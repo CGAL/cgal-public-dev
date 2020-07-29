@@ -70,7 +70,7 @@ public:
   }
 
   void init(const Ray& _ray){
-    init_rayhit(_ray)
+    init_rayhit(_ray);
   }
 
   void init(const Segment& _segment){
@@ -310,6 +310,8 @@ public:
 
   typedef Bbox_3   Bounding_box;
   typedef std::size_t size_type;
+  typedef typename Geometry::Ray Ray;
+  typedef typename Geometry::Segment Segment;
 
 private:
   RTCDevice device;
@@ -405,13 +407,11 @@ public:
    *
    */
 
-  template<typename Ray>
-  bool do_intersect(const Ray& query) const
+  template<typename Query>
+  bool do_intersect(const Query& query) const
   {
-    typedef Intersect_context<Ray> Intersect_context;
-    Intersect_context context(Intersect_context::IntersectionType::ANY);
-    context.init_context();
-    context.init_rayhit(query);
+    typedef Intersect_context<Ray, Segment> Intersect_context;
+    Intersect_context context(Intersect_context::IntersectionType::ANY, query);
 
     rtcIntersect1(scene, &context, &(context.rayhit));
 
@@ -422,13 +422,11 @@ public:
     return true;
   }
 
-  template<typename Ray>
-  size_type number_of_intersected_primitives(const Ray& query) const
+  template<typename Query>
+  size_type number_of_intersected_primitives(const Query& query) const
   {
-    typedef Intersect_context<Ray> Intersect_context;
-    Intersect_context context(Intersect_context::IntersectionType::ALL);
-    context.init_context();
-    context.init_rayhit(query);
+    typedef Intersect_context<Ray, Segment> Intersect_context;
+    Intersect_context context(Intersect_context::IntersectionType::ANY, query);
 
     rtcIntersect1(scene, &context, &(context.rayhit));
 
@@ -437,42 +435,11 @@ public:
     return (geometry->getIntersections()).size();
   }
 
-  // boost::optional<Intersection_and_primitive_id> first_intersection(const typename Geometry::Segment& query) const
-  // {
-  //   float segmentLength = sqrt(query.squared_length());
-  //   typename Geometry::Ray rayQuery(query.source(), query.direction());
-
-  //   typedef Intersect_context<typename Geometry::Ray> Intersect_context;
-  //   Intersect_context context(Intersect_context::IntersectionType::FIRST);
-  //   context.init_context();
-  //   context.init_rayhit(rayQuery);
-
-  //   context.rayhit.ray.tfar = segmentLength; 
-
-  //   rtcIntersect1(scene, &context, &(context.rayhit));
-
-  //   unsigned int rtc_geomID = context.rayhit.hit.geomID;
-  //   if(rtc_geomID == RTC_INVALID_GEOMETRY_ID){
-  //     return boost::none;
-  //   }
-
-  //   float factor = context.rayhit.ray.tfar/ sqrt(square(context.rayhit.ray.dir_x)+ square(context.rayhit.ray.dir_y)+ square(context.rayhit.ray.dir_z));
-  //   float outX = context.rayhit.ray.org_x + factor * context.rayhit.ray.dir_x;
-  //   float outY = context.rayhit.ray.org_y + factor * context.rayhit.ray.dir_y;
-  //   float outZ = context.rayhit.ray.org_z + factor * context.rayhit.ray.dir_z;
-  //   typename Geometry::Point p(outX, outY, outZ);
-
-  //   Geometry* geometry = id2geometry.at(rtc_geomID);
-  //   return boost::make_optional(std::make_pair(p, geometry->primitive_id(context.rayhit.hit.primID)));
-  // }
-
-  template<typename Ray>
-  boost::optional<Intersection_and_primitive_id> first_intersection(const Ray& query) const
+  template<typename Query>
+  boost::optional<Intersection_and_primitive_id> first_intersection(const Query& query) const
   {
     typedef Intersect_context<Ray, Segment> Intersect_context;
-    Intersect_context context(Intersect_context::IntersectionType::FIRST);
-    context.init_context();
-    context.init_rayhit(query);
+    Intersect_context context(Intersect_context::IntersectionType::ANY, query);
 
     rtcIntersect1(scene, &context, &(context.rayhit));
 
@@ -492,13 +459,11 @@ public:
   }
 
 
-  template<typename Ray>
-  boost::optional<Primitive_id> first_intersected_primitive(const Ray& query) const
+  template<typename Query>
+  boost::optional<Primitive_id> first_intersected_primitive(const Query& query) const
   {
-    typedef Intersect_context<Ray> Intersect_context;
-    Intersect_context context(Intersect_context::IntersectionType::FIRST);
-    context.init_context();
-    context.init_rayhit(query);
+    typedef Intersect_context<Ray, Segment> Intersect_context;
+    Intersect_context context(Intersect_context::IntersectionType::ANY, query);
 
     rtcIntersect1(scene, &context, &(context.rayhit));
 
@@ -512,13 +477,11 @@ public:
     return boost::make_optional(geometry->primitive_id(context.rayhit.hit.primID));
   }
 
-  template<typename Ray, typename OutputIterator>
-  OutputIterator all_intersections(const Ray& query, OutputIterator out) const
+  template<typename Query, typename OutputIterator>
+  OutputIterator all_intersections(const Query& query, OutputIterator out) const
   {
-    typedef Intersect_context<Ray> Intersect_context;
-    Intersect_context context(Intersect_context::IntersectionType::ALL);
-    context.init_context();
-    context.init_rayhit(query);
+    typedef Intersect_context<Ray, Segment> Intersect_context;
+    Intersect_context context(Intersect_context::IntersectionType::ANY, query);
 
     rtcIntersect1(scene, &context, &(context.rayhit));
 
@@ -540,13 +503,11 @@ public:
 
   }
 
-  template<typename Ray>
-  boost::optional<Intersection_and_primitive_id> any_intersection(const Ray& query) const
+  template<typename Query>
+  boost::optional<Intersection_and_primitive_id> any_intersection(const Query& query) const
   {
-    typedef Intersect_context<Ray> Intersect_context;
-    Intersect_context context(Intersect_context::IntersectionType::ANY);
-    context.init_context();
-    context.init_rayhit(query);
+    typedef Intersect_context<Ray, Segment> Intersect_context;
+    Intersect_context context(Intersect_context::IntersectionType::ANY, query);
 
     rtcIntersect1(scene, &context, &(context.rayhit));
 
