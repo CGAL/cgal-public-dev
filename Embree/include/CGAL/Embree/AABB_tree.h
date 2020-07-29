@@ -54,19 +54,29 @@ public:
   {
     queryType = RAY_QUERY;
     init_context();
-    init_rayhit(_ray);
+    init(_ray);
   }
 
-  Intersect_context(IntersectionType q_type, const Segment& _segment)
-  : intersectionType(q_type), segment(_segment)
+  Intersect_context(IntersectionType i_type, const Segment& _segment)
+  : intersectionType(i_type), segment(_segment)
   {
     queryType = SEGMENT_QUERY;
     init_context();
-    init_rayhit(_segment);
+    init(_segment);
   }
 
   void init_context(){
     rtcInitIntersectContext(this);
+  }
+
+  void init(const Ray& _ray){
+    init_rayhit(_ray)
+  }
+
+  void init(const Segment& _segment){
+    float segmentLength = sqrt(_segment.squared_length());
+    init_rayhit(_segment);
+    rayhit.ray.tfar = segmentLength;
   }
 
   template<typename T>
@@ -427,46 +437,42 @@ public:
     return (geometry->getIntersections()).size();
   }
 
+  // boost::optional<Intersection_and_primitive_id> first_intersection(const typename Geometry::Segment& query) const
+  // {
+  //   float segmentLength = sqrt(query.squared_length());
+  //   typename Geometry::Ray rayQuery(query.source(), query.direction());
 
-  boost::optional<Intersection_and_primitive_id> first_intersection(const typename Geometry::Segment& query) const
+  //   typedef Intersect_context<typename Geometry::Ray> Intersect_context;
+  //   Intersect_context context(Intersect_context::IntersectionType::FIRST);
+  //   context.init_context();
+  //   context.init_rayhit(rayQuery);
+
+  //   context.rayhit.ray.tfar = segmentLength; 
+
+  //   rtcIntersect1(scene, &context, &(context.rayhit));
+
+  //   unsigned int rtc_geomID = context.rayhit.hit.geomID;
+  //   if(rtc_geomID == RTC_INVALID_GEOMETRY_ID){
+  //     return boost::none;
+  //   }
+
+  //   float factor = context.rayhit.ray.tfar/ sqrt(square(context.rayhit.ray.dir_x)+ square(context.rayhit.ray.dir_y)+ square(context.rayhit.ray.dir_z));
+  //   float outX = context.rayhit.ray.org_x + factor * context.rayhit.ray.dir_x;
+  //   float outY = context.rayhit.ray.org_y + factor * context.rayhit.ray.dir_y;
+  //   float outZ = context.rayhit.ray.org_z + factor * context.rayhit.ray.dir_z;
+  //   typename Geometry::Point p(outX, outY, outZ);
+
+  //   Geometry* geometry = id2geometry.at(rtc_geomID);
+  //   return boost::make_optional(std::make_pair(p, geometry->primitive_id(context.rayhit.hit.primID)));
+  // }
+
+  template<typename Ray>
+  boost::optional<Intersection_and_primitive_id> first_intersection(const Ray& query) const
   {
-    float segmentLength = sqrt(query.squared_length());
-    typename Geometry::Ray rayQuery(query.source(), query.direction());
-
-    typedef Intersect_context<typename Geometry::Ray> Intersect_context;
-    Intersect_context context(Intersect_context::IntersectionType::FIRST);
-    context.init_context();
-    context.init_rayhit(rayQuery);
-
-    context.rayhit.ray.tfar = segmentLength; 
-
-    rtcIntersect1(scene, &context, &(context.rayhit));
-
-    unsigned int rtc_geomID = context.rayhit.hit.geomID;
-    if(rtc_geomID == RTC_INVALID_GEOMETRY_ID){
-      return boost::none;
-    }
-
-    float factor = context.rayhit.ray.tfar/ sqrt(square(context.rayhit.ray.dir_x)+ square(context.rayhit.ray.dir_y)+ square(context.rayhit.ray.dir_z));
-    float outX = context.rayhit.ray.org_x + factor * context.rayhit.ray.dir_x;
-    float outY = context.rayhit.ray.org_y + factor * context.rayhit.ray.dir_y;
-    float outZ = context.rayhit.ray.org_z + factor * context.rayhit.ray.dir_z;
-    typename Geometry::Point p(outX, outY, outZ);
-
-    Geometry* geometry = id2geometry.at(rtc_geomID);
-    return boost::make_optional(std::make_pair(p, geometry->primitive_id(context.rayhit.hit.primID)));
-  }
-
-  // template<typename Ray>
-  boost::optional<Intersection_and_primitive_id> first_intersection(const typename Geometry::Ray& query) const
-  {
-
-    typedef Intersect_context<typename Geometry::Ray> Intersect_context;
+    typedef Intersect_context<Ray, Segment> Intersect_context;
     Intersect_context context(Intersect_context::IntersectionType::FIRST);
     context.init_context();
     context.init_rayhit(query);
-
-    // context.rayhit.ray.tfar = 0.5f; 
 
     rtcIntersect1(scene, &context, &(context.rayhit));
 
