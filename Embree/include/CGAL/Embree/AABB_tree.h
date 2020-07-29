@@ -284,8 +284,7 @@ private:
 public:
   AABB_tree()
   {
-    device = rtcNewDevice(NULL);
-    scene = rtcNewScene(device);
+    rtc_bind();
   }
 
     AABB_tree(bool robust)
@@ -297,15 +296,20 @@ public:
 
   ~AABB_tree()
   {
+    clear();
+  }
+
+  void rtc_bind()
+  {
+    device = rtcNewDevice(NULL);
+    scene = rtcNewScene(device);
+  }
+
+  void rtc_unbind()
+  {
     rtcReleaseScene(scene);
     rtcReleaseDevice(device);
   }
-
-
-  void clear()
-  {
-  }
-
 
   bool empty() const
   {
@@ -313,6 +317,13 @@ public:
     return true;
   }
 
+  void clear()
+  {
+    rtc_unbind();
+    if (this->empty()) return;
+    geometries.clear();
+    id2geometry.clear();
+  }
 
   Bounding_box bbox() const
   {
@@ -322,7 +333,7 @@ public:
 
   size_type size() const
   {
-    return 0;
+    
   }
 
   /// T is the surface mesh
