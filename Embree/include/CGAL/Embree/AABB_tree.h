@@ -229,6 +229,17 @@ public:
   }
 
 
+  static void closest_point(RTCPointQueryFunctionArguments* args)
+  {
+    Triangle_mesh_geometry* self = (Triangle_mesh_geometry*) args->geometryUserPtr;
+    unsigned int primID = args->primID;
+    face_descriptor fd = self->id2desc(primID)
+
+    // query position in world space
+    Vec3fa q(args->query->x, args->query->y, args->query->z);
+  }
+
+
   void insert_primitives()
   {
     rtcSetGeometryUserPrimitiveCount(rtc_geometry, num_faces(*surface_mesh));
