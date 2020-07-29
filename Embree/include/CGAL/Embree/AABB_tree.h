@@ -426,7 +426,7 @@ public:
   size_type number_of_intersected_primitives(const Query& query) const
   {
     typedef Intersect_context<Ray, Segment> Intersect_context;
-    Intersect_context context(Intersect_context::IntersectionType::ANY, query);
+    Intersect_context context(Intersect_context::IntersectionType::ALL, query);
 
     rtcIntersect1(scene, &context, &(context.rayhit));
 
@@ -439,7 +439,7 @@ public:
   boost::optional<Intersection_and_primitive_id> first_intersection(const Query& query) const
   {
     typedef Intersect_context<Ray, Segment> Intersect_context;
-    Intersect_context context(Intersect_context::IntersectionType::ANY, query);
+    Intersect_context context(Intersect_context::IntersectionType::FIRST, query);
 
     rtcIntersect1(scene, &context, &(context.rayhit));
 
@@ -463,7 +463,7 @@ public:
   boost::optional<Primitive_id> first_intersected_primitive(const Query& query) const
   {
     typedef Intersect_context<Ray, Segment> Intersect_context;
-    Intersect_context context(Intersect_context::IntersectionType::ANY, query);
+    Intersect_context context(Intersect_context::IntersectionType::FIRST, query);
 
     rtcIntersect1(scene, &context, &(context.rayhit));
 
@@ -481,7 +481,7 @@ public:
   OutputIterator all_intersections(const Query& query, OutputIterator out) const
   {
     typedef Intersect_context<Ray, Segment> Intersect_context;
-    Intersect_context context(Intersect_context::IntersectionType::ANY, query);
+    Intersect_context context(Intersect_context::IntersectionType::ALL, query);
 
     rtcIntersect1(scene, &context, &(context.rayhit));
 
