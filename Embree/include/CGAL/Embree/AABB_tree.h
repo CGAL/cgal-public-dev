@@ -141,6 +141,7 @@ public:
   typedef typename GeomTraits::Triangle_3 Triangle;
   typedef typename GeomTraits::Ray_3 Ray;
   typedef typename GeomTraits::Vector_3 Vector;
+  typedef typename GeomTraits::Segment_3 Segment;
 
 private:
   const TriangleMesh* surface_mesh;
@@ -229,15 +230,15 @@ public:
   }
 
 
-  static void closest_point(RTCPointQueryFunctionArguments* args)
-  {
-    Triangle_mesh_geometry* self = (Triangle_mesh_geometry*) args->geometryUserPtr;
-    unsigned int primID = args->primID;
-    face_descriptor fd = self->id2desc(primID)
+  // static void closest_point(RTCPointQueryFunctionArguments* args)
+  // {
+  //   Triangle_mesh_geometry* self = (Triangle_mesh_geometry*) args->geometryUserPtr;
+  //   unsigned int primID = args->primID;
+  //   face_descriptor fd = self->id2desc(primID)
 
-    // query position in world space
-    Vec3fa q(args->query->x, args->query->y, args->query->z);
-  }
+  //   // query position in world space
+  //   Vec3fa q(args->query->x, args->query->y, args->query->z);
+  // }
 
 
   void insert_primitives()
@@ -412,14 +413,46 @@ public:
     return (geometry->getIntersections()).size();
   }
 
-  template<typename Ray>
-  boost::optional<Intersection_and_primitive_id> first_intersection(const Ray& query) const
+
+  boost::optional<Intersection_and_primitive_id> first_intersection(const typename Geometry::Segment& query) const
+  {
+    float segmentLength = sqrt(query.squared_length());
+    typename Geometry::Ray rayQuery(query.source(), query.direction());
+
+    typedef Intersect_context<typename Geometry::Ray> Intersect_context;
+    Intersect_context context(Intersect_context::IntersectionType::FIRST);
+    context.init_context();
+    context.init_rayhit(rayQuery);
+
+    context.rayhit.ray.tfar = segmentLength; 
+
+    rtcIntersect1(scene, &context, &(context.rayhit));
+
+    unsigned int rtc_geomID = context.rayhit.hit.geomID;
+    if(rtc_geomID == RTC_INVALID_GEOMETRY_ID){
+      return boost::none;
+    }
+
+    float factor = context.rayhit.ray.tfar/ sqrt(square(context.rayhit.ray.dir_x)+ square(context.rayhit.ray.dir_y)+ square(context.rayhit.ray.dir_z));
+    float outX = context.rayhit.ray.org_x + factor * context.rayhit.ray.dir_x;
+    float outY = context.rayhit.ray.org_y + factor * context.rayhit.ray.dir_y;
+    float outZ = context.rayhit.ray.org_z + factor * context.rayhit.ray.dir_z;
+    typename Geometry::Point p(outX, outY, outZ);
+
+    Geometry* geometry = id2geometry.at(rtc_geomID);
+    return boost::make_optional(std::make_pair(p, geometry->primitive_id(context.rayhit.hit.primID)));
+  }
+
+  // template<typename Ray>
+  boost::optional<Intersection_and_primitive_id> first_intersection(const typename Geometry::Ray& query) const
   {
 
-    typedef Intersect_context<Ray> Intersect_context;
+    typedef Intersect_context<typename Geometry::Ray> Intersect_context;
     Intersect_context context(Intersect_context::IntersectionType::FIRST);
     context.init_context();
     context.init_rayhit(query);
+
+    // context.rayhit.ray.tfar = 0.5f; 
 
     rtcIntersect1(scene, &context, &(context.rayhit));
 
