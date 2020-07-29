@@ -31,31 +31,46 @@
 namespace CGAL {
 namespace Embree {
 
-template<typename Ray>
+template<typename Ray, typename Segment>
 struct Intersect_context : public RTCIntersectContext{
 public:
   Ray ray;
+  Segment segment;
   struct RTCRayHit rayhit;
 
   enum IntersectionType{
     FIRST = 0, ANY, ALL
   };
 
-  IntersectionType intersectionType;
+  enum QueryType{
+    RAY_QUERY = 0, SEGMENT_QUERY
+  };
 
-  Intersect_context(IntersectionType _type){
-    intersectionType = _type;
+  IntersectionType intersectionType;
+  QueryType queryType;
+
+  Intersect_context(IntersectionType i_type, const Ray& _ray)
+  : intersectionType(i_type), ray(_ray)
+  {
+    queryType = RAY_QUERY;
+    init_context();
+    init_rayhit(_ray);
   }
+
+  Intersect_context(IntersectionType q_type, const Segment& _segment)
+  : intersectionType(q_type), segment(_segment)
+  {
+    queryType = SEGMENT_QUERY;
+    init_context();
+    init_rayhit(_segment);
+  }
+
   void init_context(){
     rtcInitIntersectContext(this);
   }
 
-  void set_ray(const Ray& _ray){
-    ray = _ray;
-  }
-
-  void init_rayhit(const Ray& query){
-    this->set_ray(query);
+  template<typename T>
+  void init_rayhit(const T& query){
 
     rayhit.ray.org_x =  query.source().x(); /*POINT.X*/
     rayhit.ray.org_y =  query.source().y(); /*POINT.Y*/
@@ -76,7 +91,6 @@ public:
 
     rayhit.hit.instID[0] = RTC_INVALID_GEOMETRY_ID;
   }
-
 
 };
 
@@ -183,7 +197,7 @@ public:
 
   static void intersection_function(const RTCIntersectFunctionNArguments* args)
   {
-    typedef Intersect_context<Ray> Intersect_context;
+    typedef Intersect_context<Ray, Segment> Intersect_context;
     Triangle_mesh_geometry* self = (Triangle_mesh_geometry*) args->geometryUserPtr;
     int* valid = args->valid;
     Intersect_context* context = (Intersect_context*)args->context;
@@ -205,17 +219,17 @@ public:
         face_points.push_back(data);
     }
     Triangle face(face_points[0], face_points[1], face_points[2]);
-
-    // Vector ray_direction(rayhit->ray.dir_x, rayhit->ray.dir_y, rayhit->ray.dir_z);
-    // Point ray_orgin(rayhit->ray.org_x, rayhit->ray.org_y, rayhit->ray.org_z);
-    // Ray ray(ray_orgin, ray_direction);
-
-    auto v = CGAL::intersection(context->ray, face);
+    
+    auto v = context->queryType==Intersect_context::QueryType::RAY_QUERY 
+    ? CGAL::intersection(context->ray, face) 
+    : CGAL::intersection(context->segment, face);
     if(v){
         rayhit->hit.geomID = self->rtc_geomID;
         rayhit->hit.primID = primID;
         if (const Point *intersection_point = boost::get<Point>(&*v) ){
-            float _distance = sqrt(CGAL::squared_distance(context->ray.source(), *intersection_point));
+            float _distance = context->queryType==Intersect_context::QueryType::RAY_QUERY
+            ? sqrt(CGAL::squared_distance(context->ray.source(), *intersection_point))
+            : sqrt(CGAL::squared_distance(context->segment.source(), *intersection_point));
             if(context->intersectionType == Intersect_context::IntersectionType::FIRST)
               rayhit->ray.tfar = _distance;
             else if (context->intersectionType == Intersect_context::IntersectionType::ALL)
