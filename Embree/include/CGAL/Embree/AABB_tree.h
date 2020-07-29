@@ -17,6 +17,7 @@
 // #include <CGAL/license/Embree.h>
 #include <CGAL/intersections.h>
 #include <CGAL/boost/graph/helpers.h>
+#include <CGAL/Polygon_mesh_processing/bbox.h>
 
 #include <embree3/rtcore.h>
 
@@ -327,16 +328,29 @@ public:
 
   Bounding_box bbox() const
   {
-    // TODO : 
-    // iterate through all the geomtries, find the max, and min of the xyz of their bounding boxes 
-    return Bounding_box();
+    double cmax = std::numeric_limits<double>::infinity();
+    double cmin = -std::numeric_limits<double>::infinity(); 
+    double xmin = cmin, ymin = cmin, zmin = cmin;
+    double xmax = cmax, ymax = cmax, zmax = cmax;
+    for (size_type i =0; i!=geometries.size(); ++i){
+      Geometry g = geometries[i];
+      Bounding_box b = Polygon_mesh_processing::bbox(*(g->surface_mesh));
+      xmin = b.xmin()<xmin ? b.xmin() : xmin;
+      ymin = b.ymin()<ymin ? b.ymin() : ymin; 
+      zmin = b.zmin()<zmin ? b.zmin() : zmin;
+
+      xmax = b.xmax()>xmax ? b.xmax() : xmax;
+      ymax = b.ymax()>ymax ? b.ymax() : ymax; 
+      zmax = b.zmax()>zmax ? b.zmax() : zmax;
+    }
+
+    return Bounding_box(xmin, ymin, zmin, xmax, ymax, zmax);
   }
 
 
   size_type size() const
   {
     size_type number_of_primitives = 0;
-    // typename std::list<Geometry>::iterator it;
     for (size_type i =0; i!=geometries.size(); ++i){
       Geometry g = geometries[i];
       number_of_primitives+= g.surface_mesh->number_of_faces();
