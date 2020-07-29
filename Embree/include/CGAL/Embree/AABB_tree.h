@@ -30,7 +30,7 @@
 
 namespace CGAL {
 namespace Embree {
-  
+
 template<typename Ray>
 struct Intersect_context : public RTCIntersectContext{
 public:
@@ -318,6 +318,7 @@ public:
     return true;
   }
 
+
   void clear()
   {
     rtc_unbind();
@@ -326,25 +327,17 @@ public:
     id2geometry.clear();
   }
 
+
   Bounding_box bbox() const
   {
-    double cmax = std::numeric_limits<double>::infinity();
-    double cmin = -std::numeric_limits<double>::infinity(); 
-    double xmin = cmin, ymin = cmin, zmin = cmin;
-    double xmax = cmax, ymax = cmax, zmax = cmax;
+    Bounding_box bb;
+
     for (size_type i =0; i!=geometries.size(); ++i){
       Geometry g = geometries[i];
-      Bounding_box b = Polygon_mesh_processing::bbox(*(g->surface_mesh));
-      xmin = b.xmin()<xmin ? b.xmin() : xmin;
-      ymin = b.ymin()<ymin ? b.ymin() : ymin; 
-      zmin = b.zmin()<zmin ? b.zmin() : zmin;
-
-      xmax = b.xmax()>xmax ? b.xmax() : xmax;
-      ymax = b.ymax()>ymax ? b.ymax() : ymax; 
-      zmax = b.zmax()>zmax ? b.zmax() : zmax;
+      bb += Polygon_mesh_processing::bbox(*(g->surface_mesh));
     }
 
-    return Bounding_box(xmin, ymin, zmin, xmax, ymax, zmax);
+    return bb;
   }
 
 
@@ -353,7 +346,7 @@ public:
     size_type number_of_primitives = 0;
     for (size_type i =0; i!=geometries.size(); ++i){
       Geometry g = geometries[i];
-      number_of_primitives+= g.surface_mesh->number_of_faces();
+      number_of_primitives+= num_faces(*g.surface_mesh);
     }
     return number_of_primitives;
   }
@@ -378,7 +371,7 @@ public:
 
   template<typename Ray>
   bool do_intersect(const Ray& query) const
-  { 
+  {
     typedef Intersect_context<Ray> Intersect_context;
     Intersect_context context(Intersect_context::IntersectionType::ANY);
     context.init_context();
@@ -483,7 +476,7 @@ public:
 
   }
 
-    template<typename Ray>
+  template<typename Ray>
   boost::optional<Intersection_and_primitive_id> any_intersection(const Ray& query) const
   {
     typedef Intersect_context<Ray> Intersect_context;
