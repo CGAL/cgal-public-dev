@@ -333,7 +333,13 @@ public:
 
   size_type size() const
   {
-    
+    size_type number_of_primitives = 0;
+    typename std::list<Geometry>::iterator it;
+    for (typename it = geometries.begin(); it!= geometries.end(); ++it){
+      Geometry g = *it;
+      number_of_primitives+= g.surface_mesh->number_of_faces();
+    }
+    return number_of_primitives;
   }
 
   /// T is the surface mesh
