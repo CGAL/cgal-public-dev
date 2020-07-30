@@ -321,7 +321,7 @@ public:
     return std::make_pair(id2desc(primID), const_cast<TriangleMesh*>(surface_mesh));
   }
 
-  inline std::vector<std::pair<float, unsigned int>> getIntersections(){ return allIntersections; }
+  inline const std::vector<std::pair<float, unsigned int>>& getIntersections(){ return allIntersections; }
 };
 
 /**
