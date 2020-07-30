@@ -511,6 +511,25 @@ public:
   }
 
   template<typename Query, typename OutputIterator>
+  OutputIterator all_intersected_primitives (const Query& query, OutputIterator out) const
+  {
+    typedef Intersect_context<Ray, Segment> Intersect_context;
+    Intersect_context context(Intersect_context::IntersectionType::ALL, query);
+
+    rtcIntersect1(scene, &context, &(context.rayhit));
+
+    unsigned int rtc_geomID = context.rayhit.hit.geomID;
+    Geometry* geometry = id2geometry.at(rtc_geomID);
+    std::vector<std::pair<float, unsigned int>> intersectionDistance = geometry->getIntersections();
+
+    for(int i=0; i<intersectionDistance.size();i++){
+      *out++ = boost::make_optional(geometry->primitive_id(intersectionDistance[i].second));
+    }
+
+    return out;
+  }
+
+  template<typename Query, typename OutputIterator>
   OutputIterator all_intersections(const Query& query, OutputIterator out) const
   {
     typedef Intersect_context<Ray, Segment> Intersect_context;
