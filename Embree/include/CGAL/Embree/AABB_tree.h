@@ -510,6 +510,24 @@ public:
     return boost::make_optional(geometry->primitive_id(context.rayhit.hit.primID));
   }
 
+  template<typename Query>
+  boost::optional<Primitive_id> any_intersected_primitive(const Query& query) const
+  {
+    typedef Intersect_context<Ray, Segment> Intersect_context;
+    Intersect_context context(Intersect_context::IntersectionType::ANY, query);
+
+    rtcIntersect1(scene, &context, &(context.rayhit));
+
+    unsigned int rtc_geomID = context.rayhit.hit.geomID;
+    if(rtc_geomID == RTC_INVALID_GEOMETRY_ID){
+      return boost::none;
+    }
+
+    Geometry* geometry = id2geometry.at(rtc_geomID);
+
+    return boost::make_optional(geometry->primitive_id(context.rayhit.hit.primID));
+  }
+
   template<typename Query, typename OutputIterator>
   OutputIterator all_intersected_primitives (const Query& query, OutputIterator out) const
   {
