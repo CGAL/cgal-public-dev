@@ -38,29 +38,29 @@ public:
   Segment segment;
   struct RTCRayHit rayhit;
 
-  enum IntersectionType{
+  enum Intersection_type{
     FIRST = 0, ANY, ALL
   };
 
-  enum QueryType{
+  enum Query_type{
     RAY_QUERY = 0, SEGMENT_QUERY
   };
 
-  IntersectionType intersectionType;
-  QueryType queryType;
+  Intersection_type intersection_type;
+  Query_type query_type;
 
-  Intersect_context(IntersectionType i_type, const Ray& _ray)
-  : intersectionType(i_type), ray(_ray)
+  Intersect_context(Intersection_type i_type, const Ray& _ray)
+  : intersection_type(i_type), ray(_ray)
   {
-    queryType = RAY_QUERY;
+    query_type = RAY_QUERY;
     init_context();
     init(_ray);
   }
 
-  Intersect_context(IntersectionType i_type, const Segment& _segment)
-  : intersectionType(i_type), segment(_segment)
+  Intersect_context(Intersection_type i_type, const Segment& _segment)
+  : intersection_type(i_type), segment(_segment)
   {
-    queryType = SEGMENT_QUERY;
+    query_type = SEGMENT_QUERY;
     init_context();
     init(_segment);
   }
@@ -183,7 +183,7 @@ public:
   typedef typename GeomTraits::Segment_3 Segment;
 
 private:
-  const TriangleMesh* surface_mesh;
+  const TriangleMesh* triangle_mesh;
   RTCGeometry rtc_geometry;
   unsigned int rtc_geomID;
   Vertex_point_map vpm;
@@ -195,7 +195,7 @@ public:
   {}
 
   Triangle_mesh_geometry(const TriangleMesh& tm)
-    : surface_mesh(&tm), vpm(get(CGAL::vertex_point, tm)), id2desc(tm)
+    : triangle_mesh(&tm), vpm(get(CGAL::vertex_point, tm)), id2desc(tm)
   {}
 
   static void bound_function(const struct RTCBoundsFunctionArguments* args)
@@ -207,9 +207,9 @@ public:
     Bbox_3 bb;
 
     face_descriptor fd = self->id2desc(primID);
-    halfedge_descriptor hf = halfedge(fd, *self->surface_mesh);
-    for(halfedge_descriptor hi : halfedges_around_face(hf, *(self->surface_mesh))){
-        vertex_descriptor vi = target(hi, *(self->surface_mesh));
+    halfedge_descriptor hf = halfedge(fd, *self->triangle_mesh);
+    for(halfedge_descriptor hi : halfedges_around_face(hf, *(self->triangle_mesh))){
+        vertex_descriptor vi = target(hi, *(self->triangle_mesh));
         bb += get(self->vpm,vi).bbox();
     }
     bounds_o->lower_x = bb.xmin();
@@ -237,27 +237,27 @@ public:
     face_points.reserve(3);
 
     face_descriptor fd = self->id2desc(primID);
-    halfedge_descriptor hf = halfedge(fd, *self->surface_mesh);
-    for(halfedge_descriptor hi : halfedges_around_face(hf, *(self->surface_mesh))){
-        vertex_descriptor vi = target(hi, *(self->surface_mesh));
+    halfedge_descriptor hf = halfedge(fd, *self->triangle_mesh);
+    for(halfedge_descriptor hi : halfedges_around_face(hf, *(self->triangle_mesh))){
+        vertex_descriptor vi = target(hi, *(self->triangle_mesh));
         Point data = get(self->vpm,vi);
         face_points.push_back(data);
     }
     Triangle face(face_points[0], face_points[1], face_points[2]);
 
-    auto v = context->queryType==Intersect_context::QueryType::RAY_QUERY
+    auto v = context->query_type==Intersect_context::Query_type::RAY_QUERY
     ? CGAL::intersection(context->ray, face)
     : CGAL::intersection(context->segment, face);
     if(v){
         rayhit->hit.geomID = self->rtc_geomID;
         rayhit->hit.primID = primID;
         if (const Point *intersection_point = boost::get<Point>(&*v) ){
-            float _distance = context->queryType==Intersect_context::QueryType::RAY_QUERY
+            float _distance = context->query_type==Intersect_context::Query_type::RAY_QUERY
             ? sqrt(CGAL::squared_distance(context->ray.source(), *intersection_point))
             : sqrt(CGAL::squared_distance(context->segment.source(), *intersection_point));
-            if(context->intersectionType == Intersect_context::IntersectionType::FIRST)
+            if(context->intersection_type == Intersect_context::Intersection_type::FIRST)
               rayhit->ray.tfar = _distance;
-            else if (context->intersectionType == Intersect_context::IntersectionType::ALL)
+            else if (context->intersection_type == Intersect_context::Intersection_type::ALL)
               self->allIntersections.push_back(std::make_pair(_distance, primID));
             else {
               rayhit->ray.tfar = _distance;
@@ -296,7 +296,7 @@ public:
 
   void insert_primitives()
   {
-    rtcSetGeometryUserPrimitiveCount(rtc_geometry, num_faces(*surface_mesh));
+    rtcSetGeometryUserPrimitiveCount(rtc_geometry, num_faces(*triangle_mesh));
     rtcSetGeometryUserData(rtc_geometry, this);
 
     // AF: For the next two you have to find out how to write
@@ -318,7 +318,7 @@ public:
 
   Primitive_id primitive_id(unsigned int primID) const
   {
-    return std::make_pair(id2desc(primID), const_cast<TriangleMesh*>(surface_mesh));
+    return std::make_pair(id2desc(primID), const_cast<TriangleMesh*>(triangle_mesh));
   }
 
   inline const std::vector<std::pair<float, unsigned int>>& getIntersections(){ return allIntersections; }
@@ -405,7 +405,7 @@ public:
 
     for (size_type i =0; i!=geometries.size(); ++i){
       Geometry g = geometries[i];
-      bb += Polygon_mesh_processing::bbox(*(g->surface_mesh));
+      bb += Polygon_mesh_processing::bbox(*(g->triangle_mesh));
     }
 
     return bb;
@@ -417,7 +417,7 @@ public:
     size_type number_of_primitives = 0;
     for (size_type i =0; i!=geometries.size(); ++i){
       Geometry g = geometries[i];
-      number_of_primitives+= num_faces(*g.surface_mesh);
+      number_of_primitives+= num_faces(*g.triangle_mesh);
     }
     return number_of_primitives;
   }
@@ -444,7 +444,7 @@ public:
   bool do_intersect(const Query& query) const
   {
     typedef Intersect_context<Ray, Segment> Intersect_context;
-    Intersect_context context(Intersect_context::IntersectionType::ANY, query);
+    Intersect_context context(Intersect_context::Intersection_type::ANY, query);
 
     rtcIntersect1(scene, &context, &(context.rayhit));
 
@@ -459,7 +459,7 @@ public:
   size_type number_of_intersected_primitives(const Query& query) const
   {
     typedef Intersect_context<Ray, Segment> Intersect_context;
-    Intersect_context context(Intersect_context::IntersectionType::ALL, query);
+    Intersect_context context(Intersect_context::Intersection_type::ALL, query);
 
     rtcIntersect1(scene, &context, &(context.rayhit));
 
@@ -472,7 +472,7 @@ public:
   boost::optional<Intersection_and_primitive_id> first_intersection(const Query& query) const
   {
     typedef Intersect_context<Ray, Segment> Intersect_context;
-    Intersect_context context(Intersect_context::IntersectionType::FIRST, query);
+    Intersect_context context(Intersect_context::Intersection_type::FIRST, query);
 
     rtcIntersect1(scene, &context, &(context.rayhit));
 
@@ -496,7 +496,7 @@ public:
   boost::optional<Primitive_id> first_intersected_primitive(const Query& query) const
   {
     typedef Intersect_context<Ray, Segment> Intersect_context;
-    Intersect_context context(Intersect_context::IntersectionType::FIRST, query);
+    Intersect_context context(Intersect_context::Intersection_type::FIRST, query);
 
     rtcIntersect1(scene, &context, &(context.rayhit));
 
@@ -514,7 +514,7 @@ public:
   boost::optional<Primitive_id> any_intersected_primitive(const Query& query) const
   {
     typedef Intersect_context<Ray, Segment> Intersect_context;
-    Intersect_context context(Intersect_context::IntersectionType::ANY, query);
+    Intersect_context context(Intersect_context::Intersection_type::ANY, query);
 
     rtcIntersect1(scene, &context, &(context.rayhit));
 
@@ -532,7 +532,7 @@ public:
   OutputIterator all_intersected_primitives (const Query& query, OutputIterator out) const
   {
     typedef Intersect_context<Ray, Segment> Intersect_context;
-    Intersect_context context(Intersect_context::IntersectionType::ALL, query);
+    Intersect_context context(Intersect_context::Intersection_type::ALL, query);
 
     rtcIntersect1(scene, &context, &(context.rayhit));
 
@@ -551,7 +551,7 @@ public:
   OutputIterator all_intersections(const Query& query, OutputIterator out) const
   {
     typedef Intersect_context<Ray, Segment> Intersect_context;
-    Intersect_context context(Intersect_context::IntersectionType::ALL, query);
+    Intersect_context context(Intersect_context::Intersection_type::ALL, query);
 
     rtcIntersect1(scene, &context, &(context.rayhit));
 
@@ -577,7 +577,7 @@ public:
   boost::optional<Intersection_and_primitive_id> any_intersection(const Query& query) const
   {
     typedef Intersect_context<Ray, Segment> Intersect_context;
-    Intersect_context context(Intersect_context::IntersectionType::ANY, query);
+    Intersect_context context(Intersect_context::Intersection_type::ANY, query);
 
     rtcIntersect1(scene, &context, &(context.rayhit));
 
