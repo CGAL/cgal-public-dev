@@ -11,7 +11,6 @@
 
 #include <CGAL/Embree/AABB_tree.h>
 
-#include <CGAL/AABB_face_graph_triangle_primitive.h>
 #include <CGAL/Polyhedron_3.h>
 
 #include <CGAL/Timer.h>
@@ -59,7 +58,6 @@ boost::tuple<std::size_t, std::size_t, long> test(const char* name) {
   typedef typename K::Segment_3 Segment;
   typedef CGAL::Polyhedron_3<K> Polyhedron;
 
-  typedef CGAL::AABB_face_graph_triangle_primitive<Polyhedron> Primitive;
   typedef CGAL::Embree::Triangle_mesh_geometry<Polyhedron, K> TriangleMesh;
   typedef CGAL::Embree::AABB_tree<TriangleMesh, K> Tree;
 
