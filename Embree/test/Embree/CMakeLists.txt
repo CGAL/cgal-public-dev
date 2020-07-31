@@ -9,23 +9,12 @@ include_directories(../../include)
 
 if ( CGAL_FOUND AND embree_FOUND )
 
-    ADD_EXECUTABLE(EmbreeTutorial EmbreeTutorial.cpp)
-    TARGET_LINK_LIBRARIES(EmbreeTutorial CGAL embree)
+    ADD_EXECUTABLE(aabb_any_all_benchmark aabb_any_all_benchmark.cpp)
+    TARGET_LINK_LIBRARIES(aabb_any_all_benchmark CGAL embree)
 
-    ADD_EXECUTABLE(closest_point closest_point.cpp)
-    TARGET_LINK_LIBRARIES(closest_point CGAL embree)
+    # ADD_EXECUTABLE(closest_point closest_point.cpp)
+    # TARGET_LINK_LIBRARIES(closest_point CGAL embree)
 
-    ADD_EXECUTABLE(TestEmbreeAABB TestEmbreeAABB.cpp)
-    TARGET_LINK_LIBRARIES(TestEmbreeAABB CGAL embree)
-
-    ADD_EXECUTABLE(MultipleRayEmbreeAabb MultipleRayEmbreeAabb.cpp)
-    TARGET_LINK_LIBRARIES(MultipleRayEmbreeAabb CGAL embree)
-
-    ADD_EXECUTABLE(PolyhedronTest PolyhedronTest.cpp)
-    TARGET_LINK_LIBRARIES(PolyhedronTest CGAL embree)
-
-    ADD_EXECUTABLE(MultipleIntersectionTest MultipleIntersectionTest.cpp)
-    TARGET_LINK_LIBRARIES(MultipleIntersectionTest CGAL embree)
 
 else()
 
