@@ -12,6 +12,9 @@ if ( CGAL_FOUND AND embree_FOUND )
     ADD_EXECUTABLE(EmbreeTutorial EmbreeTutorial.cpp)
     TARGET_LINK_LIBRARIES(EmbreeTutorial CGAL embree)
 
+    ADD_EXECUTABLE(closest_point closest_point.cpp)
+    TARGET_LINK_LIBRARIES(closest_point CGAL embree)
+
     ADD_EXECUTABLE(TestEmbreeAABB TestEmbreeAABB.cpp)
     TARGET_LINK_LIBRARIES(TestEmbreeAABB CGAL embree)
 

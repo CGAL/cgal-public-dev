@@ -105,19 +105,6 @@ public:
 };
 
 
-#ifdef CLOSEST
-struct Closest_point_result
-{
-  Closest_point_result()
-    : primID(RTC_INVALID_GEOMETRY_ID)
-    , geomID(RTC_INVALID_GEOMETRY_ID)
-  {}
-
-  // Vec3f p;
-  unsigned int primID;
-  unsigned int geomID;
-};
-#endif
 
 template <typename TriangleMesh, typename ConstructibleFromId>
 struct Id2descriptor
@@ -270,12 +257,12 @@ public:
 
 #ifdef CLOSEST
 
-  static bool closest_point_function(RTCPointQueryFunctionArguments* args)
+  template <typename ClosestPointResult>
+  bool closest_point_function(RTCPointQueryFunctionArguments* args, ClosestPointResult* result)
   {
-    Triangle_mesh_geometry* self; //  = (Triangle_mesh_geometry*)args->geometryUserPtr;    AF:  args has only UserPtr
     unsigned int primID = args->primID;
     unsigned int geomID = args->geomID;
-    face_descriptor fd = self->id2desc(primID);
+    face_descriptor fd = id2desc(primID);
 
     // query position in world space
     Point q(args->query->x, args->query->y, args->query->z);
@@ -284,7 +271,6 @@ public:
     Point cp; // TODO: compute the cli
     if(d < args->query->radius){
       args->query->radius = d;
-      Closest_point_result* result = (Closest_point_result*)args->userPtr;
       // result->p = args->similarityScale > 0 ? xfmPoint(inst2world, p) : p;
       result->primID = primID;
       result->geomID = geomID;
@@ -307,9 +293,7 @@ public:
 
     rtcSetGeometryBoundsFunction(rtc_geometry, bound_function, nullptr);
     rtcSetGeometryIntersectFunction(rtc_geometry, intersection_function);
-#ifdef CLOSEST
-    rtcSetGeometryPointQueryFunction(rtc_geometry, closest_point_function);
-#endif
+
     rtcCommitGeometry(rtc_geometry);
 
     rtcReleaseGeometry(rtc_geometry);
@@ -336,6 +320,7 @@ public:
 template <typename Geometry, typename GeomTraits>
 class AABB_tree {
 
+  typedef AABB_tree<Geometry,GeomTraits> Self;
   typedef typename Geometry::Primitive_id Primitive_id;
 public:
   typedef std::pair<typename Geometry::Point, Primitive_id> Intersection_and_primitive_id;
@@ -347,6 +332,35 @@ public:
   typedef typename Geometry::Segment Segment;
 
 private:
+
+
+#ifdef CLOSEST
+struct Closest_point_result
+{
+  Closest_point_result(const Self* aabb_tree)
+    : aabb_tree(aabb_tree)
+    , primID(RTC_INVALID_GEOMETRY_ID)
+    , geomID(RTC_INVALID_GEOMETRY_ID)
+  {}
+
+  const Self* aabb_tree;
+  // Vec3f p;
+  unsigned int primID;
+  unsigned int geomID;
+};
+
+  static bool closest_point_function(RTCPointQueryFunctionArguments* args)
+  {
+    unsigned int primID = args->primID;
+    unsigned int geomID = args->geomID;
+    Closest_point_result* result = (Closest_point_result*)args->userPtr;
+    const Self* aabb_tree = result->aabb_tree;
+    Geometry* geometry = aabb_tree->id2geometry.at(geomID);
+    return geometry->closest_point_function(args, result);
+  }
+#endif
+
+
   RTCDevice device;
   RTCScene scene;
 
@@ -433,6 +447,11 @@ public:
     geometry->rtc_geomID = rtcAttachGeometry(scene, geometry->rtc_geometry);
     id2geometry.insert({geometry->rtc_geomID, geometry});
     geometry->insert_primitives();
+
+#ifdef CLOSEST
+    rtcSetGeometryPointQueryFunction(geometry->rtc_geometry, closest_point_function);
+#endif
+
     rtcCommitScene(scene);
   }
 
@@ -606,7 +625,7 @@ public:
     query.radius = std::numeric_limits<float>::infinity();
     query.time = 0.f;
 
-    Closest_point_result result;
+    Closest_point_result result(this);
     RTCPointQueryContext context;
     rtcInitPointQueryContext(&context);
     rtcPointQuery(scene, &query, &context, nullptr, (void*)&result);
