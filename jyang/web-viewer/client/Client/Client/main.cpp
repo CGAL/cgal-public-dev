@@ -7,14 +7,19 @@ int main(int argc, char *argv[])
 
     QTcpSocket *socket = new QTcpSocket();
     socket->abort();
-    socket->connectToHost("120.0.0.1", 8081);
-    if (socket->waitForReadyRead(1000)) {
-        QByteArray s = socket->readAll();
-        QString ss = QVariant(s).toString();
+
+    // connect to the server
+    socket->connectToHost("127.0.0.1", 3001);
+    if (!socket->waitForConnected()) {
+        qDebug() << "Connection failed";
     }
-    QByteArray text = "This is Client!";
-    socket->write(text);
-    socket->close();
+
+    // disconnect to the server
+    socket->disconnectFromHost();
+    if (!socket->waitForDisconnected()) {
+        qDebug() << "Disconnection failed";
+    }
+    
 
     return a.exec();
 }
