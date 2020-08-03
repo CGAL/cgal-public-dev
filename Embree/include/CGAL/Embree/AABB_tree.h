@@ -404,13 +404,15 @@ public:
     rtcReleaseDevice(device);
   }
 
+
+  /// returns \c true, iff the tree contains no primitive.
   bool empty() const
   {
     if (!geometries.size()) return false;
     return true;
   }
 
-
+  // clear the tree.
   void clear()
   {
     rtc_unbind();
@@ -420,6 +422,8 @@ public:
   }
 
 
+  /// returns the axis-aligned bounding box of the whole tree.
+  /// \pre `!empty()`
   Bounding_box bbox() const
   {
     Bounding_box bb;
@@ -433,6 +437,7 @@ public:
   }
 
 
+  /// returns the number of primitives in the tree.
   size_type size() const
   {
     size_type number_of_primitives = 0;
@@ -460,6 +465,8 @@ public:
     rtcCommitScene(scene);
   }
 
+  /// \name Intersection Tests
+  ///@{
   /**
    *
    */
@@ -479,6 +486,9 @@ public:
     return true;
   }
 
+
+  /// returns the number of primitives intersected by the query.
+  /// \tparam Query may be `GeomTraits::Ray_3` or `GeomTraits::Segment_3.
   template<typename Query>
   size_type number_of_intersected_primitives(const Query& query) const
   {
@@ -494,6 +504,48 @@ public:
     return (geometry->getIntersections()).size();
   }
 
+
+  template<typename Query, typename OutputIterator>
+  OutputIterator all_intersected_primitives (const Query& query, OutputIterator out) const
+  {
+    typedef Intersect_context<Ray, Segment> Intersect_context;
+    Intersect_context context(Intersect_context::Intersection_type::ALL, query);
+
+    rtcIntersect1(scene, &context, &(context.rayhit));
+
+    unsigned int rtc_geomID = context.rayhit.hit.geomID;
+    Geometry* geometry = id2geometry.at(rtc_geomID);
+    std::vector<std::pair<float, unsigned int>> intersectionDistance = geometry->getIntersections();
+
+    for(int i=0; i<intersectionDistance.size();i++){
+      *out++ = boost::make_optional(geometry->primitive_id(intersectionDistance[i].second));
+    }
+
+    return out;
+  }
+
+
+  template<typename Query>
+  boost::optional<Primitive_id> any_intersected_primitive(const Query& query) const
+  {
+    typedef Intersect_context<Ray, Segment> Intersect_context;
+    Intersect_context context(Intersect_context::Intersection_type::ANY, query);
+
+    rtcIntersect1(scene, &context, &(context.rayhit));
+
+    unsigned int rtc_geomID = context.rayhit.hit.geomID;
+    if(rtc_geomID == RTC_INVALID_GEOMETRY_ID){
+      return boost::none;
+    }
+
+    Geometry* geometry = id2geometry.at(rtc_geomID);
+
+    return boost::make_optional(geometry->primitive_id(context.rayhit.hit.primID));
+  }
+ ///@}
+
+  /// \name Intersections
+  ///@{
   template<typename Query>
   boost::optional<Intersection_and_primitive_id> first_intersection(const Query& query) const
   {
@@ -521,6 +573,8 @@ public:
   template<typename Query>
   boost::optional<Primitive_id> first_intersected_primitive(const Query& query) const
   {
+    if (this->empty) return out;
+
     typedef Intersect_context<Ray, Segment> Intersect_context;
     Intersect_context context(Intersect_context::Intersection_type::FIRST, query);
 
@@ -534,45 +588,6 @@ public:
     Geometry* geometry = id2geometry.at(rtc_geomID);
 
     return boost::make_optional(geometry->primitive_id(context.rayhit.hit.primID));
-  }
-
-  template<typename Query>
-  boost::optional<Primitive_id> any_intersected_primitive(const Query& query) const
-  {
-    typedef Intersect_context<Ray, Segment> Intersect_context;
-    Intersect_context context(Intersect_context::Intersection_type::ANY, query);
-
-    rtcIntersect1(scene, &context, &(context.rayhit));
-
-    unsigned int rtc_geomID = context.rayhit.hit.geomID;
-    if(rtc_geomID == RTC_INVALID_GEOMETRY_ID){
-      return boost::none;
-    }
-
-    Geometry* geometry = id2geometry.at(rtc_geomID);
-
-    return boost::make_optional(geometry->primitive_id(context.rayhit.hit.primID));
-  }
-
-  template<typename Query, typename OutputIterator>
-  OutputIterator all_intersected_primitives (const Query& query, OutputIterator out) const
-  {
-    if (this->empty) return out;
-
-    typedef Intersect_context<Ray, Segment> Intersect_context;
-    Intersect_context context(Intersect_context::Intersection_type::ALL, query);
-
-    rtcIntersect1(scene, &context, &(context.rayhit));
-
-    unsigned int rtc_geomID = context.rayhit.hit.geomID;
-    Geometry* geometry = id2geometry.at(rtc_geomID);
-    std::vector<std::pair<float, unsigned int>> intersectionDistance = geometry->getIntersections();
-
-    for(int i=0; i<intersectionDistance.size();i++){
-      *out++ = boost::make_optional(geometry->primitive_id(intersectionDistance[i].second));
-    }
-
-    return out;
   }
 
   template<typename Query, typename OutputIterator>
@@ -625,7 +640,11 @@ public:
     Geometry* geometry = id2geometry.at(rtc_geomID);
     return boost::make_optional(std::make_pair(p, geometry->primitive_id(context.rayhit.hit.primID)));
   }
+ ///@}
 
+
+  /// \name Distance Queries
+  ///@{
 
   Point closest_point(const typename Geometry::Point &query) const
   {
@@ -662,7 +681,7 @@ public:
     Geometry* geometry = id2geometry.at(result.geomID);
     return std::make_pair(result.result, geometry->primitive_id(result.geomID));
   }
-
+ ///@}
 
 };
 
