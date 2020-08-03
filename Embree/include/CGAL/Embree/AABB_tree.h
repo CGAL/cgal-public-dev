@@ -207,6 +207,17 @@ public:
     bounds_o->upper_z = bb.zmax();
   }
 
+
+  static Triangle triangle(const Self* tmg, face_descriptor fd)
+  {
+    const TriangleMesh& tm = *(tmg->triangle_mesh);
+    halfedge_descriptor hd = halfedge(fd, tm);
+    return Triangle(get(tmg->vpm, target(hd, tm)),
+                    get(tmg->vpm, target(next(hd, tm), tm)),
+                    get(tmg->vpm, source(hd, tm)));
+  }
+
+
   static void intersection_function(const RTCIntersectFunctionNArguments* args)
   {
     typedef Intersect_context<Ray, Segment> Intersect_context;
@@ -224,13 +235,8 @@ public:
     face_points.reserve(3);
 
     face_descriptor fd = self->id2desc(primID);
-    halfedge_descriptor hf = halfedge(fd, *self->triangle_mesh);
-    for(halfedge_descriptor hi : halfedges_around_face(hf, *(self->triangle_mesh))){
-        vertex_descriptor vi = target(hi, *(self->triangle_mesh));
-        Point data = get(self->vpm,vi);
-        face_points.push_back(data);
-    }
-    Triangle face(face_points[0], face_points[1], face_points[2]);
+
+    Triangle face = triangle(self, fd);
 
     auto v = context->query_type==Intersect_context::Query_type::RAY_QUERY
     ? CGAL::intersection(context->ray, face)
@@ -255,7 +261,6 @@ public:
     }
   }
 
-#ifdef CLOSEST
 
   template <typename ClosestPointResult>
   bool closest_point_function(RTCPointQueryFunctionArguments* args, ClosestPointResult* result)
@@ -264,21 +269,21 @@ public:
     unsigned int geomID = args->geomID;
     face_descriptor fd = id2desc(primID);
 
-    // query position in world space
-    Point q(args->query->x, args->query->y, args->query->z);
-    Triangle t;
-    double d = sqrt(squared_distance(q,t));
-    Point cp; // TODO: compute the cli
+    Triangle t = triangle(this, fd);
+
+    GeomTraits gt;
+    Point cp = gt.construct_projected_point_3_object()(t, result->query);
+    double d = sqrt(squared_distance(result->query, cp));
     if(d < args->query->radius){
       args->query->radius = d;
-      // result->p = args->similarityScale > 0 ? xfmPoint(inst2world, p) : p;
+      result->result = cp;
       result->primID = primID;
       result->geomID = geomID;
       return true;
     }
     return false;
   }
-#endif
+
 
   void insert_primitives()
   {
@@ -328,23 +333,25 @@ public:
 
   typedef Bbox_3   Bounding_box;
   typedef std::size_t size_type;
-  typedef typename Geometry::Ray Ray;
-  typedef typename Geometry::Segment Segment;
+  typedef typename GeomTraits::Point_3 Point;
+  typedef typename GeomTraits::Ray_3 Ray;
+  typedef typename GeomTraits::Segment_3 Segment;
 
 private:
 
 
-#ifdef CLOSEST
+
 struct Closest_point_result
 {
-  Closest_point_result(const Self* aabb_tree)
+  Closest_point_result(const Self* aabb_tree, const Point& query)
     : aabb_tree(aabb_tree)
+    , query(query)
     , primID(RTC_INVALID_GEOMETRY_ID)
     , geomID(RTC_INVALID_GEOMETRY_ID)
   {}
 
   const Self* aabb_tree;
-  // Vec3f p;
+  Point query, result;
   unsigned int primID;
   unsigned int geomID;
 };
@@ -358,7 +365,7 @@ struct Closest_point_result
     Geometry* geometry = aabb_tree->id2geometry.at(geomID);
     return geometry->closest_point_function(args, result);
   }
-#endif
+
 
 
   RTCDevice device;
@@ -448,9 +455,7 @@ public:
     id2geometry.insert({geometry->rtc_geomID, geometry});
     geometry->insert_primitives();
 
-#ifdef CLOSEST
     rtcSetGeometryPointQueryFunction(geometry->rtc_geometry, closest_point_function);
-#endif
 
     rtcCommitScene(scene);
   }
@@ -621,26 +626,44 @@ public:
     return boost::make_optional(std::make_pair(p, geometry->primitive_id(context.rayhit.hit.primID)));
   }
 
-#ifdef CLOSEST
-  Point_and_primitive_id closest_point_and_primitive(const typename Geometry::Point &p) const
-  {
-    RTCPointQuery query;
-    query.x = p.x();
-    query.y = p.y();
-    query.z = p.z();
-    query.radius = std::numeric_limits<float>::infinity();
-    query.time = 0.f;
 
-    Closest_point_result result(this);
+  Point closest_point(const typename Geometry::Point &query) const
+  {
+    RTCPointQuery rtc_query;
+    rtc_query.x = p.x();
+    rtc_query.y = p.y();
+    rtc_query.z = p.z();
+    rtc_query.radius = std::numeric_limits<float>::infinity();
+    rtc_query.time = 0.f;
+
+    Closest_point_result result(this, query);
     RTCPointQueryContext context;
     rtcInitPointQueryContext(&context);
-    rtcPointQuery(scene, &query, &context, nullptr, (void*)&result);
+    rtcPointQuery(scene, &rtc_query, &context, nullptr, (void*)&result);
 
-    Geometry::Point point; // TODO the result
-    Geometry* geometry;
-    return std::make_pair(point, geometry->primitive_id(0));
+    return result.result;
   }
-#endif
+
+
+  Point_and_primitive_id closest_point_and_primitive(const typename Geometry::Point &query) const
+  {
+    RTCPointQuery rtc_query;
+    rtc_query.x = query.x();
+    rtc_query.y = query.y();
+    rtc_query.z = query.z();
+    rtc_query.radius = std::numeric_limits<float>::infinity();
+    rtc_query.time = 0.f;
+
+    Closest_point_result result(this, query);
+    RTCPointQueryContext context;
+    rtcInitPointQueryContext(&context);
+    rtcPointQuery(scene, &rtc_query, &context, nullptr, (void*)&result);
+
+    Geometry* geometry = id2geometry.at(result.geomID);
+    return std::make_pair(result.result, geometry->primitive_id(result.geomID));
+  }
+
+
 };
 
 } // namespace Embree
