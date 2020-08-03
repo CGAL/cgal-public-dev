@@ -477,6 +477,8 @@ public:
   template<typename Query>
   size_type number_of_intersected_primitives(const Query& query) const
   {
+    if (this->empty) return 0;
+
     typedef Intersect_context<Ray, Segment> Intersect_context;
     Intersect_context context(Intersect_context::Intersection_type::ALL, query);
 
@@ -550,6 +552,8 @@ public:
   template<typename Query, typename OutputIterator>
   OutputIterator all_intersected_primitives (const Query& query, OutputIterator out) const
   {
+    if (this->empty) return out;
+
     typedef Intersect_context<Ray, Segment> Intersect_context;
     Intersect_context context(Intersect_context::Intersection_type::ALL, query);
 
@@ -569,6 +573,8 @@ public:
   template<typename Query, typename OutputIterator>
   OutputIterator all_intersections(const Query& query, OutputIterator out) const
   {
+    if (this->empty) return out;
+
     typedef Intersect_context<Ray, Segment> Intersect_context;
     Intersect_context context(Intersect_context::Intersection_type::ALL, query);
 
