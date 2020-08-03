@@ -649,9 +649,9 @@ public:
   Point closest_point(const typename Geometry::Point &query) const
   {
     RTCPointQuery rtc_query;
-    rtc_query.x = p.x();
-    rtc_query.y = p.y();
-    rtc_query.z = p.z();
+    rtc_query.x = query.x();
+    rtc_query.y = query.y();
+    rtc_query.z = query.z();
     rtc_query.radius = std::numeric_limits<float>::infinity();
     rtc_query.time = 0.f;
 
