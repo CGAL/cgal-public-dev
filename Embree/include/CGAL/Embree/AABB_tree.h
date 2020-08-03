@@ -488,7 +488,7 @@ public:
 
 
   /// returns the number of primitives intersected by the query.
-  /// \tparam Query may be `GeomTraits::Ray_3` or `GeomTraits::Segment_3.
+  /// \tparam Query may be `GeomTraits::Ray_3` or `GeomTraits::Segment_3`.
   template<typename Query>
   size_type number_of_intersected_primitives(const Query& query) const
   {
@@ -618,6 +618,12 @@ public:
 
   }
 
+  /// returns if any the intersection that is encountered first
+  /// in the tree traversal. No particular
+  /// order is guaranteed over the tree traversal, e.g, the
+  /// primitive returned is not necessarily the closest from the query.
+  ///
+  /// \tparam Query may be `GeomTraits::Ray_3` or `GeomTraits::Segment_3`.
   template<typename Query>
   boost::optional<Intersection_and_primitive_id> any_intersection(const Query& query) const
   {
@@ -646,6 +652,11 @@ public:
   /// \name Distance Queries
   ///@{
 
+  /// returns the point in the union of all input primitives which
+  /// is closest to the query. In case there are several closest
+  /// points, one arbitrarily chosen closest point is
+  /// returned.
+  /// \pre `!empty()`
   Point closest_point(const typename Geometry::Point &query) const
   {
     RTCPointQuery rtc_query;
@@ -664,6 +675,10 @@ public:
   }
 
 
+  /// returns a `Point_and_primitive_id` which realizes the
+  /// smallest distance between the query point and all input
+  /// primitives.
+  /// \pre `!empty()`
   Point_and_primitive_id closest_point_and_primitive(const typename Geometry::Point &query) const
   {
     RTCPointQuery rtc_query;
