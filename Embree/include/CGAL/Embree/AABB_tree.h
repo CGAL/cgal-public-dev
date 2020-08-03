@@ -25,6 +25,7 @@
 
 #include <type_traits>
 #include <vector>
+#include <deque>
 #include <limits>
 #include <unordered_map>
 
@@ -263,7 +264,7 @@ public:
 
 
   template <typename ClosestPointResult>
-  bool closest_point_function(RTCPointQueryFunctionArguments* args, ClosestPointResult* result)
+  bool closest_point_function(RTCPointQueryFunctionArguments* args, ClosestPointResult* result) const
   {
     unsigned int primID = args->primID;
     unsigned int geomID = args->geomID;
@@ -310,7 +311,10 @@ public:
     return std::make_pair(id2desc(primID), const_cast<TriangleMesh*>(triangle_mesh));
   }
 
-  inline const std::vector<std::pair<float, unsigned int>>& intersections(){ return all_intersections; }
+  inline const std::vector<std::pair<float, unsigned int>>& intersections() const
+  {
+    return all_intersections;
+  }
 };
 
 /**
@@ -362,8 +366,8 @@ struct Closest_point_result
     unsigned int geomID = args->geomID;
     Closest_point_result* result = (Closest_point_result*)args->userPtr;
     const Self* aabb_tree = result->aabb_tree;
-    Geometry* geometry = aabb_tree->id2geometry.at(geomID);
-    return geometry->closest_point_function(args, result);
+    const Geometry& geometry = aabb_tree->geometries[geomID];
+    return geometry.closest_point_function(args, result);
   }
 
 
@@ -371,8 +375,7 @@ struct Closest_point_result
   RTCDevice device;
   RTCScene scene;
 
-  std::unordered_map<unsigned int, Geometry*> id2geometry;
-  std::vector<Geometry> geometries;
+  std::deque<Geometry> geometries;
 
 public:
   AABB_tree()
@@ -408,9 +411,10 @@ public:
   /// returns \c true, iff the tree contains no primitive.
   bool empty() const
   {
-    if (!geometries.size()) return false;
-    return true;
+    if (geometries.empty()) return true;
+    return false;
   }
+
 
   // clears the tree.
   void clear()
@@ -418,7 +422,6 @@ public:
     rtc_unbind();
     if (this->empty()) return;
     geometries.clear();
-    id2geometry.clear();
   }
 
 
@@ -429,7 +432,7 @@ public:
     Bounding_box bb;
 
     for (size_type i =0; i!=geometries.size(); ++i){
-      Geometry g = geometries[i];
+      const Geometry& g = geometries[i];
       bb += Polygon_mesh_processing::bbox(*(g->triangle_mesh));
     }
 
@@ -442,7 +445,7 @@ public:
   {
     size_type number_of_primitives = 0;
     for (size_type i =0; i!=geometries.size(); ++i){
-      Geometry g = geometries[i];
+      const Geometry& g = geometries[i];
       number_of_primitives+= num_faces(*g.triangle_mesh);
     }
     return number_of_primitives;
@@ -452,15 +455,16 @@ public:
   template<typename T>
   void insert (const T& t)
   {
+    unsigned int geomID = geometries.size();
     geometries.push_back(Geometry(t));
-    Geometry* geometry = &(geometries.back());
+    Geometry& geometry = geometries.back();
 
-    geometry->rtc_geometry = rtcNewGeometry(device, RTC_GEOMETRY_TYPE_USER);
-    geometry->rtc_geomID = rtcAttachGeometry(scene, geometry->rtc_geometry);
-    id2geometry.insert({geometry->rtc_geomID, geometry});
-    geometry->insert_primitives();
+    geometry.rtc_geometry = rtcNewGeometry(device, RTC_GEOMETRY_TYPE_USER);
+    geometry.rtc_geomID =geomID;
+    rtcAttachGeometryByID(scene, geometry.rtc_geometry, geomID);
+    geometry.insert_primitives();
 
-    rtcSetGeometryPointQueryFunction(geometry->rtc_geometry, closest_point_function);
+    rtcSetGeometryPointQueryFunction(geometry.rtc_geometry, closest_point_function);
 
     rtcCommitScene(scene);
   }
@@ -504,8 +508,8 @@ public:
     rtcIntersect1(scene, &context, &(context.rayhit));
 
     unsigned int rtc_geomID = context.rayhit.hit.geomID;
-    Geometry* geometry = id2geometry.at(rtc_geomID);
-    return (geometry->intersections()).size();
+    const Geometry& geometry = geometries[rtc_geomID];
+    return (geometry.intersections()).size();
   }
 
 
@@ -522,11 +526,11 @@ public:
     rtcIntersect1(scene, &context, &(context.rayhit));
 
     unsigned int rtc_geomID = context.rayhit.hit.geomID;
-    Geometry* geometry = id2geometry.at(rtc_geomID);
-    const std::vector<std::pair<float, unsigned int>>& intersectionDistance = geometry->intersections();
+    const Geometry& geometry = geometries[rtc_geomID];
+    const std::vector<std::pair<float, unsigned int>>& intersectionDistance = geometry.intersections();
 
     for(int i=0; i<intersectionDistance.size();i++){
-      *out++ = boost::make_optional(geometry->primitive_id(intersectionDistance[i].second));
+      *out++ = boost::make_optional(geometry.primitive_id(intersectionDistance[i].second));
     }
 
     return out;
@@ -553,9 +557,9 @@ public:
       return boost::none;
     }
 
-    Geometry* geometry = id2geometry.at(rtc_geomID);
+    const Geometry& geometry = geometries[rtc_geomID];
 
-    return boost::make_optional(geometry->primitive_id(context.rayhit.hit.primID));
+    return boost::make_optional(geometry.primitive_id(context.rayhit.hit.primID));
   }
   ///@}
 
@@ -580,8 +584,8 @@ public:
     float outZ = context.rayhit.ray.org_z + factor * context.rayhit.ray.dir_z;
     typename Geometry::Point p(outX, outY, outZ);
 
-    Geometry* geometry = id2geometry.at(rtc_geomID);
-    return boost::make_optional(std::make_pair(p, geometry->primitive_id(context.rayhit.hit.primID)));
+    const Geometry& geometry = geometries[rtc_geomID];
+    return boost::make_optional(std::make_pair(p, geometry.primitive_id(context.rayhit.hit.primID)));
   }
 
 
@@ -600,9 +604,9 @@ public:
       return boost::none;
     }
 
-    Geometry* geometry = id2geometry.at(rtc_geomID);
+    const Geometry& geometry = geometries[rtc_geomID];
 
-    return boost::make_optional(geometry->primitive_id(context.rayhit.hit.primID));
+    return boost::make_optional(geometry.primitive_id(context.rayhit.hit.primID));
   }
 
   template<typename Query, typename OutputIterator>
@@ -616,8 +620,8 @@ public:
     rtcIntersect1(scene, &context, &(context.rayhit));
 
     unsigned int rtc_geomID = context.rayhit.hit.geomID;
-    Geometry* geometry = id2geometry.at(rtc_geomID);
-    const std::vector<std::pair<float, unsigned int>>& intersectionDistance = geometry->intersections();
+    const Geometry& geometry = geometries[rtc_geomID];
+    const std::vector<std::pair<float, unsigned int>>& intersectionDistance = geometry.intersections();
 
     for(int i=0; i<intersectionDistance.size();i++){
       float factor = intersectionDistance[i].first/ sqrt(square(context.rayhit.ray.dir_x)+ square(context.rayhit.ray.dir_y)+ square(context.rayhit.ray.dir_z));
@@ -626,7 +630,7 @@ public:
       float outZ = context.rayhit.ray.org_z + factor * context.rayhit.ray.dir_z;
       typename Geometry::Point p(outX, outY, outZ);
 
-      *out++ = boost::make_optional(std::make_pair(p, geometry->primitive_id(intersectionDistance[i].second)));
+      *out++ = boost::make_optional(std::make_pair(p, geometry.primitive_id(intersectionDistance[i].second)));
     }
     // out stores the following type  ----->  boost::optional<Intersection_and_primitive_id>
     return out;
@@ -658,8 +662,8 @@ public:
     float outZ = context.rayhit.ray.org_z + factor * context.rayhit.ray.dir_z;
     typename Geometry::Point p(outX, outY, outZ);
 
-    Geometry* geometry = id2geometry.at(rtc_geomID);
-    return boost::make_optional(std::make_pair(p, geometry->primitive_id(context.rayhit.hit.primID)));
+    const Geometry& geometry = geometries[rtc_geomID];
+    return boost::make_optional(std::make_pair(p, geometry.primitive_id(context.rayhit.hit.primID)));
   }
  ///@}
 
@@ -708,8 +712,8 @@ public:
     rtcInitPointQueryContext(&context);
     rtcPointQuery(scene, &rtc_query, &context, nullptr, (void*)&result);
 
-    Geometry* geometry = id2geometry.at(result.geomID);
-    return std::make_pair(result.result, geometry->primitive_id(result.geomID));
+    const Geometry& geometry = geometries[result.geomID];
+    return std::make_pair(result.result, geometry.primitive_id(result.geomID));
   }
  ///@}
 
