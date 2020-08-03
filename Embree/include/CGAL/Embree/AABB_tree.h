@@ -269,16 +269,14 @@ public:
     unsigned int geomID = args->geomID;
     face_descriptor fd = id2desc(primID);
 
-    // query position in world space
-    Point q(args->query->x, args->query->y, args->query->z);
     Triangle t = triangle(this, fd);
 
     GeomTraits gt;
-    Point cp = gt.construct_projected_point_3_object()(t,q);
-    double d = sqrt(squared_distance(q,cp));
+    Point cp = gt.construct_projected_point_3_object()(t, result->query);
+    double d = sqrt(squared_distance(result->query, cp));
     if(d < args->query->radius){
       args->query->radius = d;
-      result->p = cp;
+      result->result = cp;
       result->primID = primID;
       result->geomID = geomID;
       return true;
@@ -345,14 +343,15 @@ private:
 
 struct Closest_point_result
 {
-  Closest_point_result(const Self* aabb_tree)
+  Closest_point_result(const Self* aabb_tree, const Point& query)
     : aabb_tree(aabb_tree)
+    , query(query)
     , primID(RTC_INVALID_GEOMETRY_ID)
     , geomID(RTC_INVALID_GEOMETRY_ID)
   {}
 
   const Self* aabb_tree;
-  Point p;
+  Point query, result;
   unsigned int primID;
   unsigned int geomID;
 };
@@ -622,40 +621,40 @@ public:
   }
 
 
-  Point closest_point(const typename Geometry::Point &p) const
+  Point closest_point(const typename Geometry::Point &query) const
   {
-    RTCPointQuery query;
-    query.x = p.x();
-    query.y = p.y();
-    query.z = p.z();
-    query.radius = std::numeric_limits<float>::infinity();
-    query.time = 0.f;
+    RTCPointQuery rtc_query;
+    rtc_query.x = p.x();
+    rtc_query.y = p.y();
+    rtc_query.z = p.z();
+    rtc_query.radius = std::numeric_limits<float>::infinity();
+    rtc_query.time = 0.f;
 
-    Closest_point_result result(this);
+    Closest_point_result result(this, query);
     RTCPointQueryContext context;
     rtcInitPointQueryContext(&context);
-    rtcPointQuery(scene, &query, &context, nullptr, (void*)&result);
+    rtcPointQuery(scene, &rtc_query, &context, nullptr, (void*)&result);
 
-    return result.p;
+    return result.result;
   }
 
 
-  Point_and_primitive_id closest_point_and_primitive(const typename Geometry::Point &p) const
+  Point_and_primitive_id closest_point_and_primitive(const typename Geometry::Point &query) const
   {
-    RTCPointQuery query;
-    query.x = p.x();
-    query.y = p.y();
-    query.z = p.z();
-    query.radius = std::numeric_limits<float>::infinity();
-    query.time = 0.f;
+    RTCPointQuery rtc_query;
+    rtc_query.x = query.x();
+    rtc_query.y = query.y();
+    rtc_query.z = query.z();
+    rtc_query.radius = std::numeric_limits<float>::infinity();
+    rtc_query.time = 0.f;
 
-    Closest_point_result result(this);
+    Closest_point_result result(this, query);
     RTCPointQueryContext context;
     rtcInitPointQueryContext(&context);
-    rtcPointQuery(scene, &query, &context, nullptr, (void*)&result);
+    rtcPointQuery(scene, &rtc_query, &context, nullptr, (void*)&result);
 
     Geometry* geometry = id2geometry.at(result.geomID);
-    return std::make_pair(result.p, geometry->primitive_id(result.geomID));
+    return std::make_pair(result.result, geometry->primitive_id(result.geomID));
   }
 
 
