@@ -175,7 +175,7 @@ private:
   unsigned int rtc_geomID;
   Vertex_point_map vpm;
   Id2descriptor<TriangleMesh, ConstructibleFromId> id2desc;
-  std::vector<std::pair<float, unsigned int>> allIntersections;
+  std::vector<std::pair<float, unsigned int>> all_intersections;
 
 public:
   Triangle_mesh_geometry()
@@ -251,7 +251,7 @@ public:
             if(context->intersection_type == Intersect_context::Intersection_type::FIRST)
               rayhit->ray.tfar = _distance;
             else if (context->intersection_type == Intersect_context::Intersection_type::ALL)
-              self->allIntersections.push_back(std::make_pair(_distance, primID));
+              self->all_intersections.push_back(std::make_pair(_distance, primID));
             else {
               rayhit->ray.tfar = _distance;
               // Makes the ray invalid, so there is no further traversal
@@ -310,7 +310,7 @@ public:
     return std::make_pair(id2desc(primID), const_cast<TriangleMesh*>(triangle_mesh));
   }
 
-  inline const std::vector<std::pair<float, unsigned int>>& getIntersections(){ return allIntersections; }
+  inline const std::vector<std::pair<float, unsigned int>>& intersections(){ return all_intersections; }
 };
 
 /**
@@ -412,7 +412,7 @@ public:
     return true;
   }
 
-  // clear the tree.
+  // clears the tree.
   void clear()
   {
     rtc_unbind();
@@ -471,6 +471,10 @@ public:
    *
    */
 
+
+  /// returns `true`, iff the query intersects at least one of
+  /// the input primitives.
+  /// \tparam Query may be `GeomTraits::Ray_3` or `GeomTraits::Segment_3`.
   template<typename Query>
   bool do_intersect(const Query& query) const
   {
@@ -501,10 +505,14 @@ public:
 
     unsigned int rtc_geomID = context.rayhit.hit.geomID;
     Geometry* geometry = id2geometry.at(rtc_geomID);
-    return (geometry->getIntersections()).size();
+    return (geometry->intersections()).size();
   }
 
 
+  /// puts in `out` the ids of all intersected primitives.
+  /// This function does not compute the intersection points
+  /// and is hence faster than the function `all_intersections()`
+  /// function below.
   template<typename Query, typename OutputIterator>
   OutputIterator all_intersected_primitives (const Query& query, OutputIterator out) const
   {
@@ -515,7 +523,7 @@ public:
 
     unsigned int rtc_geomID = context.rayhit.hit.geomID;
     Geometry* geometry = id2geometry.at(rtc_geomID);
-    std::vector<std::pair<float, unsigned int>> intersectionDistance = geometry->getIntersections();
+    const std::vector<std::pair<float, unsigned int>>& intersectionDistance = geometry->intersections();
 
     for(int i=0; i<intersectionDistance.size();i++){
       *out++ = boost::make_optional(geometry->primitive_id(intersectionDistance[i].second));
@@ -525,6 +533,13 @@ public:
   }
 
 
+  /// returns the id of the intersected primitive that is encountered first
+  /// in the tree traversal, iff
+  /// the query intersects at least one of the input primitives. No
+  /// particular order is guaranteed over the tree traversal, such
+  /// that, e.g, the primitive returned is not necessarily the
+  /// closest from the source point of a ray query.
+  /// \tparam Query may be `GeomTraits::Ray_3` or `GeomTraits::Segment_3`.
   template<typename Query>
   boost::optional<Primitive_id> any_intersected_primitive(const Query& query) const
   {
@@ -542,7 +557,7 @@ public:
 
     return boost::make_optional(geometry->primitive_id(context.rayhit.hit.primID));
   }
- ///@}
+  ///@}
 
   /// \name Intersections
   ///@{
@@ -593,7 +608,7 @@ public:
   template<typename Query, typename OutputIterator>
   OutputIterator all_intersections(const Query& query, OutputIterator out) const
   {
-    if (this->empty) return out;
+    if (empty()) return out;
 
     typedef Intersect_context<Ray, Segment> Intersect_context;
     Intersect_context context(Intersect_context::Intersection_type::ALL, query);
@@ -602,7 +617,7 @@ public:
 
     unsigned int rtc_geomID = context.rayhit.hit.geomID;
     Geometry* geometry = id2geometry.at(rtc_geomID);
-    std::vector<std::pair<float, unsigned int>> intersectionDistance = geometry->getIntersections();
+    const std::vector<std::pair<float, unsigned int>>& intersectionDistance = geometry->intersections();
 
     for(int i=0; i<intersectionDistance.size();i++){
       float factor = intersectionDistance[i].first/ sqrt(square(context.rayhit.ray.dir_x)+ square(context.rayhit.ray.dir_y)+ square(context.rayhit.ray.dir_z));

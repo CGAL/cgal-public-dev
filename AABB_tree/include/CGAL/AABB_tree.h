@@ -243,7 +243,7 @@ public:
     /// puts in `out` the ids of all intersected primitives.
     /// This function does not compute the intersection points
     /// and is hence faster than the function `all_intersections()`
-    /// function below.
+    /// below.
     /// \tparam Query must be a type for which `Do_intersect` operators are
     ///               defined in the traits class `AABBTraits`.
     template<typename Query, typename OutputIterator>
@@ -277,7 +277,7 @@ public:
 
     /// returns if any the intersection that is encountered first
     /// in the tree traversal. No particular
-    /// order is guaranteed over the tree traversal, e.g, the
+    /// order is guaranteed over the tree traversal such that, e.g, the
     /// primitive returned is not necessarily the closest from the query.
     /// \tparam Query must be a type for which `Do_intersect` and `Intersection` operators are
     ///               defined in the traits class `AABBTraits`.
