@@ -392,7 +392,7 @@ public:
 
   ~AABB_tree()
   {
-    clear();
+    rtc_unbind();
   }
 
   void rtc_bind()
@@ -419,7 +419,6 @@ public:
   // clears the tree.
   void clear()
   {
-    rtc_unbind();
     if (this->empty()) return;
     geometries.clear();
   }
