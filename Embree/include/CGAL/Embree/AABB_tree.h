@@ -79,7 +79,7 @@ public:
   }
 
   void init(const Segment& _segment){
-    float segmentLength = sqrt(_segment.squared_length());
+    float segmentLength = sqrt(to_double(_segment.squared_length()));
     init_rayhit(_segment);
     rayhit.ray.tfar = segmentLength;
   }
@@ -106,8 +106,8 @@ public:
 
     rayhit.hit.instID[0] = RTC_INVALID_GEOMETRY_ID;
   }
-  
-  inline std::vector<std::pair<float, unsigned int>>& intersections() 
+
+  inline std::vector<std::pair<float, unsigned int>>& intersections()
   {
     return all_intersections;
   }
@@ -300,18 +300,9 @@ public:
   {
     rtcSetGeometryUserPrimitiveCount(rtc_geometry, num_faces(*triangle_mesh));
     rtcSetGeometryUserData(rtc_geometry, this);
-
-    // AF: For the next two you have to find out how to write
-    // the function pointer for a static member function
-
-    // Ayush: for a static member function, we can directly pass a pointer, so the below should work fine.
-    // https://isocpp.org/wiki/faq/pointers-to-members
-
     rtcSetGeometryBoundsFunction(rtc_geometry, bound_function, nullptr);
     rtcSetGeometryIntersectFunction(rtc_geometry, intersection_function);
-
     rtcCommitGeometry(rtc_geometry);
-
     rtcReleaseGeometry(rtc_geometry);
   }
 
@@ -326,12 +317,9 @@ public:
 /**
  * \ingroup PkgEmbreeRef
  * This class...
+ * \tparam Geometry a
+ * \tparam GeomTraits a kernel
  */
-
-
-//  AF:  Geometry is the above class
-// AF: For GeomTraits you take a kernel, that is Simple_cartesian
-
 template <typename Geometry, typename GeomTraits>
 class AABB_tree {
 
@@ -377,7 +365,6 @@ struct Closest_point_result
   }
 
 
-
   RTCDevice device;
   RTCScene scene;
 
@@ -389,8 +376,8 @@ public:
     rtc_bind();
   }
 
-    AABB_tree(bool robust)
-    :AABB_tree()
+  AABB_tree(bool robust)
+    : AABB_tree()
   {
     if(robust)
       rtcSetSceneFlags(scene, RTC_SCENE_FLAG_ROBUST);
@@ -422,7 +409,7 @@ public:
   }
 
 
-  // clears the tree.
+  /// clears the tree.
   void clear()
   {
     if (this->empty()) return;
@@ -541,7 +528,7 @@ public:
     if(rtc_geomID == RTC_INVALID_GEOMETRY_ID){
       return out;
     }
-    
+
     const Geometry& geometry = geometries[rtc_geomID];
     const std::vector<std::pair<float, unsigned int>>& intersectionDistance = context.intersections();
 
