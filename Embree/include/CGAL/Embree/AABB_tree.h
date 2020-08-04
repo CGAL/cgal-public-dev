@@ -482,6 +482,8 @@ public:
   template<typename Query>
   bool do_intersect(const Query& query) const
   {
+    if (this->empty()) return false;
+
     typedef Intersect_context<Ray, Segment> Intersect_context;
     Intersect_context context(Intersect_context::Intersection_type::ANY, query);
 
@@ -500,7 +502,7 @@ public:
   template<typename Query>
   size_type number_of_intersected_primitives(const Query& query) const
   {
-    if (this->empty) return 0;
+    if (this->empty()) return 0;
 
     typedef Intersect_context<Ray, Segment> Intersect_context;
     Intersect_context context(Intersect_context::Intersection_type::ALL, query);
@@ -520,6 +522,8 @@ public:
   template<typename Query, typename OutputIterator>
   OutputIterator all_intersected_primitives (const Query& query, OutputIterator out) const
   {
+    if (this->empty()) return out;
+
     typedef Intersect_context<Ray, Segment> Intersect_context;
     Intersect_context context(Intersect_context::Intersection_type::ALL, query);
 
@@ -547,6 +551,8 @@ public:
   template<typename Query>
   boost::optional<Primitive_id> any_intersected_primitive(const Query& query) const
   {
+    if (this->empty()) return boost::none;
+
     typedef Intersect_context<Ray, Segment> Intersect_context;
     Intersect_context context(Intersect_context::Intersection_type::ANY, query);
 
@@ -568,6 +574,8 @@ public:
   template<typename Query>
   boost::optional<Intersection_and_primitive_id> first_intersection(const Query& query) const
   {
+    if (this->empty()) return boost::none;
+
     typedef Intersect_context<Ray, Segment> Intersect_context;
     Intersect_context context(Intersect_context::Intersection_type::FIRST, query);
 
@@ -592,7 +600,7 @@ public:
   template<typename Query>
   boost::optional<Primitive_id> first_intersected_primitive(const Query& query) const
   {
-    if (this->empty) return boost::none;
+    if (this->empty()) return boost::none;
 
     typedef Intersect_context<Ray, Segment> Intersect_context;
     Intersect_context context(Intersect_context::Intersection_type::FIRST, query);
@@ -612,7 +620,7 @@ public:
   template<typename Query, typename OutputIterator>
   OutputIterator all_intersections(const Query& query, OutputIterator out) const
   {
-    if (empty()) return out;
+    if (this->empty()) return out;
 
     typedef Intersect_context<Ray, Segment> Intersect_context;
     Intersect_context context(Intersect_context::Intersection_type::ALL, query);
@@ -646,6 +654,8 @@ public:
   template<typename Query>
   boost::optional<Intersection_and_primitive_id> any_intersection(const Query& query) const
   {
+    if (this->empty()) return boost::none;
+
     typedef Intersect_context<Ray, Segment> Intersect_context;
     Intersect_context context(Intersect_context::Intersection_type::ANY, query);
 
