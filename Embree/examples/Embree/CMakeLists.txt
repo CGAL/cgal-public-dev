@@ -10,8 +10,9 @@ include_directories(../../include)
 if ( CGAL_FOUND AND embree_FOUND )
 
     ADD_EXECUTABLE(surface_mesh_embree surface_mesh_embree.cpp)
-    TARGET_LINK_LIBRARIES(surface_mesh_embree CGAL embree)
-    else()
+    TARGET_LINK_LIBRARIES(surface_mesh_embree CGAL::CGAL embree)
+
+else()
 
     message(STATUS "This program requires the CGAL and the Embree library, and will not be compiled.")
 

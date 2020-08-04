@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.1...3.14)
-project( AABB_tree_test )
+project( Embree_test )
 
 find_package(CGAL  QUIET )
 FIND_PACKAGE(embree 3.0 QUIET)
@@ -22,7 +22,7 @@ if ( CGAL_FOUND AND embree_FOUND )
     TARGET_LINK_LIBRARIES(aabb_test_ray_intersection CGAL::CGAL embree)
 
     # ADD_EXECUTABLE(closest_point closest_point.cpp)
-    # TARGET_LINK_LIBRARIES(closest_point CGAL embree)
+    # TARGET_LINK_LIBRARIES(closest_point CGAL::CGAL embree)
 
 
 else()
