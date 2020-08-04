@@ -83,13 +83,13 @@ public:
   template<typename T>
   void init_rayhit(const T& query){
 
-    rayhit.ray.org_x =  query.source().x(); /*POINT.X*/
-    rayhit.ray.org_y =  query.source().y(); /*POINT.Y*/
-    rayhit.ray.org_z =  query.source().z(); /*POINT.Z*/
+    rayhit.ray.org_x =  to_double(query.source().x()); /*POINT.X*/
+    rayhit.ray.org_y =  to_double(query.source().y()); /*POINT.Y*/
+    rayhit.ray.org_z =  to_double(query.source().z()); /*POINT.Z*/
 
-    rayhit.ray.dir_x = query.direction().dx()/ sqrt(square(query.direction().dx()) + square(query.direction().dy()) + square(query.direction().dz()));
-    rayhit.ray.dir_y = query.direction().dy()/ sqrt(square(query.direction().dx()) + square(query.direction().dy()) + square(query.direction().dz()));
-    rayhit.ray.dir_z = query.direction().dz()/ sqrt(square(query.direction().dx()) + square(query.direction().dy()) + square(query.direction().dz()));
+    rayhit.ray.dir_x = to_double(query.direction().dx())/ sqrt(square(to_double(query.direction().dx())) + square(to_double(query.direction().dy())) + square(to_double(query.direction().dz())));
+    rayhit.ray.dir_y = to_double(query.direction().dy())/ sqrt(square(to_double(query.direction().dx())) + square(to_double(query.direction().dy())) + square(to_double(query.direction().dz())));
+    rayhit.ray.dir_z = to_double(query.direction().dz())/ sqrt(square(to_double(query.direction().dx())) + square(to_double(query.direction().dy())) + square(to_double(query.direction().dz())));
 
     rayhit.ray.tnear = 0;
     rayhit.ray.tfar = std::numeric_limits<float>::infinity();
@@ -246,9 +246,11 @@ public:
         rayhit->hit.geomID = self->rtc_geomID;
         rayhit->hit.primID = primID;
         if (const Point *intersection_point = boost::get<Point>(&*v) ){
-            auto _distance = context->query_type==Intersect_context::Query_type::RAY_QUERY
-            ? sqrt(CGAL::squared_distance(context->ray.source(), *intersection_point))
-            : sqrt(CGAL::squared_distance(context->segment.source(), *intersection_point));
+
+            float _distance = (context->query_type==Intersect_context::Query_type::RAY_QUERY)
+            ? sqrt(to_double(CGAL::squared_distance(context->ray.source(), *intersection_point)))
+            : sqrt(to_double(CGAL::squared_distance(context->segment.source(), *intersection_point)));
+
             if(context->intersection_type == Intersect_context::Intersection_type::FIRST)
               rayhit->ray.tfar = _distance;
             else if (context->intersection_type == Intersect_context::Intersection_type::ALL)
@@ -274,7 +276,7 @@ public:
 
     GeomTraits gt;
     Point cp = gt.construct_projected_point_3_object()(t, result->query);
-    double d = sqrt(squared_distance(result->query, cp));
+    double d = sqrt(to_double(squared_distance(result->query, cp)));
     if(d < args->query->radius){
       args->query->radius = d;
       result->result = cp;
