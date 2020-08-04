@@ -511,6 +511,9 @@ public:
     rtcIntersect1(scene, &context, &(context.rayhit));
 
     unsigned int rtc_geomID = context.rayhit.hit.geomID;
+    if(rtc_geomID == RTC_INVALID_GEOMETRY_ID){
+      return 0;
+    }
     const Geometry& geometry = geometries[rtc_geomID];
     return (geometry.intersections()).size();
   }
@@ -531,6 +534,10 @@ public:
     rtcIntersect1(scene, &context, &(context.rayhit));
 
     unsigned int rtc_geomID = context.rayhit.hit.geomID;
+    if(rtc_geomID == RTC_INVALID_GEOMETRY_ID){
+      return out;
+    }
+    
     const Geometry& geometry = geometries[rtc_geomID];
     const std::vector<std::pair<float, unsigned int>>& intersectionDistance = geometry.intersections();
 
@@ -623,12 +630,17 @@ public:
   {
     if (this->empty()) return out;
 
+
     typedef Intersect_context<Ray, Segment> Intersect_context;
     Intersect_context context(Intersect_context::Intersection_type::ALL, query);
 
     rtcIntersect1(scene, &context, &(context.rayhit));
 
     unsigned int rtc_geomID = context.rayhit.hit.geomID;
+    if(rtc_geomID == RTC_INVALID_GEOMETRY_ID){
+      return out;
+    }
+
     const Geometry& geometry = geometries[rtc_geomID];
     const std::vector<std::pair<float, unsigned int>>& intersectionDistance = geometry.intersections();
 
