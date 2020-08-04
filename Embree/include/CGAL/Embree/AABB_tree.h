@@ -246,7 +246,7 @@ public:
         rayhit->hit.geomID = self->rtc_geomID;
         rayhit->hit.primID = primID;
         if (const Point *intersection_point = boost::get<Point>(&*v) ){
-            float _distance = context->query_type==Intersect_context::Query_type::RAY_QUERY
+            auto _distance = context->query_type==Intersect_context::Query_type::RAY_QUERY
             ? sqrt(CGAL::squared_distance(context->ray.source(), *intersection_point))
             : sqrt(CGAL::squared_distance(context->segment.source(), *intersection_point));
             if(context->intersection_type == Intersect_context::Intersection_type::FIRST)
@@ -432,7 +432,7 @@ public:
 
     for (size_type i =0; i!=geometries.size(); ++i){
       const Geometry& g = geometries[i];
-      bb += Polygon_mesh_processing::bbox(*(g->triangle_mesh));
+      bb += Polygon_mesh_processing::bbox(*(g.triangle_mesh));
     }
 
     return bb;
