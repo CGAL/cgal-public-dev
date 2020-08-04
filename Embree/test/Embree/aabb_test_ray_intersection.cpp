@@ -39,19 +39,19 @@ boost::optional<
   Tree::Intersection_and_primitive_id
   >
 min_intersection(const Tree& tree, const Ray& ray) {
-  typedef std::vector< Tree::Intersection_and_primitive_id > IntersectionVector;
+  typedef std::vector< boost::optional<Tree::Intersection_and_primitive_id>> IntersectionVector;
   IntersectionVector all_intersections;
 
   tree.all_intersections(ray, std::back_inserter(all_intersections));
   accum += all_intersections.size();
-  CGAL::Lazy_exact_nt<boost::multiprecision::mpq_rational> min_distance = DBL_MAX;
+  FT min_distance = DBL_MAX;
   boost::optional<Tree::Intersection_and_primitive_id> mini = boost::none;
 
 //   for(IntersectionVector::iterator it2 = all_intersections.begin(); it2 != all_intersections.end(); ++it2) {
   for (int i=0;i<all_intersections.size();i++){
-    if(Point* point = &(all_intersections[i].first)) {
+    if(Point* point = &(all_intersections[i]->first)) {
       Vector i_ray(*point, ray.source());
-      CGAL::Lazy_exact_nt<boost::multiprecision::mpq_rational> new_distance = i_ray.squared_length();
+      FT new_distance = i_ray.squared_length();
       if(new_distance < min_distance) {
         mini = all_intersections[i];
         min_distance = new_distance;
