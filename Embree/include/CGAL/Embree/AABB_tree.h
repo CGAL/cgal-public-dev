@@ -34,10 +34,14 @@ namespace Embree {
 
 template<typename Ray, typename Segment>
 struct Intersect_context : public RTCIntersectContext{
+private:
+  std::vector<std::pair<float, unsigned int>> all_intersections;
+
 public:
   Ray ray;
   Segment segment;
   struct RTCRayHit rayhit;
+
 
   enum Intersection_type{
     FIRST = 0, ANY, ALL
@@ -101,6 +105,11 @@ public:
     rayhit.hit.primID = RTC_INVALID_GEOMETRY_ID;
 
     rayhit.hit.instID[0] = RTC_INVALID_GEOMETRY_ID;
+  }
+  
+  inline std::vector<std::pair<float, unsigned int>>& intersections() 
+  {
+    return all_intersections;
   }
 
 };
@@ -176,7 +185,6 @@ private:
   unsigned int rtc_geomID;
   Vertex_point_map vpm;
   Id2descriptor<TriangleMesh, ConstructibleFromId> id2desc;
-  std::vector<std::pair<float, unsigned int>> all_intersections;
 
 public:
   Triangle_mesh_geometry()
@@ -254,7 +262,7 @@ public:
             if(context->intersection_type == Intersect_context::Intersection_type::FIRST)
               rayhit->ray.tfar = _distance;
             else if (context->intersection_type == Intersect_context::Intersection_type::ALL)
-              self->all_intersections.push_back(std::make_pair(_distance, primID));
+              context->intersections().push_back(std::make_pair(_distance, primID));
             else {
               rayhit->ray.tfar = _distance;
               // Makes the ray invalid, so there is no further traversal
@@ -313,10 +321,6 @@ public:
     return std::make_pair(id2desc(primID), const_cast<TriangleMesh*>(triangle_mesh));
   }
 
-  inline const std::vector<std::pair<float, unsigned int>>& intersections() const
-  {
-    return all_intersections;
-  }
 };
 
 /**
@@ -514,8 +518,8 @@ public:
     if(rtc_geomID == RTC_INVALID_GEOMETRY_ID){
       return 0;
     }
-    const Geometry& geometry = geometries[rtc_geomID];
-    return (geometry.intersections()).size();
+    // const Geometry& geometry = geometries[rtc_geomID];
+    return (context.intersections()).size();
   }
 
 
@@ -539,7 +543,7 @@ public:
     }
     
     const Geometry& geometry = geometries[rtc_geomID];
-    const std::vector<std::pair<float, unsigned int>>& intersectionDistance = geometry.intersections();
+    const std::vector<std::pair<float, unsigned int>>& intersectionDistance = context.intersections();
 
     for(int i=0; i<intersectionDistance.size();i++){
       *out++ = boost::make_optional(geometry.primitive_id(intersectionDistance[i].second));
@@ -642,7 +646,7 @@ public:
     }
 
     const Geometry& geometry = geometries[rtc_geomID];
-    const std::vector<std::pair<float, unsigned int>>& intersectionDistance = geometry.intersections();
+    const std::vector<std::pair<float, unsigned int>>& intersectionDistance = context.intersections();
 
     for(int i=0; i<intersectionDistance.size();i++){
       float factor = intersectionDistance[i].first/ sqrt(square(context.rayhit.ray.dir_x)+ square(context.rayhit.ray.dir_y)+ square(context.rayhit.ray.dir_z));
