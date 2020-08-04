@@ -592,7 +592,7 @@ public:
   template<typename Query>
   boost::optional<Primitive_id> first_intersected_primitive(const Query& query) const
   {
-    if (this->empty) return out;
+    if (this->empty) return boost::none;
 
     typedef Intersect_context<Ray, Segment> Intersect_context;
     Intersect_context context(Intersect_context::Intersection_type::FIRST, query);
