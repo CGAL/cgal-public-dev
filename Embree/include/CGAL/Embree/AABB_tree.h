@@ -113,15 +113,6 @@ public:
     rayhit.hit.instID[0] = RTC_INVALID_GEOMETRY_ID;
   }
 
-  Point assign_point(const float& distance)
-  {
-    float factor = distance/ sqrt(square(rayhit.ray.dir_x)+ square(rayhit.ray.dir_y)+ square(rayhit.ray.dir_z));
-    return Point(rayhit.ray.org_x + factor * rayhit.ray.dir_x,
-                 rayhit.ray.org_y + factor * rayhit.ray.dir_y,
-                 rayhit.ray.org_z + factor * rayhit.ray.dir_z
-                );
-  }
-
   inline std::vector<IntersectionData>& intersections()
   {
     return all_intersections;
