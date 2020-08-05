@@ -48,8 +48,6 @@ public:
   Segment segment;
   unsigned int counter =0;
   struct RTCRayHit rayhit;
-  // std::vector<Point> all_points;
-
 
   enum Intersection_type{
     FIRST = 0, ANY, ALL, COUNTER
@@ -95,9 +93,9 @@ public:
   template<typename T>
   void init_rayhit(const T& query){
 
-    rayhit.ray.org_x =  to_double(query.source().x()); /*POINT.X*/
-    rayhit.ray.org_y =  to_double(query.source().y()); /*POINT.Y*/
-    rayhit.ray.org_z =  to_double(query.source().z()); /*POINT.Z*/
+    rayhit.ray.org_x =  to_double(query.source().x()); 
+    rayhit.ray.org_y =  to_double(query.source().y()); 
+    rayhit.ray.org_z =  to_double(query.source().z());
 
     rayhit.ray.dir_x = to_double(query.direction().dx())/ sqrt(square(to_double(query.direction().dx())) + square(to_double(query.direction().dy())) + square(to_double(query.direction().dz())));
     rayhit.ray.dir_y = to_double(query.direction().dy())/ sqrt(square(to_double(query.direction().dx())) + square(to_double(query.direction().dy())) + square(to_double(query.direction().dz())));
@@ -114,16 +112,15 @@ public:
 
     rayhit.hit.instID[0] = RTC_INVALID_GEOMETRY_ID;
   }
-  
+
   Point assign_point(const float& distance)
   {
     float factor = distance/ sqrt(square(rayhit.ray.dir_x)+ square(rayhit.ray.dir_y)+ square(rayhit.ray.dir_z));
     return Point(rayhit.ray.org_x + factor * rayhit.ray.dir_x,
-                     rayhit.ray.org_y + factor * rayhit.ray.dir_y,
-                     rayhit.ray.org_z + factor * rayhit.ray.dir_z
-                    );
-    
-  } 
+                 rayhit.ray.org_y + factor * rayhit.ray.dir_y,
+                 rayhit.ray.org_z + factor * rayhit.ray.dir_z
+                );
+  }
 
   inline std::vector<IntersectionData>& intersections()
   {
@@ -365,23 +362,20 @@ public:
   typedef typename GeomTraits::Segment_3 Segment;
 
 private:
+  struct Closest_point_result
+  {
+    Closest_point_result(const Self* aabb_tree, const Point& query)
+      : aabb_tree(aabb_tree)
+      , query(query)
+      , primID(RTC_INVALID_GEOMETRY_ID)
+      , geomID(RTC_INVALID_GEOMETRY_ID)
+    {}
 
-
-
-struct Closest_point_result
-{
-  Closest_point_result(const Self* aabb_tree, const Point& query)
-    : aabb_tree(aabb_tree)
-    , query(query)
-    , primID(RTC_INVALID_GEOMETRY_ID)
-    , geomID(RTC_INVALID_GEOMETRY_ID)
-  {}
-
-  const Self* aabb_tree;
-  Point query, result;
-  unsigned int primID;
-  unsigned int geomID;
-};
+    const Self* aabb_tree;
+    Point query, result;
+    unsigned int primID;
+    unsigned int geomID;
+  };
 
   static bool closest_point_function(RTCPointQueryFunctionArguments* args)
   {
@@ -392,7 +386,6 @@ struct Closest_point_result
     const Geometry& geometry = aabb_tree->geometries[geomID];
     return geometry.closest_point_function(args, result);
   }
-
 
   RTCDevice device;
   RTCScene scene;
