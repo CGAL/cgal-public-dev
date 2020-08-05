@@ -93,8 +93,8 @@ public:
   template<typename T>
   void init_rayhit(const T& query){
 
-    rayhit.ray.org_x =  to_double(query.source().x()); 
-    rayhit.ray.org_y =  to_double(query.source().y()); 
+    rayhit.ray.org_x =  to_double(query.source().x());
+    rayhit.ray.org_y =  to_double(query.source().y());
     rayhit.ray.org_z =  to_double(query.source().z());
 
     rayhit.ray.dir_x = to_double(query.direction().dx())/ sqrt(square(to_double(query.direction().dx())) + square(to_double(query.direction().dy())) + square(to_double(query.direction().dz())));
@@ -252,40 +252,34 @@ public:
     Triangle face = triangle(self, fd);
 
     auto v = context->query_type==Intersect_context::Query_type::RAY_QUERY
-    ? CGAL::intersection(context->ray, face)
-    : CGAL::intersection(context->segment, face);
+      ? CGAL::intersection(context->ray, face)
+      : CGAL::intersection(context->segment, face);
     if(v){
-        rayhit->hit.geomID = self->rtc_geomID;
-        rayhit->hit.primID = primID;
-        if (const Point *intersection_point = boost::get<Point>(&*v) ){
+      rayhit->hit.geomID = self->rtc_geomID;
+      rayhit->hit.primID = primID;
+      if (const Point *intersection_point = boost::get<Point>(&*v) ){
+        float _distance = (context->query_type==Intersect_context::Query_type::RAY_QUERY)
+          ? sqrt(to_double(CGAL::squared_distance(context->ray.source(), *intersection_point)))
+          : sqrt(to_double(CGAL::squared_distance(context->segment.source(), *intersection_point)));
 
-            float _distance = (context->query_type==Intersect_context::Query_type::RAY_QUERY)
-            ? sqrt(to_double(CGAL::squared_distance(context->ray.source(), *intersection_point)))
-            : sqrt(to_double(CGAL::squared_distance(context->segment.source(), *intersection_point)));
-
-            if(context->intersection_type == Intersect_context::Intersection_type::COUNTER)
-              context->counter++;
-
-            else
-            {
-              if(context->intersection_type == Intersect_context::Intersection_type::FIRST){
-                rayhit->ray.tfar = _distance;
-                if(context->intersections().size())
-                  context->intersections()[0] = std::make_tuple(*intersection_point, _distance, primID);
-                else
-                  context->intersections().push_back(std::make_tuple(*intersection_point, _distance, primID));
-              }
-              else if (context->intersection_type == Intersect_context::Intersection_type::ALL){
-                context->intersections().push_back(std::make_tuple(*intersection_point, _distance, primID));
-              }
-              else {
-                rayhit->ray.tfar = _distance;
-                context->intersections().push_back(std::make_tuple(*intersection_point, _distance, primID));
-                // Makes the ray invalid, so there is no further traversal
-                rayhit->ray.tnear = rayhit->ray.tfar + 1.0f;
-              }
-            }
+        if(context->intersection_type == Intersect_context::Intersection_type::COUNTER){
+          context->counter++;
+        } else if(context->intersection_type == Intersect_context::Intersection_type::FIRST){
+          rayhit->ray.tfar = _distance;
+          if(! context->intersections().empty()){
+            context->intersections()[0] = std::make_tuple(*intersection_point, _distance, primID);
+          } else {
+            context->intersections().push_back(std::make_tuple(*intersection_point, _distance, primID));
+          }
+        } else if(context->intersection_type == Intersect_context::Intersection_type::ALL){
+          context->intersections().push_back(std::make_tuple(*intersection_point, _distance, primID));
+        } else {
+          rayhit->ray.tfar = _distance;
+          context->intersections().push_back(std::make_tuple(*intersection_point, _distance, primID));
+          // Makes the ray invalid, so there is no further traversal
+          rayhit->ray.tnear = rayhit->ray.tfar + 1.0f;
         }
+      }
     }
   }
 
@@ -596,7 +590,7 @@ public:
     if(rtc_geomID == RTC_INVALID_GEOMETRY_ID){
       return boost::none;
     }
-    
+
     typename Geometry::Point p = std::get<0>(context.intersections()[0]) ;
 
     const Geometry& geometry = geometries[rtc_geomID];
