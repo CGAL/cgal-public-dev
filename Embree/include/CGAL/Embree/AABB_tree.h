@@ -120,6 +120,16 @@ public:
               rayhit.ray.org_y + factor * rayhit.ray.dir_y,
               rayhit.ray.org_z + factor * rayhit.ray.dir_z
               );
+  }
+  
+  const Point& assign_point(float distance)
+  {
+    float factor = distance/ sqrt(square(rayhit.ray.dir_x)+ square(rayhit.ray.dir_y)+ square(rayhit.ray.dir_z));
+    return p = Point(rayhit.ray.org_x + factor * rayhit.ray.dir_x,
+                     rayhit.ray.org_y + factor * rayhit.ray.dir_y,
+                     rayhit.ray.org_z + factor * rayhit.ray.dir_z
+                    );
+    
   } 
 
   const Point& point()
@@ -653,12 +663,8 @@ public:
     const std::vector<std::pair<float, unsigned int>>& intersectionDistance = context.intersections();
 
     for(int i=0; i<intersectionDistance.size();i++){
-      float factor = intersectionDistance[i].first/ sqrt(square(context.rayhit.ray.dir_x)+ square(context.rayhit.ray.dir_y)+ square(context.rayhit.ray.dir_z));
-      float outX = context.rayhit.ray.org_x + factor * context.rayhit.ray.dir_x;
-      float outY = context.rayhit.ray.org_y + factor * context.rayhit.ray.dir_y;
-      float outZ = context.rayhit.ray.org_z + factor * context.rayhit.ray.dir_z;
-      typename Geometry::Point p(outX, outY, outZ);
 
+      typename Geometry::Point p = context.assign_point(intersectionDistance[i].first);
       *out++ = boost::make_optional(std::make_pair(p, geometry.primitive_id(intersectionDistance[i].second)));
     }
     // out stores the following type  ----->  boost::optional<Intersection_and_primitive_id>
@@ -677,7 +683,6 @@ public:
   {
     if (this->empty()) return boost::none;
 
-    // typedef Intersect_context<Ray, Segment> Intersect_context;
     typedef Intersect_context<Geometry> Intersect_context;
     Intersect_context context(Intersect_context::Intersection_type::ANY, query);
 
