@@ -46,13 +46,13 @@ private:
 public:
   Ray ray;
   Segment segment;
-  // Point p;
+  unsigned int counter =0;
   struct RTCRayHit rayhit;
   // std::vector<Point> all_points;
 
 
   enum Intersection_type{
-    FIRST = 0, ANY, ALL
+    FIRST = 0, ANY, ALL, COUNTER
   };
 
   enum Query_type{
@@ -124,12 +124,6 @@ public:
                     );
     
   } 
-
-  // const Point& point()
-  // {
-  //   p = assign_point(rayhit.ray.tfar);
-  //   return p;
-  // }
 
   inline std::vector<IntersectionData>& intersections()
   {
@@ -264,8 +258,6 @@ public:
     struct RTCRayHit* rayhit = (RTCRayHit*)args->rayhit;
     unsigned int primID = args->primID;
     assert(args->N == 1);
-    std::vector<Point> face_points;
-    face_points.reserve(3);
 
     face_descriptor fd = self->id2desc(primID);
 
@@ -283,17 +275,27 @@ public:
             ? sqrt(to_double(CGAL::squared_distance(context->ray.source(), *intersection_point)))
             : sqrt(to_double(CGAL::squared_distance(context->segment.source(), *intersection_point)));
 
-            if(context->intersection_type == Intersect_context::Intersection_type::FIRST){
-              rayhit->ray.tfar = _distance;
-              context->intersections().push_back(std::make_tuple(context->assign_point(_distance), _distance, primID));
-            }
-            else if (context->intersection_type == Intersect_context::Intersection_type::ALL)
-              context->intersections().push_back(std::make_tuple(context->assign_point(_distance), _distance, primID));
-            else {
-              rayhit->ray.tfar = _distance;
-              context->intersections().push_back(std::make_tuple(context->assign_point(_distance), _distance, primID));
-              // Makes the ray invalid, so there is no further traversal
-              rayhit->ray.tnear = rayhit->ray.tfar + 1.0f;
+            if(context->intersection_type == Intersect_context::Intersection_type::COUNTER)
+              context->counter++;
+
+            else
+            {
+              if(context->intersection_type == Intersect_context::Intersection_type::FIRST){
+                rayhit->ray.tfar = _distance;
+                if(context->intersections().size())
+                  context->intersections()[0] = std::make_tuple(*intersection_point, _distance, primID);
+                else
+                  context->intersections().push_back(std::make_tuple(*intersection_point, _distance, primID));
+              }
+              else if (context->intersection_type == Intersect_context::Intersection_type::ALL){
+                context->intersections().push_back(std::make_tuple(*intersection_point, _distance, primID));
+              }
+              else {
+                rayhit->ray.tfar = _distance;
+                context->intersections().push_back(std::make_tuple(*intersection_point, _distance, primID));
+                // Makes the ray invalid, so there is no further traversal
+                rayhit->ray.tnear = rayhit->ray.tfar + 1.0f;
+              }
             }
         }
     }
@@ -524,7 +526,7 @@ public:
     if (this->empty()) return 0;
 
     typedef Intersect_context<Geometry> Intersect_context;
-    Intersect_context context(Intersect_context::Intersection_type::ALL, query);
+    Intersect_context context(Intersect_context::Intersection_type::COUNTER, query);
 
     rtcIntersect1(scene, &context, &(context.rayhit));
 
@@ -533,7 +535,7 @@ public:
       return 0;
     }
     // const Geometry& geometry = geometries[rtc_geomID];
-    return (context.intersections()).size();
+    return context.counter;
   }
 
 
