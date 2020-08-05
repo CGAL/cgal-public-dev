@@ -38,16 +38,17 @@ struct Intersect_context : public RTCIntersectContext{
   typedef typename Geometry::Ray Ray;
   typedef typename Geometry::Segment Segment;
   typedef typename Geometry::Point Point;
+  typedef std::tuple<Point, float, unsigned int> IntersectionData;
 
 private:
-  std::vector<std::pair<float, unsigned int>> all_intersections;
+  std::vector<IntersectionData> all_intersections;
 
 public:
   Ray ray;
   Segment segment;
-  Point p;
+  // Point p;
   struct RTCRayHit rayhit;
-  std::vector<Point> all_points;
+  // std::vector<Point> all_points;
 
 
   enum Intersection_type{
@@ -114,7 +115,7 @@ public:
     rayhit.hit.instID[0] = RTC_INVALID_GEOMETRY_ID;
   }
   
-  Point assign_point(float distance)
+  Point assign_point(const float& distance)
   {
     float factor = distance/ sqrt(square(rayhit.ray.dir_x)+ square(rayhit.ray.dir_y)+ square(rayhit.ray.dir_z));
     return Point(rayhit.ray.org_x + factor * rayhit.ray.dir_x,
@@ -124,13 +125,13 @@ public:
     
   } 
 
-  const Point& point()
-  {
-    p = assign_point(rayhit.ray.tfar);
-    return p;
-  }
+  // const Point& point()
+  // {
+  //   p = assign_point(rayhit.ray.tfar);
+  //   return p;
+  // }
 
-  inline std::vector<std::pair<float, unsigned int>>& intersections()
+  inline std::vector<IntersectionData>& intersections()
   {
     return all_intersections;
   }
@@ -282,14 +283,15 @@ public:
             ? sqrt(to_double(CGAL::squared_distance(context->ray.source(), *intersection_point)))
             : sqrt(to_double(CGAL::squared_distance(context->segment.source(), *intersection_point)));
 
-            if(context->intersection_type == Intersect_context::Intersection_type::FIRST)
+            if(context->intersection_type == Intersect_context::Intersection_type::FIRST){
               rayhit->ray.tfar = _distance;
-            else if (context->intersection_type == Intersect_context::Intersection_type::ALL){
-              context->intersections().push_back(std::make_pair(_distance, primID));
-              context->all_points.push_back(context->assign_point(_distance));
+              context->intersections().push_back(std::make_tuple(context->assign_point(_distance), _distance, primID));
             }
+            else if (context->intersection_type == Intersect_context::Intersection_type::ALL)
+              context->intersections().push_back(std::make_tuple(context->assign_point(_distance), _distance, primID));
             else {
               rayhit->ray.tfar = _distance;
+              context->intersections().push_back(std::make_tuple(context->assign_point(_distance), _distance, primID));
               // Makes the ray invalid, so there is no further traversal
               rayhit->ray.tnear = rayhit->ray.tfar + 1.0f;
             }
@@ -555,10 +557,9 @@ public:
     }
 
     const Geometry& geometry = geometries[rtc_geomID];
-    const std::vector<std::pair<float, unsigned int>>& intersectionDistance = context.intersections();
 
-    for(int i=0; i<intersectionDistance.size();i++){
-      *out++ = boost::make_optional(geometry.primitive_id(intersectionDistance[i].second));
+    for(int i=0; i<context.intersections().size();i++){
+      *out++ = boost::make_optional(geometry.primitive_id(std::get<2>(context.intersections()[i])));
     }
 
     return out;
@@ -610,7 +611,7 @@ public:
       return boost::none;
     }
     
-    typename Geometry::Point p = context.point();
+    typename Geometry::Point p = std::get<0>(context.intersections()[0]) ;
 
     const Geometry& geometry = geometries[rtc_geomID];
     return boost::make_optional(std::make_pair(p, geometry.primitive_id(context.rayhit.hit.primID)));
@@ -654,11 +655,9 @@ public:
     }
 
     const Geometry& geometry = geometries[rtc_geomID];
-    // const std::vector<std::pair<float, unsigned int>>& intersectionDistance = context.intersections();
+    for(int i=0; i<context.intersections().size();i++){
 
-    for(int i=0; i<context.all_points.size();i++){
-
-      *out++ = boost::make_optional(std::make_pair(context.all_points[i], geometry.primitive_id(context.intersections()[i].second)));
+      *out++ = boost::make_optional(std::make_pair(std::get<0>(context.intersections()[i]), geometry.primitive_id(std::get<2>(context.intersections()[i]))));
     }
     // out stores the following type  ----->  boost::optional<Intersection_and_primitive_id>
     return out;
@@ -686,7 +685,7 @@ public:
       return boost::none;
     }
 
-    typename Geometry::Point p = context.point();
+    typename Geometry::Point p = std::get<0>(context.intersections()[0]);
 
     const Geometry& geometry = geometries[rtc_geomID];
     return boost::make_optional(std::make_pair(p, geometry.primitive_id(context.rayhit.hit.primID)));
