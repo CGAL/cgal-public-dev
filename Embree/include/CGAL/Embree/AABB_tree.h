@@ -32,14 +32,20 @@
 namespace CGAL {
 namespace Embree {
 
-template<typename Ray, typename Segment>
+template<typename Geometry>
 struct Intersect_context : public RTCIntersectContext{
+
+  typedef typename Geometry::Ray Ray;
+  typedef typename Geometry::Segment Segment;
+  typedef typename Geometry::Point Point;
+
 private:
   std::vector<std::pair<float, unsigned int>> all_intersections;
 
 public:
   Ray ray;
   Segment segment;
+  Point p;
   struct RTCRayHit rayhit;
 
 
@@ -105,6 +111,21 @@ public:
     rayhit.hit.primID = RTC_INVALID_GEOMETRY_ID;
 
     rayhit.hit.instID[0] = RTC_INVALID_GEOMETRY_ID;
+  }
+
+  void assign_point()
+  {
+    float factor = rayhit.ray.tfar/ sqrt(square(rayhit.ray.dir_x)+ square(rayhit.ray.dir_y)+ square(rayhit.ray.dir_z));
+    p = Point(rayhit.ray.org_x + factor * rayhit.ray.dir_x,
+              rayhit.ray.org_y + factor * rayhit.ray.dir_y,
+              rayhit.ray.org_z + factor * rayhit.ray.dir_z
+              );
+  } 
+
+  const Point& point()
+  {
+    assign_point();
+    return p;
   }
 
   inline std::vector<std::pair<float, unsigned int>>& intersections()
@@ -229,7 +250,7 @@ public:
 
   static void intersection_function(const RTCIntersectFunctionNArguments* args)
   {
-    typedef Intersect_context<Ray, Segment> Intersect_context;
+    typedef Intersect_context<Self> Intersect_context;
     Triangle_mesh_geometry* self = (Triangle_mesh_geometry*) args->geometryUserPtr;
     int* valid = args->valid;
     Intersect_context* context = (Intersect_context*)args->context;
@@ -476,7 +497,7 @@ public:
   {
     if (this->empty()) return false;
 
-    typedef Intersect_context<Ray, Segment> Intersect_context;
+    typedef Intersect_context<Geometry> Intersect_context;
     Intersect_context context(Intersect_context::Intersection_type::ANY, query);
 
     rtcIntersect1(scene, &context, &(context.rayhit));
@@ -496,7 +517,7 @@ public:
   {
     if (this->empty()) return 0;
 
-    typedef Intersect_context<Ray, Segment> Intersect_context;
+    typedef Intersect_context<Geometry> Intersect_context;
     Intersect_context context(Intersect_context::Intersection_type::ALL, query);
 
     rtcIntersect1(scene, &context, &(context.rayhit));
@@ -519,7 +540,7 @@ public:
   {
     if (this->empty()) return out;
 
-    typedef Intersect_context<Ray, Segment> Intersect_context;
+    typedef Intersect_context<Geometry> Intersect_context;
     Intersect_context context(Intersect_context::Intersection_type::ALL, query);
 
     rtcIntersect1(scene, &context, &(context.rayhit));
@@ -552,7 +573,7 @@ public:
   {
     if (this->empty()) return boost::none;
 
-    typedef Intersect_context<Ray, Segment> Intersect_context;
+    typedef Intersect_context<Geometry> Intersect_context;
     Intersect_context context(Intersect_context::Intersection_type::ANY, query);
 
     rtcIntersect1(scene, &context, &(context.rayhit));
@@ -575,7 +596,7 @@ public:
   {
     if (this->empty()) return boost::none;
 
-    typedef Intersect_context<Ray, Segment> Intersect_context;
+    typedef Intersect_context<Geometry> Intersect_context;
     Intersect_context context(Intersect_context::Intersection_type::FIRST, query);
 
     rtcIntersect1(scene, &context, &(context.rayhit));
@@ -584,12 +605,8 @@ public:
     if(rtc_geomID == RTC_INVALID_GEOMETRY_ID){
       return boost::none;
     }
-
-    float factor = context.rayhit.ray.tfar/ sqrt(square(context.rayhit.ray.dir_x)+ square(context.rayhit.ray.dir_y)+ square(context.rayhit.ray.dir_z));
-    float outX = context.rayhit.ray.org_x + factor * context.rayhit.ray.dir_x;
-    float outY = context.rayhit.ray.org_y + factor * context.rayhit.ray.dir_y;
-    float outZ = context.rayhit.ray.org_z + factor * context.rayhit.ray.dir_z;
-    typename Geometry::Point p(outX, outY, outZ);
+    
+    typename Geometry::Point p = context.point();
 
     const Geometry& geometry = geometries[rtc_geomID];
     return boost::make_optional(std::make_pair(p, geometry.primitive_id(context.rayhit.hit.primID)));
@@ -601,7 +618,7 @@ public:
   {
     if (this->empty()) return boost::none;
 
-    typedef Intersect_context<Ray, Segment> Intersect_context;
+    typedef Intersect_context<Geometry> Intersect_context;
     Intersect_context context(Intersect_context::Intersection_type::FIRST, query);
 
     rtcIntersect1(scene, &context, &(context.rayhit));
@@ -622,7 +639,7 @@ public:
     if (this->empty()) return out;
 
 
-    typedef Intersect_context<Ray, Segment> Intersect_context;
+    typedef Intersect_context<Geometry> Intersect_context;
     Intersect_context context(Intersect_context::Intersection_type::ALL, query);
 
     rtcIntersect1(scene, &context, &(context.rayhit));
@@ -660,7 +677,8 @@ public:
   {
     if (this->empty()) return boost::none;
 
-    typedef Intersect_context<Ray, Segment> Intersect_context;
+    // typedef Intersect_context<Ray, Segment> Intersect_context;
+    typedef Intersect_context<Geometry> Intersect_context;
     Intersect_context context(Intersect_context::Intersection_type::ANY, query);
 
     rtcIntersect1(scene, &context, &(context.rayhit));
@@ -670,11 +688,7 @@ public:
       return boost::none;
     }
 
-    float factor = context.rayhit.ray.tfar/ sqrt(square(context.rayhit.ray.dir_x)+ square(context.rayhit.ray.dir_y)+ square(context.rayhit.ray.dir_z));
-    float outX = context.rayhit.ray.org_x + factor * context.rayhit.ray.dir_x;
-    float outY = context.rayhit.ray.org_y + factor * context.rayhit.ray.dir_y;
-    float outZ = context.rayhit.ray.org_z + factor * context.rayhit.ray.dir_z;
-    typename Geometry::Point p(outX, outY, outZ);
+    typename Geometry::Point p = context.point();
 
     const Geometry& geometry = geometries[rtc_geomID];
     return boost::make_optional(std::make_pair(p, geometry.primitive_id(context.rayhit.hit.primID)));
