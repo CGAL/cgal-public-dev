@@ -97,9 +97,10 @@ public:
     rayhit.ray.org_y =  to_double(query.source().y());
     rayhit.ray.org_z =  to_double(query.source().z());
 
-    rayhit.ray.dir_x = to_double(query.direction().dx())/ sqrt(square(to_double(query.direction().dx())) + square(to_double(query.direction().dy())) + square(to_double(query.direction().dz())));
-    rayhit.ray.dir_y = to_double(query.direction().dy())/ sqrt(square(to_double(query.direction().dx())) + square(to_double(query.direction().dy())) + square(to_double(query.direction().dz())));
-    rayhit.ray.dir_z = to_double(query.direction().dz())/ sqrt(square(to_double(query.direction().dx())) + square(to_double(query.direction().dy())) + square(to_double(query.direction().dz())));
+    double len = sqrt(square(to_double(query.direction().dx())) + square(to_double(query.direction().dy())) + square(to_double(query.direction().dz())));
+    rayhit.ray.dir_x = to_double(query.direction().dx()) / len;
+    rayhit.ray.dir_y = to_double(query.direction().dy()) / len;
+    rayhit.ray.dir_z = to_double(query.direction().dz()) / len;
 
     rayhit.ray.tnear = 0;
     rayhit.ray.tfar = std::numeric_limits<float>::infinity();
@@ -206,14 +207,14 @@ public:
     RTCBounds* bounds_o = args->bounds_o;
     unsigned int primID = args->primID;
 
-    Bbox_3 bb;
-
+    const TriangleMesh& tm = *(self->triangle_mesh);
     face_descriptor fd = self->id2desc(primID);
-    halfedge_descriptor hf = halfedge(fd, *self->triangle_mesh);
-    for(halfedge_descriptor hi : halfedges_around_face(hf, *(self->triangle_mesh))){
-        vertex_descriptor vi = target(hi, *(self->triangle_mesh));
-        bb += get(self->vpm,vi).bbox();
-    }
+    halfedge_descriptor hd = halfedge(fd, tm);
+
+    Bbox_3 bb = get(self->vpm, target(hd, tm)).bbox();
+    bb += get(self->vpm, target(next(hd, tm), tm)).bbox();
+    bb += get(self->vpm, source(hd, tm)).bbox();
+
     bounds_o->lower_x = bb.xmin();
     bounds_o->lower_y = bb.ymin();
     bounds_o->lower_z = bb.zmin();
