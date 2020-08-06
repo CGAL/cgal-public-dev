@@ -257,31 +257,48 @@ public:
     if(v){
       rayhit->hit.geomID = self->rtc_geomID;
       rayhit->hit.primID = primID;
-      if (const Point *intersection_point = boost::get<Point>(&*v) ){
-        float _distance = (context->query_type==Intersect_context::Query_type::RAY_QUERY)
-          ? sqrt(to_double(CGAL::squared_distance(context->ray.source(), *intersection_point)))
-          : sqrt(to_double(CGAL::squared_distance(context->segment.source(), *intersection_point)));
 
-        if(context->intersection_type == Intersect_context::Intersection_type::COUNTER){
-          context->counter++;
-        } else if(context->intersection_type == Intersect_context::Intersection_type::FIRST){
-          rayhit->ray.tfar = _distance;
-          if(! context->intersections().empty()){
-            context->intersections()[0] = std::make_tuple(*intersection_point, _distance, primID);
-          } else {
-            context->intersections().push_back(std::make_tuple(*intersection_point, _distance, primID));
+      const Point& source = (context->query_type==Intersect_context::Query_type::RAY_QUERY)?
+        context->ray.source() : context->segment.source();
+
+      float _distance;
+      Point intersection_point;
+      if (const Point *ip = boost::get<Point>(&*v) ){
+        intersection_point = *ip;
+        _distance = sqrt(to_double(CGAL::squared_distance(source, intersection_point)));
+      }else if(const Segment *intersection_segment = boost::get<Segment>(&*v)){
+        intersection_point = intersection_segment->source();
+        _distance = sqrt(to_double(CGAL::squared_distance(source, intersection_point)));
+        double distance_to_target = sqrt(to_double(CGAL::squared_distance(source, intersection_segment->target())));
+          if(distance_to_target < _distance){
+            _distance = distance_to_target;
+            intersection_point = intersection_segment->target();
           }
-        } else if(context->intersection_type == Intersect_context::Intersection_type::ALL){
-          context->intersections().push_back(std::make_tuple(*intersection_point, _distance, primID));
+      }else{
+        return;
+      }
+
+
+      if(context->intersection_type == Intersect_context::Intersection_type::COUNTER){
+        context->counter++;
+      } else if(context->intersection_type == Intersect_context::Intersection_type::FIRST){
+        rayhit->ray.tfar = _distance;
+        if(! context->intersections().empty()){
+          context->intersections()[0] = std::make_tuple(intersection_point, _distance, primID);
         } else {
-          rayhit->ray.tfar = _distance;
-          context->intersections().push_back(std::make_tuple(*intersection_point, _distance, primID));
-          // Makes the ray invalid, so there is no further traversal
-          rayhit->ray.tnear = rayhit->ray.tfar + 1.0f;
+          context->intersections().push_back(std::make_tuple(intersection_point, _distance, primID));
         }
+      } else if(context->intersection_type == Intersect_context::Intersection_type::ALL){
+        context->intersections().push_back(std::make_tuple(intersection_point, _distance, primID));
+      } else {
+        rayhit->ray.tfar = _distance;
+        context->intersections().push_back(std::make_tuple(intersection_point, _distance, primID));
+        // Makes the ray invalid, so there is no further traversal
+        rayhit->ray.tnear = rayhit->ray.tfar + 1.0f;
       }
     }
   }
+
 
 
   template <typename ClosestPointResult>
