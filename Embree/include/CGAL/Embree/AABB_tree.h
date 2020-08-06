@@ -267,18 +267,16 @@ public:
       if (const Point *ip = boost::get<Point>(&*v) ){
         intersection_point = *ip;
         _distance = sqrt(to_double(CGAL::squared_distance(source, intersection_point)));
-      }else if(const Segment *intersection_segment = boost::get<Segment>(&*v)){
+      }else{
+        const Segment *intersection_segment = boost::get<Segment>(&*v);
         intersection_point = intersection_segment->source();
         _distance = sqrt(to_double(CGAL::squared_distance(source, intersection_point)));
         double distance_to_target = sqrt(to_double(CGAL::squared_distance(source, intersection_segment->target())));
-          if(distance_to_target < _distance){
-            _distance = distance_to_target;
-            intersection_point = intersection_segment->target();
-          }
-      }else{
-        return;
+        if(distance_to_target < _distance){
+          _distance = distance_to_target;
+          intersection_point = intersection_segment->target();
+        }
       }
-
 
       if(context->intersection_type == Intersect_context::Intersection_type::COUNTER){
         context->counter++;
