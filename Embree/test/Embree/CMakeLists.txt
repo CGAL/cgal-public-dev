@@ -20,10 +20,10 @@ if ( CGAL_FOUND AND embree_FOUND )
 
     ADD_EXECUTABLE(aabb_test_ray_intersection aabb_test_ray_intersection.cpp)
     TARGET_LINK_LIBRARIES(aabb_test_ray_intersection CGAL::CGAL embree)
-
-    # ADD_EXECUTABLE(closest_point closest_point.cpp)
-    # TARGET_LINK_LIBRARIES(closest_point CGAL::CGAL embree)
-
+    
+    ADD_EXECUTABLE(aabb_test_each_function aabb_test_each_function.cpp)
+    TARGET_LINK_LIBRARIES(aabb_test_each_function CGAL::CGAL embree)
+    
 
 else()
 
