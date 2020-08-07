@@ -13,7 +13,7 @@ typedef CGAL::Embree::AABB_tree<Geometry, K> Tree;
 
 int main(int argc, char const *argv[])
 {
-  const char* filename =  (argc > 1)? "data/bunny00.off" : argv[1];
+  const char* filename =  (argc > 1)? "../../test/Embree/data/bunny00.off" : argv[1];
   std::ifstream input(filename);
 
   Mesh triangle_mesh;
@@ -26,7 +26,7 @@ int main(int argc, char const *argv[])
 
   Tree::Point_and_primitive_id ppid = tree.closest_point_and_primitive(origin);
 
-  std::cout << ppid.first << std::endl;
+  std::cout <<"Closest Point to origin on the mesh : "<< ppid.first << std::endl;
 
   return 0;
 }
