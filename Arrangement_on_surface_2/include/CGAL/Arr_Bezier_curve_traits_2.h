@@ -870,6 +870,27 @@ public:
   //@}
 };
 
+
+/*!
+ * IO
+ */
+namespace ArrangementIO
+{
+template <
+  class RatKernel_, class AlgKernel_, class NtTraits_, class BoundingTraits_>
+struct TraitsIOCache<CGAL::Arr_Bezier_curve_traits_2<
+  RatKernel_, AlgKernel_, NtTraits_, BoundingTraits_>>
+{
+  using Traits = CGAL::Arr_Bezier_curve_traits_2<
+    RatKernel_, AlgKernel_, NtTraits_, BoundingTraits_>;
+
+  using type = Cache<
+    typename Traits::Curve_2, typename Traits::Point_2,
+    typename Traits::Rat_point_2, typename Traits::Rational,
+    typename Traits::Integer, typename Traits::Nt_traits::Polynomial>;
+};
+} // namespace ArrangementIO
+
 } //namespace CGAL
 
 #include <CGAL/enable_warnings.h>

@@ -606,7 +606,8 @@ private:
                                               ) const;
 public:
   // IO
-  void write(std::ostream& os) const
+  template <typename OStream>
+  void write(OStream& os) const
   {
     os << "Bezier_x_monotone("
        << this->supporting_curve()
@@ -619,8 +620,11 @@ public:
        << ')';
   }
 
-  void read(std::istream& is)
+  template <typename IStream>
+  void read(IStream& is)
   {
+    namespace Bezier_io_internal = CGAL::Bezier_io_internal;
+
     Bezier_io_internal::swallow(is, "Bezier_x_monotone");
     Bezier_io_internal::swallow(is, '(');
     Curve_2 curve;
@@ -666,6 +670,30 @@ public:
 /*!
  * Exporter for Bezier curves.
  */
+namespace ArrangementIO
+{
+template <
+  class Rat_kernel, class Alg_kernel, class Nt_traits, class Bounding_traits>
+struct TypeIO<
+  _Bezier_x_monotone_2<Rat_kernel, Alg_kernel, Nt_traits, Bounding_traits>>
+{
+  using Bezier_x_monotone =
+    _Bezier_x_monotone_2<Rat_kernel, Alg_kernel, Nt_traits, Bounding_traits>;
+
+  template <typename OStream>
+  void write(OStream& os, const Bezier_x_monotone& cv)
+  {
+    cv.write(os);
+  }
+
+  template <typename IStream>
+  void read(IStream& is, Bezier_x_monotone& cv)
+  {
+    cv.read(is);
+  }
+};
+} // namespace ArrangementIO
+
 template <class Rat_kernel, class Alg_kernel, class Nt_traits,
           class Bounding_traits>
 std::ostream&

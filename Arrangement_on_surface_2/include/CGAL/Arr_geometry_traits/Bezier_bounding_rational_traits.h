@@ -1518,9 +1518,9 @@ private:
 /*!
  * Exporter for bounding information
  */
-template <class Kernel_>
-std::ostream&
-operator<<(std::ostream& os, const _Bez_point_bound<Kernel_>& point_bound)
+template <class OStream, class Kernel_>
+OStream&
+operator<<(OStream& os, const _Bez_point_bound<Kernel_>& point_bound)
 {
   os << "point_bound{";
   os << "type{" << static_cast<int>(point_bound.type) << '}';
@@ -1536,9 +1536,9 @@ operator<<(std::ostream& os, const _Bez_point_bound<Kernel_>& point_bound)
   return os;
 }
 
-template <class Kernel_>
-std::istream&
-operator>>(std::istream& is, _Bez_point_bound<Kernel_>& point_bound)
+template <class IStream, class Kernel_>
+IStream&
+operator>>(IStream& is, _Bez_point_bound<Kernel_>& point_bound)
 {
   Bezier_io_internal::swallow(is, "point_bound");
   Bezier_io_internal::swallow(is, '{');
@@ -1595,9 +1595,9 @@ operator>>(std::istream& is, _Bez_point_bound<Kernel_>& point_bound)
   return is;
 }
 
-template <class Kernel_>
-std::ostream&
-operator<<(std::ostream& os, const _Bez_point_bbox<Kernel_>& point_bbox)
+template <class OStream, class Kernel_>
+OStream&
+operator<<(OStream& os, const _Bez_point_bbox<Kernel_>& point_bbox)
 {
   os << "point_bbox{";
   os << "min_x{" << point_bbox.min_x << '}';
@@ -1609,9 +1609,9 @@ operator<<(std::ostream& os, const _Bez_point_bbox<Kernel_>& point_bbox)
   return os;
 }
 
-template <class Kernel_>
-std::istream&
-operator>>(std::istream& is, _Bez_point_bbox<Kernel_>& point_bbox)
+template <class IStream, class Kernel_>
+IStream&
+operator>>(IStream& is, _Bez_point_bbox<Kernel_>& point_bbox)
 {
   Bezier_io_internal::swallow(is, "point_bbox");
   Bezier_io_internal::swallow(is, '{');

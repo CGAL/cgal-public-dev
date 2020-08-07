@@ -30,6 +30,7 @@
 #include <list>
 #include <CGAL/Arr_enums.h>
 #include <ostream>
+#include <CGAL/IO/Arr_cached_io.h>
 
 namespace CGAL {
 
@@ -443,7 +444,12 @@ public:
    */
   bool is_same (const Self& bc) const
   {
-    if(this->identical(bc))
+    return this->identical(bc);
+  }
+
+  bool operator==(const Self& bc) const
+  {
+    if (is_same(bc))
       return true;
     if (this->number_of_control_points() != bc.number_of_control_points())
       return false;
@@ -627,50 +633,71 @@ private:
 /*!
  * Exporter for Bezier curves.
  */
-template <class Rat_kernel, class Alg_kernel, class Nt_traits,
-          class Bounding_traits>
-std::ostream&
-operator<< (std::ostream& os,
-            const _Bezier_curve_2<Rat_kernel, Alg_kernel, Nt_traits,
-                                  Bounding_traits> & bc)
+namespace ArrangementIO
 {
-  const unsigned int  n = bc.number_of_control_points();
-  unsigned int        k;
+template <
+  class Rat_kernel, class Alg_kernel, class Nt_traits, class Bounding_traits>
+struct TypeIO<
+  CGAL::_Bezier_curve_2<Rat_kernel, Alg_kernel, Nt_traits, Bounding_traits>>
+{
+  using Curve_2 =
+    CGAL::_Bezier_curve_2<Rat_kernel, Alg_kernel, Nt_traits, Bounding_traits>;
 
-  os << n;
-  for (k = 0; k < n; k++)
-    os << "  " << bc.control_point(k);
+  template <typename OStream>
+  void write(OStream& os, const Curve_2& bc)
+  {
+    const unsigned int n = bc.number_of_control_points();
+    unsigned int k;
 
-  return (os);
+    os << n;
+    for (k = 0; k < n; k++) os << "  " << bc.control_point(k);
+  }
+
+  template <typename IStream>
+  void read(IStream& is, Curve_2& bc)
+  {
+    // Read the number of control points.
+    unsigned int n;
+
+    is >> n;
+
+    // Read the control points.
+    std::vector<typename Rat_kernel::Point_2> ctrl_pts(n);
+    unsigned int k;
+
+    for (k = 0; k < n; k++) is >> ctrl_pts[k];
+
+    // Set the Bezier curve.
+    bc = _Bezier_curve_2<Rat_kernel, Alg_kernel, Nt_traits, Bounding_traits>(
+      ctrl_pts.begin(), ctrl_pts.end());
+  }
+};
+} // namespace ArrangementIO
+
+template <
+  class Rat_kernel, class Alg_kernel, class Nt_traits, class Bounding_traits>
+std::ostream& operator<<(
+  std::ostream& os,
+  const _Bezier_curve_2<Rat_kernel, Alg_kernel, Nt_traits, Bounding_traits>& bc)
+{
+  ArrangementIO::TypeIO<
+    _Bezier_curve_2<Rat_kernel, Alg_kernel, Nt_traits, Bounding_traits>>{}
+    .write(os, bc);
+  return os;
 }
 
 /*!
  * Importer for Bezier curves.
  */
-template <class Rat_kernel, class Alg_kernel, class Nt_traits,
-          class Bounding_traits>
-std::istream&
-operator>> (std::istream& is,
-            _Bezier_curve_2<Rat_kernel, Alg_kernel, Nt_traits,
-                            Bounding_traits> & bc)
+template <
+  class Rat_kernel, class Alg_kernel, class Nt_traits, class Bounding_traits>
+std::istream& operator>>(
+  std::istream& is,
+  _Bezier_curve_2<Rat_kernel, Alg_kernel, Nt_traits, Bounding_traits>& bc)
 {
-  // Read the number of control points.
-  unsigned int  n;
-
-  is >> n;
-
-  // Read the control points.
-  std::vector<typename Rat_kernel::Point_2>   ctrl_pts (n);
-  unsigned int                                k;
-
-  for (k = 0; k < n; k++)
-    is >> ctrl_pts[k];
-
-  // Set the Bezier curve.
-  bc = _Bezier_curve_2<Rat_kernel, Alg_kernel, Nt_traits,
-                       Bounding_traits> (ctrl_pts.begin(),
-                                         ctrl_pts.end());
-
+  ArrangementIO::TypeIO<
+    _Bezier_curve_2<Rat_kernel, Alg_kernel, Nt_traits, Bounding_traits>>{}
+    .read(is, bc);
   return (is);
 }
 

@@ -14,6 +14,7 @@
 #define CGAL_ARR_TEXT_FORMATTER_H
 
 #include <CGAL/license/Arrangement_on_surface_2.h>
+#include <CGAL/IO/Arr_cached_io.h>
 
 
 /*! \file
@@ -57,30 +58,38 @@ protected:
   typedef typename Dcel::Halfedge                         DHalfedge;
   typedef typename Dcel::Face                             DFace;
 
+  typedef ArrangementIO::CachedOStreamWrapper<
+    typename ArrangementIO::TraitsIOCache<
+      typename Arrangement_2::Geometry_traits_2>::type>
+                                                          OStreamWrapper;
+  typedef ArrangementIO::CachedIStreamWrapper<
+    typename ArrangementIO::TraitsIOCache<
+      typename Arrangement_2::Geometry_traits_2>::type>
+                                                          IStreamWrapper;
   // Data members:
-  std::ostream*  m_out;
+  OStreamWrapper m_out;
   IO::Mode       m_old_out_mode;
-  std::istream*  m_in;
+  IStreamWrapper m_in;
   IO::Mode       m_old_in_mode;
 
 public:
 
   /*! Default constructor.*/
   Arr_text_formatter():
-    m_out(nullptr),
-    m_in(nullptr)
+    m_out(),
+    m_in()
   {}
 
   /*! Construct an output formatter. */
   Arr_text_formatter(std::ostream& os) :
-    m_out(&os),
-    m_in(nullptr)
+    m_out(os),
+    m_in()
   {}
 
   /*! Construct an input formatter. */
   Arr_text_formatter(std::istream& is) :
-    m_out(nullptr),
-    m_in(&is)
+    m_out(),
+    m_in(is)
   {}
 
   /*! Destructor. */
@@ -90,27 +99,27 @@ public:
   /*! Set the output stream. */
   void set_out(std::ostream& os)
   {
-    m_out = &os;
+    m_out = {os};
   }
 
   /*! Set the input stream. */
   void set_in(std::istream& is)
   {
-    m_in = &is;
+    m_in = {is};
   }
 
   /*! Get the output stream. */
-  inline std::ostream& out()
+  inline auto& out()
   {
-    CGAL_assertion(m_out != nullptr);
-    return (*m_out);
+    CGAL_assertion(m_out);
+    return (m_out);
   }
 
   /*! Get the input stream. */
-  inline std::istream& in()
+  inline auto& in()
   {
-    CGAL_assertion(m_in != nullptr);
-    return (*m_in);
+    CGAL_assertion(m_in);
+    return (m_in);
   }
 
   /// \name Global write functions.
@@ -119,7 +128,7 @@ public:
   /*! Write a begin-arrangement comment. */
   void write_arrangement_begin()
   {
-    CGAL_assertion(m_out != nullptr);
+    CGAL_assertion(m_out);
     m_old_out_mode = get_mode(*m_out);
     set_ascii_mode(*m_out);
     _write_comment("BEGIN ARRANGEMENT");
@@ -276,7 +285,7 @@ public:
   /*! Start reading an arrangement. */
   void read_arrangement_begin()
   {
-    CGAL_assertion(m_in != nullptr);
+    CGAL_assertion(m_in);
     m_old_in_mode = get_mode(*m_in);
     set_ascii_mode(*m_in);
     _skip_comments();
@@ -440,7 +449,7 @@ protected:
   /*! Skip until end of line. */
   void _skip_until_EOL()
   {
-    CGAL_assertion(m_in != nullptr);
+    CGAL_assertion(m_in);
 
     int     c;
     while ((c = m_in->get()) != EOF && c != '\n') {};
@@ -449,7 +458,7 @@ protected:
   /*! Skip comment lines. */
   void _skip_comments()
   {
-    CGAL_assertion(m_in != nullptr);
+    CGAL_assertion(m_in);
 
     int     c = m_in->get();
     if (c == ' ')

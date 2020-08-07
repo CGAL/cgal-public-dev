@@ -162,7 +162,7 @@ private:
   void __skip_until_EOL ()
   {
     int     c;
-    while ((c = this->in().get()) != EOF && c != '\n') {};
+    while ((c = this->in()->get()) != EOF && c != '\n') {};
     return;
   }
 
@@ -170,9 +170,9 @@ private:
   void __skip_comments ()
   {
     int     c;
-    while ((c = this->in().get()) != EOF && c == '#')
+    while ((c = this->in()->get()) != EOF && c == '#')
       __skip_until_EOL();
-    this->in().putback (c);
+    this->in()->putback (c);
 
     return;
   }
