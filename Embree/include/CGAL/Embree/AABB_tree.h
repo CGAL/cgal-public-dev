@@ -185,6 +185,7 @@ public:
   typedef typename GeomTraits::Ray_3 Ray;
   typedef typename GeomTraits::Vector_3 Vector;
   typedef typename GeomTraits::Segment_3 Segment;
+  typedef typename GeomTraits::FT FT;
 
 private:
   const TriangleMesh* triangle_mesh;
@@ -697,7 +698,7 @@ public:
   /// points, one arbitrarily chosen closest point is
   /// returned.
   /// \pre `!empty()`
-  Point closest_point(const typename Geometry::Point &query) const
+  Point closest_point(const Point &query) const
   {
     RTCPointQuery rtc_query;
     rtc_query.x = query.x();
@@ -719,7 +720,7 @@ public:
   /// smallest distance between the query point and all input
   /// primitives.
   /// \pre `!empty()`
-  Point_and_primitive_id closest_point_and_primitive(const typename Geometry::Point &query) const
+  Point_and_primitive_id closest_point_and_primitive(const Point &query) const
   {
     RTCPointQuery rtc_query;
     rtc_query.x = query.x();
@@ -737,6 +738,11 @@ public:
     return std::make_pair(result.result, geometry.primitive_id(result.geomID));
   }
  ///@}
+
+  FT squared_distance(const Point &query) const
+  {
+    return CGAL::squared_distance(query, this->closest_point(query));
+  }
 
 };
 
