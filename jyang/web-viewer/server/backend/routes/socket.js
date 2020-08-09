@@ -1,5 +1,4 @@
 var net = require('net');
-const { type } = require('os');
 
 var server = net.createServer(function(socket) {
     console.log('client connected from', socket.remoteAddress, ':', socket.remotePort);
@@ -9,7 +8,7 @@ var server = net.createServer(function(socket) {
 
     // add 'data' event handler to this socket instance
     socket.on('data', (data) => {
-      console.log(socket.bytesRead, 'bytes', typeof data, 'data received :', data.toString('utf-8'));
+      console.log(socket.bytesRead, 'bytes', typeof data, 'data received:', data.toString('utf-8'));
     });
 
     var message = 'goodbye';
