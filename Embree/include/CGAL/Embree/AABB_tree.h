@@ -737,12 +737,12 @@ public:
     const Geometry& geometry = geometries[result.geomID];
     return std::make_pair(result.result, geometry.primitive_id(result.geomID));
   }
- ///@}
 
   FT squared_distance(const Point &query) const
   {
     return CGAL::squared_distance(query, this->closest_point(query));
   }
+ ///@}
 
 };
 
