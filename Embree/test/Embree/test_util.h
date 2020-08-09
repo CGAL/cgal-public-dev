@@ -102,22 +102,18 @@ void test_all_distance_query_types(Tree& tree)
     typedef typename Tree::Point_and_primitive_id Point_and_primitive_id;
 
     Point query = random_point_in<K>(tree.bbox());
-    Point_and_primitive_id hint = tree.any_reference_point_and_id();
 
     FT sqd1 = tree.squared_distance(query);
-    FT sqd2 = tree.squared_distance(query,hint.first);
-    if(sqd1 != sqd2)
-        std::cout << "different distances with and without hint";
+    if(!sqd1)
+        std::cout << "Squared distance calculation failed.";
 
     Point p1 = tree.closest_point(query);
-    Point p2 = tree.closest_point(query,hint.first);
-    if(p1 != p2)
-        std::cout << "Different closest points with and without hint (possible, in case there are more than one)";
+    if(!p1)
+        std::cout << "Closest point detection failed";
 
     Point_and_primitive_id pp1 = tree.closest_point_and_primitive(query);
-    Point_and_primitive_id pp2 = tree.closest_point_and_primitive(query,hint);
-    if(pp1.second != pp2.second)
-        std::cout << "Different closest primitives with and without hint (possible, in case there are more than one)";
+    if(!pp1.second)
+        std::cout << "Closest primitives calculation failed";
 }
 
 
