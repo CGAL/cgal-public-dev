@@ -1,14 +1,6 @@
 #include <iostream>
 #include <fstream>
 
-#include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
-#include <CGAL/Simple_cartesian.h>
-
-#include <CGAL/AABB_tree.h>
-#include <CGAL/AABB_traits.h>
-#include <CGAL/Polyhedron_3.h>
-
-
 #include "test_util.h"
 
 
