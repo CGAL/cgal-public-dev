@@ -352,8 +352,8 @@ template <typename Geometry, typename GeomTraits>
 class AABB_tree {
 
   typedef AABB_tree<Geometry,GeomTraits> Self;
-  typedef typename Geometry::Primitive_id Primitive_id;
 public:
+  typedef typename Geometry::Primitive_id Primitive_id;
   typedef std::pair<typename Geometry::Point, Primitive_id> Intersection_and_primitive_id;
   typedef std::pair<typename Geometry::Point, Primitive_id> Point_and_primitive_id;
 
