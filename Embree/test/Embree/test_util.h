@@ -52,7 +52,6 @@ void test_all_intersection_query_types(Tree& tree)
     typedef typename K::Line_3 Line;
     typedef typename K::Point_3 Point;
     typedef typename K::Segment_3 Segment;
-    typedef typename Tree::Primitive Primitive;
 
     Point p((FT)-0.5, (FT)-0.5, (FT)-0.5);
     Point q((FT) 0.5, (FT) 0.5, (FT) 0.5);
@@ -70,7 +69,7 @@ void test_all_intersection_query_types(Tree& tree)
     tree.number_of_intersected_primitives(segment);
 
     // all_intersected_primitives
-    std::list<typename Tree::Primitive_id> primitives;
+    std::list<boost::optional<typename Tree::Primitive_id>> primitives;
     tree.all_intersected_primitives(ray,std::back_inserter(primitives));
     tree.all_intersected_primitives(segment,std::back_inserter(primitives));
 
