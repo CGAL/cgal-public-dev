@@ -26,6 +26,9 @@ if ( CGAL_FOUND AND embree_FOUND )
 
     ADD_EXECUTABLE(aabb_intersection_triangle_test aabb_intersection_triangle_test.cpp)
     TARGET_LINK_LIBRARIES(aabb_intersection_triangle_test CGAL::CGAL embree)    
+    
+    ADD_EXECUTABLE(aabb_test_each_function aabb_test_each_function.cpp)
+    TARGET_LINK_LIBRARIES(aabb_test_each_function CGAL::CGAL embree)
 
 else()
 
