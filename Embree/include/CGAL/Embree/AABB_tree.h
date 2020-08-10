@@ -738,7 +738,7 @@ public:
     return std::make_pair(result.result, geometry.primitive_id(result.geomID));
   }
 
-  FT squared_distance(const Point &query) const
+  typename GeomTraits::FT squared_distance(const Point &query) const
   {
     return CGAL::squared_distance(query, this->closest_point(query));
   }
