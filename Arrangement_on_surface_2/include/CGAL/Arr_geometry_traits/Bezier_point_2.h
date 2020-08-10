@@ -104,9 +104,28 @@ public:
       set_parameter (t);
     }
 
+    /*! Constructor, given an exact rational representation. */
+    Originator (const Curve_2& c, const Rational& t) :
+      _curve (c),
+      _xid (0),
+      p_t (nullptr)
+    {
+      set_parameter (t);
+    }
+
     /*! Constructor, given an exact algebraic representation. */
     Originator (const Curve_2& c, unsigned int xid,
                 const Algebraic& t) :
+      _curve (c),
+      _xid (xid),
+      p_t (nullptr)
+    {
+      set_parameter (t);
+    }
+
+    /*! Constructor, given an exact algebraic representation. */
+    Originator (const Curve_2& c, unsigned int xid,
+                const Rational& t) :
       _curve (c),
       _xid (xid),
       p_t (nullptr)
@@ -232,6 +251,23 @@ public:
 
       _bpb.t_min = t_bnd.first;
       _bpb.t_max = t_bnd.second;
+
+      return;
+    }
+
+    /*!
+     * Set the parameter value.
+     * \pre The parameter value is not yet set.
+     */
+    void set_parameter (const Rational& t)
+    {
+      CGAL_precondition (p_t == nullptr);
+
+      Nt_traits                         nt_traits;
+      p_t = new Algebraic (nt_traits.convert(t));
+
+      _bpb.t_min = t;
+      _bpb.t_max = t;
 
       return;
     }
@@ -984,14 +1020,14 @@ namespace ArrangementIO
 template <
   class Rat_kernel, class Alg_kernel, class Nt_traits,
   class Bounding_traits, class IStream>
-typename _Bezier_point_2_rep<
-  Rat_kernel, Alg_kernel, Nt_traits,
-  Bounding_traits>::Originator inline read_originator(IStream& is)
+inline auto read_originator(IStream& is)
 {
   using Curve_2 = typename _Bezier_point_2<
     Rat_kernel, Alg_kernel, Nt_traits, Bounding_traits>::Curve_2;
   using Bez_point_bound = typename _Bezier_point_2<
     Rat_kernel, Alg_kernel, Nt_traits, Bounding_traits>::Bez_point_bound;
+  using Originator = typename _Bezier_point_2_rep<
+    Rat_kernel, Alg_kernel, Nt_traits, Bounding_traits>::Originator;
 
   Bezier_io_internal::swallow(is, 'C');
   Bezier_io_internal::swallow(is, '{');
@@ -1011,9 +1047,17 @@ typename _Bezier_point_2_rep<
   is >> point_bound;
   Bezier_io_internal::swallow(is, '}');
 
-  // Bezier_io_internal::swallow(is, "t{0}");
+  Originator originator{curve, xid, point_bound};
 
-  return {curve, xid, point_bound};
+  if (
+    point_bound.type == Bez_point_bound::RATIONAL_PT ||
+    point_bound.type == Bez_point_bound::UNDEFINED)
+  {
+    CGAL_assertion(point_bound.t_min == point_bound.t_max);
+    originator.set_parameter(point_bound.t_min);
+  }
+
+  return originator;
 }
 
 template <typename Originator, class OStream>
@@ -1149,7 +1193,7 @@ _Bezier_point_2_rep<RatKer, AlgKer, NtTrt, BndTrt>::_Bezier_point_2_rep
   // Note that this constructor also takes care of the Bez_bound
   // for the originator.
   Nt_traits           nt_traits;
-  Originator          org (B, nt_traits.convert (t0));
+  Originator          org (B, t0);
   Bez_point_bound     bound = org.point_bound();
 
   bound.type = Bez_point_bound::RATIONAL_PT;
@@ -1183,7 +1227,7 @@ _Bezier_point_2_rep<RatKer, AlgKer, NtTrt, BndTrt>::_Bezier_point_2_rep
   // Note that this constructor also takes care of the Bez_bound
   // for the originator.
   Nt_traits           nt_traits;
-  Originator          org (B, xid, nt_traits.convert (t0));
+  Originator          org (B, xid, t0);
   Bez_point_bound     bound = org.point_bound();
 
   bound.type = Bez_point_bound::RATIONAL_PT;
@@ -1566,7 +1610,7 @@ bool _Bezier_point_2_rep<RatKer, AlgKer, NtTrt, BndTrt>::_refine ()
       p_rat_y = new Rational (ref_vpt.bbox.min_y);
       p_alg_y = new Algebraic (nt_traits.convert (*p_rat_y));
 
-      orig1.set_parameter (nt_traits.convert (ref_vpt.bound.t_min));
+      orig1.set_parameter (ref_vpt.bound.t_min);
 
       // Make sure the point is marked as a vertical tangency point.
       ref_vpt.bound.type = Bez_point_bound::VERTICAL_TANGENCY_PT;
@@ -1615,8 +1659,8 @@ bool _Bezier_point_2_rep<RatKer, AlgKer, NtTrt, BndTrt>::_refine ()
       p_rat_y = new Rational (ref_ipt.bbox.min_y);
       p_alg_y = new Algebraic (nt_traits.convert (*p_rat_y));
 
-      orig1.set_parameter (nt_traits.convert (ref_ipt.bound1.t_min));
-      orig2.set_parameter (nt_traits.convert (ref_ipt.bound2.t_min));
+      orig1.set_parameter (ref_ipt.bound1.t_min);
+      orig2.set_parameter (ref_ipt.bound2.t_min);
 
       // Make sure the point is marked as an intersection point.
       ref_ipt.bound1.type = Bez_point_bound::INTERSECTION_PT;
@@ -1801,17 +1845,43 @@ void _Bezier_point_2_rep<RatKer, AlgKer, NtTrt, BndTrt>::_make_exact
   const Algebraic      t_min = nt_traits.convert (orig2.point_bound().t_min);
   const Algebraic      t_max = nt_traits.convert (orig2.point_bound().t_max);
 
+  bool self_intersecting = (org_it1->curve().id() == org_it2->curve().id());
+
   for (intr_it = intr_list.begin(); intr_it != intr_list.end(); ++intr_it)
   {
-    if (CGAL::compare (intr_it->s, s_min) != SMALLER &&
-        CGAL::compare (intr_it->s, s_max) != LARGER &&
-        CGAL::compare (intr_it->t, t_min) != SMALLER &&
-        CGAL::compare (intr_it->t, t_max) != LARGER)
+    auto in_approx_range =
+      [](const auto& s_, const auto& s_min_, const auto& s_max_) -> bool {
+      return CGAL::compare(s_, s_min_) != SMALLER &&
+             CGAL::compare(s_, s_max_) != LARGER;
+    };
+
+    bool st_in_st_range = in_approx_range(intr_it->s, s_min, s_max) &&
+                          in_approx_range(intr_it->t, t_min, t_max);
+    bool ts_in_st_range = false;
+
+    if (st_in_st_range)
     {
       // Update the originators.
-      orig1.set_parameter (intr_it->s);
-      orig2.set_parameter (intr_it->t);
+      orig1.set_parameter(intr_it->s);
+      orig2.set_parameter(intr_it->t);
+    }
+    else if (self_intersecting)
+    {
+      // check whether s is in t range, and t is in s range
+      // s and t can be interchanged in case of self intersections
+      ts_in_st_range = in_approx_range(intr_it->t, s_min, s_max) &&
+                       in_approx_range(intr_it->s, t_min, t_max);
 
+      if (ts_in_st_range)
+      {
+        // Update the originators.
+        orig1.set_parameter(intr_it->t);
+        orig2.set_parameter(intr_it->s);
+      }
+    }
+
+    if (st_in_st_range || ts_in_st_range)
+    {
       // Set the exact point coordinates.
       p_alg_x = new Algebraic (intr_it->x);
       p_alg_y = new Algebraic (intr_it->y);
