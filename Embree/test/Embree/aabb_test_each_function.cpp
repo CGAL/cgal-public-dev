@@ -1,4 +1,5 @@
 #include <iostream>
+#include <fstream>
 #include <cassert>
 
 #include <CGAL/Embree/AABB_tree.h>
@@ -21,25 +22,22 @@ typedef CGAL::Surface_mesh<Point> SurfaceMesh;
 template<typename T>
 class Test{
 
-  typedef CGAL::Embree::Triangle_mesh_geometry<T, K> TriangleMesh;
+  typedef typename CGAL::Embree::Triangle_mesh_geometry<T, K> TriangleMesh;
   typedef CGAL::Embree::AABB_tree<TriangleMesh, K> Tree;
 
 public:
 
-  int run(std::ifstream input){    
-    T Mesh;
-    input >> Mesh;
+  Test(){}
+  
+  int run(const T& mesh){    
     Tree tree;
 
     assert(tree.empty());
 
-    tree.insert(surfaceMesh);
+    tree.insert(mesh);
 
-    Tree::Bounding_box bb = tree.bbox();
-    if (!bb){
-      std::cout<<"Bounding Box is empty"<<std::endl;
-      return 1;
-    }
+    typename Tree::Bounding_box bb = tree.bbox();
+    std::cout<<"Bounding Box success"<<std::endl;
 
     size_t tree_size = tree.size();
     if(!tree_size){
@@ -47,31 +45,29 @@ public:
       return 1;
     }
 
-    if(!tree.do_intersect()){
+    Ray ray(Point(0.1f, 0.1f, -1.0f), Vector(0.0f, 0.0f, 1.0f));
+
+    if(!tree.do_intersect(ray)){
       std::cout<<"No Intersection reported"<<std::endl;
       return 1;
     }
 
-    std::cout<<tree.number_of_intersected_primitives()<<std::endl;
+    std::cout<<"Number of Intersected primitives : "<<tree.number_of_intersected_primitives(ray)<<std::endl;
 
-    std::vector<boost::optional<Tree::Intersection_and_primitive_id>> intersections;
-    
-    Point rayOrigin(0.1f, 0.1f, -1.0f);
-    Vector rayDirection(0.0f, 0.0f, 1.0f); 
-    Ray ray(rayOrigin, rayDirection);
+    std::vector<boost::optional<typename Tree::Intersection_and_primitive_id>> intersections;
 
     tree.all_intersections(ray, std::back_inserter(intersections));
     for (int i=0;i<intersections.size();i++){
       if(intersections[i]){
         Point p = intersections[i]->first;
-        std::cout<<"Primtive ID : "<<intersections[i].second<<" Point of intersection : "<<p<<std::endl;
+        std::cout<<"Point of intersection : "<<p<<std::endl;
       }
     }
 
-    boost::optional<Primitive_id> any_intersection = tree.any_intersection(ray);
-    boost::optional<Primitive_id> first_intersection = tree.first_intersection(ray);
+    boost::optional<typename Tree::Intersection_and_primitive_id> any_intersection = tree.any_intersection(ray);
+    boost::optional<typename Tree::Intersection_and_primitive_id> first_intersection = tree.first_intersection(ray);
 
-    std::cout<<"Closest Point to ray origin : "<< tree.closest_point(rayOrigin)<<std::endl; 
+    std::cout<<"Closest Point to ray origin : "<< tree.closest_point(Point(0.1f, 0.1f, -1.0f))<<std::endl; 
 
     tree.clear();
     assert(tree.empty());
@@ -83,9 +79,23 @@ public:
 int main(int argc, char const *argv[])
 {   
   std::ifstream input("./data/sphere.off");
+  Polyhedron polyhedron;
+  input >> polyhedron;
 
-  Test test;
-  test.run(input);
+  std::ifstream input2("./data/sphere.off");
+  SurfaceMesh surface_mesh;
+  input2 >> surface_mesh;
+  
+  Test<Polyhedron> test_polyhedron;
+  Test<SurfaceMesh> test_sm;
+
+  std::cout<<"Test on CGAL::Polyhedron_3."<<std::endl;
+  test_polyhedron.run(polyhedron);
+
+  std::cout<<std::endl<<std::endl;
+  
+  std::cout<<"Test on CGAL::SurfaceMesh."<<std::endl;
+  test_sm.run(surface_mesh);
 
   return 0;
 }
