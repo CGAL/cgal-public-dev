@@ -24,42 +24,40 @@ app.use('/', indexRouter);
 app.use('/users', usersRouter);
 
 // communication between client and server backend
-var net = require('net');
-var server = net.createServer(function(socket) {
-    console.log('client connected from', socket.remoteAddress, ':', socket.remotePort);
+var server_cpp = require('net').createServer((socket) => {
+    console.log('client connected from cpp at', socket.remoteAddress, ':', socket.remotePort);
     
     // set data encoding
     socket.setEncoding('utf-8');
 
     // add 'data' event handler to this socket instance
     socket.on('data', (data) => {
-      console.log(socket.bytesRead, 'bytes', typeof data, 'data received:', data.toString('utf-8'));
+      console.log(socket.bytesRead, 'bytes', typeof data, 'data received from cpp:', data.toString('utf-8'));
     });
 
     var message = 'goodbye';
     socket.end(message, () => {
-      console.log(socket.bytesWritten, 'bytes', typeof message, 'data sent:', message);
+      console.log(socket.bytesWritten, 'bytes', typeof message, 'data sent from cpp:', message);
     });
   }).on('error', (err) => {
     // handle errors here.
     throw err;
   });
 
-server.listen(3001, '127.0.0.1', ()=> {
-  console.log('running server on', server.address());
+  server_cpp.listen(3001, '127.0.0.1', ()=> {
+  console.log('running cpp server on', server_cpp.address());
 });
 
-//  try here
-var http = require('http');
-var socketIO = require('socket.io');
-const server_react = http.createServer(app);
-const io = socketIO(server_react);
+//  communication between server backend (Express) and server fronend (React)
+const server_react = require('http').createServer(app);
+const io = require('socket.io')(server_react);
+
 io.on('connection', (socket) => {
-  console.log('connected');
+  console.log('client connected from react at', socket.handshake.headers['host']);
 });
 
 server_react.listen(3002, '127.0.0.1', () => {
-  console.log('running server on', server_react.address());
+  console.log('running react server on', server_react.address());
 });
 
 
