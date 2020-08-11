@@ -2328,7 +2328,6 @@ bool _Bezier_x_monotone_2<RatKer, AlgKer, NtTrt,
       CGAL_assertion (CGAL::compare (bound2.t_min, bound2.t_max) == EQUAL);
       Rational   t1 = bound1.t_min;
       Rational   t2 = bound2.t_min;
-      Nt_traits  nt_traits;
 
       if (is_self_intersection)
       {
@@ -2347,7 +2346,7 @@ bool _Bezier_x_monotone_2<RatKer, AlgKer, NtTrt,
       {
         // Set the originators referring to the entire supporting curves.
         pt = Point_2 (B1, t1);
-        pt.add_originator (Originator (B2, nt_traits.convert (t2)));
+        pt.add_originator (Originator (B2, t2));
       }
     }
     else
