@@ -9,7 +9,7 @@ int main(int argc, char *argv[])
     socket->abort();
 
     // connect to the server
-    socket->connectToHost("127.0.0.1", 3001);
+    socket->connectToHost("127.0.0.1", 4001);
     if (!socket->waitForConnected()) {
         qDebug() << "Connection failed";
         return -1;

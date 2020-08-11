@@ -4,6 +4,7 @@ import logo from './logo.svg';
 import './App.css';
 
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
+import socketIOClient from 'socket.io-client';
 
 class App extends Component {
   componentDidMount() {
@@ -55,6 +56,9 @@ class App extends Component {
   }
 
   render() {
+
+    const socket = socketIOClient('http://127.0.0.1:3002');
+
     return (
       <div className="App">
         <div id="widget"></div>
