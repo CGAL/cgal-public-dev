@@ -24,6 +24,9 @@ if ( CGAL_FOUND AND embree_FOUND )
     ADD_EXECUTABLE(segment_shooting_embree segment_shooting_embree.cpp)
     TARGET_LINK_LIBRARIES(segment_shooting_embree CGAL::CGAL embree)
 
+    ADD_EXECUTABLE(ray_all_any_embree ray_all_any_embree.cpp)
+    TARGET_LINK_LIBRARIES(ray_all_any_embree CGAL::CGAL embree)
+
 else()
 
     message(STATUS "This program requires the CGAL and the Embree library, and will not be compiled.")
