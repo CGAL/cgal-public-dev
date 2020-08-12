@@ -23,7 +23,25 @@ app.use(express.static(path.join(__dirname, 'public')));
 app.use('/', indexRouter);
 app.use('/users', usersRouter);
 
-// communication between client and server backend
+/* ------------------------------------------- */
+//  communication between server backend (Express) and server fronend (React)
+const server_react = require('http').createServer(app);
+const io = require('socket.io')(server_react);
+
+io.on('connection', (socket) => {
+  const host = socket.handshake.headers['host'].split(':');
+  console.log('client connected from react at', host[0], ':', host[1]);
+
+  io.emit('message', 'Hello React Frontend');
+});
+
+
+server_react.listen(3002, '127.0.0.1', () => {
+  console.log('running react server on', server_react.address());
+});
+
+/* ------------------------------------------- */
+// communication between cpp client and server backend
 var server_cpp = require('net').createServer((socket) => {
     console.log('client connected from cpp at', socket.remoteAddress, ':', socket.remotePort);
     
@@ -35,7 +53,7 @@ var server_cpp = require('net').createServer((socket) => {
       console.log(socket.bytesRead, 'bytes', typeof data, 'data received from cpp:', data.toString('utf-8'));
     });
 
-    var message = 'goodbye';
+    var message = 'Goodbye Cpp Client';
     socket.end(message, () => {
       console.log(socket.bytesWritten, 'bytes', typeof message, 'data sent from cpp:', message);
     });
@@ -48,19 +66,7 @@ var server_cpp = require('net').createServer((socket) => {
   console.log('running cpp server on', server_cpp.address());
 });
 
-//  communication between server backend (Express) and server fronend (React)
-const server_react = require('http').createServer(app);
-const io = require('socket.io')(server_react);
-
-io.on('connection', (socket) => {
-  console.log('client connected from react at', socket.handshake.headers['host']);
-});
-
-server_react.listen(3002, '127.0.0.1', () => {
-  console.log('running react server on', server_react.address());
-});
-
-
+/* ------------------------------------------- */
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {
   next(createError(404));

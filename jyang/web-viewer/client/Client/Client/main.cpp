@@ -17,7 +17,7 @@ int main(int argc, char *argv[])
     qDebug("Connected!");
 
     // send a piece of data
-    QByteArray data("Hello World");
+    QByteArray data("Hello Express Backend");
     if (socket->state() == QAbstractSocket::ConnectedState) {
         socket->write(data);
         // send data

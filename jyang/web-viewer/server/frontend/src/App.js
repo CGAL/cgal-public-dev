@@ -4,11 +4,22 @@ import logo from './logo.svg';
 import './App.css';
 
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
-import socketIOClient from 'socket.io-client';
+import io from 'socket.io-client';
+let socket = io('http://127.0.0.1:3002');
 
 class App extends Component {
+  constructor(props) {
+    super(props);
+    this.state = {
+      message: ''
+    }
+  }
+
   componentDidMount() {
     this.init();
+    socket.on('message', (message) => {
+      console.log(message);
+    });
   }
 
   init() {
@@ -57,7 +68,10 @@ class App extends Component {
 
   render() {
 
-    const socket = socketIOClient('http://127.0.0.1:3002');
+    // const socket = socketIOClient('http://127.0.0.1:3002');
+    // socket.on('message', (message) => {
+    //   console.log(message);
+    // });
 
     return (
       <div className="App">
