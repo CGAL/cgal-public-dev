@@ -17,6 +17,9 @@ if ( CGAL_FOUND AND embree_FOUND )
 
     ADD_EXECUTABLE(closest_point closest_point.cpp)
     TARGET_LINK_LIBRARIES(closest_point CGAL::CGAL embree)
+    ray_shooting_embree
+    ADD_EXECUTABLE(ray_shooting_embree ray_shooting_embree.cpp)
+    TARGET_LINK_LIBRARIES(ray_shooting_embree CGAL::CGAL embree)
 
 else()
 
