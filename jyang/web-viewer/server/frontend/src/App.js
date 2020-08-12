@@ -65,6 +65,7 @@ class App extends Component {
   }
 
   SocketIOInit() {
+    socket.emit('message', 'Hello from React Frontend');
     socket.on('message', (message) => {
       console.log(message);
     });

@@ -31,9 +31,6 @@ int main(int argc, char *argv[])
         }
     }
 
-    // receive data if there is any
-
-
     // disconnect to the server
     socket->disconnectFromHost();
     if (socket->state() == QAbstractSocket::UnconnectedState || socket->waitForDisconnected(1000)) {

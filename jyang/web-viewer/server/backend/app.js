@@ -29,9 +29,16 @@ const server_react = require('http').createServer(app);
 const io = require('socket.io')(server_react);
 
 io.on('connection', (socket) => {
+  io.emit('message', 'Hello from Express Backend');
+
+  // connection info
   const host = socket.handshake.headers['host'].split(':');
   console.log('client connected from react at', host[0], ':', host[1]);
-  io.emit('message', 'Hello from Express Backend');
+
+  // add 'message' event handler to this socket instance
+  socket.on('message', (message) => {
+    console.log(message);
+  })
 });
 
 server_react.listen(3001, '127.0.0.1', () => {
@@ -41,6 +48,7 @@ server_react.listen(3001, '127.0.0.1', () => {
 /* ------------------------------------------- */
 // communication between cpp client and server backend
 var server_cpp = require('net').createServer((socket) => {
+    // connection info
     console.log('client connected from cpp at', socket.remoteAddress, ':', socket.remotePort);
     
     // set data encoding
@@ -49,10 +57,11 @@ var server_cpp = require('net').createServer((socket) => {
     // add 'data' event handler to this socket instance
     socket.on('data', (data) => {
       console.log(socket.bytesRead, 'bytes', typeof data, 'data received from cpp:', data.toString('utf-8'));
-      io.emit('message', data, 'via Express Backend');
+      // resend the data to React Frontend
+      io.emit('message', data + ' via Express Backend');
     });
 
-    var message = 'Goodbye from Express Backend';
+    var message = 'Hello from Express Backend';
     socket.end(message, () => {
       console.log(socket.bytesWritten, 'bytes', typeof message, 'data sent from cpp:', message);
     });
