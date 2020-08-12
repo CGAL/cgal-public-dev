@@ -31,10 +31,10 @@ int main(int argc, char const *argv[])
   Ray ray(rayOrigin, rayDirection);
 
   Ray_intersection intersection = tree.first_intersection(ray);
-    if(intersection){
-      Point p = intersection->first;
-      std::cout<<"Point of intersection : "<<p<<std::endl;
-    }
+  if(intersection){
+    Point p = intersection->first;
+    std::cout<<"Point of intersection : "<<p<<std::endl;
+  }
 
   return 0;
 }
