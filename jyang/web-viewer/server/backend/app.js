@@ -31,12 +31,11 @@ const io = require('socket.io')(server_react);
 io.on('connection', (socket) => {
   const host = socket.handshake.headers['host'].split(':');
   console.log('client connected from react at', host[0], ':', host[1]);
-
-  io.emit('message', 'Hello React Frontend');
+  io.emit('message', 'Hello from Express Backend');
 });
 
 
-server_react.listen(3002, '127.0.0.1', () => {
+server_react.listen(3001, '127.0.0.1', () => {
   console.log('running react server on', server_react.address());
 });
 
@@ -51,9 +50,10 @@ var server_cpp = require('net').createServer((socket) => {
     // add 'data' event handler to this socket instance
     socket.on('data', (data) => {
       console.log(socket.bytesRead, 'bytes', typeof data, 'data received from cpp:', data.toString('utf-8'));
+      io.emit('message', data, 'via Express Backend');
     });
 
-    var message = 'Goodbye Cpp Client';
+    var message = 'Goodbye from Express Backend';
     socket.end(message, () => {
       console.log(socket.bytesWritten, 'bytes', typeof message, 'data sent from cpp:', message);
     });
@@ -62,7 +62,7 @@ var server_cpp = require('net').createServer((socket) => {
     throw err;
   });
 
-  server_cpp.listen(3001, '127.0.0.1', ()=> {
+  server_cpp.listen(3002, '127.0.0.1', ()=> {
   console.log('running cpp server on', server_cpp.address());
 });
 

@@ -5,7 +5,7 @@ import './App.css';
 
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
 import io from 'socket.io-client';
-let socket = io('http://127.0.0.1:3002');
+let socket = io('http://127.0.0.1:3001');
 
 class App extends Component {
   constructor(props) {
@@ -16,13 +16,11 @@ class App extends Component {
   }
 
   componentDidMount() {
-    this.init();
-    socket.on('message', (message) => {
-      console.log(message);
-    });
+    this.ThreeJSInit();
+    this.SocketIOInit();
   }
 
-  init() {
+  ThreeJSInit() {
     // Create the scene
     var scene = new THREE.Scene();
     var camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
@@ -64,6 +62,12 @@ class App extends Component {
     controls.target.set(0, 0, 0);
     controls.update();
 
+  }
+
+  SocketIOInit() {
+    socket.on('message', (message) => {
+      console.log(message);
+    });
   }
 
   render() {

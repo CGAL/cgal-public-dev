@@ -9,7 +9,7 @@ int main(int argc, char *argv[])
     socket->abort();
 
     // connect to the server
-    socket->connectToHost("127.0.0.1", 3001);
+    socket->connectToHost("127.0.0.1", 3002);
     if (!socket->waitForConnected()) {
         qDebug() << "Connection failed";
         return -1;
@@ -17,7 +17,7 @@ int main(int argc, char *argv[])
     qDebug("Connected!");
 
     // send a piece of data
-    QByteArray data("Hello Express Backend");
+    QByteArray data("Hello from C++ application");
     if (socket->state() == QAbstractSocket::ConnectedState) {
         socket->write(data);
         // send data
