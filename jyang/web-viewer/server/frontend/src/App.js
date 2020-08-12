@@ -71,12 +71,6 @@ class App extends Component {
   }
 
   render() {
-
-    // const socket = socketIOClient('http://127.0.0.1:3002');
-    // socket.on('message', (message) => {
-    //   console.log(message);
-    // });
-
     return (
       <div className="App">
         <div id="widget"></div>
