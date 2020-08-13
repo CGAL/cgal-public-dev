@@ -28,13 +28,6 @@ var onWindowResize = function () {
 class App extends Component {
   constructor(props) {
     super(props);
-    this.state = {
-      message: '',
-      pcloud: {
-        size: 0,
-        points: []
-      }
-    }
   }
 
   componentDidMount() {
@@ -70,10 +63,23 @@ class App extends Component {
       console.log(message);
     });
     socket.on('vertices', (vertices_str) => {
-      // add point cloud to state and render
-      console.log(vertices_str);
+      // decode vertices
+      var vertices = [];
+      var xyz_str_list = vertices_str.trim().split(';');
+      for (var xyz_str of xyz_str_list) {
+        if (!xyz_str.length) continue;
+        var xyz = xyz_str.trim().split(' ');
+        vertices.push(parseFloat(xyz[0]), parseFloat(xyz[1]), parseFloat(xyz[2]));
+      }
 
+      // add geometry
+      var geometry = new THREE.BufferGeometry();
+      geometry.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
+      var material = new THREE.PointsMaterial({color: 0x888888, size: 0.1});
+      var points = new THREE.Points(geometry, material);
+      scene.add(points)
 
+      // render scene
       render();
     })
     socket.on('default', (geometry_str) => {
