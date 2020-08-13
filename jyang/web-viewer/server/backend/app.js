@@ -57,8 +57,12 @@ var server_cpp = require('net').createServer((socket) => {
     // add 'data' event handler to this socket instance
     socket.on('data', (data) => {
       console.log(socket.bytesRead, 'bytes', typeof data, 'data received from cpp:', data.toString('utf-8'));
+      
+      // split data
+      var split = data.split(':');
+      
       // resend the data to React Frontend
-      io.emit('message', data + ' via Express Backend');
+      io.emit(split[0], split[1].trim());
     });
 
     var message = 'Hello from Express Backend';
