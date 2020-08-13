@@ -1,4 +1,5 @@
 @INCLUDE = ${CGAL_DOC_PACKAGE_DEFAULTS}
 PROJECT_NAME = "CGAL ${CGAL_DOC_VERSION} - CGAL and Embree"
-INPUT        = ${CMAKE_SOURCE_DIR}/Embree/doc/Embree/ \
+
+INPUT       += ${CMAKE_SOURCE_DIR}/Embree/doc/Embree/ \
                ${CMAKE_SOURCE_DIR}/Embree/include
