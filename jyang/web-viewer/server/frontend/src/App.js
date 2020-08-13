@@ -26,10 +26,6 @@ var onWindowResize = function () {
 }
 
 class App extends Component {
-  constructor(props) {
-    super(props);
-  }
-
   componentDidMount() {
     this.ThreeJSInit();
     this.SocketIOInit();
@@ -75,7 +71,7 @@ class App extends Component {
       // add geometry
       var geometry = new THREE.BufferGeometry();
       geometry.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
-      var material = new THREE.PointsMaterial({color: 0x888888, size: 0.1});
+      var material = new THREE.PointsMaterial({color: 0x00ff00, size: 0.1});
       var points = new THREE.Points(geometry, material);
       scene.add(points)
 
