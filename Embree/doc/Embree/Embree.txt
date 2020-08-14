@@ -104,7 +104,35 @@ There is no need to make a seperate accerelating structure like in CGAL::AABB_tr
 
 \cgalExample{Embree/closest_point.cpp}
 
-\subsection  subsecEmbreeBenchmarks Benchmarks
+\section  subsecEmbreeBenchmarks Benchmarks
+
+These benchmarks are a result of ray querying on a Embree::AABB_tree
+made from Embree::Triangle_mesh_geometry with a Surface_mesh.
+Note : below timings are in seconds 
+
+\b Gargoyle dataset
+Ray_origin : (-70, -20, 50)
+Vertices : 818796
+Faces : 1637579
+
+|  No of Rays | AABB_tree seq | Embree_seq | Embree_Package |
+| ----: | ----: | ----: | ----: |
+    1,000 |   0.001145  |   0.000159979 | 0.000299 |
+   10,000 |   0.010294  |    0.00131297 | 0.002499 |
+10,00,000 |   0.995715  |       0.11521 | 0.237869 |
+
+
+
+\b Star3M rotated
+Ray Origin : (0, 0, 0)
+Vertices : 1691280
+Faces : 3359232
+
+|  No of Rays | AABB_tree seq | Embree_seq | Embree_Package |
+| ----: | ----: | ----: | ----: |
+    1,000 |   0.011701  |   0.000761032 | 0.002492 |
+   10,000 |   0.111176  |    0.00630283 | 0.019593 |
+10,00,000 |    10.9318  |      0.558096 |  1.69759 |
 
 \cgalFigureBegin{figEmbreeBenchmark,bench.png}
 Left: ...
