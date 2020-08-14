@@ -84,6 +84,26 @@ using the Embree::Triangle_mesh_geometry structure using a Polyhedron.
 
 \cgalExample{Embree/polyhedron_embree.cpp}
 
+\subsection subsecEmbreeThirdExample Segment Shooting with Embree.
+
+The following example shows the set up needed to query from a Segment as a query.
+
+\cgalExample{Embree/segment_shooting_embree.cpp}
+
+\subsection subsecEmbreeFourthExample Ray shooting all/any intersections.
+
+The following example shows the set up needed to query all/any type intersections using 
+a ray as query.
+
+\cgalExample{Embree/ray_all_any_embree.cpp}
+
+\subsection subsecEmbreeFifthExample Distance querying using Embree::AABB_tree.
+
+The following example shows the set up needed to make distance queries using Embree::AABB_tree.
+There is no need to make a seperate accerelating structure like in CGAL::AABB_tree.
+
+\cgalExample{Embree/closest_point.cpp}
+
 \subsection  subsecEmbreeBenchmarks Benchmarks
 
 \cgalFigureBegin{figEmbreeBenchmark,bench.png}
