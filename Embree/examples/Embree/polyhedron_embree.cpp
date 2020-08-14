@@ -10,6 +10,7 @@ typedef K::Ray_3 Ray;
 typedef K::Vector_3 Vector;
 typedef CGAL::Polyhedron_3<K> Polyhedron;
 
+// Pass the Polyhedron to the Triangle_mesh_geometry structure 
 typedef CGAL::Embree::Triangle_mesh_geometry<Polyhedron, K> TriangleMesh;
 typedef CGAL::Embree::AABB_tree<TriangleMesh, K> Tree;
 
