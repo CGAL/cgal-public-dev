@@ -28,6 +28,8 @@ primitives only. The tree can be queried for intersection against line
 objects (rays or segments) in various ways. We have tried to keep the signature 
 of functions as similar as possible to AABB_tree package for convenience.
 
+Queries:
+
 - Function `Embree::AABB_tree::do_intersect()` tests if the input primitives are
 intersected by the query. This function is fast as it stops after the first encountered intersection.
 - Function `Embree::AABB_tree::number_of_intersected_primitives()` gives a count of all
@@ -42,6 +44,9 @@ the intersections with respect to the query.
 - Function `Embree::AABB_tree::first_intersected_primitive()` returns
 the intersecting primitive id (if any) of the corresponding
 intersection object that is closest to the source of the line object.
+
+
+Constructions:
 
 - Function `Embree::AABB_tree::all_intersections()` detects and constructs all
 intersection objects with the input line object.
