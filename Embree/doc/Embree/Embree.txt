@@ -13,7 +13,7 @@ This chapter describes how to use Embree ray tracing kernel for \cgal triangle m
 Instead of duplicating the mesh to an Embree mesh representation, we use the `RTC_GEOMETRY_TYPE_USER`
 and provide callbacks for the EmbreeAPI. The two major callbacks we provide are for computing a bounding box of a primitve in the mesh and for to compute intersection attibutes between the ray and intersected primitve.
 
-As Embree uses vector instructions and single precision floating point arithmetic, it provides
+Embree uses vector instructions, intrinsic functionalities and single precision floating point arithmetic, thus it provides
 ray shooting queries faster than with the `CGAL::AABB_tree`, but without exactness guaranteed.
 
 
