@@ -56,6 +56,16 @@ function is fast as it stops after the first encountered intersection.
 - Function `Embree::AABB_tree::first_intersection()` detects and constructs
 the intersection object that is closest to the source of the ray.
 
+\b Distance. Embree AABB tree also computes the closest point from a
+given point query to the input primitives through the function
+`Embree::AABB_tree::closest_point()`. In addition, it can compute the id of the
+closest primitive from a given point query through the function
+`Embree::AABB_tree::closest_point_and_primitive()`, i.e., the id of the
+primitive which realizes the minimum distance from the point
+query. Unlike like the AABB tree which uses a secondary search structure to speed up the
+distance queries, `Embree::AABB_tree` does not require anything other than the Tree object created
+for intersection queries. This is possible due to the underlying point query support from the EmbreeAPI.
+
 \section secEmbreeExamples Examples
 
 \subsection subsecEmbreeFirstExample Ray Shooting
