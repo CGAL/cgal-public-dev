@@ -82,7 +82,7 @@ closest from the ray origin in the ray direction.
 The following example shows the basics needed to set up a Embree::AABB_tree
 using the Embree::Triangle_mesh_geometry structure using a Polyhedron.
 
-\cgalExample{polyhedron_embree/.cpp}
+\cgalExample{Embree/polyhedron_embree.cpp}
 
 \subsection  subsecEmbreeBenchmarks Benchmarks
 
