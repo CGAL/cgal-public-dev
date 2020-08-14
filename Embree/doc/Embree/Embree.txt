@@ -68,11 +68,14 @@ for intersection queries. This is possible due to the underlying point query sup
 
 \section secEmbreeExamples Examples
 
-\subsection subsecEmbreeFirstExample Ray Shooting
+\subsection subsecEmbreeFirstExample Ray Shooting with Surface_mesh
 
-The following example shows ...
+The following example shows the basics needed to set up a Embree::AABB_tree
+using the Embree::Triangle_mesh_geometry structure using a Surface_mesh. Here we call the Embree::AABB_tree::first_intersection()
+with a ray query argument. This in turn gives us the 'id' and the point on the primitive which was the
+closest from the ray origin in the ray direction.
 
-\cgalExample{Embree/surface_mesh_embree.cpp}
+\cgalExample{Embree/ray_shooting_embree.cpp}
 
 \subsection  subsecEmbreeBenchmarks Benchmarks
 
