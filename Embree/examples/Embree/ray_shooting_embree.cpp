@@ -19,6 +19,13 @@ typedef boost::optional<Tree::Intersection_and_primitive_id> Ray_intersection;
 int main(int argc, char const *argv[])
 {
   const char* filename = (argc > 1) ? argv[1] : "../../../AABB_tree/examples/AABB_tree/data/tetrahedron.off";
+    /*
+    tetrahedron.off  
+      Point p(1.0, 0.0, 0.0);
+      Point q(0.0, 1.0, 0.0);
+      Point r(0.0, 0.0, 1.0);
+      Point s(0.0, 0.0, 0.0);*/
+  
   std::ifstream input(filename);
   Mesh mesh;
   input >> mesh;
