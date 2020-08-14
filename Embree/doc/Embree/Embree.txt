@@ -29,22 +29,27 @@ objects (rays or segments) in various ways. We have tried to keep the signature
 of functions as similar as possible to AABB_tree package for convenience.
 
 - Function `Embree::AABB_tree::do_intersect()` tests if the input primitives are
-intersected by the query. This function is fast as it involves only
-predicates and stops after the first encountered intersection.
-- Function `Embree::AABB_tree::number_of_intersected_primitives()` counts all
-intersected primitives.
+intersected by the query. This function is fast as it stops after the first encountered intersection.
+- Function `Embree::AABB_tree::number_of_intersected_primitives()` gives a count of all
+intersected primitives by the query line object.
 - Function `Embree::AABB_tree::all_intersected_primitives()` enumerates all intersected
-primitives ids without constructing the corresponding intersection
-objects.
+primitives ids. 
 - Function `Embree::AABB_tree::any_intersected_primitive()` returns the first
-encountered intersecting primitive id (if any) without constructing
-the corresponding intersection object, and stops after the first
+encountered intersecting primitive id (if any) and stops after the first
 encountered intersection. Note that the traversal order of the tree is
 such that first herein does not refer to any particular ordering of
 the intersections with respect to the query.
 - Function `Embree::AABB_tree::first_intersected_primitive()` returns
 the intersecting primitive id (if any) of the corresponding
-intersection object that is closest to the source of the ray.
+intersection object that is closest to the source of the line object.
+
+- Function `Embree::AABB_tree::all_intersections()` detects and constructs all
+intersection objects with the input line object.
+- Function `Embree::AABB_tree::any_intersection()` detects and constructs the first
+encountered intersection and constructs the corresponding object. This
+function is fast as it stops after the first encountered intersection.
+- Function `Embree::AABB_tree::first_intersection()` detects and constructs
+the intersection object that is closest to the source of the ray.
 
 \section secEmbreeExamples Examples
 
