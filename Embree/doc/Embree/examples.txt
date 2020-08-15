@@ -1,3 +1,8 @@
 /*!
-\example Embree/surface_mesh_embree.cpp
+\example Embree/closest_point.cpp
+\example Embree/polyhedron_embree.cpp
+\example Embree/ray_all_any_embree.cpp
+\example Embree/ray_shooting_embree.cpp
+\example Embree/segment_all_any_embree.cpp
+\example Embree/segment_shooting_embree.cpp
 */
