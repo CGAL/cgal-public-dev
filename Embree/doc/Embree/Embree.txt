@@ -124,7 +124,7 @@ Faces : 1637579
 
 
 \b Star3M rotated
-Ray Origin : (0, 0, 0)
+Ray_origin : (0, 0, 0)
 Vertices : 1691280
 Faces : 3359232
 
