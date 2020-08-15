@@ -344,8 +344,12 @@ public:
 
 /**
  * \ingroup PkgEmbreeRef
- * This class...
- * \tparam Geometry a
+ * Data structure for efficient
+ * intersection and distance computations in 3D. It uses Embree's user defined method to calculate faster
+ * query on ray geometry intersections and distance computations
+ * for 3D geometric objects. It uses another structure which contains the data of the mesh and commits the geometry to a scene of EmbreeAPI.
+ *
+ * \tparam Geometry Surface_mesh or Polyhedron_3
  * \tparam GeomTraits a kernel
  */
 template <typename Geometry, typename GeomTraits>
@@ -353,16 +357,25 @@ class AABB_tree {
 
   typedef AABB_tree<Geometry,GeomTraits> Self;
 public:
+/// \name Types
+///@{
+  /// Identifier for a primitive in the tree.
   typedef typename Geometry::Primitive_id Primitive_id;
+  /// Intersection Point and Primitive ID type.
   typedef std::pair<typename Geometry::Point, Primitive_id> Intersection_and_primitive_id;
+  /// 3D Point and Primitive Id type
   typedef std::pair<typename Geometry::Point, Primitive_id> Point_and_primitive_id;
-
+  /// Type of bounding box.
   typedef Bbox_3   Bounding_box;
+  /// Unsigned integral size type.
   typedef std::size_t size_type;
+  /// Type of 3D point.
   typedef typename GeomTraits::Point_3 Point;
+  /// Type of ray query.
   typedef typename GeomTraits::Ray_3 Ray;
+  /// Type of segment query.
   typedef typename GeomTraits::Segment_3 Segment;
-
+///@}
 private:
   struct Closest_point_result
   {
@@ -467,7 +480,7 @@ public:
     return number_of_primitives;
   }
 
-  /// T is the surface mesh
+  /// T is the Surface_mesh/ Polyhedron_3
   template<typename T>
   void insert (const T& t)
   {
