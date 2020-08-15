@@ -15,28 +15,29 @@
 
 /*!
 \addtogroup PkgEmbree
-\todo check generated documentation
 
 \cgalPkgDescriptionBegin{Embree NAME,PkgEmbree}
 \cgalPkgPicture{pkg-small.png}
-
 \cgalPkgSummaryBegin
 \cgalPkgAuthors{Andreas Fabri, Ayush Saraswat}
-\cgalPkgDesc{The package provides a wrapper around Embree for performing ray shooting queries.}
+\cgalPkgDesc{The package provides a wrapper around Intel's ray tracing kernel "Embree" to perform efficient intersection and distance queries on sets of finite 3D geometric objects.}
 \cgalPkgManuals{Chapter_Embree,PkgEmbreeRef}
 \cgalPkgSummaryEnd
-
 \cgalPkgShortInfoBegin
 \cgalPkgSince{X.X}
 \cgalPkgDependsOn{\ref PkgDEPENDENCY}
 \cgalPkgBib{cgal:fs-cae}
 \cgalPkgLicense{\ref licensesGPL "GPL"}
 \cgalPkgShortInfoEnd
-
 \cgalPkgDescriptionEnd
 
 \cgalClassifedRefPages
 
 \cgalCRPSection{Classes}
 - `CGAL::Embree::AABB_tree<Geometry,GeomTraits>`
+- `CGAL::Embree::Triangle_mesh_geometry<TriangleMesh, GeomTraits>`
+
+\cgalCRPSection{Support Structures}
+- `CGAL::Embree::Intersect_context<Geometry>`
+- `CGAL::Embree::Id2descriptor<TriangleMesh>`
 */
