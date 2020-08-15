@@ -408,35 +408,46 @@ private:
   std::deque<Geometry> geometries;
 
 public:
+  /// \name Creation
+  ///@{
+
+  /// constructs an empty tree, and initialises the underlying objects needed by the EmbreeAPI.
+  /// Makes a call to Embree::AABB_tree::rtc_bind.
   AABB_tree()
   {
     rtc_bind();
   }
 
+  /// constructs an empty tree, and initialises the underlying objects needed by the EmbreeAPI.
+  /// user can supply a bool to make the underlying EmbreeAPI robust for calculations
   AABB_tree(bool robust)
     : AABB_tree()
   {
     if(robust)
       rtcSetSceneFlags(scene, RTC_SCENE_FLAG_ROBUST);
   }
-
+  /// Destroys the Tree object
+  /// makes a call to Embree::AABB_tree::rtc_unbind.
   ~AABB_tree()
   {
     rtc_unbind();
   }
 
+  /// initializes the EmbreeAPI objects, namely the RTCDevice and the RTCScene.
   void rtc_bind()
   {
     device = rtcNewDevice(NULL);
     scene = rtcNewScene(device);
   }
 
+  /// Can be called to free the EmbreeAPI objects, namely the Device and the Scene.
+  /// the API can not be used further if this is called.
   void rtc_unbind()
   {
     rtcReleaseScene(scene);
     rtcReleaseDevice(device);
   }
-
+  ///@}
 
   /// returns \c true, iff the tree contains no primitive.
   bool empty() const
