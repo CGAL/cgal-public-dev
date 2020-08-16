@@ -562,6 +562,28 @@ public:
     return context.counter;
   }
 
+  /// returns the primitive id of the face closest to the source point of the ray
+  /// query.
+  /// \tparam Query may be `GeomTraits::Ray_3` or `GeomTraits::Segment_3`.
+  template<typename Query>
+  boost::optional<Primitive_id> first_intersected_primitive(const Query& query) const
+  {
+    if (this->empty()) return boost::none;
+
+    typedef Intersect_context<Geometry> Intersect_context;
+    Intersect_context context(Intersect_context::Intersection_type::FIRST, query);
+
+    rtcIntersect1(scene, &context, &(context.rayhit));
+
+    unsigned int rtc_geomID = context.rayhit.hit.geomID;
+    if(rtc_geomID == RTC_INVALID_GEOMETRY_ID){
+      return boost::none;
+    }
+
+    const Geometry& geometry = geometries[rtc_geomID];
+
+    return boost::make_optional(geometry.primitive_id(context.rayhit.hit.primID));
+  }
 
   /// puts in `out` the ids of all intersected primitives.
   /// This function does not compute the intersection points
@@ -622,6 +644,10 @@ public:
 
   /// \name Intersections
   ///@{
+
+  /// returns the intersection and  primitive id closest to the source point of the ray
+  /// query.
+  /// \tparam Query may be `GeomTraits::Ray_3` or `GeomTraits::Segment_3`.
   template<typename Query>
   boost::optional<Intersection_and_primitive_id> first_intersection(const Query& query) const
   {
@@ -643,27 +669,11 @@ public:
     return boost::make_optional(std::make_pair(p, geometry.primitive_id(context.rayhit.hit.primID)));
   }
 
-
-  template<typename Query>
-  boost::optional<Primitive_id> first_intersected_primitive(const Query& query) const
-  {
-    if (this->empty()) return boost::none;
-
-    typedef Intersect_context<Geometry> Intersect_context;
-    Intersect_context context(Intersect_context::Intersection_type::FIRST, query);
-
-    rtcIntersect1(scene, &context, &(context.rayhit));
-
-    unsigned int rtc_geomID = context.rayhit.hit.geomID;
-    if(rtc_geomID == RTC_INVALID_GEOMETRY_ID){
-      return boost::none;
-    }
-
-    const Geometry& geometry = geometries[rtc_geomID];
-
-    return boost::make_optional(geometry.primitive_id(context.rayhit.hit.primID));
-  }
-
+  /// puts in `out` all intersections, as objects of
+  /// `Intersection_and_primitive_id<Query>::%Type`,
+  /// between the query and the input data to
+  /// the iterator.
+  /// \tparam Query may be `GeomTraits::Ray_3` or `GeomTraits::Segment_3`.
   template<typename Query, typename OutputIterator>
   OutputIterator all_intersections(const Query& query, OutputIterator out) const
   {
