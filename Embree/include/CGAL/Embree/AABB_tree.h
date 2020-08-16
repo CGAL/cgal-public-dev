@@ -449,6 +449,9 @@ public:
   }
   ///@}
 
+  /// \name Operations
+  ///@{
+
   /// returns \c true, iff the tree contains no primitive.
   bool empty() const
   {
@@ -508,6 +511,8 @@ public:
 
     rtcCommitScene(scene);
   }
+
+  ///@}
 
   /// \name Intersection Tests
   ///@{
