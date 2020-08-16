@@ -722,6 +722,14 @@ public:
   /// \name Distance Queries
   ///@{
 
+  /// Returns the minimum squared distance between the query 
+  /// point and all input primitives.
+  /// \pre `!empty()`
+  typename GeomTraits::FT squared_distance(const Point &query) const
+  {
+    return CGAL::squared_distance(query, this->closest_point(query));
+  }
+
   /// returns the point in the union of all input primitives which
   /// is closest to the query. In case there are several closest
   /// points, one arbitrarily chosen closest point is
@@ -767,10 +775,6 @@ public:
     return std::make_pair(result.result, geometry.primitive_id(result.geomID));
   }
 
-  typename GeomTraits::FT squared_distance(const Point &query) const
-  {
-    return CGAL::squared_distance(query, this->closest_point(query));
-  }
  ///@}
 
 };
