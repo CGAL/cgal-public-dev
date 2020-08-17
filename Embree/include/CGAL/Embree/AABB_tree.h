@@ -27,7 +27,6 @@
 #include <vector>
 #include <deque>
 #include <limits>
-#include <unordered_map>
 
 namespace CGAL {
 namespace Embree {
