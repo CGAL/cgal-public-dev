@@ -28,6 +28,8 @@
 #include <deque>
 #include <limits>
 
+#define DBL_EPSILON 2.2204460492503131e-16
+
 namespace CGAL {
 namespace Embree {
 
@@ -214,6 +216,11 @@ public:
     Bbox_3 bb = get(self->vpm, target(hd, tm)).bbox();
     bb += get(self->vpm, target(next(hd, tm), tm)).bbox();
     bb += get(self->vpm, source(hd, tm)).bbox();
+
+    //Zero box size check in all three axis.
+    if (bb.xmin() == bb.xmax())  bb.xmax() + DBL_EPSILON;
+    if (bb.ymin() == bb.ymax())  bb.ymax() + DBL_EPSILON;
+    if (bb.zmin() == bb.zmax())  bb.zmax() + DBL_EPSILON;
 
     bounds_o->lower_x = bb.xmin();
     bounds_o->lower_y = bb.ymin();
