@@ -1,0 +1,1 @@
+A set of functions that are given a set of input segments and find all lines that go through a constant number of the input segments. Currently only one version is implemented for tupples of four segments.
