@@ -55,9 +55,11 @@ class App extends Component {
 
   SocketIOInit() {
     socket.emit('message', 'Hello from React Frontend');
+
     socket.on('message', (message) => {
       console.log(message);
     });
+
     socket.on('vertices', (vertices_str) => {
       // decode vertices
       var vertices = [];
@@ -66,30 +68,65 @@ class App extends Component {
         if (!xyz_str.length) continue;
         var xyz = xyz_str.trim().split(' ');
         vertices.push(parseFloat(xyz[0]), parseFloat(xyz[1]), parseFloat(xyz[2]));
-      }
+      };
+      console.log(vertices);
 
       // add geometry
       var geometry = new THREE.BufferGeometry();
       geometry.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
       var material = new THREE.PointsMaterial({color: 0x00ff00, size: 0.1});
       var points = new THREE.Points(geometry, material);
-      scene.add(points)
+      scene.add(points);
 
       // render scene
       render();
-    })
+    });
+
+    socket.on('triangles', (vertices_str) => {
+      // decode triangles
+      var vertices = [];
+      var xyz_str_list = vertices_str.trim().split(';');
+      for (var xyz_str of xyz_str_list) {
+        if (!xyz_str.length) continue;
+        var xyz = xyz_str.trim().split(' ');
+        vertices.push(new THREE.Vector3(parseFloat(xyz[0]), parseFloat(xyz[1]), parseFloat(xyz[2])))
+      };
+      console.log(vertices);
+
+      // form triangles
+      var geometry = new THREE.Geometry();
+      for (var index in vertices) {
+        geometry.vertices.push(vertices[index]);
+        if (!((index + 1) % 3)) {
+          console.log(index);
+          geometry.faces.push(new THREE.Face3(index, index-1, index-2));
+        }
+      }
+
+      // add geometry
+      geometry.computeFaceNormals();
+      var mesh = new THREE.Mesh(geometry, new THREE.MeshNormalMaterial());
+      scene.add(mesh);
+
+      // render scene
+      render();
+    });
+
     socket.on('default', (geometry_str) => {
+      // add geometry
       var geometry = new THREE.Geometry();
       switch(geometry_str) {
         case 'cube': geometry = new THREE.BoxGeometry(); break;
         case 'sphere': geometry = new THREE.SphereGeometry(); break;
         default: geometry = new THREE.BoxGeometry(); break;
       }
-      var material = new THREE.MeshBasicMaterial({ color: 0x00ff00 });
-      var mesh = new THREE.Mesh(geometry, material);
+      geometry.computeFaceNormals();
+      var mesh = new THREE.Mesh(geometry, new THREE.MeshNormalMaterial());
       scene.add(mesh);
+
+      // render scene
       render();
-    })
+    });
   }
 
   render() {
