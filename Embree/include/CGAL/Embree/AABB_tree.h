@@ -217,16 +217,16 @@ public:
 
     //Zero box size check in all three axis.
     if (bb.xmin() == bb.xmax()){
-      bb.xmax() + 2*FLT_EPSILON;
-      bb.xmin() - 2*FLT_EPSILON;
+      bb.xmax() += 2*FLT_EPSILON;
+      bb.xmin() -= 2*FLT_EPSILON;
     }  
     if (bb.ymin() == bb.ymax()){
-      bb.ymax() + 2*FLT_EPSILON;
-      bb.ymin() - 2*FLT_EPSILON;
+      bb.ymax() += 2*FLT_EPSILON;
+      bb.ymin() -= 2*FLT_EPSILON;
     }  
     if (bb.zmin() == bb.zmax()){
-      bb.zmax() + 2*FLT_EPSILON;
-      bb.zmin() - 2*FLT_EPSILON;
+      bb.zmax() += 2*FLT_EPSILON;
+      bb.zmin() -= 2*FLT_EPSILON;
     }   
 
     bounds_o->lower_x = bb.xmin();
