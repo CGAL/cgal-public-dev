@@ -2,19 +2,10 @@
 // All rights reserved.
 //
 // This file is part of CGAL (www.cgal.org).
-// You can redistribute it and/or modify it under the terms of the GNU
-// General Public License as published by the Free Software Foundation,
-// either version 3 of the License, or (at your option) any later version.
-//
-// Licensees holding a valid commercial license may use this file in
-// accordance with the commercial license agreement provided with the software.
-//
-// This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
-// WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 //
 // $URL$
 // $Id$
-// SPDX-License-Identifier: GPL-3.0+
+// SPDX-License-Identifier: GPL-3.0-or-later OR LicenseRef-Commercial
 //
 // Author(s)     : Simon Giraudot
 
@@ -24,7 +15,7 @@
 #include <CGAL/license/Classification.h>
 
 #include <vector>
-
+#include <CGAL/Classification/Feature_base.h>
 #include <CGAL/Classification/Local_eigen_analysis.h>
 
 namespace CGAL {
@@ -50,42 +41,27 @@ template <typename GeomTraits>
 class Verticality : public Feature_base
 {
   const typename GeomTraits::Vector_3 vertical;
-  std::vector<float> verticality_feature;
+  std::vector<compressed_float> verticality_feature;
   const Local_eigen_analysis* eigen;
-  
+
 public:
   /*!
     \brief Constructs the feature using local eigen analysis.
 
     \tparam InputRange model of `ConstRange`. Its iterator type
     is `RandomAccessIterator`.
-    \param input point range.
+    \param input input range.
     \param eigen class with precomputed eigenvectors and eigenvalues.
   */
-#if defined(CGAL_CLASSIFICATION_PRECOMPUTE_FEATURES) || defined(DOXYGEN_RUNNING)
   template <typename InputRange>
   Verticality (const InputRange& input,
                const Local_eigen_analysis& eigen)
-    : vertical (0., 0., 1.), eigen(NULL)
-  {
-    this->set_name ("verticality");
-
-    for (std::size_t i = 0; i < input.size(); i++)
-    {
-      typename GeomTraits::Vector_3 normal = eigen.normal_vector(i);
-      normal = normal / CGAL::sqrt (normal * normal);
-      verticality_feature.push_back (1. - CGAL::abs(normal * vertical));
-    }
-  }
-#else
-  template <typename InputRange>
-  Verticality (const InputRange&,
-               const Local_eigen_analysis& eigen)
     : vertical (0., 0., 1.), eigen (&eigen)
   {
+    CGAL_USE(input);
     this->set_name ("verticality");
   }
-#endif
+
 
   /*!
     \brief Constructs the feature using provided normals of points.
@@ -102,14 +78,14 @@ public:
   template <typename PointRange, typename VectorMap>
   Verticality (const PointRange& input,
                VectorMap normal_map)
-    : vertical (0., 0., 1.), eigen(NULL)
+    : vertical (0., 0., 1.), eigen(nullptr)
   {
     this->set_name ("verticality");
     for (std::size_t i = 0; i < input.size(); i++)
     {
       typename GeomTraits::Vector_3 normal = get(normal_map, *(input.begin()+i));
       normal = normal / CGAL::sqrt (normal * normal);
-      verticality_feature.push_back (1.f - float(CGAL::abs(normal * vertical)));
+      verticality_feature.push_back (compress_float(1.f - float(CGAL::abs(normal * vertical))));
     }
   }
 
@@ -117,16 +93,14 @@ public:
   /// \cond SKIP_IN_MANUAL
   virtual float value (std::size_t pt_index)
   {
-#ifndef CGAL_CLASSIFICATION_PRECOMPUTE_FEATURES
-    if (eigen != NULL)
+    if (eigen != nullptr)
     {
       typename GeomTraits::Vector_3 normal = eigen->normal_vector<GeomTraits>(pt_index);
       normal = normal / CGAL::sqrt (normal * normal);
       return (1.f - float(CGAL::abs(normal * vertical)));
     }
     else
-#endif
-      return verticality_feature[pt_index];
+      return decompress_float(verticality_feature[pt_index]);
   }
   /// \endcond
 };

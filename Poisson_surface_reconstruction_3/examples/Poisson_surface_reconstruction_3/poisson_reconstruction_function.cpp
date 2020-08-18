@@ -1,6 +1,5 @@
 #include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
 #include <CGAL/Polyhedron_3.h>
-#include <CGAL/IO/Polyhedron_iostream.h>
 #include <CGAL/poisson_surface_reconstruction.h>
 #include <CGAL/IO/read_xyz_points.h>
 
@@ -30,7 +29,7 @@ int main(void)
     }
 
   Polyhedron output_mesh;
-  
+
   double average_spacing = CGAL::compute_average_spacing<CGAL::Sequential_tag>
     (points, 6, CGAL::parameters::point_map(CGAL::First_of_pair_property_map<Pwn>()));
 

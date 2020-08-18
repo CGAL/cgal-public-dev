@@ -2,10 +2,10 @@ namespace CGAL {
 
 
 /*!
-\ingroup PkgIntersectionOfCurves2
+\ingroup PkgSurfaceSweep2Ref
 
 Given a range of curves, compute all intersection points between two (or more)
-input curves. When the flag `report_endpoints` is `true`, 
+input curves. When the flag `report_endpoints` is `true`,
 this function reports all the curve endpoints as well. If a curve
 endpoint is also an intersection point, it is reported once (regardless
 of the value of the `report_endpoints` flag). The value-type of
@@ -20,10 +20,10 @@ OutputIterator compute_intersection_points (InputIterator curves_begin,
                                             bool report_endpoints = false);
 
 /*!
-\ingroup PkgIntersectionOfCurves2
+\ingroup PkgSurfaceSweep2Ref
 
 Given a range of curves, compute all intersection points between two (or more)
-input curves. When the flag `report_endpoints` is `true`, 
+input curves. When the flag `report_endpoints` is `true`,
 this function reports all the curve endpoints as well. If a curve
 endpoint is also an intersection point, it is reported once (regardless
 of the value of the `report_endpoints` flag). The `Traits` type
@@ -40,13 +40,13 @@ OutputIterator compute_intersection_points (InputIterator curves_begin,
                                             Traits traits);
 
 /*!
-\ingroup PkgIntersectionOfCurves2
+\ingroup PkgSurfaceSweep2Ref
 
 Given a range of curves, compute all \f$ x\f$-monotone subcurves that are pairwise
 disjoint in their interior, as induced by the input curves.
 If the flag `multiple_overlaps` is `true`, then a subcurve that
 represents an overlap of \f$ k\f$ input curves is reported \f$ k\f$ times; otherwise,
-each subcurve is reported only once. 
+each subcurve is reported only once.
 The value-type of `InputIterator` is a curve type, and the value-type of
 `OutputIterator` is an \f$x\f$-monotone curve type.
 */
@@ -57,7 +57,7 @@ OutputIterator compute_subcurves (InputIterator curves_begin,
                                   bool multiple_overlaps = false);
 
 /*!
-\ingroup PkgIntersectionOfCurves2
+\ingroup PkgSurfaceSweep2Ref
 
 Given a range of curves, compute all \f$ x\f$-monotone subcurves that are pairwise
 disjoint in their interior, as induced by the input curves.
@@ -76,7 +76,7 @@ OutputIterator compute_subcurves (InputIterator curves_begin,
                                   Traits traits = Default_traits());
 
 /*!
-\ingroup PkgIntersectionOfCurves2
+\ingroup PkgSurfaceSweep2Ref
 
 Given a range of curves, check whether there is at least one pair of curves
 that intersect in their interior. The function returns `true` if such
@@ -88,7 +88,7 @@ bool do_curves_intersect (InputIterator curves_begin,
                           InputIterator curves_end);
 
 /*!
-\ingroup PkgIntersectionOfCurves2
+\ingroup PkgSurfaceSweep2Ref
 
 Given a range of curves, check whether there is at least one pair of curves
 that intersect in their interior. The function returns `true` if such

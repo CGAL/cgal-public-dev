@@ -45,8 +45,7 @@ Scene::Scene()
     m_blue_ramp.build_blue();
     m_max_distance_function = (FT)0.0;
     texture = new Texture(m_grid_size,m_grid_size);
-    startTimer(0);
-    ready_to_cut = false;
+    ready_to_cut = true;
     are_buffers_initialized = false;
     gl_init = false;
 
@@ -490,7 +489,7 @@ void Scene::compute_texture(int i, int j,Color_ramp pos_ramp ,Color_ramp neg_ram
 
 }
 
-void Scene::attrib_buffers(QGLViewer* viewer)
+void Scene::attrib_buffers(CGAL::QGLViewer* viewer)
 {
     QMatrix4x4 mvpMatrix;
     double mat[16];
@@ -519,6 +518,7 @@ void Scene::changed()
         compute_elements(_UNSIGNED);
     else
         compute_elements(_SIGNED);
+    ready_to_cut=false;
     are_buffers_initialized = false;
 
 }
@@ -589,8 +589,8 @@ void Scene::update_bbox()
               << " facets)" << std::endl;
 }
 
-void Scene::draw(QGLViewer* viewer)
-{       
+void Scene::draw(CGAL::QGLViewer* viewer)
+{
     if(!gl_init)
         initGL();
     if(!are_buffers_initialized)
@@ -613,7 +613,6 @@ void Scene::draw(QGLViewer* viewer)
     }
     if(m_view_points && pos_points.size()>0)
     {
-        gl->glPointSize(2.0f);
         vao[0].bind();
         attrib_buffers(viewer);
         rendering_program.bind();
@@ -766,8 +765,8 @@ Plane Scene::random_plane(const CGAL::Bbox_3& bbox)
 
 Plane Scene::frame_plane() const
 {
-    const qglviewer::Vec& pos = m_frame->position();
-    const qglviewer::Vec& n = m_frame->inverseTransformOf(qglviewer::Vec(0.f, 0.f, 1.f));
+    const CGAL::qglviewer::Vec& pos = m_frame->position();
+    const CGAL::qglviewer::Vec& n = m_frame->inverseTransformOf(CGAL::qglviewer::Vec(0.f, 0.f, 1.f));
 
     return Plane(n[0], n[1],  n[2], - n * pos);
 }
@@ -807,7 +806,6 @@ void Scene::build_facet_tree()
     timer.start();
     std::cout << "Construct Facet AABB tree...";
     m_facet_tree.rebuild(faces(*m_pPolyhedron).first, faces(*m_pPolyhedron).second,*m_pPolyhedron);
-    m_facet_tree.accelerate_distance_queries();
     std::cout << "done (" << timer.time() << " s)" << std::endl;
 }
 
@@ -827,7 +825,6 @@ void Scene::build_edge_tree()
     timer.start();
     std::cout << "Construct Edge AABB tree...";
     m_edge_tree.rebuild(edges(*m_pPolyhedron).first,edges(*m_pPolyhedron).second,*m_pPolyhedron);
-    m_edge_tree.accelerate_distance_queries();
     std::cout << "done (" << timer.time() << " s)" << std::endl;
 }
 
@@ -858,8 +855,8 @@ void Scene::update_grid_size()
 }
 
 void Scene::generate_points_in(const unsigned int nb_points,
-                               const double min,
-                               const double max)
+                               const double vmin,
+                               const double vmax)
 {
     if(m_pPolyhedron == NULL)
     {
@@ -878,7 +875,7 @@ void Scene::generate_points_in(const unsigned int nb_points,
     CGAL::Timer timer;
     timer.start();
     std::cout << "Generate " << nb_points << " points in interval ["
-              << min << ";" << max << "]";
+              << vmin << ";" << vmax << "]";
 
     unsigned int nb_trials = 0;
     Vector vec = random_vector();
@@ -895,8 +892,8 @@ void Scene::generate_points_in(const unsigned int nb_points,
         if(nb_intersections % 2 != 0)
             signed_distance *= -1.0;
 
-        if(signed_distance >= min &&
-                signed_distance <= max)
+        if(signed_distance >= vmin &&
+                signed_distance <= vmax)
         {
             m_points.push_back(p);
             if(m_points.size()%(nb_points/10) == 0)
@@ -1229,12 +1226,16 @@ void Scene::cut_segment_plane()
     m_cut_plane = CUT_SEGMENTS;
     changed();
 }
+void Scene::updateCutPlane()
+{
+  ready_to_cut = true;
+       QTimer::singleShot(0,this,SLOT(cutting_plane()));
+}
 
 void Scene::cutting_plane(bool override)
 {
     if(ready_to_cut || override)
     {
-        ready_to_cut = false;
         switch( m_cut_plane )
         {
         case UNSIGNED_FACETS:
@@ -1298,7 +1299,7 @@ void Scene::refine_loop()
         return;
     }
     std::cout << "Loop subdivision...";
-    CGAL::Subdivision_method_3::Loop_subdivision(*m_pPolyhedron, 1);
+    CGAL::Subdivision_method_3::Loop_subdivision(*m_pPolyhedron);
     std::cout << "done (" << m_pPolyhedron->size_of_facets() << " facets)" << std::endl;
 
     clear_internal_data();
@@ -1307,13 +1308,13 @@ void Scene::refine_loop()
 
 void Scene::activate_cutting_plane()
 {
-    connect(m_frame, SIGNAL(modified()), this, SLOT(cutting_plane()));
+    connect(m_frame, SIGNAL(modified()), this, SLOT(updateCutPlane()));
     m_view_plane = true;
 }
 
 void Scene::deactivate_cutting_plane()
 {
-    disconnect(m_frame, SIGNAL(modified()), this, SLOT(cutting_plane()));
+    disconnect(m_frame, SIGNAL(modified()), this, SLOT(updateCutPlane()));
     m_view_plane = false;
 }
 void Scene::initGL()
@@ -1328,11 +1329,4 @@ void Scene::initGL()
     gl->glGenTextures(1, &textureId);
     compile_shaders();
     gl_init = true;
-}
-
-void Scene::timerEvent(QTimerEvent *)
-{
-    if(manipulatedFrame()->isSpinning())
-        set_fast_distance(true);
-    ready_to_cut = true;
 }

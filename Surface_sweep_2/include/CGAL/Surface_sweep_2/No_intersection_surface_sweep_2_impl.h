@@ -2,19 +2,10 @@
 // All rights reserved.
 //
 // This file is part of CGAL (www.cgal.org).
-// You can redistribute it and/or modify it under the terms of the GNU
-// General Public License as published by the Free Software Foundation,
-// either version 3 of the License, or (at your option) any later version.
-//
-// Licensees holding a valid commercial license may use this file in
-// accordance with the commercial license agreement provided with the software.
-//
-// This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
-// WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 //
 // $URL$
 // $Id$
-// SPDX-License-Identifier: GPL-3.0+
+// SPDX-License-Identifier: GPL-3.0-or-later OR LicenseRef-Commercial
 //
 // Author(s)     : Baruch Zukerman  <baruchzu@post.tau.ac.il>
 //                 Efi Fogel        <efif@post.tau.ac.il>
@@ -93,7 +84,7 @@ No_intersection_surface_sweep_2<Vis>::~No_intersection_surface_sweep_2()
   Allocated_events_iterator iter = m_allocated_events.begin();
   for (; iter != m_allocated_events.end(); ++iter) {
     p_event = *iter;
-    m_eventAlloc.destroy(p_event);
+    std::allocator_traits<Event_alloc>::destroy(m_eventAlloc, p_event);
     m_eventAlloc.deallocate(p_event,1);
   }
 }
@@ -137,7 +128,7 @@ void No_intersection_surface_sweep_2<Vis>::deallocate_event(Event* event)
   m_allocated_events.erase(event);
 
   // Perfrom the actual deallocation.
-  m_eventAlloc.destroy(event);
+  std::allocator_traits<Event_alloc>::destroy(m_eventAlloc, event);
   m_eventAlloc.deallocate(event, 1);
 }
 
@@ -226,8 +217,9 @@ void No_intersection_surface_sweep_2<Vis>::_complete_sweep()
   CGAL_assertion((m_statusLine.size() == 0));
 
   // Free all subcurve objects.
-  for (unsigned int i = 0; i < m_num_of_subCurves; ++i)
-    m_subCurveAlloc.destroy(m_subCurves + i);
+  for (unsigned int i = 0; i < m_num_of_subCurves; ++i){
+    std::allocator_traits<Subcurve_alloc>::destroy(m_subCurveAlloc, m_subCurves + i);
+  }
 
   if (m_num_of_subCurves > 0)
     m_subCurveAlloc.deallocate(m_subCurves, m_num_of_subCurves);
@@ -257,7 +249,7 @@ void No_intersection_surface_sweep_2<Vis>::
 _init_curve(const X_monotone_curve_2& curve, unsigned int index)
 {
   // Construct and initialize a subcurve object.
-  m_subCurveAlloc.construct(m_subCurves + index, m_masterSubcurve);
+  std::allocator_traits<Subcurve_alloc>::construct(m_subCurveAlloc, m_subCurves + index, m_masterSubcurve );
   (m_subCurves + index)->set_hint(this->m_statusLine.end());
   (m_subCurves + index)->init(curve);
 
@@ -597,7 +589,7 @@ No_intersection_surface_sweep_2<Vis>::_allocate_event(const Point_2& pt,
 {
   // Allocate the event.
   Event* e =  m_eventAlloc.allocate(1);
-  m_eventAlloc.construct(e, m_masterEvent);
+  std::allocator_traits<Event_alloc>::construct(m_eventAlloc, e, m_masterEvent);
   e->init(pt, type, ps_x, ps_y);
 
   // Insert it to the set of allocated events.
@@ -617,7 +609,7 @@ _allocate_event_at_open_boundary(Attribute type,
                                  Arr_parameter_space ps_y)
 {
   Event* e =  m_eventAlloc.allocate(1);
-  m_eventAlloc.construct(e, m_masterEvent);
+  std::allocator_traits<Event_alloc>::construct(m_eventAlloc, e, m_masterEvent);
   e->init_at_open_boundary(type, ps_x, ps_y);
 
   m_allocated_events.insert(e);
@@ -752,7 +744,7 @@ template <typename Vis>
 void No_intersection_surface_sweep_2<Vis>::_add_curve(Event* e, Subcurve* sc,
                                                       Attribute type)
 {
-  if (sc == NULL) return;
+  if (sc == nullptr) return;
 
   if (type == Event::LEFT_END) {
     sc->set_left_event(e);

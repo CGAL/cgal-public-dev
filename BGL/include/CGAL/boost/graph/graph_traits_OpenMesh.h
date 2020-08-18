@@ -1,32 +1,22 @@
 // Copyright (c) 2007  GeometryFactory (France).  All rights reserved.
 //
-// This file is part of CGAL (www.cgal.org); you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public License as
-// published by the Free Software Foundation; either version 3 of the License,
-// or (at your option) any later version.
-//
-// Licensees holding a valid commercial license may use this file in
-// accordance with the commercial license agreement provided with the software.
-//
-// This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
-// WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+// This file is part of CGAL (www.cgal.org)
 //
 // $URL$
 // $Id$
-// SPDX-License-Identifier: LGPL-3.0+
+// SPDX-License-Identifier: LGPL-3.0-or-later OR LicenseRef-Commercial
 //
 //
 // Author(s)     : Andreas Fabri, Philipp Moeller
 
 // include this to avoid a VC15 warning
-#include <CGAL/boost/graph/named_function_params.h>
+#include <CGAL/boost/graph/Named_function_parameters.h>
 
 #include <boost/graph/graph_traits.hpp>
 #include <boost/graph/properties.hpp>
 
-#include <boost/iterator/transform_iterator.hpp>
+#include <CGAL/boost/iterator/transform_iterator.hpp>
 
-#include <OpenMesh/Core/IO/MeshIO.hh>
 #include <CGAL/boost/graph/internal/OM_iterator_from_circulator.h>
 #include <CGAL/boost/graph/iterator.h>
 #include <CGAL/Iterator_range.h>
@@ -34,7 +24,6 @@
 #include <CGAL/boost/graph/io.h>
 #include <CGAL/assertions.h>
 #include <CGAL/hash_openmesh.h>
-
 
 #if defined(BOOST_MSVC)
 #  pragma warning(push)
@@ -621,12 +610,6 @@ typename boost::graph_traits<OPEN_MESH_CLASS >::face_descriptor
 add_face(OPEN_MESH_CLASS& sm)
 {
   return sm.new_face();
-}
-
-template<typename K>
-bool is_valid(OPEN_MESH_CLASS& sm, bool /* verbose */ = false)
-{
-  return CGAL::is_valid_polygon_mesh(sm);
 }
 
 } // namespace OpenMesh

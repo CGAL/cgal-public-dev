@@ -2,27 +2,17 @@
 // All rights reserved.
 //
 // This file is part of CGAL (www.cgal.org).
-// You can redistribute it and/or modify it under the terms of the GNU
-// General Public License as published by the Free Software Foundation,
-// either version 3 of the License, or (at your option) any later version.
-//
-// Licensees holding a valid commercial license may use this file in
-// accordance with the commercial license agreement provided with the software.
-//
-// This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
-// WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 //
 // $URL$
 // $Id$
-// SPDX-License-Identifier: GPL-3.0+
-// 
+// SPDX-License-Identifier: GPL-3.0-or-later OR LicenseRef-Commercial
+//
 //
 // Author(s)     : Aymeric PELLE (aymeric.pelle@inria.fr)
 
 #include <CGAL/Regular_triangulation_3.h>
 #include <CGAL/Regular_triangulation_cell_base_with_weighted_circumcenter_3.h>
 #include <CGAL/Regular_triangulation_cell_base_3.h>
-#include <CGAL/Triangulation_vertex_base_3.h>
 #include <CGAL/Triangulation_cell_base_3.h>
 #include <CGAL/Triangulation_data_structure_3.h>
 
@@ -32,20 +22,20 @@
 
 typedef CGAL::Exact_predicates_inexact_constructions_kernel K;
 
-typedef CGAL::Regular_triangulation_vertex_base_3<K>      Vb;
-typedef CGAL::Triangulation_cell_base_3<K>                Cb;
-typedef CGAL::Triangulation_data_structure_3<Vb, Cb>      Tds;
+typedef CGAL::Regular_triangulation_vertex_base_3<K>                            Vb;
+typedef CGAL::Regular_triangulation_cell_base_with_weighted_circumcenter_3<K>   Cb;
+typedef CGAL::Triangulation_data_structure_3<Vb, Cb>                            Tds;
 
 typedef CGAL::Regular_triangulation_3<K, Tds>             Regular_triangulation_3;
 
 typedef CGAL::Regular_triangulation_cell_base_with_weighted_circumcenter_3<K>::Rebind_TDS<Tds>::Other Cell_type;
 
-typedef Cell_type::Vertex_handle                Vertex_handle;
-typedef Cell_type::Cell_handle                  Cell_handle;
+typedef Regular_triangulation_3::Vertex_handle            Vertex_handle;
+typedef Regular_triangulation_3::Cell_handle              Cell_handle;
 
-typedef Regular_triangulation_3::Bare_point     Bare_point;
-typedef Regular_triangulation_3::Point          Point;
-typedef Regular_triangulation_3::Weighted_point Weighted_point;
+typedef Regular_triangulation_3::Bare_point               Bare_point;
+typedef Regular_triangulation_3::Point                    Point;
+typedef Regular_triangulation_3::Weighted_point           Weighted_point;
 
 // Explicit instantiation of the whole class.
 template class
@@ -53,7 +43,7 @@ CGAL::Regular_triangulation_cell_base_with_weighted_circumcenter_3<
   K, CGAL::Regular_triangulation_cell_base_3<
       K, CGAL::Triangulation_cell_base_3<
            K, CGAL::Triangulation_ds_cell_base_3<Tds> >,
-      CGAL::Keep_hidden_points, std::vector<Weighted_point> > >;
+           CGAL::Keep_hidden_points, std::vector<Weighted_point> > >;
 
 void test_default_constructor ()
 {

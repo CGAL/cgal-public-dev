@@ -1,5 +1,6 @@
 #!/bin/zsh
 
+set -e
 setopt -o glob
 setopt -o extended_glob
 
@@ -16,7 +17,11 @@ PUBLIC_RELEASE_DIR="$1"
 
 INTERNAL_RELEASE=`basename ${PUBLIC_RELEASE_DIR/-public/}`
 
-PUBLIC_RELEASE_NAME=`basename ${~${ZIP_TARBALL::="$PUBLIC_RELEASE_DIR"/*.zip}}`
+ZIP_TARBALL=("$PUBLIC_RELEASE_DIR"/*-library.zip(N))
+[ -z "$ZIP_TARBALL" ] && ZIP_TARBALL=("$PUBLIC_RELEASE_DIR"/*.zip(N))
+
+PUBLIC_RELEASE_NAME=`basename "$ZIP_TARBALL"`
+PUBLIC_RELEASE_NAME=${PUBLIC_RELEASE_NAME/-library.zip/}
 PUBLIC_RELEASE_NAME=${PUBLIC_RELEASE_NAME/.zip/}
 DEST_DIR="${RELEASE_CANDIDATES_DIR}/$PUBLIC_RELEASE_NAME"
 
@@ -35,7 +40,7 @@ printf "Copy documentation to doc_html/ and doc_html_online/...\n"
 [ -d "/srv/CGAL/www/${PUBLIC_RELEASE_NAME#CGAL-}/Manual" ] || mkdir -p "/srv/CGAL/www/${PUBLIC_RELEASE_NAME#CGAL-}/Manual"
 
 cp "$PUBLIC_RELEASE_DIR"/*(.) "${RELEASE_CANDIDATES_DIR}/$PUBLIC_RELEASE_NAME"
-rsync -a "$MANUAL_TESTS_DIR/$INTERNAL_RELEASE"/output/* "$DEST_DIR/doc_html/"
+rsync -a "$MANUAL_TESTS_DIR/$INTERNAL_RELEASE"/output2/* "$DEST_DIR/doc_html/"
 pushd "$DEST_DIR/doc_html/Manual/search"
   for i in g n c s i; do sed -i "s/..\/BGL$i/..\/BGL\/$i/g" *; done
 popd
@@ -43,7 +48,7 @@ rsync -a "$DEST_DIR/doc_html/" "$DEST_DIR/doc_html_online/"
 
 printf "Modify \"../../MathJax\" to MathJax CDN in doc_html...\n"
 pushd "$DEST_DIR/doc_html"
-find -name '*.html' -exec sed -i -e 's|../../MathJax|http://cdn.mathjax.org/mathjax/latest|g' {} +
+find -name '*.html' -exec sed -i -e 's|../../MathJax|https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.2|g' {} +
 popd
 
 printf "Create doc_html tarball...\n"
@@ -53,12 +58,6 @@ printf "Create doc_html zip...\n"
 pushd "$DEST_DIR"
 zip -q -r "$DEST_DIR/${PUBLIC_RELEASE_NAME}-doc_html.zip" doc_html
 popd
-
-printf "bzip2 doc_html tarball...\n"
-bzip2 --best < "$DEST_DIR/${PUBLIC_RELEASE_NAME}-doc_html.tar" > "$DEST_DIR/${PUBLIC_RELEASE_NAME}-doc_html.tar.bz2"
-
-printf "bzip2 source tarball...\n"
-zcat "$DEST_DIR/${PUBLIC_RELEASE_NAME}.tar.gz" | bzip2 --best > "$DEST_DIR/${PUBLIC_RELEASE_NAME}.tar.bz2"
 
 printf "xz doc_html tarball...\n"
 xz --best < "$DEST_DIR/${PUBLIC_RELEASE_NAME}-doc_html.tar" > "$DEST_DIR/${PUBLIC_RELEASE_NAME}-doc_html.tar.xz"

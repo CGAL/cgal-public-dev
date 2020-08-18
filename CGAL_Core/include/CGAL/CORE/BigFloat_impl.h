@@ -4,21 +4,10 @@
  * All rights reserved.
  *
  * This file is part of CGAL (www.cgal.org).
- * You can redistribute it and/or modify it under the terms of the GNU
- * Lesser General Public License as published by the Free Software Foundation,
- * either version 3 of the License, or (at your option) any later version.
- *
- * Licensees holding a valid commercial license may use this file in
- * accordance with the commercial license agreement provided with the
- * software.
- *
- * This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
- * WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
- *
  *
  * File: BigFloat.cpp
  * Synopsis:
- *       BigFloat numbers with error bounds 
+ *       BigFloat numbers with error bounds
  *
  *       EXACTNESS PROPERTY:
  *       ==================
@@ -29,7 +18,7 @@
  *       but this again preserves exactness.  Such exactness
  *       properties are used in our Newton iteration/Sturm Sequences.
  *
- * Written by 
+ * Written by
  *       Chee Yap <yap@cs.nyu.edu>
  *       Chen Li <chenli@cs.nyu.edu>
  *       Zilin Du <zilin@cs.nyu.edu>
@@ -39,7 +28,7 @@
  *
  * $URL$
  * $Id$
- * SPDX-License-Identifier: LGPL-3.0+
+ * SPDX-License-Identifier: LGPL-3.0-or-later
  ***************************************************************************/
 
 #ifdef CGAL_HEADER_ONLY
@@ -48,12 +37,15 @@
 #define CGAL_INLINE_FUNCTION
 #endif
 
+#include <CGAL/disable_warnings.h>
+
 #include <ctype.h>
 #include <CGAL/CORE/BigFloat.h>
 #include <CGAL/CORE/Expr.h>
 #include <CGAL/tss.h>
+#include <sstream>
 
-namespace CORE { 
+namespace CORE {
 
 
 ////////////////////////////////////////////////////////////
@@ -86,12 +78,14 @@ BigInt FiveTo(unsigned long exp) {
 // ZERO
 CGAL_INLINE_FUNCTION
 const BigFloat& BigFloat::getZero() {
+  init_CORE();
   CGAL_STATIC_THREAD_LOCAL_VARIABLE(BigFloat, Zero,0);
   return Zero;
 }
 // ONE
 CGAL_INLINE_FUNCTION
 const BigFloat& BigFloat::getOne() {
+  init_CORE();
   CGAL_STATIC_THREAD_LOCAL_VARIABLE(BigFloat, One,1);
   return One;
 }
@@ -200,7 +194,7 @@ void BigFloatRep :: truncM(const BigFloatRep& B, const extLong& r, const extLong
       exp = B.exp + t;
     } else //  t < chunkCeil(clLg(B.err))
       core_error(std::string("BigFloat error: truncM called with stricter")
-	  + "precision than current error.", __FILE__, __LINE__, true);
+          + "precision than current error.", __FILE__, __LINE__, true);
   } else {//  B.m == 0
     long t = chunkFloor(- a.asLong()) - B.exp;
 
@@ -210,13 +204,13 @@ void BigFloatRep :: truncM(const BigFloatRep& B, const extLong& r, const extLong
       exp = B.exp + t;
     } else //  t < chunkCeil(clLg(B.err))
       core_error(std::string("BigFloat error: truncM called with stricter")
-	  + "precision than current error.", __FILE__, __LINE__, true);
+          + "precision than current error.", __FILE__, __LINE__, true);
   }
 }
 
 // This is the main approximation function
 // REMARK: would be useful to have a self-modifying version
-// 		of this function (e.g., for Newton).
+//                 of this function (e.g., for Newton).
 CGAL_INLINE_FUNCTION
 void BigFloatRep::approx(const BigFloatRep& B,
               const extLong& r, const extLong& a) {
@@ -275,7 +269,7 @@ void BigFloatRep::normal() {
   long le = flrLg(err);
 
   if (le >= CHUNK_BIT + 2) { // so we do not carry more than 16 = CHUNK_BIT + 2
-	                     // bits of error
+                             // bits of error
     long f = chunkFloor(--le); // f is roughly equal to floor(le/CHUNK_BIT)
     long bits_f = bits(f);   // f chunks will have bits_f many bits
 #ifdef CGAL_CORE_DEBUG
@@ -285,13 +279,13 @@ void BigFloatRep::normal() {
     m   >>= bits_f;  // reduce mantissa by bits_f many bits
     err >>= bits_f;  // same for err
     err +=  2;       // why 2?
-    exp +=  f;       
+    exp +=  f;
   }
   if (err == 0)      // unlikely, if err += 2 above
     eliminateTrailingZeroes();
 }
 
-// bigNormal(err) 
+// bigNormal(err)
 //     convert a bigInt error value (=err) into an error that fits into
 //     a long number.  This is done by
 //     by increasing the exponent, and corresponding decrease
@@ -313,9 +307,9 @@ void BigFloatRep::bigNormal(BigInt& bigErr) {
     m      >>= bits_f;
     bigErr >>= bits_f;
     err    = ulongValue(bigErr) + 2; // you need to add "2" because "1" comes
-    		// from truncation error in the mantissa, and another
-		// "1" comes from the truncation error in the bigErr.
-		// (But there is danger of overflow...)
+                    // from truncation error in the mantissa, and another
+                // "1" comes from the truncation error in the bigErr.
+                // (But there is danger of overflow...)
     exp    += f;
   }
 
@@ -337,7 +331,7 @@ void BigFloatRep::add(const BigFloatRep& x, const BigFloatRep& y) {
     } else {//  x.err > 0
       m   = x.m + chunkShift(y.m, - expDiff); // negative shift!
       err = x.err + 5; // To account for y.err (but why 5?)
-      exp = x.exp;     // 
+      exp = x.exp;     //
       // normal();
     }
   } else if (!expDiff) {//  x.exp == y.exp
@@ -418,9 +412,9 @@ void BigFloatRep::mul(const BigFloatRep& x, const BigFloatRep& y) {
   }
 }
 // BigFloat div2 will half the value of x, exactly with NO error
-// 	REMARK: should generalize this to dividing by any power of 2
-// 	We need this in our use of BigFloats to maintain isolation
-// 	intervals (e.g., in Sturm sequences)	--Chee/Vikram 4/2003
+//         REMARK: should generalize this to dividing by any power of 2
+//         We need this in our use of BigFloats to maintain isolation
+//         intervals (e.g., in Sturm sequences)        --Chee/Vikram 4/2003
 //
 CGAL_INLINE_FUNCTION
 void BigFloatRep :: div2(const BigFloatRep& x) {
@@ -465,10 +459,10 @@ void BigFloatRep::centerize(const BigFloatRep& a, const BigFloatRep& b) {
 
 // BigFloat Division, computing x/y:
 //      Unlike +,-,*, this one takes a relative precision bound R
-//	Note that R is only used when x and y are error-free!
-//	(This remark means that we may be less efficient than we could be)
+//        Note that R is only used when x and y are error-free!
+//        (This remark means that we may be less efficient than we could be)
 //
-//  	Assert( R>0  && R< CORE_Infty )
+//          Assert( R>0  && R< CORE_Infty )
 //
 CGAL_INLINE_FUNCTION
 void BigFloatRep :: div(const BigFloatRep& x, const BigFloatRep& y,
@@ -544,7 +538,7 @@ void BigFloatRep :: div(const BigFloatRep& x, const BigFloatRep& y,
     }
   } else {//  y.m <= y.err
     core_error("BigFloat error: possible zero divisor.",
-		    __FILE__, __LINE__, true);
+                    __FILE__, __LINE__, true);
   }
 
   // Call normalization globally     -- IP 10/9/98
@@ -740,7 +734,7 @@ void BigFloatRep::sqrt(const BigFloatRep& x, const extLong& a, const BigFloat& A
     }//else
   } else
     core_error("BigFloat error: squareroot called with negative operand.",
-		    __FILE__, __LINE__, true);
+                    __FILE__, __LINE__, true);
 } //sqrt with initial approximation
 
 //  compareMExp(x)
@@ -828,7 +822,7 @@ BigFloatRep::toDecimal(unsigned int width, bool Scientific) const {
     // if err is larger than mantissa, sign and significant values
     // can not be determined.
     core_error("BigFloat error: Error is too big!",
-		    __FILE__, __LINE__, false);
+                    __FILE__, __LINE__, false);
     decOut.rep = "0.0e0";          // error is too big
     decOut.isScientific = false;
     decOut.noSignificant = 0;
@@ -919,16 +913,9 @@ BigFloatRep::toDecimal(unsigned int width, bool Scientific) const {
       } else { // L10 < 0
         decRep += '-';
       }
-      char eBuf[48]; // enought to hold long number L10
-      int ne = 0;
-      if ((ne = sprintf(eBuf, "%ld", labs(L10))) >= 0) {
-        eBuf[ne] = '\0';
-      } else {
-        //perror("BigFloat.cpp: Problem in outputing the exponent!");
-        core_error("BigFloat error: Problem in outputing the exponent",
-			__FILE__, __LINE__, true);
-      }
-      decRep += eBuf;
+      std::ostringstream oss;
+      oss << labs(L10);
+      decRep += oss.str();
       decOut.isScientific = true;
     }
   } else {
@@ -942,7 +929,7 @@ BigFloatRep::toDecimal(unsigned int width, bool Scientific) const {
           return toDecimal(width, true);
         }
       }
-      decOut.noSignificant = decRep.length();
+      decOut.noSignificant = static_cast<int>(decRep.length());
       if (L10 + 1 < (long)width ) {
         decRep.insert(L10 + 1, ".");
       } else { // L10 + 1 == width
@@ -957,7 +944,7 @@ BigFloatRep::toDecimal(unsigned int width, bool Scientific) const {
         decRep = round(decRep, L10, width );
         // cannot overflow since there are L10 leading zeroes.
       }
-      decOut.noSignificant = decRep.length() - (-L10);
+      decOut.noSignificant = static_cast<int>(decRep.length() - (-L10));
       decRep.insert(1, ".");
     }
     decOut.isScientific = false;
@@ -1016,12 +1003,12 @@ void BigFloatRep :: fromString(const char *str, extLong prec ) {
   // check that prec is not INFTY
   if (prec.isInfty())
     core_error("BigFloat error: infinite precision not allowed",
-			__FILE__, __LINE__, true);
+                        __FILE__, __LINE__, true);
 
   const char *e = strchr(str, 'e');
   int dot = 0;
   long e10 = 0;
-  if (e != NULL)
+  if (e != nullptr)
     e10 = atol(e+1);    // e10 is decimal precision of the input string
   // i.e., input is A/10^{e10}.
   else {
@@ -1085,7 +1072,7 @@ std::istream& BigFloatRep :: operator >>(std::istream& i) {
   // Change to:
   //  int status;
   do {
-    c = i.get();
+    i.get(c);
   } while (isspace(c)); /* loop if met end-of-file, or
                                char read in is white-space. */
   // Chen Li, "if (c == EOF)" is unsafe since c is of char type and
@@ -1135,7 +1122,7 @@ std::istream& BigFloatRep :: operator >>(std::istream& i) {
 
   // chenli: make sure that the p is still in the range
   if (p - str >= size) {
-    int len = p - str;
+    std::size_t len = p - str;
     char *t = str;
     str = new char[len + 1];
     memcpy(str, t, len);
@@ -1327,3 +1314,5 @@ BigFloat root(const BigFloat& x, unsigned long k,
   CORE_MEMORY_IMPL(BigFloatRep)
 
 } //namespace CORE
+
+#include <CGAL/enable_warnings.h>

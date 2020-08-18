@@ -2,24 +2,48 @@
 // All rights reserved.
 //
 // This file is part of CGAL (www.cgal.org).
-// You can redistribute it and/or modify it under the terms of the GNU
-// General Public License as published by the Free Software Foundation,
-// either version 3 of the License, or (at your option) any later version.
-//
-// Licensees holding a valid commercial license may use this file in
-// accordance with the commercial license agreement provided with the software.
-//
-// This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
-// WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 //
 // $URL$
 // $Id$
-// SPDX-License-Identifier: GPL-3.0+
+// SPDX-License-Identifier: GPL-3.0-or-later OR LicenseRef-Commercial
 //
 //
 // Author(s)     : Manuel Caroli <Manuel.Caroli@sophia.inria.fr>
 
 #ifdef CGAL_INCLUDE_FROM_PERIODIC_3_REGULAR_TRIANGULATION_3_H
+
+std::vector<Weighted_point> dummy_points()
+{
+  std::vector<Weighted_point> dummy_points;
+  dummy_points.reserve(6*6*8);
+
+  FT domain_x(domain().xmax() - domain().xmin());
+  FT domain_y(domain().ymax() - domain().ymin());
+  FT domain_z(domain().zmax() - domain().zmin());
+
+  for (unsigned i = 0; i < 6; ++i)
+  {
+    for (unsigned j = 0; j < 6; ++j)
+    {
+      for (unsigned k = 0; k < 8; ++k)
+      {
+        FT x = (FT(i) * domain_x / FT(6)) + domain().xmin();
+        if (k % 2)
+          x += FT(1) * domain_x / FT(12);
+
+        FT y = (FT(j) * domain_y / FT(6)) + domain().ymin();
+        if (k % 2)
+          y += FT(1) * domain_y / FT(12);
+
+        FT z = (FT(k) * domain_z / FT(8)) + domain().zmin();
+
+        dummy_points.push_back(Weighted_point(Bare_point(x, y, z), 0));
+      }
+    }
+  }
+
+  return dummy_points;
+}
 
 std::vector<Vertex_handle> insert_dummy_points ()
 {
@@ -5507,7 +5531,7 @@ static const unsigned C[288] = {
   1726,
   1727
 };
- 
+
   this->clear();
 
   std::vector<Vertex_handle> vertices;
@@ -5547,7 +5571,7 @@ static const unsigned C[288] = {
 
 
   for(unsigned i = 0; i < 1728; ++i){
-    cells[i]->set_vertices(vertices[V[i][0]], vertices[V[i][1]], vertices[V[i][2]], vertices[V[i][3]]);    
+    cells[i]->set_vertices(vertices[V[i][0]], vertices[V[i][1]], vertices[V[i][2]], vertices[V[i][3]]);
     cells[i]->set_neighbors(cells[N[i][0]], cells[N[i][1]], cells[N[i][2]], cells[N[i][3]]);
     set_offsets(cells[i],O[i][0],O[i][1],O[i][2],O[i][3]);
   }

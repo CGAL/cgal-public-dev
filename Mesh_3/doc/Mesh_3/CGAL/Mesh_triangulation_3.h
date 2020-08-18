@@ -1,19 +1,19 @@
 namespace CGAL {
 
 /*!
-\ingroup PkgMesh_3MeshClasses
+\ingroup PkgMesh3MeshClasses
 
-The class `Mesh_triangulation_3` is a metafunctor which provides the triangulation type to be used
-for the 3D triangulation embedding the mesh.
+The class `Mesh_triangulation_3` is a class template which provides the triangulation
+type to be used for the 3D triangulation embedding the mesh.
 
 \tparam MD must be a model of `MeshDomain_3`.
 
-\tparam Gt must be a model of `RegularTriangulationTraits_3` or `Default`
+\tparam Gt must be a model of `MeshTriangulationTraits_3` or `Default`
 and defaults to `Kernel_traits<MD>::%Kernel`.
 
 \tparam Concurrency_tag enables sequential versus parallel meshing and optimization algorithms.
-                        Possible values are `Sequential_tag` (the default) and
-                        `Parallel_tag`.
+                        Possible values are `Sequential_tag` (the default), `Parallel_tag`,
+                        and `Parallel_if_available_tag`.
 
 \tparam Vertex_base must be a model of `MeshVertexBase_3` or `Default`
 and defaults to `Mesh_vertex_base_3<Gt, MD>`.
@@ -45,11 +45,9 @@ struct Mesh_triangulation_3 {
 /// @{
 
 /*!
-The triangulation type to be used
-for the 3D triangulation embedding the mesh.
-This type is a `Regular_triangulation_3` type
-whose vertex and cell base classes are respectively
-`Vertex_base` and `Cell_base`.
+The triangulation type to be used for the 3D triangulation embedding the mesh.
+This type is a wrapper around the type `CGAL::Regular_triangulation_3`, whose vertex
+and cell base classes are respectively `Vertex_base` and `Cell_base`.
 */
 typedef unspecified_type type;
 

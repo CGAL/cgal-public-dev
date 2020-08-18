@@ -2,6 +2,51 @@ body, table, div, p, dl {
     font: Lucida Grande,sans-serif;
 }
 
+.icon-namespace {
+    font-family: Arial, Helvetica;
+    font-weight: bold;
+    font-size: 12px;
+    height: 14px;
+    width: 16px;
+    display: inline-block;
+    background-color: #FF0000;
+    color: white;
+    text-align: center;
+    border-radius: 4px;
+    margin-left: 2px;
+    margin-right: 2px;
+}
+
+.icon-class {
+    font-family: Arial, Helvetica;
+    font-weight: bold;
+    font-size: 12px;
+    height: 14px;
+    width: 16px;
+    display: inline-block;
+    background-color: #0000FF;
+    color: white;
+    text-align: center;
+    border-radius: 4px;
+    margin-left: 2px;
+    margin-right: 2px;
+}
+
+.icon-concept {
+    font-family: Arial, Helvetica;
+    font-weight: bold;
+    font-size: 12px;
+    height: 14px;
+    width: 16px;
+    display: inline-block;
+    background-color: #67489A;
+    color: white;
+    text-align: center;
+    border-radius: 4px;
+    margin-left: 2px;
+    margin-right: 2px;
+}
+
 .textsc {
     font-variant: small-caps;
 }
@@ -161,6 +206,14 @@ dl.requires dt a, dl.todo dt a, dl.bug dt a, dl.test dt a
     color: black;
 }
 
+div.toc {
+    width: auto;
+}
+
+.ui-resizable-e {
+    background-repeat: repeat-y;
+}
+
 div.cgal_figure_caption {
 	text-align: center;
 }
@@ -285,4 +338,48 @@ dl.deprecated > dd
 div.fragment {
     padding: 4px;
     margin: 1em 4px 1em 4px;
+}
+
+/* Make summary smaller to avoid wrapping of classes and concepts */
+div.summary
+{
+  width: auto;
+}
+
+.collapsible {
+  background-color: white;
+  color: #602020;
+  cursor: pointer;
+  padding: 3px;
+  width: 100%;
+  border: none;
+  text-align: left;
+  outline: none;
+  font: 14px Roboto,sans-serif;
+}
+
+.active, .collapsible:hover {
+  background-color: white;
+}
+
+.collapsible:after {
+  content: '\25B6';
+  color: #7A93C5;
+  font-weight: bold;
+  float: left;
+  margin-left: -20px;
+  margin-right: 5px;
+}
+
+.active:after {
+  content: "\25BC";
+}
+
+.content {
+  padding: 0 18px;
+  color: black;
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.2s ease-out;
+  background-color: white;
 }

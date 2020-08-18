@@ -155,7 +155,7 @@ void Scene_textured_polyhedron_item_priv::initializeBuffers(CGAL::Three::Viewer_
     viewer->glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
     viewer->glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     viewer->glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    viewer->glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
+    //viewer->glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
 
     nb_facets = positions_facets.size();
     positions_facets.resize(0);
@@ -194,7 +194,7 @@ Scene_textured_polyhedron_item_priv::compute_normals_and_vertices(void) const
     typedef Base::Facet Facet;
     typedef Base::Facet_iterator Facet_iterator;
 
-    const qglviewer::Vec offset = static_cast<CGAL::Three::Viewer_interface*>(QGLViewer::QGLViewerPool().first())->offset();
+    const CGAL::qglviewer::Vec offset = static_cast<CGAL::Three::Viewer_interface*>(CGAL::QGLViewer::QGLViewerPool().first())->offset();
 
     //Facets
     Facet_iterator f = poly->facets_begin();
@@ -246,8 +246,8 @@ Scene_textured_polyhedron_item_priv::compute_normals_and_vertices(void) const
 
     }
     //Lines
-    typedef Kernel::Point_3		Point;
-    typedef Base::Edge_iterator	Edge_iterator;
+    typedef Kernel::Point_3                Point;
+    typedef Base::Edge_iterator        Edge_iterator;
 
     Edge_iterator he;
 
@@ -314,7 +314,7 @@ Scene_textured_polyhedron_item::~Scene_textured_polyhedron_item()
     delete d;
 }
 
-Scene_textured_polyhedron_item* 
+Scene_textured_polyhedron_item*
 Scene_textured_polyhedron_item::clone() const {
     return new Scene_textured_polyhedron_item(*d->poly);
 }
@@ -330,14 +330,14 @@ Scene_textured_polyhedron_item::load(std::istream& in)
 }
 
 // Write textured_polyhedron to .OFF file
-bool 
+bool
 Scene_textured_polyhedron_item::save(std::ostream& out) const
 {
     out << *d->poly;
     return (bool) out;
 }
 
-QString 
+QString
 Scene_textured_polyhedron_item::toolTip() const
 {
     if(!d->poly)
@@ -392,21 +392,33 @@ void Scene_textured_polyhedron_item::drawEdges(CGAL::Three::Viewer_interface* vi
     d->program->release();
 
     vaos[Scene_textured_polyhedron_item_priv::Border_edges]->bind();
-    attribBuffers(viewer, PROGRAM_NO_SELECTION);
-    d->program=getShaderProgram(PROGRAM_NO_SELECTION);
-    d->program->bind();
-    viewer->glLineWidth(4.0);
+    if(!viewer->isOpenGL_4_3())
+    {
+      attribBuffers(viewer, PROGRAM_NO_SELECTION);
+      d->program=getShaderProgram(PROGRAM_NO_SELECTION);
+      d->program->bind();
+    }
+    else
+    {
+      attribBuffers(viewer, PROGRAM_SOLID_WIREFRAME);
+      d->program=getShaderProgram(PROGRAM_SOLID_WIREFRAME);
+      d->program->bind();
+      QVector2D vp(viewer->width(), viewer->height());
+      d->program->setUniformValue("viewport", vp);
+      d->program->setUniformValue("near",(GLfloat)viewer->camera()->zNear());
+      d->program->setUniformValue("far",(GLfloat)viewer->camera()->zFar());
+      d->program->setUniformValue("width", 4.0f);
+    }
     d->program->setAttributeValue("colors", QColor(Qt::blue));
     viewer->glDrawArrays(GL_LINES, 0, static_cast<GLsizei>(d->nb_border/3));
-    viewer->glLineWidth(1.0);
     //Clean-up
     d->program->release();
     vaos[Scene_textured_polyhedron_item_priv::Border_edges]->release();
 }
 
-Textured_polyhedron* 
+Textured_polyhedron*
 Scene_textured_polyhedron_item::textured_polyhedron()       { return d->poly; }
-const Textured_polyhedron* 
+const Textured_polyhedron*
 Scene_textured_polyhedron_item::textured_polyhedron() const { return d->poly; }
 
 bool
@@ -446,11 +458,14 @@ Scene_textured_polyhedron_item::selection_changed(bool p_is_selected)
     else
         is_selected = p_is_selected;
 }
-void Scene_textured_polyhedron_item::add_border_edges(std::vector<float> border_edges)
+void Scene_textured_polyhedron_item::add_border_edges(std::vector<float> border_edges,
+                                                      bool is_opengl_4_3)
 {
   d->positions_border = border_edges;
   d->nb_border = border_edges.size();
-  d->program=getShaderProgram(PROGRAM_NO_SELECTION);
+  d->program=is_opengl_4_3
+      ? getShaderProgram(PROGRAM_SOLID_WIREFRAME)
+      : getShaderProgram(PROGRAM_NO_SELECTION);
   d->program->bind();
   vaos[Scene_textured_polyhedron_item_priv::Border_edges]->bind();
   buffers[Scene_textured_polyhedron_item_priv::Edges_border].bind();

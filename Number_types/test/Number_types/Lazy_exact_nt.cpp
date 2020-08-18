@@ -12,6 +12,7 @@
 #include <CGAL/Quotient.h>
 #include <CGAL/Delaunay_triangulation_3.h>
 
+#include <CGAL/disable_warnings.h>
 
 #ifdef CGAL_USE_LEDA
 #  include <CGAL/leda_real.h>
@@ -90,7 +91,7 @@ void delaunay()
   for (int i=0; i<100; i++)
     D.insert(Delaunay::Point(my_NT(my_rand()),
                              my_NT(my_rand()),
-			     my_NT(my_rand())));
+                             my_NT(my_rand())));
 }
 
 // Tests the precision of to_double()

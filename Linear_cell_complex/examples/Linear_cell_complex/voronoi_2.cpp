@@ -6,10 +6,6 @@
 #include <iostream>
 #include <fstream>
 
-/* If you want to use a viewer, you can use qglviewer. */
-#ifdef CGAL_USE_BASIC_VIEWER
-#include "linear_cell_complex_3_viewer_qt.h"
-#endif
 
 // This example works both with cmap and gmap as combinatorial data structure.
 //typedef CGAL::Linear_cell_complex_for_combinatorial_map<2> LCC_2;
@@ -24,7 +20,7 @@ void display_voronoi(LCC_2& alcc, Dart_handle adart)
 {
   // We remove the infinite face plus all the faces adjacent to it.
   // Indeed, we cannot view these faces since they do not have
-  // a "correct geometry". 
+  // a "correct geometry".
   std::stack<Dart_handle> toremove;
   LCC_2::size_type mark_toremove=alcc.get_new_mark();
 
@@ -41,9 +37,9 @@ void display_voronoi(LCC_2& alcc, Dart_handle adart)
     {
       CGAL::mark_cell<LCC_2,2>(alcc, alcc.opposite<2>(it), mark_toremove);
       toremove.push(alcc.opposite<2>(it));
-    }   
+    }
   }
-  
+
   while( !toremove.empty() )
   {
     alcc.remove_cell<2>(toremove.top());
@@ -51,15 +47,11 @@ void display_voronoi(LCC_2& alcc, Dart_handle adart)
   }
 
   CGAL_assertion(alcc.is_without_boundary(1));
-    
+
   std::cout<<"Voronoi subdvision, only finite faces:"<<std::endl<<"  ";
-  alcc.display_characteristics(std::cout) << ", valid=" 
+  alcc.display_characteristics(std::cout) << ", valid="
                                           << alcc.is_valid()
                                           << std::endl;
-  
-#ifdef CGAL_USE_BASIC_VIEWER
-  display_lcc(alcc);
-#endif // CGAL_USE_BASIC_VIEWER
 }
 
 template<typename LCC, typename TR>
@@ -71,7 +63,7 @@ void transform_dart_to_their_dual(LCC& alcc, LCC& adual,
   typename LCC::Dart_range::iterator it2=adual.darts().begin();
 
   std::map<typename LCC::Dart_handle, typename LCC::Dart_handle> dual;
-  
+
   for ( ; it1!=alcc.darts().end(); ++it1, ++it2 )
   {
     dual[it1]=it2;
@@ -81,7 +73,7 @@ void transform_dart_to_their_dual(LCC& alcc, LCC& adual,
           ::iterator it=assoc.begin(), itend=assoc.end(); it!=itend; ++it)
   {
     assoc[it->first]=dual[it->second];
-  } 
+  }
 }
 
 template<typename LCC, typename TR>
@@ -104,7 +96,7 @@ int main(int narg, char** argv)
 {
   if (narg>1 && (!strcmp(argv[1],"-h") || !strcmp(argv[1],"-?")) )
   {
-    std::cout<<"Usage : voronoi_2 filename"<<std::endl   
+    std::cout<<"Usage : voronoi_2 filename"<<std::endl
              <<"   filename being a fine containing 2D points used to "
              <<" compute the Delaunay_triangulation_2."<<std::endl;
     return EXIT_FAILURE;
@@ -118,7 +110,7 @@ int main(int narg, char** argv)
   }
   else
     filename=std::string(argv[1]);
-  
+
   // 1) Compute the Delaunay_triangulation_2.
   Triangulation T;
 
@@ -128,22 +120,22 @@ int main(int narg, char** argv)
     std::cout << "Problem reading file " << filename << std::endl;
     return EXIT_FAILURE;
   }
-  
+
   std::istream_iterator<Point> begin(iFile), end;
   T.insert(begin, end);
   CGAL_assertion(T.is_valid(false));
- 
+
   // 2) Convert the triangulation into a 2D lcc.
   LCC_2 lcc;
   std::map<Triangulation::Face_handle,
            LCC_2::Dart_handle > face_to_dart;
-  
+
   Dart_handle dh=CGAL::import_from_triangulation_2<LCC_2, Triangulation>
     (lcc, T, &face_to_dart);
   CGAL_assertion(lcc.is_without_boundary());
 
   std::cout<<"Delaunay triangulation :"<<std::endl<<"  ";
-  lcc.display_characteristics(std::cout) << ", valid=" 
+  lcc.display_characteristics(std::cout) << ", valid="
                                          << lcc.is_valid() << std::endl;
 
   // 3) Compute the dual lcc.
@@ -157,10 +149,10 @@ int main(int narg, char** argv)
   transform_dart_to_their_dual<LCC_2,Triangulation>
     (lcc, dual_lcc, face_to_dart);
   set_geometry_of_dual<LCC_2,Triangulation>(dual_lcc, T, face_to_dart);
-  
+
   // 5) Display the dual_lcc characteristics.
   std::cout<<"Voronoi subdvision :"<<std::endl<<"  ";
-  dual_lcc.display_characteristics(std::cout) << ", valid=" 
+  dual_lcc.display_characteristics(std::cout) << ", valid="
                                               << dual_lcc.is_valid()
                                               << std::endl;
 

@@ -1,11 +1,11 @@
 #include "Viewer.h"
 #include <vector>
 #include <CGAL/bounding_box.h>
-#include <QGLViewer/vec.h>
+#include <CGAL/Qt/vec.h>
 #include "CGAL/Qt/CreateOpenGLContext.h"
 
 Viewer::Viewer(QWidget* parent)
-  : QGLViewer(CGAL::Qt::createOpenGLContext(),parent)
+  : CGAL::QGLViewer(parent)
 {
   are_buffers_initialized = false;
 }
@@ -51,24 +51,24 @@ void Viewer::compile_shaders()
         "varying highp vec4 fP; \n"
         "varying highp vec3 fN; \n"
         "uniform highp vec4 color; \n"
-        "uniform vec4 light_pos;  \n"
-        "uniform vec4 light_diff; \n"
-        "uniform vec4 light_spec; \n"
-        "uniform vec4 light_amb;  \n"
+        "uniform highp vec4 light_pos;  \n"
+        "uniform highp vec4 light_diff; \n"
+        "uniform highp vec4 light_spec; \n"
+        "uniform highp vec4 light_amb;  \n"
         "uniform float spec_power ; \n"
 
         "void main(void) { \n"
 
-        "   vec3 L = light_pos.xyz - fP.xyz; \n"
-        "   vec3 V = -fP.xyz; \n"
+        "   highp vec3 L = light_pos.xyz - fP.xyz; \n"
+        "   highp vec3 V = -fP.xyz; \n"
 
-        "   vec3 N = normalize(fN); \n"
+        "   highp vec3 N = normalize(fN); \n"
         "   L = normalize(L); \n"
         "   V = normalize(V); \n"
 
-        "   vec3 R = reflect(-L, N); \n"
-        "   vec4 diffuse = abs(dot(N,L)) * light_diff * color; \n"
-        "   vec4 specular = pow(max(dot(R,V), 0.0), spec_power) * light_spec; \n"
+        "   highp vec3 R = reflect(-L, N); \n"
+        "   highp vec4 diffuse = abs(dot(N,L)) * light_diff * color; \n"
+        "   highp vec4 specular = pow(max(dot(R,V), 0.0), spec_power) * light_spec; \n"
 
         "gl_FragColor = light_amb*color + diffuse + specular ; \n"
         "} \n"
@@ -109,8 +109,10 @@ const char vertex_source_points[] =
     "attribute highp vec4 vertex;\n"
 
     "uniform highp mat4 mvp_matrix;\n"
+    "uniform highp float point_size;\n"
     "void main(void)\n"
     "{\n"
+    "   gl_PointSize = point_size; \n"
     "   gl_Position = mvp_matrix * vertex;\n"
     "}"
 };
@@ -168,7 +170,7 @@ void Viewer::initialize_buffers()
     buffers[0].release();
 
     buffers[1].bind();
-    buffers[1].allocate(normals.data(), 
+    buffers[1].allocate(normals.data(),
                         static_cast<int>(normals.size()*sizeof(float)));
     normalsLocation = rendering_program.attributeLocation("normal");
     rendering_program.bind();
@@ -198,7 +200,7 @@ void Viewer::initialize_buffers()
 }
 
 
-void Viewer::attrib_buffers(QGLViewer* viewer)
+void Viewer::attrib_buffers(CGAL::QGLViewer* viewer)
 {
     QMatrix4x4 mvpMatrix;
     QMatrix4x4 mvMatrix;
@@ -214,18 +216,18 @@ void Viewer::attrib_buffers(QGLViewer* viewer)
         mvMatrix.data()[i] = (float)mat[i];
     }
     // define material
-     QVector4D	ambient(0.25f, 0.20725f, 0.20725f, 0.922f);
-     QVector4D	diffuse( 1.0f,
+     QVector4D        ambient(0.25f, 0.20725f, 0.20725f, 0.922f);
+     QVector4D        diffuse( 1.0f,
                             0.829f,
                             0.829f,
                             0.922f );
 
-    QVector4D	specular(  0.6f,
+    QVector4D        specular(  0.6f,
                             0.6f,
                             0.6f,
                             1.0f );
 
-    QVector4D	position(0.0f,0.0f,1.0f,1.0f );
+    QVector4D        position(0.0f,0.0f,1.0f,1.0f );
      GLfloat shininess =  11.264f;
 
 
@@ -261,7 +263,7 @@ void Viewer::attrib_buffers(QGLViewer* viewer)
 
 void Viewer::initializeGL()
 {
-  QGLViewer::initializeGL();
+  CGAL::QGLViewer::initializeGL();
   compile_shaders();
 }
 
@@ -271,11 +273,11 @@ Viewer::sceneChanged()
 {
 
   Iso_cuboid_3 bb = CGAL::bounding_box(scene->points.begin(), scene->points.end());
-   
-  this->camera()->setSceneBoundingBox(qglviewer::Vec(bb.xmin(), bb.ymin(), bb.zmin()),
-				      qglviewer::Vec(bb.xmax(),
-						     bb.ymax(),
-						     bb.zmax()));
+
+  this->camera()->setSceneBoundingBox(CGAL::qglviewer::Vec(bb.xmin(), bb.ymin(), bb.zmin()),
+                                      CGAL::qglviewer::Vec(bb.xmax(),
+                                                     bb.ymax(),
+                                                     bb.zmax()));
 
   this->showEntireScene();
 
@@ -334,9 +336,9 @@ Viewer::draw()
     attrib_buffers(this);
     rendering_program_points.bind();
     color.setRgbF(1.0f, 0.0f, 0.0f);
-    glPointSize(5);
     glEnable(GL_POINT_SMOOTH);
     rendering_program_points.setUniformValue(colorLocation_points, color);
+    rendering_program_points.setUniformValue("point_size",5.0f);
     glDrawArrays(GL_POINTS, 0, static_cast<GLsizei>(pos_points.size()/3));
     rendering_program_points.release();
     vao[1].release();

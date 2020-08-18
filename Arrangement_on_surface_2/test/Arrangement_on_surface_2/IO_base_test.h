@@ -3,6 +3,7 @@
 
 template <typename GeomTraits_>
 class IO_base_test {
+  IO_base_test<GeomTraits_>& operator=(const IO_base_test<GeomTraits_>&);
 public:
   typedef GeomTraits_                                   Geom_traits;
   typedef typename Geom_traits::Point_2                 Point_2;
@@ -1238,7 +1239,7 @@ bool IO_base_test<Base_geom_traits>::read_curve(InputStream_& is, Curve_2& cv)
 
   // If we reached here, we have an unknown conic type:
   std::cerr << "Illegal conic type specification: " << type << "."
-	    << std::endl;
+            << std::endl;
   return false;
 }
 

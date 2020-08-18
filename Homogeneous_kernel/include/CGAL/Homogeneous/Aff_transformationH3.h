@@ -1,25 +1,16 @@
-// Copyright (c) 1999  
+// Copyright (c) 1999
 // Utrecht University (The Netherlands),
 // ETH Zurich (Switzerland),
 // INRIA Sophia-Antipolis (France),
 // Max-Planck-Institute Saarbruecken (Germany),
-// and Tel-Aviv University (Israel).  All rights reserved. 
+// and Tel-Aviv University (Israel).  All rights reserved.
 //
-// This file is part of CGAL (www.cgal.org); you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public License as
-// published by the Free Software Foundation; either version 3 of the License,
-// or (at your option) any later version.
-//
-// Licensees holding a valid commercial license may use this file in
-// accordance with the commercial license agreement provided with the software.
-//
-// This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
-// WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+// This file is part of CGAL (www.cgal.org)
 //
 // $URL$
 // $Id$
-// SPDX-License-Identifier: LGPL-3.0+
-// 
+// SPDX-License-Identifier: LGPL-3.0-or-later OR LicenseRef-Commercial
+//
 //
 // Author(s)     : Stefan Schirra
 
@@ -364,6 +355,20 @@ public:
   RT
   hm(int i, int j) const
   { return this->Ptr()->homogeneous(i,j); }
+
+  bool operator==(const Aff_transformationH3 &t)const
+  {
+    for(int i=0; i<3; ++i)
+      for(int j = 0; j< 4; ++j)
+        if(homogeneous(i,j)!=t.homogeneous(i,j))
+          return false;
+    return true;
+  }
+
+  bool operator!=(const Aff_transformationH3 &t)const
+  {
+    return !(*this == t);
+  }
 };
 
 template < class R >
@@ -529,7 +534,7 @@ bool
 Aff_transformation_repH3<R>::is_even() const
 {
   return (CGAL_NTS sign<RT>( t33 *
-	                    determinant(t00, t01, t02,
+                            determinant(t00, t01, t02,
                                               t10, t11, t12,
                                               t20, t21, t22 ) ) == POSITIVE );
 }
@@ -551,29 +556,37 @@ homogeneous(int i, int j) const
               case 1: return t01;
               case 2: return t02;
               case 3: return t03;
+              default: CGAL_assume(false);
             }
+            break;
     case 1: switch (j)
             {
               case 0: return t10;
               case 1: return t11;
               case 2: return t12;
               case 3: return t13;
+              default: CGAL_assume(false);
             }
+            break;
     case 2: switch (j)
             {
               case 0: return t20;
               case 1: return t21;
               case 2: return t22;
               case 3: return t23;
+              default: CGAL_assume(false);
             }
+            break;
     case 3: switch (j)
             {
               case 0: return RT0;
               case 1: return RT0;
               case 2: return RT0;
               case 3: return t33;
+              default: CGAL_assume(false);
             }
   }
+  CGAL_assume(false);
   return RT0;
 }
 
@@ -695,29 +708,37 @@ Translation_repH3<R>::homogeneous(int i, int j) const
               case 1: return RT0;
               case 2: return RT0;
               case 3: return tv.hx();
+              default: CGAL_assume(false);
             }
+            break;
     case 1: switch (j)
             {
               case 0: return RT0;
               case 1: return tv.hw();
               case 2: return RT0;
               case 3: return tv.hy();
+              default: CGAL_assume(false);
             }
+            break;
     case 2: switch (j)
             {
               case 0: return RT0;
               case 1: return RT0;
               case 2: return tv.hw();
               case 3: return tv.hz();
+              default: CGAL_assume(false);
             }
+            break;
     case 3: switch (j)
             {
               case 0: return RT0;
               case 1: return RT0;
               case 2: return RT0;
               case 3: return tv.hw();
+              default: CGAL_assume(false);
             }
   }
+  CGAL_assume(false);
   return RT0;
 }
 
@@ -771,7 +792,7 @@ template < class R >
 CGAL_KERNEL_INLINE
 Aff_transformationH3<R>::
 Aff_transformationH3(const Translation&,
-	             const typename Aff_transformationH3<R>::Vector_3& v)
+                     const typename Aff_transformationH3<R>::Vector_3& v)
 { initialize_with(Translation_repH3<R>( v )); }
 
 template < class R >

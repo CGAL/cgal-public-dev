@@ -2,19 +2,10 @@
 // All rights reserved.
 //
 // This file is part of CGAL (www.cgal.org).
-// You can redistribute it and/or modify it under the terms of the GNU
-// General Public License as published by the Free Software Foundation,
-// either version 3 of the License, or (at your option) any later version.
-//
-// Licensees holding a valid commercial license may use this file in
-// accordance with the commercial license agreement provided with the software.
-//
-// This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
-// WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 //
 // $URL$
 // $Id$
-// SPDX-License-Identifier: GPL-3.0+
+// SPDX-License-Identifier: GPL-3.0-or-later OR LicenseRef-Commercial
 //
 // Author(s)     : Sylvain Pion <Sylvain.Pion@sophia.inria.fr>
 //                 Manuel Caroli <Manuel.Caroli@sophia.inria.fr>
@@ -29,19 +20,20 @@
 
 namespace CGAL {
 
-template< typename K,
-          typename Off = typename CGAL::Periodic_3_offset_3>
+template<typename K_,
+         typename Off_ = typename CGAL::Periodic_3_offset_3>
 class Periodic_3_triangulation_statically_filtered_traits_3
-    : public Periodic_3_triangulation_filtered_traits_base_3<K, Off>
+    : public Periodic_3_triangulation_filtered_traits_base_3<K_, Off_>
 {
-  typedef Periodic_3_triangulation_statically_filtered_traits_3<K, Off> Self;
-  typedef Periodic_3_triangulation_filtered_traits_base_3<K, Off>       Base;
+  typedef Periodic_3_triangulation_statically_filtered_traits_3<K_, Off_> Self;
+  typedef Periodic_3_triangulation_filtered_traits_base_3<K_, Off_>       Base;
 
 public:
-  typedef typename K::Iso_cuboid_3 Iso_cuboid_3;
+  typedef K_                                                              Kernel;
+  typedef typename Kernel::Iso_cuboid_3                                   Iso_cuboid_3;
 
   Periodic_3_triangulation_statically_filtered_traits_3(const Iso_cuboid_3& domain,
-                                                        const K& k)
+                                                        const Kernel& k)
     : Base(domain, k)
   { }
 

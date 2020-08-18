@@ -2,19 +2,10 @@
 // All rights reserved.
 //
 // This file is part of CGAL (www.cgal.org).
-// You can redistribute it and/or modify it under the terms of the GNU
-// General Public License as published by the Free Software Foundation,
-// either version 3 of the License, or (at your option) any later version.
-//
-// Licensees holding a valid commercial license may use this file in
-// accordance with the commercial license agreement provided with the software.
-//
-// This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
-// WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 //
 // $URL$
 // $Id$
-// SPDX-License-Identifier: GPL-3.0+
+// SPDX-License-Identifier: GPL-3.0-or-later OR LicenseRef-Commercial
 //
 //
 // Author(s)     : Raphaelle Chaine
@@ -72,8 +63,8 @@ construct_circumcenter(const typename DT::Facet& f,
 
 template <class Dt, class OutputIterator>
 Triple< OutputIterator,  // iterator with value type std::pair<Dt::Vertex_handle, Dt::Geom_traits::FT>
-  typename Dt::Geom_traits::FT,  // Should provide 0 and 1
-  bool >
+        typename Dt::Geom_traits::FT,  // Should provide 0 and 1
+        bool >
 laplace_natural_neighbor_coordinates_3(const Dt& dt,
                                        const typename Dt::Geom_traits::Point_3& Q,
                                        OutputIterator nn_out,
@@ -108,23 +99,25 @@ laplace_natural_neighbor_coordinates_3(const Dt& dt,
   std::set<Cell_handle> cells;
   // To replace the forbidden access to the "in conflict" flag :
   // std::find operations on this set
-  std::vector<Facet> bound_facets; bound_facets.reserve(32);
-  typename std::vector<Facet>::iterator bound_it;
+  std::vector<Facet> bound_facets;
+  bound_facets.reserve(32);
+
   // Find the cells in conflict with Q
   dt.find_conflicts(Q, c,
                     std::back_inserter(bound_facets),
-                    std::inserter(cells,cells.begin()));
+                    std::inserter(cells, cells.begin()));
 
   std::map<Vertex_handle,Coord_type> coordinate;
   typename std::map<Vertex_handle,Coord_type>::iterator coor_it;
 
+  typename std::vector<Facet>::iterator bound_it;
   for (bound_it = bound_facets.begin(); bound_it != bound_facets.end(); ++bound_it)
   {
     //for each facet on the boundary
     Facet f1 = *bound_it;
     Cell_handle cc1 = f1.first;
     if (dt.is_infinite(cc1))
-      return make_triple(nn_out,norm_coeff=Coord_type(1), false);//point outside the convex-hull
+      return make_triple(nn_out, norm_coeff=Coord_type(1), false);//point outside the convex-hull
 
     CGAL_triangulation_assertion_code(Cell_handle cc2 = cc1->neighbor(f1.second);)
     CGAL_triangulation_assertion(std::find(cells.begin(),cells.end(),cc1) != cells.end());//TODO : Delete
@@ -172,8 +165,8 @@ laplace_natural_neighbor_coordinates_3(const Dt& dt,
 
 template <class Dt, class OutputIterator>
 Triple< OutputIterator,  // iterator with value type std::pair<Dt::Vertex_handle, Dt::Geom_traits::FT>
-  typename Dt::Geom_traits::FT,  // Should provide 0 and 1
-  bool >
+        typename Dt::Geom_traits::FT,  // Should provide 0 and 1
+        bool >
 sibson_natural_neighbor_coordinates_3(const Dt& dt,
                                       const typename Dt::Geom_traits::Point_3& Q,
                                       OutputIterator nn_out,

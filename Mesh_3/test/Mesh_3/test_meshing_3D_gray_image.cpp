@@ -2,19 +2,10 @@
 // All rights reserved.
 //
 // This file is part of CGAL (www.cgal.org).
-// You can redistribute it and/or modify it under the terms of the GNU
-// General Public License as published by the Free Software Foundation,
-// either version 3 of the License, or (at your option) any later version.
-//
-// Licensees holding a valid commercial license may use this file in
-// accordance with the commercial license agreement provided with the software.
-//
-// This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
-// WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 //
 // $URL$
 // $Id$
-// SPDX-License-Identifier: GPL-3.0+
+// SPDX-License-Identifier: GPL-3.0-or-later OR LicenseRef-Commercial
 //
 //
 // Author(s)     : Laurent Rineau, Jane Tournois
@@ -22,10 +13,9 @@
 //******************************************************************************
 // File Description :
 //***************************************************************************
-
 #include "test_meshing_utilities.h"
 #include <CGAL/Image_3.h>
-#include <CGAL/Gray_image_mesh_domain_3.h>
+#include <CGAL/Labeled_mesh_domain_3.h>
 #include <CGAL/use.h>
 
 #include <functional>
@@ -49,13 +39,8 @@ struct Image_tester : public Tester<K_e_i>
 public:
   void image() const
   {
-    typedef float                                       Image_word_type;
     typedef CGAL::Image_3                               Image;
-    typedef CGAL::Gray_image_mesh_domain_3<
-      Image,
-      K_e_i,
-      Image_word_type,
-      Greater_than<double> >                            Mesh_domain;
+    typedef CGAL::Labeled_mesh_domain_3<K_e_i>          Mesh_domain;
 
     typedef typename CGAL::Mesh_triangulation_3<
       Mesh_domain,
@@ -78,19 +63,20 @@ public:
 
     std::cout << "\tSeed is\t"
               << CGAL::get_default_random().get_seed() << std::endl;
-
+    namespace p = CGAL::parameters;
     // Domain
-    Mesh_domain domain(image,
-      2.9f, //isovalue
-      0.f,  //value_outside
-      1e-3, //error_bound
-      &CGAL::get_default_random());//random generator for determinism
+    Mesh_domain domain =
+      Mesh_domain::create_gray_image_mesh_domain(image,
+                                                 p::iso_value = 2.9f,
+                                                 p::value_outside = 0.f,
+                                                 p::relative_error_bound = 1e-3,
+                                                 p::p_rng =
+                                                 &CGAL::get_default_random());
 
     // Mesh criteria
     Mesh_criteria criteria(facet_angle = 30,
                            facet_size = 6,
                            facet_distance = 2,
-                           facet_topology = CGAL::MANIFOLD,
                            cell_radius_edge_ratio = 3,
                            cell_size = 8);
 

@@ -14,15 +14,39 @@
 #include <QtPlugin>
 #include <QMessageBox>
 
+#include <sstream>
+
+#include "run_with_qprogressdialog.h"
+
 #include "ui_Point_set_bilateral_smoothing_plugin.h"
 
 // Concurrency
-#ifdef CGAL_LINKED_WITH_TBB
-typedef CGAL::Parallel_tag Concurrency_tag;
-#else
-typedef CGAL::Sequential_tag Concurrency_tag;
-#endif
+typedef CGAL::Parallel_if_available_tag Concurrency_tag;
 
+struct Bilateral_smoothing_functor
+  : public Functor_with_signal_callback
+{
+  Point_set* points;
+  unsigned int neighborhood_size;
+  unsigned int sharpness_angle;
+  boost::shared_ptr<double> result;
+
+  Bilateral_smoothing_functor  (Point_set* points,
+                                unsigned int neighborhood_size,
+                                unsigned int sharpness_angle)
+    : points (points), neighborhood_size (neighborhood_size)
+    , sharpness_angle (sharpness_angle), result (new double(0)) { }
+
+  void operator()()
+  {
+    *result = CGAL::bilateral_smooth_point_set<Concurrency_tag>
+      (points->all_or_selection_if_not_empty(),
+       neighborhood_size,
+       points->parameters().
+       sharpness_angle(sharpness_angle).
+       callback (*(this->callback())));
+  }
+};
 
 using namespace CGAL::Three;
 class Polyhedron_demo_point_set_bilateral_smoothing_plugin :
@@ -32,7 +56,7 @@ class Polyhedron_demo_point_set_bilateral_smoothing_plugin :
   Q_OBJECT
   Q_INTERFACES(CGAL::Three::Polyhedron_demo_plugin_interface)
   Q_PLUGIN_METADATA(IID "com.geometryfactory.PolyhedronDemo.PluginInterface/1.0")
-  
+
   QAction* actionBilateralSmoothing;
 
 public:
@@ -100,29 +124,32 @@ void Polyhedron_demo_point_set_bilateral_smoothing_plugin::on_actionBilateralSmo
       return;
 
     std::cerr << "Bilateral smoothing using "
-	      << dialog.iterations () << " iteration(s), neighborhood size of "
-	      << dialog.neighborhood_size () << " and sharpness angle of "
-	      << dialog.sharpness_angle () << "... ";
-    QApplication::setOverrideCursor(Qt::WaitCursor);
+              << dialog.iterations () << " iteration(s), neighborhood size of "
+              << dialog.neighborhood_size () << " and sharpness angle of "
+              << dialog.sharpness_angle () << "... ";
+    QApplication::setOverrideCursor(Qt::BusyCursor);
 
     CGAL::Timer task_timer; task_timer.start();
 
     for (unsigned int i = 0; i < dialog.iterations (); ++i)
       {
-	/* double error = */
-	CGAL::bilateral_smooth_point_set<Concurrency_tag>
-	  (points->all_or_selection_if_not_empty(),
-	   dialog.neighborhood_size (),
-           points->parameters().
-	   sharpness_angle(dialog.sharpness_angle ()));
+        std::ostringstream oss;
+        oss << "Bilateral smoothing (iteration " << i+1 << "/" << dialog.iterations() << ")";
+
+        Bilateral_smoothing_functor functor (points,
+                                             dialog.neighborhood_size (),
+                                             dialog.sharpness_angle ());
+        run_with_qprogressdialog (functor, oss.str().c_str(), mw);
+        double error = *functor.result;
+
+        if (std::isnan(error)) // NaN return means algorithm was interrupted
+          break;
       }
 
-
-    
     std::size_t memory = CGAL::Memory_sizer().virtual_size();
     std::cerr << task_timer.time() << " seconds, "
-	      << (memory>>20) << " Mb allocated)"
-	      << std::endl;
+              << (memory>>20) << " Mb allocated)"
+              << std::endl;
 
     // Updates scene
     item->invalidateOpenGLBuffers();

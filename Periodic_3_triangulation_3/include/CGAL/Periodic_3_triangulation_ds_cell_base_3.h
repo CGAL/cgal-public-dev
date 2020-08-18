@@ -2,19 +2,10 @@
 // All rights reserved.
 //
 // This file is part of CGAL (www.cgal.org).
-// You can redistribute it and/or modify it under the terms of the GNU
-// General Public License as published by the Free Software Foundation,
-// either version 3 of the License, or (at your option) any later version.
-//
-// Licensees holding a valid commercial license may use this file in
-// accordance with the commercial license agreement provided with the software.
-//
-// This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
-// WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 //
 // $URL$
 // $Id$
-// SPDX-License-Identifier: GPL-3.0+
+// SPDX-License-Identifier: GPL-3.0-or-later OR LicenseRef-Commercial
 //
 //
 // Author(s)     : Monique Teillaud <Monique.Teillaud@sophia.inria.fr>
@@ -56,31 +47,17 @@ public:
   Periodic_3_triangulation_ds_cell_base_3(
       const Vertex_handle& v0, const Vertex_handle& v1,
       const Vertex_handle& v2, const Vertex_handle& v3)
-#ifndef CGAL_CFG_NO_CPP0X_UNIFIED_INITIALIZATION_SYNTAX
     : V{v0, v1, v2, v3},
       _additional_flag(0), off(0) {}
-#else
-    : _additional_flag(0), off(0) {
-      set_vertices(v0, v1, v2, v3);
-      set_neighbors();
-    }
-#endif
 
   Periodic_3_triangulation_ds_cell_base_3(
       const Vertex_handle& v0, const Vertex_handle& v1,
       const Vertex_handle& v2, const Vertex_handle& v3,
       const Cell_handle&   n0, const Cell_handle&   n1,
       const Cell_handle&   n2, const Cell_handle&   n3)
-#ifndef CGAL_CFG_NO_CPP0X_UNIFIED_INITIALIZATION_SYNTAX
     : N{n0, n1, n2, n3},
       V{v0, v1, v2, v3},
       _additional_flag(0), off(0) {}
-#else
-    : _additional_flag(0), off(0) {
-    set_vertices(v0, v1, v2, v3);
-    set_neighbors(n0, n1, n2, n3);
-  }
-#endif
 
   // ACCESS FUNCTIONS
 
@@ -191,7 +168,27 @@ public:
     N[3] = n3;
   }
 
-  void set_offsets(int o0,int o1,int o2,int o3) {
+  void set_offset(const Vertex_handle vh, int o)
+  {
+    CGAL_triangulation_precondition(has_vertex(vh));
+    int vhi = index(vh);
+
+    unsigned int offo[3] = {static_cast<unsigned int>((o&1)),
+                            static_cast<unsigned int>((o>>1)&1),
+                            static_cast<unsigned int>((o>>2)&1)};
+
+    int bit_offset = 3 * vhi;
+
+    // first reset the bit to 0 (AND), then assign the value given in input (OR)
+    off = (off & ~(1 <<  bit_offset))      | (offo[0] <<  bit_offset);
+    off = (off & ~(1 << (bit_offset + 1))) | (offo[1] << (bit_offset + 1));
+    off = (off & ~(1 << (bit_offset + 2))) | (offo[2] << (bit_offset + 2));
+
+    CGAL_postcondition(offset(vhi) == o);
+  }
+
+  void set_offsets(int o0,int o1,int o2,int o3)
+  {
     off = 0;
     // The following explicit cast are needed according to the Intel
     // Compiler version 12.
@@ -236,7 +233,7 @@ public:
 
   // For use by Compact_container.
   void * for_compact_container() const { return N[0].for_compact_container(); }
-  void * & for_compact_container()     { return N[0].for_compact_container(); }
+  void for_compact_container(void *p) { N[0].for_compact_container(p); }
 
   // TDS internal data access functions.
   TDS_data& tds_data() { return _tds_data; }
@@ -257,11 +254,13 @@ private:
   Vertex_handle V[4];
   TDS_data _tds_data;
   unsigned char _additional_flag:2;
-  // 3 respective bits are the offset in x,y and z
-  // right to left: bit[0]-bit[2]: vertex(0),
-  // bit[3]-bit[5]: vertex(1), bit[6]-bit[8]: vertex(2),
-  // and bit[9]-bit[12]: vertex(3)
-  // Thus the underlying data type needs to have at least 12 bit,
+  // 3 consecutive bits give the offset in x, y, and z.
+  // From right to left:
+  // - vertex(0): bit[0]-bit[2],
+  // - vertex(1): bit[3]-bit[5],
+  // - vertex(2): bit[6]-bit[8],
+  // - vertex(3): bit[9]-bit[12].
+  // Thus the underlying data type must have at least 12 bits,
   // which is true for uint.
   unsigned int off;
 };

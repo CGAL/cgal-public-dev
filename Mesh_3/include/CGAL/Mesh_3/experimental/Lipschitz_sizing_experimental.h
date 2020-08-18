@@ -2,19 +2,10 @@
 // All rights reserved.
 //
 // This file is part of CGAL (www.cgal.org).
-// You can redistribute it and/or modify it under the terms of the GNU
-// General Public License as published by the Free Software Foundation,
-// either version 3 of the License, or (at your option) any later version.
-//
-// Licensees holding a valid commercial license may use this file in
-// accordance with the commercial license agreement provided with the software.
-//
-// This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
-// WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 //
 // $URL$
 // $Id$
-// SPDX-License-Identifier: GPL-3.0+
+// SPDX-License-Identifier: GPL-3.0-or-later OR LicenseRef-Commercial
 //
 //
 // Author(s)     : Jane Tournois
@@ -74,6 +65,7 @@ public:
   typedef typename CGAL::Default::Get<AABBTreeTemplate, AABB_tree>::type Tree;
 
   typedef typename MeshDomain::Index                    Index;
+  typedef typename MeshDomain::Corner_index             Corner_index;
   typedef typename MeshDomain::Subdomain_index          Subdomain_index;
   typedef typename MeshDomain::Surface_patch_index      Surface_patch_index;
 
@@ -106,7 +98,7 @@ private:
   const MeshDomain& m_domain;
   Parameters m_params;
 
-  const CGAL::cpp11::array<double, 3>& m_vxyz;
+  const std::array<double, 3>& m_vxyz;
   const CGAL::Bbox_3& m_bbox;
   const bool m_domain_is_a_box;
 
@@ -120,7 +112,7 @@ private:
 
 public:
   Lipschitz_sizing(const MeshDomain& domain)
-    : m_ptree(NULL)
+    : m_ptree(nullptr)
     , m_own_ptree()
     , m_domain(domain)
     , m_params(domain)
@@ -129,7 +121,7 @@ public:
 
   Lipschitz_sizing(const MeshDomain& domain
     , const Tree* ptree
-    , const CGAL::cpp11::array<double, 3>& vxyz
+    , const std::array<double, 3>& vxyz
     , const CGAL::Bbox_3& bbox
     , const bool domain_is_a_box
 #ifdef CGAL_MESH_3_EXPERIMENTAL_USE_PATCHES_IDS
@@ -207,9 +199,9 @@ public:
     {
 #ifdef CGAL_MESH_3_EXPERIMENTAL_USE_PATCHES_IDS
       const typename MeshDomain::Curve_index& curve_id =
-        m_domain.curve_segment_index(index);
+        m_domain.curve_index(index);
       const Patches_ids& ids = patches_ids_map[curve_id];
-      
+
       if (m_domain_is_a_box && ids.size() == 2)
       {
         //we are on an edge of the box
@@ -231,8 +223,8 @@ public:
     else if (dim == 0)
     {
 #ifdef CGAL_MESH_3_EXPERIMENTAL_USE_PATCHES_IDS
-      const Patches_ids& ids =
-        (m_domain.corners_incidences_map().find(p)->second);
+      const Corner_index cid = m_domain.corner_index(index);
+      const Patches_ids& ids = m_domain.corners_incidences_map().find(cid)->second;
 
       if (m_domain_is_a_box && ids.size() == 3)
       {
@@ -264,7 +256,7 @@ private:
   std::vector<Subdomain_index> incident_subdomains(const Patches_ids& ids) const
   {
     std::vector<Subdomain_index> vec;
-    BOOST_FOREACH(Surface_patch_index spi, ids)
+    for(Surface_patch_index spi : ids)
     {
       const std::pair<Subdomain_index, Subdomain_index>& subdomains
         = m_params.incident_subdomains(spi);
@@ -281,7 +273,7 @@ private:
   FT min_size_in_incident_subdomains(const Patches_ids& ids) const
   {
     FT size = static_cast<FT>((std::numeric_limits<double>::max)());
-    BOOST_FOREACH(Surface_patch_index spi, ids)
+    for(Surface_patch_index spi : ids)
     {
       const std::pair<Subdomain_index, Subdomain_index>& subdomains
         = m_params.incident_subdomains(spi);
@@ -318,7 +310,6 @@ public:
 
     m_own_ptree.reset(new Tree(triangles.begin(), triangles.end()));
     m_own_ptree->build();
-    m_own_ptree->accelerate_distance_queries();
   }
 
 private:
@@ -381,7 +372,7 @@ private:
     m_params.get_parameters(index, k, size_min, size_max);
 
     FT sqdist = 0.;
-    if(m_ptree == NULL)
+    if(m_ptree == nullptr)
     {
       sqdist = m_own_ptree->squared_distance(p);
     }
@@ -401,16 +392,16 @@ private:
     typedef typename MeshDomain::Polyhedron Polyhedron;
     if(m_kd_tree.get() == 0) {
       m_kd_tree.reset(new Kd_tree);
-      BOOST_FOREACH(std::size_t poly_id, m_domain.inside_polyhedra()) {
+      for(std::size_t poly_id : m_domain.inside_polyhedra()) {
         const Polyhedron& poly = m_domain.polyhedra()[poly_id];
-        BOOST_FOREACH(typename Polyhedron::Vertex_handle v, vertices(poly))
+        for(typename Polyhedron::Vertex_handle v : vertices(poly))
         {
           m_kd_tree->insert(v->point());
         }
       }
-      BOOST_FOREACH(std::size_t poly_id, m_domain.boundary_polyhedra()) {
+      for(std::size_t poly_id : m_domain.boundary_polyhedra()) {
         const Polyhedron& poly = m_domain.polyhedra()[poly_id];
-        BOOST_FOREACH(typename Polyhedron::Vertex_handle v, vertices(poly))
+        for(typename Polyhedron::Vertex_handle v : vertices(poly))
         {
           if(!is_on_cube_boundary(v->point()))
             m_kd_tree->insert(v->point());

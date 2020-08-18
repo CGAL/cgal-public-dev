@@ -43,7 +43,7 @@ struct Kernel : public Kernel1 {
 };
 
 typedef Kernel::FT FT;
-typedef Kernel::Point_3 Point;
+typedef Kernel::Point_3 Point_3;
 typedef Kernel::Sphere_3 Sphere;
 typedef Kernel::Vector_3 Vector;
 typedef Kernel::Triangle_3 Triangle_3;
@@ -51,9 +51,10 @@ typedef Kernel::Segment_3 Segment_3;
 
 // typedef CGAL::Triple<Triangle_3,Vector,const QTreeWidgetItem*> Facet;
 
-typedef boost::tuple<Triangle_3,Vector,const QTreeWidgetItem*> Facet;
+typedef boost::tuple<Triangle_3,Vector,const QTreeWidgetItem*> Facet_;
 
-typedef CBinary_image_3<FT,Point> Binary_image;
+
+typedef CBinary_image_3<FT,Point_3> Binary_image;
 
 class QTreeWidgetItem;
 
@@ -62,16 +63,19 @@ class QTreeWidgetItem;
 #include <CGAL/Surface_mesh_vertex_base_3.h>
 #include <CGAL/Triangulation_cell_base_with_info_3.h>
 #include <CGAL/Surface_mesh_cell_base_3.h>
+#include <CGAL/Delaunay_triangulation_cell_base_3.h>
 #include <CGAL/Delaunay_triangulation_cell_base_with_circumcenter_3.h>
 #include <CGAL/Delaunay_triangulation_3.h>
 #include <CGAL/Surface_mesh_complex_2_in_triangulation_3.h>
 #include <CGAL/Surface_mesh_default_criteria_3.h>
 #include <CGAL/Implicit_surface_3.h>
 #include <CGAL/Surface_mesh_traits_generator_3.h>
+
 typedef CGAL::Surface_mesh_vertex_base_3<Kernel> Vb;
 typedef CGAL::Triangulation_cell_base_with_info_3<unsigned char, Kernel> Cb1;
-typedef CGAL::Surface_mesh_cell_base_3<Kernel, Cb1> Cb2;
-typedef CGAL::Delaunay_triangulation_cell_base_with_circumcenter_3<Kernel, Cb2> Cb;
+typedef CGAL::Delaunay_triangulation_cell_base_3<Kernel, Cb1> Cb2;
+typedef CGAL::Delaunay_triangulation_cell_base_with_circumcenter_3<Kernel, Cb2> Cb3;
+typedef CGAL::Surface_mesh_cell_base_3<Kernel, Cb3> Cb;
 typedef CGAL::Triangulation_data_structure_3<Vb, Cb> Tds;
 typedef CGAL::Delaunay_triangulation_3<Kernel, Tds> Tr;
 typedef CGAL::Surface_mesh_complex_2_in_triangulation_3<Tr> C2t3;
@@ -112,7 +116,7 @@ private:
   bool use_gouraud;
   bool show_bbox;
 
-  std::vector<Facet> m_surface;
+  std::vector<Facet_> m_surface;
   Tr del;            // 3D-Delaunay triangulation
   C2t3 c2t3;         // 2D complex in 3D triangulation
 
@@ -132,7 +136,7 @@ private:
   int sm_total_time;
 
 #ifdef CGAL_SURFACE_MESH_DEMO_USE_MARCHING_CUBE
-  std::vector<Facet> m_surface_mc;
+  std::vector<Facet_> m_surface_mc;
   MarchingCubes<unsigned char> mc ;
   std::vector<int> nbs_of_mc_triangles;
   std::vector<GLint> lists_draw_surface_mc;
@@ -148,7 +152,7 @@ private:
 #endif // CGAL_SURFACE_MESH_DEMO_USE_MARCHING_CUBE
 
   bool m_view_mc; // that boolean is here even with if
-		  // CGAL_SURFACE_MESH_DEMO_USE_MARCHING_CUBE
+                  // CGAL_SURFACE_MESH_DEMO_USE_MARCHING_CUBE
                   // is not defined.
 
 #ifdef CGAL_USE_VTK
@@ -171,11 +175,11 @@ private:
                           const unsigned char blue);
 
   template <typename PointsOutputIterator,
-	    typename DomainsOutputIterator,
-	    typename TransformOperator>
+            typename DomainsOutputIterator,
+            typename TransformOperator>
   void search_for_connected_components(PointsOutputIterator,
-				       DomainsOutputIterator, 
-				       TransformOperator);
+                                       DomainsOutputIterator,
+                                       TransformOperator);
 
 public:
   void gl_draw_surface();
@@ -205,7 +209,7 @@ public Q_SLOTS:
   void check_can_export_off();
   void draw();
   void get_bbox(float& /*xmin*/, float& /*ymin*/, float& /*zmin*/,
-		float& /*xmax*/, float& /*ymax*/, float& /*zmax*/) {}
+                float& /*xmax*/, float& /*ymax*/, float& /*zmax*/) {}
   void close() {}
   void display_surface_mesher_result();
   void set_radius_bound(double);
@@ -223,11 +227,11 @@ private:
 };
 
 template <typename PointsOutputIterator,
-	  typename DomainsOutputIterator,
-	  typename TransformOperator>
+          typename DomainsOutputIterator,
+          typename TransformOperator>
 void Volume::search_for_connected_components(PointsOutputIterator it,
-					     DomainsOutputIterator dom_it,
-					     TransformOperator transform)
+                                             DomainsOutputIterator dom_it,
+                                             TransformOperator transform)
 {
   const std::size_t nx = m_image.xdim();
   const std::size_t ny = m_image.ydim();
@@ -254,7 +258,7 @@ void Volume::search_for_connected_components(PointsOutputIterator it,
         if(visited[i][j][k]>0)
           continue;
         const Label current_label = transform(m_image.value(i, j, k));
-	*dom_it++ = current_label;
+        *dom_it++ = current_label;
         if(current_label == Label()) {
           visited[i][j][k] = 3;
           continue;
@@ -265,7 +269,7 @@ void Volume::search_for_connected_components(PointsOutputIterator it,
         std::cerr << boost::format("Found new connected component (#%5%) "
                                    "at voxel (%1%, %2%, %3%), value=%4%, volume id=%6%\n")
           % i % j % k
-          % m_image.value(i, j, k) 
+          % m_image.value(i, j, k)
           % number_of_connected_components
           % (int)current_label;
 
@@ -283,7 +287,7 @@ void Volume::search_for_connected_components(PointsOutputIterator it,
          * Second pass is a BFS initialized with all voxel of the border.
          * The last voxel of that BFS is used as the seed.
          */
-        int pass = 1; // pass will be equal to 2 in second pass
+        Marker pass = 1; // pass will be equal to 2 in second pass
 
         Indices bbox_min = indices;
         Indices bbox_max = indices;
@@ -365,12 +369,12 @@ void Volume::search_for_connected_components(PointsOutputIterator it,
             }
             else // end of second pass, return the last visited voxel
             {
-// 	      if(nb_voxels >= 100)
-	      {
-		*it++ = std::make_pair(m_image.point(i, j, k), (depth+1)*max_v);
-		std::cerr << boost::format("Found seed %5%, which is voxel (%1%, %2%, %3%), value=%4%\n")
-		  % i % j % k %  m_image.value(i, j, k) % m_image.point(i, j, k);
-	      }
+//               if(nb_voxels >= 100)
+              {
+                *it++ = std::make_pair(m_image.point(i, j, k), (depth+1)*max_v);
+                std::cerr << boost::format("Found seed %5%, which is voxel (%1%, %2%, %3%), value=%4%\n")
+                  % i % j % k %  m_image.value(i, j, k) % m_image.point(i, j, k);
+              }
             }
           } // end if queue.empty()
         } // end while !queue.empty() (with local indices i, j, k)

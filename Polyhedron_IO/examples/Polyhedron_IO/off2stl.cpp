@@ -2,7 +2,6 @@
 
 #include <CGAL/Simple_cartesian.h>
 #include <CGAL/Polyhedron_3.h>
-#include <CGAL/IO/Polyhedron_iostream.h>
 #include <CGAL/IO/Verbose_ostream.h>
 #include <cstddef>
 #include <cstdlib>
@@ -41,9 +40,9 @@ int main( int argc, char **argv) {
         else if ( n < 2 ) {
             filename[ n++] = argv[i];
         } else {
-	    ++n;
+            ++n;
             break;
-	}
+        }
     }
     if ((n > 2) || help) {
         if ( ! help)

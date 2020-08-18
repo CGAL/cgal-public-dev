@@ -1,20 +1,11 @@
 // Copyright (c) 2016 CNRS and LIRIS' Establishments (France).
 // All rights reserved.
 //
-// This file is part of CGAL (www.cgal.org); you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public License as
-// published by the Free Software Foundation; either version 3 of the License,
-// or (at your option) any later version.
-//
-// Licensees holding a valid commercial license may use this file in
-// accordance with the commercial license agreement provided with the software.
-//
-// This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
-// WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+// This file is part of CGAL (www.cgal.org)
 //
 // $URL$
 // $Id$
-// SPDX-License-Identifier: LGPL-3.0+
+// SPDX-License-Identifier: LGPL-3.0-or-later OR LicenseRef-Commercial
 //
 // Author(s)     : Guillaume Damiand <guillaume.damiand@liris.cnrs.fr>
 //
@@ -22,10 +13,9 @@
 #define CGAL_GENERALIZED_MAP_2_TEST 1
 
 #include <CGAL/Generalized_map_operations.h>
+#include <CGAL/Random.h>
 
-#include <CGAL/IO/Polyhedron_iostream.h>
 #include <iostream>
-#include <fstream>
 
 using namespace std;
 
@@ -57,6 +47,28 @@ void trace_display_msg(const char*
   std::cout<<"***************** "<<msg<<"***************** "<<std::endl;
 #endif
 }
+
+template<typename GMap, typename Info=typename GMap::Dart_info>
+struct InitDartInfo
+{
+  static void run(GMap& gmap)
+  {
+    long long int nb=0;
+    for(typename GMap::Dart_range::iterator it=gmap.darts().begin(),
+        itend=gmap.darts().end(); it!=itend; ++it)
+    {
+      nb=CGAL::get_default_random().get_int(0,20000);
+      gmap.info(it)=Info(nb);
+    }
+  }
+};
+
+template<typename GMap>
+struct InitDartInfo<GMap, CGAL::Void>
+{
+  static void run(GMap&)
+  {}
+};
 
 template<typename GMAP>
 bool check_number_of_cells_2(GMAP& gmap, unsigned int nbv, unsigned int nbe,

@@ -2,19 +2,10 @@
 // All rights reserved.
 //
 // This file is part of CGAL (www.cgal.org).
-// You can redistribute it and/or modify it under the terms of the GNU
-// General Public License as published by the Free Software Foundation,
-// either version 3 of the License, or (at your option) any later version.
-//
-// Licensees holding a valid commercial license may use this file in
-// accordance with the commercial license agreement provided with the software.
-//
-// This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
-// WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 //
 // $URL$
 // $Id$
-// SPDX-License-Identifier: GPL-3.0+
+// SPDX-License-Identifier: GPL-3.0-or-later OR LicenseRef-Commercial
 //
 // Author(s)     : Sylvain Pion <Sylvain.Pion@sophia.inria.fr>
 //                 Nico Kruithof <Nico.Kruithof@sophia.inria.fr>
@@ -40,12 +31,14 @@ namespace CGAL
 {
 // The Offset_converter is parametrized by a usual kernel converter,
 // and adds the conversions for Offsets.
-template < typename Converter >
+template <typename Converter_>
 struct Offset_converter_3
-  : public Converter
+  : public Converter_
 {
-  typedef typename Converter::Source_kernel Source_kernel;
-  typedef typename Converter::Target_kernel Target_kernel;
+  typedef Converter_                        Base;
+
+  typedef typename Base::Source_kernel      Source_kernel;
+  typedef typename Base::Target_kernel      Target_kernel;
 
   typedef typename Periodic_3_triangulation_traits_base_3<Source_kernel>
                    ::Offset  Source_off;
@@ -57,7 +50,7 @@ struct Offset_converter_3
   typedef typename Periodic_3_triangulation_traits_base_3<Target_kernel>
                    ::Point_3  Target_pt;
 
-  using Converter::operator();
+  using Base::operator();
 
   Target_off
   operator()(const Source_off &off) const
@@ -67,29 +60,30 @@ struct Offset_converter_3
 };
 
 // The first template item is supposed to be a Filtered_kernel-like kernel.
-template < typename K, typename Off >
+template <typename K_, typename Off_>
 class Periodic_3_triangulation_filtered_traits_base_3
-  : public Periodic_3_triangulation_traits_base_3<K, Off>
+  : public Periodic_3_triangulation_traits_base_3<K_, Off_>
 {
-  typedef Periodic_3_triangulation_traits_base_3<K, Off>   Base;
+  typedef Periodic_3_triangulation_traits_base_3<K_, Off_> Base;
+  typedef K_                                               Kernel;
 
-  typedef typename K::Exact_kernel                         EKernel;
-  typedef typename K::Approximate_kernel                   AKernel;
-  typedef typename K::C2E                                  C2E;
-  typedef typename K::C2F                                  C2F;
+  typedef typename Kernel::Exact_kernel                    EKernel;
+  typedef typename Kernel::Approximate_kernel              AKernel;
+  typedef typename Kernel::C2E                             C2E;
+  typedef typename Kernel::C2F                             C2F;
 
   // Exact traits is based on the exact kernel.
-  typedef Periodic_3_triangulation_traits_3<EKernel, Off>  Exact_traits;
+  typedef Periodic_3_triangulation_traits_3<EKernel, Off_> Exact_traits;
   // Filtering traits is based on the filtering kernel.
-  typedef Periodic_3_triangulation_traits_3<AKernel, Off>  Filtering_traits;
+  typedef Periodic_3_triangulation_traits_3<AKernel, Off_> Filtering_traits;
 
 public:
-  typedef typename K::Iso_cuboid_3                         Iso_cuboid_3;
+  typedef typename Kernel::Iso_cuboid_3                         Iso_cuboid_3;
 
   virtual ~Periodic_3_triangulation_filtered_traits_base_3() { }
 
   Periodic_3_triangulation_filtered_traits_base_3(const Iso_cuboid_3& domain,
-                                                  const K& k)
+                                                  const Kernel& k)
     :
       Base(domain, k),
       traits_e(C2E()(domain)),
@@ -150,9 +144,9 @@ protected:
   Filtering_traits traits_f;
 };
 
-template < typename K,
-           typename Off = typename CGAL::Periodic_3_offset_3,
-           bool Has_static_filters = internal::Has_static_filters<K>::value >
+template <class K_,
+          class Off_ = typename CGAL::Periodic_3_offset_3,
+          bool Has_static_filters_ = internal::Has_static_filters<K_>::value >
 class Periodic_3_triangulation_filtered_traits_3;
 
 } //namespace CGAL
@@ -161,32 +155,34 @@ class Periodic_3_triangulation_filtered_traits_3;
 
 namespace CGAL {
 
-template<class K, class Off >
-class Periodic_3_triangulation_filtered_traits_3<K, Off, false>
-  : public Periodic_3_triangulation_filtered_traits_base_3<K, Off>
+template<class K_, class Off_>
+class Periodic_3_triangulation_filtered_traits_3<K_, Off_, false>
+  : public Periodic_3_triangulation_filtered_traits_base_3<K_, Off_>
 {
-  typedef Periodic_3_triangulation_filtered_traits_base_3<K, Off> Base;
+  typedef Periodic_3_triangulation_filtered_traits_base_3<K_, Off_> Base;
 
 public:
-  typedef typename K::Iso_cuboid_3 Iso_cuboid_3;
+  typedef K_                                                        Kernel;
+  typedef typename Kernel::Iso_cuboid_3                             Iso_cuboid_3;
 
   Periodic_3_triangulation_filtered_traits_3(const Iso_cuboid_3& domain,
-                                             const K& k)
+                                             const Kernel& k)
     : Base(domain, k)
   { }
 };
 
-template<class K, class Off>
-class Periodic_3_triangulation_filtered_traits_3<K, Off, true>
-  : public Periodic_3_triangulation_statically_filtered_traits_3<K, Off>
+template<class K_, class Off_>
+class Periodic_3_triangulation_filtered_traits_3<K_, Off_, true>
+  : public Periodic_3_triangulation_statically_filtered_traits_3<K_, Off_>
 {
-  typedef Periodic_3_triangulation_statically_filtered_traits_3<K, Off> Base;
+  typedef Periodic_3_triangulation_statically_filtered_traits_3<K_, Off_> Base;
 
 public:
-  typedef typename K::Iso_cuboid_3 Iso_cuboid_3;
+  typedef K_                                                              Kernel;
+  typedef typename Kernel::Iso_cuboid_3                                   Iso_cuboid_3;
 
   Periodic_3_triangulation_filtered_traits_3(const Iso_cuboid_3& domain,
-                                             const K& k)
+                                             const Kernel& k)
     : Base(domain, k)
   { }
 };

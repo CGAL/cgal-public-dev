@@ -1,30 +1,24 @@
 // Copyright (c) 2017 CNRS and LIRIS' Establishments (France).
 // All rights reserved.
 //
-// This file is part of CGAL (www.cgal.org); you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public License as
-// published by the Free Software Foundation; either version 3 of the License,
-// or (at your option) any later version.
-//
-// Licensees holding a valid commercial license may use this file in
-// accordance with the commercial license agreement provided with the software.
-//
-// This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
-// WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+// This file is part of CGAL (www.cgal.org)
 //
 // $URL$
 // $Id$
-// SPDX-License-Identifier: LGPL-3.0+
+// SPDX-License-Identifier: LGPL-3.0-or-later OR LicenseRef-Commercial
 //
 // Author(s)     : Guillaume Damiand <guillaume.damiand@liris.cnrs.fr>
 //
+
+
 #ifndef CGAL_BOOST_GRAPH_PROPERTIES_LINEAR_CELL_COMPLEX_FOR_COMBINATORIAL_MAP_H
 #define CGAL_BOOST_GRAPH_PROPERTIES_LINEAR_CELL_COMPLEX_FOR_COMBINATORIAL_MAP_H
 
 #include <CGAL/boost/graph/properties.h>
 #include <CGAL/Linear_cell_complex_for_combinatorial_map.h>
 #include <CGAL/Unique_hash_map.h>
-#include <CGAL/boost/graph/properties_Polyhedron_3.h>
+#include <CGAL/Dynamic_property_map.h>
+
 
 #define CGAL_LCC_ARGS unsigned int d_, unsigned int ambient_dim,        \
              class Traits_, \
@@ -242,7 +236,7 @@ get(boost::halfedge_external_index_t, CGAL_LCC_TYPE const&)
 {
   CGAL_LCC_TYPE& ncmap=const_cast<CGAL_LCC_TYPE&>(cmap);
   return typename boost::property_map<CGAL_LCC_TYPE, boost::halfedge_external_index_t>::
-    const_type(halfedges(ncmap).begin(), halfedges(ncmap).end(), num_halfedges(ncmap)); 
+    const_type(halfedges(ncmap).begin(), halfedges(ncmap).end(), num_halfedges(ncmap));
 }
 
 template<CGAL_LCC_ARGS>
@@ -251,7 +245,7 @@ get(boost::vertex_external_index_t, CGAL_LCC_TYPE const&)
 {
  CGAL_LCC_TYPE& ncmap=const_cast<CGAL_LCC_TYPE&>(cmap);
   return typename boost::property_map<CGAL_LCC_TYPE, boost::vertex_external_index_t>::
-    const_type(vertices(ncmap).begin(), vertices(ncmap).end(), num_vertices(ncmap)); 
+    const_type(vertices(ncmap).begin(), vertices(ncmap).end(), num_vertices(ncmap));
 }
 
 template<CGAL_LCC_ARGS>
@@ -366,7 +360,23 @@ get(boost::edge_weight_t, CGAL_LCC_TYPE & cmap)
   return typename boost::property_map<CGAL_LCC_TYPE, boost::edge_weight_t>::
     type(cmap);
 }
+template<CGAL_LCC_ARGS>
+struct graph_has_property<CGAL_LCC_TYPE, boost::vertex_point_t>: CGAL::Tag_true {};
 
+template<CGAL_LCC_ARGS>
+struct graph_has_property<CGAL_LCC_TYPE, boost::edge_weight_t>: CGAL::Tag_true {};
+
+template<CGAL_LCC_ARGS>
+struct graph_has_property<CGAL_LCC_TYPE, boost::edge_index_t>: CGAL::Tag_true {};
+
+template<CGAL_LCC_ARGS>
+struct graph_has_property<CGAL_LCC_TYPE, boost::face_index_t>: CGAL::Tag_true {};
+
+template<CGAL_LCC_ARGS>
+struct graph_has_property<CGAL_LCC_TYPE, boost::halfedge_index_t>: CGAL::Tag_true {};
+
+template<CGAL_LCC_ARGS>
+struct graph_has_property<CGAL_LCC_TYPE, boost::vertex_index_t>: CGAL::Tag_true {};
 } // namespace CGAL
 
 namespace boost {
@@ -390,27 +400,79 @@ struct property_map<const CGAL_LCC_TYPE, Tag>
   typedef typename map_gen::type       type;
   typedef typename map_gen::const_type const_type;
 };
-  
-  template<CGAL_LCC_ARGS>
-  struct graph_has_property<CGAL_LCC_TYPE, vertex_point_t>: CGAL::Tag_true {};
-  
-  template<CGAL_LCC_ARGS>
-  struct graph_has_property<CGAL_LCC_TYPE, edge_weight_t>: CGAL::Tag_true {};
-  
-  template<CGAL_LCC_ARGS>
-  struct graph_has_property<CGAL_LCC_TYPE, edge_index_t>: CGAL::Tag_true {};
-  
-  template<CGAL_LCC_ARGS>
-  struct graph_has_property<CGAL_LCC_TYPE, face_index_t>: CGAL::Tag_true {};
-
-  template<CGAL_LCC_ARGS>
-  struct graph_has_property<CGAL_LCC_TYPE, halfedge_index_t>: CGAL::Tag_true {};
-
-  template<CGAL_LCC_ARGS>
-  struct graph_has_property<CGAL_LCC_TYPE, vertex_index_t>: CGAL::Tag_true {};  
 
 } // namespace boost
 
+// dynamic property map ambiguity resolution
+#define CGAL_LCC_DYNAMIC_PMAP_SPEC(TAG, DESC) \
+namespace boost { \
+template<unsigned int d_, unsigned int ambient_dim,        \
+         class Traits_, \
+         class Items_, \
+         class Alloc_, \
+         template<unsigned int,class,class,class,class> \
+         class CMap, \
+         class Storage_,\
+         class T>\
+struct property_map< \
+  CGAL::Linear_cell_complex_for_combinatorial_map<d_, ambient_dim, Traits_, Items_, Alloc_, CMap , Storage_>,\
+  TAG<T> > \
+{\
+  typedef CGAL::Linear_cell_complex_for_combinatorial_map\
+           <d_, ambient_dim, Traits_, Items_, Alloc_, CMap , Storage_> LCC;\
+  typedef typename boost::graph_traits<LCC>::DESC DESC;\
+  typedef CGAL::internal::Dynamic_property_map<DESC,T> type;\
+  typedef type const_type;\
+};\
+} \
+\
+namespace CGAL { \
+template <unsigned int d_, unsigned int ambient_dim,        \
+         class Traits_, \
+         class Items_, \
+         class Alloc_, \
+         template<unsigned int,class,class,class,class> \
+         class CMap, \
+         class Storage_,\
+         class T> \
+typename boost::property_map< \
+  Linear_cell_complex_for_combinatorial_map<d_, ambient_dim, Traits_, Items_, Alloc_, CMap , Storage_>, \
+  TAG<T> >::const_type \
+get(TAG<T>, const Linear_cell_complex_for_combinatorial_map<d_, ambient_dim, Traits_, Items_, Alloc_, CMap , Storage_>&) \
+{ \
+  typedef Linear_cell_complex_for_combinatorial_map<d_, ambient_dim, Traits_, Items_, Alloc_, CMap , Storage_> LCC;\
+  typedef typename boost::graph_traits<LCC>::DESC DESC; \
+  return internal::Dynamic_property_map<DESC,T>();\
+} \
+\
+template <unsigned int d_, unsigned int ambient_dim,        \
+         class Traits_, \
+         class Items_, \
+         class Alloc_, \
+         template<unsigned int,class,class,class,class> \
+         class CMap, \
+         class Storage_,\
+         class T> \
+typename boost::property_map< \
+  Linear_cell_complex_for_combinatorial_map<d_, ambient_dim, Traits_, Items_, Alloc_, CMap , Storage_>, \
+  TAG<T> >::type \
+get(TAG<T>, Linear_cell_complex_for_combinatorial_map<d_, ambient_dim, Traits_, Items_, Alloc_, CMap , Storage_>&) \
+{ \
+  typedef Linear_cell_complex_for_combinatorial_map<d_, ambient_dim, Traits_, Items_, Alloc_, CMap , Storage_> LCC;\
+  typedef typename boost::graph_traits<LCC>::DESC DESC; \
+  return internal::Dynamic_property_map<DESC,T>();\
+} \
+}
+
+CGAL_LCC_DYNAMIC_PMAP_SPEC(CGAL::dynamic_vertex_property_t, vertex_descriptor)
+CGAL_LCC_DYNAMIC_PMAP_SPEC(CGAL::dynamic_halfedge_property_t, halfedge_descriptor)
+CGAL_LCC_DYNAMIC_PMAP_SPEC(CGAL::dynamic_edge_property_t, edge_descriptor)
+CGAL_LCC_DYNAMIC_PMAP_SPEC(CGAL::dynamic_face_property_t, face_descriptor)
+
+#undef CGAL_LCC_DYNAMIC_PMAP_SPEC
+
+
+#undef CGAL_NAME_LCC_ARGS
 #undef CGAL_LCC_ARGS
 #undef CGAL_LCC_TYPE
 

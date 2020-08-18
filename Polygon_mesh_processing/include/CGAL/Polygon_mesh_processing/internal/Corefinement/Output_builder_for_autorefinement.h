@@ -2,19 +2,10 @@
 // All rights reserved.
 //
 // This file is part of CGAL (www.cgal.org).
-// You can redistribute it and/or modify it under the terms of the GNU
-// General Public License as published by the Free Software Foundation,
-// either version 3 of the License, or (at your option) any later version.
-//
-// Licensees holding a valid commercial license may use this file in
-// accordance with the commercial license agreement provided with the software.
-//
-// This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
-// WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 //
 // $URL$
 // $Id$
-// SPDX-License-Identifier: GPL-3.0+
+// SPDX-License-Identifier: GPL-3.0-or-later OR LicenseRef-Commercial
 //
 //
 // Author(s)     : Sebastien Loriot
@@ -24,6 +15,7 @@
 
 #include <CGAL/license/Polygon_mesh_processing/corefinement.h>
 
+#include <CGAL/disable_warnings.h>
 
 #include <CGAL/Polygon_mesh_processing/internal/Corefinement/face_graph_utils.h>
 
@@ -32,12 +24,14 @@
 #include <CGAL/Polygon_mesh_processing/stitch_borders.h>
 #include <CGAL/Side_of_triangle_mesh.h>
 
+#include <CGAL/Union_find.h>
 #include <CGAL/property_map.h>
 #include <CGAL/Default.h>
 
 #include <boost/dynamic_bitset.hpp>
 
 namespace CGAL {
+namespace Polygon_mesh_processing {
 namespace Corefinement {
 
 namespace PMP=Polygon_mesh_processing;
@@ -107,6 +101,7 @@ class Output_builder_for_autorefinement
   const VertexPointMap &vpm;
   const FaceIdMap &fids;
   Ecm& ecm;
+  Node_id_map vertex_to_node_id;
   // input meshes closed ?
   bool is_tm_closed;
   // orientation of input surface mesh
@@ -137,7 +132,7 @@ class Output_builder_for_autorefinement
     if ( is_node_of_degree_one.test(src_id) )
     {
       bool res=true;
-      BOOST_FOREACH(halfedge_descriptor h, halfedges_around_source(hedge, tm))
+      for(halfedge_descriptor h : halfedges_around_source(hedge, tm))
         if (is_border(h, tm))
         {
           res = false;
@@ -147,7 +142,7 @@ class Output_builder_for_autorefinement
     }
     if ( is_node_of_degree_one.test(tgt_id) )
     {
-      BOOST_FOREACH(halfedge_descriptor h, halfedges_around_target(hedge, tm))
+      for(halfedge_descriptor h : halfedges_around_target(hedge, tm))
         if (is_border(h, tm))
           return false;
       return true;
@@ -167,7 +162,7 @@ public:
     , ecm(ecm)
     , is_tm_closed( is_closed(tm))
     , is_tm_inside_out( is_tm_closed && !PMP::is_outward_oriented(tm) )
-    , NID(-1)
+    , NID((std::numeric_limits<Node_id>::max)())
     , all_fixed(true)
   {}
 
@@ -205,6 +200,13 @@ public:
     all_intersection_edges_map[indices].add(hedge);
   }
 
+  void set_vertex_id(vertex_descriptor v, Node_id node_id, const TriangleMesh& tm_)
+  {
+    CGAL_USE(tm_);
+    CGAL_assertion(&tm_==&tm);
+    vertex_to_node_id.insert( std::make_pair(v, node_id) );
+  }
+
   template <class Nodes_vector, class Mesh_to_map_node>
   void operator()(
     const Nodes_vector& nodes,
@@ -212,18 +214,13 @@ public:
     const boost::dynamic_bitset<>& is_node_of_degree_one,
     const Mesh_to_map_node&)
   {
-
-    // this will initialize face indices if the face index map is writable.
-    helpers::init_face_indices(tm, fids);
-
     // first build an unordered_map mapping a vertex to its node id + a set
     // of all intersection edges
-    Node_id_map vertex_to_node_id;
     typedef boost::unordered_set<edge_descriptor> Intersection_edge_map;
     Intersection_edge_map intersection_edges;
 
     typedef std::pair<const Node_id_pair, Shared_halfedges> Pair_type;
-    BOOST_FOREACH(const Pair_type& p, all_intersection_edges_map)
+    for(const Pair_type& p : all_intersection_edges_map)
     {
       CGAL_assertion(p.second.h1!=boost::graph_traits<TriangleMesh>::null_halfedge());
     // p.second.h2 might be the null halfedge in case two faces sharing an edge
@@ -231,16 +228,21 @@ public:
     // and will be discarded later
       if (p.second.h2==boost::graph_traits<TriangleMesh>::null_halfedge())
         continue;
-      vertex_to_node_id[source(p.second.h1, tm)] = p.first.first;
-      vertex_to_node_id[target(p.second.h1, tm)] = p.first.second;
-      vertex_to_node_id[source(p.second.h2, tm)] = p.first.first;
-      vertex_to_node_id[target(p.second.h2, tm)] = p.first.second;
+      CGAL_assertion( vertex_to_node_id[source(p.second.h1, tm)] == p.first.first);
+      CGAL_assertion( vertex_to_node_id[target(p.second.h1, tm)] == p.first.second);
+      CGAL_assertion( vertex_to_node_id[source(p.second.h2, tm)] == p.first.first);
+      CGAL_assertion( vertex_to_node_id[target(p.second.h2, tm)] == p.first.second);
       intersection_edges.insert(edge(p.second.h1, tm));
       intersection_edges.insert(edge(p.second.h2, tm));
     }
 
-    // this will initialize face indices if the face index map is writable.
-    helpers::init_face_indices(tm, fids);
+    // The property map must be either writable or well-initialized
+    if( CGAL::internal::Is_writable_property_map<FaceIdMap>::value &&
+        !BGL::internal::is_index_map_valid(fids, num_faces(tm), faces(tm)) )
+    {
+      BGL::internal::initialize_face_index_map(fids, tm);
+    }
+    CGAL_assertion(BGL::internal::is_index_map_valid(fids, num_faces(tm), faces(tm)));
 
     // bitset to identify coplanar faces
     boost::dynamic_bitset<> tm_coplanar_faces(num_faces(tm), 0);
@@ -344,7 +346,7 @@ public:
         ++epp_it;
     }
 
-    BOOST_FOREACH(edge_descriptor ed, inter_edges_to_remove)
+    for(edge_descriptor ed : inter_edges_to_remove)
       intersection_edges.erase(ed);
 
     // (1) Assign a patch id to each face indicating in which connected
@@ -355,7 +357,7 @@ public:
       is_intersection(intersection_edges);
     std::size_t nb_patches =
       PMP::connected_components(tm,
-                                bind_property_maps(fids,make_property_map(&patch_ids[0])),
+                                bind_property_maps(fids,make_property_map(patch_ids)),
                                 params::edge_is_constrained_map(
                                     is_intersection)
                                 .face_index_map(fids));
@@ -366,6 +368,14 @@ public:
     boost::dynamic_bitset<> coplanar_patches(nb_patches,false);
     patches_to_keep.set();
     patch_status_not_set.set();
+    // use a union-find on patches to track the incidence between patches kept
+    typedef Union_find<std::size_t> UF;
+    UF uf;
+    std::vector<typename UF::handle> patch_handles(nb_patches);
+    for (std::size_t p=0; p<nb_patches; ++p)
+    {
+      patch_handles[p]=uf.make_set(p);
+    }
 
     for (typename An_edge_per_polyline_map::iterator
             it=an_edge_per_polyline.begin(),
@@ -378,6 +388,9 @@ public:
       //get the two halfedges incident to the edge [ids.first,ids.second]
       halfedge_descriptor h1 = it->second.h1;
       halfedge_descriptor h2 = it->second.h2;
+
+      CGAL_assertion(h1!=boost::graph_traits<TriangleMesh>::null_halfedge());
+      CGAL_assertion(h2!=boost::graph_traits<TriangleMesh>::null_halfedge());
 
       CGAL_assertion(ids.first==vertex_to_node_id[source(h1,tm)]);
       CGAL_assertion(ids.second==vertex_to_node_id[target(h1,tm)]);
@@ -400,13 +413,19 @@ public:
           {
             if ( is_border(h1,tm) )
             {
-              patch_status_not_set.reset(patch_ids[ get(fids, face(opposite(h1,tm),tm)) ]);
-              patch_status_not_set.reset(patch_ids[ get(fids, face(h2,tm)) ]);
+              std::size_t pid1=patch_ids[ get(fids, face(opposite(h1,tm),tm)) ],
+                          pid2=patch_ids[ get(fids, face(h2,tm)) ];
+              uf.unify_sets(patch_handles[pid1], patch_handles[pid2]);
+              patch_status_not_set.reset(pid1);
+              patch_status_not_set.reset(pid2);
             }
             else
             {
-              patch_status_not_set.reset(patch_ids[ get(fids, face(h1,tm)) ]);
-              patch_status_not_set.reset(patch_ids[ get(fids, face(opposite(h2,tm),tm)) ]);
+              std::size_t pid1=patch_ids[ get(fids, face(h1,tm)) ],
+                          pid2=patch_ids[ get(fids, face(opposite(h2,tm),tm)) ];
+              uf.unify_sets(patch_handles[pid1], patch_handles[pid2]);
+              patch_status_not_set.reset(pid1);
+              patch_status_not_set.reset(pid2);
             }
           }
         }
@@ -441,8 +460,10 @@ public:
             nodes);
 
           if (p_is_between_q1q2)
+          {
+            uf.unify_sets(patch_handles[patch_id_q1], patch_handles[patch_id_q2]);
             patches_to_keep.reset(patch_id_p); // even if badly oriented we can
-                                               // simply discard the patch
+          }                                     // simply discard the patch
           else
           {
             if (h==h1)
@@ -451,7 +472,10 @@ public:
               all_fixed = false;
             }
             else
+            {
+              uf.unify_sets(patch_handles[patch_id_p], patch_handles[patch_id_q2]);
               patches_to_keep.reset(patch_id_q1);
+            }
           }
         }
       }
@@ -487,8 +511,10 @@ public:
             nodes);
 
           if (q_is_between_p1p2)
+          {
+            uf.unify_sets(patch_handles[patch_id_p1], patch_handles[patch_id_p2]);
             patches_to_keep.reset(patch_id_q); // even if badly oriented we can
-                                               // simply discard the patch
+          }                                     // simply discard the patch
           else
           {
             if (h==h2)
@@ -497,7 +523,10 @@ public:
               all_fixed = false;
             }
             else
+            {
+              uf.unify_sets(patch_handles[patch_id_q], patch_handles[patch_id_p2]);
               patches_to_keep.reset(patch_id_p1);
+            }
           }
         }
         else
@@ -568,12 +597,30 @@ public:
             if ( q2_is_between_p1p2 ){
              //case 1
              patches_to_keep.reset(patch_id_q2);
-             patches_to_keep.reset(patch_id_q1);
+             if (patch_id_p1<patch_id_q1)
+             {
+               uf.unify_sets(patch_handles[patch_id_p1], patch_handles[patch_id_p2]);
+               patches_to_keep.reset(patch_id_q1);
+             }
+             else
+             {
+               uf.unify_sets(patch_handles[patch_id_q1], patch_handles[patch_id_p2]);
+               patches_to_keep.reset(patch_id_p1);
+             }
             }
             else{
               //case 2
-              patches_to_keep.reset(patch_id_p1);
               patches_to_keep.reset(patch_id_p2);
+              if (patch_id_p1<patch_id_q1)
+              {
+                uf.unify_sets(patch_handles[patch_id_p1], patch_handles[patch_id_q2]);
+                patches_to_keep.reset(patch_id_q1);
+              }
+              else
+              {
+                uf.unify_sets(patch_handles[patch_id_q1], patch_handles[patch_id_q2]);
+                patches_to_keep.reset(patch_id_p1);
+              }
             }
             continue;
           }
@@ -598,11 +645,14 @@ public:
                 // case 3
                 patches_to_keep.reset(patch_id_p1);
                 patches_to_keep.reset(patch_id_p2);
+                patches_to_keep.reset(patch_id_q1);
+                patches_to_keep.reset(patch_id_q2);
               }
               else{
                 // case 4
-                patches_to_keep.reset(patch_id_q2);
+                uf.unify_sets(patch_handles[patch_id_q1], patch_handles[patch_id_p2]);
                 patches_to_keep.reset(patch_id_p1);
+                patches_to_keep.reset(patch_id_q2);
               }
               continue;
             }
@@ -625,12 +675,15 @@ public:
                   nodes);
                 if ( q2_is_between_p1p2 )
                 {  //case 5
+                  patches_to_keep.reset(patch_id_p1);
+                  patches_to_keep.reset(patch_id_p2);
                   patches_to_keep.reset(patch_id_q1);
                   patches_to_keep.reset(patch_id_q2);
                 }else{
                   //case 6
-                  patches_to_keep.reset(patch_id_p2);
+                  uf.unify_sets(patch_handles[patch_id_q2], patch_handles[patch_id_p1]);
                   patches_to_keep.reset(patch_id_q1);
+                  patches_to_keep.reset(patch_id_p2);
                 }
                 continue;
               }
@@ -653,21 +706,36 @@ public:
                   if ( q1_is_between_p1p2 ){
                     //case 7
                     patches_to_keep.reset(patch_id_q1);
-                    patches_to_keep.reset(patch_id_q2);
+                    if(patch_id_p2<patch_id_q2)
+                    {
+                      uf.unify_sets(patch_handles[patch_id_p1], patch_handles[patch_id_p2]);
+                      patches_to_keep.reset(patch_id_q2);
+                    }
+                    else
+                    {
+                      uf.unify_sets(patch_handles[patch_id_p1], patch_handles[patch_id_q2]);
+                      patches_to_keep.reset(patch_id_p2);
+                    }
                   }
                   else{
                     //case 8
-                    patches_to_keep.reset(patch_id_p2);
-                    patches_to_keep.reset(patch_id_q2);
+                    patches_to_keep.reset(patch_id_p1);
+                    if(patch_id_p2<patch_id_q2)
+                    {
+                      uf.unify_sets(patch_handles[patch_id_p2], patch_handles[patch_id_q1]);
+                      patches_to_keep.reset(patch_id_q2);
+                    }
+                    else
+                    {
+                      uf.unify_sets(patch_handles[patch_id_q2], patch_handles[patch_id_q1]);
+                      patches_to_keep.reset(patch_id_p2);
+                    }
                   }
                   continue;
                 }
               }
             }
           }
-#ifdef CGAL_COREFINEMENT_POLYHEDRA_DEBUG
-          #warning At some point we should have a check if a patch status is already set, what we do is consistant otherwise --> ambiguous
-#endif //CGAL_COREFINEMENT_POLYHEDRA_DEBUG
 
           CGAL_assertion(
               ( index_p1 == Node_id(-1) ? nodes.to_exact(get(vpm,p1)): nodes.exact_node(index_p1) ) !=
@@ -707,6 +775,7 @@ public:
                 nodes);
               if (!p1_is_between_q1q2){
                 // case (a4)
+                uf.unify_sets(patch_handles[patch_id_p1], patch_handles[patch_id_p2]);
                 patches_to_keep.reset(patch_id_q1);
                 patches_to_keep.reset(patch_id_q2);
               }
@@ -724,9 +793,24 @@ public:
               if ( is_dangling_edge(ids.first, ids.second, h1, tm, is_node_of_degree_one) ||
                    is_dangling_edge(ids.first, ids.second, h2, tm, is_node_of_degree_one) )
               {
-                all_fixed = false;
-                continue;
+                // in case of a surface folding, it might happen that we have a
+                // dangling edge that is separating the faces into 2 disjoint
+                // patches (think of a sheet twisted at a vertex of the mesh,
+                // the degree 1 node being that vertex in the intersection polyline
+                // graph).
+                // TODO: the condition below is here to avoid removing too many
+                //       parts of a mesh (ex: a square in crossing the interior
+                //       of a larger). In practice, we could say this is not an
+                //       issue if anyway the whole patch would be dropped.
+                //       Note that this remark is valid for all cases where
+                //       all_fixed is set to false.
+                if (patch_id_p1==patch_id_p2 || patch_id_q1==patch_id_q2)
+                {
+                  all_fixed = false;
+                  continue;
+                }
               }
+              uf.unify_sets(patch_handles[patch_id_p1], patch_handles[patch_id_q2]);
               patches_to_keep.reset(patch_id_p2);
               patches_to_keep.reset(patch_id_q1);
             }
@@ -739,9 +823,14 @@ public:
               if ( is_dangling_edge(ids.first, ids.second, h1, tm, is_node_of_degree_one) ||
                    is_dangling_edge(ids.first, ids.second, h2, tm, is_node_of_degree_one) )
               {
-                all_fixed = false;
-                continue;
+                // same reason as above
+                if (patch_id_p1==patch_id_p2 || patch_id_q1==patch_id_q2)
+                {
+                  all_fixed = false;
+                  continue;
+                }
               }
+              uf.unify_sets(patch_handles[patch_id_p2], patch_handles[patch_id_q1]);
               patches_to_keep.reset(patch_id_q2);
               patches_to_keep.reset(patch_id_p1);
             }
@@ -755,11 +844,14 @@ public:
                 nodes);
               if (!p1_is_between_q1q2){
                 //case (e4)
+                //TODO: This is a "tangency" along an edge here, there is
+                //      not much we can do but if one of the two sheets is dropped
                 all_fixed = false;
                 continue;
               }
               else{
                 //case (f4)
+                uf.unify_sets(patch_handles[patch_id_q1], patch_handles[patch_id_q2]);
                 patches_to_keep.reset(patch_id_p1);
                 patches_to_keep.reset(patch_id_p2);
               }
@@ -771,6 +863,23 @@ public:
     // the goal here is to remove surface self-intersections. If there are
     // some nested surfaces, they will not be fixed by this function.
     // As a consequence, patch_status_not_set.none() might not be true.
+
+    // use the union-find of incident patches to update the status of patches
+    // to keep. If one of the patches in the component is marked as to remove
+    // the whole component gets marked.
+
+    // first pass to mark the master patches
+    for (typename UF::iterator it=uf.begin(), it_end=uf.end();it!=it_end; ++it)
+    {
+      if (!patches_to_keep.test(*it))
+        patches_to_keep.reset( *uf.find(it) );
+    }
+    // mark the patch as to be removed if the master is (and not already marked)
+    for (typename UF::iterator it=uf.begin(), it_end=uf.end();it!=it_end; ++it)
+    {
+      if (patches_to_keep.test(*it) && !patches_to_keep.test(*uf.find(it)))
+        patches_to_keep.reset( *it );
+    }
 
 #ifdef CGAL_COREFINEMENT_DEBUG
     std::cout << "patches_to_keep " <<  patches_to_keep << "\n";
@@ -784,7 +893,7 @@ public:
     std::vector<edge_descriptor> edges_no_longer_on_intersection;
     std::vector< std::pair<halfedge_descriptor, halfedge_descriptor> > hedge_pairs_to_stitch;
     hedge_pairs_to_stitch.reserve(all_intersection_edges_map.size());
-    BOOST_FOREACH(const Pair_type& p, all_intersection_edges_map)
+    for(const Pair_type& p : all_intersection_edges_map)
     {
       halfedge_descriptor h1 = p.second.h1;
       halfedge_descriptor h2 = p.second.h2;
@@ -880,15 +989,16 @@ public:
 
     // Merge patches to keep only 2: one we keep (1) and one we remove (0)
     const std::size_t PATCH_ID_KEPT = 1;
-    BOOST_FOREACH(std::size_t& patch_id, patch_ids)
-      patch_id = patches_to_keep.test(patch_id) ? 1 : 0;
+    for(std::size_t& patch_id : patch_ids)
+      if (patch_id != NID)
+        patch_id = patches_to_keep.test(patch_id) ? 1 : 0;
     nb_patches=2;
     patches_to_keep=boost::dynamic_bitset<>(2,0);
     patches_to_keep.set(PATCH_ID_KEPT);
 
     // remove from the set of intersection edges if the patches on both side have
     // the same status.
-    BOOST_FOREACH(edge_descriptor e, edges_no_longer_on_intersection)
+    for(edge_descriptor e : edges_no_longer_on_intersection)
       intersection_edges.erase(e);
 
     //store the patch description in a container to avoid recomputing it several times
@@ -904,6 +1014,8 @@ public:
 };
 
 
-} } // CGAL::Corefinement
+} } } // CGAL::Corefinement
+
+#include <CGAL/enable_warnings.h>
 
 #endif // CGAL_POLYGON_MESH_PROCESSING_INTERNAL_OUTPUT_BUILDER_FOR_AUTOREFINEMENT_H

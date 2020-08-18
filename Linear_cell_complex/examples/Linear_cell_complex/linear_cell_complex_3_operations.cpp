@@ -2,11 +2,6 @@
 #include <CGAL/Linear_cell_complex_for_generalized_map.h>
 #include <vector>
 
-/* If you want to use a viewer, you can use qglviewer. */
-#ifdef CGAL_USE_BASIC_VIEWER
-#include "linear_cell_complex_3_viewer_qt.h"
-#endif
-
 typedef CGAL::Linear_cell_complex_for_combinatorial_map<3> LCC_3_cmap;
 typedef CGAL::Linear_cell_complex_for_generalized_map<3> LCC_3_gmap;
 
@@ -29,9 +24,9 @@ void run_test()
 {
   typedef typename LCC::Point Point;
   typedef typename LCC::Dart_handle Dart_handle;
-  
+
   LCC lcc;
-  
+
   Dart_handle dh1 = lcc.
     make_hexahedron(Point(0,0,0),Point(1,0,0),
                     Point(1,2,0),Point(0,2,0),
@@ -47,16 +42,12 @@ void run_test()
                     Point(0,2,5),Point(1,2,6),
                     Point(1,3,8),Point(0,0,8),
                     Point(5,0,9),Point(7,3,9));
-  
+
   lcc.template sew<3>(dh1,lcc.other_orientation
                       (lcc.template opposite<2>
                        (lcc.next(lcc.next(lcc.template opposite<2>(dh2))))));
   lcc.template sew<3>(lcc.template opposite<2>(lcc.next(dh1)),
                       lcc.other_orientation(lcc.template opposite<2>(lcc.previous(dh3))));
-
-#ifdef CGAL_USE_BASIC_VIEWER
-  display_lcc(lcc);
-#endif // CGAL_USE_BASIC_VIEWER
 
   lcc.insert_cell_1_in_cell_2(lcc.next(dh1),
                               Alpha1<LCC>::run(lcc, lcc.previous(dh1)));
@@ -72,19 +63,14 @@ void run_test()
   path.push_back(lcc.next(lcc.template opposite<2>(dh2)));
   lcc.insert_cell_2_in_cell_3(path.begin(),path.end());
 
-  lcc.display_characteristics(std::cout) << ", valid=" 
+  lcc.display_characteristics(std::cout) << ", valid="
                                          << lcc.is_valid() << std::endl;
-  
-#ifdef CGAL_USE_BASIC_VIEWER
-  display_lcc(lcc);
-#endif // CGAL_USE_BASIC_VIEWER
 }
-
 
 int main()
 {
   run_test<LCC_3_cmap>();
   run_test<LCC_3_gmap>();
-  
+
   return EXIT_SUCCESS;
 }

@@ -2,8 +2,6 @@
 
 #include <CGAL/Simple_cartesian.h>
 #include <CGAL/Polyhedron_3.h>
-#include <CGAL/IO/Polyhedron_iostream.h>
-#include <CGAL/boost/graph/graph_traits_Polyhedron_3.h>
 #include <CGAL/boost/graph/split_graph_into_polylines.h>
 #include <CGAL/boost/graph/helpers.h>
 #include <boost/graph/filtered_graph.hpp>
@@ -74,7 +72,7 @@ int main()
   Is_border ib(g);
   FG fg(g,ib);
 
-  std::list<Polyline_3> polylines;  
+  std::list<Polyline_3> polylines;
   Polyline_visitor polyline_visitor(polylines);
 
    CGAL::split_graph_into_polylines( fg,
@@ -82,7 +80,7 @@ int main()
                                      Is_terminal() );
 
    std::cout.precision(17);
-   
+
    for(std::list<Polyline_3>::iterator it = polylines.begin(); it!= polylines.end(); ++it){
      Polyline_3& poly = *it;
      std::size_t n;
@@ -99,6 +97,6 @@ int main()
      std::cout << std::endl;
    }
 
-   
+
   return 0;
 }

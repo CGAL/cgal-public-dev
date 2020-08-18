@@ -2,14 +2,12 @@
 #include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
 
 #include <CGAL/Polyhedron_3.h>
-#include <CGAL/IO/Polyhedron_iostream.h>
 
 #include <CGAL/Surface_mesh_shortest_path/Surface_mesh_shortest_path_traits.h>
 #include <CGAL/Surface_mesh_shortest_path/function_objects.h>
 #include <CGAL/Surface_mesh_shortest_path/barycentric.h>
 #include <CGAL/Surface_mesh_shortest_path/internal/misc_functions.h>
 
-#include <CGAL/boost/graph/graph_traits_Polyhedron_3.h>
 #include <CGAL/boost/graph/iterator.h>
 
 #include <CGAL/test_util.h>
@@ -271,6 +269,7 @@ void detect_is_saddle_vertex()
 
   Traits traits;
   Traits::Is_saddle_vertex is_saddle_vertex(traits.is_saddle_vertex_object());
+  CGAL_USE(is_saddle_vertex);
 
   std::ifstream inFile("data/saddle_vertex_mesh.off");
 
@@ -308,6 +307,6 @@ int main()
   simple_flattening_triangle_along_edge();
   nonsimple_flattening_triangle_along_edge();
   detect_is_saddle_vertex();
-  
+
   return 0;
 }

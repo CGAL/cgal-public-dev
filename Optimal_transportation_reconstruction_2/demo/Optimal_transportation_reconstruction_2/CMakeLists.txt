@@ -1,24 +1,28 @@
 # This is the CMake script for compiling the Optimal_transportation_reconstruction_2 demo.
 
+cmake_minimum_required(VERSION 3.1...3.15)
 project(Optimal_transportation_reconstruction_2_Demo)
 
-cmake_minimum_required(VERSION 3.1)
 if(NOT POLICY CMP0070 AND POLICY CMP0053)
   # Only set CMP0053 to OLD with CMake<3.10, otherwise there is a warning.
   cmake_policy(SET CMP0053 OLD)
 endif()
 
+if(POLICY CMP0071)
+  cmake_policy(SET CMP0071 NEW)
+endif()
+
 # Include this package's headers first
-include_directories( BEFORE ./ ./include ../../include )
+include_directories( BEFORE ./ ./include )
 
 # Find CGAL and CGAL Qt5
 find_package(CGAL COMPONENTS Qt5)
-include( ${CGAL_USE_FILE} )
 
 # Find Qt5 itself
 find_package(Qt5 5.4 QUIET COMPONENTS OpenGL)
 if(Qt5_FOUND)
   add_definitions(-DQT_NO_KEYWORDS)
+  set(CMAKE_INCLUDE_CURRENT_DIR ON)
 endif(Qt5_FOUND)
 
 # Find CImg
@@ -37,27 +41,27 @@ endif()
 if(CGAL_FOUND AND CGAL_Qt5_FOUND AND Qt5_FOUND)
 
   set(
-  SRCS 
-  glviewer.cpp 
+  SRCS
+  glviewer.cpp
   scene.cpp
-  Otr2_demo.cpp 
-  window.cpp 
-  render.cpp 
+  Otr2_demo.cpp
+  window.cpp
+  render.cpp
   )
 
-  set( 
-  CGAL_Qt5_MOC_FILES 
-  moc_dialog_options.cxx 
-  moc_glviewer.cxx 
-  moc_window.cxx 
+  set(
+  CGAL_Qt5_MOC_FILES
+  moc_dialog_options.cxx
+  moc_glviewer.cxx
+  moc_window.cxx
   )
 
   set(
   UIS
-  pwsrec.ui 
+  pwsrec.ui
   options.ui
   )
-  
+
   qt5_wrap_ui( UI_FILES ${UIS} )
 
   include(AddFileDependencies)
@@ -74,10 +78,10 @@ if(CGAL_FOUND AND CGAL_Qt5_FOUND AND Qt5_FOUND)
   qt5_add_resources ( CGAL_Qt5_RESOURCE_FILES pwsrec.qrc )
 
   add_executable  ( Otr2_demo ${SRCS} ${CGAL_Qt5_MOC_FILES} ${UI_FILES} ${CGAL_Qt5_RESOURCE_FILES})
-  
+
   target_link_libraries( Otr2_demo PRIVATE
     CGAL::CGAL CGAL::CGAL_Qt5 Qt5::Gui Qt5::OpenGL )
-  
+
   # Link with pthread if necessary
   if (CIMG_INCLUDE_DIR)
     target_compile_definitions( Otr2_demo PRIVATE -DCGAL_USE_CIMG )
@@ -89,7 +93,7 @@ if(CGAL_FOUND AND CGAL_Qt5_FOUND AND Qt5_FOUND)
       target_link_libraries( Otr2_demo PRIVATE ${CMAKE_THREAD_LIBS_INIT} )
     endif()
   endif()
-    
+
   add_to_cached_list( CGAL_EXECUTABLE_TARGETS Otr2_demo )
 
   include(${CGAL_MODULES_DIR}/CGAL_add_test.cmake)

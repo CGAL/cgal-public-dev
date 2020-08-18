@@ -1,8 +1,7 @@
 #include <cstdlib>
 
-#ifndef CGAL_NO_DEPRECATED_CODE
+#include <CGAL/internal/disable_deprecation_warnings_and_errors.h>
 
-#define CGAL_NO_DEPRECATION_WARNINGS 1
 #define CGAL_CMAP_DART_DEPRECATED 1
 
 #include <CGAL/Combinatorial_map.h>
@@ -18,7 +17,7 @@ struct My_items
   struct Dart_wrapper
   {
     typedef CGAL::Dart< 3, Refs > Dart;
-    typedef CGAL::cpp11::tuple<> Attributes;
+    typedef std::tuple<> Attributes;
   };
 };
 
@@ -34,7 +33,7 @@ bool test()
     CGAL::make_combinatorial_tetrahedron(map);
     CGAL::make_combinatorial_hexahedron(map);
   }
-  
+
   for ( int i=0; i<20; ++i )
   {
     CMap::Dart_handle d1=map.darts().begin();
@@ -59,7 +58,7 @@ bool test()
     CGAL::insert_cell_0_in_cell_2<CMap>(map, d2);
 
     CGAL::insert_dangling_cell_1_in_cell_2<CMap>(map, d2);
-      
+
     if (CGAL::is_insertable_cell_1_in_cell_2<CMap>(map, d2, d3))
       CGAL::insert_cell_1_in_cell_2<CMap>(map, d2, d3);
 
@@ -67,11 +66,11 @@ bool test()
     adarts.push_back(d2);
     adarts.push_back(d3);
     adarts.push_back(map.beta<1>(d3));
-    
+
     if (CGAL::is_insertable_cell_2_in_cell_3(map, adarts.begin(), adarts.end()))
       CGAL::insert_cell_2_in_cell_3<CMap>(map, adarts.begin(), adarts.end());
   }
-  
+
   return true;
 }
 
@@ -88,12 +87,3 @@ int main()
   std::cout<<" Success."<<std::endl;
   return EXIT_SUCCESS;
 }
-
-#else // CGAL_NO_DEPRECATED_CODE
-
-int main()
-{
-  return EXIT_SUCCESS;
-}
-
-#endif // CGAL_NO_DEPRECATED_CODE

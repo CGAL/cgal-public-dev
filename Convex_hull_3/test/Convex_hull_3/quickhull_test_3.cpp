@@ -1,5 +1,6 @@
 #include <CGAL/Exact_rational.h>
 #include <CGAL/Cartesian.h>
+#include <CGAL/Polyhedron_3.h>
 
 #include <CGAL/Convex_hull_traits_3.h>
 #include <CGAL/convex_hull_3.h>
@@ -22,7 +23,7 @@ typedef CGAL::Random_points_in_sphere_3<Point_3,Creator>  Generator;
 const unsigned int num = 40;
 
 template <class Facet_handle>
-void compute_plane_equation(Facet_handle f) 
+void compute_plane_equation(Facet_handle f)
 {
    typedef typename Facet_handle::value_type         Facet;
    typedef typename Facet::Halfedge_handle           Halfedge_handle;
@@ -36,15 +37,15 @@ void compute_plane_equation(Facet_handle f)
 
 
 template <class Plane, class Facet_handle>
-void get_plane(Plane& plane, Facet_handle f) 
+void get_plane(Plane& plane, Facet_handle f)
 {
    typedef typename Facet_handle::value_type         Facet;
    typedef typename Facet::Halfedge_handle           Halfedge_handle;
 
    Halfedge_handle h = (*f).halfedge();
    plane = Plane(h->opposite()->vertex()->point(),
-		   h->vertex()->point(),
-		   h->next()->vertex()->point());
+                   h->vertex()->point(),
+                   h->next()->vertex()->point());
 }
 
 
@@ -97,12 +98,12 @@ void test_small_hull()
 
   Polyhedron_3 polyhedron1;
   CGAL::convex_hull_3(points.begin(), points.end(), polyhedron1, Traits());
-  assert( polyhedron1.size_of_vertices() == 5 && 
+  assert( polyhedron1.size_of_vertices() == 5 &&
            polyhedron1.size_of_facets() == 6 );
   Polyhedron_3 polyhedron2;
   CGAL::convex_hull_3(points.begin(), points.end(), polyhedron2);
   assert(CGAL::is_strongly_convex_3(polyhedron2)); // test default traits class
-  assert( polyhedron2.size_of_vertices() == 5 && 
+  assert( polyhedron2.size_of_vertices() == 5 &&
           polyhedron2.size_of_facets() == 6 );
 }
 
@@ -137,7 +138,7 @@ int main()
   std::cerr << "Testing 500 random points" << std::endl;
   std::vector<Point_3> points;
   Generator g(500);
-  CGAL::cpp11::copy_n( g, num, std::back_inserter(points));
+  std::copy_n( g, num, std::back_inserter(points));
 
   assert(points.size() == num);
 
@@ -149,7 +150,7 @@ int main()
 
   Polyhedron_3 polyhedron;
 
-  assert( CGAL::assign(segment, ch_object) || 
+  assert( CGAL::assign(segment, ch_object) ||
           CGAL::assign(polyhedron, ch_object) );
   return 0;
 }

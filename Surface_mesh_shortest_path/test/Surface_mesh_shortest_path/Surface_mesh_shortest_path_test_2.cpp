@@ -11,11 +11,8 @@
 
 #include <CGAL/Polyhedron_3.h>
 #include <CGAL/Polyhedron_items_with_id_3.h>
-#include <CGAL/IO/Polyhedron_iostream.h>
 
 #include <CGAL/boost/graph/iterator.h>
-#include <CGAL/boost/graph/properties_Polyhedron_3.h>
-#include <CGAL/boost/graph/graph_traits_Polyhedron_3.h>
 
 #include <CGAL/Surface_mesh_shortest_path/Surface_mesh_shortest_path_traits.h>
 #include <CGAL/Surface_mesh_shortest_path/Surface_mesh_shortest_path.h>
@@ -40,9 +37,9 @@ int main(int argc, char* argv[])
   typedef Graph_traits::face_descriptor face_descriptor;
   typedef Graph_traits::face_iterator face_iterator;
   typedef CGAL::Surface_mesh_shortest_path<Traits> Surface_mesh_shortest_path;
-  typedef boost::property_map<Polyhedron_3, boost::vertex_index_t>::type VIM;
-  typedef boost::property_map<Polyhedron_3, boost::halfedge_index_t>::type HIM;
-  typedef boost::property_map<Polyhedron_3, boost::face_index_t>::type FIM;
+  typedef boost::property_map<Polyhedron_3, boost::vertex_index_t>::const_type VIM;
+  typedef boost::property_map<Polyhedron_3, boost::halfedge_index_t>::const_type HIM;
+  typedef boost::property_map<Polyhedron_3, boost::face_index_t>::const_type FIM;
 
 
 
