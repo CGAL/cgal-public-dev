@@ -1,3 +1,4 @@
+#include <CGAL/basic.h>
 
 #ifndef CGAL_SDG_VERBOSE
 #define CGAL_SDG_DEBUG(a)
@@ -10,30 +11,31 @@
 #include <cassert>
 #include <vector>
 
-#include <CGAL/basic.h>
-#include <CGAL/Interval_nt.h>
+#include <CGAL/Interval_arithmetic.h>
 #include <CGAL/Simple_cartesian.h>
-#include <CGAL/Exact_integer.h>
-#include <CGAL/Exact_rational.h>
-#include <CGAL/Exact_algebraic.h>
-
 #include <CGAL/Segment_Delaunay_graph_Linf_traits_2.h>
 #include <CGAL/Segment_Delaunay_graph_Linf_filtered_traits_2.h>
 
+#ifdef CGAL_USE_CORE
+#include <CGAL/CORE_Expr.h>
+#endif
 
-
+#ifdef CGAL_USE_GMP
+#include <CGAL/Gmpq.h>
+#include <CGAL/Gmpz.h>
+#endif
 
 typedef CGAL::Simple_cartesian<double>      Double_Kernel;
 typedef CGAL::Simple_cartesian<CGAL::Interval_nt<true> >   IT_Kernel;
 typedef CGAL::Simple_cartesian<CGAL::Interval_nt<false> >  IF_Kernel;
 typedef CGAL::Simple_cartesian<double>      Double_Kernel;
-#if defined(CGAL_USE_CORE) || defined(CGAL_USE_LEDA)
-typedef CGAL::Simple_cartesian<CGAL::Exact_algebraic>  Algebraic_Kernel;
+#ifdef CGAL_USE_CORE
+typedef CGAL::Simple_cartesian<CORE::Expr>  CORE_Kernel;
 #endif
-
-typedef CGAL::Simple_cartesian<CGAL::Exact_rational>  Rational_Kernel;
-typedef CGAL::Simple_cartesian<CGAL::Exact_integer>  Integer_Kernel;
-
+#ifdef CGAL_USE_GMP
+typedef CGAL::Simple_cartesian<CGAL::Gmpq>  Gmpq_Kernel;
+typedef CGAL::Simple_cartesian<CGAL::Gmpz>  Gmpz_Kernel;
+#endif
 
 typedef CGAL::Integral_domain_without_division_tag        Ring;
 typedef CGAL::Field_tag       Field;
@@ -93,74 +95,78 @@ IF_Sqrt_Gt;
 
 //----------------------------------------------------------------------
 //----------------------------------------------------------------------
-#if defined(CGAL_USE_CORE) || defined(CGAL_USE_LEDA)
+
+#ifdef CGAL_USE_CORE
 typedef CGAL::Segment_Delaunay_graph_Linf_traits_without_intersections_2
-<Algebraic_Kernel,Ring>
-Algebraic_Ring_Gtwi;
+<CORE_Kernel,Ring>
+CORE_Ring_Gtwi;
 
 typedef CGAL::Segment_Delaunay_graph_Linf_traits_without_intersections_2
-<Algebraic_Kernel,Sqrt>
-Algebraic_Sqrt_Gtwi;
+<CORE_Kernel,Sqrt>
+CORE_Sqrt_Gtwi;
 
-typedef CGAL::Segment_Delaunay_graph_Linf_traits_2<Algebraic_Kernel,Field>
-Algebraic_Field_Gt;
+typedef CGAL::Segment_Delaunay_graph_Linf_traits_2<CORE_Kernel,Field>
+CORE_Field_Gt;
 
-typedef CGAL::Segment_Delaunay_graph_Linf_traits_2<Algebraic_Kernel,Sqrt>
-Algebraic_Sqrt_Gt;
+typedef CGAL::Segment_Delaunay_graph_Linf_traits_2<CORE_Kernel,Sqrt>
+CORE_Sqrt_Gt;
 #endif
 
 //----------------------------------------------------------------------
 
+#ifdef CGAL_USE_GMP
+typedef CGAL::Segment_Delaunay_graph_Linf_traits_without_intersections_2
+<Gmpz_Kernel,Ring>
+Gmpz_Ring_Gtwi;
+
+//----------------------------------------------------------------------
 
 typedef CGAL::Segment_Delaunay_graph_Linf_traits_without_intersections_2
-<Integer_Kernel,Ring>
-Integer_Ring_Gtwi;
+<Gmpq_Kernel,Ring>
+Gmpq_Ring_Gtwi;
 
-//----------------------------------------------------------------------
-
-typedef CGAL::Segment_Delaunay_graph_Linf_traits_without_intersections_2
-<Rational_Kernel,Ring>
-Rational_Ring_Gtwi;
-
-typedef CGAL::Segment_Delaunay_graph_Linf_traits_2<Rational_Kernel,Field>
-Rational_Field_Gt;
+typedef CGAL::Segment_Delaunay_graph_Linf_traits_2<Gmpq_Kernel,Field>
+Gmpq_Field_Gt;
+#endif
 
 //----------------------------------------------------------------------
 //----------------------------------------------------------------------
-#if defined(CGAL_USE_CORE) || defined(CGAL_USE_LEDA)
+
+#ifdef CGAL_USE_CORE
 typedef CGAL::Segment_Delaunay_graph_Linf_filtered_traits_without_intersections_2
-<Double_Kernel,Sqrt,Algebraic_Kernel,Ring>
-F_Algebraic_Ring_Gtwi;
+<Double_Kernel,Sqrt,CORE_Kernel,Ring>
+F_CORE_Ring_Gtwi;
 
 typedef CGAL::Segment_Delaunay_graph_Linf_filtered_traits_without_intersections_2
-<Double_Kernel,Sqrt,Algebraic_Kernel,Sqrt>
-F_Algebraic_Sqrt_Gtwi;
+<Double_Kernel,Sqrt,CORE_Kernel,Sqrt>
+F_CORE_Sqrt_Gtwi;
 
 typedef CGAL::Segment_Delaunay_graph_Linf_filtered_traits_2
-<Double_Kernel,Sqrt,Algebraic_Kernel,Field>
-F_Algebraic_Field_Gt;
+<Double_Kernel,Sqrt,CORE_Kernel,Field>
+F_CORE_Field_Gt;
 
 typedef CGAL::Segment_Delaunay_graph_Linf_filtered_traits_2
-<Double_Kernel,Sqrt,Algebraic_Kernel,Sqrt>
-F_Algebraic_Sqrt_Gt;
+<Double_Kernel,Sqrt,CORE_Kernel,Sqrt>
+F_CORE_Sqrt_Gt;
 #endif
 
 //----------------------------------------------------------------------
 
+#ifdef CGAL_USE_GMP
 typedef CGAL::Segment_Delaunay_graph_Linf_filtered_traits_without_intersections_2
-<Double_Kernel,Sqrt,Integer_Kernel,Ring>
-F_Integer_Ring_Gtwi;
+<Double_Kernel,Sqrt,Gmpz_Kernel,Ring>
+F_Gmpz_Ring_Gtwi;
 
 //----------------------------------------------------------------------
 
 typedef CGAL::Segment_Delaunay_graph_Linf_filtered_traits_without_intersections_2
-<Double_Kernel,Sqrt,Rational_Kernel,Ring>
-F_Rational_Ring_Gtwi;
+<Double_Kernel,Sqrt,Gmpq_Kernel,Ring>
+F_Gmpq_Ring_Gtwi;
 
 typedef CGAL::Segment_Delaunay_graph_Linf_filtered_traits_2
-<Double_Kernel,Sqrt,Rational_Kernel,Field>
-F_Rational_Field_Gt;
-
+<Double_Kernel,Sqrt,Gmpq_Kernel,Field>
+F_Gmpq_Field_Gt;
+#endif
 
 //----------------------------------------------------------------------
 //----------------------------------------------------------------------
@@ -1755,7 +1761,7 @@ int main(int , char**)
 
   std::cout << std::endl;
   std::cout << "************************************"
-            << "************************************" << std::endl;
+	    << "************************************" << std::endl;
   std::cout << std::endl;
 
   test_traits<IT_Ring_Gtwi>("IT Ring WI");
@@ -1766,7 +1772,7 @@ int main(int , char**)
 
   std::cout << std::endl;
   std::cout << "************************************"
-            << "************************************" << std::endl;
+	    << "************************************" << std::endl;
   std::cout << std::endl;
 
   test_traits<IF_Ring_Gtwi>("IF Ring WI");
@@ -1777,47 +1783,50 @@ int main(int , char**)
 
   std::cout << std::endl;
   std::cout << "************************************"
-            << "************************************" << std::endl;
+	    << "************************************" << std::endl;
   std::cout << std::endl;
 #endif
 
-#if defined(CGAL_USE_CORE) || defined(CGAL_USE_LEDA)
-  test_traits<Algebraic_Ring_Gtwi>("CORE Ring WI");
-  test_traits<Algebraic_Sqrt_Gtwi>("CORE Sqrt WI");
+#ifdef CGAL_USE_CORE
+  test_traits<CORE_Ring_Gtwi>("CORE Ring WI");
+  test_traits<CORE_Sqrt_Gtwi>("CORE Sqrt WI");
 
-  test_traits<Algebraic_Field_Gt>("CORE Field");
-  test_traits<Algebraic_Sqrt_Gt>("CORE Sqrt");
+  test_traits<CORE_Field_Gt>("CORE Field");
+  test_traits<CORE_Sqrt_Gt>("CORE Sqrt");
 #endif
 
-  test_traits<Integer_Ring_Gtwi>("Integer Ring WI");
+#ifdef CGAL_USE_GMP
+  test_traits<Gmpz_Ring_Gtwi>("Gmpz Ring WI");
 
-  test_traits<Rational_Ring_Gtwi>("Rational Ring WI");
-  test_traits<Rational_Field_Gt>("Rational Field");
+  test_traits<Gmpq_Ring_Gtwi>("Gmpq Ring WI");
+  test_traits<Gmpq_Field_Gt>("Gmpq Field");
+#endif
 
   std::cout << std::endl;
   std::cout << "************************************"
-            << "************************************" << std::endl;
+	    << "************************************" << std::endl;
   std::cout << std::endl;
 
-#if defined(CGAL_USE_CORE) || defined(CGAL_USE_LEDA)
-  test_traits<F_Algebraic_Ring_Gtwi>("F Algebraic Ring WI");
-  test_traits<F_Algebraic_Sqrt_Gtwi>("F Algebraic Sqrt WI");
+#ifdef CGAL_USE_CORE
+  test_traits<F_CORE_Ring_Gtwi>("F CORE Ring WI");
+  test_traits<F_CORE_Sqrt_Gtwi>("F CORE Sqrt WI");
 
-  test_traits<F_Algebraic_Field_Gt>("F Algebraic Field");
-  test_traits<F_Algebraic_Sqrt_Gt>("F Algebraic Sqrt");
+  test_traits<F_CORE_Field_Gt>("F CORE Field");
+  test_traits<F_CORE_Sqrt_Gt>("F CORE Sqrt");
 #endif
 
-  test_traits<F_Integer_Ring_Gtwi>("F Integer Ring WI");
+#ifdef CGAL_USE_GMP
+  test_traits<F_Gmpz_Ring_Gtwi>("F Gmpz Ring WI");
 
-  test_traits<F_Rational_Ring_Gtwi>("F Rational Ring WI");
-  test_traits<F_Rational_Field_Gt>("F Rational Field");
+  test_traits<F_Gmpq_Ring_Gtwi>("F Gmpq Ring WI");
+  test_traits<F_Gmpq_Field_Gt>("F Gmpq Field");
+#endif
 
   std::cout << std::endl;
   std::cout << "************************************"
-            << "************************************" << std::endl;
+	    << "************************************" << std::endl;
   std::cout << std::endl;
 
 
   return 0;
 }
-

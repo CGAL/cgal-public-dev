@@ -5,6 +5,7 @@
 #include <list>
 #include <utility>
 
+#include <CGAL/basic.h>
 #include <CGAL/Arr_batched_point_location.h>
 #include <CGAL/Arr_point_location_result.h>
 

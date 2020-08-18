@@ -10,6 +10,7 @@
 
 #include <CGAL/Polygon_mesh_processing/measure.h>
 
+#include <boost/foreach.hpp>
 
 #include <cstdlib>
 #include <iostream>

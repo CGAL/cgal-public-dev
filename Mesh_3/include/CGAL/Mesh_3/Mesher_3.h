@@ -2,10 +2,19 @@
 // All rights reserved.
 //
 // This file is part of CGAL (www.cgal.org).
+// You can redistribute it and/or modify it under the terms of the GNU
+// General Public License as published by the Free Software Foundation,
+// either version 3 of the License, or (at your option) any later version.
+//
+// Licensees holding a valid commercial license may use this file in
+// accordance with the commercial license agreement provided with the software.
+//
+// This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
+// WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 //
 // $URL$
 // $Id$
-// SPDX-License-Identifier: GPL-3.0-or-later OR LicenseRef-Commercial
+// SPDX-License-Identifier: GPL-3.0+
 //
 //
 // Author(s)     : Laurent Rineau, Stephane Tayeb, Clement Jamin
@@ -29,13 +38,12 @@
 
 #include <CGAL/Mesh_3/Dump_c3t3.h>
 
-#include <CGAL/Mesh_3/Refine_facets_3.h>
-#include <CGAL/Mesh_3/Refine_facets_manifold_base.h>
-#include <CGAL/Mesh_3/Refine_cells_3.h>
+#include<CGAL/Mesh_3/Refine_facets_3.h>
+#include<CGAL/Mesh_3/Refine_facets_manifold_base.h>
+#include<CGAL/Mesh_3/Refine_cells_3.h>
 #include <CGAL/Mesh_3/Refine_tets_visitor.h>
 #include <CGAL/Mesher_level_visitors.h>
 #include <CGAL/Kernel_traits.h>
-#include <CGAL/point_generators_3.h>
 #include <CGAL/atomic.h>
 
 #ifdef CGAL_MESH_3_USE_OLD_SURFACE_RESTRICTED_DELAUNAY_UPDATE
@@ -50,7 +58,7 @@
 #endif
 
 #ifdef CGAL_LINKED_WITH_TBB
-#  include <thread>
+#  include <tbb/task_scheduler_init.h>
 #endif
 
 #include <boost/format.hpp>
@@ -218,10 +226,10 @@ public:
            );
 
   /// Destructor
-  ~Mesher_3()
+  ~Mesher_3() 
   {
     // The lock data structure is going to be destroyed
-    r_c3t3_.triangulation().set_lock_data_structure(nullptr);
+    r_c3t3_.triangulation().set_lock_data_structure(NULL);
   }
 
   /// Launch mesh refinement
@@ -288,24 +296,6 @@ private:
   CGAL::cpp11::atomic<bool>* const stop_ptr;
 #endif
 
-#ifdef CGAL_LINKED_WITH_TBB
-  std::size_t approximate_number_of_vertices(CGAL::Parallel_tag) const {
-#  if CGAL_CONCURRENT_COMPACT_CONTAINER_APPROXIMATE_SIZE
-    return r_c3t3_.triangulation().tds().vertices().approximate_size();
-#  else // not CGAL_CONCURRENT_COMPACT_CONTAINER_APPROXIMATE_SIZE
-    CGAL_error_msg(
-      "If you want to use the Mesh_3 feature \"maximal_number_of_vertices\"\n"
-      "with CGAL::Parallel_tag then you need to recompile the code with the\n"
-      "preprocessor macro CGAL_CONCURRENT_COMPACT_CONTAINER_APPROXIMATE_SIZE\n"
-      "set to 1. That will induce a performance loss of 3%.\n");
-#  endif // not CGAL_CONCURRENT_COMPACT_CONTAINER_APPROXIMATE_SIZE
-  }
-#endif // CGAL_LINKED_WITH_TBB
-
-  std::size_t approximate_number_of_vertices(CGAL::Sequential_tag) const {
-    return r_c3t3_.triangulation().number_of_vertices();
-  }
-
   bool forced_stop() const {
 #ifndef CGAL_NO_ATOMIC
     if(stop_ptr != 0 &&
@@ -316,7 +306,8 @@ private:
     }
 #endif // not defined CGAL_NO_ATOMIC
     if(maximal_number_of_vertices_ != 0 &&
-       approximate_number_of_vertices(Concurrency_tag()) >= maximal_number_of_vertices_)
+       r_c3t3_.triangulation().number_of_vertices() >=
+       maximal_number_of_vertices_)
     {
       if(error_code_ != 0) {
         *error_code_ = CGAL_MESH_3_MAXIMAL_NUMBER_OF_VERTICES_REACHED;
@@ -390,10 +381,6 @@ Mesher_3<C3T3,MC,MD>::Mesher_3(C3T3& c3t3,
   facets_mesher_.set_worksharing_ds(this->get_worksharing_data_structure());
   cells_mesher_.set_lock_ds(this->get_lock_data_structure());
   cells_mesher_.set_worksharing_ds(this->get_worksharing_data_structure());
-#ifndef CGAL_NO_ATOMIC
-  cells_mesher_.set_stop_pointer(stop_ptr);
-  facets_mesher_.set_stop_pointer(stop_ptr);
-#endif
 }
 
 
@@ -519,15 +506,15 @@ refine_mesh(std::string dump_after_refine_surface_prefix)
     % r_tr.number_of_vertices()
     % nbsteps % cells_mesher_.debug_info()
     % (nbsteps / timer.time());
-    if(refinement_stage == REFINE_FACETS &&
-       ! forced_stop() &&
+    if(! forced_stop() &&
+       refinement_stage == REFINE_FACETS &&
        facets_mesher_.is_algorithm_done())
     {
       facets_mesher_.scan_edges();
       refinement_stage = REFINE_FACETS_AND_EDGES;
     }
-    if(refinement_stage == REFINE_FACETS_AND_EDGES &&
-       ! forced_stop() &&
+    if(! forced_stop() &&
+       refinement_stage == REFINE_FACETS_AND_EDGES &&
        facets_mesher_.is_algorithm_done())
     {
       facets_mesher_.scan_vertices();
@@ -659,7 +646,7 @@ initialize()
 #  endif
       Random_points_on_sphere_3<Bare_point> random_point(radius);
       const int NUM_PSEUDO_INFINITE_VERTICES = static_cast<int>(
-        float(std::thread::hardware_concurrency())
+        float(tbb::task_scheduler_init::default_num_threads())
         * Concurrent_mesher_config::get().num_pseudo_infinite_vertices_per_core);
       for (int i = 0 ; i < NUM_PSEUDO_INFINITE_VERTICES ; ++i, ++random_point)
         r_c3t3_.add_far_point(r_c3t3_.triangulation().geom_traits().construct_weighted_point_3_object()
@@ -687,17 +674,9 @@ initialize()
   else
 #endif // CGAL_LINKED_WITH_TBB
   {
-    if (r_c3t3_.number_of_far_points() == 0 &&
-        r_c3t3_.number_of_facets() == 0 &&
-        (r_c3t3_.triangulation().dimension() < 3
 #ifdef CGAL_SEQUENTIAL_MESH_3_ADD_OUTSIDE_POINTS_ON_A_FAR_SPHERE
-         || true // in sequential mode, one wants the far points only
-                 // if the macro
-                 // `CGAL_SEQUENTIAL_MESH_3_ADD_OUTSIDE_POINTS_ON_A_FAR_SPHERE`
-                 // is defined, or if the dimension of the
-                 // triangulation is 2.
-#endif
-         )) {
+    if (r_c3t3_.number_of_far_points() == 0 && r_c3t3_.number_of_facets() == 0)
+    {
       const Bbox_3 &bbox = r_oracle_.bbox();
 
       // Compute radius for far sphere
@@ -723,6 +702,7 @@ initialize()
       std::cerr << "done." << std::endl;
 # endif
     }
+#endif // CGAL_SEQUENTIAL_MESH_3_ADD_OUTSIDE_POINTS_ON_A_FAR_SPHERE
 
 #ifdef CGAL_MESH_3_PROFILING
     double init_time = t.elapsed();
@@ -769,10 +749,6 @@ one_step()
 
     if ( facets_mesher_.is_algorithm_done() )
     {
-      if(forced_stop()) {
-        return;
-      }
-
       switch(refinement_stage) {
       case REFINE_FACETS:
         facets_mesher_.scan_edges();
@@ -817,13 +793,7 @@ status() const
   if(boost::is_convertible<Concurrency_tag, Parallel_tag>::value) {
     const WorksharingDataStructureType* ws_ds =
       this->get_worksharing_data_structure();
-    return Mesher_status(
-#  if CGAL_CONCURRENT_COMPACT_CONTAINER_APPROXIMATE_SIZE
-                         approximate_number_of_vertices(Concurrency_tag()),
-#else
-                         // not thread-safe, but that is not important
-                         approximate_number_of_vertices(CGAL::Sequential_tag()),
-#endif
+    return Mesher_status(r_c3t3_.triangulation().number_of_vertices(),
                          0,
                          ws_ds->approximate_number_of_enqueued_element());
   }

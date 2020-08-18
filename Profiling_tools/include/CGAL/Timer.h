@@ -1,18 +1,27 @@
-// Copyright (c) 1997
+// Copyright (c) 1997  
 // Utrecht University (The Netherlands),
 // ETH Zurich (Switzerland),
 // INRIA Sophia-Antipolis (France),
 // Max-Planck-Institute Saarbruecken (Germany),
-// and Tel-Aviv University (Israel).  All rights reserved.
+// and Tel-Aviv University (Israel).  All rights reserved. 
 //
-// This file is part of CGAL (www.cgal.org)
+// This file is part of CGAL (www.cgal.org); you can redistribute it and/or
+// modify it under the terms of the GNU Lesser General Public License as
+// published by the Free Software Foundation; either version 3 of the License,
+// or (at your option) any later version.
+//
+// Licensees holding a valid commercial license may use this file in
+// accordance with the commercial license agreement provided with the software.
+//
+// This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
+// WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 //
 // $URL$
 // $Id$
-// SPDX-License-Identifier: LGPL-3.0-or-later OR LicenseRef-Commercial
+// SPDX-License-Identifier: LGPL-3.0+
+// 
 //
-//
-// Author(s)     : Lutz Kettner  <kettner@inf.ethz.ch>
+// Author(s)     : Lutz Kettner  <kettner@inf.ethz.ch>  
 //                 Matthias Baesken <baesken@informatik.uni-halle.de>
 
 #ifndef CGAL_TIMER_H
@@ -25,9 +34,9 @@ namespace CGAL {
 
 // SECTION: A Timer for User-Process Time
 // ========================================================================
-//
+// 
 // DEFINITION
-//
+// 
 // A timer `t' of type Timer is an object with a state. It is either
 // running or it is stopped. The state is controlled with `t.start()'
 // and `t.stop()'. The timer counts the time elapsed since its creation
@@ -68,7 +77,7 @@ public:
     double   precision()  const;
     // Returns timer precison. Computes it dynamically at first call.
     // Returns -1.0 if timer system call fails, which, for a proper coded
-    // test towards precision leads to an immediate stop of an otherwise
+    // test towards precision leads to an immediate stop of an otherwise 
     // infinite loop (fixed tolerance * total time >= precision).
     double   max BOOST_PREVENT_MACRO_SUBSTITUTION ()        const;
 };
@@ -98,8 +107,8 @@ inline void Timer::reset() {
     interv  = 0;
     elapsed = 0.0;
     if (running) {
-        started = user_process_time();
-        ++ interv;
+	started = user_process_time();
+	++ interv;
     } else {
         started = 0.0;
     }
@@ -108,7 +117,7 @@ inline void Timer::reset() {
 inline double Timer::time() const {
     if (running) {
         double t = user_process_time();
-        return elapsed + (t - started);
+	return elapsed + (t - started);
     }
     return elapsed;
 }

@@ -1,4 +1,5 @@
 #include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
+#include <CGAL/Simple_cartesian.h>
 
 #include <CGAL/Mesh_complex_3_in_triangulation_3.h>
 #include <CGAL/Mesh_criteria_3.h>
@@ -72,12 +73,12 @@ int test_triangles_2(const FT eps)
   CGAL::Random_points_in_triangles_2<Point_2> g(triangles);
 
   // Get 100 random points in triangle range
-  std::copy_n(g, 100, std::back_inserter(points));
+  CGAL::cpp11::copy_n(g, 100, std::back_inserter(points));
 
   // Check that we have really created 100 points.
   assert( points.size() == 100);
 
-  for(Point_2 p : points)
+  BOOST_FOREACH(Point_2 p, points)
   {
     bool on_quad = p.x() > -eps && p.x() < 0.5 + eps &&
                    p.y() > -eps && p.y() < 0.5 + eps;
@@ -109,12 +110,12 @@ int test_triangles_3(const FT eps)
   CGAL::Random_points_in_triangles_3<Point_3> g(triangles);
 
   // Get 100 random points in triangle range
-  std::copy_n(g, 100, std::back_inserter(points));
+  CGAL::cpp11::copy_n(g, 100, std::back_inserter(points));
 
   // Check that we have really created 100 points.
   assert(points.size() == 100);
 
-  for(Point_3 p : points)
+  BOOST_FOREACH(Point_3 p, points)
   {
     bool on_front = p.z() <  eps && p.z() > -eps &&
                     p.x() > -eps && p.x() < 0.5 + eps &&
@@ -160,7 +161,7 @@ int test_T2(const FT eps)
   CGAL::refine_Delaunay_mesh_2(cdt, Mesh_2_criteria(0.125, 0.5));
 
   CGAL::Random_points_in_triangle_mesh_2<Point_2, CDT> g(cdt);
-  std::copy_n(g, 300, std::back_inserter(points));
+  CGAL::cpp11::copy_n(g, 300, std::back_inserter(points));
   for(std::size_t i=0; i<points.size(); ++i)
   {
     Point_2 p = points[i];
@@ -194,7 +195,7 @@ int test_volume_mesh(Polyhedron& polyhedron, const FT eps)
 
   std::vector<Point_3> points;
   CGAL::Random_points_in_triangle_mesh_3<Polyhedron> g(polyhedron);
-  std::copy_n(g, 300, std::back_inserter(points));
+  CGAL::cpp11::copy_n(g, 300, std::back_inserter(points));
   for(std::size_t i=0; i<points.size(); ++i)
   {
     Point_3 p = points[i];
@@ -229,7 +230,7 @@ int test_on_c3t3(const Polyhedron& polyhedron, const FT eps)
   C3t3 c3t3 = CGAL::make_mesh_3<C3t3>(domain, criteria, no_perturb(), no_exude());
 
   CGAL::Random_points_in_tetrahedral_mesh_boundary_3<C3t3> g(c3t3);
-  std::copy_n(g, 300, std::back_inserter(points));
+  CGAL::cpp11::copy_n(g, 300, std::back_inserter(points));
   for(std::size_t i=0; i<points.size(); ++i)
   {
     Point_3 p = points[i];
@@ -264,7 +265,7 @@ int test_in_c3t3(const Polyhedron& polyhedron, const FT eps)
   C3t3 c3t3 = CGAL::make_mesh_3<C3t3>(domain, criteria, no_perturb(), no_exude());
 
   CGAL::Random_points_in_tetrahedral_mesh_3<C3t3> g(c3t3);
-  std::copy_n(g, 300, std::back_inserter(points));
+  CGAL::cpp11::copy_n(g, 300, std::back_inserter(points));
   for(std::size_t i=0; i<points.size(); ++i)
   {
     Point_3 p = points[i];
@@ -287,15 +288,13 @@ int main()
   Polyhedron polyhedron;
 
   // A cube
-  make_hexahedron(
-        Point_3(-0.5,-0.5,-0.5), Point_3(0.5,-0.5,-0.5), Point_3(0.5,0.5,-0.5),
-        Point_3(-0.5,0.5,-0.5), Point_3(-0.5,0.5,0.5), Point_3(-0.5,-0.5,0.5),
-        Point_3(0.5,-0.5,0.5), Point_3(0.5,0.5,0.5),
+  make_hexahedron(Point_3(-0.5,-0.5,-0.5), Point_3(0.5,-0.5,-0.5), Point_3(0.5,0.5,-0.5), Point_3(-0.5,0.5,-0.5),
+                  Point_3(-0.5,0.5,0.5), Point_3(-0.5,-0.5,0.5), Point_3(0.5,-0.5,0.5), Point_3(0.5,0.5,0.5),
                   polyhedron);
 
   boost::graph_traits<Polyhedron>::halfedge_descriptor facets[6];
   int i = 0;
-  for(boost::graph_traits<Polyhedron>::face_descriptor fd : faces(polyhedron))
+  BOOST_FOREACH(boost::graph_traits<Polyhedron>::face_descriptor fd, faces(polyhedron))
     facets[i++] = halfedge(fd, polyhedron);
 
   for(int i=0; i<6; ++i)

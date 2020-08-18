@@ -2,11 +2,11 @@
 namespace CGAL {
 
 /*!
-\ingroup PkgSTLExtensionUtilities
+\ingroup PkgStlExtensionUtilities
 
 
 \deprecated This class is deprecated, and will be removed in some future \cgal release.
-Please use std::array instead.
+Please use CGAL::cpp11::array instead.
 
 The `Threetuple` class stores a homogeneous (same type) triple
 of objects of type `T`. A `Threetuple` is much like a container, in that

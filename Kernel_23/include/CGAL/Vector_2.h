@@ -1,15 +1,24 @@
-// Copyright (c) 1999
+// Copyright (c) 1999  
 // Utrecht University (The Netherlands),
 // ETH Zurich (Switzerland),
 // INRIA Sophia-Antipolis (France),
 // Max-Planck-Institute Saarbruecken (Germany),
-// and Tel-Aviv University (Israel).  All rights reserved.
+// and Tel-Aviv University (Israel).  All rights reserved. 
 //
-// This file is part of CGAL (www.cgal.org)
+// This file is part of CGAL (www.cgal.org); you can redistribute it and/or
+// modify it under the terms of the GNU Lesser General Public License as
+// published by the Free Software Foundation; either version 3 of the License,
+// or (at your option) any later version.
+//
+// Licensees holding a valid commercial license may use this file in
+// accordance with the commercial license agreement provided with the software.
+//
+// This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
+// WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 //
 // $URL$
 // $Id$
-// SPDX-License-Identifier: LGPL-3.0-or-later OR LicenseRef-Commercial
+// SPDX-License-Identifier: LGPL-3.0+
 //
 //
 // Author(s)     : Andreas Fabri, Stefan Schirra
@@ -54,12 +63,12 @@ public:
   typedef RVector_2 Rep;
   typedef typename R_::Cartesian_const_iterator_2 Cartesian_const_iterator;
 
-  const Rep& rep() const noexcept
+  const Rep& rep() const
   {
     return *this;
   }
 
-  Rep& rep() noexcept
+  Rep& rep()
   {
     return *this;
   }
@@ -92,15 +101,6 @@ public:
 
   Vector_2(const RT &x, const RT &y, const RT &w)
       : RVector_2(typename R::Construct_vector_2()(Return_base_tag(), x,y,w)) {}
-
-  friend void swap(Self& a, Self& b)
-#ifdef __cpp_lib_is_swappable
-    noexcept(std::is_nothrow_swappable_v<Rep>)
-#endif
-  {
-    using std::swap;
-    swap(a.rep(), b.rep());
-  }
 
 
   typename cpp11::result_of<typename R::Compute_x_2(Vector_2)>::type

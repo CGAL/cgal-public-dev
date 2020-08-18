@@ -1,13 +1,6 @@
 #include <CGAL/Combinatorial_map.h>
 #include <CGAL/Cell_attribute.h>
 #include "Combinatorial_map_test_iterators.h"
-#include <CGAL/HalfedgeDS_default.h>
-#if CGAL_USE_OPENMESH
-#  include <OpenMesh/Core/IO/MeshIO.hh>
-#  include <OpenMesh/Core/Mesh/TriMesh_ArrayKernelT.hh>
-#  include <CGAL/boost/graph/graph_traits_TriMesh_ArrayKernelT.h>
-  typedef OpenMesh::TriMesh_ArrayKernelT</* MyTraits*/> OpenMesh_mesh;
-#endif // CGAL_USE_OPENMESH
 
 #include <iostream>
 #include <fstream>
@@ -24,7 +17,7 @@ struct Map_2_dart_items
     typedef CGAL::Cell_attribute< Refs, int, CGAL::Tag_true > Int_attrib;
     typedef CGAL::Cell_attribute< Refs, double, CGAL::Tag_true > Double_attrib;
 
-    typedef std::tuple<Double_attrib, void, Double_attrib> Attributes;
+    typedef CGAL::cpp11::tuple<Double_attrib, void, Double_attrib> Attributes;
   };
 };
 
@@ -39,7 +32,7 @@ struct Map_2_dart_max_items_3
     typedef CGAL::Cell_attribute< Refs, int, CGAL::Tag_true > Int_attrib;
     typedef CGAL::Cell_attribute< Refs, double, CGAL::Tag_true > Double_attrib;
 
-    typedef std::tuple<Int_attrib, Int_attrib,
+    typedef CGAL::cpp11::tuple<Int_attrib, Int_attrib,
           Double_attrib> Attributes;
   };
 };
@@ -53,7 +46,7 @@ struct Map_3_dart_items_3
     typedef CGAL::Cell_attribute< Refs, int, CGAL::Tag_true > Int_attrib;
     typedef CGAL::Cell_attribute< Refs, double, CGAL::Tag_true > Double_attrib;
 
-    typedef std::tuple<Double_attrib, void,
+    typedef CGAL::cpp11::tuple<Double_attrib, void,
           Int_attrib, Double_attrib> Attributes;
   };
 };
@@ -69,7 +62,7 @@ struct Map_3_dart_max_items_3
     typedef CGAL::Cell_attribute< Refs, int, CGAL::Tag_true > Int_attrib;
     typedef CGAL::Cell_attribute< Refs, double, CGAL::Tag_true > Double_attrib;
 
-    typedef std::tuple<Int_attrib, Int_attrib,
+    typedef CGAL::cpp11::tuple<Int_attrib, Int_attrib,
           Int_attrib, Double_attrib> Attributes;
   };
 };
@@ -98,7 +91,7 @@ public:
 
     typedef CGAL::Cell_attribute< Refs, int > Int_attrib;
 
-    typedef std::tuple<Int_attrib, void, Int_attrib> Attributes;
+    typedef CGAL::cpp11::tuple<Int_attrib, void, Int_attrib> Attributes;
   };
 };
 
@@ -110,7 +103,7 @@ struct Map_dart_items_4
     typedef CGAL::Cell_attribute< Refs, int > Int_attrib;
     typedef CGAL::Cell_attribute< Refs, double > Double_attrib;
 
-    typedef std::tuple<Int_attrib, void,
+    typedef CGAL::cpp11::tuple<Int_attrib, void,
           Int_attrib, void, Int_attrib>
     Attributes;
   };
@@ -126,7 +119,7 @@ struct Map_dart_max_items_4
     typedef CGAL::Cell_attribute< Refs, int > Int_attrib;
     typedef CGAL::Cell_attribute< Refs, double > Double_attrib;
 
-    typedef std::tuple<Int_attrib, Int_attrib,
+    typedef CGAL::cpp11::tuple<Int_attrib, Int_attrib,
           Int_attrib, Int_attrib, Double_attrib>
     Attributes;
   };
@@ -159,10 +152,6 @@ typedef CGAL::Combinatorial_map<4, Map_dart_items_4> Map8;
 // info=char, int, int, int, int, double
 typedef CGAL::Combinatorial_map<4, Map_dart_max_items_4> Map9;
 
-struct Traits { typedef int Point_2; typedef int Point_3; };
-typedef CGAL::HalfedgeDS_default<Traits> HDS;
-
-////////////////////////////////////////////////////////////////////////////////
 template<typename Map, unsigned int i, typename Attr=typename Map::
          template Attribute_type<i>::type>
 struct CreateAttributes
@@ -413,16 +402,16 @@ bool testCopy()
 
     Map1 map2p(map2); assert(map2p.is_valid());
     if ( map2.is_isomorphic_to(map2p) ) { assert(false); return false; }
-    if ( !map2.is_isomorphic_to(map2p, false, false) )
+    if ( !map2.is_isomorphic_to(map2p, false, false) ) 
     { assert(false); return false; }
 
     Map3 map2t(map2); assert(map2t.is_valid());
     if ( map2.is_isomorphic_to(map2t) ) { assert(false); return false; }
-    if ( !map2.is_isomorphic_to(map2t, false, false) )
+    if ( !map2.is_isomorphic_to(map2t, false, false) ) 
     { assert(false); return false; }
 
     if ( map2p.is_isomorphic_to(map2t) ) { assert(false); return false; }
-    if ( !map2p.is_isomorphic_to(map2t, false, false) )
+    if ( !map2p.is_isomorphic_to(map2t, false, false) ) 
     { assert(false); return false; }
 
     Map1 map3p(map3); assert(map3p.is_valid());
@@ -432,7 +421,7 @@ bool testCopy()
 
     Map2 map3t(map3); assert(map3t.is_valid());
     if ( map3.is_isomorphic_to(map3t) ) { assert(false); return false; }
-    if ( !map3.is_isomorphic_to(map3t, false, false) )
+    if ( !map3.is_isomorphic_to(map3t, false, false) ) 
     { assert(false); return false; }
 
     if ( map3p.is_isomorphic_to(map3t) ) { assert(false); return false; }
@@ -463,7 +452,7 @@ bool testCopy()
 
     Map7 map5c(map5); assert(map5c.is_valid());
     if ( map5.is_isomorphic_to(map5c) ) { assert(false); return false; }
-    if ( !map5.is_isomorphic_to(map5c, false, false) )
+    if ( !map5.is_isomorphic_to(map5c, false, false) ) 
     { assert(false); return false; }
     assert( map5c.number_of_attributes<0>()==0 &&
             map5c.number_of_attributes<2>()==map5.number_of_attributes<2>() );
@@ -523,7 +512,7 @@ bool testCopy()
     CGAL::Default_converter_cmap_attributes<Map9,Map5,2> c2;
     CGAL::Cast_converter_cmap_attributes<Map9,Map5,3> c3;
 
-    std::tuple<CGAL::Cast_converter_cmap_attributes<Map9,Map5,0>,
+    CGAL::cpp11::tuple<CGAL::Cast_converter_cmap_attributes<Map9,Map5,0>,
         CGAL::Default_converter_cmap_attributes<Map9,Map5,1>,
         CGAL::Default_converter_cmap_attributes<Map9,Map5,2>,
         CGAL::Cast_converter_cmap_attributes<Map9,Map5,3> > myconverters
@@ -541,7 +530,7 @@ bool testCopy()
     CGAL::Default_converter_cmap_attributes<Map5,Map9,2> cb2;
     CGAL::Cast_converter_cmap_attributes<Map5,Map9,3> cb3;
 
-    std::tuple<CGAL::Cast_converter_cmap_attributes<Map5,Map9,0>,
+    CGAL::cpp11::tuple<CGAL::Cast_converter_cmap_attributes<Map5,Map9,0>,
         CGAL::Default_converter_cmap_attributes<Map5,Map9,1>,
         CGAL::Default_converter_cmap_attributes<Map5,Map9,2>,
         CGAL::Cast_converter_cmap_attributes<Map5,Map9,3> > myconverters2
@@ -588,31 +577,6 @@ bool testCopy()
   //map5a.display_characteristics(std::cout)<<std::endl;
 
   return true;
-}
-
-bool testImportFromHalfedge()
-{
-  bool res=true;
-
-  HDS hds;
-  CGAL::HalfedgeDS_decorator<HDS> decorator(hds);
-  decorator.create_loop();
-  decorator.create_segment();
-
-  Map1 map1; map1.import_from_halfedge_graph(hds);
-  Map2 map2; map2.import_from_halfedge_graph(hds);
-  Map3 map3; map3.import_from_halfedge_graph(hds);
-
-#if CGAL_USE_OPENMESH
-  {
-    // test the compilation, with an empty mesh
-    OpenMesh_mesh hds;
-    Map1 map1; map1.import_from_halfedge_graph(hds);
-    Map2 map2; map2.import_from_halfedge_graph(hds);
-    Map3 map3; map3.import_from_halfedge_graph(hds);
-  }
-#endif // CGAL_USE_OPENMESH
-  return res; // TODO compare number of darts/cells
 }
 
 int main()

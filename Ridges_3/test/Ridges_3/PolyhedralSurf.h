@@ -10,6 +10,7 @@
 #include <vector>
 #include <list>
 
+#include <boost/foreach.hpp>
 
 //----------------------------------------------------------------
 // A redefined items class for the Polyhedron_3 with
@@ -65,7 +66,7 @@ class PolyhedralSurf;
 namespace boost {
   template <>
   struct graph_traits<PolyhedralSurf> : public boost::graph_traits<Polyhedron>
-  {};
+  {};  
 
   template <>
   struct graph_traits<PolyhedralSurf const> : public boost::graph_traits<Polyhedron>

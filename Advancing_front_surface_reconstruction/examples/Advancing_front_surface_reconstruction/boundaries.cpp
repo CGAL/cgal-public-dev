@@ -2,6 +2,7 @@
 #include <iostream>
 #include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
 #include <CGAL/Advancing_front_surface_reconstruction.h>
+#include <boost/foreach.hpp>
 
 struct Perimeter {
 
@@ -63,15 +64,15 @@ int main(int argc, char* argv[])
   reconstruction.run();
 
   std::cout << reconstruction.number_of_outliers() << " outliers:\n" << std::endl;
-  for(const Point_3& p : reconstruction.outliers()){
+  BOOST_FOREACH(const Point_3& p, reconstruction.outliers()){
     std::cout << p << std::endl;
   }
 
   std::cout << "Boundaries:" << std::endl ;
-  for(const Vertex_on_boundary_range& vobr : reconstruction.boundaries()){
+  BOOST_FOREACH(const Vertex_on_boundary_range & vobr, reconstruction.boundaries()){
     std::cout << "boundary\n";
-    // As we use range-base loop we do not use the type Boundary_range
-    for(Vertex_handle v : vobr){
+    // As we use BOOST_FOREACH we do not use the type Boundary_range
+    BOOST_FOREACH(Vertex_handle v, vobr){
       std::cout << v->point() << std::endl;
     }
   }

@@ -62,7 +62,6 @@ int main(int argc, char* argv[])
                   CGAL::Polygon_mesh_processing::parameters::density_control_factor(2.));
 
   std::ofstream refined_off("refined.off");
-  refined_off.precision(17);
   refined_off << poly;
   refined_off.close();
   std::cout << "Refinement added " << new_vertices.size() << " vertices." << std::endl;
@@ -76,7 +75,6 @@ int main(int argc, char* argv[])
   std::cout << "Fairing : " << (success ? "succeeded" : "failed") << std::endl;
 
   std::ofstream faired_off("faired.off");
-  faired_off.precision(17);
   faired_off << poly;
   faired_off.close();
 

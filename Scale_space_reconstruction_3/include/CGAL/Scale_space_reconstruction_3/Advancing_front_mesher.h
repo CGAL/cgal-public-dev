@@ -1,10 +1,21 @@
 // Copyright (c) 2017 GeometryFactory Sarl (France).
 //
-// This file is part of CGAL (www.cgal.org).
+//This program is free software: you can redistribute it and/or modify
+//it under the terms of the GNU General Public License as published by
+//the Free Software Foundation, either version 3 of the License, or
+//(at your option) any later version.
+//
+//This program is distributed in the hope that it will be useful,
+//but WITHOUT ANY WARRANTY; without even the implied warranty of
+//MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+//GNU General Public License for more details.
+//
+//You should have received a copy of the GNU General Public License
+//along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 // $URL$
 // $Id$
-// SPDX-License-Identifier: GPL-3.0-or-later OR LicenseRef-Commercial
+// SPDX-License-Identifier: GPL-3.0+
 //
 // Author(s):      Simon Giraudot
 
@@ -23,7 +34,7 @@ namespace CGAL
 
 namespace Scale_space_reconstruction_3
 {
-
+  
 /** \ingroup PkgScaleSpaceReconstruction3Classes
  *
  *  Surface mesher for scale space reconstruction based on
@@ -32,7 +43,7 @@ namespace Scale_space_reconstruction_3
  *  This class applies the advancing front reconstruction algorithm
  *  with the possibility of using an upper bound on the length of the
  *  produced facets.
- *
+ * 
  *  \cgalModels CGAL::Scale_space_reconstruction_3::Mesher
  *
  *  \tparam Geom_traits geometric traits class. It must be a
@@ -45,8 +56,8 @@ class Advancing_front_mesher
 {
   typedef typename Geom_traits::FT FT;
   typedef typename Geom_traits::Point_3                        Point;          ///< defines the point type.
-
-  typedef std::array< unsigned int, 3 >       Facet;
+  
+  typedef CGAL::cpp11::array< unsigned int, 3 >       Facet;
 private:
 
   class Priority
@@ -83,7 +94,7 @@ private:
   Priority m_priority;
   FT m_radius_ratio_bound;
   FT m_beta;
-
+  
 public:
 
   /**
@@ -120,7 +131,7 @@ public:
 
 };
 
-
+  
 } // namespace Scale_space_reconstruction_3
 
 } // namespace CGAL

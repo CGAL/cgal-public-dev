@@ -4,11 +4,19 @@
  Copyright (C) 2002-2014 Gilles Debunne. All rights reserved.
 
  This file is part of a fork of the QGLViewer library version 2.7.0.
+ http://www.libqglviewer.com - contact@libqglviewer.com
+
+ This file may be used under the terms of the GNU General Public License 
+ version 3.0 as published by the Free Software Foundation and
+ appearing in the LICENSE file included in the packaging of this file.
+
+ This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
+ WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 
 *****************************************************************************/
 // $URL$
 // $Id$
-// SPDX-License-Identifier: GPL-3.0-only
+// SPDX-License-Identifier: GPL-3.0
 
 #ifdef CGAL_HEADER_ONLY
 #define CGAL_INLINE_FUNCTION inline
@@ -521,6 +529,11 @@ Quaternion Quaternion::squadTangent(const Quaternion &before,
   return e;
 }
 
+CGAL_INLINE_FUNCTION
+std::ostream &operator<<(std::ostream &o, const Quaternion &Q) {
+  return o << Q[0] << '\t' << Q[1] << '\t' << Q[2] << '\t' << Q[3];
+}
+
 /*! Returns a random unit Quaternion.
 
 You can create a randomly directed unit vector using:
@@ -543,10 +556,4 @@ Quaternion Quaternion::randomQuaternion() {
   qreal t2 = 2.0 * CGAL_PI * (rand() / (qreal)RAND_MAX);
   return Quaternion(sin(t1) * r1, cos(t1) * r1, sin(t2) * r2, cos(t2) * r2);
 }
-
-CGAL_INLINE_FUNCTION
-std::ostream &operator<<(std::ostream &o, const Quaternion &Q) {
-  return o << Q[0] << '\t' << Q[1] << '\t' << Q[2] << '\t' << Q[3];
-}
-
-}} // namespace CGAL::qglviewer
+}}

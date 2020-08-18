@@ -1,5 +1,5 @@
 /*!
-\ingroup PkgArrangementOnSurface2ConceptsTraits
+\ingroup PkgArrangement2ConceptsTraits
 \cgalConcept
 
 The concept `ArrangementApproximateTraits_2` refines the basic traits concept
@@ -40,7 +40,7 @@ public:
    * models the concept `ArrTraits::Approximate_2`.
    */
   typedef unspecified_type Approximate_2;
-  /// @}
+
   /// \name Accessing Functor Objects
   /// @{
 

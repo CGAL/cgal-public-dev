@@ -2,10 +2,19 @@
 // All rights reserved.
 //
 // This file is part of CGAL (www.cgal.org).
+// You can redistribute it and/or modify it under the terms of the GNU
+// General Public License as published by the Free Software Foundation,
+// either version 3 of the License, or (at your option) any later version.
+//
+// Licensees holding a valid commercial license may use this file in
+// accordance with the commercial license agreement provided with the software.
+//
+// This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
+// WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 //
 // $URL$
 // $Id$
-// SPDX-License-Identifier: GPL-3.0-or-later OR LicenseRef-Commercial
+// SPDX-License-Identifier: GPL-3.0+
 //
 // Author(s) : Simon Giraudot
 
@@ -15,6 +24,9 @@
 #include <CGAL/license/Point_set_processing_3.h>
 
 #include <CGAL/config.h>
+#if defined(CGAL_CFG_NO_CPP0X_RVALUE_REFERENCE) || defined(CGAL_CFG_NO_CPP0X_VARIADIC_TEMPLATES)
+#error CGAL LAS writer requires a C++11 compiler
+#endif
 
 #include <tuple>
 
@@ -59,9 +71,9 @@ namespace CGAL {
 
 
   /**
-     \ingroup PkgPointSetProcessing3IOLas
-
-     Generates a %LAS property handler to write 3D points.
+     \ingroup PkgPointSetProcessingIOLas
+     
+     Generates a %LAS property handler to write 3D points. 
 
      \sa `write_las_points_with_properties()`
 
@@ -75,48 +87,48 @@ namespace CGAL {
   }
 
   /// \cond SKIP_IN_MANUAL
-
+  
 namespace internal {
 
   namespace LAS {
 
-  inline void output_value(LASpoint& r, const unsigned short& v, LAS_property::Intensity&)
+  void output_value(LASpoint& r, unsigned short& v, LAS_property::Intensity&)
   { r.set_intensity(v); }
-  inline void output_value(LASpoint& r, const unsigned char& v, LAS_property::Return_number&)
+  void output_value(LASpoint& r, unsigned char& v, LAS_property::Return_number&)
   { r.set_return_number(v); }
-  inline void output_value(LASpoint& r, const unsigned char& v, LAS_property::Number_of_returns&)
+  void output_value(LASpoint& r, unsigned char& v, LAS_property::Number_of_returns&)
   { r.set_number_of_returns(v); }
-  inline void output_value(LASpoint& r, const unsigned char& v, LAS_property::Scan_direction_flag&)
+  void output_value(LASpoint& r, unsigned char& v, LAS_property::Scan_direction_flag&)
   { r.set_scan_direction_flag(v); }
-  inline void output_value(LASpoint& r, const unsigned char& v, LAS_property::Edge_of_flight_line&)
+  void output_value(LASpoint& r, unsigned char& v, LAS_property::Edge_of_flight_line&)
   { r.set_edge_of_flight_line(v); }
-  inline void output_value(LASpoint& r, const unsigned char& v, LAS_property::Classification&)
+  void output_value(LASpoint& r, unsigned char& v, LAS_property::Classification&)
   { r.set_classification(v); }
-  inline void output_value(LASpoint& r, const unsigned char& v, LAS_property::Synthetic_flag&)
+  void output_value(LASpoint& r, unsigned char& v, LAS_property::Synthetic_flag&)
   { r.set_synthetic_flag(v); }
-  inline void output_value(LASpoint& r, const unsigned char& v, LAS_property::Keypoint_flag&)
+  void output_value(LASpoint& r, unsigned char& v, LAS_property::Keypoint_flag&)
   { r.set_keypoint_flag(v); }
-  inline void output_value(LASpoint& r, const unsigned char& v, LAS_property::Withheld_flag&)
+  void output_value(LASpoint& r, unsigned char& v, LAS_property::Withheld_flag&)
   { r.set_withheld_flag(v); }
-  inline void output_value(LASpoint& r, const float& v, LAS_property::Scan_angle&)
+  void output_value(LASpoint& r, float& v, LAS_property::Scan_angle&)
   { r.set_scan_angle_rank(char(v)); }
-  inline void output_value(LASpoint& r, const unsigned char& v, LAS_property::User_data&)
+  void output_value(LASpoint& r, unsigned char& v, LAS_property::User_data&)
   { r.set_user_data(v); }
-  inline void output_value(LASpoint& r, const unsigned short& v, LAS_property::Point_source_ID&)
+  void output_value(LASpoint& r, unsigned short& v, LAS_property::Point_source_ID&)
   { r.set_point_source_ID(v); }
-  inline void output_value(LASpoint& r, const unsigned int& v, LAS_property::Deleted_flag&)
+  void output_value(LASpoint& r, unsigned int& v, LAS_property::Deleted_flag&)
   { r.set_deleted_flag(v); }
-  inline void output_value(LASpoint& r, const double& v, LAS_property::GPS_time&)
+  void output_value(LASpoint& r, double& v, LAS_property::GPS_time&)
   { r.set_gps_time(v); }
-  inline void output_value(LASpoint& r, const unsigned short& v, LAS_property::R&)
+  void output_value(LASpoint& r, unsigned short& v, LAS_property::R&)
   { r.set_R(v); }
-  inline void output_value(LASpoint& r, const unsigned short& v, LAS_property::G&)
+  void output_value(LASpoint& r, unsigned short& v, LAS_property::G&)
   { r.set_G(v); }
-  inline void output_value(LASpoint& r, const unsigned short& v, LAS_property::B&)
+  void output_value(LASpoint& r, unsigned short& v, LAS_property::B&)
   { r.set_B(v); }
-  inline void output_value(LASpoint& r, const unsigned short& v, LAS_property::I&)
+  void output_value(LASpoint& r, unsigned short& v, LAS_property::I&)
   { r.set_I(v); }
-
+  
   template <typename ForwardIterator>
   void output_properties (LASpoint&,
                           ForwardIterator)
@@ -150,15 +162,15 @@ namespace internal {
   }
 
   } // namespace LAS
-
+  
 } // namespace internal
-
+  
 
 /// \endcond
 
 
 /**
-   \ingroup PkgPointSetProcessing3IOLas
+   \ingroup PkgPointSetProcessingIOLas
    Saves the range of `points` with properties to a
    .las stream.
 
@@ -207,7 +219,7 @@ bool write_las_points_with_properties (std::ostream& stream,  ///< output stream
      (points.begin(), CGAL::Property_map_to_unary_function<PointMap>(std::get<0>(point_property))),
      boost::make_transform_iterator
      (points.end(), CGAL::Property_map_to_unary_function<PointMap>(std::get<0>(point_property))));
-
+  
   LASheader header;
   header.x_scale_factor = 1e-9 * (bbox.xmax() - bbox.xmin());
   header.y_scale_factor = 1e-9 * (bbox.ymax() - bbox.ymin());
@@ -223,7 +235,7 @@ bool write_las_points_with_properties (std::ostream& stream,  ///< output stream
 
   LASwriterLAS laswriter;
   laswriter.open (stream, &header);
-
+  
   // Write positions + normals
   for(typename PointRange::const_iterator it = points.begin(); it != points.end(); it++)
   {
@@ -245,28 +257,21 @@ bool write_las_points_with_properties (std::ostream& stream,  ///< output stream
 }
 
 /**
-   \ingroup PkgPointSetProcessing3IOLas
+   \ingroup PkgPointSetProcessingIOLas
    Saves the range of `points` (positions only) to a
-   .las stream.
+   .las stream. 
 
    \tparam PointRange is a model of `ConstRange`. The value type of
    its iterator is the key type of the named parameter `point_map`.
 
    \param stream output stream.
    \param points input point range.
-   \param np an optional sequence of \ref bgl_namedparameters "Named Parameters" among the ones listed below
+   \param np optional sequence of \ref psp_namedparameters "Named Parameters" among the ones listed below.
 
    \cgalNamedParamsBegin
-     \cgalParamNBegin{point_map}
-       \cgalParamDescription{a property map associating points to the elements of the point range}
-       \cgalParamType{a model of `ReadablePropertyMap` with value type `geom_traits::Point_3`}
-       \cgalParamDefault{`CGAL::Identity_property_map<geom_traits::Point_3>`}
-     \cgalParamNEnd
-     \cgalParamNBegin{geom_traits}
-       \cgalParamDescription{an instance of a geometric traits class}
-       \cgalParamType{a model of `Kernel`}
-       \cgalParamDefault{a \cgal Kernel deduced from the point type, using `CGAL::Kernel_traits`}
-     \cgalParamNEnd
+     \cgalParamBegin{point_map} a model of `ReadablePropertyMap` with value type `geom_traits::Point_3`.
+     If this parameter is omitted, `CGAL::Identity_property_map<geom_traits::Point_3>` is used.\cgalParamEnd
+     \cgalParamBegin{geom_traits} an instance of a geometric traits class, model of `Kernel`\cgalParamEnd
    \cgalNamedParamsEnd
 
    \return true on success.
@@ -280,12 +285,11 @@ write_las_points(
   const PointRange& points,
   const NamedParameters& np)
 {
-  using parameters::choose_parameter;
-  using parameters::get_parameter;
+  using boost::choose_param;
 
-  typedef typename CGAL::GetPointMap<PointRange, NamedParameters>::type PointMap;
-  PointMap point_map = choose_parameter<PointMap>(get_parameter(np, internal_np::point_map));
-
+  typedef typename Point_set_processing_3::GetPointMap<PointRange, NamedParameters>::type PointMap;
+  PointMap point_map = choose_param(get_param(np, internal_np::point_map), PointMap());
+  
   return write_las_points_with_properties (stream, points, make_las_point_writer(point_map));
 }
 
@@ -318,8 +322,8 @@ write_las_points(
     (stream, points,
      CGAL::parameters::point_map(point_map));
 }
-
-// deprecated API
+  
+// deprecated API  
 template < typename ForwardIterator >
 CGAL_DEPRECATED_MSG("you are using the deprecated V1 API of CGAL::write_las_points(), please update your code")
 bool

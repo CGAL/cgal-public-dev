@@ -2,11 +2,20 @@
 // All rights reserved.
 //
 // This file is part of CGAL (www.cgal.org).
+// You can redistribute it and/or modify it under the terms of the GNU
+// General Public License as published by the Free Software Foundation,
+// either version 3 of the License, or (at your option) any later version.
+//
+// Licensees holding a valid commercial license may use this file in
+// accordance with the commercial license agreement provided with the software.
+//
+// This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
+// WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 //
 // $URL$
 // $Id$
-// SPDX-License-Identifier: GPL-3.0-or-later OR LicenseRef-Commercial
-//
+// SPDX-License-Identifier: GPL-3.0+
+// 
 //
 // Author(s)     : Ron Wein          <wein@post.tau.ac.il>
 
@@ -43,7 +52,7 @@ public:
   typedef typename Arrangement_2::Vertex_handle            Vertex_handle;
   typedef typename Arrangement_2::Halfedge_handle          Halfedge_handle;
   typedef typename Arrangement_2::Face_handle              Face_handle;
-  typedef typename Arrangement_2::Ccb_halfedge_circulator
+  typedef typename Arrangement_2::Ccb_halfedge_circulator  
                                                       Ccb_halfedge_circulator;
 
 private:
@@ -63,7 +72,7 @@ public:
 
   /*! Default constructor. */
   Arr_observer () :
-    p_arr (nullptr)
+    p_arr (NULL)
   {}
 
   /*! Constructor with an associated arrangement. */
@@ -78,7 +87,7 @@ public:
   virtual ~Arr_observer ()
   {
     // Unregister the observer object from the arrangement.
-    if (p_arr != nullptr)
+    if (p_arr != NULL)
       p_arr->_unregister_observer (this);
   }
   //@}
@@ -99,7 +108,7 @@ public:
   }
 
   /*!
-   * Attach the observer to an arrangement.
+   * Attach the observer to an arrangement. 
    * \pre The observer is not already attached to an arrangement.
    */
   void attach (Arrangement_2& arr)
@@ -109,9 +118,9 @@ public:
       return;
 
     // The observer is not already attached to an arrangement.
-    CGAL_precondition (p_arr == nullptr);
+    CGAL_precondition (p_arr == NULL);
 
-    if (p_arr != nullptr)
+    if (p_arr != NULL)
       return;
 
     // Notify the concrete oberver (the sub-class) about the attachment.
@@ -130,7 +139,7 @@ public:
   /*! Detach the observer from the arrangement. */
   void detach ()
   {
-    if (p_arr == nullptr)
+    if (p_arr == NULL)
       return;
 
     // Notify the concrete oberver (the sub-class) about the detachment.
@@ -139,8 +148,8 @@ public:
     // Unregister the observer object from the current arrangement, and mark
     // that the oberver is not attached to an arrangement.
     p_arr->_unregister_observer (this);
-    p_arr = nullptr;
-
+    p_arr = NULL;
+   
     // Notify the concrete oberver that the detachment took place.
     after_detach();
 
@@ -151,7 +160,7 @@ public:
   /// \name Notification functions on global arrangement operations.
   //@{
 
-  /*!
+  /*! 
    * Notification before the arrangement is assigned with another
    * arrangement.
    * \param arr The arrangement to be copied.
@@ -188,7 +197,7 @@ public:
   /// \name Notification functions on observer attachment or detachment.
   //@{
 
-  /*!
+  /*! 
    * Notification before the observer is attached to an arrangement.
    * \param arr The arrangement we are about to attach the observer to.
    */
@@ -201,7 +210,7 @@ public:
   virtual void after_attach ()
   {}
 
-  /*!
+  /*! 
    * Notification before the observer is detached from the arrangement.
    */
   virtual void before_detach ()

@@ -3,7 +3,11 @@
 #include <CGAL/Polygon_mesh_processing/distance.h>
 #include <CGAL/Polygon_mesh_processing/remesh.h>
 
-#define TAG CGAL::Parallel_if_available_tag
+#if defined(CGAL_LINKED_WITH_TBB)
+#define TAG CGAL::Parallel_tag
+#else
+#define TAG CGAL::Sequential_tag
+#endif
 
 typedef CGAL::Exact_predicates_inexact_constructions_kernel K;
 typedef K::Point_3                     Point;

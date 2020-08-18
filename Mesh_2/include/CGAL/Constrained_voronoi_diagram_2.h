@@ -3,11 +3,20 @@
 // All rights reserved.
 //
 // This file is part of CGAL (www.cgal.org).
+// You can redistribute it and/or modify it under the terms of the GNU
+// General Public License as published by the Free Software Foundation,
+// either version 3 of the License, or (at your option) any later version.
+//
+// Licensees holding a valid commercial license may use this file in
+// accordance with the commercial license agreement provided with the software.
+//
+// This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
+// WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 //
 // $URL$
 // $Id$
-// SPDX-License-Identifier: GPL-3.0-or-later OR LicenseRef-Commercial
-//
+// SPDX-License-Identifier: GPL-3.0+
+// 
 // Author(s) : Jane Tournois, Raul Gallegos, Pierre Alliez
 //
 
@@ -35,8 +44,8 @@ public:
   typedef typename Cdt::Geom_traits::Ray_2        Ray;
   typedef typename Cdt::Geom_traits::Point_2      Point;
   typedef CGAL::Dispatch_output_iterator<
-    std::tuple<Segment, Ray>,
-    std::tuple<std::back_insert_iterator<std::vector<Segment> >,
+    CGAL::cpp11::tuple<Segment, Ray>,
+    CGAL::cpp11::tuple<std::back_insert_iterator<std::vector<Segment> >,
                        std::back_insert_iterator<std::vector<Ray> > >
     > Construction_dispatcher;
 
@@ -45,7 +54,7 @@ private:
   std::vector<Segment> m_segments;
   std::vector<Ray>     m_rays;
   bool m_is_valid;
-
+  
 public:
   Cvd_cell_2(Vertex_handle v)
     : m_vertex(v)
@@ -64,7 +73,7 @@ public:
   bool is_valid() const { return m_is_valid; }
   bool& is_valid()      { return m_is_valid; }
 
-  bool is_infinite() const
+  bool is_infinite() const 
   {
     return !m_rays.empty();
   }
@@ -155,7 +164,7 @@ public:
   typedef typename Cvd_cell::Construction_dispatcher Construction_dispatcher;
 
 public:
-  // typedefs for basic primitives
+  // typedefs for basic primitives 
   typedef typename Cdt::Geom_traits       Geom_traits;
   typedef typename Cdt::Intersection_tag Intersection_tag;
 
@@ -194,7 +203,7 @@ public:
 
 public:
   // blind = false IFF each face sees its circumcenter
-  void tag_all_faces_blind(const bool blind)
+  void tag_all_faces_blind(const bool blind) 
   {
     for(All_faces_iterator f = m_cdt.all_faces_begin();
          f != m_cdt.all_faces_end();
@@ -228,7 +237,7 @@ public:
 private:
   // test face for blindness with respect to the edge constraint
   void tag_face_blind(Face_handle& f, const Edge& constraint)
-  {
+  {  
     if(segment_hides_circumcenter(m_cdt.segment(constraint),
                                   m_cdt.triangle(f)))
     {
@@ -270,8 +279,8 @@ private:
     CGAL_assertion(m_cdt.is_constrained(constraint));
     Face_handle seed = constraint.first;
 
-    if(!m_cdt.is_infinite(seed)
-       && !seed->is_blind()
+    if(!m_cdt.is_infinite(seed) 
+       && !seed->is_blind() 
        && !m_cdt.triangle(seed).is_degenerate() )
        //to avoid flat triangles outside the domain
     {
@@ -299,7 +308,7 @@ private:
       Edge edge_i = Edge(f, i);
       if(!m_cdt.is_constrained(edge_i) &&
           !fi->is_blind() &&
-          !m_cdt.is_infinite(fi))
+          !m_cdt.is_infinite(fi)) 
         faces.push(fi);
     }
   }
@@ -312,7 +321,7 @@ public:
   Cvd_cell cvd_cell(Vertex_handle v) const
   {
     Cvd_cell cell(v);
-
+    
     typename Cvd_cell::Construction_dispatcher oit =
       CGAL::dispatch_output<typename Cvd_cell::Segment,
                             typename Cvd_cell::Ray>(
@@ -343,7 +352,7 @@ private:
   OutputIterator finite_cvd_cell(Vertex_handle v, OutputIterator oit) const
   {
     std::vector<Point> polygon;
-
+    
     CGAL_assertion(!m_cdt.is_infinite(v));
     Face_circulator face = m_cdt.incident_faces(v);
     Face_circulator end = face;

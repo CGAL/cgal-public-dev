@@ -5,11 +5,20 @@
 // Max-Planck-Institute Saarbruecken (Germany),
 // and Tel-Aviv University (Israel).  All rights reserved.
 //
-// This file is part of CGAL (www.cgal.org)
+// This file is part of CGAL (www.cgal.org); you can redistribute it and/or
+// modify it under the terms of the GNU Lesser General Public License as
+// published by the Free Software Foundation; either version 3 of the License,
+// or (at your option) any later version.
+//
+// Licensees holding a valid commercial license may use this file in
+// accordance with the commercial license agreement provided with the software.
+//
+// This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
+// WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 //
 // $URL$
 // $Id$
-// SPDX-License-Identifier: LGPL-3.0-or-later OR LicenseRef-Commercial
+// SPDX-License-Identifier: LGPL-3.0+
 //
 //
 // Author(s)     : Philipp Möller
@@ -39,9 +48,9 @@ void deref(T*) {
 
 // N.B.: there is no such concept as Circulator as it is immaterial
 template <typename C>
-struct ForwardCirculator
+struct ForwardCirculator 
   : boost::Assignable<C>, boost::DefaultConstructible<C>
-  , boost::CopyConstructible<C>
+  , boost::CopyConstructible<C> 
 {
   // for some odd reason circulators have no associated traits
   typedef typename C::value_type value_type;
@@ -62,9 +71,9 @@ struct ForwardCirculator
     // [-Wunused-local-typedefs]"
     BOOST_CONCEPT_ASSERT((boost::SignedInteger<difference_type>)) CGAL_UNUSED;
     BOOST_CONCEPT_ASSERT((boost::Convertible<iterator_category, CGAL::Forward_circulator_tag>)) CGAL_UNUSED;
-
-    boost::require_boolean_expr(a == nullptr);
-    boost::require_boolean_expr(a != nullptr);
+    
+    boost::require_boolean_expr(a == NULL);
+    boost::require_boolean_expr(a != NULL);
     ++a;
     a++;
     (void)*a; // suppress unused warning, don't check the return type
@@ -100,7 +109,7 @@ struct RandomAccessCirculator
     c += n; // addition
     c = c + n; c = n + c;
     c -= n; // subtraction
-    c = c - n;
+    c = c - n; 
     n = c - b; // difference
     (void)c[n]; // operator[]
 

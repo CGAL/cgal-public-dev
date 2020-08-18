@@ -25,6 +25,7 @@
 // implementation: dD Smallest Enclosing Sphere
 // ============================================================================
 
+#include <CGAL/basic.h>
 #include <CGAL/Exact_rational.h>
 #include<CGAL/Random.h>
 #include<CGAL/Cartesian.h>

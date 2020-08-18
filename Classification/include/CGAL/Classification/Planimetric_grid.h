@@ -3,10 +3,19 @@
 // All rights reserved.
 //
 // This file is part of CGAL (www.cgal.org).
+// You can redistribute it and/or modify it under the terms of the GNU
+// General Public License as published by the Free Software Foundation,
+// either version 3 of the License, or (at your option) any later version.
+//
+// Licensees holding a valid commercial license may use this file in
+// accordance with the commercial license agreement provided with the software.
+//
+// This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
+// WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 //
 // $URL$
 // $Id$
-// SPDX-License-Identifier: GPL-3.0-or-later OR LicenseRef-Commercial
+// SPDX-License-Identifier: GPL-3.0+
 //
 // Author(s)     : Simon Giraudot, Florent Lafarge
 
@@ -18,8 +27,6 @@
 #include <vector>
 
 #include <CGAL/Classification/Image.h>
-
-#include <CGAL/assertions.h>
 
 #include <boost/iterator/iterator_facade.hpp>
 #include <boost/cstdint.hpp>
@@ -70,7 +77,7 @@ private:
   std::size_t m_width;
   std::size_t m_height;
   std::vector<bool> m_has_points;
-
+  
 public:
 
 #ifdef DOXYGEN_RUNNING
@@ -84,7 +91,7 @@ public:
   {
   public:
     friend class boost::iterator_core_access;
-
+    
     iterator(const Planimetric_grid* lowest_scale,
              std::size_t scale,
              std::size_t large_x,
@@ -105,7 +112,7 @@ public:
       m_xmax = (large_x + 1) * size;
       m_ymin = large_y * size;
       m_ymax = (large_y + 1) * size;
-
+      
       m_pos_x = xmin;
       m_pos_y = m_ymin;
 
@@ -143,14 +150,14 @@ public:
           if (m_pos_y == m_ymax)
           {
             m_pos_y = m_ymin;
-
+            
             ++ m_pos_x;
             if (m_pos_x == m_xmax) // end() reached
             {
               m_pos_y = m_ymax; // put y to max so that this == end()
               break;
             }
-
+              
           }
         }
         while (!(lowest_scale_has_points(m_pos_x, m_pos_y)));
@@ -206,7 +213,7 @@ public:
                     const Iso_cuboid_3& bbox,
                     float grid_resolution)
     : m_points (&input), m_point_map (point_map)
-    , m_bbox (bbox), m_resolution (grid_resolution), m_lower_scale(nullptr), m_current_scale(0)
+    , m_bbox (bbox), m_resolution (grid_resolution), m_lower_scale(NULL), m_current_scale(0)
   {
     m_width = (std::size_t)((bbox.xmax() - bbox.xmin()) / grid_resolution) + 1;
     m_height = (std::size_t)((bbox.ymax() - bbox.ymin()) / grid_resolution) + 1;
@@ -272,7 +279,7 @@ public:
   {
     return m_resolution;
   }
-
+  
   /*!
     \brief Returns the number of cells along the X-axis.
   */
@@ -327,7 +334,7 @@ public:
   bool has_points(std::size_t x, std::size_t y) const
   {
     CGAL_assertion (x < m_width && y < m_height);
-
+    
     if (m_current_scale == 0)
       return (!(m_grid(x,y).empty()));
 
@@ -340,7 +347,7 @@ public:
   */
   std::size_t x(std::size_t index) const
   {
-    if (m_lower_scale == nullptr)
+    if (m_lower_scale == NULL)
     {
       const Point_3& p = get(m_point_map, *(m_points->begin()+index));
       return (std::size_t)((p.x() - m_bbox.xmin()) / m_resolution);
@@ -354,7 +361,7 @@ public:
   */
   std::size_t y(std::size_t index) const
   {
-    if (m_lower_scale == nullptr)
+    if (m_lower_scale == NULL)
     {
       const Point_3& p = get(m_point_map, *(m_points->begin()+index));
       return (std::size_t)((p.y() - m_bbox.ymin()) / m_resolution);
@@ -364,10 +371,10 @@ public:
     return m_lower_scale->y(index) / 2;
   }
 };
-
+  
 
 }
-
+  
 }
 
 

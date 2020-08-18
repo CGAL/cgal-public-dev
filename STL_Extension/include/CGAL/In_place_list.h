@@ -1,16 +1,25 @@
-// Copyright (c) 2003
+// Copyright (c) 2003  
 // Utrecht University (The Netherlands),
 // ETH Zurich (Switzerland),
 // INRIA Sophia-Antipolis (France),
 // Max-Planck-Institute Saarbruecken (Germany),
-// and Tel-Aviv University (Israel).  All rights reserved.
+// and Tel-Aviv University (Israel).  All rights reserved. 
 //
-// This file is part of CGAL (www.cgal.org)
+// This file is part of CGAL (www.cgal.org); you can redistribute it and/or
+// modify it under the terms of the GNU Lesser General Public License as
+// published by the Free Software Foundation; either version 3 of the License,
+// or (at your option) any later version.
+//
+// Licensees holding a valid commercial license may use this file in
+// accordance with the commercial license agreement provided with the software.
+//
+// This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
+// WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 //
 // $URL$
 // $Id$
-// SPDX-License-Identifier: LGPL-3.0-or-later OR LicenseRef-Commercial
-//
+// SPDX-License-Identifier: LGPL-3.0+
+// 
 //
 // Author(s)     : Michael Hoffmann <hoffmann@inf.ethz.ch>
 //                 Lutz Kettner <kettner@mpi-sb.mpg.de>
@@ -49,10 +58,6 @@ public:
 template < class T >
 class In_place_list_base {
 public:
-  In_place_list_base()
-    : next_link(nullptr), prev_link(nullptr)
-  {}
-
   T* next_link;        // forward pointer
   T* prev_link;        // backwards pointer
   //friend  class internal::In_place_list_iterator<T, Alloc>;
@@ -134,7 +139,7 @@ namespace internal {
     typedef std::bidirectional_iterator_tag   iterator_category;
 
     In_place_list_const_iterator() : node(0) {}
-    In_place_list_const_iterator(Iterator i) : node(i.operator->()) {}
+    In_place_list_const_iterator( Iterator i) : node(&*i) {}
     In_place_list_const_iterator(const T* x) : node(x) {}
 
     bool     operator==( const Self& x) const { return node == x.node; }
@@ -234,11 +239,19 @@ public:
   // to T, T*, const T*, T&, const T&, size_t, and ptrdiff_t, respectively.
   // So we don't pass these types to the iterators explicitly.
 
+#ifdef CGAL_CXX11
   typedef typename std::allocator_traits<Allocator>::value_type            value_type;
   typedef typename std::allocator_traits<Allocator>::pointer               pointer;
   typedef typename std::allocator_traits<Allocator>::const_pointer         const_pointer;
   typedef typename std::allocator_traits<Allocator>::size_type             size_type;
   typedef typename std::allocator_traits<Allocator>::difference_type       difference_type;
+#else
+  typedef typename Allocator::value_type          value_type;
+  typedef typename Allocator::pointer             pointer;
+  typedef typename Allocator::const_pointer       const_pointer;
+  typedef typename Allocator::size_type           size_type;
+  typedef typename Allocator::difference_type     difference_type;
+#endif
 
   typedef value_type&       reference;
   typedef const value_type& const_reference;
@@ -270,15 +283,23 @@ protected:
   pointer get_node( const T& t) {
     pointer p = allocator.allocate(1);
 #ifdef CGAL_USE_ALLOCATOR_CONSTRUCT_DESTROY
+#ifdef CGAL_CXX11
     std::allocator_traits<Allocator>::construct(allocator, p, t);
+#else
+    allocator.construct(p, t);
+    #endif
 #else
     new (p) value_type(t);
 #endif
     return p;
   }
   void put_node( pointer p) {
-#ifdef CGAL_USE_ALLOCATOR_CONSTRUCT_DESTROY
+#ifdef CGAL_USE_ALLOCATOR_CONSTRUCT_DESTROY  
+#  ifdef CGAL_CXX11
     std::allocator_traits<Allocator>::destroy(allocator, p);
+#  else
+    allocator.destroy( p);
+#  endif
 #else // not CGAL_USE_ALLOCATOR_CONSTRUCT_DESTROY
    p->~value_type();
 #endif
@@ -775,7 +796,7 @@ namespace std {
 
 #if defined(BOOST_MSVC)
 #  pragma warning(push)
-#  pragma warning(disable:4099) // For VC10 it is class hash
+#  pragma warning(disable:4099) // For VC10 it is class hash 
 #endif
 
 #ifndef CGAL_CFG_NO_STD_HASH

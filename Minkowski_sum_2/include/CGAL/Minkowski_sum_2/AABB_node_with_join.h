@@ -2,10 +2,19 @@
 // All rights reserved.
 //
 // This file is part of CGAL (www.cgal.org).
+// You can redistribute it and/or modify it under the terms of the GNU
+// General Public License as published by the Free Software Foundation,
+// either version 3 of the License, or (at your option) any later version.
+//
+// Licensees holding a valid commercial license may use this file in
+// accordance with the commercial license agreement provided with the software.
+//
+// This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
+// WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 //
 // $URL$
 // $Id$
-// SPDX-License-Identifier: GPL-3.0-or-later OR LicenseRef-Commercial
+// SPDX-License-Identifier: GPL-3.0+
 //
 //
 // Author(s) : Camille Wormser, Pierre Alliez, Stephane Tayeb
@@ -38,8 +47,8 @@ public:
   /// Constructor
   AABB_node_with_join()
     : m_bbox()
-    , m_p_left_child(nullptr)
-    , m_p_right_child(nullptr)      { };
+    , m_p_left_child(NULL)
+    , m_p_right_child(NULL)      { };
 
   /// Non virtual Destructor
   /// Do not delete children because the tree hosts and delete them
@@ -142,7 +151,7 @@ AABB_node_with_join<Tr>::expand(ConstPrimitiveIterator first,
   m_bbox = traits.compute_bbox_object()(first, beyond);
 
   // sort primitives along longest axis aabb
-  traits.split_primitives_object()(first, beyond, m_bbox);
+  traits.sort_primitives_object()(first, beyond, m_bbox);
 
   switch(range)
   {

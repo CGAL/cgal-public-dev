@@ -1,7 +1,7 @@
-cmake_minimum_required(VERSION 3.1...3.15)
 project(Documentation NONE)
 
 # Minimal version of CMake:
+cmake_minimum_required(VERSION 2.8.11)
 
 # Check whether this cmake script is the top level one
 if ( ${CMAKE_SOURCE_DIR} STREQUAL ${CMAKE_CURRENT_SOURCE_DIR})
@@ -93,7 +93,7 @@ function(configure_doxygen_package CGAL_PACKAGE_NAME)
   file(APPEND ${CGAL_DOC_PACKAGE_DEFAULTS} "STRIP_FROM_INC_PATH = ${CGAL_PACKAGE_DOC_DIR}/\n")
   file(APPEND ${CGAL_DOC_PACKAGE_DEFAULTS} "STRIP_FROM_INC_PATH += ${CGAL_PACKAGE_DIR}/include/\n")
   file(APPEND ${CGAL_DOC_PACKAGE_DEFAULTS} "ALIASES += \"cgalPkgDescriptionBegin{2}=\\details \"\n")
-  file(APPEND ${CGAL_DOC_PACKAGE_DEFAULTS} "ALIASES += \"cgalPkgManuals{2}=<div class=\\\"PkgManuals\\\"></div>\"\n")
+  file(APPEND ${CGAL_DOC_PACKAGE_DEFAULTS} "ALIASES += \"cgalPkgManuals{2}=<BR>\"\n")
   file(APPEND ${CGAL_DOC_PACKAGE_DEFAULTS} "INPUT = ${CGAL_PACKAGE_DOC_DIR}\n")
   if(NOT EXISTS "${CGAL_PACKAGE_DOC_DIR}/CGAL")
     # This package has in-source documentation.
@@ -137,7 +137,7 @@ function(configure_doxygen_package CGAL_PACKAGE_NAME)
   endif()
 
   foreach(depend ${DEPENDENCIES})
-    file(APPEND ${CGAL_DOC_PACKAGE_DEFAULTS}
+    file(APPEND ${CGAL_DOC_PACKAGE_DEFAULTS} 
       "TAGFILES += ${CGAL_DOC_TAG_DIR}/${depend}.tag=../${depend}\n")
   endforeach()
 
@@ -201,15 +201,6 @@ if(CGAL_DOC_CREATE_LOGS)
   file(MAKE_DIRECTORY "${CGAL_DOC_LOG_DIR}")
 endif()
 
-option(CGAL_EXTRACT_ALL_NO_DETAILED_IF_EMPTY "Use CGAL special doxygen setting EXTRACT_ALL_NO_DETAILED_IF_EMPTY." ON)
-if(CGAL_EXTRACT_ALL_NO_DETAILED_IF_EMPTY)
-  set(CGAL_OPT_EXTRACT_ALL_NO_DETAILED_IF_EMPTY "EXTRACT_ALL_NO_DETAILED_IF_EMPTY = YES")
-else()
-  # The default is NO, so we could leave it out, but it is better to have a commented out placeholder
-  # this will work for versions with and without the setting.
-  set(CGAL_OPT_EXTRACT_ALL_NO_DETAILED_IF_EMPTY "#EXTRACT_ALL_NO_DETAILED_IF_EMPTY = NO")
-endif()
-
 #we use two directories for the generation/reading of tag files to prevent issues
 #if the targets are built in parallel
 set(CGAL_DOC_TAG_GEN_DIR "${CMAKE_BINARY_DIR}/doc_gen_tags")
@@ -252,7 +243,9 @@ endif()
 
 if (NOT CGAL_CREATED_VERSION_NUM)
   if (CGAL_BRANCH_BUILD)
-    include(${CGAL_ROOT}/CGALConfigVersion.cmake)
+    file(STRINGS "${CGAL_ROOT}/Maintenance/release_building/MAJOR_NUMBER" CGAL_MAJOR_VERSION REGEX "[0-9]*")
+    file(STRINGS "${CGAL_ROOT}/Maintenance/release_building/MINOR_NUMBER" CGAL_MINOR_VERSION REGEX "[0-9]*")
+    file(STRINGS "${CGAL_ROOT}/Maintenance/release_building/BUGFIX_NUMBER" CGAL_BUGFIX_VERSION REGEX "[0-9]*")
 
     if (CGAL_BUGFIX_VERSION AND CGAL_BUGFIX_VERSION GREATER 0)
       set(CGAL_CREATED_VERSION_NUM "${CGAL_MAJOR_VERSION}.${CGAL_MINOR_VERSION}.${CGAL_BUGFIX_VERSION}")
@@ -260,15 +253,10 @@ if (NOT CGAL_CREATED_VERSION_NUM)
       set(CGAL_CREATED_VERSION_NUM "${CGAL_MAJOR_VERSION}.${CGAL_MINOR_VERSION}")
     endif()
   else()
-    if(EXISTS "${CGAL_ROOT}/doc/public_release_name")
-      file(STRINGS "${CGAL_ROOT}/doc/public_release_name" CGAL_VERSION_LINE)
-      string(REGEX REPLACE "CGAL-" "" CGAL_CREATED_VERSION_NUM "${CGAL_VERSION_LINE}")
-    else()
-      #read version.h and get the line with CGAL_VERSION
-      file(STRINGS "${CGAL_ROOT}/include/CGAL/version.h" CGAL_VERSION_LINE REGEX "CGAL_VERSION ")
-      #extract release id
-      string(REGEX MATCH "[0-9]+\\.[0-9]+\\.?[0-9]*" CGAL_CREATED_VERSION_NUM "${CGAL_VERSION_LINE}")
-    endif()
+    #read version.h and get the line with CGAL_VERSION
+    file(STRINGS "${CGAL_ROOT}/include/CGAL/version.h" CGAL_VERSION_LINE REGEX "CGAL_VERSION ")
+    #extract release id
+    string(REGEX MATCH "[0-9]+\\.[0-9]+\\.?[0-9]*(-Ic-)?[0-9]*" CGAL_CREATED_VERSION_NUM "${CGAL_VERSION_LINE}")
   endif()
 endif()
 
@@ -349,12 +337,6 @@ else()
   foreach(pkg ${CGAL_DEMO_PACKAGES})
     set(CGAL_${pkg}_DEMO_DIR "${CGAL_ROOT}/demo")
   endforeach()
-endif()
-
-option(CGAL_BUILD_THREE_DOC "Build the documentation of the Three package" OFF)
-
-if (NOT CGAL_BUILD_THREE_DOC)
-  list(REMOVE_ITEM CGAL_DOC_PACKAGES "Three")
 endif()
 
 foreach(package ${CGAL_DOC_PACKAGES})

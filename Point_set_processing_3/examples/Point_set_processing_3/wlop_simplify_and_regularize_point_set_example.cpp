@@ -12,7 +12,11 @@ typedef CGAL::Simple_cartesian<double> Kernel;
 typedef Kernel::Point_3 Point;
 
 // Concurrency
-typedef CGAL::Parallel_if_available_tag Concurrency_tag;
+#ifdef CGAL_LINKED_WITH_TBB
+typedef CGAL::Parallel_tag Concurrency_tag;
+#else
+typedef CGAL::Sequential_tag Concurrency_tag;
+#endif
 
 int main(int argc, char** argv)
 {
@@ -40,9 +44,8 @@ int main(int argc, char** argv)
     (points, std::back_inserter(output),
      CGAL::parameters::select_percentage(retain_percentage).
      neighbor_radius (neighbor_radius));
-
+  
   std::ofstream out(output_filename);
-  out.precision(17);
   if (!out || !CGAL::write_xyz_points(
         out, output))
   {

@@ -2,10 +2,19 @@
 // All rights reserved.
 //
 // This file is part of CGAL (www.cgal.org).
+// You can redistribute it and/or modify it under the terms of the GNU
+// General Public License as published by the Free Software Foundation,
+// either version 3 of the License, or (at your option) any later version.
+//
+// Licensees holding a valid commercial license may use this file in
+// accordance with the commercial license agreement provided with the software.
+//
+// This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
+// WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 //
 // $URL$
 // $Id$
-// SPDX-License-Identifier: GPL-3.0-or-later OR LicenseRef-Commercial
+// SPDX-License-Identifier: GPL-3.0+
 //
 // Author(s)     : Christophe Delage <christophe.delage@sophia.inria.fr>
 
@@ -58,17 +67,17 @@ public:
 
   Regular_triangulation_cell_base_3(Vertex_handle v0,
                                     Vertex_handle v1,
-                                    Vertex_handle v2,
+				    Vertex_handle v2,
                                     Vertex_handle v3)
     : Cb(v0, v1, v2, v3) {}
 
   Regular_triangulation_cell_base_3(Vertex_handle v0,
                                     Vertex_handle v1,
-                                    Vertex_handle v2,
+				    Vertex_handle v2,
                                     Vertex_handle v3,
-                                    Cell_handle   n0,
+				    Cell_handle   n0,
                                     Cell_handle   n1,
-                                    Cell_handle   n2,
+				    Cell_handle   n2,
                                     Cell_handle   n3)
     : Cb(v0, v1, v2, v3, n0, n1, n2, n3) {}
 
@@ -84,11 +93,6 @@ public:
   Point_const_iterator hidden_points_end() const
   { return hidden_points_end_internal<Memory_policy>(); }
 
-  const C& hidden_points() const
-  {
-    return _hidden;
-  }
-
   void hide_point(const Point& p)
   { hide_point_internal<Memory_policy>(p); }
   void unhide_point(const Point_iterator pit)
@@ -96,47 +100,47 @@ public:
 
   // Memory_policy is Tag_true -------------------------------------------------
   template<typename Tag>
-  Point_iterator hidden_points_begin_internal(typename boost::enable_if_c<Tag::value>::type* = nullptr)
+  Point_iterator hidden_points_begin_internal(typename boost::enable_if_c<Tag::value>::type* = NULL)
   {  return _hidden.begin(); }
   template<typename Tag>
-  Point_iterator hidden_points_end_internal(typename boost::enable_if_c<Tag::value>::type* = nullptr)
+  Point_iterator hidden_points_end_internal(typename boost::enable_if_c<Tag::value>::type* = NULL)
   { return _hidden.end(); }
 
   template<typename Tag>
-  Point_const_iterator hidden_points_begin_internal(typename boost::enable_if_c<Tag::value>::type* = nullptr) const
+  Point_const_iterator hidden_points_begin_internal(typename boost::enable_if_c<Tag::value>::type* = NULL) const
   { return _hidden.begin(); }
   template<typename Tag>
-  Point_const_iterator hidden_points_end_internal(typename boost::enable_if_c<Tag::value>::type* = nullptr) const
+  Point_const_iterator hidden_points_end_internal(typename boost::enable_if_c<Tag::value>::type* = NULL) const
   { return _hidden.end(); }
 
   template<typename Tag>
-  void hide_point_internal(const Point& p, typename boost::enable_if_c<Tag::value>::type* = nullptr)
+  void hide_point_internal(const Point& p, typename boost::enable_if_c<Tag::value>::type* = NULL)
   { _hidden.push_back(p); }
   template<typename Tag>
-  void unhide_point_internal(const Point_iterator pit, typename boost::enable_if_c<Tag::value>::type* = nullptr)
+  void unhide_point_internal(const Point_iterator pit, typename boost::enable_if_c<Tag::value>::type* = NULL)
   { _hidden.erase(pit); }
 
   // Memory_policy is Tag_false ------------------------------------------------
   template<typename Tag>
-  Point_iterator hidden_points_begin_internal(typename boost::disable_if_c<Tag::value>::type* = nullptr)
+  Point_iterator hidden_points_begin_internal(typename boost::disable_if_c<Tag::value>::type* = NULL)
   { return hidden_points_end(); }
   template<typename Tag>
-  Point_iterator hidden_points_end_internal(typename boost::disable_if_c<Tag::value>::type* = nullptr)
+  Point_iterator hidden_points_end_internal(typename boost::disable_if_c<Tag::value>::type* = NULL)
   { return _hidden.end(); }
 
     // const versions
   template<typename Tag>
-  Point_const_iterator hidden_points_begin_internal(typename boost::disable_if_c<Tag::value>::type* = nullptr) const
+  Point_const_iterator hidden_points_begin_internal(typename boost::disable_if_c<Tag::value>::type* = NULL) const
   { return hidden_points_end(); }
   template<typename Tag>
-  Point_const_iterator hidden_points_end_internal(typename boost::disable_if_c<Tag::value>::type* = nullptr) const
+  Point_const_iterator hidden_points_end_internal(typename boost::disable_if_c<Tag::value>::type* = NULL) const
   { return _hidden.end(); }
 
   template<typename Tag>
-  void hide_point_internal(const Point&, typename boost::disable_if_c<Tag::value>::type* = nullptr)
+  void hide_point_internal(const Point&, typename boost::disable_if_c<Tag::value>::type* = NULL)
   { }
   template<typename Tag>
-  void unhide_point_internal(const Point_iterator, typename boost::disable_if_c<Tag::value>::type* = nullptr)
+  void unhide_point_internal(const Point_iterator, typename boost::disable_if_c<Tag::value>::type* = NULL)
   { }
 
   template<typename GT_>

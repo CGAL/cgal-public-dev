@@ -1,8 +1,5 @@
 #ifdef _MSC_VER
 #  pragma warning(disable:4244) // conversion with loss of data
-#  pragma warning(disable:4996) // boost_1_65_1\boost/iostreams/positioning.hpp(96):
-                                // warning C4996: 'std::fpos<_Mbstatet>::seekpos': warning STL4019:
-                                // The member std::fpos::seekpos() is non-Standard
 #endif
 
 #include "Volume_plane.h"
@@ -21,8 +18,6 @@
 #include <CGAL/Three/Polyhedron_demo_plugin_interface.h>
 #include <CGAL/Three/Scene_interface.h>
 #include <CGAL/Three/Scene_item.h>
-#include <CGAL/Three/Scene_group_item.h>
-#include <CGAL/Three/Three.h>
 #include <CGAL/Three/Viewer_interface.h>
 #include <CGAL/config.h>
 #include <CGAL/use.h>
@@ -49,6 +44,7 @@
 
 #include <boost/type_traits.hpp>
 #include <boost/optional.hpp>
+#include "Scene.h"
 
 #include <QSettings>
 #include <QUrl>
@@ -59,14 +55,12 @@
 #ifdef CGAL_USE_VTK
 #include <CGAL/read_vtk_image_data.h>
 
-#include <vtkNew.h>
 #include <vtkImageData.h>
 #include <vtkDICOMImageReader.h>
 #include <vtkImageReader.h>
 #include <vtkImageGaussianSmooth.h>
 #include <vtkDemandDrivenPipeline.h>
 #endif
-#include <CGAL/Three/Three.h>
 
 // Covariant return types don't work for scalar types and we cannot
 // have templates here, hence this unfortunate hack.
@@ -78,13 +72,7 @@ struct IntConverter {
 
   int operator()(float f) {
     float s = f * float((min_max.second - min_max.first));
-    //approximate instead of just floor.
-    if (s - floor(s) >= 0.5){
-      return int(s)+1 + min_max.first;
-    }
-    else{
-      return s + float(min_max.first);
-    }
+    return s + float(min_max.first);
   }
 };
 
@@ -106,6 +94,7 @@ public Q_SLOTS:
   }
 Q_SIGNALS:
   void x(QString);
+
 public:
   void setIC(const IntConverter& x) { ic = x; fc = boost::optional<DoubleConverter>(); }
   void setFC(const DoubleConverter& x) { fc = x; ic = boost::optional<IntConverter>(); }
@@ -152,7 +141,7 @@ public Q_SLOTS:
   {
     if(!ready_to_move)
       return;
-    const CGAL::qglviewer::Vec offset = Three::mainViewer()->offset();
+    const CGAL::qglviewer::Vec offset = static_cast<CGAL::Three::Viewer_interface*>(CGAL::QGLViewer::QGLViewerPool().first())->offset();
     CGAL::qglviewer::Vec v2 = v * (this->value() / scale);
     v2+=offset;
     frame->setTranslationWithConstraint(v2);
@@ -167,7 +156,7 @@ public Q_SLOTS:
     typedef qreal qglviewer_real;
     qglviewer_real a, b, c;
     frame->getPosition(a, b, c);
-    const CGAL::qglviewer::Vec offset = Three::mainViewer()->offset();
+    const CGAL::qglviewer::Vec offset = static_cast<CGAL::Three::Viewer_interface*>(CGAL::QGLViewer::QGLViewerPool().first())->offset();
     a-=offset.x;
     b-=offset.y;
     c-=offset.z;
@@ -207,16 +196,16 @@ class Io_image_plugin :
   Q_OBJECT
   Q_INTERFACES(CGAL::Three::Polyhedron_demo_io_plugin_interface)
   Q_INTERFACES(CGAL::Three::Polyhedron_demo_plugin_interface)
-  Q_PLUGIN_METADATA(IID "com.geometryfactory.PolyhedronDemo.IOPluginInterface/1.90" FILE "io_image_plugin.json")
+  Q_PLUGIN_METADATA(IID "com.geometryfactory.PolyhedronDemo.IOPluginInterface/1.0")
 
 public:
 
-  bool applicable(QAction*) const override{
+  bool applicable(QAction*) const {
     return qobject_cast<Scene_image_item*>(scene->item(scene->mainSelectionIndex()));
   }
 
-  using Polyhedron_demo_io_plugin_interface::init;
-  void init(QMainWindow* mainWindow, CGAL::Three::Scene_interface* scene_interface, Messages_interface *mi) override {
+
+  void init(QMainWindow* mainWindow, CGAL::Three::Scene_interface* scene_interface, Messages_interface *mi) {
     this->message_interface = mi;
     this->scene = scene_interface;
     this->mw = mainWindow;
@@ -226,22 +215,21 @@ public:
     z_control = NULL;
     current_control = NULL;
     planeSwitch = new QAction("Add Volume Planes", mw);
-    QAction *actionLoadDCM = new QAction("Open Directory (for DCM files)", mw);
+    QAction *actionLoadDCM = new QAction("Open directory", mw);
     connect(actionLoadDCM, SIGNAL(triggered()), this, SLOT(on_actionLoadDCM_triggered()));
     if(planeSwitch) {
       planeSwitch->setProperty("subMenuName", "3D Mesh Generation");
       connect(planeSwitch, SIGNAL(triggered()),
               this, SLOT(selectPlanes()));
-      connect(CGAL::Three::Three::connectableScene(),SIGNAL(itemIndexSelected(int)),
+      Scene* true_scene = dynamic_cast<Scene*>(scene);
+      connect(true_scene,SIGNAL(itemIndexSelected(int)),
               this, SLOT(connect_controls(int)));
     }
-    Viewer_interface* v = CGAL::Three::Three::mainViewer();
+    Viewer_interface* v = mw->findChild<Viewer_interface*>("viewer");
     CGAL_assertion(v != 0);
     pxr_.setViewer(v);
     connect(v, SIGNAL(pointSelected(const QMouseEvent *)), &pxr_, SLOT(update(const QMouseEvent *)));
     createOrGetDockLayout();
-    connect(mw, SIGNAL(newViewerCreated(QObject*)),
-            this, SLOT(connectNewViewer(QObject*)));
 
     QMenu* menuFile = mw->findChild<QMenu*>("menuFile");
     if ( NULL != menuFile )
@@ -270,10 +258,10 @@ public:
       }
     }
   }
-  QList<QAction*> actions() const override{
+  QList<QAction*> actions() const {
     return QList<QAction*>() << planeSwitch;
   }
-  virtual void closure() override
+  virtual void closure()
   {
       QDockWidget* controlDockWidget = mw->findChild<QDockWidget*>("volumePlanesControl");
       if(controlDockWidget)
@@ -281,27 +269,18 @@ public:
   }
   Io_image_plugin() : planeSwitch(NULL) {}
 
-  QString nameFilters() const override;
-  bool canLoad(QFileInfo) const override;
-  QList<Scene_item*> load(QFileInfo fileinfo, bool& ok, bool add_to_scene=true) override;
+  QString nameFilters() const;
+  bool canLoad() const;
+  CGAL::Three::Scene_item* load(QFileInfo fileinfo);
 
-  bool canSave(const CGAL::Three::Scene_item*) override;
-  bool save(QFileInfo fileinfo, QList<CGAL::Three::Scene_item*>& items ) override{
-    Scene_item* item = items.front();
+  bool canSave(const CGAL::Three::Scene_item*);
+  bool save(const CGAL::Three::Scene_item* item, QFileInfo fi) {
     const Scene_image_item* im_item = qobject_cast<const Scene_image_item*>(item);
 
     point_image p_im = *im_item->image()->image();
-    bool ok = _writeImage(&p_im, fileinfo.filePath().toUtf8()) == 0;
-    if(ok)
-      items.pop_front();
-    return ok;
+    return _writeImage(&p_im, fi.filePath().toUtf8()) == 0;
   }
-  bool isDefaultLoader(const Scene_item* item) const override{
-    if(qobject_cast<const Scene_image_item*>(item))
-      return true;
-    return false;
-  }
-  QString name() const override{ return "segmented images"; }
+  QString name() const { return "segmented images"; }
 
 
 public Q_SLOTS:
@@ -377,7 +356,7 @@ public Q_SLOTS:
       }
     }
     if(group_map.keys().contains(seg_img))
-      CGAL::Three::Three::warning("This item already has volume planes.");
+      this->message_interface->warning("This item already has volume planes.");
     else
     {
       // Opens a modal Dialog to prevent the user from manipulating things that could mess with the planes creation and cause a segfault.
@@ -390,13 +369,11 @@ public Q_SLOTS:
 
   void addVP(Volume_plane_thread* thread) {
     Volume_plane_interface* plane = thread->getItem();
-    plane->init(Three::mainViewer());
+    plane->init(static_cast<CGAL::Three::Viewer_interface*>(CGAL::QGLViewer::QGLViewerPool().first()));
     // add the interface for this Volume_plane
     int id = scene->addItem(plane);
     scene->changeGroup(plane, group);
     group->lockChild(plane);
-    //connect(plane->manipulatedFrame(), &CGAL::qglviewer::ManipulatedFrame::manipulated,
-    //        plane, &Volume_plane_interface::redraw);
     switch(thread->type())
     {
     case 'x':
@@ -501,18 +478,14 @@ public Q_SLOTS:
     }
 
   }
-
-  void connectNewViewer(QObject* o)
-  {
-    Q_FOREACH(Controls c, group_map.values())
-    {
-      o->installEventFilter(c.x_item);
-      o->installEventFilter(c.y_item);
-      o->installEventFilter(c.z_item);
-    }
-  }
 private:
   CGAL::qglviewer::Vec first_offset;
+#ifdef CGAL_USE_VTK
+  vtkImageData* vtk_image;
+  vtkDICOMImageReader* dicom_reader;
+  vtkDemandDrivenPipeline* executive;
+  vtkImageGaussianSmooth* smoother;
+#endif // CGAL_USE_VTK
   bool is_gray;
   Messages_interface* message_interface;
   QMessageBox msgBox;
@@ -573,7 +546,6 @@ private:
     } else {
       layout = controlDockWidget->findChild<QLayout*>("vpSliderLayout");
       controlDockWidget->show();
-      controlDockWidget->raise();
     }
 
     return layout;
@@ -599,11 +571,7 @@ private:
 
       // Find the right width for the label to accommodate at least 9999
       QFontMetrics metric = x_cubeLabel->fontMetrics();
-#if QT_VERSION >= QT_VERSION_CHECK(5, 11, 0)
-      x_cubeLabel->setFixedWidth(metric.horizontalAdvance(QString(".9999.")));
-#else
       x_cubeLabel->setFixedWidth(metric.width(QString(".9999.")));
-#endif
       x_cubeLabel->setText("0");
       x_cubeLabel->setValidator(validator);
 
@@ -629,11 +597,7 @@ private:
 
       // Find the right width for the label to accommodate at least 9999
       QFontMetrics metric = y_cubeLabel->fontMetrics();
-#if QT_VERSION >= QT_VERSION_CHECK(5, 11, 0)
-      y_cubeLabel->setFixedWidth(metric.horizontalAdvance(QString(".9999.")));
-#else
       y_cubeLabel->setFixedWidth(metric.width(QString(".9999.")));
-#endif
       y_cubeLabel->setText("0");
       y_cubeLabel->setValidator(validator);
       y_slider = new QSlider(mw);
@@ -658,11 +622,7 @@ private:
 
       // Find the right width for the label to accommodate at least 9999
       QFontMetrics metric = z_cubeLabel->fontMetrics();
-#if QT_VERSION >= QT_VERSION_CHECK(5, 11, 0)
-      z_cubeLabel->setFixedWidth(metric.horizontalAdvance(QString(".9999.")));
-#else
       z_cubeLabel->setFixedWidth(metric.width(QString(".9999.")));
-#endif
       z_cubeLabel->setText("0");
       z_cubeLabel->setValidator(validator);
       z_slider = new QSlider(mw);
@@ -713,20 +673,17 @@ private:
     Volume_plane<y_tag> *y_item = new Volume_plane<y_tag>(img->image()->tx,img->image()->ty, img->image()->tz);
     Volume_plane<z_tag> *z_item = new Volume_plane<z_tag>(img->image()->tx,img->image()->ty, img->image()->tz);
 
-    x_item->setProperty("img",QVariant::fromValue((void*)seg_img));
-    y_item->setProperty("img",QVariant::fromValue((void*)seg_img));
-    z_item->setProperty("img",QVariant::fromValue((void*)seg_img));
+    x_item->setProperty("img",qVariantFromValue((void*)seg_img));
+    y_item->setProperty("img",qVariantFromValue((void*)seg_img));
+    z_item->setProperty("img",qVariantFromValue((void*)seg_img));
 
     x_item->setColor(QColor("red"));
     y_item->setColor(QColor("green"));
     z_item->setColor(QColor("blue"));
-    Q_FOREACH(CGAL::QGLViewer* viewer, CGAL::QGLViewer::QGLViewerPool())
-    {
-      viewer->installEventFilter(x_item);
-      viewer->installEventFilter(y_item);
-      viewer->installEventFilter(z_item);
-    }
-
+    CGAL::Three::Viewer_interface* viewer = static_cast<CGAL::Three::Viewer_interface*>(CGAL::QGLViewer::QGLViewerPool().first());
+    viewer->installEventFilter(x_item);
+    viewer->installEventFilter(y_item);
+    viewer->installEventFilter(z_item);
     connect(x_item, SIGNAL(selected(CGAL::Three::Scene_item*)), this, SLOT(select_plane(CGAL::Three::Scene_item*)));
     connect(y_item, SIGNAL(selected(CGAL::Three::Scene_item*)), this, SLOT(select_plane(CGAL::Three::Scene_item*)));
     connect(z_item, SIGNAL(selected(CGAL::Three::Scene_item*)), this, SLOT(select_plane(CGAL::Three::Scene_item*)));
@@ -760,7 +717,7 @@ private:
     connect(threads.back(), SIGNAL(finished(Volume_plane_thread*)), this, SLOT(addVP(Volume_plane_thread*)));
     threads.back()->start();
 
-    first_offset = Three::mainViewer()->offset();
+    first_offset = viewer->offset();
 
   }
   template<typename T>
@@ -783,6 +740,7 @@ private:
 private Q_SLOTS:
   void select_plane(CGAL::Three::Scene_item* item)
   {
+    //Scene* true_scene = dynamic_cast<Scene*>(scene);
     Scene_image_item* img = (Scene_image_item*)item->property("img").value<void*>();
     if(img)
       scene->setSelectedItem(scene->item_id(img));
@@ -795,7 +753,7 @@ private Q_SLOTS:
     msgBox.setText(QString("Planes created : %1/3").arg(nbPlanes));
     if(nbPlanes == 3)
     {
-      const CGAL::qglviewer::Vec offset = Three::mainViewer()->offset();
+      const CGAL::qglviewer::Vec offset = static_cast<CGAL::Three::Viewer_interface*>(CGAL::QGLViewer::QGLViewerPool().first())->offset();
       if(offset != first_offset)
       {
         for(int i=0; i<scene->numberOfEntries(); ++i)
@@ -986,7 +944,7 @@ QString Io_image_plugin::nameFilters() const {
 }
 
 
-bool Io_image_plugin::canLoad(QFileInfo) const {
+bool Io_image_plugin::canLoad() const {
   return true;
 }
 
@@ -1008,11 +966,8 @@ void convert(Image* image)
   image->image()->wdim = 4;
   image->image()->wordKind = WK_FLOAT;
 }
-
-QList<Scene_item*>
-Io_image_plugin::load(QFileInfo fileinfo, bool& ok, bool add_to_scene)
-{
-  ok = true;
+CGAL::Three::Scene_item*
+Io_image_plugin::load(QFileInfo fileinfo) {
   QApplication::restoreOverrideCursor();
   Image* image = new Image;
   if(fileinfo.suffix() != "H" && fileinfo.suffix() != "HH" &&
@@ -1099,9 +1054,8 @@ Io_image_plugin::load(QFileInfo fileinfo, bool& ok, bool add_to_scene)
         success = false;
       }
       if(!success){
-        ok = false;
         delete image;
-        return QList<Scene_item*>();
+        return NULL;
       }
     }
   //read a sep file
@@ -1142,8 +1096,7 @@ Io_image_plugin::load(QFileInfo fileinfo, bool& ok, bool add_to_scene)
     if(return_code != QDialog::Accepted)
     {
       delete image;
-      ok = false;
-      return QList<Scene_item*>();
+      return NULL;
     }
 
     // Get selected precision
@@ -1171,9 +1124,7 @@ Io_image_plugin::load(QFileInfo fileinfo, bool& ok, bool add_to_scene)
   else
     image_item = new Scene_image_item(image,voxel_scale, false);
   image_item->setName(fileinfo.baseName());
-  if(add_to_scene)
-    CGAL::Three::Three::scene()->addItem(image_item);
-  return QList<Scene_item*>() << image_item;
+  return image_item;
 }
 
 bool Io_image_plugin::canSave(const CGAL::Three::Scene_item* item)
@@ -1192,7 +1143,7 @@ bool Io_image_plugin::loadDCM(QString dirname)
   {
     QMessageBox::warning(mw, mw->windowTitle(),
                          tr("Cannot read directory <tt>%1</tt>!").arg(dirname));
-    CGAL::Three::Three::warning(tr("Opening of directory %1 failed!").arg(dirname));
+    message_interface->warning(tr("Opening of directory %1 failed!").arg(dirname));
     result = false;
   }
   else
@@ -1243,12 +1194,12 @@ bool Io_image_plugin::loadDCM(QString dirname)
       {
         QMessageBox::warning(mw, mw->windowTitle(),
                              tr("Error with file <tt>%1/</tt>:\nunknown file format!").arg(dirname));
-        CGAL::Three::Three::warning(tr("Opening of file %1/ failed!").arg(dirname));
+        message_interface->warning(tr("Opening of file %1/ failed!").arg(dirname));
         result = false;
       }
       else
       {
-        CGAL::Three::Three::information(tr("File %1/ successfully opened.").arg(dirname));
+        message_interface->information(tr("File %1/ successfully opened.").arg(dirname));
       }
       if(result)
       {
@@ -1269,12 +1220,12 @@ bool Io_image_plugin::loadDCM(QString dirname)
       {
         QMessageBox::warning(mw, mw->windowTitle(),
                              tr("Error with file <tt>%1/</tt>:\nunknown file format!").arg(dirname));
-        CGAL::Three::Three::warning(tr("Opening of file %1/ failed!").arg(dirname));
+        message_interface->warning(tr("Opening of file %1/ failed!").arg(dirname));
         result = false;
       }
       else
       {
-        CGAL::Three::Three::information(tr("File %1/ successfully opened.").arg(dirname));
+        message_interface->information(tr("File %1/ successfully opened.").arg(dirname));
       }
       if(result)
       {
@@ -1286,7 +1237,7 @@ bool Io_image_plugin::loadDCM(QString dirname)
   }
   return result;
 #else
-  CGAL::Three::Three::warning("You need VTK to read a DCM file");
+  message_interface->warning("You need VTK to read a DCM file");
   CGAL_USE(dirname);
   return false;
 #endif
@@ -1295,26 +1246,26 @@ Image* Io_image_plugin::createDCMImage(QString dirname)
 {
   Image* image = NULL;
 #ifdef CGAL_USE_VTK
-  vtkNew<vtkDICOMImageReader> dicom_reader;
+  dicom_reader = vtkDICOMImageReader::New();
   dicom_reader->SetDirectoryName(dirname.toUtf8());
 
-  auto executive =
+  executive =
     vtkDemandDrivenPipeline::SafeDownCast(dicom_reader->GetExecutive());
   if (executive)
   {
     executive->SetReleaseDataFlag(0, 0); // where 0 is the port index
   }
 
-  vtkNew<vtkImageGaussianSmooth> smoother;
+  smoother = vtkImageGaussianSmooth::New();
   smoother->SetStandardDeviations(1., 1., 1.);
   smoother->SetInputConnection(dicom_reader->GetOutputPort());
   smoother->Update();
-  auto vtk_image = smoother->GetOutput();
+  vtk_image = smoother->GetOutput();
   vtk_image->Print(std::cerr);
   image = new Image;
-  *image = CGAL::read_vtk_image_data(vtk_image); // copy the image data
+  *image = CGAL::read_vtk_image_data(vtk_image);
 #else
-  CGAL::Three::Three::warning("You need VTK to read a DCM file");
+  message_interface->warning("You need VTK to read a DCM file");
   CGAL_USE(dirname);
 #endif
   return image;

@@ -5,6 +5,7 @@
 #include <CGAL/boost/graph/split_graph_into_polylines.h>
 #include <fstream>
 
+#include <boost/foreach.hpp>
 
 typedef CGAL::Simple_cartesian<double>                        Kernel;
 typedef Kernel::Point_3                                       Point;
@@ -67,8 +68,8 @@ int main()
 
   // Output skeleton points and the corresponding surface points
   output.open("correspondance-lcc.cgal");
-  for(Skeleton_vertex v : CGAL::make_range(vertices(skeleton)))
-    for(vertex_descriptor vd : skeleton[v].vertices)
+  BOOST_FOREACH(Skeleton_vertex v, vertices(skeleton))
+    BOOST_FOREACH(vertex_descriptor vd, skeleton[v].vertices)
       output << "2 " << skeleton[v].point << " "
                      << get(CGAL::vertex_point, lcc, vd)  << "\n";
 

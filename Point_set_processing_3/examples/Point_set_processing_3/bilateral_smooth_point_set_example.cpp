@@ -17,7 +17,12 @@ typedef Kernel::Vector_3 Vector;
 typedef std::pair<Point, Vector> PointVectorPair;
 
 // Concurrency
-typedef CGAL::Parallel_if_available_tag Concurrency_tag;
+#ifdef CGAL_LINKED_WITH_TBB
+typedef CGAL::Parallel_tag Concurrency_tag;
+#else
+typedef CGAL::Sequential_tag Concurrency_tag;
+#endif
+
 
 int main(int argc, char*argv[])
 {
@@ -43,7 +48,7 @@ int main(int argc, char*argv[])
   double sharpness_angle = 25; // control sharpness of the result.
                                // The bigger the smoother the result will be
   int iter_number = 3;         // number of times the projection is applied
-
+  
   for (int i = 0; i < iter_number; ++i)
   {
     /* double error = */
@@ -54,10 +59,9 @@ int main(int argc, char*argv[])
       normal_map(CGAL::Second_of_pair_property_map<PointVectorPair>()).
       sharpness_angle (sharpness_angle));
   }
-
+  
   //// Save point set.
-  std::ofstream out(output_filename);
-  out.precision(17);
+  std::ofstream out(output_filename);   
   if (!out ||
       !CGAL::write_xyz_points(
       out, points,

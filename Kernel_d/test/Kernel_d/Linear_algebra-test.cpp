@@ -1,3 +1,4 @@
+#include <CGAL/basic.h>
 #include <CGAL/Linear_algebraHd.h>
 #include <CGAL/Linear_algebraCd.h>
 #include <CGAL/random_selection.h>

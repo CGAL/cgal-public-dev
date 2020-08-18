@@ -1,4 +1,5 @@
 #include <CGAL/Exact_predicates_exact_constructions_kernel.h>
+#include <CGAL/intersections.h>
 #include <CGAL/Constrained_Delaunay_triangulation_2.h>
 #include <CGAL/Constrained_triangulation_plus_2.h>
 
@@ -28,6 +29,6 @@ main( )
        scit != cdt.subconstraints_end();
        ++scit)  ++count;
   std::cout << "The number of resulting constrained edges is  "
-            <<  count << std::endl;
+	    <<  count << std::endl;
   return 0;
 }

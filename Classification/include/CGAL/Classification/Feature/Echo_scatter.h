@@ -3,10 +3,19 @@
 // All rights reserved.
 //
 // This file is part of CGAL (www.cgal.org).
+// You can redistribute it and/or modify it under the terms of the GNU
+// General Public License as published by the Free Software Foundation,
+// either version 3 of the License, or (at your option) any later version.
+//
+// Licensees holding a valid commercial license may use this file in
+// accordance with the commercial license agreement provided with the software.
+//
+// This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
+// WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 //
 // $URL$
 // $Id$
-// SPDX-License-Identifier: GPL-3.0-or-later OR LicenseRef-Commercial
+// SPDX-License-Identifier: GPL-3.0+
 //
 // Author(s)     : Simon Giraudot, Florent Lafarge
 
@@ -27,7 +36,7 @@ namespace CGAL {
 namespace Classification {
 
 namespace Feature {
-
+  
   /*!
     \ingroup PkgClassificationFeatures
 
@@ -53,13 +62,13 @@ class Echo_scatter : public Feature_base
 {
 public:
   typedef Classification::Planimetric_grid<GeomTraits, PointRange, PointMap> Grid;
-private:
+private:  
   typedef Classification::Image<compressed_float> Image_cfloat;
 
   const Grid& grid;
   Image_cfloat Scatter;
   std::vector<compressed_float> echo_scatter;
-
+  
 public:
   /*!
     \brief Constructs the feature.
@@ -76,20 +85,18 @@ public:
     : grid (grid)
   {
     this->set_name ("echo_scatter");
-    if (radius_neighbors < 0.)
-      radius_neighbors = 3.f * grid.resolution();
 
     if (grid.width() * grid.height() > input.size())
       echo_scatter.resize(input.size(), compressed_float(0));
     else
     {
       Scatter = Image_cfloat(grid.width(), grid.height());
-      for (std::size_t j = 0; j < grid.height(); j++)
+      for (std::size_t j = 0; j < grid.height(); j++)	
         for (std::size_t i = 0; i < grid.width(); i++)
           if (grid.has_points(i,j))
             Scatter(i,j) = compressed_float(0);
     }
-
+    
     std::size_t square = (std::size_t)(0.5 * radius_neighbors / grid.resolution()) + 1;
 
     for (std::size_t j = 0; j < grid.height(); j++)
@@ -101,13 +108,13 @@ public:
           std::size_t squareXmax = (std::min) (grid.width()-1, i + square);
           std::size_t squareYmin = (j < square ? 0 : j - square);
           std::size_t squareYmax = (std::min) (grid.height()-1, j + square);
-
+			
           std::size_t NB_echo_sup=0;
           std::size_t NB_echo_total=0;
 
           for(std::size_t k = squareXmin; k <= squareXmax; k++){
             for(std::size_t l = squareYmin; l <= squareYmax; l++){
-
+									
               if(CGAL::sqrt(pow((float)k-i,2)+pow((float)l-j,2))<=(float)0.5*radius_neighbors/grid.resolution())
               {
                 typename Grid::iterator end = grid.indices_end(k,l);
@@ -122,11 +129,11 @@ public:
                 NB_echo_total=NB_echo_total+nb;
 
               }
-
+						
             }
-
+					
           }
-
+					
           compressed_float v = compress_float (NB_echo_sup/float(NB_echo_total));
           if (echo_scatter.empty())
             Scatter(i,j) = v;
@@ -156,7 +163,7 @@ public:
 } // namespace Feature
 
 } // namespace Classification
-
+  
 } // namespace CGAL
 
 #endif // CGAL_CLASSIFICATION_FEATURE_ECHO_SCATTER_H

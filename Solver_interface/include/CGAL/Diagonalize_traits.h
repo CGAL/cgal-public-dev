@@ -1,10 +1,19 @@
 // Copyright (c) 2015 GeometryFactory (France), All rights reserved.
 //
-// This file is part of CGAL (www.cgal.org)
+// This file is part of CGAL (www.cgal.org); you can redistribute it and/or
+// modify it under the terms of the GNU Lesser General Public License as
+// published by the Free Software Foundation; either version 3 of the License,
+// or (at your option) any later version.
+//
+// Licensees holding a valid commercial license may use this file in
+// accordance with the commercial license agreement provided with the software.
+//
+// This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
+// WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 //
 // $URL$
 // $Id$
-// SPDX-License-Identifier: LGPL-3.0-or-later OR LicenseRef-Commercial
+// SPDX-License-Identifier: LGPL-3.0+
 //
 // Author(s)     : Simon Giraudot
 
@@ -17,19 +26,15 @@
 #include <CGAL/number_type_config.h>
 #include <CGAL/double.h>
 
-#ifndef CGAL_I_WANT_TO_USE_DIAGONALIZE_TRAITS
 #define CGAL_WARNING_DIAGONALIZE_TRAITS \
   CGAL_DEPRECATED_MSG("CGAL::Diagonalize_traits is a deprecated class that can \
 lead to precision issues, please use CGAL::Eigen_diagonalize_traits")
-#else
-#define CGAL_WARNING_DIAGONALIZE_TRAITS
-#endif
 
 /// \cond SKIP_IN_MANUAL
 
 namespace CGAL {
 
-/// \ingroup PkgSolverInterfaceRef
+/// \ingroup PkgSolver
 ///
 /// The class `Diagonalize_traits` provides an internal
 /// implementation for the diagonalization of Variance-Covariance
@@ -47,9 +52,9 @@ template <typename FT, unsigned int dim = 3>
 class Diagonalize_traits
 {
 public:
-  typedef std::array<FT, dim>                         Vector;
-  typedef std::array<FT, dim*dim>                     Matrix;
-  typedef std::array<FT, (dim * (dim+1) / 2)>         Covariance_matrix;
+  typedef cpp11::array<FT, dim>                         Vector;
+  typedef cpp11::array<FT, dim*dim>                     Matrix;
+  typedef cpp11::array<FT, (dim * (dim+1) / 2)>         Covariance_matrix;
 
   /// Fill `eigenvalues` with the eigenvalues of the covariance matrix represented by `cov`.
   /// Eigenvalues are sorted by increasing order.
@@ -271,7 +276,7 @@ public:
 
       eigen_values[k] = eigen_values[i];
       eigen_values[i] = x;
-
+      
       int jj = index[k];
       index[k] = index[i];
       index[i] = jj;

@@ -4,7 +4,6 @@ STL_Extension
 Algebraic_foundations
 Circulator
 Stream_support
-BGL
 TDS_2
 Triangulation_3
 Spatial_sorting

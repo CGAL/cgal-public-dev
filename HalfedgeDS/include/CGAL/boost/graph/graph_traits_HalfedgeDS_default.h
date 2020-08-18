@@ -1,10 +1,19 @@
 // Copyright (c) 2018  GeometryFactory (France).  All rights reserved.
 //
-// This file is part of CGAL (www.cgal.org)
+// This file is part of CGAL (www.cgal.org); you can redistribute it and/or
+// modify it under the terms of the GNU Lesser General Public License as
+// published by the Free Software Foundation; either version 3 of the License,
+// or (at your option) any later version.
+//
+// Licensees holding a valid commercial license may use this file in
+// accordance with the commercial license agreement provided with the software.
+//
+// This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
+// WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 //
 // $URL$
 // $Id$
-// SPDX-License-Identifier: LGPL-3.0-or-later OR LicenseRef-Commercial
+// SPDX-License-Identifier: LGPL-3.0+
 //
 //
 // Author(s)     : Andreas Fabri
@@ -13,22 +22,20 @@
 #define CGAL_GRAPH_TRAITS_HALFEDGEDS_DEFAULT_H
 
 #include <CGAL/boost/graph/graph_traits_HalfedgeDS.h>
-#include <CGAL/boost/graph/properties.h>
 #include <CGAL/Iterator_range.h>
 #include <CGAL/HalfedgeDS_decorator.h>
 #include <CGAL/HalfedgeDS_default.h>
-#include <CGAL/boost/graph/properties.h>
 
 namespace CGAL {
 
-template <class Traits_, class HalfedgeDSItems,
+template <class Traits_, class HalfedgeDSItems, 
           class Alloc>
 class HalfedgeDS_default;
-} // namespace CGAL
+}; // namespace CGAL
 
 namespace boost {
 
-
+  
 
 template<class T, class I, class A>
 struct graph_traits< CGAL::HalfedgeDS_default<T,I,A> >
@@ -45,7 +52,7 @@ struct graph_traits< CGAL::HalfedgeDS_default<T,I,A> const >
 } // namespace boost
 
 namespace CGAL {
-
+  
 template<class T, class I, class A>
 typename boost::graph_traits< HalfedgeDS_default<T,I,A> const>::vertices_size_type
 num_vertices(const HalfedgeDS_default<T,I,A>& p)
@@ -174,7 +181,7 @@ out_edges( typename boost::graph_traits< HalfedgeDS_default<T,I,A> const>::verte
 
 //
 // MutableHalfedgeGraph
-//
+// 
 
 template<class T, class I, class A>
 typename boost::graph_traits< HalfedgeDS_default<T,I,A> >::vertex_descriptor
@@ -203,9 +210,9 @@ remove_vertex(typename boost::graph_traits< HalfedgeDS_default<T,I,A> >::vertex_
 template<class T, class I, class A>
 typename boost::graph_traits< HalfedgeDS_default<T,I,A> >::edge_descriptor
 add_edge(HalfedgeDS_default<T,I,A>& g)
-{
+{ 
   return typename boost::graph_traits< HalfedgeDS_default<T,I,A> >::edge_descriptor(
-    g.edges_push_back(typename HalfedgeDS_default<T,I,A>::Halfedge(),
+    g.edges_push_back(typename HalfedgeDS_default<T,I,A>::Halfedge(), 
                             typename HalfedgeDS_default<T,I,A>::Halfedge()));
 }
 
@@ -245,7 +252,7 @@ set_next(typename boost::graph_traits< HalfedgeDS_default<T,I,A> >::halfedge_des
 }
 
 //
-// MutableFaceGraph
+// MutableFaceGraph 
 //
 
 template<class T, class I, class A>
@@ -265,7 +272,7 @@ add_face(InputIterator begin, InputIterator end, HalfedgeDS_default<T,I,A>& g)
 template<class T, class I, class A>
 void
 remove_face(typename boost::graph_traits< HalfedgeDS_default<T,I,A> >::face_descriptor f
-            , HalfedgeDS_default<T,I,A>& g)
+            , HalfedgeDS_default<T,I,A>& g) 
 {
   g.faces_erase(f);
 }
@@ -314,7 +321,7 @@ template<class T, class I, class A>
 typename boost::graph_traits< HalfedgeDS_default<T,I,A> >::edge_descriptor
 edge(typename boost::graph_traits< HalfedgeDS_default<T,I,A> >::halfedge_descriptor h
      , const HalfedgeDS_default<T,I,A>&)
-{
+{ 
   return typename boost::graph_traits< HalfedgeDS_default<T,I,A> >::edge_descriptor(h);
 }
 
@@ -322,7 +329,7 @@ template<class T, class I, class A>
 typename boost::graph_traits< HalfedgeDS_default<T,I,A> >::halfedge_descriptor
 halfedge(typename boost::graph_traits< HalfedgeDS_default<T,I,A> >::edge_descriptor e
          , const HalfedgeDS_default<T,I,A>&)
-{
+{ 
   return e.halfedge();
 }
 
@@ -330,7 +337,7 @@ template<class T, class I, class A>
 typename boost::graph_traits< HalfedgeDS_default<T,I,A> >::halfedge_descriptor
 halfedge(typename boost::graph_traits< HalfedgeDS_default<T,I,A> >::vertex_descriptor v
          , const HalfedgeDS_default<T,I,A>&)
-{
+{ 
   return v->halfedge();
 }
 
@@ -340,7 +347,7 @@ std::pair< typename boost::graph_traits< HalfedgeDS_default<T,I,A> >::halfedge_d
 halfedge(typename boost::graph_traits< HalfedgeDS_default<T,I,A> >::vertex_descriptor u
          , typename boost::graph_traits< HalfedgeDS_default<T,I,A> >::vertex_descriptor v
          , const HalfedgeDS_default<T,I,A>& g)
-{
+{ 
   std::pair< typename boost::graph_traits< HalfedgeDS_default<T,I,A> >::edge_descriptor
              , bool> e = edge(u, v, g);
   return std::make_pair(e.first.halfedge(), e.second);
@@ -411,7 +418,7 @@ num_halfedges(const HalfedgeDS_default<T,I,A>& p)
 template<class T, class I, class A>
 typename boost::graph_traits< HalfedgeDS_default<T,I,A> >::face_descriptor
 face(typename boost::graph_traits< HalfedgeDS_default<T,I,A> >::halfedge_descriptor h
-     , const HalfedgeDS_default<T,I,A>&)
+     , const HalfedgeDS_default<T,I,A>&) 
 {
   return h->face();
 }
@@ -419,7 +426,7 @@ face(typename boost::graph_traits< HalfedgeDS_default<T,I,A> >::halfedge_descrip
 template<class T, class I, class A>
 typename boost::graph_traits< HalfedgeDS_default<T,I,A> >::halfedge_descriptor
 halfedge(typename boost::graph_traits< HalfedgeDS_default<T,I,A> >::face_descriptor f
-         , const HalfedgeDS_default<T,I,A>&)
+         , const HalfedgeDS_default<T,I,A>&) 
 {
   return f->halfedge();
 }
@@ -439,55 +446,67 @@ num_faces(const HalfedgeDS_default<T,I,A>& p)
 {
   return p.size_of_faces();
 }
+namespace internal {
+
+template<typename Handle, typename ValueType, typename Reference>
+struct HDS_Point_accessor
+  : boost::put_get_helper< Reference, HDS_Point_accessor<Handle, ValueType, Reference> >
+{
+  typedef boost::lvalue_property_map_tag category;
+  typedef Reference                      reference;
+  typedef ValueType                      value_type;
+  typedef Handle                         key_type;
+
+  reference operator[](Handle h) const { return h->point(); }
+};
+
+} // namespace internal
 
 template <class T>
 struct HDS_property_map;
-
+  
 template <>
 struct HDS_property_map<vertex_point_t>
 {
   template<class T, class I, class A>
   struct bind_
   {
-    typedef internal::Point_accessor<
+    typedef internal::HDS_Point_accessor<
       typename boost::graph_traits<
         HalfedgeDS_default<T, I, A>
         >::vertex_descriptor,
       typename T::Point_3, typename T::Point_3&> type;
 
-    typedef internal::Point_accessor<
+    typedef internal::HDS_Point_accessor<
       typename boost::graph_traits<
         HalfedgeDS_default<T, I, A>
         >::vertex_descriptor,
       typename T::Point_3, const typename T::Point_3&> const_type;
   };
 };
-
-template<class T, class I, class A>
-void reserve(HalfedgeDS_default<T,I,A>& p,
-             typename boost::graph_traits< HalfedgeDS_default<T,I,A> const>::vertices_size_type nv,
-             typename boost::graph_traits< HalfedgeDS_default<T,I,A> const>::edges_size_type ne,
-             typename boost::graph_traits< HalfedgeDS_default<T,I,A> const>::faces_size_type nf)
-{
-  p.reserve(nv, 2*ne, nf);
-}
-
+  
 }// namespace CGAL
 namespace boost {
 
-#define CGAL_PM_SPECIALIZATION(TAG) \
-template<class T, class I, class A> \
-struct property_map<CGAL::HalfedgeDS_default<T,I,A>, TAG> \
-{\
-  typedef typename CGAL::HDS_property_map<TAG>:: \
-      template bind_<T,I,A> map_gen; \
-  typedef typename map_gen::type       type; \
-  typedef typename map_gen::const_type const_type; \
+// property_map dispatcher into Polyhedron
+template<class T, class I, class A, class Tag>
+struct property_map<CGAL::HalfedgeDS_default<T,I,A>, Tag>
+{
+  typedef typename CGAL::HDS_property_map<Tag>::
+      template bind_<T,I,A> map_gen;
+  typedef typename map_gen::type       type;
+  typedef typename map_gen::const_type const_type;
 };
 
-CGAL_PM_SPECIALIZATION(vertex_point_t)
-
-#undef CGAL_PM_SPECIALIZATION
+// property_map dispatcher into const Polyhedron
+template<class T, class I, class A, class Tag>
+struct property_map<const CGAL::HalfedgeDS_default<T,I,A>, Tag>
+{
+  typedef typename CGAL::HDS_property_map<Tag>::
+      template bind_<T,I,A> map_gen;
+  typedef typename map_gen::type       type;
+  typedef typename map_gen::const_type const_type;
+};
 
 } // namespace boost
 

@@ -108,7 +108,7 @@ struct Tester2 {
                                  CGAL::Delaunay_mesh_criteria_2<CDT>());
     const size_type number_of_vertices0bis = cdt.number_of_vertices();
     std::cerr << " done.\nNumber of vertices: " << cdt.number_of_vertices() << "\n\n";
-
+  
     assert( number_of_vertices0 == number_of_vertices0bis );
 
     cdt = cdt2;
@@ -139,7 +139,7 @@ struct Tester2 {
       mesher.refine_mesh();
     }
     const size_type number_of_vertices2 = cdt.number_of_vertices();
-    std::cerr << " done.\nNumber of vertices: " << cdt.number_of_vertices()
+    std::cerr << " done.\nNumber of vertices: " << cdt.number_of_vertices() 
               << "\n\n";
 
     assert(cdt.is_valid());
@@ -194,9 +194,9 @@ struct Tester2 {
   }
 };
 
-typedef CGAL::Exact_predicates_inexact_constructions_kernel K_e_i;
+struct K_e_i : public CGAL::Exact_predicates_inexact_constructions_kernel {};
 #if CGAL_USE_CORE || CGAL_USE_LEDA
-typedef CGAL::Exact_predicates_exact_constructions_kernel_with_sqrt K_e_e;
+struct K_e_e : public CGAL::Exact_predicates_exact_constructions_kernel_with_sqrt {};
 #endif
 
 int main()

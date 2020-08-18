@@ -3,12 +3,12 @@
 
 #if TESTR==1
    typedef double               NT;
-   typedef CGAL::Simple_cartesian<NT>  K;
-#endif
+   typedef CGAL::Cartesian<NT>  K;
+#endif 
 
 #if TESTR==2
    typedef double                NT;
-   typedef CGAL::Simple_homogeneous<NT> K;
+   typedef CGAL::Homogeneous<NT> K;
 #endif
 
 

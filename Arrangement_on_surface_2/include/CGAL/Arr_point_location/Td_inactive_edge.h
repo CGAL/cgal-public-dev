@@ -2,12 +2,21 @@
 // All rights reserved.
 //
 // This file is part of CGAL (www.cgal.org).
+// You can redistribute it and/or modify it under the terms of the GNU
+// General Public License as published by the Free Software Foundation,
+// either version 3 of the License, or (at your option) any later version.
+//
+// Licensees holding a valid commercial license may use this file in
+// accordance with the commercial license agreement provided with the software.
+//
+// This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
+// WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 //
 // $URL$
 // $Id$
-// SPDX-License-Identifier: GPL-3.0-or-later OR LicenseRef-Commercial
+// SPDX-License-Identifier: GPL-3.0+
 //
-// Author(s)         : Oren Nechushtan <theoren@math.tau.ac.il>
+// Author(s)	 : Oren Nechushtan <theoren@math.tau.ac.il>
 //               updated by: Michal Balas <balasmic@post.tau.ac.il>
 
 #ifndef CGAL_TD_INACTIVE_EDGE_H
@@ -37,25 +46,25 @@ namespace CGAL {
  * Implementation of a pseudo-trapezoid as two halfedges(top,bottom)
  * and two curve-ends(left,right).
  * Trapezoids are represented as two curve-ends called right and left and
- * two halfedges called top and bottom. The curve-ends (points) lie on the
- * right and left boundaries of the trapezoid respectively and the halfedges
+ * two halfedges called top and bottom. The curve-ends (points) lie on the 
+ * right and left boundaries of the trapezoid respectively and the halfedges 
  * bound the trapezoid from above and below.
- * There exist degenerate trapezoids called infinite trapezoid; this happens
+ * There exist degenerate trapezoids called infinite trapezoid; this happens 
  * when one of the four sides is on the parameter space boundary.
  * Trapezoids are created as active and become inactive when Remove() member
  * function called.
  * Each trapezoid has at most four neighbouring trapezoids.
- * X_trapezoid structure can represent a real trapezoid, a Td-edge or an
+ * X_trapezoid structure can represent a real trapezoid, a Td-edge or an 
  * edge-end (end point).
  */
 template <class Td_traits_>
 class Td_inactive_edge : public Handle
 {
 public:
-
+  
   //type of traits class
   typedef Td_traits_                                   Traits;
-
+  
   //type of point (Point_2)
   typedef typename Traits::Point                       Point;
 
@@ -67,18 +76,18 @@ public:
 
   //type of Halfedge_const_handle (trapezoid edge)
   typedef typename Traits::Halfedge_const_handle  Halfedge_const_handle;
-
+  
   //type of Vertex_const_handle (trapezoid vertex)
   typedef typename Traits::Vertex_const_handle    Vertex_const_handle;
 
   //type of Td_inactive_edge (Self)
   typedef typename Traits::Td_inactive_edge            Self;
-
+  
   typedef typename Traits::Td_map_item            Td_map_item;
 
   //type of Trapezoidal decomposition
   typedef Trapezoidal_decomposition_2<Traits>          TD;
-
+  
   //type of In face iterator
   typedef typename TD::In_face_iterator                In_face_iterator;
 
@@ -89,7 +98,7 @@ public:
   //friend class declarations:
 
   friend class Trapezoidal_decomposition_2<Traits>;
-
+  
 #ifdef CGAL_PM_FRIEND_CLASS
 #if defined(__SUNPRO_CC) || defined(__PGI) || defined(__INTEL_COMPILER)
   friend class Trapezoidal_decomposition_2<Traits>::In_face_iterator;
@@ -100,12 +109,12 @@ public:
 #else
   friend class Trapezoidal_decomposition_2<Traits>::In_face_iterator;
 #endif
-
+  
 #else
   friend class In_face_iterator;
 #endif
 #endif
-
+  
  /*! \class
    * Inner class Data derived from Rep class
    */
@@ -118,19 +127,19 @@ public:
     Data (boost::shared_ptr<X_monotone_curve_2>& _cv, Dag_node* _p_node)
        : cv(_cv), p_node(_p_node) //, lb(_lb),lt(_lt),rb(_rb),rt(_rt)
     { }
-
+    
     ~Data() { }
 
   protected:
-    boost::shared_ptr<X_monotone_curve_2> cv;
+    boost::shared_ptr<X_monotone_curve_2> cv; 
     Dag_node* p_node;
-  };
-
+  }; 
+  
  private:
-
+  
   Data* ptr() const { return (Data*)(PTR);  }
-
-
+	
+	
 #ifndef CGAL_TD_DEBUG
 #ifdef CGAL_PM_FRIEND_CLASS
  protected:
@@ -142,46 +151,46 @@ public:
 #endif //CGAL_TD_DEBUG
 
   /*! Set the DAG node. */
-  inline void set_dag_node(Dag_node* p)
+  inline void set_dag_node(Dag_node* p) 
   {
     ptr()->p_node = p;
   }
-
+  
   /*! Set the x_monotone_curve_2 for removed edge degenerate trapezoid. */
   CGAL_TD_INLINE void set_curve(boost::shared_ptr<X_monotone_curve_2>& cv)
   {
-    ptr()->cv = cv;
+    ptr()->cv = cv; 
   }
-
+  
  public:
-
+  
   /// \name Constructors.
   //@{
 
   /*! Constructor given Vertex & Halfedge handles. */
-  Td_inactive_edge (boost::shared_ptr<X_monotone_curve_2>& cv, Dag_node* node = nullptr)
+  Td_inactive_edge (boost::shared_ptr<X_monotone_curve_2>& cv, Dag_node* node = NULL)
   {
     PTR = new Data(cv,node);
   }
-
+  
   /*! Copy constructor. */
   Td_inactive_edge (const Self& tr) : Handle(tr)
   {
   }
-
+  
   //@}
-
+  
   /// \name Operator overloading.
   //@{
 
-  /*! Assignment operator.
-  *   operator= should not copy m_dag_node (or otherwise update
+  /*! Assignment operator. 
+  *   operator= should not copy m_dag_node (or otherwise update 
   *     Dag_node::replace)
     */
   inline Self& operator= (const Self& t2)
   {
-          Handle::operator=(t2);
-          return *this;
+	  Handle::operator=(t2);
+	  return *this;
   }
 
   /*! Operator==. */
@@ -202,12 +211,12 @@ public:
   /// \name Access methods.
   //@{
 
-  inline Self& self()
+  inline Self& self() 
   {
     return *this;
   }
-
-  inline const Self& self() const
+  
+  inline const Self& self() const 
   {
     return *this;
   }
@@ -218,21 +227,21 @@ public:
     return (unsigned long) PTR;
   }
 
-  inline X_monotone_curve_2& curve() const
+  inline X_monotone_curve_2& curve() const  
   {
     X_monotone_curve_2* cv_ptr = (ptr()->cv).get();
-    CGAL_assertion(cv_ptr != nullptr);
+    CGAL_assertion(cv_ptr != NULL);
     return *cv_ptr;
   }
 
   /*! Access DAG node. */
   Dag_node* dag_node() const            {return ptr()->p_node; }
-
-
+  
+  
   //@}
-
-
-
+  
+  
+	
 
 };
 

@@ -2,11 +2,20 @@
 // All rights reserved.
 //
 // This file is part of CGAL (www.cgal.org).
+// You can redistribute it and/or modify it under the terms of the GNU
+// General Public License as published by the Free Software Foundation,
+// either version 3 of the License, or (at your option) any later version.
+//
+// Licensees holding a valid commercial license may use this file in
+// accordance with the commercial license agreement provided with the software.
+//
+// This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
+// WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 //
 // $URL$
 // $Id$
-// SPDX-License-Identifier: GPL-3.0-or-later OR LicenseRef-Commercial
-//
+// SPDX-License-Identifier: GPL-3.0+
+// 
 //
 // Author(s)     : Panagiotis Cheilaris, Sandeep Kumar Dey, Evanthia Papadopoulou
 //philaris@gmail.com, sandeep.kr.dey@gmail.com, evanthia.papadopoulou@usi.ch
@@ -42,6 +51,10 @@ class Polychainsegment_2 : public Polygon_2<Traits_P, Container_P> {
     // constructors
 
     Polychainsegment_2() : Base() {}
+
+    Polychainsegment_2(
+        const Polychainsegment_2<Traits_P,Container_P>& pc)
+      : Base((Base) pc) {}
 
     template <class InputIterator>
     Polychainsegment_2(InputIterator first, InputIterator last,
@@ -194,11 +207,13 @@ public:
 
     Polychainray_2(): Base(), outgoing() {}
 
+    Polychainray_2(const Polychainray_2<Traits_P,Container_P>& pcr)
+      : Base((Base) pcr), outgoing(pcr.outgoing) {}
 
     template <class InputIterator>
     Polychainray_2(InputIterator first, InputIterator last,
-                   OutgoingDirection d,
-                   Traits p_traits = Traits())
+	           OutgoingDirection d,
+              Traits p_traits = Traits())
         : Base(first, last, p_traits), outgoing(d)
     {
     }
@@ -207,7 +222,7 @@ public:
     // get_outgoing
 
     OutgoingDirection get_outgoing() const {
-        return outgoing;
+	return outgoing;
     }
 
 
@@ -218,7 +233,7 @@ public:
       typedef typename K::Segment_2 K_Segment_2;
       typedef typename K::Ray_2 K_Ray_2;
       typedef typename
-          Polychainray_2<Traits_P,Container_P>::Vertex_const_iterator VI;
+	  Polychainray_2<Traits_P,Container_P>::Vertex_const_iterator VI;
 
       CGAL_assertion( this->size() > 0 );
 
@@ -240,7 +255,7 @@ public:
       typedef typename Traits_P::Segment_2 Segment_2;
       typedef typename Traits_P::Ray_2 Ray_2;
       typedef typename
-          Polychainray_2<Traits_P,Container_P>::Vertex_const_iterator VI;
+	  Polychainray_2<Traits_P,Container_P>::Vertex_const_iterator VI;
 
       CGAL_assertion( this->size() > 0 );
 
@@ -358,10 +373,15 @@ public:
       is_line_optimization(false)
     {}
 
+    Polychainline_2(const Self& pcl)
+      : Base((Base) pcl), incoming(pcl.incoming),
+        is_line_optimization(pcl.is_line_optimization)
+    {}
+
     template <class InputIterator>
     Polychainline_2(IncomingDirection dinc,
-                    InputIterator first, InputIterator last,
-                    OutgoingDirection dout,
+	            InputIterator first, InputIterator last,
+	            OutgoingDirection dout,
                     Traits p_traits = Traits())
         : Base(first, last, dout, p_traits), incoming(dinc),
           is_line_optimization(false)
@@ -377,7 +397,7 @@ public:
     // get_incoming
 
     IncomingDirection get_incoming() const {
-        return incoming;
+	return incoming;
     }
 
 
@@ -446,7 +466,7 @@ public:
       Line_2 line((*this)[0], this->get_outgoing());
 
       typedef typename
-          Polychainline_2<Traits_P,Container_P>::
+	  Polychainline_2<Traits_P,Container_P>::
                      Vertex_const_iterator
           VI;
 
@@ -501,7 +521,7 @@ public:
           << *this << " pcl=" << pcl << std::endl;);
 
       typedef typename
-          Polychainline_2<Traits_P,Container_P>::
+	  Polychainline_2<Traits_P,Container_P>::
                      Vertex_const_iterator
           VI;
 
@@ -721,7 +741,7 @@ public:
       typedef typename K::Segment_2 K_Segment_2;
       typedef typename K::Ray_2 K_Ray_2;
       typedef typename
-          Polychainline_2<Traits_P,Container_P>::Vertex_const_iterator VI;
+	  Polychainline_2<Traits_P,Container_P>::Vertex_const_iterator VI;
 
       CGAL_assertion( this->size() > 0 );
 
@@ -746,7 +766,7 @@ public:
     template< class Stream >
     void draw(Stream & stream) const {
       typedef typename
-          Polychainline_2<Traits_P,Container_P>::Vertex_const_iterator VI;
+	  Polychainline_2<Traits_P,Container_P>::Vertex_const_iterator VI;
 
       CGAL_assertion( this->size() > 0 );
 

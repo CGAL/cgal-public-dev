@@ -2,10 +2,19 @@
 // All rights reserved.
 //
 // This file is part of CGAL (www.cgal.org).
+// You can redistribute it and/or modify it under the terms of the GNU
+// General Public License as published by the Free Software Foundation,
+// either version 3 of the License, or (at your option) any later version.
+//
+// Licensees holding a valid commercial license may use this file in
+// accordance with the commercial license agreement provided with the software.
+//
+// This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
+// WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 //
 // $URL$
 // $Id$
-// SPDX-License-Identifier: GPL-3.0-or-later OR LicenseRef-Commercial
+// SPDX-License-Identifier: GPL-3.0+
 //
 // Author(s)     : Laurent Rineau, Stéphane Tayeb
 
@@ -434,7 +443,6 @@ public:
    && !defined(CGAL_MESH_3_USE_LAZY_UNSORTED_REFINEMENT_QUEUE)
     this->remove_element(c);
   #endif
-    CGAL_USE(c);
   }
   // Parallel: it's always lazy, so do nothing
   void remove_element_from_refinement_queue(Cell_handle, Parallel_tag) {}
@@ -479,7 +487,7 @@ public:
 
     return sstr.str();
   }
-
+  
   /// Adds \c cell to the refinement queue if needed
   void treat_new_cell(const Cell_handle& cell);
 
@@ -521,7 +529,7 @@ private:
     }
   };
 #endif // CGAL_LINKED_WITH_TBB
-
+  
   // -----------------------------------
   // -----------------------------------
   // -----------------------------------
@@ -669,7 +677,7 @@ scan_triangulation_impl()
     std::cerr << "Scanning triangulation for bad cells (in parallel)";
 # endif
     add_to_TLS_lists(true);
-
+    
     typedef typename Tr::All_cells_iterator All_cells_iterator;
 
     // WITH PARALLEL_FOR
@@ -795,7 +803,7 @@ conflicts_zone_impl(const Weighted_point& point
 
   facet_is_in_its_cz = true; // Always true
 
-  CGAL_HISTOGRAM_PROFILER("Mesh_3::Refine_cells::conflict zone",
+  CGAL_HISTOGRAM_PROFILER("Mesh_3::Refine_cells::conflict zone", 
                           static_cast<unsigned int>(zone.cells.size()));
   return zone;
 }

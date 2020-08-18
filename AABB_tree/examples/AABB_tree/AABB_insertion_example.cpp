@@ -37,6 +37,8 @@ int main()
     // data structure to accelerate distance queries
     Tree tree(faces(polyhedron1).first, faces(polyhedron1).second, polyhedron1);
 
+    tree.accelerate_distance_queries();
+
     tree.insert(faces(polyhedron2).first, faces(polyhedron2).second, polyhedron2);
 
     // query point

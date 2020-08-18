@@ -4,11 +4,19 @@
  Copyright (C) 2002-2014 Gilles Debunne. All rights reserved.
 
  This file is part of a fork of the QGLViewer library version 2.7.0.
+ http://www.libqglviewer.com - contact@libqglviewer.com
+
+ This file may be used under the terms of the GNU General Public License 
+ version 3.0 as published by the Free Software Foundation and
+ appearing in the LICENSE file included in the packaging of this file.
+
+ This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
+ WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 
 *****************************************************************************/
 // $URL$
 // $Id$
-// SPDX-License-Identifier: GPL-3.0-only
+// SPDX-License-Identifier: GPL-3.0
 
 #ifdef CGAL_HEADER_ONLY
 #define CGAL_INLINE_FUNCTION inline
@@ -51,7 +59,7 @@ ManipulatedFrame::ManipulatedFrame()
   setZoomSensitivity(1.0);
 
   isSpinning_ = false;
-  previousConstraint_ = nullptr;
+  previousConstraint_ = NULL;
 
   connect(&spinningTimer_, SIGNAL(timeout()), SLOT(spinUpdate()));
 }
@@ -146,7 +154,7 @@ restored and are left unchanged.
 See Vec::initFromDOMElement() for a complete code example. */
 CGAL_INLINE_FUNCTION
 void ManipulatedFrame::initFromDOMElement(const QDomElement &element) {
-  // Not called since it would set constraint() and referenceFrame() to nullptr.
+  // Not called since it would set constraint() and referenceFrame() to NULL.
   // *this = ManipulatedFrame();
   Frame::initFromDOMElement(element);
 
@@ -222,10 +230,10 @@ void ManipulatedFrame::startAction(int ma, bool withConstraint) {
   // manipulatedCameraFrame::wheelEvent and mouseReleaseEvent() restore previous
   // constraint
   if (withConstraint)
-    previousConstraint_ = nullptr;
+    previousConstraint_ = NULL;
   else {
     previousConstraint_ = constraint();
-    setConstraint(nullptr);
+    setConstraint(NULL);
   }
 
   switch (action_) {
@@ -251,7 +259,7 @@ CGAL_INLINE_FUNCTION
 void ManipulatedFrame::computeMouseSpeed(const QMouseEvent *const e) {
   const QPoint delta = (e->pos() - prevPos_);
   const qreal dist = sqrt(qreal(delta.x() * delta.x() + delta.y() * delta.y()));
-  delay_ = static_cast<int>(last_move_time.restart());
+  delay_ = last_move_time.restart();
   if (delay_ == 0)
     // Less than a millisecond: assume delay = 1ms
     mouseSpeed_ = dist;
@@ -295,7 +303,7 @@ qreal ManipulatedFrame::deltaWithPrevPos(QMouseEvent *const event,
 CGAL_INLINE_FUNCTION
 qreal ManipulatedFrame::wheelDelta(const QWheelEvent *event) const {
   static const qreal WHEEL_SENSITIVITY_COEF = 8E-4;
-  return event->angleDelta().y() * wheelSensitivity() * WHEEL_SENSITIVITY_COEF;
+  return event->delta() * wheelSensitivity() * WHEEL_SENSITIVITY_COEF;
 }
 
 CGAL_INLINE_FUNCTION

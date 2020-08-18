@@ -1,9 +1,9 @@
 
 /*!
-\ingroup PkgCircularKernel3GeometricConcepts
+\ingroup PkgSphericalKernel3GeometricConcepts
 \cgalConcept
 
-Concept for arcs of circles.
+Concept for arcs of circles. 
 
 \cgalRefines `CopyConstructible`
 \cgalRefines `Assignable`

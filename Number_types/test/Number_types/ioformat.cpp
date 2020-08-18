@@ -1,4 +1,4 @@
-#include <CGAL/config.h>
+#include <CGAL/basic.h>
 
 #include <CGAL/Quotient.h>
 #include <CGAL/MP_Float.h>

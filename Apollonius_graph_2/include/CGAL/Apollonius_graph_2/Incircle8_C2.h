@@ -2,11 +2,20 @@
 // All rights reserved.
 //
 // This file is part of CGAL (www.cgal.org).
+// You can redistribute it and/or modify it under the terms of the GNU
+// General Public License as published by the Free Software Foundation,
+// either version 3 of the License, or (at your option) any later version.
+//
+// Licensees holding a valid commercial license may use this file in
+// accordance with the commercial license agreement provided with the software.
+//
+// This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
+// WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 //
 // $URL$
 // $Id$
-// SPDX-License-Identifier: GPL-3.0-or-later OR LicenseRef-Commercial
-//
+// SPDX-License-Identifier: GPL-3.0+
+// 
 //
 // Author(s)     : Menelaos Karavelas <mkaravel@iacm.forth.gr>
 
@@ -48,8 +57,8 @@ public:
 private:
   inline
   Sign predicate(const FT& Exp, const FT& Eyp, const FT& Erp,
-                 const FT& Exrp, const FT& Eyrp, const FT& Exyp,
-                 const Field_with_sqrt_tag&) const
+		 const FT& Exrp, const FT& Eyrp, const FT& Exyp,
+		 const Field_with_sqrt_tag&) const
   {
     FT G = CGAL::square(Exp) + CGAL::square(Eyp) - CGAL::square(Erp);
     return CGAL::sign(Exp * Exrp + Eyp * Eyrp + Exyp * CGAL::sqrt(G));
@@ -57,8 +66,8 @@ private:
 
   inline
   Sign predicate(const FT& Exp, const FT& Eyp, const FT& /* Erp */,
-                 const FT& Exrp, const FT& Eyrp, const FT& Exyp,
-                 const Integral_domain_without_division_tag&) const
+		 const FT& Exrp, const FT& Eyrp, const FT& Exyp,
+		 const Integral_domain_without_division_tag&) const
   {
     Sign sA = CGAL::sign(Exp * Exrp + Eyp * Eyrp);
     Sign sB = CGAL::sign(Exyp);
@@ -76,7 +85,7 @@ private:
 public:
   inline
   Sign operator()(const Site_2& p1, const Site_2& p2,
-                  const Site_2& p3, const Site_2& q) const
+		  const Site_2& p3, const Site_2& q) const
   {
 #ifdef AG2_PROFILE_PREDICATES
     ag2_predicate_profiler::incircle_counter++;
@@ -116,10 +125,10 @@ public:
 
   inline
   Sign operator()(const Site_2& p1, const Site_2& p2,
-                  const Site_2& q) const
+		  const Site_2& q) const
   {
     return Base::operator()(p1, p2, q);
-  }
+  }  
 
 };
 

@@ -1,6 +1,5 @@
 Algebraic_foundations
 Arithmetic_kernel
-BGL
 Cartesian_kernel
 Circulator
 Combinatorial_map
@@ -18,7 +17,5 @@ Kernel_d
 Modular_arithmetic
 Number_types
 Profiling_tools
-Property_map
 STL_Extension
 Stream_support
-Random_numbers

@@ -15,7 +15,7 @@ int main(int argc, char** argv)
     std::cerr << "Nothing tested\n";
     return 1;
   }
-
+  
   for(int i=0;i<(argc-1)/2; ++i)
   {
     std::cout << "Handling " << argv[2*i+1]
@@ -26,10 +26,10 @@ int main(int argc, char** argv)
     Surface_mesh sm;
     input >> sm;
     bool res = atoi(argv[2*(i+1)])>0;
-    if (CGAL::Polygon_mesh_processing::does_bound_a_volume(sm)!=res)
-      CGAL_error_msg("Result is not as expected (input orientation)");
+    assert(!"Result is not as expected (input orientation)" ||
+           CGAL::Polygon_mesh_processing::does_bound_a_volume(sm)==res);
     CGAL::Polygon_mesh_processing::reverse_face_orientations(sm);
-    if (CGAL::Polygon_mesh_processing::does_bound_a_volume(sm)!=res)
-      CGAL_error_msg("Result is not as expected (reversed orientation)");
+    assert(!"Result is not as expected (reversed orientation)" ||
+           CGAL::Polygon_mesh_processing::does_bound_a_volume(sm)==res);
   }
 }

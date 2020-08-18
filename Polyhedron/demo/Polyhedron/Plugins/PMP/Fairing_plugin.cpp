@@ -3,18 +3,24 @@
 
 #include "Messages_interface.h"
 #include <CGAL/Three/Polyhedron_demo_plugin_helper.h>
-#include <CGAL/Three/Three.h>
 #include "Scene_polyhedron_selection_item.h"
 #include "ui_Fairing_widget.h"
 
+#ifdef USE_SURFACE_MESH
 #include "SMesh_type.h"
 typedef Scene_surface_mesh_item Scene_facegraph_item;
+
+#else
+#include "Polyhedron_type.h"
+typedef Scene_polyhedron_item Scene_facegraph_item;
+#endif
+
 
 #include <CGAL/iterator.h>
 #include <CGAL/Polygon_mesh_processing/fair.h>
 #include <CGAL/Polygon_mesh_processing/refine.h>
 
-#include <QElapsedTimer>
+#include <QTime>
 #include <QAction>
 #include <QMainWindow>
 #include <QApplication>
@@ -37,13 +43,13 @@ class Polyhedron_demo_fairing_plugin :
 {
   Q_OBJECT
   Q_INTERFACES(CGAL::Three::Polyhedron_demo_plugin_interface)
-  Q_PLUGIN_METADATA(IID "com.geometryfactory.PolyhedronDemo.PluginInterface/1.0" FILE "fairing_plugin.json")
+  Q_PLUGIN_METADATA(IID "com.geometryfactory.PolyhedronDemo.PluginInterface/1.0")
 public:
-  bool applicable(QAction*) const {
+  bool applicable(QAction*) const { 
     return qobject_cast<Scene_facegraph_item*>(scene->item(scene->mainSelectionIndex()))
-    || qobject_cast<Scene_polyhedron_selection_item*>(scene->item(scene->mainSelectionIndex()));
+    || qobject_cast<Scene_polyhedron_selection_item*>(scene->item(scene->mainSelectionIndex()));  
   }
-  void print_message(QString message) { CGAL::Three::Three::information(message);}
+  void print_message(QString message) { messages->information(message);}
   QList<QAction*> actions() const { return QList<QAction*>() << actionFairing; }
 
 
@@ -52,25 +58,36 @@ public:
     scene = scene_interface;
     messages = m;
     actionFairing = new QAction(tr(
-                                  "Refinement and Fairing"
+                              #ifdef USE_SURFACE_MESH
+                                  "Refinement and Fairing for Surface Mesh"
+                              #else
+                                  "Refinement and Fairing for Polyhedron"
+                              #endif
                                   ), mw);
     actionFairing->setProperty("subMenuName", "Polygon Mesh Processing");
 
     connect(actionFairing, SIGNAL(triggered()), this, SLOT(fairing_action()));
 
     dock_widget = new QDockWidget(
-          "Refinement and Fairing"
+      #ifdef USE_SURFACE_MESH
+          "Refinement and Fairing for Surface Mesh"
+      #else
+          "Refinement and Fairing for Polyhedron"
+      #endif
                                   , mw);
     dock_widget->setVisible(false);
 
     ui_widget.setupUi(dock_widget);
-    ui_widget.Density_control_factor_spin_box->setMaximum(96.989999999999995);
     addDockWidget(dock_widget);
     dock_widget->setWindowTitle(tr(
-                                  "Fairing "
+                              #ifdef USE_SURFACE_MESH
+                                  "Fairing for Surface Mesh"
+                              #else
+                                  "Fairing for Polyhedron"
+                              #endif
                                   ));
 
-    connect(ui_widget.Fair_button,  SIGNAL(clicked()), this, SLOT(on_Fair_button_clicked()));
+    connect(ui_widget.Fair_button,  SIGNAL(clicked()), this, SLOT(on_Fair_button_clicked()));  
     connect(ui_widget.Refine_button,  SIGNAL(clicked()), this, SLOT(on_Refine_button_clicked()));
   }
   virtual void closure()
@@ -104,7 +121,6 @@ public Q_SLOTS:
       CGAL::Polygon_mesh_processing::fair(*selection_item->polyhedron(),
         selection_item->selected_vertices,
         CGAL::Polygon_mesh_processing::parameters::fairing_continuity(continuity));
-    selection_item->polyhedron_item()->resetColors();
     selection_item->changed_with_poly_item();
     selection_item->invalidateOpenGLBuffers();
     QApplication::restoreOverrideCursor();
@@ -130,7 +146,6 @@ public Q_SLOTS:
     for(std::vector<boost::graph_traits<FaceGraph>::face_descriptor>::iterator it = new_facets.begin(); it != new_facets.end(); ++it) {
       selection_item->selected_facets.insert(*it);
     }
-    selection_item->polyhedron_item()->resetColors();
     selection_item->changed_with_poly_item();
     selection_item->invalidateOpenGLBuffers();
     QApplication::restoreOverrideCursor();

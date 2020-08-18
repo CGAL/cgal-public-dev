@@ -3,17 +3,17 @@ namespace CGAL {
 
 namespace IO{
 /*!
-  \ingroup PkgStreamSupportRef
+  \ingroup PkgIOstreams
 
 All classes in the \cgal `Kernel` provide input and output operators for
 IOStreams.  The basic task of such an operator is to produce a
 representation of an object that can be written as a sequence of
 characters on devices as a console, a file, or a pipe. The enum `Mode` distinguish between three different printing formats.
 
-In  `ASCII` mode, numbers
+In  `ASCII` mode, numbers 
 e.g. the coordinates of a point or
 the coefficients of a line, are written
-in a machine independent format.
+in a machine independent format. 
 In <span class="textsc">BINARY</span> mode, data are written
 in a binary format, e.g. a double is represented
 as a sequence of four byte. The format depends on the machine.
@@ -38,7 +38,7 @@ enum Mode { ASCII = 0, BINARY, PRETTY };
 }
 
 /*!
-\ingroup PkgStreamSupportRef
+\ingroup PkgIOstreams
 
 returns the printing mode of the %IO stream `s`.
 
@@ -56,7 +56,7 @@ returns the printing mode of the %IO stream `s`.
 IO::Mode get_mode(std::ios& s);
 
 /*!
-\ingroup PkgStreamSupportRef
+\ingroup PkgIOstreams
 
 sets the mode of the %IO stream `s` to be the `IO::ASCII` mode.
 Returns the previous mode of `s`.
@@ -74,7 +74,7 @@ Returns the previous mode of `s`.
 IO::Mode set_ascii_mode(std::ios& s);
 
 /*!
-\ingroup PkgStreamSupportRef
+\ingroup PkgIOstreams
 
 \sa `CGAL::IO::Mode`
 \sa `CGAL::set_mode()`
@@ -91,7 +91,7 @@ Returns the previous mode of `s`.
 IO::Mode set_binary_mode(std::ios& s);
 
 /*!
-\ingroup PkgStreamSupportRef
+\ingroup PkgIOstreams
 
 sets the printing mode of the %IO stream `s`.
 
@@ -107,7 +107,7 @@ sets the printing mode of the %IO stream `s`.
 IO::Mode set_mode(std::ios& s, IO::Mode m);
 
 /*!
-\ingroup PkgStreamSupportRef
+\ingroup PkgIOstreams
 
 sets the mode of the %IO stream `s` to be the `IO::PRETTY` mode.
 Returns the previous mode of `s`.
@@ -126,9 +126,9 @@ IO::Mode set_pretty_mode(std::ios& s);
 
 
 /*!
-\ingroup PkgStreamSupportRef
+\ingroup PkgIOstreams
 
-The definition of `Input_rep` is completely symmetric to `Output_rep`.
+The definition of `Input_rep` is completely symmetric to `Output_rep`. 
 
 */
 template< typename T, typename F >
@@ -137,26 +137,26 @@ class Input_rep {
 }; /* end Input_rep */
 
 /*!
-\ingroup PkgStreamSupportRef
+\ingroup PkgIOstreams
 
-The purpose of `Output_rep` is to provide a way to control output formatting that works independently of the object's stream output operator.
+The purpose of `Output_rep` is to provide a way to control output formatting that works independently of the object's stream output operator. 
 
-If you dont specialize `Output_rep` for `T`, `T`'s stream output operator is called from within `Output_rep`, by default. If you want another behaviour for your type `T`, you have to provide a specialization for that type. Furthermore, you can provide specializations with a second template parameter (a formatting tag). The second template parameter defaults to `Null_tag` and means *default behaviour*.
+If you dont specialize `Output_rep` for `T`, `T`'s stream output operator is called from within `Output_rep`, by default. If you want another behaviour for your type `T`, you have to provide a specialization for that type. Furthermore, you can provide specializations with a second template parameter (a formatting tag). The second template parameter defaults to `Null_tag` and means *default behaviour*. 
 
-Specializations of `Output_rep` should provide the following features:
+Specializations of `Output_rep` should provide the following features: 
 
-\code{.cpp}
+\code{.cpp} 
 
-template< class F >
-struct Output_rep< Some_type, F > {
+template< class F > 
+struct Output_rep< Some_type, F > { 
   static const bool is_specialized = true;
   Output_rep( const Some_type& t );
   std::ostream& operator()( std::ostream& out ) const;
-};
+}; 
 
-\endcode
+\endcode 
 
-You can also specialize for a formatting tag `F`.
+You can also specialize for a formatting tag `F`. 
 
 The constant `is_specialized` can be tested by meta-programming tools to
 verify that a given type can be used with `oformat()`. Its value has to be
@@ -171,7 +171,7 @@ class Output_rep {
 
 
 /*!
-\ingroup PkgStreamSupportRef
+\ingroup PkgIOstreams
 
 checks if the %IO stream `s` is in `IO::ASCII` mode.
 
@@ -188,7 +188,7 @@ bool is_ascii(std::ios& s);
 
 
 /*!
-\ingroup PkgStreamSupportRef
+\ingroup PkgIOstreams
 
 checks if the %IO stream `s` is in `IO::BINARY` mode.
 
@@ -204,7 +204,7 @@ checks if the %IO stream `s` is in `IO::BINARY` mode.
 bool is_binary(std::ios& s);
 
 /*!
-\ingroup PkgStreamSupportRef
+\ingroup PkgIOstreams
 
 checks if the %IO stream `s` is in `IO::PRETTY` mode.
 
@@ -221,16 +221,16 @@ checks if the %IO stream `s` is in `IO::PRETTY` mode.
 bool is_pretty(std::ios& s);
 
 /*!
-\ingroup PkgStreamSupportRef
+\ingroup PkgIOstreams
 
-Convenience function to construct an output representation (`Output_rep`) for type `T`.
+Convenience function to construct an output representation (`Output_rep`) for type `T`. 
 
 Generic IO for type `T`.
 */
 template <class T> Output_rep<T> oformat( const T& t);
 
 /*!
-\ingroup PkgStreamSupportRef
+\ingroup PkgIOstreams
 
 The definition of this function is completely symmetric to `oformat()`.
 */
@@ -238,9 +238,9 @@ template <class T> Input_rep<T> iformat( const T& t);
 
 
 /*!
-\ingroup PkgStreamSupportRef
+\ingroup PkgIOstreams
 
-Convenience function to construct an output representation (`Output_rep`) for type `T`.
+Convenience function to construct an output representation (`Output_rep`) for type `T`. 
 
 Generic IO for type `T` with formatting tag.
 */
@@ -251,11 +251,11 @@ template <class T, typename F> Output_rep<T,F> oformat( const T& t, F );
 
 \brief Inserts object `c` in the stream `os`. Returns `os`.
 
-\cgal defines output operators for classes that are derived
-from the class `ostream`. This allows to write to ostreams
-as `cout` or `cerr`, as well as to `std::ostringstream`
-and `std::ofstream`.
-The output operator is defined for all classes in the \cgal `Kernel` and for the class `Color` as well.
+\cgal defines output operators for classes that are derived 
+from the class `ostream`. This allows to write to ostreams 
+as `cout` or `cerr`, as well as to `std::ostringstream` 
+and `std::ofstream`. 
+The output operator is defined for all classes in the \cgal `Kernel` and for the class `Color` as well. 
 
 \sa `CGAL::set_mode()`
 \sa `CGAL::set_ascii_mode()`
@@ -288,4 +288,5 @@ The input operator is defined for all classes in the \cgal `Kernel`.
 \sa `CGAL::is_pretty()`
 */
 istream& operator>>(istream& is, Class c);
+
 }

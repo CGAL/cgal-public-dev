@@ -2,10 +2,19 @@
 // All rights reserved.
 //
 // This file is part of CGAL (www.cgal.org).
+// You can redistribute it and/or modify it under the terms of the GNU
+// General Public License as published by the Free Software Foundation,
+// either version 3 of the License, or (at your option) any later version.
+//
+// Licensees holding a valid commercial license may use this file in
+// accordance with the commercial license agreement provided with the software.
+//
+// This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
+// WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 //
 // $URL$
 // $Id$
-// SPDX-License-Identifier: GPL-3.0-or-later OR LicenseRef-Commercial
+// SPDX-License-Identifier: GPL-3.0+
 //
 //
 // Author(s)     : Stéphane Tayeb
@@ -25,7 +34,7 @@
 
 #include <CGAL/Image_3.h>
 #include <CGAL/function_objects.h>
-#include <functional>
+#include <CGAL/function.h>
 #include <boost/mpl/if.hpp>
 
 namespace CGAL {
@@ -47,7 +56,7 @@ template<typename Image_word_type = unsigned char,
 class Image_to_labeled_function_wrapper
 {
 public:
-  typedef std::function<Return_type(Interpolation_type)>
+  typedef CGAL::cpp11::function<Return_type(Interpolation_type)>
                                                     Image_values_to_labels;
 
   // Types

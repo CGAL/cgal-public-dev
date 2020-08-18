@@ -3,19 +3,21 @@
 #include <QStringList>
 #include <QMainWindow>
 #include <QInputDialog>
+#include "Scene_polyhedron_item.h"
 #include "Scene_polygon_soup_item.h"
 #include "Scene_surface_mesh_item.h"
+#include "Polyhedron_type.h"
 
 #include <CGAL/Three/Polyhedron_demo_plugin_interface.h>
 #include <CGAL/Polygon_mesh_processing/orientation.h>
 using namespace CGAL::Three;
-class Polyhedron_demo_inside_out_plugin :
+class Polyhedron_demo_inside_out_plugin : 
   public QObject,
   public Polyhedron_demo_plugin_interface
 {
   Q_OBJECT
   Q_INTERFACES(CGAL::Three::Polyhedron_demo_plugin_interface)
-  Q_PLUGIN_METADATA(IID "com.geometryfactory.PolyhedronDemo.PluginInterface/1.0" FILE "inside_out_plugin.json")
+  Q_PLUGIN_METADATA(IID "com.geometryfactory.PolyhedronDemo.PluginInterface/1.0")
 
 public:
 
@@ -46,10 +48,12 @@ public:
   bool applicable(QAction* action) const {
     const CGAL::Three::Scene_interface::Item_id index = scene->mainSelectionIndex();
     if(action == actionInsideOut)
-      return qobject_cast<Scene_polygon_soup_item*>(scene->item(index))
+      return qobject_cast<Scene_polyhedron_item*>(scene->item(index))
+          || qobject_cast<Scene_polygon_soup_item*>(scene->item(index))
           || qobject_cast<Scene_surface_mesh_item*>(scene->item(index));
     else if(action == actionOrientCC)
-      return qobject_cast<Scene_surface_mesh_item*>(scene->item(index));
+      return qobject_cast<Scene_polyhedron_item*>(scene->item(index))
+          || qobject_cast<Scene_surface_mesh_item*>(scene->item(index));
     return false;
   }
 
@@ -68,18 +72,28 @@ private:
 void Polyhedron_demo_inside_out_plugin::on_actionInsideOut_triggered()
 {
   const CGAL::Three::Scene_interface::Item_id index = scene->mainSelectionIndex();
+  
+  Scene_polyhedron_item* poly_item = 
+    qobject_cast<Scene_polyhedron_item*>(scene->item(index));
 
-  Scene_polygon_soup_item* soup_item =
+  Scene_polygon_soup_item* soup_item = 
     qobject_cast<Scene_polygon_soup_item*>(scene->item(index));
 
-  Scene_surface_mesh_item* sm_item =
+  Scene_surface_mesh_item* sm_item = 
     qobject_cast<Scene_surface_mesh_item*>(scene->item(index));
 
-  if(soup_item || sm_item)
+  if(poly_item || soup_item || sm_item)
   {
     QApplication::setOverrideCursor(Qt::WaitCursor);
 
-    if(sm_item) {
+    if(poly_item) {
+      Polyhedron* pMesh = poly_item->polyhedron();
+      if(pMesh){
+        CGAL::Polygon_mesh_processing::reverse_face_orientations(*pMesh);
+        poly_item->invalidateOpenGLBuffers();
+      }
+    }
+    else if(sm_item) {
       SMesh* pMesh = sm_item->polyhedron();
       if(pMesh){
         CGAL::Polygon_mesh_processing::reverse_face_orientations(*pMesh);
@@ -102,10 +116,13 @@ void Polyhedron_demo_inside_out_plugin::on_actionOrientCC_triggered()
 {
   const CGAL::Three::Scene_interface::Item_id index = scene->mainSelectionIndex();
 
+  Scene_polyhedron_item* poly_item =
+    qobject_cast<Scene_polyhedron_item*>(scene->item(index));
+
   Scene_surface_mesh_item* sm_item =
     qobject_cast<Scene_surface_mesh_item*>(scene->item(index));
 
-  if(sm_item)
+  if(poly_item || sm_item)
   {
     QStringList items;
     items << tr("Outward") << tr("Inward");
@@ -116,13 +133,23 @@ void Polyhedron_demo_inside_out_plugin::on_actionOrientCC_triggered()
     if (!ok )
       return;
     QApplication::setOverrideCursor(Qt::WaitCursor);
-    if(sm_item) {
+    if(poly_item) {
+      Polyhedron* pMesh = poly_item->polyhedron();
+      if(pMesh){
+        if(is_closed(*pMesh))
+          CGAL::Polygon_mesh_processing::orient_to_bound_a_volume(*pMesh, item==items.first());
+        else
+          CGAL::Polygon_mesh_processing::orient(*pMesh, item==items.first());
+        poly_item->invalidateOpenGLBuffers();
+      }
+    }
+    else if(sm_item) {
       SMesh* pMesh = sm_item->polyhedron();
       if(pMesh){
         if(is_closed(*pMesh))
-          CGAL::Polygon_mesh_processing::orient_to_bound_a_volume(*pMesh);
+          CGAL::Polygon_mesh_processing::orient_to_bound_a_volume(*pMesh, item==items.first());
         else
-          CGAL::Polygon_mesh_processing::orient(*pMesh);
+          CGAL::Polygon_mesh_processing::orient(*pMesh, item==items.first());
         sm_item->invalidateOpenGLBuffers();
       }
     }

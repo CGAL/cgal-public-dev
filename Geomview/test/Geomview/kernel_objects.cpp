@@ -3,7 +3,7 @@
 //
 // Sylvain Pion, 2000.
 
-#include <CGAL/config.h>
+#include <CGAL/basic.h>
 
 #ifndef CGAL_USE_GEOMVIEW
 #include <iostream>

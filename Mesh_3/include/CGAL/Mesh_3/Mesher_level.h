@@ -2,10 +2,19 @@
 // All rights reserved.
 //
 // This file is part of CGAL (www.cgal.org).
+// You can redistribute it and/or modify it under the terms of the GNU
+// General Public License as published by the Free Software Foundation,
+// either version 3 of the License, or (at your option) any later version.
+//
+// Licensees holding a valid commercial license may use this file in
+// accordance with the commercial license agreement provided with the software.
+//
+// This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
+// WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 //
 // $URL$
 // $Id$
-// SPDX-License-Identifier: GPL-3.0-or-later OR LicenseRef-Commercial
+// SPDX-License-Identifier: GPL-3.0+
 //
 //
 // Author(s)     : Laurent RINEAU, Clement JAMIN
@@ -23,7 +32,6 @@
   #include <CGAL/Mesh_3/Profiling_tools.h>
 #endif
 
-#include <CGAL/atomic.h>
 #include <CGAL/Mesh_3/Worksharing_data_structures.h>
 
 #ifdef CGAL_CONCURRENT_MESH_3_PROFILING
@@ -417,7 +425,7 @@ public:
     for (int i = 0 ; i < 4 ; ++i)
       vertices[i] = e->vertex(i);
   }
-  // Among the 4 values, one of them will be Vertex_handle() (~= nullptr)
+  // Among the 4 values, one of them will be Vertex_handle() (~= NULL)
   void get_valid_vertices_of_element(const Facet &e, Vertex_handle vertices[4]) const
   {
     for (int i = 0 ; i < 4 ; ++i)
@@ -676,9 +684,6 @@ public:
   // Useless here
   void set_lock_ds(Lock_data_structure *) {}
   void set_worksharing_ds(WorksharingDataStructureType *) {}
-#ifndef CGAL_NO_ATOMIC
-  void set_stop_pointer(CGAL::cpp11::atomic<bool>*) {}
-#endif
 
 protected:
 };
@@ -701,7 +706,7 @@ class Mesher_level<Tr, Derived, Element, Previous,
 {
 private:
   typedef Derived Derived_;
-  template <typename ML, typename Container_element,
+  template <typename ML, typename Container_element, 
             typename Quality, typename Mesh_visitor> class Enqueue_element;
 public:
 
@@ -749,9 +754,6 @@ public:
     , m_lock_ds(0)
     , m_worksharing_ds(0)
     , m_empty_root_task(0)
-#ifndef CGAL_NO_ATOMIC
-    , m_stop_ptr(0)
-#endif
   {
   }
 
@@ -850,7 +852,7 @@ public:
   {
 
     CGAL_assertion_msg(triangulation().get_lock_data_structure() == 0,
-      "In refine_sequentially_up_to_N_vertices, the triangulation's locking data structure should be nullptr");
+      "In refine_sequentially_up_to_N_vertices, the triangulation's locking data structure should be NULL");
 
     while(! is_algorithm_done()
       && triangulation().number_of_vertices() < approx_max_num_mesh_vertices)
@@ -1039,11 +1041,6 @@ public:
     {
       // Lock the element area on the grid
       Element element = derivd.extract_element_from_container_value(ce);
-
-      // This is safe to do with the concurrent compact container because even if the element `ce`
-      // gets removed from the TDS at this point, it is not actually deleted in the cells container and
-      // `ce->vertex(0-3)` still points to a vertex of the vertices container whose `.point()`
-      // can be safely accessed (even if that vertex has itself also been removed from the TDS).
       bool locked = derivd.try_lock_element(element, FIRST_GRID_LOCK_RADIUS);
 
       if( locked )
@@ -1148,26 +1145,6 @@ public:
     m_worksharing_ds = p;
   }
 
-#ifndef CGAL_NO_ATOMIC
-  void set_stop_pointer(CGAL::cpp11::atomic<bool>* stop_ptr)
-  {
-    m_stop_ptr = stop_ptr;
-  }
-#endif
-
-  bool forced_stop() const {
-#ifndef CGAL_NO_ATOMIC
-    if(m_stop_ptr != 0 &&
-       m_stop_ptr->load(CGAL::cpp11::memory_order_acquire) == true)
-    {
-      CGAL_assertion(m_empty_root_task != 0);
-      m_empty_root_task->cancel_group_execution();
-      return true;
-    }
-#endif // not defined CGAL_NO_ATOMIC
-    return false;
-  }
-
 protected:
 
   // Member variables
@@ -1178,9 +1155,6 @@ protected:
   WorksharingDataStructureType *m_worksharing_ds;
 
   tbb::task *m_empty_root_task;
-#ifndef CGAL_NO_ATOMIC
-  CGAL::cpp11::atomic<bool>* m_stop_ptr;
-#endif
 
 private:
 
@@ -1196,12 +1170,12 @@ private:
   public:
     // Constructor
     Enqueue_element(ML &ml,
-                    const Container_element &ce,
-                    const Quality &quality,
+                    const Container_element &ce, 
+                    const Quality &quality, 
                     Mesh_visitor visitor)
-    : m_mesher_level(ml),
-      m_container_element(ce),
-      m_quality(quality),
+    : m_mesher_level(ml), 
+      m_container_element(ce), 
+      m_quality(quality), 
       m_visitor(visitor)
     {
     }
@@ -1209,17 +1183,13 @@ private:
     // operator()
     void operator()() const
     {
-      typedef typename ML::Derived_::Container::value_type
+      typedef typename ML::Derived_::Container::value_type 
                                                  Container_quality_and_element;
 
       Mesher_level_conflict_status status;
       do
       {
-        if(m_mesher_level.forced_stop()) {
-          return;
-        }
-
-        status = m_mesher_level.try_lock_and_refine_element(m_container_element,
+        status = m_mesher_level.try_lock_and_refine_element(m_container_element, 
                                                             m_visitor);
       }
       while (status != NO_CONFLICT
@@ -1237,7 +1207,7 @@ private:
       // Finally we add the new local bad_elements to the feeder
       while (m_mesher_level.no_longer_local_element_to_refine() == false)
       {
-        Container_quality_and_element qe =
+        Container_quality_and_element qe = 
           m_mesher_level.derived().get_next_local_raw_element_impl();
         m_mesher_level.pop_next_local_element();
         m_mesher_level.enqueue_task(qe.second, qe.first, m_visitor);

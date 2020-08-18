@@ -11,5 +11,7 @@ template< typename FT >
 class Root_for_circles_2_2 {
 public:
 
+/// @}
+
 }; /* end Root_for_circles_2_2 */
 } /* end namespace CGAL */

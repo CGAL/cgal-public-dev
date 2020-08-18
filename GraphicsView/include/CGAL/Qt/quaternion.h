@@ -4,11 +4,19 @@
  Copyright (C) 2002-2014 Gilles Debunne. All rights reserved.
 
  This file is part of a fork of the QGLViewer library version 2.7.0.
+ http://www.libqglviewer.com - contact@libqglviewer.com
+
+ This file may be used under the terms of the GNU General Public License 
+ version 3.0 as published by the Free Software Foundation and
+ appearing in the LICENSE file included in the packaging of this file.
+
+ This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
+ WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 
 *****************************************************************************/
 // $URL$
 // $Id$
-// SPDX-License-Identifier: GPL-3.0-only
+// SPDX-License-Identifier: GPL-3.0
 
 #ifndef QGLVIEWER_QUATERNION_H
 #define QGLVIEWER_QUATERNION_H
@@ -315,7 +323,7 @@ public:
           Quaternion rot(...);
           cout << "Rotation=" << rot << endl;
           \endcode */
-  std::ostream &operator<<(std::ostream &o, const CGAL::qglviewer::Quaternion &);
+  std::ostream &operator<<(std::ostream &o, const CGAL::qglviewer::Vec &);
 //@}
 #endif
 
@@ -325,8 +333,8 @@ private:
   qreal q[4];
 };
 
-std::ostream &operator<<(std::ostream &o, const Quaternion &);
-
 }} // namespace CGAL::qglviewer
+
+std::ostream &operator<<(std::ostream &o, const CGAL::qglviewer::Quaternion &);
 
 #endif // QGLVIEWER_QUATERNION_H

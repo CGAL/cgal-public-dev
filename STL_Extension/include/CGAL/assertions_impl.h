@@ -5,11 +5,20 @@
 // Max-Planck-Institute Saarbruecken (Germany),
 // and Tel-Aviv University (Israel).  All rights reserved.
 //
-// This file is part of CGAL (www.cgal.org)
+// This file is part of CGAL (www.cgal.org); you can redistribute it and/or
+// modify it under the terms of the GNU Lesser General Public License as
+// published by the Free Software Foundation; either version 3 of the License,
+// or (at your option) any later version.
+//
+// Licensees holding a valid commercial license may use this file in
+// accordance with the commercial license agreement provided with the software.
+//
+// This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
+// WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 //
 // $URL$
 // $Id$
-// SPDX-License-Identifier: LGPL-3.0-or-later OR LicenseRef-Commercial
+// SPDX-License-Identifier: LGPL-3.0+
 //
 //
 // Author(s)     : Geert-Jan Giezeman and Sven Schönherr
@@ -30,6 +39,8 @@
 
 namespace CGAL {
 
+namespace {
+
 #ifdef CGAL_HEADER_ONLY
 
 inline Failure_behaviour& get_static_error_behaviour()
@@ -45,8 +56,6 @@ inline Failure_behaviour& get_static_warning_behaviour()
 
 #else // CGAL_HEADER_ONLY
 
-namespace {
-
 // behaviour variables
 // -------------------
 
@@ -58,11 +67,7 @@ inline Failure_behaviour& get_static_error_behaviour()
 inline Failure_behaviour& get_static_warning_behaviour()
 { return _warning_behaviour; }
 
-} // anonymous namespace
-
 #endif // CGAL_HEADER_ONLY
-
-namespace {
 
 // standard error handlers
 // -----------------------
@@ -86,7 +91,7 @@ _standard_error_handler(
          << "Line       : " << line << std::endl
          << "Explanation: " << msg << std::endl
          << "Refer to the bug-reporting instructions at https://www.cgal.org/bug_report.html"
-         << std::endl;
+	 << std::endl;
 }
 
 
@@ -111,10 +116,8 @@ _standard_warning_handler( const char *,
          << "Line       : " << line << std::endl
          << "Explanation: " << msg << std::endl
          << "Refer to the bug-reporting instructions at https://www.cgal.org/bug_report.html"
-         << std::endl;
+	 << std::endl;
 }
-
-} // anonymous namespace
 
 #ifdef CGAL_HEADER_ONLY
 
@@ -130,9 +133,6 @@ inline Failure_function& get_static_warning_handler()
 }
 
 #else // CGAL_HEADER_ONLY
-
-namespace {
-
 // default handler settings
 // ------------------------
 Failure_function _error_handler   = _standard_error_handler;
@@ -143,9 +143,9 @@ inline Failure_function& get_static_error_handler()
 inline Failure_function& get_static_warning_handler()
 { return _warning_handler; }
 
-} // anonymous namespace
-
 #endif // CGAL_HEADER_ONLY
+
+} // anonymous namespace
 
 // failure functions
 // -----------------

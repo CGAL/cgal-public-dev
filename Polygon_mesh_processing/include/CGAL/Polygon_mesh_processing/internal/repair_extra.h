@@ -2,10 +2,19 @@
 // All rights reserved.
 //
 // This file is part of CGAL (www.cgal.org).
+// You can redistribute it and/or modify it under the terms of the GNU
+// General Public License as published by the Free Software Foundation,
+// either version 3 of the License, or (at your option) any later version.
+//
+// Licensees holding a valid commercial license may use this file in
+// accordance with the commercial license agreement provided with the software.
+//
+// This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
+// WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 //
 // $URL$
 // $Id$
-// SPDX-License-Identifier: GPL-3.0-or-later OR LicenseRef-Commercial
+// SPDX-License-Identifier: GPL-3.0+
 //
 //
 // Author(s)     : Sebastien Loriot
@@ -110,8 +119,7 @@ void collect_close_stitchable_boundary_edges(PM& pm,
   typedef boost::unordered_map<halfedge_descriptor, int> Halfedge_multiplicity;
   typedef std::vector<std::pair<halfedge_descriptor, halfedge_descriptor> > Halfedge_pairs;
 
-  typedef CGAL::Box_intersection_d::ID_FROM_BOX_ADDRESS Box_policy;
-  typedef CGAL::Box_intersection_d::Box_with_info_d<double, 3, edge_descriptor, Box_policy> Box;
+  typedef typename Box_intersection_d::Box_with_info_d<double, 3, edge_descriptor> Box;
 
   typedef Union_find<vertex_descriptor> UF_vertices;
   typedef std::map<vertex_descriptor, typename UF_vertices::handle> Handle_map;
@@ -119,7 +127,7 @@ void collect_close_stitchable_boundary_edges(PM& pm,
   typedef typename boost::property_traits<Vpm>::reference Point_ref;
 
   std::vector<Box> boxes;
-  for(edge_descriptor ed : edges(pm))
+  BOOST_FOREACH(edge_descriptor ed, edges(pm))
   {
     if (is_border(ed, pm))
     {
@@ -139,8 +147,9 @@ void collect_close_stitchable_boundary_edges(PM& pm,
 
   std::vector<Box*> box_ptrs;
   box_ptrs.reserve(boxes.size());
-  for(Box& b : boxes)
+  BOOST_FOREACH(Box& b, boxes)
     box_ptrs.push_back(&b);
+
 
   Halfedge_multiplicity multiplicity;
   Halfedge_pairs matching_hedges;
@@ -154,13 +163,13 @@ void collect_close_stitchable_boundary_edges(PM& pm,
   Handle_map handles;
 
   typedef std::pair<halfedge_descriptor, halfedge_descriptor> Halfedge_pair;
-  for(const Halfedge_pair& p : matching_hedges)
+  BOOST_FOREACH(const Halfedge_pair& p, matching_hedges)
   {
     CGAL_assertion(multiplicity.count(p.first)==1 && multiplicity.count(p.second)==1);
     if (multiplicity[p.first]==1 && multiplicity[p.second]==1)
     {
       bool skip=false;
-      for(halfedge_descriptor h : halfedges_around_source(p.first, pm))
+      BOOST_FOREACH(halfedge_descriptor h, halfedges_around_source(p.first, pm))
         if ( get(vpm, target(h, pm)) == get(vpm, source(h, pm)) )
         {
           // ignore that edge
@@ -169,7 +178,7 @@ void collect_close_stitchable_boundary_edges(PM& pm,
         }
       if (skip) continue;
 
-      for(halfedge_descriptor h : halfedges_around_target(p.first, pm))
+      BOOST_FOREACH(halfedge_descriptor h, halfedges_around_target(p.first, pm))
         if ( get(vpm, target(h, pm)) == get(vpm, source(h, pm)) )
         {
           // ignore that edge
@@ -205,12 +214,12 @@ void collect_close_stitchable_boundary_edges(PM& pm,
   std::vector<bool> pair_to_remove(halfedges_to_stitch.size(), false);
   std::size_t i=0;
   std::size_t nb_pairs_to_remove=0;
-  for(const Halfedge_pair& p : halfedges_to_stitch)
+  BOOST_FOREACH(const Halfedge_pair& p, halfedges_to_stitch)
   {
-    std::array<halfedge_descriptor, 4> hedges = {{ p.first, p.second, opposite(p.first, pm), opposite(p.second, pm) }};
+    cpp11::array<halfedge_descriptor, 4> hedges = {{ p.first, p.second, opposite(p.first, pm), opposite(p.second, pm) }};
     bool null_edge_found=false;
 
-    for(halfedge_descriptor h : hedges)
+    BOOST_FOREACH( halfedge_descriptor h, hedges)
     {
       if ( is_null_edge(next(h, pm), pm, vpm) ||
            is_null_edge(prev(h, pm), pm, vpm) )
@@ -232,7 +241,7 @@ void collect_close_stitchable_boundary_edges(PM& pm,
     std::vector<Halfedge_pair> buffer;
     buffer.reserve(halfedges_to_stitch.size()-nb_pairs_to_remove);
     i=0;
-    for(const Halfedge_pair& p : halfedges_to_stitch)
+    BOOST_FOREACH(const Halfedge_pair& p, halfedges_to_stitch)
     {
       if (!pair_to_remove[i])
         buffer.push_back(p);

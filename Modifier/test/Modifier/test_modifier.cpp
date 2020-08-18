@@ -11,7 +11,7 @@
 // release       : $CGAL_Revision: $
 // release_date  : $CGAL_Date: $
 //
-// file          : test_modifier.cpp
+// file          : test_modifier.C
 // chapter       : $CGAL_Chapter: Protected access to the internal repr.$
 // package       : $CGAL_Package: Modifier 1.2 (07 Apr 1999) $
 // source        : modifier.fw
@@ -24,7 +24,8 @@
 // Protected access to the internal representation.
 // ============================================================================
 
-#include <CGAL/assertions.h>
+
+#include <CGAL/basic.h>
 #include <CGAL/Modifier_base.h>
 
 #include <cassert>

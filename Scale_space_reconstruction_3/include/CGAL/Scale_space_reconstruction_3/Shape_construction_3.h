@@ -1,10 +1,21 @@
 //Copyright (C) 2013  INRIA - Sophia Antipolis
 //
-// This file is part of CGAL (www.cgal.org)
+//This program is free software: you can redistribute it and/or modify
+//it under the terms of the GNU General Public License as published by
+//the Free Software Foundation, either version 3 of the License, or
+//(at your option) any later version.
+//
+//This program is distributed in the hope that it will be useful,
+//but WITHOUT ANY WARRANTY; without even the implied warranty of
+//MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+//GNU General Public License for more details.
+//
+//You should have received a copy of the GNU General Public License
+//along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 // $URL$
 // $Id$
-// SPDX-License-Identifier: GPL-3.0-or-later OR LicenseRef-Commercial
+// SPDX-License-Identifier: GPL-3.0+
 //
 // Author(s):      Thijs van Lankveld
 
@@ -32,7 +43,7 @@
 
 namespace CGAL {
 
-// provides a generalized constructor for the shape of a set of points.
+// provides a generalized constructor for the shape of a set of points. 
 /* \ingroup PkgScaleSpaceReconstruction3Classes
  *  The shape of a set of points is ill-defined. Specifically,
  *  because a set of points has no inherent notion of connectivity,
@@ -73,8 +84,8 @@ class Shape_construction_3
 public:
 /// \name Types
 /// \{
-        typedef typename GeomTraits::FT                                         FT;                 ///< defines the number field type.
-        typedef typename GeomTraits::Point_3                                    Point;              ///< defines the point type.
+	typedef typename GeomTraits::FT                                         FT;                 ///< defines the number field type.
+	typedef typename GeomTraits::Point_3                                    Point;              ///< defines the point type.
 #ifdef DOXYGEN_RUNNING
     typedef unspecified_type                  Triangulation_data_structure;                     ///< defines the triangulation data structure type.
     typedef Delaunay_triangulation_3< GeomTraits, Triangulation_data_structure >    Triangulation;  ///< defines the triangulation type.
@@ -103,7 +114,7 @@ public:
      *  the object after use.
      *
      *  \param shape points to the shape to base the new shape on.
-     *  If `shape` is nullptr, the new shape will not contain any vertices.
+     *  If `shape` is NULL, the new shape will not contain any vertices.
      *  Otherwise, the new shape will clone the vertices.
      *  \param squared_radius is the squared scale parameter of the shape.
      *  \return a pointer to the new shape.
@@ -112,7 +123,7 @@ public:
         if( shape ) return new Shape( *shape, squared_radius, Shape::GENERAL );
         else return new Shape( squared_radius, Shape::GENERAL );
     }
-
+    
     /// constructs a new shape.
     /** Important note: Shape_construction_3 does not take responsibility for destroying
      *  the object after use.
@@ -137,10 +148,10 @@ public:
      *
      *  \param shape points to the shape to adjust.
      *  \param squared_radius is the new squared scale parameter of the shape.
-     *  \pre `shape` is not nullptr.
+     *  \pre `shape` is not NULL.
      */
     void change_scale( Shape* shape, const FT& squared_radius ) const {
-        CGAL_assertion( shape != nullptr );
+        CGAL_assertion( shape != NULL );
         shape->set_alpha( squared_radius );
     }
 /// \}
@@ -163,11 +174,11 @@ public:
     typedef Delaunay_triangulation_3< GeomTraits, Tds >                     Triangulation;
     typedef Fixed_alpha_shape_3< Triangulation >                            Shape;
 
-        typedef typename GeomTraits::FT                                         FT;
-        typedef typename GeomTraits::Point_3                                    Point;
+	typedef typename GeomTraits::FT                                         FT;
+	typedef typename GeomTraits::Point_3                                    Point;
 private:
     typedef internal::Auto_count<Point>                                     PointIndex;
-
+       
 public:
     Shape_construction_3() {}
 
@@ -179,7 +190,7 @@ public:
         if( shape ) return new Shape( *shape, squared_radius );
         else return new Shape( squared_radius );
     }
-
+    
     //  Construct a new shape.
     /*  Note: Shape_construction_3 does not take responsibility for destroying
      *  the object after use.
@@ -196,7 +207,7 @@ public:
      *  replace it by a new shape.
      */
     void change_scale( Shape*& shape, const FT& squared_radius ) const {
-        CGAL_assertion( shape != nullptr );
+        CGAL_assertion( shape != NULL );
         Shape* tmp = construct( shape, squared_radius );
         delete shape;
         shape = tmp;

@@ -6,9 +6,8 @@
 
 #include <CGAL/Polyhedral_mesh_domain_with_features_3.h>
 #include <CGAL/make_mesh_3.h>
-#include <CGAL/IO/output_to_vtu.h>
 
-// Domain
+// Domain 
 typedef CGAL::Exact_predicates_inexact_constructions_kernel K;
 typedef CGAL::Mesh_polyhedron_3<K>::type Polyhedron;
 typedef CGAL::Polyhedral_mesh_domain_with_features_3<K> Mesh_domain;
@@ -50,7 +49,7 @@ int main(int argc, char*argv[])
 
   // Create domain
   Mesh_domain domain(polyhedron);
-
+  
   // Get sharp features
   domain.detect_features();
 
@@ -58,15 +57,13 @@ int main(int argc, char*argv[])
   Mesh_criteria criteria(edge_size = 0.025,
                          facet_angle = 25, facet_size = 0.05, facet_distance = 0.005,
                          cell_radius_edge_ratio = 3, cell_size = 0.05);
-
+  
   // Mesh generation
   C3t3 c3t3 = CGAL::make_mesh_3<C3t3>(domain, criteria);
 
   // Output
-  std::ofstream file("out.vtu");
-  CGAL::output_to_vtu(file, c3t3);
-  // Could be replaced by:
-  // c3t3.output_to_medit(file);
+  std::ofstream medit_file("out.mesh");
+  c3t3.output_to_medit(medit_file);
 
   return EXIT_SUCCESS;
 }

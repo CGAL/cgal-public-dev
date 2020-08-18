@@ -1,7 +1,6 @@
 #include <CGAL/Three/Scene_item.h>
 #include <CGAL/Three/Scene_group_item.h>
 #include <CGAL/Three/Scene_interface.h>
-#include <CGAL/Three/Three.h>
 #include <QMenu>
 #include <iostream>
 #include <QDebug>
@@ -62,6 +61,30 @@ void CGAL::Three::Scene_item::itemAboutToBeDestroyed(CGAL::Three::Scene_item* it
     }
 }
 
+
+QString modeName(RenderingMode mode) {
+    switch(mode)
+    {
+    case Points:
+        return QObject::tr("points");
+    case ShadedPoints:
+        return QObject::tr("shaded points");
+    case Wireframe:
+        return QObject::tr("wire");
+    case Flat:
+        return QObject::tr("flat");
+    case FlatPlusEdges:
+        return QObject::tr("flat+edges");
+    case Gouraud:
+        return QObject::tr("Gouraud");
+    case PointsPlusNormals:
+        return QObject::tr("pts+normals");
+    default:
+        Q_ASSERT(false);
+        return QObject::tr("unknown");
+    }
+}
+
 const char* slotName(RenderingMode mode) {
     switch(mode)
     {
@@ -79,8 +102,6 @@ const char* slotName(RenderingMode mode) {
         return SLOT(setGouraudMode());
     case PointsPlusNormals:
         return SLOT(setPointsPlusNormalsMode());
-    case GouraudPlusEdges:
-        return SLOT(setGouraudPlusEdgesMode());
     default:
         Q_ASSERT(false);
         return "";
@@ -90,8 +111,8 @@ const char* slotName(RenderingMode mode) {
 // Rendering mode as a human readable string
 QString CGAL::Three::Scene_item::renderingModeName() const
 {
-    return CGAL::Three::Three::modeName(renderingMode());
-}
+    return modeName(renderingMode());
+} 
 QMenu* CGAL::Three::Scene_item::contextMenu()
 {
     if(defaultContextMenu) {
@@ -104,7 +125,7 @@ QMenu* CGAL::Three::Scene_item::contextMenu()
         ++mode)
     {
         if(!supportsRenderingMode(RenderingMode(mode))) continue;
-        QString mName = CGAL::Three::Three::modeName(RenderingMode(mode));
+        QString mName = modeName(RenderingMode(mode));
         defaultContextMenu->addAction(tr("Set %1 Mode")
                                       .arg(mName),
                                       this,
@@ -114,11 +135,6 @@ QMenu* CGAL::Three::Scene_item::contextMenu()
     return defaultContextMenu;
 }
 
-void CGAL::Three::Scene_item::resetMenu()
-{
-  delete defaultContextMenu;
-  defaultContextMenu = nullptr;
-}
 CGAL::Three::Scene_group_item* CGAL::Three::Scene_item::parentGroup() const {
   return parent_group;
 }
@@ -225,5 +241,5 @@ float Scene_item::alpha() const
 
 void Scene_item::setAlpha(int )
 {
-
+ 
 }

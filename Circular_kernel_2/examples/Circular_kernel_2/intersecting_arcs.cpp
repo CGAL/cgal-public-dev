@@ -1,6 +1,5 @@
 #include <CGAL/Exact_circular_kernel_2.h>
 #include <CGAL/point_generators_2.h>
-#include <iostream>
 
 typedef CGAL::Exact_circular_kernel_2             Circular_k;
 
@@ -25,7 +24,7 @@ double prob_2() {
     if(CGAL::orientation(p4, p5, p6) != CGAL::COUNTERCLOCKWISE) std::swap(p4, p6);
     T o2 = T(p4, p5, p6);
 
-    typedef typename CGAL::CK2_Intersection_traits<Circular_k, T, T>::type
+    typedef typename CGAL::CK2_Intersection_traits<Circular_k, T, T>::type 
       Intersection_result;
     std::vector<Intersection_result> res;
     CGAL::intersection(o1, o2, std::back_inserter(res));
@@ -43,7 +42,7 @@ int main()
   std::cout << "The probability is: " << prob_2<Circular_arc_2>() <<
     std::endl << std::endl;
 
-  std::cout << "And what about the probability that two circles formed by"
+  std::cout << "And what about the probability that two circles formed by" 
     << std::endl;
   std::cout << "three random counterclockwise-oriented points on" << std::endl;
   std::cout << "an unit square intersect? (wait a second please)" << std::endl;

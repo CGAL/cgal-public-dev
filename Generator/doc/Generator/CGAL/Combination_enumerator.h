@@ -1,6 +1,7 @@
 namespace CGAL {
 
-/// \ingroup PkgGeneratorsRef
+/// \addtogroup PkgGenerators
+/// @{
 
 /*!
   The class `Combination_enumerator` is used to enumerate all fixed-size combinations
@@ -31,7 +32,7 @@ of the enumeration.
 \pre  `1 <= k <= beyond - first`
 */
 Combination_enumerator(int k, const CombinationElement & first, const CombinationElement & beyond);
-
+  
 /*!
 The copy constructor.
 */
@@ -43,7 +44,7 @@ Combination_enumerator(const Combination_enumerator & combi);
 /// @{
 
 /*!
-Returns the `i`-th element of the current combination.
+Returns the `i`-th element of the current combination. 
 \pre `0 <= i < number_of_elements()`
 */
 const CombinationElement & operator[](int i);
@@ -52,7 +53,7 @@ const CombinationElement & operator[](int i);
 
 
 /// \name Access to the Enumeration
-/// @{
+///@{
 
 /*!
 Returns the size of the enumerated combinations (the parameter `k` from the class' constructor).
@@ -60,7 +61,7 @@ Returns the size of the enumerated combinations (the parameter `k` from the clas
 int number_of_elements();
 
 /*!
-Returns the smallest element of the source range. (the parameter `first` of the
+Returns the smallest element of the source range. (the parameter `first` of the 
 constructor of the class).
 */
 const CombinationElement & min_element();
@@ -103,3 +104,5 @@ Combination_enumerator operator++(int);
 
 }; /*end of class Combination_enumerator*/
 } /* end namespace CGAL */
+
+/// @}

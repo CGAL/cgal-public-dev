@@ -1,15 +1,24 @@
-// Copyright (c) 1999
+// Copyright (c) 1999  
 // Utrecht University (The Netherlands),
 // ETH Zurich (Switzerland),
 // INRIA Sophia-Antipolis (France),
 // Max-Planck-Institute Saarbruecken (Germany),
-// and Tel-Aviv University (Israel).  All rights reserved.
+// and Tel-Aviv University (Israel).  All rights reserved. 
 //
-// This file is part of CGAL (www.cgal.org)
+// This file is part of CGAL (www.cgal.org); you can redistribute it and/or
+// modify it under the terms of the GNU Lesser General Public License as
+// published by the Free Software Foundation; either version 3 of the License,
+// or (at your option) any later version.
+//
+// Licensees holding a valid commercial license may use this file in
+// accordance with the commercial license agreement provided with the software.
+//
+// This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
+// WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 //
 // $URL$
 // $Id$
-// SPDX-License-Identifier: LGPL-3.0-or-later OR LicenseRef-Commercial
+// SPDX-License-Identifier: LGPL-3.0+
 //
 //
 // Author(s)     : Andreas Fabri
@@ -64,7 +73,7 @@ public:
     : RCircle_2(t) {}
 
   Circle_2(const Point_2 &center, const FT &squared_radius,
-           const Orientation &orientation)
+	   const Orientation &orientation)
     : RCircle_2(typename R::Construct_circle_2()(Return_base_tag(), center, squared_radius, orientation)) {}
 
   Circle_2(const Point_2 &center, const FT &squared_radius)
@@ -74,7 +83,7 @@ public:
     : RCircle_2(typename R::Construct_circle_2()(Return_base_tag(), p, q, r)) {}
 
   Circle_2(const Point_2 & p, const Point_2 & q,
-           const Orientation &orientation)
+	   const Orientation &orientation)
     : RCircle_2(typename R::Construct_circle_2()(Return_base_tag(), p, q, orientation)) {}
 
   Circle_2(const Point_2 & p, const Point_2 & q)
@@ -166,8 +175,8 @@ public:
   {
     //return R().construct_opposite_circle_2_object()(*this);
     return Circle_2(center(),
-                    squared_radius(),
-                    CGAL::opposite(orientation()) );
+		    squared_radius(),
+		    CGAL::opposite(orientation()) );
   }
 
   Bbox_2
@@ -281,7 +290,7 @@ extract(std::istream& is, Circle_2<R>& c)
         break;
     }
     if (is)
-        c = Circle_2<R>(center, squared_radius, static_cast<Orientation>(o));
+	c = Circle_2<R>(center, squared_radius, static_cast<Orientation>(o));
     return is;
 }
 

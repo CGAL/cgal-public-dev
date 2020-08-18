@@ -48,6 +48,4 @@ public:
   \param location the barycentric coordinates inside `face` of this point on the path.
   */
   void operator()(face_descriptor face, Barycentric_coordinates location);
-
-///@}
 };

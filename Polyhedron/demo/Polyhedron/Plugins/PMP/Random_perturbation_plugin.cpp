@@ -3,8 +3,9 @@
 
 #include <CGAL/Three/Polyhedron_demo_plugin_interface.h>
 
-#include "Scene_surface_mesh_item.h"
+#include "Scene_polyhedron_item.h"
 #include "Scene_polyhedron_selection_item.h"
+#include "Polyhedron_type.h"
 
 #include <CGAL/iterator.h>
 #include <CGAL/boost/graph/graph_traits_Polyhedron_3.h>
@@ -16,7 +17,7 @@
 #include <boost/graph/graph_traits.hpp>
 #include <CGAL/property_map.h>
 
-#include <QElapsedTimer>
+#include <QTime>
 #include <QAction>
 #include <QMainWindow>
 #include <QApplication>
@@ -34,7 +35,7 @@ class Polyhedron_demo_random_perturbation_plugin :
 {
   Q_OBJECT
   Q_INTERFACES(CGAL::Three::Polyhedron_demo_plugin_interface)
-  Q_PLUGIN_METADATA(IID "com.geometryfactory.PolyhedronDemo.PluginInterface/1.0" FILE "random_perturbation_plugin.json")
+  Q_PLUGIN_METADATA(IID "com.geometryfactory.PolyhedronDemo.PluginInterface/1.0")
 
 public:
   void init(QMainWindow* mainWindow,
@@ -59,7 +60,7 @@ public:
   bool applicable(QAction*) const
   {
     const Scene_interface::Item_id index = scene->mainSelectionIndex();
-    if (qobject_cast<Scene_surface_mesh_item*>(scene->item(index)))
+    if (qobject_cast<Scene_polyhedron_item*>(scene->item(index)))
       return true;
     else if (qobject_cast<Scene_polyhedron_selection_item*>(scene->item(index)))
       return true;
@@ -71,8 +72,8 @@ public Q_SLOTS:
   void random_perturb()
   {
     const Scene_interface::Item_id index = scene->mainSelectionIndex();
-    Scene_surface_mesh_item* poly_item =
-      qobject_cast<Scene_surface_mesh_item*>(scene->item(index));
+    Scene_polyhedron_item* poly_item =
+      qobject_cast<Scene_polyhedron_item*>(scene->item(index));
     Scene_polyhedron_selection_item* selection_item =
       qobject_cast<Scene_polyhedron_selection_item*>(scene->item(index));
 
@@ -94,7 +95,7 @@ public Q_SLOTS:
 
     // wait cursor
     QApplication::setOverrideCursor(Qt::WaitCursor);
-    QElapsedTimer time;
+    QTime time;
     time.start();
 
     std::cout << "Perturbation..." << std::endl;
@@ -103,7 +104,7 @@ public Q_SLOTS:
 
     if (poly_item)
     {
-      SMesh& pmesh = *poly_item->face_graph();
+      Polyhedron& pmesh = *poly_item->polyhedron();
       if(ui.deterministic_checkbox->isChecked())
       {
         unsigned int seed = static_cast<unsigned int>(ui.seed_spinbox->value());
@@ -118,7 +119,7 @@ public Q_SLOTS:
       }
 
       poly_item->invalidateOpenGLBuffers();
-      poly_item->itemChanged();
+      Q_EMIT poly_item->itemChanged();
     }
     else if (selection_item)
     {
@@ -133,7 +134,7 @@ public Q_SLOTS:
         QApplication::restoreOverrideCursor();
         return;
       }
-      SMesh& pmesh = *selection_item->polyhedron();
+      Polyhedron& pmesh = *selection_item->polyhedron();
       if (ui.deterministic_checkbox->isChecked())
       {
         unsigned int seed = static_cast<unsigned int>(ui.seed_spinbox->value());
@@ -171,7 +172,7 @@ public Q_SLOTS:
 
   Ui::Random_perturbation_dialog
   perturb_dialog(QDialog* dialog,
-                 Scene_surface_mesh_item* poly_item,
+                 Scene_polyhedron_item* poly_item,
                  Scene_polyhedron_selection_item* selection_item)
   {
     Ui::Random_perturbation_dialog ui;
@@ -196,8 +197,12 @@ public Q_SLOTS:
     double diago_length = CGAL::sqrt((bbox.xmax() - bbox.xmin())*(bbox.xmax() - bbox.xmin())
       + (bbox.ymax() - bbox.ymin())*(bbox.ymax() - bbox.ymin())
       + (bbox.zmax() - bbox.zmin())*(bbox.zmax() - bbox.zmin()));
+    double log = std::log10(diago_length);
+    unsigned int nb_decimals = (log > 0) ? 5 : (std::ceil(-log) + 3);
 
     //parameters
+    ui.moveSize_dspinbox->setDecimals(nb_decimals);
+    ui.moveSize_dspinbox->setSingleStep(1e-3);
     ui.moveSize_dspinbox->setRange(0., diago_length);
     ui.moveSize_dspinbox->setValue(0.05 * diago_length);
 

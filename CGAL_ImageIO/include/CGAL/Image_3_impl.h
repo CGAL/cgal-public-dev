@@ -2,11 +2,20 @@
 //               2008 GeometryFactory, Sophia Antipolis (France)
 // All rights reserved.
 //
-// This file is part of CGAL (www.cgal.org)
+// This file is part of CGAL (www.cgal.org); you can redistribute it and/or
+// modify it under the terms of the GNU Lesser General Public License as
+// published by the Free Software Foundation; either version 3 of the License,
+// or (at your option) any later version.
+//
+// Licensees holding a valid commercial license may use this file in
+// accordance with the commercial license agreement provided with the software.
+//
+// This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
+// WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 //
 // $URL$
 // $Id$
-// SPDX-License-Identifier: LGPL-3.0-or-later OR LicenseRef-Commercial
+// SPDX-License-Identifier: LGPL-3.0+
 //
 // Author(s)     : Laurent Rineau, Pierre Alliez
 
@@ -16,12 +25,12 @@
 #define CGAL_INLINE_FUNCTION
 #endif
 
-#include <CGAL/assertions.h>
+#include <CGAL/basic.h>
 
 namespace CGAL {
 
 CGAL_INLINE_FUNCTION
-bool Image_3::private_read(_image* im, Own own)
+bool Image_3::private_read(_image* im)
 {
   if(im != 0)
   {
@@ -29,9 +38,9 @@ bool Image_3::private_read(_image* im, Own own)
     {
       ::_freeImage(image());
     }
-    image_ptr = Image_shared_ptr(im, Image_deleter(own == OWN_THE_DATA));
+    image_ptr = Image_shared_ptr(im, Image_deleter());
 
-//     std::cerr <<
+//     std::cerr << 
 //       boost::format("image=%1% (xdim=%2%, ydim=%3%, zdim=%4%)\n")
 //       % image_ptr.get() % image_ptr->xdim % image_ptr->ydim % image_ptr->zdim;
 
@@ -57,12 +66,12 @@ struct VTK_to_ImageIO_type_mapper {
   unsigned int wdim;
 };
 
-static const VTK_to_ImageIO_type_mapper VTK_to_ImageIO_type[VTK_ID_TYPE] =
+static const VTK_to_ImageIO_type_mapper VTK_to_ImageIO_type[VTK_ID_TYPE] = 
   { { WK_UNKNOWN, SGN_UNKNOWN,  0}, //  0=VTK_VOID
     { WK_UNKNOWN, SGN_UNKNOWN,  0}, //  1=VTK_BIT
     { WK_FIXED,   SGN_SIGNED,   1}, //  2=VTK_CHAR
     { WK_FIXED,   SGN_UNSIGNED, 1}, //  3=VTK_UNSIGNED_CHAR
-    { WK_FIXED,   SGN_SIGNED,   2}, //  4=VTK_SHORT
+    { WK_FIXED,   SGN_SIGNED,   2}, //  4=VTK_SHORT 
     { WK_FIXED,   SGN_UNSIGNED, 2}, //  5=VTK_UNSIGNED_SHORT
     { WK_FIXED,   SGN_SIGNED,   4}, //  6=VTK_INT
     { WK_FIXED,   SGN_UNSIGNED, 4}, //  7=VTK_UNSIGNED_INT
@@ -70,7 +79,7 @@ static const VTK_to_ImageIO_type_mapper VTK_to_ImageIO_type[VTK_ID_TYPE] =
     { WK_FIXED,   SGN_UNSIGNED, 8}, //  9=VTK_UNSIGNED_LONG
     { WK_FLOAT,   SGN_SIGNED,   4}, // 10=VTK_FLOAT
     { WK_FIXED,   SGN_SIGNED,   8}  // 11=VTK_DOUBLE
- };
+ }; 
 
 } //end anonymous namespace
 
@@ -97,7 +106,7 @@ Image_3::read_vtk_image_data(vtkImageData* vtk_image)
   if(vtk_type == VTK_SIGNED_CHAR) vtk_type = VTK_CHAR;
   if(vtk_type < 0 || vtk_type > VTK_DOUBLE)
     vtk_type = VTK_DOUBLE;
-  const VTK_to_ImageIO_type_mapper& imageio_type =
+  const VTK_to_ImageIO_type_mapper& imageio_type = 
     VTK_to_ImageIO_type[vtk_type];
   image->wdim = imageio_type.wdim;
   image->wordKind = imageio_type.wordKind;

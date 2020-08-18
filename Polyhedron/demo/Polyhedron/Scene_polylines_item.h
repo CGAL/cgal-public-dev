@@ -14,8 +14,7 @@
 struct Scene_polylines_item_private;
 class Scene_spheres_item;
 
-class SCENE_POLYLINES_ITEM_EXPORT Scene_polylines_item
-    : public CGAL::Three::Scene_group_item
+class SCENE_POLYLINES_ITEM_EXPORT Scene_polylines_item : public CGAL::Three::Scene_group_item
 {
     Q_OBJECT
 public:
@@ -33,41 +32,43 @@ public:
       MAX_LENGTH,
       MEAN_LENGTH
     };
-    bool has_stats()const Q_DECL_OVERRIDE {return true;}
-    QString computeStats(int type)Q_DECL_OVERRIDE ;
-    CGAL::Three::Scene_item::Header_data header() const Q_DECL_OVERRIDE ;
+    bool has_stats()const {return true;}
+    QString computeStats(int type);
+    CGAL::Three::Scene_item::Header_data header() const;
 
-    bool isFinite() const Q_DECL_OVERRIDE { return true; }
-    bool isEmpty() const Q_DECL_OVERRIDE ;
-    void compute_bbox() const Q_DECL_OVERRIDE ;
-    Bbox bbox() const Q_DECL_OVERRIDE ;
+    bool isFinite() const { return true; }
+    bool isEmpty() const;
+    void compute_bbox() const;
+    Bbox bbox() const;
 
-    Scene_polylines_item* clone() const Q_DECL_OVERRIDE ;
+    Scene_polylines_item* clone() const;
 
-    QString toolTip() const Q_DECL_OVERRIDE ;
+    QString toolTip() const;
 
     // Indicate if rendering mode is supported
-    bool supportsRenderingMode(RenderingMode m) const Q_DECL_OVERRIDE ;
+    bool supportsRenderingMode(RenderingMode m) const;
 
-    QMenu* contextMenu() Q_DECL_OVERRIDE ;
+    QMenu* contextMenu();
 
-    void draw(CGAL::Three::Viewer_interface*) const Q_DECL_OVERRIDE ;
-    void drawEdges(CGAL::Three::Viewer_interface*) const Q_DECL_OVERRIDE ;
-    void drawPoints(CGAL::Three::Viewer_interface*) const Q_DECL_OVERRIDE ;
+    // Flat/Gouraud OpenGL drawing
+    void draw() const {}
+    void draw(CGAL::Three::Viewer_interface*) const;
+
+    // Wireframe OpenGL drawing
+    void drawEdges() const{}
+    void drawEdges(CGAL::Three::Viewer_interface*) const;
+
+    void drawPoints() const{}
+    void drawPoints(CGAL::Three::Viewer_interface*) const;
 
 
     void smooth(std::vector<Point_3>& polyline);
-    //When selecting a polylineitem, we don't want to select its children, so
-    //we can still apply Operations to it
-    QList<Scene_interface::Item_id> getChildrenForSelection() const Q_DECL_OVERRIDE {
-      return QList<Scene_interface::Item_id>();
-    }
+    //When selecting a polylineitem, we don't want to select its children, so we can still apply Operations to it
+    QList<Scene_interface::Item_id> getChildrenForSelection() const { return QList<Scene_interface::Item_id>(); }
     void setWidth(int i);
-    void computeElements() const Q_DECL_OVERRIDE;
-    void initializeBuffers(Viewer_interface *) const Q_DECL_OVERRIDE;
 
 public Q_SLOTS:
-    void invalidateOpenGLBuffers() Q_DECL_OVERRIDE;
+    virtual void invalidateOpenGLBuffers();
     void change_corner_radii(double);
     void change_corner_radii();
     void split_at_sharp_angles();
@@ -76,11 +77,10 @@ public Q_SLOTS:
     void merge(Scene_polylines_item*);
 
     void smooth();
-    void point_set_from_polyline();
 public:
     Polylines_container polylines;
 protected:
-    // https://en.wikipedia.org/wiki/D-pointer
+    // http://en.wikipedia.org/wiki/D-pointer
     friend struct Scene_polylines_item_private;
     Scene_polylines_item_private* d;
 

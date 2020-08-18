@@ -2,10 +2,19 @@
 // All rights reserved.
 //
 // This file is part of CGAL (www.cgal.org).
+// You can redistribute it and/or modify it under the terms of the GNU
+// General Public License as published by the Free Software Foundation,
+// either version 3 of the License, or (at your option) any later version.
+//
+// Licensees holding a valid commercial license may use this file in
+// accordance with the commercial license agreement provided with the software.
+//
+// This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
+// WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 //
 // $URL$
 // $Id$
-// SPDX-License-Identifier: GPL-3.0-or-later OR LicenseRef-Commercial
+// SPDX-License-Identifier: GPL-3.0+
 //
 //
 // Author(s)     : Maxime Gimeno,
@@ -14,13 +23,13 @@
 #ifndef CGAL_FACETS_IN_COMPLEX_3_TO_TRIANGLE_MESH_H
 #define CGAL_FACETS_IN_COMPLEX_3_TO_TRIANGLE_MESH_H
 
-#include <CGAL/license/Triangulation_3.h>
+#include <CGAL/license/Mesh_3.h>
 
 #include <CGAL/array.h>
 #include <CGAL/boost/graph/Euler_operations.h>
+#include <CGAL/Hash_handles_with_or_without_timestamps.h>
 #include <CGAL/Polygon_mesh_processing/orient_polygon_soup.h>
 #include <CGAL/Polygon_mesh_processing/polygon_soup_to_polygon_mesh.h>
-#include <CGAL/Time_stamper.h>
 
 #include <boost/unordered_map.hpp>
 #include <boost/tuple/tuple.hpp>
@@ -43,9 +52,9 @@ void resize(Polygon& p, std::size_t size)
 }
 
 template <std::size_t N, class INT>
-void resize(std::array<INT, N>&, std::size_t CGAL_assertion_code(size))
+void resize(CGAL::cpp11::array<INT, N>&, std::size_t CGAL_assertion_code(size))
 {
-  CGAL_assertion(size == N);
+  CGAL_assertion(size >= N);
 }
 
 template<class C3T3, class PointContainer, class FaceContainer>
@@ -144,7 +153,7 @@ void facets_in_complex_3_to_triangle_soup(const C3T3& c3t3,
 
 } // end namespace Mesh_3
 
-//! \ingroup PkgMesh3Functions
+//! \ingroup PkgMesh_3Functions
 //!
 //! \brief builds a `TriangleMesh` from the surface facets, with a consistent orientation
 //!        at the interface of two subdomains.
@@ -166,7 +175,7 @@ void facets_in_complex_3_to_triangle_mesh(const C3T3& c3t3, TriangleMesh& graph)
   typedef typename boost::property_map<TriangleMesh, boost::vertex_point_t>::type  VertexPointMap;
   typedef typename boost::property_traits<VertexPointMap>::value_type              Point_3;
 
-  typedef std::array<std::size_t, 3>                                       Face;
+  typedef CGAL::cpp11::array<std::size_t, 3>                                       Face;
 
   std::vector<Face> faces;
   std::vector<Point_3> points;

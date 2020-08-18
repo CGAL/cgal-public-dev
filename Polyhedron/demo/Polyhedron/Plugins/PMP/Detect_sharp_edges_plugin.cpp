@@ -7,12 +7,22 @@
 
 #include <CGAL/Three/Polyhedron_demo_plugin_interface.h>
 
+#ifdef USE_SURFACE_MESH
 #include "Scene_surface_mesh_item.h"
+
+#else
+#include "Scene_polyhedron_item.h"
+#include "Polyhedron_type.h"
+#endif
 
 #include "Polyhedron_demo_detect_sharp_edges.h"
 
+#ifdef USE_SURFACE_MESH
 typedef Scene_surface_mesh_item Scene_facegraph_item;
 typedef CGAL::Kernel_traits<Scene_surface_mesh_item::Face_graph::Point>::Kernel Kernel;
+#else
+typedef Scene_polyhedron_item Scene_facegraph_item;
+#endif
 
 typedef Scene_facegraph_item::Face_graph FaceGraph;
 typedef boost::graph_traits<FaceGraph>::halfedge_descriptor halfedge_descriptor;
@@ -26,7 +36,7 @@ class Polyhedron_demo_detect_sharp_edges_plugin :
 {
   Q_OBJECT
   Q_INTERFACES(CGAL::Three::Polyhedron_demo_plugin_interface)
-  Q_PLUGIN_METADATA(IID "com.geometryfactory.PolyhedronDemo.PluginInterface/1.0" FILE "detect_sharp_edges_plugin.json")
+  Q_PLUGIN_METADATA(IID "com.geometryfactory.PolyhedronDemo.PluginInterface/1.0")
 
 public:
   void init(QMainWindow* mainWindow, Scene_interface* scene_interface, Messages_interface*) {
@@ -49,7 +59,7 @@ public:
     }
     return false;
   }
-
+  
   QList<QAction*> actions() const {
     return QList<QAction*>() << actionSharEdges;
   }
@@ -79,7 +89,7 @@ void Polyhedron_demo_detect_sharp_edges_plugin::detectSharpEdges(bool input_dial
 {
   QApplication::setOverrideCursor(Qt::WaitCursor);
   typedef std::pair<int,FaceGraph*> Poly_tuple;
-
+  
   // Get selected items
   QList<Poly_tuple> polyhedrons;
   Q_FOREACH(int index, scene->selectionIndices())
@@ -88,7 +98,7 @@ void Polyhedron_demo_detect_sharp_edges_plugin::detectSharpEdges(bool input_dial
       qobject_cast<Scene_facegraph_item*>(scene->item(index));
     if(!item)
       return;
-
+    
     FaceGraph* pMesh = item->polyhedron();
     if(!pMesh)
       return;
@@ -99,11 +109,11 @@ void Polyhedron_demo_detect_sharp_edges_plugin::detectSharpEdges(bool input_dial
   QApplication::restoreOverrideCursor();
   if(input_dialog) {
     bool ok = true;
-    angle = QInputDialog::getDouble(NULL,
+    angle = QInputDialog::getDouble(NULL, 
                                     tr("Sharp edges max angle"),
                                     tr("Angle in degrees between 0 and 180:"),
                                     angle, // value
-                                    0.,          // min
+                                    0.,          // min 
                                     180., // max
                                     2,          // decimals
                                     &ok);
@@ -133,7 +143,9 @@ void Polyhedron_demo_detect_sharp_edges_plugin::detectSharpEdges(bool input_dial
                                                .vertex_incident_patches_map(vip));
     //update item
     item->setItemIsMulticolor(true);
-    item->computeItemColorVectorAutomatically(true);
+#ifndef USE_SURFACE_MESH
+    item->set_color_vector_read_only(false);
+#endif
     item->invalidateOpenGLBuffers();
 
     // update scene

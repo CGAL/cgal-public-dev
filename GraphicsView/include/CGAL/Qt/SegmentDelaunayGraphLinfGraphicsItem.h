@@ -2,11 +2,20 @@
 // All rights reserved.
 //
 // This file is part of CGAL (www.cgal.org).
+// You can redistribute it and/or modify it under the terms of the GNU
+// General Public License as published by the Free Software Foundation,
+// either version 3 of the License, or (at your option) any later version.
+//
+// Licensees holding a valid commercial license may use this file in
+// accordance with the commercial license agreement provided with the software.
+//
+// This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
+// WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 //
 // $URL$
 // $Id$
-// SPDX-License-Identifier: GPL-3.0-or-later OR LicenseRef-Commercial
-//
+// SPDX-License-Identifier: GPL-3.0+
+// 
 //
 // Author(s)     : Panagiotis Cheilaris, Sandeep Kumar Dey, Evanthia Papadopoulou
 //philaris@gmail.com, sandeep.kr.dey@gmail.com, evanthia.papadopoulou@usi.ch
@@ -36,7 +45,7 @@ namespace Qt {
 
 template <typename T>
 class SegmentDelaunayGraphLinfGraphicsItem : public GraphicsItem
-{
+{ 
   typedef typename T::Geom_traits Geom_traits;
   typedef typename T::Point_2 Point_2;
   typedef typename Kernel_traits<Point_2> ::Kernel Kern;
@@ -56,7 +65,7 @@ public:
       voronoi_pen(::Qt::blue)
   {
   }
-
+  
 
   void updateBoundingBox();
 
@@ -64,9 +73,9 @@ public:
 
 
   QRectF boundingRect() const;
-
+ 
   void paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget);
-
+ 
   const QPen& verticesPen() const
   {
     return vertices_pen;
@@ -110,7 +119,7 @@ protected:
 };
 
 template <typename T>
-void
+void 
 SegmentDelaunayGraphLinfGraphicsItem<T>::drawDualEdge(QPainter * /*painter*/, typename T::Edge e)
 {
   CGAL_precondition( ! t->is_infinite(e) );
@@ -122,11 +131,11 @@ SegmentDelaunayGraphLinfGraphicsItem<T>::drawDualEdge(QPainter * /*painter*/, ty
 //  CGAL::Polychainray_2<Kern>          pcr;
 //  CGAL::Polychainsegment_2<Kern>      pcs;
 
-//  std::cout << "debug drawDE pcl type= "
+//  std::cout << "debug drawDE pcl type= " 
 //            << typeid(pcl).name() << std::endl;
-//  std::cout << "debug drawDE pcr type= "
+//  std::cout << "debug drawDE pcr type= " 
 //            << typeid(pcr).name() << std::endl;
-//  std::cout << "debug drawDE pcs type= "
+//  std::cout << "debug drawDE pcs type= " 
 //            << typeid(pcs).name() << std::endl;
 
   Object o = t->primal(e);
@@ -134,32 +143,32 @@ SegmentDelaunayGraphLinfGraphicsItem<T>::drawDualEdge(QPainter * /*painter*/, ty
   //std::cout << "debug drawDE trying to assign object at "
   //          << &o << std::endl;
 
-  if (CGAL::assign(pcl, o)) {
-    /* m_painter->setPen(::Qt::cyan);
-       std::cerr << "line " << std::endl; */
+  if (CGAL::assign(pcl, o)) { 
+    /* m_painter->setPen(::Qt::cyan); 
+       std::cerr << "line " << std::endl; */ 
 //    std::cout << "debug drawDE pcl-assigned object at "
 //              << &o << std::endl;
-    //painterostream << pcl;
-    pcl.draw(painterostream);
+    //painterostream << pcl; 
+    pcl.draw(painterostream);      
   }
-  else if (CGAL::assign(pcr, o)) {
-    /* m_painter->setPen(::Qt::magenta);
-       std::cerr << "segment " << std::endl; */
+  else if (CGAL::assign(pcr, o)) { 
+    /* m_painter->setPen(::Qt::magenta); 
+       std::cerr << "segment " << std::endl; */ 
 //    std::cout << "debug drawDE pcr-assigned object at "
 //              << &o << std::endl;
     //painterostream << pcr;
-    pcr.draw(painterostream);
+    pcr.draw(painterostream);      
   }
-  else if (CGAL::assign(pcs, o))  {
-    /* m_painter->setPen(::Qt::darkMagenta);
-       std::cerr << "ray " << r << std::endl;  */
+  else if (CGAL::assign(pcs, o))  { 
+    /* m_painter->setPen(::Qt::darkMagenta);  
+       std::cerr << "ray " << r << std::endl;  */ 
 //    std::cout << "debug drawDE pcs-assigned object at "
 //              << &o << std::endl;
-    //painterostream << pcs;
-    pcs.draw(painterostream);
+    //painterostream << pcs; 
+    pcs.draw(painterostream);      
   }
-  else {
-    std::cerr << "error: drawDualEdge unknown curve" << std::endl;
+  else { 
+    std::cerr << "error: drawDualEdge unknown curve" << std::endl; 
   }
 
   /* m_painter->setPen(::Qt::black); */
@@ -167,7 +176,7 @@ SegmentDelaunayGraphLinfGraphicsItem<T>::drawDualEdge(QPainter * /*painter*/, ty
 
 
 template <typename T>
-void
+void 
 SegmentDelaunayGraphLinfGraphicsItem<T>::drawAll(QPainter *painter, const QStyleOptionGraphicsItem *option)
 {
   QRectF rect = option->exposedRect;
@@ -182,31 +191,31 @@ SegmentDelaunayGraphLinfGraphicsItem<T>::drawAll(QPainter *painter, const QStyle
     m_painter->setPen(this->segmentPen());
       typename T::Finite_vertices_iterator vit;
       for (vit = t->finite_vertices_begin();
-           vit != t->finite_vertices_end(); ++vit) {
-        typename T::Site_2 s = vit->site();
-        if ( s.is_segment() ) {
-          painterostream << s.segment();
-        }
+	   vit != t->finite_vertices_end(); ++vit) {
+	typename T::Site_2 s = vit->site();
+	if ( s.is_segment() ) {
+	  painterostream << s.segment();
+	}
       }
     }
     {
     m_painter->setPen(this->verticesPen());
-    QTransform matrix = m_painter->worldTransform();
-    m_painter->resetTransform();
+    QMatrix matrix = m_painter->matrix();
+    m_painter->resetMatrix();
     Converter<Kern> convert;
       typename T::Finite_vertices_iterator vit;
       for (vit = t->finite_vertices_begin();
-           vit != t->finite_vertices_end(); ++vit) {
-        typename T::Site_2 s = vit->site();
-        if ( s.is_input() ) {
-          //*widget << CGAL::red();
-        } else {
-          //*widget << CGAL::yellow();
-        }
-        if ( s.is_point() ) {
+	   vit != t->finite_vertices_end(); ++vit) {
+	typename T::Site_2 s = vit->site();
+	if ( s.is_input() ) {
+	  //*widget << CGAL::RED;
+	} else {
+	  //*widget << CGAL::YELLOW;
+	}
+	if ( s.is_point() ) {
           QPointF point = matrix.map(convert(s.point()));
           m_painter->drawPoint(point);
-        }
+	}
       }
     }
 
@@ -214,7 +223,7 @@ SegmentDelaunayGraphLinfGraphicsItem<T>::drawAll(QPainter *painter, const QStyle
 
 /*
 template <typename T>
-void
+void 
 SegmentDelaunayGraphLinfGraphicsItem<T>::operator()(typename T::Face_handle fh)
 {
   if(visibleFacesInDomain()) {
@@ -231,7 +240,7 @@ SegmentDelaunayGraphLinfGraphicsItem<T>::operator()(typename T::Face_handle fh)
 
 
 template <typename T>
-QRectF
+QRectF 
 SegmentDelaunayGraphLinfGraphicsItem<T>::boundingRect() const
 {
 
@@ -241,7 +250,7 @@ SegmentDelaunayGraphLinfGraphicsItem<T>::boundingRect() const
 
 
 template <typename T>
-void
+void 
 SegmentDelaunayGraphLinfGraphicsItem<T>::modelChanged()
 {
   if((t->number_of_vertices() == 0) ){
@@ -253,7 +262,7 @@ SegmentDelaunayGraphLinfGraphicsItem<T>::modelChanged()
 }
 
 template <typename T>
-void
+void 
 SegmentDelaunayGraphLinfGraphicsItem<T>::updateBoundingBox()
 {
   prepareGeometryChange();
@@ -268,8 +277,8 @@ SegmentDelaunayGraphLinfGraphicsItem<T>::updateBoundingBox()
   /*
   if(t->dimension() <2){
     for(typename T::Finite_vertices_iterator it = t->finite_vertices_begin();
-        it != t->finite_vertices_end();
-        ++it){
+	it != t->finite_vertices_end();
+	++it){
       bb = bb + it->point().bbox();
     }
   } else {
@@ -290,8 +299,8 @@ SegmentDelaunayGraphLinfGraphicsItem<T>::updateBoundingBox()
 
 
 template <typename T>
-void
-SegmentDelaunayGraphLinfGraphicsItem<T>::paint(QPainter *painter,
+void 
+SegmentDelaunayGraphLinfGraphicsItem<T>::paint(QPainter *painter, 
                                     const QStyleOptionGraphicsItem *option,
                                     QWidget * /*widget*/)
 {

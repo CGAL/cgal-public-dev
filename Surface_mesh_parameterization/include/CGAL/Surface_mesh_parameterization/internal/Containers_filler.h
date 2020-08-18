@@ -2,10 +2,19 @@
 // All rights reserved.
 //
 // This file is part of CGAL (www.cgal.org).
+// You can redistribute it and/or modify it under the terms of the GNU
+// General Public License as published by the Free Software Foundation,
+// either version 3 of the License, or (at your option) any later version.
+//
+// Licensees holding a valid commercial license may use this file in
+// accordance with the commercial license agreement provided with the software.
+//
+// This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
+// WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 //
 // $URL$
 // $Id$
-// SPDX-License-Identifier: GPL-3.0-or-later OR LicenseRef-Commercial
+// SPDX-License-Identifier: GPL-3.0+
 //
 // Author(s)     : Mael Rouxel-Labbé
 
@@ -16,6 +25,7 @@
 
 #include <CGAL/disable_warnings.h>
 
+#include <boost/foreach.hpp>
 #include "boost/tuple/tuple.hpp"
 #include <boost/unordered_set.hpp>
 #include <boost/graph/graph_traits.hpp>
@@ -53,17 +63,17 @@ public:
 
   Containers_filler(const TriangleMesh& mesh_,
                     Vertex_set& vertices_)
-    : mesh(mesh_), vertices(vertices_), faces(nullptr)
+    : mesh(mesh_), vertices(vertices_), faces(NULL)
   { }
 
   void operator()(face_descriptor fd)
   {
     halfedge_descriptor hd = halfedge(fd, mesh);
-    for(vertex_descriptor vd : vertices_around_face(hd, mesh)) {
+    BOOST_FOREACH(vertex_descriptor vd, vertices_around_face(hd, mesh)) {
       vertices.insert(vd);
     }
 
-    if(faces != nullptr)
+    if(faces != NULL)
       faces->push_back(fd);
   }
 };
@@ -80,7 +90,7 @@ struct Index_map_filler
 
   void operator()(const face_descriptor& fd)
   {
-    for(vertex_descriptor vd :
+    BOOST_FOREACH(vertex_descriptor vd,
                   vertices_around_face(halfedge(fd, mesh), mesh)) {
       typename Map::iterator it;
       bool new_element;

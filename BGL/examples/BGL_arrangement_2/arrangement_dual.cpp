@@ -6,7 +6,7 @@
 #include <CGAL/Arr_segment_traits_2.h>
 #include <CGAL/Arr_extended_dcel.h>
 #include <CGAL/Arrangement_2.h>
-#include <CGAL/graph_traits_dual_arrangement_2.h>
+#include <CGAL/graph_traits_Dual_Arrangement_2.h>
 #include <CGAL/Arr_face_index_map.h>
 
 #include <climits>
@@ -15,7 +15,7 @@
 
 #include "arr_print.h"
 
-// A property map that reads/writes the information to/from the extended
+// A property map that reads/writes the information to/from the extended 
 // face.
 template <typename Arrangement, class Type> class Extended_face_property_map {
 public:

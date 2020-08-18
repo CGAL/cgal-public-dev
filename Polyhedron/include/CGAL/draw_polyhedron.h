@@ -2,10 +2,19 @@
 // All rights reserved.
 //
 // This file is part of CGAL (www.cgal.org).
+// You can redistribute it and/or modify it under the terms of the GNU
+// General Public License as published by the Free Software Foundation,
+// either version 3 of the License, or (at your option) any later version.
+//
+// Licensees holding a valid commercial license may use this file in
+// accordance with the commercial license agreement provided with the software.
+//
+// This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
+// WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 //
 // $URL$
 // $Id$
-// SPDX-License-Identifier: GPL-3.0-or-later OR LicenseRef-Commercial
+// SPDX-License-Identifier: GPL-3.0+
 //
 // Author(s)     : Guillaume Damiand <guillaume.damiand@liris.cnrs.fr>
 
@@ -17,12 +26,11 @@
 
 #ifdef CGAL_USE_BASIC_VIEWER
 
-#include <CGAL/Polyhedron_3.h>
 #include <CGAL/Random.h>
 
 namespace CGAL
 {
-
+  
 // Default color functor; user can change it to have its own face color
 struct DefaultColorFunctorPolyhedron
 {
@@ -47,7 +55,7 @@ class SimplePolyhedronViewerQt : public Basic_viewer_qt
   typedef typename Polyhedron::Halfedge_const_handle Halfedge_const_handle;
   typedef typename Polyhedron::Vertex_const_handle Vertex_const_handle;
   typedef typename Polyhedron::Facet_const_handle Facet_const_handle;
-
+  
 public:
   /// Construct the viewer.
   /// @param apoly the polyhedron to view
@@ -89,7 +97,7 @@ protected:
     add_segment(he->vertex()->point(),
                 he->opposite()->vertex()->point());
     // We can use add_segment(p1, p2, c) with c a CGAL::Color to add a colored segment
-  }
+  } 
 
   void compute_vertex(Vertex_const_handle vh)
   {
@@ -128,7 +136,7 @@ protected:
     // Test key pressed:
     //    const ::Qt::KeyboardModifiers modifiers = e->modifiers();
     //    if ((e->key()==Qt::Key_PageUp) && (modifiers==Qt::NoButton)) { ... }
-
+    
     // Call: * compute_elements() if the model changed, followed by
     //       * redraw() if some viewing parameters changed that implies some
     //                  modifications of the buffers
@@ -140,44 +148,43 @@ protected:
   }
 
 protected:
-  Local_vector get_face_normal(Halfedge_const_handle he)
+  typename Kernel::Vector_3 get_face_normal(Halfedge_const_handle he)
   {
-    Local_vector normal=CGAL::NULL_VECTOR;
+    typename Kernel::Vector_3 normal=CGAL::NULL_VECTOR;
     Halfedge_const_handle end=he;
     unsigned int nb=0;
     do
     {
-      internal::newell_single_step_3
-        (this->get_local_point(he->vertex()->point()),
-         this->get_local_point(he->next()->vertex()->point()),
-         normal);
+      internal::newell_single_step_3(he->vertex()->point(),
+                                     he->next()->vertex()->point(),
+                                     normal);
       ++nb;
       he=he->next();
     }
     while (he!=end);
     assert(nb>0);
-    return (typename Local_kernel::Construct_scaled_vector_3()(normal, 1.0/nb));
+    return (typename Kernel::Construct_scaled_vector_3()(normal, 1.0/nb));
   }
-
-  Local_vector get_vertex_normal(Halfedge_const_handle he)
+  
+  typename Kernel::Vector_3 get_vertex_normal(Halfedge_const_handle he)
   {
-    Local_vector normal=CGAL::NULL_VECTOR;
+    typename Kernel::Vector_3 normal=CGAL::NULL_VECTOR;
     Halfedge_const_handle end=he;
     do
     {
       if (!he->is_border())
       {
-        Local_vector n=get_face_normal(he);
-        normal=typename Local_kernel::Construct_sum_of_vectors_3()(normal, n);
+        typename Kernel::Vector_3 n=get_face_normal(he);
+        normal=typename Kernel::Construct_sum_of_vectors_3()(normal, n);
       }
       he=he->next()->opposite();
     }
     while (he!=end);
-
-    if (!typename Local_kernel::Equal_3()(normal, CGAL::NULL_VECTOR))
-    { normal=(typename Local_kernel::Construct_scaled_vector_3()
+    
+    if (!typename Kernel::Equal_3()(normal, CGAL::NULL_VECTOR))
+    { normal=(typename Kernel::Construct_scaled_vector_3()
               (normal, 1.0/CGAL::sqrt(normal.squared_length()))); }
-
+    
     return normal;
   }
 
@@ -186,24 +193,17 @@ protected:
   bool m_nofaces;
   const ColorFunctor& m_fcolor;
 };
-
-// Specialization of draw function.
-#define CGAL_POLY_TYPE CGAL::Polyhedron_3 \
-  <PolyhedronTraits_3, PolyhedronItems_3, T_HDS, Alloc>
-
-template<class PolyhedronTraits_3,
-         class PolyhedronItems_3,
-         template < class T, class I, class A>
-         class T_HDS,
-         class Alloc>
-void draw(const CGAL_POLY_TYPE& apoly,
-          const char* title="Polyhedron Basic Viewer",
-          bool nofill=false)
-{
+  
+template<class Polyhedron, class ColorFunctor>
+void draw(const Polyhedron& apoly,
+          const char* title,
+          bool nofill,
+          const ColorFunctor& fcolor)
+{  
 #if defined(CGAL_TEST_SUITE)
   bool cgal_test_suite=true;
 #else
-  bool cgal_test_suite=qEnvironmentVariableIsSet("CGAL_TEST_SUITE");
+  bool cgal_test_suite=false;
 #endif
 
   if (!cgal_test_suite)
@@ -211,15 +211,27 @@ void draw(const CGAL_POLY_TYPE& apoly,
     int argc=1;
     const char* argv[2]={"polyhedron_viewer","\0"};
     QApplication app(argc,const_cast<char**>(argv));
-    DefaultColorFunctorPolyhedron fcolor;
-    SimplePolyhedronViewerQt<CGAL_POLY_TYPE, DefaultColorFunctorPolyhedron>
+    SimplePolyhedronViewerQt<Polyhedron, ColorFunctor>
       mainwindow(app.activeWindow(), apoly, title, nofill, fcolor);
     mainwindow.show();
     app.exec();
   }
 }
 
-#undef CGAL_POLY_TYPE
+template<class Polyhedron>
+void draw(const Polyhedron& apoly, const char* title, bool nofill)
+{
+  DefaultColorFunctorPolyhedron c;
+  draw(apoly, title, nofill, c);
+}
+
+template<class Polyhedron>
+void draw(const Polyhedron& apoly, const char* title)
+{ draw(apoly, title, false); }
+
+template<class Polyhedron>
+void draw(const Polyhedron& apoly)
+{ draw(apoly, "Basic Polyhedron Viewer"); }
 
 } // End namespace CGAL
 

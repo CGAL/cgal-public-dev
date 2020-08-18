@@ -1,11 +1,20 @@
 // Copyright (c) 2011 CNRS and LIRIS' Establishments (France).
 // All rights reserved.
 //
-// This file is part of CGAL (www.cgal.org)
+// This file is part of CGAL (www.cgal.org); you can redistribute it and/or
+// modify it under the terms of the GNU Lesser General Public License as
+// published by the Free Software Foundation; either version 3 of the License,
+// or (at your option) any later version.
+//
+// Licensees holding a valid commercial license may use this file in
+// accordance with the commercial license agreement provided with the software.
+//
+// This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
+// WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 //
 // $URL$
 // $Id$
-// SPDX-License-Identifier: LGPL-3.0-or-later OR LicenseRef-Commercial
+// SPDX-License-Identifier: LGPL-3.0+
 //
 // Author(s)     : Guillaume Damiand <guillaume.damiand@liris.cnrs.fr>
 //
@@ -164,11 +173,11 @@ namespace CGAL {
   }
 
   template < class LCC >
-  bool load_off(LCC& alcc, std::istream& in)
+  void load_off(LCC& alcc, std::istream& in)
   {
     File_header_OFF  m_file_header;
     File_scanner_OFF scanner( in, m_file_header.verbose());
-    if (!in) return false;
+    if (!in) return;
     m_file_header = scanner;  // Remember file header after return.
 
     Linear_cell_complex_incremental_builder_3<LCC> B(alcc);
@@ -234,7 +243,7 @@ namespace CGAL {
        std::cerr << " " << std::endl;
        std::cerr << "Polyhedron_scan_OFF<Traits>::" << std::endl;
        std::cerr << "operator()(): input error: cannot "
-       "successfully remove isolated vertices."
+       "succesfully remove isolated vertices."
        << std::endl;
        }
        B.rollback();
@@ -243,30 +252,26 @@ namespace CGAL {
        }
        }*/
     B.end_surface();
-
-    return true;
   }
 
   template < class LCC >
-  bool load_off(LCC& alcc, const char* filename)
+  void load_off(LCC& alcc, const char* filename)
   {
     std::ifstream input(filename);
-    if (!input.is_open())
-    { return false; }
-
-    return load_off(alcc, input);
+    if (input.is_open())
+      load_off(alcc, input);
   }
 
   /** Export the alcc in off file format. If dimension>2, export all faces but only once.
    *  @pre all faces are closed (i.e. form by closed cycles of edges)
    */
   template < class LCC >
-  bool write_off(LCC& alcc, std::ostream& out)
+  void write_off(LCC& alcc, std::ostream& out)
   {
     if (!alcc.are_all_faces_closed())
     {
       std::cerr<<"Impossible to write in off a map having open faces."<<std::endl;
-      return false;
+      return;
     }
 
     File_header_OFF header(false);
@@ -333,17 +338,14 @@ namespace CGAL {
     }
     writer.write_footer();
     alcc.free_mark(m);
-    return true;
   }
 
   template < class LCC >
-  bool write_off(LCC& alcc, const char* filename)
+  void write_off(LCC& alcc, const char* filename)
   {
     std::ofstream output(filename);
-    if (!output.is_open())
-    { return false; }
-
-    return write_off(alcc, output);
+    if (output.is_open())
+      write_off(alcc, output);
   }
 
 } // namespace CGAL

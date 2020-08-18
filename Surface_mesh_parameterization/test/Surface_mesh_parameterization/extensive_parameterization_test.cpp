@@ -11,6 +11,7 @@
 
 #include <CGAL/Polygon_mesh_processing/measure.h>
 
+#include <boost/foreach.hpp>
 #include <boost/functional/hash.hpp>
 
 #include <iostream>
@@ -435,7 +436,7 @@ int main(int, char**)
       SMP::compute_shortest_paths_between_cones(sm, cone_sm_vds.begin(), cone_sm_vds.end(), seam_edges);
 
       // Add the seams to the seam mesh
-      for(SM_edge_descriptor e : seam_edges) {
+      BOOST_FOREACH(SM_edge_descriptor e, seam_edges) {
         mesh.add_seam(source(e, sm), target(e, sm));
       }
     }
@@ -445,7 +446,7 @@ int main(int, char**)
     Indices indices;
     boost::associative_property_map<Indices> vimap(indices);
     int counter = 0;
-    for(SM_SE_vertex_descriptor vd : vertices(mesh)) {
+    BOOST_FOREACH(SM_SE_vertex_descriptor vd, vertices(mesh)) {
       put(vimap, vd, counter++);
     }
 

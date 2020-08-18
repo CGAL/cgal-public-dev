@@ -1,3 +1,4 @@
+#include <CGAL/basic.h>
 #include <CGAL/Arithmetic_kernel.h>
 #include <CGAL/Polynomial.h>
 
@@ -15,7 +16,7 @@ void test_get_arithmetic_kernel(){
   }
 }
 
-int main(){
+int main(){ 
 #ifdef CGAL_HAS_DEFAULT_ARITHMETIC_KERNEL
    test_get_arithmetic_kernel<CGAL::Arithmetic_kernel>();
 #endif // CGAL_HAS_DEFAULT_ARITHMETIC_KERNEL

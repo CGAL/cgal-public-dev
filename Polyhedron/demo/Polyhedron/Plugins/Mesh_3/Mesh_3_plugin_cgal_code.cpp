@@ -5,6 +5,7 @@
 #include <C3t3_type.h>
 #include <CGAL/Mesh_3/polylines_to_protect.h>
 #include <CGAL/Bbox_3.h>
+#include <Polyhedron_type.h>
 
 #include <Scene_c3t3_item.h>
 
@@ -31,9 +32,21 @@ struct Compare_to_isovalue {
   }
 };
 
-Meshing_thread* cgal_code_mesh_3(QList<const SMesh*> pMeshes,
+template<typename Mesh>
+struct Polyhedral_mesh_domain_selector
+{
+  typedef Polyhedral_mesh_domain type;
+};
+
+template<>
+struct Polyhedral_mesh_domain_selector<SMesh>
+{
+  typedef Polyhedral_mesh_domain_sm type;
+};
+template<class Mesh>
+Meshing_thread* cgal_code_mesh_3_templated(const Mesh* pMesh,
                                  const Polylines_container& polylines,
-                                 const SMesh* pBoundingMesh,
+                                 const Mesh* pBoundingMesh,
                                  QString filename,
                                  const double facet_angle,
                                  const double facet_sizing,
@@ -45,41 +58,46 @@ Meshing_thread* cgal_code_mesh_3(QList<const SMesh*> pMeshes,
                                  bool protect_borders,
                                  const double sharp_edges_angle,
                                  const int manifold,
-                                 const bool surface_only)
+                                 const bool surface_only,
+                                 CGAL::Three::Scene_interface* scene)
 {
-  if(pMeshes.empty() && nullptr == pBoundingMesh) return 0;
+  if(!pMesh) return 0;
 
   std::cerr << "Meshing file \"" << qPrintable(filename) << "\"\n";
   std::cerr << "  angle: " << facet_angle << std::endl
             << "  edge size bound: " << edge_size << std::endl
             << "  facets size bound: " << facet_sizing << std::endl
             << "  approximation bound: " << facet_approx << std::endl;
-  if (!surface_only)
+  if (is_closed(*pMesh))
     std::cerr << "  tetrahedra size bound: " << tet_sizing << std::endl;
 
   std::cerr << "Build AABB tree...";
   CGAL::Real_timer timer;
   timer.start();
 
+  typedef typename Polyhedral_mesh_domain_selector<Mesh>::type Polyhedral_mesh_domain;
   // Create domain
-  Polyhedral_mesh_domain* p_domain = nullptr;
-  if (surface_only || nullptr == pBoundingMesh)
-    p_domain = new Polyhedral_mesh_domain(pMeshes.begin(), pMeshes.end());
-  else if(pMeshes.empty())
-    p_domain = new Polyhedral_mesh_domain(*pBoundingMesh);
+  Polyhedral_mesh_domain* p_domain = NULL;
+  if (!surface_only && is_closed(*pMesh))
+    p_domain = new Polyhedral_mesh_domain(*pMesh);
+  else if (!surface_only && pBoundingMesh != NULL && is_closed(*pBoundingMesh))
+    p_domain = new Polyhedral_mesh_domain(*pMesh, *pBoundingMesh);
   else
-    p_domain = new Polyhedral_mesh_domain(pMeshes.begin(), pMeshes.end(),
-                                          *pBoundingMesh);
+  {
+    std::vector<const Mesh*> poly_ptrs_vector(1, pMesh);
+    p_domain = new Polyhedral_mesh_domain(poly_ptrs_vector.begin(), poly_ptrs_vector.end());
+  }
+
   // Features
-  if(polylines.empty()) {
-    if(protect_features) {
+  if(polylines.empty() && protect_features) {
       //includes detection of borders in the surface case
       p_domain->detect_features(sharp_edges_angle);
-    }
-    else if (protect_borders) {
-      p_domain->detect_borders();
-    }
-  } else {
+  }
+  else if (polylines.empty() && protect_borders)
+  {
+    p_domain->detect_borders();
+  }
+  if(! polylines.empty()){
     p_domain->add_features(polylines.begin(), polylines.end());
     protect_features = true; // so that it will be passed in make_mesh_3
   }
@@ -87,6 +105,7 @@ Meshing_thread* cgal_code_mesh_3(QList<const SMesh*> pMeshes,
   std::cerr << " done (" << timer.time() * 1000 << " ms)" << std::endl;
 
   Scene_c3t3_item* p_new_item = new Scene_c3t3_item(surface_only);
+  p_new_item->setScene(scene);
 
   QString tooltip = QString("<div>From \"") + filename +
     QString("\" with the following mesh parameters"
@@ -99,7 +118,7 @@ Meshing_thread* cgal_code_mesh_3(QList<const SMesh*> pMeshes,
     .arg(edge_size)
     .arg(facet_sizing)
     .arg(facet_approx);
-  if (!surface_only)
+  if (is_closed(*pMesh))
     tooltip += QString("<li>Tetrahedra size bound: %1</li>" )
         .arg(tet_sizing);
   tooltip += "</ul></div>";
@@ -123,6 +142,76 @@ Meshing_thread* cgal_code_mesh_3(QList<const SMesh*> pMeshes,
   return new Meshing_thread(p_mesh_function, p_new_item);
 }
 
+
+Meshing_thread* cgal_code_mesh_3(const Polyhedron* pMesh,
+                                 const Polylines_container& polylines,
+                                 const Polyhedron* pBoundingMesh,
+                                 QString filename,
+                                 const double facet_angle,
+                                 const double facet_sizing,
+                                 const double facet_approx,
+                                 const double tet_sizing,
+                                 const double edge_size,
+                                 const double tet_shape,
+                                 bool protect_features,
+                                 bool protect_borders,
+                                 const double sharp_edges_angle,
+                                 const int manifold,
+                                 const bool surface_only,
+                                 CGAL::Three::Scene_interface* scene)
+{
+  return cgal_code_mesh_3_templated(pMesh,
+                          polylines,
+                          pBoundingMesh,
+                          filename,
+                          facet_angle,
+                          facet_sizing,
+                          facet_approx,
+                          tet_sizing,
+                          edge_size,
+                          tet_shape,
+                          protect_features,
+                          protect_borders,
+                          sharp_edges_angle,
+                          manifold,
+                          surface_only,
+                          scene);
+}
+
+Meshing_thread* cgal_code_mesh_3(const SMesh* pMesh,
+                                 const Polylines_container& polylines,
+                                 const SMesh* pBoundingMesh,
+                                 QString filename,
+                                 const double facet_angle,
+                                 const double facet_sizing,
+                                 const double facet_approx,
+                                 const double tet_sizing,
+                                 const double edge_size,
+                                 const double tet_shape,
+                                 bool protect_features,
+                                 bool protect_borders,
+                                 const double sharp_edges_angle,
+                                 const int manifold,
+                                 const bool surface_only,
+                                 CGAL::Three::Scene_interface* scene)
+{
+  return cgal_code_mesh_3_templated(pMesh,
+                          polylines,
+                          pBoundingMesh,
+                          filename,
+                          facet_angle,
+                          facet_sizing,
+                          facet_approx,
+                          tet_sizing,
+                          edge_size,
+                          tet_shape,
+                          protect_features,
+                          protect_borders,
+                          sharp_edges_angle,
+                          manifold,
+                          surface_only,
+                          scene);
+}
 #ifdef CGAL_MESH_3_DEMO_ACTIVATE_IMPLICIT_FUNCTIONS
 
 Meshing_thread* cgal_code_mesh_3(const Implicit_function_interface* pfunction,
@@ -133,9 +222,9 @@ Meshing_thread* cgal_code_mesh_3(const Implicit_function_interface* pfunction,
                                  const double edge_size,
                                  const double tet_shape,
                                  const int manifold,
-                                 const bool surface_only)
+                                 CGAL::Three::Scene_interface* scene)
 {
-  if (pfunction == nullptr) { return nullptr; }
+  if (pfunction == NULL) { return NULL; }
 
   CGAL::Bbox_3 domain_bbox(pfunction->bbox().xmin(),
                            pfunction->bbox().ymin(),
@@ -150,7 +239,8 @@ Meshing_thread* cgal_code_mesh_3(const Implicit_function_interface* pfunction,
                                [](int i, int j) { return (i * 1000 + j); }
                              );
 
-  Scene_c3t3_item* p_new_item = new Scene_c3t3_item(surface_only);
+  Scene_c3t3_item* p_new_item = new Scene_c3t3_item;
+  p_new_item->setScene(scene);
 
   Mesh_parameters param;
   param.protect_features = false;
@@ -161,9 +251,6 @@ Meshing_thread* cgal_code_mesh_3(const Implicit_function_interface* pfunction,
   param.tet_shape = tet_shape;
   param.edge_sizing = edge_size;
   param.manifold = manifold;
-  param.detect_connected_components = false; // to avoid random values
-                                             // in the debug displays
-
 
   typedef ::Mesh_function<Function_mesh_domain,
                           Mesh_fnt::Implicit_domain_tag> Mesh_function;
@@ -190,14 +277,14 @@ Meshing_thread* cgal_code_mesh_3(const Image* pImage,
                                  const double tet_shape,
                                  bool protect_features,
                                  const int manifold,
-                                 const bool surface_only,
+                                 CGAL::Three::Scene_interface* scene,
                                  bool detect_connected_components,
                                  bool is_gray,
                                  float iso_value,
                                  float value_outside,
                                  bool inside_is_less)
 {
-  if (nullptr == pImage) { return nullptr; }
+  if (NULL == pImage) { return NULL; }
 
   if(! polylines.empty()){
     protect_features = true; // so that it will be passed in make_mesh_3
@@ -213,7 +300,8 @@ Meshing_thread* cgal_code_mesh_3(const Image* pImage,
   param.tet_shape = tet_shape;
   param.manifold = manifold;
   param.image_3_ptr = pImage;
-  Scene_c3t3_item* p_new_item = new Scene_c3t3_item(surface_only);
+  Scene_c3t3_item* p_new_item = new Scene_c3t3_item;
+  p_new_item->setScene(scene);
   if(!is_gray)
   {
     namespace p = CGAL::parameters;

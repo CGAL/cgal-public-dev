@@ -1,6 +1,7 @@
 #ifndef CGAL_TRAITS_TEST_H
 #define CGAL_TRAITS_TEST_H
 
+#include <CGAL/basic.h>
 
 #include <iostream>
 #include <fstream>
@@ -17,7 +18,6 @@
 #include <CGAL/Arr_tags.h>
 #include <CGAL/Arrangement_2/Arr_traits_adaptor_2_dispatching.h>
 #include <CGAL/use.h>
-
 #include "Traits_base_test.h"
 
 /*! Traits test */
@@ -990,22 +990,18 @@ intersect_wrapper(std::istringstream& str_stream)
   typedef typename Traits::X_monotone_curve_2   X_monotone_curve_2;
   typedef typename Traits::Multiplicity         Multiplicity;
 
-  typedef std::pair<Point_2, Multiplicity>      Intersection_point;
-  typedef boost::variant<Intersection_point, X_monotone_curve_2>
-                                                Intersection_result;
-
   unsigned int id1, id2;
   str_stream >> id1 >> id2;
-  std::vector<Intersection_result> xections;
+  std::vector<CGAL::Object> object_vec;
   this->m_geom_traits.intersect_2_object()(this->m_xcurves[id1],
                                            this->m_xcurves[id2],
-                                           std::back_inserter(xections));
+                                           std::back_inserter(object_vec));
 
   std::cout << "Test: intersect( " << this->m_xcurves[id1] << ","
             << this->m_xcurves[id2] << " ) ? ";
   size_t num;
   str_stream >> num;
-  if (! this->compare(num, xections.size(), "size")) return false;
+  if (!this->compare(num, object_vec.size(), "size")) return false;
 
   for (size_t i = 0; i < num; ++i) {
     unsigned int type;                  // 0 - point, 1 - x-monotone curve
@@ -1016,25 +1012,30 @@ intersect_wrapper(std::istringstream& str_stream)
     if (type == 0) str_stream >> multiplicity;
 
     unsigned int exp_type = 1;
-    const X_monotone_curve_2* cv_p =
-      boost::get<X_monotone_curve_2>(&(xections[i]));
+    const X_monotone_curve_2 * xcv_ptr =
+      CGAL::object_cast<X_monotone_curve_2> (&(object_vec[i]));
 
-    if (cv_p != nullptr) {
-      if (! this->compare(type, exp_type, "type")) return false;
-      if (! this->compare_curves(this->m_xcurves[id], *cv_p)) return false;
+    if (xcv_ptr != NULL) {
+      if (!this->compare(type, exp_type, "type")) return false;
+
+      if (!this->compare_curves(this->m_xcurves[id], *xcv_ptr)) return false;
       continue;
     }
 
     exp_type = 0;
-    const Intersection_point* p_p =
-      boost::get<Intersection_point>(&(xections[i]));
-    assert(p_p != nullptr);
-    if (! this->compare(type, exp_type, "type")) return false;
-    if (! this->compare_points(this->m_points[id], p_p->first)) return false;
-    if (! this->compare(multiplicity, p_p->second, "multiplicity")) return false;
-  }
+    typedef std::pair<Point_2,Multiplicity> Point_2_pair;
+    const Point_2_pair * pt_pair_ptr =
+      CGAL::object_cast<Point_2_pair> (&(object_vec[i]));
+    assert(pt_pair_ptr != NULL);
+    if (!this->compare(type, exp_type, "type")) return false;
+    if (!this->compare_points(this->m_points[id], (*pt_pair_ptr).first))
+      return false;
+    if (!this->compare(multiplicity, (*pt_pair_ptr).second, "multiplicity"))
+      return false;
+  } //forloop
 
-  xections.clear();
+  object_vec.clear();
+
 
   return true;
 }

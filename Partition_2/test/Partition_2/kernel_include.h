@@ -1,7 +1,7 @@
 #if TESTR == 1
-#include <CGAL/Simple_cartesian.h>
+#include <CGAL/Cartesian.h>
 #endif
 #if TESTR == 2
-#include <CGAL/simple_homogeneous.h>
+#include <CGAL/Homogeneous.h>
 #endif
 

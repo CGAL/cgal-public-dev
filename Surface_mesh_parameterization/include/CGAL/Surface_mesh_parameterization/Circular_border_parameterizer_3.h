@@ -2,10 +2,19 @@
 // All rights reserved.
 //
 // This file is part of CGAL (www.cgal.org).
+// You can redistribute it and/or modify it under the terms of the GNU
+// General Public License as published by the Free Software Foundation,
+// either version 3 of the License, or (at your option) any later version.
+//
+// Licensees holding a valid commercial license may use this file in
+// accordance with the commercial license agreement provided with the software.
+//
+// This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
+// WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 //
 // $URL$
 // $Id$
-// SPDX-License-Identifier: GPL-3.0-or-later OR LicenseRef-Commercial
+// SPDX-License-Identifier: GPL-3.0+
 //
 // Author(s)     : Laurent Saboret, Pierre Alliez, Bruno Levy
 
@@ -22,6 +31,7 @@
 #include <CGAL/boost/graph/iterator.h>
 #include <CGAL/number_utils.h>
 
+#include <boost/foreach.hpp>
 
 #include <cmath>
 
@@ -35,7 +45,7 @@ namespace Surface_mesh_parameterization {
 // Class Circular_border_parameterizer_3
 //
 
-/// \ingroup PkgSurfaceMeshParameterizationBorderParameterizationMethods
+/// \ingroup PkgSurfaceParameterizationBorderParameterizationMethods
 ///
 /// This is the base class of strategies that parameterize the border
 /// of a 3D surface onto a circle.
@@ -88,7 +98,7 @@ private:
                            halfedge_descriptor bhd) const
   {
     NT len = 0.0;
-    for(halfedge_descriptor hd : halfedges_around_face(bhd, mesh)) {
+    BOOST_FOREACH(halfedge_descriptor hd, halfedges_around_face(bhd, mesh)) {
       len += compute_edge_length(mesh, source(hd, mesh), target(hd, mesh));
     }
     return len;
@@ -142,7 +152,7 @@ public:
     const NT tmp = 2 * CGAL_PI / total_len;
     NT len = 0.0; // current position on circle in [0, total_len]
 
-    for(halfedge_descriptor hd : halfedges_around_face(bhd, mesh)) {
+    BOOST_FOREACH(halfedge_descriptor hd, halfedges_around_face(bhd, mesh)) {
       vertex_descriptor vd = source(hd, mesh);
       NT angle = len * tmp; // current position on the circle in radians
 
@@ -169,7 +179,7 @@ public:
 // Class Circular_border_uniform_parameterizer_3
 //
 
-/// \ingroup PkgSurfaceMeshParameterizationBorderParameterizationMethods
+/// \ingroup PkgSurfaceParameterizationBorderParameterizationMethods
 ///
 /// This class parameterizes the border of a 3D surface onto a circle
 /// in a uniform manner: points are equally spaced.
@@ -221,7 +231,7 @@ public:
 // Class Circular_border_arc_length_parameterizer_3
 //
 
-/// \ingroup  PkgSurfaceMeshParameterizationBorderParameterizationMethods
+/// \ingroup  PkgSurfaceParameterizationBorderParameterizationMethods
 ///
 /// This class parameterizes the border of a 3D surface onto a circle,
 /// with an arc-length parameterization: the `(u,v)` values are proportional

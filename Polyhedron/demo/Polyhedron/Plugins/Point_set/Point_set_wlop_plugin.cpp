@@ -20,7 +20,11 @@
 #include "ui_Point_set_wlop_plugin.h"
 
 // Concurrency
-typedef CGAL::Parallel_if_available_tag Concurrency_tag;
+#ifdef CGAL_LINKED_WITH_TBB
+typedef CGAL::Parallel_tag Concurrency_tag;
+#else
+typedef CGAL::Sequential_tag Concurrency_tag;
+#endif
 
 struct Compute_average_spacing_functor
   : public Functor_with_signal_callback
@@ -49,7 +53,7 @@ struct Wlop_functor
   double select_percentage;
   double neighbor_radius;
   Scene_points_with_normal_item* new_item;
-
+  
   Wlop_functor (Point_set* points, double select_percentage, double neighbor_radius,
                 Scene_points_with_normal_item* new_item)
     : points (points), select_percentage (select_percentage)
@@ -77,7 +81,7 @@ class Polyhedron_demo_point_set_wlop_plugin :
   Q_OBJECT
   Q_INTERFACES(CGAL::Three::Polyhedron_demo_plugin_interface)
   Q_PLUGIN_METADATA(IID "com.geometryfactory.PolyhedronDemo.PluginInterface/1.0")
-
+  
   QAction* actionSimplifyAndRegularize;
 
 public:
@@ -140,8 +144,8 @@ void Polyhedron_demo_point_set_wlop_plugin::on_actionSimplifyAndRegularize_trigg
     CGAL::Timer task_timer; task_timer.start();
 
     std::cerr << "Point cloud simplification and regularization by WLOP ("
-              << dialog.retainedPercentage () << "% retained points, neighborhood radius = "
-              << dialog.neighborhoodRadius() <<" * average spacing)...\n";
+	      << dialog.retainedPercentage () << "% retained points, neighborhood radius = "
+	      << dialog.neighborhoodRadius() <<" * average spacing)...\n";
 
     // Computes average spacing
     Compute_average_spacing_functor functor_as (points, 6);
@@ -161,10 +165,10 @@ void Polyhedron_demo_point_set_wlop_plugin::on_actionSimplifyAndRegularize_trigg
 
     std::size_t memory = CGAL::Memory_sizer().virtual_size();
     std::cerr << "Simplification and regularization: "
-              << new_item->point_set ()->size () << " point(s) created ("
-              << task_timer.time() << " seconds, "
-              << (memory>>20) << " Mb allocated)"
-              << std::endl;
+	      << new_item->point_set ()->size () << " point(s) created ("
+	      << task_timer.time() << " seconds, "
+	      << (memory>>20) << " Mb allocated)"
+	      << std::endl;
 
     QApplication::restoreOverrideCursor();
   }

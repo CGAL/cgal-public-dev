@@ -15,7 +15,11 @@
 #include "run_with_qprogressdialog.h"
 
 // Concurrency
-typedef CGAL::Parallel_if_available_tag Concurrency_tag;
+#ifdef CGAL_LINKED_WITH_TBB
+typedef CGAL::Parallel_tag Concurrency_tag;
+#else
+typedef CGAL::Sequential_tag Concurrency_tag;
+#endif
 
 struct Jet_smoothing_functor
   : public Functor_with_signal_callback
@@ -60,7 +64,7 @@ public:
     return QList<QAction*>() << actionJetSmoothing;
   }
 
-  bool applicable(QAction*) const {
+  bool applicable(QAction*) const { 
     return qobject_cast<Scene_points_with_normal_item*>(scene->item(scene->mainSelectionIndex()));
   }
 

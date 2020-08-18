@@ -50,12 +50,7 @@ class My_vertex : public CGAL::HalfedgeDS_vertex_base<Refs, T, P> {
     Norm  norm;
 public:
     My_vertex() {} // repeat mandatory constructors
-    My_vertex( const P& pt)
-      : CGAL::HalfedgeDS_vertex_base<Refs, T, P>(pt)
-    {
-      //initialization of the normal
-      norm= CGAL::NULL_VECTOR;
-    }
+    My_vertex( const P& pt) : CGAL::HalfedgeDS_vertex_base<Refs, T, P>(pt) {}
     typedef Norm Normal_3;
     Normal_3&       normal()       { return norm; }
     const Normal_3& normal() const { return norm; }

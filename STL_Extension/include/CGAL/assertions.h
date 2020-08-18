@@ -1,15 +1,24 @@
-// Copyright (c) 1999
+// Copyright (c) 1999  
 // Utrecht University (The Netherlands),
 // ETH Zurich (Switzerland),
 // INRIA Sophia-Antipolis (France),
 // Max-Planck-Institute Saarbruecken (Germany),
-// and Tel-Aviv University (Israel).  All rights reserved.
+// and Tel-Aviv University (Israel).  All rights reserved. 
 //
-// This file is part of CGAL (www.cgal.org)
+// This file is part of CGAL (www.cgal.org); you can redistribute it and/or
+// modify it under the terms of the GNU Lesser General Public License as
+// published by the Free Software Foundation; either version 3 of the License,
+// or (at your option) any later version.
+//
+// Licensees holding a valid commercial license may use this file in
+// accordance with the commercial license agreement provided with the software.
+//
+// This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
+// WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 //
 // $URL$
 // $Id$
-// SPDX-License-Identifier: LGPL-3.0-or-later OR LicenseRef-Commercial
+// SPDX-License-Identifier: LGPL-3.0+
 //
 //
 // Author(s)     : Geert-Jan Giezeman and Sven Schoenherr
@@ -54,9 +63,9 @@ namespace CGAL {
 // =====================
 // failure functions
 // -----------------
-[[noreturn]] CGAL_EXPORT void assertion_fail      ( const char*, const char*, int, const char* = "") ;
-[[noreturn]] CGAL_EXPORT void precondition_fail   ( const char*, const char*, int, const char* = "") ;
-[[noreturn]] CGAL_EXPORT void postcondition_fail  ( const char*, const char*, int, const char* = "") ;
+CGAL_EXPORT CGAL_NORETURN void assertion_fail      ( const char*, const char*, int, const char* = "") ;
+CGAL_EXPORT CGAL_NORETURN void precondition_fail   ( const char*, const char*, int, const char* = "") ;
+CGAL_EXPORT CGAL_NORETURN void postcondition_fail  ( const char*, const char*, int, const char* = "") ;
 
 // warning function
 // ----------------
@@ -131,7 +140,7 @@ inline bool possibly(Uncertain<bool> c);
 
 #    define CGAL_static_assertion(EX) \
      BOOST_STATIC_ASSERT(true) CGAL_UNUSED
-
+  
 #    define CGAL_static_assertion_msg(EX,MSG) \
      BOOST_STATIC_ASSERT(true) CGAL_UNUSED
 
@@ -139,14 +148,14 @@ inline bool possibly(Uncertain<bool> c);
 
 #    define CGAL_static_assertion(EX) \
      BOOST_STATIC_ASSERT(EX) CGAL_UNUSED
-
+  
 #    define CGAL_static_assertion_msg(EX,MSG) \
      BOOST_STATIC_ASSERT(EX) CGAL_UNUSED
 
 #  endif // no CGAL_NO_ASSERTIONS
 
 #endif // if CGAL_CFG_NO_CPP0X_STATIC_ASSERT is true
-
+  
 #if defined(CGAL_NO_ASSERTIONS) || !defined(CGAL_CHECK_EXACTNESS)
 #  define CGAL_exactness_assertion(EX) (static_cast<void>(0))
 #  define CGAL_exactness_assertion_msg(EX,MSG) (static_cast<void>(0))
@@ -223,7 +232,7 @@ inline bool possibly(Uncertain<bool> c);
 #  define CGAL_expensive_precondition_code(CODE) CODE
 #endif // CGAL_NO_PRECONDITIONS
 
-#if defined(CGAL_NO_PRECONDITIONS) || !defined(CGAL_CHECK_EXACTNESS) || !defined(CGAL_CHECK_EXPENSIVE)
+#if defined(CGAL_NO_PRECONDITIONS) || !defined(CGAL_CHECK_EXACTNESS) || !defined(CGAL_CHECK_EXPENSIVE) 
 #  define CGAL_expensive_exactness_precondition(EX) (static_cast<void>(0))
 #  define CGAL_expensive_exactness_precondition_msg(EX,MSG) (static_cast<void>(0))
 #  define CGAL_expensive_exactness_precondition_code(CODE)

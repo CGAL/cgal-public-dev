@@ -1,6 +1,6 @@
 // examples/Pm_with_intersections/example4
 // ---------------------------------------
-#include <CGAL/config.h>
+#include <CGAL/basic.h>
 #include <algorithm>
 #include <list>
 #include <iostream>

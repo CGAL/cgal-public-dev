@@ -4,12 +4,14 @@
 #include "Scene_facegraph_transform_item_config.h"
 #include "Kernel_type.h"
 
+#ifdef CGAL_USE_SURFACE_MESH
 #include <CGAL/Surface_mesh/Surface_mesh_fwd.h>
 #include <CGAL/boost/graph/graph_traits_Surface_mesh.h>
 #include <CGAL/Three/Scene_interface.h>
-#include <CGAL/Three/Scene_item_rendering_helper.h>
-#include <CGAL/Three/Three.h>
-#include <CGAL/Three/Point_container.h>
+#include <CGAL/Three/Scene_item.h>
+#else
+#include "Scene_polyhedron_item.h"
+#endif
 
 #include <CGAL/Qt/manipulatedFrame.h>
 #include <CGAL/Qt/qglviewer.h>
@@ -17,14 +19,20 @@
 #include <QKeyEvent>
 
 
+
+using namespace CGAL::Three;
 struct Scene_facegraph_transform_item_priv;
+#ifdef CGAL_USE_SURFACE_MESH
 typedef CGAL::Surface_mesh<Kernel::Point_3> FaceGraph;
+#else
+typedef Polyhedron FaceGraph;
+#endif
 // This class represents a polyhedron in the OpenGL scene
 class SCENE_FACEGRAPH_TRANSFORM_ITEM_EXPORT Scene_facegraph_transform_item
-        : public CGAL::Three::Scene_item_rendering_helper {
+        : public Scene_item {
     Q_OBJECT
-
-public:
+    
+public: 
     Scene_facegraph_transform_item(const CGAL::qglviewer::Vec& pos, FaceGraph *sm,
                                     const QString name);
     Scene_item* clone() const{return NULL;}
@@ -42,8 +50,6 @@ public:
     void setFMatrix(double matrix[16]);
     bool isEmpty() const {return false;}
     FaceGraph* getFaceGraph();
-    void initializeBuffers(CGAL::Three::Viewer_interface *) const;
-    void computeElements() const;
 
 protected:
     friend struct Scene_facegraph_transform_item_priv;

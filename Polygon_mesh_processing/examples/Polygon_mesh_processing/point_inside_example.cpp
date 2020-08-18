@@ -7,6 +7,7 @@
 #include <vector>
 #include <fstream>
 #include <limits>
+#include <boost/foreach.hpp>
 
 typedef CGAL::Exact_predicates_inexact_constructions_kernel K;
 typedef K::Point_3 Point;
@@ -15,7 +16,7 @@ typedef CGAL::Polyhedron_3<K> Polyhedron;
 double max_coordinate(const Polyhedron& poly)
 {
   double max_coord = -std::numeric_limits<double>::infinity();
-  for(Polyhedron::Vertex_handle v : vertices(poly))
+  BOOST_FOREACH(Polyhedron::Vertex_handle v, vertices(poly))
   {
     Point p = v->point();
     max_coord = (std::max)(max_coord, p.x());

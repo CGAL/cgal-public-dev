@@ -2,10 +2,19 @@
 // All rights reserved.
 //
 // This file is part of CGAL (www.cgal.org).
+// You can redistribute it and/or modify it under the terms of the GNU
+// General Public License as published by the Free Software Foundation,
+// either version 3 of the License, or (at your option) any later version.
+//
+// Licensees holding a valid commercial license may use this file in
+// accordance with the commercial license agreement provided with the software.
+//
+// This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
+// WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 //
 // $URL$
 // $Id$
-// SPDX-License-Identifier: GPL-3.0-or-later OR LicenseRef-Commercial
+// SPDX-License-Identifier: GPL-3.0+
 //
 // Author(s)     : Stephen Kiazyk
 
@@ -49,9 +58,7 @@ public:
   {
   }
 
-  Construct_barycentric_coordinates_in_triangle_2(const Construct_barycentric_coordinates& cbc,
-                                                  const Construct_vector_2& cv2,
-                                                  const Compute_scalar_product_2& csp2)
+  Construct_barycentric_coordinates_in_triangle_2(const Construct_barycentric_coordinates& cbc, const Construct_vector_2& cv2, const Compute_scalar_product_2& csp2)
     : m_construct_barycentric_coordinates(cbc)
     , m_construct_vector_2(cv2)
     , m_compute_scalar_product_2(csp2)
@@ -74,7 +81,7 @@ public:
 
     FT v = (d11 * d20 - d01 * d21) / denom;
     FT w = (d00 * d21 - d01 * d20) / denom;
-    return m_construct_barycentric_coordinates(FT(1) - v - w, v, w);
+    return m_construct_barycentric_coordinates(FT(1.0) - v - w, v, w);
   }
 };
 
@@ -102,9 +109,7 @@ public:
   {
   }
 
-  Construct_barycentric_coordinates_in_triangle_3(const Construct_barycentric_coordinates& cbc,
-                                                  const Construct_vector_3& cv3,
-                                                  const Compute_scalar_product_3& csp3)
+  Construct_barycentric_coordinates_in_triangle_3(const Construct_barycentric_coordinates& cbc, const Construct_vector_3& cv3, const Compute_scalar_product_3& csp3)
     : m_construct_barycentric_coordinates(cbc)
     , m_construct_vector_3(cv3)
     , m_compute_scalar_product_3(csp3)
@@ -127,7 +132,7 @@ public:
 
     FT v = (d11 * d20 - d01 * d21) / denom;
     FT w = (d00 * d21 - d01 * d20) / denom;
-    return m_construct_barycentric_coordinates(FT(1) - v - w, v, w);
+    return m_construct_barycentric_coordinates(FT(1.0) - v - w, v, w);
   }
 };
 
@@ -189,8 +194,7 @@ public:
     bool nonZero[3];
     std::size_t numNonZero = 0;
 
-    if (cbcw(baryCoords, 0) + cbcw(baryCoords, 1) + cbcw(baryCoords, 2) > 1.00001 ||
-        cbcw(baryCoords, 0) + cbcw(baryCoords, 1) + cbcw(baryCoords, 2) < 0.99999)
+    if (cbcw(baryCoords, 0) + cbcw(baryCoords, 1) + cbcw(baryCoords, 2) > 1.00001 || cbcw(baryCoords, 0) + cbcw(baryCoords, 1) + cbcw(baryCoords, 2) < 0.99999)
     {
       return std::make_pair(BARYCENTRIC_COORDINATES_ON_UNBOUNDED_SIDE, 0);
     }

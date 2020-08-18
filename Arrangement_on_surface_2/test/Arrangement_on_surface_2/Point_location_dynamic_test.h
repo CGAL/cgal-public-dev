@@ -1,6 +1,7 @@
 #ifndef CGAL_POINT_LOCATION_DYNAMIC_TEST_H
 #define CGAL_POINT_LOCATION_DYNAMIC_TEST_H
 
+#include <CGAL/basic.h>
 
 #include "Point_location_test.h"
 

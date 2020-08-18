@@ -2,10 +2,19 @@
 // All rights reserved.
 //
 // This file is part of CGAL (www.cgal.org).
+// You can redistribute it and/or modify it under the terms of the GNU
+// General Public License as published by the Free Software Foundation,
+// either version 3 of the License, or (at your option) any later version.
+//
+// Licensees holding a valid commercial license may use this file in
+// accordance with the commercial license agreement provided with the software.
+//
+// This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
+// WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 //
 // $URL$
 // $Id$
-// SPDX-License-Identifier: GPL-3.0-or-later OR LicenseRef-Commercial
+// SPDX-License-Identifier: GPL-3.0+
 //
 //
 // Author(s)     : Stephane Tayeb
@@ -200,10 +209,7 @@ struct Mesh_3_options {
 #else
       typedef bool* Pointer_to_stop_atomic_boolean_t;
 #endif
-  Mesh_3_options(bool nonlinear = false)
-    // This parameter `nonlinear` adds a compatibility with previous
-    // API of the constructor of `C3t3_initializer`.
-    // -- Laurent Rineau, 2019/05/03
+  Mesh_3_options()
     : dump_after_init_prefix()
     , dump_after_refine_surface_prefix()
     , dump_after_refine_prefix()
@@ -211,7 +217,7 @@ struct Mesh_3_options {
     , dump_after_perturb_prefix()
     , dump_after_exude_prefix()
     , number_of_initial_points(-1)
-    , nonlinear_growth_of_balls(nonlinear)
+    , nonlinear_growth_of_balls(false)
     , maximal_number_of_vertices(0)
     , pointer_to_error_code(0)
 #ifndef CGAL_NO_ATOMIC
@@ -374,10 +380,9 @@ BOOST_PARAMETER_FUNCTION((internal::Mesh_3_options), mesh_3_options, tag,
                           (dump_after_perturb_prefix_, (std::string), "" )
                           (dump_after_exude_prefix_, (std::string), "" )
                           (number_of_initial_points_, (int), -1)
-                          (maximal_number_of_vertices_, (std::size_t), 0)
-                          (nonlinear_growth_of_balls_, (bool), false)
-                          (pointer_to_error_code_, (Mesh_error_code*), ((Mesh_error_code*)0))
-                          (pointer_to_stop_atomic_boolean_, (internal::Mesh_3_options::Pointer_to_stop_atomic_boolean_t), ((internal::Mesh_3_options::Pointer_to_stop_atomic_boolean_t)0))
+			  (maximal_number_of_vertices_, (std::size_t), 0)
+			  (pointer_to_error_code_, (Mesh_error_code*), ((Mesh_error_code*)0))
+			  (pointer_to_stop_atomic_boolean_, (internal::Mesh_3_options::Pointer_to_stop_atomic_boolean_t), ((internal::Mesh_3_options::Pointer_to_stop_atomic_boolean_t)0))
                           )
                          )
 {
@@ -390,7 +395,6 @@ BOOST_PARAMETER_FUNCTION((internal::Mesh_3_options), mesh_3_options, tag,
   options.dump_after_perturb_prefix=dump_after_perturb_prefix_;
   options.dump_after_exude_prefix=dump_after_exude_prefix_;
   options.number_of_initial_points=number_of_initial_points_;
-  options.nonlinear_growth_of_balls = nonlinear_growth_of_balls_;
   options.maximal_number_of_vertices=maximal_number_of_vertices_;
   options.pointer_to_error_code=pointer_to_error_code_;
 #ifndef CGAL_NO_ATOMIC
@@ -450,7 +454,7 @@ CGAL_PRAGMA_DIAG_POP
 } // end namespace parameters
 
 
-
+  
 #if defined(BOOST_MSVC)
 #  pragma warning(push)
 #  pragma warning(disable:4003) // not enough actual parameters for macro
@@ -555,7 +559,7 @@ void refine_mesh_3_impl(C3T3& c3t3,
 #ifndef CGAL_NO_ATOMIC
                  , mesh_options.pointer_to_stop_atomic_boolean
 #endif
-                 );
+		 );
   double refine_time = mesher.refine_mesh(mesh_options.dump_after_refine_surface_prefix);
   c3t3.clear_manifold_info();
 

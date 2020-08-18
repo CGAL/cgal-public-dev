@@ -1,16 +1,25 @@
-// Copyright (c) 1997,2005
+// Copyright (c) 1997,2005  
 // Utrecht University (The Netherlands),
 // ETH Zurich (Switzerland),
 // INRIA Sophia-Antipolis (France),
 // Max-Planck-Institute Saarbruecken (Germany),
-// and Tel-Aviv University (Israel).  All rights reserved.
+// and Tel-Aviv University (Israel).  All rights reserved. 
 //
-// This file is part of CGAL (www.cgal.org)
+// This file is part of CGAL (www.cgal.org); you can redistribute it and/or
+// modify it under the terms of the GNU Lesser General Public License as
+// published by the Free Software Foundation; either version 3 of the License,
+// or (at your option) any later version.
+//
+// Licensees holding a valid commercial license may use this file in
+// accordance with the commercial license agreement provided with the software.
+//
+// This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
+// WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 //
 // $URL$
 // $Id$
-// SPDX-License-Identifier: LGPL-3.0-or-later OR LicenseRef-Commercial
-//
+// SPDX-License-Identifier: LGPL-3.0+
+// 
 //
 // Author(s)     : Lutz Kettner  <kettner@mpi-sb.mpg.de>
 //                 Ralf Osbild   <osbild@mpi-sb.mpg.de>
@@ -45,7 +54,7 @@ private:
     Pt                 m_point;
 
     void next_vertex() {
-        CGAL_assertion( m_scan != nullptr);
+        CGAL_assertion( m_scan != NULL);
         if ( m_cnt < m_scan->size_of_vertices()) {
             file_scan_vertex( *m_scan, m_point);
             m_scan->skip_to_next_vertex( m_cnt);
@@ -77,7 +86,7 @@ public:
         return tmp;
     }
     const Point& operator*()  const {
-        CGAL_assertion( m_scan != nullptr);
+        CGAL_assertion( m_scan != NULL);
         return m_point;
     }
     const Point* operator->() const { return & operator*(); }
@@ -101,10 +110,10 @@ private:
     File_scanner_OFF*  m_scan;
     std::size_t        m_cnt;
     value_type         m_current;
-
+    
 
     void next() {
-        CGAL_assertion( m_scan != nullptr);
+        CGAL_assertion( m_scan != NULL);
         if ( m_cnt < m_scan->size_of_vertices()) {
             file_scan_vertex( *m_scan, m_current.first);
             if ( m_scan->has_normals())
@@ -136,7 +145,7 @@ public:
         return tmp;
     }
     reference operator*()  const {
-        CGAL_assertion( m_scan != nullptr);
+        CGAL_assertion( m_scan != NULL);
         return m_current;
     }
     pointer   operator->() const { return & operator*(); }
@@ -156,13 +165,13 @@ private:
     value_type         m_indices;
 
     void next_facet() {
-        CGAL_assertion( m_scan != nullptr);
+        CGAL_assertion( m_scan != NULL);
         if ( m_cnt < m_scan->size_of_facets()) {
             m_indices.erase( m_indices.begin(), m_indices.end());
             std::size_t no;
             m_scan->scan_facet( no, m_cnt);
             m_indices.reserve( no);
-            std::size_t index = (std::numeric_limits<std::size_t>::max)();
+            std::size_t index = (std::numeric_limits<std::size_t>::max)(); 
             //  A huge value helps to detect a potential
             //  error in the function scan_facet_vertex_index
             for (std::size_t i = 0; i < no; ++i) {
@@ -177,7 +186,7 @@ private:
 public:
     value_type::size_type size_of_indices () const // RO
        { return m_indices.size(); }
-    typedef value_type::size_type          indices_size_type; // RO
+    typedef value_type::size_type	  indices_size_type; // RO
 public:
     typedef File_scanner_OFF              Scanner;
     typedef I_Scanner_OFF_facet_iterator  Self;
@@ -202,11 +211,11 @@ public:
         return tmp;
     }
     value_type&       operator*()        {
-        CGAL_assertion( m_scan != nullptr);
+        CGAL_assertion( m_scan != NULL);
         return m_indices;
     }
     const value_type& operator*()  const {
-        CGAL_assertion( m_scan != nullptr);
+        CGAL_assertion( m_scan != NULL);
         return m_indices;
     }
     value_type*       operator->()       { return & operator*(); }

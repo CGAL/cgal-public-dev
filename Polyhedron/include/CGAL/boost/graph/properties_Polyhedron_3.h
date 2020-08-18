@@ -1,10 +1,19 @@
 // Copyright (c) 2007  GeometryFactory (France).  All rights reserved.
 //
-// This file is part of CGAL (www.cgal.org)
+// This file is part of CGAL (www.cgal.org); you can redistribute it and/or
+// modify it under the terms of the GNU Lesser General Public License as
+// published by the Free Software Foundation; either version 3 of the License,
+// or (at your option) any later version.
+//
+// Licensees holding a valid commercial license may use this file in
+// accordance with the commercial license agreement provided with the software.
+//
+// This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
+// WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 //
 // $URL$
 // $Id$
-// SPDX-License-Identifier: LGPL-3.0-or-later OR LicenseRef-Commercial
+// SPDX-License-Identifier: LGPL-3.0+
 //
 //
 // Author(s)     : Andreas Fabri, Fernando Cacciola
@@ -126,24 +135,6 @@ typename boost::property_traits< typename boost::property_map<CGAL::Polyhedron_3
 get(PropertyTag p, CGAL::Polyhedron_3<Gt,I,HDS,A> const& g, const Key& key)
 { return get(get(p, g), key); }
 
-
-
-#define CGAL_POLYHEDRON_DYNAMIC_PM(TAG, DESCRIPTOR) \
-template <typename T, typename Gt, typename I, CGAL_HDS_PARAM_, typename A> \
-typename boost::property_map<Polyhedron_3<Gt,I,HDS,A>, TAG >::const_type \
-get(const TAG&, const Polyhedron_3<Gt,I,HDS,A>&) \
-{ \
-  typedef typename boost::graph_traits< Polyhedron_3<Gt,I,HDS,A> >::DESCRIPTOR descriptor; \
-  return internal::Dynamic_property_map<descriptor,T>(); \
-}
-
-CGAL_POLYHEDRON_DYNAMIC_PM(dynamic_vertex_property_t<T>, vertex_descriptor)
-CGAL_POLYHEDRON_DYNAMIC_PM(dynamic_halfedge_property_t<T>, halfedge_descriptor)
-CGAL_POLYHEDRON_DYNAMIC_PM(dynamic_edge_property_t<T>, edge_descriptor)
-CGAL_POLYHEDRON_DYNAMIC_PM(dynamic_face_property_t<T>, face_descriptor)
-
-
-#undef CGAL_POLYHEDRON_DYNAMIC_PM
 
 
 // generalized put
@@ -418,7 +409,7 @@ struct property_map<CGAL::Polyhedron_3<Gt,I,HDS,A>, CGAL::dynamic_edge_property_
   typedef CGAL::internal::Dynamic_property_map<edge_descriptor,T> type;
   typedef type const_type;
 };
-
+  
 template<class Gt, class I, CGAL_HDS_PARAM_, class A, class T>
 struct property_map<CGAL::Polyhedron_3<Gt,I,HDS,A>, CGAL::dynamic_face_property_t<T> >
 {
@@ -427,7 +418,7 @@ struct property_map<CGAL::Polyhedron_3<Gt,I,HDS,A>, CGAL::dynamic_face_property_
   typedef CGAL::internal::Dynamic_property_map<face_descriptor,T> type;
   typedef type const_type;
 };
-
+  
 // What are those needed for ???
 template<class Gt, class I, CGAL_HDS_PARAM_, class A>
 struct edge_property_type<CGAL::Polyhedron_3<Gt,I,HDS,A> >

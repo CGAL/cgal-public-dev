@@ -2,10 +2,19 @@
 // All rights reserved.
 //
 // This file is part of CGAL (www.cgal.org).
+// You can redistribute it and/or modify it under the terms of the GNU
+// General Public License as published by the Free Software Foundation,
+// either version 3 of the License, or (at your option) any later version.
+//
+// Licensees holding a valid commercial license may use this file in
+// accordance with the commercial license agreement provided with the software.
+//
+// This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
+// WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 //
 // $URL$
 // $Id$
-// SPDX-License-Identifier: GPL-3.0-or-later OR LicenseRef-Commercial
+// SPDX-License-Identifier: GPL-3.0+
 //
 // Author(s)     : Fernando de Goes, Pierre Alliez, Ivo Vigan, Clément Jamin
 
@@ -60,7 +69,7 @@ public:
   : Base(),
     m_id(-1),
     m_pinned(false),
-    m_sample(nullptr),
+    m_sample(NULL),
     m_relevance(0)
 {
 }
@@ -69,7 +78,7 @@ public:
   : Base(p),
     m_id(-1),
     m_pinned(false),
-    m_sample(nullptr),
+    m_sample(NULL),
     m_relevance(0)
   {
   }
@@ -78,7 +87,7 @@ public:
   : Base(f),
     m_id(-1),
     m_pinned(false),
-    m_sample(nullptr),
+    m_sample(NULL),
     m_relevance(0)
   {
   }
@@ -87,7 +96,7 @@ public:
   : Base(p, f),
     m_id(-1),
     m_pinned(false),
-    m_sample(nullptr),
+    m_sample(NULL),
     m_relevance(0)
   {
   }
@@ -109,7 +118,7 @@ public:
   const Point& relocated() const { return m_relocated; }
   Point& relocated() { return m_relocated; }
 
-  bool  has_sample_assigned() const { return sample() != nullptr; }
+  bool  has_sample_assigned() const { return sample() != NULL; }
 };
 //---------------STRUCT LESS VERTEX_HANDLE---------------------
 template <class T>

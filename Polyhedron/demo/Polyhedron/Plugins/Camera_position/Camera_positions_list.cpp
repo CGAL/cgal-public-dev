@@ -8,29 +8,34 @@
 #include <QTextStream>
 #include <CGAL/number_type_config.h>
 #include <CGAL/Three/Viewer_interface.h>
-#include <CGAL/Three/Three.h>
 
 
 
 #include <cassert>
-using namespace CGAL::Three;
+
 Camera_positions_list::Camera_positions_list(QWidget* parent)
-  : QDockWidget(parent), counter(0), m_model(new QStandardItemModel(this))
+  : QDockWidget(parent), m_viewer(0), counter(0), m_model(new QStandardItemModel(this))
 {
   Ui::Camera_positions_list ui;
   ui.setupUi(this);
   m_listView = ui.listView;
   m_listView->setModel(m_model);
-
+  
   m_listView->setEditTriggers(QAbstractItemView::DoubleClicked | QAbstractItemView::EditKeyPressed);
   connect(m_listView, SIGNAL(activated(QModelIndex)),
           this, SLOT(activatedRow(QModelIndex)));
 }
 
+void Camera_positions_list::setViewer(CGAL::Three::Viewer_interface* viewer)
+{
+  m_viewer = viewer;
+}
+
 void Camera_positions_list::on_plusButton_pressed()
 {
+  if(!m_viewer) return;
   addItem(tr("Camera Position #%1").arg(++counter),
-          Three::activeViewer()->dumpCameraCoordinates());
+          m_viewer->dumpCameraCoordinates());
 }
 
 void Camera_positions_list::addItem(QString text, QString data)
@@ -64,7 +69,7 @@ void Camera_positions_list::on_downButton_pressed()
 
 void Camera_positions_list::on_minusButton_pressed()
 {
-  Q_FOREACH(QModelIndex index,
+  Q_FOREACH(QModelIndex index, 
             m_listView->selectionModel()->selectedIndexes()) {
     m_model->removeRows(index.row(), 1);
   }
@@ -86,13 +91,13 @@ void Camera_positions_list::activatedRow(QModelIndex index)
 {
   QString s = m_model->data(index, Qt::UserRole).toString();
   if(s.isNull()) return;
-  Three::activeViewer()->moveCameraToCoordinates(s);
+  m_viewer->moveCameraToCoordinates(s);
 }
 
 void Camera_positions_list::on_saveButton_pressed()
 {
   QString filename =
-    QFileDialog::getSaveFileName(this,
+    QFileDialog::getSaveFileName(this, 
                                  tr("Save camera coordinates to file"),
                                  QString(),
                                  tr("(*.camera.txt)"));
@@ -113,7 +118,7 @@ void Camera_positions_list::on_saveButton_pressed()
 void Camera_positions_list::on_openButton_pressed()
 {
   QString filename =
-    QFileDialog::getOpenFileName(this,
+    QFileDialog::getOpenFileName(this, 
                                  tr("Read camera coordinates from file"),
                                  QString(),
                                  tr("(*.camera.txt)"));
@@ -130,18 +135,18 @@ void Camera_positions_list::load(QString filename) {
     QString coord = input.readLine(1000);
     if(text.isNull() || coord.isNull()) return;
     CGAL::qglviewer::Frame frame;
-    if(Three::activeViewer()->readFrame(coord, frame))
+    if(m_viewer->readFrame(coord, frame))
     {
       addItem(text,
-              Three::activeViewer()->dumpFrame(frame));
+              m_viewer->dumpFrame(frame));
     }
   }
 }
 
 void Camera_positions_list::on_frontButton_pressed()
 {
-    CGAL::qglviewer::Vec posFront = CGAL::qglviewer::Vec(0,0,Three::activeViewer()->sceneRadius()/(sin (Three::activeViewer()->camera()->fieldOfView()/2)));
-    CGAL::qglviewer::Vec trans = Three::activeViewer()->camera()->pivotPoint();
+    CGAL::qglviewer::Vec posFront = CGAL::qglviewer::Vec(0,0,m_viewer->sceneRadius()/(sin (m_viewer->camera()->fieldOfView()/2)));
+    CGAL::qglviewer::Vec trans = m_viewer->camera()->pivotPoint();
     posFront = posFront + trans;
     CGAL::qglviewer::Quaternion dirFront;
     dirFront.setAxisAngle(CGAL::qglviewer::Vec(0,1,0),0);
@@ -154,13 +159,13 @@ void Camera_positions_list::on_frontButton_pressed()
             .arg(dirFront[2])
             .arg(dirFront[3]);
 
-   Three::activeViewer()->moveCameraToCoordinates(frontCoord, 0.5f);
+   m_viewer->moveCameraToCoordinates(frontCoord, 0.5f);
 }
 
 void Camera_positions_list::on_backButton_pressed()
 {
-    CGAL::qglviewer::Vec posBack = CGAL::qglviewer::Vec(0,0,-Three::activeViewer()->sceneRadius()/(sin (Three::activeViewer()->camera()->fieldOfView()/2)));
-    CGAL::qglviewer::Vec trans = Three::activeViewer()->camera()->pivotPoint();
+    CGAL::qglviewer::Vec posBack = CGAL::qglviewer::Vec(0,0,-m_viewer->sceneRadius()/(sin (m_viewer->camera()->fieldOfView()/2)));
+    CGAL::qglviewer::Vec trans = m_viewer->camera()->pivotPoint();
     posBack+= trans;
     CGAL::qglviewer::Quaternion dirBack;
     dirBack.setAxisAngle(CGAL::qglviewer::Vec(0,1,0),CGAL_PI);
@@ -172,13 +177,13 @@ void Camera_positions_list::on_backButton_pressed()
             .arg(dirBack[1])
             .arg(dirBack[2])
             .arg(dirBack[3]);
-    Three::activeViewer()->moveCameraToCoordinates(backCoord, 0.5f);
+    m_viewer->moveCameraToCoordinates(backCoord, 0.5f);
 }
 
 void Camera_positions_list::on_topButton_pressed()
 {
-    CGAL::qglviewer::Vec posTop = CGAL::qglviewer::Vec(0,Three::activeViewer()->sceneRadius()/(sin (Three::activeViewer()->camera()->fieldOfView()/2)), 0);
-    CGAL::qglviewer::Vec trans = Three::activeViewer()->camera()->pivotPoint();
+    CGAL::qglviewer::Vec posTop = CGAL::qglviewer::Vec(0,m_viewer->sceneRadius()/(sin (m_viewer->camera()->fieldOfView()/2)), 0);
+    CGAL::qglviewer::Vec trans = m_viewer->camera()->pivotPoint();
     posTop += trans;
     CGAL::qglviewer::Quaternion dirTop;
     dirTop.setAxisAngle(CGAL::qglviewer::Vec(1,0,0), -CGAL_PI/2);
@@ -190,13 +195,13 @@ void Camera_positions_list::on_topButton_pressed()
             .arg(dirTop[1])
             .arg(dirTop[2])
             .arg(dirTop[3]);
-     Three::activeViewer()->moveCameraToCoordinates(topCoord, 0.5f);
+     m_viewer->moveCameraToCoordinates(topCoord, 0.5f);
 }
 
 void Camera_positions_list::on_botButton_pressed()
 {
-    CGAL::qglviewer::Vec posBot = CGAL::qglviewer::Vec(0,-Three::activeViewer()->sceneRadius()/(sin (Three::activeViewer()->camera()->fieldOfView()/2)), 0);;
-    CGAL::qglviewer::Vec trans = Three::activeViewer()->camera()->pivotPoint();
+    CGAL::qglviewer::Vec posBot = CGAL::qglviewer::Vec(0,-m_viewer->sceneRadius()/(sin (m_viewer->camera()->fieldOfView()/2)), 0);;
+    CGAL::qglviewer::Vec trans = m_viewer->camera()->pivotPoint();
     posBot += trans;
     CGAL::qglviewer::Quaternion dirBot;
     dirBot.setAxisAngle(CGAL::qglviewer::Vec(1,0,0),CGAL_PI/2);
@@ -208,13 +213,13 @@ void Camera_positions_list::on_botButton_pressed()
             .arg(dirBot[1])
             .arg(dirBot[2])
             .arg(dirBot[3]);
-     Three::activeViewer()->moveCameraToCoordinates(botCoord, 0.5f);
+     m_viewer->moveCameraToCoordinates(botCoord, 0.5f);
 }
 
 void Camera_positions_list::on_leftButton_pressed()
 {
-    CGAL::qglviewer::Vec posLeft = CGAL::qglviewer::Vec(-Three::activeViewer()->sceneRadius()/(sin (Three::activeViewer()->camera()->fieldOfView()/2)), 0, 0);;
-    CGAL::qglviewer::Vec trans = Three::activeViewer()->camera()->pivotPoint();
+    CGAL::qglviewer::Vec posLeft = CGAL::qglviewer::Vec(-m_viewer->sceneRadius()/(sin (m_viewer->camera()->fieldOfView()/2)), 0, 0);;
+    CGAL::qglviewer::Vec trans = m_viewer->camera()->pivotPoint();
     posLeft += trans;
     CGAL::qglviewer::Quaternion dirLeft;
     dirLeft.setAxisAngle(CGAL::qglviewer::Vec(0,1,0),-CGAL_PI/2);
@@ -226,13 +231,13 @@ void Camera_positions_list::on_leftButton_pressed()
             .arg(dirLeft[1])
             .arg(dirLeft[2])
             .arg(dirLeft[3]);
-    Three::activeViewer()->moveCameraToCoordinates(leftCoord, 0.5f);
+    m_viewer->moveCameraToCoordinates(leftCoord, 0.5f);
 }
 
 void Camera_positions_list::on_rightButton_pressed()
 {
-    CGAL::qglviewer::Vec posRight = CGAL::qglviewer::Vec(Three::activeViewer()->sceneRadius()/(sin (Three::activeViewer()->camera()->fieldOfView()/2)), 0,0);
-    CGAL::qglviewer::Vec trans = Three::activeViewer()->camera()->pivotPoint();
+    CGAL::qglviewer::Vec posRight = CGAL::qglviewer::Vec(m_viewer->sceneRadius()/(sin (m_viewer->camera()->fieldOfView()/2)), 0,0);
+    CGAL::qglviewer::Vec trans = m_viewer->camera()->pivotPoint();
     posRight += trans;
     CGAL::qglviewer::Quaternion dirRight;
     dirRight.setAxisAngle(CGAL::qglviewer::Vec(0,1,0),CGAL_PI/2);
@@ -244,6 +249,6 @@ void Camera_positions_list::on_rightButton_pressed()
             .arg(dirRight[1])
             .arg(dirRight[2])
             .arg(dirRight[3]);
-    Three::activeViewer()->moveCameraToCoordinates(rightCoord, 0.5f);
+    m_viewer->moveCameraToCoordinates(rightCoord, 0.5f);
 
 }

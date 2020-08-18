@@ -2,10 +2,19 @@
 // All rights reserved.
 //
 // This file is part of CGAL (www.cgal.org).
+// You can redistribute it and/or modify it under the terms of the GNU
+// General Public License as published by the Free Software Foundation,
+// either version 3 of the License, or (at your option) any later version.
+//
+// Licensees holding a valid commercial license may use this file in
+// accordance with the commercial license agreement provided with the software.
+//
+// This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
+// WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 //
 // $URL$
 // $Id$
-// SPDX-License-Identifier: GPL-3.0-or-later OR LicenseRef-Commercial
+// SPDX-License-Identifier: GPL-3.0+
 //
 // Author(s)    : Samuel Hornus
 
@@ -26,7 +35,7 @@ namespace CGAL {
  * 'Triangulation_ds_vertex<TDS>'
  */
 template< class TDS = void >
-class Triangulation_ds_vertex
+class Triangulation_ds_vertex 
 {
     typedef Triangulation_ds_vertex<TDS>    Self;
 
@@ -75,7 +84,7 @@ public:
             return false;
         }
         bool found(false);
-        // These two typename below are OK because TDS fulfils the
+        // These two typename below are OK because TDS fullfils the
         // TriangulationDataStructure concept.
         typename TDS::Full_cell::Vertex_handle_iterator vit(full_cell()->vertices_begin());
         typedef typename TDS::Vertex_handle Vertex_handle;
@@ -102,7 +111,7 @@ public:
 public: // FOR MEMORY MANAGEMENT
 
     void*   for_compact_container() const { return full_cell_.for_compact_container(); }
-    void    for_compact_container(void *p){ full_cell_.for_compact_container(p); }
+    void* & for_compact_container()       { return full_cell_.for_compact_container(); }
 
 };  // end of Triangulation_ds_vertex
 

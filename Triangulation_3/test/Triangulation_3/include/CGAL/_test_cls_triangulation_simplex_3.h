@@ -2,11 +2,20 @@
 // All rights reserved.
 //
 // This file is part of CGAL (www.cgal.org).
+// You can redistribute it and/or modify it under the terms of the GNU
+// General Public License as published by the Free Software Foundation,
+// either version 3 of the License, or (at your option) any later version.
+//
+// Licensees holding a valid commercial license may use this file in
+// accordance with the commercial license agreement provided with the software.
+//
+// This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
+// WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 //
 // $URL$
 // $Id$
-// SPDX-License-Identifier: GPL-3.0-or-later OR LicenseRef-Commercial
-//
+// SPDX-License-Identifier: GPL-3.0+
+// 
 //
 // Author(s)     : Nico Kruithof
 
@@ -70,14 +79,14 @@ _test_cls_triangulation_simplex_3(const Triangulation &)
   {  // Check vertices:
     Finite_vertices_iterator vit = t.finite_vertices_begin();
     Vertex_handle vh = vit;
-
+    
     Simplex s1 = vh;
 
     Simplex s2(vit);
     Simplex s3(vh);
 
     Simplex s4(s1);
-
+    
     assert(s1.dimension() == 0);
     assert(s1 == s2);
     assert(s1 == s3);
@@ -89,7 +98,7 @@ _test_cls_triangulation_simplex_3(const Triangulation &)
   {  // Check edges
     Finite_edges_iterator eit = t.finite_edges_begin();
     Edge e = *eit;
-
+    
     Simplex s1 = *eit;
     Simplex s2 = e;
 
@@ -97,7 +106,7 @@ _test_cls_triangulation_simplex_3(const Triangulation &)
     Simplex s4(e);
 
     Simplex s5(s1);
-
+    
     assert(s1.dimension() == 1);
     assert(s1 == s2);
     assert(s1 == s3);
@@ -110,7 +119,7 @@ _test_cls_triangulation_simplex_3(const Triangulation &)
   {  // Check facets
     Finite_facets_iterator fit = t.finite_facets_begin();
     Facet f = *fit;
-
+    
     Simplex s1 = *fit;
     Simplex s2 = f;
 
@@ -118,7 +127,7 @@ _test_cls_triangulation_simplex_3(const Triangulation &)
     Simplex s4(f);
 
     Simplex s5(s1);
-
+    
     assert(s1.dimension() == 2);
     assert(s1 == s2);
     assert(s1 == s3);
@@ -131,7 +140,7 @@ _test_cls_triangulation_simplex_3(const Triangulation &)
   {  // Check cells
     Finite_cells_iterator cit = t.finite_cells_begin();
     Cell_handle ch = cit;
-
+    
     Simplex s1 = Simplex(cit);
     Simplex s2 = ch;
 
@@ -139,7 +148,7 @@ _test_cls_triangulation_simplex_3(const Triangulation &)
     Simplex s4(ch);
 
     Simplex s5(s1);
-
+    
     assert(s1.dimension() == 3);
     assert(s1 == s2);
     assert(s1 == s3);

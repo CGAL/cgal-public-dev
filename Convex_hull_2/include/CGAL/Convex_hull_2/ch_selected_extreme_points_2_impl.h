@@ -2,11 +2,20 @@
 // All rights reserved.
 //
 // This file is part of CGAL (www.cgal.org).
+// You can redistribute it and/or modify it under the terms of the GNU
+// General Public License as published by the Free Software Foundation,
+// either version 3 of the License, or (at your option) any later version.
+//
+// Licensees holding a valid commercial license may use this file in
+// accordance with the commercial license agreement provided with the software.
+//
+// This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
+// WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 //
 // $URL$
 // $Id$
-// SPDX-License-Identifier: GPL-3.0-or-later OR LicenseRef-Commercial
-//
+// SPDX-License-Identifier: GPL-3.0+
+// 
 //
 // Author(s)     : Stefan Schirra
 
@@ -31,9 +40,9 @@ ch_nswe_point( ForwardIterator first, ForwardIterator last,
                     ForwardIterator& e,
                     const Traits& ch_traits )
 {
-  typename Traits::Less_xy_2
+  typename Traits::Less_xy_2    
       lexicographically_xy_smaller = ch_traits.less_xy_2_object();
-  typename Traits::Less_yx_2
+  typename Traits::Less_yx_2    
       lexicographically_yx_smaller = ch_traits.less_yx_2_object();
   n = s = w = e = first;
   while ( first != last )
@@ -54,7 +63,7 @@ ch_we_point( ForwardIterator first, ForwardIterator last,
                   ForwardIterator& e,
                   const Traits& ch_traits)
 {
- typename Traits::Less_xy_2
+ typename Traits::Less_xy_2    
     lexicographically_xy_smaller = ch_traits.less_xy_2_object();
  w = e = first;
  while ( first != last )
@@ -72,7 +81,7 @@ ch_ns_point( ForwardIterator first, ForwardIterator last,
                   ForwardIterator& s,
                   const Traits& ch_traits)
 {
- typename Traits::Less_yx_2
+ typename Traits::Less_yx_2    
     lexicographically_yx_smaller = ch_traits.less_yx_2_object();
  n = s = first;
  while ( first != last )
@@ -89,7 +98,7 @@ ch_n_point( ForwardIterator first, ForwardIterator last,
                  ForwardIterator& n,
                  const Traits& ch_traits)
 {
- typename Traits::Less_yx_2
+ typename Traits::Less_yx_2    
     lexicographically_yx_smaller = ch_traits.less_yx_2_object();
  n = first;
  while ( first != last )
@@ -105,7 +114,7 @@ ch_s_point( ForwardIterator first, ForwardIterator last,
                  ForwardIterator& s,
                  const Traits& ch_traits)
 {
- typename Traits::Less_yx_2
+ typename Traits::Less_yx_2    
     lexicographically_yx_smaller = ch_traits.less_yx_2_object();
  s = first;
  while ( first != last )
@@ -121,7 +130,7 @@ ch_e_point( ForwardIterator first, ForwardIterator last,
                  ForwardIterator& e,
                  const Traits& ch_traits)
 {
- typename Traits::Less_xy_2
+ typename Traits::Less_xy_2    
     lexicographically_xy_smaller = ch_traits.less_xy_2_object();
  e = first;
  while ( first != last )
@@ -137,7 +146,7 @@ ch_w_point( ForwardIterator first, ForwardIterator last,
                  ForwardIterator& w,
                  const Traits& ch_traits)
 {
- typename Traits::Less_xy_2
+ typename Traits::Less_xy_2    
     lexicographically_xy_smaller = ch_traits.less_xy_2_object();
  w = first;
  while ( first != last )

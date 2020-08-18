@@ -1,23 +1,32 @@
 // Copyright (c) 2013  INRIA Sophia Antipolis -  Mediterranee,  (France).
 // All rights reserved.
 //
-// This file is part of CGAL (www.cgal.org)
+// This file is part of CGAL (www.cgal.org); you can redistribute it and/or
+// modify it under the terms of the GNU Lesser General Public License as
+// published by the Free Software Foundation; either version 3 of the License,
+// or (at your option) any later version.
+//
+// Licensees holding a valid commercial license may use this file in
+// accordance with the commercial license agreement provided with the software.
+//
+// This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
+// WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 //
 // $URL$
 // $Id$
-// SPDX-License-Identifier: LGPL-3.0-or-later OR LicenseRef-Commercial
-//
+// SPDX-License-Identifier: LGPL-3.0+
+// 
 //
 // Author(s)     : Olivier Devillers
 
 
 #include <CGAL/Exact_circular_kernel_2.h>
 
-#include <CGAL/CGAL_Ipelet_base.h>
+#include <CGAL/CGAL_Ipelet_base.h> 
 #include <CGAL/Object.h>
 
 
-
+ 
 #include <CGAL/Cartesian.h>
 namespace CGAL_distance_ipelet{
 
@@ -39,10 +48,10 @@ const std::string helpmsg[] = {
   "Distance between two marks in inches when printed",
 };
 
-class distanceIpelet
+class distanceIpelet 
   : public CGAL::Ipelet_base<Kernel,4> {
 public:
-  distanceIpelet()
+  distanceIpelet() 
     :CGAL::Ipelet_base<Kernel,4>("Distance",sublabel,helpmsg){}
   void protected_run(int);
 };
@@ -53,11 +62,11 @@ void distanceIpelet::protected_run(int fn)
   if (fn==3) {
     show_help();
     return;
-  }
-
+  } 
+  
   std::list<Point_2> pt_list;
 
-  int i=get_IpePage()->primarySelection();
+  int i=get_IpePage()->primarySelection(); 
 
   if (i<0) {
     print_error_message(("Nothing selected"));
@@ -66,7 +75,7 @@ void distanceIpelet::protected_run(int fn)
 
   Iso_rectangle_2 bbox=
   read_active_objects(
-                      CGAL::dispatch_or_drop_output<Point_2>(
+		      CGAL::dispatch_or_drop_output<Point_2>(
       std::back_inserter(pt_list)
     )
   );
@@ -84,9 +93,9 @@ void distanceIpelet::protected_run(int fn)
   char message[50];
   if (fn==0)
     sprintf(message,"Distance between marks is %f in ipe pts",length);
-  else if (fn==1)
+  else if (fn==1) 
     sprintf(message,"Distance between marks is %f cm",0.0353*length);
-  else if (fn==2)
+  else if (fn==2) 
     sprintf(message,"Distance between marks is %f inches",0.0139*length);
   print_error_message(message);
   return;

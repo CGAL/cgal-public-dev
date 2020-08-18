@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1503</width>
-    <height>984</height>
+    <width>978</width>
+    <height>594</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -20,21 +20,14 @@
   <widget class="QWidget" name="centralwidget">
    <layout class="QVBoxLayout" name="verticalLayout_2">
     <item>
-     <layout class="QHBoxLayout" name="hl" stretch="0">
-      <item>
-       <widget class="QMdiArea" name="mdiArea">
-        <property name="sizePolicy">
-         <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
-          <horstretch>0</horstretch>
-          <verstretch>0</verstretch>
-         </sizepolicy>
-        </property>
-        <property name="tabPosition">
-         <enum>QTabWidget::South</enum>
-        </property>
-       </widget>
-      </item>
-     </layout>
+     <widget class="Viewer" name="viewer" native="true">
+      <property name="sizePolicy">
+       <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+        <horstretch>0</horstretch>
+        <verstretch>1</verstretch>
+       </sizepolicy>
+      </property>
+     </widget>
     </item>
    </layout>
   </widget>
@@ -43,7 +36,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>1503</width>
+     <width>978</width>
      <height>20</height>
     </rect>
    </property>
@@ -55,10 +48,7 @@
     <addaction name="actionErase"/>
     <addaction name="actionEraseAll"/>
     <addaction name="actionDuplicate"/>
-    <addaction name="action_Save"/>
     <addaction name="actionSaveAs"/>
-    <addaction name="actionSa_ve_Scene_as_Script"/>
-    <addaction name="actionLoad_a_Scene_from_a_Script_File"/>
     <addaction name="actionSaveSnapshot"/>
     <addaction name="separator"/>
     <addaction name="actionLoadScript"/>
@@ -93,10 +83,27 @@
      </property>
      <addaction name="dummyAction"/>
     </widget>
-    <addaction name="actionAdd_Viewer"/>
-    <addaction name="action_Rearrange_Viewers"/>
+    <widget class="QMenu" name="menuCamera">
+     <property name="title">
+      <string>Ca&amp;mera</string>
+     </property>
+     <addaction name="actionDumpCamera"/>
+     <addaction name="actionCopyCamera"/>
+     <addaction name="actionPasteCamera"/>
+    </widget>
+    <addaction name="actionRecenterScene"/>
+    <addaction name="actionLookAt"/>
+    <addaction name="actionAntiAliasing"/>
+    <addaction name="actionDrawTwoSides"/>
+    <addaction name="actionQuickCameraMode"/>
+    <addaction name="actionSwitchProjection"/>
+    <addaction name="actionMaxTextItemsDisplayed"/>
+    <addaction name="actionSetBackgroundColor"/>
+    <addaction name="actionSetLighting"/>
     <addaction name="menuDockWindows"/>
+    <addaction name="menuCamera"/>
     <addaction name="separator"/>
+    <addaction name="actionSet_Transparency_Pass_Number"/>
    </widget>
    <addaction name="menuFile"/>
    <addaction name="menuEdit"/>
@@ -291,7 +298,7 @@
            <rect>
             <x>0</x>
             <y>0</y>
-            <width>843</width>
+            <width>541</width>
             <height>176</height>
            </rect>
           </property>
@@ -378,6 +385,14 @@
     <string>Ctrl+D</string>
    </property>
   </action>
+  <action name="actionAntiAliasing">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>&amp;Antialiasing</string>
+   </property>
+  </action>
   <action name="dummyAction">
    <property name="text">
     <string>n/a</string>
@@ -403,17 +418,61 @@
   </action>
   <action name="actionSetPolyhedronA">
    <property name="text">
-    <string>Set Facegraph A</string>
+    <string>Set Polyhedron A</string>
    </property>
   </action>
   <action name="actionSetPolyhedronB">
    <property name="text">
-    <string>Set Facegraph B</string>
+    <string>Set Polyhedron B</string>
+   </property>
+  </action>
+  <action name="actionDrawTwoSides">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Draw &amp;Two Sides</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+T</string>
+   </property>
+  </action>
+  <action name="actionRecenterScene">
+   <property name="text">
+    <string>Re&amp;center Scene</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+R</string>
+   </property>
+  </action>
+  <action name="actionSetBackgroundColor">
+   <property name="text">
+    <string>Change &amp;Background Color...</string>
+   </property>
+  </action>
+  <action name="actionLookAt">
+   <property name="text">
+    <string>&amp;Look at...</string>
    </property>
   </action>
   <action name="actionSaveSnapshot">
    <property name="text">
     <string>Save Snapshot</string>
+   </property>
+  </action>
+  <action name="actionDumpCamera">
+   <property name="text">
+    <string>&amp;Dump Camera Coordinates</string>
+   </property>
+  </action>
+  <action name="actionCopyCamera">
+   <property name="text">
+    <string>&amp;Copy Camera</string>
+   </property>
+  </action>
+  <action name="actionPasteCamera">
+   <property name="text">
+    <string>&amp;Paste Camera</string>
    </property>
   </action>
   <action name="actionSelectAllItems">
@@ -439,38 +498,70 @@
     <string>Load Plugin</string>
    </property>
   </action>
+  <action name="actionQuickCameraMode">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Quick Camera Mode</string>
+   </property>
+  </action>
+  <action name="actionMaxTextItemsDisplayed">
+   <property name="text">
+    <string>Set Maximum  Text Items Displayed :</string>
+   </property>
+  </action>
+  <action name="actionSwitchProjection">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Orthographic Projection</string>
+   </property>
+  </action>
   <action name="actionColorItems">
    <property name="text">
     <string>Set Different Colors for Selected Items</string>
    </property>
   </action>
-  <action name="actionAdd_Viewer">
+  <action name="actionPolyhedron_Mode">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
+    <bool>true</bool>
+   </property>
    <property name="text">
-    <string>Add &amp;Viewer</string>
+    <string>Polyhedron Mode</string>
+   </property>
+   <property name="toolTip">
+    <string>In Polyhedron Mode, the default type for facegraphs is Polyhedron, by opposition to Surface_mesh.</string>
    </property>
   </action>
-  <action name="action_Rearrange_Viewers">
+  <action name="actionSetLighting">
    <property name="text">
-    <string>&amp;Rearrange Viewers</string>
+    <string>Change Lighting &amp;Settings...</string>
    </property>
   </action>
-  <action name="actionSa_ve_Scene_as_Script">
+  <action name="actionSet_Transparency_Pass_Number">
    <property name="text">
-    <string>Sa&amp;ve the Scene as a Script File...</string>
-   </property>
-  </action>
-  <action name="action_Save">
-   <property name="text">
-    <string>&amp;Save</string>
-   </property>
-  </action>
-  <action name="actionLoad_a_Scene_from_a_Script_File">
-   <property name="text">
-    <string>Load a Scene &amp;from a Script File...</string>
+    <string>Set Transparency &amp;Pass Number</string>
    </property>
   </action>
  </widget>
+ <customwidgets>
+  <customwidget>
+   <class>Viewer</class>
+   <extends>QWidget</extends>
+   <header>Viewer.h</header>
+  </customwidget>
+ </customwidgets>
  <resources>
+  <include location="Polyhedron_3.qrc"/>
+  <include location="Polyhedron_3.qrc"/>
   <include location="Polyhedron_3.qrc"/>
   <include location="Polyhedron_3.qrc"/>
  </resources>

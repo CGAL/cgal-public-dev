@@ -2,10 +2,19 @@
 // All rights reserved.
 //
 // This file is part of CGAL (www.cgal.org).
+// You can redistribute it and/or modify it under the terms of the GNU
+// General Public License as published by the Free Software Foundation,
+// either version 3 of the License, or (at your option) any later version.
+//
+// Licensees holding a valid commercial license may use this file in
+// accordance with the commercial license agreement provided with the software.
+//
+// This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
+// WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 //
 // $URL$
 // $Id$
-// SPDX-License-Identifier: GPL-3.0-or-later OR LicenseRef-Commercial
+// SPDX-License-Identifier: GPL-3.0+
 //
 // Author(s)     : Fernando de Goes, Pierre Alliez, Ivo Vigan, Clément Jamin
 
@@ -31,14 +40,32 @@ private:
   FT m_total_weight;
 
 public:
+  Cost()
+  : m_norm(0),
+    m_tang(0),
+    m_max_norm(0),
+    m_max_tang(0),
+    m_total_weight(0)
+  {}
 
-  Cost(const FT norm = FT(0), const FT tang = FT(0))
+  Cost(const FT norm, const FT tang)
   : m_norm(norm),
     m_tang(tang),
     m_max_norm(norm),
     m_max_tang(tang),
     m_total_weight(0)
   {}
+
+  ~Cost() {}
+
+  Cost& operator= (const Cost& cost)
+  {
+    m_norm = cost.norm();
+    m_tang = cost.tang();
+    m_max_norm = cost.max_norm();
+    m_max_tang = cost.max_tang();
+    return *this;
+  }
 
   const FT norm() const { return m_norm; }
 

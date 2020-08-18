@@ -1,5 +1,4 @@
 find_package( GMP QUIET )
-find_package( MPFR QUIET )
 
 if( GMP_FOUND AND MPFR_FOUND )
 

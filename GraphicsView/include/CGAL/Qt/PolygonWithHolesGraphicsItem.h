@@ -2,11 +2,20 @@
 // All rights reserved.
 //
 // This file is part of CGAL (www.cgal.org).
+// You can redistribute it and/or modify it under the terms of the GNU
+// General Public License as published by the Free Software Foundation,
+// either version 3 of the License, or (at your option) any later version.
+//
+// Licensees holding a valid commercial license may use this file in
+// accordance with the commercial license agreement provided with the software.
+//
+// This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
+// WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 //
 // $URL$
 // $Id$
-// SPDX-License-Identifier: GPL-3.0-or-later OR LicenseRef-Commercial
-//
+// SPDX-License-Identifier: GPL-3.0+
+// 
 //
 // Author(s)     : Andreas Fabri <Andreas.Fabri@geometryfactory.com>
 //                 Laurent Rineau <Laurent.Rineau@geometryfactory.com>
@@ -41,16 +50,16 @@ public:
 
 public:
   QRectF boundingRect() const;
-
+  
   void paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget);
-
+  
 
   const QBrush& brush() const
   {
     return brush_;
   }
 
-
+  
   void setBrush(const QBrush& b)
   {
     brush_ = b;
@@ -108,7 +117,7 @@ protected:
 template <typename P>
 PolygonWithHolesGraphicsItem<P>::PolygonWithHolesGraphicsItem(P * p_)
   :  poly(p_), painterostream(0),
-     draw_vertices(true)
+     draw_vertices(true)   
 {
   setVerticesPen(QPen(::Qt::red, 3.));
   if(poly->outer_boundary().size() == 0){
@@ -119,7 +128,7 @@ PolygonWithHolesGraphicsItem<P>::PolygonWithHolesGraphicsItem(P * p_)
 }
 
 template <typename P>
-QRectF
+QRectF 
 PolygonWithHolesGraphicsItem<P>::boundingRect() const
 {
   return bounding_rect;
@@ -129,10 +138,10 @@ PolygonWithHolesGraphicsItem<P>::boundingRect() const
 
 
 template <typename P>
-void
-PolygonWithHolesGraphicsItem<P>::paint(QPainter *painter,
-                                       const QStyleOptionGraphicsItem * /*option*/,
-                                       QWidget * /*widget*/)
+void 
+PolygonWithHolesGraphicsItem<P>::paint(QPainter *painter, 
+				       const QStyleOptionGraphicsItem * /*option*/,
+				       QWidget * /*widget*/)
 {
   Converter<Traits> convert;
   QPainterPath border;
@@ -147,11 +156,11 @@ PolygonWithHolesGraphicsItem<P>::paint(QPainter *painter,
   for(++it;
       it != poly->outer_boundary().vertices_end();
       ++it){
-    border.lineTo(convert(*it));
+    border.lineTo(convert(*it)); 
   }
   border.lineTo(firstPoint);
 
-
+ 
   for(typename P::Hole_const_iterator hit = poly->holes_begin();
       hit != poly->holes_end();
       ++hit){
@@ -159,21 +168,21 @@ PolygonWithHolesGraphicsItem<P>::paint(QPainter *painter,
     QPointF firstPoint = convert(*it);
     border.moveTo(firstPoint);
     for(++it;
-        it != hit->vertices_end();
-        ++it){
-      border.lineTo(convert(*it));
+	it != hit->vertices_end();
+	++it){
+      border.lineTo(convert(*it)); 
     }
     border.lineTo(firstPoint);
   }
-
+  
   painter->setBrush(this->brush());
   painter->drawPath(border);
 
   if(drawVertices()) {
 
     painter->setPen(verticesPen());
-    QTransform matrix = painter->worldTransform();
-    painter->resetTransform();
+    QMatrix matrix = painter->matrix();
+    painter->resetMatrix();
     for(typename P::General_polygon_2::Vertex_iterator it = poly->outer_boundary().vertices_begin();
         it != poly->outer_boundary().vertices_end();
         it++){
@@ -186,7 +195,7 @@ PolygonWithHolesGraphicsItem<P>::paint(QPainter *painter,
 // We let the bounding box only grow, so that when vertices get removed
 // the maximal bbox gets refreshed in the GraphicsView
 template <typename P>
-void
+void 
 PolygonWithHolesGraphicsItem<P>::updateBoundingBox()
 {
   Converter<Traits> convert;
@@ -199,7 +208,7 @@ PolygonWithHolesGraphicsItem<P>::updateBoundingBox()
 
 
 template <typename P>
-void
+void 
 PolygonWithHolesGraphicsItem<P>::modelChanged()
 {
   if((poly->outer_boundary().size() == 0) ){

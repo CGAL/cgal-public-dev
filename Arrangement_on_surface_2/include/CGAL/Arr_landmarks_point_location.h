@@ -2,10 +2,19 @@
 // All rights reserved.
 //
 // This file is part of CGAL (www.cgal.org).
+// You can redistribute it and/or modify it under the terms of the GNU
+// General Public License as published by the Free Software Foundation,
+// either version 3 of the License, or (at your option) any later version.
+//
+// Licensees holding a valid commercial license may use this file in
+// accordance with the commercial license agreement provided with the software.
+//
+// This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
+// WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 //
 // $URL$
 // $Id$
-// SPDX-License-Identifier: GPL-3.0-or-later OR LicenseRef-Commercial
+// SPDX-License-Identifier: GPL-3.0+
 //
 //
 // Author(s)     : Idit Haran   <haranidi@post.tau.ac.il>
@@ -105,9 +114,9 @@ protected:
 public:
   /*! Default constructor. */
   Arr_landmarks_point_location() :
-    p_arr(nullptr),
-    m_traits(nullptr),
-    lm_gen(nullptr),
+    p_arr(NULL),
+    m_traits(NULL),
+    lm_gen(NULL),
     own_gen(false)
   {}
 
@@ -132,25 +141,25 @@ public:
   {
     if (own_gen) {
       delete lm_gen;
-      lm_gen = nullptr;
+      lm_gen = NULL;
     }
   }
 
  /*! Attach an arrangement object (and a generator, if supplied). */
-  void attach(const Arrangement_2& arr, Generator* gen = nullptr)
+  void attach(const Arrangement_2& arr, Generator* gen = NULL)
   {
     // Keep a pointer to the associated arrangement.
     p_arr = &arr;
     m_traits = static_cast<const Traits_adaptor_2*>(p_arr->geometry_traits());
 
     // Update the landmarks generator.
-    if (gen != nullptr) {
+    if (gen != NULL) {
       // In case a generator is given, keep a pointer to it.
-      CGAL_assertion(lm_gen == nullptr);
+      CGAL_assertion(lm_gen == NULL);
       lm_gen = gen;
       own_gen = false;
     }
-    else if (lm_gen != nullptr) {
+    else if (lm_gen != NULL) {
       // In case a generator exists internally, make sure it is attached to
       // the given arrangement.
       Arrangement_2& non_const_arr = const_cast<Arrangement_2&>(*p_arr);
@@ -166,10 +175,10 @@ public:
   /*! Detach the instance from the arrangement object. */
   void detach()
   {
-    p_arr = nullptr;
-    m_traits = nullptr;
+    p_arr = NULL;
+    m_traits = NULL;
 
-    CGAL_assertion(lm_gen != nullptr);
+    CGAL_assertion(lm_gen != NULL);
     if (lm_gen)
       lm_gen->detach();
   }

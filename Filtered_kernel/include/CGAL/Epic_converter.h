@@ -1,12 +1,21 @@
 // Copyright (c) 2017  GeometryFactory
 // All rights reserved.
 //
-// This file is part of CGAL (www.cgal.org)
+// This file is part of CGAL (www.cgal.org); you can redistribute it and/or
+// modify it under the terms of the GNU Lesser General Public License as
+// published by the Free Software Foundation; either version 3 of the License,
+// or (at your option) any later version.
+//
+// Licensees holding a valid commercial license may use this file in
+// accordance with the commercial license agreement provided with the software.
+//
+// This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
+// WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 //
 // $URL$
 // $Id$
-// SPDX-License-Identifier: LGPL-3.0-or-later OR LicenseRef-Commercial
-//
+// SPDX-License-Identifier: LGPL-3.0+
+// 
 //
 // Author(s)     : Andreas Fabri, Laurent Rineau
 
@@ -65,12 +74,12 @@ public:
   {
     return std::make_pair(b,true);
   }
-
+ 
   std::pair<Bbox_3,bool> operator()(const Bbox_3 b) const
   {
     return std::make_pair(b,true);
   }
-
+  
   std::pair<Point_2,bool> operator()(const typename IK::Point_2& p) const
   {
     double x, y;
@@ -80,7 +89,7 @@ public:
     }
     return std::make_pair(ORIGIN,false);
   }
-
+  
   std::pair<Vector_2,bool> operator()(const typename IK::Vector_2& v) const
   {
     double x, y;
@@ -90,7 +99,7 @@ public:
     }
     return std::make_pair(Vector_2(),false);
   }
-
+  
   std::pair<Direction_2,bool> operator()(const typename IK::Direction_2& d) const
   {
     double x, y;
@@ -100,7 +109,7 @@ public:
     }
     return std::make_pair(Direction_2(),false);
   }
-
+  
   std::pair<Weighted_point_2,bool> operator()(const typename IK::Weighted_point_2& wp) const
   {
     std::pair<Point_2,bool> sp = operator()(wp.point());
@@ -110,7 +119,7 @@ public:
     }
     return std::make_pair(Weighted_point_2(),false);
   }
-
+  
   std::pair<Segment_2,bool> operator()(const typename IK::Segment_2& s) const
   {
     std::pair<Point_2,bool> sp = operator()(s.source());
@@ -132,7 +141,7 @@ public:
     }
     return std::make_pair(Line_2(), false);
   }
-
+  
   std::pair<Ray_2,bool> operator()(const typename IK::Ray_2& r) const
   {
     std::pair<Point_2,bool> sp = operator()(r.source());
@@ -145,7 +154,7 @@ public:
     }
     return std::make_pair(Ray_2(sp.first,tp.first), true);
   }
-
+  
   std::pair<Triangle_2,bool> operator()(const typename IK::Triangle_2& t) const
   {
     std::pair<Point_2,bool> v0 = operator()(t.vertex(0));
@@ -162,7 +171,7 @@ public:
     }
     return std::make_pair(Triangle_2(v0.first,v1.first, v2.first), true);
   }
-
+  
   std::pair<Circle_2,bool> operator()(const typename IK::Circle_2& ci) const
   {
     std::pair<Point_2,bool> c = operator()(ci.center());
@@ -186,7 +195,7 @@ public:
     return std::make_pair(Iso_rectangle_2(sp.first,tp.first), true);
   }
 
-
+  
   std::pair<Line_3,bool> operator()(const typename IK::Line_3& li) const
   {
     std::pair<Point_3,bool> sp = operator()(li.point());
@@ -225,7 +234,7 @@ public:
     }
     return std::make_pair(Triangle_3(v0.first,v1.first, v2.first), true);
   }
-
+  
   std::pair<Tetrahedron_3,bool> operator()(const typename IK::Tetrahedron_3& t) const
   {
     std::pair<Point_3,bool> v0 = operator()(t.vertex(0));
@@ -246,7 +255,7 @@ public:
     }
     return std::make_pair(Tetrahedron_3(v0.first,v1.first, v2.first, v3.first), true);
   }
-
+  
   std::pair<Ray_3,bool> operator()(const typename IK::Ray_3& r) const
   {
     std::pair<Point_3,bool> sp = operator()(r.source());
@@ -259,7 +268,7 @@ public:
     }
     return std::make_pair(Ray_3(sp.first,tp.first), true);
   }
-
+  
   std::pair<Point_3,bool> operator()(const typename IK::Point_3& p) const
   {
     double x, y, z;
@@ -269,7 +278,7 @@ public:
     }
     return std::make_pair(ORIGIN,false);
   }
-
+  
   std::pair<Vector_3,bool> operator()(const typename IK::Vector_3& v) const
   {
     double x, y, z;
@@ -279,7 +288,7 @@ public:
     }
     return std::make_pair(Vector_3(),false);
   }
-
+  
   std::pair<Direction_3,bool> operator()(const typename IK::Direction_3& d) const
   {
     double x, y, z;
@@ -289,7 +298,7 @@ public:
     }
     return std::make_pair(Direction_3(),false);
   }
-
+  
   std::pair<Segment_3,bool> operator()(const typename IK::Segment_3& s) const
   {
     std::pair<Point_3,bool> sp = operator()(s.source());
@@ -312,7 +321,7 @@ public:
     }
     return std::make_pair(Weighted_point_3(),false);
   }
-
+  
   std::pair<Sphere_3,bool> operator()(const typename IK::Sphere_3& s) const
   {
     std::pair<Point_3,bool> c = operator()(s.center());
@@ -348,7 +357,7 @@ public:
 
 
 };
-
+  
 } // CGAL
 
 #endif // CGAL_EPIC_CONVERTER_H

@@ -1,16 +1,25 @@
-// Copyright (c) 1999
+// Copyright (c) 1999  
 // Utrecht University (The Netherlands),
 // ETH Zurich (Switzerland),
 // INRIA Sophia-Antipolis (France),
 // Max-Planck-Institute Saarbruecken (Germany),
-// and Tel-Aviv University (Israel).  All rights reserved.
+// and Tel-Aviv University (Israel).  All rights reserved. 
 //
-// This file is part of CGAL (www.cgal.org)
+// This file is part of CGAL (www.cgal.org); you can redistribute it and/or
+// modify it under the terms of the GNU Lesser General Public License as
+// published by the Free Software Foundation; either version 3 of the License,
+// or (at your option) any later version.
+//
+// Licensees holding a valid commercial license may use this file in
+// accordance with the commercial license agreement provided with the software.
+//
+// This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
+// WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 //
 // $URL$
 // $Id$
-// SPDX-License-Identifier: LGPL-3.0-or-later OR LicenseRef-Commercial
-//
+// SPDX-License-Identifier: LGPL-3.0+
+// 
 //
 // Author(s)     : Stefan Schirra
 
@@ -444,12 +453,14 @@ class Reflection_repH2 : public Aff_transformation_rep_baseH2<R>
 
     virtual  Direction_2
              transform(const Direction_2 & d) const
-             { return transform( d.vector() ).direction(); }
+             { return transform( Vector_2(d) ).direction(); }
 
     virtual  Aff_transformationH2<R>
              inverse() const
              {
-               return Aff_transformationH2<R>(REFLECTION, l);
+               return Aff_transformationH2<R>(
+                   static_cast< Aff_transformation_rep_baseH2<R>* >
+                   ( const_cast< Reflection_repH2<R>*> (this) )  );
              }
 
     virtual  bool
@@ -513,7 +524,7 @@ public:
 
           // Scaling:
 
-          Aff_transformationH2(const Scaling, const RT& a,
+          Aff_transformationH2(const Scaling, const RT& a,  
                                const RT& b = RT(1));
 
           Aff_transformationH2(const Scaling, const RT& xa, const RT& xb,
@@ -595,21 +606,6 @@ public:
     Aff_transformationH2<R>
     operator*(const Aff_transformationH2<R>& right_argument ) const;
 
-
-    bool operator==(const Aff_transformationH2 &t)const
-    {
-      for(int i=0; i<3; ++i)
-        for(int j = 0; j< 3; ++j)
-          if(homogeneous(i,j)!=t.homogeneous(i,j))
-            return false;
-      return true;
-    }
-
-    bool operator!=(const Aff_transformationH2 &t)const
-    {
-      return !(*this == t);
-    }
-
 };
 
 template < class R >
@@ -624,7 +620,7 @@ Aff_transformationH2(const Identity_transformation)
 template < class R >
 Aff_transformationH2<R>::
 Aff_transformationH2(const Translation,
-                     const typename Aff_transformationH2<R>::Vector_2& v)
+	             const typename Aff_transformationH2<R>::Vector_2& v)
 { initialize_with(Translation_repH2<R>( v )); }
 
 template < class R >
@@ -645,7 +641,7 @@ Aff_transformationH2( const Scaling, const RT& xa, const RT& xb,
 template < class R >
 Aff_transformationH2<R>::
 Aff_transformationH2(const Reflection,
-                     const typename Aff_transformationH2<R>::Line_2& l)
+	             const typename Aff_transformationH2<R>::Line_2& l)
 { initialize_with(Reflection_repH2<R>( l)); }
 
 template < class R >
@@ -769,17 +765,6 @@ operator*(const Aff_transformationH2<R>& right_argument) const
   return _general_transformation_composition(
                   this->Ptr()->general_form(),
                   right_argument.Ptr()->general_form() );
-}
-
-template <class R>
-std::ostream&
-operator<<(std::ostream& out, const Aff_transformationH2<R>& t)
-{
-  typename R::RT RT0(0);
-  Aff_transformation_repH2<R> r = t.Ptr()->general_form();
-  return out << "| "<< r.a << ' ' << r.b << ' ' << r.c << " |\n"
-             << "| "<< r.d << ' ' << r.e << ' ' << r.f << " |\n"
-             << "| "<< RT0 << ' ' << RT0 << ' ' << r.g << " |\n";
 }
 
 template <class R>

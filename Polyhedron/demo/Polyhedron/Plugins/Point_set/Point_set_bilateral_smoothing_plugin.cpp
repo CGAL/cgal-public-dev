@@ -21,7 +21,11 @@
 #include "ui_Point_set_bilateral_smoothing_plugin.h"
 
 // Concurrency
-typedef CGAL::Parallel_if_available_tag Concurrency_tag;
+#ifdef CGAL_LINKED_WITH_TBB
+typedef CGAL::Parallel_tag Concurrency_tag;
+#else
+typedef CGAL::Sequential_tag Concurrency_tag;
+#endif
 
 struct Bilateral_smoothing_functor
   : public Functor_with_signal_callback
@@ -56,7 +60,7 @@ class Polyhedron_demo_point_set_bilateral_smoothing_plugin :
   Q_OBJECT
   Q_INTERFACES(CGAL::Three::Polyhedron_demo_plugin_interface)
   Q_PLUGIN_METADATA(IID "com.geometryfactory.PolyhedronDemo.PluginInterface/1.0")
-
+  
   QAction* actionBilateralSmoothing;
 
 public:
@@ -124,9 +128,9 @@ void Polyhedron_demo_point_set_bilateral_smoothing_plugin::on_actionBilateralSmo
       return;
 
     std::cerr << "Bilateral smoothing using "
-              << dialog.iterations () << " iteration(s), neighborhood size of "
-              << dialog.neighborhood_size () << " and sharpness angle of "
-              << dialog.sharpness_angle () << "... ";
+	      << dialog.iterations () << " iteration(s), neighborhood size of "
+	      << dialog.neighborhood_size () << " and sharpness angle of "
+	      << dialog.sharpness_angle () << "... ";
     QApplication::setOverrideCursor(Qt::BusyCursor);
 
     CGAL::Timer task_timer; task_timer.start();
@@ -145,11 +149,11 @@ void Polyhedron_demo_point_set_bilateral_smoothing_plugin::on_actionBilateralSmo
         if (std::isnan(error)) // NaN return means algorithm was interrupted
           break;
       }
-
+    
     std::size_t memory = CGAL::Memory_sizer().virtual_size();
     std::cerr << task_timer.time() << " seconds, "
-              << (memory>>20) << " Mb allocated)"
-              << std::endl;
+	      << (memory>>20) << " Mb allocated)"
+	      << std::endl;
 
     // Updates scene
     item->invalidateOpenGLBuffers();

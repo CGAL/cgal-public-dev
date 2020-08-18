@@ -11,9 +11,7 @@ function(cgal_parse_version_h version_h_file name)
   # CMAKE_MATCH_3 and CMAKE_MATCH_4 corresponds to the two sub-expressions
   # of the alternative, and cannot be non-empty at the same time.
   set(${ARGV2} "${CMAKE_MATCH_3}${CMAKE_MATCH_4}" PARENT_SCOPE) # major version
-  MATH(EXPR ${ARGV3} "${CMAKE_MATCH_5}")        # minor version without leading 0
-  set(${ARGV3} "${${ARGV3}}" PARENT_SCOPE)
+  set(${ARGV3} "${CMAKE_MATCH_5}" PARENT_SCOPE)                 # minor version
   set(${ARGV4} "${CMAKE_MATCH_6}" PARENT_SCOPE)                 # patch number
-  MATH(EXPR ${ARGV5} "${CMAKE_MATCH_7}")        # build number version without leading 0
-  set(${ARGV5} "${${ARGV5}}" PARENT_SCOPE)                      # build number
+  set(${ARGV5} "${CMAKE_MATCH_7}" PARENT_SCOPE)                 # build number
 endfunction()

@@ -1,24 +1,28 @@
-// Copyright (c) 1999
+// Copyright (c) 1999  
 // Utrecht University (The Netherlands),
 // ETH Zurich (Switzerland),
 // INRIA Sophia-Antipolis (France),
 // Max-Planck-Institute Saarbruecken (Germany),
-// and Tel-Aviv University (Israel).  All rights reserved.
+// and Tel-Aviv University (Israel).  All rights reserved. 
 //
-// This file is part of CGAL (www.cgal.org)
+// This file is part of CGAL (www.cgal.org); you can redistribute it and/or
+// modify it under the terms of the GNU Lesser General Public License as
+// published by the Free Software Foundation; either version 3 of the License,
+// or (at your option) any later version.
+//
+// This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
+// WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 //
 // $URL$
 // $Id$
-// SPDX-License-Identifier: LGPL-3.0-or-later
-//
+// SPDX-License-Identifier: LGPL-3.0+
+// 
 //
 // Author(s)     : Stefan Schirra
-
+ 
 
 #ifndef CGAL__TEST_CLS_DIRECTION_3_H
 #define CGAL__TEST_CLS_DIRECTION_3_H
-
-#include <CGAL/use.h>
 
 template <class R>
 bool
@@ -31,7 +35,7 @@ _test_cls_direction_3(const R& )
  typename R::Direction_3  id;
 
  CGAL::Direction_3<R> d0;
- CGAL::Direction_3<R> d1(id); CGAL_USE(d1);
+ CGAL::Direction_3<R> d1(id);
 
  std::cout << '.';
  RT   n0 = 10;

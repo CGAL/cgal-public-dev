@@ -1,11 +1,20 @@
 // Copyright (c) 2013  INRIA Bordeaux Sud-Ouest (France), All rights reserved.
 // Copyright (c) 2013 GeometryFactory
 //
-// This file is part of CGAL (www.cgal.org)
+// This file is part of CGAL (www.cgal.org); you can redistribute it and/or
+// modify it under the terms of the GNU Lesser General Public License as
+// published by the Free Software Foundation; either version 3 of the License,
+// or (at your option) any later version.
+//
+// Licensees holding a valid commercial license may use this file in
+// accordance with the commercial license agreement provided with the software.
+//
+// This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
+// WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 //
 // $URL$
 // $Id$
-// SPDX-License-Identifier: LGPL-3.0-or-later OR LicenseRef-Commercial
+// SPDX-License-Identifier: LGPL-3.0+
 //
 // Author(s)     : Gael Guennebaud Ilker O. Yaz
 
@@ -18,7 +27,7 @@
 #include <CGAL/Profile_counter.h>
 
 namespace CGAL {
-  /// \ingroup PkgSurfaceMeshDeformationRef
+  /// \ingroup PkgSurfaceMeshDeformation
   /// A class to compute the closest rotation in Frobenius norm to a 3x3 Matrix using the \link thirdpartyEigen `Eigen` library \endlink.
   /// The internal computation relies on a hybrid system using the solvers `Eigen::SelfAdjointEigenSolver<>`
   /// and `Eigen::JacobiSVD<>` (polar decomposition).

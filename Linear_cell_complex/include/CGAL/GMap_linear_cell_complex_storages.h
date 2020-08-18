@@ -1,11 +1,20 @@
 // Copyright (c) 2016 CNRS and LIRIS' Establishments (France).
 // All rights reserved.
 //
-// This file is part of CGAL (www.cgal.org)
+// This file is part of CGAL (www.cgal.org); you can redistribute it and/or
+// modify it under the terms of the GNU Lesser General Public License as
+// published by the Free Software Foundation; either version 3 of the License,
+// or (at your option) any later version.
+//
+// Licensees holding a valid commercial license may use this file in
+// accordance with the commercial license agreement provided with the software.
+//
+// This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
+// WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 //
 // $URL$
 // $Id$
-// SPDX-License-Identifier: LGPL-3.0-or-later OR LicenseRef-Commercial
+// SPDX-License-Identifier: LGPL-3.0+
 //
 // Author(s)     : Guillaume Damiand <guillaume.damiand@liris.cnrs.fr>
 //
@@ -62,8 +71,12 @@ namespace CGAL {
                                                            Darts_with_id;
     typedef CGAL::Dart<d_, Self, Dart_info, Darts_with_id> Dart;
 
+#ifdef CGAL_CXX11
     typedef std::allocator_traits<Alloc_> Allocator_traits;
     typedef typename Allocator_traits::template rebind_alloc<Dart> Dart_allocator;
+#else
+    typedef typename Alloc_::template rebind<Dart>::other  Dart_allocator;
+#endif
 
     typedef Compact_container<Dart, Dart_allocator>        Dart_container;
 
@@ -71,16 +84,23 @@ namespace CGAL {
     typedef typename Dart_container::const_iterator        Dart_const_handle;
     typedef typename Dart_container::size_type             size_type;
 
-    typedef std::nullptr_t Null_handle_type;
+    typedef CGAL::Void* Null_handle_type;
     static const Null_handle_type null_handle;
 
     typedef Items_ Items;
     typedef Alloc_ Alloc;
 
+#ifdef CGAL_CXX11
     template <typename T>
     struct Container_for_attributes :
         public Compact_container<T, typename std::allocator_traits<Alloc_>::template rebind_alloc<T> >
     {};
+#else
+    template <typename T>
+    struct Container_for_attributes :
+        public Compact_container<T, typename Alloc_::template rebind<T>::other>
+    {};
+#endif
     /// Typedef for attributes
     typedef typename internal::template Get_attributes_tuple<Dart_wrapper>::type
                                    Attributes;
@@ -122,84 +142,82 @@ namespace CGAL {
 
     // Init
     void init_storage()
-    { null_dart_handle=nullptr; }
+    {}
 
    /** Return if this dart is free for adimension.
      * @param dh a dart handle
      * @param i the dimension.
-     * @return true iff dh is linked with nullptr for \em adimension.
+     * @return true iff dh is linked with NULL for \em adimension.
      */
     template<unsigned int i>
     bool is_free(Dart_const_handle dh) const
     {
-      CGAL_assertion( dh!=nullptr );
+      CGAL_assertion( dh!=NULL );
       CGAL_assertion(i <= dimension);
       return dh->mf[i]==dh;
     }
     bool is_free(Dart_const_handle dh, unsigned int i) const
     {
-      CGAL_assertion( dh!=nullptr );
+      CGAL_assertion( dh!=NULL );
       CGAL_assertion(i <= dimension);
       return dh->mf[i]==dh;
     }
-    bool is_perforated(Dart_const_handle /*dh*/) const
-    { return false; }
 
     /// Set simultaneously all the marks of this dart to a given value.
     void set_dart_marks(Dart_const_handle ADart,
                         const std::bitset<NB_MARKS>& amarks) const
     {
-      CGAL_assertion( ADart!=nullptr );
+      CGAL_assertion( ADart!=NULL );
       ADart->set_marks(amarks);
     }
     /// Return all the marks of a dart.
     std::bitset<NB_MARKS> get_dart_marks(Dart_const_handle ADart) const
     {
-      CGAL_assertion( ADart!=nullptr );
+      CGAL_assertion( ADart!=NULL );
       return ADart->get_marks();
     }
     /// Return the mark value of dart a given mark number.
     bool get_dart_mark(Dart_const_handle ADart, size_type amark) const
     {
-      CGAL_assertion( ADart!=nullptr );
+      CGAL_assertion( ADart!=NULL );
       return ADart->get_mark(amark);
     }
 
     /// Set the mark of a given mark number to a given value.
     void set_dart_mark(Dart_const_handle ADart, size_type amark, bool avalue) const
     {
-      CGAL_assertion( ADart!=nullptr );
+      CGAL_assertion( ADart!=NULL );
       ADart->set_mark(amark, avalue);
     }
 
     /// Flip the mark of a given mark number to a given value.
     void flip_dart_mark(Dart_const_handle ADart, size_type amark) const
     {
-      CGAL_assertion( ADart!=nullptr );
+      CGAL_assertion( ADart!=NULL );
       ADart->flip_mark(amark);
     }
 
     // Access to alpha maps
     Dart_handle get_alpha(Dart_handle ADart, int B1)
     {
-      CGAL_assertion(ADart!=nullptr && B1>=0 && B1<=(int)dimension);
+      CGAL_assertion(ADart!=NULL && B1>=0 && B1<=(int)dimension);
       return ADart->mf[B1];
     }
     Dart_const_handle get_alpha(Dart_const_handle ADart, int B1) const
     {
-      CGAL_assertion(ADart!=nullptr && B1>=0 && B1<=(int)dimension);
+      CGAL_assertion(ADart!=NULL && B1>=0 && B1<=(int)dimension);
       return  ADart->mf[B1];
     }
     template<int B1>
     Dart_handle get_alpha(Dart_handle ADart)
     {
-      CGAL_assertion(ADart!=nullptr && B1>=0 && B1<=(int)dimension);
+      CGAL_assertion(ADart!=NULL && B1>=0 && B1<=(int)dimension);
       return  ADart->mf[B1];
     }
     template<int B1>
     Dart_const_handle get_alpha(Dart_const_handle ADart) const
     {
-      CGAL_assertion(ADart!=nullptr && B1>=0 && B1<=(int)dimension);
+      CGAL_assertion(ADart!=NULL && B1>=0 && B1<=(int)dimension);
       return  ADart->mf[B1];
     }
 
@@ -209,7 +227,7 @@ namespace CGAL {
     {
       CGAL_static_assertion_msg(Helper::template Dimension_index<i>::value>=0,
                      "attribute<i> called but i-attributes are disabled.");
-      return std::get<Helper::template Dimension_index<i>::value>
+      return CGAL::cpp11::get<Helper::template Dimension_index<i>::value>
         (ADart->mattribute_handles);
     }
     template<unsigned int i>
@@ -218,7 +236,7 @@ namespace CGAL {
     {
       CGAL_static_assertion_msg(Helper::template Dimension_index<i>::value>=0,
                      "attribute<i> called but i-attributes are disabled.");
-      return std::get<Helper::template Dimension_index<i>::value>
+      return CGAL::cpp11::get<Helper::template Dimension_index<i>::value>
         (ADart->mattribute_handles);
     }
 
@@ -230,7 +248,7 @@ namespace CGAL {
       CGAL_static_assertion_msg(Helper::template Dimension_index<i>::value>=0,
                      "copy_attribute<i> called but i-attributes are disabled.");
       typename Attribute_handle<i>::type res=
-        std::get<Helper::template Dimension_index<i>::value>
+        CGAL::cpp11::get<Helper::template Dimension_index<i>::value>
         (mattribute_containers).emplace(*ah);
       this->template init_attribute_ref_counting<i>(res);
       return res;
@@ -240,34 +258,34 @@ namespace CGAL {
     template<unsigned int i>
     bool is_valid_attribute(typename Attribute_const_handle<i>::type ah) const
     {
-      CGAL_assertion( ah!=nullptr );
+      CGAL_assertion( ah!=NULL );
       return ah->is_valid();
     }
-
+    
     // accessors and modifiers to the attribute ref counting given its handle
     template<unsigned int i>
     std::size_t get_attribute_ref_counting
     (typename Attribute_const_handle<i>::type ah) const
     {
-      CGAL_assertion( ah!=nullptr );
+      CGAL_assertion( ah!=NULL );
       return ah->get_nb_refs();
     }
     template<unsigned int i>
     void init_attribute_ref_counting(typename Attribute_handle<i>::type ah)
     {
-      CGAL_assertion( ah!=nullptr );
+      CGAL_assertion( ah!=NULL );
       ah->mrefcounting=0;
     }
     template<unsigned int i>
     void inc_attribute_ref_counting(typename Attribute_handle<i>::type ah)
     {
-      CGAL_assertion( ah!=nullptr );
+      CGAL_assertion( ah!=NULL );
       ah->inc_nb_refs();
     }
     template<unsigned int i>
     void dec_attribute_ref_counting(typename Attribute_handle<i>::type ah)
     {
-      CGAL_assertion( ah!=nullptr );
+      CGAL_assertion( ah!=NULL );
       ah->dec_nb_refs();
     }
 
@@ -276,14 +294,14 @@ namespace CGAL {
     typename Attribute_type<i>::type&
     get_attribute(typename Attribute_handle<i>::type ah)
     {
-      CGAL_assertion( ah!=nullptr );
+      CGAL_assertion( ah!=NULL );
       return *ah;
     }
     template<unsigned int i>
     const typename Attribute_type<i>::type&
     get_attribute(typename Attribute_const_handle<i>::type ah) const
     {
-      CGAL_assertion( ah!=nullptr );
+      CGAL_assertion( ah!=NULL );
       return *ah;
     }
 
@@ -291,14 +309,14 @@ namespace CGAL {
     template<unsigned int i>
     Dart_handle dart_of_attribute(typename Attribute_handle<i>::type ah)
     {
-      CGAL_assertion( ah!=nullptr );
+      CGAL_assertion( ah!=NULL );
       return ah->dart();
     }
     template<unsigned int i>
     Dart_const_handle
     dart_of_attribute(typename Attribute_const_handle<i>::type ah) const
     {
-      CGAL_assertion( ah!=nullptr );
+      CGAL_assertion( ah!=NULL );
       return ah->dart();
     }
 
@@ -307,7 +325,7 @@ namespace CGAL {
     void set_dart_of_attribute(typename Attribute_handle<i>::type ah,
                                Dart_handle adart)
     {
-      CGAL_assertion( ah!=nullptr );
+      CGAL_assertion( ah!=NULL );
       ah->set_dart(adart);
     }
 
@@ -322,14 +340,14 @@ namespace CGAL {
     typename Attribute_type<i>::type::Info &
     info_of_attribute(typename Attribute_handle<i>::type ah)
     {
-      CGAL_assertion( ah!=nullptr );
+      CGAL_assertion( ah!=NULL );
       return ah->info();
     }
     template<unsigned int i>
     const typename Attribute_type<i>::type::Info &
     info_of_attribute(typename Attribute_const_handle<i>::type ah) const
     {
-      CGAL_assertion( ah!=nullptr );
+      CGAL_assertion( ah!=NULL );
       return ah->info();
     }
 
@@ -337,16 +355,16 @@ namespace CGAL {
     template<unsigned int i>
     typename Attribute_type<i>::type::Info & info(Dart_handle adart)
     {
-      CGAL_assertion( adart!=nullptr );
-      CGAL_assertion( attribute<i>(adart)!=nullptr );
+      CGAL_assertion( adart!=NULL );
+      CGAL_assertion( attribute<i>(adart)!=NULL );
       return info_of_attribute<i>(attribute<i>(adart));
     }
     template<unsigned int i>
     const typename Attribute_type<i>::type::Info &
     info(Dart_const_handle adart) const
     {
-      CGAL_assertion( adart!=nullptr );
-      CGAL_assertion( attribute<i>(adart)!=nullptr );
+      CGAL_assertion( adart!=NULL );
+      CGAL_assertion( attribute<i>(adart)!=NULL );
       return info_of_attribute<i>(attribute<i>(adart));
     }
 
@@ -354,29 +372,29 @@ namespace CGAL {
     template<unsigned int i>
     Dart_handle dart(Dart_handle adart)
     {
-      CGAL_assertion( adart!=nullptr );
-      CGAL_assertion( attribute<i>(adart)!=nullptr );
+      CGAL_assertion( adart!=NULL );
+      CGAL_assertion( attribute<i>(adart)!=NULL );
       return dart_of_attribute<i>(attribute<i>(adart));
     }
     template<unsigned int i>
     Dart_const_handle dart(Dart_const_handle adart) const
     {
-      CGAL_assertion( adart!=nullptr );
-      CGAL_assertion( attribute<i>(adart)!=nullptr );
+      CGAL_assertion( adart!=NULL );
+      CGAL_assertion( attribute<i>(adart)!=NULL );
       return dart_of_attribute<i>(attribute<i>(adart));
     }
 
     // Get the dart of the given 0-attribute
     Point & point_of_vertex_attribute(typename Attribute_handle<0>::type vh)
     {
-      CGAL_assertion( vh!=nullptr );
+      CGAL_assertion( vh!=NULL );
       return get_attribute<0>(vh).point();
     }
 
     const Point & point_of_vertex_attribute
     (typename Attribute_const_handle<0>::type vh) const
     {
-      CGAL_assertion( vh!=nullptr );
+      CGAL_assertion( vh!=NULL );
       return get_attribute<0>(vh).point();
     }
 
@@ -386,7 +404,7 @@ namespace CGAL {
 
     template<unsigned int i>
     void display_attribute(typename Attribute_const_handle<i>::type ah) const
-    { std::cout<< std::get<Helper::template Dimension_index<i>::value>
+    { std::cout<< CGAL::cpp11::get<Helper::template Dimension_index<i>::value>
         (mattribute_containers).index(ah); }
 
   protected:
@@ -395,7 +413,7 @@ namespace CGAL {
     void basic_set_dart_attribute(Dart_handle dh,
                                   typename Attribute_handle<i>::type ah)
     {
-      std::get<Helper::template Dimension_index<i>::value>
+      CGAL::cpp11::get<Helper::template Dimension_index<i>::value>
         (dh->mattribute_handles) = ah;
     }
 
@@ -408,13 +426,13 @@ namespace CGAL {
     void dart_link_alpha(Dart_handle adart, Dart_handle adart2)
     {
       CGAL_assertion(i <= dimension);
-      CGAL_assertion(adart!=nullptr && adart2!=nullptr);
+      CGAL_assertion(adart!=NULL && adart2!=NULL);
       adart->mf[i] = adart2;
     }
     void dart_link_alpha(Dart_handle adart, Dart_handle adart2, unsigned int i)
     {
       CGAL_assertion(i <= dimension);
-      CGAL_assertion(adart!=nullptr && adart2!=nullptr);
+      CGAL_assertion(adart!=NULL && adart2!=NULL);
       adart->mf[i] = adart2;
     }
 
@@ -425,18 +443,16 @@ namespace CGAL {
     template<unsigned int i>
     void dart_unlink_alpha(Dart_handle adart)
     {
-      CGAL_assertion(adart!=nullptr && i <= dimension);
+      CGAL_assertion(adart!=NULL && i <= dimension);
       adart->mf[i] = adart;
     }
     void dart_unlink_alpha(Dart_handle adart, unsigned int i)
     {
-      CGAL_assertion(adart!=nullptr && i <= dimension);
+      CGAL_assertion(adart!=NULL && i <= dimension);
       adart->mf[i] = adart;
     }
 
   protected:
-    Dart_handle null_dart_handle; // To be compatible with combinatorial map
-
     /// Dart container.
     Dart_container mdarts;
 
@@ -450,7 +466,7 @@ namespace CGAL {
   const typename GMap_linear_cell_complex_storage_1<d_, ambient_dim, Traits_,
                                          Items_, Alloc_>::Null_handle_type
   GMap_linear_cell_complex_storage_1<d_, ambient_dim, Traits_,
-                                Items_, Alloc_>::null_handle = nullptr;
+                                Items_, Alloc_>::null_handle = NULL;
 } // namespace CGAL
 
 #if  (BOOST_GCC >= 40900)

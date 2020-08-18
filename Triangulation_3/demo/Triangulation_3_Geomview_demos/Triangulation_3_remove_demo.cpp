@@ -2,10 +2,19 @@
 // All rights reserved.
 //
 // This file is part of CGAL (www.cgal.org).
+// You can redistribute it and/or modify it under the terms of the GNU
+// General Public License as published by the Free Software Foundation,
+// either version 3 of the License, or (at your option) any later version.
+//
+// Licensees holding a valid commercial license may use this file in
+// accordance with the commercial license agreement provided with the software.
+//
+// This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
+// WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 //
 // $URL$
 // $Id$
-// SPDX-License-Identifier: GPL-3.0-or-later OR LicenseRef-Commercial
+// SPDX-License-Identifier: GPL-3.0+
 //
 //
 // Author(s)     : Monique Teillaud <Monique.Teillaud@sophia.inria.fr>
@@ -46,7 +55,7 @@ typedef Dt::Point           Point;
 //////////////////////
 template<class TRIANGULATION>
 void visu_cell(CGAL::Geomview_stream & os, const TRIANGULATION & T,
-               Cell_handle c)
+	       Cell_handle c)
 {
   if ( ! T.is_infinite(c) )
     os << T.tetrahedron(c);
@@ -55,14 +64,14 @@ void visu_cell(CGAL::Geomview_stream & os, const TRIANGULATION & T,
 }
 template<class TRIANGULATION>
 void visu_facet(CGAL::Geomview_stream & os, const TRIANGULATION & T,
-               Cell_handle c, int i)
+	       Cell_handle c, int i)
 {
   if ( ! T.is_infinite(c,i) )
     os << T.triangle(c,i);
 }
 template<class TRIANGULATION>
 void visu_edge(CGAL::Geomview_stream & os, const TRIANGULATION & T,
-               Cell_handle c, int i, int j)
+	       Cell_handle c, int i, int j)
 {
   if ( ! T.is_infinite(c,i,j) )
     os << T.segment(c,i,j);
@@ -83,7 +92,7 @@ void visu_vertices(CGAL::Geomview_stream & os, const TRIANGULATION & T)
 }
 template<class TRIANGULATION>
 void visu_vertex(CGAL::Geomview_stream & os, const TRIANGULATION & T,
-               Cell_handle c, int i)
+	       Cell_handle c, int i)
 {
   if ( ! T.is_infinite(c->vertex(i)) )
     os << c->vertex(i)->point();
@@ -108,7 +117,7 @@ int main()
   for (z=0 ; z<5 ; z++)
     for (y=0 ; y<5 ; y++)
       for (x=0 ; x<5 ; x++)
-          V[i++] = T.insert(Point(x,y,z));
+	  V[i++] = T.insert(Point(x,y,z));
 
   assert( T.is_valid() );
   assert( T.number_of_vertices() == 125 );

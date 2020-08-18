@@ -8,8 +8,8 @@ typedef CGAL::Exact_predicates_inexact_constructions_kernel K;
 
 typedef CGAL::Exact_predicates_tag                               Itag;
 typedef CGAL::Constrained_Delaunay_triangulation_2<K, CGAL::Default, Itag> CDT;
-typedef CDT::Point Point;
-typedef CDT::Edge  Edge;
+typedef CDT::Point          Point;
+
 int
 main( )
 {
@@ -22,9 +22,10 @@ main( )
 
   assert(cdt.is_valid());
   int count = 0;
-  for (const Edge& e : cdt.finite_edges())
-    if (cdt.is_constrained(e))
-      ++count;
+  for (CDT::Finite_edges_iterator eit = cdt.finite_edges_begin();
+       eit != cdt.finite_edges_end();
+       ++eit)
+    if (cdt.is_constrained(*eit)) ++count;
   std::cout << "The number of resulting constrained edges is  ";
   std::cout <<  count << std::endl;
   return 0;

@@ -1,11 +1,20 @@
 // Copyright (c) 2011 CNRS and LIRIS' Establishments (France).
 // All rights reserved.
 //
-// This file is part of CGAL (www.cgal.org)
+// This file is part of CGAL (www.cgal.org); you can redistribute it and/or
+// modify it under the terms of the GNU Lesser General Public License as
+// published by the Free Software Foundation; either version 3 of the License,
+// or (at your option) any later version.
+//
+// Licensees holding a valid commercial license may use this file in
+// accordance with the commercial license agreement provided with the software.
+//
+// This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
+// WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 //
 // $URL$
 // $Id$
-// SPDX-License-Identifier: LGPL-3.0-or-later OR LicenseRef-Commercial
+// SPDX-License-Identifier: LGPL-3.0+
 //
 // Author(s)     : Guillaume Damiand <guillaume.damiand@liris.cnrs.fr>
 //
@@ -149,7 +158,7 @@ public:
     typedef CGAL::Cell_attribute_with_point< Refs > Vertex_attrib;
     typedef CGAL::Cell_attribute< Refs, Volume_info> Volume_attrib;
 
-    typedef std::tuple<Vertex_attrib,void,void,
+    typedef CGAL::cpp11::tuple<Vertex_attrib,void,void,
                                Volume_attrib> Attributes;
   };
 };
@@ -185,7 +194,8 @@ typedef CGAL::Triangulation_face_base_with_info_2<Face_info,P_traits> Fb1;
 
 typedef CGAL::Constrained_triangulation_face_base_2<P_traits, Fb1>    Fb;
 typedef CGAL::Triangulation_data_structure_2<Vb,Fb>                   TDS;
-typedef CGAL::Exact_predicates_tag                                    Itag;
+// typedef CGAL::No_intersection_tag                                     Itag;
+ typedef CGAL::Exact_predicates_tag Itag;
 typedef CGAL::Constrained_Delaunay_triangulation_2<P_traits, TDS,
                                                    Itag>              CDT;
 

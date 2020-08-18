@@ -2,11 +2,20 @@
 // All rights reserved.
 //
 // This file is part of CGAL (www.cgal.org).
+// You can redistribute it and/or modify it under the terms of the GNU
+// General Public License as published by the Free Software Foundation,
+// either version 3 of the License, or (at your option) any later version.
+//
+// Licensees holding a valid commercial license may use this file in
+// accordance with the commercial license agreement provided with the software.
+//
+// This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
+// WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 //
 // $URL$
 // $Id$
-// SPDX-License-Identifier: GPL-3.0-or-later OR LicenseRef-Commercial
-//
+// SPDX-License-Identifier: GPL-3.0+
+// 
 //
 // Author(s)     : Mariette Yvinec
 
@@ -22,14 +31,15 @@
 
 namespace CGAL {
 
-template <class Tds>
+  // with Once set to false, the Edge is reported twice, seen from the two adjacentfaces 
+  template <class Tds, bool Once = true>
 class Triangulation_ds_edge_iterator_2
 {
 public:
   typedef typename Tds::Edge           Edge;
   typedef typename Tds::Face_iterator  Face_iterator;
   typedef typename Tds::Face_handle    Face_handle;
-
+    
   typedef Edge            value_type;
   typedef Edge*           pointer;
   typedef Edge&           reference;
@@ -37,8 +47,8 @@ public:
   typedef std::ptrdiff_t                         difference_type;
   typedef std::bidirectional_iterator_tag        iterator_category;
 
-  typedef Triangulation_ds_edge_iterator_2<Tds>  Edge_iterator;
-
+  typedef Triangulation_ds_edge_iterator_2<Tds,Once> Edge_iterator;
+  
 private:
 const Tds* _tds;
 Face_iterator pos;
@@ -58,19 +68,20 @@ public:
   Edge*     operator->() const;
   Edge&     operator*() const ;
 
-private:
+private: 
   void increment();
   void decrement();
-  bool associated_edge();
+  bool associated_edge(CGAL::Tag_true);
+  bool associated_edge(CGAL::Tag_false);
 };
 
 
 // Edge iterator implementation
 
-template<class Tds>
-Triangulation_ds_edge_iterator_2<Tds>::
+template<class Tds, bool Once>
+Triangulation_ds_edge_iterator_2<Tds,Once> ::
 Triangulation_ds_edge_iterator_2(const Tds * tds)
- :  _tds(tds)
+ :  _tds(tds) 
 {
   edge.second = 0;
   if (_tds->dimension()<= 0) {
@@ -79,14 +90,14 @@ Triangulation_ds_edge_iterator_2(const Tds * tds)
   }
   pos = _tds->faces().begin();
   if (_tds->dimension() == 1) edge.second = 2;
-    while ( pos != _tds->faces().end() && !associated_edge())
-      increment();
+    while ( pos != _tds->faces().end()  
+            && !associated_edge(Boolean_tag<Once>()) ) increment();
 }
 
-template<class Tds>
-Triangulation_ds_edge_iterator_2<Tds>::
+template<class Tds, bool Once>
+Triangulation_ds_edge_iterator_2<Tds,Once> ::
 Triangulation_ds_edge_iterator_2(const Tds * tds, int )
-  : _tds(tds)
+  : _tds(tds) 
 {
   pos = tds->faces().end();
   edge.second = 0;
@@ -94,19 +105,19 @@ Triangulation_ds_edge_iterator_2(const Tds * tds, int )
 }
 
 
-template<class Tds>
+template<class Tds, bool Once>
 inline
 bool
-Triangulation_ds_edge_iterator_2<Tds>::
+Triangulation_ds_edge_iterator_2<Tds,Once> ::
 operator==(const Edge_iterator& fi) const
 {
   return _tds == fi._tds  && pos == fi.pos  && edge.second == fi.edge.second;
 }
 
-template<class Tds>
+template<class Tds, bool Once>
 inline
 void
-Triangulation_ds_edge_iterator_2<Tds>::
+Triangulation_ds_edge_iterator_2<Tds,Once> ::
 increment()
 {
   CGAL_triangulation_precondition(_tds->dimension() >= 1);
@@ -116,10 +127,10 @@ increment()
   return;
 }
 
-template<class Tds>
+template<class Tds, bool Once>
 inline
 void
-Triangulation_ds_edge_iterator_2<Tds>::
+Triangulation_ds_edge_iterator_2<Tds,Once> ::
 decrement()
 {
   CGAL_triangulation_precondition(_tds->dimension() >= 1);
@@ -129,81 +140,90 @@ decrement()
   return;
 }
 
-template<class Tds>
+template<class Tds, bool Once>
 inline
 bool
-Triangulation_ds_edge_iterator_2<Tds>::
-associated_edge()
+Triangulation_ds_edge_iterator_2<Tds,Once> ::
+associated_edge(Tag_true)
 {
   if (_tds->dimension() == 1) {return true;}
   return Face_handle(pos) < pos->neighbor(edge.second);
 }
 
-template<class Tds>
+template<class Tds, bool Once>
 inline
-Triangulation_ds_edge_iterator_2<Tds>&
-Triangulation_ds_edge_iterator_2<Tds>::
+bool
+Triangulation_ds_edge_iterator_2<Tds,Once> ::
+associated_edge(Tag_false)
+{
+  return true;
+}
+
+template<class Tds, bool Once>
+inline
+Triangulation_ds_edge_iterator_2<Tds,Once>&
+Triangulation_ds_edge_iterator_2<Tds,Once> ::
 operator++()
 {
-  //CGAL_triangulation_precondition(pos != Iterator_base() &&
-  //                               pos != _tds->faces().end());
+  //CGAL_triangulation_precondition(pos != Iterator_base() && 
+  //			       pos != _tds->faces().end());
   do     increment();
-  while( pos != _tds->faces().end() && !associated_edge());
+  while( pos != _tds->faces().end() && !associated_edge(Boolean_tag<Once>()));
   return *this;
 }
+    
 
-
-template<class Tds>
+template<class Tds, bool Once>
 inline
-Triangulation_ds_edge_iterator_2<Tds>&
-Triangulation_ds_edge_iterator_2<Tds>::
+Triangulation_ds_edge_iterator_2<Tds,Once>&
+Triangulation_ds_edge_iterator_2<Tds,Once> ::
 operator--()
 {
-  // CGAL_triangulation_precondition(pos != Iterator_base()
+  // CGAL_triangulation_precondition(pos != Iterator_base() 
   //                          && *this != Edge_iterator(_tds));
   do      decrement();
-  while ( !associated_edge() && *this != Edge_iterator(_tds) );
+  while ( !associated_edge(Boolean_tag<Once>()) && *this != Edge_iterator(_tds) ); 
   return *this;
 }
 
-
-template<class Tds>
+    
+template<class Tds, bool Once>
 inline
-Triangulation_ds_edge_iterator_2<Tds>
-Triangulation_ds_edge_iterator_2<Tds>::
+Triangulation_ds_edge_iterator_2<Tds,Once>
+Triangulation_ds_edge_iterator_2<Tds,Once> ::    
 operator++(int)
 {
   Edge_iterator tmp(*this);
   ++(*this);
   return tmp;
 }
-
-template<class Tds>
+    
+template<class Tds, bool Once>
 inline
-Triangulation_ds_edge_iterator_2<Tds>
-Triangulation_ds_edge_iterator_2<Tds>::
+Triangulation_ds_edge_iterator_2<Tds,Once>
+Triangulation_ds_edge_iterator_2<Tds,Once> ::     
 operator--(int)
 {
   Edge_iterator tmp(*this);
   --(*this);
   return tmp;
 }
-
-template<class Tds>
+    
+template<class Tds, bool Once>
 inline
-typename Triangulation_ds_edge_iterator_2<Tds>::Edge*
-Triangulation_ds_edge_iterator_2<Tds>::
+typename Triangulation_ds_edge_iterator_2<Tds,Once>::Edge*
+Triangulation_ds_edge_iterator_2<Tds,Once> ::    
 operator->() const
 {
   edge.first = pos;
   return &edge;
 }
 
-template<class Tds>
+template<class Tds, bool Once>
 inline
-typename Triangulation_ds_edge_iterator_2<Tds>::Edge&
-Triangulation_ds_edge_iterator_2<Tds>::
-operator*() const
+typename Triangulation_ds_edge_iterator_2<Tds,Once>::Edge&
+Triangulation_ds_edge_iterator_2<Tds,Once> ::    
+operator*() const 
 {
   edge.first = pos;
   return edge;

@@ -1,5 +1,6 @@
 /*!
-\ingroup PkgSolverInterfaceConcepts
+\ingroup PkgSolverConcepts
+
 \cgalConcept
 
 Concept describing the set of requirements for solving the normal equation \f$ A^t A X = A^t B \f$,
@@ -9,6 +10,7 @@ Concept describing the set of requirements for solving the normal equation \f$ A
 
 \cgalHasModel `CGAL::Eigen_solver_traits<T>`
 */
+
 class NormalEquationSparseLinearAlgebraTraits_d
 {
 public:
@@ -68,3 +70,4 @@ bool normal_equation_solver(const Matrix& A, const Vector& B, Vector& X);
 /// @}
 
 }; /* end NormalEquationSparseLinearAlgebraTraits_d */
+

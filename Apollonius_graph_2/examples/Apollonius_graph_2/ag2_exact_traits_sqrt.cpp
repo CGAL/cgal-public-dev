@@ -1,12 +1,14 @@
-#include <CGAL/config.h>
+#include <CGAL/basic.h>
 
 // standard includes
 #include <iostream>
 #include <fstream>
 #include <cassert>
 
-#if defined(CGAL_USE_CORE) || defined(CGAL_USE_LEDA)
-#  include <CGAL/Exact_algebraic.h>
+#if defined CGAL_USE_LEDA
+#  include <CGAL/leda_real.h>
+#elif defined CGAL_USE_CORE
+#  include <CGAL/CORE_Expr.h>
 #endif
 
 // *** WARNING ***
@@ -16,10 +18,13 @@
 // benchmarking the Apollonius_graph_filtered_traits_2<> class should
 // be used.
 
-#if defined(CGAL_USE_CORE) || defined(CGAL_USE_LEDA)
+#if defined CGAL_USE_LEDA
 // If LEDA is present use leda_real as the exact number type
+typedef leda_real NT;
+
+#elif defined CGAL_USE_CORE
 // Otherwise if CORE is present use CORE's Expr as the exact number type
-typedef CGAL::Exact_algebraic NT;
+typedef CORE::Expr NT;
 
 #else
 

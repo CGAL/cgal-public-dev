@@ -1,15 +1,21 @@
-// Copyright (c) 1999
+// Copyright (c) 1999  
 // Utrecht University (The Netherlands),
 // ETH Zurich (Switzerland),
 // INRIA Sophia-Antipolis (France),
 // Max-Planck-Institute Saarbruecken (Germany),
-// and Tel-Aviv University (Israel).  All rights reserved.
+// and Tel-Aviv University (Israel).  All rights reserved. 
 //
-// This file is part of CGAL (www.cgal.org)
+// This file is part of CGAL (www.cgal.org); you can redistribute it and/or
+// modify it under the terms of the GNU Lesser General Public License as
+// published by the Free Software Foundation; either version 3 of the License,
+// or (at your option) any later version.
+//
+// This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
+// WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 //
 // $URL$
 // $Id$
-// SPDX-License-Identifier: LGPL-3.0-or-later
+// SPDX-License-Identifier: LGPL-3.0+
 //
 //
 // Author(s)     : Stefan Schirra
@@ -20,7 +26,6 @@
 
 #include <CGAL/Bbox_3.h>
 #include <cassert>
-#include <CGAL/use.h>
 
 template <class R>
 bool
@@ -30,6 +35,9 @@ _test_cls_iso_cuboid_3(const R& )
 
  typedef typename  R::RT    RT;
  typedef typename  R::FT    FT;
+
+ typename R::Iso_cuboid_3 ir;
+ CGAL::Iso_cuboid_3<R>  r0(ir);
 
  RT n1 =  1;
  RT n2 =  2;
@@ -56,10 +64,6 @@ _test_cls_iso_cuboid_3(const R& )
  CGAL::Point_3<R> p11(n2, n8, n2, n2);    // ( 1, 4, 1)
  CGAL::Point_3<R> p12(n1, n1, n3 );       // ( 1, 1, 3)
  CGAL::Point_3<R> p13(n4, n1, n3 );       // ( 4, 1, 3)
-
- typename R::Iso_cuboid_3 ir0; CGAL_USE(ir0); // test default-construction
- typename R::Iso_cuboid_3 ir( p1, p3);
- CGAL::Iso_cuboid_3<R>  r0(ir);
 
  const CGAL::Iso_cuboid_3<R> r1( p1, p3);
  CGAL::Iso_cuboid_3<R> r1_( p1, p3, 0);

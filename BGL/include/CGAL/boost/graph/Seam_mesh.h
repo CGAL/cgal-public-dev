@@ -1,10 +1,19 @@
 // Copyright (c) 2016  GeometryFactory (France).  All rights reserved.
 //
-// This file is part of CGAL (www.cgal.org)
+// This file is part of CGAL (www.cgal.org); you can redistribute it and/or
+// modify it under the terms of the GNU Lesser General Public License as
+// published by the Free Software Foundation; either version 3 of the License,
+// or (at your option) any later version.
+//
+// Licensees holding a valid commercial license may use this file in
+// accordance with the commercial license agreement provided with the software.
+//
+// This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
+// WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 //
 // $URL$
 // $Id$
-// SPDX-License-Identifier: LGPL-3.0-or-later OR LicenseRef-Commercial
+// SPDX-License-Identifier: LGPL-3.0+
 //
 //
 // Author(s)     : Andreas Fabri, Mael Rouxel-Labbé
@@ -20,6 +29,7 @@
 #include <CGAL/circulator.h>
 #include <CGAL/Unique_hash_map.h>
 
+#include <boost/foreach.hpp>
 #include <boost/iterator/iterator_facade.hpp>
 #include <boost/unordered_set.hpp>
 
@@ -43,6 +53,10 @@ public:
 
   Seam_mesh_halfedge_descriptor()
     : tmhd(), seam(false)
+  { }
+
+  Seam_mesh_halfedge_descriptor(const Seam_mesh_halfedge_descriptor& other)
+    : tmhd(other.tmhd), seam(other.seam)
   { }
 
   Seam_mesh_halfedge_descriptor(TM_halfedge_descriptor tmhd, bool seam = false)
@@ -124,8 +138,8 @@ public:
   /// The type for the objects used to identify halfedges in the underlying mesh.
   typedef typename boost::graph_traits<TM>::halfedge_descriptor   TM_halfedge_descriptor;
 
-  /// The type for the iterators that traverse through the complete halfedge set of the underlying mesh.
-  typedef typename boost::graph_traits<TM>::halfedge_iterator     TM_halfedge_iterator;
+ /// The type for the iterators that traverse through the complete halfedge set of the underlying mesh.
+ typedef typename boost::graph_traits<TM>::halfedge_iterator     TM_halfedge_iterator;
 
   /// The type for the objects used to identify edges in the underlying mesh.
   typedef typename boost::graph_traits<TM>::edge_descriptor       TM_edge_descriptor;
@@ -168,7 +182,7 @@ private:
   mutable vertices_size_type number_of_vertices;
 
 public:
-  /// returns the underlying mesh.
+  /// Returns the underlying mesh.
   const TM& mesh() const
   {
     return tm;
@@ -227,7 +241,7 @@ public:
     bool seam;
     const Self* mesh_;
 
-    halfedge_iterator() : hd(), end(), seam(false), mesh_(nullptr) { }
+    halfedge_iterator() : hd(), end(), seam(false), mesh_(NULL) { }
 
     halfedge_iterator(const Iterator_range<TM_halfedge_iterator>& ir, const Self* m)
       : hd(ir.first), end(ir.second), seam(false), mesh_(m)
@@ -289,6 +303,10 @@ public:
       : hd(h)
     { }
 
+    vertex_descriptor(const vertex_descriptor& other)
+      : hd(other.hd)
+    { }
+
     bool operator==(const vertex_descriptor& other) const
     {
       return (hd == other.hd);
@@ -340,7 +358,7 @@ public:
 
   public:
     /// Constructors
-    vertex_iterator() : hd(), end(), mesh_(nullptr) { }
+    vertex_iterator() : hd(), end(), mesh_(NULL) { }
 
     vertex_iterator(const Iterator_range<TM_halfedge_iterator>& ir, const Self* m)
       : hd(ir.first), end(ir.second), mesh_(m)
@@ -423,7 +441,7 @@ public:
 #endif
 
     edge_descriptor()
-      : mesh_(nullptr)
+      : mesh_(NULL)
     {}
 
     edge_descriptor(const halfedge_descriptor& hd, const Self* m)
@@ -432,17 +450,12 @@ public:
 
     friend bool operator==(edge_descriptor e1, edge_descriptor e2)
     {
-      return (e1.hd == e2.hd) || (e1.hd == e2.mesh_->opposite(e2.hd));
+      return (e1.hd == e2.hd) || (e1.hd == e2.mesh_->opposite(e2.hd)); 
     }
 
     friend bool operator!=(edge_descriptor e1, edge_descriptor e2)
     {
       return ! (e1 == e2);
-    }
-
-    friend std::size_t hash_value(const edge_descriptor& ed)
-    {
-      return hash_value((std::min)(ed.hd, ed.mesh_->opposite(ed.hd)));
     }
   };
 
@@ -465,7 +478,7 @@ public:
     const Self* mesh_;
 
   public:
-    edge_iterator() : hd(), end(), seam(false), mesh_(nullptr) { }
+    edge_iterator() : hd(), end(), seam(false), mesh_(NULL) { }
 
     edge_iterator(const Iterator_range<TM_halfedge_iterator>& ir, const Self* m)
       : hd(ir.first), end(ir.second), seam(false), mesh_(m)
@@ -543,31 +556,31 @@ public:
   /// \name Seam query functions
   /// @{
 
-  /// returns `true` if the vertex is on the seam.
+  /// Returns `true` if the vertex is on the seam.
   bool has_on_seam(TM_vertex_descriptor vd) const
   {
     return get(svm, vd);
   }
 
-  /// returns `true` if the edge is on the seam.
+  /// Returns `true` if the edge is on the seam.
   bool has_on_seam(TM_edge_descriptor ed) const
   {
     return get(sem, ed);
   }
 
-  /// returns `true` if the halfedge is on the seam.
+  /// Returns `true` if the halfedge is on the seam.
   bool has_on_seam(TM_halfedge_descriptor tmhd) const
   {
     return get(sem, CGAL::edge(tmhd, tm));
   }
 
-  /// returns `true` if the halfedge is on the seam.
+  /// Returns `true` if the halfedge is on the seam.
   bool has_on_seam(const halfedge_descriptor& hd) const
   {
     return has_on_seam(CGAL::edge(hd, tm));
   }
 
-  /// returns the number of seam edges in the seam mesh.
+  /// Return the number of seam edges in the seam mesh.
   edges_size_type number_of_seam_edges() const
   {
     return number_of_seams;
@@ -601,7 +614,7 @@ public:
   }
   /// @endcond
 
-  /// returns the iterator range of the vertices of the mesh.
+  /// Returns the iterator range of the vertices of the mesh.
   Iterator_range<vertex_iterator> vertices() const
   {
     Iterator_range<TM_halfedge_iterator> ir = CGAL::halfedges(tm);
@@ -627,7 +640,7 @@ public:
   }
   /// @endcond
 
-  /// returns the iterator range of the halfedges of the mesh.
+  /// Returns the iterator range of the halfedges of the mesh.
   Iterator_range<halfedge_iterator> halfedges() const
   {
     Iterator_range<TM_halfedge_iterator> ir = CGAL::halfedges(tm);
@@ -652,7 +665,7 @@ public:
   }
   /// @endcond
 
-  /// returns the iterator range of the edges of the mesh.
+  /// Returns the iterator range of the edges of the mesh.
   Iterator_range<edge_iterator> edges() const
   {
     Iterator_range<TM_halfedge_iterator> ir = CGAL::halfedges(tm);
@@ -675,7 +688,7 @@ public:
   }
   /// @endcond
 
-  /// returns the iterator range of the faces of the mesh.
+  /// Returns the iterator range of the faces of the mesh.
   Iterator_range<face_iterator> faces() const
   {
     return CGAL::faces(tm);
@@ -686,7 +699,7 @@ public:
   /// \name Memory Management
   /// @{
 
-  /// returns the number of vertices in the seam mesh.
+  /// Returns the number of vertices in the seam mesh.
   vertices_size_type num_vertices() const
   {
     if(number_of_vertices == static_cast<vertices_size_type>(-1)) {
@@ -696,19 +709,19 @@ public:
     return number_of_vertices;
   }
 
-  /// returns the number of halfedges in the seam mesh.
+  /// Returns the number of halfedges in the seam mesh.
   halfedges_size_type num_halfedges() const
   {
     return CGAL::num_halfedges(tm) + 2 * number_of_seams;
   }
 
-  /// returns the number of edges in the seam mesh.
+  /// Returns the number of edges in the seam mesh.
   halfedges_size_type num_edges() const
   {
     return CGAL::num_edges(tm) + number_of_seams;
   }
 
-  /// returns the number of faces in the seam mesh.
+  /// Returns the number of faces in the seam mesh.
   faces_size_type num_faces() const
   {
     return CGAL::num_faces(tm);
@@ -719,7 +732,7 @@ public:
   /// \name Degree Functions
   /// @{
 
-  /// returns the number of incident halfedges of vertex `v`.
+  /// Returns the number of incident halfedges of vertex `v`.
   degree_size_type degree(vertex_descriptor v) const
   {
     degree_size_type count(0);
@@ -743,13 +756,13 @@ public:
 #ifndef DOXYGEN_RUNNING
   ///@{
 
-  /// returns the edge that contains halfedge `h` as one of its two halfedges.
+  /// Returns the edge that contains halfedge `h` as one of its two halfedges.
   edge_descriptor edge(halfedge_descriptor h) const
   {
     return edge_descriptor(h,this);
   }
 
-  /// returns the halfedge corresponding to the edge `e`.
+  /// Returns the halfedge corresponding to the edge `e`.
   halfedge_descriptor halfedge(edge_descriptor e) const
   {
     return e.hd;
@@ -758,7 +771,7 @@ public:
 
   ///@{
 
-  /// returns an incoming halfedge of vertex `v`.
+  /// Returns an incoming halfedge of vertex `v`.
   /// If `v` is a seam vertex, this will be the halfedge whose target is `v` and
   /// whose opposite is a virtual border halfedge.
   /// Otherwise, the rules of the underlying mesh are followed.
@@ -769,7 +782,7 @@ public:
     return halfedge_descriptor(h, false /*not on seam*/);
   }
 
-  /// finds a halfedge between two vertices. Returns a default constructed
+  /// Finds a halfedge between two vertices. Returns a default constructed
   /// `halfedge_descriptor`, if  `source` and  `target` are not connected.
   std::pair<halfedge_descriptor, bool> halfedge(vertex_descriptor u,
                                                 vertex_descriptor v) const
@@ -800,7 +813,7 @@ public:
     return std::make_pair(halfedge_descriptor(), false/*invalid*/);
   }
 
-  /// finds an edge between two vertices. Returns a default constructed
+  /// Finds an edge between two vertices. Returns a default constructed
   /// `edge`, if  `source` and  `target` are not connected.
   std::pair<edge_descriptor, bool> edge(vertex_descriptor u, vertex_descriptor v) const
   {
@@ -815,7 +828,7 @@ public:
     return halfedge_descriptor(hd, false/*not on seam*/);
   }
 
-  /// returns the face incident to halfedge `h`.
+  /// Returns the face incident to halfedge `h`.
   face_descriptor face(halfedge_descriptor h) const
   {
     if(h.seam)
@@ -825,7 +838,7 @@ public:
   }
 
 public:
-  /// returns the next halfedge within the incident face.
+  /// Returns the next halfedge within the incident face.
   halfedge_descriptor next(const halfedge_descriptor& hd) const
   {
     if((!hd.seam) && (!is_border(hd.tmhd, tm)))
@@ -840,7 +853,7 @@ public:
                                !is_border(CGAL::opposite(*hatc, tm), tm));
   }
 
-  /// returns the previous halfedge within the incident face.
+  /// Returns the previous halfedge within the incident face.
   halfedge_descriptor prev(const halfedge_descriptor& hd) const
   {
     if((!hd.seam) && (!is_border(hd.tmhd, tm)))
@@ -855,7 +868,7 @@ public:
                                !is_border(CGAL::opposite(*hatc, tm), tm));
   }
 
-  /// returns the opposite halfedge of `hd`.
+  /// Returns the opposite halfedge of `hd`.
   halfedge_descriptor opposite(const halfedge_descriptor& hd) const
   {
     if(!hd.seam)
@@ -864,7 +877,7 @@ public:
     return halfedge_descriptor(CGAL::opposite(hd.tmhd, tm), false /*not on seam*/);
   }
 
-  /// returns the vertex the halfedge `h` emanates from.
+  /// Returns the vertex the halfedge `h` emanates from.
   vertex_descriptor target(halfedge_descriptor hd) const
   {
     TM_halfedge_descriptor tmhd(hd);
@@ -884,7 +897,7 @@ public:
     return vertex_descriptor(halfedge_descriptor(tmhd));
   }
 
-  /// returns the vertex the halfedge `h` emanates from.
+  /// Returns the vertex the halfedge `h` emanates from.
   vertex_descriptor source(const halfedge_descriptor& hd) const
   {
     return target(opposite(hd));
@@ -922,7 +935,7 @@ public:
   /// \name Seam selection
   /// @{
 
-  /// marks the edge of the underlying mesh that has extremities the vertices
+  /// Mark the edge of the underlying mesh that has extremities the vertices
   /// `tm_vd_s` and `tm_vd_s` as a seam edge.
   ///
   /// \return whether the edge was successfully marked or not.
@@ -963,7 +976,7 @@ public:
     return true;
   }
 
-  /// creates new seams.
+  /// Create new seams.
   ///
   /// The edges to be marked as seams are described by the range [first, last) of
   /// vertices of the underlying mesh. Each edge to be marked is described
@@ -998,13 +1011,13 @@ public:
     return tmhd;
   }
 
-  /// creates new seams.
+  /// Create new seams.
   ///
   /// A seam edge is described by a pair of integers. The integer index
   /// of a vertex of the underlying mesh is given by its position
   /// in the container `tm_vds`.
   ///
-  /// \tparam VdContainer must be a model of `SequenceContainer` (that is, provide
+  /// \tparam VdContainer must be a model of <a href="http://en.cppreference.com/w/cpp/concept/SequenceContainer"><tt>SequenceContainer</tt></a> (that is, provide
   ///         the functions: `operator[]` and `at()`).
   ///
   /// \returns one of the halfedges of the seam mesh that is on a seam.
@@ -1024,7 +1037,7 @@ public:
     return add_seams(seam_vertices.begin(), seam_vertices.end());
   }
 
-  /// creates new seams.
+  /// Create new seams.
   ///
   /// A seam edge is described by a pair of integers. The integer
   /// index of a vertex of the underlying mesh is defined as its position when
@@ -1041,7 +1054,7 @@ public:
     return add_seams(in, tm_vds);
   }
 
-  /// creates new seams.
+  /// Create new seams.
   ///
   /// A seam edge is described by a pair of integers. The integer index
   /// of a vertex of the underlying mesh is given by its position
@@ -1049,11 +1062,11 @@ public:
   ///
   /// \returns one of the halfedges of the seam mesh that is on a seam.
   ///
-  /// \tparam VdContainer must be a model of `SequenceContainer` (that is, provide
+  /// \tparam VdContainer must be a model of <a href="http://en.cppreference.com/w/cpp/concept/SequenceContainer"><tt>SequenceContainer</tt></a> (that is, provide
   ///         the functions: `operator[]` and `at()`).
   ///
-  /// \pre filename should be the name of a \cgal selection file with file extension "*.selection.txt":
-  ///      edges are described by pairs of integers, on the third line of the file.
+  /// \pre filename should be the name of a CGAL selection file: edges are
+  ///      described by pairs of integers, on the third line of the file.
   template<typename VdContainer>
   TM_halfedge_descriptor add_seams(const char* filename,
                                    const VdContainer& tm_vds)
@@ -1062,7 +1075,7 @@ public:
 
     // Check the file type
     std::string str = filename;
-    if( (str.length()) < 14 || (str.substr(str.length() - 14) != ".selection.txt") ) {
+    if(str.substr(str.length() - 14) != ".selection.txt") {
       std::cerr << "Error: seams must be given by a *.selection.txt file" << std::endl;
       return tmhd;
     }
@@ -1085,7 +1098,7 @@ public:
     return add_seams(in, tm_vds);
   }
 
-  /// creates new seams.
+  /// Create new seams.
   ///
   /// A seam edge is described by a pair of integers. The integer
   /// index of a vertex of the underlying mesh is defined as its position when
@@ -1094,8 +1107,8 @@ public:
   ///
   /// \returns one of the halfedges of the seam mesh that is on a seam.
   ///
-  /// \pre filename should be the name of a \cgal selection file with file extension "*.selection.txt":
-  ///      edges are described by pairs of integers, on the third line of the file.
+  /// \pre filename should be the name of a CGAL selection file: edges are
+  ///      described by pairs of integers, on the third line of the file.
   TM_halfedge_descriptor add_seams(const char* filename)
   {
     std::vector<TM_vertex_descriptor> tm_vds;
@@ -1104,7 +1117,7 @@ public:
 
   /// @}
 
-  /// constructs a seam mesh for a triangle mesh and an edge and vertex property map
+  /// Constructs a seam mesh for a triangle mesh and an edge and vertex property map
   ///
   /// \param tm the underlying mesh
   /// \param sem the edge property map with value `true` for seam edges

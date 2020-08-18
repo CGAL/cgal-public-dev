@@ -1,11 +1,20 @@
 // Copyright (c) 2010-2011 CNRS and LIRIS' Establishments (France).
 // All rights reserved.
 //
-// This file is part of CGAL (www.cgal.org)
+// This file is part of CGAL (www.cgal.org); you can redistribute it and/or
+// modify it under the terms of the GNU Lesser General Public License as
+// published by the Free Software Foundation; either version 3 of the License,
+// or (at your option) any later version.
+//
+// Licensees holding a valid commercial license may use this file in
+// accordance with the commercial license agreement provided with the software.
+//
+// This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
+// WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 //
 // $URL$
 // $Id$
-// SPDX-License-Identifier: LGPL-3.0-or-later OR LicenseRef-Commercial
+// SPDX-License-Identifier: LGPL-3.0+
 //
 // Author(s)     : Guillaume Damiand <guillaume.damiand@liris.cnrs.fr>
 //
@@ -140,57 +149,64 @@ namespace CGAL
           to_erase.begin();
       for ( ; it!=to_erase.end(); ++it )
       {
-        if (i!=1 || amap.template beta<1>(*it)!=*it) // for 1-removal of a dart loop, nothing to do
+        d1=amap.template beta<iinv>(*it);
+        while ( d1!=amap.null_dart_handle && amap.is_marked(d1, mark) )
         {
-          d1=amap.template beta<iinv>(*it);
-          while (d1!=amap.null_dart_handle && amap.is_marked(d1, mark))
-          {
-            d1=amap.template beta<i+1, iinv>(d1);
-            if (d1==amap. template beta<iinv>(*it))
-            { d1=amap.null_dart_handle; }
-          }
+          d1=amap.template beta<i+1, iinv>(d1);
+          if ( d1==amap. template beta<iinv>(*it) ) d1=amap.null_dart_handle;
+        }
 
+        if ( !amap.is_marked(d1, mark_modified_darts) )
+        {
           d2=amap.template beta<i+1,i>(*it);
           while ( d2!=amap.null_dart_handle && amap.is_marked(d2, mark) )
           {
             d2=amap.template beta<i+1,i>(d2);
             if ( d2==amap.template beta<i+1,i>(*it) )
-            { d2=amap.null_dart_handle; }
+              d2=amap.null_dart_handle;
           }
 
-          if ( d1!=amap.null_dart_handle )
+          if ( !amap.is_marked(d2, mark_modified_darts) )
           {
-            if ( d2!=amap.null_dart_handle && d1!=d2 )
+            if ( d1!=amap.null_dart_handle )
             {
-              amap.template basic_link_beta<i>(d1, d2);
-              amap.mark(d1, mark_modified_darts);
-              amap.mark(d2, mark_modified_darts);
-              first_modified_darts.push_back(d1);
-              modified_darts.push_back(d2);
-            }
-            else
-            {
-              if (d1==d2)
+              if ( d2!=amap.null_dart_handle && d1!=d2 )
               {
-                amap.template basic_link_beta<i>(d1, d1);
+                //d1->basic_link_beta(d2, i);
+                amap.template basic_link_beta<i>(d1, d2);
                 amap.mark(d1, mark_modified_darts);
+                amap.mark(d2, mark_modified_darts);
                 first_modified_darts.push_back(d1);
+                modified_darts.push_back(d2);
+                // TODO push only one out of two dart ?
+
+                /*if ( i==1 )
+                {
+                  d2->basic_link_beta(d1, 0);
+                  modified_darts.push_back(d2);
+                }*/
+                //            modified_darts2.push_back(d1);
               }
-              else if ( !amap.template is_free<i>(d1) )
+              else
               {
-                amap.template unlink_beta<i>(d1);
-                amap.mark(d1, mark_modified_darts);
-                first_modified_darts.push_back(d1);
+                if ( !amap.template is_free<i>(d1) )
+                {
+                  amap.template unlink_beta<i>(d1);
+                  CGAL_assertion( !amap.is_marked(d1, mark_modified_darts) );
+                  amap.mark(d1, mark_modified_darts);
+                  first_modified_darts.push_back(d1);
+                }
               }
             }
-          }
-          else if ( d2!=amap.null_dart_handle )
-          {
-            if ( !amap.template is_free<iinv>(d2) )
+            else if ( d2!=amap.null_dart_handle )
             {
-              amap.template unlink_beta<iinv>(d2);
-              amap.mark(d2, mark_modified_darts);
-              modified_darts.push_back(d2);
+              if ( !amap.template is_free<iinv>(d2) )
+              {
+                amap.template unlink_beta<iinv>(d2);
+                CGAL_assertion( !amap.is_marked(d2, mark_modified_darts) );
+                amap.mark(d2, mark_modified_darts);
+                modified_darts.push_back(d2);
+              }
             }
           }
         }
@@ -201,6 +217,7 @@ namespace CGAL
           if ( !amap.template is_free<iinv>(d1) )
           {
             amap.template unlink_beta<iinv>(d1);
+            CGAL_assertion( !amap.is_marked(d1, mark_modified_darts) );
             amap.mark(d1, mark_modified_darts);
             modified_darts.push_back(d1);
           }

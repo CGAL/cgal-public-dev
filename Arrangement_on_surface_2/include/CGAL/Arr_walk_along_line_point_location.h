@@ -2,11 +2,20 @@
 // All rights reserved.
 //
 // This file is part of CGAL (www.cgal.org).
+// You can redistribute it and/or modify it under the terms of the GNU
+// General Public License as published by the Free Software Foundation,
+// either version 3 of the License, or (at your option) any later version.
+//
+// Licensees holding a valid commercial license may use this file in
+// accordance with the commercial license agreement provided with the software.
+//
+// This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
+// WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 //
 // $URL$
 // $Id$
-// SPDX-License-Identifier: GPL-3.0-or-later OR LicenseRef-Commercial
-//
+// SPDX-License-Identifier: GPL-3.0+
+// 
 //
 // Author(s)     : Ron Wein   <wein@post.tau.ac.il>
 //                 (based on old version by Oren Nechushtan and Iddo Hanniel)
@@ -67,7 +76,7 @@ protected:
     Isolated_vertex_const_iterator;
 
   // Data members:
-  const Arrangement_2*    p_arr;        // The associated arrangement.
+  const Arrangement_2*    p_arr;        // The associated arrangement.  
   const Traits_adaptor_2* geom_traits;  // Its associated geometry traits.
   const Topology_traits*  top_traits;   // Its associated topology traits.
 
@@ -77,12 +86,12 @@ protected:
 
 public:
   /*! Default constructor. */
-  Arr_walk_along_line_point_location() :
-    p_arr(nullptr),
-    geom_traits(nullptr),
-    top_traits(nullptr)
+  Arr_walk_along_line_point_location() : 
+    p_arr(NULL),
+    geom_traits(NULL),
+    top_traits(NULL)
   {}
-
+        
   /*! Constructor given an arrangement. */
   Arr_walk_along_line_point_location(const Arrangement_2& arr) :
     p_arr(&arr)
@@ -93,7 +102,7 @@ public:
   }
 
   /*! Attach an arrangement object. */
-  void attach(const Arrangement_2& arr)
+  void attach(const Arrangement_2& arr) 
   {
     p_arr = &arr;
     geom_traits =
@@ -104,11 +113,11 @@ public:
   /*! Detach from the current arrangement object. */
   void detach()
   {
-    p_arr = nullptr;
-    geom_traits = nullptr;
-    top_traits = nullptr;
+    p_arr = NULL;
+    geom_traits = NULL;
+    top_traits = NULL;
   }
-
+ 
   /*!
    * Locate the arrangement feature containing the given point.
    * \param p The query point.
@@ -168,7 +177,7 @@ protected:
    * \param is_on_edge Output: Is the query point located on closest_he.
    * \param closest_to_target Output: Whether the closest point to p in
    *                                  closest_he to p is its target (in case
-   *                                  p is not located on closest_he).
+   *                                  p is not located on closest_he). 
    * \return (true) if p is contained in the connected component;
    *         (false) otherwise.
    */

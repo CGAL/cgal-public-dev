@@ -1,15 +1,24 @@
-// Copyright (c) 2002,2003
+// Copyright (c) 2002,2003  
 // Utrecht University (The Netherlands),
 // ETH Zurich (Switzerland),
 // INRIA Sophia-Antipolis (France),
 // Max-Planck-Institute Saarbruecken (Germany),
-// and Tel-Aviv University (Israel).  All rights reserved.
+// and Tel-Aviv University (Israel).  All rights reserved. 
 //
-// This file is part of CGAL (www.cgal.org)
+// This file is part of CGAL (www.cgal.org); you can redistribute it and/or
+// modify it under the terms of the GNU Lesser General Public License as
+// published by the Free Software Foundation; either version 3 of the License,
+// or (at your option) any later version.
+//
+// Licensees holding a valid commercial license may use this file in
+// accordance with the commercial license agreement provided with the software.
+//
+// This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
+// WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 //
 // $URL$
 // $Id$
-// SPDX-License-Identifier: LGPL-3.0-or-later OR LicenseRef-Commercial
+// SPDX-License-Identifier: LGPL-3.0+
 //
 //
 // Author(s)     : Andreas Fabri, Sylvain Pion
@@ -222,23 +231,20 @@ public:
   Gmpq& operator*=(const Gmpq &q);
   Gmpq& operator/=(const Gmpq &q);
 
-  bool operator==(const Gmpq &q) const noexcept { return mpq_equal(this->mpq(), q.mpq()) != 0;}
+  bool operator==(const Gmpq &q) const { return mpq_equal(this->mpq(), q.mpq()) != 0;}
   bool operator< (const Gmpq &q) const { return mpq_cmp(this->mpq(), q.mpq()) < 0; }
 
-  double to_double() const noexcept;
-  Sign sign() const noexcept;
+  double to_double() const;
+  Sign sign() const;
 
-  const mpq_t & mpq() const noexcept { return Ptr()->mpQ; }
-  mpq_t & mpq() noexcept { return ptr()->mpQ; }
+  const mpq_t & mpq() const { return Ptr()->mpQ; }
+  mpq_t & mpq() { return ptr()->mpQ; }
 
-  friend void swap(Gmpq &x, Gmpq &y) noexcept { x.Base::swap(y); }
-#ifdef CGAL_PROFILE
   ~Gmpq()
   {
      CGAL_HISTOGRAM_PROFILER("[Gmpq sizes in log2 scale]",
                              (unsigned) ( ::log(double(size())) / ::log(double(2)) )  );
   }
-#endif
 
   // Interoperability with int
   Gmpq& operator+=(int z){return (*this)+= Gmpq(z);}
@@ -449,12 +455,12 @@ Gmpq& Gmpq::operator/=(const Gmpz &z){
 
 inline
 double
-Gmpq::to_double() const noexcept
+Gmpq::to_double() const
 { return mpq_get_d(mpq()); }
 
 inline
 Sign
-Gmpq::sign() const noexcept
+Gmpq::sign() const
 { return static_cast<Sign>(mpq_sgn(mpq())); }
 
 inline

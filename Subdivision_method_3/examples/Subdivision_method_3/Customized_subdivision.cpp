@@ -6,6 +6,7 @@
 #include <CGAL/subdivision_method_3.h>
 #include <CGAL/Timer.h>
 
+#include <boost/foreach.hpp>
 #include <boost/lexical_cast.hpp>
 
 #include <iostream>
@@ -52,10 +53,10 @@ public:
     Point_ref S = get(vpm,vd);
 
     std::size_t n = 0;
-    for(halfedge_descriptor hd : halfedges_around_target(vd, pmesh)){
+    BOOST_FOREACH(halfedge_descriptor hd, halfedges_around_target(vd, pmesh)){
       ++n;
       Point_ref p = get(vpm, target(opposite(hd,pmesh),pmesh));
-      R[0] += p[0];         R[1] += p[1];         R[2] += p[2];
+      R[0] += p[0]; 	R[1] += p[1]; 	R[2] += p[2];
     }
 
     if (n == 6) {

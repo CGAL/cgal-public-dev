@@ -15,26 +15,38 @@ typedef CDTP::Point                                                       Point;
 typedef CDTP::Constraint_id                                               Cid;
 typedef CDTP::Vertex_handle                                               Vertex_handle;
 
-void
+void 
 print(const CDTP& cdtp, Cid cid)
 {
+  typedef CDTP::Vertices_in_constraint Vertices_in_constraint;
+
   std::cout << "Polyline constraint:" << std::endl;
-  for(Vertex_handle vh : cdtp.vertices_in_constraint(cid)){
+  for(Vertices_in_constraint it = cdtp.vertices_in_constraint_begin(cid);
+      it !=cdtp.vertices_in_constraint_end(cid);
+      it++){
+    Vertex_handle vh = *it;
     std::cout << vh->point() << std::endl;
   }
 }
 
 
-void
+void 
 contexts(const CDTP& cdtp)
 {
-  for(auto sc : cdtp.subconstraints()){
-    Vertex_handle vp = sc.first.first, vq = sc.first.second;
+  CDTP::Subconstraint_iterator
+    beg = cdtp.subconstraints_begin(),
+    end = cdtp.subconstraints_end();
+
+  for(; beg!=end; ++beg){
+    Vertex_handle vp = beg->first.first, vq = beg->first.second;
 
     if(cdtp.number_of_enclosing_constraints(vp, vq) == 2){
-      std::cout << "subconstraint " << vp->point() << " " << vq->point()
+      CDTP::Context_iterator cbeg = cdtp.contexts_begin(vp,vq),
+        cend = cdtp.contexts_end(vp,vq);
+      std::cout << "subconstraint " << vp->point() << " " << vq->point() 
                 << " is on constraints starting at:\n";
-      for(const CDTP::Context& c : cdtp.contexts(vp,vq)){
+      for(; cbeg !=  cend; ++cbeg){
+        CDTP::Context c = *cbeg;
         std::cout << (*(c.vertices_begin()))->point() << std::endl;
       }
     }

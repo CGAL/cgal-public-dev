@@ -2,10 +2,19 @@
 // All rights reserved.
 //
 // This file is part of CGAL (www.cgal.org).
+// You can redistribute it and/or modify it under the terms of the GNU
+// General Public License as published by the Free Software Foundation,
+// either version 3 of the License, or (at your option) any later version.
+//
+// Licensees holding a valid commercial license may use this file in
+// accordance with the commercial license agreement provided with the software.
+//
+// This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
+// WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 //
 // $URL$
 // $Id$
-// SPDX-License-Identifier: GPL-3.0-or-later OR LicenseRef-Commercial
+// SPDX-License-Identifier: GPL-3.0+
 //
 //
 // Author(s)     : Monique Teillaud <Monique.Teillaud@sophia.inria.fr>
@@ -37,15 +46,16 @@
 
 #ifndef CGAL_TRIANGULATION_3_DONT_INSERT_RANGE_OF_POINTS_WITH_INFO
 #include <CGAL/Spatial_sort_traits_adapter_3.h>
+#include <CGAL/internal/info_check.h>
 
 #include <boost/tuple/tuple.hpp>
+#include <boost/iterator/zip_iterator.hpp>
 #include <boost/mpl/and.hpp>
 #endif //CGAL_TRIANGULATION_3_DONT_INSERT_RANGE_OF_POINTS_WITH_INFO
 
 #ifdef CGAL_LINKED_WITH_TBB
 # include <CGAL/point_generators_3.h>
 # include <tbb/parallel_for.h>
-# include <thread>
 # include <tbb/enumerable_thread_specific.h>
 # include <tbb/concurrent_vector.h>
 #endif
@@ -93,7 +103,6 @@ class Delaunay_triangulation_3<Gt, Tds_, Default, Lock_data_structure_>
   typedef Delaunay_triangulation_3<Gt, Tds_, Default, Lock_data_structure_> Self;
 
 public:
-  typedef typename Tds::Concurrency_tag                     Concurrency_tag;
   typedef Triangulation_3<Gt, Tds, Lock_data_structure_>    Tr_Base;
 
   typedef Tds                                               Triangulation_data_structure;
@@ -224,7 +233,7 @@ protected:
   }
 
 public:
-  Delaunay_triangulation_3(const Gt& gt = Gt(), Lock_data_structure *lock_ds = nullptr)
+  Delaunay_triangulation_3(const Gt& gt = Gt(), Lock_data_structure *lock_ds = NULL)
     : Tr_Base(gt, lock_ds)
   {}
 
@@ -237,13 +246,20 @@ public:
   Delaunay_triangulation_3(const Point& p0, const Point& p1,
                            const Point& p2, const Point& p3,
                            const Gt& gt = Gt(),
-                           Lock_data_structure *lock_ds = nullptr)
+                           Lock_data_structure *lock_ds = NULL)
     : Tr_Base(p0, p1, p2, p3, gt, lock_ds)
   {}
 
+  // copy constructor duplicates vertices and cells
+  Delaunay_triangulation_3(const Delaunay_triangulation_3& tr)
+    : Tr_Base(tr)
+  {
+    CGAL_triangulation_postcondition(is_valid());
+  }
+
   template < typename InputIterator >
   Delaunay_triangulation_3(InputIterator first, InputIterator last,
-                           const Gt& gt = Gt(), Lock_data_structure *lock_ds = nullptr)
+                           const Gt& gt = Gt(), Lock_data_structure *lock_ds = NULL)
     : Tr_Base(gt, lock_ds)
   {
     insert(first, last);
@@ -257,7 +273,6 @@ public:
   {
     insert(first, last);
   }
-
 
 private:
   #ifdef CGAL_CONCURRENT_TRIANGULATION_3_ADD_TEMPORARY_POINTS_ON_FAR_SPHERE
@@ -290,7 +305,7 @@ private:
                                          bbox.zmin() + 0.5*zdelta);
       Random_points_on_sphere_3<Point> random_point(radius);
       const int NUM_PSEUDO_INFINITE_VERTICES = static_cast<int>(
-                                                 std::thread::hardware_concurrency() * 3.5);
+                                                 tbb::task_scheduler_init::default_num_threads() * 3.5);
       std::vector<Point> points_on_far_sphere;
 
       points_on_far_sphere.reserve(NUM_PSEUDO_INFINITE_VERTICES);
@@ -338,7 +353,7 @@ public:
                               typename std::iterator_traits<InputIterator>::value_type,
                               Point
                           >
-                        >::type* = nullptr)
+                        >::type* = NULL)
 #else
   template < class InputIterator >
   std::ptrdiff_t insert(InputIterator first, InputIterator last)
@@ -350,7 +365,7 @@ public:
 
     size_type n = number_of_vertices();
     std::vector<Point> points(first, last);
-    spatial_sort<Concurrency_tag>(points.begin(), points.end(), geom_traits());
+    spatial_sort(points.begin(), points.end(), geom_traits());
 
     // Parallel
 #ifdef CGAL_LINKED_WITH_TBB
@@ -404,8 +419,18 @@ public:
 
 #ifndef CGAL_TRIANGULATION_3_DONT_INSERT_RANGE_OF_POINTS_WITH_INFO
 private:
-  using Tr_Base::top_get_first;
-  using Tr_Base::top_get_second;
+  //top stands for tuple-or-pair
+  template <class Info>
+  const Point& top_get_first(const std::pair<Point,Info>& pair) const { return pair.first; }
+
+  template <class Info>
+  const Info& top_get_second(const std::pair<Point,Info>& pair) const { return pair.second; }
+
+  template <class Info>
+  const Point& top_get_first(const boost::tuple<Point,Info>& tuple) const { return boost::get<0>(tuple); }
+
+  template <class Info>
+  const Info& top_get_second(const boost::tuple<Point,Info>& tuple) const { return boost::get<1>(tuple); }
 
   template <class Tuple_or_pair,class InputIterator>
   std::ptrdiff_t insert_with_info(InputIterator first, InputIterator last)
@@ -426,8 +451,8 @@ private:
     typedef typename Pointer_property_map<Point>::type Pmap;
     typedef Spatial_sort_traits_adapter_3<Geom_traits,Pmap> Search_traits;
 
-    spatial_sort<Concurrency_tag>(indices.begin(), indices.end(),
-                                  Search_traits(make_property_map(points),geom_traits()));
+    spatial_sort(indices.begin(), indices.end(),
+                 Search_traits(make_property_map(points),geom_traits()));
 
 #ifdef CGAL_LINKED_WITH_TBB
     if(this->is_parallel())
@@ -484,7 +509,7 @@ public:
                             typename std::iterator_traits<InputIterator>::value_type,
                             std::pair<Point, typename internal::Info_check<
                                                typename Triangulation_data_structure::Vertex>::type>
-                          > >::type* =nullptr)
+                          > >::type* =NULL)
   {
     return insert_with_info< std::pair<Point,typename internal::Info_check<typename Triangulation_data_structure::Vertex>::type> >(first,last);
   }
@@ -498,25 +523,25 @@ public:
               boost::is_convertible< typename std::iterator_traits<InputIterator_1>::value_type, Point >,
               boost::is_convertible< typename std::iterator_traits<InputIterator_2>::value_type, typename internal::Info_check<typename Triangulation_data_structure::Vertex>::type >
             >
-          >::type* =nullptr)
+          >::type* =NULL)
   {
     return insert_with_info< boost::tuple<Point, typename internal::Info_check<
         typename Triangulation_data_structure::Vertex>::type> >(first,last);
   }
 #endif //CGAL_TRIANGULATION_3_DONT_INSERT_RANGE_OF_POINTS_WITH_INFO
 
-  Vertex_handle insert(const Point& p, Vertex_handle hint, bool *could_lock_zone = nullptr)
+  Vertex_handle insert(const Point& p, Vertex_handle hint, bool *could_lock_zone = NULL)
   {
     return insert(p, hint == Vertex_handle() ? this->infinite_cell() : hint->cell(),
                   could_lock_zone);
   }
 
   Vertex_handle insert(const Point& p, Cell_handle start = Cell_handle(),
-                       bool *could_lock_zone = nullptr);
+                       bool *could_lock_zone = NULL);
 
   Vertex_handle insert(const Point& p, Locate_type lt,
                        Cell_handle c, int li, int,
-                       bool *could_lock_zone = nullptr);
+                       bool *could_lock_zone = NULL);
 
 public: // internal methods
   template <class OutputItCells>
@@ -546,7 +571,7 @@ public:
                  OutputIteratorBoundaryFacets bfit,
                  OutputIteratorCells cit,
                  OutputIteratorInternalFacets ifit,
-                 bool *could_lock_zone = nullptr) const
+                 bool *could_lock_zone = NULL) const
   {
     CGAL_triangulation_precondition(dimension() >= 2);
 
@@ -595,7 +620,7 @@ public:
   find_conflicts(const Point& p, Cell_handle c,
                  OutputIteratorBoundaryFacets bfit,
                  OutputIteratorCells cit,
-                 bool *could_lock_zone = nullptr) const
+                 bool *could_lock_zone = NULL) const
   {
       Triple<OutputIteratorBoundaryFacets,
              OutputIteratorCells,
@@ -888,6 +913,11 @@ protected:
     : m_dt(dt), m_points(points), m_tls_hint(tls_hint)
     {}
 
+    // Constructor
+    Insert_point(const Insert_point& ip)
+    : m_dt(ip.m_dt), m_points(ip.m_points), m_tls_hint(ip.m_tls_hint)
+    {}
+
     // operator()
     void operator()(const tbb::blocked_range<size_t>& r) const
     {
@@ -963,6 +993,12 @@ protected:
       m_tls_hint(tls_hint)
     {}
 
+    // Constructor
+    Insert_point_with_info(const Insert_point_with_info& ip)
+      : m_dt(ip.m_dt), m_points(ip.m_points), m_infos(ip.m_infos),
+      m_indices(ip.m_indices), m_tls_hint(ip.m_tls_hint)
+    {}
+
     // operator()
     void operator()(const tbb::blocked_range<size_t>& r) const
     {
@@ -1034,6 +1070,12 @@ protected:
                  tbb::concurrent_vector<Vertex_handle>& vertices_to_remove_sequentially)
     : m_dt(dt), m_vertices(vertices),
       m_vertices_to_remove_sequentially(vertices_to_remove_sequentially)
+    {}
+
+    // Constructor
+    Remove_point(const Remove_point& rp)
+    : m_dt(rp.m_dt), m_vertices(rp.m_vertices),
+      m_vertices_to_remove_sequentially(rp.m_vertices_to_remove_sequentially)
     {}
 
     // operator()
@@ -1241,15 +1283,15 @@ class Delaunay_triangulation_3<Gt,Tds,Default,Lds>::Vertex_remover
   typedef DelaunayTriangulation_3 Delaunay;
 
 public:
-  typedef std::nullptr_t Hidden_points_iterator;
+  typedef Nullptr_t Hidden_points_iterator;
 
   Vertex_remover(Delaunay &tmp_) : tmp(tmp_) {}
 
   Delaunay &tmp;
 
   void add_hidden_points(Cell_handle) {}
-  Hidden_points_iterator hidden_points_begin() { return nullptr; }
-  Hidden_points_iterator hidden_points_end() { return nullptr; }
+  Hidden_points_iterator hidden_points_begin() { return NULL; }
+  Hidden_points_iterator hidden_points_end() { return NULL; }
 
   Bounded_side side_of_bounded_circle(const Point& p, const Point& q,
                                       const Point& r, const Point& s,
@@ -1266,15 +1308,15 @@ class Delaunay_triangulation_3<Gt,Tds,Default,Lds>::Vertex_inserter
   typedef DelaunayTriangulation_3 Delaunay;
 
 public:
-  typedef std::nullptr_t Hidden_points_iterator;
+  typedef Nullptr_t Hidden_points_iterator;
 
   Vertex_inserter(Delaunay &tmp_) : tmp(tmp_) {}
 
   Delaunay &tmp;
 
   void add_hidden_points(Cell_handle) {}
-  Hidden_points_iterator hidden_points_begin() { return nullptr; }
-  Hidden_points_iterator hidden_points_end() { return nullptr; }
+  Hidden_points_iterator hidden_points_begin() { return NULL; }
+  Hidden_points_iterator hidden_points_end() { return NULL; }
 
   Vertex_handle insert(const Point& p, Locate_type lt, Cell_handle c, int li, int lj)
   {

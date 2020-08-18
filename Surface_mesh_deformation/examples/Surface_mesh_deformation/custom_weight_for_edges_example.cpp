@@ -47,9 +47,10 @@ int main()
 
   std::map<halfedge_descriptor, double> weight_map;
   // Store all the weights
-  for(halfedge_descriptor h : halfedges(mesh))
+  halfedge_iterator eb, ee;
+  for(boost::tie(eb, ee) = halfedges(mesh); eb != ee; ++eb)
   {
-    weight_map[h] = 1.0; // store some precomputed weights
+    weight_map[*eb] = 1.0; // store some precomputed weights
   }
 
   // Create and initialize the vertex index map
@@ -57,16 +58,16 @@ int main()
   Vertex_index_map vertex_index_map(internal_vertex_index_map);
   vertex_iterator vb, ve;
   std::size_t counter = 0;
-  for(vertex_descriptor v : vertices(mesh)) {
-    put(vertex_index_map, v, counter++);
+  for(boost::tie(vb, ve) = vertices(mesh); vb != ve; ++vb, ++counter) {
+    put(vertex_index_map, *vb, counter);
   }
 
   // Create and initialize the halfedge index map
   Internal_hedge_map internal_hedge_index_map;
   Hedge_index_map hedge_index_map(internal_hedge_index_map);
   counter = 0;
-  for(halfedge_descriptor h : halfedges(mesh)) {
-    put(hedge_index_map, h, counter++);
+  for(boost::tie(eb, ee) = halfedges(mesh); eb != ee; ++eb, ++counter) {
+    put(hedge_index_map, *eb, counter);
   }
   Surface_mesh_deformation deform_mesh(mesh,
                                        vertex_index_map,

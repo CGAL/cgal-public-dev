@@ -1,4 +1,4 @@
-#include <CGAL/config.h>
+#include <CGAL/basic.h>
 
 #if !defined(CGAL_USE_CORE)
 #include <iostream>

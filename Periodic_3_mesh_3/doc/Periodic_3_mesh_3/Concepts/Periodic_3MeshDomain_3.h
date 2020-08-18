@@ -1,5 +1,5 @@
 /*!
-\ingroup PkgPeriodic3Mesh3Concepts
+\ingroup PkgPeriodic_3_mesh_3Concepts
 \cgalConcept
 
 \cgalRefines `MeshDomain_3`
@@ -40,5 +40,7 @@ public:
   returns the user-chosen cube that is the canonical instance of the flat torus.
   */
   const Iso_cuboid_3& bounding_box();
+
+/// @}
 
 }; /* end Periodic_3MeshDomain_3 */

@@ -1,19 +1,28 @@
-// Copyright (c) 1999
+// Copyright (c) 1999  
 // Utrecht University (The Netherlands),
 // ETH Zurich (Switzerland),
 // INRIA Sophia-Antipolis (France),
 // Max-Planck-Institute Saarbruecken (Germany),
-// and Tel-Aviv University (Israel).  All rights reserved.
+// and Tel-Aviv University (Israel).  All rights reserved. 
 //
-// This file is part of CGAL (www.cgal.org)
+// This file is part of CGAL (www.cgal.org); you can redistribute it and/or
+// modify it under the terms of the GNU Lesser General Public License as
+// published by the Free Software Foundation; either version 3 of the License,
+// or (at your option) any later version.
+//
+// Licensees holding a valid commercial license may use this file in
+// accordance with the commercial license agreement provided with the software.
+//
+// This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
+// WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 //
 // $URL$
 // $Id$
-// SPDX-License-Identifier: LGPL-3.0-or-later OR LicenseRef-Commercial
-//
+// SPDX-License-Identifier: LGPL-3.0+
+// 
 //
 // Author(s)     : Stefan Schirra
-
+ 
 #ifndef CGAL_RAYH3_H
 #define CGAL_RAYH3_H
 
@@ -27,6 +36,7 @@ namespace CGAL {
 template < class R_ >
 class RayH3
 {
+   typedef typename R_::RT                   RT;
    typedef typename R_::FT                   FT;
    typedef typename R_::Point_3              Point_3;
    typedef typename R_::Line_3               Line_3;
@@ -58,7 +68,7 @@ public:
     const Point_3 & start() const;
     const Point_3 & source() const;
     Point_3 second_point() const;
-    Point_3 point(const FT i) const;
+    Point_3 point(int i) const;
     Direction_3 direction() const;
     const Vector_3 & to_vector() const;
     Line_3  supporting_line() const;
@@ -108,11 +118,10 @@ RayH3<R>::second_point() const
 template < class R >
 CGAL_KERNEL_INLINE
 typename RayH3<R>::Point_3
-RayH3<R>::point(const FT i) const
+RayH3<R>::point(int i) const
 {
-  CGAL_kernel_precondition( i >= FT(0) );
-  if (i == FT(0)) return source();
-  return start() + i * to_vector();
+  CGAL_kernel_precondition( i >= 0 );
+  return start() + RT(i)*to_vector();
 }
 
 template < class R >

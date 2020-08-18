@@ -1,10 +1,10 @@
 # Created by the script cgal_create_cmake_script_with_options
 # This is the CMake script for compiling a set of CGAL applications.
 
-cmake_minimum_required(VERSION 3.1...3.15)
 project( BGL_Tests )
 
 
+cmake_minimum_required(VERSION 2.8.11)
 
 
 
@@ -14,16 +14,20 @@ find_package( CGAL QUIET COMPONENTS  )
 if ( NOT CGAL_FOUND )
 
   message(STATUS "This project requires the CGAL library, and will not be compiled.")
-  return()
+  return()  
 
 endif()
+
+# include helper file
+include( ${CGAL_USE_FILE} )
+
 
 # Boost and its components
 find_package( Boost )
 
 if ( NOT Boost_FOUND )
   message(STATUS "This project requires the Boost library, and will not be compiled.")
-  return()
+  return()  
 endif()
 
 find_package( OpenMesh QUIET )
@@ -38,9 +42,12 @@ endif()
 
 
 # include for local package
+include_directories( BEFORE ../../include )
 
 # Creating entries for all .cpp/.C files with "main" routine
 # ##########################################################
+
+include( CGAL_CreateSingleSourceCGALProgram )
 
 if(OpenMesh_FOUND)
   create_single_source_cgal_program( "graph_concept_OpenMesh.cpp" )
@@ -87,8 +94,6 @@ create_single_source_cgal_program( "graph_concept_Face_filtered_graph.cpp" )
 
 create_single_source_cgal_program( "test_Manifold_face_removal.cpp")
 
-create_single_source_cgal_program( "test_Regularize_face_selection_borders.cpp")
-
 create_single_source_cgal_program( "test_Face_filtered_graph.cpp" )
 
 create_single_source_cgal_program( "test_Euler_operations.cpp" )
@@ -98,10 +103,6 @@ create_single_source_cgal_program( "test_Collapse_edge.cpp" )
 create_single_source_cgal_program( "test_graph_traits.cpp" )
 
 create_single_source_cgal_program( "test_Properties.cpp" )
-
-create_single_source_cgal_program( "test_wrl.cpp" )
-
-create_single_source_cgal_program( "bench_read_from_stream_vs_add_face_and_add_faces.cpp" )
 
 if(OpenMesh_FOUND)
   target_link_libraries( test_clear PRIVATE ${OPENMESH_LIBRARIES})

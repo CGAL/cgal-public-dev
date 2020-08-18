@@ -1,16 +1,13 @@
 #include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
 #include <CGAL/Exact_predicates_exact_constructions_kernel.h>
-
 #include <CGAL/Surface_mesh.h>
 
-#include <CGAL/boost/graph/copy_face_graph.h>
-#include <CGAL/boost/graph/Dual.h>
-#include <CGAL/boost/graph/named_params_helper.h>
-#include <CGAL/centroid.h>
 #include <CGAL/Polygon_mesh_processing/triangulate_faces.h>
-
+#include <boost/foreach.hpp>
+#include <CGAL/boost/graph/Dual.h>
 #include <boost/graph/filtered_graph.hpp>
-
+#include <CGAL/boost/graph/copy_face_graph.h>
+#include <CGAL/centroid.h>
 #include <fstream>
 
 typedef CGAL::Exact_predicates_inexact_constructions_kernel Epic;
@@ -31,45 +28,9 @@ test_triangulate_faces()
     std::cerr << "Not a valid off file." << std::endl;
     return false;
   }
-
-  bool success = CGAL::Polygon_mesh_processing::triangulate_faces(mesh);
-  assert(CGAL::is_triangle_mesh(mesh));
-
-  return success;
-}
-
-template <typename K>
-bool
-test_triangulate_faces_with_named_parameters()
-{
-  typedef typename K::Point_3                    Point;
-  typedef CGAL::Surface_mesh<Epic::Point_3>      Surface_mesh;
-
-  Surface_mesh mesh;
-  std::ifstream input("data/cube_quad.off");
-
-  typedef Surface_mesh::Property_map<Surface_mesh::Vertex_index, Point>  VertexPointMap;
-  VertexPointMap custom_vpm = mesh.add_property_map<Surface_mesh::Vertex_index, Point>("exact_vpm", Point()).first;
-
-  typedef typename CGAL::property_map_selector<Surface_mesh, boost::vertex_point_t>::const_type CVPM;
-  CVPM cvpm = CGAL::get_const_property_map(CGAL::vertex_point, mesh);
-
-  if (!input || !(input >> mesh) || mesh.is_empty())
-  {
-    std::cerr << "Not a valid off file." << std::endl;
-    return false;
-  }
-
-  CGAL::Cartesian_converter<Epic, K> to_custom;
-
-  for(boost::graph_traits<Surface_mesh>::vertex_descriptor vd : vertices(mesh))
-  {
-    put(custom_vpm, vd, to_custom(get(cvpm, vd)));
-  }
-
-  bool success = CGAL::Polygon_mesh_processing::triangulate_faces(mesh,
-                                                                  CGAL::parameters::vertex_point_map(custom_vpm)
-                                                                                   .geom_traits(K()));
+  
+  bool success =
+  CGAL::Polygon_mesh_processing::triangulate_faces(mesh);
   assert(CGAL::is_triangle_mesh(mesh));
 
   return success;
@@ -91,12 +52,9 @@ test_triangulate_face_range()
     return false;
   }
 
-  bool success = CGAL::Polygon_mesh_processing::triangulate_faces(faces(mesh), mesh);
+  bool success =
+    CGAL::Polygon_mesh_processing::triangulate_faces(faces(mesh), mesh);
   assert(CGAL::is_triangle_mesh(mesh));
-
-  // For compilation
-  CGAL::Polygon_mesh_processing::triangulate_faces(faces(mesh), mesh,
-                                                   CGAL::parameters::geom_traits(K()));
 
   return success;
 }
@@ -118,7 +76,7 @@ test_triangulate_face()
   }
 
   unsigned int nb = 0;
-  for(typename boost::graph_traits<Surface_mesh>::face_descriptor fit : faces(mesh))
+  BOOST_FOREACH(typename boost::graph_traits<Surface_mesh>::face_descriptor fit, faces(mesh))
   {
     if (nb > 4)
       break;
@@ -127,11 +85,9 @@ test_triangulate_face()
     {
       if(CGAL::Polygon_mesh_processing::triangulate_face(fit, mesh))
         ++nb;
-      else
-        assert(false);
+      else assert(false);
     }
   }
-
   return true;
 }
 
@@ -151,9 +107,9 @@ test_triangulate_triangle_face()
     return false;
   }
 
-  for(typename boost::graph_traits<Surface_mesh>::face_descriptor fit : faces(mesh))
+  BOOST_FOREACH(typename boost::graph_traits<Surface_mesh>::face_descriptor fit, faces(mesh))
   {
-    if(!CGAL::Polygon_mesh_processing::triangulate_face(fit, mesh, CGAL::parameters::geom_traits(K())))
+    if(!CGAL::Polygon_mesh_processing::triangulate_face(fit, mesh))
       assert(false);
   }
   return true;
@@ -190,7 +146,7 @@ struct Dual_vpm
   {
     std::vector<Point> face_points;
 
-    for(vertex_descriptor v :
+    BOOST_FOREACH(vertex_descriptor v,
                   CGAL::vertices_around_face(halfedge(f, map.primal()), map.primal()))
     {
       face_points.push_back( get(map.primal_map(), v) );
@@ -230,10 +186,12 @@ test_dual_with_various_faces()
   // copy dual to a sm
   Surface_mesh sm_dual;
   CGAL::copy_face_graph(dual, sm_dual,
-                        CGAL::parameters::vertex_point_map(
-                          Dual_vpm<Surface_mesh, Point, Pmap>(mesh, vpmap)));
+                        CGAL::Emptyset_iterator(),
+                        CGAL::Emptyset_iterator(),
+                        CGAL::Emptyset_iterator(),
+                        Dual_vpm<Surface_mesh, Point, Pmap>(mesh, vpmap));
 
-  for(typename boost::graph_traits<Surface_mesh>::face_descriptor fit : faces(sm_dual))
+  BOOST_FOREACH(typename boost::graph_traits<Surface_mesh>::face_descriptor fit, faces(sm_dual))
   {
     if(!CGAL::Polygon_mesh_processing::triangulate_face(fit, sm_dual))
       assert(false);
@@ -241,17 +199,19 @@ test_dual_with_various_faces()
   return true;
 }
 
+
+
+
+
 int main()
 {
   assert(test_triangulate_faces<Epic>());
-  assert(test_triangulate_faces_with_named_parameters<Epic>());
   assert(test_triangulate_face_range<Epic>());
   assert(test_triangulate_face<Epic>());
   assert(test_triangulate_triangle_face<Epic>());
   assert(test_dual_with_various_faces<Epic>());
 
   assert(test_triangulate_faces<Epec>());
-  assert(test_triangulate_faces_with_named_parameters<Epec>());
   assert(test_triangulate_face_range<Epec>());
   assert(test_triangulate_face<Epec>());
   assert(test_triangulate_triangle_face<Epec>());

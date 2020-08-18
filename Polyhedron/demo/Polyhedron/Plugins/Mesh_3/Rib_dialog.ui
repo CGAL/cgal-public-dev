@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>423</width>
-    <height>443</height>
+    <height>436</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -22,6 +22,20 @@
      <layout class="QVBoxLayout" name="verticalLayout_2">
       <item>
        <layout class="QGridLayout" name="gridLayout">
+        <item row="1" column="1">
+         <widget class="QDoubleSpinBox" name="sphereRadius">
+          <property name="decimals">
+           <number>4</number>
+          </property>
+         </widget>
+        </item>
+        <item row="2" column="1">
+         <widget class="QDoubleSpinBox" name="cylinderRadius">
+          <property name="decimals">
+           <number>4</number>
+          </property>
+         </widget>
+        </item>
         <item row="2" column="0">
          <widget class="QLabel" name="cylinderRadiusLabel">
           <property name="text">
@@ -33,20 +47,6 @@
          <widget class="QLabel" name="sphereRadiusLabel">
           <property name="text">
            <string>sphere radius (points)</string>
-          </property>
-         </widget>
-        </item>
-        <item row="1" column="2">
-         <widget class="DoubleEdit" name="sphereRadius">
-          <property name="text">
-           <string>0.00</string>
-          </property>
-         </widget>
-        </item>
-        <item row="2" column="2">
-         <widget class="DoubleEdit" name="cylinderRadius">
-          <property name="text">
-           <string>0.00</string>
           </property>
          </widget>
         </item>
@@ -70,6 +70,13 @@
      <layout class="QVBoxLayout" name="verticalLayout_3">
       <item>
        <layout class="QGridLayout" name="gridLayout_2">
+        <item row="1" column="0">
+         <widget class="QLabel" name="ambientLabel">
+          <property name="text">
+           <string>Ambient Light</string>
+          </property>
+         </widget>
+        </item>
         <item row="1" column="2">
          <widget class="QCheckBox" name="isAmbientOn">
           <property name="text">
@@ -80,10 +87,29 @@
           </property>
          </widget>
         </item>
-        <item row="2" column="0">
-         <widget class="QLabel" name="shadowLabel">
-          <property name="text">
-           <string>Shadow Light</string>
+        <item row="1" column="1">
+         <widget class="QDoubleSpinBox" name="ambientIntensity">
+          <property name="maximum">
+           <double>1.000000000000000</double>
+          </property>
+          <property name="singleStep">
+           <double>0.010000000000000</double>
+          </property>
+          <property name="value">
+           <double>0.150000000000000</double>
+          </property>
+         </widget>
+        </item>
+        <item row="2" column="1">
+         <widget class="QDoubleSpinBox" name="shadowIntensity">
+          <property name="maximum">
+           <double>1.000000000000000</double>
+          </property>
+          <property name="singleStep">
+           <double>0.010000000000000</double>
+          </property>
+          <property name="value">
+           <double>0.850000000000000</double>
           </property>
          </widget>
         </item>
@@ -97,24 +123,10 @@
           </property>
          </widget>
         </item>
-        <item row="1" column="0">
-         <widget class="QLabel" name="ambientLabel">
+        <item row="2" column="0">
+         <widget class="QLabel" name="shadowLabel">
           <property name="text">
-           <string>Ambient Light</string>
-          </property>
-         </widget>
-        </item>
-        <item row="1" column="1">
-         <widget class="DoubleEdit" name="ambientIntensity">
-          <property name="text">
-           <string>0.15</string>
-          </property>
-         </widget>
-        </item>
-        <item row="2" column="1">
-         <widget class="DoubleEdit" name="shadowIntensity">
-          <property name="text">
-           <string>0.85</string>
+           <string>Shadow Light</string>
           </property>
          </widget>
         </item>
@@ -205,19 +217,6 @@
         </property>
        </widget>
       </item>
-      <item>
-       <spacer name="verticalSpacer">
-        <property name="orientation">
-         <enum>Qt::Vertical</enum>
-        </property>
-        <property name="sizeHint" stdset="0">
-         <size>
-          <width>20</width>
-          <height>40</height>
-         </size>
-        </property>
-       </spacer>
-      </item>
      </layout>
     </widget>
    </item>
@@ -233,13 +232,6 @@
    </item>
   </layout>
  </widget>
- <customwidgets>
-  <customwidget>
-   <class>DoubleEdit</class>
-   <extends>QLineEdit</extends>
-   <header>CGAL_double_edit.h</header>
-  </customwidget>
- </customwidgets>
  <resources/>
  <connections>
   <connection>

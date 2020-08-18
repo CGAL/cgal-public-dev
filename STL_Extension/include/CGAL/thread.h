@@ -1,11 +1,20 @@
 // Copyright (c) 2018 GeometryFactory Sarl (France).
 // All rights reserved.
 //
-// This file is part of CGAL (www.cgal.org)
+// This file is part of CGAL (www.cgal.org); you can redistribute it and/or
+// modify it under the terms of the GNU Lesser General Public License as
+// published by the Free Software Foundation; either version 3 of the License,
+// or (at your option) any later version.
+//
+// Licensees holding a valid commercial license may use this file in
+// accordance with the commercial license agreement provided with the software.
+//
+// This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
+// WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 //
 // $URL$
 // $Id$
-// SPDX-License-Identifier: LGPL-3.0-or-later OR LicenseRef-Commercial
+// SPDX-License-Identifier: LGPL-3.0+
 //
 // Author(s)     : Simon Giraudot
 
@@ -34,7 +43,7 @@
 #  include <tbb/tbb_config.h>
 #  if TBB_IMPLEMENT_CPP0X
 #    include <tbb/compat/thread>
-#    include <atomic>
+#    include <tbb/atomic.h>
 #    include <tbb/tick_count.h>
 #    define CGAL_USE_TBB_THREADS 1
 #  else
@@ -56,7 +65,7 @@ namespace CGAL {
 namespace cpp11 {
 
 #if CGAL_USE_TBB_THREADS
-
+  
   using std::thread; // std::thread is declared by TBB if TBB_IMPLEMENT_CPP0X == 1
 
   inline void sleep_for (double seconds)
@@ -65,7 +74,7 @@ namespace cpp11 {
     // It takes interval_t types as argument (!= from the std norm)
     std::this_thread::sleep_for(tbb::tick_count::interval_t(seconds));
   }
-
+  
 #else // C++11 implementation
 
   using std::thread;
@@ -83,8 +92,8 @@ namespace cpp11 {
 
 #if defined(CGAL_NO_ATOMIC) && defined(CGAL_LINKED_WITH_TBB)
   // If <CGAL/atomic.h> did not defined CGAL::cpp11::atomic, then use
-  // std::atomic as a fallback.
-  using std::atomic;
+  // tbb::atomic as a fallback.
+  using tbb::atomic;
 #endif
 
 } // cpp11

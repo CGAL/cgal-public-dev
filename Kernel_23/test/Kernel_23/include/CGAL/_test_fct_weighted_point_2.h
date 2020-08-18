@@ -5,11 +5,17 @@
 // Max-Planck-Institute Saarbruecken (Germany),
 // and Tel-Aviv University (Israel).  All rights reserved.
 //
-// This file is part of CGAL (www.cgal.org)
+// This file is part of CGAL (www.cgal.org); you can redistribute it and/or
+// modify it under the terms of the GNU Lesser General Public License as
+// published by the Free Software Foundation; either version 3 of the License,
+// or (at your option) any later version.
+//
+// This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
+// WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 //
 // $URL$
 // $Id$
-// SPDX-License-Identifier: LGPL-3.0-or-later
+// SPDX-License-Identifier: LGPL-3.0+
 //
 //
 // Author(s)     : Mael Rouxel-Labbé
@@ -24,8 +30,6 @@
 
 #include <cassert>
 #include <iostream>
-
-#include "_approx_equal.h"
 
 template <class R>
 bool
@@ -154,9 +158,8 @@ _test_fct_weighted_point_2(const R& )
 
   std::cout << CGAL::weighted_circumcenter(wp_00, wp_10, wp_01) << std::endl;
 
-  using CGAL::testsuite::approx_equal;
-  assert( approx_equal(CGAL::squared_radius_smallest_orthogonal_circle(wp1, wp3, wp5),
-                       CGAL::squared_radius(p1, p3, p5)) );
+  assert( CGAL::squared_radius_smallest_orthogonal_circle(wp1, wp3, wp5)
+            == CGAL::squared_radius(p1, p3, p5));
   assert( CGAL::squared_radius_smallest_orthogonal_circle(wp_00, wp_10, wp_01) == RT(0));
 
   std::cout << "done" << std::endl;

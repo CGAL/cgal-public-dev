@@ -1,5 +1,4 @@
 #include <CGAL/Simple_cartesian.h>
-
 #include <CGAL/boost/graph/graph_traits_Triangulation_2.h>
 #include <CGAL/boost/graph/graph_traits_Constrained_triangulation_2.h>
 #include <CGAL/boost/graph/graph_traits_Delaunay_triangulation_2.h>
@@ -41,8 +40,6 @@ void concept_check_triangulation()
   boost::function_requires< CGAL::HalfedgeListGraphConcept<T> >();
   boost::function_requires< CGAL::FaceGraphConcept<T> >();
   boost::function_requires< CGAL::FaceListGraphConcept<T> >();
-
-  // Triangulations are not mutable graphs
 //  boost::function_requires< CGAL::MutableHalfedgeGraphConcept<T> >();
 //  boost::function_requires< CGAL::MutableFaceGraphConcept<T> >();
 
@@ -62,6 +59,6 @@ int main()
   concept_check_triangulation<CDTP2>();
   concept_check_triangulation<THCDT2>();
   concept_check_triangulation<THCDTP2>();
-
+  
   return 0;
 }

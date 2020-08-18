@@ -2,10 +2,19 @@
 // All rights reserved.
 //
 // This file is part of CGAL (www.cgal.org).
+// You can redistribute it and/or modify it under the terms of the GNU
+// General Public License as published by the Free Software Foundation,
+// either version 3 of the License, or (at your option) any later version.
+//
+// Licensees holding a valid commercial license may use this file in
+// accordance with the commercial license agreement provided with the software.
+//
+// This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
+// WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 //
 // $URL$
 // $Id$
-// SPDX-License-Identifier: GPL-3.0-or-later OR LicenseRef-Commercial
+// SPDX-License-Identifier: GPL-3.0+
 // $Date$
 
 // Author(s)     :  Manuel Caroli <Manuel.Caroli@sophia.inria.fr>
@@ -61,17 +70,17 @@ Point my_rand_p3()
 }
 
 // Random int in [0;256).
-int my_rand_int(int imin, int imax)
+int my_rand_int(int min, int max)
 {
-  return r->get_int(imin, imax+1);
+  return r->get_int(min, max+1);
 }
 
 // Random offset
-Offset my_rand_o3(int imin, int imax)
+Offset my_rand_o3(int min, int max)
 {
-  int x = my_rand_int(imin,imax);
-  int y = my_rand_int(imin,imax);
-  int z = my_rand_int(imin,imax);
+  int x = my_rand_int(min,max);
+  int y = my_rand_int(min,max);
+  int z = my_rand_int(min,max);
   return Offset(x, y, z);
 }
 
@@ -326,7 +335,7 @@ int _test_periodic_3_static_filters()
     test_orientation_3(eorient,forient);
 
   std::cout << "Testing statically filtered Side_of_oriented_sphere_3"
-            << std::endl;
+	    << std::endl;
   for(int i=0; i<loops; ++i)
     test_side_of_oriented_sphere_3(esoos,fsoos);
 

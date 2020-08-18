@@ -1,10 +1,19 @@
 // Copyright (c) 2016  GeometryFactory (France).  All rights reserved.
 //
-// This file is part of CGAL (www.cgal.org)
+// This file is part of CGAL (www.cgal.org); you can redistribute it and/or
+// modify it under the terms of the GNU Lesser General Public License as
+// published by the Free Software Foundation; either version 3 of the License,
+// or (at your option) any later version.
+//
+// Licensees holding a valid commercial license may use this file in
+// accordance with the commercial license agreement provided with the software.
+//
+// This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
+// WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 //
 // $URL$
 // $Id$
-// SPDX-License-Identifier: LGPL-3.0-or-later OR LicenseRef-Commercial
+// SPDX-License-Identifier: LGPL-3.0+
 //
 //
 // Author(s)     : Andreas Fabri
@@ -35,11 +44,11 @@ public:
   Descriptor descriptor;
 
   Gwdwg_descriptor()
-    : graph(nullptr), descriptor()
+    : graph(NULL), descriptor()
   {}
 
   Gwdwg_descriptor(Descriptor descriptor)
-    : graph(nullptr), descriptor(descriptor)
+    : graph(NULL), descriptor(descriptor)
   {}
 
   Gwdwg_descriptor(Descriptor descriptor, Graph& graph)
@@ -51,7 +60,7 @@ template<typename Graph,typename Descriptor>
 bool operator==(const Gwdwg_descriptor<Graph,Descriptor>& lhs,
                 const Gwdwg_descriptor<Graph,Descriptor>& rhs)
 {
-  CGAL_assertion( lhs.graph == rhs.graph || rhs.graph==nullptr || lhs.graph==nullptr);
+  CGAL_assertion( lhs.graph == rhs.graph || rhs.graph==NULL || lhs.graph==NULL);
   return lhs.descriptor == rhs.descriptor;
 }
 
@@ -66,7 +75,7 @@ template<typename Graph,typename Descriptor>
 bool operator<(const Gwdwg_descriptor<Graph,Descriptor>& lhs,
                 const Gwdwg_descriptor<Graph,Descriptor>& rhs)
 {
-  CGAL_assertion( lhs.graph == rhs.graph || rhs.graph==nullptr || lhs.graph==nullptr);
+  CGAL_assertion( lhs.graph == rhs.graph || rhs.graph==NULL || lhs.graph==NULL);
   return lhs.descriptor < rhs.descriptor;
 }
 
@@ -74,7 +83,7 @@ template<typename Graph,typename Descriptor>
 bool operator>(const Gwdwg_descriptor<Graph,Descriptor>& lhs,
                 const Gwdwg_descriptor<Graph,Descriptor>& rhs)
 {
-  CGAL_assertion( lhs.graph == rhs.graph || rhs.graph==nullptr || lhs.graph==nullptr);
+  CGAL_assertion( lhs.graph == rhs.graph || rhs.graph==NULL || lhs.graph==NULL);
   return lhs.descriptor > rhs.descriptor;
 }
 
@@ -82,7 +91,7 @@ template<typename Graph,typename Descriptor>
 bool operator<=(const Gwdwg_descriptor<Graph,Descriptor>& lhs,
                 const Gwdwg_descriptor<Graph,Descriptor>& rhs)
 {
-  CGAL_assertion( lhs.graph == rhs.graph || rhs.graph==nullptr || lhs.graph==nullptr);
+  CGAL_assertion( lhs.graph == rhs.graph || rhs.graph==NULL || lhs.graph==NULL);
   return lhs.descriptor <= rhs.descriptor;
 }
 
@@ -90,7 +99,7 @@ template<typename Graph,typename Descriptor>
 bool operator>=(const Gwdwg_descriptor<Graph,Descriptor>& lhs,
                 const Gwdwg_descriptor<Graph,Descriptor>& rhs)
 {
-  CGAL_assertion( lhs.graph == rhs.graph || rhs.graph==nullptr || lhs.graph==nullptr);
+  CGAL_assertion( lhs.graph == rhs.graph || rhs.graph==NULL || lhs.graph==NULL);
   return lhs.descriptor >= rhs.descriptor;
 }
 
@@ -109,7 +118,8 @@ The class `Graph_with_descriptor_with_graph` wraps a graph into another graph in
 For example, calling `source(edge, graph)` will trigger an assertion if `edge` does not belong to `graph`.
 It is mainly used for debugging purposes.
 
-\cgalHeading{Property Forwarding}
+Property forwarding
+-------------------
 All internal properties of the underlying graph are forwarded.
 
 Property maps can be wrapped with `Graph_with_descriptor_with_graph_property_map`.
@@ -133,7 +143,7 @@ struct Graph_with_descriptor_with_graph
   typedef Gwdwg_descriptor<Graph, typename gt::face_descriptor> face_descriptor;
 
   Graph_with_descriptor_with_graph()
-    : graph(nullptr)
+    : graph(NULL)
   {}
 
   Graph_with_descriptor_with_graph(Graph& graph)
@@ -147,7 +157,7 @@ struct Descriptor2Descriptor: public CGAL::cpp98::unary_function<Graph_descripto
 {
 
   Descriptor2Descriptor()
-    : graph(nullptr)
+    : graph(NULL)
   {}
 
   Descriptor2Descriptor(Graph& graph)
@@ -157,7 +167,7 @@ struct Descriptor2Descriptor: public CGAL::cpp98::unary_function<Graph_descripto
   Descriptor
   operator()(Graph_descriptor gd) const
   {
-    CGAL_assertion(graph!=nullptr);
+    CGAL_assertion(graph!=NULL);
     return Descriptor(gd,*graph);
   }
 
@@ -707,7 +717,7 @@ struct Graph_with_descriptor_with_graph_property_map {
   PM pm;
 
   Graph_with_descriptor_with_graph_property_map()
-    : graph(nullptr)
+    : graph(NULL)
   {}
 
   Graph_with_descriptor_with_graph_property_map(const Graph& graph, const PM& pm)
@@ -719,7 +729,7 @@ struct Graph_with_descriptor_with_graph_property_map {
   reference
   get(const Graph_with_descriptor_with_graph_property_map<Graph,PM>& gpm, const Descriptor& d)
   {
-    CGAL_assertion(gpm.graph!=nullptr);
+    CGAL_assertion(gpm.graph!=NULL);
     CGAL_assertion(d.graph == gpm.graph);
     return get(gpm.pm, d.descriptor);
   }
@@ -729,7 +739,7 @@ struct Graph_with_descriptor_with_graph_property_map {
   void
   put(const Graph_with_descriptor_with_graph_property_map<Graph,PM>& gpm, const Descriptor& d,   const value_type& v)
   {
-    CGAL_assertion(gpm.graph!=nullptr);
+    CGAL_assertion(gpm.graph!=NULL);
     CGAL_assertion(d.graph == gpm.graph);
     put(gpm.pm, d.descriptor, v);
   }
@@ -753,7 +763,7 @@ struct Graph_with_descriptor_with_graph_property_map<Graph, PM, boost::lvalue_pr
   }
 
   Graph_with_descriptor_with_graph_property_map()
-    : graph(nullptr)
+    : graph(NULL)
   {}
 
   Graph_with_descriptor_with_graph_property_map(const Graph& graph, const PM& pm)
@@ -765,7 +775,7 @@ struct Graph_with_descriptor_with_graph_property_map<Graph, PM, boost::lvalue_pr
   reference
   get(const Graph_with_descriptor_with_graph_property_map<Graph,PM>& gpm, const Descriptor& d)
   {
-    CGAL_assertion(gpm.graph!=nullptr);
+    CGAL_assertion(gpm.graph!=NULL);
     CGAL_assertion(d.graph == gpm.graph);
     return get(gpm.pm, d.descriptor);
   }
@@ -775,7 +785,7 @@ struct Graph_with_descriptor_with_graph_property_map<Graph, PM, boost::lvalue_pr
   void
   put(const Graph_with_descriptor_with_graph_property_map<Graph,PM>& gpm, const Descriptor& d,   const value_type& v)
   {
-    CGAL_assertion(gpm.graph!=nullptr);
+    CGAL_assertion(gpm.graph!=NULL);
     CGAL_assertion(d.graph == gpm.graph);
     put(gpm.pm, d.descriptor, v);
   }

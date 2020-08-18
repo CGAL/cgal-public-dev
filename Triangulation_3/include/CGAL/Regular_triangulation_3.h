@@ -2,10 +2,19 @@
 // All rights reserved.
 //
 // This file is part of CGAL (www.cgal.org).
+// You can redistribute it and/or modify it under the terms of the GNU
+// General Public License as published by the Free Software Foundation,
+// either version 3 of the License, or (at your option) any later version.
+//
+// Licensees holding a valid commercial license may use this file in
+// accordance with the commercial license agreement provided with the software.
+//
+// This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
+// WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 //
 // $URL$
 // $Id$
-// SPDX-License-Identifier: GPL-3.0-or-later OR LicenseRef-Commercial
+// SPDX-License-Identifier: GPL-3.0+
 //
 //
 // Author(s)     : Monique Teillaud <Monique.Teillaud@sophia.inria.fr>
@@ -22,10 +31,16 @@
 
 #include <CGAL/basic.h>
 
+#include <set>
+
+#include <boost/bind.hpp>
+#include <boost/mpl/if.hpp>
+#include <boost/mpl/identity.hpp>
+#include <boost/utility/result_of.hpp>
+
 #ifdef CGAL_LINKED_WITH_TBB
 # include <CGAL/point_generators_3.h>
 # include <tbb/parallel_for.h>
-# include <thread>
 # include <tbb/enumerable_thread_specific.h>
 # include <tbb/concurrent_vector.h>
 #endif
@@ -34,6 +49,7 @@
 #include <CGAL/Regular_triangulation_vertex_base_3.h>
 #include <CGAL/Regular_triangulation_cell_base_3.h>
 #include <CGAL/internal/Has_nested_type_Bare_point.h>
+#include <CGAL/internal/boost/function_property_map.hpp>
 
 #include <CGAL/Cartesian_converter.h>
 #include <CGAL/Exact_predicates_exact_constructions_kernel.h>
@@ -54,20 +70,6 @@
 #ifdef CGAL_CONCURRENT_TRIANGULATION_3_ADD_TEMPORARY_POINTS_ON_FAR_SPHERE
 #include <CGAL/point_generators_3.h>
 #endif
-
-#include <boost/bind.hpp>
-#include <boost/mpl/if.hpp>
-#include <boost/mpl/identity.hpp>
-#include <boost/property_map/function_property_map.hpp>
-#include <boost/utility/result_of.hpp>
-
-#include <algorithm>
-#include <iostream>
-#include <iterator>
-#include <set>
-#include <thread>
-#include <utility>
-#include <vector>
 
 namespace CGAL {
 
@@ -153,7 +155,6 @@ public:
   using Tr_Base::geom_traits;
 #endif
   using Tr_Base::adjacent_vertices;
-  using Tr_Base::adjacent_vertices_threadsafe;
   using Tr_Base::cw;
   using Tr_Base::ccw;
   using Tr_Base::construct_point;
@@ -186,7 +187,7 @@ public:
   using Tr_Base::tds;
   using Tr_Base::vertex_triple_index;
 
-  Regular_triangulation_3(const Gt& gt = Gt(), Lock_data_structure *lock_ds = nullptr)
+  Regular_triangulation_3(const Gt& gt = Gt(), Lock_data_structure *lock_ds = NULL)
     : Tr_Base(gt, lock_ds), hidden_point_visitor(this)
   { }
 
@@ -200,45 +201,10 @@ public:
     CGAL_triangulation_postcondition(is_valid());
   }
 
-  Regular_triangulation_3(Regular_triangulation_3&& rt)
-    noexcept(noexcept(Tr_Base(std::move(rt))))
-    : Tr_Base(std::move(rt)), hidden_point_visitor(this)
-  {
-    CGAL_triangulation_postcondition(is_valid());
-  }
-
-  ~Regular_triangulation_3() = default;
-
-  void swap(Regular_triangulation_3& tr)
-  {
-    // The 'vertices' and 'hidden_points' members of
-    // 'hidden_point_visitor' should be empty as they are only filled
-    // (and cleared) during the insertion of a point.  Hidden points
-    // are not stored there, but rather in cells. Thus, the only thing
-    // that must be set is the triangulation pointer, and it is
-    // already correctly set. There is nothing to do about
-    // 'hidden_point_visitor'.
-    Tr_Base::swap(tr);
-  }
-
-  Regular_triangulation_3& operator=(const Regular_triangulation_3& tr)
-  {
-    Regular_triangulation_3 copy(tr);
-    copy.swap(*this);
-    return *this;
-  }
-
-  Regular_triangulation_3& operator=(Regular_triangulation_3&& tr)
-    noexcept(noexcept(Regular_triangulation_3(std::move(tr))))
-  {
-    Tr_Base::operator=(std::move(tr));
-    return *this;
-  }
-
   //insertion
   template < typename InputIterator >
   Regular_triangulation_3(InputIterator first, InputIterator last,
-                          const Gt& gt = Gt(), Lock_data_structure *lock_ds = nullptr)
+                          const Gt& gt = Gt(), Lock_data_structure *lock_ds = NULL)
     : Tr_Base(gt, lock_ds), hidden_point_visitor(this)
   {
     insert(first, last);
@@ -282,7 +248,7 @@ private:
                                          bbox.zmin() + 0.5*zdelta);
       Random_points_on_sphere_3<Bare_point> random_point(radius);
       const int NUM_PSEUDO_INFINITE_VERTICES = static_cast<int>(
-                                                 std::thread::hardware_concurrency() * 3.5);
+                                                 tbb::task_scheduler_init::default_num_threads() * 3.5);
       typename Gt::Construct_weighted_point_3 cwp =
           geom_traits().construct_weighted_point_3_object();
 
@@ -293,12 +259,12 @@ private:
       // Spatial sorting can only be applied to bare points, so we need an adaptor
       typedef typename Geom_traits::Construct_point_3 Construct_point_3;
       typedef typename boost::result_of<const Construct_point_3(const Weighted_point&)>::type Ret;
-      typedef boost::function_property_map<Construct_point_3, Weighted_point, Ret> fpmap;
+      typedef CGAL::internal::boost_::function_property_map<Construct_point_3, Weighted_point, Ret> fpmap;
       typedef CGAL::Spatial_sort_traits_adapter_3<Geom_traits, fpmap> Search_traits_3;
 
       spatial_sort(points_on_far_sphere.begin(), points_on_far_sphere.end(),
                    Search_traits_3(
-                     boost::make_function_property_map<Weighted_point, Ret, Construct_point_3>(
+                     CGAL::internal::boost_::make_function_property_map<Weighted_point, Ret, Construct_point_3>(
                        geom_traits().construct_point_3_object()), geom_traits()));
 
       typename std::vector<Weighted_point>::const_iterator it_p =
@@ -341,7 +307,7 @@ public:
                         typename boost::enable_if<
                           boost::is_convertible<
                           typename std::iterator_traits<InputIterator>::value_type,
-                          Weighted_point> >::type* = nullptr)
+                          Weighted_point> >::type* = NULL)
 #else
   template < class InputIterator >
   std::ptrdiff_t insert(InputIterator first, InputIterator last)
@@ -365,12 +331,12 @@ public:
     // kernel creates temporaries and prevent it.
     typedef typename Geom_traits::Construct_point_3 Construct_point_3;
     typedef typename boost::result_of<const Construct_point_3(const Weighted_point&)>::type Ret;
-    typedef boost::function_property_map<Construct_point_3, Weighted_point, Ret> fpmap;
+    typedef CGAL::internal::boost_::function_property_map<Construct_point_3, Weighted_point, Ret> fpmap;
     typedef CGAL::Spatial_sort_traits_adapter_3<Geom_traits, fpmap> Search_traits_3;
 
     spatial_sort(points.begin(), points.end(),
                  Search_traits_3(
-                   boost::make_function_property_map<Weighted_point, Ret, Construct_point_3>(
+                   CGAL::internal::boost_::make_function_property_map<Weighted_point, Ret, Construct_point_3>(
                      geom_traits().construct_point_3_object()), geom_traits()));
 
     // Parallel
@@ -436,7 +402,6 @@ public:
 
 #ifndef CGAL_TRIANGULATION_3_DONT_INSERT_RANGE_OF_POINTS_WITH_INFO
 private:
-
   //top stands for tuple-or-pair
   template <class Info>
   const Weighted_point& top_get_first(const std::pair<Weighted_point,Info>& pair) const { return pair.first; }
@@ -490,14 +455,14 @@ private:
     typedef Index_to_Bare_point<Construct_point_3,
         std::vector<Weighted_point> > Access_bare_point;
     typedef typename boost::result_of<const Construct_point_3(const Weighted_point&)>::type Ret;
-    typedef boost::function_property_map<Access_bare_point, std::size_t, Ret> fpmap;
+    typedef CGAL::internal::boost_::function_property_map<Access_bare_point, std::size_t, Ret> fpmap;
     typedef CGAL::Spatial_sort_traits_adapter_3<Gt, fpmap> Search_traits_3;
 
     Access_bare_point accessor(points, geom_traits().construct_point_3_object());
     spatial_sort(indices.begin(), indices.end(),
                  Search_traits_3(
-                   boost::make_function_property_map<
-                     std::size_t, Ret, Access_bare_point>(accessor),
+                   CGAL::internal::boost_::make_function_property_map<
+                   std::size_t, Ret, Access_bare_point>(accessor),
                    geom_traits()));
 
 #ifdef CGAL_LINKED_WITH_TBB
@@ -582,7 +547,7 @@ public:
                         typename std::iterator_traits<InputIterator>::value_type,
                         std::pair<Weighted_point,typename internal::Info_check<typename Triangulation_data_structure::Vertex>::type>
                         >
-                        >::type* = nullptr)
+                        >::type* = NULL)
   {
     return insert_with_info<
              std::pair<Weighted_point,
@@ -599,7 +564,7 @@ public:
            boost::mpl::and_<
            typename boost::is_convertible< typename std::iterator_traits<InputIterator_1>::value_type, Weighted_point >,
            typename boost::is_convertible< typename std::iterator_traits<InputIterator_2>::value_type, typename internal::Info_check<typename Triangulation_data_structure::Vertex>::type >
-         > >::type* =nullptr)
+         > >::type* =NULL)
   {
     return insert_with_info<
              boost::tuple<Weighted_point,
@@ -611,7 +576,7 @@ public:
 
 
   Vertex_handle insert(const Weighted_point& p, Vertex_handle hint,
-                       bool *could_lock_zone = nullptr)
+                       bool *could_lock_zone = NULL)
   {
     return insert(p,
                   hint == Vertex_handle() ? this->infinite_cell() : hint->cell(),
@@ -619,10 +584,10 @@ public:
   }
 
   Vertex_handle insert(const Weighted_point& p,
-                       Cell_handle start = Cell_handle(), bool *could_lock_zone = nullptr);
+                       Cell_handle start = Cell_handle(), bool *could_lock_zone = NULL);
 
   Vertex_handle insert(const Weighted_point& p, Locate_type lt,
-                       Cell_handle c, int li, int, bool *could_lock_zone = nullptr);
+                       Cell_handle c, int li, int, bool *could_lock_zone = NULL);
 
   template <class CellIt>
   Vertex_handle insert_in_hole(const Weighted_point& p,
@@ -644,9 +609,9 @@ public:
                  OutputIteratorBoundaryFacets bfit,
                  OutputIteratorCells cit,
                  OutputIteratorInternalFacets ifit,
-                 bool *could_lock_zone = nullptr,
-                 const Facet *this_facet_must_be_in_the_cz = nullptr,
-                 bool *the_facet_is_in_its_cz = nullptr) const
+                 bool *could_lock_zone = NULL,
+                 const Facet *this_facet_must_be_in_the_cz = NULL,
+                 bool *the_facet_is_in_its_cz = NULL) const
   {
     CGAL_triangulation_precondition(dimension() >= 2);
 
@@ -707,7 +672,7 @@ public:
   find_conflicts(const Weighted_point& p, Cell_handle c,
                  OutputIteratorBoundaryFacets bfit,
                  OutputIteratorCells cit,
-                 bool *could_lock_zone = nullptr) const
+                 bool *could_lock_zone = NULL) const
   {
     Triple<OutputIteratorBoundaryFacets,
            OutputIteratorCells,
@@ -809,38 +774,6 @@ public:
 
     return std::copy(vertices.begin(), vertices.end(), res);
   }
-
-    // In parallel operations, we need to be able to check the health of the 'hint' vertex handle,
-    // which might be invalided by other threads. One way to do that is the 'is_vertex()' function
-    // of the TDS, but it runs in O(sqrt(n)) complexity. When we are using our TDS, we can use
-    // a lower level function from the compact container, which runs in constant time.
-    BOOST_MPL_HAS_XXX_TRAIT_DEF(Is_CGAL_TDS_3)
-
-    template <typename TDS_,
-              bool has_TDS_tag = has_Is_CGAL_TDS_3<TDS_>::value>
-    struct Is_CGAL_TDS_3 : public CGAL::Tag_false
-    { };
-
-    template <typename TDS_>
-    struct Is_CGAL_TDS_3<TDS_, true> : public CGAL::Boolean_tag<TDS_::Is_CGAL_TDS_3::value>
-    { };
-
-    template <typename TDS_,
-              bool is_CGAL_TDS_3 = Is_CGAL_TDS_3<TDS_>::value>
-    struct Vertex_validity_checker
-    {
-      bool operator()(const typename TDS_::Vertex_handle vh_, const TDS_& tds_) {
-        return tds_.is_vertex(vh_);
-      }
-    };
-
-    template <typename TDS_>
-    struct Vertex_validity_checker<TDS_, true /* is_CGAL_TDS_3 */>
-    {
-      bool operator()(const typename TDS_::Vertex_handle vh_, const TDS_& tds_) {
-        return tds_.vertices().is_used(vh_);
-      }
-    };
 
   void remove(Vertex_handle v);
   // Concurrency-safe
@@ -1411,6 +1344,11 @@ protected:
       : m_rt(rt), m_points(points), m_tls_hint(tls_hint)
     {}
 
+    // Constructor
+    Insert_point(const Insert_point& ip)
+      : m_rt(ip.m_rt), m_points(ip.m_points), m_tls_hint(ip.m_tls_hint)
+    {}
+
     // operator()
     void operator()(const tbb::blocked_range<size_t>& r) const
     {
@@ -1420,40 +1358,14 @@ protected:
 #endif
 
       Vertex_handle& hint = m_tls_hint.local();
-      Vertex_validity_checker<typename RT::Triangulation_data_structure> vertex_validity_check;
-
       for(size_t i_point = r.begin() ; i_point != r.end() ; ++i_point)
       {
         bool success = false;
         const Weighted_point& p = m_points[i_point];
         while(!success)
         {
-          // The 'hint' is unsafe to use immediately because we are in a regular triangulation,
-          // and the insertion of a (weighted) point in another thread might have hidden (deleted)
-          // the hint.
-          if(!vertex_validity_check(hint, m_rt.tds()))
+          if(m_rt.try_lock_vertex(hint) && m_rt.try_lock_point(p))
           {
-            hint = m_rt.finite_vertices_begin();
-            continue;
-          }
-
-          // We need to make sure that while are locking the position P1 := hint->point(), 'hint'
-          // does not get its position changed to P2 != P1.
-          const Weighted_point hint_point_mem = hint->point();
-
-          if(m_rt.try_lock_point(hint_point_mem) && m_rt.try_lock_point(p))
-          {
-            // Make sure that the hint is still valid (so that we can safely take hint->cell()) and
-            // that its position hasn't changed to ensure that we will start the locate from where
-            // we have locked.
-            if(!vertex_validity_check(hint, m_rt.tds()) ||
-               hint->point() != hint_point_mem)
-            {
-              hint = m_rt.finite_vertices_begin();
-              m_rt.unlock_all_elements();
-              continue;
-            }
-
             bool could_lock_zone;
             Locate_type lt;
             int li, lj;
@@ -1517,6 +1429,12 @@ protected:
         m_tls_hint(tls_hint)
     {}
 
+    // Constructor
+    Insert_point_with_info(const Insert_point_with_info &ip)
+      : m_rt(ip.m_rt), m_points(ip.m_points), m_infos(ip.m_infos),
+        m_indices(ip.m_indices), m_tls_hint(ip.m_tls_hint)
+    {}
+
     // operator()
     void operator()(const tbb::blocked_range<size_t>& r) const
     {
@@ -1526,8 +1444,6 @@ protected:
 #endif
 
       Vertex_handle& hint = m_tls_hint.local();
-      Vertex_validity_checker<typename RT::Triangulation_data_structure> vertex_validity_check;
-
       for(size_t i_idx = r.begin() ; i_idx != r.end() ; ++i_idx)
       {
         bool success = false;
@@ -1535,37 +1451,14 @@ protected:
         const Weighted_point& p = m_points[i_point];
         while(!success)
         {
-          // The 'hint' is unsafe to use immediately because we are in a regular triangulation,
-          // and the insertion of a (weighted) point in another thread might have hidden (deleted)
-          // the hint.
-          if(!vertex_validity_check(hint, m_rt.tds()))
+          if(m_rt.try_lock_vertex(hint) && m_rt.try_lock_point(p))
           {
-            hint = m_rt.finite_vertices_begin();
-            continue;
-          }
-
-          // We need to make sure that while are locking the position P1 := hint->point(), 'hint'
-          // does not get its position changed to P2 != P1.
-          const Weighted_point hint_point_mem = hint->point();
-
-          if(m_rt.try_lock_point(hint_point_mem) && m_rt.try_lock_point(p))
-          {
-            // Make sure that the hint is still valid (so that we can safely take hint->cell()) and
-            // that its position hasn't changed to ensure that we will start the locate from where
-            // we have locked.
-            if(!vertex_validity_check(hint, m_rt.tds()) ||
-               hint->point() != hint_point_mem)
-            {
-              hint = m_rt.finite_vertices_begin();
-              m_rt.unlock_all_elements();
-              continue;
-            }
-
             bool could_lock_zone;
             Locate_type lt;
             int li, lj;
 
-            Cell_handle c = m_rt.locate(p, lt, li, lj, hint->cell(), &could_lock_zone);
+            Cell_handle c = m_rt.locate(p, lt, li, lj, hint->cell(),
+                                        &could_lock_zone);
             Vertex_handle v;
             if(could_lock_zone)
               v = m_rt.insert(p, lt, c, li, lj, &could_lock_zone);
@@ -1626,6 +1519,12 @@ protected:
                  tbb::concurrent_vector<Vertex_handle>& vertices_to_remove_sequentially)
       : m_rt(rt), m_vertices(vertices),
         m_vertices_to_remove_sequentially(vertices_to_remove_sequentially)
+    {}
+
+    // Constructor
+    Remove_point(const Remove_point& rp)
+      : m_rt(rp.m_rt), m_vertices(rp.m_vertices),
+        m_vertices_to_remove_sequentially(rp.m_vertices_to_remove_sequentially)
     {}
 
     // operator()
@@ -1718,7 +1617,7 @@ nearest_power_vertex(const Bare_point& p, Cell_handle start) const
   while(true)
   {
     Vertex_handle tmp = nearest;
-    adjacent_vertices_threadsafe(nearest, std::back_inserter(vs));
+    adjacent_vertices(nearest, std::back_inserter(vs));
     for(typename std::vector<Vertex_handle>::const_iterator
          vsit = vs.begin(); vsit != vs.end(); ++vsit)
       tmp = nearest_power_vertex(p, tmp, *vsit);
@@ -2495,15 +2394,15 @@ class Regular_triangulation_3<Gt, Tds, Lds>::Vertex_inserter
   typedef RegularTriangulation_3              Regular;
 
 public:
-  typedef std::nullptr_t                           Hidden_points_iterator;
+  typedef Nullptr_t                           Hidden_points_iterator;
 
   Vertex_inserter(Regular &tmp_) : tmp(tmp_) {}
 
   Regular& tmp;
 
   void add_hidden_points(Cell_handle) {}
-  Hidden_points_iterator hidden_points_begin() { return nullptr; }
-  Hidden_points_iterator hidden_points_end() { return nullptr; }
+  Hidden_points_iterator hidden_points_begin() { return NULL; }
+  Hidden_points_iterator hidden_points_end() { return NULL; }
 
   Vertex_handle insert(const Weighted_point& p,
                        Locate_type lt, Cell_handle c, int li, int lj)
@@ -2561,13 +2460,8 @@ remove(Vertex_handle v, bool *could_lock_zone)
   }
   else
   {
-    Vertex_validity_checker<Tds> vertex_validity_check;
-
-    // Check that the vertex hasn't be deleted from the TDS while we were locking it
-    if(!vertex_validity_check(v, tds()))
-      return true; // vertex is already gone from the TDS, nothing to do
-
-    Vertex_handle hint = v->cell()->vertex(0) == v ? v->cell()->vertex(1) : v->cell()->vertex(0);
+    Vertex_handle hint = (v->cell()->vertex(0) == v ?
+                           v->cell()->vertex(1) : v->cell()->vertex(0));
 
     Self tmp;
     Vertex_remover<Self> remover(tmp);
@@ -2575,62 +2469,21 @@ remove(Vertex_handle v, bool *could_lock_zone)
 
     if(*could_lock_zone && removed)
     {
-      // The vertex has been removed, re-insert the points that 'v' was hiding
-
-      // Start by unlocking the area of the removed vertex to avoid deadlocks
-      this->unlock_all_elements();
-
+      // Re-insert the points that v was hiding.
       for(typename Vertex_remover<Self>::Hidden_points_iterator
-            hi = remover.hidden_points_begin();
-            hi != remover.hidden_points_end(); ++hi)
+           hi = remover.hidden_points_begin();
+           hi != remover.hidden_points_end(); ++hi)
       {
-        const Weighted_point& wp = *hi;
-
-        // try to lock the positions of the hint and the hidden point
-        bool success = false;
-        while(!success)
+        bool could_lock_zone = false;
+        Vertex_handle hv;
+        while(!could_lock_zone)
         {
-          // The 'hint' is unsafe to use immediately because we are in a regular triangulation,
-          // and the insertion of a (weighted) point in another thread might have hidden (deleted)
-          // the hint.
-          if(!vertex_validity_check(hint, tds()))
-          {
-            hint = finite_vertices_begin();
-            continue;
-          }
-
-          // We need to make sure that while are locking the position P1 := hint->point(), 'hint'
-          // does not get its position changed to P2 != P1.
-          const Weighted_point hint_point_mem = hint->point();
-
-          if(this->try_lock_point(hint_point_mem) && this->try_lock_point(wp))
-          {
-            // Make sure that the hint is still valid (so that we can safely take hint->cell()) and
-            // that its position hasn't changed to ensure that we will start the locate from where
-            // we have locked.
-            if(!vertex_validity_check(hint, tds()) ||
-               hint->point() != hint_point_mem)
-            {
-              hint = finite_vertices_begin();
-              this->unlock_all_elements();
-              continue;
-            }
-
-            Vertex_handle hv = insert(wp, hint, could_lock_zone);
-
-            if(*could_lock_zone)
-            {
-              success = true;
-              if(hv != Vertex_handle())
-                hint = hv;
-            }
-          }
-
-          // This unlocks everything in all cases: partial lock failure, failed insertion, successful insertion
-          this->unlock_all_elements();
+          hv = insert(*hi, hint, &could_lock_zone);
         }
-      }
 
+        if(hv != Vertex_handle())
+          hint = hv;
+      }
       CGAL_triangulation_expensive_postcondition(is_valid());
     }
   }

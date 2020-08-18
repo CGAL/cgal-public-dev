@@ -2,10 +2,19 @@
 // All rights reserved.
 //
 // This file is part of CGAL (www.cgal.org).
+// You can redistribute it and/or modify it under the terms of the GNU
+// General Public License as published by the Free Software Foundation,
+// either version 3 of the License, or (at your option) any later version.
+//
+// Licensees holding a valid commercial license may use this file in
+// accordance with the commercial license agreement provided with the software.
+//
+// This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
+// WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 //
 // $URL$
 // $Id$
-// SPDX-License-Identifier: GPL-3.0-or-later OR LicenseRef-Commercial
+// SPDX-License-Identifier: GPL-3.0+
 //
 // Author(s)     : Mael Rouxel-Labbé
 
@@ -18,6 +27,7 @@
 
 #include <CGAL/assertions.h>
 
+#include <boost/foreach.hpp>
 #include <boost/graph/dijkstra_shortest_paths.hpp>
 #include <boost/graph/graph_traits.hpp>
 #include <boost/unordered_map.hpp>
@@ -38,11 +48,7 @@ class Dijkstra_end_exception : public std::exception
 {
   const char* what() const throw ()
   {
-#ifdef CGAL_SMP_ORBIFOLD_DEBUG
     return "Dijkstra: reached the target vertex";
-#else
-    return "";
-#endif
   }
 };
 
@@ -57,13 +63,13 @@ void output_shortest_paths_to_selection_file(const TriangleMesh& mesh,
   boost::unordered_map<vertex_descriptor, int> index_map;
 
   int counter = 0;
-  for(vertex_descriptor vd : vertices(mesh)) {
+  BOOST_FOREACH(vertex_descriptor vd, vertices(mesh)) {
     index_map[vd] = counter++;
   }
 
   os << std::endl /* vertices */ << std::endl /* faces */;
 
-  for(edge_descriptor ed : seams) {
+  BOOST_FOREACH(edge_descriptor ed, seams) {
     // could be made more efficient...
     os << index_map[source(ed, mesh)] << " " << index_map[target(ed, mesh)] << " ";
   }
@@ -101,10 +107,10 @@ public:
 
 } // namespace internal
 
-/// \ingroup PkgSurfaceMeshParameterizationOrbifoldHelperFunctions
+/// \ingroup PkgSurfaceParameterizationOrbifoldHelperFunctions
 ///
 /// Compute the shortest path between `source` and `target` over `mesh`, using
-/// <a href="https://www.boost.org/doc/libs/release/libs/graph/doc/dijkstra_shortest_paths.html">
+/// <a href="http://www.boost.org/doc/libs/release/libs/graph/doc/dijkstra_shortest_paths.html">
 /// boost::dijkstra_shortest_paths()</a>.
 ///
 /// \tparam TriangleMesh A triangle mesh, model of `FaceListGraph` and `HalfedgeListGraph`.
@@ -160,7 +166,7 @@ void compute_shortest_paths_between_two_cones(const TriangleMesh& mesh,
   } while (s != source);
 }
 
-/// \ingroup PkgSurfaceMeshParameterizationOrbifoldHelperFunctions
+/// \ingroup PkgSurfaceParameterizationOrbifoldHelperFunctions
 ///
 /// Given a range `[first; beyond[` of cones (described as vertex descriptors),
 /// compute the shortest path for all pairs of consecutive entries in the range
@@ -169,8 +175,8 @@ void compute_shortest_paths_between_two_cones(const TriangleMesh& mesh,
 /// \tparam TriangleMesh A triangle mesh, model of `FaceListGraph` and `HalfedgeListGraph`.
 /// \tparam InputConesForwardIterator A model of `ForwardIterator` with value type
 ///                                   `boost::graph_traits<TriangleMesh>::%vertex_descriptor`.
-/// \tparam SeamContainer A model of `SequenceContainer` with value type
-///                       `boost::graph_traits<TriangleMesh>::%edge_descriptor`.
+/// \tparam SeamContainer A model of <a href="http://en.cppreference.com/w/cpp/concept/SequenceContainer"><tt>SequenceContainer</tt></a>
+///                       with value type `boost::graph_traits<TriangleMesh>::%edge_descriptor`.
 ///
 /// \param mesh the triangular mesh on which paths are computed
 /// \param first, beyond a range of cones
@@ -191,9 +197,7 @@ void compute_shortest_paths_between_cones(const TriangleMesh& mesh,
   }
 
   std::ofstream out("shortest_path.selection.txt");
-#ifdef CGAL_SMP_ORBIFOLD_DEBUG
   internal::output_shortest_paths_to_selection_file(mesh, seams, out);
-#endif
 }
 
 } // namespace Surface_mesh_parameterization

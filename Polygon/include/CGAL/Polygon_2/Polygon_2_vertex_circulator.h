@@ -1,16 +1,25 @@
-// Copyright (c) 1997
+// Copyright (c) 1997  
 // Utrecht University (The Netherlands),
 // ETH Zurich (Switzerland),
 // INRIA Sophia-Antipolis (France),
 // Max-Planck-Institute Saarbruecken (Germany),
-// and Tel-Aviv University (Israel).  All rights reserved.
+// and Tel-Aviv University (Israel).  All rights reserved. 
 //
-// This file is part of CGAL (www.cgal.org)
+// This file is part of CGAL (www.cgal.org); you can redistribute it and/or
+// modify it under the terms of the GNU Lesser General Public License as
+// published by the Free Software Foundation; either version 3 of the License,
+// or (at your option) any later version.
+//
+// Licensees holding a valid commercial license may use this file in
+// accordance with the commercial license agreement provided with the software.
+//
+// This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
+// WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 //
 // $URL$
 // $Id$
-// SPDX-License-Identifier: LGPL-3.0-or-later OR LicenseRef-Commercial
-//
+// SPDX-License-Identifier: LGPL-3.0+
+// 
 //
 // Author(s)     : Geert-Jan Giezeman <geert@cs.uu.nl>
 
@@ -47,7 +56,7 @@ private:
 public:
 // CREATION
 
-    Polygon_circulator() : ctnr(nullptr) {}
+    Polygon_circulator() : ctnr(NULL) {}
     Polygon_circulator( const Ctnr* c)
         : ctnr(c), i(c->begin()) {}
     Polygon_circulator( const Ctnr* c, iterator j)
@@ -55,19 +64,24 @@ public:
     Polygon_circulator( const Mutable& c)
         : ctnr( c.container()), i( c.current_iterator()) {}
 
-
+// Gnu-bug workaround: define operator= explicitly.
+    Self& operator=( const Self& c) {
+        ctnr = c.ctnr;
+        i    = c.i;
+        return *this;
+    }
 
 // OPERATIONS
 
-  bool operator==( std::nullptr_t CGAL_assertion_code(p)) const {
-        CGAL_assertion( p == nullptr);
-        return (ctnr == nullptr) || (ctnr->begin() == ctnr->end());
+  bool operator==( Nullptr_t CGAL_assertion_code(p)) const {
+        CGAL_assertion( p == NULL);
+        return (ctnr == NULL) || (ctnr->begin() == ctnr->end());
     }
-    bool operator!=( std::nullptr_t p) const { return !(*this == p); }
+    bool operator!=( Nullptr_t p) const { return !(*this == p); }
     bool operator==( const Self& c) const { return i == c.i; }
     bool operator!=( const Self& c) const { return !(*this == c); }
     reference  operator*() const {
-        CGAL_assertion( ctnr != nullptr);
+        CGAL_assertion( ctnr != NULL);
         CGAL_assertion( current_iterator() != ctnr->end());
         return *i;
     }
@@ -82,12 +96,12 @@ private:
 public:
 
     pointer  operator->() const {
-        CGAL_assertion( ctnr != nullptr);
+        CGAL_assertion( ctnr != NULL);
         CGAL_assertion( current_iterator() != ctnr->end());
         return deref(i);
     }
     Self& operator++() {
-        CGAL_assertion( ctnr != nullptr);
+        CGAL_assertion( ctnr != NULL);
         CGAL_assertion( current_iterator() != ctnr->end());
         ++i;
         if ( current_iterator() == ctnr->end())
@@ -100,7 +114,7 @@ public:
         return tmp;
     }
     Self& operator--() {
-        CGAL_assertion( ctnr != nullptr);
+        CGAL_assertion( ctnr != NULL);
         CGAL_assertion( current_iterator() != ctnr->end());
         if ( current_iterator() == ctnr->begin())
             i = const_cast<Container*>(ctnr)->end();
@@ -113,7 +127,7 @@ public:
         return tmp;
     }
     Self& operator+=( difference_type n) {
-        CGAL_assertion( ctnr != nullptr);
+        CGAL_assertion( ctnr != NULL);
         CGAL_assertion( current_iterator() != ctnr->end());
         typename Ctnr::difference_type j = current_iterator() - ctnr->begin();
         typename Ctnr::difference_type size = ctnr->size();
@@ -135,8 +149,8 @@ public:
         return tmp += -n;
     }
     difference_type operator-( const Self& c) const {
-        CGAL_assertion( ctnr != nullptr);
-        CGAL_assertion( c.ctnr != nullptr);
+        CGAL_assertion( ctnr != NULL);
+        CGAL_assertion( c.ctnr != NULL);
         return i - c.i;
     }
     reference  operator[]( difference_type n) const {
