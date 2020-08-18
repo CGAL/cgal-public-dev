@@ -20,7 +20,8 @@ int main(int argc, char *argv[])
     //QByteArray data("message: Hello from C++ application");
     //QByteArray data("default:sphere");
     //QByteArray data("vertices: 0 0 0; 0 0 1; 0 1 0; 1 0 0; 0 0 -1; 0 -1 0; -1 0 0");
-    QByteArray data("triangles: 0 0 1; 0 1 0; 1 0 0; 0 0 -1; 0 -1 0; -1 0 0");
+    //QByteArray data("triangles: 0 0 1; 0 1 0; 1 0 0; 0 0 -1; 0 -1 0; -1 0 0");
+    QByteArray data("lines: 0 0 1; 0 1 0; 1 0 0; 0 0 -1; 0 -1 0; -1 0 0");
     if (socket->state() == QAbstractSocket::ConnectedState) {
         socket->write(data);
         // send data
