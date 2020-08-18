@@ -2,19 +2,10 @@
 // All rights reserved.
 //
 // This file is part of CGAL (www.cgal.org).
-// You can redistribute it and/or modify it under the terms of the GNU
-// General Public License as published by the Free Software Foundation,
-// either version 3 of the License, or (at your option) any later version.
-//
-// Licensees holding a valid commercial license may use this file in
-// accordance with the commercial license agreement provided with the software.
-//
-// This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
-// WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 //
 // $URL$
 // $Id$
-// SPDX-License-Identifier: GPL-3.0+
+// SPDX-License-Identifier: GPL-3.0-or-later OR LicenseRef-Commercial
 //
 // Author(s)     : Mael Rouxel-Labbé
 
@@ -29,7 +20,7 @@ namespace CGAL {
 
 namespace Surface_mesh_parameterization {
 
-/// \ingroup PkgSurfaceParameterizationEnums
+/// \ingroup PkgSurfaceMeshParameterizationEnums
 ///
 /// The two possible weight types available in the Orbifold Tutte parameterization.
 enum Weight_type
@@ -40,7 +31,7 @@ enum Weight_type
                  /// and the parameterization is guaranteed to be injective.
 };
 
-/// \ingroup PkgSurfaceParameterizationEnums
+/// \ingroup PkgSurfaceMeshParameterizationEnums
 ///
 /// A classification type for the cones used in Orbifold Tutte parameterization.
 enum Cone_type
@@ -52,7 +43,7 @@ enum Cone_type
                          /// at two different positions.
 };
 
-/// \ingroup PkgSurfaceParameterizationEnums
+/// \ingroup PkgSurfaceMeshParameterizationEnums
 ///
 /// The four Orbifold types available in the Orbifold Tutte parameterization.
 /// The different shapes result from the number of cones and the angle constraints
@@ -65,7 +56,7 @@ enum Orbifold_type
   Parallelogram ///< Four cones, forming a parallelogram-shaped basic tile.
 };
 
-/// \ingroup PkgSurfaceParameterizationEnums
+/// \ingroup PkgSurfaceMeshParameterizationEnums
 /// \brief Convert the orbifold type to a literal message.
 /// \param orb_type the integer value in the enum
 /// \return the string describing the Orbifold type.

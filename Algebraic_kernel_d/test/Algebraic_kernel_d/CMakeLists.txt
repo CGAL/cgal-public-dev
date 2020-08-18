@@ -1,6 +1,6 @@
+cmake_minimum_required(VERSION 3.1...3.15)
 project( Algebraic_kernel_d_Tests )
 
-cmake_minimum_required(VERSION 3.1)
 
 
 # CGAL and its components
@@ -9,12 +9,9 @@ find_package( CGAL QUIET COMPONENTS Core)
 if ( NOT CGAL_FOUND )
 
   message(STATUS "This project requires the CGAL library, and will not be compiled.")
-  return()  
+  return()
 
 endif()
-
-# include helper file
-include( ${CGAL_USE_FILE} )
 
 find_package(RS3 QUIET)
 
@@ -25,8 +22,6 @@ if(RS3_FOUND)
   include( ${RS3_USE_FILE} )
 endif()
 
-include( CGAL_CreateSingleSourceCGALProgram )
-
 # Boost and its components
 find_package( Boost )
 
@@ -34,20 +29,17 @@ if ( NOT Boost_FOUND )
 
   message(STATUS "This project requires the Boost library, and will not be compiled.")
 
-  return()  
+  return()
 
 endif()
 
 # include for local directory
 include_directories( BEFORE include )
 
-# include for local package
-include_directories( BEFORE ../../include )
+include( ${CGAL_USE_FILE} )
 
 # Creating entries for all .cpp/.C files with "main" routine
 # ##########################################################
-
-include( CGAL_CreateSingleSourceCGALProgram )
 
 create_single_source_cgal_program( "cyclic.cpp" )
 create_single_source_cgal_program( "Algebraic_curve_kernel_2.cpp" )

@@ -10,12 +10,12 @@
 #include <CGAL/Three/Scene_item.h>
 #include <CGAL/Three/Viewer_interface.h>
 #include <CGAL/Three/Polyhedron_demo_plugin_helper.h>
-#include "Scene_polyhedron_item.h"
 #include "Scene_surface_mesh_item.h"
 #include "Scene_points_with_normal_item.h"
 #include "Scene_polylines_item.h"
 #include <CGAL/subdivision_method_3.h>
 #include <CGAL/Kernel_traits.h>
+#include <CGAL/Three/Three.h>
 #include "ui_Basic_generator_widget.h"
 
 class GeneratorWidget :
@@ -35,13 +35,15 @@ typedef Kernel::Point_3 Point;
 
 namespace euler =  CGAL::Euler;
 using namespace CGAL::Three;
+namespace params = CGAL::parameters;
+
 class Q_DECL_EXPORT Basic_generator_plugin :
     public QObject,
     public Polyhedron_demo_plugin_helper
 {
   Q_OBJECT
   Q_INTERFACES(CGAL::Three::Polyhedron_demo_plugin_interface)
-  Q_PLUGIN_METADATA(IID "com.geometryfactory.PolyhedronDemo.PluginInterface/1.0")
+  Q_PLUGIN_METADATA(IID "com.geometryfactory.PolyhedronDemo.PluginInterface/1.0" FILE "basic_generator_plugin.json")
 public :
   void init(QMainWindow* mainWindow,
             CGAL::Three::Scene_interface* scene_interface,
@@ -49,13 +51,19 @@ public :
   {
     this->scene = scene_interface;
     this->mw = mainWindow;
-    for(int i=0; i<POLYLINE; ++i)
+    for(int i=0; i<=POLYLINE; ++i)
       nbs[i]=0;
 
 
     QMenu* menuFile = mw->findChild<QMenu*>("menuFile");
-    QMenu* menu = new QMenu(tr("&Objet Generator Widget"), menuFile);
-    QAction* actionLoad = mw->findChild<QAction*>("actionLoadPlugin");
+
+    QMenu* menu = menuFile->findChild<QMenu*>("menuGenerateObject");
+    if(!menu){
+      QAction* actionLoad = mw->findChild<QAction*>("actionLoadPlugin");
+      menu = new QMenu(tr("Generate &Object"), menuFile);
+      menu->setObjectName("menuGenerateObject");
+      menuFile->insertMenu(actionLoad, menu);
+    }
 
 
     QAction* actionPrism       = new QAction("P&rism", mw);
@@ -102,13 +110,11 @@ public :
             this, SLOT(on_actionPolyline_triggered()));
     _actions << actionPolyline;
 
-    menu->clear();
     Q_FOREACH(QAction* action, _actions)
     {
       menu->addAction(action);
     }
-    menuFile->insertMenu(actionLoad, menu);
-    dock_widget = new GeneratorWidget("Basic Objets", mw);
+    dock_widget = new GeneratorWidget("Basic Objects", mw);
     dock_widget->setVisible(false); // do not show at the beginning
     addDockWidget(dock_widget);
     connect(dock_widget->generateButton, &QAbstractButton::clicked,
@@ -179,42 +185,42 @@ private:
 //show the widget
 void Basic_generator_plugin::on_actionPrism_triggered()
 {
-  dock_widget->show();
+  dock_widget->show(); dock_widget->raise();
   dock_widget->selector_tabWidget->tabBar()->setCurrentIndex(PRISM);
 }
 void Basic_generator_plugin::on_actionSphere_triggered()
 {
-  dock_widget->show();
+  dock_widget->show(); dock_widget->raise();
   dock_widget->selector_tabWidget->tabBar()->setCurrentIndex(SPHERE);
 }
 void Basic_generator_plugin::on_actionPyramid_triggered()
 {
-  dock_widget->show();
+  dock_widget->show(); dock_widget->raise();
   dock_widget->selector_tabWidget->tabBar()->setCurrentIndex(PYRAMID);
 }
 void Basic_generator_plugin::on_actionHexahedron_triggered()
 {
-  dock_widget->show();
+  dock_widget->show(); dock_widget->raise();
   dock_widget->selector_tabWidget->tabBar()->setCurrentIndex(HEXAHEDRON);
 }
 void Basic_generator_plugin::on_actionTetrahedron_triggered()
 {
-  dock_widget->show();
+  dock_widget->show(); dock_widget->raise();
   dock_widget->selector_tabWidget->tabBar()->setCurrentIndex(TETRAHEDRON);
 }
 void Basic_generator_plugin::on_actionGrid_triggered()
 {
-  dock_widget->show();
+  dock_widget->show(); dock_widget->raise();
   dock_widget->selector_tabWidget->tabBar()->setCurrentIndex(GRID);
 }
 void Basic_generator_plugin::on_actionPointSet_triggered()
 {
-  dock_widget->show();
+  dock_widget->show(); dock_widget->raise();
   dock_widget->selector_tabWidget->tabBar()->setCurrentIndex(POINT_SET);
 }
 void Basic_generator_plugin::on_actionPolyline_triggered()
 {
-  dock_widget->show();
+  dock_widget->show(); dock_widget->raise();
   dock_widget->selector_tabWidget->tabBar()->setCurrentIndex(POLYLINE);
 }
 void Basic_generator_plugin::on_tab_changed()
@@ -285,53 +291,34 @@ void Basic_generator_plugin::on_tab_changed()
 //generate
 void Basic_generator_plugin::on_generate_clicked()
 {
-  bool is_polyhedron = mw->property("is_polyhedron_mode").toBool();
   switch(dock_widget->selector_tabWidget->currentIndex())
   {
   case PRISM:
-    if(is_polyhedron)
-      generatePrism<Scene_polyhedron_item>();
-    else
-      generatePrism<Scene_surface_mesh_item>();
+    generatePrism<Scene_surface_mesh_item>();
     ++nbs[PRISM];
     break;
 
   case SPHERE:
-    if(is_polyhedron)
-      generateSphere<Scene_polyhedron_item>();
-    else
-      generateSphere<Scene_surface_mesh_item>();
+    generateSphere<Scene_surface_mesh_item>();
     ++nbs[SPHERE];
     break;
 
   case PYRAMID:
-    if(is_polyhedron)
-      generatePyramid<Scene_polyhedron_item>();
-    else
-      generatePyramid<Scene_surface_mesh_item>();
+    generatePyramid<Scene_surface_mesh_item>();
     ++nbs[PYRAMID];
     break;
 
   case HEXAHEDRON:
-    if(is_polyhedron)
-      generateCube<Scene_polyhedron_item>();
-    else
-      generateCube<Scene_surface_mesh_item>();
+    generateCube<Scene_surface_mesh_item>();
     ++nbs[HEXAHEDRON];
     break;
 
   case TETRAHEDRON:
-    if(is_polyhedron)
-      generateTetrahedron<Scene_polyhedron_item>();
-    else
-      generateTetrahedron<Scene_surface_mesh_item>();
+    generateTetrahedron<Scene_surface_mesh_item>();
     ++nbs[TETRAHEDRON];
     break;
   case GRID:
-    if(is_polyhedron)
-      generateGrid<Scene_polyhedron_item>();
-    else
-      generateGrid<Scene_surface_mesh_item>();
+    generateGrid<Scene_surface_mesh_item>();
     ++nbs[GRID];
     break;
   case POINT_SET:
@@ -364,8 +351,7 @@ void Basic_generator_plugin::generateCube()
 
     for(int i=0; i<8; ++i)
     {
-
-      QStringList list = point_texts[i].split(QRegExp("\\s+"), QString::SkipEmptyParts);
+      QStringList list = point_texts[i].split(QRegExp("\\s+"), CGAL_QT_SKIP_EMPTY_PARTS);
       if (list.isEmpty()) return;
       if (list.size()!=3){
         QMessageBox *msgBox = new QMessageBox;
@@ -406,7 +392,7 @@ void Basic_generator_plugin::generateCube()
   else
   {
     QString text = dock_widget->extremaEdit->text();
-    QStringList list = text.split(QRegExp("\\s+"), QString::SkipEmptyParts);
+    QStringList list = text.split(QRegExp("\\s+"), CGAL_QT_SKIP_EMPTY_PARTS);
     if (list.isEmpty()) return;
     if (list.size()!=6){
       QMessageBox *msgBox = new QMessageBox;
@@ -457,7 +443,7 @@ void Basic_generator_plugin::generatePrism()
   bool is_closed = dock_widget->prismCheckBox->isChecked();
 
   QString text = dock_widget->prism_lineEdit->text();
-  QStringList list = text.split(QRegExp("\\s+"), QString::SkipEmptyParts);
+  QStringList list = text.split(QRegExp("\\s+"), CGAL_QT_SKIP_EMPTY_PARTS);
   if (list.isEmpty()) return;
   if (list.size()!=3){
     QMessageBox *msgBox = new QMessageBox;
@@ -504,7 +490,7 @@ void Basic_generator_plugin::generatePyramid()
   bool is_closed = dock_widget->pyramidCheckBox->isChecked();
 
   QString text = dock_widget->pyramid_lineEdit->text();
-  QStringList list = text.split(QRegExp("\\s+"), QString::SkipEmptyParts);
+  QStringList list = text.split(QRegExp("\\s+"), CGAL_QT_SKIP_EMPTY_PARTS);
   if (list.isEmpty()) return;
   if (list.size()!=3){
     QMessageBox *msgBox = new QMessageBox;
@@ -547,7 +533,7 @@ void Basic_generator_plugin::generateSphere()
 {
   int precision = dock_widget->SphereSpinBox->value();
   QString text = dock_widget->center_radius_lineEdit->text();
-  QStringList list = text.split(QRegExp("\\s+"), QString::SkipEmptyParts);
+  QStringList list = text.split(QRegExp("\\s+"), CGAL_QT_SKIP_EMPTY_PARTS);
   if (list.isEmpty()) return;
   if (list.size()!=4){
     QMessageBox *msgBox = new QMessageBox;
@@ -564,12 +550,12 @@ void Basic_generator_plugin::generateSphere()
   typedef typename boost::property_map<typename Facegraph_item::Face_graph, CGAL::vertex_point_t>::type VPMap;
   if(precision !=0)
     CGAL::Subdivision_method_3::Sqrt3_subdivision(sphere,
-                                                  precision);
+                                                  params::number_of_iterations(precision));
   VPMap vpmap = get(CGAL::vertex_point, sphere);
   //emplace the points back on the sphere
-  BOOST_FOREACH(typename boost::graph_traits<typename Facegraph_item::Face_graph>::vertex_descriptor vd, vertices(sphere))
+  for(typename boost::graph_traits<typename Facegraph_item::Face_graph>::vertex_descriptor vd : vertices(sphere))
   {
-    Kernel::Vector_3 vec(get(vpmap, vd), center);
+    Kernel::Vector_3 vec(center, get(vpmap, vd));
     vec = radius*vec/CGAL::sqrt(vec.squared_length());
     put(vpmap, vd, Kernel::Point_3(center.x() + vec.x(),
                                    center.y() + vec.y(),
@@ -596,8 +582,7 @@ void Basic_generator_plugin::generateTetrahedron()
 
   for(int i=0; i<4; ++i)
   {
-
-    QStringList list = point_texts[i].split(QRegExp("\\s+"), QString::SkipEmptyParts);
+    QStringList list = point_texts[i].split(QRegExp("\\s+"), CGAL_QT_SKIP_EMPTY_PARTS);
     if (list.isEmpty()) return;
     if (list.size()!=3){
       QMessageBox *msgBox = new QMessageBox;
@@ -638,7 +623,7 @@ void Basic_generator_plugin::generatePoints()
 {
   QString text = dock_widget->point_textEdit->toPlainText();
   Scene_points_with_normal_item* item = new Scene_points_with_normal_item();
-  QStringList list = text.split(QRegExp("\\s+"), QString::SkipEmptyParts);
+  QStringList list = text.split(QRegExp("\\s+"), CGAL_QT_SKIP_EMPTY_PARTS);
   int counter = 0;
   double coord[3];
   bool ok = true;
@@ -696,15 +681,23 @@ void Basic_generator_plugin::generateLines()
   polylines.resize(polylines.size()+1);
   std::vector<Scene_polylines_item::Point_3>& polyline = *(polylines.rbegin());
   QStringList polylines_metadata;
-  QStringList list = text.split(QRegExp("\\s+"), QString::SkipEmptyParts);
+
+  QStringList list = text.split(QRegExp("\\s+"), CGAL_QT_SKIP_EMPTY_PARTS);
   int counter = 0;
   double coord[3];
   bool ok = true;
   if (list.isEmpty()) return;
-  if (list.size()%3!=0){
+  if(!dock_widget->polygon_checkBox->isChecked() && list.size()%3!=0){
     QMessageBox *msgBox = new QMessageBox;
     msgBox->setWindowTitle("Error");
     msgBox->setText("ERROR : Input should consists of triplets.");
+    msgBox->exec();
+    return;
+  }
+  else if(dock_widget->polygon_checkBox->isChecked()&& list.size()%2!=0){
+    QMessageBox *msgBox = new QMessageBox;
+    msgBox->setWindowTitle("Error");
+    msgBox->setText("ERROR : Input should consists of pairs.");
     msgBox->exec();
     return;
   }
@@ -727,18 +720,29 @@ void Basic_generator_plugin::generateLines()
             counter++;
           }
       }
-      if(counter == 3)
+      if(!dock_widget->polygon_checkBox->isChecked() && counter == 3)
       {
           Scene_polylines_item::Point_3 p(coord[0], coord[1], coord[2]);
           polyline.push_back(p);
           counter =0;
       }
+      else if(dock_widget->polygon_checkBox->isChecked() && counter == 2)
+      {
+          Scene_polylines_item::Point_3 p(coord[0], coord[1], 0);
+          polyline.push_back(p);
+          counter = 0;
+      }
+  }
+  if(dock_widget->polygon_checkBox->isChecked())
+  {
+    polyline.push_back(polyline.front()); //polygon_2 are not closed.
   }
     if(ok)
     {
         dock_widget->line_textEdit->clear();
-        Scene_polylines_item* item = new Scene_polylines_item;
+        Scene_polylines_item* item = new Scene_polylines_item();
         item->polylines = polylines;
+        item->invalidateOpenGLBuffers();
         item->setName(dock_widget->name_lineEdit->text());
         item->setColor(Qt::black);
         item->setProperty("polylines metadata", polylines_metadata);
@@ -758,11 +762,11 @@ struct Point_generator
                   const Point& ur)
     :w(w), h(h), bl(bl), ur(ur)
   {}
-  Point operator()(std::size_t i, std::size_t j, std::size_t k) const
+  Point operator()(std::size_t i, std::size_t j) const
   {
     return Point(bl.x() + i*(ur.x()-bl.x())/(w-1),
                  bl.y() + j*(ur.y()-bl.y())/(h-1),
-                 k);
+                 bl.z() + j*(ur.z()-bl.z())/(h-1));
   }
 };
 template<class Facegraph_item>
@@ -773,11 +777,12 @@ void Basic_generator_plugin::generateGrid()
 
   QString points_text;
   Point extrema[2];
-  typename boost::graph_traits<Face_graph>::vertices_size_type nb_cells[2];
+  using size_type = typename boost::graph_traits<Face_graph>::vertices_size_type;
+  size_type nb_cells[2];
   bool triangulated = dock_widget->grid_checkBox->isChecked();
   points_text= dock_widget->grid_lineEdit->text();
 
-  QStringList list = points_text.split(QRegExp("\\s+"), QString::SkipEmptyParts);
+  QStringList list = points_text.split(QRegExp("\\s+"), CGAL_QT_SKIP_EMPTY_PARTS);
   if (list.isEmpty()) return;
   if (list.size()!=6){
     QMessageBox *msgBox = new QMessageBox;
@@ -802,8 +807,8 @@ void Basic_generator_plugin::generateGrid()
   }
   extrema[0] = Point(coords[0], coords[1], coords[2]);
   extrema[1] = Point(coords[3], coords[4], coords[5]);
-  nb_cells[0] = static_cast<std::size_t>(dock_widget->gridX_spinBox->value());
-  nb_cells[1] = static_cast<std::size_t>(dock_widget->gridY_spinBox->value());
+  nb_cells[0] = static_cast<size_type>(dock_widget->gridX_spinBox->value());
+  nb_cells[1] = static_cast<size_type>(dock_widget->gridY_spinBox->value());
 
   //nb_points = nb_cells+1
   Point_generator point_gen(nb_cells[0]+1, nb_cells[1]+1, extrema[0], extrema[1]);

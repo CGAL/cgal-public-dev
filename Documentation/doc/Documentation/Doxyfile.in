@@ -11,14 +11,18 @@ HTML_HEADER         = ${CGAL_DOC_HEADER}
 LAYOUT_FILE         = ${CGAL_DOC_RESOURCE_DIR}/DoxygenLayout.xml
 GENERATE_TAGFILE    = ${CGAL_DOC_TAG_GEN_DIR}/Manual.tag
 EXAMPLE_PATH        = ${CGAL_Convex_hull_2_EXAMPLE_DIR} \
-                      ${CGAL_Kernel_23_EXAMPLE_DIR}
+                      ${CGAL_Kernel_23_EXAMPLE_DIR} \
+                      ${CGAL_Poisson_surface_reconstruction_3_EXAMPLE_DIR} \
+                      ${CGAL_Surface_mesh_EXAMPLE_DIR} \
+                      ${CGAL_Classification_EXAMPLE_DIR}
 FILTER_PATTERNS     = *.txt=${CMAKE_BINARY_DIR}/pkglist_filter
 
 HTML_EXTRA_FILES += ${CGAL_DOC_RESOURCE_DIR}/hacks.js \
                     ${CGAL_DOC_RESOURCE_DIR}/menu_version.js \
                     ${CGAL_DOC_RESOURCE_DIR}/cgal_stylesheet.css \
                     ${CMAKE_BINARY_DIR}/how_to_cite_cgal.bib \
-                    ${CMAKE_BINARY_DIR}/how_to_cite.html
+                    ${CMAKE_BINARY_DIR}/how_to_cite.html \
+                    ${CGAL_PACKAGE_DOC_DIR}/fig/g-196x196-doc.png
 
 ALLEXTERNALS             = true
 EXTERNAL_GROUPS          = false

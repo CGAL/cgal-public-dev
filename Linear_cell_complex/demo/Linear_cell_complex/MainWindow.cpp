@@ -1,20 +1,11 @@
 // Copyright (c) 2011 CNRS and LIRIS' Establishments (France).
 // All rights reserved.
 //
-// This file is part of CGAL (www.cgal.org); you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public License as
-// published by the Free Software Foundation; either version 3 of the License,
-// or (at your option) any later version.
-//
-// Licensees holding a valid commercial license may use this file in
-// accordance with the commercial license agreement provided with the software.
-//
-// This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
-// WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+// This file is part of CGAL (www.cgal.org)
 //
 // $URL$
 // $Id$
-// SPDX-License-Identifier: LGPL-3.0+
+// SPDX-License-Identifier: LGPL-3.0-or-later OR LicenseRef-Commercial
 //
 // Author(s)     : Guillaume Damiand <guillaume.damiand@liris.cnrs.fr>
 // Contributor(s): Kumar Snehasish <kumar.snehasish@gmail.com>
@@ -39,7 +30,7 @@ void subdivide_lcc_pqq (LCC & m);
 
 #define DELAY_STATUSMSG 1500
 
-MainWindow::MainWindow (QWidget * parent):CGAL::Qt::DemosMainWindow (parent),
+MainWindow::MainWindow (QWidget * parent) : CGAL::Qt::DemosMainWindow (parent),
   nbcube      (0),
   dialogmesh  (this),
   dialogmenger(this),
@@ -78,7 +69,7 @@ MainWindow::MainWindow (QWidget * parent):CGAL::Qt::DemosMainWindow (parent),
 
   QObject::connect(&dialogmesh, SIGNAL(accepted()),
                    this, SLOT(onCreateMeshOk()));
-  this->viewer->setScene(&scene);
+  this->viewer->setScene(&scene, false);
 
   connect_actions ();
   this->addAboutDemo (":/cgal/help/about_Linear_cell_complex_3.html");

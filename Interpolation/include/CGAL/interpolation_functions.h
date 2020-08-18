@@ -2,19 +2,10 @@
 // All rights reserved.
 //
 // This file is part of CGAL (www.cgal.org).
-// You can redistribute it and/or modify it under the terms of the GNU
-// General Public License as published by the Free Software Foundation,
-// either version 3 of the License, or (at your option) any later version.
-//
-// Licensees holding a valid commercial license may use this file in
-// accordance with the commercial license agreement provided with the software.
-//
-// This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
-// WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 //
 // $URL$
 // $Id$
-// SPDX-License-Identifier: GPL-3.0+
+// SPDX-License-Identifier: GPL-3.0-or-later OR LicenseRef-Commercial
 //
 // Author(s)     : Julia Floetotto
 
@@ -28,7 +19,6 @@
 #include <CGAL/use.h>
 
 #include <boost/utility/result_of.hpp>
-
 #include <iterator>
 #include <utility>
 #include <vector>
@@ -44,7 +34,7 @@ struct Data_access
   typedef typename Map::mapped_type   Data_type;
   typedef typename Map::key_type      Key_type;
 
-  Data_access<Map>(const Map& m): map(m){}
+  Data_access(const Map& m): map(m){}
 
   std::pair< Data_type, bool>
   operator()(const Key_type& p) const
@@ -59,7 +49,7 @@ struct Data_access
 };
 
 //the interpolation functions:
-template < class ForwardIterator, class ValueFunctor >
+  template < class ForwardIterator, class ValueFunctor>
 typename boost::result_of<
            ValueFunctor(typename std::iterator_traits<ForwardIterator>::value_type::first_type)>
              ::type::first_type
@@ -67,19 +57,21 @@ linear_interpolation(ForwardIterator first, ForwardIterator beyond,
                      const typename std::iterator_traits<ForwardIterator>::value_type::second_type& norm,
                      ValueFunctor value_function)
 {
+  CGAL_precondition(first != beyond);
   CGAL_precondition(norm > 0);
 
   typedef typename std::iterator_traits<ForwardIterator>::value_type::first_type  arg_type;
   typedef typename boost::result_of<ValueFunctor(arg_type)>::type                 result_type;
   typedef typename result_type::first_type                                        Value_type;
 
-  Value_type result(0);
-  result_type val;
+  result_type val = value_function(first->first);
+  CGAL_assertion(val.second);
+  Value_type result = (first->second / norm) * val.first;
+  ++first;
   for(; first!=beyond; ++first)
   {
     val = value_function(first->first);
-    CGAL_assertion(val.second);
-    result += (first->second / norm) * val.first;
+    result = result + (first->second / norm) * val.first;
   }
   return result;
 }
@@ -97,6 +89,7 @@ quadratic_interpolation(ForwardIterator first, ForwardIterator beyond,
                         GradFunctor gradient_function,
                         const Traits& traits)
 {
+  CGAL_precondition(first != beyond);
   CGAL_precondition(norm > 0);
 
   typedef typename std::iterator_traits<ForwardIterator>::value_type::first_type  arg_type;
@@ -145,6 +138,7 @@ sibson_c1_interpolation(ForwardIterator first, ForwardIterator beyond,
                         GradFunctor gradient_function,
                         const Traits& traits)
 {
+  CGAL_precondition(first != beyond);
   CGAL_precondition(norm >0);
 
   typedef typename std::iterator_traits<ForwardIterator>::value_type::first_type  arg_type;
@@ -209,10 +203,10 @@ sibson_c1_interpolation(ForwardIterator first, ForwardIterator beyond,
 //
 // The general scheme:
 //  Coord_type inv_weight = f(dist); //i.e. dist^2
-//   	term1 +=  coeff/inv_weight;
+//           term1 +=  coeff/inv_weight;
 //    term2 +=  coeff * squared_dist;
 //    term3 +=  coeff*(squared_dist/inv_weight);
-// 	  gradient_int += (coeff/inv_weight) * (vh->get_value()+ vh->get_gradient() * (p - vh->point()));
+//           gradient_int += (coeff/inv_weight) * (vh->get_value()+ vh->get_gradient() * (p - vh->point()));
 
 template < class ForwardIterator, class ValueFunctor, class GradFunctor, class Traits, class Point >
 std::pair<
@@ -227,6 +221,7 @@ sibson_c1_interpolation_square(ForwardIterator first, ForwardIterator beyond,
                                GradFunctor gradient_function,
                                const Traits& traits)
 {
+  CGAL_precondition(first != beyond);
   CGAL_precondition(norm > 0);
 
   typedef typename std::iterator_traits<ForwardIterator>::value_type::first_type  arg_type;
@@ -300,6 +295,7 @@ farin_c1_interpolation(RandomAccessIterator first,
                        GradFunctor gradient_function,
                        const Traits& traits)
 {
+  CGAL_precondition(first != beyond);
   CGAL_precondition(norm >0);
 
   typedef typename std::iterator_traits<RandomAccessIterator>::value_type::first_type  arg_type;
