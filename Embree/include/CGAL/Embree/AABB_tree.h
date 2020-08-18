@@ -216,9 +216,18 @@ public:
     bb += get(self->vpm, source(hd, tm)).bbox();
 
     //Zero box size check in all three axis.
-    if (bb.xmin() == bb.xmax())  bb.xmax() + DBL_EPSILON;
-    if (bb.ymin() == bb.ymax())  bb.ymax() + DBL_EPSILON;
-    if (bb.zmin() == bb.zmax())  bb.zmax() + DBL_EPSILON; 
+    if (bb.xmin() == bb.xmax()){
+      bb.xmax() + 2*FLT_EPSILON;
+      bb.xmin() - 2*FLT_EPSILON;
+    }  
+    if (bb.ymin() == bb.ymax()){
+      bb.ymax() + 2*FLT_EPSILON;
+      bb.ymin() - 2*FLT_EPSILON;
+    }  
+    if (bb.zmin() == bb.zmax()){
+      bb.zmax() + 2*FLT_EPSILON;
+      bb.zmin() - 2*FLT_EPSILON;
+    }   
 
     bounds_o->lower_x = bb.xmin();
     bounds_o->lower_y = bb.ymin();
