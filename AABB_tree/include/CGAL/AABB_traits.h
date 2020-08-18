@@ -2,19 +2,10 @@
 // All rights reserved.
 //
 // This file is part of CGAL (www.cgal.org).
-// You can redistribute it and/or modify it under the terms of the GNU
-// General Public License as published by the Free Software Foundation,
-// either version 3 of the License, or (at your option) any later version.
-//
-// Licensees holding a valid commercial license may use this file in
-// accordance with the commercial license agreement provided with the software.
-//
-// This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
-// WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 //
 // $URL$
 // $Id$
-// SPDX-License-Identifier: GPL-3.0+
+// SPDX-License-Identifier: GPL-3.0-or-later OR LicenseRef-Commercial
 //
 //
 // Author(s) : Stéphane Tayeb, Pierre Alliez, Camille Wormser
@@ -114,7 +105,7 @@ struct AABB_traits_base_2<GeomTraits,true>{
         } else {
           FT t1 = ((bbox.min)(i) - *source_iter) / *direction_iter;
           FT t2 = ((bbox.max)(i) - *source_iter) / *direction_iter;
- 
+
           t_near = (std::max)(t_near, (std::min)(t1, t2));
           t_far = (std::min)(t_far, (std::max)(t1, t2));
 
@@ -180,9 +171,11 @@ class AABB_tree;
 /// \sa `AABBPrimitiveWithSharedData`
 
   template<typename GeomTraits, typename AABBPrimitive, typename BboxMap = Default>
-class AABB_traits:
-  public internal::AABB_tree::AABB_traits_base<AABBPrimitive>,
+class AABB_traits
+#ifndef DOXYGEN_RUNNING
+: public internal::AABB_tree::AABB_traits_base<AABBPrimitive>,
   public internal::AABB_tree::AABB_traits_base_2<GeomTraits>
+#endif
 {
   typedef typename CGAL::Object Object;
 public:
@@ -309,7 +302,7 @@ public:
   public:
     Compute_bbox(const AABB_traits<GeomTraits,AABBPrimitive, BboxMap>& traits)
       :m_traits (traits) {}
-    
+
     template<typename ConstPrimitiveIterator>
     typename AT::Bounding_box operator()(ConstPrimitiveIterator first,
                                          ConstPrimitiveIterator beyond) const
@@ -321,7 +314,7 @@ public:
         }
       return bbox;
     }
-    
+
   };
 
   Compute_bbox compute_bbox_object() const {return Compute_bbox(*this);}
@@ -453,7 +446,7 @@ private:
   {
     return internal::Primitive_helper<AT>::get_datum(pr,*this).bbox();
   }
-  
+
 
   typedef enum { CGAL_AXIS_X = 0,
                  CGAL_AXIS_Y = 1,
