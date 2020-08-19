@@ -28,6 +28,8 @@
 #include <deque>
 #include <limits>
 
+#define BOX_EXT FLT_EPSILON
+
 namespace CGAL {
 namespace Embree {
 
@@ -215,26 +217,14 @@ public:
     bb += get(self->vpm, target(next(hd, tm), tm)).bbox();
     bb += get(self->vpm, source(hd, tm)).bbox();
 
-    //Zero box size check in all three axis.
-    // if (bb.xmin() == bb.xmax()){
-    //   bb.xmax() += 2*FLT_EPSILON;
-    //   bb.xmin() -= 2*FLT_EPSILON;
-    // }  
-    // if (bb.ymin() == bb.ymax()){
-    //   bb.ymax() += 2*FLT_EPSILON;
-    //   bb.ymin() -= 2*FLT_EPSILON;
-    // }  
-    // if (bb.zmin() == bb.zmax()){
-    //   bb.zmax() += 2*FLT_EPSILON;
-    //   bb.zmin() -= 2*FLT_EPSILON;
-    // }   
+    bounds_o->lower_x = bb.xmin() == bb.xmax() ? (bb.xmin()-BOX_EXT) : bb.xmin();
+    bounds_o->upper_x = bb.xmin() == bb.xmax() ? (bb.xmax()+BOX_EXT) : bb.xmax();
 
-    bounds_o->lower_x = bb.xmin();
-    bounds_o->lower_y = bb.ymin();
-    bounds_o->lower_z = bb.zmin();
-    bounds_o->upper_x = bb.xmax();
-    bounds_o->upper_y = bb.ymax();
-    bounds_o->upper_z = bb.zmax();
+    bounds_o->lower_y = bb.ymin() == bb.ymax() ? (bb.ymin()-BOX_EXT) : bb.ymin();
+    bounds_o->upper_y = bb.ymin() == bb.ymax() ? (bb.ymax()+BOX_EXT) : bb.ymax();
+
+    bounds_o->lower_z = bb.zmin() == bb.zmax() ? (bb.zmin()-BOX_EXT) : bb.zmin();
+    bounds_o->upper_z = bb.zmin() == bb.zmax() ? (bb.zmax()+BOX_EXT) : bb.zmax();
   }
 
 
