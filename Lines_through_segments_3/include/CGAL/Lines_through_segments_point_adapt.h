@@ -25,7 +25,7 @@
 #include <CGAL/CORE_algebraic_number_traits.h>
 #include <CGAL/Arr_rational_function_traits_2.h>
 #include <CGAL/Algebraic_kernel_d_1.h>
-#include <CGAL/Algebraic_kernel_2_1.h>
+// #include <CGAL/Algebraic_kernel_2_1.h>
 #include <CGAL/Lazy_exact_nt.h>
 /*! \file
  *
