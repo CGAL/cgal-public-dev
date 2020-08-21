@@ -67,7 +67,7 @@ var server_cpp = require('net').createServer((socket) => {
 
     var message = 'Hello from Express Backend';
     socket.end(message, () => {
-      console.log(socket.bytesWritten, 'bytes', typeof message, 'data sent from cpp:', message);
+      console.log(socket.bytesWritten, 'bytes', typeof message, 'data sent from Express backend:', message);
     });
   }).on('error', (err) => {
     // handle errors here.

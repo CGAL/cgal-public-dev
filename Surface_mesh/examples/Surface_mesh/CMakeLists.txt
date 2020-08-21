@@ -21,6 +21,8 @@ endif()
 #CGAL_Qt5 is needed for the drawing.
 find_package(CGAL REQUIRED OPTIONAL_COMPONENTS Qt5)
 
+find_package(Qt5 COMPONENTS Network)
+
 if(CGAL_Qt5_FOUND)
   #required to use basic_viewer
   add_definitions(-DCGAL_USE_BASIC_VIEWER -DQT_NO_KEYWORDS)
@@ -44,11 +46,17 @@ if ( CGAL_FOUND )
   create_single_source_cgal_program("draw_surface_mesh.cpp")
   create_single_source_cgal_program("sm_draw_small_faces.cpp")
   create_single_source_cgal_program("check_orientation.cpp")
+
   if(CGAL_Qt5_FOUND )
 
     #link it with the required CGAL libraries
 
-    target_link_libraries(draw_surface_mesh PUBLIC CGAL::CGAL_Qt5)
+    if (Qt5Network_FOUND)
+      target_link_libraries(draw_surface_mesh PUBLIC CGAL::CGAL_Qt5 Qt5::Network)
+    else()
+      target_link_libraries(draw_surface_mesh PUBLIC CGAL::CGAL_Qt5)
+    endif()
+
     target_link_libraries(sm_draw_small_faces PUBLIC CGAL::CGAL_Qt5)
   endif()
 

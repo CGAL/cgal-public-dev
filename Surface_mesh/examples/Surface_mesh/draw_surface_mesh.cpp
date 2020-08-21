@@ -13,7 +13,8 @@ int main(int argc, char* argv[])
   std::ifstream in1((argc>1)?argv[1]:"data/elephant.off");
   in1 >> sm1;
 
-  CGAL::draw(sm1);
+  // CGAL::draw(sm1);
+  CGAL::draw_three(sm1);
 
   return EXIT_SUCCESS;
 }
