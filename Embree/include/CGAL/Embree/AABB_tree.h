@@ -33,34 +33,59 @@
 namespace CGAL {
 namespace Embree {
 
+/**
+ * \ingroup PkgEmbreeRef
+ * Data structure created to store 
+ * computations and return values of intersection and distance queries.
+ * It takes care of the type of intersection and conveys information from one structure to another
+ * in the pipeline.
+ *
+ * \tparam Geometry Surface_mesh or Polyhedron_3
+ */
 template<typename Geometry>
 struct Intersect_context : public RTCIntersectContext{
-
+/// \name Types
+///@{
   typedef typename Geometry::Ray Ray;
   typedef typename Geometry::Segment Segment;
   typedef typename Geometry::Point Point;
   typedef std::tuple<Point, float, unsigned int> IntersectionData;
+///@}
 
 private:
   std::vector<IntersectionData> all_intersections;
 
 public:
+/// \name Attributes
+///@{
   Ray ray;
   Segment segment;
   unsigned int counter =0;
   struct RTCRayHit rayhit;
+///@}
 
+/// \name Enum Types
+///@{
+  /// Enum type to supply the program with the type of information queries
   enum Intersection_type{
     FIRST = 0, ANY, ALL, COUNTER
   };
-
+  /// as the name suggests this suplies the program with the object of querying.
   enum Query_type{
     RAY_QUERY = 0, SEGMENT_QUERY
   };
+///@}
 
+/// \name Attributes
+///@{
   Intersection_type intersection_type;
   Query_type query_type;
+///@}
 
+
+/// \name Constructors
+///@{
+  /// Constructor to initialise when query type in a ray.
   Intersect_context(Intersection_type i_type, const Ray& _ray)
   : intersection_type(i_type), ray(_ray)
   {
@@ -69,6 +94,7 @@ public:
     init(_ray);
   }
 
+  /// Constructor to initialise when query type in a segment.
   Intersect_context(Intersection_type i_type, const Segment& _segment)
   : intersection_type(i_type), segment(_segment)
   {
@@ -76,21 +102,28 @@ public:
     init_context();
     init(_segment);
   }
+///@}
 
+/// \name Set-up
+///@{
+  /// initialise an EmbreeAPI context.
   void init_context(){
     rtcInitIntersectContext(this);
   }
-
+  /// makes a call to init_rayhit for a ray.
   void init(const Ray& _ray){
     init_rayhit(_ray);
   }
 
+  /// makes a call to init_rayhit for a segment.
   void init(const Segment& _segment){
     float segmentLength = sqrt(to_double(_segment.squared_length()));
     init_rayhit(_segment);
     rayhit.ray.tfar = segmentLength;
   }
 
+  ///initialises the rayhit object used by the EmbreeAPI.
+  /// \tparam T ray or segment
   template<typename T>
   void init_rayhit(const T& query){
 
@@ -114,11 +147,16 @@ public:
 
     rayhit.hit.instID[0] = RTC_INVALID_GEOMETRY_ID;
   }
+///@}
 
+/// \name Helpers
+///@{
+  ///Getter to return the array which contain the intersection objects.
   inline std::vector<IntersectionData>& intersections()
   {
     return all_intersections;
   }
+///@}
 
 };
 
