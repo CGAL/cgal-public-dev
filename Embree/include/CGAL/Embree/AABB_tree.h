@@ -205,6 +205,16 @@ struct Id2descriptor<TriangleMesh,Tag_true>
 template <typename Geometry, typename GeomTraits>
 class AABB_tree;
 
+
+/**
+ * \ingroup PkgEmbreeRef
+ * Support structure for that stores a pointer to the userMesh, namely a surface_mesh or a polyhedron.
+ * It also stores the RTCGeometry object used by the EmbreeAPI and a geomID assigned to it which 
+ * can be used to query a geometry object. 
+ *
+ * \tparam TriangleMesh Surface_mesh or Polyhedron_3
+ * \tparam GeomTraits a kernel
+ */
 template <typename TriangleMesh, typename GeomTraits, typename ConstructibleFromId = CGAL::Boolean_tag<std::is_constructible<typename boost::graph_traits<TriangleMesh>::vertex_descriptor, unsigned int>::value> >
 class Triangle_mesh_geometry {
 
@@ -218,6 +228,8 @@ class Triangle_mesh_geometry {
   typedef typename boost::property_map<TriangleMesh, vertex_point_t>::const_type Vertex_point_map;
 
 public:
+/// \name Types
+///@{
   typedef std::pair<face_descriptor, TriangleMesh*> Primitive_id;
   typedef typename GeomTraits::Point_3 Point;
   typedef typename GeomTraits::Triangle_3 Triangle;
@@ -225,6 +237,7 @@ public:
   typedef typename GeomTraits::Vector_3 Vector;
   typedef typename GeomTraits::Segment_3 Segment;
   typedef typename GeomTraits::FT FT;
+///@}
 
 private:
   const TriangleMesh* triangle_mesh;
@@ -234,13 +247,18 @@ private:
   Id2descriptor<TriangleMesh, ConstructibleFromId> id2desc;
 
 public:
+/// \name Constructors
+///@{
   Triangle_mesh_geometry()
   {}
 
   Triangle_mesh_geometry(const TriangleMesh& tm)
     : triangle_mesh(&tm), vpm(get(CGAL::vertex_point, tm)), id2desc(tm)
   {}
+///@}
 
+/// \name Call-backs
+///@{
   static void bound_function(const struct RTCBoundsFunctionArguments* args)
   {
     Triangle_mesh_geometry* self = (Triangle_mesh_geometry*) args->geometryUserPtr;
@@ -264,8 +282,10 @@ public:
     bounds_o->lower_z = bb.zmin() == bb.zmax() ? (bb.zmin()-BOX_EXT) : bb.zmin();
     bounds_o->upper_z = bb.zmin() == bb.zmax() ? (bb.zmax()+BOX_EXT) : bb.zmax();
   }
+///@}
 
-
+/// \name Utility
+///@{
   static Triangle triangle(const Self* tmg, face_descriptor fd)
   {
     const TriangleMesh& tm = *(tmg->triangle_mesh);
@@ -274,8 +294,11 @@ public:
                     get(tmg->vpm, target(next(hd, tm), tm)),
                     get(tmg->vpm, source(hd, tm)));
   }
+///@}
 
 
+/// \name Call-backs
+///@{
   static void intersection_function(const RTCIntersectFunctionNArguments* args)
   {
     typedef Intersect_context<Self> Intersect_context;
@@ -340,8 +363,6 @@ public:
     }
   }
 
-
-
   template <typename ClosestPointResult>
   bool closest_point_function(RTCPointQueryFunctionArguments* args, ClosestPointResult* result) const
   {
@@ -363,8 +384,11 @@ public:
     }
     return false;
   }
+///@}
 
 
+/// \name Utility
+///@{
   void insert_primitives()
   {
     rtcSetGeometryUserPrimitiveCount(rtc_geometry, num_faces(*triangle_mesh));
@@ -380,6 +404,7 @@ public:
   {
     return std::make_pair(id2desc(primID), const_cast<TriangleMesh*>(triangle_mesh));
   }
+///@}
 
 };
 
