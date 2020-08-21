@@ -230,6 +230,7 @@ class Triangle_mesh_geometry {
 public:
 /// \name Types
 ///@{
+  ///gives a face descriptor to a certain geometry.
   typedef std::pair<face_descriptor, TriangleMesh*> Primitive_id;
   typedef typename GeomTraits::Point_3 Point;
   typedef typename GeomTraits::Triangle_3 Triangle;
@@ -259,6 +260,8 @@ public:
 
 /// \name Call-backs
 ///@{
+  ///This is callback that the EmbreeAPI ues to get bounds of the primitive
+  /// in our user defined geometry.
   static void bound_function(const struct RTCBoundsFunctionArguments* args)
   {
     Triangle_mesh_geometry* self = (Triangle_mesh_geometry*) args->geometryUserPtr;
@@ -286,6 +289,7 @@ public:
 
 /// \name Utility
 ///@{
+  /// utility method to get triangle points using a face desciptor.
   static Triangle triangle(const Self* tmg, face_descriptor fd)
   {
     const TriangleMesh& tm = *(tmg->triangle_mesh);
@@ -299,6 +303,9 @@ public:
 
 /// \name Call-backs
 ///@{
+  /// after the EmbreeAPI detects a certain Interesecting node in the BVH
+  /// it makes a call to the Intersection_function callback to get the intersection object.
+  /// takes in RTCIntersectFunctionNArguments and set them accordingly.
   static void intersection_function(const RTCIntersectFunctionNArguments* args)
   {
     typedef Intersect_context<Self> Intersect_context;
@@ -363,6 +370,8 @@ public:
     }
   }
 
+  /// .....
+  /// \tparam ClosestPointResult .....
   template <typename ClosestPointResult>
   bool closest_point_function(RTCPointQueryFunctionArguments* args, ClosestPointResult* result) const
   {
@@ -389,6 +398,8 @@ public:
 
 /// \name Utility
 ///@{
+  /// This method binds the callback methods to the RTCgeometry object
+  /// in the Embree::Triangle_mesh_geomtry.
   void insert_primitives()
   {
     rtcSetGeometryUserPrimitiveCount(rtc_geometry, num_faces(*triangle_mesh));
@@ -399,7 +410,7 @@ public:
     rtcReleaseGeometry(rtc_geometry);
   }
 
-
+  /// Getter for Primitive_id.
   Primitive_id primitive_id(unsigned int primID) const
   {
     return std::make_pair(id2desc(primID), const_cast<TriangleMesh*>(triangle_mesh));
