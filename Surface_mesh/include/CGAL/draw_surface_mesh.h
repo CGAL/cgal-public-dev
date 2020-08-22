@@ -203,16 +203,36 @@ namespace CGAL
   class SimpleSurfaceMeshViewerThree : public Basic_viewer_three
   {
     typedef Basic_viewer_three Base;
+    typedef typename SM::Vertex_index vertex_descriptor;
   public:
     SimpleSurfaceMeshViewerThree(const SM &amesh, 
                                  const char *title = "Basic Surface_mesh Viewer", 
                                  bool anofaces = false,
                                  const ColorFunctor &fcolor = ColorFunctor()) : // First draw: no vertex; edges, faces;
-                                                                                Base(title, false, true, true),
+                                                                                Base(title, true, true, true),
                                                                                 sm(amesh), 
                                                                                 m_nofaces(anofaces),
                                                                                 m_fcolor(fcolor)
     {
+      compute_elements();
+    }
+
+  protected:
+
+  void compute_vertex(vertex_descriptor vh)
+  {
+    add_point(sm.point(vh));
+  }
+
+    void compute_elements()
+    {
+      clear();
+
+      // vertices
+      for (typename SM::Vertex_range::iterator v = sm.vertices().begin(); v != sm.vertices().end(); v++)
+      {
+        compute_vertex(*v);
+      }
     }
 
   protected:
@@ -266,7 +286,8 @@ namespace CGAL
       DefaultColorFunctorSM fcolor;
       SimpleSurfaceMeshViewerThree<Surface_mesh<K>, DefaultColorFunctorSM> mainwindow(amesh, title, nofill, fcolor);
       if (!mainwindow.connect("127.0.0.1", 3002)) return;
-      mainwindow.show();
+      mainwindow.draw();
+      mainwindow.disconnect();
       app.exec();
     }
   }

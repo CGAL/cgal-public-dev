@@ -60,15 +60,7 @@ class App extends Component {
       console.log(message);
     });
 
-    socket.on('vertices', (vertices_str) => {
-      // decode vertices
-      var vertex_buffer = [];
-      var xyz_str_list = vertices_str.trim().split(';');
-      for (var xyz_str of xyz_str_list) {
-        if (!xyz_str.length) continue;
-        var xyz = xyz_str.trim().split(' ');
-        vertex_buffer.push(parseFloat(xyz[0]), parseFloat(xyz[1]), parseFloat(xyz[2]));
-      };
+    socket.on('vertices', (vertex_buffer) => {
 
       // add geometry
       var geometry = new THREE.BufferGeometry();

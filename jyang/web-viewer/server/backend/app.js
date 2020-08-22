@@ -47,22 +47,34 @@ server_react.listen(3001, '127.0.0.1', () => {
 
 /* ------------------------------------------- */
 // communication between cpp client and server backend
+// Tcp packet size is 64K (65535 bytes), which is need to be considered
 var server_cpp = require('net').createServer((socket) => {
     // connection info
     console.log('client connected from cpp at', socket.remoteAddress, ':', socket.remotePort);
     
-    // set data encoding
-    socket.setEncoding('utf-8');
-
     // add 'data' event handler to this socket instance
     socket.on('data', (data) => {
-      console.log(socket.bytesRead, 'bytes', typeof data, 'data received from cpp:', data.toString('utf-8'));
+      console.log(socket.bytesRead, 'bytes', typeof data, 'data received from cpp:');
+      console.log(data.buffer.byteLength)
+      console.log(data.byteLength)
       
-      // split data
-      var split = data.split(':');
+      // decode mode
+      var mode; // first 4 bytes as mode
+      switch (new DataView(data.buffer).getInt32(0)) {
+        case 0: mode = 'vertices'; break;
+        case 1: mode = 'lines'; break;
+        case 2: mode = 'triangles'; break;
+      }
+
+      // decode elements
+      var elements = [];
+      for (var i = 4; i < 1060; i = i + 8) {
+        elements.push(new DataView(data.buffer.slice(i, i+8)).getFloat64(0));
+      }
       
       // resend the data to React Frontend
-      io.emit(split[0], split[1].trim());
+      console.log(mode, elements);
+      io.emit(mode, elements);
     });
 
     var message = 'Hello from Express Backend';
