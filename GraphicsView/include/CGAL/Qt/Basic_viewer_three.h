@@ -85,11 +85,12 @@ public:
         {
             QByteArray buffer;
             QDataStream stream(&buffer, QIODevice::WriteOnly);
-            stream << 0; // write mode
+            stream << 0.f; // write mode
             for (auto i = buffer_for_mono_points.begin(); i != buffer_for_mono_points.end(); i++)
             {
                 stream << *i;
             }
+            stream << (float)'e' << (float)'n' << (float)'d'; // this is necessary for large object
             write(buffer);
         }
     }

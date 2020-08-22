@@ -49,55 +49,84 @@ server_react.listen(3001, '127.0.0.1', () => {
 // communication between cpp client and server backend
 // Tcp packet size is 64K (65535 bytes), which is need to be considered
 var server_cpp = require('net').createServer((socket) => {
-    // connection info
-    console.log('client connected from cpp at', socket.remoteAddress, ':', socket.remotePort);
-    
-    // add 'data' event handler to this socket instance
-    socket.on('data', (data) => {
-      console.log(socket.bytesRead, 'bytes', typeof data, 'data received from cpp:');
-      console.log(data.buffer.byteLength)
-      console.log(data.byteLength)
-      
-      // decode mode
-      var mode; // first 4 bytes as mode
-      switch (new DataView(data.buffer).getInt32(0)) {
-        case 0: mode = 'vertices'; break;
-        case 1: mode = 'lines'; break;
-        case 2: mode = 'triangles'; break;
-      }
+  // connection info
+  console.log('client connected from cpp at', socket.remoteAddress, ':', socket.remotePort, 'via socket');
 
-      // decode elements
+  // add 'data' event handler to this socket instance
+  var data_list = []
+  socket.on('data', (data_packet) => {
+    console.log(data_packet.byteLength, 'bytes', typeof data_packet, 'data received from cpp:', data_packet);
+
+    // collect data
+    data_list.push(data_packet.buffer);
+
+    // check if the last 24 bytes can be conver to 'e', 'n', 'd'
+    var byte_d = new DataView(data_packet.buffer).getFloat64(data_packet.byteLength - 8);  // d ascii should be 100
+    var byte_n = new DataView(data_packet.buffer).getFloat64(data_packet.byteLength - 16); // n ascii should be 110
+    var byte_e = new DataView(data_packet.buffer).getFloat64(data_packet.byteLength - 24); // e ascii should be 101
+
+    if (byte_d == 100 && byte_n == 110 && byte_e == 101) {
+      // prepare complete data
+      var data_size = 0;
+      data_list.forEach((item) => { data_size += item.byteLength });
+
+      var data = new Uint8Array(data_size);
+      for (var i = 0; i < data_list.length; i++) {
+        data.set(new Uint8Array(data_list[i]), i > 0 ? data_list[i - 1].byteLength : 0);
+      }
+      console.log
+
+      var mode;
       var elements = [];
-      for (var i = 4; i < 1060; i = i + 8) {
-        elements.push(new DataView(data.buffer.slice(i, i+8)).getFloat64(0));
-      }
-      
-      // resend the data to React Frontend
-      console.log(mode, elements);
-      io.emit(mode, elements);
-    });
 
-    var message = 'Hello from Express Backend';
-    socket.end(message, () => {
-      console.log(socket.bytesWritten, 'bytes', typeof message, 'data sent from Express backend:', message);
-    });
-  }).on('error', (err) => {
-    // handle errors here.
-    throw err;
+      // decode mode
+      switch (new DataView(data.buffer).getFloat64(0)) { // first 8 bytes as mode
+        case 0:
+          mode = 'vertices'; // decode elements as vertices
+
+          for (var i = 8; i < data.byteLength; i = i+8) {
+            elements.push(new DataView(data.buffer.slice(i, i + 8)).getFloat64(0));
+          }
+
+          break;
+        case 1:
+          mode = 'lines';
+
+          break;
+        case 2:
+          mode = 'triangles';
+
+          break;
+      }
+
+    }
+
+    // resend the data to React Frontend
+    console.log(mode, elements);
+    io.emit(mode, elements);
   });
 
-  server_cpp.listen(3002, '127.0.0.1', ()=> {
+  var message = 'Hello from Express Backend';
+  socket.end(message, () => {
+    console.log(socket.bytesWritten, 'bytes', typeof message, 'data sent from Express backend:', message);
+  });
+}).on('error', (err) => {
+  // handle errors here.
+  throw err;
+});
+
+server_cpp.listen(3002, '127.0.0.1', () => {
   console.log('running cpp server on', server_cpp.address());
 });
 
 /* ------------------------------------------- */
 // catch 404 and forward to error handler
-app.use(function(req, res, next) {
+app.use(function (req, res, next) {
   next(createError(404));
 });
 
 // error handler
-app.use(function(err, req, res, next) {
+app.use(function (err, req, res, next) {
   // set locals, only providing error in development
   res.locals.message = err.message;
   res.locals.error = req.app.get('env') === 'development' ? err : {};
