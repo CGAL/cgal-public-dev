@@ -61,11 +61,10 @@ class App extends Component {
     });
 
     socket.on('vertices', (vertex_buffer) => {
-
       // add geometry
       var geometry = new THREE.BufferGeometry();
       geometry.setAttribute('position', new THREE.Float32BufferAttribute(vertex_buffer, 3));
-      var material = new THREE.PointsMaterial({color: 0x00ff00, size: 0.01});
+      var material = new THREE.PointsMaterial({color: 0x00ff00, size: 0.001});
       var points = new THREE.Points(geometry, material);
       scene.add(points);
 

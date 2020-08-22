@@ -66,7 +66,7 @@ var server_cpp = require('net').createServer((socket) => {
     var byte_e = new DataView(data_packet.buffer).getFloat64(data_packet.byteLength - 24); // e ascii should be 101
 
     if (byte_d == 100 && byte_n == 110 && byte_e == 101) {
-      // prepare complete data
+      // receive the last packet and prepare complete data
       var data_size = 0;
       data_list.forEach((item) => { data_size += item.byteLength });
 
@@ -74,17 +74,16 @@ var server_cpp = require('net').createServer((socket) => {
       for (var i = 0; i < data_list.length; i++) {
         data.set(new Uint8Array(data_list[i]), i > 0 ? data_list[i - 1].byteLength : 0);
       }
-      console.log
 
       var mode;
       var elements = [];
 
       // decode mode
       switch (new DataView(data.buffer).getFloat64(0)) { // first 8 bytes as mode
-        case 0:
-          mode = 'vertices'; // decode elements as vertices
+        case 0: mode = 'vertices';
 
-          for (var i = 8; i < data.byteLength; i = i+8) {
+          // decode elements
+          for (var i = 8; i < data.byteLength; i = i + 8) {
             elements.push(new DataView(data.buffer.slice(i, i + 8)).getFloat64(0));
           }
 
@@ -99,11 +98,11 @@ var server_cpp = require('net').createServer((socket) => {
           break;
       }
 
+      // resend the data to React Frontend
+      console.log(mode, elements);
+      io.emit(mode, elements);
     }
 
-    // resend the data to React Frontend
-    console.log(mode, elements);
-    io.emit(mode, elements);
   });
 
   var message = 'Hello from Express Backend';
