@@ -4629,21 +4629,21 @@ void MainWindow::on_actionRecenter_triggered() { zoomToFit(); }
 void MainWindow::on_actionOpenLinear_triggered()
 {
   open(QFileDialog::getOpenFileName(this,
-                                    tr("Open Linear Polygon"), "../data",
+                                    tr("Open Linear Polygon"), "./data",
                                     tr("Linear Curve files (*.lps)")));
 }
 
 void MainWindow::on_actionOpenDXF_triggered()
 {
   open(QFileDialog::getOpenFileName(this,
-                                    tr("Open Line segments and circular arcs"), "../data",
+                                    tr("Open Line segments and circular arcs"), "./data",
                                     tr("Circular curve files (*.cps)")));
 }
 
 void MainWindow::on_actionOpenBezier_triggered()
 {
   open(QFileDialog::getOpenFileName(this, 
-                                    tr("Open Bezier Polygon"), "../data", 
+                                    tr("Open Bezier Polygon"), "./data", 
                                     tr("Bezier Curve files (*.bps)") ));
 }
 
