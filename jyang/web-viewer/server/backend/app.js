@@ -83,7 +83,7 @@ var server_cpp = require('net').createServer((socket) => {
         case 0: mode = 'vertices';
 
           // decode elements
-          for (var i = 8; i < data.byteLength; i = i + 8) {
+          for (var i = 8; i < data.byteLength - 24; i = i + 8) {
             elements.push(new DataView(data.buffer.slice(i, i + 8)).getFloat64(0));
           }
 
@@ -95,6 +95,10 @@ var server_cpp = require('net').createServer((socket) => {
         case 2:
           mode = 'triangles';
 
+          // decode elements
+          for (var i = 8; i < data.byteLength - 24; i = i + 8) {
+            elements.push(new DataView(data.buffer.slice(i, i + 8)).getFloat64(0));
+          }
           break;
       }
 

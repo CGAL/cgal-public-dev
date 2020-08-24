@@ -8,6 +8,11 @@
 class Basic_viewer_three
 {
 public:
+    typedef CGAL::Exact_predicates_inexact_constructions_kernel Local_kernel;
+    typedef Local_kernel::Point_3 Local_point;
+    typedef Local_kernel::Vector_3 Local_vector;
+
+public:
     Basic_viewer_three(const char *title = "",
                        bool draw_vertices = false,
                        bool draw_edges = false,
@@ -17,7 +22,13 @@ public:
                                                   m_buffer_for_mono_points(&arrays[POS_MONO_POINTS],
                                                                            nullptr,
                                                                            &m_bounding_box,
-                                                                           nullptr, nullptr, nullptr)
+                                                                           nullptr, nullptr, nullptr),
+                                                  m_buffer_for_mono_faces(&arrays[POS_MONO_FACES],
+                                                                          nullptr,
+                                                                          &m_bounding_box,
+                                                                          nullptr,
+                                                                          &arrays[FLAT_NORMAL_MONO_FACES],
+                                                                          &arrays[SMOOTH_NORMAL_MONO_FACES])
     {
         this->socket = new QTcpSocket();
     }
@@ -62,6 +73,24 @@ public:
         }
     }
 
+    void disconnect()
+    {
+        if (socket->state() == QAbstractSocket::UnconnectedState || socket->waitForDisconnected(1000))
+        {
+            qDebug() << "Disconnected";
+            return;
+        }
+        socket->disconnectFromHost();
+    }
+
+    void request(QByteArray &data)
+    {
+        if (!connect("127.0.0.1", 3002))
+            return;
+        write(data);
+        disconnect();
+    }
+
     void clear()
     {
         for (unsigned int i = 0; i < LAST_INDEX; i++)
@@ -79,27 +108,95 @@ public:
         CGAL::Buffer_for_vao<float>::add_point_in_buffer(p, buffer_for_mono_points);
     }
 
+    bool is_a_face_started() const
+    {
+        return m_buffer_for_mono_faces.is_a_face_started();
+    }
+
+    void face_begin()
+    {
+        if (is_a_face_started())
+        {
+            std::cerr << "You cannot start a new face before to finish the previous one." << std::endl;
+        }
+        else
+        {
+            m_buffer_for_mono_faces.face_begin();
+        }
+    }
+
+    template <typename KPoint>
+    bool add_point_in_face(const KPoint &kp)
+    {
+        if (m_buffer_for_mono_faces.is_a_face_started())
+        {
+            return m_buffer_for_mono_faces.add_point_in_face(kp);
+        }
+        return false;
+    }
+
+    template <typename KPoint, typename KVector>
+    bool add_point_in_face(const KPoint &kp, const KVector &p_normal)
+    {
+        if (m_buffer_for_mono_faces.is_a_face_started())
+        {
+            return m_buffer_for_mono_faces.add_point_in_face(kp, p_normal);
+        }
+        return false;
+    }
+
+    void face_end()
+    {
+        if (m_buffer_for_mono_faces.is_a_face_started())
+        {
+            m_buffer_for_mono_faces.face_end();
+        }
+    }
+
+    template <typename KPoint>
+    static Local_point get_local_point(const KPoint &p)
+    {
+        return CGAL::internal::Geom_utils<typename CGAL::Kernel_traits<KPoint>::Kernel, Local_kernel>::
+            get_local_point(p);
+    }
+    template <typename KVector>
+    static Local_vector get_local_vector(const KVector &v)
+    {
+        return CGAL::internal::Geom_utils<typename CGAL::Kernel_traits<KVector>::Kernel, Local_kernel>::
+            get_local_vector(v);
+    }
+
     void draw()
     {
         if (m_draw_vertices)
         {
             QByteArray buffer;
             QDataStream stream(&buffer, QIODevice::WriteOnly);
-            stream << 0.f; // write mode
+            stream << 0.f; // vertex mode
             for (auto i = buffer_for_mono_points.begin(); i != buffer_for_mono_points.end(); i++)
             {
                 stream << *i;
             }
             stream << (float)'e' << (float)'n' << (float)'d'; // this is necessary for large object
-            write(buffer);
+            // write(buffer);
+            request(buffer);
         }
-    }
-
-    void disconnect()
-    {
-        if (socket->state() == QAbstractSocket::UnconnectedState || socket->waitForDisconnected(1000))
-            qDebug() << "Disconnected";
-        socket->disconnectFromHost();
+        if (m_draw_edges)
+        {
+        }
+        if (m_draw_faces)
+        {
+            QByteArray buffer;
+            QDataStream stream(&buffer, QIODevice::WriteOnly);
+            stream << 2.f; // face mode
+            for (auto i = buffer_for_mono_points.begin(); i != buffer_for_mono_points.end(); i++)
+            {
+                stream << *i;
+            }
+            stream << (float)'e' << (float)'n' << (float)'d'; // this is necessary for large object
+            // write(buffer);
+            request(buffer);
+        }
     }
 
 protected:
@@ -113,15 +210,24 @@ protected:
     {
         BEGIN_POS = 0,
         POS_MONO_POINTS = BEGIN_POS,
+        POS_MONO_FACES,
         END_POS,
-        LAST_INDEX = END_POS
+        BEGIN_NORMAL = END_POS,
+        SMOOTH_NORMAL_MONO_FACES = BEGIN_NORMAL,
+        FLAT_NORMAL_MONO_FACES,
+        END_NORMAL,
+        LAST_INDEX = END_NORMAL
     };
     std::vector<float> arrays[LAST_INDEX];
 
     CGAL::Buffer_for_vao<float> m_buffer_for_mono_points;
+    CGAL::Buffer_for_vao<float> m_buffer_for_mono_faces;
+
     std::vector<float> buffer_for_mono_points;
 
     QTcpSocket *socket;
+    QString hostName;
+    qint16 port;
 };
 
 #endif // CGAL_BASIC_VIEWER_THREE_H

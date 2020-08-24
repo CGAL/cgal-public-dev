@@ -47,7 +47,7 @@ class App extends Component {
     // Init OrbitControls
     var controls = new OrbitControls(camera, renderer.domElement);
     controls.addEventListener('change', render); //use if there is no animation loop
-    controls.minDistance = 2;
+    controls.minDistance = 0.1;
     controls.maxDistance = 10;
     controls.target.set(0, 0, 0);
     controls.update();
@@ -72,28 +72,28 @@ class App extends Component {
       render();
     });
 
-    socket.on('triangles', (vertices_str) => {
-      // decode triangles
-      var vertices = [];
-      var xyz_str_list = vertices_str.trim().split(';');
-      for (var xyz_str of xyz_str_list) {
-        if (!xyz_str.length) continue;
-        var xyz = xyz_str.trim().split(' ');
-        vertices.push(new THREE.Vector3(parseFloat(xyz[0]), parseFloat(xyz[1]), parseFloat(xyz[2])))
-      };
+    socket.on('triangles', (vertex_buffer) => {
+      console.log(vertex_buffer)
+
+      var geometry = new THREE.BufferGeometry();
+      geometry.setAttribute('position', new THREE.Float32BufferAttribute(vertex_buffer, 3));
+
+
 
       // form triangles
-      var geometry = new THREE.Geometry();
-      for (var index in vertices) {
-        geometry.vertices.push(vertices[index]);
-        if (!((index + 1) % 3)) {
-          geometry.faces.push(new THREE.Face3(index, index-1, index-2));
-        }
-      }
+      // var geometry = new THREE.Geometry();
+      // for (var index in vertex_buffer) {
+      //   geometry.vertices.push(vertex_buffer[index]);
+      //   if (!((index + 1) % 3)) {
+      //     geometry.faces.push(new THREE.Face3(index - 2, index-1, index));
+      //   }
+      // }
 
       // add geometry
-      geometry.computeFaceNormals();
-      var mesh = new THREE.Mesh(geometry, new THREE.MeshNormalMaterial());
+      // geometry.computeFaceNormals();
+      // var material = new THREE.MeshNormalMaterial()
+      var material = new THREE.MeshBasicMaterial( { color: 0xff0000 } );
+      var mesh = new THREE.Mesh(geometry, material);
       scene.add(mesh);
 
       // render scene

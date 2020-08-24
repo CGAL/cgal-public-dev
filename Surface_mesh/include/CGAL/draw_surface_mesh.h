@@ -204,13 +204,16 @@ namespace CGAL
   {
     typedef Basic_viewer_three Base;
     typedef typename SM::Vertex_index vertex_descriptor;
+    typedef typename SM::Face_index face_descriptor;
+    typedef typename SM::Halfedge_index halfedge_descriptor;
+
   public:
-    SimpleSurfaceMeshViewerThree(const SM &amesh, 
-                                 const char *title = "Basic Surface_mesh Viewer", 
+    SimpleSurfaceMeshViewerThree(const SM &amesh,
+                                 const char *title = "Basic Surface_mesh Viewer",
                                  bool anofaces = false,
                                  const ColorFunctor &fcolor = ColorFunctor()) : // First draw: no vertex; edges, faces;
                                                                                 Base(title, true, true, true),
-                                                                                sm(amesh), 
+                                                                                sm(amesh),
                                                                                 m_nofaces(anofaces),
                                                                                 m_fcolor(fcolor)
     {
@@ -218,11 +221,24 @@ namespace CGAL
     }
 
   protected:
+    void compute_vertex(vertex_descriptor vh)
+    {
+      add_point(sm.point(vh));
+    }
 
-  void compute_vertex(vertex_descriptor vh)
-  {
-    add_point(sm.point(vh));
-  }
+    void compute_face(face_descriptor fh)
+    {
+      CGAL::Color c = m_fcolor.run(sm, fh);
+      // face_begin(c);
+      face_begin();
+      halfedge_descriptor hd = sm.halfedge(fh);
+      do
+      {
+        add_point_in_face(sm.point(sm.source(hd)), get_vertex_normal(hd));
+        hd = sm.next(hd);
+      } while (hd != sm.halfedge(fh));
+      face_end();
+    }
 
     void compute_elements()
     {
@@ -233,6 +249,56 @@ namespace CGAL
       {
         compute_vertex(*v);
       }
+
+      // faces
+      if (!m_nofaces)
+      {
+        for (typename SM::Face_range::iterator f = sm.faces().begin(); f != sm.faces().end(); f++)
+        {
+          if (*f != boost::graph_traits<SM>::null_face())
+          {
+            compute_face(*f);
+          }
+        }
+      }
+    }
+
+    Local_vector get_face_normal(halfedge_descriptor he)
+    {
+      Local_vector normal = CGAL::NULL_VECTOR;
+      halfedge_descriptor end = he;
+      unsigned int nb = 0;
+      do
+      {
+        internal::newell_single_step_3(this->get_local_point(sm.point(sm.source(he))),
+                                       this->get_local_point(sm.point(sm.target(he))), normal);
+        ++nb;
+        he = sm.next(he);
+      } while (he != end);
+      assert(nb > 0);
+      return (typename Local_kernel::Construct_scaled_vector_3()(normal, 1.0 / nb));
+    }
+
+    Local_vector get_vertex_normal(halfedge_descriptor he)
+    {
+      Local_vector normal = CGAL::NULL_VECTOR;
+      halfedge_descriptor end = he;
+      do
+      {
+        if (!sm.is_border(he))
+        {
+          Local_vector n = get_face_normal(he);
+          normal = typename Local_kernel::Construct_sum_of_vectors_3()(normal, n);
+        }
+        he = sm.next(sm.opposite(he));
+      } while (he != end);
+
+      if (!typename Local_kernel::Equal_3()(normal, CGAL::NULL_VECTOR))
+      {
+        normal = (typename Local_kernel::Construct_scaled_vector_3()(normal, 1.0 / CGAL::sqrt(normal.squared_length())));
+      }
+
+      return normal;
     }
 
   protected:
@@ -285,9 +351,7 @@ namespace CGAL
       QCoreApplication app(argc, const_cast<char **>(argv));
       DefaultColorFunctorSM fcolor;
       SimpleSurfaceMeshViewerThree<Surface_mesh<K>, DefaultColorFunctorSM> mainwindow(amesh, title, nofill, fcolor);
-      if (!mainwindow.connect("127.0.0.1", 3002)) return;
       mainwindow.draw();
-      mainwindow.disconnect();
       app.exec();
     }
   }
