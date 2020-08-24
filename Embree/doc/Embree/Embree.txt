@@ -137,7 +137,7 @@ Faces : 3359232
    10,000 |   0.111176  |    0.00630283 | 0.019593 |
 10,00,000 |    10.9318  |      0.558096 |  1.69759 |
 
-\subsection subsecEmbreeVCgal Benchmark for Kernels in Embree::AABB_tree.
+\subsection subsecEmbreeKernelBenchmark Benchmark for Kernels in Embree::AABB_tree.
 
 These benchmark were performed to test the difference in performance
 between the CGAL kernels in Embree::AABB_tree.
@@ -152,6 +152,14 @@ Time : 0.000125885<br>
 
 CGAL::Simple_cartesian<float><br>
 Time : 6.41346e-05<br>
+
+\subsection subsecEmbreeClosestPointBenchmark Benchmark for Distance Queries.
+
+These are the results of bencharking distance queries in Embree::AABB_tree
+compared to one in CGAL::AABB_tree.
+
+Embree Closest_point : 0.000775099<br>
+CGAL Closest_point : 1.09396
 
 */
 
