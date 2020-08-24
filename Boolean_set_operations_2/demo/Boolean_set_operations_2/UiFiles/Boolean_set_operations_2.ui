@@ -2181,6 +2181,15 @@
                 <verstretch>0</verstretch>
                </sizepolicy>
               </property>
+              <property name="styleSheet">
+                <string notr="true">QToolButton {border:none;}  
+                                    QToolButton:hover {
+                                        border: 1px solid gray;
+                                        border-radius: 2px;
+                                        background-color: white;
+                                      }
+                </string>
+              </property>
              <property name="checkable" >
               <bool>true</bool>
              </property>
@@ -2209,6 +2218,15 @@
                   <width>27</width>
                   <height>25</height>
                 </size>
+              </property>
+              <property name="styleSheet">
+                <string notr="true">QToolButton {border:none;}  
+                                    QToolButton:hover {
+                                        border: 1px solid gray;
+                                        border-radius: 2px;
+                                        background-color: white;
+                                      }
+                </string>
               </property>
               <property name="sizePolicy" >
                <sizepolicy vsizetype="Fixed" hsizetype="Preferred" >
@@ -2245,6 +2263,15 @@
                   <height>25</height>
                 </size>
               </property>
+              <property name="styleSheet">
+                <string notr="true">QToolButton {border:none;}  
+                                    QToolButton:hover {
+                                        border: 1px solid gray;
+                                        border-radius: 2px;
+                                        background-color: white;
+                                      }
+                </string>
+              </property>
               <property name="sizePolicy" >
                <sizepolicy vsizetype="Fixed" hsizetype="Preferred" >
                 <horstretch>0</horstretch>
@@ -2279,6 +2306,15 @@
                   <width>27</width>
                   <height>25</height>
                 </size>
+              </property>
+              <property name="styleSheet">
+                <string notr="true">QToolButton {border:none;}  
+                                    QToolButton:hover {
+                                        border: 1px solid gray;
+                                        border-radius: 2px;
+                                        background-color: white;
+                                      }
+                </string>
               </property>
               <property name="sizePolicy" >
                <sizepolicy vsizetype="Fixed" hsizetype="Preferred" >
@@ -2315,6 +2351,15 @@
                   <height>25</height>
                 </size>
               </property>
+              <property name="styleSheet">
+                <string notr="true">QToolButton {border:none;}  
+                                    QToolButton:hover {
+                                        border: 1px solid gray;
+                                        border-radius: 2px;
+                                        background-color: white;
+                                      }
+                </string>
+              </property>
               <property name="sizePolicy" >
                <sizepolicy vsizetype="Fixed" hsizetype="Preferred" >
                 <horstretch>0</horstretch>
@@ -2349,6 +2394,15 @@
                   <width>27</width>
                   <height>25</height>
                 </size>
+              </property>
+              <property name="styleSheet">
+                <string notr="true">QToolButton {border:none;}  
+                                    QToolButton:hover {
+                                        border: 1px solid gray;
+                                        border-radius: 2px;
+                                        background-color: white;
+                                      }
+                </string>
               </property>
               <property name="sizePolicy" >
                <sizepolicy vsizetype="Fixed" hsizetype="Preferred" >
@@ -2385,6 +2439,15 @@
                   <height>25</height>
                 </size>
               </property>
+              <property name="styleSheet">
+                <string notr="true">QToolButton {border:none;}  
+                                    QToolButton:hover {
+                                        border: 1px solid gray;
+                                        border-radius: 2px;
+                                        background-color: white;
+                                      }
+                </string>
+              </property>
               <property name="sizePolicy" >
                <sizepolicy vsizetype="Fixed" hsizetype="Preferred" >
                 <horstretch>0</horstretch>
@@ -2419,6 +2482,15 @@
                   <width>27</width>
                   <height>25</height>
                 </size>
+              </property>
+              <property name="styleSheet">
+                <string notr="true">QToolButton {border:none;}  
+                                    QToolButton:hover {
+                                        border: 1px solid gray;
+                                        border-radius: 2px;
+                                        background-color: white;
+                                      }
+                </string>
               </property>
               <property name="sizePolicy" >
                <sizepolicy vsizetype="Fixed" hsizetype="Preferred" >
@@ -2470,6 +2542,15 @@
                   <width>33</width>
                   <height>33</height>  
                 </rect>
+              </property>
+              <property name="styleSheet">
+                <string notr="true">QToolButton {border:none;}  
+                                    QToolButton:hover {
+                                        border: 1px solid gray;
+                                        border-radius: 2px;
+                                        background-color: white;
+                                      }
+                </string>
               </property>
               <property name="IconSize">
                 <size>

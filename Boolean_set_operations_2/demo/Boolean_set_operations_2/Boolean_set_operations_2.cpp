@@ -1544,17 +1544,6 @@ MainWindow::MainWindow() :
 
   this->addRecentFiles(this->menuFile, this->actionClose);
 
-  actionComplementH->setStyleSheet("#actionComplementH:hover {border: 1px solid grey; border-radius: 15px; }");
-  actionIntersectionH->setStyleSheet("#actionIntersectionH:hover {border: 1px solid grey; border-radius: 15px;}");
-  actionUnionH->setStyleSheet("#actionUnionH:hover {border: 1px solid grey; border-radius: 15px;}");
-  actionDifferenceH->setStyleSheet("#actionDifferenceH:hover {border: 1px solid grey; border-radius: 15px;}");
-  actionSymmetric_DifferenceH->setStyleSheet("#actionSymmetric_DifferenceH:hover {border: 1px solid grey; border-radius: 15px;}");
-  actionMinkowski_SumH->setStyleSheet("#actionMinkowski_SumH:hover {border: 1px solid grey; border-radius: 15px;}");
-  actionCopyH->setStyleSheet("#actionCopyH:hover {border: 1px solid grey; border-radius: 15px;}");
-  actionMoveH->setStyleSheet("#actionMoveH:hover {border: 1px solid grey; border-radius: 15px;}");
-  actionClearH->setStyleSheet("#actionClearH:hover {border: 1px solid grey; border-radius: 15px;}");
-
-
   //operation_name
      // COMPLEMENT_OP = 0
     // INTERSECTION_OP = 1
