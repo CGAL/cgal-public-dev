@@ -12,6 +12,9 @@ if ( CGAL_FOUND AND embree_FOUND )
     ADD_EXECUTABLE(epic_kernel epic_kernel.cpp)
     TARGET_LINK_LIBRARIES(epic_kernel CGAL::CGAL embree)
     
+    ADD_EXECUTABLE(closest_point_compare closest_point_compare.cpp)
+    TARGET_LINK_LIBRARIES(closest_point_compare CGAL::CGAL embree) 
+    
 else()
 
     message(STATUS "This program requires the CGAL and the Embree library, and will not be compiled.")
