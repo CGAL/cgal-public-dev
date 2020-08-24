@@ -106,13 +106,16 @@ There is no need to make a seperate accerelating structure like in CGAL::AABB_tr
 
 \section  subsecEmbreeBenchmarks Benchmarks
 
+Note : Below timings are in seconds 
+
+\subsection subsecEmbreeVCgal Benchmark CGAL::AABB_tree v Embree v Embree::AABB_tree.
+
 These benchmarks are a result of ray querying on a Embree::AABB_tree
 made from Embree::Triangle_mesh_geometry with a Surface_mesh.
-Note : below timings are in seconds 
 
-\b Gargoyle dataset
-Ray_origin : (-70, -20, 50)
-Vertices : 818796
+\b Gargoyle dataset<br>
+Ray_origin : (-70, -20, 50)<br>
+Vertices : 818796<br>
 Faces : 1637579
 
 |  No of Rays | AABB_tree seq | Embree_seq | Embree_Package |
@@ -123,9 +126,9 @@ Faces : 1637579
 
 
 
-\b Star3M rotated
-Ray_origin : (0, 0, 0)
-Vertices : 1691280
+\b Star3M rotated<br>
+Ray_origin : (0, 0, 0)<br>
+Vertices : 1691280<br>
 Faces : 3359232
 
 |  No of Rays | AABB_tree seq | Embree_seq | Embree_Package |
@@ -134,9 +137,21 @@ Faces : 3359232
    10,000 |   0.111176  |    0.00630283 | 0.019593 |
 10,00,000 |    10.9318  |      0.558096 |  1.69759 |
 
-\cgalFigureBegin{figEmbreeBenchmark,bench.png}
-Left: ...
-\cgalFigureEnd
+\subsection subsecEmbreeVCgal Benchmark for Kernels in Embree::AABB_tree.
+
+These benchmark were performed to test the difference in performance
+between the CGAL kernels in Embree::AABB_tree.
+
+\b Dataset : Unit axial tetrahedron<br>
+Ray information : 0.5 0.5 -1 0 0 1<br>
+Bounding Box : 0 0 0 1 1 1<br>
+
+
+Exact_predicates_inexact_constructions_kernel<br>
+Time : 0.000125885<br>
+
+CGAL::Simple_cartesian<float><br>
+Time : 6.41346e-05<br>
 
 */
 
