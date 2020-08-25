@@ -163,10 +163,25 @@ compared to one in CGAL::AABB_tree.
 Query points : points on circle with 500 units radius, 
 centre is the centre of the bounding box of the mesh.
 
+\subsubsection subsecEmbreeClosestPointBenchmarkCartesian Simple_Cartesian<float>.
+
+Embree_AABB construction time : 0.0753491<br>
+CGAL_AABB construction time : 1.14821
+
 |  No of Points | Embree_ | CGAL_ |
 | ----: | ----: | ----: |
-    1,000 |    1.18827  |     2.79171 |
-   10,000 |    11.8571  |     17.8001 |
+    1,000 |    1.22194  |     4.23481 |
+   10,000 |    11.9649  |     19.4789 |
+
+\subsubsection subsecEmbreeClosestPointBenchmarkEpic Exact_predicates_inexact_constructions_kernel.
+
+Embree_AABB construction time : 0.078824<br>
+CGAL_AABB construction time : 1.11888
+
+|  No of Points | Embree_ | CGAL_ |
+| ----: | ----: | ----: |
+    1,000 |      1.135  |     4.43331 |
+   10,000 |    11.6219  |      21.535 |
 
 */
 
