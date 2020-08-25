@@ -3,6 +3,7 @@
 
 #include <CGAL/Embree/AABB_tree.h>
 #include <CGAL/Simple_cartesian.h>
+#include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
 #include <CGAL/Surface_mesh.h>
 
 #include <CGAL/AABB_tree.h>
@@ -13,7 +14,9 @@
 
 #include "../../../AABB_tree/benchmark/AABB_tree/include/RaysGenerate.h"
 
-typedef CGAL::Simple_cartesian<float> K;
+// typedef CGAL::Simple_cartesian<float> K;
+typedef CGAL::Exact_predicates_inexact_constructions_kernel K;
+
 typedef K::Point_3 Point;
 typedef K::Ray_3 Ray;
 typedef CGAL::Surface_mesh<Point> Mesh;
@@ -36,18 +39,28 @@ int main(int argc, char const *argv[])
   int num_points = 10000; 
   RaysGenerate rg(num_points);
 
+  CGAL::Real_timer time;
+
+  time.start();
   TreeEmbree tree1;
   tree1.insert(triangle_mesh);
+  time.stop();
+  std::cout<<"Embree AABB construction time : "<< time.time()<<std::endl;
 
   Point centre((tree1.bbox().min(0)+tree1.bbox().max(0))/2, 
                (tree1.bbox().min(1)+tree1.bbox().max(1))/2,
                (tree1.bbox().min(2)+tree1.bbox().max(2))/2); 
 
+  time.reset();
+
+  time.start();
   TreeCgal tree2(faces(triangle_mesh).first, faces(triangle_mesh).second, triangle_mesh);
-  tree2.build();
+  tree2.accelerate_distance_queries(); //accelerated structure.
+  time.stop();
+  std::cout<<"CGAL AABB construction time : "<< time.time()<<std::endl;
+  time.reset();
 
   {
-    CGAL::Real_timer time;
     time.start();
     for (int i=0; i<num_points;i++){
       Point p (centre.x()+500*rg.normalisedRayDirections[i]._x, 
@@ -61,7 +74,6 @@ int main(int argc, char const *argv[])
   }
   
   {
-    CGAL::Real_timer time;
     time.start();
         for (int i=0; i<num_points;i++){
       Point p (centre.x()+500*rg.normalisedRayDirections[i]._x, 
