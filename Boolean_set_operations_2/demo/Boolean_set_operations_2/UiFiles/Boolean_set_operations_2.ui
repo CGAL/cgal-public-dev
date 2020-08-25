@@ -90,6 +90,8 @@
     <property name="title">
      <string>Help</string>
     </property>
+    <addaction name="aboutBol_Minkop"/>
+    <addaction name="aboutDemo"/>
    </widget>
    <addaction name="menuFile"/>
    <addaction name="menuEdit"/>
@@ -2808,6 +2810,16 @@
   <action name="actionHelp">
    <property name="text">
     <string>&amp;About</string>
+   </property>
+  </action>
+  <action name="aboutBol_Minkop">
+   <property name="text">
+    <string>&amp;About 2D Regularized Boolean Operations and 2D Minkowski sums</string>
+   </property>
+  </action>
+  <action name="aboutDemo">
+   <property name="text">
+    <string>&amp;About this demo</string>
    </property>
   </action>
   <action name="actionClose">
