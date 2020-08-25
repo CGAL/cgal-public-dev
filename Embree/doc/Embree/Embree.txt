@@ -115,6 +115,7 @@ made from Embree::Triangle_mesh_geometry with a Surface_mesh.
 
 \b Gargoyle dataset<br>
 Ray_origin : (-70, -20, 50)<br>
+Bounding Box : -58.2138 -122.804 -46.1634 60.9945 6.55621 46.6318<br>
 Vertices : 818796<br>
 Faces : 1637579
 
@@ -128,6 +129,7 @@ Faces : 1637579
 
 \b Star3M rotated<br>
 Ray_origin : (0, 0, 0)<br>
+Bounding Box : -0.314453 -0.314453 -0.314453 13.4276 13.4276 13.4276<br>
 Vertices : 1691280<br>
 Faces : 3359232
 
