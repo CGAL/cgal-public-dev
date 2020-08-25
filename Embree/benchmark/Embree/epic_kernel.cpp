@@ -25,17 +25,23 @@ double test (int argc, char const *argv[], const int numberOfRays){
   std::ifstream input(filename);
   Mesh mesh;
   input >> mesh;
+  
+  std::cout<<std::endl;
 
+  CGAL::Real_timer time;
+
+  time.start();
   Tree tree;
   tree.insert(mesh);
+  time.stop();
+  std::cout<<"Construction time : "<<time.time()<<std::endl;
+  time.reset();
 
   Point rayOrigin(-70.0f, -20.0f, 50.0f); //Point for gargoyle dataset. change it accordingly.
   RaysGenerate rg(numberOfRays);
   
-  std::cout<<std::endl;
   std::cout<<"Bounding Box : "<<tree.bbox()<<std::endl;
 
-  CGAL::Real_timer time;
   {
     time.start();
     for (int i=0; i<numberOfRays;i++){
