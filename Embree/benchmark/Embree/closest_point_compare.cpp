@@ -14,8 +14,8 @@
 
 #include "../../../AABB_tree/benchmark/AABB_tree/include/RaysGenerate.h"
 
-// typedef CGAL::Simple_cartesian<float> K;
-typedef CGAL::Exact_predicates_inexact_constructions_kernel K;
+typedef CGAL::Simple_cartesian<float> K;
+// typedef CGAL::Exact_predicates_inexact_constructions_kernel K;
 
 typedef K::Point_3 Point;
 typedef K::Ray_3 Ray;
@@ -30,13 +30,13 @@ typedef CGAL::AABB_tree<Traits> TreeCgal;
 
 int main(int argc, char const *argv[])
 {
-  const char* filename =  (argc > 1) ? "../../test/Embree/data/bunny00.off" : argv[1];
+  const char* filename =  (argc > 1) ? argv[1] :  "../../test/Embree/data/bunny00.off" ;
   std::ifstream input(filename);
 
   Mesh triangle_mesh;
   input >> triangle_mesh;
 
-  int num_points = 10000; 
+  int num_points = 1000; 
   RaysGenerate rg(num_points);
 
   CGAL::Real_timer time;
