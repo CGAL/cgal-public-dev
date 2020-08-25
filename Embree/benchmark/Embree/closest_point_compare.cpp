@@ -39,9 +39,9 @@ int main(int argc, char const *argv[])
   TreeEmbree tree1;
   tree1.insert(triangle_mesh);
 
-  Point centre(tree1.bbox().min(0)+tree1.bbox().max(0)/2, 
-               tree1.bbox().min(1)+tree1.bbox().max(1)/2,
-               tree1.bbox().min(2)+tree1.bbox().max(2)/2); 
+  Point centre((tree1.bbox().min(0)+tree1.bbox().max(0))/2, 
+               (tree1.bbox().min(1)+tree1.bbox().max(1))/2,
+               (tree1.bbox().min(2)+tree1.bbox().max(2))/2); 
 
   TreeCgal tree2(faces(triangle_mesh).first, faces(triangle_mesh).second, triangle_mesh);
   tree2.build();
