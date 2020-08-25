@@ -142,16 +142,17 @@ Faces : 3359232
 These benchmark were performed to test the difference in performance
 between the CGAL kernels in Embree::AABB_tree.
 
-\b Dataset : Unit axial tetrahedron<br>
-Ray information : 0.5 0.5 -1 0 0 1<br>
-Bounding Box : 0 0 0 1 1 1<br>
+\b Dataset : Gargoyle<br>
+Ray origin : -70, -20, 50<br>
+Bounding Box : -58.2138 -122.804 -46.1634 60.9945 6.55621 46.6318<br>
 
 
-Exact_predicates_inexact_constructions_kernel<br>
-Time : 0.000125885<br>
+|  No of Rays | Epic | Cartesian<float> |
+| ----: | ----: | ----: |
+    1,000 |   0.00540113  |   0.00474501 |
+   10,000 |    0.0614481  |     0.050199 |
+ 1,00,000 |      5.04707  |      4.53408 |
 
-CGAL::Simple_cartesian<float><br>
-Time : 6.41346e-05<br>
 
 \subsection subsecEmbreeClosestPointBenchmark Benchmark for Distance Queries.
 
