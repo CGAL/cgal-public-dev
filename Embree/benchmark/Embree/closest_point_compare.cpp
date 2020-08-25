@@ -14,8 +14,8 @@
 
 #include "../../../AABB_tree/benchmark/AABB_tree/include/RaysGenerate.h"
 
-typedef CGAL::Simple_cartesian<float> K;
-// typedef CGAL::Exact_predicates_inexact_constructions_kernel K;
+// typedef CGAL::Simple_cartesian<float> K;
+typedef CGAL::Exact_predicates_inexact_constructions_kernel K;
 
 typedef K::Point_3 Point;
 typedef K::Ray_3 Ray;
@@ -36,7 +36,7 @@ int main(int argc, char const *argv[])
   Mesh triangle_mesh;
   input >> triangle_mesh;
 
-  int num_points = 1000; 
+  int num_points = 10000; 
   RaysGenerate rg(num_points);
 
   CGAL::Real_timer time;
@@ -60,12 +60,13 @@ int main(int argc, char const *argv[])
   std::cout<<"CGAL AABB construction time : "<< time.time()<<std::endl;
   time.reset();
 
+  int factor = 4; // keep bigger than the lenght of diagonal of the bbox of mesh.
   {
     time.start();
     for (int i=0; i<num_points;i++){
-      Point p (centre.x()+500*rg.normalisedRayDirections[i]._x, 
-               centre.y()+500*rg.normalisedRayDirections[i]._y,
-               centre.z()+500*rg.normalisedRayDirections[i]._z);
+      Point p (centre.x()+factor*rg.normalisedRayDirections[i]._x, 
+               centre.y()+factor*rg.normalisedRayDirections[i]._y,
+               centre.z()+factor*rg.normalisedRayDirections[i]._z);
       auto p1 = tree1.closest_point(p);
     }
     time.stop();
