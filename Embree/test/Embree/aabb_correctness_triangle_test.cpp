@@ -62,16 +62,6 @@ int test()
     return EXIT_FAILURE;
   }
 
-  // // closest point query
-  // Point r((FT)0.0, (FT)0.0, (FT)3.0);
-  // Point closest((FT)0.0, (FT)0.0, (FT)1.0);
-  // Point result = tree.closest_point(r);
-  // if(result != closest)
-  // {
-  //   std::cerr << "wrong closest point" << std::endl;
-  //   return EXIT_FAILURE;
-  // }
-
   return EXIT_SUCCESS;
 }
 
@@ -93,4 +83,3 @@ int main()
 /* Local Variables: */
 /* tab-width: 2     */
 /* End:             */
-
