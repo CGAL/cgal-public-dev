@@ -23,6 +23,10 @@ public:
                                                                            nullptr,
                                                                            &m_bounding_box,
                                                                            nullptr, nullptr, nullptr),
+                                                  m_buffer_for_mono_segments(&arrays[POS_MONO_SEGMENTS],
+                                                                             nullptr,
+                                                                             &m_bounding_box,
+                                                                             nullptr, nullptr, nullptr),
                                                   m_buffer_for_mono_faces(&arrays[POS_MONO_FACES],
                                                                           nullptr,
                                                                           &m_bounding_box,
@@ -105,7 +109,12 @@ public:
     void add_point(const KPoint &p)
     {
         m_buffer_for_mono_points.add_point(p);
-        // CGAL::Buffer_for_vao<float>::add_point_in_buffer(p, buffer_for_mono_points);
+    }
+
+    template <typename KPoint>
+    void add_segment(const KPoint &p1, const KPoint &p2)
+    {
+        m_buffer_for_mono_segments.add_segment(p1, p2);
     }
 
     bool is_a_face_started() const
@@ -179,12 +188,12 @@ public:
         }
         if (m_draw_edges)
         {
-            // QByteArray buffer;
-            // QDataStream stream(&buffer, QIODevice::WriteOnly);
-            // stream << 1.f; // face mode
-            // m_buffer_for_mono_faces.fill_in_pos_buffer(stream);
-            // stream << (float)'e' << (float)'n' << (float)'d'; // this is necessary for large object
-            // request(buffer);
+            QByteArray buffer;
+            QDataStream stream(&buffer, QIODevice::WriteOnly);
+            stream << 1.f; // face mode
+            m_buffer_for_mono_faces.fill_in_pos_buffer(stream); //
+            stream << (float)'e' << (float)'n' << (float)'d'; // this is necessary for large object
+            request(buffer);
         }
         if (m_draw_faces)
         {
@@ -208,6 +217,7 @@ protected:
     {
         BEGIN_POS = 0,
         POS_MONO_POINTS = BEGIN_POS,
+        POS_MONO_SEGMENTS,
         POS_MONO_FACES,
         END_POS,
         BEGIN_NORMAL = END_POS,
@@ -219,6 +229,7 @@ protected:
     std::vector<float> arrays[LAST_INDEX];
 
     CGAL::Buffer_for_vao<float> m_buffer_for_mono_points;
+    CGAL::Buffer_for_vao<float> m_buffer_for_mono_segments;
     CGAL::Buffer_for_vao<float> m_buffer_for_mono_faces;
 
     std::vector<float> buffer_for_mono_points;

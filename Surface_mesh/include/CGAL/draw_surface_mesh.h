@@ -204,6 +204,7 @@ namespace CGAL
   {
     typedef Basic_viewer_three Base;
     typedef typename SM::Vertex_index vertex_descriptor;
+    typedef typename SM::Edge_index edge_descriptor;
     typedef typename SM::Face_index face_descriptor;
     typedef typename SM::Halfedge_index halfedge_descriptor;
 
@@ -224,6 +225,11 @@ namespace CGAL
     void compute_vertex(vertex_descriptor vh)
     {
       add_point(sm.point(vh));
+    }
+
+    void compute_edge(edge_descriptor e)
+    {
+      add_segment(sm.point(sm.source(sm.halfedge(e))), sm.point(sm.target(sm.halfedge(e))));
     }
 
     void compute_face(face_descriptor fh)
@@ -248,6 +254,12 @@ namespace CGAL
       for (typename SM::Vertex_range::iterator v = sm.vertices().begin(); v != sm.vertices().end(); v++)
       {
         compute_vertex(*v);
+      }
+
+      // edges
+      for (typename SM::Edge_range::iterator e = sm.edges().begin(); e != sm.edges().end(); e++)
+      {
+        compute_edge(*e);
       }
 
       // faces

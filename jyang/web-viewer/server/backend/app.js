@@ -57,7 +57,6 @@ var server_cpp = require('net').createServer((socket) => {
   var data_list = []
   socket.on('data', (data_packet) => {
     console.log(data_packet.byteLength, 'in', socket.bytesRead, 'bytes', typeof data_packet, 'data received from cpp:', data_packet);
-    console.log(data_packet.time)
 
     // collect data
     data_list.push(data_packet.buffer);
@@ -92,6 +91,11 @@ var server_cpp = require('net').createServer((socket) => {
           break;
         case 1:
           mode = 'lines';
+
+          // decode elements
+          for (var i = 8; i < data.byteLength - 24; i = i + 8) {
+            elements.push(new DataView(data.buffer.slice(i, i + 8)).getFloat64(0));
+          }
 
           break;
         case 2:

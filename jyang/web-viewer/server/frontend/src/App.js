@@ -64,7 +64,7 @@ class App extends Component {
       // add geometry
       var geometry = new THREE.BufferGeometry();
       geometry.setAttribute('position', new THREE.Float32BufferAttribute(vertex_buffer, 3));
-      var material = new THREE.PointsMaterial({color: 0x00ff00, size: 0.005});
+      var material = new THREE.PointsMaterial({ color: 0x00ff00, size: 0.005 });
       var points = new THREE.Points(geometry, material);
       scene.add(points);
 
@@ -77,33 +77,31 @@ class App extends Component {
 
     });
 
-    socket.on('triangles', (vertex_buffer) => {
+    socket.on('lines', (vertex_buffer) => {
       // add geometry
+      // var geometry = new THREE.BufferGeometry().setFromPoints(vertices);
+      // var material = new THREE.LineBasicMaterial({color: 0x00ff00});
+      // var line = new THREE.Line(geometry, material);
       var geometry = new THREE.BufferGeometry();
       geometry.setAttribute('position', new THREE.Float32BufferAttribute(vertex_buffer, 3));
-      var material = new THREE.MeshBasicMaterial( { color: 0xff0000 } );
-      var mesh = new THREE.Mesh(geometry, material);
-      scene.add(mesh);
+      var wireframe = new THREE.WireframeGeometry(geometry);
+      var line = new THREE.LineSegments(wireframe);
+      line.material.depthTest = false;
+      line.material.opacity = 0.25;
+      line.material.transparent = true;
+      scene.add(line);
 
       // render scene
       render();
     });
 
-    socket.on('lines', (vertices_str) => {
-      // decode triangles
-      var vertices = [];
-      var xyz_str_list = vertices_str.trim().split(';');
-      for (var xyz_str of xyz_str_list) {
-        if (!xyz_str.length) continue;
-        var xyz = xyz_str.trim().split(' ');
-        vertices.push(new THREE.Vector3(parseFloat(xyz[0]), parseFloat(xyz[1]), parseFloat(xyz[2])))
-      };
-
-      // form lines
-      var geometry = new THREE.BufferGeometry().setFromPoints(vertices);
-      var material = new THREE.LineBasicMaterial({color: 0x00ff00});
-      var line = new THREE.Line(geometry, material);
-      scene.add(line);
+    socket.on('triangles', (vertex_buffer) => {
+      // add geometry
+      var geometry = new THREE.BufferGeometry();
+      geometry.setAttribute('position', new THREE.Float32BufferAttribute(vertex_buffer, 3));
+      var material = new THREE.MeshBasicMaterial({ color: 0x0000ff });
+      var mesh = new THREE.Mesh(geometry, material);
+      scene.add(mesh);
 
       // render scene
       render();
@@ -112,7 +110,7 @@ class App extends Component {
     socket.on('default', (geometry_str) => {
       // add geometry
       var geometry = new THREE.Geometry();
-      switch(geometry_str) {
+      switch (geometry_str) {
         case 'cube': geometry = new THREE.BoxGeometry(); break;
         case 'sphere': geometry = new THREE.SphereGeometry(); break;
         default: geometry = new THREE.BoxGeometry(); break;
