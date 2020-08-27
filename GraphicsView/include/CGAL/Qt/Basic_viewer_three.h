@@ -177,33 +177,21 @@ public:
 
     void draw()
     {
+        auto draw_graphics = [this](float mode, CGAL::Buffer_for_vao<float> &graphics_buffer) {
+            QByteArray buffer;
+            QDataStream stream(&buffer, QIODevice::WriteOnly);
+            stream << mode;
+            graphics_buffer.fill_in_pos_buffer(stream);
+            stream << (float)'e' << (float)'n' << (float)'d'; // this is necessary for large object
+            request(buffer);
+        };
+
         if (m_draw_vertices)
-        {
-            QByteArray buffer;
-            QDataStream stream(&buffer, QIODevice::WriteOnly);
-            stream << 0.f; // vertex mode
-            m_buffer_for_mono_points.fill_in_pos_buffer(stream);
-            stream << (float)'e' << (float)'n' << (float)'d'; // this is necessary for large object
-            request(buffer);
-        }
+            draw_graphics(0.f, m_buffer_for_mono_points);
         if (m_draw_edges)
-        {
-            QByteArray buffer;
-            QDataStream stream(&buffer, QIODevice::WriteOnly);
-            stream << 1.f; // face mode
-            m_buffer_for_mono_faces.fill_in_pos_buffer(stream); //
-            stream << (float)'e' << (float)'n' << (float)'d'; // this is necessary for large object
-            request(buffer);
-        }
+            draw_graphics(1.f, m_buffer_for_mono_faces); // since threejs needs triangles to render segments
         if (m_draw_faces)
-        {
-            QByteArray buffer;
-            QDataStream stream(&buffer, QIODevice::WriteOnly);
-            stream << 2.f; // face mode
-            m_buffer_for_mono_faces.fill_in_pos_buffer(stream);
-            stream << (float)'e' << (float)'n' << (float)'d'; // this is necessary for large object
-            request(buffer);
-        }
+            draw_graphics(2.f, m_buffer_for_mono_faces);
     }
 
 protected:

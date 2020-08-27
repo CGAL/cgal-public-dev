@@ -74,14 +74,6 @@ class App extends Component {
 
     socket.on('lines', (vertex_buffer) => {
       // add geometry
-
-    });
-
-    socket.on('lines', (vertex_buffer) => {
-      // add geometry
-      // var geometry = new THREE.BufferGeometry().setFromPoints(vertices);
-      // var material = new THREE.LineBasicMaterial({color: 0x00ff00});
-      // var line = new THREE.Line(geometry, material);
       var geometry = new THREE.BufferGeometry();
       geometry.setAttribute('position', new THREE.Float32BufferAttribute(vertex_buffer, 3));
       var wireframe = new THREE.WireframeGeometry(geometry);
@@ -127,21 +119,7 @@ class App extends Component {
   render() {
     return (
       <div className="App">
-        <div id="widget"></div>
-        <header className="App-header">
-          <img src={logo} className="App-logo" alt="logo" />
-          <p>
-            Edit <code>src/App.js</code> and save to reload.
-          </p>
-          <a
-            className="App-link"
-            href="https://reactjs.org"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Learn React
-          </a>
-        </header>
+        <div id="widget"/>
       </div>
     );
   }

@@ -81,31 +81,14 @@ var server_cpp = require('net').createServer((socket) => {
 
       // decode mode
       switch (new DataView(data.buffer).getFloat64(0)) { // first 8 bytes as mode
-        case 0: mode = 'vertices';
+        case 0: mode = 'vertices'; break;
+        case 1: mode = 'lines'; break;
+        case 2: mode = 'triangles'; break;
+      }
 
-          // decode elements
-          for (var i = 8; i < data.byteLength - 24; i = i + 8) {
-            elements.push(new DataView(data.buffer.slice(i, i + 8)).getFloat64(0));
-          }
-
-          break;
-        case 1:
-          mode = 'lines';
-
-          // decode elements
-          for (var i = 8; i < data.byteLength - 24; i = i + 8) {
-            elements.push(new DataView(data.buffer.slice(i, i + 8)).getFloat64(0));
-          }
-
-          break;
-        case 2:
-          mode = 'triangles';
-
-          // decode elements
-          for (var i = 8; i < data.byteLength - 24; i = i + 8) {
-            elements.push(new DataView(data.buffer.slice(i, i + 8)).getFloat64(0));
-          }
-          break;
+      // decode elements
+      for (var i = 8; i < data.byteLength - 24; i = i + 8) {
+        elements.push(new DataView(data.buffer.slice(i, i + 8)).getFloat64(0));
       }
 
       // resend the data to React Frontend
