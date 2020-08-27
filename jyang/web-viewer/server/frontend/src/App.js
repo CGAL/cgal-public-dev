@@ -64,7 +64,7 @@ class App extends Component {
       // add geometry
       var geometry = new THREE.BufferGeometry();
       geometry.setAttribute('position', new THREE.Float32BufferAttribute(vertex_buffer, 3));
-      var material = new THREE.PointsMaterial({color: 0x00ff00, size: 0.001});
+      var material = new THREE.PointsMaterial({color: 0x00ff00, size: 0.005});
       var points = new THREE.Points(geometry, material);
       scene.add(points);
 
@@ -72,26 +72,15 @@ class App extends Component {
       render();
     });
 
-    socket.on('triangles', (vertex_buffer) => {
-      console.log(vertex_buffer)
+    socket.on('lines', (vertex_buffer) => {
+      // add geometry
 
+    });
+
+    socket.on('triangles', (vertex_buffer) => {
+      // add geometry
       var geometry = new THREE.BufferGeometry();
       geometry.setAttribute('position', new THREE.Float32BufferAttribute(vertex_buffer, 3));
-
-
-
-      // form triangles
-      // var geometry = new THREE.Geometry();
-      // for (var index in vertex_buffer) {
-      //   geometry.vertices.push(vertex_buffer[index]);
-      //   if (!((index + 1) % 3)) {
-      //     geometry.faces.push(new THREE.Face3(index - 2, index-1, index));
-      //   }
-      // }
-
-      // add geometry
-      // geometry.computeFaceNormals();
-      // var material = new THREE.MeshNormalMaterial()
       var material = new THREE.MeshBasicMaterial( { color: 0xff0000 } );
       var mesh = new THREE.Mesh(geometry, material);
       scene.add(mesh);

@@ -6,6 +6,7 @@ var logger = require('morgan');
 
 var indexRouter = require('./routes/index');
 var usersRouter = require('./routes/users');
+const { SSL_OP_NO_COMPRESSION } = require('constants');
 // require('./routes/socket');
 
 var app = express();
@@ -55,7 +56,8 @@ var server_cpp = require('net').createServer((socket) => {
   // add 'data' event handler to this socket instance
   var data_list = []
   socket.on('data', (data_packet) => {
-    console.log(data_packet.byteLength, 'bytes', typeof data_packet, 'data received from cpp:', data_packet);
+    console.log(data_packet.byteLength, 'in', socket.bytesRead, 'bytes', typeof data_packet, 'data received from cpp:', data_packet);
+    console.log(data_packet.time)
 
     // collect data
     data_list.push(data_packet.buffer);
@@ -72,7 +74,7 @@ var server_cpp = require('net').createServer((socket) => {
 
       var data = new Uint8Array(data_size);
       for (var i = 0; i < data_list.length; i++) {
-        data.set(new Uint8Array(data_list[i]), i > 0 ? data_list[i - 1].byteLength : 0);
+        data.set(new Uint8Array(data_list[i]), i * data_list[0].byteLength);
       }
 
       var mode;

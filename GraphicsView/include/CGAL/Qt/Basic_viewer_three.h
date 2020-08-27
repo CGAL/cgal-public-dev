@@ -105,7 +105,7 @@ public:
     void add_point(const KPoint &p)
     {
         m_buffer_for_mono_points.add_point(p);
-        CGAL::Buffer_for_vao<float>::add_point_in_buffer(p, buffer_for_mono_points);
+        // CGAL::Buffer_for_vao<float>::add_point_in_buffer(p, buffer_for_mono_points);
     }
 
     bool is_a_face_started() const
@@ -173,28 +173,26 @@ public:
             QByteArray buffer;
             QDataStream stream(&buffer, QIODevice::WriteOnly);
             stream << 0.f; // vertex mode
-            for (auto i = buffer_for_mono_points.begin(); i != buffer_for_mono_points.end(); i++)
-            {
-                stream << *i;
-            }
+            m_buffer_for_mono_points.fill_in_pos_buffer(stream);
             stream << (float)'e' << (float)'n' << (float)'d'; // this is necessary for large object
-            // write(buffer);
             request(buffer);
         }
         if (m_draw_edges)
         {
+            // QByteArray buffer;
+            // QDataStream stream(&buffer, QIODevice::WriteOnly);
+            // stream << 1.f; // face mode
+            // m_buffer_for_mono_faces.fill_in_pos_buffer(stream);
+            // stream << (float)'e' << (float)'n' << (float)'d'; // this is necessary for large object
+            // request(buffer);
         }
         if (m_draw_faces)
         {
             QByteArray buffer;
             QDataStream stream(&buffer, QIODevice::WriteOnly);
             stream << 2.f; // face mode
-            for (auto i = buffer_for_mono_points.begin(); i != buffer_for_mono_points.end(); i++)
-            {
-                stream << *i;
-            }
+            m_buffer_for_mono_faces.fill_in_pos_buffer(stream);
             stream << (float)'e' << (float)'n' << (float)'d'; // this is necessary for large object
-            // write(buffer);
             request(buffer);
         }
     }

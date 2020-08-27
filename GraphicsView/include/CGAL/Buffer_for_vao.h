@@ -529,6 +529,15 @@ public:
 
   CGAL::Bbox_3 *bb() const { return m_bb; }
 
+  // used for stream to web viewer
+  void fill_in_pos_buffer(QDataStream &stream)
+  {
+    for (auto iter = m_pos_buffer->begin(); iter != m_pos_buffer->end(); iter++)
+    {
+      stream << *iter;
+    }
+  }
+
 protected:
   void face_begin_internal(bool has_color, bool has_normal)
   {
