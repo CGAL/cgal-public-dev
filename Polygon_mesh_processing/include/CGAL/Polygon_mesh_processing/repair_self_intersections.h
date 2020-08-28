@@ -24,6 +24,8 @@
 #include <CGAL/Polygon_mesh_processing/polygon_soup_to_polygon_mesh.h>
 #include <CGAL/Polygon_mesh_processing/self_intersections.h>
 #include <CGAL/Polygon_mesh_processing/smooth_mesh.h>
+#include <CGAL/Polygon_mesh_processing/remesh.h>
+#include <CGAL/pca_estimate_normals.h>
 
 #include <CGAL/assertions.h>
 #include <CGAL/boost/graph/copy_face_graph.h>
@@ -44,8 +46,15 @@
 #include <utility>
 #include <vector>
 
-// #define CGAL_PMP_REMOVE_SELF_INTERSECTIONS_NO_SMOOTHING
-// #define CGAL_PMP_REMOVE_SELF_INTERSECTIONS_NO_CONSTRAINTS_IN_HOLE_FILLING
+//includes from in-meshing
+#include <core/util.h>
+#include <core/output.h>
+#include <core/mesh_completion.h>
+#include <core/adjust_geometry.h>
+#include <core/dualcontouring/connectivity.h>
+
+ #define CGAL_PMP_REMOVE_SELF_INTERSECTIONS_NO_SMOOTHING
+ #define CGAL_PMP_REMOVE_SELF_INTERSECTIONS_NO_CONSTRAINTS_IN_HOLE_FILLING
 
 // Self-intersection removal is done by making a big-enough hole and filling it
 //
@@ -61,6 +70,530 @@
 
 namespace CGAL {
   namespace Polygon_mesh_processing {
+    namespace In_meshing_tools_for_self_intersections {
+
+      template <typename TriangleMesh>
+      std::set<typename boost::graph_traits<TriangleMesh>::face_descriptor>
+          make_ring(const std::set<typename boost::graph_traits<TriangleMesh>::face_descriptor>& cc_faces,
+                    const TriangleMesh& tmesh,
+                    unsigned nb_expand = 3)
+      {
+        typedef typename boost::graph_traits<TriangleMesh>::face_descriptor       face_descriptor;
+        typedef CGAL::dynamic_face_property_t<bool>                               Face_bool_tag;
+        typedef CGAL::Face_filtered_graph<TriangleMesh>                           Filtered_graph;
+
+        std::set<face_descriptor> ring;
+
+        auto selected = get(Face_bool_tag(), tmesh);
+        for(auto& f : cc_faces)
+        {
+          put(selected, f, true);
+        }
+        CGAL::expand_face_selection(cc_faces, tmesh, nb_expand, selected, std::inserter(ring, ring.end()));
+
+        return ring;
+      }
+
+      template <typename TriangleMesh, typename VertexPointMap, typename GeomTraits>
+      void make_guides(std::vector<typename GeomTraits::Point_3>& points,
+                       std::vector<typename GeomTraits::Vector_3>& normals,
+                       const TriangleMesh& tmesh,
+                       std::set<typename boost::graph_traits<TriangleMesh>::face_descriptor> to_sample,
+                       VertexPointMap vpm)
+      {
+        typedef typename boost::graph_traits<TriangleMesh>::vertex_descriptor        vertex_descriptor;
+        typedef typename boost::graph_traits<TriangleMesh>::halfedge_descriptor      halfedge_descriptor;
+        typedef typename boost::graph_traits<TriangleMesh>::edge_descriptor          edge_descriptor;
+        typedef typename boost::graph_traits<TriangleMesh>::face_descriptor          face_descriptor;
+        typedef typename GeomTraits::Point_3                                         Point_3;
+        typedef typename GeomTraits::Vector_3                                        Vector_3;
+
+        for(const auto& f : to_sample)
+        {
+          typename GeomTraits::Point_3 p, q, r;
+
+          unsigned i = 0;
+          for(const auto& v : vertices_around_face(halfedge(f, tmesh), tmesh))
+          {
+            switch(i){
+              case 0:
+                p = get(vpm, v);
+                break;
+              case 1:
+                q = get(vpm, v);
+                break;
+              case 2:
+                r = get(vpm, v);
+                break;
+              default:
+                break;
+            }
+            ++i;
+          }
+
+          Random_points_in_triangle_3<Point_3> random(p, q, r);
+
+          unsigned nb_points_on_f = 300;
+
+          std::copy_n(random, nb_points_on_f, std::back_inserter(points));
+          for(unsigned j = 0; j < nb_points_on_f; ++j)
+          {
+            normals.push_back(compute_face_normal(f, tmesh));
+          }
+        }
+      }
+
+      template <typename TriangleMesh, typename VertexPointMap, typename GeomTraits>
+      point_mesh make_point_mesh_for_in_meshing(std::vector<typename boost::graph_traits<TriangleMesh>::halfedge_descriptor>& cc_border_hedges,
+                                                std::vector<typename boost::graph_traits<TriangleMesh>::halfedge_descriptor>& cc_ordered_border_hedges,
+                                                std::set<typename boost::graph_traits<TriangleMesh>::face_descriptor>& cc_faces,
+                                                std::set<typename boost::graph_traits<TriangleMesh>::face_descriptor>& working_face_range,
+                                                TriangleMesh& tmesh,
+                                                VertexPointMap vpm,
+                                                const GeomTraits& gt,
+                                                std::vector<unsigned>& hole_indices)
+      {
+        std::ofstream os;
+
+        typedef typename GeomTraits::Point_3                                         Point_3;
+        typedef typename GeomTraits::Vector_3                                        Vector_3;
+        typedef typename boost::graph_traits<TriangleMesh>::vertex_descriptor        vertex_descriptor;
+        typedef typename boost::graph_traits<TriangleMesh>::halfedge_descriptor      halfedge_descriptor;
+        typedef typename boost::graph_traits<TriangleMesh>::face_descriptor          face_descriptor;
+
+        std::map<vertex_descriptor, unsigned> tmesh_vertices_to_psoup_indices;
+        unsigned i = 0;
+        std::vector<oriented_point> points;
+        std::set<vertex_descriptor> treated;
+        for(const auto& f : working_face_range)
+        {
+          for(const auto& v : vertices_around_face(halfedge(f, tmesh), tmesh))
+          {
+            if(treated.count(v) > 0)
+            {
+              continue;
+            }
+
+            typename GeomTraits::Point_3 p = get(vpm, v);
+            auto n = CGAL::Polygon_mesh_processing::compute_vertex_normal(v, tmesh);
+            Eigen::Vector3f p_(p.x(), p.y(), p.z());
+            Eigen::Vector3f n_(n.x(), n.y(), n.z());
+
+            points.emplace_back(p_, n_);
+            tmesh_vertices_to_psoup_indices[v] = i;
+            ++i;
+            treated.insert(v);
+          }
+        }
+
+        std::vector<unsigned> faces;
+        for(const auto& f : working_face_range)
+        {
+          for(const auto& v : vertices_around_face(halfedge(f, tmesh), tmesh))
+          {
+            faces.push_back(tmesh_vertices_to_psoup_indices[v]);
+          }
+        }
+
+        os = std::ofstream("/home/felix/Bureau/Geo_Facto/PSR/tests-repair/dumps/self_intersections/hole_indices/tmesh.off");
+        CGAL::write_off(os, tmesh);
+        os.close();
+
+        halfedge_descriptor h = cc_border_hedges[0];
+        for(unsigned j = 0; j < cc_border_hedges.size(); ++j)
+        {
+          vertex_descriptor v = source(h, tmesh);
+//          std::cout << tmesh.point(v) << std::endl;
+          hole_indices.push_back(tmesh_vertices_to_psoup_indices[v]);
+          cc_ordered_border_hedges.push_back(h);
+          h = next(h, tmesh);
+        }
+
+        return point_mesh(points, faces);
+      }
+
+      template <typename TriangleMesh, typename VertexPointMap, typename GeomTraits>
+      point_mesh make_point_mesh_for_in_meshing_(std::vector<typename boost::graph_traits<TriangleMesh>::halfedge_descriptor>& cc_border_hedges,
+                                                std::vector<typename boost::graph_traits<TriangleMesh>::halfedge_descriptor>& cc_ordered_border_hedges,
+                                                std::set<typename boost::graph_traits<TriangleMesh>::face_descriptor>& cc_faces,
+                                                std::set<typename boost::graph_traits<TriangleMesh>::face_descriptor>& working_face_range,
+                                                TriangleMesh& tmesh,
+                                                VertexPointMap vpm,
+                                                const GeomTraits& gt,
+                                                std::vector<unsigned>& hole_indices)
+      {
+        std::ofstream os;
+
+        typedef typename GeomTraits::Point_3                                         Point_3;
+        typedef typename GeomTraits::Vector_3                                        Vector_3;
+        typedef std::pair<Point_3, Vector_3>                                         PointVectorPair;
+        typedef typename boost::graph_traits<TriangleMesh>::vertex_descriptor        vertex_descriptor;
+        typedef typename boost::graph_traits<TriangleMesh>::halfedge_descriptor      halfedge_descriptor;
+        typedef typename boost::graph_traits<TriangleMesh>::face_descriptor          face_descriptor;
+
+        std::map<vertex_descriptor, unsigned> tmesh_vertices_to_psoup_indices;
+        unsigned i = 0;
+        std::vector<PointVectorPair> points;
+        std::set<vertex_descriptor> treated;
+        for(const auto& f : working_face_range)
+        {
+          for(const auto& v : vertices_around_face(halfedge(f, tmesh), tmesh))
+          {
+            if(treated.count(v) > 0)
+            {
+              continue;
+            }
+
+            typename GeomTraits::Point_3 p = get(vpm, v);
+            points.emplace_back();
+            points.back().first = p;
+            tmesh_vertices_to_psoup_indices[v] = i;
+            ++i;
+            treated.insert(v);
+          }
+        }
+
+        // compute normals
+        const int nb_neighbors = 18; // K-nearest neighbors = 3 rings
+        CGAL::pca_estimate_normals<CGAL::Parallel_if_available_tag>
+            (points, nb_neighbors,
+             CGAL::parameters::point_map(CGAL::First_of_pair_property_map<PointVectorPair>()).
+                 normal_map(CGAL::Second_of_pair_property_map<PointVectorPair>()));
+
+        std::vector<oriented_point> new_points;
+        for(auto& p : points)
+        {
+          Eigen::Vector3f p_(p.first.x(), p.first.y(), p.first.z());
+          Eigen::Vector3f n_(p.second.x(), p.second.y(), p.second.z());
+          new_points.emplace_back(p_, n_);
+        }
+
+        std::vector<unsigned> faces;
+        for(const auto& f : working_face_range)
+        {
+          for(const auto& v : vertices_around_face(halfedge(f, tmesh), tmesh))
+          {
+            faces.push_back(tmesh_vertices_to_psoup_indices[v]);
+          }
+        }
+
+        os = std::ofstream("/home/felix/Bureau/Geo_Facto/PSR/tests-repair/dumps/self_intersections/hole_indices/tmesh.off");
+        CGAL::write_off(os, tmesh);
+        os.close();
+
+        halfedge_descriptor h = cc_border_hedges[0];
+        for(unsigned j = 0; j < cc_border_hedges.size(); ++j)
+        {
+          vertex_descriptor v = source(h, tmesh);
+//          std::cout << tmesh.point(v) << std::endl;
+          hole_indices.push_back(tmesh_vertices_to_psoup_indices[v]);
+          cc_ordered_border_hedges.push_back(h);
+          h = next(h, tmesh);
+        }
+
+        return point_mesh(new_points, faces);
+      }
+
+      template <typename GeomTraits>
+      void surface_mesh_to_completed_mesh(const Surface_mesh<typename GeomTraits::Point_3>& sm, completed_mesh& mesh)
+      {
+        typedef typename GeomTraits::Point_3 Point_3;
+
+        completed_mesh truc;
+
+        std::vector<Point_3> points;
+        std::vector<std::vector<unsigned>> polygons;
+
+        CGAL::Polygon_mesh_processing::polygon_mesh_to_polygon_soup(sm, points, polygons);
+
+        mesh.vertices.clear();
+        unsigned i = 0;
+        for(auto& v : sm.vertices())
+        {
+          auto p = points[i];
+          auto n = CGAL::Polygon_mesh_processing::compute_vertex_normal(v, sm);
+          Eigen::Vector3f p_ (p.x(), p.y(), p.z());
+          Eigen::Vector3f n_ (n.x(), n.y(), n.z());
+          mesh.vertices.emplace_back(p_, n_);
+          ++i;
+        }
+
+        mesh.indices.clear();
+        for(auto& poly : polygons)
+        {
+          for(auto& j : poly)
+          {
+            mesh.indices.push_back(j);
+          }
+        }
+      }
+
+      template <typename GeomTraits>
+      Surface_mesh<typename GeomTraits::Point_3> completed_mesh_to_surface_mesh(const completed_mesh& cm)
+      {
+        Surface_mesh<typename GeomTraits::Point_3> sm;
+
+        std::vector<typename GeomTraits::Point_3> points;
+        for(auto& v : cm.vertices)
+        {
+          double x = v.position[0];
+          double y = v.position[1];
+          double z = v.position[2];
+          points.emplace_back(x, y, z);
+        }
+
+        std::vector<std::vector<std::size_t>> polygons;
+        for(unsigned i = 0; i < cm.indices.size(); ++i)
+        {
+          if(i % 3 == 0)
+          {
+            polygons.emplace_back();
+          }
+          polygons.back().push_back(cm.indices[i]);
+        }
+
+        CGAL::Polygon_mesh_processing::polygon_soup_to_polygon_mesh(points, polygons, sm);
+
+        return sm;
+      }
+
+      template <typename GeomTraits>
+      std::vector<typename Surface_mesh<typename GeomTraits::Point_3>::face_index>
+      make_faces_for_remeshing(const Surface_mesh<typename GeomTraits::Point_3>& sm,
+                               const completed_mesh& mesh)
+      {
+        typedef Surface_mesh<typename GeomTraits::Point_3> Surface_mesh;
+        typedef std::vector<typename Surface_mesh::face_index> Face_range;
+
+        Face_range faces;
+
+        unsigned i = 0;
+        for(auto& f : sm.faces())
+        {
+          if(i < mesh.num_base_triangles)
+          {
+            ++i;
+            continue;
+          }
+          faces.push_back(f);
+        }
+
+        return faces;
+      }
+
+      template<typename GeomTraits>
+      void remesh_with_CGAL(completed_mesh& mesh, float target_length)
+      {
+        typedef Surface_mesh<typename GeomTraits::Point_3>                         Surface_mesh;
+        typedef CGAL::dynamic_edge_property_t<bool>                                Edge_bool_tag;
+        typedef typename boost::property_map<Surface_mesh, Edge_bool_tag>::type    Mark_map;
+
+        Surface_mesh sm = completed_mesh_to_surface_mesh<GeomTraits>(mesh);
+
+        std::vector<typename Surface_mesh::face_index> faces = make_faces_for_remeshing<GeomTraits>(sm, mesh);
+
+        Mark_map constrained_edges = get(Edge_bool_tag(), sm);
+        unsigned i = 0;
+        for(auto& f : sm.faces())
+        {
+          if(i < mesh.num_base_triangles + 10)
+          {
+            for(auto& h : halfedges_around_face(halfedge(f, sm), sm))
+            {
+              put(constrained_edges, edge(h, sm), true);
+            }
+            ++i;
+          }
+          else
+          {
+            break;
+          }
+        }
+
+        namespace PMP = CGAL::Polygon_mesh_processing;
+//        CGAL::Polygon_mesh_processing::isotropic_remeshing(faces, target_length, sm,
+//                                                           PMP::parameters::edge_is_constrained_map(constrained_edges)
+//                                                               .protect_constraints(true));
+
+//      std::ofstream os("/home/felix/Bureau/Geo_Facto/PSR/tests-repair/dumps/remesh/remeshed.off");
+//      CGAL::write_off(os, sm);
+//      os.close();
+
+        surface_mesh_to_completed_mesh<GeomTraits>(sm, mesh);
+      }
+
+      template <typename TriangleMesh, typename GeomTraits>
+      TriangleMesh make_triangle_mesh_from_completed_mesh(const output& out, const completed_mesh& out_mesh, const GeomTraits& gt)
+      {
+        TriangleMesh tri_mesh;
+
+        std::vector<typename GeomTraits::Point_3> points;
+        for(auto& v : out_mesh.vertices)
+        {
+          double x = from_hpos<float>(out.back_transform * to_hpos(v.position))[0];
+          double y = from_hpos<float>(out.back_transform * to_hpos(v.position))[1];
+          double z = from_hpos<float>(out.back_transform * to_hpos(v.position))[2];
+          points.emplace_back(x, y, z);
+        }
+
+        std::vector<std::vector<std::size_t>> polygons;
+        for(unsigned i = 0; i < out_mesh.indices.size(); ++i)
+        {
+          if(i % 3 == 0)
+          {
+            polygons.emplace_back();
+          }
+          polygons.back().push_back(out_mesh.indices[i]);
+        }
+
+        CGAL::Polygon_mesh_processing::repair_polygon_soup(points, polygons);
+
+        CGAL::Polygon_mesh_processing::polygon_soup_to_polygon_mesh(points, polygons, tri_mesh);
+
+        return tri_mesh;
+      }
+
+      template <typename TriangleMesh, typename GeomTraits>
+      TriangleMesh extract_reconstruction(const output& out, const completed_mesh& out_mesh,
+                                          const GeomTraits& gt,
+                                          const std::vector<unsigned>& hole_indices,
+                                          std::vector<typename boost::graph_traits<TriangleMesh>::halfedge_descriptor>& reconstruction_hole)
+      {
+        typedef CGAL::dynamic_face_property_t<bool>                                    Face_bool_tag;
+        typedef typename boost::property_map<TriangleMesh, Face_bool_tag>::type        Mark_map;
+        typedef typename boost::graph_traits<TriangleMesh>::vertex_descriptor          vertex_descriptor;
+        typedef typename boost::graph_traits<TriangleMesh>::halfedge_descriptor        halfedge_descriptor;
+        typedef typename boost::graph_traits<TriangleMesh>::face_descriptor            face_descriptor;
+
+        TriangleMesh reconstruction = make_triangle_mesh_from_completed_mesh<TriangleMesh, GeomTraits>(out, out_mesh, gt);
+        std::ofstream os;
+
+        std::string recon_file = "/home/felix/Bureau/Geo_Facto/PSR/tests-repair/dumps/self_intersections/inmsh-reconstruction.off";
+        os = std::ofstream(recon_file);
+        write_off(os, reconstruction);
+        os.close();
+
+        // mark map for the faces we will delete to keep only the reconstruction
+        Mark_map to_delete = get(Face_bool_tag(), reconstruction);
+        std::set<face_descriptor> dump_to_delete;
+        // vector used as a stack to treat the faces to delete and add their neighbours to expand the deletion zone
+        std::vector<face_descriptor> to_handle;
+
+        // 1. mark all faces incident to the border, and on the opposite side of the reconstruction
+
+        unsigned size = hole_indices.size();
+        std::cout << std::endl << size << std::endl;
+        for(unsigned i = 0; i < size; ++i)
+        {
+//          std::cout << i << ' ' << std::flush;
+          vertex_descriptor v1 = *(reconstruction.vertices().begin() + hole_indices[i]);
+//          std::cout << reconstruction.point(v1) << std::endl;
+          vertex_descriptor v2 = *(reconstruction.vertices().begin() + hole_indices[(i + 1) % size]);
+          halfedge_descriptor h = reconstruction.halfedge(v1, v2);
+          reconstruction_hole.push_back(h);
+          put(to_delete, face(opposite(h, reconstruction), reconstruction), true);
+          dump_to_delete.insert(face(h, reconstruction));
+//          std::cout << i << std::endl;
+        }
+
+        typedef CGAL::Face_filtered_graph<TriangleMesh>            Filtered_graph;
+
+        Filtered_graph ffg1(reconstruction, dump_to_delete);
+        TriangleMesh tm1;
+        CGAL::copy_face_graph(ffg1, tm1);
+        os = std::ofstream("/home/felix/Bureau/Geo_Facto/PSR/tests-repair/dumps/self_intersections/faces_reconstruction.off");
+        CGAL::write_off(os, tm1);
+        os.close();
+
+
+
+        // 2. add one face f next to the marked faces next to the border
+        //    f will be used as initial point to start the delition zone expantion
+        {
+          vertex_descriptor v1 = *(reconstruction.vertices().begin() + hole_indices[0]);
+          vertex_descriptor v2 = *(reconstruction.vertices().begin() + hole_indices[1]);
+          halfedge_descriptor h = reconstruction.halfedge(v1, v2);
+          halfedge_descriptor h_ = opposite(next(opposite(h, reconstruction), reconstruction), reconstruction);
+          if (!get(to_delete, face(h_, reconstruction))) {
+            put(to_delete, face(h_, reconstruction), true);
+            to_handle.push_back(face(h_, reconstruction));
+          } else {
+            put(to_delete,
+                face(opposite(next(opposite(h_, reconstruction), reconstruction), reconstruction), reconstruction),
+                true);
+            to_handle.push_back(
+                face(opposite(next(opposite(h_, reconstruction), reconstruction), reconstruction), reconstruction));
+          }
+        }
+
+        // 3. expand the zone
+        while(!to_handle.empty())
+        {
+          face_descriptor f = to_handle.back();
+          to_handle.pop_back();
+          halfedge_descriptor h = opposite(halfedge(f, reconstruction), reconstruction);
+          for(unsigned i = 0; i < 3; ++i, h = opposite(next(opposite(h, reconstruction), reconstruction), reconstruction))
+          {
+            if(get(to_delete, face(h, reconstruction)))
+            {
+              continue;
+            }
+            to_handle.push_back(face(h, reconstruction));
+            put(to_delete, face(h, reconstruction), true);
+          }
+        }
+
+        // 4. delete the expanded zone
+        for(auto& f : reconstruction.faces())
+        {
+          if(get(to_delete, f))
+          {
+            CGAL::Euler::remove_face(halfedge(f, reconstruction), reconstruction);
+          }
+        }
+
+        os = std::ofstream("/home/felix/Bureau/Geo_Facto/PSR/tests-repair/dumps/self_intersections/reconstruction.off");
+        CGAL::write_off(os, reconstruction);
+        os.close();
+
+        return reconstruction;
+      }
+
+
+
+      template <typename TriangleMesh>
+      std::vector<std::pair<typename boost::graph_traits<TriangleMesh>::halfedge_descriptor,
+                            typename boost::graph_traits<TriangleMesh>::halfedge_descriptor>>
+      make_associations(const std::vector<typename boost::graph_traits<TriangleMesh>::halfedge_descriptor> cc_ordered_border_hedges,
+                        const TriangleMesh& tmesh,
+                        const std::vector<typename boost::graph_traits<TriangleMesh>::halfedge_descriptor>& reconstruction_hole,
+                        const std::vector<std::pair<typename boost::graph_traits<TriangleMesh>::halfedge_descriptor,
+                                                    typename boost::graph_traits<TriangleMesh>::halfedge_descriptor>>& h2h)
+      {
+        typedef typename boost::graph_traits<TriangleMesh>::halfedge_descriptor     halfedge_descriptor;
+        typedef std::pair<halfedge_descriptor, halfedge_descriptor>                 halfedge_pair;
+        std::vector<halfedge_pair> associations;
+
+        for(unsigned i = 0; i < cc_ordered_border_hedges.size(); ++i)
+        {
+          halfedge_descriptor h1 = cc_ordered_border_hedges[i];
+          halfedge_descriptor h2 = reconstruction_hole[i];
+          for(auto& it : h2h)
+          {
+            if(it.first == h2)
+            {
+              h2 = tmesh.opposite(it.second);
+              break;
+            }
+          }
+          associations.emplace_back(h1, h2);
+        }
+
+        return associations;
+      }
+
+    }
+
     namespace internal {
 
 #ifdef CGAL_PMP_REMOVE_SELF_INTERSECTION_DEBUG
@@ -431,7 +964,8 @@ static int self_intersections_solved_by_unconstrained_hole_filling = 0;
                                                        const double strong_dihedral_angle,
                                                        const double weak_dihedral_angle,
                                                        VertexPointMap vpm,
-                                                       const GeomTraits& gt)
+                                                       const GeomTraits& gt,
+                                                       unsigned step = 0)
       {
 #ifdef CGAL_PMP_REMOVE_SELF_INTERSECTION_OUTPUT
         std::ofstream out("results/zone_border.polylines.txt");
@@ -445,6 +979,16 @@ static int self_intersections_solved_by_unconstrained_hole_filling = 0;
         // Do not try to impose sharp edge constraints if we are not doing local-only self intersections removal
   local_self_intersection_removal = false;
 #endif
+
+//        Un bon gros dump des familles pour comprendre tout ça
+        typedef CGAL::Face_filtered_graph<TriangleMesh>            Filtered_graph;
+
+
+        std::set<typename boost::graph_traits<TriangleMesh>::face_descriptor> cc_border_hedges_faces;
+        for(auto& h : cc_border_hedges)
+        {
+          cc_border_hedges_faces.insert(face(h, tmesh));
+        }
 
         bool success = false;
         if(local_self_intersection_removal)
@@ -467,7 +1011,126 @@ static int self_intersections_solved_by_unconstrained_hole_filling = 0;
   }
 #endif
 
+//        std::ofstream os ("/home/felix/Bureau/Geo_Facto/PSR/tests-repair/dumps/self_intersections/pig1_hf.off");
+//        CGAL::write_off(os, tmesh);
+//        os.close();
+
         return success;
+      }
+
+      template <typename TriangleMesh, typename VertexPointMap, typename GeomTraits>
+      bool remove_self_intersections_with_inmeshing(std::vector<typename boost::graph_traits<TriangleMesh>::halfedge_descriptor>& cc_border_hedges,
+                                                    std::set<typename boost::graph_traits<TriangleMesh>::face_descriptor>& cc_faces,
+                                                    std::set<typename boost::graph_traits<TriangleMesh>::face_descriptor>& working_face_range,
+                                                    TriangleMesh& tmesh,
+                                                    bool local_self_intersection_removal,
+                                                    const double strong_dihedral_angle,
+                                                    const double weak_dihedral_angle,
+                                                    VertexPointMap vpm,
+                                                    const GeomTraits& gt,
+                                                    unsigned step = 0)
+      {
+        typedef typename GeomTraits::Point_3                                         Point_3;
+        typedef typename GeomTraits::Vector_3                                        Vector_3;
+        namespace IMT = Polygon_mesh_processing::In_meshing_tools_for_self_intersections;
+
+        output out;
+        out.enable_export = true;
+        out.enable_log_data = true;
+        out.enable_log_quality = true;
+        out.enable_log_timing = true;
+        bool allow_recompute_normals = false;
+        unsigned max_depth = 8;
+        bool export_raw_poisson_surface = true;
+        bool allow_same_boundary_chains = true;
+        float salient_angle_deg = 84;
+
+        out.start_timing();
+
+        std::vector<Point_3> guide_points;
+        std::vector<Vector_3> guide_normals;
+
+        std::set<typename boost::graph_traits<TriangleMesh>::face_descriptor> ring = IMT::make_ring(cc_faces, tmesh, 2);
+
+
+        IMT::make_guides<TriangleMesh, VertexPointMap, GeomTraits>(guide_points, guide_normals, tmesh, cc_faces, vpm);
+
+        for(auto& f : cc_faces)
+        {
+          Euler::remove_face(halfedge(f, tmesh), tmesh);
+        }
+
+        std::vector<typename boost::graph_traits<TriangleMesh>::halfedge_descriptor> cc_ordered_border_hedges;
+        std::vector<unsigned> hole_indices;
+        point_mesh pm = IMT::make_point_mesh_for_in_meshing(cc_border_hedges, cc_ordered_border_hedges, cc_faces, ring, tmesh,
+                                                            vpm, gt, hole_indices);
+
+
+        for(auto& i : hole_indices)
+        {
+          Eigen::Vector3f p = pm.vertices[i].position;
+          std::cout << p[0] << ' ' << p[1] << ' ' << p[2] << std::endl;
+        }
+
+        for(unsigned i = 0; i < guide_points.size(); ++i)
+        {
+          Eigen::Vector3f p(guide_points[i].x(), guide_points[i].y(), guide_points[i].z());
+          Eigen::Vector3f n(guide_normals[i].x(), guide_normals[i].y(), guide_normals[i].z());
+          pm.vertices.emplace_back(p, n);
+        }
+
+        out.back_transform = pm.transform_to_unit(1.25f);
+        out.stop_timing("Loading & transforming points");
+
+        if(allow_recompute_normals)
+        {
+          size_t invalid_normals = 0;
+          for(size_t v = 0; v < pm.vertices.size(); v++)
+            if(pm.vertices[v].normal.squaredNorm() <= 0.1)
+              invalid_normals++;
+          if(invalid_normals > 0)
+          {
+            printf("%i invalid normals => recompute them\n", (int)invalid_normals);
+            const std::vector<Eigen::Vector3f> normals = compute_normals(pm.vertices, pm.indices);
+            for(size_t v = 0; v < pm.vertices.size(); v++)
+              pm.vertices[v].normal = normals[v];
+          }
+        }
+
+        /// 1) Mesh completion
+        completed_mesh out_mesh = std::move(pm);
+        mesh_in_filling(out_mesh, out, max_depth, export_raw_poisson_surface);
+
+        /// 2) Large scale geometric adjustments
+        out.log_metric("Total vertices", out_mesh.vertices.size());
+        out.log_metric("Total triangles", out_mesh.indices.size() / 3);
+        out.log_metric("Base vertices", out_mesh.num_base_vertices);
+        out.log_metric("Base triangles", out_mesh.num_base_triangles);
+        geometry_new(out, out_mesh, allow_same_boundary_chains, salient_angle_deg, hole_indices);
+//        float target_length = geometry_new1(out, out_mesh, allow_same_boundary_chains, salient_angle_deg, hole_indices);
+//        IMT::remesh_with_CGAL<GeomTraits>(out_mesh, target_length * 3);
+//        geometry_new2(out, out_mesh, allow_same_boundary_chains, salient_angle_deg, hole_indices);
+
+        /// 3) Final output
+        out.enable_export = true;
+        out.log_metric("Output/Vertices", out_mesh.vertices.size());
+        out.log_metric("Output/Triangles", out_mesh.indices.size() / 3);
+//  out.save_object("Final object", cmd.output_filename(), out_mesh);
+
+        typedef typename boost::graph_traits<TriangleMesh>::halfedge_descriptor    halfedge_descriptor;
+        typedef std::pair<halfedge_descriptor, halfedge_descriptor>                halfedge_pair;
+
+
+        std::vector<halfedge_descriptor> reconstruction_hole;
+        TriangleMesh reconstruction = IMT::extract_reconstruction<TriangleMesh, GeomTraits>
+            (out, out_mesh, gt, hole_indices, reconstruction_hole);
+
+        std::vector<halfedge_pair> h2h;
+        CGAL::copy_face_graph(reconstruction, tmesh, CGAL::parameters::halfedge_to_halfedge_output_iterator(std::back_inserter(h2h)));
+        std::vector<halfedge_pair> associations = IMT::make_associations(cc_ordered_border_hedges, tmesh, reconstruction_hole, h2h);
+        stitch_borders(tmesh, associations);
+
+        return true;
       }
 
 // the parameter `step` controls how many extra layers of faces we take around the range `faces_to_remove`
@@ -893,10 +1556,14 @@ static int self_intersections_solved_by_unconstrained_hole_filling = 0;
             }
           }
 
-          if(!remove_self_intersections_with_hole_filling(cc_border_hedges, cc_faces, working_face_range,
-                                                          tmesh, only_treat_self_intersections_locally,
-                                                          strong_dihedral_angle, weak_dihedral_angle,
-                                                          vpm, gt))
+          if(!remove_self_intersections_with_inmeshing(cc_border_hedges, cc_faces, working_face_range,
+                                                       tmesh, only_treat_self_intersections_locally,
+                                                       strong_dihedral_angle, weak_dihedral_angle,
+                                                       vpm, gt, step))
+//          if(!remove_self_intersections_with_hole_filling(cc_border_hedges, cc_faces, working_face_range,
+//                                                          tmesh, only_treat_self_intersections_locally,
+//                                                          strong_dihedral_angle, weak_dihedral_angle,
+//                                                          vpm, gt, step))
           {
 #ifdef CGAL_PMP_REMOVE_SELF_INTERSECTION_DEBUG
             std::cout << "  DEBUG: Failed to fill hole\n";

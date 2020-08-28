@@ -19,7 +19,7 @@ typedef boost::graph_traits<Surface_mesh>::face_descriptor        face_descripto
 
 int main(int argc, char* argv[])
 {
-  const char* filename = (argc > 1) ? argv[1] : "data/eight.off";
+  const char* filename = (argc > 1) ? argv[1] : "/home/felix/Bureau/Geo_Facto/PSR/tests-SGP13/jeux-de-test/tobehealed2/healed.off";
   std::ifstream input(filename);
 
   Surface_mesh mesh;
@@ -33,13 +33,24 @@ int main(int argc, char* argv[])
 
   PMP::compute_normals(mesh, vnormals, fnormals);
 
-  std::cout << "Vertex normals :" << std::endl;
-  for(vertex_descriptor vd: vertices(mesh))
-    std::cout << vnormals[vd] << std::endl;
+  std::ofstream os("/home/felix/Bureau/Geo_Facto/PSR/tests-SGP13/dumps/normales_de_Mael.ply");
+  os << "ply\nformat ascii 1.0\nelement vertex " << vertices(mesh).size() << "\nproperty float x\nproperty float y\nproperty float z\nproperty float nx\nproperty float ny\nproperty float nz\nend_header\n";
 
-  std::cout << "Face normals :" << std::endl;
-  for(face_descriptor fd: faces(mesh))
-    std::cout << fnormals[fd] << std::endl;
+  for(auto& v : vertices(mesh))
+  {
+    auto p = mesh.point(v);
+    auto n = vnormals[v];
+    os << p.x() << ' ' << p.y() << ' ' <<  p.z() << ' ';
+    os << n.x() << ' ' << n.y() << ' ' << n.z() << std::endl;
+  }
+
+//  std::cout << "Vertex normals :" << std::endl;
+//  for(vertex_descriptor vd: vertices(mesh))
+//    std::cout << vnormals[vd] << std::endl;
+
+//  std::cout << "Face normals :" << std::endl;
+//  for(face_descriptor fd: faces(mesh))
+//    std::cout << fnormals[fd] << std::endl;
 
   return 0;
 }

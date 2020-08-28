@@ -1,6 +1,8 @@
 # Created by the script cgal_create_CMakeLists
 # This is the CMake script for compiling a set of CGAL applications.
 
+set (CMAKE_CXX_STANDARD 20)
+
 cmake_minimum_required(VERSION 3.1...3.15)
 project( Polygon_mesh_processing_Examples )
 
@@ -17,7 +19,9 @@ endif()
 # include for local package
 find_package(Eigen3 3.2.0) #(requires 3.2.0 or greater)
 
-# Ajouts pour In-meshing
+
+
+# NEEDS FOR ADDING IN-MESHING
 set(source_dir "/home/felix/code/source")
 include_directories(${source_dir})
 
@@ -87,17 +91,24 @@ set_target_properties(core PROPERTIES FOLDER "core")
 # =====================================================================================================================
 create_single_source_cgal_program( "in_meshing.cpp" )
 create_single_source_cgal_program( "repair_manifoldness_with_inmeshing.cpp" )
+create_single_source_cgal_program( "repair_self_intersecions_with_inmeshing.cpp" )
+create_single_source_cgal_program( "poisson_reconstruction_from_in_meshing.cpp" )
 CGAL_target_use_Eigen(in_meshing)
 CGAL_target_use_Eigen(repair_manifoldness_with_inmeshing)
+CGAL_target_use_Eigen(repair_self_intersecions_with_inmeshing)
+CGAL_target_use_Eigen(poisson_reconstruction_from_in_meshing)
 #target_link_libraries(in_meshing PUBLIC core)
 #target_link_libraries(repair_manifoldness_with_inmeshing PUBLIC core)
-
+#target_link_libraries(repair_self_intersecions_with_inmeshing PUBLIC core)
+#target_link_libraries(poisson_reconstruction_from_in_meshing PUBLIC core)
 
 adjust_exe_target(in_meshing in_meshing.cpp)
 adjust_exe_target(repair_manifoldness_with_inmeshing repair_manifoldness_with_inmeshing.cpp)
+adjust_exe_target(repair_self_intersecions_with_inmeshing repair_self_intersecions_with_inmeshing.cpp)
+adjust_exe_target(poisson_reconstruction_from_in_meshing poisson_reconstruction_from_in_meshing.cpp)
 set_property(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY VS_STARTUP_PROJECT main)
 
-# Ajouts pour In-meshing - fin
+# NEEDS FOR ADDING IN-MESHING - END
 
 # Boost and its components
 find_package( Boost REQUIRED )
