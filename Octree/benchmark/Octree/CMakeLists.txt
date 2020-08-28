@@ -6,5 +6,6 @@ project(Octree)
 
 find_package(CGAL REQUIRED QUIET OPTIONAL_COMPONENTS Core)
 
-create_single_source_cgal_program("bench.cpp")
+create_single_source_cgal_program("construction.cpp")
+create_single_source_cgal_program("nearest_neighbor.cpp")
 
