@@ -12,7 +12,7 @@ int main(int argc, char **argv) {
 
   file << "Number of Points,Build Time (ms) \n";
 
-  for (size_t num_points = 10; num_points < 10000; ++num_points) {
+  for (size_t num_points = 10; num_points < 10000; num_points *= 1.1) {
 
     std::cout << num_points << std::endl;
 
