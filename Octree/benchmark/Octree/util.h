@@ -6,7 +6,7 @@
 #include <CGAL/point_generators_3.h>
 
 template<class Kernel>
-CGAL::Point_set_3<typename Kernel::Point_3> generate(size_t num_points) {
+CGAL::Point_set_3<typename Kernel::Point_3> generate(size_t num_points = 1) {
 
   typedef typename Kernel::Point_3 Point;
   typedef CGAL::Point_set_3<Point> Point_set;
