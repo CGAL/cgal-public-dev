@@ -1235,7 +1235,8 @@ public slots:
   void on_drawMagenta_toggled (bool a_check);
   void on_drawAqua_toggled (bool a_check);
 
-  void on_aboutBol_Minkop_triggered();
+  void on_aboutBolop_triggered();
+  void on_aboutMinkop_triggered();
   void on_aboutDemo_triggered();
 
   void resizeEvent(QResizeEvent* event);
@@ -1567,6 +1568,8 @@ MainWindow::MainWindow() :
   actionUndo->setEnabled(false);
 
   this->setWindowState(Qt::WindowMaximized);
+
+  actionUse_OpenGL->setVisible(false);
 
   //initializing classes to draw respective polygons using mouse
   m_bezier_input = new CGAL::Qt::GraphicsViewBezierPolygonInput<Bezier_traits>(this, &m_scene);
@@ -7402,27 +7405,113 @@ void MainWindow::resizeEvent(QResizeEvent* e)
   modelChanged();
 }
 
-void MainWindow::on_aboutBol_Minkop_triggered()
+void MainWindow::on_aboutMinkop_triggered()
 {
-  QMessageBox msgBox;
-  msgBox.setStyleSheet("QLabel{min-width: 700px; min-height: 500px}");
-  msgBox.setWindowTitle("About 2D Regularized Boolean Operations and 2D Minkowski sums");
-  msgBox.setText("<b>2D Regularized Boolean Operations</b>This package consists of the implementation of Boolean set operations on point sets bounded by weakly x-monotone curves in 2-dimensional Euclidean space. In particular, it contains the implementation of regularized Boolean set-operations, intersection predicates, and point containment predicates. Our package supports the following Boolean set-operations on two point sets P and Q that each is the union of one or more general polygons:<br><b>Complement</b><br>&nbsp;&nbsp;&nbsp;&nbsp;computes the complement R=P&macr;.<br><b>Intersection</b><br>&nbsp;&nbsp;&nbsp;&nbsp;computes the intersection R=P∩Q.<br><b>Join</b><br>&nbsp;&nbsp;&nbsp;&nbsp;computes the union R=P∪Q.<br><b>Difference</b><br>&nbsp;&nbsp;&nbsp;&nbsp;computes the difference R=P∖Q.<br><b>Symmetric Difference</b><br>&nbsp;&nbsp;&nbsp;&nbsp;computes the symmetric difference P=P⊕Q=(P∖Q)∪(Q∖P).<br>&nbsp;<img src='resources/teaser.png' height = 170 width = 600><br><br><b>2D Minkowski sums:</b>Given two sets A,B∈R<sup>d</sup>, their Minkowski sum, denoted by A⊕B, is their point-wise sum, namely the set {a+b | a∈A,b∈B}. Minkowski sums are used in many applications, such as motion planning and computer-aided design and manufacturing. This package contains functions that compute the planar Minkowski sums of two polygons. (Here, A and B are two closed polygons in R<sup>2</sup>, which may have holes), and the planar Minkowski sum of a simple polygon and a disc—an operation also referred to as offsetting or dilating a polygon. This package, like the 2D Regularized Boolean Set-Operations package, is implemented on top of the arrangement infrastructure provided by the 2D Arrangements package. The two packages are integrated well to allow mixed operations. For example, it is possible to apply Boolean set operations on objects that are the result of Minkowski sum computations.<br><br><br>&ensp;&ensp;For more details: <a href='https://doc.cgal.org/latest/Boolean_set_operations_2/index.html'>Boolean set operations 2</a> and <a href='https://doc.cgal.org/latest/Minkowski_sum_2/index.html'>Minkowski sum 2</a>");
-  QPixmap pixmap = QPixmap(":/cgal/icons/resources/cgal_logo.xpm");
-  msgBox.setWindowIcon(QIcon(pixmap));
-  msgBox.addButton(QMessageBox::Ok);              
-  msgBox.exec();
+	QString title = "About 2D Minkowski sums";
+	QString html_resource_name = "help/About2DMinkowskisums.html";
+
+	QFile about_CGAL(html_resource_name);
+  	about_CGAL.open(QIODevice::ReadOnly);
+  	QString about_CGAL_txt = QTextStream(&about_CGAL).readAll();
+#ifdef CGAL_VERSION_STR
+  QString cgal_version(CGAL_VERSION_STR);
+#  ifdef CGAL_FAKE_PUBLIC_RELEASE
+  cgal_version.replace(QRegExp("-Ic?.*"), "");
+#  endif
+  about_CGAL_txt.replace("<!--CGAL_VERSION-->",
+                         QString(" (version %1)")
+                         .arg(cgal_version));
+#endif
+  QMessageBox mb;
+  mb.setStyleSheet("QLabel{min-width: 700px; min-height: 300px;}");
+  mb.setWindowTitle(title);
+  mb.setText(about_CGAL_txt);
+  mb.addButton(QMessageBox::Ok);    
+
+  QLabel* mb_label = mb.findChild<QLabel*>("qt_msgbox_label");
+  if(mb_label) {
+    mb_label->setTextInteractionFlags(mb_label->textInteractionFlags() |
+                                      ::Qt::LinksAccessibleByMouse |
+                                      ::Qt::LinksAccessibleByKeyboard);
+  }
+  else {
+    std::cerr << "Cannot find child \"qt_msgbox_label\" in QMessageBox\n"
+              << "  with Qt version " << QT_VERSION_STR << "!\n";
+  }
+  mb.exec();
+}
+
+void MainWindow::on_aboutBolop_triggered()
+{
+
+  QString title = "About 2D Minkowski sums";
+	QString html_resource_name = "help/About2DRegularizedBooleanOperations.html";
+
+	QFile about_CGAL(html_resource_name);
+  	about_CGAL.open(QIODevice::ReadOnly);
+  	QString about_CGAL_txt = QTextStream(&about_CGAL).readAll();
+#ifdef CGAL_VERSION_STR
+  QString cgal_version(CGAL_VERSION_STR);
+#  ifdef CGAL_FAKE_PUBLIC_RELEASE
+  cgal_version.replace(QRegExp("-Ic?.*"), "");
+#  endif
+  about_CGAL_txt.replace("<!--CGAL_VERSION-->",
+                         QString(" (version %1)")
+                         .arg(cgal_version));
+#endif
+  QMessageBox mb;
+  mb.setStyleSheet("QLabel{min-width: 700px; min-height: 300px;}");
+  mb.setWindowTitle(title);
+  mb.setText(about_CGAL_txt);
+  mb.addButton(QMessageBox::Ok);    
+
+  QLabel* mb_label = mb.findChild<QLabel*>("qt_msgbox_label");
+  if(mb_label) {
+    mb_label->setTextInteractionFlags(mb_label->textInteractionFlags() |
+                                      ::Qt::LinksAccessibleByMouse |
+                                      ::Qt::LinksAccessibleByKeyboard);
+  }
+  else {
+    std::cerr << "Cannot find child \"qt_msgbox_label\" in QMessageBox\n"
+              << "  with Qt version " << QT_VERSION_STR << "!\n";
+  }
+  mb.exec();
 }
 
 void MainWindow::on_aboutDemo_triggered()
 {
-  QMessageBox msgBox;
-  msgBox.setWindowTitle("About this demo");
-  msgBox.setText("<b>This Demo uses CGAL Boolean set operations 2 and Minkowski Sum 2 libraries. The demo is built using C++ and Qt5. </b><br><br><br> It offers wide ranging features:<br><br> &#8226; 3 types of Polygons namely Linear Polygon, Line segment and Circular Polygon, and Bezier Polygons<br><br> &#8226; Operations DockWidget offers 5 Boolean operations and a Minkowski Sum Operation to be performed besides handling side tasks like view, copy, move and clear.<br><br> &#8226; Demo offers 7 different color buckets of which 3 are visible by default and other can be loaded or removed via 'Add a Bucket' and 'Remove' button<br><br> &#8226; You can PAN/hand-drag a scene and also Recenter the viewport.<br><br> &#8226; Undo operation helps undo.<br><br> &#8226; Reset will help brig Demo to start state.<br><br> &#8226; Demo offers file handling and you can easily save you active set in a file and load it later. You can try loading some files in /data directory.");
-  QPixmap pixmap = QPixmap(":/cgal/icons/resources/cgal_logo.xpm");
-  msgBox.setWindowIcon(QIcon(pixmap));
-  msgBox.addButton(QMessageBox::Ok);              
-  msgBox.exec();
+	QString title = "About Demo";
+	QString html_resource_name = "help/aboutThisDemo.html";
+
+	QFile about_CGAL(html_resource_name);
+  	about_CGAL.open(QIODevice::ReadOnly);
+  	QString about_CGAL_txt = QTextStream(&about_CGAL).readAll();
+#ifdef CGAL_VERSION_STR
+  QString cgal_version(CGAL_VERSION_STR);
+#  ifdef CGAL_FAKE_PUBLIC_RELEASE
+  cgal_version.replace(QRegExp("-Ic?.*"), "");
+#  endif
+  about_CGAL_txt.replace("<!--CGAL_VERSION-->",
+                         QString(" (version %1)")
+                         .arg(cgal_version));
+#endif
+  QMessageBox mb;
+  mb.setStyleSheet("QLabel{min-width: 700px; min-height: 300px;}");
+  mb.setWindowTitle(title);
+  mb.setText(about_CGAL_txt);
+  mb.addButton(QMessageBox::Ok);    
+
+  QLabel* mb_label = mb.findChild<QLabel*>("qt_msgbox_label");
+  if(mb_label) {
+    mb_label->setTextInteractionFlags(mb_label->textInteractionFlags() |
+                                      ::Qt::LinksAccessibleByMouse |
+                                      ::Qt::LinksAccessibleByKeyboard);
+  }
+  else {
+    std::cerr << "Cannot find child \"qt_msgbox_label\" in QMessageBox\n"
+              << "  with Qt version " << QT_VERSION_STR << "!\n";
+  }
+  mb.exec();
 }
 
 
