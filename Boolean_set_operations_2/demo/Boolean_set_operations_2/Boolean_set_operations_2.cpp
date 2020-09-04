@@ -1236,6 +1236,7 @@ public slots:
   void on_drawAqua_toggled (bool a_check);
 
   void on_aboutBolop_triggered();
+  void on_aboutCGAL_triggered();
   void on_aboutMinkop_triggered();
   void on_aboutDemo_triggered();
 
@@ -1544,7 +1545,7 @@ MainWindow::MainWindow() :
   this->setupOptionsMenu();
   //link to a page describing
   //link for about page of CGAL
-  this->addAboutCGAL();
+  //this->addAboutCGAL();
 
   this->addRecentFiles(this->menuFile, this->actionClose);
 
@@ -7403,6 +7404,42 @@ void MainWindow::resizeEvent(QResizeEvent* e)
   this->graphicsView->fitInView(m_scene.sceneRect());
   this->graphicsView->scale(2.5, 2.5);
   modelChanged();
+}
+
+void MainWindow::on_aboutCGAL_triggered()
+{
+	QString title = "About CGAL";
+	QString html_resource_name = "help/about_CGAL.html";
+
+	QFile about_CGAL(html_resource_name);
+  	about_CGAL.open(QIODevice::ReadOnly);
+  	QString about_CGAL_txt = QTextStream(&about_CGAL).readAll();
+#ifdef CGAL_VERSION_STR
+  QString cgal_version(CGAL_VERSION_STR);
+#  ifdef CGAL_FAKE_PUBLIC_RELEASE
+  cgal_version.replace(QRegExp("-Ic?.*"), "");
+#  endif
+  about_CGAL_txt.replace("<!--CGAL_VERSION-->",
+                         QString(" (version %1)")
+                         .arg(cgal_version));
+#endif
+  QMessageBox mb;
+  mb.setStyleSheet("QLabel{min-width: 550px; min-height: 250px;}");
+  mb.setWindowTitle(title);
+  mb.setText(about_CGAL_txt);
+  mb.addButton(QMessageBox::Ok);    
+
+  QLabel* mb_label = mb.findChild<QLabel*>("qt_msgbox_label");
+  if(mb_label) {
+    mb_label->setTextInteractionFlags(mb_label->textInteractionFlags() |
+                                      ::Qt::LinksAccessibleByMouse |
+                                      ::Qt::LinksAccessibleByKeyboard);
+  }
+  else {
+    std::cerr << "Cannot find child \"qt_msgbox_label\" in QMessageBox\n"
+              << "  with Qt version " << QT_VERSION_STR << "!\n";
+  }
+  mb.exec();
 }
 
 void MainWindow::on_aboutMinkop_triggered()
