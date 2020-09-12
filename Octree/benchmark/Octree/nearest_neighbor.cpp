@@ -25,7 +25,7 @@ int main(int argc, char **argv) {
 
   // Set output file
   std::ofstream file;
-  file.open((argc > 1) ? argv[1] : "nearest_neighbor_benchmark.csv");
+  file.open((argc > 1) ? argv[1] : "../nearest_neighbor_benchmark.csv");
 
   // Add header for CSV
   file << "Number of Points,Search Time (ms) \n";

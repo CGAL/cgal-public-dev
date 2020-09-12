@@ -25,7 +25,7 @@ int main(int argc, char **argv) {
 
   // Set output file
   std::ofstream file;
-  file.open((argc > 1) ? argv[1] : "construction_benchmark.csv");
+  file.open((argc > 1) ? argv[1] : "../construction_benchmark.csv");
 
   // Add header for CSV
   file << "Number of Points,Build Time (ms) \n";
@@ -48,6 +48,8 @@ int main(int argc, char **argv) {
 
     file << num_points << ",";
     file << duration_cast<microseconds>(end - start).count() << "\n";
+
+    std::cout << num_points << std::endl;
   }
 
   file.close();
