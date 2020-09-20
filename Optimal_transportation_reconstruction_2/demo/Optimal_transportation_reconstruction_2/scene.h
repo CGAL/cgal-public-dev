@@ -18,11 +18,18 @@
 #define cimg_display 0 // To avoid X11 or Windows-GDI dependency
 #include <CImg.h>
 #endif
-#include "random.h"
 #include <utility>      // std::pair
 #include <vector>
+
+#include <CGAL/number_type_config.h>
+#include <CGAL/Random.h>
 #include <CGAL/property_map.h>
 #include <CGAL/value_type_traits.h>
+#include <CGAL/compute_average_spacing.h>
+#include <CGAL/functional.h>
+#include <CGAL/Iterator_range.h>
+
+class GlViewer;
 
 class Scene {
 
@@ -77,18 +84,39 @@ public:
 
 
 private:
+
+  struct Point_3_from_sample : public CGAL::cpp98::unary_function<Sample_, K::Point_3>
+  {
+    K::Point_3 operator() (const Sample_& sample) const
+    {
+      return K::Point_3 (sample.point().x(), sample.point().y(), 0.);
+    }
+  };
+
   // data
   std::vector<Sample_> m_samples;
 
   Optimal_transportation_reconstruction_kerneled_2* m_pwsrec;
   int m_ignore;
   bool m_init_done;
+  bool is_viewer_set;
   double m_percentage;
 
   // bbox
   double m_bbox_x;
   double m_bbox_y;
   double m_bbox_size;
+
+  //Random
+  CGAL::Random random;
+
+  template <class Vector>
+  Vector random_vec(const double scale)
+  {
+    double dx = random.get_double(-scale, scale);
+    double dy = random.get_double(-scale, scale);
+    return Vector(dx, dy);
+  }
 
 public:
   Scene() {
@@ -99,6 +127,7 @@ public:
     m_bbox_x = 0.0;
     m_bbox_y = 0.0;
     m_bbox_size = 1.0;
+    is_viewer_set = false;
 
     m_pwsrec = new Optimal_transportation_reconstruction_kerneled_2();
   }
@@ -222,9 +251,19 @@ public:
 
   void load(const QString& filename, QWidget* qw) {
 
-    if (filename.contains(".xy", Qt::CaseInsensitive)) {
+    if (filename.contains(".xyz", Qt::CaseInsensitive)) {
+      load_xyz_file(filename);
+      //      normalize_points();
+      return;
+    }
+    if (filename.contains(".xyw", Qt::CaseInsensitive)) {
+      load_xyw_file(filename);
+      //      normalize_points();
+      return;
+    }
+     if (filename.contains(".xy", Qt::CaseInsensitive)) {
       load_xy_file(filename);
-      normalize_points();
+      //      normalize_points();
       return;
     }
 
@@ -268,6 +307,42 @@ public:
     unsigned int nb = 0;
     while (ifs >> point) {
       add_sample(point, 1.0);
+      nb++;
+    }
+    std::cerr << "done (" << nb << " points)" << std::endl;
+    ifs.close();
+  }
+
+  void load_xyw_file(const QString& fileName) {
+
+    std::cout << "filename: " << fileName.toUtf8().constData() << std::endl;
+    std::ifstream ifs(qPrintable(fileName));
+    std::cerr << "reading xy with weights...";
+    Point point;
+    FT weight;
+    unsigned int nb = 0;
+    while (ifs >> point >> weight) {
+      add_sample(point, weight);
+      nb++;
+    }
+    std::cerr << "done (" << nb << " points)" << std::endl;
+    ifs.close();
+    compute_average_spacing();
+  }
+
+  void load_xyz_file(const QString& fileName) {
+
+    std::cout << "filename: " << fileName.toUtf8().constData() << std::endl;
+    std::ifstream ifs(qPrintable(fileName));
+    std::cerr << "reading xyz...";
+    unsigned int nb = 0;
+    std::string str;
+    while (getline (ifs, str)) {
+      std::istringstream iss (str);
+      double x = 0., y = 0.;
+      iss >> x >> y;
+      str.clear();
+      add_sample(Point (x, y), 1.0);
       nb++;
     }
     std::cerr << "done (" << nb << " points)" << std::endl;
@@ -324,6 +399,17 @@ public:
     std::cerr << "done (" << m_samples.size() << ")" << std::endl;
   }
 #endif
+
+  void compute_average_spacing()
+  {
+    FT spacing = CGAL::compute_average_spacing<CGAL::Sequential_tag>
+      (CGAL::make_range (boost::make_transform_iterator (m_samples.begin(),
+                                                         Point_3_from_sample()),
+                         boost::make_transform_iterator (m_samples.end(),
+                                                         Point_3_from_sample())),
+       3, CGAL::parameters::point_map (CGAL::Identity_property_map_no_lvalue<K::Point_3>()));
+    std::cerr << "Average spacing = " << spacing << std::endl;
+  }
 
   void print_vertex(Vertex vertex) {
     std::cout << "vertex " << vertex << std::endl;
@@ -449,7 +535,7 @@ public:
 
     std::vector<Sample_>::iterator it;
     for (it = m_samples.begin(); it != m_samples.end(); it++) {
-      const double rd = random_double(0.0, 1.0);
+      const double rd = random.get_double(0.0, 1.0);
       if (rd >= percentage)
         selected.push_back(*it);
     }
@@ -468,7 +554,7 @@ public:
       Sample_& s = *it;
 
       samples.push_back(&s);
-      FT rv = random_double(0.0, 1.0);
+      FT rv = random.get_double(0.0, 1.0);
       if (rv <= percentage)
         vertices.push_back(&s);
     }
@@ -479,6 +565,13 @@ public:
     if (!m_init_done)
       init_reconstruction(m_percentage);
     m_pwsrec->run_until(nv);
+  }
+
+  void reconstruct_wasserstein_tolerance (const double tolerance) {
+    std::cout << "reconstruct_wasserstein_tolerance" << std::endl;
+    if (!m_init_done)
+      init_reconstruction(m_percentage);
+    m_pwsrec->run_under_wasserstein_tolerance (tolerance);
   }
 
   void reconstruct(const unsigned int steps) {
@@ -526,17 +619,26 @@ public:
 
   // RENDER //
 
-  void render(const bool view_points, const bool view_vertices,
+  void render(const bool view_points, const bool view_tolerance,
+    const bool view_vertices,
     const bool view_edges, const bool view_ghost_edges,
     const bool view_edge_cost, const bool view_edge_priority,
     const bool view_bins, const bool view_foot_points,
     const bool view_relocation, const bool view_edge_relevance,
     const float point_size, const float vertex_size,
-    const float line_thickness)
+    const float line_thickness, GlViewer* viewer)
   {
     if (m_pwsrec == NULL) {
       return;
     }
+    if(!is_viewer_set)
+    {
+      m_pwsrec->setViewer(viewer);
+      is_viewer_set = true;
+    }
+
+    if (view_tolerance)
+      draw_tolerance(viewer);
 
     if (view_edges)
       m_pwsrec->draw_edges(0.5f * line_thickness, 0.9f, 0.9f, 0.9f);
@@ -563,27 +665,12 @@ public:
       m_pwsrec->draw_footpoints(line_thickness, 0.2f, 0.8f, 0.2f);
 
     if (view_points)
-      draw_samples(point_size);
+      draw_samples(point_size, viewer);
   }
 
-  void draw_samples(const float point_size) {
+  void draw_samples(const float point_size, GlViewer* viewer);
 
-    ::glPointSize(point_size);
-    ::glBegin(GL_POINTS);
-
-    std::vector<Sample_>::const_iterator it;
-    for (it = m_samples.begin(); it != m_samples.end(); it++) {
-      double mass = it->mass();
-
-      float value = mass;
-      float grey = 0.9 * (1.0f - value);
-      ::glColor3f(grey, grey, grey);
-      const Point& p = it->point();
-      ::glVertex2d(p.x(), p.y());
-    }
-    ::glEnd();
-  }
-
+  void draw_tolerance(GlViewer* viewer);
 
   // PREDEFINED EXAMPLES //
 
@@ -868,7 +955,7 @@ public:
 
   void append_star(const int nb_branches, const int density) {
     std::cerr << "append star...";
-    const double deg_in_rad = 3.1415926535897932384626 / 180.0;
+    const double deg_in_rad = CGAL_PI / 180.0;
     const double incr = 180.0 / nb_branches;
     double angle = 0.0;
     const Point center(0.5, 0.5);
@@ -885,7 +972,7 @@ public:
 
   void append_predefined_increasingly_sharp_angles(const int density,
     const double min_angle) {
-    const double deg_in_rad = 3.1415926535897932384626 / 180.0;
+    const double deg_in_rad = CGAL_PI / 180.0;
     double prev_angle = 0.0;
     double curr_angle = min_angle;
     double incr = min_angle;

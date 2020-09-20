@@ -2,18 +2,10 @@
 // All rights reserved.
 //
 // This file is part of CGAL (www.cgal.org).
-// You can redistribute it and/or modify it under the terms of the GNU
-// General Public License as published by the Free Software Foundation,
-// either version 3 of the License, or (at your option) any later version.
-//
-// Licensees holding a valid commercial license may use this file in
-// accordance with the commercial license agreement provided with the software.
-//
-// This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
-// WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 //
 // $URL$
 // $Id$
+// SPDX-License-Identifier: GPL-3.0-or-later OR LicenseRef-Commercial
 //
 //
 // Author(s)     : Laurent Saboret, Pierre Alliez
@@ -34,7 +26,7 @@
 namespace CGAL {
 
 /// \cond SKIP_IN_MANUAL
-  
+
 /// The Point_with_normal_3 class represents a 3D point with:
 /// - a position,
 /// - a normal (oriented).
@@ -134,7 +126,7 @@ private:
 /// @param Gt Geometric traits class.
 
 template <class Gt>
-struct Normal_of_point_with_normal_pmap
+struct Normal_of_point_with_normal_map
 {
   typedef Point_with_normal_3<Gt> Point_with_normal; ///< Position + normal
   typedef typename Gt::Vector_3 Vector; /// normal
@@ -147,7 +139,7 @@ struct Normal_of_point_with_normal_pmap
   /// Access a property map element
   value_type& operator[](key_type& pwn) const { return pwn.normal(); }
 
-  typedef Normal_of_point_with_normal_pmap<Gt> Self;
+  typedef Normal_of_point_with_normal_map<Gt> Self;
   /// \name Put/get free functions
   /// @{
   friend reference get(const Self&,const key_type& k) {return k.normal();}
@@ -155,16 +147,16 @@ struct Normal_of_point_with_normal_pmap
   /// @};}
 };
 
-/// Free function to create a Normal_of_point_with_normal_pmap property map.
+/// Free function to create a Normal_of_point_with_normal_map property map.
 ///
-/// @relates Normal_of_point_with_normal_pmap
+/// @relates Normal_of_point_with_normal_map
 
 template <class Point_with_normal> // Point_with_normal type
-Normal_of_point_with_normal_pmap<
+Normal_of_point_with_normal_map<
   typename CGAL::Kernel_traits<Point_with_normal>::Kernel>
-  make_normal_of_point_with_normal_pmap(Point_with_normal)
+  make_normal_of_point_with_normal_map(Point_with_normal)
 {
-  return Normal_of_point_with_normal_pmap<typename CGAL::Kernel_traits<Point_with_normal>::Kernel>();
+  return Normal_of_point_with_normal_map<typename CGAL::Kernel_traits<Point_with_normal>::Kernel>();
 }
 
 /// \endcond

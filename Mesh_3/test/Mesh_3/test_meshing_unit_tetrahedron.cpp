@@ -26,7 +26,7 @@ struct Polyhedron_tester : public Tester<K>
       Concurrency_tag>::type Tr;
     typedef CGAL::Mesh_complex_3_in_triangulation_3<Tr,
       typename Mesh_domain::Corner_index,
-      typename Mesh_domain::Curve_segment_index> C3t3;
+      typename Mesh_domain::Curve_index> C3t3;
 
     // Criteria
     typedef CGAL::Mesh_criteria_3<Tr> Mesh_criteria;
@@ -65,9 +65,9 @@ struct Polyhedron_tester : public Tester<K>
                            cell_size = cs);
     // Mesh generation
     C3t3 c3t3 = CGAL::make_mesh_3<C3t3>(domain, criteria);
-    
+
     CGAL::remove_far_points_in_mesh_3(c3t3);
-    
+
     double vol = 1/6.;
     this->verify_c3t3_volume(c3t3, vol*0.95, vol*1.05);
 #ifdef CGAL_MESH_3_USE_DEFAULT_EDGE_SIZE
@@ -90,7 +90,7 @@ int main() {
   Polyhedron_tester<K> test_epic;
   std::cerr << "Mesh generation from a polyhedron:\n";
   test_epic.polyhedron();
-  
+
 #ifdef CGAL_LINKED_WITH_TBB
   Polyhedron_tester<K, CGAL::Parallel_tag> test_epic_p;
   std::cerr << "Parallel mesh generation from a polyhedron:\n";

@@ -2,18 +2,10 @@
 // All rights reserved.
 //
 // This file is part of CGAL (www.cgal.org).
-// You can redistribute it and/or modify it under the terms of the GNU
-// General Public License as published by the Free Software Foundation,
-// either version 3 of the License, or (at your option) any later version.
-//
-// Licensees holding a valid commercial license may use this file in
-// accordance with the commercial license agreement provided with the software.
-//
-// This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
-// WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 //
 // $URL$
 // $Id$
+// SPDX-License-Identifier: GPL-3.0-or-later OR LicenseRef-Commercial
 //
 //
 // Author(s)     : Laurent Saboret, Pierre Alliez
@@ -24,6 +16,7 @@
 
 #include <CGAL/license/Poisson_surface_reconstruction_3.h>
 
+#include <CGAL/disable_warnings.h>
 
 #include <CGAL/Point_with_normal_3.h>
 #include <CGAL/Lightweight_vector_3.h>
@@ -31,8 +24,10 @@
 #include <CGAL/surface_reconstruction_points_assertions.h>
 
 #include <CGAL/Delaunay_triangulation_3.h>
+#include <CGAL/Delaunay_triangulation_cell_base_3.h>
 #include <CGAL/Triangulation_cell_base_with_info_3.h>
 
+#include <CGAL/algorithm.h>
 #include <CGAL/bounding_box.h>
 #include <boost/random/random_number_generator.hpp>
 #include <boost/random/linear_congruential.hpp>
@@ -170,8 +165,12 @@ struct Reconstruction_triangulation_default_geom_traits_3 : public BaseGt
 
 template <class BaseGt,
           class Gt = Reconstruction_triangulation_default_geom_traits_3<BaseGt>,
-          class Tds_ = Triangulation_data_structure_3<Reconstruction_vertex_base_3<Gt>, Triangulation_cell_base_with_info_3<int,Gt> > >
-class Reconstruction_triangulation_3 : public Delaunay_triangulation_3<Gt,Tds_>
+          class Tds_ = Triangulation_data_structure_3<
+                         Reconstruction_vertex_base_3<Gt>,
+                         Delaunay_triangulation_cell_base_3<
+                           Gt, Triangulation_cell_base_with_info_3<int, Gt> > > >
+class Reconstruction_triangulation_3
+  : public Delaunay_triangulation_3<Gt, Tds_>
 {
 // Private types
 private:
@@ -333,7 +332,7 @@ public:
     }
     if(this->dimension() < 3){
       Vertex_handle v = Base::insert(p, start);
-      v->type() = type;
+      v->type() = static_cast<unsigned char>(type);
       return v;
     }
     typename Base::Locate_type lt;
@@ -341,9 +340,9 @@ public:
     Cell_handle ch = Base::locate(p, lt, li, lj, start);
 
     Vertex_handle v = Base::insert(p, lt, ch, li, lj);
-    v->type() = type;
+    v->type() = static_cast<unsigned char>(type);
     return v;
-    
+
   }
 
   /// Insert the [first, beyond) range of points in the triangulation using a spatial sort.
@@ -388,19 +387,19 @@ public:
     typedef typename Iterator_traits::difference_type Diff_t;
     boost::rand48 random;
     boost::random_number_generator<boost::rand48, Diff_t> rng(random);
-    std::random_shuffle (points.begin(), points.end(), rng);
+    CGAL::cpp98::random_shuffle (points.begin(), points.end(), rng);
     fraction = 0;
 
     fractions.clear();
     fractions.push_back(1.0);
-    
+
     double m = static_cast<double>(n);
-    
+
     while(m > 500){
       m /= 2;
       fractions.push_front(m/n);
     }
-    
+
     insert_fraction(visitor);
     return 0;
   }
@@ -456,11 +455,11 @@ public:
   template <class CellIt>
   Vertex_handle
   insert_in_hole(const Point_with_normal& p, CellIt cell_begin, CellIt cell_end,
-	         Cell_handle begin, int i,
+                 Cell_handle begin, int i,
                  Point_type type = STEINER)
   {
       Vertex_handle v = Base::insert_in_hole(p, cell_begin, cell_end, begin, i);
-      v->type() = type;
+      v->type() = static_cast<unsigned char>(type);
       return v;
   }
 
@@ -492,10 +491,12 @@ public:
   {
     constrained_vertex = v;
   }
-  
+
 
 }; // end of Reconstruction_triangulation_3
 
 } //namespace CGAL
+
+#include <CGAL/enable_warnings.h>
 
 #endif // CGAL_IMPLICIT_FCT_DELAUNAY_TRIANGULATION_H

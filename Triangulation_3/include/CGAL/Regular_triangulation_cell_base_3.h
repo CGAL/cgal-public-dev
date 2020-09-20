@@ -2,18 +2,10 @@
 // All rights reserved.
 //
 // This file is part of CGAL (www.cgal.org).
-// You can redistribute it and/or modify it under the terms of the GNU
-// General Public License as published by the Free Software Foundation,
-// either version 3 of the License, or (at your option) any later version.
-//
-// Licensees holding a valid commercial license may use this file in
-// accordance with the commercial license agreement provided with the software.
-//
-// This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
-// WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 //
 // $URL$
 // $Id$
+// SPDX-License-Identifier: GPL-3.0-or-later OR LicenseRef-Commercial
 //
 // Author(s)     : Christophe Delage <christophe.delage@sophia.inria.fr>
 
@@ -66,17 +58,17 @@ public:
 
   Regular_triangulation_cell_base_3(Vertex_handle v0,
                                     Vertex_handle v1,
-				    Vertex_handle v2,
+                                    Vertex_handle v2,
                                     Vertex_handle v3)
     : Cb(v0, v1, v2, v3) {}
 
   Regular_triangulation_cell_base_3(Vertex_handle v0,
                                     Vertex_handle v1,
-				    Vertex_handle v2,
+                                    Vertex_handle v2,
                                     Vertex_handle v3,
-				    Cell_handle   n0,
+                                    Cell_handle   n0,
                                     Cell_handle   n1,
-				    Cell_handle   n2,
+                                    Cell_handle   n2,
                                     Cell_handle   n3)
     : Cb(v0, v1, v2, v3, n0, n1, n2, n3) {}
 
@@ -92,6 +84,11 @@ public:
   Point_const_iterator hidden_points_end() const
   { return hidden_points_end_internal<Memory_policy>(); }
 
+  const C& hidden_points() const
+  {
+    return _hidden;
+  }
+
   void hide_point(const Point& p)
   { hide_point_internal<Memory_policy>(p); }
   void unhide_point(const Point_iterator pit)
@@ -99,79 +96,56 @@ public:
 
   // Memory_policy is Tag_true -------------------------------------------------
   template<typename Tag>
-  Point_iterator hidden_points_begin_internal(typename boost::enable_if_c<Tag::value>::type* = NULL)
+  Point_iterator hidden_points_begin_internal(typename boost::enable_if_c<Tag::value>::type* = nullptr)
   {  return _hidden.begin(); }
   template<typename Tag>
-  Point_iterator hidden_points_end_internal(typename boost::enable_if_c<Tag::value>::type* = NULL)
+  Point_iterator hidden_points_end_internal(typename boost::enable_if_c<Tag::value>::type* = nullptr)
   { return _hidden.end(); }
 
   template<typename Tag>
-  Point_const_iterator hidden_points_begin_internal(typename boost::enable_if_c<Tag::value>::type* = NULL) const
+  Point_const_iterator hidden_points_begin_internal(typename boost::enable_if_c<Tag::value>::type* = nullptr) const
   { return _hidden.begin(); }
   template<typename Tag>
-  Point_const_iterator hidden_points_end_internal(typename boost::enable_if_c<Tag::value>::type* = NULL) const
+  Point_const_iterator hidden_points_end_internal(typename boost::enable_if_c<Tag::value>::type* = nullptr) const
   { return _hidden.end(); }
 
   template<typename Tag>
-  void hide_point_internal(const Point& p, typename boost::enable_if_c<Tag::value>::type* = NULL)
+  void hide_point_internal(const Point& p, typename boost::enable_if_c<Tag::value>::type* = nullptr)
   { _hidden.push_back(p); }
   template<typename Tag>
-  void unhide_point_internal(const Point_iterator pit, typename boost::enable_if_c<Tag::value>::type* = NULL)
+  void unhide_point_internal(const Point_iterator pit, typename boost::enable_if_c<Tag::value>::type* = nullptr)
   { _hidden.erase(pit); }
 
   // Memory_policy is Tag_false ------------------------------------------------
   template<typename Tag>
-  Point_iterator hidden_points_begin_internal(typename boost::disable_if_c<Tag::value>::type* = NULL)
+  Point_iterator hidden_points_begin_internal(typename boost::disable_if_c<Tag::value>::type* = nullptr)
   { return hidden_points_end(); }
   template<typename Tag>
-  Point_iterator hidden_points_end_internal(typename boost::disable_if_c<Tag::value>::type* = NULL)
+  Point_iterator hidden_points_end_internal(typename boost::disable_if_c<Tag::value>::type* = nullptr)
   { return _hidden.end(); }
 
     // const versions
   template<typename Tag>
-  Point_const_iterator hidden_points_begin_internal(typename boost::disable_if_c<Tag::value>::type* = NULL) const
+  Point_const_iterator hidden_points_begin_internal(typename boost::disable_if_c<Tag::value>::type* = nullptr) const
   { return hidden_points_end(); }
   template<typename Tag>
-  Point_const_iterator hidden_points_end_internal(typename boost::disable_if_c<Tag::value>::type* = NULL) const
+  Point_const_iterator hidden_points_end_internal(typename boost::disable_if_c<Tag::value>::type* = nullptr) const
   { return _hidden.end(); }
 
   template<typename Tag>
-  void hide_point_internal(const Point&, typename boost::disable_if_c<Tag::value>::type* = NULL)
+  void hide_point_internal(const Point&, typename boost::disable_if_c<Tag::value>::type* = nullptr)
   { }
   template<typename Tag>
-  void unhide_point_internal(const Point_iterator, typename boost::disable_if_c<Tag::value>::type* = NULL)
+  void unhide_point_internal(const Point_iterator, typename boost::disable_if_c<Tag::value>::type* = nullptr)
   { }
-
-  //note this function is not requested by the RegularTriangulationCellBase_3
-  //it should be replaced everywhere by weighted_circumcenter()
-  // but remains here for backward compatibility
-  template<typename GT_>
-  Point_3 circumcenter(const GT_& gt) const
-  {
-    CGAL_static_assertion((boost::is_same<Point_3,
-      typename GT_::Construct_weighted_circumcenter_3::result_type>::value));
-      return gt.construct_weighted_circumcenter_3_object()
-        (this->vertex(0)->point(),
-         this->vertex(1)->point(),
-         this->vertex(2)->point(),
-         this->vertex(3)->point());
-  }
-
-  Point_3 circumcenter() const
-  {
-    return circumcenter(Geom_traits());
-  }
 
   template<typename GT_>
   Point_3 weighted_circumcenter(const GT_& gt) const
   {
-    CGAL_static_assertion((boost::is_same<Point_3,
-      typename GT_::Construct_weighted_circumcenter_3::result_type>::value));
-      return gt.construct_weighted_circumcenter_3_object()
-        (this->vertex(0)->point(),
-         this->vertex(1)->point(),
-         this->vertex(2)->point(),
-         this->vertex(3)->point());
+    return gt.construct_weighted_circumcenter_3_object()(this->vertex(0)->point(),
+                                                         this->vertex(1)->point(),
+                                                         this->vertex(2)->point(),
+                                                         this->vertex(3)->point());
   }
 
   Point_3 weighted_circumcenter() const

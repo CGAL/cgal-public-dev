@@ -2,7 +2,7 @@
 namespace CGAL {
 
 /*!
-\ingroup PkgBGLHelper
+\ingroup BGLGraphExternalIndices
 
 The class `Linear_cell_complex_bgl_min_items` defines `void` as the information associated with darts, darts have ids and 0- and 2-attributes are enabled and have ids.
 
@@ -22,7 +22,7 @@ struct Linear_cell_complex_bgl_min_items
     typedef CGAL::Tag_true Darts_with_id;
     typedef CGAL::Cell_attribute_with_point_and_id<LCC> Vertex_attrib;
     typedef CGAL::Cell_attribute_with_id<LCC> Face_attrib;
-    typedef CGAL::cpp11::tuple<Vertex_attrib, void, Face_attrib> Attributes;
+    typedef std::tuple<Vertex_attrib, void, Face_attrib> Attributes;
   };
 };
 
@@ -31,10 +31,7 @@ struct Linear_cell_complex_bgl_min_items
 \sa `CGAL::Linear_cell_complex_min_item`
 
 */
-class Linear_cell_complex_bgl_min_items {
-public:
-
-/// @}
+struct Linear_cell_complex_bgl_min_items {
 
 }; /* end Linear_cell_complex_bgl_min_items */
 

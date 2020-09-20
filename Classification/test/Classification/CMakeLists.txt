@@ -1,62 +1,64 @@
 # Created by the script cgal_create_CMakeLists
 # This is the CMake script for compiling a set of CGAL applications.
 
+cmake_minimum_required(VERSION 3.1...3.15)
 project( Classification_Tests )
 
-
-cmake_minimum_required(VERSION 2.8.11)
 
 # CGAL and its components
 find_package( CGAL QUIET COMPONENTS  )
 
 if ( NOT CGAL_FOUND )
-
   message(STATUS "This project requires the CGAL library, and will not be compiled.")
-  return()  
-
+  return()
 endif()
-
-# include helper file
-include( ${CGAL_USE_FILE} )
-
 
 # Boost and its components
 find_package( Boost REQUIRED )
 
-# Use Eigen
-find_package(Eigen3 3.1.0) #(requires 3.1.0 or greater)
-if (EIGEN3_FOUND)
-  include( ${EIGEN3_USE_FILE} )
-endif()
-
 if ( NOT Boost_FOUND )
-
   message(STATUS "This project requires the Boost library, and will not be compiled.")
-
-  return()  
-
+  return()
 endif()
 
-find_package( TBB )
-if( TBB_FOUND )
-  include(${TBB_USE_FILE})
-  list(APPEND CGAL_3RD_PARTY_LIBRARIES ${TBB_LIBRARIES})
+set(Classification_dependencies_met TRUE)
+
+find_package( Boost OPTIONAL_COMPONENTS serialization iostreams )
+include(CGAL_Boost_serialization_support)
+include(CGAL_Boost_iostreams_support)
+
+if (NOT TARGET CGAL::Boost_serialization_support)
+  message(STATUS "NOTICE: This project requires Boost Serialization, and will not be compiled.")
+  set(Classification_dependencies_met FALSE)
+endif()
+if (NOT TARGET CGAL::Boost_iostreams_support)
+  message(STATUS "NOTICE: This project requires Boost IO Streams, and will not be compiled.")
+  set(Classification_dependencies_met FALSE)
 endif()
 
-# include for local directory
-include_directories( BEFORE include )
+find_package(Eigen3 3.1.0 REQUIRED) #(3.1.0 or greater)
+include(CGAL_Eigen_support)
+if (NOT TARGET CGAL::Eigen_support)
+  message(STATUS "This project requires the Eigen library, and will not be compiled.")
+  set(Classification_dependencies_met FALSE)
+endif()
 
-# include for local package
-include_directories( BEFORE ../../include )
+find_package(TBB QUIET)
+include(CGAL_TBB_support)
 
+if (NOT Classification_dependencies_met)
+  return()
+endif()
 
-# Creating entries for all C++ files with "main" routine
-# ##########################################################
+create_single_source_cgal_program( "test_classification_point_set.cpp" )
+create_single_source_cgal_program( "test_classification_io.cpp" )
 
-include( CGAL_CreateSingleSourceCGALProgram )
-
-#add_definitions("-DCGAL_DO_NOT_USE_BOYKOV_KOLMOGOROV_MAXFLOW_SOFTWARE")
-
-set(needed_cxx_features cxx_rvalue_references cxx_variadic_templates)
-create_single_source_cgal_program( "test_classification_point_set.cpp" CXX_FEATURES ${needed_cxx_features} )
-
+foreach(target test_classification_point_set test_classification_io)
+  target_link_libraries(${target} PUBLIC
+    CGAL::Eigen_support
+    CGAL::Boost_iostreams_support
+    CGAL::Boost_serialization_support)
+  if(TARGET CGAL::TBB_support)
+    target_link_libraries(${target} PUBLIC CGAL::TBB_support)
+  endif()
+endforeach()

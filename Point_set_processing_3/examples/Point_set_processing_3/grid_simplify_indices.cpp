@@ -23,7 +23,7 @@ int main(int argc, char*argv[])
   while(stream >> p >> v){
     points.push_back(p);
     normals.push_back(v);
-  } 
+  }
 
   std::cout << points.size() << " input points" << std::endl;
   std::vector<std::size_t> indices(points.size());
@@ -33,14 +33,13 @@ int main(int argc, char*argv[])
   // simplification by clustering using erase-remove idiom
   double cell_size = 0.05;
   std::vector<std::size_t>::iterator end;
-  end = CGAL::grid_simplify_point_set(indices.begin(),
-                                      indices.end(),
-                                      CGAL::make_property_map(points),
-                                      cell_size);
+  end = CGAL::grid_simplify_point_set(indices,
+                                      cell_size,
+                                      CGAL::parameters::point_map (CGAL::make_property_map(points)));
 
   std::size_t k = end - indices.begin();
 
-  std::cerr << "Keep " << k << " of " << indices.size() <<  "indices" << std::endl;
+  std::cerr << "Keep " << k << " of " << indices.size() <<  " indices" << std::endl;
 
   {
     std::vector<Point> tmp_points(k);

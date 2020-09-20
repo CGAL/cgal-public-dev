@@ -1,11 +1,11 @@
 namespace ArrTraits {
 /*!
-\ingroup PkgArrangement2ConceptsFunctionObjects
+\ingroup PkgArrangementOnSurface2ConceptsFunctionObjects
 \cgalConcept
 
 \cgalRefines AdaptableBinaryFunction
 
-\cgalHasModel ArrangementBasicTraits_2::Compare_xy_2 
+\cgalHasModel ArrangementBasicTraits_2::Compare_xy_2
 
 */
 
@@ -17,11 +17,11 @@ public:
 /// @{
 
 /*!
-returns `SMALLER`, `EQUAL`, or `LARGER` according 
-to the lexicographic \f$ xy\f$-order of the points `p1` and `p2`. 
-*/ 
-Comparison_result operator()(ArrTraits::Point_2 p1, 
-ArrTraits::Point_2 p2); 
+returns `SMALLER`, `EQUAL`, or `LARGER` according
+to the lexicographic \f$ xy\f$-order of the points `p1` and `p2`.
+*/
+Comparison_result operator()(ArrTraits::Point_2 p1,
+ArrTraits::Point_2 p2);
 
 /// @}
 

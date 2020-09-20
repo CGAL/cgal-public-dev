@@ -1,17 +1,14 @@
 //#define CGAL_PMP_REMESHING_VERBOSE
 //#define CGAL_PMP_REMESHING_DEBUG
 //#define CGAL_PMP_REMESHING_VERY_VERBOSE
+//#define CGAL_PMP_REMESHING_VERBOSE_PROGRESS
 
 #include <QtCore/qglobal.h>
 
 #include <CGAL/Three/Polyhedron_demo_plugin_interface.h>
 
-#ifdef USE_SURFACE_MESH
+
 #include "Scene_surface_mesh_item.h"
-#else
-#include "Scene_polyhedron_item.h"
-#include "Polyhedron_type.h"
-#endif
 
 #include "Scene_polyhedron_selection_item.h"
 
@@ -26,7 +23,7 @@
 #include <boost/unordered_set.hpp>
 #include <CGAL/property_map.h>
 
-#include <QTime>
+#include <QElapsedTimer>
 #include <QAction>
 #include <QMainWindow>
 #include <QApplication>
@@ -49,31 +46,12 @@
 
 #include "ui_Isotropic_remeshing_dialog.h"
 
-#ifdef USE_SURFACE_MESH
+
 typedef Scene_surface_mesh_item Scene_facegraph_item;
-#else
-typedef Scene_facegraph_item Scene_facegraph_item;
-#endif
 typedef Scene_facegraph_item::Face_graph FaceGraph;
 typedef boost::graph_traits<FaceGraph>::face_descriptor face_descriptor;
 
-template<class Mesh>
-#ifdef USE_SURFACE_MESH
-void reset_face_ids(Mesh&)
-{}
-#else
-void reset_face_ids(Mesh& mesh)
-{
-typename boost::property_map<Mesh, CGAL::face_index_t>::type fim
-  = get(CGAL::face_index, mesh);
 
-unsigned int id = 0;
-BOOST_FOREACH(face_descriptor f, faces(mesh))
-{
-  put(fim, f, id++);
-}
-}
-#endif
 // give a halfedge and a target edge length, put in `out` points
 // which the edge equally spaced such that splitting the edge
 // using the sequence of points make the edges shorter than
@@ -121,7 +99,7 @@ split_identical_edges(
   typedef boost::graph_traits<TriangleMesh> GT;
   typedef typename GT::halfedge_descriptor halfedge_descriptor;
 
-  BOOST_FOREACH(const Point_3& p, points)
+  for(const Point_3& p : points)
   {
     // split the edge
     halfedge_descriptor new_hd=CGAL::Euler::split_edge(hd,tm);
@@ -167,7 +145,7 @@ void split_long_duplicated_edge(const HedgeRange& hedge_range,
   CGAL_assertion_code(Point_3 tgt = get(pmap, target(hd, *p.second));)
 
   // split the edges and collect faces to triangulate
-  BOOST_FOREACH(const Pair& h_and_p, hedge_range)
+  for(const Pair& h_and_p : hedge_range)
   {
     halfedge_descriptor hc=h_and_p.first;
     TriangleMesh* polyc = h_and_p.second;
@@ -193,7 +171,7 @@ class Polyhedron_demo_isotropic_remeshing_plugin :
 {
   Q_OBJECT
   Q_INTERFACES(CGAL::Three::Polyhedron_demo_plugin_interface)
-  Q_PLUGIN_METADATA(IID "com.geometryfactory.PolyhedronDemo.PluginInterface/1.0")
+  Q_PLUGIN_METADATA(IID "com.geometryfactory.PolyhedronDemo.PluginInterface/1.0" FILE "isotropic_remeshing_plugin.json")
 
   typedef boost::graph_traits<FaceGraph>::edge_descriptor edge_descriptor;
   typedef boost::graph_traits<FaceGraph>::halfedge_descriptor halfedge_descriptor;
@@ -243,7 +221,7 @@ public:
                                    std::map<FaceGraph*,Edge_set>& edges_to_protect,
                                    double target_length)
   {
-    typedef Polyhedron::Point_3 Point_3;
+    typedef EPICK::Point_3 Point_3;
     typedef std::pair<Point_3,Point_3> Segment_3;
 
     typedef std::map< Segment_3,
@@ -252,10 +230,10 @@ public:
       CGAL::vertex_point_t>::type PointPMap;
     MapType duplicated_edges;
 
-    BOOST_FOREACH(Scene_facegraph_item* poly_item, selection){
+    for(Scene_facegraph_item* poly_item : selection){
       FaceGraph& pmesh = *poly_item->polyhedron();
       PointPMap pmap = get(boost::vertex_point, pmesh);
-      BOOST_FOREACH(edge_descriptor ed, edges(pmesh)){
+      for(edge_descriptor ed : edges(pmesh)){
         halfedge_descriptor hd = halfedge(ed,pmesh);
         Point_3 p = get(pmap, source(hd,pmesh)), q = get(pmap, target(hd,pmesh));
         Segment_3 s = CGAL::make_sorted_pair(p,q);
@@ -268,11 +246,11 @@ public:
     // consistently split duplicate edges and triangulate incident faces
     typedef std::pair<face_descriptor, FaceGraph*> Face_and_poly;
     std::set< Face_and_poly > faces_to_triangulate;
-    BOOST_FOREACH(const MapType::value_type& p, duplicated_edges)
+    for(const MapType::value_type& p : duplicated_edges)
       if (p.second.size()>1){
         //collect faces to retriangulate
         typedef std::pair<halfedge_descriptor, FaceGraph*> Pair_type;
-        BOOST_FOREACH(const Pair_type& h_and_p, p.second)
+        for(const Pair_type& h_and_p : p.second)
         {
           halfedge_descriptor hc=h_and_p.first;
           FaceGraph* polyc = h_and_p.second;
@@ -288,10 +266,39 @@ public:
       }
     // now retriangulate
     namespace PMP=CGAL::Polygon_mesh_processing;
-    BOOST_FOREACH(Face_and_poly f_and_p, faces_to_triangulate)
+    for(Face_and_poly f_and_p : faces_to_triangulate)
       PMP::triangulate_face(f_and_p.first, *f_and_p.second);
   }
 
+  void do_split_edges(Scene_polyhedron_selection_item* selection_item,
+                      SMesh& pmesh,
+                      double target_length)
+  {
+    std::vector<edge_descriptor> p_edges;
+    for(edge_descriptor e : edges(pmesh))
+    {
+      if(get(selection_item->constrained_edges_pmap(), e))
+        p_edges.push_back(e);
+    }
+    for(face_descriptor f : selection_item->selected_facets)
+    {
+      for(halfedge_descriptor he : halfedges_around_face(halfedge(f, pmesh), pmesh))
+      {
+        if (selection_item->selected_facets.find(face(opposite(he, pmesh), pmesh))
+            == selection_item->selected_facets.end())
+          p_edges.push_back(edge(he, pmesh));
+      }
+    }
+    if (!p_edges.empty())
+      CGAL::Polygon_mesh_processing::split_long_edges(
+            p_edges
+            , target_length
+            , *selection_item->polyhedron()
+            , PMP::parameters::geom_traits(EPICK())
+            .edge_is_constrained_map(selection_item->constrained_edges_pmap()));
+    else
+      std::cout << "No selected or boundary edges to be split" << std::endl;
+  }
 
 public Q_SLOTS:
   void isotropic_remeshing()
@@ -334,130 +341,216 @@ public Q_SLOTS:
       // wait cursor
       QApplication::setOverrideCursor(Qt::WaitCursor);
 
-      QTime time;
+      QElapsedTimer time;
       time.start();
 
       typedef boost::graph_traits<FaceGraph>::edge_descriptor edge_descriptor;
-      typedef boost::graph_traits<FaceGraph>::halfedge_descriptor halfedge_descriptor;
       typedef boost::graph_traits<FaceGraph>::face_descriptor face_descriptor;
 
-      const FaceGraph& pmesh = (poly_item != NULL)
+      FaceGraph& pmesh = (poly_item != NULL)
         ? *poly_item->polyhedron()
         : *selection_item->polyhedron();
 
-     reset_face_ids(pmesh);
+
+     Patch_id_pmap fpmap = get(CGAL::face_patch_id_t<int>(), pmesh);
+     bool fpmap_valid = false;
+     {
+       for(face_descriptor f : faces(pmesh))
+       {
+         if (get(fpmap, f) != 1)
+         {
+           fpmap_valid = true;
+           break;/*1 is the default value for both Surface_mesh and Polyhedron*/
+         }
+       }
+     }
+
       if (selection_item)
       {
         if (edges_only)
         {
-          std::vector<edge_descriptor> edges;
-          BOOST_FOREACH(edge_descriptor e, selection_item->selected_edges)
-          {
-            if (selection_item->selected_facets.find(face(halfedge(e, pmesh), pmesh))
-                 != selection_item->selected_facets.end()
-             || selection_item->selected_facets.find(face(opposite(halfedge(e, pmesh), pmesh), pmesh))
-                 != selection_item->selected_facets.end())
-              edges.push_back(e);
-          }
-          BOOST_FOREACH(face_descriptor f, selection_item->selected_facets)
-          {
-            BOOST_FOREACH(halfedge_descriptor he, halfedges_around_face(halfedge(f, pmesh), pmesh))
-            {
-              if (selection_item->selected_facets.find(face(opposite(he, pmesh), pmesh))
-                  == selection_item->selected_facets.end())
-              edges.push_back(edge(he, pmesh));
-            }
-          }
-          if (!edges.empty())
-            CGAL::Polygon_mesh_processing::split_long_edges(
-              edges
-              , target_length
-              , *selection_item->polyhedron()
-              , PMP::parameters::geom_traits(Kernel())
-              .edge_is_constrained_map(selection_item->constrained_edges_pmap()));
-          else
-            std::cout << "No selected or boundary edges to be split" << std::endl;
+          do_split_edges(selection_item, pmesh, target_length);
         }
-        else
+        else //not edges_only
         {
-          if (selection_item->selected_facets.empty() &&
-            (!selection_item->selected_edges.empty() || !selection_item->selected_vertices.empty()))
-          {
             if(protect &&
                !CGAL::Polygon_mesh_processing::internal::constraints_are_short_enough(
                  *selection_item->polyhedron(),
                  selection_item->constrained_edges_pmap(),
                  get(CGAL::vertex_point, *selection_item->polyhedron()),
+                 CGAL::Static_property_map<face_descriptor, std::size_t>(1),
                  4. / 3. * target_length))
             {
               QApplication::restoreOverrideCursor();
-              QMessageBox::warning(mw, tr("Error"),
-                                   tr("Isotropic remeshing : protect_constraints cannot be set to"
-                                      " true with constraints larger than 4/3 * target_edge_length."
-                                      " Remeshing aborted."),
-                                   QMessageBox::Ok);
-              return;
+              //If facets are selected, splitting edges will add facets that won't be selected, and it will mess up the rest.
+              //If there is only edges, it will work fine because new edges are dealt with in the code, so we can directly
+              //split and continue.
+              // Possibility todo: check if the barycenter of a new face is inside an old selected face to
+              //select it again.
+              if(!selection_item->selected_facets.empty())
+              {
+                QMessageBox::warning(mw, tr("Error"),
+                                      tr("Isotropic remeshing : protect_constraints cannot be set to"
+                                         " true with constraints larger than 4/3 * target_edge_length."
+                                         " Aborting."));
+                return;
+              }
+              else if(QMessageBox::question(mw, tr("Error"),
+                                            tr("Isotropic remeshing : protect_constraints cannot be set to"
+                                               " true with constraints larger than 4/3 * target_edge_length."
+                                               " Do you wish to split the constrained edges ?")) !=
+                      QMessageBox::Yes)
+              {
+                return;
+              }
+              else
+              {
+                QApplication::setOverrideCursor(Qt::WaitCursor);
+                do_split_edges(selection_item, pmesh, target_length);
+              }
             }
 
-            CGAL::Polygon_mesh_processing::isotropic_remeshing(
-              faces(*selection_item->polyhedron())
-              , target_length
-              , *selection_item->polyhedron()
-              , CGAL::Polygon_mesh_processing::parameters::number_of_iterations(nb_iter)
-              .protect_constraints(protect)
-              .edge_is_constrained_map(selection_item->constrained_edges_pmap())
-              .relax_constraints(smooth_features)
-              .number_of_relaxation_steps(nb_smooth)
-              .vertex_is_constrained_map(selection_item->constrained_vertices_pmap())
-
-              .face_patch_map(get(CGAL::face_patch_id_t<int>(), *selection_item->polyhedron())));
-          }
-          else
-            CGAL::Polygon_mesh_processing::isotropic_remeshing(
-              selection_item->selected_facets
-              , target_length
-              , *selection_item->polyhedron()
-              , CGAL::Polygon_mesh_processing::parameters::number_of_iterations(nb_iter)
-              .protect_constraints(protect)
-              .edge_is_constrained_map(selection_item->constrained_edges_pmap())
-              .relax_constraints(smooth_features)
-              .number_of_relaxation_steps(nb_smooth)
-              .vertex_is_constrained_map(selection_item->constrained_vertices_pmap())
-              .face_patch_map(get(CGAL::face_patch_id_t<int>(), *selection_item->polyhedron())));
+            if (selection_item->selected_facets.empty() && !selection_item->isEmpty())
+            {
+              if (fpmap_valid)
+                CGAL::Polygon_mesh_processing::isotropic_remeshing(faces(*selection_item->polyhedron())
+                   , target_length
+                   , *selection_item->polyhedron()
+                   , CGAL::Polygon_mesh_processing::parameters::number_of_iterations(nb_iter)
+                   .protect_constraints(protect)
+                   .edge_is_constrained_map(selection_item->constrained_edges_pmap())
+                   .relax_constraints(smooth_features)
+                   .number_of_relaxation_steps(nb_smooth)
+                   .vertex_is_constrained_map(selection_item->constrained_vertices_pmap())
+                   .face_patch_map(fpmap));
+              else
+                CGAL::Polygon_mesh_processing::isotropic_remeshing(faces(*selection_item->polyhedron())
+                   , target_length
+                   , *selection_item->polyhedron()
+                   , CGAL::Polygon_mesh_processing::parameters::number_of_iterations(nb_iter)
+                   .protect_constraints(protect)
+                   .edge_is_constrained_map(selection_item->constrained_edges_pmap())
+                   .relax_constraints(smooth_features)
+                   .number_of_relaxation_steps(nb_smooth)
+                   .vertex_is_constrained_map(selection_item->constrained_vertices_pmap())
+                                                                   );
+            }
+            else //selected_facets not empty
+            {
+              if (fpmap_valid)
+                CGAL::Polygon_mesh_processing::isotropic_remeshing(selection_item->selected_facets
+                  , target_length
+                  , *selection_item->polyhedron()
+                  , CGAL::Polygon_mesh_processing::parameters::number_of_iterations(nb_iter)
+                  .protect_constraints(protect)
+                  .edge_is_constrained_map(selection_item->constrained_edges_pmap())
+                  .relax_constraints(smooth_features)
+                  .number_of_relaxation_steps(nb_smooth)
+                  .vertex_is_constrained_map(selection_item->constrained_vertices_pmap())
+                  .face_patch_map(fpmap));
+              else
+                CGAL::Polygon_mesh_processing::isotropic_remeshing(selection_item->selected_facets
+                  , target_length
+                  , *selection_item->polyhedron()
+                  , CGAL::Polygon_mesh_processing::parameters::number_of_iterations(nb_iter)
+                  .protect_constraints(protect)
+                  .edge_is_constrained_map(selection_item->constrained_edges_pmap())
+                  .relax_constraints(smooth_features)
+                  .number_of_relaxation_steps(nb_smooth)
+                  .vertex_is_constrained_map(selection_item->constrained_vertices_pmap()));
+            }
         }
-#ifdef USE_SURFACE_MESH
+
+        SMesh mesh_ = *selection_item->polyhedron();
+        std::vector<bool> are_edges_removed;
+        are_edges_removed.resize(mesh_.number_of_edges()+mesh_.number_of_removed_edges());
+        std::vector<bool> are_edges_constrained;
+        are_edges_constrained.resize(are_edges_removed.size());
+        for(std::size_t i=0; i< are_edges_removed.size(); ++i)
+        {
+          are_edges_removed[i] = mesh_.is_removed(SMesh::Edge_index(static_cast<int>(i)));
+          if(!are_edges_removed[i])
+            are_edges_constrained[i] = get(selection_item->constrained_edges_pmap(), SMesh::Edge_index(static_cast<int>(i)));
+        }
+
+
+        int i0, i1,
+            nE(mesh_.number_of_edges()+mesh_.number_of_removed_edges());
+
+        //get constrained values in order.
+        if (nE > 0)
+        {
+          i0=0;  i1=nE-1;
+          while (1)
+          {
+            // find first removed and last un-removed
+            while (!are_edges_removed[i0] && i0 < i1) ++i0;
+            while ( are_edges_removed[i1] && i0 < i1) --i1;
+            if (i0 >= i1) break;
+
+            // swap
+            std::swap(are_edges_constrained[i0], are_edges_constrained[i1]);
+            std::swap(are_edges_removed[i0], are_edges_removed[i1]);
+          }
+          // remember new size
+          nE = are_edges_removed[i0] ? i0 : i0+1;
+        }
         selection_item->polyhedron_item()->setColor(
               selection_item->polyhedron_item()->color());
-        selection_item->polyhedron_item()->setItemIsMulticolor(false);
-        selection_item->polyhedron_item()->polyhedron()->collect_garbage();
-#else
-        if(!selection_item->polyhedron_item()->isItemMulticolor())
+        if(fpmap_valid)
         {
+          selection_item->polyhedron_item()->setItemIsMulticolor(true);
+          selection_item->polyhedron_item()->computeItemColorVectorAutomatically(true);
         }
-#endif
+        else
+        {
+          selection_item->polyhedron_item()->setItemIsMulticolor(false);
+        }
+
+        selection_item->polyhedron_item()->polyhedron()->collect_garbage();
+        //fix constrained_edges_map
+        for(int i=0; i< nE; ++i)
+        {
+          Scene_polyhedron_selection_item::Is_constrained_map<Scene_polyhedron_selection_item::Selection_set_edge>
+              pmap = selection_item->constrained_edges_pmap();
+          put(pmap, SMesh::Edge_index(i), are_edges_constrained[i]);
+        }
+
         selection_item->poly_item_changed();
         selection_item->clear<face_descriptor>();
         selection_item->changed_with_poly_item();
       }
       else if (poly_item)
       {
+        boost::property_map<FaceGraph, CGAL::edge_is_feature_t>::type eif
+          = get(CGAL::edge_is_feature, pmesh);
         if (edges_only)
         {
-          std::vector<halfedge_descriptor> border;
-          CGAL::Polygon_mesh_processing::border_halfedges(
-            faces(*poly_item->polyhedron()),
-            pmesh,
-            std::back_inserter(border));
-          std::vector<edge_descriptor> border_edges;
-          BOOST_FOREACH(halfedge_descriptor h, border)
-            border_edges.push_back(edge(h, pmesh));
+          std::vector<edge_descriptor> edges_to_split;
+          for(edge_descriptor e : edges(pmesh))
+          {
+            if( is_border(e, pmesh) || get(eif, e) )
+              edges_to_split.push_back(e);
+          }
 
-          if (!border_edges.empty())
-            CGAL::Polygon_mesh_processing::split_long_edges(
-              border_edges
-              , target_length
-              , *poly_item->polyhedron()
-              , PMP::parameters::geom_traits(Kernel()));
+          if (!edges_to_split.empty())
+          {
+            if (fpmap_valid)
+              CGAL::Polygon_mesh_processing::split_long_edges(
+                edges_to_split
+                , target_length
+                , pmesh
+                , PMP::parameters::geom_traits(EPICK())
+                . edge_is_constrained_map(eif)
+                . face_patch_map(fpmap));
+            else
+              CGAL::Polygon_mesh_processing::split_long_edges(
+                edges_to_split
+                , target_length
+                , pmesh
+                , PMP::parameters::geom_traits(EPICK())
+                . edge_is_constrained_map(eif));
+          }
           else
             std::cout << "No border to be split" << std::endl;
         }
@@ -471,26 +564,62 @@ public Q_SLOTS:
           if (preserve_duplicates)
           {
             detect_and_split_duplicates(poly_items, edges_to_protect_map, target_length);
-            reset_face_ids(pmesh);
+
           }
           Scene_polyhedron_selection_item::Is_constrained_map<Edge_set> ecm(&edges_to_protect);
+          for(edge_descriptor e : edges(pmesh))
+          {
+            if (eif[e])
+              edges_to_protect.insert(e);
+          }
 
-          CGAL::Polygon_mesh_processing::isotropic_remeshing(
-           faces(*poly_item->polyhedron())
-         , target_length
-         , *poly_item->polyhedron()
-         , CGAL::Polygon_mesh_processing::parameters::number_of_iterations(nb_iter)
-         .protect_constraints(protect)
-         .number_of_relaxation_steps(nb_smooth)
-         .face_patch_map(get(CGAL::face_patch_id_t<int>(), *poly_item->polyhedron()))
-         .edge_is_constrained_map(ecm)
-         .relax_constraints(smooth_features));
+          if(protect &&
+             !CGAL::Polygon_mesh_processing::internal::constraints_are_short_enough(
+               pmesh,
+               ecm,
+               get(CGAL::vertex_point, pmesh),
+               CGAL::Static_property_map<face_descriptor, std::size_t>(1),
+               4. / 3. * target_length))
+          {
+            QApplication::restoreOverrideCursor();
+            QMessageBox::warning(mw, tr("Error"),
+                                 tr("Isotropic remeshing : protect_constraints cannot be set to"
+                                    " true with constraints larger than 4/3 * target_edge_length."
+                                    " Aborting."));
+            return;
+          }
+          if (fpmap_valid)
+            CGAL::Polygon_mesh_processing::isotropic_remeshing(
+                 faces(*poly_item->polyhedron())
+               , target_length
+               , *poly_item->polyhedron()
+               , CGAL::Polygon_mesh_processing::parameters::number_of_iterations(nb_iter)
+               .protect_constraints(protect)
+               .number_of_relaxation_steps(nb_smooth)
+               .edge_is_constrained_map(ecm)
+               .relax_constraints(smooth_features)
+               .face_patch_map(fpmap));
+          else
+            CGAL::Polygon_mesh_processing::isotropic_remeshing(
+                 faces(*poly_item->polyhedron())
+               , target_length
+               , *poly_item->polyhedron()
+               , CGAL::Polygon_mesh_processing::parameters::number_of_iterations(nb_iter)
+               .protect_constraints(protect)
+               .number_of_relaxation_steps(nb_smooth)
+               .edge_is_constrained_map(ecm)
+               .relax_constraints(smooth_features));
         }
-        //destroys the patch_id_map for the Surface_mesh_item to avoid assertions.
-#ifdef USE_SURFACE_MESH
-        poly_item->setItemIsMulticolor(false);
-#endif
+        if (fpmap_valid)
+        {
+          poly_item->setItemIsMulticolor(true);
+          poly_item->show_feature_edges(true);
+        }
+        else
+          poly_item->setItemIsMulticolor(false);
+
         poly_item->invalidateOpenGLBuffers();
+
         Q_EMIT poly_item->itemChanged();
       }
       else{
@@ -513,7 +642,7 @@ public Q_SLOTS:
     bool smooth_features = true;
 
     std::vector<Scene_facegraph_item*> selection;
-    BOOST_FOREACH(int index, scene->selectionIndices())
+    for(int index : scene->selectionIndices())
     {
       Scene_facegraph_item* poly_item =
         qobject_cast<Scene_facegraph_item*>(scene->item(index));
@@ -569,7 +698,7 @@ public Q_SLOTS:
       detect_and_split_duplicates(selection, edges_to_protect, target_length);
 
 #ifdef CGAL_LINKED_WITH_TBB
-    QTime time;
+    QElapsedTimer time;
     time.start();
 
       tbb::parallel_for(
@@ -583,9 +712,9 @@ public Q_SLOTS:
 
     Remesh_polyhedron_item remesher(edges_only,
       target_length, nb_iter, protect, smooth_features);
-    BOOST_FOREACH(Scene_facegraph_item* poly_item, selection)
+    for(Scene_facegraph_item* poly_item : selection)
     {
-      QTime time;
+      QElapsedTimer time;
       time.start();
 
       remesher(poly_item, edges_to_protect[poly_item->polyhedron()]);
@@ -598,12 +727,10 @@ public Q_SLOTS:
     std::cout << "Remeshing of all selected items done in "
       << total_time << " ms" << std::endl;
 
-    BOOST_FOREACH(Scene_facegraph_item* poly_item, selection)
+    for(Scene_facegraph_item* poly_item : selection)
     {
-#ifdef USE_SURFACE_MESH
       //destroys the patch_id_map for the Surface_mesh_item to avoid assertions.
-      poly_item->setItemIsMulticolor(false);
-#endif
+      poly_item->resetColors();
       poly_item->invalidateOpenGLBuffers();
       Q_EMIT poly_item->itemChanged();
     }
@@ -632,7 +759,6 @@ private:
                 Edge_set& edges_to_protect) const
     {
       //fill face_index property map
-      reset_face_ids(*poly_item->polyhedron());
 
       if (edges_only_)
       {
@@ -642,7 +768,7 @@ private:
           , *poly_item->polyhedron()
           , std::back_inserter(border));
         std::vector<edge_descriptor> border_edges;
-        BOOST_FOREACH(halfedge_descriptor h, border)
+        for(halfedge_descriptor h : border)
           border_edges.push_back(edge(h, *poly_item->polyhedron()));
 
         CGAL::Polygon_mesh_processing::split_long_edges(
@@ -778,13 +904,8 @@ private:
     double diago_length = CGAL::sqrt((bbox.xmax()-bbox.xmin())*(bbox.xmax()-bbox.xmin())
                                    + (bbox.ymax()-bbox.ymin())*(bbox.ymax()-bbox.ymin())
                                    + (bbox.zmax()-bbox.zmin())*(bbox.zmax()-bbox.zmin()));
-    double log = std::log10(diago_length);
-    unsigned int nb_decimals = (log > 0) ? 5 : (std::ceil(-log)+3);
 
-    ui.edgeLength_dspinbox->setDecimals(nb_decimals);
-    ui.edgeLength_dspinbox->setSingleStep(1e-3);
-    ui.edgeLength_dspinbox->setRange(1e-6 * diago_length, //min
-                                     2.   * diago_length);//max
+
     ui.edgeLength_dspinbox->setValue(0.05 * diago_length);
 
     std::ostringstream oss;

@@ -2,18 +2,10 @@
 // All rights reserved.
 //
 // This file is part of CGAL (www.cgal.org).
-// You can redistribute it and/or modify it under the terms of the GNU
-// General Public License as published by the Free Software Foundation,
-// either version 3 of the License, or (at your option) any later version.
-//
-// Licensees holding a valid commercial license may use this file in
-// accordance with the commercial license agreement provided with the software.
-//
-// This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
-// WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 //
 // $URL$
 // $Id$
+// SPDX-License-Identifier: GPL-3.0-or-later OR LicenseRef-Commercial
 //
 // Author(s)     : Simon Giraudot
 
@@ -24,6 +16,12 @@
 
 #include <CGAL/Classification/Label.h>
 #include <CGAL/Classification/Label_set.h>
+
+#include <boost/iterator/zip_iterator.hpp>
+#include <CGAL/Iterator_range.h>
+
+#include <map>
+#include <cmath> // for std::isnan
 
 namespace CGAL {
 
@@ -51,7 +49,7 @@ public:
   /// \name Constructor
   /// @{
 
-  
+
 /*!
 
   \brief Instantiates an evaluation object and computes all
@@ -68,10 +66,10 @@ public:
   a classification.
 
 */
-  template <typename LabelIndexRange>
+  template <typename GroundTruthIndexRange, typename ResultIndexRange>
   Evaluation (const Label_set& labels,
-              const LabelIndexRange& ground_truth,
-              const LabelIndexRange& result)
+              const GroundTruthIndexRange& ground_truth,
+              const ResultIndexRange& result)
     : m_precision (labels.size()),
       m_recall (labels.size()),
       m_iou (labels.size())
@@ -85,11 +83,14 @@ public:
 
     std::size_t sum_true_positives = 0;
     std::size_t total = 0;
-    
-    for (std::size_t j = 0; j < ground_truth.size(); ++ j)
+
+    for (const auto& zip : CGAL::make_range (boost::make_zip_iterator
+                                             (boost::make_tuple(ground_truth.begin(), result.begin())),
+                                             boost::make_zip_iterator
+                                             (boost::make_tuple(ground_truth.end(), result.end()))))
     {
-      int gt = static_cast<int>(ground_truth[j]);
-      int res = static_cast<int>(result[j]);
+      int gt = static_cast<int>(boost::get<0>(zip));
+      int res = static_cast<int>(boost::get<1>(zip));
       if (gt == -1 || res == -1)
         continue;
       ++ total;
@@ -105,20 +106,26 @@ public:
 
     m_mean_iou = 0.;
     m_mean_f1 = 0.;
-    
+
+    std::size_t correct_labels = 0;
+
     for (std::size_t j = 0; j < labels.size(); ++ j)
     {
       m_precision[j] = true_positives[j] / float(true_positives[j] + false_positives[j]);
       m_recall[j] = true_positives[j] / float(true_positives[j] + false_negatives[j]);
       m_iou[j] = true_positives[j] / float(true_positives[j] + false_positives[j] + false_negatives[j]);
 
+      if (std::isnan(m_iou[j]))
+        continue;
+
+      ++ correct_labels;
       m_mean_iou += m_iou[j];
       m_mean_f1 += 2.f * (m_precision[j] * m_recall[j])
         / (m_precision[j] + m_recall[j]);
     }
 
-    m_mean_iou /= labels.size();
-    m_mean_f1 /= labels.size();
+    m_mean_iou /= correct_labels;
+    m_mean_f1 /= correct_labels;
     m_accuracy = sum_true_positives / float(total);
   }
 
@@ -186,11 +193,11 @@ public:
   }
 
   /// @}
-  
+
   /// \name Global Evaluation
   /// @{
 
-  
+
   /*!
     \brief Returns the accuracy of the training.
 
@@ -198,13 +205,13 @@ public:
     total number of provided inliers.
   */
   float accuracy() const { return m_accuracy; }
-  
+
   /*!
     \brief Returns the mean \f$F_1\f$ score of the training over all
     labels (see `f1_score()`).
   */
   float mean_f1_score() const { return m_mean_f1; }
-  
+
   /*!
     \brief Returns the mean intersection over union of the training
     over all labels (see `intersection_over_union()`).
@@ -212,13 +219,12 @@ public:
   float mean_intersection_over_union() const { return m_mean_iou; }
 
   /// @}
-  
+
 };
-  
-  
+
+
 } // namespace Classification
 
 } // namespace CGAL
 
 #endif // CGAL_CLASSIFICATION_EVALUATION_H
-

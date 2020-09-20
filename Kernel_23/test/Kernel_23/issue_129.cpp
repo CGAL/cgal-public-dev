@@ -4,13 +4,9 @@
 // Licensees holding a valid commercial license may use this file in
 // accordance with the commercial license agreement provided with the software.
 //
-// This file is part of CGAL (www.cgal.org); you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public License as
-// published by the Free Software Foundation; version 2.1 of the License.
-// See the file LICENSE.LGPL distributed with CGAL.
+// This file is part of CGAL (www.cgal.org)
 //
-// This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
-// WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+// SPDX-License-Identifier: LGPL-2.1-only
 //
 // Author(s)     : Philipp Moeller
 
@@ -26,7 +22,7 @@
 int main()
 {
   try {
-    CGAL::Point_3<CGAL::Epick> a, b, c, d;
+    CGAL::Point_3<CGAL::Epick> a(CGAL::ORIGIN), b(a), c(a), d(a);
     CGAL::squared_radius(a, b, c, d);
   } catch(...) {}
   return EXIT_SUCCESS;

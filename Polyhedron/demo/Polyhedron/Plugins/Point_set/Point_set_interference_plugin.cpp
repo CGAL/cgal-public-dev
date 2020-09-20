@@ -16,11 +16,8 @@
 #include <QMainWindow>
 
 using namespace CGAL::Three;
-#ifdef CGAL_LINKED_WITH_TBB
-typedef CGAL::Parallel_tag Concurrency_tag;
-#else
-typedef CGAL::Sequential_tag Concurrency_tag;
-#endif
+
+typedef CGAL::Parallel_if_available_tag Concurrency_tag;
 
 class  Point_set_interference_plugin:
     public QObject,
@@ -72,9 +69,9 @@ private Q_SLOTS:
       return;
 
     double average_spacing = CGAL::compute_average_spacing<Concurrency_tag>(
-                                    points->begin_or_selection_begin(), points->end(),
-                                    points->point_map(),
-                                    6 /* knn = 1 ring */);
+      points->all_or_selection_if_not_empty(),
+      6 /* knn = 1 ring */,
+      points->parameters());
 
     const double max_dist =
         QInputDialog::getDouble((QWidget*)mw,

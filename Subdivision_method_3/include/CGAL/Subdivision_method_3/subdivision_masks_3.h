@@ -2,19 +2,11 @@
 //
 // Copyright (c) 2005-2017 GeometryFactory (France).  All Rights Reserved.
 //
-// This file is part of CGAL (www.cgal.org); you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public License as
-// published by the Free Software Foundation; either version 3 of the License,
-// or (at your option) any later version.
-//
-// Licensees holding a valid commercial license may use this file in
-// accordance with the commercial license agreement provided with the software.
-//
-// This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
-// WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+// This file is part of CGAL (www.cgal.org)
 //
 // $URL$
 // $Id$
+// SPDX-License-Identifier: LGPL-3.0-or-later OR LicenseRef-Commercial
 //
 //
 // Author(s): Le-Jeng Shiue <Andy.Shiue@gmail.com>
@@ -29,6 +21,7 @@
 
 #include <CGAL/circulator.h>
 #include <CGAL/boost/graph/iterator.h>
+#include <CGAL/boost/graph/property_maps.h>
 
 namespace CGAL {
 
@@ -92,6 +85,8 @@ public:
   typedef typename Base::FT                          FT;
   typedef typename Base::Point                       Point;
   typedef typename Base::Vector                      Vector;
+
+  typedef typename boost::property_traits<VertexPointMap>::reference Point_ref;
 #endif
 
 public:
@@ -106,7 +101,7 @@ public:
   void face_node(face_descriptor facet, Point& pt) {
     int n = 0;
     Point p(0,0,0);
-    BOOST_FOREACH(vertex_descriptor vd,
+    for(vertex_descriptor vd :
                   vertices_around_face(halfedge(facet, *(this->pmesh)), *(this->pmesh)))
     {
       p = p + ( get(this->vpmap,vd) - ORIGIN);
@@ -116,8 +111,8 @@ public:
   }
 
   void edge_node(halfedge_descriptor edge, Point& pt) {
-    const Point& p1 = get(this->vpmap, target(edge, *(this->pmesh)));
-    const Point& p2 = get(this->vpmap, source(edge, *(this->pmesh)));
+    Point_ref p1 = get(this->vpmap, target(edge, *(this->pmesh)));
+    Point_ref p2 = get(this->vpmap, source(edge, *(this->pmesh)));
     pt = Point((p1[0]+p2[0])/2, (p1[1]+p2[1])/2, (p1[2]+p2[2])/2);
   }
 
@@ -132,7 +127,7 @@ public:
 
 // ======================================================================
 /*!
-\ingroup PkgSurfaceSubdivisionMethods3
+\ingroup PkgSurfaceSubdivisionMethod3Ref
 
 The geometry mask of Catmull-Clark subdivision.
 
@@ -172,6 +167,8 @@ public:
   typedef typename Base::FT                          FT;
   typedef typename Base::Point                       Point;
   typedef typename Base::Vector                      Vector;
+
+  typedef typename boost::property_traits<VertexPointMap>::reference Point_ref;
 #endif
 
 public:
@@ -196,8 +193,8 @@ public:
 
   /// computes the Catmull-Clark edge-point `pt` of the edge `edge`.
   void edge_node(halfedge_descriptor edge, Point& pt) {
-    const Point& p1 = get(this->vpmap,target(edge, *(this->pmesh)));
-    const Point& p2 = get(this->vpmap,source(edge, *(this->pmesh)));
+    Point_ref p1 = get(this->vpmap,target(edge, *(this->pmesh)));
+    Point_ref p2 = get(this->vpmap,source(edge, *(this->pmesh)));
     Point f1, f2;
     this->face_node(face(edge, *(this->pmesh)), f1);
     this->face_node(face(opposite(edge, *(this->pmesh)), *(this->pmesh)), f2);
@@ -209,14 +206,14 @@ public:
   /// computes the Catmull-Clark vertex-point `pt` of the vertex `vertex`.
   void vertex_node(vertex_descriptor vertex, Point& pt) {
     Halfedge_around_target_circulator<Mesh> vcir(vertex, *(this->pmesh));
-    typename boost::graph_traits<Mesh>::degree_size_type n = degree(vertex, *(this->pmesh));
+    int n = static_cast<int>(degree(vertex, *(this->pmesh)));
 
     FT Q[] = {0.0, 0.0, 0.0}, R[] = {0.0, 0.0, 0.0};
-    Point& S = get(this->vpmap,vertex);
+    Point_ref S = get(this->vpmap,vertex);
 
     Point q;
-    for (unsigned int i = 0; i < n; i++, ++vcir) {
-      const Point& p2 = get(this->vpmap, target(opposite(*vcir, *(this->pmesh)), *(this->pmesh)));
+    for (int i = 0; i < n; i++, ++vcir) {
+      Point_ref p2 = get(this->vpmap, target(opposite(*vcir, *(this->pmesh)), *(this->pmesh)));
       R[0] += (S[0] + p2[0]) / 2;
       R[1] += (S[1] + p2[1]) / 2;
       R[2] += (S[2] + p2[2]) / 2;
@@ -236,15 +233,15 @@ public:
   /// computes the Catmull-Clark edge-point `ept` and the Catmull-Clark
   /// vertex-point `vpt` of the border edge `edge`.
   void border_node(halfedge_descriptor edge, Point& ept, Point& vpt) {
-    const Point& ep1 = get(this->vpmap,target(edge, *(this->pmesh)));
-    const Point& ep2 = get(this->vpmap,target(opposite(edge, *(this->pmesh)), *(this->pmesh)));
+    Point_ref ep1 = get(this->vpmap,target(edge, *(this->pmesh)));
+    Point_ref ep2 = get(this->vpmap,target(opposite(edge, *(this->pmesh)), *(this->pmesh)));
     ept = Point((ep1[0]+ep2[0])/2, (ep1[1]+ep2[1])/2, (ep1[2]+ep2[2])/2);
 
     Halfedge_around_target_circulator<Mesh> vcir(edge, *(this->pmesh));
-    const Point& vp1  = get(this->vpmap,target(opposite(*vcir, *(this->pmesh)), *(this->pmesh)));
-    const Point& vp0  = get(this->vpmap, target(*vcir, *(this->pmesh)));
+    Point_ref vp1  = get(this->vpmap,target(opposite(*vcir, *(this->pmesh)), *(this->pmesh)));
+    Point_ref vp0  = get(this->vpmap, target(*vcir, *(this->pmesh)));
     --vcir;
-    const Point& vp_1 = get(this->vpmap, target(opposite(*vcir, *(this->pmesh)), *(this->pmesh)));
+    Point_ref vp_1 = get(this->vpmap, target(opposite(*vcir, *(this->pmesh)), *(this->pmesh)));
     vpt = Point((vp_1[0] + 6*vp0[0] + vp1[0])/8,
                 (vp_1[1] + 6*vp0[1] + vp1[1])/8,
                 (vp_1[2] + 6*vp0[2] + vp1[2])/8 );
@@ -254,7 +251,7 @@ public:
 
 // ======================================================================
 /*!
-\ingroup PkgSurfaceSubdivisionMethods3
+\ingroup PkgSurfaceSubdivisionMethod3Ref
 
 The geometry mask of Loop subdivision.
 
@@ -295,6 +292,7 @@ public:
   typedef typename Base::FT                          FT;
   typedef typename Base::Point                       Point;
   typedef typename Base::Vector                      Vector;
+  typedef typename boost::property_traits<VertexPointMap>::reference Point_ref;
 #endif
 
   typedef Halfedge_around_face_circulator<Mesh> Halfedge_around_facet_circulator;
@@ -322,10 +320,10 @@ public:
 
   /// computes the Loop edge-point `pt` of the edge `edge`.
   void edge_node(halfedge_descriptor edge, Point& pt) {
-    const Point& p1 = get(this->vpmap,target(edge, *(this->pmesh)));
-    const Point& p2 = get(this->vpmap,target(opposite(edge, *(this->pmesh)), *(this->pmesh)));
-    const Point& f1 = get(this->vpmap,target(next(edge, *(this->pmesh)), *(this->pmesh)));
-    const Point& f2 = get(this->vpmap,target(next(opposite(edge, *(this->pmesh)), *(this->pmesh)), *(this->pmesh)));
+    Point_ref p1 = get(this->vpmap,target(edge, *(this->pmesh)));
+    Point_ref p2 = get(this->vpmap,target(opposite(edge, *(this->pmesh)), *(this->pmesh)));
+    Point_ref f1 = get(this->vpmap,target(next(edge, *(this->pmesh)), *(this->pmesh)));
+    Point_ref f2 = get(this->vpmap,target(next(opposite(edge, *(this->pmesh)), *(this->pmesh)), *(this->pmesh)));
 
     pt = Point((3*(p1[0]+p2[0])+f1[0]+f2[0])/8,
                (3*(p1[1]+p2[1])+f1[1]+f2[1])/8,
@@ -338,11 +336,11 @@ public:
     size_t n = circulator_size(vcir);
 
     FT R[] = {0.0, 0.0, 0.0};
-    const Point& S = get(this->vpmap,vertex);
+    Point_ref S = get(this->vpmap,vertex);
 
     for (size_t i = 0; i < n; i++, ++vcir) {
-      const Point& p = get(this->vpmap,target(opposite(*vcir, *(this->pmesh)), *(this->pmesh)));
-      R[0] += p[0]; 	R[1] += p[1]; 	R[2] += p[2];
+      Point_ref p = get(this->vpmap,target(opposite(*vcir, *(this->pmesh)), *(this->pmesh)));
+      R[0] += p[0];         R[1] += p[1];         R[2] += p[2];
     }
     if (n == 6) {
       pt = Point((10*S[0]+R[0])/16, (10*S[1]+R[1])/16, (10*S[2]+R[2])/16);
@@ -360,15 +358,15 @@ public:
 
   /// computes the Loop edge-point `ept` and the Loop vertex-point `vpt` of the border edge `edge`.
   void border_node(halfedge_descriptor edge, Point& ept, Point& vpt) {
-    const Point& ep1 = get(this->vpmap,target(edge, *(this->pmesh)));
-    const Point& ep2 = get(this->vpmap,target(opposite(edge, *(this->pmesh)), *(this->pmesh)));
+    Point_ref ep1 = get(this->vpmap,target(edge, *(this->pmesh)));
+    Point_ref ep2 = get(this->vpmap,target(opposite(edge, *(this->pmesh)), *(this->pmesh)));
     ept = Point((ep1[0]+ep2[0])/2, (ep1[1]+ep2[1])/2, (ep1[2]+ep2[2])/2);
 
     Halfedge_around_vertex_circulator vcir(edge, *(this->pmesh));
-    const Point& vp1  = get(this->vpmap,target(opposite(*vcir, *(this->pmesh) ), *(this->pmesh)));
-    const Point& vp0  = get(this->vpmap,target(*vcir, *(this->pmesh)));
+    Point_ref vp1  = get(this->vpmap,target(opposite(*vcir, *(this->pmesh) ), *(this->pmesh)));
+    Point_ref vp0  = get(this->vpmap,target(*vcir, *(this->pmesh)));
     --vcir;
-    const Point& vp_1 = get(this->vpmap,target(opposite(*vcir, *(this->pmesh)), *(this->pmesh)));
+    Point_ref vp_1 = get(this->vpmap,target(opposite(*vcir, *(this->pmesh)), *(this->pmesh)));
     vpt = Point((vp_1[0] + 6*vp0[0] + vp1[0])/8,
                 (vp_1[1] + 6*vp0[1] + vp1[1])/8,
                 (vp_1[2] + 6*vp0[2] + vp1[2])/8 );
@@ -415,7 +413,7 @@ public:
 
 // ======================================================================
 /*!
-\ingroup PkgSurfaceSubdivisionMethods3
+\ingroup PkgSurfaceSubdivisionMethod3Ref
 
 The geometry mask of Doo-Sabin subdivision.
 
@@ -456,6 +454,7 @@ public:
   typedef typename Base::FT                          FT;
   typedef typename Base::Point                       Point;
   typedef typename Base::Vector                      Vector;
+  typedef typename boost::property_traits<VertexPointMap>::reference Point_ref;
 #endif
 
 public:
@@ -505,11 +504,12 @@ public:
     }
     pt = CGAL::ORIGIN + cv;
   }
+/// @}
 };
 
 // ======================================================================
 /*!
-\ingroup PkgSurfaceSubdivisionMethods3
+\ingroup PkgSurfaceSubdivisionMethod3Ref
 
 The geometry mask of Sqrt(3) subdivision.
 
@@ -573,12 +573,12 @@ public:
   /// computes the \f$ \sqrt{3}\f$ vertex-point `pt` of the vertex `vd`.
   void vertex_node(vertex_descriptor vertex, Point& pt) {
     Halfedge_around_target_circulator<Mesh> vcir(vertex, *(this->pmesh));
-    const size_t n = degree(vertex, *(this->pmesh));
+    const typename boost::graph_traits<Mesh>::degree_size_type n = degree(vertex, *(this->pmesh));
 
     const FT a = (FT) ((4.0-2.0*std::cos(2.0*CGAL_PI/(double)n))/9.0);
 
     Vector cv = ((FT)(1.0-a)) * (get(this->vpmap, vertex) - CGAL::ORIGIN);
-    for (size_t i = 1; i <= n; ++i, --vcir) {
+    for (typename boost::graph_traits<Mesh>::degree_size_type i = 1; i <= n; ++i, --vcir) {
       cv = cv + (a/FT(n))*(get(this->vpmap, target(opposite(*vcir, *(this->pmesh)), *(this->pmesh)))-CGAL::ORIGIN);
     }
 
@@ -610,6 +610,7 @@ public:
     ept2 = CGAL::ORIGIN + denom * ( 10.*sv + 16.*tv + next_tv );
     vpt = CGAL::ORIGIN + 1./27. * ( 4*prev_sv + 19*sv + 4*tv );
   }
+/// @}
 };
 
 } // namespace CGAL

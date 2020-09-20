@@ -2,18 +2,10 @@
 // All rights reserved.
 //
 // This file is part of CGAL (www.cgal.org).
-// You can redistribute it and/or modify it under the terms of the GNU
-// General Public License as published by the Free Software Foundation,
-// either version 3 of the License, or (at your option) any later version.
-//
-// Licensees holding a valid commercial license may use this file in
-// accordance with the commercial license agreement provided with the software.
-//
-// This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
-// WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 //
 // $URL$
 // $Id$
+// SPDX-License-Identifier: GPL-3.0-or-later OR LicenseRef-Commercial
 //
 //
 // Author(s)     : Ron Wein <wein@post.tau.ac.il>
@@ -24,48 +16,71 @@
 
 #include <CGAL/license/Arrangement_on_surface_2.h>
 
-
 /*! \file
+ *
  * Definition of the Arr_spherical_construction_helper class-template.
  */
 
-#include <CGAL/Sweep_line_empty_visitor.h>
+#include <CGAL/Arr_accessor.h>
 #include <CGAL/Unique_hash_map.h>
 
 namespace CGAL {
 
 /*! \class Arr_spherical_construction_helper
+ *
  * A helper class for the construction sweep-line visitor, suitable
  * for an Arrangement_on_surface_2 instantiated with a topology-traits class
  * for bounded curves in the plane.
  */
-template <typename Traits_, typename Arrangement_, typename Event_,
+template <typename GeometryTraits_2, typename Arrangement_, typename Event_,
           typename Subcurve_>
 class Arr_spherical_construction_helper {
 public:
-  typedef Traits_                                         Traits_2;
-  typedef Arrangement_                                    Arrangement_2;
-  typedef Event_                                          Event;
-  typedef Subcurve_                                       Subcurve;
-
-  typedef typename Traits_2::X_monotone_curve_2           X_monotone_curve_2;
-  typedef typename Traits_2::Point_2                      Point_2;
-
-  typedef Sweep_line_empty_visitor<Traits_2, Subcurve, Event>
-                                                          Base_visitor;
-
-  typedef typename Arrangement_2::Vertex_handle           Vertex_handle;
-  typedef typename Arrangement_2::Halfedge_handle         Halfedge_handle;
-  typedef typename Arrangement_2::Face_handle             Face_handle;
-
-  typedef typename Subcurve::Halfedge_indices_list        Indices_list;
-  typedef Unique_hash_map<Halfedge_handle, Indices_list>  Halfedge_indices_map;
+  typedef GeometryTraits_2                              Geometry_traits_2;
+  typedef Arrangement_                                  Arrangement_2;
+  typedef Event_                                        Event;
+  typedef Subcurve_                                     Subcurve;
+  typedef typename Subcurve::Allocator                  Allocator;
 
 protected:
-  typedef typename Arrangement_2::Topology_traits         Topology_traits;
+  typedef Geometry_traits_2                             Gt2;
 
-  typedef typename Topology_traits::Vertex                DVertex;
-  typedef typename Topology_traits::Halfedge              DHalfedge;
+public:
+  typedef typename Gt2::X_monotone_curve_2              X_monotone_curve_2;
+  typedef typename Gt2::Point_2                         Point_2;
+
+  typedef typename Arrangement_2::Vertex_handle         Vertex_handle;
+  typedef typename Arrangement_2::Halfedge_handle       Halfedge_handle;
+  typedef typename Arrangement_2::Face_handle           Face_handle;
+
+  typedef typename Subcurve::Halfedge_indices_list      Indices_list;
+  typedef Unique_hash_map<Halfedge_handle, Indices_list>
+    Halfedge_indices_map;
+
+  /*! \struct rebind
+   * An auxiliary structure for rebinding the helper with a new types.
+   * Mainly used to rebind the geometry-traits type and a new type that derives
+   * from the old one.
+   */
+  template <typename OtherGeometryTraits_2, typename OtherArrangement,
+            typename OtherEvent, typename OtherSubcurve>
+  struct rebind {
+    typedef Arr_spherical_construction_helper<OtherGeometryTraits_2,
+                                              OtherArrangement,
+                                              OtherEvent, OtherSubcurve>
+                                                        other;
+  };
+
+  // The following should be private. It is declared 'protected' as a
+  // workaround to a problem with VC. (At least VC 14 exhibits this problem).
+  // When declared private, VC claims that Gt2 is private (within
+  // Arr_spherical_construction_helper); thus, it cannot be access by
+  // Arr_spherical_construction_helper.
+protected:
+  typedef typename Arrangement_2::Topology_traits       Topology_traits;
+
+  typedef typename Topology_traits::Vertex              DVertex;
+  typedef typename Topology_traits::Halfedge            DHalfedge;
 
   // Data members:
 
@@ -90,7 +105,7 @@ public:
   Arr_spherical_construction_helper(Arrangement_2* arr) :
     m_top_traits(arr->topology_traits()),
     m_arr_access(*arr),
-    m_he_ind_map_p(NULL)
+    m_he_ind_map_p(nullptr)
   {}
 
   /*! Destructor. */
@@ -148,7 +163,7 @@ public:
    */
   void splice_indices_list(Halfedge_handle he)
   {
-    CGAL_assertion(m_he_ind_map_p != NULL);
+    CGAL_assertion(m_he_ind_map_p != nullptr);
     Indices_list& list_ref = (*m_he_ind_map_p)[he];
     list_ref.splice(list_ref.end(), m_subcurves_at_nf);
   }
@@ -264,6 +279,6 @@ before_handle_event(Event* event)
   }
 }
 
-} //namespace CGAL
+} // namespace CGAL
 
 #endif

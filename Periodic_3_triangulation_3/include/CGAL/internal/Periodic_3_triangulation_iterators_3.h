@@ -2,18 +2,10 @@
 // All rights reserved.
 //
 // This file is part of CGAL (www.cgal.org).
-// You can redistribute it and/or modify it under the terms of the GNU
-// General Public License as published by the Free Software Foundation,
-// either version 3 of the License, or (at your option) any later version.
-//
-// Licensees holding a valid commercial license may use this file in
-// accordance with the commercial license agreement provided with the software.
-//
-// This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
-// WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 //
 // $URL$
 // $Id$
+// SPDX-License-Identifier: GPL-3.0-or-later OR LicenseRef-Commercial
 //
 //
 // Author(s)     : Monique Teillaud <Monique.Teillaud@sophia.inria.fr>
@@ -38,7 +30,7 @@ class Periodic_3_triangulation_tetrahedron_iterator_3 {
 // - UNIQUE: output exactly one periodic copy of each primitive, no matter
 //     whether the current tds stores a n-sheeted covering for n!=1.
 // - STORED_COVER_DOMAIN: output each primitive whose intersection with the
-//     actually used periodic domain is non-zero.
+//     fundamental domain is non-zero.
 // - UNIQUE_COVER_DOMAIN: output each primitive whose intersection
 //     with the original domain that the user has given is non-zero
 //
@@ -65,7 +57,7 @@ public:
   typedef typename T::Iterator_type                       Iterator_type;
 
   Periodic_3_triangulation_tetrahedron_iterator_3(Iterator_type it = T::STORED)
-    : _t(NULL), _it(it), _off(0) {}
+    : _t(nullptr), _it(it), _off(0) {}
 
   Periodic_3_triangulation_tetrahedron_iterator_3(const T * t,
                                                   Iterator_type it = T::STORED)
@@ -264,7 +256,7 @@ private:
   int get_drawing_offsets() {
     Offset off0, off1, off2, off3;
     // Choose edges that are to be duplicated. These are edges that
-    // intersect the boundary of the periodic domain. In UNIQUE mode
+    // intersect the boundary of the fundamental domain. In UNIQUE mode
     // this means that the offset with respect to drawing should
     // differ in some entries. Otherwise we consider the offsets
     // internally stored inside the cell telling us that this cell
@@ -343,7 +335,7 @@ class Periodic_3_triangulation_triangle_iterator_3 {
 // - UNIQUE: output exactly one periodic copy of each primitive, no matter
 //     whether the current tds stores a n-sheeted covering for n!=1.
 // - STORED_COVER_DOMAIN: output each primitive whose intersection with the
-//     actually used periodic domain is non-zero.
+//     fundamental domain is non-zero.
 // - UNIQUE_COVER_DOMAIN: output each primitive whose intersection
 //     with the original domain that the user has given is non-zero
 //
@@ -371,7 +363,7 @@ public:
   typedef typename T::Iterator_type                       Iterator_type;
 
   Periodic_3_triangulation_triangle_iterator_3(Iterator_type it = T::STORED)
-    : _t(NULL), _it(it), _off(0) {}
+    : _t(nullptr), _it(it), _off(0) {}
 
   Periodic_3_triangulation_triangle_iterator_3(const T * t,
                                                Iterator_type it = T::STORED)
@@ -567,7 +559,7 @@ private:
   int get_drawing_offsets() {
     Offset off0, off1, off2;
     // Choose edges that are to be duplicated. These are edges that
-    // intersect the boundary of the periodic domain. In UNIQUE mode
+    // intersect the boundary of the fundamental domain. In UNIQUE mode
     // this means that the offset with respect to drawing should
     // differ in some entries. Otherwise we consider the offsets
     // internally stored inside the cell telling us that this cell
@@ -633,7 +625,7 @@ class Periodic_3_triangulation_segment_iterator_3 {
 // - UNIQUE: output exactly one periodic copy of each primitive, no matter
 //     whether the current tds stores a n-sheeted covering for n!=1.
 // - STORED_COVER_DOMAIN: output each primitive whose intersection with the
-//     actually used periodic domain is non-zero.
+//     fundamental domain is non-zero.
 // - UNIQUE_COVER_DOMAIN: output each primitive whose intersection
 //     with the original domain that the user has given is non-zero
 //
@@ -661,7 +653,7 @@ public:
   typedef typename T::Iterator_type                       Iterator_type;
 
   Periodic_3_triangulation_segment_iterator_3(Iterator_type it = T::STORED)
-    : _t(NULL), _it(it), _off(0) {}
+    : _t(nullptr), _it(it), _off(0) {}
 
   Periodic_3_triangulation_segment_iterator_3(const T * t,
                                               Iterator_type it = T::STORED)
@@ -841,7 +833,7 @@ private:
   int get_drawing_offsets() {
     Offset off0, off1;
     // Choose edges that are to be duplicated. These are edges that
-    // intersect the boundary of the periodic domain. In UNIQUE mode
+    // intersect the boundary of the fundamental domain. In UNIQUE mode
     // this means that the offset with respect to drawing should
     // differ in some entries. Otherwise we consider the offsets
     // internally stored inside the cell telling us that this cell
@@ -893,7 +885,7 @@ class Periodic_3_triangulation_point_iterator_3 {
 // - UNIQUE: output exactly one periodic copy of each primitive, no matter
 //     whether the current tds stores a n-sheeted covering for n!=1.
 // - STORED_COVER_DOMAIN: output each primitive whose intersection with the
-//     actually used periodic domain is non-zero.
+//     fundamental domain is non-zero.
 // - UNIQUE_COVER_DOMAIN: output each primitive whose intersection
 //     with the original domain that the user has given is non-zero
 //
@@ -920,7 +912,7 @@ public:
   typedef typename T::Iterator_type                       Iterator_type;
 
   Periodic_3_triangulation_point_iterator_3(Iterator_type it = T::STORED)
-    : _t(NULL), _it(it) {}
+    : _t(nullptr), _it(it) {}
 
   Periodic_3_triangulation_point_iterator_3(const T * t,
                                             Iterator_type it = T::STORED)

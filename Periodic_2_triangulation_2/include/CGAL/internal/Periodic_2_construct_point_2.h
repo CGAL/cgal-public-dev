@@ -2,15 +2,10 @@
 // All rights reserved.
 //
 // This file is part of CGAL (www.cgal.org).
-// You can redistribute it and/or modify it under the terms of the GNU
-// General Public License as published by the Free Software Foundation,
-// either version 3 of the License, or (at your option) any later version.
 //
-// Licensees holding a valid commercial license may use this file in
-// accordance with the commercial license agreement provided with the software.
-//
-// This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
-// WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+// $URL$
+// $Id$
+// SPDX-License-Identifier: GPL-3.0-or-later OR LicenseRef-Commercial
 //
 // Author(s)     : Nico Kruithof <Nico@nghk.nl>,
 //                 Mael Rouxel-Labbé
@@ -22,13 +17,12 @@
 
 namespace CGAL {
 
-template < typename K, typename Construct_point_2_base>
+template < typename K_, typename Construct_point_2_base_>
 class Periodic_2_construct_point_2
-  : public Construct_point_2_base
+  : public Construct_point_2_base_
 {
-  typedef Construct_point_2_base             Base;
-
-  typedef K                                  Kernel;
+  typedef Construct_point_2_base_            Base;
+  typedef K_                                 Kernel;
 
   typedef typename Kernel::Point_2           Point;
   typedef typename Kernel::Offset            Offset;
@@ -36,7 +30,7 @@ class Periodic_2_construct_point_2
 
 public:
   Periodic_2_construct_point_2(const Iso_rectangle_2* dom,
-                               const Construct_point_2_base& cp)
+                               const Base& cp)
     : Base(cp), _dom(dom)
   { }
 

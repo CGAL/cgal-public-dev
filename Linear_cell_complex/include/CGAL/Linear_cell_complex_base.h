@@ -1,25 +1,18 @@
 // Copyright (c) 2011 CNRS and LIRIS' Establishments (France).
 // All rights reserved.
 //
-// This file is part of CGAL (www.cgal.org); you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public License as
-// published by the Free Software Foundation; either version 3 of the License,
-// or (at your option) any later version.
-//
-// Licensees holding a valid commercial license may use this file in
-// accordance with the commercial license agreement provided with the software.
-//
-// This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
-// WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+// This file is part of CGAL (www.cgal.org)
 //
 // $URL$
 // $Id$
+// SPDX-License-Identifier: LGPL-3.0-or-later OR LicenseRef-Commercial
 //
 // Author(s)     : Guillaume Damiand <guillaume.damiand@liris.cnrs.fr>
 //
 #ifndef CGAL_LINEAR_CELL_COMPLEX_BASE_H
 #define CGAL_LINEAR_CELL_COMPLEX_BASE_H 1
 
+#include <CGAL/Linear_cell_complex_fwd.h>
 #include <CGAL/Combinatorial_map_functors.h>
 #include <CGAL/internal/Combinatorial_map_internal_functors.h>
 #include <CGAL/Linear_cell_complex_operations.h>
@@ -50,21 +43,22 @@ namespace CGAL {
              class Alloc_,
              template<unsigned int,class,class,class,class>
              class Map,
-             class Refs,
+             class Refs_,
              class Storage_>
   class Linear_cell_complex_base:
-    public Map<d_, Refs, Items_, Alloc_, Storage_>
+    public Map<d_, Refs_, Items_, Alloc_, Storage_>
   {
   public:
     typedef Linear_cell_complex_base<d_, ambient_dim,
                                 Traits_, Items_, Alloc_, Map,
-                                Refs, Storage_>  Self;
-    typedef Map<d_, Refs, Items_, Alloc_, Storage_> Base;
+                                Refs_, Storage_>  Self;
+    typedef Map<d_, Refs_, Items_, Alloc_, Storage_> Base;
 
-    typedef Traits_ Traits;
-    typedef Items_  Items;
-    typedef Alloc_  Alloc;
+    typedef Traits_  Traits;
+    typedef Items_   Items;
+    typedef Alloc_   Alloc;
     typedef Storage_ Storage;
+    typedef Refs_     Refs;
 
     static const unsigned int ambient_dimension = ambient_dim;
     static const unsigned int dimension = Base::dimension;
@@ -118,10 +112,11 @@ namespace CGAL {
     using Base::create_dart;
     using Base::attribute;
     using Base::null_handle;
+    using Base::null_dart_handle;
     using Base::point_of_vertex_attribute;
     using Base::other_extremity;
     using Base::darts;
-    
+
     using Base::are_attributes_automatically_managed;
     using Base::mark;
     using Base::is_marked;
@@ -133,7 +128,7 @@ namespace CGAL {
     using Base::opposite;
     using Base::is_next_exist;
     using Base::is_previous_exist;
-    
+
     using Base::make_segment;
     using Base::make_triangle;
     using Base::make_quadrangle;
@@ -155,26 +150,48 @@ namespace CGAL {
     Linear_cell_complex_base(const Self& alcc) : Base(alcc)
     {}
 
-    template < class LCC2 >
-    Linear_cell_complex_base(const LCC2& alcc) : Base(alcc)
+    template <unsigned int d2,  unsigned int ambient_dim2, class Traits2,
+              class Items2, class Alloc2,
+              template<unsigned int,class,class,class,class> class CMap2,
+              class Refs2, class Storage2>
+    Linear_cell_complex_base
+    (const Linear_cell_complex_base<d2, ambient_dim2,
+     Traits2, Items2, Alloc2, CMap2, Refs2, Storage2>& alcc) : Base(alcc)
     {}
 
-    template < class LCC2, typename Converters >
-    Linear_cell_complex_base(const LCC2& alcc, Converters& converters) :
+    template <unsigned int d2,  unsigned int ambient_dim2, class Traits2,
+              class Items2, class Alloc2,
+              template<unsigned int,class,class,class,class> class CMap2,
+              class Refs2,
+              class Storage2, typename Converters>
+    Linear_cell_complex_base
+    (const Linear_cell_complex_base<d2, ambient_dim2, Traits2, Items2,
+     Alloc2, CMap2, Refs2, Storage2>& alcc, Converters& converters) :
       Base(alcc, converters)
     {}
 
-    template < class LCC2, typename Converters, typename DartInfoConverter >
-    Linear_cell_complex_base(const LCC2& alcc, Converters& converters,
-                             const DartInfoConverter& dartinfoconverter) :
+    template <unsigned int d2,  unsigned int ambient_dim2, class Traits2,
+              class Items2, class Alloc2,
+              template<unsigned int,class,class,class,class> class CMap2,
+              class Refs2, class Storage2, typename Converters,
+              typename DartInfoConverter>
+    Linear_cell_complex_base
+    (const Linear_cell_complex_base<d2, ambient_dim2, Traits2, Items2,
+     Alloc2, CMap2, Refs2, Storage2>& alcc, Converters& converters,
+     const DartInfoConverter& dartinfoconverter) :
       Base(alcc, converters, dartinfoconverter)
     {}
 
-    template < class LCC2, typename Converters, typename DartInfoConverter,
-               typename Pointconverter >
-    Linear_cell_complex_base(const LCC2& alcc, Converters& converters,
-                             const DartInfoConverter& dartinfoconverter,
-                             const Pointconverter& pointconverter) :
+    template <unsigned int d2,  unsigned int ambient_dim2, class Traits2,
+              class Items2, class Alloc2,
+              template<unsigned int,class,class,class,class> class CMap2,
+              class Refs2, class Storage2, typename Converters,
+              typename DartInfoConverter, typename Pointconverter>
+    Linear_cell_complex_base
+    (const Linear_cell_complex_base<d2, ambient_dim2, Traits2, Items2,
+     Alloc2, CMap2, Refs2, Storage2>& alcc, Converters& converters,
+     const DartInfoConverter& dartinfoconverter,
+     const Pointconverter& pointconverter) :
       Base(alcc, converters, dartinfoconverter, pointconverter)
     {}
 
@@ -195,69 +212,9 @@ namespace CGAL {
     /** Create a vertex attribute.
      * @return an handle on the new attribute.
      */
-#ifndef CGAL_CFG_NO_CPP0X_VARIADIC_TEMPLATES
     template<typename ...Args>
     Vertex_attribute_handle create_vertex_attribute(const Args&... args)
     { return Base::template create_attribute<0>(args...); }
-#else
-    Vertex_attribute_handle create_vertex_attribute()
-    { return Base::template create_attribute<0>(); }
-
-    template<typename T1>
-    Vertex_attribute_handle create_vertex_attribute(const T1& t1)
-    { return Base::template create_attribute<0>(t1); }
-
-    template<typename T1, typename T2>
-    Vertex_attribute_handle create_vertex_attribute
-    (const T1& t1, const T2 &t2)
-    { return Base::template create_attribute<0>(t1, t2); }
-
-    template<typename T1, typename T2, typename T3>
-    Vertex_attribute_handle create_vertex_attribute
-    (const T1& t1, const T2 &t2, const T3 &t3)
-    { return Base::template create_attribute<0>(t1, t2, t3); }
-
-    template<typename T1, typename T2, typename T3, typename T4>
-    Vertex_attribute_handle create_vertex_attribute
-    (const T1& t1, const T2 &t2, const T3 &t3, const T4 &t4)
-    { return Base::template create_attribute<0>(t1, t2, t3, t4); }
-
-    template<typename T1, typename T2, typename T3, typename T4, typename T5>
-    Vertex_attribute_handle create_vertex_attribute
-    (const T1& t1, const T2 &t2, const T3 &t3, const T4 &t4,
-     const T5 &t5)
-    { return Base::template create_attribute<0>(t1, t2, t3, t4, t5); }
-
-    template<typename T1, typename T2, typename T3, typename T4, typename T5,
-             typename T6>
-    Vertex_attribute_handle create_vertex_attribute
-    (const T1& t1, const T2 &t2, const T3 &t3, const T4 &t4,
-     const T5 &t5, const T6 &t6)
-    { return Base::template create_attribute<0>(t1, t2, t3, t4, t5, t6); }
-
-    template<typename T1, typename T2, typename T3, typename T4, typename T5,
-             typename T6, typename T7>
-    Vertex_attribute_handle create_vertex_attribute
-    (const T1& t1, const T2 &t2, const T3 &t3, const T4 &t4,
-     const T5 &t5, const T6 &t6, const T7 &t7)
-    { return Base::template create_attribute<0>(t1, t2, t3, t4, t5, t6, t7); }
-
-    template<typename T1, typename T2, typename T3, typename T4, typename T5,
-             typename T6, typename T7, typename T8>
-    Vertex_attribute_handle create_vertex_attribute
-    (const T1& t1, const T2 &t2, const T3 &t3, const T4 &t4,
-     const T5 &t5, const T6 &t6, const T7 &t7, const T8 &t8)
-    { return Base::template create_attribute<0>(t1, t2, t3, t4, t5, t6, t7,
-                                                t8); }
-
-    template<typename T1, typename T2, typename T3, typename T4, typename T5,
-             typename T6, typename T7, typename T8, typename T9>
-    Vertex_attribute_handle create_vertex_attribute
-    (const T1& t1, const T2 &t2, const T3 &t3, const T4 &t4,
-     const T5 &t5, const T6 &t6, const T7 &t7, const T8 &t8, const T9 &t9)
-    { return Base::template create_attribute<0>(t1, t2, t3, t4, t5, t6, t7,
-                                                t8, t9); }
-#endif // CGAL_CFG_NO_CPP0X_VARIADIC_TEMPLATES
 
     /**
      * Create a new dart associated with an handle through an attribute.
@@ -760,7 +717,7 @@ namespace CGAL {
      * @return a dart handle to the new vertex containing p.
      */
     Dart_handle insert_point_in_cell_1(Dart_handle dh, const Point& p,
-                                       bool update_attributes)
+                                       bool update_attributes=true)
     {
       return this->insert_cell_0_in_cell_1(dh,
                                            create_vertex_attribute(p),
@@ -774,7 +731,7 @@ namespace CGAL {
      * @return a dart handle to the new vertex containing p.
      */
     Dart_handle insert_point_in_cell_2(Dart_handle dh, const Point& p,
-                                       bool update_attributes)
+                                       bool update_attributes=true)
     {
       Vertex_attribute_handle v = create_vertex_attribute(p);
 
@@ -798,7 +755,7 @@ namespace CGAL {
      */
     template <unsigned int i>
     Dart_handle insert_point_in_cell(Dart_handle dh, const Point& p,
-                                     bool update_attributes = true)
+                                     bool update_attributes=true)
     {
       CGAL_static_assertion(1<=i && i<=2);
       if (i==1) return insert_point_in_cell_1(dh, p, update_attributes);
@@ -806,14 +763,14 @@ namespace CGAL {
     }
 
     /** Insert a dangling edge in a given facet.
-     * @param dh a dart of the facet (!=NULL).
+     * @param dh a dart of the facet (!=nullptr).
      * @param p the coordinates of the new vertex.
      * @param update_attributes a boolean to update the enabled attributes
      * @return a dart of the new edge, incident to the new vertex.
      */
     Dart_handle insert_dangling_cell_1_in_cell_2(Dart_handle dh,
                                                  const Point& p,
-                                                 bool update_attributes = true)
+                                                 bool update_attributes=true)
     {
       return this->insert_dangling_cell_1_in_cell_2
           (dh, create_vertex_attribute(p), update_attributes);
@@ -826,13 +783,13 @@ namespace CGAL {
      * @return a dart handle to the new vertex containing p.
      */
     template <unsigned int i>
-    Dart_handle insert_barycenter_in_cell(Dart_handle dh, bool update_attributes = true)
+    Dart_handle insert_barycenter_in_cell(Dart_handle dh, bool update_attributes=true)
     { return insert_point_in_cell<i>(dh, barycenter<i>(dh), update_attributes); }
 
     /** Compute the dual of a Linear_cell_complex.
      * @param alcc the lcc in which we build the dual of this lcc.
-     * @param adart a dart of the initial lcc, NULL by default.
-     * @return adart of the dual lcc, the dual of adart if adart!=NULL,
+     * @param adart a dart of the initial lcc, nullptr by default.
+     * @return adart of the dual lcc, the dual of adart if adart!=nullptr,
      *         any dart otherwise.
      * As soon as we don't modify this lcc and alcc lcc, we can iterate
      * simultaneously through all the darts of the two lcc and we have

@@ -2,18 +2,10 @@
 // All rights reserved.
 //
 // This file is part of CGAL (www.cgal.org).
-// You can redistribute it and/or modify it under the terms of the GNU
-// General Public License as published by the Free Software Foundation,
-// either version 3 of the License, or (at your option) any later version.
-//
-// Licensees holding a valid commercial license may use this file in
-// accordance with the commercial license agreement provided with the software.
-//
-// This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
-// WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 //
 // $URL$
 // $Id$
+// SPDX-License-Identifier: GPL-3.0-or-later OR LicenseRef-Commercial
 //
 //
 // Author(s)     : Monique Teillaud <Monique.Teillaud@inria.fr>
@@ -31,32 +23,41 @@
 
 #include <utility>
 
-namespace CGAL
-{
+namespace CGAL {
 
 // Triangulation_3 has calls to Construct_point_3 to handle weighted and bare points.
 // The default inherited Construct_point_3 inherited by Periodic_3_triangulation_remove_traits_3
 // must be overwritten by a construction Construct_point_3 that offers:
 // - pair<K::Point_3, offset> --> pair<K::Point_3, offset> (identity)
 // - pair<K::Weighted_point_3, offset> --> pair<K::Point_3, offset>
-template<class Gt,
-         typename Construct_point_3_base>
+template<class Gt_,
+         typename Construct_point_3_base_>
 class Construct_point_from_weighted_pair_3
-  : public Construct_point_from_pair_3<Gt, Construct_point_3_base>
+  : public Construct_point_from_pair_3<Gt_, Construct_point_3_base_>
 {
-  typedef Construct_point_from_pair_3<Gt, Construct_point_3_base>  Base;
+  typedef Construct_point_from_pair_3<Gt_, Construct_point_3_base_>  Base;
+
+  typedef Gt_                                                        Geom_traits;
 
   // `Traits::Point_3` is actually a `std::pair<Point_3, Offset>`
   // `Traits::Weighted_point_3` is actually a `std::pair<Weighted_point_3, Offset>`
-  typedef typename Gt::Point_3                                 Point_3;
-  typedef typename Gt::Weighted_point_3                        Weighted_point_3;
+  typedef typename Geom_traits::Point_3                              Point_3;
+  typedef typename Geom_traits::Weighted_point_3                     Weighted_point_3;
 
 public:
-  Construct_point_from_weighted_pair_3(const Construct_point_3_base& cp) : Base(cp) { }
+  Construct_point_from_weighted_pair_3(const Construct_point_3_base_& cp) : Base(cp) { }
 
   using Base::operator(); // for K::Weighted_point_3 to Point_3
 
-  Point_3 operator()(const Weighted_point_3& wp) {
+  template<typename F>
+  struct result : Base::template result<F> {};
+
+  template<typename F>
+  struct result<F(Weighted_point_3)> {
+    typedef Point_3 type;
+  };
+
+  Point_3 operator()(const Weighted_point_3& wp) const {
     return std::make_pair(operator()(wp.first), wp.second /* offset */);
   }
 };
@@ -137,56 +138,56 @@ public:
   }
 };
 
-template<class Gt, class Off = typename CGAL::Periodic_3_offset_3>
+template<class Gt_, class Off_ = typename CGAL::Periodic_3_offset_3>
 class Periodic_3_regular_triangulation_remove_traits_3
-  : public Gt
+  : public Gt_
 {
-  typedef Periodic_3_regular_triangulation_remove_traits_3<Gt, Off> Self;
-  typedef Gt                                                        Base;
+  typedef Periodic_3_regular_triangulation_remove_traits_3<Gt_, Off_>    Self;
+  typedef Gt_                                                            Base;
 
 public:
-  typedef Gt                                                    Geom_traits;
-  typedef Off                                                   Offset;
+  typedef Gt_                                                            Geom_traits;
+  typedef Off_                                                           Offset;
 
-  typedef typename Gt::RT                                       RT;
-  typedef typename Gt::FT                                       FT;
-  typedef std::pair<typename Gt::Point_3, Offset>               Point_3;
-  typedef std::pair<typename Gt::Weighted_point_3, Offset>      Weighted_point_3;
+  typedef typename Geom_traits::RT                                       RT;
+  typedef typename Geom_traits::FT                                       FT;
+  typedef std::pair<typename Geom_traits::Point_3, Offset>               Point_3;
+  typedef std::pair<typename Geom_traits::Weighted_point_3, Offset>      Weighted_point_3;
 
   // not allowing a default value for `gt` because we need to have
   // an initialized domain in `gt`
-  Periodic_3_regular_triangulation_remove_traits_3(const Gt& gt) : Base(gt) { }
+  Periodic_3_regular_triangulation_remove_traits_3(const Geom_traits& gt) : Base(gt) { }
 
   // Construct point
-  typedef Construct_point_from_weighted_pair_3<Self, typename Gt::Construct_point_3>
+  typedef Construct_point_from_weighted_pair_3<Self, typename Geom_traits::Construct_point_3>
       Construct_point_3;
 
   // Triangulation traits
-  typedef Functor_with_weighted_point_offset_pair_adaptor<Self, typename Gt::Compare_xyz_3>
+  typedef Functor_with_weighted_point_offset_pair_adaptor<Self, typename Geom_traits::Compare_xyz_3>
       Compare_xyz_3;
-  typedef Functor_with_weighted_point_offset_pair_adaptor<Self, typename Gt::Coplanar_orientation_3>
+  typedef Functor_with_weighted_point_offset_pair_adaptor<Self, typename Geom_traits::Coplanar_orientation_3>
       Coplanar_orientation_3;
-  typedef Functor_with_weighted_point_offset_pair_adaptor<Self, typename Gt::Orientation_3>
+  typedef Functor_with_weighted_point_offset_pair_adaptor<Self, typename Geom_traits::Orientation_3>
       Orientation_3;
 
   // Regular Triangulation traits
-  typedef Functor_with_weighted_point_offset_pair_adaptor<Self, typename Gt::Power_side_of_oriented_power_sphere_3>
+  typedef Functor_with_weighted_point_offset_pair_adaptor<Self, typename Geom_traits::Power_side_of_oriented_power_sphere_3>
       Power_side_of_oriented_power_sphere_3;
-  typedef Functor_with_weighted_point_offset_pair_adaptor<Self, typename Gt::Compare_power_distance_3>
+  typedef Functor_with_weighted_point_offset_pair_adaptor<Self, typename Geom_traits::Compare_power_distance_3>
       Compare_power_distance_3;
-  typedef Functor_with_weighted_point_offset_pair_adaptor<Self, typename Gt::Power_side_of_bounded_power_sphere_3>
+  typedef Functor_with_weighted_point_offset_pair_adaptor<Self, typename Geom_traits::Power_side_of_bounded_power_sphere_3>
       Power_side_of_bounded_power_sphere_3;
-  typedef Functor_with_weighted_point_offset_pair_adaptor<Self, typename Gt::Construct_weighted_circumcenter_3>
+  typedef Functor_with_weighted_point_offset_pair_adaptor<Self, typename Geom_traits::Construct_weighted_circumcenter_3>
       Construct_weighted_circumcenter_3;
-  typedef Functor_with_weighted_point_offset_pair_adaptor<Self, typename Gt::Construct_circumcenter_3>
+  typedef Functor_with_weighted_point_offset_pair_adaptor<Self, typename Geom_traits::Construct_circumcenter_3>
       Construct_circumcenter_3;
-  typedef Functor_with_weighted_point_offset_pair_adaptor<Self, typename Gt::Compute_squared_radius_smallest_orthogonal_sphere_3>
+  typedef Functor_with_weighted_point_offset_pair_adaptor<Self, typename Geom_traits::Compute_squared_radius_smallest_orthogonal_sphere_3>
       Compute_squared_radius_smallest_orthogonal_sphere_3;
-  typedef Functor_with_weighted_point_offset_pair_adaptor<Self, typename Gt::Compute_power_product_3>
+  typedef Functor_with_weighted_point_offset_pair_adaptor<Self, typename Geom_traits::Compute_power_product_3>
       Compute_power_product_3;
-  typedef Functor_with_weighted_point_offset_pair_adaptor<Self, typename Gt::Compute_power_distance_to_power_sphere_3>
+  typedef Functor_with_weighted_point_offset_pair_adaptor<Self, typename Geom_traits::Compute_power_distance_to_power_sphere_3>
       Compute_power_distance_to_power_sphere_3;
-  typedef Functor_with_weighted_point_offset_pair_adaptor<Self, typename Gt::Compare_weighted_squared_radius_3>
+  typedef Functor_with_weighted_point_offset_pair_adaptor<Self, typename Geom_traits::Compare_weighted_squared_radius_3>
       Compare_weighted_squared_radius_3;
 
   // Operations

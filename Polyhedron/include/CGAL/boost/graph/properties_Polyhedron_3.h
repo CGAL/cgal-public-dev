@@ -1,26 +1,16 @@
 // Copyright (c) 2007  GeometryFactory (France).  All rights reserved.
 //
-// This file is part of CGAL (www.cgal.org); you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public License as
-// published by the Free Software Foundation; either version 3 of the License,
-// or (at your option) any later version.
-//
-// Licensees holding a valid commercial license may use this file in
-// accordance with the commercial license agreement provided with the software.
-//
-// This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
-// WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+// This file is part of CGAL (www.cgal.org)
 //
 // $URL$
 // $Id$
+// SPDX-License-Identifier: LGPL-3.0-or-later OR LicenseRef-Commercial
 //
 //
 // Author(s)     : Andreas Fabri, Fernando Cacciola
 
 #ifndef CGAL_BOOST_GRAPH_PROPERTIES_POLYHEDRON_3_H
 #define CGAL_BOOST_GRAPH_PROPERTIES_POLYHEDRON_3_H
-
-#include <CGAL/license/Polyhedron.h>
 
 #include <CGAL/boost/graph/properties.h>
 #include <CGAL/boost/graph/graph_traits_Polyhedron_3.h>
@@ -104,42 +94,6 @@ struct Wrap_squared
   }
 };
 
-  template<typename Polyhedron, typename Handle>
-struct Index_accessor
-    : boost::put_get_helper< std::size_t&, Index_accessor<Polyhedron,Handle> >
-{
-  typedef boost::lvalue_property_map_tag category;
-  typedef std::size_t&                   reference;
-  typedef std::size_t                    value_type;
-  typedef Handle                         key_type;
-
-  reference operator[](Handle h) const { return h->id(); }
-};
-
-template<typename Handle>
-struct Edge_index_accessor
-  : boost::put_get_helper< std::size_t, Edge_index_accessor<Handle> >
-{
-  typedef boost::readable_property_map_tag category;
-  typedef std::size_t                      reference;
-  typedef std::size_t                      value_type;
-  typedef Handle                           key_type;
-
-  reference operator[](Handle h) const { return h.id(); }
-};
-
-template<typename Handle, typename ValueType, typename Reference>
-struct Point_accessor
-  : boost::put_get_helper< Reference, Point_accessor<Handle, ValueType, Reference> >
-{
-  typedef boost::lvalue_property_map_tag category;
-  typedef Reference                      reference;
-  typedef ValueType                      value_type;
-  typedef Handle                         key_type;
-
-  reference operator[](Handle h) const { return h->point(); }
-};
-
 } // internal
 
 // the tag we dispatch on from property_map<G, Property>
@@ -172,6 +126,24 @@ typename boost::property_traits< typename boost::property_map<CGAL::Polyhedron_3
 get(PropertyTag p, CGAL::Polyhedron_3<Gt,I,HDS,A> const& g, const Key& key)
 { return get(get(p, g), key); }
 
+
+
+#define CGAL_POLYHEDRON_DYNAMIC_PM(TAG, DESCRIPTOR) \
+template <typename T, typename Gt, typename I, CGAL_HDS_PARAM_, typename A> \
+typename boost::property_map<Polyhedron_3<Gt,I,HDS,A>, TAG >::const_type \
+get(const TAG&, const Polyhedron_3<Gt,I,HDS,A>&) \
+{ \
+  typedef typename boost::graph_traits< Polyhedron_3<Gt,I,HDS,A> >::DESCRIPTOR descriptor; \
+  return internal::Dynamic_property_map<descriptor,T>(); \
+}
+
+CGAL_POLYHEDRON_DYNAMIC_PM(dynamic_vertex_property_t<T>, vertex_descriptor)
+CGAL_POLYHEDRON_DYNAMIC_PM(dynamic_halfedge_property_t<T>, halfedge_descriptor)
+CGAL_POLYHEDRON_DYNAMIC_PM(dynamic_edge_property_t<T>, edge_descriptor)
+CGAL_POLYHEDRON_DYNAMIC_PM(dynamic_face_property_t<T>, face_descriptor)
+
+
+#undef CGAL_POLYHEDRON_DYNAMIC_PM
 
 
 // generalized put
@@ -420,6 +392,42 @@ struct property_map<const CGAL::Polyhedron_3<Gt,I,HDS,A>, Tag>
   typedef typename map_gen::const_type const_type;
 };
 
+template<class Gt, class I, CGAL_HDS_PARAM_, class A, class T>
+struct property_map<CGAL::Polyhedron_3<Gt,I,HDS,A>, CGAL::dynamic_vertex_property_t<T> >
+{
+  typedef CGAL::Polyhedron_3<Gt,I,HDS,A> G;
+  typedef typename boost::graph_traits<G>::vertex_descriptor vertex_descriptor;
+  typedef CGAL::internal::Dynamic_property_map<vertex_descriptor,T> type;
+  typedef type const_type;
+};
+
+template<class Gt, class I, CGAL_HDS_PARAM_, class A, class T>
+struct property_map<CGAL::Polyhedron_3<Gt,I,HDS,A>, CGAL::dynamic_halfedge_property_t<T> >
+{
+  typedef CGAL::Polyhedron_3<Gt,I,HDS,A> G;
+  typedef typename boost::graph_traits<G>::halfedge_descriptor halfedge_descriptor;
+  typedef CGAL::internal::Dynamic_property_map<halfedge_descriptor,T> type;
+  typedef type const_type;
+};
+
+template<class Gt, class I, CGAL_HDS_PARAM_, class A, class T>
+struct property_map<CGAL::Polyhedron_3<Gt,I,HDS,A>, CGAL::dynamic_edge_property_t<T> >
+{
+  typedef CGAL::Polyhedron_3<Gt,I,HDS,A> G;
+  typedef typename boost::graph_traits<G>::edge_descriptor edge_descriptor;
+  typedef CGAL::internal::Dynamic_property_map<edge_descriptor,T> type;
+  typedef type const_type;
+};
+
+template<class Gt, class I, CGAL_HDS_PARAM_, class A, class T>
+struct property_map<CGAL::Polyhedron_3<Gt,I,HDS,A>, CGAL::dynamic_face_property_t<T> >
+{
+  typedef CGAL::Polyhedron_3<Gt,I,HDS,A> G;
+  typedef typename boost::graph_traits<G>::face_descriptor face_descriptor;
+  typedef CGAL::internal::Dynamic_property_map<face_descriptor,T> type;
+  typedef type const_type;
+};
+
 // What are those needed for ???
 template<class Gt, class I, CGAL_HDS_PARAM_, class A>
 struct edge_property_type<CGAL::Polyhedron_3<Gt,I,HDS,A> >
@@ -439,25 +447,29 @@ struct vertex_property_type<const CGAL::Polyhedron_3<Gt,I,HDS,A> >
   typedef CGAL::vertex_point_t type;
 };
 
+
+} // namespace boost
+
+namespace CGAL{
 template<class Gt, class I, CGAL_HDS_PARAM_, class A>
-struct graph_has_property<CGAL::Polyhedron_3<Gt, I, HDS, A>, vertex_point_t>
+struct graph_has_property<CGAL::Polyhedron_3<Gt, I, HDS, A>, boost::vertex_point_t>
   : CGAL::Tag_true {};
 
 template<class Gt, class I, CGAL_HDS_PARAM_, class A>
-struct graph_has_property<CGAL::Polyhedron_3<Gt, I, HDS, A>, edge_weight_t>
+struct graph_has_property<CGAL::Polyhedron_3<Gt, I, HDS, A>, boost::edge_weight_t>
   : CGAL::Tag_true {};
 
 template<class Gt, class I, CGAL_HDS_PARAM_, class A>
-struct graph_has_property<CGAL::Polyhedron_3<Gt, I, HDS, A>, edge_index_t>
+struct graph_has_property<CGAL::Polyhedron_3<Gt, I, HDS, A>, boost::edge_index_t>
   : CGAL::Boolean_tag<
       CGAL::internal::Has_member_id<
-        typename graph_traits<CGAL::Polyhedron_3<Gt, I, HDS, A> >::edge_descriptor
+        typename boost::graph_traits<CGAL::Polyhedron_3<Gt, I, HDS, A> >::edge_descriptor
       >::value
     >
 {};
 
 template<class Gt, class I, CGAL_HDS_PARAM_, class A>
-struct graph_has_property<CGAL::Polyhedron_3<Gt, I, HDS, A>, face_index_t>
+struct graph_has_property<CGAL::Polyhedron_3<Gt, I, HDS, A>, boost::face_index_t>
   : CGAL::Boolean_tag<
       CGAL::internal::Has_member_id<
         typename CGAL::Polyhedron_3<Gt, I, HDS, A>::Facet
@@ -466,7 +478,7 @@ struct graph_has_property<CGAL::Polyhedron_3<Gt, I, HDS, A>, face_index_t>
 {};
 
 template<class Gt, class I, CGAL_HDS_PARAM_, class A>
-struct graph_has_property<CGAL::Polyhedron_3<Gt, I, HDS, A>, halfedge_index_t>
+struct graph_has_property<CGAL::Polyhedron_3<Gt, I, HDS, A>, boost::halfedge_index_t>
   : CGAL::Boolean_tag<
       CGAL::internal::Has_member_id<
         typename CGAL::Polyhedron_3<Gt, I, HDS, A>::Halfedge
@@ -475,17 +487,19 @@ struct graph_has_property<CGAL::Polyhedron_3<Gt, I, HDS, A>, halfedge_index_t>
 {};
 
 template<class Gt, class I, CGAL_HDS_PARAM_, class A>
-struct graph_has_property<CGAL::Polyhedron_3<Gt, I, HDS, A>, vertex_index_t>
+struct graph_has_property<CGAL::Polyhedron_3<Gt, I, HDS, A>, boost::vertex_index_t>
   : CGAL::Boolean_tag<
       CGAL::internal::Has_member_id<
         typename CGAL::Polyhedron_3<Gt, I, HDS, A>::Vertex
       >::value
     >
 {};
-
-} // namespace boost
-
-
+}// end CGAL
 #undef CGAL_HDS_PARAM_
+
+
+
+#include <CGAL/boost/graph/properties_Polyhedron_3_time_stamp.h>
+#include <CGAL/boost/graph/properties_Polyhedron_3_features.h>
 
 #endif // CGAL_BOOST_GRAPH_PROPERTIES_POLYHEDRON_3_H

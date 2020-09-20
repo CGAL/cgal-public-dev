@@ -2,15 +2,10 @@
 // All rights reserved.
 //
 // This file is part of CGAL (www.cgal.org).
-// You can redistribute it and/or modify it under the terms of the GNU
-// General Public License as published by the Free Software Foundation,
-// either version 3 of the License, or (at your option) any later version.
 //
-// Licensees holding a valid commercial license may use this file in
-// accordance with the commercial license agreement provided with the software.
-//
-// This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
-// WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+// $URL$
+// $Id$
+// SPDX-License-Identifier: GPL-3.0-or-later OR LicenseRef-Commercial
 //
 // Author(s)     : Laurent Saboret, Pierre Alliez, Bruno Levy
 
@@ -19,13 +14,14 @@
 
 #include <CGAL/license/Surface_mesh_parameterization.h>
 
+#include <CGAL/disable_warnings.h>
+
 #include <CGAL/Surface_mesh_parameterization/internal/kernel_traits.h>
 #include <CGAL/Surface_mesh_parameterization/Error_code.h>
 
 #include <CGAL/circulator.h>
 #include <CGAL/boost/graph/iterator.h>
 
-#include <boost/foreach.hpp>
 
 #include <cfloat>
 #include <climits>
@@ -41,7 +37,7 @@ namespace Surface_mesh_parameterization {
 // Class Square_border_parameterizer_3
 //
 
-/// \ingroup PkgSurfaceParameterizationBorderParameterizationMethods
+/// \ingroup PkgSurfaceMeshParameterizationBorderParameterizationMethods
 ///
 /// This is the base class of strategies that parameterize the border
 /// of a 3D surface onto a square.
@@ -107,7 +103,7 @@ private:
                                halfedge_descriptor bhd) const
   {
     double len = 0.0;
-    BOOST_FOREACH(halfedge_descriptor hd, halfedges_around_face(bhd, mesh)) {
+    for(halfedge_descriptor hd : halfedges_around_face(bhd, mesh)) {
       len += compute_edge_length(mesh, source(hd, mesh), target(hd, mesh));
     }
     return len;
@@ -123,7 +119,7 @@ private:
     halfedge_around_face_iterator b, e, best;
     double min = DBL_MAX; // distance for 'best'
 
-    std::size_t id = 0, min_id = -1;
+    std::size_t id = 0, min_id = (std::numeric_limits<std::size_t>::max)();
     for(boost::tie(b,e) = halfedges_around_face(bhd, mesh); b!=e; ++b, ++id) {
       double d = CGAL::abs(offset[id] - value);
       if(d < min) {
@@ -210,7 +206,7 @@ private:
     double len = 0.0;
     std::size_t index_of_previous_corner = 0, current_index = 0;
     double corner_offset = 0.0;
-    BOOST_FOREACH(halfedge_descriptor hd, halfedges_around_face(start_hd, mesh)) {
+    for(halfedge_descriptor hd : halfedges_around_face(start_hd, mesh)) {
       vertex_descriptor vs = source(hd, mesh);
       vertex_descriptor vt = target(hd, mesh);
 
@@ -298,7 +294,7 @@ public:
     // make sure that the given vertices all belong to the border defined by 'bhd'
     unsigned int v_counter = 0;
     if(vertices_given) {
-      BOOST_FOREACH(halfedge_descriptor hd, halfedges_around_face(bhd, mesh)) {
+      for(halfedge_descriptor hd : halfedges_around_face(bhd, mesh)) {
         vertex_descriptor vd = source(hd, mesh);
         if(vd == v0 || vd == v1 || vd == v2 || vd == v3)
           v_counter++;
@@ -324,7 +320,7 @@ public:
     unsigned int corners_encountered = 0;
     std::size_t counter = 0;
 
-    BOOST_FOREACH(halfedge_descriptor hd, halfedges_around_face(start_hd, mesh)) {
+    for(halfedge_descriptor hd : halfedges_around_face(start_hd, mesh)) {
       vertex_descriptor vd = source(hd, mesh);
       Point_2 uv;
       assert(counter < offset.size());
@@ -377,7 +373,7 @@ public:
 // Class Square_border_uniform_parameterizer_3
 //
 
-/// \ingroup PkgSurfaceParameterizationBorderParameterizationMethods
+/// \ingroup PkgSurfaceMeshParameterizationBorderParameterizationMethods
 ///
 /// This class parameterizes the border of a 3D surface onto a square
 /// in a uniform manner: points are equally spaced.
@@ -443,7 +439,7 @@ protected:
 // Class Square_border_arc_length_parameterizer_3
 //
 
-/// \ingroup PkgSurfaceParameterizationBorderParameterizationMethods
+/// \ingroup PkgSurfaceMeshParameterizationBorderParameterizationMethods
 ///
 /// This class parameterizes the border of a 3D surface onto a square,
 /// with an arc-length parameterization: `(u,v)` values are
@@ -514,5 +510,7 @@ protected:
 } // Surface_mesh_parameterization
 
 } // namespace CGAL
+
+#include <CGAL/enable_warnings.h>
 
 #endif // CGAL_SURFACE_MESH_PARAMETERIZATION_SQUARE_BORDER_PARAMETERIZER_3_H

@@ -1,11 +1,9 @@
+cmake_minimum_required(VERSION 3.1...3.15)
 project(CGALimageIO_Demo)
 
-cmake_minimum_required(VERSION 2.8.11)
-if(POLICY CMP0053)
+if(NOT POLICY CMP0070 AND POLICY CMP0053)
+  # Only set CMP0053 to OLD with CMake<3.10, otherwise there is a warning.
   cmake_policy(SET CMP0053 OLD)
-endif()
-if(POLICY CMP0043)
-  cmake_policy(SET CMP0043 OLD)
 endif()
 
 
@@ -13,8 +11,8 @@ set(PACKAGE_ROOT ../..)
 
 # Add several CGAL packages to the include and link paths,
 # if they lie in ${PACKAGE_ROOT}/.
-foreach(INC_DIR ${PACKAGE_ROOT}/include 
-		${PACKAGE_ROOT}/../CGAL_ImageIO/include )
+foreach(INC_DIR ${PACKAGE_ROOT}/include
+                ${PACKAGE_ROOT}/../CGAL_ImageIO/include )
   if(EXISTS ${INC_DIR})
     include_directories (BEFORE ${INC_DIR})
   endif()
@@ -27,7 +25,6 @@ endforeach()
 
 
 find_package(CGAL REQUIRED ImageIO)
-include( ${CGAL_USE_FILE} )
 find_package(VTK QUIET NO_MODULE)
 
 if(VTK_FOUND)

@@ -1,5 +1,5 @@
 /*!
-\ingroup PkgAABB_treeConcepts
+\ingroup PkgAABBTreeConcepts
 \cgalConcept
 
 The concept `AABBRayIntersectionTraits` is a refinement of the concept
@@ -44,7 +44,7 @@ public:
   typedef unspecified_type Intersection_distance;
 
   /*!
-    Returns the intersection distance functor.
+    returns the intersection distance functor.
   */
   Intersection_distance intersection_distance_object() const ;
 };

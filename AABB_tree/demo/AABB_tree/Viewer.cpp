@@ -5,7 +5,7 @@
 #include <CGAL/Qt/CreateOpenGLContext.h>
 
 Viewer::Viewer(QWidget* parent)
-  : QGLViewer(CGAL::Qt::createOpenGLContext(),parent),
+  : CGAL::QGLViewer(parent),
     m_pScene(NULL),
     m_custom_mouse(false)
 {
@@ -18,8 +18,7 @@ void Viewer::setScene(Scene* pScene)
 
 void Viewer::draw()
 {
-  glEnable(GL_DEPTH_TEST);
-  QGLViewer::draw();
+  CGAL::QGLViewer::draw();
   if(m_pScene != NULL)
   {
       m_pScene->draw(this);
@@ -29,7 +28,7 @@ void Viewer::draw()
 
 void Viewer::initializeGL()
 {
-  QGLViewer::initializeGL();
+  CGAL::QGLViewer::initializeGL();
   setBackgroundColor(::Qt::white);
   //m_pScene->initGL(this);
 }
@@ -43,8 +42,8 @@ void Viewer::mousePressEvent(QMouseEvent* e)
     m_pScene->cutting_plane(true);
     m_custom_mouse = true;
   }
-  
-  QGLViewer::mousePressEvent(e);
+
+  CGAL::QGLViewer::mousePressEvent(e);
 }
 
 void Viewer::mouseReleaseEvent(QMouseEvent* e)
@@ -56,10 +55,10 @@ void Viewer::mouseReleaseEvent(QMouseEvent* e)
     QApplication::setOverrideCursor(Qt::WaitCursor);
     m_pScene->cutting_plane(true);
     QApplication::restoreOverrideCursor();
-      
+
     m_custom_mouse = false;
   }
-  
-  QGLViewer::mouseReleaseEvent(e);
+
+  CGAL::QGLViewer::mouseReleaseEvent(e);
 }
 

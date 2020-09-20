@@ -1,27 +1,19 @@
-// Copyright (c) 2003-2004  
+// Copyright (c) 2003-2004
 // Utrecht University (The Netherlands),
 // ETH Zurich (Switzerland),
 // INRIA Sophia-Antipolis (France),
 // Max-Planck-Institute Saarbruecken (Germany),
-// Copyright (c) 2010 GeometryFactory Sarl (France) 
+// Copyright (c) 2010 GeometryFactory Sarl (France)
 //
-// This file is part of CGAL (www.cgal.org); you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public License as
-// published by the Free Software Foundation; either version 3 of the License,
-// or (at your option) any later version.
-//
-// Licensees holding a valid commercial license may use this file in
-// accordance with the commercial license agreement provided with the software.
-//
-// This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
-// WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+// This file is part of CGAL (www.cgal.org)
 //
 // $URL$
 // $Id$
-// 
+// SPDX-License-Identifier: LGPL-3.0-or-later OR LicenseRef-Commercial
+//
 //
 // Author(s)     : Sylvain Pion
- 
+
 #ifndef CGAL_KERNEL_GLOBAL_FUNCTIONS_INTERNAL_3_H
 #define CGAL_KERNEL_GLOBAL_FUNCTIONS_INTERNAL_3_H
 
@@ -85,6 +77,25 @@ angle(const typename K::Point_3 &p,
 template < class K >
 inline
 typename K::FT
+approximate_angle(const typename K::Vector_3 &u,
+                  const typename K::Vector_3 &v , const K& k)
+{
+  return k.compute_approximate_angle_3_object()(u, v);
+}
+
+template < class K >
+inline
+typename K::FT
+approximate_angle(const typename K::Point_3 &p,
+                  const typename K::Point_3 &q,
+                  const typename K::Point_3 &r, const K& k)
+{
+  return k.compute_approximate_angle_3_object()(p, q, r);
+}
+
+template < class K >
+inline
+typename K::FT
 approximate_dihedral_angle(const typename K::Point_3 &p,
                            const typename K::Point_3 &q,
                            const typename K::Point_3 &r,
@@ -122,7 +133,7 @@ barycenter(const typename K::Point_3 &p1, const typename K::FT& w1,
 {
   return k.construct_barycenter_3_object()(p1, w1, p2);
 }
-  
+
 template < class K >
 inline
 typename K::Point_3
@@ -131,26 +142,26 @@ barycenter(const typename K::Point_3 &p1, const typename K::FT& w1,
 {
   return k.construct_barycenter_3_object()(p1, w1, p2, w2);
 }
-  
+
 template < class K >
 inline
 typename K::Point_3
 barycenter(const typename K::Point_3 &p1, const typename K::FT& w1,
            const typename K::Point_3 &p2, const typename K::FT& w2,
            const typename K::Point_3 &p3, const K& k)
-{        
+{
   return k.construct_barycenter_3_object()(p1, w1, p2, w2, p3);
 }
-  
+
 template < class K >
 inline
 typename K::Point_3
 barycenter(const typename K::Point_3 &p1, const typename K::FT& w1,
            const typename K::Point_3 &p2, const typename K::FT& w2,
            const typename K::Point_3 &p3, const typename K::FT& w3, const K& k)
-{        
+{
   return k.construct_barycenter_3_object()(p1, w1, p2, w2, p3, w3);
-}        
+}
 
 template < class K >
 inline
@@ -315,11 +326,11 @@ template < class K >
 inline
 typename K::Comparison_result
 compare_dihedral_angle(const typename K::Point_3& a1,
-                       const typename K::Point_3& b1, 
+                       const typename K::Point_3& b1,
                        const typename K::Point_3& c1,
-                       const typename K::Point_3& d1, 
-                       const typename K::Point_3& a2, 
-                       const typename K::Point_3& b2, 
+                       const typename K::Point_3& d1,
+                       const typename K::Point_3& a2,
+                       const typename K::Point_3& b2,
                        const typename K::Point_3& c2,
                        const typename K::Point_3& d2,
                        const K& k)
@@ -331,9 +342,9 @@ template < class K >
 inline
 typename K::Comparison_result
 compare_dihedral_angle(const typename K::Point_3& a1,
-                       const typename K::Point_3& b1, 
+                       const typename K::Point_3& b1,
                        const typename K::Point_3& c1,
-                       const typename K::Point_3& d1, 
+                       const typename K::Point_3& d1,
                        const typename K::FT& cosine,
                        const K& k)
 {
@@ -343,7 +354,7 @@ compare_dihedral_angle(const typename K::Point_3& a1,
 template < class K >
 inline
 typename K::Comparison_result
-compare_dihedral_angle(const typename K::Vector_3& ab1, 
+compare_dihedral_angle(const typename K::Vector_3& ab1,
                        const typename K::Vector_3& ac1,
                        const typename K::Vector_3& ad1,
                        const typename K::Vector_3& ab2,
@@ -357,7 +368,7 @@ compare_dihedral_angle(const typename K::Vector_3& ab1,
 template < class K >
 inline
 typename K::Comparison_result
-compare_dihedral_angle(const typename K::Vector_3& ab1, 
+compare_dihedral_angle(const typename K::Vector_3& ab1,
                        const typename K::Vector_3& ac1,
                        const typename K::Vector_3& ad1,
                        const typename K::FT& cosine,
@@ -409,7 +420,7 @@ typename K::Comparison_result
 compare_distance_to_point(const typename K::Point_3 &p,
                           const typename K::Point_3 &q,
                           const typename K::Point_3 &r,
-			  const K& k)
+                          const K& k)
 {
   return k.compare_distance_3_object()(p, q, r);
 }
@@ -443,7 +454,7 @@ typename K::Comparison_result
 compare_squared_distance(const typename K::Point_3 &p,
                          const typename K::Point_3 &q,
                          const typename K::FT &d2,
-		         const K& k)
+                         const K& k)
 {
   return k.compare_squared_distance_3_object()(p, q, d2);
 }
@@ -452,8 +463,8 @@ template < class K >
 inline
 typename K::Comparison_result
 compare_squared_radius(const typename K::Point_3 &p,
-		       const typename K::FT &sr,
-		       const K& k)
+                       const typename K::FT &sr,
+                       const K& k)
 {
   return k.compare_squared_radius_3_object()(p, sr);
 }
@@ -462,9 +473,9 @@ template < class K >
 inline
 typename K::Comparison_result
 compare_squared_radius(const typename K::Point_3 &p,
-		       const typename K::Point_3 &q,
-		       const typename K::FT &sr,
-		       const K& k)
+                       const typename K::Point_3 &q,
+                       const typename K::FT &sr,
+                       const K& k)
 {
   return k.compare_squared_radius_3_object()(p, q, sr);
 }
@@ -473,10 +484,10 @@ template < class K >
 inline
 typename K::Comparison_result
 compare_squared_radius(const typename K::Point_3 &p,
-		       const typename K::Point_3 &q,
-		       const typename K::Point_3 &r,
-		       const typename K::FT &sr,
-		       const K& k)
+                       const typename K::Point_3 &q,
+                       const typename K::Point_3 &r,
+                       const typename K::FT &sr,
+                       const K& k)
 {
   return k.compare_squared_radius_3_object()(p, q, r, sr);
 }
@@ -485,11 +496,11 @@ template < class K >
 inline
 typename K::Comparison_result
 compare_squared_radius(const typename K::Point_3 &p,
-		       const typename K::Point_3 &q,
-		       const typename K::Point_3 &r,
-		       const typename K::Point_3 &s,
-		       const typename K::FT &sr,
-		       const K& k)
+                       const typename K::Point_3 &q,
+                       const typename K::Point_3 &r,
+                       const typename K::Point_3 &s,
+                       const typename K::FT &sr,
+                       const K& k)
 {
   return k.compare_squared_radius_3_object()(p, q, r, s, sr);
 }
@@ -499,7 +510,7 @@ inline
 typename K::Comparison_result
 compare_lexicographically_xyz(const typename K::Point_3 &p,
                               const typename K::Point_3 &q,
-			      const K& k)
+                              const K& k)
 {
   return k.compare_xyz_3_object()(p, q);
 }
@@ -508,10 +519,10 @@ template < class K >
 inline
 typename K::Comparison_result
 compare_signed_distance_to_plane(const typename K::Plane_3 &h,
-				 const typename K::Point_3 &p,
-				 const typename K::Point_3 &q,
-				 const K &k)
-{ 
+                                 const typename K::Point_3 &p,
+                                 const typename K::Point_3 &q,
+                                 const K &k)
+{
   if (k.less_signed_distance_to_plane_3_object()(h, p, q)) return SMALLER;
   if (k.less_signed_distance_to_plane_3_object()(h, q, p)) return LARGER;
   return EQUAL;
@@ -521,12 +532,12 @@ template < class K >
 inline
 typename K::Comparison_result
 compare_signed_distance_to_plane(const typename K::Point_3 &hp,
-				 const typename K::Point_3 &hq,
-				 const typename K::Point_3 &hr,
-				 const typename K::Point_3 &p,
-				 const typename K::Point_3 &q,
-				 const K &k)
-{ 
+                                 const typename K::Point_3 &hq,
+                                 const typename K::Point_3 &hr,
+                                 const typename K::Point_3 &p,
+                                 const typename K::Point_3 &q,
+                                 const K &k)
+{
   if (k.less_signed_distance_to_plane_3_object()(hp, hq, hr, p, q))
     return SMALLER;
   if (k.less_signed_distance_to_plane_3_object()(hp, hq, hr, q, p))
@@ -580,9 +591,9 @@ template < class K >
 inline
 typename K::Comparison_result
 compare_x(const typename K::Point_3 &p,
-	  const typename K::Point_3 &q,
-	  const K &k)
-{ 
+          const typename K::Point_3 &q,
+          const K &k)
+{
   return k.compare_x_3_object()(p, q);
 }
 
@@ -590,9 +601,9 @@ template < class K >
 inline
 typename K::Comparison_result
 compare_y(const typename K::Point_3 &p,
-	  const typename K::Point_3 &q,
-	  const K &k)
-{ 
+          const typename K::Point_3 &q,
+          const K &k)
+{
   return k.compare_y_3_object()(p, q);
 }
 
@@ -600,9 +611,9 @@ template < class K >
 inline
 typename K::Comparison_result
 compare_z(const typename K::Point_3 &p,
-	  const typename K::Point_3 &q,
-	  const K &k)
-{ 
+          const typename K::Point_3 &q,
+          const K &k)
+{
   return k.compare_z_3_object()(p, q);
 }
 
@@ -610,9 +621,9 @@ template < class K >
 inline
 typename K::Comparison_result
 compare_xyz(const typename K::Point_3 &p,
-	    const typename K::Point_3 &q,
-	    const K &k)
-{ 
+            const typename K::Point_3 &q,
+            const K &k)
+{
   return k.compare_xyz_3_object()(p, q);
 }
 
@@ -695,7 +706,7 @@ typename K::Boolean
 has_smaller_distance_to_point(const typename K::Point_3 &p,
                               const typename K::Point_3 &q,
                               const typename K::Point_3 &r,
-			      const K &k)
+                              const K &k)
 {
   return k.less_distance_to_point_3_object()(p, q, r);
 }
@@ -704,9 +715,9 @@ template < class K >
 inline
 typename K::Boolean
 has_larger_distance_to_point(const typename K::Point_3 &p,
-			     const typename K::Point_3 &q,
-			     const typename K::Point_3 &r,
-			     const K &k)
+                             const typename K::Point_3 &q,
+                             const typename K::Point_3 &r,
+                             const K &k)
 {
   return k.compare_distance_3_object()(p, q, r) == LARGER;
 }
@@ -715,10 +726,10 @@ template < class K >
 inline
 typename K::Boolean
 has_larger_signed_distance_to_plane(const typename K::Plane_3 &h,
-				    const typename K::Point_3 &p,
-				    const typename K::Point_3 &q,
-				    const K &k)
-{ 
+                                    const typename K::Point_3 &p,
+                                    const typename K::Point_3 &q,
+                                    const K &k)
+{
   return k.less_signed_distance_to_plane_3_object()(h, q, p);
 }
 
@@ -726,12 +737,12 @@ template < class K >
 inline
 typename K::Boolean
 has_larger_signed_distance_to_plane(const typename K::Point_3 &hp,
-				    const typename K::Point_3 &hq,
-				    const typename K::Point_3 &hr,
-				    const typename K::Point_3 &p,
-				    const typename K::Point_3 &q,
-				    const K &k)
-{ 
+                                    const typename K::Point_3 &hq,
+                                    const typename K::Point_3 &hr,
+                                    const typename K::Point_3 &p,
+                                    const typename K::Point_3 &q,
+                                    const K &k)
+{
   return k.less_signed_distance_to_plane_3_object()(hp, hq, hr, q, p);
 }
 
@@ -741,8 +752,8 @@ typename K::Boolean
 has_smaller_signed_distance_to_plane(const typename K::Plane_3 &h,
                                      const typename K::Point_3 &p,
                                      const typename K::Point_3 &q,
-				     const K &k)
-{ 
+                                     const K &k)
+{
   return k.less_signed_distance_to_plane_3_object()(h, p, q);
 }
 
@@ -754,8 +765,8 @@ has_smaller_signed_distance_to_plane(const typename K::Point_3 &hp,
                                      const typename K::Point_3 &hr,
                                      const typename K::Point_3 &p,
                                      const typename K::Point_3 &q,
-				     const K &k)
-{ 
+                                     const K &k)
+{
   return k.less_signed_distance_to_plane_3_object()(hp, hq, hr, p, q);
 }
 
@@ -765,7 +776,7 @@ typename K::Boolean
 less_x(const typename K::Point_3 &p,
        const typename K::Point_3 &q,
        const K &k)
-{ 
+{
   return k.less_x_3_object()(p, q);
 }
 
@@ -775,7 +786,7 @@ typename K::Boolean
 less_y(const typename K::Point_3 &p,
        const typename K::Point_3 &q,
        const K &k)
-{ 
+{
   return k.less_y_3_object()(p, q);
 }
 
@@ -785,7 +796,7 @@ typename K::Boolean
 less_z(const typename K::Point_3 &p,
        const typename K::Point_3 &q,
        const K &k)
-{ 
+{
   return k.less_z_3_object()(p, q);
 }
 
@@ -853,9 +864,9 @@ template <class K >
 inline
 typename K::Orientation
 orientation(const typename K::Point_3 &p,
-	    const typename K::Point_3 &q,
-	    const typename K::Point_3 &r,
-	    const typename K::Point_3 &s, const K &k)
+            const typename K::Point_3 &q,
+            const typename K::Point_3 &r,
+            const typename K::Point_3 &s, const K &k)
 {
   return k.orientation_3_object()(p, q, r, s);
 }
@@ -864,8 +875,8 @@ template <class K >
 inline
 typename K::Orientation
 orientation(const typename K::Vector_3 &u,
-	    const typename K::Vector_3 &v,
-	    const typename K::Vector_3 &w, const K &k)
+            const typename K::Vector_3 &v,
+            const typename K::Vector_3 &w, const K &k)
 {
   return k.orientation_3_object()(u, v, w);
 }
@@ -874,8 +885,8 @@ template < class K >
 inline
 typename K::Vector_3
 orthogonal_vector(const typename K::Point_3 &p,
-		  const typename K::Point_3 &q,
-		  const typename K::Point_3 &r, const K &k)
+                  const typename K::Point_3 &q,
+                  const typename K::Point_3 &r, const K &k)
 {
   return k.construct_orthogonal_vector_3_object()(p, q, r);
 }
@@ -1078,8 +1089,8 @@ template <typename K>
 inline
 typename K::FT
 squared_area(const typename K::Point_3 &p,
-	     const typename K::Point_3 &q,
-	     const typename K::Point_3 &r, const K &k)
+             const typename K::Point_3 &q,
+             const typename K::Point_3 &r, const K &k)
 {
   return k.compute_squared_area_3_object()(p, q, r);
 }
@@ -1088,9 +1099,9 @@ template < class K >
 inline
 typename K::FT
 squared_radius(const typename K::Point_3 &p,
-	       const typename K::Point_3 &q,
-	       const typename K::Point_3 &r,
-	       const typename K::Point_3 &s, const K &k)
+               const typename K::Point_3 &q,
+               const typename K::Point_3 &r,
+               const typename K::Point_3 &s, const K &k)
 {
   return k.compute_squared_radius_3_object()(p, q, r, s);
 }
@@ -1099,8 +1110,8 @@ template < class K >
 inline
 typename K::FT
 squared_radius(const typename K::Point_3 &p,
-	       const typename K::Point_3 &q,
-	       const typename K::Point_3 &r, const K &k)
+               const typename K::Point_3 &q,
+               const typename K::Point_3 &r, const K &k)
 {
   return k.compute_squared_radius_3_object()(p, q, r);
 }
@@ -1109,7 +1120,7 @@ template < class K >
 inline
 typename K::FT
 squared_radius(const typename K::Point_3 &p,
-	       const typename K::Point_3 &q, const K &k)
+               const typename K::Point_3 &q, const K &k)
 {
   return k.compute_squared_radius_3_object()(p, q);
 }

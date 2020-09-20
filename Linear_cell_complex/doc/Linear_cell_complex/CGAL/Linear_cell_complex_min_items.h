@@ -22,7 +22,7 @@ struct Linear_cell_complex_min_items
   struct Dart_wrapper
   {
     typedef CGAL::Cell_attribute_with_point<LCC> Vertex_attrib;
-    typedef CGAL::cpp11::tuple<Vertex_attrib> Attributes;
+    typedef std::tuple<Vertex_attrib> Attributes;
   };
 };
 
@@ -32,10 +32,7 @@ struct Linear_cell_complex_min_items
 \sa `CGAL::Linear_cell_complex_for_generalized_map<d,d2,LCCTraits,Items,Alloc>`
 
 */
-class Linear_cell_complex_min_items {
-public:
-
-/// @}
+struct Linear_cell_complex_min_items {
 
 }; /* end Linear_cell_complex_min_items */
 

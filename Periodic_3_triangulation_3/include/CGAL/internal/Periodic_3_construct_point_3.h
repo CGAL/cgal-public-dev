@@ -2,15 +2,10 @@
 // All rights reserved.
 //
 // This file is part of CGAL (www.cgal.org).
-// You can redistribute it and/or modify it under the terms of the GNU
-// General Public License as published by the Free Software Foundation,
-// either version 3 of the License, or (at your option) any later version.
 //
-// Licensees holding a valid commercial license may use this file in
-// accordance with the commercial license agreement provided with the software.
-//
-// This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
-// WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+// $URL$
+// $Id$
+// SPDX-License-Identifier: GPL-3.0-or-later OR LicenseRef-Commercial
 //
 // Author(s)     : Monique Teillaud <Monique.Teillaud@sophia.inria.fr>
 //                 Sylvain Pion <Sylvain.Pion@sophia.inria.fr>
@@ -25,13 +20,13 @@
 
 namespace CGAL {
 
-template < typename K, typename Construct_point_3_base>
+template <typename K_, typename Construct_point_3_base_>
 class Periodic_3_construct_point_3
-  : public Construct_point_3_base
+  : public Construct_point_3_base_
 {
-  typedef Construct_point_3_base             Base;
+  typedef Construct_point_3_base_            Base;
 
-  typedef K                                  Kernel;
+  typedef K_                                 Kernel;
 
   typedef typename Kernel::Point_3           Point;
   typedef typename Kernel::Weighted_point_3  Weighted_point;
@@ -40,7 +35,7 @@ class Periodic_3_construct_point_3
 
 public:
   Periodic_3_construct_point_3(const Iso_cuboid_3* dom,
-                               const Construct_point_3_base& cp)
+                               const Base& cp)
     : Base(cp), _dom(dom)
   { }
 

@@ -1,25 +1,18 @@
 // Copyright (c) 2004-2006  INRIA Sophia-Antipolis (France).
 // All rights reserved.
 //
-// This file is part of CGAL (www.cgal.org); you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public License as
-// published by the Free Software Foundation; either version 3 of the License,
-// or (at your option) any later version.
-//
-// Licensees holding a valid commercial license may use this file in
-// accordance with the commercial license agreement provided with the software.
-//
-// This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
-// WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+// This file is part of CGAL (www.cgal.org)
 //
 // $URL$
-// $Id$ $Date$
-// 
+// $Id$
+// SPDX-License-Identifier: LGPL-3.0-or-later OR LicenseRef-Commercial
 //
 // Author(s)     : Laurent RINEAU
 
 #ifndef CGAL_MESH_2_TRIANGULATION_MESHER_LEVEL_TRAITS_3_H
 #define CGAL_MESH_2_TRIANGULATION_MESHER_LEVEL_TRAITS_3_H
+
+#include <CGAL/disable_warnings.h>
 
 #include <vector>
 #include <CGAL/Mesher_level.h>
@@ -94,12 +87,12 @@ struct Triangulation_mesher_level_traits_3 :
 
   Vertex_handle insert_impl(const Point& p, Zone& zone)
   {
-    if( zone.locate_type == Tr::VERTEX 
-	) return zone.cell->vertex(zone.i);
+    if( zone.locate_type == Tr::VERTEX
+        ) return zone.cell->vertex(zone.i);
 
     const Facet& f = *(zone.boundary_facets.begin());
 
-    const Vertex_handle v = 
+    const Vertex_handle v =
       triangulation_ref_impl().insert_in_hole(p,
                                               zone.cells.begin(),
                                               zone.cells.end(),
@@ -112,7 +105,7 @@ struct Triangulation_mesher_level_traits_3 :
     std::vector<Vertex_handle> vertices;
 
     triangulation_ref_impl().incident_vertices(v, std::back_inserter(vertices));
-    
+
     typedef typename Tr::Geom_traits::FT FT;
 
     FT sq_insertion_radius = std::numeric_limits<FT>::infinity();
@@ -121,13 +114,13 @@ struct Triangulation_mesher_level_traits_3 :
           vertices.begin();
         vit != vertices.end();
         ++vit)
-      sq_insertion_radius = (CGAL::min)(sq_insertion_radius, 
-					CGAL::squared_distance(v->point(),
-							       (*vit)->point()) );
+      sq_insertion_radius = (CGAL::min)(sq_insertion_radius,
+                                        CGAL::squared_distance(v->point(),
+                                                               (*vit)->point()) );
     std::cerr << "insertion radius: " << CGAL::sqrt(sq_insertion_radius);
 #ifdef CGAL_MESH_3_DIRTY_DEBUG_SPHERES
-      std::cerr << " \t\tdistance: " 
-                << CGAL::sqrt(CGAL::squared_distance(v->point(), 
+      std::cerr << " \t\tdistance: "
+                << CGAL::sqrt(CGAL::squared_distance(v->point(),
                                       typename Tr::Geom_traits::Point_3(CGAL::ORIGIN)));
 #endif
     std::cerr << std::endl;
@@ -140,5 +133,7 @@ struct Triangulation_mesher_level_traits_3 :
 }; // end Triangulation_mesher_level_traits_3
 
 } // end namespace CGAL
+
+#include <CGAL/enable_warnings.h>
 
 #endif // CGAL_MESH_2_TRIANGULATION_MESHER_LEVEL_TRAITS_3_H

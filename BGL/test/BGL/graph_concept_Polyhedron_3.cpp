@@ -1,5 +1,5 @@
 #include <CGAL/Simple_cartesian.h>
-#include <CGAL/boost/graph/graph_traits_Polyhedron_3.h>
+#include <CGAL/Polyhedron_3.h>
 #include <CGAL/boost/graph/graph_concepts.h>
 #include <CGAL/Polyhedron_items_with_id_3.h>
 
@@ -12,7 +12,7 @@ typedef Traits::vertex_descriptor vertex_descriptor;
 typedef Traits::face_descriptor face_descriptor;
 typedef Kernel::Point_3 Point_3;
 
-template<typename Graph> 
+template<typename Graph>
 void concept_check_polyhedron() {
   boost::function_requires< boost::GraphConcept<Polyhedron> >();
   boost::function_requires< boost::VertexListGraphConcept<Polyhedron> >();
@@ -52,14 +52,11 @@ void concept_check_polyhedron() {
 
   // null
   boost::graph_traits<Polyhedron>::null_vertex();
+  boost::graph_traits<Polyhedron>::null_halfedge();
   boost::graph_traits<Polyhedron>::null_face();
 }
 
-
-
-
-int
-main()
+int main()
 {
   concept_check_polyhedron<Polyhedron>();
 

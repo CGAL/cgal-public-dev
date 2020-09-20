@@ -2,23 +2,19 @@
 // All rights reserved.
 //
 // This file is part of CGAL (www.cgal.org).
-// You can redistribute it and/or modify it under the terms of the GNU
-// General Public License as published by the Free Software Foundation,
-// either version 3 of the License, or (at your option) any later version.
 //
-// Licensees holding a valid commercial license may use this file in
-// accordance with the commercial license agreement provided with the software.
+// $URL$
+// $Id$
+// SPDX-License-Identifier: GPL-3.0-or-later OR LicenseRef-Commercial
 //
-// This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
-// WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
-//
-// Author(s)     : Efi Fogel         <efif@post.tau.ac.il>
+// Author(s) : Efi Fogel         <efif@post.tau.ac.il>
 
 #ifndef CGAL_ARR_GEODESIC_ARC_ON_SPHERE_TRAITS_2_H
 #define CGAL_ARR_GEODESIC_ARC_ON_SPHERE_TRAITS_2_H
 
 #include <CGAL/license/Arrangement_on_surface_2.h>
 
+#include <CGAL/disable_warnings.h>
 
 // #define CGAL_FULL_X_MONOTONE_GEODESIC_ARC_ON_SPHERE_IS_SUPPORTED 1
 
@@ -29,8 +25,11 @@
 
 #include <fstream>
 
+#include <boost/variant.hpp>
+
 #include <CGAL/config.h>
 #include <CGAL/tags.h>
+#include <CGAL/tss.h>
 #include <CGAL/intersections.h>
 #include <CGAL/Arr_tags.h>
 #include <CGAL/Arr_enums.h>
@@ -88,7 +87,7 @@ protected:
    */
   inline static const Direction_3& pos_pole()
   {
-    static const Direction_3 d(0, 0, 1);
+    CGAL_STATIC_THREAD_LOCAL_VARIABLE_3(Direction_3, d, 0, 0, 1);
     return d;
   }
 
@@ -97,7 +96,7 @@ protected:
    */
   inline static const Direction_3& neg_pole()
   {
-    static const Direction_3 d(0, 0, -1);
+    CGAL_STATIC_THREAD_LOCAL_VARIABLE_3(Direction_3, d, 0, 0, -1);
     return d;
   }
 
@@ -109,11 +108,13 @@ protected:
   inline static const Direction_2& identification_xy()
   {
 #if (CGAL_IDENTIFICATION_XY == CGAL_X_MINUS_1_Y_0)
-    static const Direction_2 d(-1, 0);
+    CGAL_STATIC_THREAD_LOCAL_VARIABLE_2(Direction_2, d, -1, 0);
+
 #elif (CGAL_IDENTIFICATION_XY == CGAL_X_MINUS_8_Y_6)
-    static const Direction_2 d(-8, 6);
+    CGAL_STATIC_THREAD_LOCAL_VARIABLE_2(Direction_2, d, -8, 6);
+
 #elif (CGAL_IDENTIFICATION_XY == CGAL_X_MINUS_11_Y_7)
-    static const Direction_2 d(-11, 7);
+    CGAL_STATIC_THREAD_LOCAL_VARIABLE_2(Direction_2, d, -11, 7);
 #else
 #error CGAL_IDENTIFICATION_XY is not defined
 #endif
@@ -128,11 +129,11 @@ protected:
   inline static const Direction_3& identification_normal()
   {
 #if (CGAL_IDENTIFICATION_XY == CGAL_X_MINUS_1_Y_0)
-    static const Direction_3 d(0, 1, 0);
+    CGAL_STATIC_THREAD_LOCAL_VARIABLE_3(Direction_3, d, 0, 1, 0);
 #elif (CGAL_IDENTIFICATION_XY == CGAL_X_MINUS_8_Y_6)
-    static const Direction_3 d(6, 8, 0);
+    CGAL_STATIC_THREAD_LOCAL_VARIABLE_3(Direction_3, d, 6, 8, 0);
 #elif (CGAL_IDENTIFICATION_XY == CGAL_X_MINUS_11_Y_7)
-    static const Direction_3 d(7, 11, 0);
+    CGAL_STATIC_THREAD_LOCAL_VARIABLE_3(Direction_3, d,7, 11, 0);
 #else
 #error CGAL_IDENTIFICATION_XY is not defined
 #endif
@@ -144,7 +145,7 @@ protected:
    */
   inline static const Direction_2& neg_x_2()
   {
-    static const Direction_2 d(-1, 0);
+    CGAL_STATIC_THREAD_LOCAL_VARIABLE_2(Direction_2, d, -1, 0);
     return d;
   }
 
@@ -153,7 +154,7 @@ protected:
    */
   inline static const Direction_2& neg_y_2()
   {
-    static const Direction_2 d(0, -1);
+    CGAL_STATIC_THREAD_LOCAL_VARIABLE_2(Direction_2, d, 0, -1);
     return d;
   }
 
@@ -711,7 +712,8 @@ public:
       typename Kernel::Construct_opposite_direction_3 opposite_3 =
         kernel->construct_opposite_direction_3_object();
       Point_2 tmp1 = opposite_3(p);     // pacify msvc 10
-      if (!kernel->equal_3_object()(tmp1, r1)) return EQUAL;
+      if (!kernel->equal_3_object()(Direction_3(tmp1), Direction_3(r1)))
+        return EQUAL;
 
       Sign xsign = Traits::x_sign(p);
       Sign ysign = Traits::y_sign(p);
@@ -778,8 +780,8 @@ public:
                 equal_3(xc1.normal(), xc2.normal()));
       }
 
-      return (equal_3(xc1.left(), xc2.left()) &&
-              equal_3(xc1.right(), xc2.right()));
+      return (equal_3(Direction_3(xc1.left()),  Direction_3(xc2.left())) &&
+              equal_3(Direction_3(xc1.right()), Direction_3(xc2.right())));
     }
 
     /*! Determines whether the two points are the same.
@@ -790,7 +792,7 @@ public:
     bool operator()(const Point_2& p1, const Point_2& p2) const
     {
       const Kernel* kernel = m_traits;
-      return kernel->equal_3_object()(p1, p2);
+      return kernel->equal_3_object()(Direction_3(p1), Direction_3(p2));
     }
   };
 
@@ -1557,8 +1559,8 @@ public:
       CGAL_precondition_code(const Kernel* kernel = m_traits);
       CGAL_precondition_code
         (typename Kernel::Equal_3 equal_3 = kernel->equal_3_object());
-      CGAL_precondition(!equal_3(p, source));
-      CGAL_precondition(!equal_3(p, target));
+      CGAL_precondition(!equal_3(Direction_3(p), Direction_3(source)));
+      CGAL_precondition(!equal_3(Direction_3(p), Direction_3(target)));
 
       xc1.set_normal(xc.normal());
       xc1.set_is_vertical(xc.is_vertical());
@@ -1646,7 +1648,10 @@ public:
                                         Project project,
                                         OutputIterator oi) const
     {
-      typedef std::pair<Point_2, Multiplicity>                  Point_2_pair;
+      typedef std::pair<Point_2, Multiplicity>          Intersection_point;
+      typedef boost::variant<Intersection_point, X_monotone_curve_2>
+                                                        Intersection_result;
+
       const Kernel* kernel = m_traits;
       typename Kernel::Equal_2 equal = kernel->equal_2_object();
 
@@ -1658,7 +1663,7 @@ public:
       if (equal(l1, l2)) {
         const Point_2& trg = (in_between(r1, l2, r2)) ? r1_3 : r2_3;
         X_monotone_curve_2 xc(l1_3, trg, normal, vertical, true);
-        *oi++ = make_object(xc);
+        *oi++ = Intersection_result(xc);
         return oi;
       }
 
@@ -1668,29 +1673,29 @@ public:
       if (l1_eq_start || (!l2_eq_start && in_between(l1, start, l2))) {
         // The following applies only to full circles:
         if (l1_eq_start && equal(r2, start))
-          *oi++ = make_object(Point_2_pair(r2_3, 1));
+          *oi++ = Intersection_result(Intersection_point(r2_3, 1));
         if (in_between(r1, l1, l2)) return oi;      // no intersection
         if (equal(r1, l2)) {
-          *oi++ = make_object(Point_2_pair(r1_3, 1));
+          *oi++ = Intersection_result(Intersection_point(r1_3, 1));
           return oi;
         }
         const Point_2& trg = (in_between(r1, l2, r2)) ? r1_3 : r2_3;
         X_monotone_curve_2 xc(l2_3, trg, normal, vertical, true);
-        *oi++ = make_object(xc);
+        *oi++ = Intersection_result(xc);
         return oi;
       }
       CGAL_assertion(l2_eq_start || in_between(l2, start, l1));
       // The following applies only to full circles:
       if (l2_eq_start && equal(r1, start))
-        *oi++ = make_object(Point_2_pair(r1_3, 1));
+        *oi++ = Intersection_result(Intersection_point(r1_3, 1));
       if (in_between(r2, l2, l1)) return oi;      // no intersection
       if (equal(r2, l1)) {
-        *oi++ = make_object(Point_2_pair(r2_3, 1));
+        *oi++ = Intersection_result(Intersection_point(r2_3, 1));
         return oi;
       }
       const Point_2& trg = (in_between(r1, l2, r2)) ? r1_3 : r2_3;
       X_monotone_curve_2 xc(l1_3, trg, normal, vertical, true);
-      *oi++ = make_object(xc);
+      *oi++ = Intersection_result(xc);
       return oi;
     }
 
@@ -1784,9 +1789,12 @@ public:
       typedef Arr_geodesic_arc_on_sphere_traits_2<Kernel> Traits;
       typedef typename Kernel::Counterclockwise_in_between_2
         Counterclockwise_in_between_2;
-      typedef typename Kernel::Equal_3                          Equal_3;
+      typedef typename Kernel::Equal_3                  Equal_3;
 
-      typedef std::pair<Point_2, Multiplicity>                  Point_2_pair;
+      typedef std::pair<Point_2, Multiplicity>          Intersection_point;
+      typedef boost::variant<Intersection_point, X_monotone_curve_2>
+                                                        Intersection_result;
+
       const Kernel* kernel = m_traits;
 
       Equal_3 equal_3 = kernel->equal_3_object();
@@ -1810,9 +1818,9 @@ public:
               (res && (xc1.is_directed_right() != xc2.is_directed_right())))
           {
             if (xc1.left().is_min_boundary() && xc2.left().is_min_boundary())
-              *oi++ = make_object(Point_2_pair(xc1.left(), 1));
+              *oi++ = Intersection_result(Intersection_point(xc1.left(), 1));
             if (xc1.right().is_max_boundary() && xc2.right().is_max_boundary())
-              *oi++ = make_object(Point_2_pair(xc1.right(), 1));
+              *oi++ = Intersection_result(Intersection_point(xc1.right(), 1));
             return oi;
           }
 
@@ -1820,11 +1828,11 @@ public:
            * the other arc is completely overlapping.
            */
           if (xc1.left().is_min_boundary() && xc1.right().is_max_boundary()) {
-            *oi++ = make_object(xc2);
+            *oi++ = Intersection_result(xc2);
             return oi;
           }
           if (xc2.left().is_min_boundary() && xc2.right().is_max_boundary()) {
-            *oi++ = make_object(xc1);
+            *oi++ = Intersection_result(xc1);
             return oi;
           }
           /*! Find an endpoint that does not coincide with a pole, and project
@@ -1877,14 +1885,14 @@ public:
       // Determine which one of the two directions:
       Point_2 ed(v.direction());
       if (is_in_between(ed, xc1) && is_in_between(ed, xc2)) {
-        *oi++ = make_object(Point_2_pair(ed, 1));
+        *oi++ = Intersection_result(Intersection_point(ed, 1));
         return oi;
       }
 
       Vector_3 vo(kernel->construct_opposite_vector_3_object()(v));
       Point_2 edo(vo.direction());
       if (is_in_between(edo, xc1) && is_in_between(edo, xc2)) {
-        *oi++ = make_object(Point_2_pair(edo, 1));
+        *oi++ = Intersection_result(Intersection_point(edo, 1));
         return oi;
       }
       return oi;
@@ -1927,8 +1935,13 @@ public:
       const Kernel* kernel = m_traits;
       typename Kernel::Equal_3 equal = kernel->equal_3_object();
 
+      // Down cast to pass to kernel member functions
+      const Direction_3& xc1_left = xc1.left();
+      const Direction_3& xc2_left = xc2.left();
+      const Direction_3& xc1_right = xc1.right();
+      const Direction_3& xc2_right = xc2.right();
       if (xc1.is_degenerate() && xc2.is_degenerate())
-        return equal(xc1.left(), xc2.left());
+        return equal(xc1_left, xc2_left);
       if ((xc1.is_full() || xc1.is_meridian()) && xc2.is_degenerate())
         return xc1.has_on(xc2.left());
       if ((xc2.is_full() || xc2.is_meridian()) && xc1.is_degenerate())
@@ -1941,8 +1954,8 @@ public:
       if (!equal(normal1, normal2) && !equal(opposite_normal1, normal2))
         return false;
 
-      bool eq1 = equal(xc1.right(), xc2.left());
-      bool eq2 = equal(xc1.left(), xc2.right());
+      bool eq1 = equal(xc1_right, xc2_left);
+      bool eq2 = equal(xc1_left, xc2_right);
 
 #if defined(CGAL_FULL_X_MONOTONE_GEODESIC_ARC_ON_SPHERE_IS_SUPPORTED)
       if (eq1 && eq2) return true;
@@ -2001,14 +2014,20 @@ public:
       const Kernel* kernel = m_traits;
       typename Kernel::Equal_3 equal = kernel->equal_3_object();
 
+      // Down cast to pass to kernel member functions
+      const Direction_3& xc1_right = xc1.right();
+      const Direction_3& xc2_left = xc2.left();
+
       xc.set_is_degenerate(false);
       xc.set_is_empty(false);
       xc.set_is_vertical(xc1.is_vertical());
 
-      bool eq1 = equal(xc1.right(), xc2.left());
+      bool eq1 = equal(xc1_right, xc2_left);
 
 #if defined(CGAL_FULL_X_MONOTONE_GEODESIC_ARC_ON_SPHERE_IS_SUPPORTED)
-      bool eq2 = equal(xc1.left(), xc2.right());
+      const Direction_3& xc1_left = xc1.left();
+      const Direction_3& xc2_right = xc2.right();
+      bool eq2 = equal(xc1_left, xc2_right);
       if (eq1 && eq2) {
         const Point_2& p =
           xc1.source().is_mid_boundary() ? xc1.source() : xc1.target();
@@ -2017,8 +2036,10 @@ public:
         xc.set_normal(xc1.normal());
         xc.set_is_full(true);
       }
+#else
+      CGAL_assertion_code(const Direction_3& xc1_left = xc1.left();
+                          const Direction_3& xc2_right = xc2.right());
 #endif
-
       if (xc1.is_directed_right() || xc2.is_directed_right()) {
         xc.set_normal(xc1.is_directed_right() ? xc1.normal() : xc2.normal());
         xc.set_is_directed_right(true);
@@ -2026,20 +2047,23 @@ public:
         if (eq1) {
           xc.set_source(xc1.left());
           xc.set_target(xc2.right());
-        } else {
-          CGAL_assertion(equal(xc1.left(), xc2.right()));
+        }
+        else {
+          CGAL_assertion(equal(xc1_left, xc2_right));
           xc.set_source(xc2.left());
           xc.set_target(xc1.right());
         }
-      } else {
+      }
+      else {
         xc.set_normal(xc1.normal());
         xc.set_is_directed_right(false);
 
         if (eq1) {
           xc.set_source(xc2.right());
           xc.set_target(xc1.left());
-        } else {
-          CGAL_assertion(equal(xc1.left(), xc2.right()));
+        }
+        else {
+          CGAL_assertion(equal(xc1_left, xc2_right));
           xc.set_source(xc1.right());
           xc.set_target(xc2.left());
         }
@@ -2463,7 +2487,8 @@ public:
     typedef Arr_geodesic_arc_on_sphere_traits_2<Kernel> Traits;
 
     Kernel kernel;
-    CGAL_precondition(!kernel.equal_3_object()(m_source, m_target));
+    CGAL_precondition(!kernel.equal_3_object()(Direction_3(m_source),
+                                               Direction_3(m_target)));
 
     // Check whether any one of the endpoint coincide with a pole:
     if (m_source.is_max_boundary()) {
@@ -2534,7 +2559,8 @@ public:
     // The arc is not vertical!
     set_is_vertical(false);
     set_is_directed_right(orient == LEFT_TURN);
-    set_is_full(kernel.equal_3_object()(m_source, m_target));
+    set_is_full(kernel.equal_3_object()(Direction_3(m_source),
+                                        Direction_3(m_target)));
   }
 
   /*! Construct a full spherical_arc from a plane
@@ -2870,11 +2896,13 @@ public:
   /*! Copy constructor
    * \param other the other arc
    */
+#ifdef DOXYGEN_RUNNING
   Arr_geodesic_arc_on_sphere_3
   (const Arr_geodesic_arc_on_sphere_3& other) : Base(other)
   {
     m_is_x_monotone = other.m_is_x_monotone;
   }
+#endif
 
   /*! Constructor
    * \param src the source point of the arc
@@ -2933,7 +2961,8 @@ public:
     typedef typename Kernel::Direction_3                        Direction_3;
 
     Kernel kernel;
-    CGAL_precondition(!kernel.equal_3_object()(source, target));
+    CGAL_precondition(!kernel.equal_3_object()(Direction_3(source),
+                                               Direction_3(target)));
     CGAL_precondition(!kernel.equal_3_object()
                       (kernel.construct_opposite_direction_3_object()(source),
                        static_cast<const Direction_3&>(target)));
@@ -3247,4 +3276,5 @@ operator>>(InputStream& is,
 
 } //namespace CGAL
 
+#include <CGAL/enable_warnings.h>
 #endif

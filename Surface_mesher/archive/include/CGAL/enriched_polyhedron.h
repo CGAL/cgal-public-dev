@@ -4,18 +4,10 @@
 // All rights reserved.
 //
 // This file is part of CGAL (www.cgal.org).
-// You can redistribute it and/or modify it under the terms of the GNU
-// General Public License as published by the Free Software Foundation,
-// either version 3 of the License, or (at your option) any later version.
-//
-// Licensees holding a valid commercial license may use this file in
-// accordance with the commercial license agreement provided with the software.
-//
-// This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
-// WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 //
 // $URL$
 // $Id$
+// SPDX-License-Identifier: GPL-3.0-or-later OR LicenseRef-Commercial
 //
 // Author(s)     : Pierre Alliez
 
@@ -34,14 +26,12 @@
 #include <CGAL/HalfedgeDS_default.h>
 #include <list>
 
-#include <CGAL/gl.h>
-
 // a refined facet with a normal and a tag
 template <class Refs, class T, class P, class Norm>
 class Enriched_facet : public CGAL::HalfedgeDS_face_base<Refs, T>
 {
   // tag
-  int m_tag; 
+  int m_tag;
 
   // normal
   Norm m_normal;
@@ -59,7 +49,7 @@ public:
   // tag
   const int& tag() const { return m_tag; }
   int& tag() { return m_tag; }
-	void tag(const int& i) { m_tag = i; }
+        void tag(const int& i) { m_tag = i; }
 
   // normal
   typedef Norm Normal_3;
@@ -67,8 +57,8 @@ public:
   const Normal_3& normal() const { return m_normal; }
 };
 
-// a refined halfedge with a general tag and 
-// a binary tag to indicate wether it belongs 
+// a refined halfedge with a general tag and
+// a binary tag to indicate whether it belongs
 // to the control mesh or not
 template <class Refs, class Tprev, class Tvertex, class Tface, class Norm>
 class Enriched_halfedge : public CGAL::HalfedgeDS_halfedge_base<Refs,Tprev,Tvertex,Tface>
@@ -76,10 +66,10 @@ class Enriched_halfedge : public CGAL::HalfedgeDS_halfedge_base<Refs,Tprev,Tvert
 private:
 
   // general purpose tag
-  int m_tag; 
+  int m_tag;
 
   // option for edge superimposing
-  bool m_control_edge; 
+  bool m_control_edge;
   bool m_sharp;
 
 public:
@@ -96,7 +86,7 @@ public:
   int& tag() { return m_tag;  }
   void tag(const int& t)  { m_tag = t; }
 
-  // control edge 
+  // control edge
   bool& control_edge()  { return m_control_edge; }
   const bool& control_edge()  const { return m_control_edge; }
 
@@ -112,7 +102,7 @@ template <class Refs, class T, class P, class Norm>
 class Enriched_vertex : public CGAL::HalfedgeDS_vertex_base<Refs, T, P>
 {
   // tag
-  int m_tag; 
+  int m_tag;
 
   // normal
   Norm m_normal;
@@ -137,12 +127,12 @@ public:
   void tag(const int& t)  { m_tag = t; }
 };
 
-// A redefined items class for the Polyhedron_3 
-// with a refined vertex class that contains a 
+// A redefined items class for the Polyhedron_3
+// with a refined vertex class that contains a
 // member for the normal vector and a refined
-// facet with a normal vector instead of the 
-// plane equation (this is an alternative 
-// solution instead of using 
+// facet with a normal vector instead of the
+// plane equation (this is an alternative
+// solution instead of using
 // Polyhedron_traits_with_normals_3).
 
 struct Enriched_items : public CGAL::Polyhedron_items_3
@@ -183,7 +173,7 @@ struct Enriched_items : public CGAL::Polyhedron_items_3
 
 static const double PI = 3.1415926535897932384626;
 
-// compute facet normal 
+// compute facet normal
 struct Facet_normal // (functor)
 {
   template<class Facet> void operator()(Facet& f)
@@ -209,7 +199,7 @@ struct Facet_normal // (functor)
   }
 };
 
-// compute vertex normal 
+// compute vertex normal
 struct Vertex_normal // (functor)
 {
   template<class Vertex> void operator()(Vertex& v)
@@ -243,7 +233,7 @@ public :
   typedef typename kernel::Vector_3 Vector;
   typedef typename kernel::Iso_cuboid_3 Iso_cuboid;
   typedef CGAL::Polyhedron_3<kernel,items,HDS> Base;
-  
+
   typedef typename Base::Vertex_handle Vertex_handle;
   typedef typename Base::Vertex_iterator Vertex_iterator;
   typedef typename Base::Halfedge_handle Halfedge_handle;
@@ -254,7 +244,7 @@ public :
   typedef typename Base::Facet_iterator Facet_iterator;
   typedef typename Base::Facet_handle Facet_handle;
   typedef typename Base::Facet Facet;
-  
+
   using Base::vertices_begin;
   using Base::vertices_end;
   using Base::edges_begin;
@@ -277,7 +267,7 @@ private :
 
 public :
   enum Vertex_type { SMOOTH,           // 0 sharp edge
-                     DART,             // 1 
+                     DART,             // 1
                      CREASE_REGULAR,   // 2 - with two non-sharp edges on each side
                      CREASE_IRREGULAR, // 2
                      CORNER };         // 3 and more
@@ -285,12 +275,12 @@ public :
 public :
 
   // life cycle
-  Enriched_polyhedron() 
+  Enriched_polyhedron()
   {
     m_pure_quad = false;
     m_pure_triangle = false;
   }
-  virtual ~Enriched_polyhedron() 
+  virtual ~Enriched_polyhedron()
   {
   }
 
@@ -333,13 +323,13 @@ public :
     {
       const Point& p = pVertex->point();
 
-      xmin =  std::min(xmin,p.x());
-      ymin =  std::min(ymin,p.y());
-      zmin =  std::min(zmin,p.z());
+      xmin =  (std::min)(xmin,p.x());
+      ymin =  (std::min)(ymin,p.y());
+      zmin =  (std::min)(zmin,p.z());
 
-      xmax =  std::max(xmax,p.x());
-      ymax =  std::max(ymax,p.y());
-      zmax =  std::max(zmax,p.z());
+      xmax =  (std::max)(xmax,p.x());
+      ymax =  (std::max)(ymax,p.y());
+      zmax =  (std::max)(zmax,p.z());
     }
     m_bbox = Iso_cuboid(xmin,ymin,zmin,
                         xmax,ymax,zmax);
@@ -372,7 +362,7 @@ public :
   // degree of a face
   static unsigned int degree(Facet_handle pFace)
   {
-    return CGAL::circulator_size(pFace->facet_begin());    
+    return CGAL::circulator_size(pFace->facet_begin());
   }
 
   // valence of a vertex
@@ -381,7 +371,7 @@ public :
     return CGAL::circulator_size(pVertex->vertex_begin());
   }
 
-  // check wether a vertex is on a boundary or not
+  // check whether a vertex is on a boundary or not
   static bool is_border(Vertex_handle pVertex)
   {
     Halfedge_around_vertex_circulator pHalfEdge = pVertex->vertex_begin();
@@ -491,99 +481,6 @@ public :
     center = CGAL::ORIGIN + (vec/FT(degree));
   }
 
-
-  void gl_draw_direct_triangles(bool smooth_shading,
-                                bool use_normals,
-                                bool inverse_normals = false)
-  {
-    // draw triangles
-    ::glBegin(GL_TRIANGLES);
-    Facet_iterator pFacet = facets_begin();
-    for(;pFacet != facets_end();pFacet++)
-      gl_draw_facet(pFacet,smooth_shading,use_normals,inverse_normals);
-    ::glEnd(); // end polygon assembly
-  }
-
-
-  void gl_draw_direct(bool smooth_shading,
-                      bool use_normals,
-                      bool inverse_normals = false)
-  {
-    // draw polygons
-    Facet_iterator pFacet = facets_begin();
-    for(;pFacet != facets_end();pFacet++)
-    {
-      // begin polygon assembly
-      ::glBegin(GL_POLYGON);
-        gl_draw_facet(pFacet,smooth_shading,use_normals,inverse_normals);
-      ::glEnd(); // end polygon assembly
-    }
-  }
-
-  void gl_draw_facet(Facet_handle pFacet,
-                      bool smooth_shading,
-                      bool use_normals,
-                      bool inverse_normals = false)
-  {
-    // one normal per face
-    if(use_normals && !smooth_shading)
-    {
-      const typename Facet::Normal_3& normal = pFacet->normal();
-      if(inverse_normals)
-        ::glNormal3f(-normal[0],-normal[1],-normal[2]);
-      else
-        ::glNormal3f(normal[0],normal[1],normal[2]);
-    }
-
-    // revolve around current face to get vertices
-    Halfedge_around_facet_circulator pHalfedge = pFacet->facet_begin();
-    do
-    {
-      // one normal per vertex
-      if(use_normals && smooth_shading)
-      {
-        const typename Facet::Normal_3& normal = pHalfedge->vertex()->normal();
-        if(inverse_normals)
-          ::glNormal3f(-normal[0],-normal[1],-normal[2]);
-        else      
-          ::glNormal3f(normal[0],normal[1],normal[2]);      }
-
-      // polygon assembly is performed per vertex
-      const Point& point  = pHalfedge->vertex()->point();
-      ::glVertex3d(point[0],point[1],point[2]);
-    }
-    while(++pHalfedge != pFacet->facet_begin());
-  }
-
-  // superimpose edges
-  void superimpose_edges(bool skip_ordinary_edges = true,
-                         bool skip_control_edges = false)
-  {
-    ::glBegin(GL_LINES);
-    for(Edge_iterator h = edges_begin();
-        h != edges_end();
-        h++)
-    {
-      if(h->sharp())
-        continue;
-
-      // ignore this edges
-      if(skip_ordinary_edges && !h->control_edge())
-        continue;
-
-      // ignore control edges
-      if(skip_control_edges && h->control_edge())
-        continue;
-
-        // assembly and draw line segment
-        const Point& p1 = h->prev()->vertex()->point();
-        const Point& p2 = h->vertex()->point();
-        ::glVertex3f(p1[0],p1[1],p1[2]);
-        ::glVertex3f(p2[0],p2[1],p2[2]);
-    }
-    ::glEnd();
-  }
-
   bool is_sharp(Halfedge_handle he,
                 const double angle_sharp)
   {
@@ -623,7 +520,7 @@ public :
       return CREASE_IRREGULAR;
 
     // valence = 6 - let us check regularity
-    
+
     // pick first sharp edge
     Halfedge_around_vertex_circulator he = v->vertex_begin();
     Halfedge_around_vertex_circulator end = he;
@@ -699,8 +596,8 @@ public :
     return conv * angle_rad(u,v);
   }
 
-  static FT len(const Vector &v) 
-  { 
+  static FT len(const Vector &v)
+  {
     return (FT)std::sqrt(CGAL_NTS to_double(v*v));
   }
 
@@ -760,87 +657,6 @@ public :
     return nb;
   }
 
-  // draw edges
-  void gl_draw_sharp_edges(const float line_width,
-                           unsigned char r,
-                           unsigned char g,
-                           unsigned char b)
-  {
-    ::glLineWidth(line_width);
-    ::glColor3ub(r,g,b);
-
-    ::glBegin(GL_LINES);
-    for(Halfedge_iterator he = edges_begin();
-        he != edges_end();
-        he++)
-    {
-      if(he->sharp())
-      {
-        const Point& a =  he->opposite()->vertex()->point();
-        const Point& b =  he->vertex()->point();
-        ::glVertex3d(a[0],a[1],a[2]);
-        ::glVertex3d(b[0],b[1],b[2]);
-      }
-    }
-    ::glEnd();
-  }
-
-
-  void gl_draw_boundaries()
-  {
-    ::glBegin(GL_LINES);
-    for(Halfedge_iterator he = halfedges_begin();
-        he != halfedges_end();
-        he++)
-    {
-      if(he->is_border())
-      {
-        const Point& a = he->vertex()->point();
-        const Point& b = he->opposite()->vertex()->point();
-        ::glVertex3d(a.x(),a.y(),a.z());
-        ::glVertex3d(b.x(),b.y(),b.z());
-      }
-    }
-    ::glEnd();
-  }
-
-  // draw bounding box
-  void gl_draw_bounding_box()
-  {
-    ::glBegin(GL_LINES);
-
-      // along x axis
-      ::glVertex3f(m_bbox.xmin(),m_bbox.ymin(),m_bbox.zmin());
-      ::glVertex3f(m_bbox.xmax(),m_bbox.ymin(),m_bbox.zmin());
-      ::glVertex3f(m_bbox.xmin(),m_bbox.ymin(),m_bbox.zmax());
-      ::glVertex3f(m_bbox.xmax(),m_bbox.ymin(),m_bbox.zmax());
-      ::glVertex3f(m_bbox.xmin(),m_bbox.ymax(),m_bbox.zmin());
-      ::glVertex3f(m_bbox.xmax(),m_bbox.ymax(),m_bbox.zmin());
-      ::glVertex3f(m_bbox.xmin(),m_bbox.ymax(),m_bbox.zmax());
-      ::glVertex3f(m_bbox.xmax(),m_bbox.ymax(),m_bbox.zmax());
-
-      // along y axis
-      ::glVertex3f(m_bbox.xmin(),m_bbox.ymin(),m_bbox.zmin());
-      ::glVertex3f(m_bbox.xmin(),m_bbox.ymax(),m_bbox.zmin());
-      ::glVertex3f(m_bbox.xmin(),m_bbox.ymin(),m_bbox.zmax());
-      ::glVertex3f(m_bbox.xmin(),m_bbox.ymax(),m_bbox.zmax());
-      ::glVertex3f(m_bbox.xmax(),m_bbox.ymin(),m_bbox.zmin());
-      ::glVertex3f(m_bbox.xmax(),m_bbox.ymax(),m_bbox.zmin());
-      ::glVertex3f(m_bbox.xmax(),m_bbox.ymin(),m_bbox.zmax());
-      ::glVertex3f(m_bbox.xmax(),m_bbox.ymax(),m_bbox.zmax());
-
-      // along z axis
-      ::glVertex3f(m_bbox.xmin(),m_bbox.ymin(),m_bbox.zmin());
-      ::glVertex3f(m_bbox.xmin(),m_bbox.ymin(),m_bbox.zmax());
-      ::glVertex3f(m_bbox.xmin(),m_bbox.ymax(),m_bbox.zmin());
-      ::glVertex3f(m_bbox.xmin(),m_bbox.ymax(),m_bbox.zmax());
-      ::glVertex3f(m_bbox.xmax(),m_bbox.ymin(),m_bbox.zmin());
-      ::glVertex3f(m_bbox.xmax(),m_bbox.ymin(),m_bbox.zmax());
-      ::glVertex3f(m_bbox.xmax(),m_bbox.ymax(),m_bbox.zmin());
-      ::glVertex3f(m_bbox.xmax(),m_bbox.ymax(),m_bbox.zmax());
-
-    ::glEnd();
-  }
 
   // count #boundaries
   unsigned int nb_boundaries()
@@ -866,7 +682,7 @@ public :
     return nb;
   }
 
-  // tag component 
+  // tag component
   void tag_component(Facet_handle pSeedFacet,
                      const int tag_free,
                      const int tag_done)

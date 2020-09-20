@@ -4,15 +4,10 @@
 // Copyright (C) 2014 GeometryFactory
 //
 // This file is part of CGAL (www.cgal.org).
-// You can redistribute it and/or modify it under the terms of the GNU
-// General Public License as published by the Free Software Foundation,
-// either version 3 of the License, or (at your option) any later version.
 //
-// Licensees holding a valid commercial license may use this file in
-// accordance with the commercial license agreement provided with the software.
-//
-// This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
-// WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+// $URL$
+// $Id$
+// SPDX-License-Identifier: GPL-3.0-or-later OR LicenseRef-Commercial
 //
 
 #ifndef CGAL_SURFACE_MESH_IO_H
@@ -21,11 +16,13 @@
 #include <CGAL/license/Surface_mesh.h>
 
 
+#include <CGAL/disable_warnings.h>
 
 //== INCLUDES =================================================================
 
 #include <string>
-#include <cstdio>
+#include <fstream>
+#include <sstream>
 #include <cstring>
 #include <algorithm>
 #include <vector>
@@ -47,17 +44,14 @@ namespace CGAL {
 
 namespace internal {
 // helper function
-template <typename T> void read(FILE* in, T& t)
+  template <typename T> void read(std::istream& in, T& t)
 {
-  std::size_t err = 0;
-    err = fread(&t, 1, sizeof(t), in);
-    if(err != 0)
-      throw std::runtime_error("fread error");
+    in.read(reinterpret_cast<char*>(&t), sizeof(t));
 }
 
 template <typename Point_3>
 bool read_off_binary(Surface_mesh<Point_3>& mesh,
-                     FILE* in,
+                     std::istream& in,
                      const bool has_normals,
                      const bool has_texcoords)
 {
@@ -91,7 +85,7 @@ bool read_off_binary(Surface_mesh<Point_3>& mesh,
 
 
     // read vertices: pos [normal] [color] [texcoord]
-    for (i=0; i<nV && !feof(in); ++i)
+    for (i=0; i<nV && in.good(); ++i)
     {
         // position
         internal::read(in, p);
@@ -135,7 +129,7 @@ bool read_off_binary(Surface_mesh<Point_3>& mesh,
 
 template <typename Point_3>
 bool read_off_ascii(Surface_mesh<Point_3>& mesh,
-                    FILE* in,
+                    std::istream& in,
                     const bool has_normals,
                     const bool has_texcoords)
 {
@@ -146,41 +140,41 @@ bool read_off_ascii(Surface_mesh<Point_3>& mesh,
     typedef typename K::Vector_3 Texture_coordinate;
 
     boost::array<double, 3> buffer;
-    char                    line[100], *lp;
-    unsigned int            i, j, items, idx;
-    int                     nc;
+    std::string             line;
+    unsigned int            i, j, idx;
     unsigned int            nV, nF, nE;
     typename Mesh::Vertex_index   v;
 
     // properties
     typename Mesh::template Property_map<typename Mesh::Vertex_index, Normal>                 normals;
     typename Mesh::template Property_map<typename Mesh::Vertex_index, Texture_coordinate>     texcoords;
-    
+
     if (has_normals)   normals   = mesh.template add_property_map<typename Mesh::Vertex_index, Normal>("v:normal").first;
     if (has_texcoords) texcoords = mesh.template add_property_map<typename Mesh::Vertex_index, Texture_coordinate>("v:texcoord").first;
 
-    int c;
+    char c;
     do {
-      c = getc(in);
+      c = in.get();
       if(c == '#'){
-        fgets(line, 100, in);
+        getline(in,line);
       } else {
-        ungetc(c,in);
+        in.putback(c);
         break;
       }
     }while(1);
 
     // #Vertice, #Faces, #Edges
-    items = fscanf(in, "%d %d %d\n", (int*)&nV, (int*)&nF, (int*)&nE);
+    in >> nV >> nF >> nE;
+    getline(in,line); // reads eol
 
     mesh.clear();
     mesh.reserve(nV, (std::max)(3*nV, nE), nF);
 
     // read vertices: pos [normal] [color] [texcoord]
-    for (i=0; i<nV && !feof(in); ++i)
+    for (i=0; i<nV && in.good(); ++i)
     {
         // read line
-        lp = fgets(line, 100, in);
+        getline(in, line);
         if(line[0] == '#') // if the first column is a # we are looking at a comment line
         {
           --i;
@@ -188,28 +182,21 @@ bool read_off_ascii(Surface_mesh<Point_3>& mesh,
         }
 
         // position
-        items = sscanf(lp, "%lf %lf %lf%n", &(buffer[0]), &buffer[1], &buffer[2], &nc);
-        CGAL_assertion(items==3);
+        std::istringstream iss(line);
+        iss >> iformat(buffer[0]) >> iformat(buffer[1]) >> iformat(buffer[2]);
         v = mesh.add_vertex(Point_3(buffer[0], buffer[1], buffer[2]));
-        lp += nc;
 
         // normal
         if (has_normals)
         {
-            if (sscanf(lp, "%lf %lf %lf%n", &buffer[0], &buffer[1], &buffer[2], &nc) == 3)
-            {
-              normals[v] = Vector_3(buffer[0], buffer[1], buffer[2]);
-            }
-            lp += nc;
+            iss >> iformat(buffer[0]) >> iformat(buffer[1]) >> iformat(buffer[2]);
         }
 
         // tex coord
         if (has_texcoords)
         {
-            items = sscanf(lp, "%lf %lf%n", &buffer[0], &buffer[1], &nc);
-            CGAL_assertion(items == 2);
+            iss >> iformat(buffer[0]) >> iformat(buffer[1]);
             texcoords[v] = Vector_3(buffer[0], buffer[1], 0.0);
-            lp += nc;
         }
     }
 
@@ -218,7 +205,7 @@ bool read_off_ascii(Surface_mesh<Point_3>& mesh,
     for (i=0; i<nF; ++i)
     {
         // read line
-        lp = fgets(line, 100, in);
+        getline(in, line);
         if(line[0] == '#') // if the first column is a # we are looking at a comment line
         {
           --i;
@@ -226,18 +213,15 @@ bool read_off_ascii(Surface_mesh<Point_3>& mesh,
         }
 
         // #vertices
-        items = sscanf(lp, "%d%n", (int*)&nV, &nc);
-        CGAL_assertion(items == 1);
+        std::istringstream iss(line);
+        iss >> nV;
         vertices.resize(nV);
-        lp += nc;
 
         // indices
         for (j=0; j<nV; ++j)
         {
-            items = sscanf(lp, "%d%n", (int*)&idx, &nc);
-            CGAL_assertion(items == 1);
+           iss >> idx;
             vertices[j] = typename Mesh::Vertex_index(idx);
-            lp += nc;
         }
 
         if(!mesh.add_face(vertices).is_valid()) {
@@ -245,7 +229,6 @@ bool read_off_ascii(Surface_mesh<Point_3>& mesh,
             return false;
         }
     }
-    CGAL_USE(items);
     return true;
 }
 }
@@ -263,7 +246,7 @@ bool read_off_ascii(Surface_mesh<Point_3>& mesh,
 /// This function reads an `OFF` file into a `Surface_mesh`. It
 /// supports the `OFF` vertex properties normal, color, and vertex
 /// coordinates. If a property is detected in the `OFF` file, it will be
-/// read into the `mesh` as a vertex property with the name 
+/// read into the `mesh` as a vertex property with the name
 /// `"v:normal"`, `"v:color"`, and `"v:texcoord"`, respectivly.
 ///
 /// @param mesh The mesh that should contain the file contents.
@@ -275,7 +258,7 @@ bool read_off_ascii(Surface_mesh<Point_3>& mesh,
 template <typename K>
 bool read_off(Surface_mesh<K>& mesh, const std::string& filename)
 {
-    char  line[100];
+  std::string  line;
     bool  has_texcoords = false;
     bool  has_normals   = false;
     bool  has_hcoords   = false;
@@ -283,25 +266,24 @@ bool read_off(Surface_mesh<K>& mesh, const std::string& filename)
     bool  is_binary     = false;
 
     // open file (in ASCII mode)
-    FILE* in = std::fopen(filename.c_str(), "r");
+    std::ifstream in(filename.c_str());
     if (!in) return false;
 
     // read header: [ST][C][N][4][n]OFF BINARY
-    char *c = std::fgets(line, 100, in);
-    CGAL_assertion(c != NULL);
-    c = line;
+    std::getline(in,line);
+    const char *c = line.c_str();
     if (c[0] == 'S' && c[1] == 'T') { has_texcoords = true; c += 2; }
     if (c[0] == 'N') { has_normals = true; ++c; }
     if (c[0] == '4') { has_hcoords = true; ++c; }
     if (c[0] == 'n') { has_dim     = true; ++c; }
-    if (strncmp(c, "OFF", 3) != 0) { std::fclose(in); return false; } // no OFF
+    if (strncmp(c, "OFF", 3) != 0) { in.close(); return false; } // no OFF
     if (strncmp(c+4, "BINARY", 6) == 0) is_binary = true;
 
 
     // homogeneous coords, and vertex dimension != 3 are not supported
     if (has_hcoords || has_dim)
     {
-        std::fclose(in);
+        in.close();
         return false;
     }
 
@@ -309,10 +291,9 @@ bool read_off(Surface_mesh<K>& mesh, const std::string& filename)
     // if binary: reopen file in binary mode
     if (is_binary)
     {
-        std::fclose(in);
-        in = std::fopen(filename.c_str(), "rb");
-        c = std::fgets(line, 100, in);
-        CGAL_assertion(c != NULL);
+      in.close();
+      in.open(filename.c_str(), std::ios::binary);
+      std::getline(in,line);
     }
 
     // read as ASCII or binary
@@ -320,8 +301,7 @@ bool read_off(Surface_mesh<K>& mesh, const std::string& filename)
                internal::read_off_binary(mesh, in, has_normals, has_texcoords) :
                internal::read_off_ascii(mesh, in, has_normals, has_texcoords));
 
-
-    std::fclose(in);
+    in.close();
     return ok;
 }
 
@@ -334,49 +314,18 @@ bool read_off(Surface_mesh<K>& mesh, const std::string& filename)
 ///
 /// @returns `true`, if reading succeeded, `false` otherwise
 ///
-#endif 
+#endif
 template <typename K>
 bool write_off(const Surface_mesh<K>& mesh, const std::string& filename)
 {
-    typedef Surface_mesh<K> Mesh;
-    typedef typename Mesh::Point Point_3;
-
-    FILE* out = fopen(filename.c_str(), "w");
-    if (!out)
+    std::ofstream out(filename.c_str());
+    if (out.fail())
         return false;
 
+    out << std::setprecision(17);
+    write_off(out, mesh);
 
-    // header
-    fprintf(out, "OFF\n%d %d 0\n", mesh.num_vertices(), mesh.num_faces());
-
-
-    // vertices
-    typename Mesh::template Property_map<typename Mesh::Vertex_index, Point_3> points
-      = mesh.template property_map<typename Mesh::Vertex_index, Point_3>("v:point").first;
-    for (typename Mesh::Vertex_iterator vit=mesh.vertices_begin(); vit!=mesh.vertices_end(); ++vit)
-    {
-        const Point_3& p = points[*vit];
-        fprintf(out, "%.10f %.10f %.10f\n", p[0], p[1], p[2]);
-    }
-
-
-    // faces
-    for (typename Surface_mesh<K>::Face_iterator fit=mesh.faces_begin(); fit!=mesh.faces_end(); ++fit)
-    {
-        int nV = mesh.degree(*fit);
-        fprintf(out, "%d", nV);
-        typename Surface_mesh<K>::Vertex_around_face_circulator fvit(mesh.halfedge(*fit),mesh), fvend=fvit;
-        do
-        {
-          typename Surface_mesh<K>::size_type idx = *fvit;
-          fprintf(out, " %d", idx);
-        }
-        while (++fvit != fvend);
-        fprintf(out, "\n");
-    }
-
-    fclose(out);
-    return true;
+    return !out.fail();
 }
 
 #if 0
@@ -391,7 +340,7 @@ bool write_off(const Surface_mesh<K>& mesh, const std::string& filename)
 ///
 /// @return `true`, if reading succeeded, `false` otherwise
 ///
-#endif 
+#endif
 template <typename K>
 bool read_mesh(Surface_mesh<K>& mesh, const std::string& filename) {
       // clear mesh before reading from file
@@ -427,7 +376,7 @@ bool read_mesh(Surface_mesh<K>& mesh, const std::string& filename) {
 ///
 #endif
 template <typename K>
-bool write_mesh(const Surface_mesh<K>& mesh, const std::string& filename) 
+bool write_mesh(const Surface_mesh<K>& mesh, const std::string& filename)
 {
       // extract file extension
     std::string::size_type dot(filename.rfind("."));
@@ -446,7 +395,6 @@ bool write_mesh(const Surface_mesh<K>& mesh, const std::string& filename)
 }
 
 /// group io
-/// @}
 template <class P, class Writer>
 void
 generic_print_surface_mesh( std::ostream&   out,
@@ -475,6 +423,19 @@ generic_print_surface_mesh( std::ostream&   out,
 
     hint = index_map.insert(hint, std::make_pair(*vi, id++));
   }
+  typedef typename boost::property_traits<VPmap>::value_type Point_3;
+  typedef typename Kernel_traits<Point_3>::Kernel K;
+  typename Surface_mesh<P>::template Property_map<typename Surface_mesh<P>::Vertex_index, typename K::Vector_3 > vnormals;
+  bool has_normals = false;
+  boost::tie(vnormals, has_normals) = M.template property_map<typename Surface_mesh<P>::Vertex_index, typename K::Vector_3>("v:normal");
+  if(has_normals)
+  {
+    for( VCI vi = vertices(M).begin(); vi != vertices(M).end(); ++vi) {
+      writer.write_vertex_normal( ::CGAL::to_double( get(vnormals, *vi).x()),
+                                  ::CGAL::to_double( get(vnormals, *vi).y()),
+                                  ::CGAL::to_double( get(vnormals, *vi).z()));
+    }
+  }
 
   writer.write_facet_header();
   for( FCI fi = faces(M).begin(); fi != faces(M).end(); ++fi) {
@@ -493,6 +454,7 @@ generic_print_surface_mesh( std::ostream&   out,
 }
 } // CGAL
 
+#include <CGAL/enable_warnings.h>
 
 #endif // CGAL_SURFACE_MESH_IO_H
 

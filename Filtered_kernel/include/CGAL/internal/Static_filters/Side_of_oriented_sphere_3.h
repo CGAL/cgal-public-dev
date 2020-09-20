@@ -1,20 +1,12 @@
 // Copyright (c) 2001,2004  INRIA Sophia-Antipolis (France).
 // All rights reserved.
 //
-// This file is part of CGAL (www.cgal.org); you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public License as
-// published by the Free Software Foundation; either version 3 of the License,
-// or (at your option) any later version.
-//
-// Licensees holding a valid commercial license may use this file in
-// accordance with the commercial license agreement provided with the software.
-//
-// This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
-// WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+// This file is part of CGAL (www.cgal.org)
 //
 // $URL$
 // $Id$
-// 
+// SPDX-License-Identifier: LGPL-3.0-or-later OR LicenseRef-Commercial
+//
 //
 // Author(s)     : Sylvain Pion
 
@@ -23,7 +15,6 @@
 
 #include <CGAL/Profile_counter.h>
 #include <CGAL/internal/Static_filters/Static_filter_error.h>
-#include <CGAL/internal/Static_filters/tools.h>
 
 namespace CGAL { namespace internal { namespace Static_filters_predicates {
 
@@ -42,44 +33,41 @@ public:
   {
       CGAL_BRANCH_PROFILER_3("semi-static failures/attempts/calls to   : Side_of_oriented_sphere_3", tmp);
 
-      Get_approx<Point_3> get_approx; // Identity functor for all points
-                                      // but lazy points.
-
       double px, py, pz, qx, qy, qz, rx, ry, rz, sx, sy, sz, tx, ty, tz;
 
-      if (fit_in_double(get_approx(p).x(), px) && fit_in_double(get_approx(p).y(), py) &&
-          fit_in_double(get_approx(p).z(), pz) &&
-          fit_in_double(get_approx(q).x(), qx) && fit_in_double(get_approx(q).y(), qy) &&
-          fit_in_double(get_approx(q).z(), qz) &&
-          fit_in_double(get_approx(r).x(), rx) && fit_in_double(get_approx(r).y(), ry) &&
-          fit_in_double(get_approx(r).z(), rz) &&
-          fit_in_double(get_approx(s).x(), sx) && fit_in_double(get_approx(s).y(), sy) &&
-          fit_in_double(get_approx(s).z(), sz) &&
-          fit_in_double(get_approx(t).x(), tx) && fit_in_double(get_approx(t).y(), ty) &&
-          fit_in_double(get_approx(t).z(), tz))
+      if (fit_in_double(p.x(), px) && fit_in_double(p.y(), py) &&
+          fit_in_double(p.z(), pz) &&
+          fit_in_double(q.x(), qx) && fit_in_double(q.y(), qy) &&
+          fit_in_double(q.z(), qz) &&
+          fit_in_double(r.x(), rx) && fit_in_double(r.y(), ry) &&
+          fit_in_double(r.z(), rz) &&
+          fit_in_double(s.x(), sx) && fit_in_double(s.y(), sy) &&
+          fit_in_double(s.z(), sz) &&
+          fit_in_double(t.x(), tx) && fit_in_double(t.y(), ty) &&
+          fit_in_double(t.z(), tz))
       {
-	  CGAL_BRANCH_PROFILER_BRANCH_1(tmp);
+          CGAL_BRANCH_PROFILER_BRANCH_1(tmp);
 
           double ptx = px - tx;
           double pty = py - ty;
           double ptz = pz - tz;
           double pt2 = CGAL_NTS square(ptx) + CGAL_NTS square(pty)
-	             + CGAL_NTS square(ptz);
+                     + CGAL_NTS square(ptz);
           double qtx = qx - tx;
           double qty = qy - ty;
           double qtz = qz - tz;
           double qt2 = CGAL_NTS square(qtx) + CGAL_NTS square(qty)
-	             + CGAL_NTS square(qtz);
+                     + CGAL_NTS square(qtz);
           double rtx = rx - tx;
           double rty = ry - ty;
           double rtz = rz - tz;
          double rt2 = CGAL_NTS square(rtx) + CGAL_NTS square(rty)
-	             + CGAL_NTS square(rtz);
+                     + CGAL_NTS square(rtz);
           double stx = sx - tx;
           double sty = sy - ty;
           double stz = sz - tz;
           double st2 = CGAL_NTS square(stx) + CGAL_NTS square(sty)
-	             + CGAL_NTS square(stz);
+                     + CGAL_NTS square(stz);
 
           // Compute the semi-static bound.
           double maxx = CGAL::abs(ptx);
@@ -99,7 +87,7 @@ public:
           double astz = CGAL::abs(stz);
 
 #ifdef CGAL_USE_SSE2_MAX
-          CGAL::Max<double> mmax; 
+          CGAL::Max<double> mmax;
           maxx = mmax(maxx, aqtx, artx, astx);
           maxy = mmax(maxy, aqty, arty, asty);
           maxz = mmax(maxz, aqtz, artz, astz);
@@ -118,17 +106,17 @@ public:
 #endif
 
           double eps = 1.2466136531027298e-13 * maxx * maxy * maxz;
-  
+
 #ifdef CGAL_USE_SSE2_MAX
           /*
-          CGAL::Min<double> mmin; 
+          CGAL::Min<double> mmin;
           double tmp = mmin(maxx, maxy, maxz);
           maxz = mmax(maxx, maxy, maxz);
           maxx = tmp;
           */
           sse2minmax(maxx,maxy,maxz);
           // maxy can contain ANY element
-          
+
 #else
           // Sort maxx < maxy < maxz.
           if (maxx > maxz)
@@ -155,7 +143,7 @@ public:
             if (det < -eps) return ON_NEGATIVE_SIDE;
           }
 
-	  CGAL_BRANCH_PROFILER_BRANCH_2(tmp);
+          CGAL_BRANCH_PROFILER_BRANCH_2(tmp);
       }
       return Base::operator()(p, q, r, s, t);
   }

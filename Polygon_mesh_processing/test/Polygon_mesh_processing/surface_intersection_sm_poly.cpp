@@ -2,8 +2,6 @@
 #include <CGAL/Surface_mesh.h>
 #include <CGAL/Polyhedron_3.h>
 #include <CGAL/Linear_cell_complex_for_combinatorial_map.h>
-#include <CGAL/boost/graph/graph_traits_Surface_mesh.h>
-#include <CGAL/boost/graph/graph_traits_Polyhedron_3.h>
 #include <CGAL/boost/graph/graph_traits_Linear_cell_complex_for_combinatorial_map.h>
 #include <CGAL/Linear_cell_complex_for_bgl_combinatorial_map_helper.h>
 #include <CGAL/iterator.h>
@@ -30,13 +28,13 @@ void run(const char* filename1, const char* filename2, const char* msg)
 {
   TriangleMesh mesh1;
   if ( !CGAL::read_off(filename1, mesh1) ) {
-    std::cerr << filename1 << " is not a valid off file.\n";
+    std::cerr << filename1 << " is not a valid off file." << std::endl;
     exit(1);
   }
 
   TriangleMesh mesh2;
   if ( !CGAL::read_off(filename2, mesh2) ) {
-    std::cerr << filename2 << " is not a valid off file.\n";
+    std::cerr << filename2 << " is not a valid off file." << std::endl;
     exit(1);
   }
 

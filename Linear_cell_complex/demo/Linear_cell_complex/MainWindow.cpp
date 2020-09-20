@@ -1,19 +1,11 @@
 // Copyright (c) 2011 CNRS and LIRIS' Establishments (France).
 // All rights reserved.
 //
-// This file is part of CGAL (www.cgal.org); you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public License as
-// published by the Free Software Foundation; either version 3 of the License,
-// or (at your option) any later version.
-//
-// Licensees holding a valid commercial license may use this file in
-// accordance with the commercial license agreement provided with the software.
-//
-// This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
-// WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+// This file is part of CGAL (www.cgal.org)
 //
 // $URL$
 // $Id$
+// SPDX-License-Identifier: LGPL-3.0-or-later OR LicenseRef-Commercial
 //
 // Author(s)     : Guillaume Damiand <guillaume.damiand@liris.cnrs.fr>
 // Contributor(s): Kumar Snehasish <kumar.snehasish@gmail.com>
@@ -24,6 +16,7 @@
 #include <CGAL/Polyhedron_3_to_lcc.h>
 #include <CGAL/Triangulation_3_to_lcc.h>
 #include <QSettings>
+#include <QHeaderView>
 #include <CGAL/Timer.h>
 #include <CGAL/ipower.h>
 #include "import_moka.h"
@@ -37,7 +30,7 @@ void subdivide_lcc_pqq (LCC & m);
 
 #define DELAY_STATUSMSG 1500
 
-MainWindow::MainWindow (QWidget * parent):CGAL::Qt::DemosMainWindow (parent),
+MainWindow::MainWindow (QWidget * parent) : CGAL::Qt::DemosMainWindow (parent),
   nbcube      (0),
   dialogmesh  (this),
   dialogmenger(this),
@@ -76,7 +69,7 @@ MainWindow::MainWindow (QWidget * parent):CGAL::Qt::DemosMainWindow (parent),
 
   QObject::connect(&dialogmesh, SIGNAL(accepted()),
                    this, SLOT(onCreateMeshOk()));
-  this->viewer->setScene(&scene);
+  this->viewer->setScene(&scene, false);
 
   connect_actions ();
   this->addAboutDemo (":/cgal/help/about_Linear_cell_complex_3.html");
@@ -153,7 +146,6 @@ void MainWindow::connectVolumeListHandlers()
 void MainWindow::update_operations_entries(bool show)
 {
   actionImportOFF->setEnabled(show);
-  actionAddOFF->setEnabled(show);
   actionImport3DTDS->setEnabled(show);
   actionCompute_Voronoi_3D->setEnabled(show);
   actionClear->setEnabled(show);
@@ -246,7 +238,7 @@ void MainWindow::on_actionLoad_triggered ()
 
   if (!fileName.isEmpty ())
   {
-    load(fileName, true);
+    load(fileName, false);
   }
 }
 
@@ -259,7 +251,7 @@ void MainWindow::on_actionImportOFF_triggered ()
 
   if (!fileName.isEmpty ())
   {
-    load_off (fileName, true);
+    load_off (fileName, false);
   }
 }
 
@@ -272,7 +264,7 @@ void MainWindow::on_actionImportMoka_triggered()
 
   if (!fileName.isEmpty ())
   {
-    load_moka(fileName, true);
+    load_moka(fileName, false);
   }
 }
 
@@ -285,22 +277,9 @@ void MainWindow::on_actionImport3DTDS_triggered ()
 
   if (!fileName.isEmpty ())
   {
-    load_3DTDS (fileName, true);
+    load_3DTDS (fileName, false);
     statusBar ()->showMessage (QString ("Import 3DTDS file") + fileName,
                                DELAY_STATUSMSG);
-  }
-}
-
-void MainWindow::on_actionAddOFF_triggered()
-{
-  QString fileName = QFileDialog::getOpenFileName (this,
-                                                   tr ("Add OFF"),
-                                                   "./off",
-                                                   tr ("off files (*.off)"));
-
-  if (!fileName.isEmpty ())
-  {
-    load_off (fileName, false);
   }
 }
 
@@ -467,7 +446,7 @@ void MainWindow::load_moka(const QString & fileName, bool clear)
 
 #ifdef CGAL_PROFILE_LCC_DEMO
   timer.stop();
-  std::cout<<"Time to load off "<<qPrintable(fileName)<<": "
+  std::cout<<"Time to load moka "<<qPrintable(fileName)<<": "
            <<timer.time()<<" seconds."<<std::endl;
 #endif
 
@@ -478,10 +457,10 @@ void MainWindow::load_moka(const QString & fileName, bool clear)
   QApplication::restoreOverrideCursor ();
 
   if (clear)
-    statusBar ()->showMessage (QString ("Load off file") + fileName,
+    statusBar ()->showMessage (QString ("Load moka file") + fileName,
                                DELAY_STATUSMSG);
   else
-    statusBar ()->showMessage (QString ("Add off file") + fileName,
+    statusBar ()->showMessage (QString ("Add moka file") + fileName,
                                DELAY_STATUSMSG);
   Q_EMIT (sceneChanged ());
 }
@@ -1019,9 +998,9 @@ double compute_angle3d(const Vector_3& v1, const Vector_3& v2)
   double a = CGAL::to_double( (v1*v2) /
                               ( sqrt(v1.squared_length()) * sqrt(v2.squared_length()) ) ) ;
 
-  if (a < -1.0) return acos(-1.0)/M_PI*180.0;
-  else if (a > 1.0) return acos(1.0)/M_PI*180.0;
-  else return acos(a)/M_PI*180.0;
+  if (a < -1.0) return acos(-1.0)/CGAL_PI*180.0;
+  else if (a > 1.0) return acos(1.0)/CGAL_PI*180.0;
+  else return acos(a)/CGAL_PI*180.0;
 }
 
 void MainWindow::on_actionMerge_coplanar_faces_triggered()

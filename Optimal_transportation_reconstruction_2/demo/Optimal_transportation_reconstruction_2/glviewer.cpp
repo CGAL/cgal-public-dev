@@ -10,6 +10,7 @@ GlViewer::GlViewer(QWidget *pParent)
   m_scene = NULL;
 
   m_view_points         = true;
+  m_view_tolerance      = false;
   m_view_vertices       = true;
   m_view_edges          = false;
   m_view_ghost_edges    = false;
@@ -31,7 +32,7 @@ GlViewer::GlViewer(QWidget *pParent)
   setAutoFillBackground(false);
 }
 
-void GlViewer::resizeGL(int width, int height) 
+void GlViewer::resizeGL(int width, int height)
 {
   glViewport(0, 0, width, height);
   double aspect_ratio = double(height) / double(width);
@@ -44,14 +45,17 @@ void GlViewer::resizeGL(int width, int height)
   glLoadIdentity();
 }
 
-void GlViewer::initializeGL() 
+void GlViewer::initializeGL()
 {
+  QOpenGLWidget::initializeGL();
+  initializeOpenGLFunctions();
+  makeCurrent();
   glClearColor(1., 1., 1., 0.);
   glDisable(GL_DEPTH_TEST);
   glEnable(GL_SMOOTH);
 }
 
-void GlViewer::paintGL() 
+void GlViewer::paintGL()
 {
 
   glClear(GL_COLOR_BUFFER_BIT);
@@ -62,6 +66,7 @@ void GlViewer::paintGL()
   glTranslated(-m_center_x, -m_center_y, 0.0);
 
   m_scene->render(m_view_points,
+      m_view_tolerance,
       m_view_vertices,
       m_view_edges,
       m_view_ghost_edges,
@@ -73,20 +78,21 @@ void GlViewer::paintGL()
       m_view_edge_relevance,
       float(m_point_size),
       float(m_vertex_size),
-      float(m_line_thickness));
+      float(m_line_thickness),
+      this);
 
   glPopMatrix();
 }
 
-void GlViewer::wheelEvent(QWheelEvent *event) 
+void GlViewer::wheelEvent(QWheelEvent *event)
 {
   if (!m_scene) return;
-  m_scale += 0.05 * (event->delta() / 120);
+  m_scale += 0.05 * (event->angleDelta().y() / 120);
   if (m_scale <= 0.0) m_scale = 0.0;
   update();
 }
 
-void GlViewer::mousePressEvent(QMouseEvent *event) 
+void GlViewer::mousePressEvent(QMouseEvent *event)
 {
   if (!m_scene) return;
   m_mouse_click = event->pos();
@@ -121,7 +127,7 @@ void GlViewer::mouseMoveEvent(QMouseEvent *event)
   update();
 }
 
-void GlViewer::mouseReleaseEvent(QMouseEvent *event) 
+void GlViewer::mouseReleaseEvent(QMouseEvent *event)
 {
   if (!m_scene) return;
   m_mouse_move = event->pos();

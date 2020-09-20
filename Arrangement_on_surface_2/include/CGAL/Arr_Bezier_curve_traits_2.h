@@ -2,15 +2,10 @@
 // All rights reserved.
 //
 // This file is part of CGAL (www.cgal.org).
-// You can redistribute it and/or modify it under the terms of the GNU
-// General Public License as published by the Free Software Foundation,
-// either version 3 of the License, or (at your option) any later version.
 //
-// Licensees holding a valid commercial license may use this file in
-// accordance with the commercial license agreement provided with the software.
-//
-// This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
-// WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+// $URL$
+// $Id$
+// SPDX-License-Identifier: GPL-3.0-or-later OR LicenseRef-Commercial
 //
 // Author(s)     : Ron Wein     <wein@post.tau.ac.il>
 //                 Iddo Hanniel <iddoh@cs.technion.ac.il>
@@ -20,7 +15,7 @@
 #define CGAL_ARR_BEZIER_CURVE_TRAITS_2_H
 
 #include <CGAL/license/Arrangement_on_surface_2.h>
-
+#include <CGAL/disable_warnings.h>
 
 /*! \file
  * Definition of the Arr_Bezier_curve_traits_2 class.
@@ -163,8 +158,8 @@ public:
       delete p_cache;
       delete p_inter_map;
     }
-    p_cache = NULL;
-    p_inter_map = NULL;
+    p_cache = nullptr;
+    p_inter_map = nullptr;
   }
   //@}
 
@@ -780,7 +775,7 @@ public:
      * \return SMALLER if the curve is directed right;
      *         LARGER if the curve is directed left.
      */
-    Comparison_result operator() (const X_monotone_curve_2& cv)
+    Comparison_result operator() (const X_monotone_curve_2& cv) const
     {
       if (cv.is_directed_right())
         return (SMALLER);
@@ -877,4 +872,5 @@ public:
 
 } //namespace CGAL
 
+#include <CGAL/enable_warnings.h>
 #endif

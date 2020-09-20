@@ -17,12 +17,7 @@ typedef Kernel::Vector_3 Vector;
 typedef std::pair<Point, Vector> PointVectorPair;
 
 // Concurrency
-#ifdef CGAL_LINKED_WITH_TBB
-typedef CGAL::Parallel_tag Concurrency_tag;
-#else
-typedef CGAL::Sequential_tag Concurrency_tag;
-#endif
-
+typedef CGAL::Parallel_if_available_tag Concurrency_tag;
 
 int main(int argc, char*argv[])
 {
@@ -33,10 +28,10 @@ int main(int argc, char*argv[])
   std::vector<PointVectorPair> points;
   std::ifstream stream(input_filename);
   if (!stream ||
-      !CGAL::read_xyz_points_and_normals(stream,
+      !CGAL::read_xyz_points(stream,
                      std::back_inserter(points),
-                     CGAL::First_of_pair_property_map<PointVectorPair>(),
-                     CGAL::Second_of_pair_property_map<PointVectorPair>()))
+                     CGAL::parameters::point_map(CGAL::First_of_pair_property_map<PointVectorPair>()).
+                     normal_map(CGAL::Second_of_pair_property_map<PointVectorPair>())))
   {
      std::cerr << "Error: cannot read file " << input_filename << std::endl;
      return EXIT_FAILURE;
@@ -48,26 +43,26 @@ int main(int argc, char*argv[])
   double sharpness_angle = 25; // control sharpness of the result.
                                // The bigger the smoother the result will be
   int iter_number = 3;         // number of times the projection is applied
-  
+
   for (int i = 0; i < iter_number; ++i)
   {
     /* double error = */
     CGAL::bilateral_smooth_point_set <Concurrency_tag>(
-          points.begin(), 
-          points.end(),
-          CGAL::First_of_pair_property_map<PointVectorPair>(),
-          CGAL::Second_of_pair_property_map<PointVectorPair>(),
-          k,
-          sharpness_angle);
+      points,
+      k,
+      CGAL::parameters::point_map(CGAL::First_of_pair_property_map<PointVectorPair>()).
+      normal_map(CGAL::Second_of_pair_property_map<PointVectorPair>()).
+      sharpness_angle (sharpness_angle));
   }
-  
+
   //// Save point set.
-  std::ofstream out(output_filename);   
+  std::ofstream out(output_filename);
+  out.precision(17);
   if (!out ||
-      !CGAL::write_xyz_points_and_normals(
-      out, points.begin(), points.end(), 
-      CGAL::First_of_pair_property_map<PointVectorPair>(),
-      CGAL::Second_of_pair_property_map<PointVectorPair>()))
+      !CGAL::write_xyz_points(
+      out, points,
+      CGAL::parameters::point_map(CGAL::First_of_pair_property_map<PointVectorPair>()).
+      normal_map(CGAL::Second_of_pair_property_map<PointVectorPair>())))
   {
     return EXIT_FAILURE;
   }

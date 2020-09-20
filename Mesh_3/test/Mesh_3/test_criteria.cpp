@@ -2,18 +2,10 @@
 // All rights reserved.
 //
 // This file is part of CGAL (www.cgal.org).
-// You can redistribute it and/or modify it under the terms of the GNU
-// General Public License as published by the Free Software Foundation,
-// either version 3 of the License, or (at your option) any later version.
-//
-// Licensees holding a valid commercial license may use this file in
-// accordance with the commercial license agreement provided with the software.
-//
-// This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
-// WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 //
 // $URL$
 // $Id$
+// SPDX-License-Identifier: GPL-3.0-or-later OR LicenseRef-Commercial
 //
 //
 // Author(s)     : Stephane Tayeb
@@ -126,7 +118,7 @@ struct Tester
     std::cerr << name << ":[" ;
 
     for ( int i=0; i<4 ; ++i )
-      std::cerr << "[" << c->vertex(i)->point() << "]";
+      std::cerr << "[" << c3t3_.triangulation().point(c, i) << "]";
 
     std::cerr << "] ";
   }
@@ -138,7 +130,7 @@ struct Tester
     for ( int i=0; i<4 ; ++i )
     {
       if ( i != f.second )
-        std::cerr << "[" << f.first->vertex(i)->point() << "]";
+        std::cerr << "[" << c3t3_.triangulation().point(f.first, i) << "]";
     }
 
     std::cerr << "] ";
@@ -219,15 +211,17 @@ struct Tester
                  const bool is_cell2_bad = false,
                  const bool compare_cells = false) const
   {
-    typedef typename Cell_criteria::Cell_badness Badness;
+    typedef typename Cell_criteria::Is_cell_bad Is_bad;
+
+    const Tr& tr = c3t3_.triangulation();
 
     Cell_handle cell1 = cell_handle(c1_);
     Cell_handle cell2 = cell_handle(c2_);
 
     Cell_criteria cell_criteria(radius_edge,radius);
 
-    Badness b1 = cell_criteria(cell1);
-    Badness b2 = cell_criteria(cell2);
+    Is_bad b1 = cell_criteria(tr, cell1);
+    Is_bad b2 = cell_criteria(tr, cell2);
 
     std::cerr << "\t[Radius bound: " << radius
               << " - Radius-edge bound: " << radius_edge
@@ -264,15 +258,17 @@ struct Tester
                   const bool is_facet2_bad = false,
                   const bool compare_facets = false) const
     {
-      typedef typename Facet_criteria::Facet_badness Badness;
+      typedef typename Facet_criteria::Is_facet_bad Is_bad;
+
+      const Tr& tr = c3t3_.triangulation();
 
       Facet f1 = facet_handle(f1_);
       Facet f2 = facet_handle(f2_);
 
       Facet_criteria criteria(angle, radius, distance);
 
-      Badness b1 = criteria(f1);
-      Badness b2 = criteria(f2);
+      Is_bad b1 = criteria(tr, f1);
+      Is_bad b2 = criteria(tr, f2);
 
       std::cerr << "\t[Angle bound: " << angle
                 << " - Radius bound: " << radius

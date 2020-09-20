@@ -4,19 +4,17 @@
 // Licensees holding a valid commercial license may use this file in
 // accordance with the commercial license agreement provided with the software.
 //
-// This file is part of CGAL (www.cgal.org); you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public License as
-// published by the Free Software Foundation; either version 3 of the License,
-// or (at your option) any later version.
+// This file is part of CGAL (www.cgal.org)
 //
-// This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
-// WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+// $URL$
+// $Id$
+// SPDX-License-Identifier: LGPL-3.0-or-later OR LicenseRef-Commercial
 //
 // Author(s)     : Philipp Möller, Mael Rouxel-Labbé
 
 // Including this header will cause compilation to fail
 // if CGAL_NO_DEPRECATED_CODE is defined. If this is not the case, it will issue
-// a warning during compilation unless CGAL_NO_DEPRECATION_WARNINGS.
+// a warning during compilation, unless CGAL_NO_DEPRECATION_WARNINGS is defined.
 
 // CGAL_DEPRECATED_HEADER, CGAL_REPLACEMENT_HEADER, and
 // CGAL_DEPRECATED_MESSAGE_DETAILS can be defined
@@ -52,11 +50,11 @@
 #  define CGAL_INTERNAL_DEPRECATED_MESSAGE_HEADERS \
             CGAL_INTERNAL_DEPRECATED_MESSAGE_DEPRECATED_HEADER \
             CGAL_INTERNAL_NO_DEPRECATED_CODE_MESSAGE \
-            " Please use `" CGAL_REPLACEMENT_HEADER "` instead.\n"
+            " Please use `" CGAL_REPLACEMENT_HEADER "` instead. "
 #else
 #  define CGAL_INTERNAL_DEPRECATED_MESSAGE_HEADERS \
             CGAL_INTERNAL_DEPRECATED_MESSAGE_DEPRECATED_HEADER \
-            CGAL_INTERNAL_NO_DEPRECATED_CODE_MESSAGE "\n"
+            CGAL_INTERNAL_NO_DEPRECATED_CODE_MESSAGE " "
 #endif
 
 // if more details are given, print them

@@ -5,7 +5,6 @@
 
 #include <vector>
 #include <fstream>
-#include <boost/tuple/tuple.hpp>
 
 // Types
 typedef CGAL::Exact_predicates_inexact_constructions_kernel Kernel;
@@ -37,8 +36,8 @@ int main (int, char**)
   queries.push_back (Point_2 (1., 0.));
 
   std::vector<std::size_t> k_scales;
-  CGAL::estimate_local_k_neighbor_scales (samples.begin(), samples.end(),
-                                          queries.begin(), queries.end(),
+  CGAL::estimate_local_k_neighbor_scales (samples,
+                                          queries,
                                           std::back_inserter (k_scales));
 
   // Display results

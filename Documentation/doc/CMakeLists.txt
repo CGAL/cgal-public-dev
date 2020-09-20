@@ -1,7 +1,7 @@
+cmake_minimum_required(VERSION 3.1...3.15)
 project(Documentation NONE)
 
 # Minimal version of CMake:
-cmake_minimum_required(VERSION 2.8.11)
 
 # Check whether this cmake script is the top level one
 if ( ${CMAKE_SOURCE_DIR} STREQUAL ${CMAKE_CURRENT_SOURCE_DIR})
@@ -93,7 +93,7 @@ function(configure_doxygen_package CGAL_PACKAGE_NAME)
   file(APPEND ${CGAL_DOC_PACKAGE_DEFAULTS} "STRIP_FROM_INC_PATH = ${CGAL_PACKAGE_DOC_DIR}/\n")
   file(APPEND ${CGAL_DOC_PACKAGE_DEFAULTS} "STRIP_FROM_INC_PATH += ${CGAL_PACKAGE_DIR}/include/\n")
   file(APPEND ${CGAL_DOC_PACKAGE_DEFAULTS} "ALIASES += \"cgalPkgDescriptionBegin{2}=\\details \"\n")
-  file(APPEND ${CGAL_DOC_PACKAGE_DEFAULTS} "ALIASES += \"cgalPkgManuals{2}=<BR>\"\n")
+  file(APPEND ${CGAL_DOC_PACKAGE_DEFAULTS} "ALIASES += \"cgalPkgManuals{2}=<div class=\\\"PkgManuals\\\"></div>\"\n")
   file(APPEND ${CGAL_DOC_PACKAGE_DEFAULTS} "INPUT = ${CGAL_PACKAGE_DOC_DIR}\n")
   if(NOT EXISTS "${CGAL_PACKAGE_DOC_DIR}/CGAL")
     # This package has in-source documentation.
@@ -137,7 +137,7 @@ function(configure_doxygen_package CGAL_PACKAGE_NAME)
   endif()
 
   foreach(depend ${DEPENDENCIES})
-    file(APPEND ${CGAL_DOC_PACKAGE_DEFAULTS} 
+    file(APPEND ${CGAL_DOC_PACKAGE_DEFAULTS}
       "TAGFILES += ${CGAL_DOC_TAG_DIR}/${depend}.tag=../${depend}\n")
   endforeach()
 
@@ -185,8 +185,11 @@ function(configure_doxygen_package CGAL_PACKAGE_NAME)
 endfunction()
 
 # set up the directories and variables
-set(CGAL_DOC_MATHJAX_LOCATION "https://cdn.mathjax.org/mathjax/latest"
-    CACHE STRING "The location of MathJax to be used for the documentation.")
+if (CGAL_DOC_MATHJAX_LOCATION)
+  set(CGAL_DOC_MATHJAX_LOCATION_FULL_OPTION_LINE "MATHJAX_RELPATH = ${CGAL_DOC_MATHJAX_LOCATION}")
+else()
+  set(CGAL_DOC_MATHJAX_LOCATION "https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.2")
+endif()
 
 set(CGAL_DOC_OUTPUT_DIR "${CMAKE_BINARY_DIR}/doc_output")
 file(MAKE_DIRECTORY "${CGAL_DOC_OUTPUT_DIR}")
@@ -196,6 +199,15 @@ option(CGAL_DOC_CREATE_LOGS "Write log files or print warnings and errors to cer
 if(CGAL_DOC_CREATE_LOGS)
   set(CGAL_DOC_LOG_DIR "${CMAKE_BINARY_DIR}/doc_log")
   file(MAKE_DIRECTORY "${CGAL_DOC_LOG_DIR}")
+endif()
+
+option(CGAL_EXTRACT_ALL_NO_DETAILED_IF_EMPTY "Use CGAL special doxygen setting EXTRACT_ALL_NO_DETAILED_IF_EMPTY." ON)
+if(CGAL_EXTRACT_ALL_NO_DETAILED_IF_EMPTY)
+  set(CGAL_OPT_EXTRACT_ALL_NO_DETAILED_IF_EMPTY "EXTRACT_ALL_NO_DETAILED_IF_EMPTY = YES")
+else()
+  # The default is NO, so we could leave it out, but it is better to have a commented out placeholder
+  # this will work for versions with and without the setting.
+  set(CGAL_OPT_EXTRACT_ALL_NO_DETAILED_IF_EMPTY "#EXTRACT_ALL_NO_DETAILED_IF_EMPTY = NO")
 endif()
 
 #we use two directories for the generation/reading of tag files to prevent issues
@@ -208,7 +220,7 @@ set(CGAL_DOC_DXY_DIR "${CMAKE_BINARY_DIR}/doc_dxy")
 file(MAKE_DIRECTORY "${CGAL_DOC_DXY_DIR}")
 
 #Setting the resource directory depending on the version of doxygen
-set(CGAL_DOC_RESOURCE_DIR_DEFAULT "${CMAKE_CURRENT_LIST_DIR}/resources/1.8.13")
+set(CGAL_DOC_RESOURCE_DIR_DEFAULT "${CMAKE_CURRENT_LIST_DIR}/resources/1.8.14")
 
 #  first look if resources for the specific doxygen version is available, fallback
 #  on the default otherwise
@@ -236,6 +248,28 @@ if(${CGAL_BUILD_MONTH} GREATER 6)
   set(CGAL_RELEASE_YEAR_ID "${CGAL_BUILD_YEAR2}b")
 else()
   set(CGAL_RELEASE_YEAR_ID "${CGAL_BUILD_YEAR2}a")
+endif()
+
+if (NOT CGAL_CREATED_VERSION_NUM)
+  if (CGAL_BRANCH_BUILD)
+    include(${CGAL_ROOT}/CGALConfigVersion.cmake)
+
+    if (CGAL_BUGFIX_VERSION AND CGAL_BUGFIX_VERSION GREATER 0)
+      set(CGAL_CREATED_VERSION_NUM "${CGAL_MAJOR_VERSION}.${CGAL_MINOR_VERSION}.${CGAL_BUGFIX_VERSION}")
+    else()
+      set(CGAL_CREATED_VERSION_NUM "${CGAL_MAJOR_VERSION}.${CGAL_MINOR_VERSION}")
+    endif()
+  else()
+    if(EXISTS "${CGAL_ROOT}/doc/public_release_name")
+      file(STRINGS "${CGAL_ROOT}/doc/public_release_name" CGAL_VERSION_LINE)
+      string(REGEX REPLACE "CGAL-" "" CGAL_CREATED_VERSION_NUM "${CGAL_VERSION_LINE}")
+    else()
+      #read version.h and get the line with CGAL_VERSION
+      file(STRINGS "${CGAL_ROOT}/include/CGAL/version.h" CGAL_VERSION_LINE REGEX "CGAL_VERSION ")
+      #extract release id
+      string(REGEX MATCH "[0-9]+\\.[0-9]+\\.?[0-9]*" CGAL_CREATED_VERSION_NUM "${CGAL_VERSION_LINE}")
+    endif()
+  endif()
 endif()
 
 # Introduce our own version variable. This way we avoid tying this too
@@ -315,6 +349,12 @@ else()
   foreach(pkg ${CGAL_DEMO_PACKAGES})
     set(CGAL_${pkg}_DEMO_DIR "${CGAL_ROOT}/demo")
   endforeach()
+endif()
+
+option(CGAL_BUILD_THREE_DOC "Build the documentation of the Three package" OFF)
+
+if (NOT CGAL_BUILD_THREE_DOC)
+  list(REMOVE_ITEM CGAL_DOC_PACKAGES "Three")
 endif()
 
 foreach(package ${CGAL_DOC_PACKAGES})

@@ -8,18 +8,20 @@
 
 #include <string>
 
+#include <CGAL/disable_warnings.h>
+
 typedef CGAL::Exact_predicates_inexact_constructions_kernel K;
 
 //
 // Define two fake Mesh_domain, with index types
-// 
+//
 
 // One with all types equal to int.
 struct MD_homogeneous_types {
   typedef CGAL::Tag_false Has_features;
   typedef int Subdomain_index;
   typedef int Surface_patch_index;
-  typedef int Curve_segment_index;
+  typedef int Curve_index;
   typedef int Corner_index;
   typedef int Index;
 
@@ -27,8 +29,8 @@ struct MD_homogeneous_types {
   static Subdomain_index get_sub_domain_index_2() { return 2; }
   static Surface_patch_index get_surface_patch_index_1() { return 3; }
   static Surface_patch_index get_surface_patch_index_2() { return 4; }
-  static Curve_segment_index get_curve_segment_index_1() { return 5; }
-  static Curve_segment_index get_curve_segment_index_2() { return 6; }
+  static Curve_index get_curve_index_1() { return 5; }
+  static Curve_index get_curve_index_2() { return 6; }
   static Corner_index get_corner_index_1() { return 7; }
   static Corner_index get_corner_index_2() { return 8; }
 
@@ -44,18 +46,18 @@ struct MD_heterogeneous_types {
   enum Subdomain_index_enum { Z = 0, A, B, C, D};
   typedef Subdomain_index_enum Subdomain_index;
   typedef std::pair<int, int> Surface_patch_index;
-  typedef int Curve_segment_index;
+  typedef int Curve_index;
   typedef double Corner_index;
   typedef boost::variant<Subdomain_index,
                          Surface_patch_index,
-                         Curve_segment_index,
+                         Curve_index,
                          Corner_index> Index;
   static Subdomain_index get_sub_domain_index_1() { return A; }
   static Subdomain_index get_sub_domain_index_2() { return B; }
   static Surface_patch_index get_surface_patch_index_1() { return std::make_pair(1, 2); }
   static Surface_patch_index get_surface_patch_index_2() { return std::make_pair(3, 4); }
-  static Curve_segment_index get_curve_segment_index_1() { return 5; }
-  static Curve_segment_index get_curve_segment_index_2() { return 6; }
+  static Curve_index get_curve_index_1() { return 5; }
+  static Curve_index get_curve_index_2() { return 6; }
   static Corner_index get_corner_index_1() { return 7.; }
   static Corner_index get_corner_index_2() { return 8.; }
 
@@ -67,11 +69,11 @@ struct MD_heterogeneous_types {
 
 //
 // Define I/O for MD_heterogeneous_types::Subdomain_index (then enum)
-// 
- 
+//
+
 // First, new technique: specialization of Output_rep and Input_rep (from
 // CGAL/IO/io.h). That works for CGAL::read and CGAL::write, and ease the
-// overload of << and >> 
+// overload of << and >>
 namespace CGAL {
 
 template <>
@@ -82,7 +84,7 @@ public:
   //! initialize with a const reference to \a t.
   Output_rep( const T& tt) : t(tt) {}
   //! perform the output, calls \c operator\<\< by default.
-  std::ostream& operator()( std::ostream& out) const { 
+  std::ostream& operator()( std::ostream& out) const {
     if(is_ascii(out)) {
       out << (int)t;
     } else {
@@ -100,7 +102,7 @@ public:
   //! initialize with a const reference to \a t.
   Input_rep( T& tt) : t(tt) {}
   //! perform the output, calls \c operator\<\< by default.
-  std::istream& operator()( std::istream& in) const { 
+  std::istream& operator()( std::istream& in) const {
     int i;
     if(is_ascii(in)) {
       in >> i;
@@ -113,13 +115,13 @@ public:
 };
 } // end namespace CGAL
 
-// Second: operator<< and >> 
+// Second: operator<< and >>
 namespace std {
-std::ostream& operator<<(std::ostream& out, 
+std::ostream& operator<<(std::ostream& out,
                          MD_heterogeneous_types::Subdomain_index index) {
   return out << CGAL::oformat(index);
 }
-std::istream& operator>>(std::istream& in, 
+std::istream& operator>>(std::istream& in,
                          MD_heterogeneous_types::Subdomain_index& index) {
   return in >> CGAL::iformat(index);
 }
@@ -138,10 +140,10 @@ struct Get_io_signature<MD_heterogeneous_types::Subdomain_index> {
 //
 // Define I/O for MD_heterogeneous_types::Surface_patch_index (pair of int)
 //
- 
+
 // First, new technique: specialization of Output_rep and Input_rep (from
 // CGAL/IO/io.h). That works for CGAL::read and CGAL::write, and ease the
-// overload of << and >> 
+// overload of << and >>
 template <>
 class Output_rep<MD_heterogeneous_types::Surface_patch_index> {
   typedef MD_heterogeneous_types::Surface_patch_index T;
@@ -150,7 +152,7 @@ public:
   //! initialize with a const reference to \a t.
   Output_rep( const T& tt) : t(tt) {}
   //! perform the output, calls \c operator\<\< by default.
-  std::ostream& operator()( std::ostream& out) const { 
+  std::ostream& operator()( std::ostream& out) const {
     if(is_ascii(out)) {
       out << t.first << " " << t.second;
     } else {
@@ -169,7 +171,7 @@ public:
   //! initialize with a const reference to \a t.
   Input_rep( T& tt) : t(tt) {}
   //! perform the output, calls \c operator\<\< by default.
-  std::istream& operator()( std::istream& in) const { 
+  std::istream& operator()( std::istream& in) const {
     if(is_ascii(in)) {
       in >> t.first >> t.second;
     } else {
@@ -181,27 +183,27 @@ public:
 };
 } // end namespace CGAL
 
-// Second: operator<< and >> 
+// Second: operator<< and >>
 namespace std {
-std::ostream& operator<<(std::ostream& out, 
+std::ostream& operator<<(std::ostream& out,
                          MD_heterogeneous_types::Surface_patch_index index) {
   return out << CGAL::oformat(index);
 }
-std::istream& operator>>(std::istream& in, 
+std::istream& operator>>(std::istream& in,
                          MD_heterogeneous_types::Surface_patch_index& index) {
   return in >> CGAL::iformat(index);
 }
 } // end namespace std
 
 
-// 
+//
 // Class to test I/O of Mesh_complex_3_in_triangulation_3<Mesh_domain,K>
-// 
+//
 template <typename Mesh_domain>
 struct Test_c3t3_io {
   typedef typename Mesh_domain::Subdomain_index Subdomain_index;
   typedef typename Mesh_domain::Surface_patch_index Surface_patch_index;
-  typedef typename Mesh_domain::Curve_segment_index Curve_segment_index;
+  typedef typename Mesh_domain::Curve_index Curve_index;
   typedef typename Mesh_domain::Corner_index Corner_index;
   typedef typename Mesh_domain::Index Index;
 
@@ -209,7 +211,7 @@ struct Test_c3t3_io {
   typedef CGAL::Mesh_complex_3_in_triangulation_3<
     Tr,
     Corner_index,
-    Curve_segment_index
+    Curve_index
     > C3t3;
 
   typedef typename Tr::Point Point;
@@ -237,7 +239,7 @@ struct Test_c3t3_io {
       assert(false);
       return false;
     }
-    for(typename Tr::Finite_vertices_iterator 
+    for(typename Tr::Finite_vertices_iterator
           vit1 = t1.finite_vertices_begin(),
           vit2 = t2.finite_vertices_begin(),
           end1 = t1.finite_vertices_end();
@@ -255,7 +257,7 @@ struct Test_c3t3_io {
     }
 #if 0
     // Note: The Triangulation_3 facets iterator order changes after a reload
-    for(typename Tr::Finite_facets_iterator 
+    for(typename Tr::Finite_facets_iterator
           fit1 = t1.finite_facets_begin(),
           fit2 = t2.finite_facets_begin(),
           end1 = t1.finite_facets_end();
@@ -265,17 +267,17 @@ struct Test_c3t3_io {
       typename Tr::Cell_handle c2 = fit2->first;
       int i1 = fit1->second;
       int i2 = fit2->second;
-      // CJ: this may cause an assertion because the 2 C3T3s may have 
+      // CJ: this may cause an assertion because the 2 C3T3s may have
       // facets in different orders.
       // This is because the Finite_facets_iterator compares the
-      // addresses of cells to ensure parsing unique facets. The 
-      // facets are stored in a Compact_container, which doesn't 
+      // addresses of cells to ensure parsing unique facets. The
+      // facets are stored in a Compact_container, which doesn't
       /// guarantee any order in memory (and even in the container itself)
       assert(i1 == i2);
-      if( c1->surface_patch_index(i1) != 
+      if( c1->surface_patch_index(i1) !=
           c2->surface_patch_index(i2) )
       {
-        std::cerr << "Error: facets #" << i1 
+        std::cerr << "Error: facets #" << i1
                   << "of the following cells are different:\n";
         std::cerr << *c1 << "\n"
                   << *c2 << std::endl;
@@ -284,7 +286,7 @@ struct Test_c3t3_io {
       }
     }
 #endif // not WIN32
-    for(typename Tr::Finite_cells_iterator 
+    for(typename Tr::Finite_cells_iterator
           cit1 = t1.finite_cells_begin(),
           cit2 = t2.finite_cells_begin(),
           end1 = t1.finite_cells_end();
@@ -382,6 +384,17 @@ struct Test_c3t3_io {
       return true;
     }
 
+    {
+      std::string filename(prefix);
+      filename += "_new";
+      if(binary) filename += ".binary";
+      filename += ".cgal";
+      std::ofstream output(filename.c_str(),
+                           binary ? (std::ios_base::out | std::ios_base::binary)
+                           : std::ios_base::out);
+      CGAL::Mesh_3::save_binary_file(output, c3t3_bis, binary);
+    }
+
     c3t3_bis.clear();
     {
       std::ifstream input(filename.c_str(),
@@ -422,8 +435,8 @@ struct Test_c3t3_io {
     c3t3.add_to_complex(c2, Mesh_domain::get_sub_domain_index_2());
     c3t3.add_to_complex(f1, Mesh_domain::get_surface_patch_index_1());
     c3t3.add_to_complex(f2, Mesh_domain::get_surface_patch_index_2());
-    c3t3.add_to_complex(e1, Mesh_domain::get_curve_segment_index_1());
-    c3t3.add_to_complex(e2, Mesh_domain::get_curve_segment_index_2());
+    c3t3.add_to_complex(e1, Mesh_domain::get_curve_index_1());
+    c3t3.add_to_complex(e2, Mesh_domain::get_curve_index_2());
     c3t3.add_to_complex(v1, Mesh_domain::get_corner_index_1());
     c3t3.add_to_complex(v2, Mesh_domain::get_corner_index_2());
 
@@ -433,9 +446,9 @@ struct Test_c3t3_io {
     v2->set_dimension(0);
     v2->set_index(Mesh_domain::get_corner_index_2());
     v3->set_dimension(1);
-    v3->set_index(Mesh_domain::get_curve_segment_index_1());
+    v3->set_index(Mesh_domain::get_curve_index_1());
     v4->set_dimension(1);
-    v4->set_index(Mesh_domain::get_curve_segment_index_2());
+    v4->set_index(Mesh_domain::get_curve_index_2());
     v5->set_dimension(2);
     v5->set_index(Mesh_domain::get_surface_patch_index_1());
     v6->set_dimension(3);

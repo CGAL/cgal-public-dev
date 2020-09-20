@@ -2,18 +2,10 @@
 // All rights reserved.
 //
 // This file is part of CGAL (www.cgal.org).
-// You can redistribute it and/or modify it under the terms of the GNU
-// General Public License as published by the Free Software Foundation,
-// either version 3 of the License, or (at your option) any later version.
-//
-// Licensees holding a valid commercial license may use this file in
-// accordance with the commercial license agreement provided with the software.
-//
-// This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
-// WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 //
 // $URL$
 // $Id$
+// SPDX-License-Identifier: GPL-3.0-or-later OR LicenseRef-Commercial
 //
 //
 // Author(s)     : Sebastien Loriot
@@ -32,6 +24,7 @@
 #include <bitset>
 
 namespace CGAL{
+namespace Polygon_mesh_processing {
 namespace Corefinement{
 
 template <class TriangleMesh, class VertexPointMap>
@@ -79,7 +72,7 @@ struct Intersect_coplanar_faces_3{
   //constructor for intersection of edges. prev and curr are two points on an edge of the first facet (preserving the
   //orientation of the facet). This edge is intersected by h2 from the second facet.
   //
-  //The rational is the following: we first check whether curr and prev are on the same edge. I so we create
+  //The rational is the following: we first check whether curr and prev are on the same edge. If so we create
   //an intersection point between two edges. Otherwise, the point is a vertex of the second facet included into
   //the first facet.
   //
@@ -102,15 +95,47 @@ struct Intersect_coplanar_faces_3{
     res.info_2=h2;
 
     if (ipt_prev.type_1==ON_VERTEX && next(ipt_prev.info_1, tm1) == ipt_curr.info_1){
-      CGAL_assertion(ipt_curr.type_1!=ON_FACE);
-      res.type_1=ON_EDGE;
-      res.info_1=ipt_curr.info_1;
+      if(ipt_curr.type_1!=ON_FACE)
+      {
+        res.type_1=ON_EDGE;
+        res.info_1=ipt_curr.info_1;
+      }
+      else
+      {
+        CGAL_assertion( ipt_curr.type_2==ON_VERTEX);
+        res.type_1=ON_FACE;
+        res.info_1=h1;
+        res.type_2=ON_VERTEX;
+        typename Exact_kernel::Collinear_3 is_collinear = Exact_kernel().collinear_3_object();
+        if ( !is_collinear(ipt_prev.point,ipt_curr.point,to_exact(get(vpm2,target(res.info_2,tm2)) ) ) ){
+          res.info_2=prev(res.info_2,tm2);
+          CGAL_assertion( is_collinear(ipt_prev.point,ipt_curr.point,to_exact(get(vpm2,target(res.info_2,tm2))) ) );
+        }
+        res.point = to_exact( get(vpm2, target(res.info_2,tm2)) );
+        return res;
+      }
     }
     else{
       if(ipt_curr.type_1==ON_VERTEX && ipt_prev.info_1 == ipt_curr.info_1){
-        CGAL_assertion(ipt_prev.type_1!=ON_FACE);
-        res.type_1=ON_EDGE;
-        res.info_1=ipt_curr.info_1;
+        if (ipt_prev.type_1!=ON_FACE)
+        {
+          res.type_1=ON_EDGE;
+          res.info_1=ipt_curr.info_1;
+        }
+        else
+        {
+          CGAL_assertion( ipt_prev.type_2==ON_VERTEX);
+          res.type_1=ON_FACE;
+          res.info_1=h1;
+          res.type_2=ON_VERTEX;
+          typename Exact_kernel::Collinear_3 is_collinear = Exact_kernel().collinear_3_object();
+          if ( !is_collinear(ipt_prev.point,ipt_curr.point,to_exact(get(vpm2,target(res.info_2,tm2)) ) ) ){
+            res.info_2=prev(res.info_2,tm2);
+            CGAL_assertion( is_collinear(ipt_prev.point,ipt_curr.point,to_exact(get(vpm2,target(res.info_2,tm2))) ) );
+          }
+          res.point = to_exact( get(vpm2, target(res.info_2,tm2)) );
+          return res;
+        }
       }
       else{
         if (ipt_curr.type_1==ON_EDGE && ipt_prev.type_1==ON_EDGE &&  ipt_curr.info_1==ipt_prev.info_1){
@@ -208,7 +233,7 @@ struct Intersect_coplanar_faces_3{
     typedef typename std::list<Inter_pt_info>::iterator Iterator;
 
     std::map<Inter_pt_info*,Orientation> orientations;
-    BOOST_FOREACH(Inter_pt_info& ipt, inter_pts)
+    for(Inter_pt_info& ipt : inter_pts)
       orientations[ &ipt ]=get_orientation_and_update_info_2(h2,ipt);
 
     CGAL_assertion_code(int pt_added=0;)
@@ -287,7 +312,7 @@ void intersection_coplanar_faces(
   intersect_cpln.cutoff_face(next(next(h2,tm2),tm2),inter_pts,h1);
 }
 
-} } //namespace CGAL::Corefinement
+} } } // CGAL::Polygon_mesh_processing::Corefinement
 
 
 #endif //CGAL_PMP_INTERNAL_COREFINEMENT_INTERSECTION_OF_COPLANAR_TRIANGLES_3_H

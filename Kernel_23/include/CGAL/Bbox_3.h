@@ -1,23 +1,15 @@
-// Copyright (c) 1999,2004  
+// Copyright (c) 1999,2004
 // Utrecht University (The Netherlands),
 // ETH Zurich (Switzerland),
 // INRIA Sophia-Antipolis (France),
 // Max-Planck-Institute Saarbruecken (Germany),
-// and Tel-Aviv University (Israel).  All rights reserved. 
+// and Tel-Aviv University (Israel).  All rights reserved.
 //
-// This file is part of CGAL (www.cgal.org); you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public License as
-// published by the Free Software Foundation; either version 3 of the License,
-// or (at your option) any later version.
-//
-// Licensees holding a valid commercial license may use this file in
-// accordance with the commercial license agreement provided with the software.
-//
-// This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
-// WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+// This file is part of CGAL (www.cgal.org)
 //
 // $URL$
 // $Id$
+// SPDX-License-Identifier: LGPL-3.0-or-later OR LicenseRef-Commercial
 //
 // Author(s)     : Andreas Fabri
 
@@ -30,6 +22,7 @@
 #include <CGAL/IO/io.h>
 #include <CGAL/Dimension.h>
 #include <CGAL/array.h>
+#include <boost/math/special_functions/next.hpp>
 
 namespace CGAL {
 
@@ -38,7 +31,7 @@ struct Simple_cartesian;
 
 class Bbox_3
 {
-  cpp11::array<double, 6>   rep;
+  std::array<double, 6>   rep;
 
 public:
 
@@ -75,8 +68,13 @@ public:
   inline double min BOOST_PREVENT_MACRO_SUBSTITUTION (int i) const;
   inline double max BOOST_PREVENT_MACRO_SUBSTITUTION (int i) const;
 
+  inline double min_coord(int i) const { return (min)(i); }
+  inline double max_coord(int i) const { return (max)(i); }
+
   Bbox_3  operator+(const Bbox_3& b) const;
   Bbox_3& operator+=(const Bbox_3& b);
+
+  void dilate(int dist);
 };
 
 inline
@@ -176,6 +174,20 @@ Bbox_3::operator+=(const Bbox_3& b)
 }
 
 inline
+void
+Bbox_3::dilate(int dist)
+{
+  using boost::math::float_advance;
+  rep[0] = float_advance(rep[0],-dist);
+  rep[1] = float_advance(rep[1],-dist);
+  rep[2] = float_advance(rep[2],-dist);
+  rep[3] = float_advance(rep[3],dist);
+  rep[4] = float_advance(rep[4],dist);
+  rep[5] = float_advance(rep[5],dist);
+}
+
+
+inline
 bool
 do_overlap(const Bbox_3& bb1, const Bbox_3& bb2)
 {
@@ -198,7 +210,7 @@ operator<<(std::ostream &os, const Bbox_3& b)
   {
     case IO::ASCII :
         return os << b.xmin() << ' ' << b.ymin() << ' ' << b.zmin()
-		  << ' ' << b.xmax() << ' ' << b.ymax() << ' ' << b.zmax();
+                  << ' ' << b.xmax() << ' ' << b.ymax() << ' ' << b.zmax();
     case IO::BINARY :
         write(os, b.xmin());
         write(os, b.ymin());

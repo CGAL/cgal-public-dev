@@ -1,7 +1,7 @@
 namespace CGAL {
 
 /*!
-  \ingroup PkgGeomview
+  \ingroup PkgGeomviewRef
 
   An object of the class `Geomview_stream` is a stream in which geometric
   objects can be inserted and where geometric objects can be extracted
@@ -34,16 +34,16 @@ public:
   /*!
     Introduces a Geomview stream `gs` with a camera that sees the
     bounding box.  The command `geomview` must be in the user's `PATH`.
-    If `machine` and `login` are not `NULL`,
+    If `machine` and `login` are not `nullptr`,
     Geomview is started on the remote machine using `rsh`.
   */
-  Geomview_stream(const Bbox_3 &bbox 
+  Geomview_stream(const Bbox_3 &bbox
                   = Bbox_3(0,0,0, 1,1,1),
-                  const char *machine = NULL,
-                  const char *login = NULL);
+                  const char *machine = nullptr,
+                  const char *login = nullptr);
 /// @}
 
-  
+
   /*!
     [`begin`;`end`) is an iterator range with value type
     `Triangle_3<R>`.  This method uses the OFF format to draw several triangles
@@ -58,12 +58,10 @@ public:
 
 /// @{
   /*!
-    Makes `c` the color of vertices, edges and faces in subsequent IO 
+    Makes `c` the color of vertices, edges and faces in subsequent IO
     operations.
   */
   Geomview_stream& operator<<(const Color& c);
-
-/// @}
 
   /*!
     Changes the background color. Returns the old value.
@@ -255,8 +253,8 @@ template <class R>
 Geomview_stream&
 operator<<(Geomview_stream& gs, const Point_2<R>& p);
 
-/// \addtogroup GeomviewOutput Output Operators for CGAL Kernel Classes 
-/// \ingroup PkgGeomview
+/// \addtogroup GeomviewOutput Output Operators for CGAL Kernel Classes
+/// \ingroup PkgGeomviewRef
 /// The following classes of the \cgal kernel have output
 /// operators. 2D objects are embedded in the `xy`-plane.
 /// @{
@@ -363,24 +361,11 @@ operator<<(Geomview_stream& gs, const Bbox_2& b);
 Geomview_stream&
 operator<<(Geomview_stream& gs, const Bbox_3& b);
 
-/*!
-  Inserts the bounding box `b` into the stream `gs`.
-  \relates Geomview_stream
-*/
-Geomview_stream&
-operator<<(Geomview_stream& gs, const Bbox_3& b);
-
-/*!
-  Inserts the bounding box `b` into the stream `gs`.
-  \relates Geomview_stream
-*/
-Geomview_stream&
-operator<<(Geomview_stream& gs, const Bbox_3& b);
 
 /// @}
 
-/// \addtogroup GeomviewInput Input Operators for CGAL Kernel Classes 
-/// \ingroup PkgGeomview
+/// \addtogroup GeomviewInput Input Operators for CGAL Kernel Classes
+/// \ingroup PkgGeomviewRef
 /// An input operator is provided for points. The user has to select
 /// a point on the <I>pick plane</I> with the right mouse button. The pick plane
 /// can be moved anywhere with the left mouse button, before a point is entered.
@@ -398,9 +383,9 @@ operator>>(Geomview_stream& gs, Point_3<R>& p);
 /// @}
 
 /// \addtogroup GeomviewOutputClasses Output Operators for CGAL Basic Library Classes
-/// \ingroup PkgGeomview
-/// Output operators are provided for polyhedral surfaces, as well as for 3D 
-/// and 2D triangulations. The latter allow to visualize terrrains if the 
+/// \ingroup PkgGeomviewRef
+/// Output operators are provided for polyhedral surfaces, as well as for 3D
+/// and 2D triangulations. The latter allow to visualize terrrains if the
 /// point type isa  3D point.
 /// @{
 

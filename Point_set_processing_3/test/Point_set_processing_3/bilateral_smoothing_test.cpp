@@ -47,16 +47,14 @@ void test_bilateral_smoothing(std::deque<PointVectorPair>& points,// input point
                              double sharpness_sigma)
 {
   CGAL::Real_timer task_timer; task_timer.start();
-  
+
   for (int i = 0; i < 3; i++)
   {
       CGAL::bilateral_smooth_point_set <Concurrency_tag>(
-      points.begin(), 
-      points.end(),
-      CGAL::First_of_pair_property_map<PointVectorPair>(),
-      CGAL::Second_of_pair_property_map<PointVectorPair>(),
-      nb_neighbors,
-      sharpness_sigma);
+        points, nb_neighbors,
+        CGAL::parameters::point_map(CGAL::First_of_pair_property_map<PointVectorPair>()).
+        normal_map(CGAL::Second_of_pair_property_map<PointVectorPair>()).
+        sharpness_angle (sharpness_sigma));
   }
 
   std::size_t memory = CGAL::Memory_sizer().virtual_size();
@@ -115,10 +113,10 @@ int main(int argc, char * argv[])
     // If XYZ file format:
     std::ifstream stream(input_filename.c_str());
     if(stream &&
-       CGAL::read_xyz_points_and_normals(stream, 
-                                         std::back_inserter(points),
-                                         CGAL::First_of_pair_property_map<PointVectorPair>(),
-                                         CGAL::Second_of_pair_property_map<PointVectorPair>()))
+       CGAL::read_xyz_points(stream,
+                             std::back_inserter(points),
+                             CGAL::parameters::point_map(CGAL::First_of_pair_property_map<PointVectorPair>()).
+                             normal_map(CGAL::Second_of_pair_property_map<PointVectorPair>())))
     {
       std::cerr << "ok (" << points.size() << " points)" << std::endl;
     }
@@ -136,7 +134,7 @@ int main(int argc, char * argv[])
 #ifdef CGAL_LINKED_WITH_TBB
     std::deque<PointVectorPair> points2(points);
 #endif // CGAL_LINKED_WITH_TBB
-    
+
     test_bilateral_smoothing<CGAL::Sequential_tag>(
       points, nb_neighbors, sharpness_sigma);
 

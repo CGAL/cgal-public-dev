@@ -1,11 +1,9 @@
+cmake_minimum_required(VERSION 3.1...3.15)
 project(CGAL_ipelets_Demo)
 
-cmake_minimum_required(VERSION 3.1)
-if(POLICY CMP0053)
+if(NOT POLICY CMP0070 AND POLICY CMP0053)
+  # Only set CMP0053 to OLD with CMake<3.10, otherwise there is a warning.
   cmake_policy(SET CMP0053 OLD)
-endif()
-if(POLICY CMP0043)
-  cmake_policy(SET CMP0043 OLD)
 endif()
 
 macro( remove_leading_zero var )
@@ -25,7 +23,15 @@ set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}")
 find_package(CGAL QUIET COMPONENTS Core)
 
 if ( CGAL_FOUND )
-  include( ${CGAL_USE_FILE} )
+
+  include(${CGAL_USE_FILE})
+
+  find_package(Eigen3 3.1.0) #(requires 3.1.0 or greater)
+  include(CGAL_Eigen_support)
+  if (NOT TARGET CGAL::Eigen_support)
+    message(STATUS "NOTICE: This project requires the Eigen library, and will not be compiled.")
+    return()
+  endif()
 
   find_package(IPE 6)
 
@@ -63,9 +69,9 @@ if ( CGAL_FOUND )
     if (WITH_IPE_7)
       add_definitions(-DCGAL_USE_IPE_7)
     endif()
-    
-    message("-- Using IPE version ${IPE_VERSION} compatibility.") 
-    
+
+    message("-- Using IPE version ${IPE_VERSION} compatibility.")
+
     #setting installation directory
     get_filename_component(IPE_LIBRARY_DIR ${IPE_LIBRARIES} PATH)
     if (IPE_FOUND AND NOT IPELET_INSTALL_DIR)
@@ -73,7 +79,7 @@ if ( CGAL_FOUND )
         remove_leading_zero(IPE_MINOR_VERSION_1)
         remove_leading_zero(IPE_MINOR_VERSION_2)
         set(INSTALL_PATHS "${IPE_LIBRARY_DIR}/ipe/7.${IPE_MINOR_VERSION_1}.${IPE_MINOR_VERSION_2}/ipelets/")
-        find_path(IPELET_INSTALL_DIR 
+        find_path(IPELET_INSTALL_DIR
                       NAMES libgoodies.lua goodies.lua
                       PATHS ${INSTALL_PATHS}
                       DOC "The folder where ipelets will be installed"
@@ -89,14 +95,14 @@ if ( CGAL_FOUND )
         set(INSTALL_PATHS ${INSTALL_PATHS} /usr/lib/ipe/6.0/ipelets)
 
 
-        find_library(IPELET_INSTALL_DIR_FILES 
+        find_library(IPELET_INSTALL_DIR_FILES
                       NAMES align
                       PATHS ${INSTALL_PATHS}
                             ENV IPELETPATH
                     )
         if (IPELET_INSTALL_DIR_FILES)
           get_filename_component(IPELET_INSTALL_DIR ${IPELET_INSTALL_DIR_FILES} PATH)
-        endif()                
+        endif()
       endif()
     endif()
 
@@ -110,38 +116,48 @@ if ( CGAL_FOUND )
     set(CGAL_IPELETS ${CGAL_IPELETS} generator)
     set(CGAL_IPELETS ${CGAL_IPELETS} mesh_2)
     set(CGAL_IPELETS ${CGAL_IPELETS} minkowski)
+    set(CGAL_IPELETS ${CGAL_IPELETS} mst)
     set(CGAL_IPELETS ${CGAL_IPELETS} multi_delaunay)
     set(CGAL_IPELETS ${CGAL_IPELETS} multi_regular)
     set(CGAL_IPELETS ${CGAL_IPELETS} partition)
-    set(CGAL_IPELETS ${CGAL_IPELETS} pca)    
+    set(CGAL_IPELETS ${CGAL_IPELETS} pca)
     set(CGAL_IPELETS ${CGAL_IPELETS} skeleton)
     set(CGAL_IPELETS ${CGAL_IPELETS} svdlinf)
     set(CGAL_IPELETS ${CGAL_IPELETS} triangulation)
     set(CGAL_IPELETS ${CGAL_IPELETS} circle_pencils)
     set(CGAL_IPELETS ${CGAL_IPELETS} hyperbolic)
     set(CGAL_IPELETS ${CGAL_IPELETS} distance)
-    set(CGAL_IPELETS ${CGAL_IPELETS} cone_spanners)
+    if(CGAL_Core_FOUND)
+      set(CGAL_IPELETS ${CGAL_IPELETS} cone_spanners)
+    endif()
 
 
     if ( IPELET_INSTALL_DIR )
       message(STATUS "Set Ipelets install dir: ${IPELET_INSTALL_DIR}")
     endif()
 
+    include(${CGAL_MODULES_DIR}/CGAL_add_test.cmake)
+
     foreach(IPELET ${CGAL_IPELETS})
       add_library(CGAL_${IPELET} MODULE ${IPELET}.cpp)
       add_to_cached_list(CGAL_EXECUTABLE_TARGETS CGAL_${IPELET})
-      target_link_libraries(CGAL_${IPELET} ${IPE_LIBRARIES})
+      target_link_libraries(CGAL_${IPELET} PRIVATE CGAL::CGAL CGAL::Eigen_support ${IPE_LIBRARIES})
       if ( IPELET_INSTALL_DIR )
         install(TARGETS CGAL_${IPELET} DESTINATION ${IPELET_INSTALL_DIR})
         if (WITH_IPE_7)
           install(FILES ./lua/libCGAL_${IPELET}.lua DESTINATION ${IPELET_INSTALL_DIR}) #only for ipe 7
         endif()
       endif ()
+      cgal_add_compilation_test(CGAL_${IPELET})
     endforeach(IPELET)
+    if(CGAL_Core_FOUND)
+      target_link_libraries(CGAL_cone_spanners PRIVATE CGAL::CGAL_Core CGAL::Eigen_support)
+    endif()
     #example in doc not installed
     add_library(simple_triangulation MODULE simple_triangulation.cpp)
     add_to_cached_list(CGAL_EXECUTABLE_TARGETS simple_triangulation)
-    target_link_libraries(simple_triangulation ${IPE_LIBRARIES})
+    target_link_libraries(simple_triangulation CGAL::Eigen_support ${IPE_LIBRARIES})
+    cgal_add_compilation_test(simple_triangulation)
 
   else()
     message(STATUS "NOTICE: This program requires the Ipe include files and library, and will not be compiled.")

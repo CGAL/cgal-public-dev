@@ -1,20 +1,10 @@
 // Copyright (c) 2006-2013 INRIA Nancy-Grand Est (France). All rights reserved.
 //
-// This file is part of CGAL (www.cgal.org); you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public License as
-// published by the Free Software Foundation; either version 3 of the License,
-// or (at your option) any later version.
-
-// See the file LICENSE.LGPL distributed with CGAL.
-//
-// Licensees holding a valid commercial license may use this file in
-// accordance with the commercial license agreement provided with the software.
-//
-// This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
-// WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+// This file is part of CGAL (www.cgal.org)
 //
 // $URL$
 // $Id$
+// SPDX-License-Identifier: LGPL-3.0-or-later OR LicenseRef-Commercial
 //
 // Author: Luis Peñaranda <luis.penaranda@gmx.com>
 
@@ -35,7 +25,7 @@
 #define CGALRS_PTR(a)   void *a
 #endif
 
-// RS3 does not work with MPFR 3.1.3 to 3.1.5. In case RS3 is enabled and
+// RS3 does not work with MPFR 3.1.3 to 3.1.6. In case RS3 is enabled and
 // the version of MPFR is one of those buggy versions, abort the compilation
 // and instruct the user to update MPFR or don't use RS3.
 #ifdef CGAL_USE_RS3
@@ -43,8 +33,8 @@
 BOOST_STATIC_ASSERT_MSG(
         MPFR_VERSION_MAJOR!=3 ||
         MPFR_VERSION_MINOR!=1 ||
-        MPFR_VERSION_PATCHLEVEL<3 || MPFR_VERSION_PATCHLEVEL>5,
-        "RS3 does not work with MPFR versions 3.1.3 to 3.1.5. "#
+        MPFR_VERSION_PATCHLEVEL<3 || MPFR_VERSION_PATCHLEVEL>6,
+        "RS3 does not work with MPFR versions 3.1.3 to 3.1.6. "
         "Please update MPFR or disable RS3.");
 #endif // CGAL_USE_RS3
 

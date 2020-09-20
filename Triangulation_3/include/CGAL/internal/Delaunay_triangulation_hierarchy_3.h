@@ -2,18 +2,10 @@
 // All rights reserved.
 //
 // This file is part of CGAL (www.cgal.org).
-// You can redistribute it and/or modify it under the terms of the GNU
-// General Public License as published by the Free Software Foundation,
-// either version 3 of the License, or (at your option) any later version.
-//
-// Licensees holding a valid commercial license may use this file in
-// accordance with the commercial license agreement provided with the software.
-//
-// This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
-// WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 //
 // $URL$
 // $Id$
+// SPDX-License-Identifier: GPL-3.0-or-later OR LicenseRef-Commercial
 //
 // Author(s)     : Sylvain Pion
 
@@ -36,8 +28,8 @@ namespace CGAL {
 
 #define CGAL_TDS_3 \
 typename Default::Get<Tds_, Triangulation_data_structure_3 <\
-	                    Triangulation_vertex_base_3<Gt>,\
-	                    Triangulation_cell_base_3<Gt> > >::type
+                              Triangulation_vertex_base_3<Gt>,\
+                              Delaunay_triangulation_cell_base_3<Gt> > >::type
 
 template < class Gt, class Tds_ >
 class Delaunay_triangulation_3<Gt, Tds_, Fast_location>
@@ -82,12 +74,14 @@ public:
 template < class Gt >
 class Delaunay_triangulation_3<Gt, Fast_location>
   : public Triangulation_hierarchy_3<Delaunay_triangulation_3<Gt,
-             Triangulation_data_structure_3< Triangulation_hierarchy_vertex_base_3<Triangulation_vertex_base_3<Gt> >,
-	                                     Triangulation_cell_base_3<Gt> > > >
+             Triangulation_data_structure_3<
+               Triangulation_hierarchy_vertex_base_3<Triangulation_vertex_base_3<Gt> >,
+               Delaunay_triangulation_cell_base_3<Gt> > > >
 {
     typedef Triangulation_hierarchy_3<Delaunay_triangulation_3<Gt,
-             Triangulation_data_structure_3< Triangulation_hierarchy_vertex_base_3<Triangulation_vertex_base_3<Gt> >,
-	                                     Triangulation_cell_base_3<Gt> > > >  Base;
+             Triangulation_data_structure_3<
+               Triangulation_hierarchy_vertex_base_3<Triangulation_vertex_base_3<Gt> >,
+               Delaunay_triangulation_cell_base_3<Gt> > > >  Base;
 
 public:
 

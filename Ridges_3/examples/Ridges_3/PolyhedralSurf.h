@@ -3,9 +3,6 @@
 
 #include <CGAL/Simple_cartesian.h>
 #include <CGAL/Polyhedron_3.h>
-#include <CGAL/IO/Polyhedron_iostream.h>
-#include <CGAL/boost/graph/graph_traits_Polyhedron_3.h>
-#include <CGAL/boost/graph/properties_Polyhedron_3.h>
 #include <CGAL/boost/graph/helpers.h>
 #include <cstdlib>
 #include <cstdio>
@@ -13,7 +10,6 @@
 #include <vector>
 #include <list>
 
-#include <boost/foreach.hpp>
 
 //----------------------------------------------------------------
 // A redefined items class for the Polyhedron_3 with
@@ -69,7 +65,7 @@ class PolyhedralSurf;
 namespace boost {
   template <>
   struct graph_traits<PolyhedralSurf> : public boost::graph_traits<Polyhedron>
-  {};  
+  {};
 
   template <>
   struct graph_traits<PolyhedralSurf const> : public boost::graph_traits<Polyhedron>

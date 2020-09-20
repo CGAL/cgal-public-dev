@@ -1,11 +1,11 @@
 #include <CGAL/Three/Polyhedron_demo_plugin_interface.h>
 #include <CGAL/Three/Polyhedron_demo_plugin_helper.h>
+#include <CGAL/Three/Three.h>
 #include <QApplication>
 #include <QDockWidget>
 #include <QObject>
 #include <QAction>
 #include <QMainWindow>
-#include <Scene_polyhedron_item.h>
 #include <Scene_surface_mesh_item.h>
 #include <Scene_points_with_normal_item.h>
 #include "Messages_interface.h"
@@ -22,7 +22,7 @@
 #ifdef CGAL_LINKED_WITH_TBB
 #include <tbb/parallel_for.h>
 #include <tbb/blocked_range.h>
-#include <tbb/atomic.h>
+#include <atomic>
 #endif // CGAL_LINKED_WITH_TBB
 
 #if defined(CGAL_LINKED_WITH_TBB)
@@ -31,13 +31,13 @@ struct Distance_computation{
   const AABB_tree& tree;
   const Point_set & point_set;
   Point_3 initial_hint;
-  tbb::atomic<double>* distance;
+  std::atomic<double>* distance;
   std::vector<double>& output;
 
   Distance_computation(const AABB_tree& tree,
                        const Point_3 p,
                        const Point_set & point_set,
-                       tbb::atomic<double>* d,
+                       std::atomic<double>* d,
                        std::vector<double>& out )
     : tree(tree)
     , point_set(point_set)
@@ -77,7 +77,6 @@ double compute_distances(const Mesh& m,
   typedef CGAL::AABB_tree< Traits > Tree;
 
   Tree tree( faces(m).first, faces(m).second, m);
-  tree.accelerate_distance_queries();
   tree.build();
   typedef typename boost::property_map<Mesh, boost::vertex_point_t>::const_type VPMap;
   VPMap vpmap = get(boost::vertex_point, m);
@@ -96,7 +95,7 @@ double compute_distances(const Mesh& m,
   }
     return hdist;
 #else
-  tbb::atomic<double> distance;
+  std::atomic<double> distance;
   distance.store(0);
   Distance_computation<Tree, typename Traits::Point_3> f(tree, hint, point_set, &distance, out);
   tbb::parallel_for(tbb::blocked_range<Point_set::const_iterator>(point_set.begin(), point_set.end()), f);
@@ -132,19 +131,16 @@ public:
   {
     if(scene->selectionIndices().size() != 2)
       return false;
-    Scene_polyhedron_item* poly = NULL;
     Scene_surface_mesh_item* sm = NULL;
     Scene_points_with_normal_item* pn = NULL;
     Q_FOREACH(Scene_interface::Item_id i,scene->selectionIndices())
     {
-      if(!poly)
-        poly = qobject_cast<Scene_polyhedron_item*>(scene->item(i));
       if(!sm)
         sm = qobject_cast<Scene_surface_mesh_item*>(scene->item(i));
       if(!pn)
         pn = qobject_cast<Scene_points_with_normal_item*>(scene->item(i));
     }
-    if((!poly && ! sm)|| !pn)
+    if(! sm|| !pn)
       return false;
     else
       return true;
@@ -188,7 +184,7 @@ private Q_SLOTS:
     if(!item ||
        !item->point_set()->has_property_map<double>("distance"))
     {
-      messageInterface->warning("You must select the resulting point set.");
+      CGAL::Three::Three::warning("You must select the resulting point set.");
       return;
     }
     PMap distance_map;
@@ -198,26 +194,23 @@ private Q_SLOTS:
         it != item->point_set()->end(); ++ it)
    {
      if(distance <= distance_map[*it])
-       item->point_set()->select(it);
+       item->point_set()->select(*it);
    }
    item->invalidateOpenGLBuffers();
    item->itemChanged();
   }
   void perform()
   {
-    Scene_polyhedron_item* poly = NULL;
     Scene_surface_mesh_item* sm = NULL;
     Scene_points_with_normal_item* pn = NULL;
     Q_FOREACH(Scene_interface::Item_id i,scene->selectionIndices())
     {
-      if(!poly)
-        poly = qobject_cast<Scene_polyhedron_item*>(scene->item(i));
       if(!sm)
         sm = qobject_cast<Scene_surface_mesh_item*>(scene->item(i));
       if(!pn)
         pn = qobject_cast<Scene_points_with_normal_item*>(scene->item(i));
     }
-    if((!poly && ! sm)|| !pn)
+    if(! sm|| !pn)
       return ;
     QApplication::setOverrideCursor(Qt::WaitCursor);
     Scene_points_with_normal_item* new_item = new Scene_points_with_normal_item(*pn);
@@ -241,10 +234,7 @@ private Q_SLOTS:
     points->collect_garbage();
     std::vector<double> distances(points->size());
     double hdist;
-    if(poly)
-      hdist = compute_distances(*poly->face_graph(), *points, distances);
-    else
-      hdist = compute_distances(*sm->face_graph(), *points, distances);
+    hdist = compute_distances(*sm->face_graph(), *points, distances);
     if(hdist == 0)
       hdist++;
     int id = 0;
@@ -279,6 +269,7 @@ private Q_SLOTS:
     if(!dock_widget->isVisible())
     {
       dock_widget->show();
+      dock_widget->raise();
     }
     perform();
   }

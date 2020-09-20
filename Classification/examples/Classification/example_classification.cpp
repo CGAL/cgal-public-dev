@@ -11,16 +11,12 @@
 #include <CGAL/Simple_cartesian.h>
 #include <CGAL/Classification.h>
 #include <CGAL/bounding_box.h>
-
+#include <CGAL/tags.h>
 #include <CGAL/IO/read_ply_points.h>
 
 #include <CGAL/Real_timer.h>
 
-#ifdef CGAL_LINKED_WITH_TBB
-typedef CGAL::Parallel_tag Concurrency_tag;
-#else
-typedef CGAL::Sequential_tag Concurrency_tag;
-#endif
+typedef CGAL::Parallel_if_available_tag Concurrency_tag;
 
 typedef CGAL::Simple_cartesian<double> Kernel;
 typedef Kernel::Point_3 Point;
@@ -42,10 +38,6 @@ typedef Classification::Label_set                                               
 typedef Classification::Feature_set                                             Feature_set;
 
 typedef Classification::Feature::Distance_to_plane<Point_range, Pmap>           Distance_to_plane;
-typedef Classification::Feature::Linearity                                      Linearity;
-typedef Classification::Feature::Omnivariance                                   Omnivariance;
-typedef Classification::Feature::Planarity                                      Planarity;
-typedef Classification::Feature::Surface_variation                              Surface_variation;
 typedef Classification::Feature::Elevation<Kernel, Point_range, Pmap>           Elevation;
 typedef Classification::Feature::Vertical_dispersion<Kernel, Point_range, Pmap> Dispersion;
 
@@ -68,8 +60,7 @@ int main (int argc, char** argv)
   }
 
   float grid_resolution = 0.34f;
-  float radius_neighbors = 1.7f;
-  float radius_dtm = 15.0f;
+  unsigned int number_of_neighbors = 6;
 
   std::cerr << "Computing useful structures" << std::endl;
 
@@ -77,25 +68,35 @@ int main (int argc, char** argv)
 
   Planimetric_grid grid (pts, Pmap(), bbox, grid_resolution);
   Neighborhood neighborhood (pts, Pmap());
-  Local_eigen_analysis eigen (pts, Pmap(), neighborhood.k_neighbor_query(6));
+  Local_eigen_analysis eigen
+    = Local_eigen_analysis::create_from_point_set
+    (pts, Pmap(), neighborhood.k_neighbor_query(number_of_neighbors));
 
   //! [Analysis]
   ///////////////////////////////////////////////////////////////////
-  
+
   ///////////////////////////////////////////////////////////////////
   //! [Features]
 
+  float radius_neighbors = 1.7f;
+  float radius_dtm = 15.0f;
+
   std::cerr << "Computing features" << std::endl;
   Feature_set features;
+
+#ifdef CGAL_LINKED_WITH_TBB
+  features.begin_parallel_additions();
+#endif
+
   Feature_handle distance_to_plane = features.add<Distance_to_plane> (pts, Pmap(), eigen);
-  Feature_handle linearity = features.add<Linearity> (pts, eigen);
-  Feature_handle omnivariance = features.add<Omnivariance> (pts, eigen);
-  Feature_handle planarity = features.add<Planarity> (pts, eigen);
-  Feature_handle surface_variation = features.add<Surface_variation> (pts, eigen);
   Feature_handle dispersion = features.add<Dispersion> (pts, Pmap(), grid,
                                                         radius_neighbors);
   Feature_handle elevation = features.add<Elevation> (pts, Pmap(), grid,
                                                       radius_dtm);
+
+#ifdef CGAL_LINKED_WITH_TBB
+  features.end_parallel_additions();
+#endif
 
   //! [Features]
   ///////////////////////////////////////////////////////////////////
@@ -110,42 +111,26 @@ int main (int argc, char** argv)
 
   //! [Labels]
   ///////////////////////////////////////////////////////////////////
-  
+
   ///////////////////////////////////////////////////////////////////
   //! [Weights]
 
   std::cerr << "Setting weights" << std::endl;
   Classifier classifier (labels, features);
   classifier.set_weight (distance_to_plane, 6.75e-2f);
-  classifier.set_weight (linearity, 1.19f);
-  classifier.set_weight (omnivariance, 1.34e-1f);
-  classifier.set_weight (planarity, 7.32e-1f);
-  classifier.set_weight (surface_variation, 1.36e-1f);
   classifier.set_weight (dispersion, 5.45e-1f);
   classifier.set_weight (elevation, 1.47e1f);
-  
+
   std::cerr << "Setting effects" << std::endl;
   classifier.set_effect (ground, distance_to_plane, Classifier::NEUTRAL);
-  classifier.set_effect (ground, linearity,  Classifier::PENALIZING);
-  classifier.set_effect (ground, omnivariance, Classifier::NEUTRAL);
-  classifier.set_effect (ground, planarity, Classifier::FAVORING);
-  classifier.set_effect (ground, surface_variation, Classifier::PENALIZING);
   classifier.set_effect (ground, dispersion, Classifier::NEUTRAL);
   classifier.set_effect (ground, elevation, Classifier::PENALIZING);
-  
+
   classifier.set_effect (vegetation, distance_to_plane,  Classifier::FAVORING);
-  classifier.set_effect (vegetation, linearity,  Classifier::NEUTRAL);
-  classifier.set_effect (vegetation, omnivariance, Classifier::FAVORING);
-  classifier.set_effect (vegetation, planarity, Classifier::NEUTRAL);
-  classifier.set_effect (vegetation, surface_variation, Classifier::NEUTRAL);
   classifier.set_effect (vegetation, dispersion, Classifier::FAVORING);
   classifier.set_effect (vegetation, elevation, Classifier::NEUTRAL);
 
   classifier.set_effect (roof, distance_to_plane,  Classifier::NEUTRAL);
-  classifier.set_effect (roof, linearity,  Classifier::PENALIZING);
-  classifier.set_effect (roof, omnivariance, Classifier::FAVORING);
-  classifier.set_effect (roof, planarity, Classifier::FAVORING);
-  classifier.set_effect (roof, surface_variation, Classifier::PENALIZING);
   classifier.set_effect (roof, dispersion, Classifier::NEUTRAL);
   classifier.set_effect (roof, elevation, Classifier::FAVORING);
 
@@ -157,8 +142,8 @@ int main (int argc, char** argv)
 
   ///////////////////////////////////////////////////////////////////
   //! [Classify]
-  std::vector<std::size_t> label_indices;
-    
+  std::vector<int> label_indices (pts.size(), -1);
+
   CGAL::Real_timer t;
   t.start();
   Classification::classify<Concurrency_tag> (pts, labels, classifier, label_indices);
@@ -167,7 +152,7 @@ int main (int argc, char** argv)
   t.reset();
   //! [Classify]
   ///////////////////////////////////////////////////////////////////
-  
+
   ///////////////////////////////////////////////////////////////////
   //! [Smoothing]
   t.start();
@@ -192,7 +177,7 @@ int main (int argc, char** argv)
   std::cerr << "Classification with graphcut performed in " << t.time() << " second(s)" << std::endl;
   //! [Graph_cut]
   ///////////////////////////////////////////////////////////////////
-  
+
   // Save the output in a colored PLY format
 
   std::ofstream f ("classification.ply");
@@ -206,12 +191,12 @@ int main (int argc, char** argv)
     << "property uchar green" << std::endl
     << "property uchar blue" << std::endl
     << "end_header" << std::endl;
-  
+
   for (std::size_t i = 0; i < pts.size(); ++ i)
   {
     f << pts[i] << " ";
-      
-    Label_handle label = labels[label_indices[i]];
+
+    Label_handle label = labels[std::size_t(label_indices[i])];
     if (label == ground)
       f << "245 180 0" << std::endl;
     else if (label == vegetation)
@@ -224,7 +209,7 @@ int main (int argc, char** argv)
       std::cerr << "Error: unknown classification label" << std::endl;
     }
   }
-  
+
   std::cerr << "All done" << std::endl;
   return EXIT_SUCCESS;
 }

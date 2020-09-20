@@ -19,7 +19,7 @@ typedef Kernel::Vector_3 Vector_3;
 
 
 int main()
-{  
+{
   std::vector<Point_3> points;
   std::vector<size_t> indices(100);
 
@@ -36,12 +36,10 @@ int main()
   }
 
 
-  CGAL::jet_estimate_normals<CGAL::Sequential_tag>(indices.begin(), indices.end(),
-                                                   CGAL::make_property_map(points),
-                                                   CGAL::make_property_map(normals),
-                                                   12);
-  
-  
+  CGAL::jet_estimate_normals<CGAL::Sequential_tag>(indices, 12,
+                                                   CGAL::parameters::point_map(CGAL::make_property_map(points)).
+                                                   normal_map(CGAL::make_property_map(normals)));
+
   return 0;
 }
 

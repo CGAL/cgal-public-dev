@@ -1,19 +1,11 @@
 // Copyright (c) 2016 GeometryFactory (France).
 // All rights reserved.
 //
-// This file is part of CGAL (www.cgal.org); you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public License as
-// published by the Free Software Foundation; either version 3 of the License,
-// or (at your option) any later version.
-//
-// Licensees holding a valid commercial license may use this file in
-// accordance with the commercial license agreement provided with the software.
-//
-// This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
-// WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+// This file is part of CGAL (www.cgal.org)
 //
 // $URL$
 // $Id$
+// SPDX-License-Identifier: LGPL-3.0-or-later OR LicenseRef-Commercial
 //
 //
 // Author(s)     : Maxime Gimeno
@@ -21,12 +13,14 @@
 #ifndef CGAL_INTERNAL_GENERIC_RANDOM_POINT_GENERATOR_H
 #define CGAL_INTERNAL_GENERIC_RANDOM_POINT_GENERATOR_H
 
+#include <CGAL/assertions.h>
+#include <CGAL/Iterator_range.h>
 #include <CGAL/generators.h>
 #include <CGAL/Random.h>
 #include <CGAL/property_map.h>
+
+
 #include <vector>
-#include <boost/foreach.hpp>
-#include <CGAL/Iterator_range.h>
 
 namespace CGAL {
 
@@ -56,12 +50,14 @@ public:
     , random(rnd)
   {
     std::size_t input_size = input.size();
+    CGAL_precondition(input_size > 0);
+
     ids.reserve(input_size);
     weights.reserve(input_size);
 
     // fill the weights
     double total_weight = 0;
-    BOOST_FOREACH(Id id, input)
+    for(Id id : input)
     {
       //create a geometric object
       Geometric_object object = object_from_id_map(id);
@@ -70,9 +66,11 @@ public:
       total_weight += to_double( compute_weight(object) );
       weights.push_back(total_weight);
     }
+
     //generate the first point
     generate_point();
   }
+
   This& operator++()
   {
     generate_point();
@@ -84,6 +82,7 @@ public:
     ++(*this);
     return tmp;
   }
+
   double sum_of_weights() const
   {
     if (weights.empty())

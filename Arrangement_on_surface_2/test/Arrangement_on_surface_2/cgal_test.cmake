@@ -70,7 +70,11 @@ set(CGAL_GMPZ_NT 14)
 set(CORE_INT_NT 15)
 set(CORE_RAT_NT 16)
 
-if($ENV{CGAL_DISABLE_GMP})
+if(CGAL_DISABLE_GMP)
+  set(CGAL_DISABLE_GMP ON)
+endif()
+
+if(CGAL_DISABLE_GMP)
   message(STATUS "GMP is disable. Try to use LEDA instead.")
   set(GMPZ_NT ${LEDA_INT_NT})
   set(QUOTIENT_CGAL_GMPZ_NT ${LEDA_RAT_NT})
@@ -152,13 +156,21 @@ function(cgal_arr_2_add_target exe_name source_file)
     set(name ${exe_name}_${suffix})
   endif()
   add_executable(${name} ${source_file})
+  add_to_cached_list( CGAL_EXECUTABLE_TARGETS ${name} )
   separate_arguments(flags UNIX_COMMAND "${TESTSUITE_CXXFLAGS}")
   target_compile_options(${name} PRIVATE ${flags})
   cgal_debug_message(STATUS "#      -> target ${name} with TESTSUITE_CXXFLAGS: ${flags}")
 
+  if(BUILD_TESTING)
+    cgal_add_compilation_test(${name})
+  endif(BUILD_TESTING)
+
   # Add a compatibility-mode with the shell script `cgal_test_base`
   if(NOT TARGET ${exe_name})
     create_single_source_cgal_program( "${source_file}" NO_TESTING)
+    if(BUILD_TESTING)
+      cgal_add_compilation_test(${exe_name})
+    endif(BUILD_TESTING)
   endif()
 endfunction()
 
@@ -171,24 +183,26 @@ endfunction()
 function(run_test_with_flags)
   # ${ARGV0} - executable name
   # ${ARGV1} - test substring name
+  if(NOT BUILD_TESTING)
+    return()
+  endif()
   cgal_debug_message(STATUS "# run_test_with_flags(${ARGN})")
   cgal_add_test(${ARGV0}_${suffix} ${ARGV0} ${ARGV0}.${ARGV1})
 endfunction()
 
 function(run_test_alt name datafile)
+  if(NOT BUILD_TESTING)
+    return()
+  endif()
   if(suffix)
     set(name ${name}_${suffix})
   endif()
   cgal_debug_message(STATUS "#     run_test_alt(${ARGN})")
   cgal_debug_message(STATUS "#       -> ./${name} ${datafile} ${ARGN}")
-  set(command ${name} ${datafile} ${ARGN})
   string(MAKE_C_IDENTIFIER "${name}  ${ARGV4}  ${ARGV5}" test_name)
-  add_test(NAME ${test_name} COMMAND ${command}
-    WORKING_DIRECTORY ${CGAL_CURRENT_SOURCE_DIR})
-#  message("   successful execution of ${name}  ${ARGV4} ${ARGV5}")
-  set_property(TEST "${test_name}"
-    APPEND PROPERTY LABELS "${PROJECT_NAME}")
-  cgal_debug_message(STATUS "add test \"${test_name}\": ${name} ${datafile} ${ARGN}")
+  cgal_add_test(${name}
+    TEST_NAME ${test_name}
+    ARGUMENTS ${datafile} ${ARGN})
 endfunction()
 
 function(run_trapped_test name datafile)
@@ -201,7 +215,9 @@ function(compile_and_run)
   cgal_debug_message(STATUS "# compile_and_run(${ARGN})")
 #  message("   successful compilation of ${name}")
   cgal_arr_2_add_target(${name} ${name}.cpp)
-  cgal_add_test(${name})
+  if(BUILD_TESTING)
+    cgal_add_test(${name})
+  endif()
 endfunction()
 
 function(execute_commands_old_structure data_dir traits_type_name)
@@ -454,6 +470,7 @@ function(execute_commands_traits_adaptor data_dir traits_type_name)
 
   set(commands_indicator_PARAMETER_SPACE_X 0)
   set(commands_indicator_PARAMETER_SPACE_Y 0)
+  set(commands_indicator_COMPARE_XY 0)
   set(commands_indicator_COMPARE_X_AT_LIMIT 0)
   set(commands_indicator_COMPARE_X_NEAR_LIMIT 0)
   set(commands_indicator_COMPARE_X_ON_BOUNDARY 0)
@@ -482,6 +499,11 @@ function(execute_commands_traits_adaptor data_dir traits_type_name)
     run_trapped_test(test_traits_adaptor data/test_adaptor/${data_dir}/points
       data/test_adaptor/${data_dir}/xcurves data/test_adaptor/${data_dir}/curves
       data/test_adaptor/${data_dir}/parameter_space_y ${traits_type_name})
+  endif()
+  if(commands_indicator_COMPARE_XY)
+    run_trapped_test(test_traits_adaptor data/test_adaptor/${data_dir}/points
+      data/test_adaptor/${data_dir}/xcurves data/test_adaptor/${data_dir}/curves
+      data/test_adaptor/${data_dir}/compare_xy ${traits_type_name})
   endif()
   if(commands_indicator_COMPARE_X_AT_LIMIT)
     run_trapped_test(test_traits_adaptor data/test_adaptor/${data_dir}/points
@@ -574,7 +596,7 @@ function(test_segment_traits_adaptor)
   compile_test_with_flags(test_traits_adaptor segments "${flags}")
 #  if [ -n "${SUCCESS}" ] ; then
   execute_commands_traits_adaptor( segments segments_traits_adaptor
-    COMPARE_Y_POSITION COMPARE_CW_AROUND_POINT COMPARE_Y_AT_X_LEFT
+    COMPARE_XY COMPARE_Y_POSITION COMPARE_CW_AROUND_POINT COMPARE_Y_AT_X_LEFT
     ARE_MERGEABLE MERGE IS_IN_X_RANGE IS_BETWEEN_CW)
 endfunction()
 
@@ -590,7 +612,7 @@ function(test_linear_traits_adaptor)
   compile_test_with_flags( test_traits_adaptor linear "${flags}")
 
   execute_commands_traits_adaptor( linear linear_traits_adaptor
-    COMPARE_Y_AT_X_LEFT ARE_MERGEABLE MERGE IS_IN_X_RANGE
+    COMPARE_XY COMPARE_Y_AT_X_LEFT ARE_MERGEABLE MERGE IS_IN_X_RANGE
     COMPARE_Y_POSITION IS_BETWEEN_CW COMPARE_CW_AROUND_POINT)
 endfunction()
 
@@ -607,7 +629,7 @@ function(test_spherical_arcs_traits_adaptor)
   compile_test_with_flags( test_traits_adaptor geodesic_arcs_on_sphere "${flags}")
 
   execute_commands_traits_adaptor( spherical_arcs spherical_arcs_traits_adaptor
-    COMPARE_Y_AT_X_LEFT ARE_MERGEABLE MERGE IS_IN_X_RANGE
+    COMPARE_XY COMPARE_Y_AT_X_LEFT ARE_MERGEABLE MERGE IS_IN_X_RANGE
     COMPARE_Y_POSITION IS_BETWEEN_CW COMPARE_CW_AROUND_POINT)
 endfunction()
 
@@ -660,6 +682,18 @@ function(test_construction_spherical_arcs)
   set(flags "-DTEST_NT=${nt} -DTEST_KERNEL=${kernel} -DTEST_GEOM_TRAITS=${geom_traits} -DTEST_TOPOL_TRAITS=${topol_traits}")
   compile_and_run_with_flags( test_construction geodesic_arcs_on_sphere "${flags}")
 endfunction()
+
+#---------------------------------------------------------------------#
+# construction with polylines
+#---------------------------------------------------------------------#
+function(test_construction_polylines)
+  set(nt ${CGAL_GMPQ_NT})
+  set(kernel ${CARTESIAN_KERNEL})
+  set(geom_traits ${POLYLINE_GEOM_TRAITS})
+  set(flags "-DTEST_NT=${nt} -DTEST_KERNEL=${kernel} -DTEST_GEOM_TRAITS=${geom_traits}")
+  compile_and_run_with_flags( test_construction polylines "${flags}")
+endfunction()
+
 
 #---------------------------------------------------------------------#
 # overlay with segments
@@ -865,7 +899,7 @@ endfunction()
 #---------------------------------------------------------------------#
 function(test_polycurve_conic_traits)
 #  echo polycurve test starting
-  if($ENV{CGAL_DISABLE_GMP})
+  if(CGAL_DISABLE_GMP)
     MESSAGE(STATUS "test_polycurve_conic_traits requires CORE and will not be executed")
     return()
   endif()
@@ -936,7 +970,7 @@ endfunction()
 # polycurve bezier traits
 #---------------------------------------------------------------------#
 function(test_polycurve_bezier_traits)
-  if($ENV{CGAL_DISABLE_GMP})
+  if(CGAL_DISABLE_GMP)
     MESSAGE(STATUS "test_polycurve_bezier_traits requires CORE and will not be executed")
     return()
   endif()
@@ -1045,7 +1079,7 @@ endfunction()
 # conic traits
 #---------------------------------------------------------------------#
 function(test_conic_traits)
-  if($ENV{CGAL_DISABLE_GMP})
+  if(CGAL_DISABLE_GMP)
     MESSAGE(STATUS "test_conic_traits requires CORE and will not be executed")
     return()
   endif()
@@ -1176,7 +1210,7 @@ endfunction()
 # bezier traits
 #---------------------------------------------------------------------#
 function(test_bezier_traits)
-  if($ENV{CGAL_DISABLE_GMP})
+  if(CGAL_DISABLE_GMP)
     MESSAGE(STATUS "test_bezier_traits requires CORE and will not be executed")
     return()
   endif()
@@ -1223,7 +1257,7 @@ endfunction()
 # rational arc traits
 #---------------------------------------------------------------------#
 function(test_rational_arc_traits)
-  if($ENV{CGAL_DISABLE_GMP})
+  if(CGAL_DISABLE_GMP)
     MESSAGE(STATUS "test_rational_arc_traits requires CORE and will not be executed")
     return()
   endif()
@@ -1248,7 +1282,10 @@ endfunction()
 #---------------------------------------------------------------------#
 function(test_algebraic_traits_gmp)
   #TODO: Adapt
-
+  if(CGAL_DISABLE_GMP)
+    MESSAGE(STATUS "test_traits_algebraic_traits_gmp requires GMP and will not be executed")
+    return()
+  endif()
   set(nt ${CGAL_GMPZ_NT})
   set(kernel ${UNIVARIATE_ALGEBRAIC_KERNEL})
   set(geom_traits ${ALGEBRAIC_GEOM_TRAITS})
@@ -1287,7 +1324,7 @@ endfunction()
 #---------------------------------------------------------------------#
 function(test_algebraic_traits_core)
   #TODO: Adapt
-  if($ENV{CGAL_DISABLE_GMP})
+  if(CGAL_DISABLE_GMP)
     MESSAGE(STATUS "test_algebraic_traits_core requires CORE and will not be executed")
     return()
   endif()
@@ -1333,6 +1370,8 @@ test_algebraic_traits_core()
 test_algebraic_traits_gmp()
 test_algebraic_traits_leda()
 
+compile_and_run(test_data_traits)
+
 compile_and_run(test_insertion)
 compile_and_run(test_unbounded_rational_insertion)
 compile_and_run(test_unbounded_rational_direct_insertion)
@@ -1344,6 +1383,7 @@ compile_and_run(test_vert_ray_shoot_vert_segments)
 test_construction_segments()
 test_construction_linear_curves()
 test_construction_spherical_arcs()
+test_construction_polylines()
 
 test_overlay_segments()
 test_overlay_spherical_arcs()

@@ -51,7 +51,7 @@ bool check_points_and_vectors(
 bool check_points(
   const boost::vector_property_map<Point_3>& points_1,
   const std::vector<Point_3>& points_2,
-  const std::vector<std::size_t>& indices) 
+  const std::vector<std::size_t>& indices)
 {
   if(points_2.size() != indices.size()) {
     std::cerr << "Error: inconsistency between point / normal size." << std::endl;
@@ -78,18 +78,21 @@ bool test_no_deduction_points_and_normals_xyz(const char* file_name)
   // read with custom output iterator type
   dummy_counter::counter = 0;
   std::ifstream input(file_name);
-  CGAL::read_xyz_points_and_normals<dummy_counter>(
-    input, back_inserter(indices), points, normals, Kernel());
+  CGAL::read_xyz_points<dummy_counter>(
+    input, back_inserter(indices),
+    CGAL::parameters::point_map (points).
+    normal_map (normals).
+    geom_traits (Kernel()));
 
   // read with ordinary pmaps
   input.clear();
   input.close();
   input.open(file_name);
-  CGAL::read_xyz_points_and_normals(
-    input, back_inserter(pv_pairs), 
-    CGAL::First_of_pair_property_map<PointVectorPair>(), 
-    CGAL::Second_of_pair_property_map<PointVectorPair>(),
-    Kernel());
+  CGAL::read_xyz_points(
+    input, back_inserter(pv_pairs),
+    CGAL::parameters::point_map(CGAL::First_of_pair_property_map<PointVectorPair>()).
+    normal_map(CGAL::Second_of_pair_property_map<PointVectorPair>()).
+    geom_traits(Kernel()));
 
   return check_points_and_vectors(points, normals, pv_pairs, indices);
 }
@@ -105,18 +108,21 @@ bool test_no_deduction_points_and_normals_off(const char* file_name)
   // read with custom output iterator type
   dummy_counter::counter = 0;
   std::ifstream input(file_name);
-  CGAL::read_off_points_and_normals<dummy_counter>(
-    input, back_inserter(indices), points, normals, Kernel());
+  CGAL::read_off_points<dummy_counter>(
+    input, back_inserter(indices),
+    CGAL::parameters::point_map(points).
+    normal_map(normals).
+    geom_traits(Kernel()));
 
   // read with ordinary pmaps
   input.clear();
   input.close();
   input.open(file_name);
-  CGAL::read_off_points_and_normals(
-    input, back_inserter(pv_pairs), 
-    CGAL::First_of_pair_property_map<PointVectorPair>(), 
-    CGAL::Second_of_pair_property_map<PointVectorPair>(),
-    Kernel());
+  CGAL::read_off_points(
+    input, back_inserter(pv_pairs),
+    CGAL::parameters::point_map(CGAL::First_of_pair_property_map<PointVectorPair>()).
+    normal_map(CGAL::Second_of_pair_property_map<PointVectorPair>()).
+    geom_traits(Kernel()));
 
   return check_points_and_vectors(points, normals, pv_pairs, indices);
 }
@@ -132,16 +138,17 @@ bool test_no_deduction_points_xyz(const char* file_name)
   dummy_counter::counter = 0;
   std::ifstream input(file_name);
   CGAL::read_xyz_points<dummy_counter>(
-    input, back_inserter(indices), points_1, Kernel());
+    input, back_inserter(indices),
+    CGAL::parameters::point_map(points_1).geom_traits(Kernel()));
 
   // read with ordinary pmaps
   input.clear();
   input.close();
   input.open(file_name);
   CGAL::read_xyz_points(
-    input, back_inserter(points_2), 
-    CGAL::Identity_property_map<Point_3>(), 
-    Kernel());
+    input, back_inserter(points_2),
+    CGAL::parameters::point_map(CGAL::Identity_property_map<Point_3>()).
+    geom_traits(Kernel()));
 
   return check_points(points_1, points_2, indices);
 }
@@ -157,16 +164,18 @@ bool test_no_deduction_points_off(const char* file_name)
   dummy_counter::counter = 0;
   std::ifstream input(file_name);
   CGAL::read_off_points<dummy_counter>(
-    input, back_inserter(indices), points_1, Kernel());
+    input, back_inserter(indices),
+    CGAL::parameters::point_map(points_1).
+    geom_traits(Kernel()));
 
   // read with ordinary pmaps
   input.clear();
   input.close();
   input.open(file_name);
   CGAL::read_off_points(
-    input, back_inserter(points_2), 
-    CGAL::Identity_property_map<Point_3>(), 
-    Kernel());
+    input, back_inserter(points_2),
+    CGAL::parameters::point_map(CGAL::Identity_property_map<Point_3>()).
+    geom_traits(Kernel()));
 
   return check_points(points_1, points_2, indices);
 }
@@ -176,19 +185,11 @@ void compile_test() {
   std::deque<Vector_3> normals;
   std::deque<PointVectorPair> pv_pairs;
   std::ifstream input;
-  
+
   input.open("data/read_test/simple.xyz");
   CGAL::read_xyz_points(
     input,
     std::front_inserter(points));
-  input.clear();
-  input.close();
-  
-  input.open("data/read_test/simple.xyz");
-  CGAL::read_xyz_points(
-    input,
-    std::front_inserter(points),
-    CGAL::Identity_property_map<Point_3>());
   input.clear();
   input.close();
 
@@ -196,8 +197,16 @@ void compile_test() {
   CGAL::read_xyz_points(
     input,
     std::front_inserter(points),
-    CGAL::Identity_property_map<Point_3>(),
-    Kernel());
+    CGAL::parameters::point_map(CGAL::Identity_property_map<Point_3>()));
+  input.clear();
+  input.close();
+
+  input.open("data/read_test/simple.xyz");
+  CGAL::read_xyz_points(
+    input,
+    std::front_inserter(points),
+    CGAL::parameters::point_map(CGAL::Identity_property_map<Point_3>()).
+    geom_traits(Kernel()));
   input.clear();
   input.close();
 
@@ -215,12 +224,12 @@ void compile_test() {
     std::front_inserter(points));
   input.clear();
   input.close();
-  
+
   input.open("data/read_test/simple.off");
   CGAL::read_off_points(
     input,
     std::front_inserter(points),
-    CGAL::Identity_property_map<Point_3>());
+    CGAL::parameters::point_map(CGAL::Identity_property_map<Point_3>()));
   input.clear();
   input.close();
 
@@ -228,8 +237,8 @@ void compile_test() {
   CGAL::read_off_points(
     input,
     std::front_inserter(points),
-    CGAL::Identity_property_map<Point_3>(),
-    Kernel());
+    CGAL::parameters::point_map(CGAL::Identity_property_map<Point_3>()).
+    geom_traits(Kernel()));
   input.clear();
   input.close();
 
@@ -242,72 +251,72 @@ void compile_test() {
   input.close();
   //-----------------------------------------------------------------------
   input.open("data/read_test/simple.xyz");
-  CGAL::read_xyz_points_and_normals(
+  CGAL::read_xyz_points(
     input,
     std::front_inserter(points),
-    boost::dummy_property_map());
+    CGAL::parameters::normal_map(boost::dummy_property_map()));
   input.clear();
   input.close();
 
   input.open("data/read_test/simple.xyz");
-  CGAL::read_xyz_points_and_normals(
+  CGAL::read_xyz_points(
     input,
     std::front_inserter(pv_pairs),
-    CGAL::First_of_pair_property_map<PointVectorPair>(), 
-    CGAL::Second_of_pair_property_map<PointVectorPair>());
+    CGAL::parameters::point_map(CGAL::First_of_pair_property_map<PointVectorPair>()).
+    normal_map(CGAL::Second_of_pair_property_map<PointVectorPair>()));
   input.clear();
   input.close();
 
   input.open("data/read_test/simple.xyz");
-  CGAL::read_xyz_points_and_normals(
+  CGAL::read_xyz_points(
     input,
     std::front_inserter(pv_pairs),
-    CGAL::First_of_pair_property_map<PointVectorPair>(), 
-    CGAL::Second_of_pair_property_map<PointVectorPair>(),
-    Kernel());
+    CGAL::parameters::point_map(CGAL::First_of_pair_property_map<PointVectorPair>()).
+    normal_map(CGAL::Second_of_pair_property_map<PointVectorPair>()).
+    geom_traits(Kernel()));
   input.clear();
   input.close();
 
   input.open("data/read_test/simple.xyz");
-  CGAL::read_xyz_points_and_normals<Point_3>(
+  CGAL::read_xyz_points<Point_3>(
     input,
     std::front_inserter(points),
-    boost::dummy_property_map());
+    CGAL::parameters::normal_map(boost::dummy_property_map()));
   input.clear();
   input.close();
   //-----------------------------------------------------------------------
   input.open("data/read_test/simple.off");
-  CGAL::read_off_points_and_normals(
+  CGAL::read_off_points(
     input,
     std::front_inserter(points),
-    boost::dummy_property_map());
+    CGAL::parameters::normal_map(boost::dummy_property_map()));
   input.clear();
   input.close();
 
   input.open("data/read_test/simple.off");
-  CGAL::read_off_points_and_normals(
+  CGAL::read_off_points(
     input,
     std::front_inserter(pv_pairs),
-    CGAL::First_of_pair_property_map<PointVectorPair>(), 
-    CGAL::Second_of_pair_property_map<PointVectorPair>());
+    CGAL::parameters::point_map(CGAL::First_of_pair_property_map<PointVectorPair>()).
+    normal_map(CGAL::Second_of_pair_property_map<PointVectorPair>()));
   input.clear();
   input.close();
 
   input.open("data/read_test/simple.off");
-  CGAL::read_off_points_and_normals(
+  CGAL::read_off_points(
     input,
     std::front_inserter(pv_pairs),
-    CGAL::First_of_pair_property_map<PointVectorPair>(), 
-    CGAL::Second_of_pair_property_map<PointVectorPair>(),
-    Kernel());
+    CGAL::parameters::point_map(CGAL::First_of_pair_property_map<PointVectorPair>()).
+    normal_map(CGAL::Second_of_pair_property_map<PointVectorPair>()).
+    geom_traits(Kernel()));
   input.clear();
   input.close();
 
   input.open("data/read_test/simple.off");
-  CGAL::read_off_points_and_normals<Point_3>(
+  CGAL::read_off_points<Point_3>(
     input,
     std::front_inserter(points),
-    boost::dummy_property_map());
+    CGAL::parameters::normal_map(boost::dummy_property_map()));
   input.clear();
   input.close();
 }

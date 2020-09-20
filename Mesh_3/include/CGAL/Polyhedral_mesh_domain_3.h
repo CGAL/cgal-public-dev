@@ -3,18 +3,10 @@
 // All rights reserved.
 //
 // This file is part of CGAL (www.cgal.org).
-// You can redistribute it and/or modify it under the terms of the GNU
-// General Public License as published by the Free Software Foundation,
-// either version 3 of the License, or (at your option) any later version.
-//
-// Licensees holding a valid commercial license may use this file in
-// accordance with the commercial license agreement provided with the software.
-//
-// This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
-// WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 //
 // $URL$
 // $Id$
+// SPDX-License-Identifier: GPL-3.0-or-later OR LicenseRef-Commercial
 //
 //
 // Author(s)     : Stéphane Tayeb
@@ -29,32 +21,37 @@
 
 #include <CGAL/license/Mesh_3.h>
 
-#include <CGAL/Mesh_3/global_parameters.h>
+#include <CGAL/disable_warnings.h>
+
 #include <CGAL/Mesh_3/Robust_intersection_traits_3.h>
-
-#include <CGAL/boost/graph/Graph_with_descriptor_with_graph.h>
-#include <CGAL/Surface_mesh/Surface_mesh_fwd.h>
-
-#include <CGAL/Side_of_triangle_mesh.h>
-
-#include <sstream>
-
-#include <CGAL/Default.h>
-#include <CGAL/Random.h>
-#include <CGAL/point_generators_3.h>
 #include <CGAL/Mesh_3/Profile_counter.h>
+
+#include <CGAL/AABB_tree.h>
+#include <CGAL/AABB_face_graph_triangle_primitive.h>
 #include <CGAL/boost/graph/helpers.h>
-#include <CGAL/Mesh_3/properties.h>
+#include <CGAL/boost/graph/properties.h>
+#include <CGAL/Default.h>
+#include <CGAL/point_generators_3.h>
+#include <CGAL/Random.h>
+#include <CGAL/Side_of_triangle_mesh.h>
+#include <CGAL/tuple.h>
 
 #include <boost/optional.hpp>
 #include <boost/none.hpp>
 #include <boost/utility/enable_if.hpp>
 #include <boost/mpl/vector.hpp>
 #include <boost/mpl/contains.hpp>
-#include <CGAL/tuple.h>
+#include <boost/mpl/or.hpp>
+#include <boost/type_traits/is_same.hpp>
 #include <boost/format.hpp>
 #include <boost/variant.hpp>
 #include <boost/math/special_functions/round.hpp>
+
+#include <iostream>
+#include <map>
+#include <sstream>
+#include <string>
+#include <utility>
 
 #ifdef CGAL_LINKED_WITH_TBB
 # include <tbb/enumerable_thread_specific.h>
@@ -63,6 +60,8 @@
 // To handle I/O for Surface_patch_index if that is a pair of `int` (the
 // default)
 #include <CGAL/internal/Mesh_3/Handle_IO_for_pair_of_int.h>
+
+#include <CGAL/internal/Mesh_3/indices_management.h>
 
 namespace CGAL {
 
@@ -77,111 +76,6 @@ max_length(const Bbox_3& b)
   return (std::max)(b.xmax()-b.xmin(),
                     (std::max)(b.ymax()-b.ymin(),b.zmax()-b.zmin()) );
 }
-
-
-// -----------------------------------
-// Surface_patch_index_generator
-// To use patch_id enclosed in AABB_primitives or not
-// -----------------------------------
-
-// here we had Tag_true instead of Patch_id
-template < class Subdomain_index, class Polyhedron, class Patch_id_>
-struct Surface_patch_index_generator
-{
-  typedef Patch_id_ Patch_id;
-  typedef Patch_id Surface_patch_index;
-  typedef Surface_patch_index   type;
-
-  template < typename Primitive_id >
-  Surface_patch_index operator()(const Primitive_id& primitive_id)
-  {
-    return primitive_id->patch_id(); 
-  }
-};
-
-template < class Subdomain_index, class P, class Patch_id_>
-struct Surface_patch_index_generator<Subdomain_index, Graph_with_descriptor_with_graph<Surface_mesh<P> >, Patch_id_>
-{
-  typedef Patch_id_ Patch_id;
-  typedef Patch_id Surface_patch_index;
-  typedef Surface_patch_index   type;
-
-  template < typename Primitive_id >
-  Surface_patch_index operator()(const Primitive_id& primitive_id)
-  {
-    typedef typename boost::property_map<Surface_mesh<P>,
-                                         face_patch_id_t<Patch_id> >::type Fpim;
-    Fpim fpim = get(face_patch_id_t<Patch_id>(),*(primitive_id.graph));
-    Surface_patch_index spi =  get(fpim, primitive_id.descriptor);
-    return spi;
-  }
-};
-
-
-
-template < class Subdomain_index, class Polyhedron>
-struct Surface_patch_index_generator<Subdomain_index, Polyhedron,void>
-{
-  typedef void Patch_id;
-  typedef std::pair<Subdomain_index,Subdomain_index>  Surface_patch_index;
-  typedef Surface_patch_index                         type;
-
-  template < typename Primitive_id >
-  Surface_patch_index operator()(const Primitive_id&)
-  { return Surface_patch_index(0,1); }
-};
-
-template < class Subdomain_index, class P>
-struct Surface_patch_index_generator<Subdomain_index,  Graph_with_descriptor_with_graph<Surface_mesh<P> >,void>
-{
-  typedef void Patch_id;
-  typedef std::pair<Subdomain_index,Subdomain_index>  Surface_patch_index;
-  typedef Surface_patch_index                         type;
-
-  template < typename Primitive_id >
-  Surface_patch_index operator()(const Primitive_id&)
-  { return Surface_patch_index(0,1); }
-};
-
-// Compatibility: when `Patch_id` is `Tag_true`, use the `Patch_id`
-// from the `Facet`
-template < class Subdomain_index, class Polyhedron>
-struct Surface_patch_index_generator<Subdomain_index,
-                                     Polyhedron,
-                                     Tag_true>
- : public Surface_patch_index_generator<Subdomain_index,
-                                        Polyhedron,
-                                        typename Polyhedron::Facet::Patch_id>
-{};
-
-// Compatibility: when `Patch_id` is `Tag_false`, treat it as `void`
-template < class Subdomain_index, class Polyhedron>
-struct Surface_patch_index_generator<Subdomain_index,
-                                     Polyhedron,
-                                     Tag_false>
- : public Surface_patch_index_generator<Subdomain_index,
-                                        Polyhedron,
-                                        void>
-{};
-
-
-// -----------------------------------
-// Index_generator
-// Don't use boost::variant if types are the same type
-// -----------------------------------
-template < typename Subdomain_index, typename Surface_patch_index >
-struct Index_generator
-{
-  typedef boost::variant<Subdomain_index,Surface_patch_index> Index;
-  typedef Index                                         type;
-};
-
-template < typename T >
-struct Index_generator<T, T>
-{
-  typedef T       Index;
-  typedef Index   type;
-};
 
 // -----------------------------------
 // Geometric traits generator
@@ -209,9 +103,7 @@ struct IGT_generator<Gt,CGAL::Tag_false>
 };
 
 }  // end namespace details
-
 }  // end namespace Mesh_3
-
 
 /**
  * @class Polyhedral_mesh_domain_3
@@ -220,7 +112,7 @@ struct IGT_generator<Gt,CGAL::Tag_false>
  */
 template<class Polyhedron,/*FaceGraph*/
          class IGT_,
-         class TriangleAccessor = CGAL::Default,
+         class = CGAL::Default,
          class Patch_id_ = void,
          class Use_exact_intersection_construction_tag = CGAL::Tag_true>
 class Polyhedral_mesh_domain_3
@@ -246,17 +138,20 @@ public:
   /// Type of indexes for cells of the input complex
   typedef int Subdomain_index;
   typedef boost::optional<Subdomain_index> Subdomain;
+
   /// Type of indexes for surface patch of the input complex
-  typedef Mesh_3::details::Surface_patch_index_generator<
-    Subdomain_index,Polyhedron,Patch_id> Surface_patch_index_generator;
-  typedef typename Surface_patch_index_generator::type    Surface_patch_index;
+  typedef typename boost::property_map<Polyhedron,
+                                       face_patch_id_t<Patch_id>
+                                       >::type            Face_patch_id_pmap;
+  typedef typename boost::property_traits<
+    Face_patch_id_pmap>::value_type                       Surface_patch_index;
   typedef boost::optional<Surface_patch_index>            Surface_patch;
   /// Type of indexes to characterize the lowest dimensional face of the input
   /// complex on which a vertex lie
-  typedef typename Mesh_3::details::Index_generator<
+  typedef typename Mesh_3::internal::Index_generator<
     Subdomain_index, Surface_patch_index>::type           Index;
 
-  typedef CGAL::cpp11::tuple<Point_3,Index,int> Intersection;
+  typedef std::tuple<Point_3,Index,int> Intersection;
 
 
   typedef typename IGT::FT         FT;
@@ -264,19 +159,48 @@ public:
   // Kernel_traits compatibility
   typedef IGT R;
 
+  BOOST_MPL_HAS_XXX_TRAIT_DEF(HalfedgeDS)
+
+  template <typename P>
+  struct Primitive_type {
+      //setting OneFaceGraphPerTree to false transforms the id type into
+      //std::pair<FD, const FaceGraph*>.
+    typedef AABB_face_graph_triangle_primitive<P, typename boost::property_map<P,vertex_point_t>::const_type, CGAL::Tag_false> type;
+
+    static
+    typename IGT_::Triangle_3 datum(const typename type::Id primitive_id) {
+      CGAL::Triangle_from_face_descriptor_map<P> pmap(primitive_id.second);
+      return get(pmap, primitive_id.first);
+    }
+
+    static Surface_patch_index get_index(const typename type::Id primitive_id) {
+      return get(get(face_patch_id_t<Patch_id>(),
+                     *primitive_id.second),
+                 primitive_id.first);
+    }
+  }; // Primitive_type (for non-Polyhedron_3)
+
+
 public:
-  typedef Side_of_triangle_mesh<Polyhedron, IGT>        Inside_functor;
+  typedef typename Primitive_type<Polyhedron>::type       Ins_fctor_primitive;
+  typedef CGAL::AABB_traits<IGT, Ins_fctor_primitive>     Ins_fctor_traits;
+  typedef CGAL::AABB_tree<Ins_fctor_traits>               Ins_fctor_AABB_tree;
+
+  typedef Side_of_triangle_mesh<Polyhedron,
+                                IGT,
+                                Default,
+                                Ins_fctor_AABB_tree>      Inside_functor;
   typedef typename Inside_functor::AABB_tree              AABB_tree_;
+  BOOST_STATIC_ASSERT((boost::is_same<AABB_tree_, Ins_fctor_AABB_tree>::value));
   typedef typename AABB_tree_::AABB_traits                AABB_traits;
   typedef typename AABB_tree_::Primitive                  AABB_primitive;
-  typedef typename AABB_tree_::Primitive_id             AABB_primitive_id;
-  typedef typename AABB_tree_::Primitive                Primitive;
-  typedef typename AABB_traits::Bounding_box            Bounding_box;
+  typedef typename AABB_tree_::Primitive_id               AABB_primitive_id;
+  typedef typename AABB_traits::Bounding_box              Bounding_box;
 
 public:
 
   /// Default constructor
-  Polyhedral_mesh_domain_3(CGAL::Random* p_rng = NULL)
+  Polyhedral_mesh_domain_3(CGAL::Random* p_rng = nullptr)
     : tree_()
     , bounding_tree_(&tree_)
     , p_rng_(p_rng)
@@ -288,7 +212,7 @@ public:
    * @param polyhedron the polyhedron describing the polyhedral surface
    */
   Polyhedral_mesh_domain_3(const Polyhedron& p,
-                           CGAL::Random* p_rng = NULL)
+                           CGAL::Random* p_rng = nullptr)
     : tree_()
     , bounding_tree_(&tree_) // the bounding tree is tree_
     , p_rng_(p_rng)
@@ -303,7 +227,7 @@ public:
 
   Polyhedral_mesh_domain_3(const Polyhedron& p,
                            const Polyhedron& bounding_polyhedron,
-                           CGAL::Random* p_rng = NULL)
+                           CGAL::Random* p_rng = nullptr)
     : tree_()
     , bounding_tree_(new AABB_tree_)
     , p_rng_(p_rng)
@@ -333,7 +257,7 @@ public:
   Polyhedral_mesh_domain_3(InputPolyhedraPtrIterator begin,
                            InputPolyhedraPtrIterator end,
                            const Polyhedron& bounding_polyhedron,
-                           CGAL::Random* p_rng = NULL)
+                           CGAL::Random* p_rng = nullptr)
     : p_rng_(p_rng)
     , delete_rng_(false)
   {
@@ -364,7 +288,7 @@ public:
   template <typename InputPolyhedraPtrIterator>
   Polyhedral_mesh_domain_3(InputPolyhedraPtrIterator begin,
                            InputPolyhedraPtrIterator end,
-                           CGAL::Random* p_rng = NULL)
+                           CGAL::Random* p_rng = nullptr)
     : p_rng_(p_rng)
   {
     if(begin != end) {
@@ -537,26 +461,16 @@ public:
         AABB_primitive_id primitive_id = intersection->second;
 
         // intersection may be either a point or a segment
-#if CGAL_INTERSECTION_VERSION > 1
         if ( const Bare_point* p_intersect_pt =
              boost::get<Bare_point>( &(intersection->first) ) )
-#else
-        if ( const Bare_point* p_intersect_pt =
-             object_cast<Bare_point>( &(intersection->first) ) )
-#endif
         {
           return Intersection(*p_intersect_pt,
                               r_domain_.index_from_surface_patch_index(
                                 r_domain_.make_surface_index(primitive_id)),
                               2);
         }
-#if CGAL_INTERSECTION_VERSION > 1
         else if ( const Segment_3* p_intersect_seg =
                   boost::get<Segment_3>(&(intersection->first)))
-#else
-        else if ( const Segment_3* p_intersect_seg =
-                  object_cast<Segment_3>(&(intersection->first)))
-#endif
         {
           CGAL_MESH_3_PROFILER("Mesh_3 profiler: Intersection is a segment");
 
@@ -651,11 +565,7 @@ public:
   Surface_patch_index make_surface_index(
     const AABB_primitive_id& primitive_id = AABB_primitive_id() ) const
   {
-    Mesh_3::details::Surface_patch_index_generator<Subdomain_index,
-                                                   Polyhedron,
-                                                   Patch_id> generator;
-
-    return generator(primitive_id);
+    return Primitive_type<Polyhedron>::get_index(primitive_id);
   }
 
   // Undocumented function, used to implement a sizing field that
@@ -742,7 +652,7 @@ public:
     Query_cache &qc = query_cache.local();
     return qc.has_cache && (qc.cached_query == Cached_query(q));
 #else
-    return query_cache.has_cache 
+    return query_cache.has_cache
       && (query_cache.cached_query == Cached_query(q));
 #endif
   }
@@ -804,13 +714,13 @@ Construct_initial_points::operator()(OutputIterator pts,
 
 #ifdef CGAL_MESH_3_NO_LONGER_CALLS_DO_INTERSECT_3
     Intersection intersection = r_domain_.construct_intersection_object()(ray_shot);
-    if(CGAL::cpp0x::get<2>(intersection) != 0) {
+    if(std::get<2>(intersection) != 0) {
 #else
     if(r_domain_.do_intersect_surface_object()(ray_shot)) {
       Intersection intersection = r_domain_.construct_intersection_object()(ray_shot);
 #endif
-      *pts++ = std::make_pair(CGAL::cpp0x::get<0>(intersection),
-                              CGAL::cpp0x::get<1>(intersection));
+      *pts++ = std::make_pair(std::get<0>(intersection),
+                              std::get<1>(intersection));
 
       --i;
 
@@ -847,10 +757,8 @@ Is_in_domain::operator()(const Point_3& p) const
   else { return Subdomain(Subdomain_index(1)); } // case ON_BOUNDARY && ON_BOUNDED_SIDE
 }
 
-
-
-
 }  // end namespace CGAL
 
+#include <CGAL/enable_warnings.h>
 
 #endif // POLYHEDRAL_MESH_TRAITS_3_H_

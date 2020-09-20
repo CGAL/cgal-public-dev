@@ -1,16 +1,11 @@
 // Copyright (c) 2016  GeometryFactory SARL (France).
 // All rights reserved.
 //
-// This file is part of CGAL (www.cgal.org); you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public License as
-// published by the Free Software Foundation; either version 3 of the License,
-// or (at your option) any later version.
+// This file is part of CGAL (www.cgal.org)
 //
-// Licensees holding a valid commercial license may use this file in
-// accordance with the commercial license agreement provided with the software.
-//
-// This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
-// WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+// $URL$
+// $Id$
+// SPDX-License-Identifier: LGPL-3.0-or-later OR LicenseRef-Commercial
 //
 // Author(s) : Andreas Fabri
 //
@@ -21,9 +16,6 @@
 
 #include <CGAL/config.h>
 #include <CGAL/license.h>
-
-
-
 
 #ifdef CGAL_ALPHA_SHAPES_3_COMMERCIAL_LICENSE
 
@@ -37,8 +29,8 @@
 
 #    ifdef CGAL_LICENSE_ERROR
 #      error "Your commercial license for CGAL does not cover this release \
-of the 3D Alpha Shapes package. \
-You get this error, as you defined CGAL_LICENSE_ERROR."
+              of the 3D Alpha Shapes package. \
+              You get this error, as you defined CGAL_LICENSE_ERROR."
 #    endif // CGAL_LICENSE_ERROR
 
 #  endif // CGAL_ALPHA_SHAPES_3_COMMERCIAL_LICENSE < CGAL_RELEASE_DATE
@@ -53,10 +45,10 @@ You get this error, as you defined CGAL_LICENSE_ERROR."
 
 #  ifdef CGAL_LICENSE_ERROR
 #    error "The macro CGAL_ALPHA_SHAPES_3_COMMERCIAL_LICENSE is not defined.\
- You use the CGAL 3D Alpha Shapes package under the terms of \
-the GPLv3+. You get this error, as you defined CGAL_LICENSE_ERROR."
+            You use the CGAL 3D Alpha Shapes package under the terms of \
+            the GPLv3+. You get this error, as you defined CGAL_LICENSE_ERROR."
 #  endif // CGAL_LICENSE_ERROR
 
 #endif // no CGAL_ALPHA_SHAPES_3_COMMERCIAL_LICENSE
 
-#endif // CGAL_LICENSE_CHECK_ALPHA_SHAPES_3_H
+#endif // CGAL_LICENSE_ALPHA_SHAPES_3_H

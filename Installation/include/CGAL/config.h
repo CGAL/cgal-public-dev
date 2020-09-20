@@ -3,30 +3,28 @@
 // ETH Zurich (Switzerland),
 // INRIA Sophia-Antipolis (France),
 // Max-Planck-Institute Saarbruecken (Germany),
-// and Tel-Aviv University (Israel).  All rights reserved. 
+// and Tel-Aviv University (Israel).  All rights reserved.
 //
-// This file is part of CGAL (www.cgal.org); you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public License as
-// published by the Free Software Foundation; either version 3 of the License,
-// or (at your option) any later version.
-//
-// Licensees holding a valid commercial license may use this file in
-// accordance with the commercial license agreement provided with the software.
-//
-// This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
-// WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+// This file is part of CGAL (www.cgal.org)
 //
 // $URL$
 // $Id$
-// 
+// SPDX-License-Identifier: LGPL-3.0-or-later OR LicenseRef-Commercial
 //
-// Author(s)     : Wieger Wesselink 
+//
+//
+// Author(s)     : Wieger Wesselink
 //                 Michael Hoffmann <hoffmann@inf.ethz.ch>
 //                 Sylvain Pion
 //                 Laurent Rineau
 
 #ifndef CGAL_CONFIG_H
 #define CGAL_CONFIG_H
+
+// CGAL is header-only by default since CGAL-5.0.
+#if !defined(CGAL_HEADER_ONLY) && ! CGAL_NOT_HEADER_ONLY
+#  define CGAL_HEADER_ONLY 1
+#endif
 
 #ifdef CGAL_HEADER_ONLY
 #  define CGAL_NO_AUTOLINK 1
@@ -36,6 +34,11 @@
 //   https://svn.boost.org/trac/boost/ticket/5519
 #if defined(_WIN64) && ! defined(WIN64)
 #  define WIN64
+#endif
+
+#ifdef _MSC_VER
+#define _SILENCE_CXX17_ALLOCATOR_VOID_DEPRECATION_WARNING 1
+#define _SILENCE_CXX17_OLD_ALLOCATOR_MEMBERS_DEPRECATION_WARNING 1
 #endif
 
 #ifdef CGAL_INCLUDE_WINDOWS_DOT_H
@@ -103,9 +106,24 @@
 // <boost/type_traits/detail/has_postfix_operator.hpp> fails as well
 #  define BOOST_TT_HAS_POST_DECREMENT_HPP_INCLUDED
 #  define BOOST_TT_HAS_POST_INCREMENT_HPP_INCLUDED
+//work around for moc bug : https://bugreports.qt.io/browse/QTBUG-80990
+#if defined(CGAL_LINKED_WITH_TBB)
+#undef CGAL_LINKED_WITH_TBB
+#endif
 #endif
 
-// The following header file defines among other things  BOOST_PREVENT_MACRO_SUBSTITUTION 
+// Macro used by Boost Parameter. Mesh_3 needs at least 12, before the
+// Boost Parameter headers are included: <boost/parameter/config.hpp>
+// defines the value to 8, if it is not yet defined.
+// The CGAL BGL properties mechanism includes
+// <boost/graph/named_function_params.hpp>, that includes
+// <boost/parameter/name.hpp>, and maybe other Boost libraries may use
+// Boost Parameter as well.
+// That is why that is important to define that macro as early as possible,
+// in <CGAL/config.h>
+#define BOOST_PARAMETER_MAX_ARITY 12
+
+// The following header file defines among other things  BOOST_PREVENT_MACRO_SUBSTITUTION
 #include <boost/config.hpp>
 #include <boost/version.hpp>
 
@@ -119,7 +137,7 @@
 
 // workaround for the bug https://svn.boost.org/trac10/ticket/12534
 // That bug was introduced in Boost 1.62 and fixed in 1.63.
-#if BOOST_VERSION >= 106200 && BOOSTS_VERSION < 106300
+#if BOOST_VERSION >= 106200 && BOOST_VERSION < 106300
 #  include <boost/container/flat_map.hpp>
 #endif
 
@@ -139,7 +157,18 @@
 //  platform specific workaround flags (CGAL_CFG_...)
 //----------------------------------------------------------------------//
 
-#include <CGAL/compiler_config.h>
+#if CGAL_HEADER_ONLY
+#  include <CGAL/internal/enable_third_party_libraries.h>
+#  if(BOOST_MSVC)
+#    include <CGAL/MSVC_compiler_config.h>
+#  endif
+#else
+#  include <CGAL/compiler_config.h>
+#endif
+
+#if BOOST_MSVC && CGAL_TEST_SUITE
+#  include <CGAL/Testsuite/vc_debug_hook.h>
+#endif
 
 //----------------------------------------------------------------------//
 //  Support for DLL on Windows (CGAL_EXPORT macro)
@@ -171,8 +200,13 @@
 #if defined(BOOST_NO_0X_HDR_UNORDERED_SET) || \
     defined(BOOST_NO_0X_HDR_UNORDERED_MAP) || \
     defined(BOOST_NO_CXX11_HDR_UNORDERED_SET) || \
-    defined(BOOST_NO_CXX11_HDR_UNORDERED_MAP)
+    defined(BOOST_NO_CXX11_HDR_UNORDERED_MAP) || \
+   (defined(_MSC_VER) && (_MSC_VER == 1800)) // std::unordered_set is very bad in MSVC2013
 #define CGAL_CFG_NO_CPP0X_UNORDERED 1
+#endif
+#if defined( BOOST_NO_0X_HDR_THREAD) || \
+    defined( BOOST_NO_CXX11_HDR_THREAD)
+#define CGAL_CFG_NO_STD_THREAD 1
 #endif
 #if defined(BOOST_NO_DECLTYPE) || \
     defined(BOOST_NO_CXX11_DECLTYPE) || (BOOST_VERSION < 103600)
@@ -181,7 +215,8 @@
 #if defined(BOOST_NO_DELETED_FUNCTIONS) || \
     defined(BOOST_NO_DEFAULTED_FUNCTIONS) || \
     defined(BOOST_NO_CXX11_DELETED_FUNCTIONS) || \
-    defined(BOOST_NO_CXX11_DEFAULTED_FUNCTIONS) || (BOOST_VERSION < 103600)
+    defined(BOOST_NO_CXX11_DEFAULTED_FUNCTIONS) || (BOOST_VERSION < 103600) || \
+    (defined(_MSC_VER) && _MSC_VER < 1900) // MSVC 2013 has only partial support
 #define CGAL_CFG_NO_CPP0X_DELETED_AND_DEFAULT_FUNCTIONS 1
 #endif
 #if defined(BOOST_NO_FUNCTION_TEMPLATE_DEFAULT_ARGS) || \
@@ -239,10 +274,14 @@
     || (BOOST_VERSION < 103600)
 #define CGAL_CFG_NO_CPP0X_EXPLICIT_CONVERSION_OPERATORS 1
 #endif
+#if defined(BOOST_NO_CXX11_TEMPLATE_ALIASES) || \
+    defined(BOOST_NO_TEMPLATE_ALIASES) || (BOOST_VERSION < 103900)
+#define CGAL_CFG_NO_CPP0X_TEMPLATE_ALIASES 1
+#endif
 
 // Some random list to let us write C++11 without thinking about
 // each feature we are using.
-#if __cplusplus >= 201103L && \
+#if ( __cplusplus >= 201103L || _MSVC_LANG >= 201103L ) &&      \
     !defined CGAL_CFG_NO_CPP0X_VARIADIC_TEMPLATES && \
     !defined CGAL_CFG_NO_CPP0X_RVALUE_REFERENCE && \
     !defined CGAL_CFG_NO_CPP0X_EXPLICIT_CONVERSION_OPERATORS && \
@@ -252,12 +291,30 @@
     !defined CGAL_CFG_NO_CPP0X_DECLTYPE && \
     !defined CGAL_CFG_NO_CPP0X_DELETED_AND_DEFAULT_FUNCTIONS && \
     !defined CGAL_CFG_NO_CPP0X_DEFAULT_TEMPLATE_ARGUMENTS_FOR_FUNCTION_TEMPLATES
-#define CGAL_CXX11
+#define CGAL_CXX11 1
+#endif
+// Same for C++14.
+#if __cplusplus >= 201402L || _MSVC_LANG >= 201402L
+#  define CGAL_CXX14 1
+#endif
+// Same for C++17
+#if __cplusplus >= 201703L || _MSVC_LANG >= 201703L
+#  define CGAL_CXX17 1
 #endif
 
 #if defined(BOOST_NO_CXX11_HDR_FUNCTIONAL) || BOOST_VERSION < 105000
 #define CGAL_CFG_NO_STD_HASH 1
+#define CGAL_CFG_NO_STD_FUNCTION 1
 #endif
+
+
+//----------------------------------------------------------------------//
+//  As std::unary_function and std::binary_function are deprecated
+//  we use internally equivalent class templates from
+// <CGAL/functional.h>.
+//----------------------------------------------------------------------//
+
+#include <CGAL/functional.h>
 
 //----------------------------------------------------------------------//
 //  auto-link the CGAL library on platforms that support it
@@ -278,7 +335,7 @@
 #define CGAL_VERSION_NUMBER(x,y,z) (1000001 + 10000*x + 100*y + 10*z) * 1000
 
 #ifndef CGAL_NO_DEPRECATED_CODE
-#define CGAL_BEGIN_NAMESPACE  namespace CGAL { 
+#define CGAL_BEGIN_NAMESPACE  namespace CGAL {
 #define CGAL_END_NAMESPACE }
 #endif
 
@@ -313,8 +370,6 @@
 #    define CGAL_BIG_ENDIAN
 #  elif BOOST_ENDIAN_LITTLE_BYTE
 #    define CGAL_LITTLE_ENDIAN
-#  else
-#    error Unknown endianness
 #  endif
 #elif defined (__GLIBC__)
 #  include <endian.h>
@@ -322,8 +377,6 @@
 #    define CGAL_LITTLE_ENDIAN
 #  elif (__BYTE_ORDER == __BIG_ENDIAN)
 #    define CGAL_BIG_ENDIAN
-#  else
-#    error Unknown endianness
 #  endif
 #elif defined(__sparc) || defined(__sparc__) \
    || defined(_POWER) || defined(__powerpc__) \
@@ -337,11 +390,19 @@
    || defined(_M_IX86) || defined(_M_IA64) \
    || defined(_M_ALPHA) || defined(_WIN64)
 #  define CGAL_LITTLE_ENDIAN
-#else
-#  error Unknown endianness
 #endif
 
-
+#if ! defined(CGAL_LITTLE_ENDIAN) && ! defined(CGAL_BIG_ENDIAN)
+#  ifdef CGAL_DEFAULT_IS_LITTLE_ENDIAN
+#    if CGAL_DEFAULT_IS_LITTLE_ENDIAN
+#      define CGAL_LITTLE_ENDIAN
+#    else
+#      define CGAL_BIG_ENDIAN
+#    endif
+#  else
+#    error Unknown endianness: Define CGAL_DEFAULT_IS_LITTLE_ENDIAN to 1 for little endian and to 0 for big endian.
+#  endif
+#endif
 // Symbolic constants to tailor inlining. Inlining Policy.
 // =======================================================
 #ifndef CGAL_MEDIUM_INLINE
@@ -385,15 +446,15 @@
 #    warning "Your configuration may exhibit run-time errors in CGAL code"
 #    warning "This appears with g++ 4.0 on MacOSX when optimizing"
 #    warning "You can disable this warning using -DCGAL_NO_WARNING_FOR_MACOSX_GCC_4_0_BUG"
-#    warning "For more information, see http://www.cgal.org/FAQ.html#mac_optimization_bug"
+#    warning "For more information, see https://www.cgal.org/FAQ.html#mac_optimization_bug"
 #  endif
 #endif
 
 //-------------------------------------------------------------------//
-// When the global min and max are no longer defined (as macros) 
-// because of NOMINMAX flag definition, we define our own global 
+// When the global min and max are no longer defined (as macros)
+// because of NOMINMAX flag definition, we define our own global
 // min/max functions to make the Microsoft headers compile. (afxtempl.h)
-// Users that does not want the global min/max 
+// Users that does not want the global min/max
 // should define CGAL_NOMINMAX
 //-------------------------------------------------------------------//
 #include <algorithm>
@@ -415,7 +476,7 @@ using std::max;
 #  define CGAL_PRETTY_FUNCTION __FUNCSIG__
 #elif defined __GNUG__
 #  define CGAL_PRETTY_FUNCTION __PRETTY_FUNCTION__
-#else 
+#else
 #  define CGAL_PRETTY_FUNCTION __func__
 // with sunpro, this requires -features=extensions
 #endif
@@ -498,10 +559,15 @@ using std::max;
 #endif
 
 // Macro to specify a 'noreturn' attribute.
-#if defined(__GNUG__) || __has_attribute(__noreturn__)
-#  define CGAL_NORETURN  __attribute__ ((__noreturn__))
+// (This macro existed in CGAL before we switched to C++11. Let's keep
+// the macro defined for backward-compatibility. That cannot harm.)
+#define CGAL_NORETURN  [[noreturn]]
+
+// Macro to specify [[no_unique_address]] if supported
+#if CGAL_CXX11 && __has_cpp_attribute(no_unique_address)
+#  define CGAL_NO_UNIQUE_ADDRESS [[no_unique_address]]
 #else
-#  define CGAL_NORETURN
+#  define CGAL_NO_UNIQUE_ADDRESS
 #endif
 
 // Macro CGAL_ASSUME
@@ -528,7 +594,7 @@ using std::max;
 #if __has_feature(cxx_thread_local) || \
     ( (__GNUC__ * 100 + __GNUC_MINOR__) >= 408 && __cplusplus >= 201103L ) || \
     ( _MSC_VER >= 1900 )
-// see also Installation/config/support/CGAL_test_cpp_version.cpp
+// see also Installation/cmake/modules/config/support/CGAL_test_cpp_version.cpp
 #define CGAL_CAN_USE_CXX11_THREAD_LOCAL
 #endif
 
@@ -564,9 +630,49 @@ using std::max;
 #  define CGAL_PRAGMA_DIAG_POP
 #endif
 
+//
+// Compatibility with CGAL-4.14.
+#ifndef CGAL_NO_DEPRECATED_CODE
+//
+// That is temporary, and will be replaced by a namespace alias, as
+// soon as we can remove cpp11::result_of, and <CGAL/atomic.h> and
+// <CGAL/thread.h>.
+//
+#  include <iterator>
+#  include <array>
+#  include <utility>
+#  include <type_traits>
+#  include <unordered_set>
+#  include <unordered_map>
+#  include <functional>
+//
+namespace CGAL {
+//
+  namespace cpp11 {
+    using std::next;
+    using std::prev;
+    using std::copy_n;
+    using std::array;
+    using std::function;
+    using std::tuple;
+    using std::make_tuple;
+    using std::tie;
+    using std::get;
+    using std::tuple_size;
+    using std::tuple_element;
+    using std::is_enum;
+    using std::unordered_set;
+    using std::unordered_map;
+  }
+//
+  namespace cpp0x = cpp11;
+  using cpp11::array;
+  using cpp11::copy_n;
+} // end of the temporary compatibility with CGAL-4.14
+#endif // CGAL_NO_DEPRECATED_CODE
 namespace CGAL {
 
-// Typedef for the type of NULL.
+// Typedef for the type of nullptr.
 typedef const void * Nullptr_t;   // Anticipate C++0x's std::nullptr_t
 
 } //namespace CGAL
@@ -583,11 +689,11 @@ typedef const void * Nullptr_t;   // Anticipate C++0x's std::nullptr_t
 //   http://clang.llvm.org/docs/AttributeReference.html#statement-attributes
 // See for gcc:
 //   https://gcc.gnu.org/onlinedocs/gcc/Warning-Options.html
-#if __has_cpp_attribute(fallthrough)
+#if __cpp_attributes >= 200809 && __has_cpp_attribute(fallthrough)
 #  define CGAL_FALLTHROUGH [[fallthrough]]
-#elif __has_cpp_attribute(gnu::fallthrough)
+#elif __cpp_attributes >= 200809 && __has_cpp_attribute(gnu::fallthrough)
 #  define CGAL_FALLTHROUGH [[gnu::fallthrough]]
-#elif __has_cpp_attribute(clang::fallthrough)
+#elif __cpp_attributes >= 200809 && __has_cpp_attribute(clang::fallthrough)
 #  define CGAL_FALLTHROUGH [[clang::fallthrough]]
 #elif __has_attribute(fallthrough) && ! __clang__
 #  define CGAL_FALLTHROUGH __attribute__ ((fallthrough))
@@ -635,6 +741,7 @@ typedef const void * Nullptr_t;   // Anticipate C++0x's std::nullptr_t
 /// @}
 
 /// Macro `CGAL_pragma_warning`.
+/// @{
 #ifdef BOOST_MSVC
 #  define CGAL_pragma_warning(desc) __pragma(CGAL_WARNING(desc))
 #else // not BOOST_MSVC
@@ -642,6 +749,5 @@ typedef const void * Nullptr_t;   // Anticipate C++0x's std::nullptr_t
 #endif // not BOOST_MSVC
 /// @}
 #include <CGAL/license/lgpl.h>
-
 
 #endif // CGAL_CONFIG_H

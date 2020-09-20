@@ -16,7 +16,7 @@ class Scene : public QObject, QOpenGLFunctions_2_1
   Q_OBJECT
 
 private:
-  typedef qglviewer::Vec Vec;
+  typedef CGAL::qglviewer::Vec Vec;
   typedef std::set<Segment, Compare_segment<Segment> > Segment_set;
 
   enum Init {EMPTY, GRID, SINGLE, PLANE, RANDOM};
@@ -106,9 +106,8 @@ public Q_SLOTS:
 
   void insert_mp() {
     insert_point(moving_point);
-    QString str;
-    ui->viewer->displayMessage(str.sprintf("Added point (%f, %f, %f)",
-           moving_point.x(),moving_point.y(),moving_point.z()));
+    ui->viewer->displayMessage(QString("Added point (%1, %2, %3)").arg(
+           moving_point.x()).arg(moving_point.y()).arg(moving_point.z()));
     changed();
   }
 
@@ -117,9 +116,8 @@ public Q_SLOTS:
     Point pt = *rp+Vector(0.5,0.5,0.5);
     rp++;
     insert_point(Point(pt.x(),pt.y(),(in_plane? 0.0:pt.z())));
-    QString str;
-    ui->viewer->displayMessage(str.sprintf("Added point (%f, %f, %f)",
-           pt.x(),pt.y(),(in_plane? 0.0:pt.z())));
+    ui->viewer->displayMessage(QString("Added point (%1, %2, %3)").arg(
+           pt.x()).arg(pt.y()).arg((in_plane? 0.0:pt.z())));
     changed();
   }
   void insert_point(Point p) {
@@ -130,10 +128,11 @@ public Q_SLOTS:
     dconflict = temp_flags[1];
     changed();
   }
+
   void grab_image() {
-    ui->viewer->openSnapshotFormatDialog();
-    ui->viewer->saveSnapshot(false);
+    ui->viewer->saveSnapshot();
   }
+
   void toggle_dlocate(bool on) {
     dlocate = on;
     changed();
@@ -253,9 +252,9 @@ private:
 
   QColor color;
   // define material
-   QVector4D	ambient;
-   QVector4D	diffuse;
-   QVector4D	specular;
+   QVector4D        ambient;
+   QVector4D        diffuse;
+   QVector4D        specular;
    GLfloat      shininess ;
       int poly_vertexLocation[3];
       int normalsLocation[3];
@@ -304,7 +303,7 @@ private:
       PFNGLVERTEXATTRIBDIVISORARBPROC glVertexAttribDivisor;
       void initialize_buffers();
       void compute_elements();
-      void attrib_buffers(QGLViewer*);
+      void attrib_buffers(CGAL::QGLViewer*);
       void compile_shaders();
       void draw_sphere(float R, int prec);
       void draw_cylinder(float R, int prec, std::vector<float> *vertices, std::vector<float> *normals);

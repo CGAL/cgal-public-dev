@@ -1,36 +1,32 @@
-// Copyright (c) 1999  
+// Copyright (c) 1999
 // Utrecht University (The Netherlands),
 // ETH Zurich (Switzerland),
 // INRIA Sophia-Antipolis (France),
 // Max-Planck-Institute Saarbruecken (Germany),
-// and Tel-Aviv University (Israel).  All rights reserved. 
+// and Tel-Aviv University (Israel).  All rights reserved.
 //
-// This file is part of CGAL (www.cgal.org); you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public License as
-// published by the Free Software Foundation; either version 3 of the License,
-// or (at your option) any later version.
-//
-// This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
-// WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+// This file is part of CGAL (www.cgal.org)
 //
 // $URL$
 // $Id$
-// 
+// SPDX-License-Identifier: LGPL-3.0-or-later
+//
 //
 // Author(s)     : Stefan Schirra
- 
+
 
 #ifndef CGAL__TEST_FCT_CONSTRUCTIONS_3_H
 #define CGAL__TEST_FCT_CONSTRUCTIONS_3_H
 
 template <class R>
 bool
-_test_fct_constructions_3(const R&)
+_test_fct_constructions_3(const R& r)
 {
   typedef typename R::RT               RT;
   typedef typename R::Point_3          Point;
   typedef typename R::Weighted_point_3 Weighted_point;
   typedef typename R::Segment_3        Segment;
+  typedef typename R::Ray_3        Ray;
   typedef typename R::Plane_3          Plane;
   typedef typename R::Vector_3         Vector;
   typedef typename R::Triangle_3       Triangle;
@@ -128,6 +124,12 @@ _test_fct_constructions_3(const R&)
   assert( CGAL::weighted_circumcenter( wp000_b, wp100_b, wp010_b) == wp000_b);
   assert( CGAL::weighted_circumcenter( wp000_b, wp100_b, wp010_b, wp001_b) == wp000_b);
 
+    // projected point
+  Ray ray(Point(0,0,0), Point (1,1,0));
+  Segment s(Point(0,0,0), Point (1,1,0));
+  assert( r.construct_projected_point_3_object()(ray, Point(-1,0,0)) == Point(0,0,0));
+  assert( r.construct_projected_point_3_object()(s, Point(-1,0,0)) == Point(0,0,0));
+  assert( r.construct_projected_point_3_object()(s, Point(2,0,0)) == Point(1,1,0));
   return true;
 }
 

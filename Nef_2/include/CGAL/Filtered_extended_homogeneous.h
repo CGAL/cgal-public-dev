@@ -2,18 +2,10 @@
 // All rights reserved.
 //
 // This file is part of CGAL (www.cgal.org).
-// You can redistribute it and/or modify it under the terms of the GNU
-// General Public License as published by the Free Software Foundation,
-// either version 3 of the License, or (at your option) any later version.
-//
-// Licensees holding a valid commercial license may use this file in
-// accordance with the commercial license agreement provided with the software.
-//
-// This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
-// WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 //
 // $URL$
 // $Id$
+// SPDX-License-Identifier: GPL-3.0-or-later OR LicenseRef-Commercial
 //
 //
 // Author(s)     : Michael Seel <seel@mpi-sb.mpg.de>
@@ -22,6 +14,7 @@
 
 #include <CGAL/license/Nef_2.h>
 
+#include <CGAL/disable_warnings.h>
 
 #include <CGAL/basic.h>
 #include <CGAL/Handle_for.h>
@@ -97,12 +90,12 @@ public:
 
 
   // only for visualization:
-  
+
   static RT& R()
   {
     CGAL_STATIC_THREAD_LOCAL_VARIABLE(RT,R_,0);
   }
-  
+
   static void set_R(const RT& r) { R() = r; }
   RT eval_at(const RT& r) const { return _m*r+_n; }
   RT eval_at_R() const { return _m*R()+_n; }
@@ -1260,7 +1253,7 @@ void determine_frame_radius(Forward_iterator start, Forward_iterator end,
     Point_2 p = *start;
     if ( is_standard(p) ) {
       R = (CGAL::max)(CGAL_NTS abs(p.mx())/p.hw(),
-		      CGAL_NTS abs(p.my())/p.hw());
+                      CGAL_NTS abs(p.my())/p.hw());
     } else {
       RT rx = CGAL_NTS abs(p.hx()), ry = CGAL_NTS abs(p.hy());
       if ( rx[1] > ry[1] )      R = CGAL_NTS abs(ry[0]-rx[0])/(rx[1]-ry[1]);
@@ -1291,5 +1284,7 @@ const char* output_identifier() const
 #undef INCEXCEPTION
 #undef PRINT_STATISTICS
 #undef PRINT_CHECK_ENABLED
+
+#include <CGAL/enable_warnings.h>
 
 #endif // CGAL_FILTERED_EXTENDED_HOMOGENEOUS_H

@@ -2,18 +2,10 @@
 // All rights reserved.
 //
 // This file is part of CGAL (www.cgal.org).
-// You can redistribute it and/or modify it under the terms of the GNU
-// General Public License as published by the Free Software Foundation,
-// either version 3 of the License, or (at your option) any later version.
-//
-// Licensees holding a valid commercial license may use this file in
-// accordance with the commercial license agreement provided with the software.
-//
-// This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
-// WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 //
 // $URL$
 // $Id$
+// SPDX-License-Identifier: GPL-3.0-or-later OR LicenseRef-Commercial
 //
 // Author(s)     : Olivier Devillers <Olivier.Devillers@sophia.inria.fr>
 //                 Sylvain Pion
@@ -26,13 +18,13 @@
 
 #include <CGAL/basic.h>
 #include <CGAL/array.h>
+#include <CGAL/algorithm.h>
 #include <CGAL/Triangulation_hierarchy_vertex_base_3.h>
 
 #include <boost/random/linear_congruential.hpp>
 #include <boost/random/geometric_distribution.hpp>
 #include <boost/random/variate_generator.hpp>
 
-#include <algorithm>
 #include <cstddef>
 #include <map>
 #include <vector>
@@ -126,7 +118,7 @@ public:
     size_type n = number_of_vertices();
 
     std::vector<Point> points (first, last);
-    std::random_shuffle (points.begin(), points.end());
+    CGAL::cpp98::random_shuffle (points.begin(), points.end());
     spatial_sort (points.begin(), points.end(), geom_traits());
 
     // hints[i] is the cell of the previously inserted point in level i.

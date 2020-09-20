@@ -2,18 +2,10 @@
 // All rights reserved.
 //
 // This file is part of CGAL (www.cgal.org).
-// You can redistribute it and/or modify it under the terms of the GNU
-// General Public License as published by the Free Software Foundation,
-// either version 3 of the License, or (at your option) any later version.
-//
-// Licensees holding a valid commercial license may use this file in
-// accordance with the commercial license agreement provided with the software.
-//
-// This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
-// WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 //
 // $URL$
 // $Id$
+// SPDX-License-Identifier: GPL-3.0-or-later OR LicenseRef-Commercial
 //
 //
 // Author(s)     : Sebastien Loriot
@@ -29,6 +21,7 @@
 #include <CGAL/Kernel_traits.h>
 
 namespace CGAL {
+namespace Polygon_mesh_processing {
 namespace Corefinement {
 
 // A class responsible for storing the intersection nodes of the intersection
@@ -164,8 +157,9 @@ private:
   Double_to_exact double_to_exact;
   Exact_to_double exact_to_double;
   Exact_kernel        ek;
+  Exact_kernel::Intersect_3 exact_intersection;
   std::vector<vertex_descriptor> tm1_vertices, tm2_vertices;
-
+  const bool doing_autorefinement;
 public:
   const TriangleMesh &tm1, &tm2;
   VertexPointMap vpm1, vpm2;
@@ -174,7 +168,8 @@ public:
                      const TriangleMesh& tm2_,
                      const VertexPointMap& vpm1_,
                      const VertexPointMap& vpm2_)
-  : tm1(tm1_)
+  : doing_autorefinement(&tm1_ == &tm2_)
+  , tm1(tm1_)
   , tm2(tm2_)
   , vpm1(vpm1_)
   , vpm2(vpm2_)
@@ -233,6 +228,35 @@ public:
         to_exact( get(vpm_a, target(h_a,tm_a)) ) ) );
   }
 
+  // use to resolve intersection of 3 faces in autorefinement only
+  void add_new_node(halfedge_descriptor h1,
+                    halfedge_descriptor h2,
+                    halfedge_descriptor h3,
+                    const TriangleMesh& tm,
+                    const VertexPointMap& vpm)
+  {
+    // TODO Far from optimal!
+    typedef Exact_kernel::Plane_3 Plane_3;
+    Plane_3 p1(to_exact( get(vpm, source(h1,tm)) ),
+               to_exact( get(vpm, target(h1,tm)) ),
+               to_exact( get(vpm, target(next(h1,tm),tm)))),
+            p2(to_exact( get(vpm, source(h2,tm)) ),
+               to_exact( get(vpm, target(h2,tm)) ),
+               to_exact( get(vpm, target(next(h2,tm),tm)))),
+            p3(to_exact( get(vpm, source(h3,tm)) ),
+               to_exact( get(vpm, target(h3,tm)) ),
+               to_exact( get(vpm, target(next(h3,tm),tm))));
+    typename cpp11::result_of<
+      Exact_kernel::Intersect_3(Plane_3, Plane_3, Plane_3)
+    >::type inter_res = exact_intersection(p1, p2, p3);
+
+    CGAL_assertion(inter_res != boost::none);
+    const Exact_kernel::Point_3* pt =
+      boost::get<Exact_kernel::Point_3>(&(*inter_res));
+    CGAL_assertion(pt!=nullptr);
+    add_new_node(*pt);
+  }
+
   void add_new_node(halfedge_descriptor edge_1, face_descriptor face_2)
   {
     add_new_node(edge_1, face_2, tm1, tm2, vpm1, vpm2);
@@ -253,7 +277,15 @@ public:
   {
     put(vpm, vd, exact_to_double(enodes[i]));
     if (&tm1==&tm)
-      tm1_vertices[i] = vd;
+    {
+      if (  tm1_vertices[i] == GT::null_vertex() )
+      {
+        tm1_vertices[i] = vd;
+        return;
+      }
+      if (doing_autorefinement)
+        tm2_vertices[i] = vd;
+    }
     else
       tm2_vertices[i] = vd;
   }
@@ -289,6 +321,7 @@ class Intersection_nodes<TriangleMesh,VertexPointMap,Predicates_on_constructions
 //members
   Nodes_vector nodes;
   Input_kernel k;
+  typename Input_kernel::Intersect_3 intersection;
 public:
   typedef Input_kernel                                             Exact_kernel;
 
@@ -312,6 +345,34 @@ public:
 
   size_t size() const {return nodes.size();}
   const Point_3& exact_node(std::size_t i) const {return nodes[i];}
+
+  void add_new_node(halfedge_descriptor h1,
+                    halfedge_descriptor h2,
+                    halfedge_descriptor h3,
+                    const TriangleMesh& tm,
+                    const VertexPointMap& vpm)
+  {
+    // TODO Far from optimal!
+    typedef typename Exact_kernel::Plane_3 Plane_3;
+    Plane_3 p1( get(vpm, source(h1,tm)),
+                get(vpm, target(h1,tm)),
+                get(vpm, target(next(h1,tm),tm))),
+            p2(get(vpm, source(h2,tm)),
+               get(vpm, target(h2,tm)),
+               get(vpm, target(next(h2,tm),tm))),
+            p3(get(vpm, source(h3,tm)),
+               get(vpm, target(h3,tm)),
+               get(vpm, target(next(h3,tm),tm)));
+    typename cpp11::result_of<
+      typename Exact_kernel::Intersect_3(Plane_3, Plane_3, Plane_3)
+    >::type inter_res = intersection(p1, p2, p3);
+
+    CGAL_assertion(inter_res != boost::none);
+    const Point_3* pt =
+      boost::get<Point_3>(&(*inter_res));
+    CGAL_assertion(pt!=nullptr);
+    add_new_node(*pt);
+  }
 
   //add a new node in the final graph.
   //it is the intersection of the triangle with the segment
@@ -358,6 +419,6 @@ public:
 }; // end specialization
 
 
-} } // end of namespace CGAL::Corefinement
+} } } // CGAL::Polygon_mesh_processing::Corefinement
 
 #endif // CGAL_POLYGON_MESH_PROCESSING_INTERNAL_COREFINEMENT_INTERSECTION_NODES_H

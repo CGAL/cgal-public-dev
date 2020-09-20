@@ -233,6 +233,9 @@ ALIASES                = "sc{1}=<span style=\"font-variant: small-caps;\">\1</sp
                          "protocgal=\sc{C++gal}" \
                          "plageo=\sc{Plageo}" \
                          "stl=\sc{STL}" \
+                         "gmp=\sc{GMP}" \
+                         "mpir=\sc{MPIR}" \
+                         "mpfr=\sc{MPFR}" \
                          "leda=\sc{LEDA}" \
                          "gcc=\sc{GCC}" \
                          "cpp=\sc{C++}" \
@@ -250,9 +253,9 @@ ALIASES                = "sc{1}=<span style=\"font-variant: small-caps;\">\1</sp
                          "cgalFigureBegin{8}=\anchor fig__\1 \n  <CENTER> <TABLE border=0> <TR> <TD> \image html \2 \n \image latex \2 \"\" width=2.1cm \n </TD> <TD> \image html \3 \n \image latex \3 \"\" width=2.1cm \n </TD> <TD> \image html \4 \n \image latex \4 \"\" width=2.1cm \n </TD> <TD> \image html \5 \n \image latex \5 \"\" width=2.1cm \n </TD> <TD> \image html \6 \n \image latex \6 \"\" width=2.1cm \n </TD> <TD> \image html \7 \n \image latex \7 \"\" width=2.1cm \n </TD> <TD> \image html \8 \n \image latex \8 \"\" width=2.1cm \n </TD> </TR> </TABLE> </CENTER> \htmlonly <div class=\"cgal_figure_caption\"> \endhtmlonly \n \latexonly \n \endlatexonly \ref fig__\1" \
                          "cgalFigureBegin{9}=\anchor fig__\1 \n  <CENTER> <TABLE border=0> <TR> <TD> \image html \2 \n \image latex \2 \"\" width=1.9cm \n </TD> <TD> \image html \3 \n \image latex \3 \"\" width=1.9cm \n </TD> <TD> \image html \4 \n \image latex \4 \"\" width=1.9cm \n </TD> <TD> \image html \5 \n \image latex \5 \"\" width=1.9cm \n </TD> <TD> \image html \6 \n \image latex \6 \"\" width=1.9cm \n </TD> <TD> \image html \7 \n \image latex \7 \"\" width=1.9cm \n </TD> <TD> \image html \8 \n \image latex \8 \"\" width=1.9cm \n </TD> <TD> \image html \9 \n \image latex \9 \"\" width=1.9cm \n </TD> </TR> </TABLE> </CENTER> \htmlonly <div class=\"cgal_figure_caption\"> \endhtmlonly \n \latexonly \n \endlatexonly \ref fig__\1" \
                          "cgalFigureBegin{10}=\anchor fig__\1 \n <CENTER> <TABLE border=0> <TR> <TD> \image html \2 \n \image latex \2 \"\" width=1.6cm \n </TD> <TD> \image html \3 \n \image latex \3 \"\" width=1.6cm \n </TD> <TD> \image html \4 \n \image latex \4 \"\" width=1.6cm \n </TD> <TD> \image html \5 \n \image latex \5 \"\" width=1.6cm \n </TD> <TD> \image html \6 \n \image latex \6 \"\" width=1.6cm \n </TD> <TD> \image html \7 \n \image latex \7 \"\" width=1.6cm \n </TD> <TD> \image html \8 \n \image latex \8 \"\" width=1.6cm \n </TD> <TD> \image html \9 \n \image latex \9 \"\" width=1.6cm \n </TD> <TD> \image html \10 \n \image latex \10 \"\" width=1.6cm \n </TD> </TR> </TABLE> </CENTER> \htmlonly <div class=\"cgal_figure_caption\"> \endhtmlonly \n \latexonly \n \endlatexonly \ref fig__\1" \
-                         "cgalFigureEnd=\htmlonly </div> \endhtmlonly <br>" \
+                         "cgalFigureEnd=\htmlonly </div> <br> \endhtmlonly" \
                          "cgalFigureCaptionBegin{1}=\htmlonly <div class=\"cgal_figure_caption\"> \endhtmlonly \ref fig__\1" \
-                         "cgalFigureCaptionEnd=\htmlonly </div> \endhtmlonly <br>" \
+                         "cgalFigureCaptionEnd=\htmlonly </div> <br> \endhtmlonly" \
                          "cgalConcept=\details <div id=\"CGALConcept\"></div>\n \brief" \
                          "cgalConceptNamespace=\details <div id=\"CGALConceptNS\"></div>\n \brief" \
                          "cgalRefines=\xrefitem refines \"Refines\" \"Refinement Relationships\"" \
@@ -266,6 +269,8 @@ ALIASES                = "sc{1}=<span style=\"font-variant: small-caps;\">\1</sp
                          "cgalAdvancedEnd=\htmlonly </div> \endhtmlonly" \
                          "cgalAdvancedFunction=This is an advanced function." \
                          "cgalAdvancedClass=This is an advanced class." \
+                         "cgalAdvancedType=This is an advanced type." \
+                         "cgalAdvancedConcept=This is an advanced concept." \
                          "cgalRequiresCPP11=\warning This function requires a C++11 compiler." \
                          "cgalPkgPicture{1}=<div class=\"PkgImage\"> \n \image html \1 \n</div>" \
                          "cgalPkgSummaryBegin=<div class=\"PkgSummary\">" \
@@ -278,9 +283,9 @@ ALIASES                = "sc{1}=<span style=\"font-variant: small-caps;\">\1</sp
                          "cgalPkgSince{1}=<B>Introduced in:</B> \cgal \1<BR>" \
                          "cgalPkgDependsOn{1}=<B>Depends on:</B> \1 <BR>" \
                          "cgalPkgLicense{1}=<B>License:</B> \1 <BR>" \
-                         "cgalPkgDemo{2}=<B>Windows Demo:</B> <a href=\"http://www.cgal.org/demo/${CGAL_CREATED_VERSION_NUM}/\2\">\1</a><BR><B>Common Demo Dlls:</B> <a href=\"http://www.cgal.org/demo/${CGAL_CREATED_VERSION_NUM}/CGAL-demoDLLs.zip\">dlls</a><BR>" \
-                         "cgalPkgDemo{4}=<B>Windows Demos:</B> <a href=\"http://www.cgal.org/demo/${CGAL_CREATED_VERSION_NUM}/\2\">\1</a>, <a href=\"http://www.cgal.org/demo/${CGAL_CREATED_VERSION_NUM}/\4\">\3</a><BR><B>Common Demo Dlls:</B> <a href=\"http://www.cgal.org/demo/${CGAL_CREATED_VERSION_NUM}/CGAL-demoDLLs.zip\">dlls</a><BR>" \
-                         "cgalPkgDemo{6}=<B>Windows Demos:</B> <a href=\"http://www.cgal.org/demo/${CGAL_CREATED_VERSION_NUM}/\2\">\1</a>, <a href=\"http://www.cgal.org/demo/${CGAL_CREATED_VERSION_NUM}/\4\">\3</a>, <a href=\"http://www.cgal.org/demo/${CGAL_CREATED_VERSION_NUM}/\6\">\5</a><BR><B>Common Demo Dlls:</B> <a href=\"http://www.cgal.org/demo/${CGAL_CREATED_VERSION_NUM}/CGAL-demoDLLs.zip\">dlls</a><BR>" \
+                         "cgalPkgDemo{2}=<B>Windows Demo:</B> <a href=\"https://www.cgal.org/demo/${CGAL_CREATED_VERSION_NUM}/\2\">\1</a><BR><B>Common Demo Dlls:</B> <a href=\"https://www.cgal.org/demo/${CGAL_CREATED_VERSION_NUM}/CGAL-demoDLLs.zip\">dlls</a><BR>" \
+                         "cgalPkgDemo{4}=<B>Windows Demos:</B> <a href=\"https://www.cgal.org/demo/${CGAL_CREATED_VERSION_NUM}/\2\">\1</a>, <a href=\"https://www.cgal.org/demo/${CGAL_CREATED_VERSION_NUM}/\4\">\3</a><BR><B>Common Demo Dlls:</B> <a href=\"https://www.cgal.org/demo/${CGAL_CREATED_VERSION_NUM}/CGAL-demoDLLs.zip\">dlls</a><BR>" \
+                         "cgalPkgDemo{6}=<B>Windows Demos:</B> <a href=\"https://www.cgal.org/demo/${CGAL_CREATED_VERSION_NUM}/\2\">\1</a>, <a href=\"https://www.cgal.org/demo/${CGAL_CREATED_VERSION_NUM}/\4\">\3</a>, <a href=\"https://www.cgal.org/demo/${CGAL_CREATED_VERSION_NUM}/\6\">\5</a><BR><B>Common Demo Dlls:</B> <a href=\"https://www.cgal.org/demo/${CGAL_CREATED_VERSION_NUM}/CGAL-demoDLLs.zip\">dlls</a><BR>" \
                          "cgalPkgDescriptionEnd=" \
                          "cgalModifBegin=\htmlonly <div class=\"CGALModification\"> \endhtmlonly \xrefitem Modification \"Modifications\" \"MODIFICATIONS\" " \
                          "cgalModifEnd=\htmlonly </div> \endhtmlonly \latexonly END MODIFICATIONS \endlatexonly" \
@@ -291,7 +296,19 @@ ALIASES                = "sc{1}=<span style=\"font-variant: small-caps;\">\1</sp
                          "cgalTagFalse=\link CGAL::Tag_false `CGAL::Tag_false`\endlink" \
                          "cgalHeading{1}= <B>\1</B><BR>" \
                          "cgalClassifedRefPages=\htmlonly  <h2 class=\"groupheader\">Classified Reference Pages</h2> \endhtmlonly" \
-                         "cgalCite{1}=<!-- -->\cite \1"
+                         "cgalCRPSection{1}=<h2>\1</h2>" \
+                         "cgalCRPSubsection{1}=<h3>\1</h3>" \
+                         "cgalCite{1}=<!-- -->\cite \1" \
+                         "cgalPackageSection{2}=\htmlonly[block] <div style=\"background-color: #EEEDF2;\">\endhtmlonly \section \1 \2 \n \htmlonly[block] </div>\endhtmlonly" \
+                         "cgalNamedParamsBegin=<dl class=\"params\"><dt>Optional Named Parameters</dt><dd> <table class=\"params\">" \
+                         "cgalNamedParamsBegin{1}=<dl class=\"params\"><dt>\1</dt><dd> <table class=\"params\">" \
+                         "cgalNamedParamsEnd=</table> </dd> </dl>" \
+                         "cgalParamNBegin{1}=<tr><td class> \htmlonly[block] <button class=\"collapsible\">\endhtmlonly <b>\1</b> \htmlonly[block]</button> <div class=\"content\">\endhtmlonly<ul>" \
+                         "cgalParamDescription{1}=<li>\1</li>" \
+                         "cgalParamType{1}=<li><b>Type: </b>\1</li>" \
+                         "cgalParamDefault{1}=<li><b>%Default: </b>\1</li>" \
+                         "cgalParamExtra{1}=<li><b>Extra: </b>\1</li>" \
+                         "cgalParamNEnd=</ul> \htmlonly[block] </div> \endhtmlonly </td><td></td></tr>"
 
 # This tag can be used to specify a number of word-keyword mappings (TCL only).
 # A mapping has the form "name=value". For example adding "class=itcl::class"
@@ -1568,10 +1585,10 @@ MATHJAX_FORMAT         = HTML-CSS
 # Content Delivery Network so you can quickly see the result without installing
 # MathJax. However, it is strongly recommended to install a local copy of
 # MathJax from http://www.mathjax.org before deployment.
-# The default value is: http://cdn.mathjax.org/mathjax/latest.
+# The default value is: https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.2.
 # This tag requires that the tag USE_MATHJAX is set to YES.
 
-MATHJAX_RELPATH        = ${CGAL_DOC_MATHJAX_LOCATION}
+MATHJAX_RELPATH = ${CGAL_DOC_MATHJAX_LOCATION}
 
 # The MATHJAX_EXTENSIONS tag can be used to specify one or more MathJax
 # extension names that should be enabled during MathJax rendering. For example
@@ -1587,7 +1604,7 @@ MATHJAX_EXTENSIONS     = TeX/AMSmath \
 # example see the documentation.
 # This tag requires that the tag USE_MATHJAX is set to YES.
 
-MATHJAX_CODEFILE       =
+MATHJAX_CODEFILE       = ${CGAL_DOC_RESOURCE_DIR}/CGAL_mathjax.js
 
 # When the SEARCHENGINE tag is enabled doxygen will generate a search box for
 # the HTML output. The underlying search engine uses javascript and DHTML and

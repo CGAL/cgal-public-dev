@@ -3,15 +3,12 @@
 // All rights reserved.
 //
 // This file is part of CGAL (www.cgal.org).
-// You can redistribute it and/or modify it under the terms of the GNU
-// General Public License as published by the Free Software Foundation,
-// either version 3 of the License, or (at your option) any later version.
 //
-// Licensees holding a valid commercial license may use this file in
-// accordance with the commercial license agreement provided with the software.
+// $URL$
+// $Id$
+// SPDX-License-Identifier: GPL-3.0-or-later OR LicenseRef-Commercial
 //
-// This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
-// WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+// Author(s)     : Ilker O. Yaz
 
 
 #define CGAL_INTERNAL_SURFACE_MESH_SEGMENTATION_AABB_TRAITS_H
@@ -55,7 +52,7 @@ public:
       const Point_3& p = segment.source();
       const Point_3& q = segment.target();
 
-      return internal::do_intersect_bbox_segment_aux
+      return Intersections::internal::do_intersect_bbox_segment_aux
              <double,
              true, // bounded at t=0
              true, // bounded at t=1
@@ -73,7 +70,7 @@ public:
       const Point_3& p = ray.source();
       const Point_3& q = ray.second_point();
 
-      return internal::do_intersect_bbox_segment_aux
+      return Intersections::internal::do_intersect_bbox_segment_aux
              <double,
              true, // bounded at t=0
              false,// not bounded at t=1
