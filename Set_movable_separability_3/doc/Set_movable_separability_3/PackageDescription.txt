@@ -41,7 +41,7 @@ of separation.}
 \cgalPkgSummaryEnd
 \cgalPkgShortInfoBegin
 \cgalPkgSince{4.12}
-\cgalPkgDependsOn{\ref PkgSolverSummary}
+\cgalPkgDependsOn{\ref PkgSolverInterface}
 \cgalPkgBib{cgal:sf-sms3}
 \cgalPkgLicense{\ref licensesGPL "GPL"}
 \cgalPkgShortInfoEnd

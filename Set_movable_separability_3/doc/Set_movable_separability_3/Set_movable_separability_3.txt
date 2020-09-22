@@ -79,8 +79,7 @@ directions.
 The input polyhedron must satisfy two conditions as follows. First, it
 has to be simple. Essentially, a simple polyhedron is topologically
 equivalent to a sphere and the facets of which are simple polygons;
-see Chapter \ref Chapter_2D_Regularized_Boolean_Set-Operations "2D
-Regularized Boolean Set-Operations" for the precise definition of
+see Chapter \ref PkgBooleanSetOperations2 for the precise definition of
 simple polygons. Secondly, any consecutive three vertices cannot be
 collinear. If you suspect that the input polygon may not satisfy the
 latter condition, pre-process the polygon to elliminate this
