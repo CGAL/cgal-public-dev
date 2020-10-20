@@ -1,9 +1,11 @@
 Validity:
 - Test correctness of covariance matrix (via eigenvalues)
   -> change API to get the covariance matrix
-- Test stability of closed forms under refinement/clustering 
+- Test stability of closed forms under partitioning refinement/clustering 
   with identical type of primitives
-  with different types of primitives: eg iso cuboid split into tetrahedra and vice-versa.
+  with different types of primitives: eg iso cuboid split into 
+- Test convergence of closed forms under refinement: eg generate more and more points inside an iso rectangle, etc.
+tetrahedra and vice-versa.
   only possible for segments, isocuboids, tetrahedra, triangles
 - Test correctness of fitting line/planes (generate primitives whose centroid and best fitting primitive are known)
 - Cover more kernels
