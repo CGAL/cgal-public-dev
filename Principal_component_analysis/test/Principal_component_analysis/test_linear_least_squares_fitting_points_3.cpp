@@ -73,9 +73,9 @@ void test_one_point()
   Line line;
   fit_point_set(points,plane,line);
 
-  Point point(FT(0),FT(0),FT(0));
-  Vector vec(FT(0),FT(0),FT(1));
-  Plane horizontal_plane(point,vec);
+  Point point(FT(0), FT(0), FT(0));
+  Vector vec(FT(0), FT(0), FT(1));
+  Plane horizontal_plane(point, vec);
   if(!parallel(horizontal_plane,plane))
   {
     std::cout << "failure" << std::endl;

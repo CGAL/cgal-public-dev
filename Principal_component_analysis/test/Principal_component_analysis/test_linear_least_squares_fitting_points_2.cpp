@@ -32,9 +32,9 @@ void test_2D()
   Line_2 line;
   Point_2 centroid;
   FT quality;
-  quality = linear_least_squares_fitting_2(points.begin(),points.end(),line,CGAL::Dimension_tag<0>());
-  quality = linear_least_squares_fitting_2(points.begin(),points.end(),line,centroid,CGAL::Dimension_tag<0>());
-  quality = linear_least_squares_fitting_2(points.begin(),points.end(),line,centroid,CGAL::Dimension_tag<0>(),k,
+  quality = linear_least_squares_fitting_2(points.begin(), points.end(), line, CGAL::Dimension_tag<0>());
+  quality = linear_least_squares_fitting_2(points.begin(), points.end(), line, centroid,CGAL::Dimension_tag<0>());
+  quality = linear_least_squares_fitting_2(points.begin(), points.end(), line, centroid,CGAL::Dimension_tag<0>(), k,
                                            CGAL::Default_diagonalize_traits<FT,2>());
 
   std::cout << "done (quality: " << quality << ")" << std::endl;
@@ -57,8 +57,8 @@ void test_2D_point_set(const unsigned int nb_points)
         typedef typename Kernel::Point_2 Point_2;
 
   // create points on a horizontal segment
-  Point_2 p(FT(0.0),FT(0.5));
-  Point_2 q(FT(1.0),FT(0.5));
+  Point_2 p(FT(0.0), FT(0.5));
+  Point_2 q(FT(1.0), FT(0.5));
 
   std::cout << "generate " << nb_points <<
        " 2D points on a horizontal line...";
@@ -93,11 +93,11 @@ int main()
 {
   std::cout << "Test 2D linear least squares fitting of points"  << std::endl;
 
-        typedef CGAL::Simple_cartesian<double> Kernel_double;
+  typedef CGAL::Simple_cartesian<double> Kernel_double;
   test_2D<Kernel_double>();
   test_2D_point_set<Kernel_double>(100);
 
-        typedef CGAL::Simple_cartesian<float> Kernel_float;
+  typedef CGAL::Simple_cartesian<float> Kernel_float;
   test_2D<Kernel_float>();
   test_2D_point_set<Kernel_float>(100);
 

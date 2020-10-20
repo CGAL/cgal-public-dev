@@ -1,0 +1,15 @@
+Validity:
+- Test correctness of covariance matrix (via eigenvalues)
+  -> change API to get the covariance matrix
+- Test stability of closed forms under refinement/clustering 
+  with identical type of primitives
+  with different types of primitives: eg iso cuboid split into tetrahedra and vice-versa.
+  only possible for segments, isocuboids, tetrahedra, triangles
+- Test correctness of fitting line/planes (generate primitives whose centroid and best fitting primitive are known)
+- Cover more kernels
+- Detect primitives with Nan as coordinates -> assertion
+- Detect primitives whose sum of lens/areas/volumes is zero, as the centroid may be indefinite in this case -> assertion
+
+
+
+
