@@ -1,3 +1,5 @@
+Full list 
+
 Validity:
 - Test correctness of covariance matrix (via eigenvalues)
   -> change API to get the covariance matrix
@@ -11,6 +13,21 @@ tetrahedra and vice-versa.
 - Cover more kernels
 - Detect primitives with Nan as coordinates -> assertion
 - Detect primitives whose sum of lens/areas/volumes is zero, as the centroid may be indefinite in this case -> assertion
+
+
+SIMON
+- Accuracy of iso-cuboids 2D & 3D
+- Kernel coverage
+- Adding assertions: non-degenerate measures (areas or volumes)
+
+CEDRIC-PIERRE
+- Test stability of closed forms under partitioning refinement/clustering 
+  - only possible for segments, isocuboids, tetrahedra, triangles
+- Test convergence of closed forms under refinement: monotonous
+  - triangle - points -> sample a surface mesh uniformly
+  - volume - points -> sample a volume
+- Test correctness of covariance matrix / order-2 moment with respect to origin
+  - consistency with closed forms of article
 
 
 
