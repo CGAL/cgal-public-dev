@@ -38,9 +38,20 @@ namespace CGAL {
 
 template <class Kernel, class Container>
 inline bool do_intersect(const Polygon_2<Kernel, Container>& pgn1,
-                         const Polygon_2<Kernel, Container>& pgn2)
+                         const Polygon_2<Kernel, Container>& pgn2,
+                         Tag_true = Tag_true())
 {
-  return (_do_intersect(pgn1, pgn2));
+  typename Gps_polyline_traits<Kernel>::Traits traits;
+  return (_do_intersect(pgn1, pgn2, traits));
+}
+
+template <class Kernel, class Container>
+inline bool do_intersect(const Polygon_2<Kernel, Container>& pgn1,
+                         const Polygon_2<Kernel, Container>& pgn2,
+                         Tag_false)
+{
+  typename Gps_default_traits<Polygon_2<Kernel, Container> >::Traits traits;
+  return (_do_intersect(pgn1, pgn2, traits));
 }
 
 template <class Kernel, class Container, class Traits>
@@ -53,9 +64,20 @@ inline bool do_intersect(const Polygon_2<Kernel, Container>& pgn1,
 
 template <class Kernel, class Container>
 inline bool do_intersect(const Polygon_2<Kernel, Container>& pgn1,
-                         const Polygon_with_holes_2<Kernel, Container>& pgn2)
+                         const Polygon_with_holes_2<Kernel, Container>& pgn2,
+                         Tag_true = Tag_true())
 {
-  return (_do_intersect(pgn1, pgn2));
+  typename Gps_polyline_traits<Kernel>::Traits traits;
+  return (_do_intersect(pgn1, pgn2, traits));
+}
+
+template <class Kernel, class Container>
+inline bool do_intersect(const Polygon_2<Kernel, Container>& pgn1,
+                         const Polygon_with_holes_2<Kernel, Container>& pgn2,
+                         Tag_false)
+{
+  typename Gps_default_traits<Polygon_2<Kernel, Container> >::Traits traits;
+  return (_do_intersect(pgn1, pgn2, traits));
 }
 
 template <class Kernel, class Container, class Traits>
@@ -68,9 +90,20 @@ inline bool do_intersect(const Polygon_2<Kernel, Container>& pgn1,
 
 template <class Kernel, class Container>
 inline bool do_intersect(const Polygon_with_holes_2<Kernel, Container>& pgn1,
-                         const Polygon_2<Kernel, Container>& pgn2)
+                         const Polygon_2<Kernel, Container>& pgn2,
+                         Tag_true = Tag_true())
 {
-  return (_do_intersect(pgn1, pgn2));
+  typename Gps_polyline_traits<Kernel>::Traits traits;
+  return (_do_intersect(pgn1, pgn2, traits));
+}
+
+template <class Kernel, class Container>
+inline bool do_intersect(const Polygon_with_holes_2<Kernel, Container>& pgn1,
+                         const Polygon_2<Kernel, Container>& pgn2,
+                         Tag_false)
+{
+  typename Gps_default_traits<Polygon_2<Kernel, Container> >::Traits traits;
+  return (_do_intersect(pgn1, pgn2, traits));
 }
 
 template <class Kernel, class Container, class Traits>
@@ -83,9 +116,20 @@ inline bool do_intersect(const Polygon_with_holes_2<Kernel, Container>& pgn1,
 
 template <class Kernel, class Container>
 inline bool do_intersect(const Polygon_with_holes_2<Kernel, Container>& pgn1,
-                         const Polygon_with_holes_2<Kernel, Container>& pgn2)
+                         const Polygon_with_holes_2<Kernel, Container>& pgn2,
+                         Tag_true = Tag_true())
 {
-  return (_do_intersect(pgn1, pgn2));
+  typename Gps_polyline_traits<Kernel>::Traits traits;
+  return (_do_intersect(pgn1, pgn2, traits));
+}
+
+template <class Kernel, class Container>
+inline bool do_intersect(const Polygon_with_holes_2<Kernel, Container>& pgn1,
+                         const Polygon_with_holes_2<Kernel, Container>& pgn2,
+                         Tag_false)
+{
+  typename Gps_default_traits<Polygon_2<Kernel, Container> >::Traits traits;
+  return (_do_intersect(pgn1, pgn2, traits));
 }
 
 template <class Kernel, class Container, class Traits>
@@ -169,9 +213,21 @@ inline bool do_intersect(const General_polygon_with_holes_2<Polygon_>& pgn1,
 template <class Kernel, class Container, typename OutputIterator>
 inline OutputIterator intersection(const Polygon_2<Kernel, Container>& pgn1,
                                    const Polygon_2<Kernel, Container>& pgn2,
-                                   OutputIterator out)
+                                   OutputIterator out,
+                                   Tag_true = Tag_true())
 {
-  return (_intersection(pgn1, pgn2, out));
+  typename Gps_polyline_traits<Kernel>::Traits traits;
+  return (_intersection(pgn1, pgn2, out, traits));
+}
+
+template <class Kernel, class Container, typename OutputIterator>
+inline OutputIterator intersection(const Polygon_2<Kernel, Container>& pgn1,
+                                   const Polygon_2<Kernel, Container>& pgn2,
+                                   OutputIterator out,
+                                   Tag_false)
+{
+  typename Gps_default_traits<Polygon_2<Kernel, Container> >::Traits traits;
+  return (_intersection(pgn1, pgn2, out, traits));
 }
 
 template <class Kernel, class Container, typename OutputIterator, class Traits>
@@ -186,9 +242,21 @@ inline OutputIterator intersection(const Polygon_2<Kernel, Container>& pgn1,
 template <class Kernel, class Container, typename OutputIterator>
 inline OutputIterator intersection(const Polygon_2<Kernel, Container>& pgn1,
                          const Polygon_with_holes_2<Kernel, Container>& pgn2,
-                           OutputIterator out)
+                           OutputIterator out,
+                           Tag_true = Tag_true())
 {
-  return (_intersection(pgn1, pgn2, out));
+  typename Gps_polyline_traits<Kernel>::Traits traits;
+  return (_intersection(pgn1, pgn2, out, traits));
+}
+
+template <class Kernel, class Container, typename OutputIterator>
+inline OutputIterator intersection(const Polygon_2<Kernel, Container>& pgn1,
+                         const Polygon_with_holes_2<Kernel, Container>& pgn2,
+                           OutputIterator out,
+                           Tag_false)
+{
+  typename Gps_default_traits<Polygon_2<Kernel, Container> >::Traits traits;
+  return (_intersection(pgn1, pgn2, out, traits));
 }
 
 template <class Kernel, class Container, typename OutputIterator, class Traits>
@@ -204,9 +272,22 @@ template <class Kernel, class Container, typename OutputIterator>
 inline OutputIterator
 intersection (const Polygon_with_holes_2<Kernel, Container>& pgn1,
               const Polygon_2<Kernel, Container>& pgn2,
-              OutputIterator out)
+              OutputIterator out,
+              Tag_true = Tag_true())
 {
-  return (_intersection(pgn1, pgn2, out));
+  typename Gps_polyline_traits<Kernel>::Traits traits;
+  return (_intersection(pgn1, pgn2, out, traits));
+}
+
+template <class Kernel, class Container, typename OutputIterator>
+inline OutputIterator
+intersection (const Polygon_with_holes_2<Kernel, Container>& pgn1,
+              const Polygon_2<Kernel, Container>& pgn2,
+              OutputIterator out,
+              Tag_false)
+{
+  typename Gps_default_traits<Polygon_2<Kernel, Container> >::Traits traits;
+  return (_intersection(pgn1, pgn2, out, traits));
 }
 
 template <class Kernel, class Container, typename OutputIterator, class Traits>
@@ -222,9 +303,22 @@ template <class Kernel, class Container, typename OutputIterator>
 inline OutputIterator
 intersection (const Polygon_with_holes_2<Kernel, Container>& pgn1,
               const Polygon_with_holes_2<Kernel, Container>& pgn2,
-              OutputIterator out)
+              OutputIterator out,
+              Tag_true = Tag_true())
 {
-  return (_intersection(pgn1, pgn2, out));
+  typename Gps_polyline_traits<Kernel>::Traits traits;
+  return (_intersection(pgn1, pgn2, out, traits));
+}
+
+template <class Kernel, class Container, typename OutputIterator>
+inline OutputIterator
+intersection (const Polygon_with_holes_2<Kernel, Container>& pgn1,
+              const Polygon_with_holes_2<Kernel, Container>& pgn2,
+              OutputIterator out,
+              Tag_false)
+{
+  typename Gps_default_traits<Polygon_2<Kernel, Container> >::Traits traits;
+  return (_intersection(pgn1, pgn2, out, traits));
 }
 
 template <class Kernel, class Container, typename OutputIterator, class Traits>
@@ -319,9 +413,21 @@ intersection (const General_polygon_with_holes_2<Polygon_>& pgn1,
 template <class Kernel, class Container>
 inline bool join (const Polygon_2<Kernel, Container>& pgn1,
                   const Polygon_2<Kernel, Container>& pgn2,
-                  Polygon_with_holes_2<Kernel, Container>& res)
+                  Polygon_with_holes_2<Kernel, Container>& res,
+                  Tag_true = Tag_true())
 {
-  return (_join(pgn1, pgn2, res));
+  typename Gps_polyline_traits<Kernel>::Traits traits;
+  return (_join(pgn1, pgn2, res, traits));
+}
+
+template <class Kernel, class Container>
+inline bool join (const Polygon_2<Kernel, Container>& pgn1,
+                  const Polygon_2<Kernel, Container>& pgn2,
+                  Polygon_with_holes_2<Kernel, Container>& res,
+                  Tag_false)
+{
+  typename Gps_default_traits<Polygon_2<Kernel, Container> >::Traits traits;
+  return (_join(pgn1, pgn2, res, traits));
 }
 
 template <class Kernel, class Container, class Traits>
@@ -335,9 +441,21 @@ inline bool join (const Polygon_2<Kernel, Container>& pgn1,
 template <class Kernel, class Container>
 inline bool join (const Polygon_2<Kernel, Container>& pgn1,
                   const Polygon_with_holes_2<Kernel, Container>& pgn2,
-                  Polygon_with_holes_2<Kernel, Container>& res)
+                  Polygon_with_holes_2<Kernel, Container>& res,
+                  Tag_true = Tag_true())
 {
-  return (_join(pgn1, pgn2, res));
+  typename Gps_polyline_traits<Kernel>::Traits traits;
+  return (_join(pgn1, pgn2, res, traits));
+}
+
+template <class Kernel, class Container>
+inline bool join (const Polygon_2<Kernel, Container>& pgn1,
+                  const Polygon_with_holes_2<Kernel, Container>& pgn2,
+                  Polygon_with_holes_2<Kernel, Container>& res,
+                  Tag_false)
+{
+  typename Gps_default_traits<Polygon_2<Kernel, Container> >::Traits traits;
+  return (_join(pgn1, pgn2, res, traits));
 }
 
 template <class Kernel, class Container, class Traits>
@@ -351,9 +469,21 @@ inline bool join (const Polygon_2<Kernel, Container>& pgn1,
 template <class Kernel, class Container>
 inline bool join (const Polygon_with_holes_2<Kernel, Container>& pgn1,
                   const Polygon_2<Kernel, Container>& pgn2,
-                  Polygon_with_holes_2<Kernel, Container>& res )
+                  Polygon_with_holes_2<Kernel, Container>& res,
+                  Tag_true = Tag_true())
 {
-  return (_join(pgn1, pgn2, res));
+  typename Gps_polyline_traits<Kernel>::Traits traits;
+  return (_join(pgn1, pgn2, res, traits));
+}
+
+template <class Kernel, class Container>
+inline bool join (const Polygon_with_holes_2<Kernel, Container>& pgn1,
+                  const Polygon_2<Kernel, Container>& pgn2,
+                  Polygon_with_holes_2<Kernel, Container>& res,
+                  Tag_false)
+{
+  typename Gps_default_traits<Polygon_2<Kernel, Container> >::Traits traits;
+  return (_join(pgn1, pgn2, res, traits));
 }
 
 template <class Kernel, class Container, class Traits>
@@ -367,9 +497,21 @@ inline bool join (const Polygon_with_holes_2<Kernel, Container>& pgn1,
 template <class Kernel, class Container>
 inline bool join (const Polygon_with_holes_2<Kernel, Container>& pgn1,
                   const Polygon_with_holes_2<Kernel, Container>& pgn2,
-                  Polygon_with_holes_2<Kernel, Container>& res )
+                  Polygon_with_holes_2<Kernel, Container>& res,
+                  Tag_true = Tag_true())
 {
-  return (_join(pgn1, pgn2, res));
+  typename Gps_polyline_traits<Kernel>::Traits traits;
+  return (_join(pgn1, pgn2, res, traits));
+}
+
+template <class Kernel, class Container>
+inline bool join (const Polygon_with_holes_2<Kernel, Container>& pgn1,
+                  const Polygon_with_holes_2<Kernel, Container>& pgn2,
+                  Polygon_with_holes_2<Kernel, Container>& res,
+                  Tag_false)
+{
+  typename Gps_default_traits<Polygon_2<Kernel, Container> >::Traits traits;
+  return (_join(pgn1, pgn2, res, traits));
 }
 
 template <class Kernel, class Container, class Traits>
@@ -460,9 +602,21 @@ inline bool join (const General_polygon_with_holes_2<Polygon_>& pgn1,
 template <class Kernel, class Container, typename OutputIterator>
 inline OutputIterator difference (const Polygon_2<Kernel, Container>& pgn1,
                                   const Polygon_2<Kernel, Container>& pgn2,
-                                  OutputIterator oi)
+                                  OutputIterator oi,
+                                  Tag_true = Tag_true())
 {
-  return(_difference(pgn1, pgn2, oi));
+  typename Gps_polyline_traits<Kernel>::Traits traits;
+  return(_difference(pgn1, pgn2, oi, traits));
+}
+
+template <class Kernel, class Container, typename OutputIterator>
+inline OutputIterator difference (const Polygon_2<Kernel, Container>& pgn1,
+                                  const Polygon_2<Kernel, Container>& pgn2,
+                                  OutputIterator oi,
+                                  Tag_false)
+{
+  typename Gps_default_traits<Polygon_2<Kernel, Container> >::Traits traits;
+  return(_difference(pgn1, pgn2, oi, traits));
 }
 
 template <class Kernel, class Container, typename OutputIterator, class Traits>
@@ -477,9 +631,22 @@ template <class Kernel, class Container, typename OutputIterator>
 inline OutputIterator
 difference (const Polygon_2<Kernel, Container>& pgn1,
             const Polygon_with_holes_2<Kernel, Container>& pgn2,
-            OutputIterator oi)
+            OutputIterator oi,
+            Tag_true = Tag_true())
 {
-  return(_difference(pgn1, pgn2, oi));
+  typename Gps_polyline_traits<Kernel>::Traits traits;
+  return(_difference(pgn1, pgn2, oi, traits));
+}
+
+template <class Kernel, class Container, typename OutputIterator>
+inline OutputIterator
+difference (const Polygon_2<Kernel, Container>& pgn1,
+            const Polygon_with_holes_2<Kernel, Container>& pgn2,
+            OutputIterator oi,
+            Tag_false)
+{
+  typename Gps_default_traits<Polygon_2<Kernel, Container> >::Traits traits;
+  return(_difference(pgn1, pgn2, oi, traits));
 }
 
 template <class Kernel, class Container, typename OutputIterator, class Traits>
@@ -495,9 +662,22 @@ template <class Kernel, class Container, typename OutputIterator>
 inline OutputIterator
 difference (const Polygon_with_holes_2<Kernel, Container>& pgn1,
             const Polygon_2<Kernel, Container>& pgn2,
-            OutputIterator oi)
+            OutputIterator oi,
+            Tag_true = Tag_true())
 {
-  return (_difference(pgn1, pgn2, oi));
+  typename Gps_polyline_traits<Kernel>::Traits traits;
+  return (_difference(pgn1, pgn2, oi, traits));
+}
+
+template <class Kernel, class Container, typename OutputIterator>
+inline OutputIterator
+difference (const Polygon_with_holes_2<Kernel, Container>& pgn1,
+            const Polygon_2<Kernel, Container>& pgn2,
+            OutputIterator oi,
+            Tag_false)
+{
+  typename Gps_default_traits<Polygon_2<Kernel, Container> >::Traits traits;
+  return (_difference(pgn1, pgn2, oi, traits));
 }
 
 template <class Kernel, class Container, typename OutputIterator, class Traits>
@@ -514,9 +694,22 @@ template <class Kernel, class Container, typename OutputIterator>
 inline OutputIterator
 difference (const Polygon_with_holes_2<Kernel, Container>& pgn1,
             const Polygon_with_holes_2<Kernel, Container>& pgn2,
-            OutputIterator oi)
+            OutputIterator oi,
+            Tag_true = Tag_true())
 {
-  return (_difference(pgn1, pgn2, oi));
+  typename Gps_polyline_traits<Kernel>::Traits traits;
+  return (_difference(pgn1, pgn2, oi, traits));
+}
+
+template <class Kernel, class Container, typename OutputIterator>
+inline OutputIterator
+difference (const Polygon_with_holes_2<Kernel, Container>& pgn1,
+            const Polygon_with_holes_2<Kernel, Container>& pgn2,
+            OutputIterator oi,
+            Tag_false)
+{
+  typename Gps_default_traits<Polygon_2<Kernel, Container> >::Traits traits;
+  return (_difference(pgn1, pgn2, oi, traits));
 }
 
 template <class Kernel, class Container, typename OutputIterator, class Traits>
@@ -616,9 +809,22 @@ template <class Kernel, class Container, typename OutputIterator>
 inline OutputIterator
 symmetric_difference (const Polygon_2<Kernel, Container>& pgn1,
                       const Polygon_2<Kernel, Container>& pgn2,
-                      OutputIterator oi)
+                      OutputIterator oi,
+                      Tag_true = Tag_true())
 {
-  return (_symmetric_difference(pgn1, pgn2, oi));
+  typename Gps_polyline_traits<Kernel>::Traits traits;
+  return (_symmetric_difference(pgn1, pgn2, oi, traits));
+}
+
+template <class Kernel, class Container, typename OutputIterator>
+inline OutputIterator
+symmetric_difference (const Polygon_2<Kernel, Container>& pgn1,
+                      const Polygon_2<Kernel, Container>& pgn2,
+                      OutputIterator oi,
+                      Tag_false)
+{
+  typename Gps_default_traits<Polygon_2<Kernel, Container> >::Traits traits;
+  return (_symmetric_difference(pgn1, pgn2, oi, traits));
 }
 
 template <class Kernel, class Container, typename OutputIterator, class Traits>
@@ -635,9 +841,22 @@ template <class Kernel, class Container, typename OutputIterator>
 inline OutputIterator
 symmetric_difference (const Polygon_2<Kernel, Container>& pgn1,
                       const Polygon_with_holes_2<Kernel, Container>& pgn2,
-                      OutputIterator oi)
+                      OutputIterator oi,
+                      Tag_true = Tag_true())
 {
-  return (_symmetric_difference(pgn1, pgn2, oi));
+  typename Gps_polyline_traits<Kernel>::Traits traits;
+  return (_symmetric_difference(pgn1, pgn2, oi, traits));
+}
+
+template <class Kernel, class Container, typename OutputIterator>
+inline OutputIterator
+symmetric_difference (const Polygon_2<Kernel, Container>& pgn1,
+                      const Polygon_with_holes_2<Kernel, Container>& pgn2,
+                      OutputIterator oi,
+                      Tag_false)
+{
+  typename Gps_default_traits<Polygon_2<Kernel, Container> >::Traits traits;
+  return (_symmetric_difference(pgn1, pgn2, oi, traits));
 }
 
 template <class Kernel, class Container, typename OutputIterator, class Traits>
@@ -653,9 +872,22 @@ template <class Kernel, class Container, typename OutputIterator>
 inline OutputIterator
 symmetric_difference (const Polygon_with_holes_2<Kernel, Container>& pgn1,
                       const Polygon_2<Kernel, Container>& pgn2,
-                      OutputIterator oi)
+                      OutputIterator oi,
+                      Tag_true = Tag_true())
 {
-  return (_symmetric_difference(pgn1, pgn2, oi));
+  typename Gps_polyline_traits<Kernel>::Traits traits;
+  return (_symmetric_difference(pgn1, pgn2, oi, traits));
+}
+
+template <class Kernel, class Container, typename OutputIterator>
+inline OutputIterator
+symmetric_difference (const Polygon_with_holes_2<Kernel, Container>& pgn1,
+                      const Polygon_2<Kernel, Container>& pgn2,
+                      OutputIterator oi,
+                      Tag_false)
+{
+  typename Gps_default_traits<Polygon_2<Kernel, Container> >::Traits traits;
+  return (_symmetric_difference(pgn1, pgn2, oi, traits));
 }
 
 template <class Kernel, class Container, typename OutputIterator, class Traits>
@@ -671,9 +903,22 @@ template <class Kernel, class Container, typename OutputIterator>
 inline OutputIterator
 symmetric_difference (const Polygon_with_holes_2<Kernel, Container>& pgn1,
                       const Polygon_with_holes_2<Kernel, Container>& pgn2,
-                      OutputIterator oi)
+                      OutputIterator oi,
+                      Tag_true = Tag_true())
 {
-  return (_symmetric_difference(pgn1, pgn2, oi));
+  typename Gps_polyline_traits<Kernel>::Traits traits;
+  return (_symmetric_difference(pgn1, pgn2, oi, traits));
+}
+
+template <class Kernel, class Container, typename OutputIterator>
+inline OutputIterator
+symmetric_difference (const Polygon_with_holes_2<Kernel, Container>& pgn1,
+                      const Polygon_with_holes_2<Kernel, Container>& pgn2,
+                      OutputIterator oi,
+                      Tag_false)
+{
+  typename Gps_default_traits<Polygon_2<Kernel, Container> >::Traits traits;
+  return (_symmetric_difference(pgn1, pgn2, oi, traits));
 }
 
 template <class Arr_traits, typename OutputIterator, class Traits>
@@ -760,9 +1005,20 @@ symmetric_difference (const General_polygon_with_holes_2<Polygon_>& pgn1,
 
 template <class Kernel, class Container>
 void complement (const Polygon_2<Kernel, Container>& pgn,
-                 Polygon_with_holes_2<Kernel, Container>& res)
+                 Polygon_with_holes_2<Kernel, Container>& res,
+                 Tag_true = Tag_true())
 {
-  _complement(pgn, res);
+  typename Gps_polyline_traits<Kernel>::Traits traits;
+  _complement(pgn, res, traits);
+}
+
+template <class Kernel, class Container>
+void complement (const Polygon_2<Kernel, Container>& pgn,
+                 Polygon_with_holes_2<Kernel, Container>& res,
+                 Tag_false)
+{
+  typename Gps_default_traits<Polygon_2<Kernel, Container> >::Traits traits;
+  _complement(pgn, res, traits);
 }
 
 template <class Kernel, class Container, class Traits>
@@ -795,14 +1051,24 @@ OutputIterator complement (const Polygon_with_holes_2<Kernel, Container>& pgn,
                            OutputIterator oi, Traits& tr)
 {
   General_polygon_set_2<Traits> gps(tr);
-  gps.insert(pgn);
+  gps.insert(convert_polygon(pgn, tr));
   gps.complement();
-  return (gps.polygons_with_holes(oi));
+  return (gps.polygons_with_holes(convert_polygon_back(oi, pgn, tr)));
 }
 
 template <class Kernel, class Container, typename OutputIterator>
 OutputIterator complement (const Polygon_with_holes_2<Kernel, Container>& pgn,
-                           OutputIterator oi)
+                           OutputIterator oi,
+                           Tag_true = Tag_true())
+{
+  typename Gps_polyline_traits<Kernel>::Traits tr;
+  return (complement(pgn, oi, tr));
+}
+
+template <class Kernel, class Container, typename OutputIterator>
+OutputIterator complement (const Polygon_with_holes_2<Kernel, Container>& pgn,
+                           OutputIterator oi,
+                           Tag_false)
 {
   typename Gps_default_traits<Polygon_2<Kernel, Container> >::Traits  tr;
   return (complement(pgn, oi, tr));
@@ -852,9 +1118,33 @@ inline OutputIterator join(InputIterator begin, InputIterator end,
 
 template <typename InputIterator, typename OutputIterator>
 inline OutputIterator join(InputIterator begin, InputIterator end,
-                           OutputIterator oi, unsigned int k=5)
+                           OutputIterator oi, Tag_true = Tag_true(), unsigned int k=5,
+                           Enable_if_Polygon_2_iterator<InputIterator>* = 0)
 {
-  typename map_iterator_to_traits<InputIterator>::Traits          tr;
+  typedef typename std::iterator_traits<InputIterator>::value_type InputPolygon;
+  typedef typename Kernel_traits<typename InputPolygon::Point_2>::Kernel Kernel;
+  typename Gps_polyline_traits<Kernel>::Traits tr;
+
+  return join(convert_polygon_iterator(begin, tr),
+              convert_polygon_iterator(end, tr),
+              convert_polygon_back(oi, *begin, tr), tr, k);
+}
+
+template <typename InputIterator, typename OutputIterator>
+inline OutputIterator join(InputIterator begin, InputIterator end,
+                           OutputIterator oi, Tag_false, unsigned int k=5,
+                           Enable_if_Polygon_2_iterator<InputIterator>* = 0)
+{
+  typename map_iterator_to_traits<InputIterator>::Traits  tr;
+  return join(begin, end, oi, tr, k);
+}
+
+template <typename InputIterator, typename OutputIterator>
+inline OutputIterator join(InputIterator begin, InputIterator end,
+                           OutputIterator oi, unsigned int k=5,
+                           Disable_if_Polygon_2_iterator<InputIterator>* = 0)
+{
+  typename map_iterator_to_traits<InputIterator>::Traits  tr;
   return join(begin, end, oi, tr, k);
 }
 
@@ -877,7 +1167,36 @@ template <typename InputIterator1, typename InputIterator2,
           typename OutputIterator>
 inline OutputIterator join(InputIterator1 begin1, InputIterator1 end1,
                            InputIterator2 begin2, InputIterator2 end2,
-                           OutputIterator oi, unsigned int k=5)
+                           OutputIterator oi, Tag_true = Tag_true(), unsigned int k=5,
+                           Enable_if_Polygon_2_iterator<InputIterator1>* = 0)
+{
+  typedef typename std::iterator_traits<InputIterator1>::value_type InputPolygon;
+  typedef typename Kernel_traits<typename InputPolygon::Point_2>::Kernel Kernel;
+  typename Gps_polyline_traits<Kernel>::Traits tr;
+
+  return join(convert_polygon_iterator(begin1),
+              convert_polygon_iterator(end1),
+              convert_polygon_iterator(begin2),
+              convert_polygon_iterator(end2),
+              convert_polygon_back(oi), tr, k);
+}
+
+template <typename InputIterator1, typename InputIterator2,
+          typename OutputIterator>
+inline OutputIterator join(InputIterator1 begin1, InputIterator1 end1,
+                           InputIterator2 begin2, InputIterator2 end2,
+                           OutputIterator oi, Tag_false, unsigned int k=5,
+                           Enable_if_Polygon_2_iterator<InputIterator1>* = 0)
+{
+  typename map_iterator_to_traits<InputIterator1>::Traits  tr;
+  return join(begin1, end1, begin2, end2, oi, tr, k);
+}
+template <typename InputIterator1, typename InputIterator2,
+          typename OutputIterator>
+inline OutputIterator join(InputIterator1 begin1, InputIterator1 end1,
+                           InputIterator2 begin2, InputIterator2 end2,
+                           OutputIterator oi, unsigned int k=5,
+                           Disable_if_Polygon_2_iterator<InputIterator1>* = 0)
 {
   typename map_iterator_to_traits<InputIterator1>::Traits  tr;
   return join(begin1, end1, begin2, end2, oi, tr, k);
@@ -900,11 +1219,34 @@ inline OutputIterator intersection (InputIterator begin, InputIterator end,
 
 template <typename InputIterator, typename OutputIterator>
 inline OutputIterator intersection (InputIterator begin, InputIterator end,
+                                    OutputIterator oi, Tag_true = Tag_true(), unsigned int k=5,
+                                    Enable_if_Polygon_2_iterator<InputIterator>* = 0)
+{
+  typedef typename std::iterator_traits<InputIterator>::value_type InputPolygon;
+  typedef typename Kernel_traits<typename InputPolygon::Point_2>::Kernel Kernel;
+  typename Gps_polyline_traits<Kernel>::Traits tr;
+
+  return intersection(convert_polygon_iterator(begin),
+                      convert_polygon_iterator(end),
+                      convert_polygon_back(oi), tr, k);
+}
+
+template <typename InputIterator, typename OutputIterator>
+inline OutputIterator intersection (InputIterator begin, InputIterator end,
+                                    OutputIterator oi, Tag_false, unsigned int k=5,
+                                    Enable_if_Polygon_2_iterator<InputIterator>* = 0)
+{
+  typename map_iterator_to_traits<InputIterator>::Traits          tr;
+  return intersection(begin, end, oi, tr, k);
+}
+
+template <typename InputIterator, typename OutputIterator>
+inline OutputIterator intersection (InputIterator begin, InputIterator end,
                                     OutputIterator oi, unsigned int k=5,
                                     typename boost::enable_if<
                                       typename CGAL::is_iterator<InputIterator>
-                                    >::type* =0 // workaround to avoid ambiguous calls with kernel functions
-)
+                                    >::type* =0, // workaround to avoid ambiguous calls with kernel functions
+                                    Disable_if_Polygon_2_iterator<InputIterator>* = 0)
 {
   typename map_iterator_to_traits<InputIterator>::Traits          tr;
   return intersection(begin, end, oi, tr, k);
@@ -931,7 +1273,37 @@ template <typename InputIterator1, typename InputIterator2,
           typename OutputIterator>
 inline OutputIterator intersection(InputIterator1 begin1, InputIterator1 end1,
                                    InputIterator2 begin2, InputIterator2 end2,
-                                   OutputIterator oi, unsigned int k=5)
+                                   OutputIterator oi, Tag_true = Tag_true(), unsigned int k=5,
+                                   Enable_if_Polygon_2_iterator<InputIterator1>* = 0)
+{
+  typedef typename std::iterator_traits<InputIterator1>::value_type InputPolygon;
+  typedef typename Kernel_traits<typename InputPolygon::Point_2>::Kernel Kernel;
+  typename Gps_polyline_traits<Kernel>::Traits tr;
+
+  return intersection(convert_polygon_iterator(begin1),
+                      convert_polygon_iterator(end1),
+                      convert_polygon_iterator(begin2),
+                      convert_polygon_iterator(end2),
+                      convert_polygon_back(oi), tr, k);
+}
+
+template <typename InputIterator1, typename InputIterator2,
+          typename OutputIterator>
+inline OutputIterator intersection(InputIterator1 begin1, InputIterator1 end1,
+                                   InputIterator2 begin2, InputIterator2 end2,
+                                   OutputIterator oi, Tag_false, unsigned int k=5,
+                                   Enable_if_Polygon_2_iterator<InputIterator1>* = 0)
+{
+  typename map_iterator_to_traits<InputIterator1>::Traits  tr;
+  return intersection(begin1, end1, begin2, end2, oi, tr, k);
+}
+
+template <typename InputIterator1, typename InputIterator2,
+          typename OutputIterator>
+inline OutputIterator intersection(InputIterator1 begin1, InputIterator1 end1,
+                                   InputIterator2 begin2, InputIterator2 end2,
+                                   OutputIterator oi, unsigned int k=5,
+                                   Disable_if_Polygon_2_iterator<InputIterator1>* = 0)
 {
   typename map_iterator_to_traits<InputIterator1>::Traits  tr;
   return intersection(begin1, end1, begin2, end2, oi, tr, k);
@@ -958,7 +1330,33 @@ OutputIterator symmetric_difference(InputIterator begin, InputIterator end,
 template <typename InputIterator, typename OutputIterator>
 inline
 OutputIterator symmetric_difference (InputIterator begin, InputIterator end,
-                                     OutputIterator oi, unsigned int k=5)
+                                     OutputIterator oi, Tag_true = Tag_true(), unsigned int k=5,
+                                     Enable_if_Polygon_2_iterator<InputIterator>* = 0)
+{
+  typedef typename std::iterator_traits<InputIterator>::value_type InputPolygon;
+  typedef typename Kernel_traits<typename InputPolygon::Point_2>::Kernel Kernel;
+  typename Gps_polyline_traits<Kernel>::Traits tr;
+
+  return symmetric_difference(convert_polygon_iterator(begin),
+                              convert_polygon_iterator(end),
+                              convert_polygon_back(oi), tr, k);
+}
+
+template <typename InputIterator, typename OutputIterator>
+inline
+OutputIterator symmetric_difference (InputIterator begin, InputIterator end,
+                                     OutputIterator oi, Tag_false, unsigned int k=5,
+                                     Enable_if_Polygon_2_iterator<InputIterator>* = 0)
+{
+  typename map_iterator_to_traits<InputIterator>::Traits          tr;
+  return symmetric_difference(begin, end, oi, tr, k);
+}
+
+template <typename InputIterator, typename OutputIterator>
+inline
+OutputIterator symmetric_difference (InputIterator begin, InputIterator end,
+                                     OutputIterator oi, unsigned int k=5,
+                                     Disable_if_Polygon_2_iterator<InputIterator>* = 0)
 {
   typename map_iterator_to_traits<InputIterator>::Traits          tr;
   return symmetric_difference(begin, end, oi, tr, k);
@@ -988,7 +1386,39 @@ template <typename InputIterator1, typename InputIterator2,
 inline
 OutputIterator symmetric_difference (InputIterator1 begin1, InputIterator1 end1,
                                      InputIterator2 begin2, InputIterator2 end2,
-                                     OutputIterator oi, unsigned int k=5)
+                                     OutputIterator oi, Tag_true = Tag_true(), unsigned int k=5,
+                                     Enable_if_Polygon_2_iterator<InputIterator1>* = 0)
+{
+  typedef typename std::iterator_traits<InputIterator1>::value_type InputPolygon;
+  typedef typename Kernel_traits<typename InputPolygon::Point_2>::Kernel Kernel;
+  typename Gps_polyline_traits<Kernel>::Traits tr;
+
+  return symmetric_difference(convert_polygon_iterator(begin1),
+                              convert_polygon_iterator(end1),
+                              convert_polygon_iterator(begin2),
+                              convert_polygon_iterator(end2),
+                              convert_polygon_back(oi), tr, k);
+}
+
+template <typename InputIterator1, typename InputIterator2,
+          typename OutputIterator>
+inline
+OutputIterator symmetric_difference (InputIterator1 begin1, InputIterator1 end1,
+                                     InputIterator2 begin2, InputIterator2 end2,
+                                     OutputIterator oi, Tag_false, unsigned int k=5,
+                                     Enable_if_Polygon_2_iterator<InputIterator1>* = 0)
+{
+  typename map_iterator_to_traits<InputIterator1>::Traits  tr;
+  return symmetric_difference(begin1, end1, begin2, end2, oi, tr, k);
+}
+
+template <typename InputIterator1, typename InputIterator2,
+          typename OutputIterator>
+inline
+OutputIterator symmetric_difference (InputIterator1 begin1, InputIterator1 end1,
+                                     InputIterator2 begin2, InputIterator2 end2,
+                                     OutputIterator oi, unsigned int k=5,
+                                     Disable_if_Polygon_2_iterator<InputIterator1>* = 0)
 {
   typename map_iterator_to_traits<InputIterator1>::Traits  tr;
   return symmetric_difference(begin1, end1, begin2, end2, oi, tr, k);
@@ -1012,7 +1442,29 @@ inline bool do_intersect(InputIterator begin, InputIterator end, Traits& tr,
 
 template <typename InputIterator>
 inline bool do_intersect(InputIterator begin, InputIterator end,
-                         unsigned int k=5)
+                         Tag_true = Tag_true(), unsigned int k=5,
+                         Enable_if_Polygon_2_iterator<InputIterator>* = 0)
+{
+  typedef typename std::iterator_traits<InputIterator>::value_type InputPolygon;
+  typedef typename Kernel_traits<typename InputPolygon::Point_2>::Kernel Kernel;
+  typename Gps_polyline_traits<Kernel>::Traits tr;
+
+  return do_intersect(convert_polygon_iterator(begin), convert_polygon_iterator(end), tr, k);
+}
+
+template <typename InputIterator>
+inline bool do_intersect(InputIterator begin, InputIterator end,
+                         Tag_false, unsigned int k=5,
+                         Enable_if_Polygon_2_iterator<InputIterator>* = 0)
+{
+  typename map_iterator_to_traits<InputIterator>::Traits  tr;
+  return do_intersect(begin, end, tr, k);
+}
+
+template <typename InputIterator>
+inline bool do_intersect(InputIterator begin, InputIterator end,
+                         unsigned int k=5,
+                         Disable_if_Polygon_2_iterator<InputIterator>* = 0)
 {
   typename map_iterator_to_traits<InputIterator>::Traits  tr;
   return do_intersect(begin, end, tr, k);
@@ -1034,7 +1486,34 @@ inline bool do_intersect (InputIterator1 begin1, InputIterator1 end1,
 template <typename InputIterator1, typename InputIterator2>
 inline bool do_intersect (InputIterator1 begin1, InputIterator1 end1,
                           InputIterator2 begin2, InputIterator2 end2,
-                          unsigned int k=5)
+                          Tag_true = Tag_true(), unsigned int k=5,
+                          Enable_if_Polygon_2_iterator<InputIterator1>* = 0)
+{
+  typedef typename std::iterator_traits<InputIterator1>::value_type InputPolygon;
+  typedef typename Kernel_traits<typename InputPolygon::Point_2>::Kernel Kernel;
+  typename Gps_polyline_traits<Kernel>::Traits tr;
+
+  return do_intersect(convert_polygon_iterator(begin1),
+                      convert_polygon_iterator(end1),
+                      convert_polygon_iterator(begin2),
+                      convert_polygon_iterator(end2), tr, k);
+}
+
+template <typename InputIterator1, typename InputIterator2>
+inline bool do_intersect (InputIterator1 begin1, InputIterator1 end1,
+                          InputIterator2 begin2, InputIterator2 end2,
+                          Tag_false, unsigned int k=5,
+                          Enable_if_Polygon_2_iterator<InputIterator1>* = 0)
+{
+  typename map_iterator_to_traits<InputIterator1>::Traits  tr;
+  return do_intersect(begin1, end1, begin2, end2, tr, k);
+}
+
+template <typename InputIterator1, typename InputIterator2>
+inline bool do_intersect (InputIterator1 begin1, InputIterator1 end1,
+                          InputIterator2 begin2, InputIterator2 end2,
+                          unsigned int k=5,
+                          Disable_if_Polygon_2_iterator<InputIterator1>* = 0)
 {
   typename map_iterator_to_traits<InputIterator1>::Traits  tr;
   return do_intersect(begin1, end1, begin2, end2, tr, k);
@@ -1047,9 +1526,20 @@ inline bool do_intersect (InputIterator1 begin1, InputIterator1 end1,
 
 template <class Kernel, class Container>
 inline Oriented_side oriented_side(const Polygon_2<Kernel, Container>& pgn1,
-                                   const Polygon_2<Kernel, Container>& pgn2)
+                                   const Polygon_2<Kernel, Container>& pgn2,
+                                   Tag_true = Tag_true())
 {
-  return (_oriented_side(pgn1, pgn2));
+  typename Gps_polyline_traits<Kernel>::Traits traits;
+  return (_oriented_side(pgn1, pgn2, traits));
+}
+
+template <class Kernel, class Container>
+inline Oriented_side oriented_side(const Polygon_2<Kernel, Container>& pgn1,
+                                   const Polygon_2<Kernel, Container>& pgn2,
+                                   Tag_false)
+{
+  typename Gps_default_traits<Polygon_2<Kernel, Container> >::Traits traits;
+  return (_oriented_side(pgn1, pgn2, traits));
 }
 
 template <class Kernel, class Container, class Traits>
@@ -1063,9 +1553,21 @@ inline Oriented_side oriented_side(const Polygon_2<Kernel, Container>& pgn1,
 template <class Kernel, class Container>
 inline
 Oriented_side oriented_side(const Polygon_2<Kernel, Container>& pgn1,
-                            const Polygon_with_holes_2<Kernel, Container>& pgn2)
+                            const Polygon_with_holes_2<Kernel, Container>& pgn2,
+                            Tag_true = Tag_true())
 {
-  return (_oriented_side(pgn1, pgn2));
+  typename Gps_polyline_traits<Kernel>::Traits traits;
+  return (_oriented_side(pgn1, pgn2, traits));
+}
+
+template <class Kernel, class Container>
+inline
+Oriented_side oriented_side(const Polygon_2<Kernel, Container>& pgn1,
+                            const Polygon_with_holes_2<Kernel, Container>& pgn2,
+                            Tag_false)
+{
+  typename Gps_default_traits<Polygon_2<Kernel, Container> >::Traits traits;
+  return (_oriented_side(pgn1, pgn2, traits));
 }
 
 template <class Kernel, class Container, class Traits>
@@ -1080,9 +1582,21 @@ Oriented_side oriented_side(const Polygon_2<Kernel, Container>& pgn1,
 template <class Kernel, class Container>
 inline
 Oriented_side oriented_side(const Polygon_with_holes_2<Kernel, Container>& pgn1,
-                            const Polygon_2<Kernel, Container>& pgn2)
+                            const Polygon_2<Kernel, Container>& pgn2,
+                            Tag_true = Tag_true())
 {
-  return (_oriented_side(pgn1, pgn2));
+  typename Gps_polyline_traits<Kernel>::Traits traits;
+  return (_oriented_side(pgn1, pgn2, traits));
+}
+
+template <class Kernel, class Container>
+inline
+Oriented_side oriented_side(const Polygon_with_holes_2<Kernel, Container>& pgn1,
+                            const Polygon_2<Kernel, Container>& pgn2,
+                            Tag_false)
+{
+  typename Gps_default_traits<Polygon_2<Kernel, Container> >::Traits traits;
+  return (_oriented_side(pgn1, pgn2, traits));
 }
 
 template <class Kernel, class Container, class Traits>
@@ -1097,9 +1611,21 @@ Oriented_side oriented_side(const Polygon_with_holes_2<Kernel, Container>& pgn1,
 template <class Kernel, class Container>
 inline
 Oriented_side oriented_side(const Polygon_with_holes_2<Kernel, Container>& pgn1,
-                            const Polygon_with_holes_2<Kernel, Container>& pgn2)
+                            const Polygon_with_holes_2<Kernel, Container>& pgn2,
+                            Tag_true = Tag_true())
 {
-  return (_oriented_side(pgn1, pgn2));
+  typename Gps_polyline_traits<Kernel>::Traits traits;
+  return (_oriented_side(pgn1, pgn2, traits));
+}
+
+template <class Kernel, class Container>
+inline
+Oriented_side oriented_side(const Polygon_with_holes_2<Kernel, Container>& pgn1,
+                            const Polygon_with_holes_2<Kernel, Container>& pgn2,
+                            Tag_false)
+{
+  typename Gps_default_traits<Polygon_2<Kernel, Container> >::Traits traits;
+  return (_oriented_side(pgn1, pgn2, traits));
 }
 
 template <class Kernel, class Container, class Traits>
@@ -1183,9 +1709,20 @@ Oriented_side oriented_side(const General_polygon_with_holes_2<Polygon_>& pgn1,
 
 template <class Kernel, class Container>
 inline Oriented_side oriented_side(const typename Kernel::Point_2& p,
-                                   const Polygon_2<Kernel, Container>& pgn)
+                                   const Polygon_2<Kernel, Container>& pgn,
+                                   Tag_true = Tag_true())
 {
-  return (_oriented_side(p, pgn));
+  typename Gps_polyline_traits<Kernel>::Traits traits;
+  return (_oriented_side(p, pgn, traits));
+}
+
+template <class Kernel, class Container>
+inline Oriented_side oriented_side(const typename Kernel::Point_2& p,
+                                   const Polygon_2<Kernel, Container>& pgn,
+                                   Tag_false)
+{
+  typename Gps_default_traits<Polygon_2<Kernel, Container> >::Traits traits;
+  return (_oriented_side(p, pgn, traits));
 }
 
 template <class Kernel, class Container, class Traits>
@@ -1199,9 +1736,21 @@ inline Oriented_side oriented_side(const typename Kernel::Point_2& p,
 template <class Kernel, class Container>
 inline
 Oriented_side oriented_side(const typename Kernel::Point_2& p,
-                            const Polygon_with_holes_2<Kernel, Container>& pgn)
+                            const Polygon_with_holes_2<Kernel, Container>& pgn,
+                            Tag_true = Tag_true())
 {
-  return (_oriented_side(p, pgn));
+  typename Gps_polyline_traits<Kernel>::Traits traits;
+  return (_oriented_side(p, pgn, traits));
+}
+
+template <class Kernel, class Container>
+inline
+Oriented_side oriented_side(const typename Kernel::Point_2& p,
+                            const Polygon_with_holes_2<Kernel, Container>& pgn,
+                            Tag_false)
+{
+  typename Gps_default_traits<Polygon_2<Kernel, Container> >::Traits traits;
+  return (_oriented_side(p, pgn, traits));
 }
 
 template <class Kernel, class Container, class Traits>

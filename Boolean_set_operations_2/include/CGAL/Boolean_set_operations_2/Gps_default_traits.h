@@ -21,6 +21,7 @@
 #include <CGAL/General_polygon_with_holes_2.h>
 #include <CGAL/General_polygon_2.h>
 #include <CGAL/Gps_segment_traits_2.h>
+#include <CGAL/Arr_polyline_traits_2.h>
 #include <CGAL/Gps_traits_2.h>
 
 namespace CGAL {
@@ -36,6 +37,13 @@ struct Gps_default_traits<CGAL::Polygon_2<Kernel, Container> >
   typedef Gps_segment_traits_2<Kernel,
                                Container,
                                Arr_segment_traits_2<Kernel> >    Traits;
+};
+
+template <class Kernel>
+struct Gps_polyline_traits
+{
+  typedef Arr_polyline_traits_2<Arr_segment_traits_2<Kernel> > Base;
+  typedef Gps_traits_2<Base> Traits;
 };
 
 template <class Kernel, class Container>
