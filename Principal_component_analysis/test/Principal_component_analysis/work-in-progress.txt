@@ -14,21 +14,25 @@ tetrahedra and vice-versa.
 - Detect primitives with Nan as coordinates -> assertion
 - Detect primitives whose sum of lens/areas/volumes is zero, as the centroid may be indefinite in this case -> assertion
 
-
 SIMON
 - Accuracy of iso-cuboids 2D & 3D
-- Kernel coverage
+	TOFIX: closed form integral for dim-2 cuboid-3: check formulas
+- Kernel coverage including EPEK -> done
 - Adding assertions: non-degenerate measures (areas or volumes)
+- Iterator facade from boost
 
 CEDRIC-PIERRE
-- Test stability of closed forms under partitioning refinement/clustering 
+- Test stability of centroids and closed forms under partitioning refinement/clustering 
   - only possible for segments, isocuboids, tetrahedra, triangles
+  - how to measure distance between two lines ? planes ? compare projections of sample points instead.
 - Test convergence of closed forms under refinement: monotonous
   - triangle - points -> sample a surface mesh uniformly
   - volume - points -> sample a volume
 - Test correctness of covariance matrix / order-2 moment with respect to origin
   - consistency with closed forms of article
 
+TARGET
+- code freeze: April 1st
 
 
 
