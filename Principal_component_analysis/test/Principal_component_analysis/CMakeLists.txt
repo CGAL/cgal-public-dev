@@ -24,7 +24,6 @@ if ( CGAL_FOUND )
     endif()
   endforeach()
 
-  create_single_source_cgal_program( "test_partitioning_stability.cpp" )
 else()
 
     message(STATUS "This program requires the CGAL library, and will not be compiled.")
