@@ -322,61 +322,38 @@ int main()
 
   std::cerr << "[Testing line fitting on Segment_2 objects]" << std::endl;
   test_partitioning_stability<Segment_2, Line_2, 1> ();
-  test_partitioning_stability<Segment_2, Line_2, 0> ();
 
   std::cerr << "[Testing line fitting on Triangle_2 objects]" << std::endl;
   test_partitioning_stability<Triangle_2, Line_2, 2> ();
-  test_partitioning_stability<Triangle_2, Line_2, 1> ();
-  test_partitioning_stability<Triangle_2, Line_2, 0> ();
 
   std::cerr << "[Testing line fitting on Iso_rectangle_2 objects]" << std::endl;
   test_partitioning_stability<Iso_rectangle_2, Line_2, 2> ();
-  test_partitioning_stability<Iso_rectangle_2, Line_2, 1> ();
-  test_partitioning_stability<Iso_rectangle_2, Line_2, 0> ();
 
   std::cerr << std::endl << "=== 3D ===" << std::endl << std::endl;
 
   std::cerr << "[Testing line fitting on Segment_3 objects]" << std::endl;
   test_partitioning_stability<Segment_3, Line_3, 1> ();
-  test_partitioning_stability<Segment_3, Line_3, 0> ();
 
   std::cerr << "[Testing plane fitting on Segment_3 objects]" << std::endl;
   test_partitioning_stability<Segment_3, Plane_3, 1> ();
-  test_partitioning_stability<Segment_3, Plane_3, 0> ();
 
   std::cerr << "[Testing line fitting on Triangle_3 objects]" << std::endl;
   test_partitioning_stability<Triangle_3, Line_3, 2> ();
-  test_partitioning_stability<Triangle_3, Line_3, 1> ();
-  test_partitioning_stability<Triangle_3, Line_3, 0> ();
 
   std::cerr << "[Testing plane fitting on Triangle_3 objects]" << std::endl;
   test_partitioning_stability<Triangle_3, Plane_3, 2> ();
-  test_partitioning_stability<Triangle_3, Plane_3, 1> ();
-  test_partitioning_stability<Triangle_3, Plane_3, 0> ();
 
   std::cerr << "[Testing line fitting on Tetrahedron_3 objects]" << std::endl;
   test_partitioning_stability<Tetrahedron_3, Line_3, 3> ();
-  test_partitioning_stability<Tetrahedron_3, Line_3, 2> ();
-  test_partitioning_stability<Tetrahedron_3, Line_3, 1> ();
-  test_partitioning_stability<Tetrahedron_3, Line_3, 0> ();
 
   std::cerr << "[Testing plane fitting on Tetrahedron_3 objects]" << std::endl;
   test_partitioning_stability<Tetrahedron_3, Plane_3, 3> ();
-  test_partitioning_stability<Tetrahedron_3, Plane_3, 2> ();
-  test_partitioning_stability<Tetrahedron_3, Plane_3, 1> ();
-  test_partitioning_stability<Tetrahedron_3, Plane_3, 0> ();
 
   std::cerr << "[Testing line fitting on Iso_cuboid_3 objects]" << std::endl;
   test_partitioning_stability<Iso_cuboid_3, Line_3, 3> ();
-  test_partitioning_stability<Iso_cuboid_3, Line_3, 2> ();
-  test_partitioning_stability<Iso_cuboid_3, Line_3, 1> ();
-  test_partitioning_stability<Iso_cuboid_3, Line_3, 0> ();
 
   std::cerr << "[Testing plane fitting on Iso_cuboid_3 objects]" << std::endl;
   test_partitioning_stability<Iso_cuboid_3, Plane_3, 3> ();
-  test_partitioning_stability<Iso_cuboid_3, Plane_3, 2> ();
-  test_partitioning_stability<Iso_cuboid_3, Plane_3, 1> ();
-  test_partitioning_stability<Iso_cuboid_3, Plane_3, 0> ();
 
   return EXIT_SUCCESS;
 }
