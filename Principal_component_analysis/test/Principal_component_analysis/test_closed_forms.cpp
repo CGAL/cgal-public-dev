@@ -1,5 +1,6 @@
 /*
   This test checks that the closed form covariance matrices are correct
+  Author: Pierre Alliez
  */
 
 #include <CGAL/Simple_cartesian.h>

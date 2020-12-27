@@ -87,6 +87,24 @@ linear_least_squares_fitting_2(InputIterator first,
                                               Default_diagonalize_traits<typename Kernel::FT, 2>());
 }
 
+template < typename InputIterator,
+    typename Kernel,
+    typename Tag,
+    typename DiagonalizeTraits>
+    inline
+    typename DiagonalizeTraits::Covariance_matrix
+    order_2_moment_2(InputIterator first,
+        InputIterator beyond,
+        typename const Kernel::Point_2& reference,
+        const Kernel& kernel,
+        const Tag& tag,
+        const DiagonalizeTraits& diagonalize_traits)
+{
+    typedef typename std::iterator_traits<InputIterator>::value_type Value_type;
+    return internal::order_2_moment_2(first, beyond, 
+        reference, (Value_type*)nullptr, kernel, tag, diagonalize_traits);
+}
+
 
 } //namespace CGAL
 
