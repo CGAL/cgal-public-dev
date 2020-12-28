@@ -37,6 +37,15 @@ CEDRIC-PIERRE
   - triangle - points -> sample a surface mesh uniformly
   - volume - points -> sample a volume
 
+TODO
+- Remove PCA_util
+- compute_moment_2 in compute_moment_2.h
+- compute_moment_3 in compute_moment_3.h
+- fitting_plane_3.h
+- fitting_line_2.h
+- fitting_line_3.h
+- generic convergence test
+
 
 TARGET
 - code freeze: April 1st

@@ -54,7 +54,7 @@ linear_least_squares_fitting_3(InputIterator first,
 
   // assemble covariance matrix
   typename DiagonalizeTraits::Covariance_matrix covariance = {{ 0., 0., 0., 0., 0., 0. }};
-  assemble_covariance_matrix_3(first,beyond,covariance,c,k,(Tetrahedron*) nullptr,tag, diagonalize_traits);
+  assemble_covariance_matrix_3(first, beyond, covariance, c, k,(Tetrahedron*) nullptr, tag, diagonalize_traits);
 
   // compute fitting plane
   return fitting_plane_3(covariance,c,plane,k,diagonalize_traits);

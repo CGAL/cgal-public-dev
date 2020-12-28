@@ -22,8 +22,9 @@ typedef Kernel::Iso_rectangle_2 Iso_rectangle_2;
 typedef CGAL::Default_diagonalize_traits<typename Kernel::FT, 2> Diagonalize_traits_2;
 typedef Diagonalize_traits_2::Covariance_matrix Moment;
 
-
-double distance(Moment& ref, Moment& moment)
+// compute distance between two 2D moment matrices
+// by summing absolute value of term-by-term differences
+double distance_moment_2(Moment& ref, Moment& moment)
 {
 	return std::fabs(moment[0] - ref[0]) +
 		   std::fabs(moment[1] - ref[1]) +
@@ -69,7 +70,7 @@ void test_pca_convergence_iso_rectangle_2()
 		moment[1] /= (FT)points.size();
 		moment[2] /= (FT)points.size();
 
-		double curr_distance = distance(ref, moment);
+		double curr_distance = distance_moment_2(ref, moment);
 
 		std::cerr << "Moment matrix for " << points.size() << " random points: ";
 		std::cerr << moment[0] << " " << moment[1] << " " << moment[2] << 
