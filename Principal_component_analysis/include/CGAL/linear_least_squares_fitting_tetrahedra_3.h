@@ -16,19 +16,21 @@
 
 
 #include <CGAL/basic.h>
-#include <CGAL/centroid.h>
-
-#include <CGAL/PCA_util.h>
+#include <CGAL/pca_fitting_3.h>
+#include <CGAL/compute_moment_3.h>
 #include <CGAL/linear_least_squares_fitting_points_3.h>
 #include <CGAL/linear_least_squares_fitting_segments_3.h>
 #include <CGAL/linear_least_squares_fitting_triangles_3.h>
 #include <CGAL/Subiterator.h>
+
 
 #include <iterator>
 
 namespace CGAL {
 
 namespace internal {
+
+
 
 // fits a plane to a 3D tetrahedron set
 template < typename InputIterator,
@@ -44,23 +46,40 @@ linear_least_squares_fitting_3(InputIterator first,
                                const CGAL::Dimension_tag<3>& tag,
                                const DiagonalizeTraits& diagonalize_traits)
 {
-  typedef typename K::Tetrahedron_3    Tetrahedron;
-
-  // precondition: at least one element in the container.
-  CGAL_precondition(first != beyond);
-
-  // compute centroid
-  c = centroid(first,beyond,K(),tag);
-
-  // assemble covariance matrix
-  typename DiagonalizeTraits::Covariance_matrix covariance = {{ 0., 0., 0., 0., 0., 0. }};
-  assemble_covariance_matrix_3(first, beyond, covariance, c, k,(Tetrahedron*) nullptr, tag, diagonalize_traits);
+  typedef typename K::Tetrahedron_3 Tetrahedron;
+  typename DiagonalizeTraits::Covariance_matrix covariance = { { 0., 0., 0., 0., 0., 0. } };
+  compute_centroid_and_covariance_3(first, beyond, c, covariance, (Tetrahedron*)nullptr, k, tag);
 
   // compute fitting plane
   return fitting_plane_3(covariance,c,plane,k,diagonalize_traits);
 } // end linear_least_squares_fitting_tetrahedrons_3
 
-// fits a plane to a 3D tetrahedron set
+
+// fits a line to a 3D tetrahedron set
+template < typename InputIterator,
+    typename K,
+    typename DiagonalizeTraits >
+    typename K::FT
+    linear_least_squares_fitting_3(InputIterator first,
+        InputIterator beyond,
+        typename K::Line_3& line,     // best fit line
+        typename K::Point_3& c,       // centroid
+        const typename K::Tetrahedron_3*,  // used for indirection
+        const K& k,                   // kernel
+        const CGAL::Dimension_tag<3>& tag,
+        const DiagonalizeTraits& diagonalize_traits)
+{
+    typedef typename K::Tetrahedron_3 Tetrahedron;
+    typename DiagonalizeTraits::Covariance_matrix covariance = { { 0., 0., 0., 0., 0., 0. } };
+    compute_centroid_and_covariance_3(first, beyond, c, covariance, (Tetrahedron*)nullptr, k, tag);
+
+    // compute fitting line
+    return fitting_line_3(covariance, c, line, k, diagonalize_traits);
+
+} // end linear_least_squares_fitting_tetrahedrons_3
+
+
+  // fits a plane to a 3D tetrahedron set
 template < typename InputIterator,
            typename K,
            typename DiagonalizeTraits >
@@ -120,7 +139,6 @@ linear_least_squares_fitting_3(InputIterator first,
      make_subiterator<Segment, 6> (beyond),
      plane,c,(Segment*)nullptr,k,tag,
      diagonalize_traits);
-
 } // end linear_least_squares_fitting_tetrahedrons_3
 
 // fits a plane to a 3D tetrahedron set
@@ -151,36 +169,6 @@ linear_least_squares_fitting_3(InputIterator first,
      diagonalize_traits);
 } // end linear_least_squares_fitting_tetrahedrons_3
 
-// fits a line to a 3D tetrahedron set
-template < typename InputIterator,
-           typename K,
-           typename DiagonalizeTraits >
-typename K::FT
-linear_least_squares_fitting_3(InputIterator first,
-                               InputIterator beyond,
-                               typename K::Line_3& line,     // best fit line
-                               typename K::Point_3& c,       // centroid
-                               const typename K::Tetrahedron_3*,  // used for indirection
-                               const K& k,                   // kernel
-                               const CGAL::Dimension_tag<3>& tag,
-                               const DiagonalizeTraits& diagonalize_traits)
-{
-  typedef typename K::Tetrahedron_3    Tetrahedron;
-
-  // precondition: at least one element in the container.
-  CGAL_precondition(first != beyond);
-
-  // compute centroid
-  c = centroid(first,beyond,K(),tag);
-
-  // assemble covariance matrix
-  typename DiagonalizeTraits::Covariance_matrix covariance = {{ 0., 0., 0., 0., 0., 0. }};
-  assemble_covariance_matrix_3(first,beyond,covariance,c,k,(Tetrahedron*) nullptr,tag, diagonalize_traits);
-
-  // compute fitting line
-  return fitting_line_3(covariance,c,line,k,diagonalize_traits);
-
-} // end linear_least_squares_fitting_tetrahedrons_3
 
 // fits a line to a 3D tetrahedron set
 template < typename InputIterator,

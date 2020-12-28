@@ -93,7 +93,7 @@ template < typename InputIterator,
     typename DiagonalizeTraits>
     inline
     typename DiagonalizeTraits::Covariance_matrix
-    order_2_moment_2(InputIterator first,
+    compute_moment_2(InputIterator first,
         InputIterator beyond,
         const typename Kernel::Point_2& reference,
         const Kernel& kernel,
@@ -101,7 +101,7 @@ template < typename InputIterator,
         const DiagonalizeTraits& diagonalize_traits)
 {
     typedef typename std::iterator_traits<InputIterator>::value_type Value_type;
-    return internal::order_2_moment_2(first, beyond,
+    return internal::compute_moment_2(first, beyond,
         reference, (Value_type*)nullptr, kernel, tag, diagonalize_traits);
 }
 

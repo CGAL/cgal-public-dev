@@ -17,8 +17,13 @@
 
 #include <CGAL/basic.h>
 #include <CGAL/centroid.h>
+<<<<<<< HEAD
 #include <CGAL/PCA_util.h>
 #include <CGAL/Subiterator.h>
+=======
+#include <CGAL/compute_moment_3.h>
+#include <CGAL/pca_fitting_3.h>
+>>>>>>> 63f374b7339... PCA: refactoring to reduce size of code, expose interface for computing moments.
 
 #include <list>
 #include <iterator>
@@ -43,20 +48,38 @@ linear_least_squares_fitting_3(InputIterator first,
 {
   typedef typename K::Triangle_3  Triangle;
 
-  // precondition: at least one element in the container.
-  CGAL_precondition(first != beyond);
-
-  // compute centroid
-  c = centroid(first,beyond,K(),tag);
-
-  // assemble covariance matrix
-  typename DiagonalizeTraits::Covariance_matrix covariance = {{ 0., 0., 0., 0., 0., 0. }};
-  assemble_covariance_matrix_3(first,beyond,covariance,c,k,(Triangle*) nullptr,tag, diagonalize_traits);
+  typename DiagonalizeTraits::Covariance_matrix covariance = { { 0., 0., 0., 0., 0., 0. } };
+  compute_centroid_and_covariance_3(first, beyond, c, covariance, (Triangle*)nullptr, k, tag);
 
   // compute fitting plane
   return fitting_plane_3(covariance,c,plane,k,diagonalize_traits);
 
 } // end linear_least_squares_fitting_triangles_3
+
+// fits a line to a 3D triangle set
+template < typename InputIterator,
+    typename K,
+    typename DiagonalizeTraits >
+    typename K::FT
+    linear_least_squares_fitting_3(InputIterator first,
+        InputIterator beyond,
+        typename K::Line_3& line,     // best fit line
+        typename K::Point_3& c,       // centroid
+        const typename K::Triangle_3*,  // used for indirection
+        const K& k,                   // kernel
+        const CGAL::Dimension_tag<2>& tag,
+        const DiagonalizeTraits& diagonalize_traits)
+{
+    typedef typename K::Triangle_3  Triangle;
+
+    typename DiagonalizeTraits::Covariance_matrix covariance = { { 0., 0., 0., 0., 0., 0. } };
+    compute_centroid_and_covariance_3(first, beyond, c, covariance, (Triangle*)nullptr, k, tag);
+
+    // compute fitting line
+    return fitting_line_3(covariance, c, line, k, diagonalize_traits);
+
+} // end linear_least_squares_fitting_triangles_3
+
 
 // fits a plane to a 3D triangle set
 template < typename InputIterator,
@@ -116,36 +139,6 @@ linear_least_squares_fitting_3(InputIterator first,
 
 } // end linear_least_squares_fitting_triangles_3
 
-// fits a line to a 3D triangle set
-template < typename InputIterator,
-           typename K,
-           typename DiagonalizeTraits >
-typename K::FT
-linear_least_squares_fitting_3(InputIterator first,
-                               InputIterator beyond,
-                               typename K::Line_3& line,     // best fit line
-                               typename K::Point_3& c,       // centroid
-                               const typename K::Triangle_3*,  // used for indirection
-                               const K& k,                   // kernel
-                               const CGAL::Dimension_tag<2>& tag,
-                               const DiagonalizeTraits& diagonalize_traits)
-{
-  typedef typename K::Triangle_3  Triangle;
-
-  // precondition: at least one element in the container.
-  CGAL_precondition(first != beyond);
-
-  // compute centroid
-  c = centroid(first,beyond,K(),tag);
-
-  // assemble covariance matrix
-  typename DiagonalizeTraits::Covariance_matrix covariance = {{ 0., 0., 0., 0., 0., 0. }};
-  assemble_covariance_matrix_3(first,beyond,covariance,c,k,(Triangle*) nullptr,tag, diagonalize_traits);
-
-  // compute fitting line
-  return fitting_line_3(covariance,c,line,k,diagonalize_traits);
-
-} // end linear_least_squares_fitting_triangles_3
 
 // fits a line to a 3D triangle set
 template < typename InputIterator,

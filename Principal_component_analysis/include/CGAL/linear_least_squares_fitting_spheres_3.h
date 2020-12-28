@@ -17,13 +17,16 @@
 
 #include <CGAL/basic.h>
 #include <CGAL/centroid.h>
-#include <CGAL/PCA_util.h>
+#include <CGAL/pca_fitting_3.h>
+#include <CGAL/compute_moment_3.h>
+
 
 #include <iterator>
 
 namespace CGAL {
 
 namespace internal {
+
 
 // fits a plane to a set of 3D balls (3D)
 template < typename InputIterator,
@@ -39,20 +42,13 @@ linear_least_squares_fitting_3(InputIterator first,
                                const CGAL::Dimension_tag<3>& tag,
                                const DiagonalizeTraits& diagonalize_traits)
 {
-  typedef typename K::Sphere_3    Sphere;
+  typedef typename K::Sphere_3 Sphere;
 
-  // precondition: at least one element in the container.
-  CGAL_precondition(first != beyond);
-
-  // compute centroid
-  c = centroid(first,beyond,K(),tag);
-
-  // assemble covariance matrix
   typename DiagonalizeTraits::Covariance_matrix covariance = {{ 0., 0., 0., 0., 0., 0. }};
-  assemble_covariance_matrix_3(first,beyond,covariance,c,k,(Sphere*) nullptr,tag, diagonalize_traits);
+  compute_centroid_and_covariance_3(first, beyond, c, covariance, (Sphere*)nullptr, k, tag);
 
   // compute fitting plane
-  return fitting_plane_3(covariance,c,plane,k,diagonalize_traits);
+  return fitting_plane_3(covariance, c, plane, k, diagonalize_traits);
 
 } // end linear_least_squares_fitting_spheres_3
 
@@ -72,18 +68,11 @@ linear_least_squares_fitting_3(InputIterator first,
 {
   typedef typename K::Sphere_3    Sphere;
 
-  // precondition: at least one element in the container.
-  CGAL_precondition(first != beyond);
-
-  // compute centroid
-  c = centroid(first,beyond,K(),tag);
-
-  // assemble covariance matrix
-  typename DiagonalizeTraits::Covariance_matrix covariance = {{ 0., 0., 0., 0., 0., 0. }};
-  assemble_covariance_matrix_3(first,beyond,covariance,c,k,(Sphere*) nullptr,tag, diagonalize_traits);
+  typename DiagonalizeTraits::Covariance_matrix covariance = { { 0., 0., 0., 0., 0., 0. } };
+  compute_centroid_and_covariance(begin, beyond, c, covariance, (Sphere*)nullptr, k, tag);
 
   // compute fitting plane
-  return fitting_plane_3(covariance,c,plane,k,diagonalize_traits);
+  return fitting_plane_3(covariance, c, plane, k, diagonalize_traits);
 
 } // end linear_least_squares_fitting_spheres_3
 
@@ -104,16 +93,8 @@ linear_least_squares_fitting_3(InputIterator first,
 {
   typedef typename K::Sphere_3  Sphere;
 
-  // precondition: at least one element in the container.
-  CGAL_precondition(first != beyond);
-
-  // compute centroid
-  c = centroid(first,beyond,K(),tag);
-
-  // assemble covariance matrix
-  typename DiagonalizeTraits::Covariance_matrix covariance = {{ 0., 0., 0., 0., 0., 0. }};
-  assemble_covariance_matrix_3(first,beyond,covariance,c,k,(Sphere*) nullptr,tag, diagonalize_traits);
-
+  typename DiagonalizeTraits::Covariance_matrix covariance = { { 0., 0., 0., 0., 0., 0. } };
+  compute_centroid_and_covariance(first, beyond, c, covariance, (Sphere*)nullptr, k, tag);
 
   // compute fitting line
   return fitting_line_3(covariance,c,line,k,diagonalize_traits);
@@ -136,15 +117,8 @@ linear_least_squares_fitting_3(InputIterator first,
 {
   typedef typename K::Sphere_3  Sphere;
 
-  // precondition: at least one element in the container.
-  CGAL_precondition(first != beyond);
-
-  // compute centroid
-  c = centroid(first,beyond,K(),tag);
-
-  // assemble covariance matrix
-  typename DiagonalizeTraits::Covariance_matrix covariance = {{ 0., 0., 0., 0., 0., 0. }};
-  assemble_covariance_matrix_3(first,beyond,covariance,c,k,(Sphere*) nullptr,tag, diagonalize_traits);
+  typename DiagonalizeTraits::Covariance_matrix covariance = { { 0., 0., 0., 0., 0., 0. } };
+  compute_centroid_and_covariance(first, beyond, c, covariance, (Sphere*)nullptr, k, tag);
 
   // compute fitting line
   return fitting_line_3(covariance,c,line,k,diagonalize_traits);

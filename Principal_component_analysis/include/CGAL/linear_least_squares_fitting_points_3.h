@@ -17,7 +17,8 @@
 
 #include <CGAL/basic.h>
 #include <CGAL/centroid.h>
-#include <CGAL/PCA_util.h>
+#include <CGAL/pca_fitting_3.h>
+#include <CGAL/compute_moment_3.h>
 
 #include <iterator>
 
@@ -43,18 +44,12 @@ linear_least_squares_fitting_3(InputIterator first,
 {
   typedef typename K::Point_3  Point;
 
-  // precondition: at least one element in the container.
-  CGAL_precondition(first != beyond);
-
-  // compute centroid
-  c = centroid(first,beyond,K(),tag);
-
-  // assemble covariance matrix
-  typename DiagonalizeTraits::Covariance_matrix covariance = {{ 0., 0., 0., 0., 0., 0. }};
-  assemble_covariance_matrix_3(first,beyond,covariance,c,k,(Point*) nullptr,tag, diagonalize_traits);
+  typename DiagonalizeTraits::Covariance_matrix covariance = { { 0., 0., 0., 0., 0., 0. } };
+  compute_centroid_and_covariance_3(first, beyond, c, covariance, (Point*)nullptr, k, tag);
 
   // compute fitting plane
-  return fitting_plane_3(covariance,c,plane,k,diagonalize_traits);
+  return fitting_plane_3(covariance, c, plane, k, diagonalize_traits);
+
 } // end fit plane to point set
 
 // fits a line to a 3D point set
@@ -76,18 +71,11 @@ linear_least_squares_fitting_3(InputIterator first,
 {
   typedef typename K::Point_3  Point;
 
-  // precondition: at least one element in the container.
-  CGAL_precondition(first != beyond);
-
-  // compute centroid
-  c = centroid(first,beyond,K(),tag);
-
-  // assemble covariance matrix
-  typename DiagonalizeTraits::Covariance_matrix covariance = {{ 0., 0., 0., 0., 0., 0. }};
-  assemble_covariance_matrix_3(first,beyond,covariance,c,k,(Point*) nullptr,tag, diagonalize_traits);
+  typename DiagonalizeTraits::Covariance_matrix covariance = { { 0., 0., 0., 0., 0., 0. } };
+  compute_centroid_and_covariance_3(first, beyond, c, covariance, (Point*)nullptr, k, tag);
 
   // compute fitting line
-  return fitting_line_3(covariance,c,line,k,diagonalize_traits);
+  return fitting_line_3(covariance, c, line, k, diagonalize_traits);
 } // end fit line to point set
 
 } // end namespace internal

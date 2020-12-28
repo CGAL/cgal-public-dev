@@ -17,6 +17,9 @@
 
 #include <CGAL/basic.h>
 #include <CGAL/centroid.h>
+#include <CGAL/pca_fitting_2.h>
+#include <CGAL/compute_moment_2.h>
+
 #include <iterator>
 #include <cmath>
 
@@ -24,52 +27,7 @@ namespace CGAL {
 
 namespace internal {
 
-    // Computes closed form order-2 moment matrix with respect to given reference point.
-    template < typename InputIterator, typename K, typename DiagonalizeTraits>
-    typename DiagonalizeTraits::Covariance_matrix // return symmetric 2x2 matrix
-        order_2_moment_2(InputIterator first,
-            InputIterator beyond,
-            const typename K::Point_2& reference, // given reference point
-            const typename K::Point_2*,   // used for indirection
-            const K&,                             // kernel
-            const CGAL::Dimension_tag<0>& tag,
-            const DiagonalizeTraits&)
-    {
-        // types
-        typedef typename K::FT       FT;
-        typedef typename K::Point_2  Point;
-        typedef typename K::Vector_2 Vector;
-
-        // precondition: at least one element in the container.
-        CGAL_precondition(first != beyond);
-
-        // assemble moment matrix as a 2D symmetric matrix.
-        // Matrix numbering:
-        // 0 1
-        //   2
-
-        typename DiagonalizeTraits::Covariance_matrix moment = { { 0., 0., 0. } };
-
-        for (InputIterator it = first;
-            it != beyond;
-            it++)
-        {
-            const Point& p = *it;
-            Vector d = p - reference; // centered data point wrt reference point
-            moment[0] += d.x() * d.x();
-            moment[1] += d.x() * d.y();
-            moment[2] += d.y() * d.y();
-        }
-
-        return moment;
-    } // end order_2_moment_2
-
-
 // Fits a line to a 2D point set.
-// Returns a fitting quality (1 - lambda_min/lambda_max):
-//  1 is best  (zero variance orthogonally to the fitting line);
-//  0 is worst (isotropic case, returns a line with horizontal
-//              direction by default).
 template < typename InputIterator,
            typename K,
            typename DiagonalizeTraits>
@@ -79,63 +37,17 @@ linear_least_squares_fitting_2(InputIterator first,
                                typename K::Line_2& line,   // best fit line
                                typename K::Point_2& c,     // centroid
                                const typename K::Point_2*,// used for indirection
-                               const K&,                   // kernel
+                               const K& k,                   // kernel
                                const CGAL::Dimension_tag<0>& tag,
-                               const DiagonalizeTraits&)
+                               const DiagonalizeTraits& diagonalize_traits)
 {
   // types
-  typedef typename K::FT       FT;
-  typedef typename K::Line_2   Line;
-  typedef typename K::Point_2  Point;
-  typedef typename K::Vector_2 Vector;
+  typedef typename K::Point_2 Point;
 
-  // precondition: at least one element in the container.
-  CGAL_precondition(first != beyond);
+  typename DiagonalizeTraits::Covariance_matrix covariance = { { 0., 0., 0. } };
+  compute_centroid_and_covariance_2(begin, beyond, c, covariance, (Point*)nullptr, k, tag);
 
-  // compute centroid
-  c = centroid(first,beyond,K(),tag);
-
-  // assemble covariance matrix as a semi-definite matrix.
-  // Matrix numbering:
-  // 0 1
-  //   2
-
-  typename DiagonalizeTraits::Covariance_matrix covariance = {{ 0., 0., 0. }};
-
-  for(InputIterator it = first;
-      it != beyond;
-      it++)
-  {
-    const Point& p = *it;
-    Vector d = p - c; // centered data point
-    covariance[0] += d.x() * d.x();
-    covariance[1] += d.x() * d.y();
-    covariance[2] += d.y() * d.y();
-  }
-
-  // solve for eigenvalues and eigenvectors.
-  // eigen values are sorted in ascending order,
-  // eigen vectors are sorted in accordance.
-  typename DiagonalizeTraits::Vector eigen_values = {{ 0. , 0. }};
-  typename DiagonalizeTraits::Matrix eigen_vectors = {{ 0., 0., 0. }};
-  DiagonalizeTraits::diagonalize_selfadjoint_covariance_matrix
-    (covariance, eigen_values, eigen_vectors);
-
-  // check unicity and build fitting line accordingly
-  if(eigen_values[0] != eigen_values[1])
-  {
-    // regular case
-    line = Line(c, Vector (eigen_vectors[2], eigen_vectors[3]));
-    return (FT)1.0 - eigen_values[0] / eigen_values[1];
-  }
-  else
-  {
-    // isotropic case (infinite number of directions)
-    // by default: assemble a line that goes through
-    // the centroid and with a default horizontal vector.
-    line = Line(c, Vector(FT(1), FT(0)));
-    return (FT)0.0;
-  }
+  return fitting_line_2(covariance, c, line, k, diagonalize_traits);
 } // end linear_least_squares_fitting_2 for point set
 
 } // end namespace internal

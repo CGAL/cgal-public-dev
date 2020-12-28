@@ -71,7 +71,7 @@ linear_least_squares_fitting_3(InputIterator first,
 {
   typedef typename std::iterator_traits<InputIterator>::value_type Value_type;
   typedef typename Kernel_traits<Value_type>::Kernel Kernel;
-  return CGAL::linear_least_squares_fitting_3(first,beyond,object,centroid,tag,Kernel(),
+  return CGAL::linear_least_squares_fitting_3(first, beyond, object, centroid, tag, Kernel(),
                                               Default_diagonalize_traits<typename Kernel::FT, 3>());
 
 }
@@ -91,7 +91,7 @@ linear_least_squares_fitting_3(InputIterator first,
   typedef typename std::iterator_traits<InputIterator>::value_type Value_type;
   typedef typename Kernel_traits<Value_type>::Kernel Kernel;
   typename Kernel::Point_3 centroid; // not used by caller
-  return CGAL::linear_least_squares_fitting_3(first,beyond,object,centroid,tag,Kernel(),
+  return CGAL::linear_least_squares_fitting_3(first, beyond, object, centroid, tag, Kernel(),
                                               Default_diagonalize_traits<typename Kernel::FT, 3>());
 
 }
