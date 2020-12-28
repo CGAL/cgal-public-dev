@@ -34,10 +34,10 @@ namespace internal {
     typename DiagonalizeTraits::Covariance_matrix // return symmetric 2x2 matrix
         order_2_moment_2(InputIterator first,
             InputIterator beyond,
-            typename const K::Point_2& reference, // given reference point
+            const typename K::Point_2& reference, // given reference point
             const typename K::Iso_rectangle_2*,   // used for indirection
             const K&,                             // kernel
-            const CGAL::Dimension_tag<2>& tag, 
+            const CGAL::Dimension_tag<2>& tag,
             const DiagonalizeTraits&)
     {
         // types
