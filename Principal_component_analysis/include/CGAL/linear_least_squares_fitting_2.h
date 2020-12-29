@@ -90,19 +90,19 @@ linear_least_squares_fitting_2(InputIterator first,
 template < typename InputIterator,
     typename Kernel,
     typename Tag,
-    typename DiagonalizeTraits>
+    typename Covariance_matrix>
     inline
-    typename DiagonalizeTraits::Covariance_matrix
+    void 
     compute_moment_2(InputIterator first,
         InputIterator beyond,
+        typename Covariance_matrix& moment,
         const typename Kernel::Point_2& reference,
         const Kernel& kernel,
-        const Tag& tag,
-        const DiagonalizeTraits& diagonalize_traits)
+        const Tag& tag)
 {
     typedef typename std::iterator_traits<InputIterator>::value_type Value_type;
-    return internal::compute_moment_2(first, beyond,
-        reference, (Value_type*)nullptr, kernel, tag, diagonalize_traits);
+    internal::compute_moment_2(first, beyond, moment, reference, 
+        kernel, (Value_type*)nullptr, tag);
 }
 
 

@@ -60,6 +60,9 @@ compute_moment_2(InputIterator first,
   // precondition: at least one element in the container.
   CGAL_precondition(first != beyond);
 
+  // init moment to zero
+  moment[0] = moment[1] = moment[2] = 0.0;
+
   // compute moment matrix as a 2D symmetric matrix.
   for (InputIterator it = first;
        it != beyond;
@@ -94,9 +97,14 @@ compute_moment_2(InputIterator first,
   typedef typename CGAL::Linear_algebraCd<FT> LA;
   typedef typename LA::Matrix Matrix;
 
+  // init moment to zero
+  moment[0] = moment[1] = moment[2] = 0.0;
+
   // assemble 2nd order moment about the origin.
-  FT temp[4] = { 1.0, 0.5, 0.5, 1.0 };
-  Matrix canonical_moment = FT(1.0 / 3.0) * init_matrix<FT>(2, temp);
+  // global factor sqrt(2) omitted for simplicity, 
+  // see https://hal.inria.fr/inria-00327027/document
+  FT temp[4] = { 2.0, 1.0, 1.0, 2.0 }; 
+  Matrix canonical_moment = FT(1.0 / 6.0) * init_matrix<FT>(2, temp);
 
   FT mass = 0.0; // accumulate segment lengths
   for (InputIterator it = first;
@@ -157,9 +165,11 @@ compute_moment_2(InputIterator first,
   // precondition: at least one element in the container.
   CGAL_precondition(first != beyond);
 
+  // init moment to zero
+  moment[0] = moment[1] = moment[2] = 0.0;
+
   // assemble order-2 matrix as a semi-definite matrix.
   FT mass = 0.0;
-  // moment = { { 0., 0., 0. } };
 
   // assemble reference 2nd order moment about the origin.
   FT temp[4] = { 1.0 / 3.0, 0.25,
@@ -239,7 +249,9 @@ compute_moment_2(InputIterator first,
   FT temp[4] = { 0.25, 0.0,
                  0.0,  0.25 };
   Matrix canonical_moment = init_matrix<FT>(2, temp);
-  //  Matrix moment = Matrix(2,true,PI);
+
+  // init moment to zero
+  moment[0] = moment[1] = moment[2] = 0.0;
 
   for (InputIterator it = first;
        it != beyond;
@@ -305,12 +317,15 @@ compute_moment_2(InputIterator first,
   typedef typename CGAL::Linear_algebraCd<FT> LA;
   typedef typename LA::Matrix Matrix;
 
-  FT mass = 0.0;
+  // init moment to zero
+  moment[0] = moment[1] = moment[2] = 0.0;
 
   // assemble 2nd order moment about the origin.
   FT temp[4] = { 1.0, 0.0,
                  0.0, 1.0 };
   Matrix canonical_moment = init_matrix<FT>(2, temp);
+
+  FT mass = 0.0;
 
   for (InputIterator it = first;
        it != beyond;
@@ -321,7 +336,6 @@ compute_moment_2(InputIterator first,
     const Circle& t = *it;
 
     // defined for convenience.
-    // FT example = CGAL::to_double(t[0].x());
     FT radius = CGAL::approximate_sqrt(t.squared_radius());
     FT delta[4] = { radius, 0.0,
                     0.0, radius };
@@ -375,6 +389,9 @@ compute_moment_2(InputIterator first,
   typedef typename K::Triangle_2 Triangle;
   typedef typename CGAL::Linear_algebraCd<FT> LA;
   typedef typename LA::Matrix Matrix;
+
+  // init moment to zero
+  moment[0] = moment[1] = moment[2] = 0.0;
 
   // assemble the 2nd order moment about the origin.
   FT temp[4] = { 1.0 / 12.0, 1.0 / 24.0,

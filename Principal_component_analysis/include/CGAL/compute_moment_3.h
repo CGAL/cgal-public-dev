@@ -46,6 +46,7 @@ compute_moment_3(InputIterator first,
   //     5
   moment[0] = moment[1] = moment[2] =
   moment[3] = moment[4] = moment[5] = (FT)0.0;
+
   for(InputIterator it = first;
       it != beyond;
       it++)
@@ -83,6 +84,9 @@ compute_moment_3(InputIterator first,
   // 0 1 2
   //   3 4
   //     5
+  moment[0] = moment[1] = moment[2] =
+  moment[3] = moment[4] = moment[5] = (FT)0.0;
+
   //Final combined moment matrix for all triangles and their combined mass
   FT mass = 0.0;
 
@@ -162,6 +166,9 @@ compute_moment_3(InputIterator first,
   // 0 1 2
   //   3 4
   //     5
+  moment[0] = moment[1] = moment[2] =
+  moment[3] = moment[4] = moment[5] = (FT)0.0;
+
   // final combined moment matrix for all cuboids and their combined mass
   FT mass = (FT)0.0;
 
@@ -371,6 +378,9 @@ compute_moment_3(InputIterator first,
   // 0 1 2
   //   3 4
   //     5
+  moment[0] = moment[1] = moment[2] =
+  moment[3] = moment[4] = moment[5] = (FT)0.0;
+
   //Final combined moment matrix for all spheres and their combined mass
   FT mass = 0.0;
 
@@ -455,7 +465,10 @@ compute_moment_3(InputIterator first,
   // 0 1 2
   //   3 4
   //     5
-  //Final combined moment matrix for all spheres and their combined mass
+  moment[0] = moment[1] = moment[2] =
+  moment[3] = moment[4] = moment[5] = (FT)0.0;
+
+  // Final combined moment matrix for all spheres and their combined mass
   FT mass = 0.0;
 
   // assemble 2nd order moment about the origin.
@@ -543,6 +556,9 @@ compute_moment_3(InputIterator first,
   // 0 1 2
   //   3 4
   //     5
+  moment[0] = moment[1] = moment[2] =
+  moment[3] = moment[4] = moment[5] = (FT)0.0;
+
   // assemble 2nd order moment about the origin.
   Matrix canonical_moment;
   canonical_moment << 1.0 / 60.0, 1.0 / 120.0, 1.0 / 120.0,
@@ -616,7 +632,10 @@ compute_moment_3(InputIterator first,
   // 0 1 2
   //   3 4
   //     5
-  //Final combined moment matrix for all segments and their combined mass
+  moment[0] = moment[1] = moment[2] =
+      moment[3] = moment[4] = moment[5] = (FT)0.0;
+
+  // Final combined moment matrix for all segments and their combined mass
   FT mass = 0.0;
 
   // assemble 2nd order moment about the origin.
