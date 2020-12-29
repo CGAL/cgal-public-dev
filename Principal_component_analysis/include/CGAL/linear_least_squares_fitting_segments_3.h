@@ -48,7 +48,7 @@ linear_least_squares_fitting_3(InputIterator first,
   typedef typename K::Segment_3  Segment;
 
   typename DiagonalizeTraits::Covariance_matrix covariance = {{ 0., 0., 0., 0., 0., 0. }};
-  compute_centroid_and_covariance(first, beyond, c, covariance, (Segment*)nullptr, k, tag);
+  compute_centroid_and_covariance_3(first, beyond, c, covariance, (Segment*)nullptr, k, tag);
 
   // compute fitting plane
   return fitting_plane_3(covariance, c, plane, k, diagonalize_traits);
@@ -72,7 +72,7 @@ template < typename InputIterator,
     typedef typename K::Segment_3  Segment;
 
     typename DiagonalizeTraits::Covariance_matrix covariance = { { 0., 0., 0., 0., 0., 0. } };
-    compute_centroid_and_covariance(first, beyond, c, covariance, (Segment*)nullptr, k, tag);
+    compute_centroid_and_covariance_3(first, beyond, c, covariance, (Segment*)nullptr, k, tag);
 
     // compute fitting line
     return fitting_line_3(covariance, c, line, k, diagonalize_traits);

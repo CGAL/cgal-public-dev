@@ -27,7 +27,6 @@
 
 namespace CGAL {
 
-<<<<<<< HEAD
 namespace internal {
 // Fits a line to a 2D triangle set.
 // Returns a fitting quality (1 - lambda_min/lambda_max):
@@ -43,12 +42,12 @@ linear_least_squares_fitting_2(InputIterator first,
                                typename Kernel::Line_2& line,   // best fit line
                                typename Kernel::Point_2& c,     // centroid
                                const typename Kernel::Triangle_2*,// used for indirection
-                               const Kernel&,                   // kernel
+                               const Kernel& k,                   // kernel
                                const CGAL::Dimension_tag<2>& tag,
-                               const DiagonalizeTraits&)
+                               const DiagonalizeTraits& diagonalize_traits)
 {
   // types
-  typedef typename K::Triangle_2 Triangle;
+  typedef typename Kernel::Triangle_2 Triangle;
 
   typename DiagonalizeTraits::Covariance_matrix covariance = { { 0., 0., 0. } };
   compute_centroid_and_covariance_2(first, beyond, c, covariance, (Triangle*)nullptr, k, tag);

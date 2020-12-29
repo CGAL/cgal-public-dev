@@ -23,32 +23,42 @@ namespace CGAL {
 
 namespace internal {
 
-// compute centroid and covariance matrix
+// compute order-2 moment matrix from a point set
 template < typename InputIterator,
-           typename K,
-           typename DiagonalizeTraits,
-           typename Dimension,
-           typename Primitive>
+           typename K >
 void
-compute_centroid_and_covariance_3(InputIterator first,
-                                  InputIterator beyond,
-                                  typename K::Point_3& c,       // centroid
-                                  typename Eigen_diagonalize_traits<typename K::FT, 3>::Covariance_matrix& covariance,
-                                  const typename Primitive* primitive,  // used for indirection
-                                  const K& k,                   // kernel
-                                  const Dimension& tag)
+compute_moment_3(InputIterator first,
+                 InputIterator beyond,
+                 typename Eigen_diagonalize_traits<typename K::FT, 3>::Covariance_matrix& moment, // moment matrix
+                 const typename K::Point_3& c, // centroid
+                 const K& k,                    // kernel
+                 const typename K::Point_3*,// used for indirection
+                 const CGAL::Dimension_tag<0>&)
 {
-  // precondition: at least one element in the container.
-  CGAL_precondition(first != beyond);
+  typedef typename K::FT       FT;
+  typedef typename K::Point_3  Point;
+  typedef typename K::Vector_3 Vector;
 
-  // compute centroid
-  c = centroid(first, beyond, k, tag);
-
-  // assemble covariance matrix
-  compute_moment_3(first, beyond, covariance, c, k, primitive, tag);
-
-} // end compute_centroid_and_covariance_3
-
+  // Matrix numbering:
+  // 0 1 2
+  //   3 4
+  //     5
+  moment[0] = moment[1] = moment[2] =
+  moment[3] = moment[4] = moment[5] = (FT)0.0;
+  for(InputIterator it = first;
+      it != beyond;
+      it++)
+  {
+    const Point& p = *it;
+    Vector d = k.construct_vector_3_object()(c,p);
+    moment[0] += d.x() * d.x();
+    moment[1] += d.x() * d.y();
+    moment[2] += d.x() * d.z();
+    moment[3] += d.y() * d.y();
+    moment[4] += d.y() * d.z();
+    moment[5] += d.z() * d.z();
+  }
+}
 
 // compute order-2 moment matrix from a triangle set
 template < typename InputIterator,
@@ -757,6 +767,30 @@ compute_moment_3(InputIterator first,
   compute_moment_3(first, beyond, moment, c, k, s, tag);
 }
 
+// compute centroid and covariance matrix
+template < typename InputIterator,
+           typename K,
+           typename Dimension,
+           typename Primitive>
+void
+compute_centroid_and_covariance_3(InputIterator first,
+                                  InputIterator beyond,
+                                  typename K::Point_3& c,       // centroid
+                                  typename Eigen_diagonalize_traits<typename K::FT, 3>::Covariance_matrix& covariance,
+                                  const Primitive* primitive,  // used for indirection
+                                  const K& k,                   // kernel
+                                  const Dimension& tag)
+{
+  // precondition: at least one element in the container.
+  CGAL_precondition(first != beyond);
+
+  // compute centroid
+  c = centroid(first, beyond, k, tag);
+
+  // assemble covariance matrix
+  compute_moment_3(first, beyond, covariance, c, k, primitive, tag);
+
+} // end compute_centroid_and_covariance_3
 
 } // end namespace internal
 

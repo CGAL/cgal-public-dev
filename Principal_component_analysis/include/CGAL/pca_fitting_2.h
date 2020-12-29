@@ -39,7 +39,7 @@ fitting_line_2(typename DiagonalizeTraits::Covariance_matrix& covariance, // cov
 {
   typedef typename K::FT       FT;
   typedef typename K::Line_2   Line;
-  typedef typename K::Vector_3 Vector;
+  typedef typename K::Vector_2 Vector;
 
   // solve for eigenvalues and eigenvectors.
   // eigen values are sorted in ascending order,

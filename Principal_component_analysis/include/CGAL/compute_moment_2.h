@@ -22,32 +22,23 @@ namespace CGAL {
 
 namespace internal {
 
-// compute centroid and covariance matrix
-template < typename InputIterator,
-           typename K,
-           typename DiagonalizeTraits,
-           typename Dimension,
-           typename Primitive>
-void
-compute_centroid_and_covariance_2(InputIterator first,
-                                  InputIterator beyond,
-                                  typename K::Point_2& c,       // centroid
-                                  typename Eigen_diagonalize_traits<typename K::FT, 2>::Covariance_matrix& covariance,
-                                  const typename Primitive* primitive,  // used for indirection
-                                  const K& k,                   // kernel
-                                  const Dimension& tag)
+// Initialize a matrix in n dimension by an array or numbers
+template <typename FT>
+typename CGAL::Linear_algebraCd<FT>::Matrix
+init_matrix(const int n,
+            FT entries[])
 {
-  // precondition: at least one element in the container.
-  CGAL_precondition(first != beyond);
+  CGAL_assertion(n > 1); // dimension > 1
+  typedef typename CGAL::Linear_algebraCd<FT>::Matrix Matrix;
 
-  // compute centroid
-  c = centroid(first, beyond, k, tag);
+  Matrix m(n);
+  int i,j;
+  for(i = 0; i < n; i++)
+    for(j = 0; j < n; j++)
+      m[i][j] = entries[i*n+j];
 
-  // assemble covariance matrix
-  compute_moment_2(first, beyond, covariance, c, k, primitive, tag);
-
-} // end compute_centroid_and_covariance_3
-
+  return m;
+} // end initialization of matrix
 
 // Computes closed form order-2 moment matrix of a 2D point set
 // with respect to a given reference point.
@@ -95,6 +86,14 @@ compute_moment_2(InputIterator first,
                  const typename K::Segment_2*,   // used for indirection
                  const CGAL::Dimension_tag<1>& tag)
 {
+  // types
+  typedef typename K::FT       FT;
+  typedef typename K::Line_2   Line;
+  typedef typename K::Vector_2 Vector;
+  typedef typename K::Segment_2 Segment;
+  typedef typename CGAL::Linear_algebraCd<FT> LA;
+  typedef typename LA::Matrix Matrix;
+
   // assemble 2nd order moment about the origin.
   FT temp[4] = { 1.0, 0.5, 0.5, 1.0 };
   Matrix canonical_moment = FT(1.0 / 3.0) * init_matrix<FT>(2, temp);
@@ -120,10 +119,10 @@ compute_moment_2(InputIterator first,
     // Transform the standard 2nd order moment using the transformation matrix
     transformation = length * transformation * canonical_moment * LA::transpose(transformation);
 
-    // add to covariance matrix
-    covariance[0] += transformation[0][0];
-    covariance[1] += transformation[0][1];
-    covariance[2] += transformation[1][1];
+    // add to moment matrix
+    moment[0] += transformation[0][0];
+    moment[1] += transformation[0][1];
+    moment[2] += transformation[1][1];
 
     mass += length;
   }
@@ -131,10 +130,10 @@ compute_moment_2(InputIterator first,
   CGAL_assertion_msg (mass != FT(0), "Can't compute PCA of null measure.");
 
   // Translate the 2nd order moment calculated about the origin to
-  // the center of mass to get the covariance.
-  covariance[0] += mass * (-1.0 * reference.x() * reference.x());
-  covariance[1] += mass * (-1.0 * reference.x() * reference.y());
-  covariance[2] += mass * (-1.0 * reference.y() * reference.y());
+  // the center of mass to get the moment.
+  moment[0] += mass * (-1.0 * reference.x() * reference.x());
+  moment[1] += mass * (-1.0 * reference.x() * reference.y());
+  moment[2] += mass * (-1.0 * reference.y() * reference.y());
 }
 
 // Computes closed form order-2 moment matrix of 2D iso rectangles
@@ -239,7 +238,7 @@ compute_moment_2(InputIterator first,
   // assemble 2nd order moment about the origin.
   FT temp[4] = { 0.25, 0.0,
                  0.0,  0.25 };
-  Matrix moment = init_matrix<FT>(2, temp);
+  Matrix canonical_moment = init_matrix<FT>(2, temp);
   //  Matrix moment = Matrix(2,true,PI);
 
   for (InputIterator it = first;
@@ -262,7 +261,7 @@ compute_moment_2(InputIterator first,
     // Find the 2nd order moment for the circle wrt to the origin by an affine transformation.
 
     // Transform the standard 2nd order moment using the transformation matrix
-    transformation = area * transformation * moment * LA::transpose(transformation);
+    transformation = area * transformation * canonical_moment * LA::transpose(transformation);
 
     // Translate the 2nd order moment to the center of the circle.
     FT x0 = t.center().x();
@@ -311,7 +310,7 @@ compute_moment_2(InputIterator first,
   // assemble 2nd order moment about the origin.
   FT temp[4] = { 1.0, 0.0,
                  0.0, 1.0 };
-  Matrix moment = init_matrix<FT>(2, temp);
+  Matrix canonical_moment = init_matrix<FT>(2, temp);
 
   for (InputIterator it = first;
        it != beyond;
@@ -332,7 +331,7 @@ compute_moment_2(InputIterator first,
     // Find the 2nd order moment for the circle wrt to the origin by an affine transformation.
 
     // Transform the standard 2nd order moment using the transformation matrix
-    transformation = FT(0.5) * length * transformation * moment * LA::transpose(transformation);
+    transformation = FT(0.5) * length * transformation * canonical_moment * LA::transpose(transformation);
 
     // Translate the 2nd order moment to the center of the circle.
     FT x0 = t.center().x();
@@ -370,10 +369,10 @@ compute_moment_2(InputIterator first,
                  const CGAL::Dimension_tag<2>& tag)
 {
   // types
-  typedef typename Kernel::FT       FT;
-  typedef typename Kernel::Line_2   Line;
-  typedef typename Kernel::Vector_2 Vector;
-  typedef typename Kernel::Triangle_2 Triangle;
+  typedef typename K::FT       FT;
+  typedef typename K::Line_2   Line;
+  typedef typename K::Vector_2 Vector;
+  typedef typename K::Triangle_2 Triangle;
   typedef typename CGAL::Linear_algebraCd<FT> LA;
   typedef typename LA::Matrix Matrix;
 
@@ -404,7 +403,7 @@ compute_moment_2(InputIterator first,
     // Find the 2nd order moment for the triangle wrt to the origin by an affine transformation.
 
     // Transform the standard 2nd order moment using the transformation matrix
-    const transformation = 2 * area * transformation * canonical_moment * LA::transpose(transformation);
+    transformation = 2 * area * transformation * canonical_moment * LA::transpose(transformation);
 
     // Translate the 2nd order moment to (x0, y0).
     const FT xav0 = (delta[0] + delta[1]) / 3.0;
@@ -426,6 +425,31 @@ compute_moment_2(InputIterator first,
   moment[1] += mass * (-1.0 * reference.x() * reference.y());
   moment[2] += mass * (-1.0 * reference.y() * reference.y());
 }
+
+// compute centroid and covariance matrix
+template < typename InputIterator,
+           typename K,
+           typename Dimension,
+           typename Primitive>
+void
+compute_centroid_and_covariance_2(InputIterator first,
+                                  InputIterator beyond,
+                                  typename K::Point_2& c,       // centroid
+                                  typename Eigen_diagonalize_traits<typename K::FT, 2>::Covariance_matrix& covariance,
+                                  const Primitive* primitive,  // used for indirection
+                                  const K& k,                   // kernel
+                                  const Dimension& tag)
+{
+  // precondition: at least one element in the container.
+  CGAL_precondition(first != beyond);
+
+  // compute centroid
+  c = centroid(first, beyond, k, tag);
+
+  // assemble covariance matrix
+  compute_moment_2(first, beyond, covariance, c, k, primitive, tag);
+
+} // end compute_centroid_and_covariance_3
 
 } // end namespace internal
 

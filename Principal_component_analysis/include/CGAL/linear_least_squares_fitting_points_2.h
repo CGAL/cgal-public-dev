@@ -45,7 +45,7 @@ linear_least_squares_fitting_2(InputIterator first,
   typedef typename K::Point_2 Point;
 
   typename DiagonalizeTraits::Covariance_matrix covariance = { { 0., 0., 0. } };
-  compute_centroid_and_covariance_2(begin, beyond, c, covariance, (Point*)nullptr, k, tag);
+  compute_centroid_and_covariance_2(first, beyond, c, covariance, (Point*)nullptr, k, tag);
 
   return fitting_line_2(covariance, c, line, k, diagonalize_traits);
 } // end linear_least_squares_fitting_2 for point set

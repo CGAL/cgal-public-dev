@@ -69,7 +69,7 @@ linear_least_squares_fitting_3(InputIterator first,
   typedef typename K::Sphere_3    Sphere;
 
   typename DiagonalizeTraits::Covariance_matrix covariance = { { 0., 0., 0., 0., 0., 0. } };
-  compute_centroid_and_covariance(begin, beyond, c, covariance, (Sphere*)nullptr, k, tag);
+  compute_centroid_and_covariance_3(first, beyond, c, covariance, (Sphere*)nullptr, k, tag);
 
   // compute fitting plane
   return fitting_plane_3(covariance, c, plane, k, diagonalize_traits);
@@ -94,7 +94,7 @@ linear_least_squares_fitting_3(InputIterator first,
   typedef typename K::Sphere_3  Sphere;
 
   typename DiagonalizeTraits::Covariance_matrix covariance = { { 0., 0., 0., 0., 0., 0. } };
-  compute_centroid_and_covariance(first, beyond, c, covariance, (Sphere*)nullptr, k, tag);
+  compute_centroid_and_covariance_3(first, beyond, c, covariance, (Sphere*)nullptr, k, tag);
 
   // compute fitting line
   return fitting_line_3(covariance,c,line,k,diagonalize_traits);
@@ -118,7 +118,7 @@ linear_least_squares_fitting_3(InputIterator first,
   typedef typename K::Sphere_3  Sphere;
 
   typename DiagonalizeTraits::Covariance_matrix covariance = { { 0., 0., 0., 0., 0., 0. } };
-  compute_centroid_and_covariance(first, beyond, c, covariance, (Sphere*)nullptr, k, tag);
+  compute_centroid_and_covariance_3(first, beyond, c, covariance, (Sphere*)nullptr, k, tag);
 
   // compute fitting line
   return fitting_line_3(covariance,c,line,k,diagonalize_traits);

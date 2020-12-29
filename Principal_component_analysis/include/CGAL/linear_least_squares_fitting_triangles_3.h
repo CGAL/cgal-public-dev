@@ -17,13 +17,9 @@
 
 #include <CGAL/basic.h>
 #include <CGAL/centroid.h>
-<<<<<<< HEAD
-#include <CGAL/PCA_util.h>
 #include <CGAL/Subiterator.h>
-=======
 #include <CGAL/compute_moment_3.h>
 #include <CGAL/pca_fitting_3.h>
->>>>>>> 63f374b7339... PCA: refactoring to reduce size of code, expose interface for computing moments.
 
 #include <list>
 #include <iterator>

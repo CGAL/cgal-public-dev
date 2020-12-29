@@ -38,7 +38,7 @@ linear_least_squares_fitting_2(InputIterator first,
                                typename K::Line_2& line,   // best fit line
                                typename K::Point_2& c,     // centroid
                                const typename K::Segment_2*,// used for indirection
-                               const K&,                   // kernel
+                               const K& k,                   // kernel
                                const CGAL::Dimension_tag<1>& tag,
                                const DiagonalizeTraits& diagonalize_traits)
 {
