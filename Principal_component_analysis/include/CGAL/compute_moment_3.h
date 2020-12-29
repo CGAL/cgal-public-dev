@@ -25,11 +25,12 @@ namespace internal {
 
 // compute order-2 moment matrix from a point set
 template < typename InputIterator,
+           typename Moment,
            typename K >
 void
 compute_moment_3(InputIterator first,
                  InputIterator beyond,
-                 typename Eigen_diagonalize_traits<typename K::FT, 3>::Covariance_matrix& moment, // moment matrix
+                 Moment& moment, // moment matrix
                  const typename K::Point_3& c, // centroid
                  const K& k,                    // kernel
                  const typename K::Point_3*,// used for indirection
@@ -62,11 +63,12 @@ compute_moment_3(InputIterator first,
 
 // compute order-2 moment matrix from a triangle set
 template < typename InputIterator,
+           typename Moment,
            typename K >
 void
 compute_moment_3(InputIterator first,
                  InputIterator beyond,
-                 typename Eigen_diagonalize_traits<typename K::FT, 3>::Covariance_matrix& moment, // moment matrix
+                 Moment& moment, // moment matrix
                  const typename K::Point_3& c, // centroid
                  const K&,                    // kernel
                  const typename K::Triangle_3*,// used for indirection
@@ -140,11 +142,12 @@ compute_moment_3(InputIterator first,
 
 // compute order-2 moment matrix from a cuboid set
 template < typename InputIterator,
+           typename Moment,
            typename K >
 void
 compute_moment_3(InputIterator first,
                  InputIterator beyond,
-                 typename Eigen_diagonalize_traits<typename K::FT, 3>::Covariance_matrix& moment, // moment matrix
+                 Moment& moment, // moment matrix
                  const typename K::Point_3& c, // centroid
                  const K&,                    // kernel
                  const typename K::Iso_cuboid_3*,// used for indirection
@@ -233,11 +236,12 @@ compute_moment_3(InputIterator first,
 
 // compute order-2 moment matrix from a cuboid set
 template < typename InputIterator,
+           typename Moment,
            typename K >
 void
 compute_moment_3(InputIterator first,
                  InputIterator beyond,
-                 typename Eigen_diagonalize_traits<typename K::FT, 3>::Covariance_matrix& moment, // moment matrix
+                 Moment& moment, // moment matrix
                  const typename K::Point_3& c, // centroid
                  const K&,                    // kernel
                  const typename K::Iso_cuboid_3*,// used for indirection
@@ -347,11 +351,12 @@ compute_moment_3(InputIterator first,
 
 // compute order-2 moment matrix from a sphere set
 template < typename InputIterator,
+           typename Moment,
            typename K >
 void
 compute_moment_3(InputIterator first,
                  InputIterator beyond,
-                 typename Eigen_diagonalize_traits<typename K::FT, 3>::Covariance_matrix& moment, // moment matrix
+                 Moment& moment, // moment matrix
                  const typename K::Point_3& c, // centroid
                  const K&,                     // kernel
                  const typename K::Sphere_3*,  // used for indirection
@@ -430,11 +435,12 @@ compute_moment_3(InputIterator first,
 }
 // compute order-2 moment matrix from a sphere set
 template < typename InputIterator,
+           typename Moment,
            typename K >
 void
 compute_moment_3(InputIterator first,
                  InputIterator beyond,
-                 typename Eigen_diagonalize_traits<typename K::FT, 3>::Covariance_matrix& moment, // moment matrix
+                 Moment& moment, // moment matrix
                  const typename K::Point_3& c, // centroid
                  const K&,                     // kernel
                  const typename K::Sphere_3*,  // used for indirection
@@ -514,11 +520,12 @@ compute_moment_3(InputIterator first,
 
 // compute order-2 moment matrix from a tetrahedron set
 template < typename InputIterator,
+           typename Moment,
            typename K >
 void
 compute_moment_3(InputIterator first,
                  InputIterator beyond,
-                 typename Eigen_diagonalize_traits<typename K::FT, 3>::Covariance_matrix& moment, // moment matrix
+                 Moment& moment, // moment matrix
                  const typename K::Point_3& c, // centroid
                  const K&,                    // kernel
                  const typename K::Tetrahedron_3*,// used for indirection
@@ -589,11 +596,12 @@ compute_moment_3(InputIterator first,
 
 // compute order-2 moment matrix from a segment set
 template < typename InputIterator,
+           typename Moment,
            typename K >
 void
 compute_moment_3(InputIterator first,
                  InputIterator beyond,
-                 typename Eigen_diagonalize_traits<typename K::FT, 3>::Covariance_matrix& moment, // moment matrix
+                 Moment& moment, // moment matrix
                  const typename K::Point_3& c, // centroid
                  const K&,                    // kernel
                  const typename K::Segment_3*,// used for indirection
@@ -667,6 +675,7 @@ compute_moment_3(InputIterator first,
 
 // Variants using default
 template < typename InputIterator,
+           typename Moment,
            typename K >
 void
 compute_moment_3(InputIterator first,
@@ -681,6 +690,7 @@ compute_moment_3(InputIterator first,
 }
 
 template < typename InputIterator,
+           typename Moment,
            typename K >
 void
 compute_moment_3(InputIterator first,
@@ -695,6 +705,7 @@ compute_moment_3(InputIterator first,
 }
 
 template < typename InputIterator,
+           typename Moment,
            typename K >
 void
 compute_moment_3(InputIterator first,
@@ -709,6 +720,7 @@ compute_moment_3(InputIterator first,
 }
 
 template < typename InputIterator,
+           typename Moment,
            typename K >
 void
 compute_moment_3(InputIterator first,
@@ -726,6 +738,7 @@ compute_moment_3(InputIterator first,
 
 
 template < typename InputIterator,
+           typename Moment,
            typename K >
 void
 compute_moment_3(InputIterator first,
@@ -740,6 +753,7 @@ compute_moment_3(InputIterator first,
 }
 
 template < typename InputIterator,
+           typename Moment,
            typename K >
 void
 compute_moment_3(InputIterator first,
@@ -754,6 +768,7 @@ compute_moment_3(InputIterator first,
 }
 
 template < typename InputIterator,
+           typename Moment,
            typename K >
 void
 compute_moment_3(InputIterator first,
@@ -770,13 +785,14 @@ compute_moment_3(InputIterator first,
 // compute centroid and covariance matrix
 template < typename InputIterator,
            typename K,
+           typename Moment,
            typename Dimension,
            typename Primitive>
 void
 compute_centroid_and_covariance_3(InputIterator first,
                                   InputIterator beyond,
                                   typename K::Point_3& c,       // centroid
-                                  typename Eigen_diagonalize_traits<typename K::FT, 3>::Covariance_matrix& covariance,
+                                  Moment& covariance,
                                   const Primitive* primitive,  // used for indirection
                                   const K& k,                   // kernel
                                   const Dimension& tag)

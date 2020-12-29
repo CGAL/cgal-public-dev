@@ -42,11 +42,11 @@ init_matrix(const int n,
 
 // Computes closed form order-2 moment matrix of a 2D point set
 // with respect to a given reference point.
-template < typename InputIterator, typename K>
+template < typename InputIterator, typename Moment, typename K>
 void
 compute_moment_2(InputIterator first,
                  InputIterator beyond,
-                 typename Eigen_diagonalize_traits<typename K::FT, 2>::Covariance_matrix& moment, // moment matrix
+                 Moment& moment, // moment matrix
                  const typename K::Point_2& reference, // given reference point
                  const K&, // kernel
                  const typename K::Point_2*,   // used for indirection
@@ -76,11 +76,11 @@ compute_moment_2(InputIterator first,
 
 // Computes closed form order-2 moment matrix of 2D segments
 // with respect to a given reference point.
-template < typename InputIterator, typename K>
+template < typename InputIterator, typename Moment, typename K>
 void
 compute_moment_2(InputIterator first,
                  InputIterator beyond,
-                 typename Eigen_diagonalize_traits<typename K::FT, 2>::Covariance_matrix& moment, // moment matrix
+                 Moment& moment, // moment matrix
                  const typename K::Point_2& reference, // given reference point
                  const K&,                             // kernel
                  const typename K::Segment_2*,   // used for indirection
@@ -138,11 +138,11 @@ compute_moment_2(InputIterator first,
 
 // Computes closed form order-2 moment matrix of 2D iso rectangles
 // with respect to a given reference point.
-template < typename InputIterator, typename K>
+template < typename InputIterator, typename Moment, typename K>
 void
 compute_moment_2(InputIterator first,
                  InputIterator beyond,
-                 typename Eigen_diagonalize_traits<typename K::FT, 2>::Covariance_matrix& moment, // moment matrix
+                 Moment& moment, // moment matrix
                  const typename K::Point_2& reference, // given reference point
                  const K&,                             // kernel
                  const typename K::Iso_rectangle_2*,   // used for indirection
@@ -218,11 +218,11 @@ compute_moment_2(InputIterator first,
 
 // Computes closed form order-2 moment matrix of 2D discs
 // with respect to a given reference point.
-template < typename InputIterator, typename K>
+template < typename InputIterator, typename Moment, typename K>
 void
 compute_moment_2(InputIterator first,
                  InputIterator beyond,
-                 typename Eigen_diagonalize_traits<typename K::FT, 2>::Covariance_matrix& moment, // moment matrix
+                 Moment& moment, // moment matrix
                  const typename K::Point_2& reference, // given reference point
                  const K&,                             // kernel
                  const typename K::Circle_2*,   // used for indirection
@@ -287,11 +287,11 @@ compute_moment_2(InputIterator first,
 
 // Computes closed form order-2 moment matrix of 2D circles
 // with respect to a given reference point.
-template < typename InputIterator, typename K>
+template < typename InputIterator, typename Moment, typename K>
 void
 compute_moment_2(InputIterator first,
                  InputIterator beyond,
-                 typename Eigen_diagonalize_traits<typename K::FT, 2>::Covariance_matrix& moment, // moment matrix
+                 Moment& moment, // moment matrix
                  const typename K::Point_2& reference, // given reference point
                  const K&,                             // kernel
                  const typename K::Circle_2*,   // used for indirection
@@ -358,11 +358,11 @@ compute_moment_2(InputIterator first,
 
 // Computes closed form order-2 moment matrix of 2D circles
 // with respect to a given reference point.
-template < typename InputIterator, typename K>
+template < typename InputIterator, typename Moment, typename K>
 void
 compute_moment_2(InputIterator first,
                  InputIterator beyond,
-                 typename Eigen_diagonalize_traits<typename K::FT, 2>::Covariance_matrix& moment, // moment matrix
+                 Moment& moment, // moment matrix
                  const typename K::Point_2& reference, // given reference point
                  const K&,                             // kernel
                  const typename K::Triangle_2*,   // used for indirection
@@ -429,13 +429,14 @@ compute_moment_2(InputIterator first,
 // compute centroid and covariance matrix
 template < typename InputIterator,
            typename K,
+           typename Moment,
            typename Dimension,
            typename Primitive>
 void
 compute_centroid_and_covariance_2(InputIterator first,
                                   InputIterator beyond,
                                   typename K::Point_2& c,       // centroid
-                                  typename Eigen_diagonalize_traits<typename K::FT, 2>::Covariance_matrix& covariance,
+                                  Moment& covariance,
                                   const Primitive* primitive,  // used for indirection
                                   const K& k,                   // kernel
                                   const Dimension& tag)
