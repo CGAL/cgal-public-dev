@@ -92,16 +92,16 @@ template < typename InputIterator,
     typename Tag,
     typename Covariance_matrix>
     inline
-    void 
+    void
     compute_moment_2(InputIterator first,
         InputIterator beyond,
-        typename Covariance_matrix& moment,
+        Covariance_matrix& moment,
         const typename Kernel::Point_2& reference,
         const Kernel& kernel,
         const Tag& tag)
 {
     typedef typename std::iterator_traits<InputIterator>::value_type Value_type;
-    internal::compute_moment_2(first, beyond, moment, reference, 
+    internal::compute_moment_2(first, beyond, moment, reference,
         kernel, (Value_type*)nullptr, tag);
 }
 
