@@ -18,31 +18,45 @@
 namespace CGAL
 {
 
+// Helper to deduce Kernel from Polygon_2 / PWH_2
+template <typename Polygon>
+struct Kernel_of_polygon;
+template <typename Kernel>
+struct Kernel_of_polygon<Polygon_2<Kernel> > { using type = Kernel; };
+template <typename Kernel>
+struct Kernel_of_polygon<Polygon_with_holes_2<Kernel> > { using type = Kernel; };
+
+// Helper to map Polygon_2 -> General_polygon_2 / PWH_2 -> General_PWH_2
+template <typename Polygon>
+struct General_polygon_of_polygon;
+template <typename Kernel>
+struct General_polygon_of_polygon<Polygon_2<Kernel> >
+{ using type = General_polygon_2<typename Gps_polyline_traits<Kernel>::Base>; };
+template <typename Kernel>
+struct General_polygon_of_polygon<Polygon_with_holes_2<Kernel> >
+{ using type = General_polygon_with_holes_2<General_polygon_2<typename Gps_polyline_traits<Kernel>::Base> >; };
+
+// Helper to detect if a type is Polygon_2 / PWH_2
 template <typename InputIterator>
-struct Is_Kernel_Polygon_2_iterator
-{
-  static constexpr bool value = false;
-};
-
+struct Is_Kernel_Polygon_2
+{ static constexpr bool value = false; };
 template <typename Kernel>
-struct Is_Kernel_Polygon_2_iterator<Polygon_2<Kernel> >
-{
-  static constexpr bool value = true;
-};
-
+struct Is_Kernel_Polygon_2<Polygon_2<Kernel> >
+{ static constexpr bool value = true; };
 template <typename Kernel>
-struct Is_Kernel_Polygon_2_iterator<Polygon_with_holes_2<Kernel> >
-{
-  static constexpr bool value = true;
-};
+struct Is_Kernel_Polygon_2<Polygon_with_holes_2<Kernel> >
+{ static constexpr bool value = true; };
 
+// Helper to enable/disable if InputIterator's value type is Polygon_2 / PWH_2
 template <typename InputIterator>
 using Enable_if_Polygon_2_iterator
-= typename std::enable_if<Is_Kernel_Polygon_2_iterator<InputIterator>::value>::type;
+= typename std::enable_if<Is_Kernel_Polygon_2
+                          <typename std::iterator_traits<InputIterator>::value_type>::value>::type;
 
 template <typename InputIterator>
 using Disable_if_Polygon_2_iterator
-= typename std::enable_if<!Is_Kernel_Polygon_2_iterator<InputIterator>::value>::type;
+= typename std::enable_if<!Is_Kernel_Polygon_2
+                          <typename std::iterator_traits<InputIterator>::value_type>::value>::type;
 
 // Default Polygon conversion (identity)
 template <typename Traits>
@@ -104,24 +118,21 @@ convert_polygon (const Polygon_with_holes_2<Kernel>& pwh,
 }
 
 // Convert CGAL::Polygon_2 to General_polygon_2<Polyline_traits>
-template <typename InputIterator, typename Kernel>
+template <typename InputIterator, typename Traits>
 boost::transform_iterator
 <std::function
- <General_polygon_2<typename Gps_polyline_traits<Kernel>::Base>
+ <typename General_polygon_of_polygon<typename std::iterator_traits<InputIterator>::value_type>::type
   (typename std::iterator_traits<InputIterator>::reference)>,
  InputIterator>
-convert_polygon_iterator (InputIterator it,
-                          typename Gps_polyline_traits<Kernel>::Traits& tr)
+convert_polygon_iterator (InputIterator it, Traits& tr)
 {
-  using Polyline_traits = typename Gps_polyline_traits<Kernel>::Base;
-  using Input_type = typename std::iterator_traits<InputIterator>::reference;
-  using Return_type = General_polygon_2<Polyline_traits>;
+  using Input_type = typename std::iterator_traits<InputIterator>::value_type;
+  using Return_type = typename General_polygon_of_polygon<Input_type>::type;
   using Function_type = std::function<Return_type(Input_type)>;
 
-  Function_type func = std::bind (convert_polygon<Kernel>, std::placeholders::_1, std::ref(tr));
+  Function_type func = [&tr](const Input_type& p) -> Return_type { return convert_polygon(p, tr); };
 
-  return boost::transform_iterator<Function_type, InputIterator>
-    (it, func);
+  return boost::transform_iterator<Function_type, InputIterator> (it, func);
 }
 
 
