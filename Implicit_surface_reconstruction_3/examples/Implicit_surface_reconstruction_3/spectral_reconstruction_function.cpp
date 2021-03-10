@@ -2,7 +2,7 @@
 #include <CGAL/Polyhedron_3.h>
 #include <CGAL/IO/Polyhedron_iostream.h>
 #include <CGAL/spectral_surface_reconstruction.h>
-#include <CGAL/IO/read_xyz_points.h>
+#include <CGAL/IO/read_points.h>
 #include <CGAL/property_map.h>
 
 #include <vector>
@@ -18,10 +18,8 @@ typedef CGAL::Polyhedron_3<Kernel> Polyhedron;
 int main(void)
 {
   std::vector<Pwn> points;
-  std::ifstream stream("../data/sphere.xyz");
-  if (!stream ||
-      !CGAL::read_xyz_points(
-           stream,
+  if (!CGAL::read_points(
+           "data/sphere.xyz",
            std::back_inserter(points),
            CGAL::parameters::point_map(CGAL::First_of_pair_property_map<Pwn>()).
            normal_map(CGAL::Second_of_pair_property_map<Pwn>())))

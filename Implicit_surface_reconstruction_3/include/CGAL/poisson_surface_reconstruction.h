@@ -74,7 +74,7 @@ namespace CGAL {
     \param tag surface mesher tag.
     \return `true` if reconstruction succeeded, `false` otherwise.
   */
-  template <typename PointInputIterator,
+  template <typename PointRange,
             typename PointMap,
             typename NormalMap,
             typename PolygonMesh,
