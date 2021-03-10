@@ -1,12 +1,12 @@
-/// \defgroup PkgPoissonSurfaceReconstruction3Ref Poisson Surface Reconstruction Reference
+/// \defgroup PkgImplicitSurfaceReconstruction3Ref Implicit Surface Reconstruction Reference
 /*!
-\addtogroup PkgPoissonSurfaceReconstruction3Ref
-\cgalPkgDescriptionBegin{Poisson Surface Reconstruction,PkgPoissonSurfaceReconstruction3}
+\addtogroup PkgImplicitSurfaceReconstruction3Ref
+\cgalPkgDescriptionBegin{Implicit Surface Reconstruction,PkgImplicitSurfaceReconstruction3}
 \cgalPkgPicture{surface_reconstruction_points_detail.png}
 \cgalPkgSummaryBegin
-\cgalPkgAuthors{Pierre Alliez, Laurent Saboret, Gaël Guennebaud}
-\cgalPkgDesc{This package implements a surface reconstruction method: Poisson Surface Reconstruction. It takes as input a set of points with oriented normals and computes an implicit function. The \cgal surface mesh generator can then be used to extract an iso-surface from this function.  }
-\cgalPkgManuals{Chapter_Poisson_Surface_Reconstruction,PkgPoissonSurfaceReconstruction3Ref}
+\cgalPkgAuthors{Pierre Alliez, Laurent Saboret, Gaël Guennebaud, Tong Zhao}
+\cgalPkgDesc{This package provides 2 surface reconstruction methods: Poisson Surface Reconstruction and Spectral Surface Reconstruction. It takes as input a set of points with oriented normals / unoriented normals and computes an implicit function. The \cgal surface mesh generator can then be used to extract an iso-surface from this function.  }
+\cgalPkgManuals{Chapter_Implicit_Surface_Reconstruction,PkgImplicitSurfaceReconstruction3Ref}
 \cgalPkgSummaryEnd
 \cgalPkgShortInfoBegin
 \cgalPkgSince{3.5}
@@ -20,6 +20,6 @@
 \cgalClassifedRefPages
 \cgalCRPSection{Classes}
 - `CGAL::Poisson_reconstruction_function<GeomTraits>`
+- `CGAL::Implicit_reconstruction_function<GeomTraits>`
 
 */
-

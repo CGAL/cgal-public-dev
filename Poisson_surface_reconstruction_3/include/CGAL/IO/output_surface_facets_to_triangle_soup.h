@@ -12,7 +12,7 @@
 #ifndef CGAL_OUTPUT_SURFACE_FACETS_TO_TRIANGLE_SOUP_H
 #define CGAL_OUTPUT_SURFACE_FACETS_TO_TRIANGLE_SOUP_H
 
-#include <CGAL/license/Poisson_surface_reconstruction_3.h>
+#include <CGAL/license/Implicit_surface_reconstruction_3.h>
 
 
 #include <CGAL/Polyhedron_3.h>

@@ -1,7 +1,7 @@
 # This is the CMake script for compiling this folder.
 
 cmake_minimum_required(VERSION 3.1...3.15)
-project(Poisson_surface_reconstruction_3_Examples)
+project( Implicit_surface_reconstruction_3_Examples )
 
 # Find CGAL
 find_package(CGAL REQUIRED)
@@ -37,13 +37,20 @@ if(TARGET CGAL::Eigen3_support)
   create_single_source_cgal_program("poisson_reconstruction_example.cpp")
   target_link_libraries(poisson_reconstruction_example
                         PUBLIC CGAL::Eigen3_support)
-  create_single_source_cgal_program("poisson_reconstruction.cpp")
-  target_link_libraries(poisson_reconstruction PUBLIC CGAL::Eigen3_support)
   create_single_source_cgal_program("poisson_reconstruction_function.cpp")
   target_link_libraries(poisson_reconstruction_function
                         PUBLIC CGAL::Eigen3_support)
   create_single_source_cgal_program("tutorial_example.cpp")
   target_link_libraries(tutorial_example PUBLIC CGAL::Eigen3_support)
+
+  find_package(Spectra REQUIRED)
+  if(SPECTRA_FOUND)
+    include_directories("${SPECTRA_INCLUDE_DIR}")
+    create_single_source_cgal_program( "spectral_reconstruction_function.cpp" )
+    target_link_libraries(spectral_reconstruction_function PUBLIC CGAL::Eigen3_support)
+  else()
+    message(STATUS "NOTICE: Spectra was not found, tests won't be compiled.")
+  endif()
 else()
   message(
     STATUS

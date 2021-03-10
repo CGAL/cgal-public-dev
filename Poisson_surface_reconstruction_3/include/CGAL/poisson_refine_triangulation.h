@@ -9,17 +9,17 @@
 //
 // Author(s)     : Laurent RINEAU, Laurent Saboret
 
-#ifndef CGAL_POISSON_REFINE_TRIANGULATION_H
-#define CGAL_POISSON_REFINE_TRIANGULATION_H
+#ifndef CGAL_IMPLICIT_REFINE_TRIANGULATION_H
+#define CGAL_IMPLICIT_REFINE_TRIANGULATION_H
 
-#include <CGAL/license/Poisson_surface_reconstruction_3.h>
+#include <CGAL/license/Implicit_surface_reconstruction_3.h>
 
 
 // CGAL
 #include <CGAL/IO/trace.h>
 #include <CGAL/Mesher_level.h>
-#include <CGAL/Mesh_3/Poisson_refine_cells_3.h>
-#include <CGAL/Poisson_mesh_cell_criteria_3.h>
+#include <CGAL/Mesh_3/Implicit_refine_cells_3.h>
+#include <CGAL/Implicit_mesh_cell_criteria_3.h>
 #include <CGAL/surface_reconstruction_points_assertions.h>
 #include <CGAL/Surface_mesh_traits_generator_3.h>
 
@@ -27,7 +27,7 @@ namespace CGAL {
 
 /// \cond SKIP_IN_MANUAL
 
-/// Utility class for poisson_refine_triangulation():
+/// Utility class for implicit_refine_triangulation():
 /// implements Delaunay refinement in a loose bounding
 /// box of point set (break bad tetrahedra, where
 /// bad means badly shaped or too big).
@@ -40,10 +40,10 @@ template <class Tr,
           class Container = Meshes::Double_map_container<typename Tr::Cell_handle,
                                                          typename Criteria::Cell_quality>
 >
-class Poisson_mesher_level_impl_base :
-    public Mesh_3::Poisson_refine_tets_with_oracle_base<Tr, Criteria, Surface, Oracle, Container>
+class Implicit_mesher_level_impl_base :
+    public Mesh_3::Implicit_refine_tets_with_oracle_base<Tr, Criteria, Surface, Oracle, Container>
 {
-  typedef Mesh_3::Poisson_refine_tets_with_oracle_base<Tr, Criteria, Surface, Oracle, Container> Base;
+  typedef Mesh_3::Implicit_refine_tets_with_oracle_base<Tr, Criteria, Surface, Oracle, Container> Base;
 
 public:
   // Inherited methods and fields used below
@@ -61,7 +61,7 @@ public:
 public:
   /** \name CONSTRUCTORS */
 
-  Poisson_mesher_level_impl_base(Tr& t, Criteria crit, unsigned int max_vert, Surface& surface, Oracle& oracle)
+  Implicit_mesher_level_impl_base(Tr& t, Criteria crit, unsigned int max_vert, Surface& surface, Oracle& oracle)
     : Base(t, crit, surface, oracle),
       max_vertices(max_vert) ///< number of vertices bound (ignored if zero)
   {}
@@ -133,46 +133,46 @@ private:
   /* --- private datas --- */
   unsigned int max_vertices; ///< number of vertices bound (ignored if zero)
 
-}; // end Poisson_mesher_level_impl_base
+}; // end Implicit_mesher_level_impl_base
 
 
-/// Utility class for poisson_refine_triangulation():
+/// Utility class for implicit_refine_triangulation():
 /// glue class that inherits from both Mesher_level
-/// and Poisson_mesher_level_impl_base.
+/// and Implicit_mesher_level_impl_base.
 template <typename Tr,
           typename Criteria,
           typename Surface,
           typename Oracle = typename CGAL::Surface_mesh_traits_generator_3<Surface>::type,
           typename PreviousLevel = Null_mesher_level
  >
-class Poisson_mesher_level :
-  public Poisson_mesher_level_impl_base<Tr, Criteria, Surface, Oracle>,
+class Implicit_mesher_level :
+  public Implicit_mesher_level_impl_base<Tr, Criteria, Surface, Oracle>,
   public Mesher_level <
     Tr,
-    Poisson_mesher_level<Tr, Criteria, Surface, Oracle, PreviousLevel>,
+    Implicit_mesher_level<Tr, Criteria, Surface, Oracle, PreviousLevel>,
     typename Tr::Cell_handle,
     PreviousLevel,
     Triangulation_mesher_level_traits_3<Tr>
   >
 {
-  typedef Poisson_mesher_level_impl_base<Tr, Criteria, Surface, Oracle> Base;
+  typedef Implicit_mesher_level_impl_base<Tr, Criteria, Surface, Oracle> Base;
 
 public:
   typedef Mesher_level <
     Tr,
-    Poisson_mesher_level<Tr, Criteria, Surface, Oracle, PreviousLevel>,
+    Implicit_mesher_level<Tr, Criteria, Surface, Oracle, PreviousLevel>,
     typename Tr::Cell_handle,
     PreviousLevel,
     Triangulation_mesher_level_traits_3<Tr>
   > Mesher;
 
-  Poisson_mesher_level(Tr& t, Criteria criteria, unsigned int max_vertices, Surface& surface, Oracle& oracle, PreviousLevel& previous_level)
+  Implicit_mesher_level(Tr& t, Criteria criteria, unsigned int max_vertices, Surface& surface, Oracle& oracle, PreviousLevel& previous_level)
     : Base(t, criteria, max_vertices, surface, oracle),
       Mesher(previous_level)
   {
   }
 
-}; // end class Poisson_mesher_level
+}; // end class Implicit_mesher_level
 
 
 /// Delaunay refinement in a loose bounding box
@@ -202,7 +202,7 @@ template <typename Tr,
           typename Surface,
           typename Sizing_field,
           typename Second_sizing_field>
-unsigned int poisson_refine_triangulation(
+unsigned int implicit_refine_triangulation(
   Tr& tr,
   double radius_edge_ratio_bound, ///< radius edge ratio bound (>= 1.0)
   const Sizing_field& sizing_field, ///< sizing field for cell radius bound
@@ -215,13 +215,13 @@ unsigned int poisson_refine_triangulation(
   CGAL_surface_reconstruction_points_precondition(radius_edge_ratio_bound >= 1.0);
 
   // Mesher_level types
-  typedef Poisson_mesh_cell_criteria_3<
+  typedef Implicit_mesh_cell_criteria_3<
     Tr
     , Sizing_field
     , Second_sizing_field
     > Tets_criteria;
   typedef typename CGAL::Surface_mesh_traits_generator_3<Surface>::type Oracle;
-  typedef Poisson_mesher_level<Tr, Tets_criteria, Surface, Oracle, Null_mesher_level> Refiner;
+  typedef Implicit_mesher_level<Tr, Tets_criteria, Surface, Oracle, Null_mesher_level> Refiner;
 
 
   std::size_t nb_vertices = tr.number_of_vertices(); // get former #vertices
@@ -247,4 +247,4 @@ unsigned int poisson_refine_triangulation(
 
 } //namespace CGAL
 
-#endif // CGAL_POISSON_REFINE_TRIANGULATION_H
+#endif // CGAL_IMPLICIT_REFINE_TRIANGULATION_H

@@ -20,6 +20,7 @@ Envelope_2 2D Envelopes
 Envelope_3 3D Envelopes
 GraphicsView CGAL and the Qt Graphics View Framework
 Hyperbolic_triangulation_2 2D Hyperbolic Delaunay Triangulations
+Implicit_surface_reconstruction_3 3D Implicit Surface Reconstruction
 Inscribed_areas Inscribed Areas
 Interpolation 2D and Surface Function Interpolation
 Interval_skip_list Interval Skip List
@@ -42,7 +43,6 @@ Periodic_4_hyperbolic_triangulation_2 2D Periodic Hyperbolic Triangulations
 Point_set_2 2D Range and Neighbor Search
 Point_set_3 3D Point Set
 Point_set_processing_3 Point Set Processing
-Poisson_surface_reconstruction_3 Poisson Surface Reconstruction
 Polygon_mesh_processing Polygon Mesh Processing
 Polygon_mesh_processing/Compute_normal Polygon Mesh Processing - Normal Computation
 Polygon_mesh_processing/connected_components Polygon Mesh Processing - Connected Components
@@ -72,6 +72,7 @@ Shape_detection Shape Detection
 Skin_surface_3 3D Skin Surface Meshing
 Snap_rounding_2 2D Snap Rounding
 Spatial_searching dD Spatial Searching
+Spectral_surface_reconstruction_3 3D Spectral Surface Reconstruction
 Straight_skeleton_2 2D Straight Skeleton and Polygon Offsetting
 Stream_lines_2 2D Placement of Streamlines
 Surface_mesh_deformation Triangulated Surface Mesh Deformation

@@ -4,7 +4,7 @@
 #include <CGAL/make_surface_mesh.h>
 #include <CGAL/Implicit_surface_3.h>
 #include <CGAL/IO/facets_in_complex_2_to_triangle_mesh.h>
-#include <CGAL/Poisson_reconstruction_function.h>
+#include <CGAL/Implicit_reconstruction_function.h>
 #include <CGAL/property_map.h>
 #include <CGAL/IO/read_points.h>
 #include <CGAL/compute_average_spacing.h>
@@ -22,15 +22,15 @@ typedef Kernel::FT FT;
 typedef Kernel::Point_3 Point;
 typedef Kernel::Vector_3 Vector;
 typedef std::pair<Point, Vector> Point_with_normal;
-typedef CGAL::First_of_pair_property_map<Point_with_normal> Point_map;
-typedef CGAL::Second_of_pair_property_map<Point_with_normal> Normal_map;
 typedef Kernel::Sphere_3 Sphere;
 typedef std::vector<Point_with_normal> PointList;
+typedef CGAL::First_of_pair_property_map<Point_with_normal> Point_map;
+typedef CGAL::Second_of_pair_property_map<Point_with_normal> Normal_map;
 typedef CGAL::Polyhedron_3<Kernel> Polyhedron;
-typedef CGAL::Poisson_reconstruction_function<Kernel> Poisson_reconstruction_function;
+typedef CGAL::Implicit_reconstruction_function<Kernel, PointList, Normal_map> Implicit_reconstruction_function;
 typedef CGAL::Surface_mesh_default_triangulation_3 STr;
 typedef CGAL::Surface_mesh_complex_2_in_triangulation_3<STr> C2t3;
-typedef CGAL::Implicit_surface_3<Kernel, Poisson_reconstruction_function> Surface_3;
+typedef CGAL::Implicit_surface_3<Kernel, Implicit_reconstruction_function> Surface_3;
 
 int main(void)
 {
@@ -55,11 +55,12 @@ int main(void)
 
     // Note: this method requires an iterator over points
     // + property maps to access each point's position and normal.
-    Poisson_reconstruction_function function(points.begin(), points.end(), Point_map(), Normal_map());
+    // The position property map can be omitted here as we use iterators over Point_3 elements.
+    Implicit_reconstruction_function function(points, Point_map(), Normal_map());
 
     // Computes the Poisson indicator function f()
     // at each vertex of the triangulation.
-    if ( ! function.compute_implicit_function() )
+    if ( ! function.compute_poisson_implicit_function() )
       return EXIT_FAILURE;
 
     // Computes average spacing

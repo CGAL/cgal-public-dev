@@ -17,7 +17,7 @@ int main(void)
 {
   std::vector<Pwn> points;
 
-  if(!CGAL::read_points("data/kitten.xyz", std::back_inserter(points),
+  if(!CGAL::read_points("data/sphere.xyz", std::back_inserter(points),
                         CGAL::parameters::point_map(CGAL::First_of_pair_property_map<Pwn>())
                                          .normal_map(CGAL::Second_of_pair_property_map<Pwn>())))
   {
@@ -31,7 +31,7 @@ int main(void)
     (points, 6, CGAL::parameters::point_map(CGAL::First_of_pair_property_map<Pwn>()));
 
   if (CGAL::poisson_surface_reconstruction_delaunay
-      (points.begin(), points.end(),
+      (points,
        CGAL::First_of_pair_property_map<Pwn>(),
        CGAL::Second_of_pair_property_map<Pwn>(),
        output_mesh, average_spacing))

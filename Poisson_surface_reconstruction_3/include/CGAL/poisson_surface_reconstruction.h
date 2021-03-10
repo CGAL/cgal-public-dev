@@ -12,20 +12,20 @@
 #ifndef CGAL_POISSON_SURFACE_RECONSTRUCTION_H
 #define CGAL_POISSON_SURFACE_RECONSTRUCTION_H
 
-#include <CGAL/license/Poisson_surface_reconstruction_3.h>
+#include <CGAL/license/Implicit_surface_reconstruction_3.h>
 
 #include <CGAL/Surface_mesh_default_triangulation_3.h>
 #include <CGAL/make_surface_mesh.h>
 #include <CGAL/Implicit_surface_3.h>
 #include <CGAL/IO/facets_in_complex_2_to_triangle_mesh.h>
-#include <CGAL/Poisson_reconstruction_function.h>
+#include <CGAL/Implicit_reconstruction_function.h>
 #include <CGAL/property_map.h>
 
 namespace CGAL {
 
 
   /*!
-    \ingroup PkgPoissonSurfaceReconstruction3Ref
+    \ingroup PkgImplicitSurfaceReconstruction3Ref
 
     Performs surface reconstruction as follows:
 
@@ -48,7 +48,8 @@ namespace CGAL {
     similarly to the parameters of `SurfaceMeshFacetsCriteria_3`. The
     latest two are defined with respect to `spacing`.
 
-    \tparam PointInputIterator is a model of `InputIterator`.
+    \tparam PointRange is a model of `Range`. The value type of
+    its iterator is the key type of the named parameter `point_map`.
 
     \tparam PointMap is a model of `ReadablePropertyMap` with value
     type `Point_3<Kernel>`.
@@ -62,8 +63,7 @@ namespace CGAL {
     \tparam Tag is a tag whose type affects the behavior of the
     meshing algorithm (see `make_surface_mesh()`).
 
-    \param begin iterator on the first point of the sequence.
-    \param end past the end iterator of the point sequence.
+    \param points input point range.
     \param point_map property map: value_type of `InputIterator` -> Point_3.
     \param normal_map property map: value_type of `InputIterator` -> Vector_3.
     \param output_mesh where the reconstruction is stored.
@@ -80,8 +80,7 @@ namespace CGAL {
             typename PolygonMesh,
             typename Tag = CGAL::Manifold_with_boundary_tag>
   bool
-  poisson_surface_reconstruction_delaunay (PointInputIterator begin,
-                                           PointInputIterator end,
+  poisson_surface_reconstruction_delaunay (PointRange& points,
                                            PointMap point_map,
                                            NormalMap normal_map,
                                            PolygonMesh& output_mesh,
@@ -95,13 +94,13 @@ namespace CGAL {
     typedef typename Kernel_traits<Point>::Kernel Kernel;
     typedef typename Kernel::Sphere_3 Sphere;
 
-    typedef CGAL::Poisson_reconstruction_function<Kernel> Poisson_reconstruction_function;
+    typedef CGAL::Implicit_reconstruction_function<Kernel, PointRange, NormalMap> Implicit_reconstruction_function;
     typedef CGAL::Surface_mesh_default_triangulation_3 STr;
     typedef CGAL::Surface_mesh_complex_2_in_triangulation_3<STr> C2t3;
-    typedef CGAL::Implicit_surface_3<Kernel, Poisson_reconstruction_function> Surface_3;
+    typedef CGAL::Implicit_surface_3<Kernel, Implicit_reconstruction_function> Surface_3;
 
-    Poisson_reconstruction_function function(begin, end, point_map, normal_map);
-    if ( ! function.compute_implicit_function() )
+    Implicit_reconstruction_function function(points, point_map, normal_map);
+    if ( ! function.compute_poisson_implicit_function() )
       return false;
 
     Point inner_point = function.get_inner_point();

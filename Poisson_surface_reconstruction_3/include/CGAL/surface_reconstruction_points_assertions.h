@@ -15,7 +15,7 @@
 /// \cond SKIP_IN_MANUAL
 
 /// @file surface_reconstruction_points_assertions.h
-/// Define checking macros for the Poisson_surface_reconstruction_3 package
+/// Define checking macros for the Implicit_surface_reconstruction_3 package
 
 // Note that this header file is intentionnaly not protected with a
 // macro (as <cassert>). Calling it a second time with another value
@@ -36,7 +36,7 @@
   || defined(NDEBUG)
 #  define CGAL_surface_reconstruction_points_assertion(EX) (static_cast<void>(0))
 
-#include <CGAL/license/Poisson_surface_reconstruction_3.h>
+#include <CGAL/license/Implicit_surface_reconstruction_3.h>
 
 #  define CGAL_surface_reconstruction_points_assertion_msg(EX,MSG) (static_cast<void>(0))
 #  define CGAL_surface_reconstruction_points_assertion_code(CODE)

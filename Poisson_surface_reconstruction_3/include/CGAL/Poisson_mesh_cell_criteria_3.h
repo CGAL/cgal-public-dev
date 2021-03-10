@@ -10,10 +10,10 @@
 //
 // Author(s)     : Laurent RINEAU
 
-#ifndef CGAL_POISSON_MESH_CRITERIA_3_H
-#define CGAL_POISSON_MESH_CRITERIA_3_H
+#ifndef CGAL_IMPLICIT_MESH_CRITERIA_3_H
+#define CGAL_IMPLICIT_MESH_CRITERIA_3_H
 
-#include <CGAL/license/Poisson_surface_reconstruction_3.h>
+#include <CGAL/license/Implicit_surface_reconstruction_3.h>
 
 
 #include <iostream>
@@ -23,7 +23,7 @@
 namespace CGAL {
 
 namespace internal {
-namespace Poisson {
+namespace Implicit {
 
 template <class Tr>
 class Constant_sizing_field {
@@ -38,21 +38,21 @@ public:
   double operator()(const Point&) const { return sq_radius_bound; }
 }; // end class Constant_sizing_field
 
-} // end namespace Poisson
+} // end namespace Implicit
 } // end namespace internal
 
 template <
   class Tr,
-  typename Sizing_field = internal::Poisson::Constant_sizing_field<Tr>,
-  typename Second_sizing_field = internal::Poisson::Constant_sizing_field<Tr>
+  typename Sizing_field = internal::Implicit::Constant_sizing_field<Tr>,
+  typename Second_sizing_field = internal::Implicit::Constant_sizing_field<Tr>
   >
-class Poisson_mesh_cell_criteria_3
+class Implicit_mesh_cell_criteria_3
 {
   Sizing_field sizing_field;
   Second_sizing_field second_sizing_field;
   double radius_edge_bound_;
 
-  typedef Poisson_mesh_cell_criteria_3<Tr,
+  typedef Implicit_mesh_cell_criteria_3<Tr,
                                        Sizing_field,
                                        Second_sizing_field> Self;
 public:
@@ -90,14 +90,14 @@ public:
 
   typedef typename Tr::Cell_handle Cell_handle;
 
-  Poisson_mesh_cell_criteria_3(const double radius_edge_bound = 2, //< radius edge ratio bound (ignored if zero)
-                  const double radius_bound = 0) //< cell radius bound (ignored if zero)
+  Implicit_mesh_cell_criteria_3(const double radius_edge_bound = 2, //< radius edge ratio bound (ignored if zero)
+		  const double radius_bound = 0) //< cell radius bound (ignored if zero)
     : sizing_field(radius_bound*radius_bound),
       second_sizing_field(),
       radius_edge_bound_(radius_edge_bound)
   {}
 
-  Poisson_mesh_cell_criteria_3(const double radius_edge_bound, //< radius edge ratio bound (ignored if zero)
+  Implicit_mesh_cell_criteria_3(const double radius_edge_bound, //< radius edge ratio bound (ignored if zero)
                                const Sizing_field& sizing_field,
                                const Second_sizing_field second_sizing_field = Second_sizing_field())
     : sizing_field(sizing_field),
@@ -192,15 +192,15 @@ public:
   Is_bad is_bad_object() const
   { return Is_bad(this); }
 
-}; // end Poisson_mesh_cell_criteria_3
+}; // end Implicit_mesh_cell_criteria_3
 
   template <typename Tr>
   std::ostream& operator<<(std::ostream& os,
-                           const typename Poisson_mesh_cell_criteria_3<Tr>::Cell_quality& q)
+                           const typename Implicit_mesh_cell_criteria_3<Tr>::Cell_quality& q)
   {
     return os << q.sq_size() << ", " << q.aspect();
   }
 
 } // end namespace CGAL
 
-#endif // CGAL_POISSON_MESH_CRITERIA_3_H
+#endif // CGAL_IMPLICIT_MESH_CRITERIA_3_H

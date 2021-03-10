@@ -1,7 +1,8 @@
-# This is the CMake script for compiling this folder.
+# Created by the script cgal_create_cmake_script
+# This is the CMake script for compiling a CGAL application.
 
 cmake_minimum_required(VERSION 3.1...3.15)
-project(Poisson_surface_reconstruction_3_Tests)
+project( Implicit_surface_reconstruction_3_Tests )
 
 # Find CGAL
 find_package(CGAL REQUIRED)
@@ -43,6 +44,29 @@ endif()
     else()
       message(STATUS "NOTICE: test with parallel Mesh_3 needs TBB and will not be compiled.")
     endif()
+
+    find_package(Spectra REQUIRED)
+    if(SPECTRA_FOUND)
+      include_directories("${SPECTRA_INCLUDE_DIR}")
+      find_package(Boost COMPONENTS system filesystem REQUIRED)
+      add_definitions( "-BOOST_FILESYSTEM_LIBRARY" )
+      add_definitions( "-BOOST_SYSTEM_LIBRARY" )
+      add_definitions( "-DDEBUG_TRACE")
+      list(APPEND CGAL_3RD_PARTY_LIBRARIES ${Boost_FILESYSTEM_LIBRARY})
+      list(APPEND CGAL_3RD_PARTY_LIBRARIES ${Boost_SYSTEM_LIBRARY})
+      create_single_source_cgal_program( "isr_test_mean_distance_mtp.cpp" )
+      create_single_source_cgal_program( "isr_test_mean_distance_ptm.cpp" )
+      create_single_source_cgal_program( "isr_test_hausdorff_ptm.cpp" )
+      create_single_source_cgal_program( "isr_test_hausdorff_mtp.cpp" )
+      create_single_source_cgal_program( "isr_test_mean_ang_dev.cpp" )
+      create_single_source_cgal_program( "isr_test_check_genus.cpp" )
+      create_single_source_cgal_program( "isr_test_hole_filling.cpp" )
+      create_single_source_cgal_program( "isr_test_check_cc.cpp" )
+      create_single_source_cgal_program( "isr_test_octree.cpp" )
+    else()
+      message(STATUS "NOTICE: Spectra was not found, tests won't be compiled.")
+    endif()
+
   else()
     message(STATUS "NOTICE: Some of the executables in this directory need Eigen 3.1 (or greater) and will not be compiled.")
 endif()

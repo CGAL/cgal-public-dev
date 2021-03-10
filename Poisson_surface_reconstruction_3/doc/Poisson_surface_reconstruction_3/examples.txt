@@ -1,3 +1,5 @@
-/// \example Poisson_surface_reconstruction_3/poisson_reconstruction_function.cpp
-/// \example Poisson_surface_reconstruction_3/poisson_reconstruction_example.cpp
+/// \example Implicit_surface_reconstruction_3/poisson_reconstruction_function.cpp
+/// \example Implicit_surface_reconstruction_3/poisson_reconstruction_example.cpp
+/// \example Implicit_surface_reconstruction_3/spectral_reconstruction_function.cpp
+/// \example Implicit_surface_reconstruction_3/spectral_reconstruction_example.cpp
 
