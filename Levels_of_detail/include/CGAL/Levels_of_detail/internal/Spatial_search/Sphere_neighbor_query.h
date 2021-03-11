@@ -49,8 +49,8 @@ namespace Levels_of_detail {
 namespace internal {
 
   template<
-  typename GeomTraits, 
-  typename InputRange, 
+  typename GeomTraits,
+  typename InputRange,
   typename PointMap>
   class Sphere_neighbor_query {
 
@@ -62,29 +62,29 @@ namespace internal {
     using Point = typename Point_map::value_type;
     using FT = typename Traits::FT;
 
-    using Index_to_point_map = 
+    using Index_to_point_map =
     internal::Item_property_map<Input_range, Point_map>;
 
     using Search_base = typename std::conditional<
-      std::is_same<typename Traits::Point_2, Point>::value, 
-      CGAL::Search_traits_2<Traits>, 
+      std::is_same<typename Traits::Point_2, Point>::value,
+      CGAL::Search_traits_2<Traits>,
       CGAL::Search_traits_3<Traits> >::type;
-                    
-    using Search_traits = 
+
+    using Search_traits =
     CGAL::Search_traits_adapter<std::size_t, Index_to_point_map, Search_base>;
-      
-    using Splitter = 
+
+    using Splitter =
     CGAL::Sliding_midpoint<Search_traits>;
-      
-    using Fuzzy_sphere 
+
+    using Fuzzy_sphere
     = CGAL::Fuzzy_sphere<Search_traits>;
-      
-    using Tree 
+
+    using Tree
     = CGAL::Kd_tree<Search_traits, Splitter, CGAL::Tag_true>;
 
     Sphere_neighbor_query(
-      const Input_range& input_range, 
-      const FT sphere_radius, 
+      const Input_range& input_range,
+      const FT sphere_radius,
       const Point_map& point_map) :
     m_input_range(input_range),
     m_sphere_radius(sphere_radius),
@@ -94,7 +94,7 @@ namespace internal {
       boost::counting_iterator<std::size_t>(0),
       boost::counting_iterator<std::size_t>(m_input_range.size()),
       Splitter(),
-      Search_traits(m_index_to_point_map)) { 
+      Search_traits(m_index_to_point_map)) {
 
       CGAL_precondition(m_input_range.size() > 0);
       CGAL_precondition(m_sphere_radius >= FT(0));
@@ -103,18 +103,18 @@ namespace internal {
     }
 
     void operator()(
-      const std::size_t query_index, 
+      const std::size_t query_index,
       std::vector<std::size_t>& neighbors) const {
-                
+
       CGAL_precondition(query_index >= 0);
       CGAL_precondition(query_index < m_input_range.size());
-      
+
       const std::size_t sphere_center = query_index;
 
       const Fuzzy_sphere sphere(
-        sphere_center, 
-        m_sphere_radius, 
-        FT(0), 
+        sphere_center,
+        m_sphere_radius,
+        FT(0),
         m_tree.traits());
 
       neighbors.clear();
@@ -122,13 +122,13 @@ namespace internal {
     }
 
     void operator()(
-      const Point& sphere_center, 
+      const Point& sphere_center,
       std::vector<std::size_t>& neighbors) const {
-      
+
       const Fuzzy_sphere sphere(
-        sphere_center, 
-        m_sphere_radius, 
-        FT(0), 
+        sphere_center,
+        m_sphere_radius,
+        FT(0),
         m_tree.traits());
 
       neighbors.clear();
@@ -141,7 +141,7 @@ namespace internal {
 
   private:
     const Input_range& m_input_range;
-    
+
     const FT m_sphere_radius;
 
     const Point_map& m_point_map;

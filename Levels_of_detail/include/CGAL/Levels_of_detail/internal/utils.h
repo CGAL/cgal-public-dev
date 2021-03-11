@@ -54,16 +54,16 @@ namespace CGAL {
 namespace Levels_of_detail {
 namespace internal {
 
-  template<typename GeomTraits> 
+  template<typename GeomTraits>
   class Default_sqrt {
-    
+
   private:
     using Traits = GeomTraits;
     using FT = typename Traits::FT;
 
   public:
-    FT operator()(const FT value) const { 
-      
+    FT operator()(const FT value) const {
+
       CGAL_precondition(value >= FT(0));
       return static_cast<FT>(CGAL::sqrt(CGAL::to_double(value)));
     }
@@ -72,15 +72,15 @@ namespace internal {
   BOOST_MPL_HAS_XXX_TRAIT_NAMED_DEF(Has_nested_type_Sqrt, Sqrt, false)
 
   // Case: do_not_use_default = false.
-  template<typename GeomTraits, 
+  template<typename GeomTraits,
   bool do_not_use_default = Has_nested_type_Sqrt<GeomTraits>::value>
   class Get_sqrt {
-        
+
   public:
     using Traits = GeomTraits;
     using Sqrt = Default_sqrt<Traits>;
 
-    static Sqrt sqrt_object(const Traits& ) { 
+    static Sqrt sqrt_object(const Traits& ) {
       return Sqrt();
     }
   };
@@ -88,12 +88,12 @@ namespace internal {
   // Case: do_not_use_default = true.
   template<typename GeomTraits>
   class Get_sqrt<GeomTraits, true> {
-        
+
   public:
     using Traits = GeomTraits;
     using Sqrt = typename Traits::Sqrt;
 
-    static Sqrt sqrt_object(const Traits& traits) { 
+    static Sqrt sqrt_object(const Traits& traits) {
       return traits.sqrt_object();
     }
   };
@@ -110,7 +110,7 @@ namespace internal {
 
   template<typename Point_3>
   bool are_coplanar_3(
-    const Point_3& p1, const Point_3& p2, 
+    const Point_3& p1, const Point_3& p2,
     const Point_3& p3, const Point_3& p4) {
 
     using Traits = typename Kernel_traits<Point_3>::Kernel;
@@ -134,8 +134,8 @@ namespace internal {
     using FT = typename Traits::FT;
 
     const FT eps = tolerance<FT>();
-    return 
-    (CGAL::abs(p.x() - q.x()) < eps) && 
+    return
+    (CGAL::abs(p.x() - q.x()) < eps) &&
     (CGAL::abs(p.y() - q.y()) < eps);
   }
 
@@ -147,30 +147,30 @@ namespace internal {
     using FT = typename Traits::FT;
 
     const FT eps = tolerance<FT>();
-    return 
-    (CGAL::abs(p.x() - q.x()) < eps) && 
-    (CGAL::abs(p.y() - q.y()) < eps) && 
+    return
+    (CGAL::abs(p.x() - q.x()) < eps) &&
+    (CGAL::abs(p.y() - q.y()) < eps) &&
     (CGAL::abs(p.z() - q.z()) < eps);
   }
 
   template<typename Point_3>
 	bool are_equal_edges_3(
-      const Point_3& p1, const Point_3& p2, 
+      const Point_3& p1, const Point_3& p2,
       const Point_3& q1, const Point_3& q2) {
-      
+
     return (
-      internal::are_equal_points_3(p1, q1) && 
+      internal::are_equal_points_3(p1, q1) &&
       internal::are_equal_points_3(p2, q2)) || (
-      internal::are_equal_points_3(p1, q2) && 
+      internal::are_equal_points_3(p1, q2) &&
       internal::are_equal_points_3(p2, q1));
   }
 
   template<typename Vector>
   void normalize(Vector& v) {
-    
+
     using Traits = typename Kernel_traits<Vector>::Kernel;
     using FT = typename Traits::FT;
-    
+
     v /= static_cast<FT>(
       CGAL::sqrt(CGAL::to_double(v.squared_length())));
   }
@@ -179,7 +179,7 @@ namespace internal {
   typename Point_3,
   typename Vector_3>
   bool compute_cross_product_3(
-    const std::vector<Point_3>& polygon, 
+    const std::vector<Point_3>& polygon,
     Vector_3& cross) {
 
     using Traits = typename Kernel_traits<Point_3>::Kernel;
@@ -200,7 +200,7 @@ namespace internal {
       const Vector_3 v2 = Vector_3(p2, p3);
 
       cross = CGAL::cross_product(v1, v2);
-      if (!are_equal_points_3(cross, zero)) 
+      if (!are_equal_points_3(cross, zero))
         return true;
     }
     return false;
@@ -211,7 +211,7 @@ namespace internal {
   typename FT>
   void compute_angle_2(
     const Vector_2& m, const Vector_2& n, FT& angle) {
-				
+
 		const FT cross = CGAL::determinant(m, n);
 		const FT dot = CGAL::scalar_product(m, n);
 		angle = static_cast<FT>(
@@ -222,10 +222,10 @@ namespace internal {
   typename Kernel_traits<Vector_2>::Kernel::FT
   unsigned_angle_2(
     const Vector_2& m, const Vector_2& n) {
-				
+
     using FT = typename Kernel_traits<Vector_2>::Kernel::FT;
 		const FT dot = CGAL::scalar_product(m, n);
-    
+
     const FT lm = static_cast<FT>(
       CGAL::sqrt(CGAL::to_double(m.squared_length())));
     const FT ln = static_cast<FT>(
@@ -242,7 +242,7 @@ namespace internal {
   bool is_thin_polygon_2(
     const std::vector<Point_2>& polygon,
     const FT max_angle) {
-				
+
 		using Traits = typename Kernel_traits<Point_2>::Kernel;
     using Vector_2 = typename Traits::Vector_2;
 
@@ -250,7 +250,7 @@ namespace internal {
     for (std::size_t i = 0; i < polygon.size(); ++i) {
       const std::size_t ip = (i + 1) % polygon.size();
       const std::size_t ipp = (i + 2) % polygon.size();
-      
+
       const auto& p0 = polygon[i];
       const auto& p1 = polygon[ip];
       const auto& p2 = polygon[ipp];
@@ -272,16 +272,16 @@ namespace internal {
   typename Point_3,
   typename Vector_3>
   bool compute_normal_3(
-    const std::vector<Point_3>& polygon, 
+    const std::vector<Point_3>& polygon,
     Vector_3& normal) {
-                
+
     CGAL_assertion(polygon.size() >= 3);
     if (polygon.size() < 3)
       return false;
 
-    const bool success = 
+    const bool success =
       compute_cross_product_3(polygon, normal);
-    if (success) {              
+    if (success) {
       normalize(normal); return true;
     } return false;
   }
@@ -290,7 +290,7 @@ namespace internal {
   typename Vector_3,
   typename FT>
   bool compute_angle_and_axis_3(
-    const Vector_3& m, const Vector_3& n, 
+    const Vector_3& m, const Vector_3& n,
     FT& angle, Vector_3& axis) {
 
 		const auto cross = CGAL::cross_product(m, n);
@@ -301,31 +301,31 @@ namespace internal {
 		angle = static_cast<FT>(std::atan2(
       CGAL::to_double(length), CGAL::to_double(dot)));
 
-		const FT angle_deg = 
+		const FT angle_deg =
       angle * FT(180) / static_cast<FT>(CGAL_PI);
-		if (angle_deg == FT(0) || angle_deg == FT(180)) 
+		if (angle_deg == FT(0) || angle_deg == FT(180))
 			return true;
 
-		if (length == FT(0)) {             
+		if (length == FT(0)) {
       std::cerr << "Error: length = 0" << std::endl;
       exit(EXIT_FAILURE); }
-                
+
 		CGAL_assertion(length > FT(0));
 		axis = cross / length;
 
     const FT half_pi = static_cast<FT>(CGAL_PI) / FT(2);
-    if (angle > half_pi) {                
+    if (angle > half_pi) {
       angle = static_cast<FT>(CGAL_PI) - angle;
       axis = -axis;
     }
 		return true;
 	}
-  
+
   template<
   typename Vector_3,
   typename FT>
   void compute_angle_3_deg(
-    const Vector_3& m, const Vector_3& n, 
+    const Vector_3& m, const Vector_3& n,
     FT& angle_deg) {
 
 		const auto cross = CGAL::cross_product(m, n);
@@ -335,16 +335,16 @@ namespace internal {
 
 		FT angle_rad = static_cast<FT>(std::atan2(
       CGAL::to_double(length), CGAL::to_double(dot)));
-                
+
     const FT half_pi = static_cast<FT>(CGAL_PI) / FT(2);
-    if (angle_rad > half_pi) 
+    if (angle_rad > half_pi)
         angle_rad = static_cast<FT>(CGAL_PI) - angle_rad;
 		angle_deg = angle_rad * FT(180) / static_cast<FT>(CGAL_PI);
   }
 
   template<typename Point_2>
   void compute_barycenter_2(
-    const std::vector<Point_2>& points, 
+    const std::vector<Point_2>& points,
     Point_2& b) {
 
     using Traits = typename Kernel_traits<Point_2>::Kernel;
@@ -363,7 +363,7 @@ namespace internal {
 
   template<typename Point_3>
   void compute_barycenter_3(
-    const std::vector<Point_3>& points, 
+    const std::vector<Point_3>& points,
     Point_3& b) {
 
     using Traits = typename Kernel_traits<Point_3>::Kernel;
@@ -384,7 +384,7 @@ namespace internal {
 
   template<typename Point_3>
   void compute_barycenter_3(
-    const std::vector< std::vector<Point_3> >& polygons, 
+    const std::vector< std::vector<Point_3> >& polygons,
     const std::vector<std::size_t>& indices,
     Point_3& b) {
 
@@ -412,7 +412,7 @@ namespace internal {
   typename FT,
   typename Point_2>
   void scale_polygon_2(
-    const FT scale, 
+    const FT scale,
     std::vector<Point_2>& polygon) {
 
     Point_2 b;
@@ -424,13 +424,13 @@ namespace internal {
       p = Point_2(x, y);
     }
   }
-    
+
   template<
   typename FT,
   typename Point_3>
   void scale_polygon_3(
-    const FT scale, 
-    const FT z_extender, 
+    const FT scale,
+    const FT z_extender,
     std::vector<Point_3>& polygon) {
 
     Point_3 b;
@@ -449,8 +449,8 @@ namespace internal {
   typename Vector_3,
   typename Point_3>
   void rotate_point_3(
-    const FT angle, 
-    const Vector_3& axis, 
+    const FT angle,
+    const Vector_3& axis,
     Point_3& p) {
 
 		const double tmp_angle = CGAL::to_double(angle);
@@ -473,8 +473,8 @@ namespace internal {
   typename Vector_3,
   typename Point_3>
 	void rotate_points_3(
-    const FT angle, 
-    const Vector_3& axis, 
+    const FT angle,
+    const Vector_3& axis,
     std::vector<Point_3>& points) {
 
 		for (auto& p : points)
@@ -485,13 +485,13 @@ namespace internal {
   typename FT,
   typename Point_2>
   void rotate_point_2(
-    const FT angle, 
-    const Point_2& barycenter, 
+    const FT angle,
+    const Point_2& barycenter,
     Point_2& p) {
 
 		FT x = p.x(); x -= barycenter.x();
 		FT y = p.y(); y -= barycenter.y();
-		
+
     p = Point_2(x, y);
     const double tmp_angle = CGAL::to_double(angle);
     const FT c = static_cast<FT>(std::cos(tmp_angle));
@@ -500,14 +500,14 @@ namespace internal {
 		x = p.x() * c - p.y() * s; x += barycenter.x();
 		y = p.y() * c + p.x() * s; y += barycenter.y();
 		p = Point_2(x, y);
-	} 
+	}
 
   template<
   typename FT,
   typename Point_2>
 	void rotate_points_2(
-    const FT angle, 
-    const Point_2& barycenter, 
+    const FT angle,
+    const Point_2& barycenter,
     std::vector<Point_2>& points) {
 
 		for (auto& p : points)
@@ -519,13 +519,13 @@ namespace internal {
   typename FT,
   typename Vector_3>
   void rotate_polygon_3(
-    const std::vector<Point_3>& polygon, 
-    const FT angle, 
-    const Vector_3& axis, 
+    const std::vector<Point_3>& polygon,
+    const FT angle,
+    const Vector_3& axis,
     const Point_3& b,
     std::vector<Point_3>& rotated) {
 
-    if (angle == FT(0)) {    
+    if (angle == FT(0)) {
       rotated = polygon; return;
     }
 
@@ -545,8 +545,8 @@ namespace internal {
   typename Vector_3,
   typename Point_3>
   void rotate_polygon_3(
-    const FT angle, 
-    const Vector_3& axis, 
+    const FT angle,
+    const Vector_3& axis,
     const Point_3& b,
     std::vector<Point_3>& polygon) {
 
@@ -565,9 +565,9 @@ namespace internal {
   typename Vector_3>
   void rotate_polygons_3(
     const std::vector< std::vector<Point_3> >& polygons,
-    const std::vector<std::size_t>& indices, 
-    const FT angle, 
-    const Vector_3& axis, 
+    const std::vector<std::size_t>& indices,
+    const FT angle,
+    const Vector_3& axis,
     const Point_3& b,
     std::vector< std::vector<Point_3> >& rotated) {
 
@@ -596,7 +596,7 @@ namespace internal {
     FT angle_deg;
     compute_angle_3_deg(m, n, angle_deg);
     const FT angle_diff = CGAL::abs(FT(90) - CGAL::abs(angle_deg));
-    if (angle_diff < angle_threshold) 
+    if (angle_diff < angle_threshold)
       return true;
     return false;
   }
@@ -613,10 +613,10 @@ namespace internal {
     using Point_3 = typename Traits::Point_3;
     using Intersect_3 = typename Traits::Intersect_3;
 
-		typename CGAL::cpp11::result_of<Intersect_3(Line_3, Plane_3)>::type result 
+		typename CGAL::cpp11::result_of<Intersect_3(Line_3, Plane_3)>::type result
     = CGAL::intersection(line, plane);
     if (result) {
-      if (const Line_3* tmp = boost::get<Line_3>(&*result)) 
+      if (const Line_3* tmp = boost::get<Line_3>(&*result))
         return max_value<FT>();
       else {
         const Point_3* point = boost::get<Point_3>(&*result);
@@ -630,10 +630,10 @@ namespace internal {
   typename Point_3,
   typename Point_2>
   void polygon_3_to_polygon_2(
-    const std::vector<Point_3>& poly_3, 
+    const std::vector<Point_3>& poly_3,
     std::vector<Point_2>& poly_2) {
 
-    poly_2.clear();      
+    poly_2.clear();
     poly_2.reserve(poly_3.size());
     for (const auto& p : poly_3)
       poly_2.push_back(Point_2(p.x(), p.y()));
@@ -645,7 +645,7 @@ namespace internal {
   typename Traits>
   typename Traits::FT min_distance_from_edge_2(
     const Face_handle& fh) {
-    
+
     using FT = typename Traits::FT;
     using Point_2 = typename Traits::Point_2;
     using Triangle_2 = typename Traits::Triangle_2;
@@ -675,14 +675,14 @@ namespace internal {
   template<typename Vector_3>
   typename Kernel_traits<Vector_3>::Kernel::FT
   angle_3d(
-    const Vector_3& v1, 
+    const Vector_3& v1,
     const Vector_3& v2) {
-        
+
     using Traits = typename Kernel_traits<Vector_3>::Kernel;
     using FT = typename Traits::FT;
 
     const double a = CGAL::to_double(v1 * v2) / (
-      CGAL::sqrt(CGAL::to_double(v1.squared_length())) * 
+      CGAL::sqrt(CGAL::to_double(v1.squared_length())) *
       CGAL::sqrt(CGAL::to_double(v2.squared_length())));
 
     if (a < -1.0) return static_cast<FT>(std::acos(-1.0) / CGAL_PI * 180.0);
@@ -695,7 +695,7 @@ namespace internal {
   typename Triangle_2,
   typename FT>
   bool is_near_boundary_2(
-    const Point_2& query, 
+    const Point_2& query,
     const Triangle_2& triangle,
     const FT tol) {
 
@@ -704,7 +704,7 @@ namespace internal {
 
     std::vector<Vector_2> s(3);
     std::vector<FT> r(3);
-    for (std::size_t i = 0; i < 3; ++i) {          
+    for (std::size_t i = 0; i < 3; ++i) {
       s[i] = triangle[i] - query;
       r[i] = s[i].squared_length();
       if (CGAL::abs(r[i]) < tol * tol)
@@ -733,10 +733,10 @@ namespace internal {
     using Traits = typename Kernel_traits<Point_2>::Kernel;
     using Line_2 = typename Traits::Line_2;
 
-    if (triangle.has_on_bounded_side(query) || 
-        triangle.has_on_boundary(query)) 
+    if (triangle.has_on_bounded_side(query) ||
+        triangle.has_on_boundary(query))
       return true;
-                
+
     for (std::size_t i = 0; i < 3; ++i) {
       const std::size_t ip = (i + 1) % 3;
 
@@ -755,9 +755,9 @@ namespace internal {
       const FT bval = -FT(1) / FT(5);
       const FT tval = FT(6) / FT(5);
 
-      if (res[0] > bval && res[1] > bval && 
-          res[0] < tval && res[1] < tval && 
-          squared_distance < squared_tolerance) 
+      if (res[0] > bval && res[1] > bval &&
+          res[0] < tval && res[1] < tval &&
+          squared_distance < squared_tolerance)
         return true;
     }
     return false;
@@ -773,7 +773,7 @@ namespace internal {
     using Triangle_2 = typename Traits::Triangle_2;
 
     CGAL_assertion(polygon.size() > 0);
-    if (!CGAL::is_simple_2(polygon.begin(), polygon.end())) 
+    if (!CGAL::is_simple_2(polygon.begin(), polygon.end()))
       return false;
 
     const Point_2& ref = polygon[0];
@@ -821,7 +821,7 @@ namespace internal {
   std::size_t size_t_rand(
     Random& random,
     const std::size_t maxv)  {
-    
+
     return static_cast<std::size_t>(random.get_int(0, maxv));
   }
 
@@ -829,7 +829,7 @@ namespace internal {
   typename FT,
   typename Point_3>
   void perturb_point_inside_disc(
-    const FT disc_radius, 
+    const FT disc_radius,
     const std::size_t num_points_in_disc,
     Random& random,
     Point_3& p) {
@@ -842,10 +842,10 @@ namespace internal {
     std::vector<Local_point_2> points_2;
     points_2.reserve(num_points_in_disc);
 
-    CGAL::Random_points_in_disc_2<Local_point_2, Point_creator_2> 
+    CGAL::Random_points_in_disc_2<Local_point_2, Point_creator_2>
     random_points_2(CGAL::to_double(disc_radius));
-      
-    CGAL::cpp11::copy_n(random_points_2, num_points_in_disc, 
+
+    CGAL::cpp11::copy_n(random_points_2, num_points_in_disc,
       std::back_inserter(points_2));
 
     const std::size_t rand_index = size_t_rand(random, num_points_in_disc - 1);
@@ -864,7 +864,7 @@ namespace internal {
     const std::size_t num_points_in_disc,
     Random& random,
     std::vector<Point_3>& polygon) {
-      
+
     using Traits = typename Kernel_traits<Point_3>::Kernel;
     using Vector_3 = typename Traits::Vector_3;
 
@@ -883,7 +883,7 @@ namespace internal {
     const FT angle_deg = angle_3d * FT(180) / static_cast<FT>(CGAL_PI);
     if (angle_deg != FT(0) && angle_deg != FT(180))
       rotate_polygon_3(angle_3d, axis, b, polygon);
-    
+
     for (std::size_t i = 0; i < polygon.size(); ++i)
       perturb_point_inside_disc(
         disc_radius, num_points_in_disc, random, polygon[i]);
@@ -913,18 +913,18 @@ namespace internal {
 
   template<typename Segment_2>
   typename Kernel_traits<Segment_2>::Kernel::Vector_2
-  compute_direction(const Segment_2& segment) { 
+  compute_direction(const Segment_2& segment) {
     using Traits = typename Kernel_traits<Segment_2>::Kernel;
     using FT = typename Traits::FT;
     using Vector = typename Traits::Vector_2;
 
-    Vector v = segment.to_vector(); 
-    if (v.y() < FT(0) || (v.y() == FT(0) && v.x() < FT(0))) 
+    Vector v = segment.to_vector();
+    if (v.y() < FT(0) || (v.y() == FT(0) && v.x() < FT(0)))
       v = -v;
     normalize(v);
     return v;
   }
-  
+
   template<typename Vector>
   typename Kernel_traits<Vector>::Kernel::FT
   compute_orientation(const Vector& v) {
@@ -933,7 +933,7 @@ namespace internal {
 
     const FT atan = static_cast<FT>(std::atan2(CGAL::to_double(v.y()), CGAL::to_double(v.x())));
     FT orientation = atan * FT(180) / static_cast<FT>(CGAL_PI);
-    if (orientation < FT(0)) 
+    if (orientation < FT(0))
       orientation += FT(180);
     return orientation;
   }
@@ -953,9 +953,9 @@ namespace internal {
   template<typename Point>
   typename Kernel_traits<Point>::Kernel::FT
   distance(
-    const Point& p, 
+    const Point& p,
     const Point& q) {
-      
+
     using Traits = typename Kernel_traits<Point>::Kernel;
     using FT = typename Traits::FT;
     return static_cast<FT>(
@@ -963,12 +963,12 @@ namespace internal {
   }
 
   template<
-  typename Point_3, 
+  typename Point_3,
   typename Plane_3>
   typename Kernel_traits<Point_3>::Kernel::Point_2
   to_2d(
     const Point_3& p,
-    const Point_3& centroid, 
+    const Point_3& centroid,
     const Plane_3& plane) {
 
     using Traits = typename Kernel_traits<Point_3>::Kernel;
@@ -986,12 +986,12 @@ namespace internal {
   }
 
   template<
-  typename Point_2, 
-  typename Point_3, 
+  typename Point_2,
+  typename Point_3,
   typename Plane_3>
   Point_3 to_3d(
     const Point_2& p,
-    const Point_3& centroid, 
+    const Point_3& centroid,
     const Plane_3& plane) {
 
     using Traits = typename Kernel_traits<Point_3>::Kernel;
@@ -1028,14 +1028,14 @@ namespace internal {
 
     const Vector_2 ref_vector = line.to_vector();
     const Point_2& ref_point = get(point_map_2, item_range[indices[0]]);
-    
+
     for (std::size_t i = 0; i < indices.size(); ++i) {
       const Point_2& query = get(point_map_2, item_range[indices[i]]);
       const Point_2 point = line.projection(query);
-      
+
       const Vector_2 curr_vector(ref_point, point);
       const FT value = CGAL::scalar_product(curr_vector, ref_vector);
-      
+
       if (value < min_proj_value) {
         min_proj_value = value;
         p = point; }
@@ -1062,7 +1062,7 @@ namespace internal {
 
     Point_2 p, q;
     boundary_points_on_line_2(item_range, point_map_2, indices, line, p, q);
-    const FT squared_length = 
+    const FT squared_length =
     CGAL::squared_distance(line.projection(p), line.projection(q));
     return squared_length;
   }
@@ -1081,7 +1081,7 @@ namespace internal {
     typename boost::property_traits<Point_map>::value_type>::Kernel;
     using Point_2 = typename Traits::Point_2;
     using Triangle_2 = typename Traits::Triangle_2;
-    
+
     using Vb = CGAL::Alpha_shape_vertex_base_2<Traits>;
     using Fb = CGAL::Alpha_shape_face_base_2<Traits>;
     using Tds = CGAL::Triangulation_data_structure_2<Vb, Fb>;
@@ -1097,7 +1097,7 @@ namespace internal {
     FT total_area = FT(0);
     Alpha_shape_2 alpha_shape(triangulation, alpha, Alpha_shape_2::GENERAL);
 
-    for (auto fh = alpha_shape.finite_faces_begin(); 
+    for (auto fh = alpha_shape.finite_faces_begin();
       fh != alpha_shape.finite_faces_end(); ++fh) {
 
       const auto type = alpha_shape.classify(fh);
@@ -1115,12 +1115,12 @@ namespace internal {
   }
 
   template<
-  typename Triangle_2, 
+  typename Triangle_2,
   typename Point_2>
   void random_point_in_triangle_2(
     const Triangle_2& triangle,
     Point_2& point) {
-      
+
     using Traits = typename Kernel_traits<Triangle_2>::Kernel;
     using FT = typename Traits::FT;
     using Vector_2 = typename Traits::Vector_2;
@@ -1143,14 +1143,14 @@ namespace internal {
   }
 
   template<
-  typename Item_range, 
-  typename Point_map_3, 
+  typename Item_range,
+  typename Point_map_3,
   typename Line_3>
   typename Kernel_traits<Line_3>::Kernel::FT
   line_from_points_3(
-    const Item_range& item_range, 
+    const Item_range& item_range,
     const Point_map_3& point_map_3,
-    const std::vector<std::size_t>& indices, 
+    const std::vector<std::size_t>& indices,
     Line_3& line) {
 
     using Traits = typename Kernel_traits<Line_3>::Kernel;
@@ -1158,7 +1158,7 @@ namespace internal {
     using Point_3 = typename Traits::Point_3;
     using Vector_3 = typename Traits::Vector_3;
 
-    using Local_traits 
+    using Local_traits
     = CGAL::Exact_predicates_inexact_constructions_kernel;
 		using Local_FT = typename Local_traits::FT;
 		using Local_line_3 = typename Local_traits::Line_3;
@@ -1167,7 +1167,7 @@ namespace internal {
 		CGAL_assertion(indices.size() > 0);
 		std::vector<Local_point_3> points;
     points.reserve(indices.size());
-				
+
 		for (const std::size_t idx : indices) {
 			const Point_3& p = get(point_map_3, *(item_range.begin() + idx));
 
@@ -1184,20 +1184,20 @@ namespace internal {
 
 		const FT quality = static_cast<FT>(
       CGAL::linear_least_squares_fitting_3(
-        points.begin(), points.end(), 
-        fitted_line, fitted_centroid, 
+        points.begin(), points.end(),
+        fitted_line, fitted_centroid,
         CGAL::Dimension_tag<0>()));
 
     const auto a = fitted_line.point(0);
     const auto b = fitted_line.to_vector();
-    
+
     const Point_3 p = Point_3(
-      static_cast<FT>(a.x()), 
-      static_cast<FT>(a.y()), 
+      static_cast<FT>(a.x()),
+      static_cast<FT>(a.y()),
       static_cast<FT>(a.z()));
     const Vector_3 v = Vector_3(
-      static_cast<FT>(b.x()), 
-      static_cast<FT>(b.y()), 
+      static_cast<FT>(b.x()),
+      static_cast<FT>(b.y()),
       static_cast<FT>(b.z()));
 
 		line = Line_3(p, v);
@@ -1205,22 +1205,22 @@ namespace internal {
   }
 
   template<
-  typename Item_range, 
-  typename Point_map_3, 
+  typename Item_range,
+  typename Point_map_3,
   typename Plane_3,
   typename Point_3>
   void project_on_plane_3(
-    const Item_range& item_range, 
+    const Item_range& item_range,
     const Point_map_3& point_map_3,
-    const std::vector<std::size_t>& indices, 
-    const Plane_3& plane, 
+    const std::vector<std::size_t>& indices,
+    const Plane_3& plane,
     std::vector<Point_3>& points) {
-      
+
     CGAL_assertion(indices.size() > 0);
     points.clear();
     points.reserve(indices.size());
 
-    for (const std::size_t idx : indices) {			
+    for (const std::size_t idx : indices) {
       const auto& p = get(point_map_3, *(item_range.begin() + idx));
 			points.push_back(plane.projection(p));
     }
@@ -1228,22 +1228,22 @@ namespace internal {
   }
 
   template<
-  typename Item_range, 
-  typename Point_map_2, 
+  typename Item_range,
+  typename Point_map_2,
   typename Line_2,
   typename Point_2>
   void project_on_line_2(
-    const Item_range& item_range, 
+    const Item_range& item_range,
     const Point_map_2& point_map_2,
-    const std::vector<std::size_t>& indices, 
-    const Line_2& line, 
+    const std::vector<std::size_t>& indices,
+    const Line_2& line,
     std::vector<Point_2>& points) {
-      
+
     CGAL_assertion(indices.size() > 0);
     points.clear();
     points.reserve(indices.size());
 
-    for (const std::size_t idx : indices) {			
+    for (const std::size_t idx : indices) {
       const auto& p = get(point_map_2, *(item_range.begin() + idx));
 			points.push_back(line.projection(p));
     }
@@ -1282,9 +1282,9 @@ namespace internal {
   template<typename FT>
   struct Compare_scores {
     const std::vector<FT>& m_scores;
-      
-    Compare_scores(const std::vector<FT>& scores) : 
-    m_scores(scores) 
+
+    Compare_scores(const std::vector<FT>& scores) :
+    m_scores(scores)
     { }
 
     bool operator()(const std::size_t i, const std::size_t j) const {
@@ -1296,7 +1296,7 @@ namespace internal {
 
   template<typename Point>
   class Indexer {
-  
+
     using Local_traits = Exact_predicates_inexact_constructions_kernel;
     using Local_point_3 = typename Local_traits::Point_3;
 
@@ -1309,7 +1309,7 @@ namespace internal {
 
       const auto pair = m_indices.insert(
         std::make_pair(
-          p, 
+          p,
           m_indices.size()));
       const auto& item = pair.first;
       const std::size_t idx = item->second;
@@ -1322,11 +1322,11 @@ namespace internal {
   };
 
   template<
-  typename Point_2, 
+  typename Point_2,
   typename Plane_3>
   typename Kernel_traits<Point_2>::Kernel::Point_3
   position_on_plane_3(
-    const Point_2& point, 
+    const Point_2& point,
     const Plane_3& plane) {
 
     using Traits = typename Kernel_traits<Point_2>::Kernel;
@@ -1338,33 +1338,33 @@ namespace internal {
 
     static Vector_3 vertical(FT(0), FT(0), FT(1));
     const Line_3 line(Point_3(point.x(), point.y(), FT(0)), vertical);
-    typename CGAL::cpp11::result_of<Intersect_3(Line_3, Plane_3)>::type result 
+    typename CGAL::cpp11::result_of<Intersect_3(Line_3, Plane_3)>::type result
     = CGAL::intersection(line, plane);
     if (result)
       if (const Point_3* p = boost::get<Point_3>(&*result))
         return *p;
 
-    /*    
-    std::cerr << 
-      "Error (position_on_plane): cannot compute the 3D position!" 
+    /*
+    std::cerr <<
+      "Error (position_on_plane): cannot compute the 3D position!"
     << std::endl; */
     return Point_3(FT(0), FT(0), FT(0));
   }
 
   template<
-  typename Item_range, 
-  typename Point_map_2, 
+  typename Item_range,
+  typename Point_map_2,
   typename Line_2>
   typename Kernel_traits<Line_2>::Kernel::FT
   line_from_points_2(
-    const Item_range& item_range, 
-    const Point_map_2& point_map_2, 
+    const Item_range& item_range,
+    const Point_map_2& point_map_2,
     Line_2& line) {
 
     using Traits = typename Kernel_traits<Line_2>::Kernel;
     using FT = typename Traits::FT;
 
-    using Local_traits 
+    using Local_traits
     = CGAL::Exact_predicates_inexact_constructions_kernel;
 		using Local_FT = typename Local_traits::FT;
 		using Local_line_2 = typename Local_traits::Line_2;
@@ -1373,7 +1373,7 @@ namespace internal {
 		CGAL_assertion(item_range.size() > 0);
 		std::vector<Local_point_2> points;
     points.reserve(item_range.size());
-				
+
 		for (std::size_t i = 0; i < item_range.size(); ++i) {
 			const auto& p = get(point_map_2, *(item_range.begin() + i));
 
@@ -1389,13 +1389,13 @@ namespace internal {
 
 		const FT quality = static_cast<FT>(
       CGAL::linear_least_squares_fitting_2(
-        points.begin(), points.end(), 
-        fitted_line, fitted_centroid, 
+        points.begin(), points.end(),
+        fitted_line, fitted_centroid,
         CGAL::Dimension_tag<0>()));
 
 		line = Line_2(
-      static_cast<FT>(fitted_line.a()), 
-      static_cast<FT>(fitted_line.b()), 
+      static_cast<FT>(fitted_line.a()),
+      static_cast<FT>(fitted_line.b()),
       static_cast<FT>(fitted_line.c()));
 
     return quality;
@@ -1405,7 +1405,7 @@ namespace internal {
   typename Point_2,
   typename Vector_2>
   void estimate_direction_2(
-    const std::vector<Point_2>& points, 
+    const std::vector<Point_2>& points,
     Vector_2& direction) {
 
     using Traits = typename Kernel_traits<Point_2>::Kernel;
@@ -1418,13 +1418,13 @@ namespace internal {
   }
 
   template<
-  typename Item_range, 
-  typename Point_map_3, 
+  typename Item_range,
+  typename Point_map_3,
   typename Plane_3>
   typename Kernel_traits<Plane_3>::Kernel::FT
   plane_from_points_3(
-    const Item_range& item_range, 
-    const Point_map_3& point_map_3, 
+    const Item_range& item_range,
+    const Point_map_3& point_map_3,
     const std::vector<std::size_t>& indices,
     Plane_3& plane) {
 
@@ -1432,7 +1432,7 @@ namespace internal {
     using FT = typename Traits::FT;
     using Point_3 = typename Traits::Point_3;
 
-    using Local_traits 
+    using Local_traits
     = CGAL::Exact_predicates_inexact_constructions_kernel;
 		using Local_FT = typename Local_traits::FT;
 		using Local_point_3 = typename Local_traits::Point_3;
@@ -1441,7 +1441,7 @@ namespace internal {
 		CGAL_assertion(indices.size() > 0);
 		std::vector<Local_point_3> points;
     points.reserve(indices.size());
-				
+
 		for (const std::size_t idx : indices) {
 			const Point_3& p = get(point_map_3, *(item_range.begin() + idx));
 
@@ -1458,27 +1458,27 @@ namespace internal {
 
 		const FT quality = static_cast<FT>(
       CGAL::linear_least_squares_fitting_3(
-        points.begin(), points.end(), 
-        fitted_plane, fitted_centroid, 
+        points.begin(), points.end(),
+        fitted_plane, fitted_centroid,
         CGAL::Dimension_tag<0>()));
 
 		plane = Plane_3(
-      static_cast<FT>(fitted_plane.a()), 
-      static_cast<FT>(fitted_plane.b()), 
-      static_cast<FT>(fitted_plane.c()), 
+      static_cast<FT>(fitted_plane.a()),
+      static_cast<FT>(fitted_plane.b()),
+      static_cast<FT>(fitted_plane.c()),
       static_cast<FT>(fitted_plane.d()));
 
     return quality;
 	}
 
   template<
-  typename Item_range, 
-  typename Point_map_3, 
+  typename Item_range,
+  typename Point_map_3,
   typename Plane_3>
   typename Kernel_traits<Plane_3>::Kernel::FT
   plane_from_points_3(
-    const Item_range& item_range, 
-    const Point_map_3& point_map_3, 
+    const Item_range& item_range,
+    const Point_map_3& point_map_3,
     Plane_3& plane) {
 
     std::vector<std::size_t> indices;
@@ -1490,14 +1490,14 @@ namespace internal {
   }
 
   template<
-  typename Item_range, 
+  typename Item_range,
   typename Point_map_2,
   typename Point_2>
   void bounding_box_2(
     const Item_range& item_range,
     const Point_map_2& point_map_2,
     std::vector<Point_2>& bbox) {
-    
+
     using Traits = typename Kernel_traits<Point_2>::Kernel;
     using FT = typename Traits::FT;
 
@@ -1535,12 +1535,12 @@ namespace internal {
   }
 
   template<
-  typename Segment_2, 
+  typename Segment_2,
   typename Point_2>
   void bounding_box_2(
     const std::vector<Segment_2>& segments,
     std::vector<Point_2>& bbox) {
-    
+
     using Traits = typename Kernel_traits<Segment_2>::Kernel;
     using FT = typename Traits::FT;
 
@@ -1548,7 +1548,7 @@ namespace internal {
     FT minx = internal::max_value<FT>(), miny = internal::max_value<FT>();
     FT maxx = -internal::max_value<FT>(), maxy = -internal::max_value<FT>();
 
-    for (const auto& segment : segments) {                      
+    for (const auto& segment : segments) {
       const Point_2& source = segment.source();
       const Point_2& target = segment.target();
 
@@ -1595,12 +1595,12 @@ namespace internal {
       points.push_back(Local_point_3(tx, ty, Local_FT(0)));
     }
 
-    const Local_FT average_spacing = 
+    const Local_FT average_spacing =
     CGAL::compute_average_spacing<CGAL::Sequential_tag>(
       points, num_neighbors, CGAL::parameters::point_map(
         CGAL::Identity_property_map<Local_point_3>()).
         geom_traits(Local_traits()));
-                
+
     return static_cast<FT>(average_spacing);
   }
 
@@ -1608,12 +1608,12 @@ namespace internal {
   typename Face_handle,
   typename Triangle_3>
   void triangle_3(
-    const Face_handle& fh, 
+    const Face_handle& fh,
     Triangle_3& triangle) {
-    
+
     using Traits = typename Kernel_traits<Triangle_3>::Kernel;
     using Point_3 = typename Traits::Point_3;
-    
+
     Point_3 p0, p1, p2;
     point_3(fh, 0, p0);
     point_3(fh, 1, p1);
@@ -1625,11 +1625,11 @@ namespace internal {
   typename Face_handle,
   typename Point_3>
   void point_3(
-    const Face_handle& fh, 
+    const Face_handle& fh,
     const std::size_t idx,
     Point_3& p) {
-    p = Point_3(fh->vertex(idx)->point().x(), 
-                fh->vertex(idx)->point().y(), 
+    p = Point_3(fh->vertex(idx)->point().x(),
+                fh->vertex(idx)->point().y(),
                 fh->info().z[idx]);
   }
 

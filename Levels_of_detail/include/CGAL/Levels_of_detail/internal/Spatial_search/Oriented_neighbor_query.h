@@ -39,6 +39,7 @@ namespace internal {
   class Oriented_neighbor_query {
 
   public:
+
     using Traits = GeomTraits;
     using Indices = std::vector<std::size_t>;
 

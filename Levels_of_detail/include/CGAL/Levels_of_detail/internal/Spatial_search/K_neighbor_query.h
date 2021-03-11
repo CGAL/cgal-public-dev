@@ -49,8 +49,8 @@ namespace Levels_of_detail {
 namespace internal {
 
 template<
-  typename GeomTraits, 
-  typename InputRange, 
+  typename GeomTraits,
+  typename InputRange,
   typename PointMap>
   class K_neighbor_query {
 
@@ -62,43 +62,43 @@ template<
     using FT = typename Traits::FT;
 
     using Point = typename Point_map::value_type;
-    
-    using Index_to_point_map = 
+
+    using Index_to_point_map =
     internal::Item_property_map<Input_range, Point_map>;
 
     using Search_base = typename std::conditional<
-      std::is_same<typename Traits::Point_2, Point>::value, 
-      CGAL::Search_traits_2<Traits>, 
+      std::is_same<typename Traits::Point_2, Point>::value,
+      CGAL::Search_traits_2<Traits>,
       CGAL::Search_traits_3<Traits> >::type;
 
-    using Search_traits = 
+    using Search_traits =
     CGAL::Search_traits_adapter<std::size_t, Index_to_point_map, Search_base>;
 
-    using Distance = 
+    using Distance =
     CGAL::Distance_adapter<
-      std::size_t, 
-      Index_to_point_map, 
+      std::size_t,
+      Index_to_point_map,
       CGAL::Euclidean_distance<Search_base> >;
 
-    using Splitter = 
+    using Splitter =
     CGAL::Sliding_midpoint<Search_traits>;
 
-    using Search_tree = 
+    using Search_tree =
     CGAL::Kd_tree<Search_traits, Splitter, CGAL::Tag_true>;
 
-    using Neighbor_search = 
+    using Neighbor_search =
     CGAL::Orthogonal_k_neighbor_search<
-      Search_traits, 
-      Distance, 
-      Splitter, 
+      Search_traits,
+      Distance,
+      Splitter,
       Search_tree>;
 
-    using Tree = 
+    using Tree =
     typename Neighbor_search::Tree;
 
     K_neighbor_query(
-      const Input_range& input_range, 
-      const FT k, 
+      const Input_range& input_range,
+      const FT k,
       const Point_map& point_map) :
     m_input_range(input_range),
     m_number_of_neighbors(static_cast<std::size_t>(CGAL::to_double(k))),
@@ -109,7 +109,7 @@ template<
       boost::counting_iterator<std::size_t>(0),
       boost::counting_iterator<std::size_t>(m_input_range.size()),
       Splitter(),
-      Search_traits(m_index_to_point_map)) { 
+      Search_traits(m_index_to_point_map)) {
 
       CGAL_precondition(m_input_range.size() > 0);
       CGAL_precondition(m_number_of_neighbors > 0);
@@ -118,18 +118,18 @@ template<
     }
 
     void operator()(
-      const std::size_t query_index, 
+      const std::size_t query_index,
       std::vector<std::size_t>& neighbors) const {
 
       CGAL_precondition(query_index >= 0);
       CGAL_precondition(query_index < m_input_range.size());
 
       Neighbor_search neighbor_search(
-        m_tree, 
-        get(m_index_to_point_map, query_index), 
-        m_number_of_neighbors, 
-        0, 
-        true, 
+        m_tree,
+        get(m_index_to_point_map, query_index),
+        m_number_of_neighbors,
+        0,
+        true,
         m_distance);
 
       neighbors.clear();
@@ -138,15 +138,15 @@ template<
     }
 
     void operator()(
-      const Point& query_point, 
+      const Point& query_point,
       std::vector<std::size_t>& neighbors) const {
 
       Neighbor_search neighbor_search(
-        m_tree, 
-        query_point, 
-        m_number_of_neighbors, 
-        0, 
-        true, 
+        m_tree,
+        query_point,
+        m_number_of_neighbors,
+        0,
+        true,
         m_distance);
 
       neighbors.clear();
@@ -160,7 +160,7 @@ template<
 
   private:
     const Input_range& m_input_range;
-    
+
     const std::size_t m_number_of_neighbors;
 
     const Point_map& m_point_map;
@@ -169,7 +169,7 @@ template<
     Distance m_distance;
     Tree m_tree;
   };
-  
+
 } // internal
 } // Levels_of_detail
 } // CGAL

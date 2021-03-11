@@ -40,7 +40,7 @@ namespace internal {
   template<
     typename GeomTraits,
     typename InputRange,
-    typename NeighborQuery, 
+    typename NeighborQuery,
     typename RegularizationType>
   class Shape_regularization {
 
@@ -56,8 +56,8 @@ namespace internal {
     using Dense_vector_FT = typename Eigen::Matrix<FT, Eigen::Dynamic, 1>;
 
     Shape_regularization(
-      InputRange& input_range, 
-      NeighborQuery& neighbor_query, 
+      InputRange& input_range,
+      NeighborQuery& neighbor_query,
       RegularizationType& regularization_type) :
     m_input_range(input_range),
     m_neighbor_query(neighbor_query),
@@ -65,7 +65,7 @@ namespace internal {
     m_qp_solver(QP_solver()),
     m_parameters(Parameters()) { }
 
-    void regularize() { 
+    void regularize() {
       if(m_input_range.size() < 2) return;
 
       m_graph.clear();
@@ -89,7 +89,7 @@ namespace internal {
       if(m_targets.size() == 0) return;
       CGAL_postcondition(m_targets.size() > 0);
 
-      build_OSQP_solver_data(); 
+      build_OSQP_solver_data();
 
       std::vector<FT> result_qp;
       std::size_t n = m_input_range.size() + m_targets.size();
@@ -100,7 +100,7 @@ namespace internal {
 
       m_regularization_type.update(result_qp);
     }
-    
+
   private:
     class Parameters {
       public:
@@ -112,8 +112,8 @@ namespace internal {
         const FT m_val_neg;
 
         Parameters():
-        m_weight(FT(100000)), 
-        m_lambda(FT(4)/FT(5)), 
+        m_weight(FT(100000)),
+        m_lambda(FT(4)/FT(5)),
         m_neg_inf(FT(-10000000000)),
         m_pos_inf(FT(10000000000)),
         m_val_pos(FT(2) * m_lambda),
@@ -128,7 +128,7 @@ namespace internal {
     std::set <std::pair<std::size_t, std::size_t>> m_graph;
     std::map <std::pair<std::size_t, std::size_t>, FT> m_targets;
     const Parameters m_parameters;
-    
+
     // Variables for the OSQP solver:
     Sparse_matrix_FT m_P_mat;
     Sparse_matrix_FT m_A_mat;
@@ -158,7 +158,7 @@ namespace internal {
         CGAL_postcondition(bound > 0);
 
         m_bounds.push_back(bound);
-        if (m_max_bound < bound) 
+        if (m_max_bound < bound)
           m_max_bound = bound;
       }
     }
@@ -166,7 +166,7 @@ namespace internal {
     void obtain_targets() {
       for(const auto &gi : m_graph) {
         const std::size_t i = gi.first;
-        const std::size_t j = gi.second; 
+        const std::size_t j = gi.second;
 
         FT tar_val = m_regularization_type.target_value(i, j);
         if (CGAL::abs(tar_val) < m_regularization_type.bound(i) + m_regularization_type.bound(j))
@@ -182,8 +182,8 @@ namespace internal {
         FT val = FT(0);
         if (i < k)
           val = FT(2) * m_parameters.m_weight * (FT(1) - m_parameters.m_lambda) / (m_bounds[i] * m_bounds[i] * FT(k));
-  
-        vec.push_back(FT_triplet(i, i, val));  
+
+        vec.push_back(FT_triplet(i, i, val));
       }
       CGAL_postcondition(vec.size() == n);
 
@@ -199,8 +199,8 @@ namespace internal {
       }
     }
 
-    void build_linear_constraints_matrix(const std::size_t n, 
-                                         const std::size_t m, 
+    void build_linear_constraints_matrix(const std::size_t n,
+                                         const std::size_t m,
                                          const std::size_t k,
                                          const std::size_t e,
                                          const std::size_t A_nnz) {
@@ -248,7 +248,7 @@ namespace internal {
 
         if (i < 2 * e) {
           const FT val = ti->second;
-          if (i % 2 == 0) 
+          if (i % 2 == 0)
             m_u[i] =  m_parameters.m_val_neg * val;
           else {
             m_u[i] =  m_parameters.m_val_pos * val;

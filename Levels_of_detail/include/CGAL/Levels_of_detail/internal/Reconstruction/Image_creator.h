@@ -102,8 +102,8 @@ public:
   m_image_ptr(image_ptr),
   m_boundary(boundary),
   m_noise_level_2(noise_level_2),
-  m_pi(static_cast<FT>(CGAL_PI)) { 
-    
+  m_pi(static_cast<FT>(CGAL_PI)) {
+
     create_boundary_knq();
   }
 
@@ -156,7 +156,7 @@ public:
     const auto& label_pairs = m_image.label_pairs;
     for (const auto& label_pair : label_pairs)
       extract_ridges(label_pair);
-    
+
     /* std::cout << "num ridges: " << m_ridges.size() << std::endl; */
   }
 
@@ -184,7 +184,7 @@ private:
   const std::vector<Segment_2>& m_boundary;
   const FT m_noise_level_2;
   const FT m_pi;
-  
+
   Image m_image;
   Images m_ridges;
   Point_pairs m_boundary_queries;
@@ -209,7 +209,7 @@ private:
     m_image.line_found = ridge.line_found;
     m_image.create_contours_from_label_pair_v1(
       lp_index, label_pair, ridge.contours);
-    
+
     /* save_contours(ridge.contours, lp_index); */
     m_ridges.push_back(ridge);
   }
@@ -232,7 +232,7 @@ private:
     m_image.line_found = ridge.line_found;
     m_image.create_contours_from_label_pair_v2(
       lp_index, label_pair, ridge.contours);
-    
+
     /* save_contours(ridge.contours, lp_index); */
     m_ridges.push_back(ridge);
   }
@@ -257,8 +257,8 @@ private:
 
       Saver saver;
       saver.save_polylines(
-        segments, 
-        "/Users/monet/Documents/lod/logs/buildings/tmp/contours/ridge-contours-" + 
+        segments,
+        "/Users/monet/Documents/gf/lod/logs/buildings/tmp/contours/ridge-contours-" +
         std::to_string(lp_index) + "-" + std::to_string(i));
     }
   }
@@ -267,7 +267,7 @@ private:
 
     create_boundary_queries();
     Point_pair_map pmap;
-    m_knq_ptr = 
+    m_knq_ptr =
       std::make_shared<KNQ_pair>(m_boundary_queries, FT(1), pmap);
   }
 
@@ -279,13 +279,13 @@ private:
 
     for (std::size_t i = 0; i < m_boundary.size(); ++i) {
       const auto& segment = m_boundary[i];
-          
+
       const auto& s = segment.source();
       const auto& t = segment.target();
 
       samples.clear();
       PS_generator generator(s, t, num_samples_per_segment);
-      std::copy_n(generator, num_samples_per_segment - 1, 
+      std::copy_n(generator, num_samples_per_segment - 1,
       std::back_inserter(samples));
 
       for (const auto& p : samples)
@@ -312,7 +312,7 @@ private:
         const auto& cell = original.grid[i][j];
         const std::size_t label = m_image_ptr->get_label(
           cell.zr, cell.zg, cell.zb);
-        
+
         if (label == num_labels) {
           ipixel.label = std::size_t(-1);
           ipixel.is_outer = true;
@@ -331,7 +331,7 @@ private:
         else
           seeds.push_back(ipixel.index);
 
-        idx_map[std::make_pair(ipixel.i, ipixel.j)] = ipixel.index; 
+        idx_map[std::make_pair(ipixel.i, ipixel.j)] = ipixel.index;
         ++index;
       }
     }
@@ -371,7 +371,7 @@ private:
     const std::size_t rows, const std::size_t cols,
     const std::size_t i, const std::size_t j,
     const Idx_map& idx_map, Indices& neighbors) {
-    
+
     neighbors.clear();
     std::size_t ii, jj;
 
@@ -380,7 +380,7 @@ private:
       const std::size_t idx = idx_map.at(std::make_pair(ii, jj));
       neighbors.push_back(idx);
     }
-    
+
     if (j != cols - 1) {
       ii = i; jj = j + 1;
       const std::size_t idx = idx_map.at(std::make_pair(ii, jj));
@@ -404,7 +404,7 @@ private:
     const std::size_t rows, const std::size_t cols,
     const std::size_t i, const std::size_t j,
     const Idx_map& idx_map, Indices& neighbors) {
-    
+
     neighbors.clear();
     std::size_t ii, jj;
 
@@ -449,22 +449,22 @@ private:
 
     std::vector<Indices> regions;
     region_growing.detect(std::back_inserter(regions));
-    
+
     /* std::cout << "num labeled regions: " << regions.size() << std::endl; */
 
     // find best label
     auto& original = m_image_ptr->get_image();
 
     m_image_ptr->save_image(
-      "/Users/monet/Documents/lod/logs/buildings/tmp/image-clean-0.jpg", original);
+      "/Users/monet/Documents/gf/lod/logs/buildings/tmp/image-clean-0.jpg", original);
 
     for (const auto& region : regions) {
       if (region.size() <= 50) {
-        
+
         const std::size_t new_label = get_best_label(region);
         if (new_label == std::size_t(-1))
           continue;
-        
+
         const auto& p = m_image_ptr->get_label_map().at(new_label);
         for (const std::size_t idx : region) {
           const std::size_t i = pixels[idx].i;
@@ -478,7 +478,7 @@ private:
     }
 
     m_image_ptr->save_image(
-      "/Users/monet/Documents/lod/logs/buildings/tmp/image-clean-1.jpg", original);
+      "/Users/monet/Documents/gf/lod/logs/buildings/tmp/image-clean-1.jpg", original);
 
     // remove degenerated corner pixels
     for (auto& pixel : pixels) {
@@ -491,7 +491,7 @@ private:
       std::size_t count = 1;
       for (std::size_t k = 1; k < neighbors.size(); ++k)
         if (pixels[neighbors[k]].label == result) ++count;
-      
+
       if (count == neighbors.size()) {
         pixel.label = result;
 
@@ -511,7 +511,7 @@ private:
       std::size_t count = 0;
       for (std::size_t k = 0; k < neighbors.size(); ++k)
         if (pixels[neighbors[k]].label != std::size_t(-1)) ++count;
-      
+
       if (count == neighbors.size()) {
         pixel.label = pixels[neighbors[0]].label;
 
@@ -528,7 +528,7 @@ private:
       pixel.used = false;
 
     m_image_ptr->save_image(
-      "/Users/monet/Documents/lod/logs/buildings/tmp/image-clean-2.jpg", original);
+      "/Users/monet/Documents/gf/lod/logs/buildings/tmp/image-clean-2.jpg", original);
 
     // remove degenerated internal pixels
     for (auto& pixel : pixels) {
@@ -537,9 +537,9 @@ private:
       pixel.used = true;
       const auto& neighbors03 = pixel.neighbors_03;
       const auto& neighbors47 = pixel.neighbors_47;
-      
+
       std::size_t result = std::size_t(-1);
-      const bool is_degenerated = 
+      const bool is_degenerated =
         is_degenerated_corner(pixel, neighbors03, neighbors47, result);
 
       if (is_degenerated) {
@@ -558,7 +558,7 @@ private:
       pixel.used = false;
 
     m_image_ptr->save_image(
-      "/Users/monet/Documents/lod/logs/buildings/tmp/image-clean.jpg", original);
+      "/Users/monet/Documents/gf/lod/logs/buildings/tmp/image-clean.jpg", original);
   }
 
   bool is_degenerated_corner(
@@ -700,11 +700,11 @@ private:
     Indices neighbors;
     Indices nums(num_labels, 0);
     for (const std::size_t idx : region) {
-      
+
       const std::size_t ref_label = pixels[idx].label;
       if (ref_label == std::size_t(-1))
         continue;
-      
+
       neighbors.clear();
       m_image(idx, neighbors);
 
@@ -712,7 +712,7 @@ private:
         if (
           pixels[neighbor].label != std::size_t(-1) &&
           pixels[neighbor].label != ref_label) {
-          
+
           nums[pixels[neighbor].label] += 1;
         }
       }
@@ -758,7 +758,7 @@ private:
           CGAL_assertion(l1 != l2);
           if (l1 <= l2)
             unique.insert(std::make_pair(l1, l2));
-          else 
+          else
             unique.insert(std::make_pair(l2, l1));
         }
       }
@@ -768,7 +768,7 @@ private:
     label_pairs.reserve(unique.size());
     for (const auto& item : unique)
       label_pairs.push_back(item);
-    
+
     /* std::cout << "num label pairs: " << label_pairs.size() << std::endl; */
   }
 
@@ -795,10 +795,10 @@ private:
     std::set<std::size_t> unique;
     for (const auto& pixel : pixels) {
       if (pixel.label == label_pair.first) {
-        
+
         neighbors.clear();
         m_image(pixel.index, neighbors);
-        
+
         bool found = false;
         for (const std::size_t neighbor : neighbors) {
           if (pixels[neighbor].label == label_pair.second) {
@@ -818,7 +818,7 @@ private:
 
     std::map<std::size_t, std::size_t> mapping;
     std::size_t index = 0; Pixel rpixel;
-    
+
     rimage.clear();
     rimage.label_pairs.push_back(label_pair);
     rimage.num_labels = num_labels;
@@ -828,7 +828,7 @@ private:
       mapping[rpixel.index] = index;
       rpixel.index = index;
       ++index;
-      
+
       rimage.pixels.push_back(rpixel);
       if (rpixel.label == std::size_t(-1))
         rimage.seeds.push_back(rpixel.label);
@@ -885,7 +885,7 @@ private:
     const Image& rimage,
     const std::size_t rindex,
     const std::vector<Indices>& regions) {
-    
+
     const auto& region = regions[rindex];
     const auto& rpixels = rimage.pixels;
     const std::size_t num_labels = rimage.num_labels;
@@ -898,7 +898,7 @@ private:
     ridge.label_pairs = label_pairs;
     ridge.is_ridge = true;
     ridge.noise_level_2 = m_noise_level_2;
-    
+
     std::map<std::size_t, std::size_t> mapping;
     std::size_t index = 0; Pixel rpixel;
 
@@ -907,7 +907,7 @@ private:
       mapping[rpixel.index] = index;
       rpixel.index = index;
       ++index;
-      
+
       ridge.pixels.push_back(rpixel);
       if (rpixel.label == std::size_t(-1))
         ridge.seeds.push_back(rpixel.label);
@@ -930,12 +930,12 @@ private:
   void clean_contours() {
 
     set_types();
-    
+
     /* // removed in version 2
     mark_internal_degenerated_contours_before(); */
-    
+
     mark_end_points();
-    
+
     /* // removed in version 1
     for (auto& ridge : m_ridges) {
       for (auto& contour : ridge.contours) {
@@ -943,25 +943,25 @@ private:
         contour.truncate();
       }
     } */
-    
+
     intersect_contours();
     update_internal_points();
 
     /* // removed in version 2
     mark_internal_degenerated_contours_after(); */
-    
+
     /* // removed in version 3
     type_end_points(); */
 
     /* // removed in version 3
     update_boundary_points(); */
-    
+
     /* // removed in version 2
     mark_boundary_degenerated_contours(); */
-    
+
     /* // removed in version 3
     snap_contours(); */
-    
+
     /* // removed in version 2
     remove_duplicated_edges(); */
   }
@@ -984,7 +984,7 @@ private:
       for (auto& contour : ridge.contours) {
         for (auto& item : contour.points) {
           if (
-            internal::are_equal_points_2(query, item.point_) && 
+            internal::are_equal_points_2(query, item.point_) &&
             query != item.point_) {
             item.point_ = query;
           }
@@ -997,7 +997,7 @@ private:
 
     for (auto& ridge : m_ridges) {
       for (auto& contour : ridge.contours) {
-        
+
         auto& items = contour.points;
         for (auto& item : items)
           item.end_type = item.int_type;
@@ -1028,7 +1028,7 @@ private:
 
         bool found_out = false;
         for (const auto& contour : m_ridges[i].contours) {
-          if (contour.skip()) continue; 
+          if (contour.skip()) continue;
 
           bool found_in = false;
           for (const auto& p : contour.points) {
@@ -1051,7 +1051,7 @@ private:
     /*
     FT max_dist = FT(0);
     for (const auto& ridge : m_ridges) {
-      
+
       bool found = false;
       for (const auto& contour : ridge.contours) {
         if (contour.points.size() < 2) continue;
@@ -1077,7 +1077,7 @@ private:
 
   void add_contour_neighbors(
     const FT max_dist,
-    const std::size_t skip, 
+    const std::size_t skip,
     My_point& p) {
 
     for (std::size_t i = 0; i < m_ridges.size(); ++i) {
@@ -1116,7 +1116,7 @@ private:
     for (auto& ridge : m_ridges) {
       for (auto& contour : ridge.contours) {
         if (contour.skip()) continue;
-        
+
         auto& items = contour.points;
         const std::size_t nump = items.size();
 
@@ -1141,14 +1141,14 @@ private:
         average_point(max_dist, i, p);
         average_point(max_dist, i, q);
       }
-    }    
+    }
   }
 
   void update_end_point(
     const FT max_dist,
     My_point& query) {
 
-    FT x = query.point().x(); 
+    FT x = query.point().x();
     FT y = query.point().y();
 
     const auto& neighbors = query.neighbors;
@@ -1156,10 +1156,10 @@ private:
 
     for (const auto& pair : neighbors) {
       const auto& contour = m_ridges[pair.first].contours[pair.second];
-      
+
       const auto& items = contour.points;
       const std::size_t nump = items.size();
-      
+
       const auto& p = contour.points[0];
       const auto& q = contour.points[nump - 1];
 
@@ -1175,19 +1175,19 @@ private:
           x += q.point().x(); y += q.point().y();
         }
       }
-    } 
+    }
     x /= static_cast<FT>(neighbors.size() + 1);
     y /= static_cast<FT>(neighbors.size() + 1);
-    
+
     const Point_2 center = Point_2(x, y);
     query.point_ = center;
 
     for (const auto& pair : neighbors) {
       auto& contour = m_ridges[pair.first].contours[pair.second];
-      
+
       auto& items = contour.points;
       const std::size_t nump = items.size();
-      
+
       auto& p = contour.points[0];
       auto& q = contour.points[nump - 1];
 
@@ -1248,7 +1248,7 @@ private:
         if (contour.points.size() < 2) {
           contour.is_degenerated = true; continue;
         }
-        
+
         FT dist = FT(0);
         for (std::size_t i = 0; i < contour.points.size() - 1; ++i) {
           const auto& p = contour.points[i];
@@ -1272,18 +1272,18 @@ private:
 
         auto& items = contour.points;
         const std::size_t nump = items.size();
-        
+
         auto& p = items[0];
         auto& q = items[nump - 1];
 
         if (p.neighbors.size() < 2)
           p.end_type = Point_type::BOUNDARY;
-        else 
+        else
           p.end_type = Point_type::CORNER;
 
         if (q.neighbors.size() < 2)
           q.end_type = Point_type::BOUNDARY;
-        else 
+        else
           q.end_type = Point_type::CORNER;
       }
     }
@@ -1305,7 +1305,7 @@ private:
           /* if (success) clean_intersection_end(items); */
         }
       }
-    }    
+    }
   }
 
   bool intersect_with_boundary(My_point& query) {
@@ -1313,12 +1313,12 @@ private:
     Indices closest;
     (*m_knq_ptr)(query.point(), closest);
     const std::size_t bd_idx = m_boundary_queries[closest[0]].second;
-    
+
     const auto& segment = m_boundary[bd_idx];
     const auto& s = segment.source();
     const auto& t = segment.target();
     const Line_2 line2 = Line_2(s, t);
-    
+
     const auto proj = line2.projection(query.point());
     if (internal::distance(query.point(), proj) >= m_noise_level_2) {
       query.end_type = Point_type::DISTANT_BOUNDARY; return false;
@@ -1326,7 +1326,7 @@ private:
 
     query.bd_idx = bd_idx;
     query.point_ = proj;
-    
+
     return true;
   }
 
@@ -1380,7 +1380,7 @@ private:
     const std::size_t nump = items.size();
     const std::size_t nums = ( nump >= 6 ? 5 : nump - 1 );
     const auto& query = items[nump - 1];
-    
+
     const std::size_t bd_idx = query.bd_idx;
     const auto& segment = m_boundary[bd_idx];
     const auto& s = segment.source();
@@ -1422,7 +1422,7 @@ private:
   bool belongs_to_segment(
     const Point_2& s, const Point_2& r, const Point_2& t) {
 
-    const auto res = 
+    const auto res =
       CGAL::Barycentric_coordinates::compute_segment_coordinates_2(
         s, t, r, Traits());
     return ( res[0] >= FT(0) && res[1] >= FT(0) );
@@ -1431,11 +1431,11 @@ private:
   bool intersect_2(
     const Line_2& line_1, const Line_2& line_2,
     Point_2& in_point) {
-    
-    typename std::result_of<Intersect_2(Line_2, Line_2)>::type result 
+
+    typename std::result_of<Intersect_2(Line_2, Line_2)>::type result
     = CGAL::intersection(line_1, line_2);
     if (result) {
-      if (const Line_2* line = boost::get<Line_2>(&*result)) 
+      if (const Line_2* line = boost::get<Line_2>(&*result))
         return false;
       else {
         const Point_2* point = boost::get<Point_2>(&*result);
@@ -1514,7 +1514,7 @@ private:
     const auto& s = segment.source();
     const auto& t = segment.target();
     const auto  m = internal::middle_point_2(s, t);
-    
+
     const FT dist1 = internal::distance(query.point(), s);
     const FT dist2 = internal::distance(query.point(), t);
     const FT dist3 = internal::distance(query.point(), m);
@@ -1532,7 +1532,7 @@ private:
   }
 
   void remove_duplicated_edges() {
-    
+
     bool found = false;
     for (std::size_t i = 0; i < m_ridges.size(); ++i) {
       for (auto& contour : m_ridges[i].contours) {
@@ -1572,7 +1572,7 @@ private:
   }
 
   bool is_edge_on_another_contour(
-    const std::size_t skip, 
+    const std::size_t skip,
     const std::size_t ii, const std::size_t jj,
     My_point& a, My_point& b) {
 
@@ -1591,7 +1591,7 @@ private:
 
           if (
             internal::are_equal_points_2(a.point(), c.point()) &&
-            internal::are_equal_points_2(b.point(), d.point()) ) {            
+            internal::are_equal_points_2(b.point(), d.point()) ) {
 
             a.merge(c); b.merge(d);
             a.merge(b); c.merge(d);
@@ -1607,7 +1607,7 @@ private:
           if (
             internal::are_equal_points_2(a.point(), d.point()) &&
             internal::are_equal_points_2(b.point(), c.point()) ) {
-            
+
             a.merge(d); b.merge(c);
             a.merge(b); d.merge(c);
             b.is_removed = true;
@@ -1636,25 +1636,25 @@ private:
       cell.zr = FT(0); cell.zg = FT(0); cell.zb = FT(0);
     }
     m_image_ptr->save_image(
-      "/Users/monet/Documents/lod/logs/buildings/tmp/ridges/ridge-" 
-      + std::to_string(label_pair.first)  + "-" 
+      "/Users/monet/Documents/gf/lod/logs/buildings/tmp/ridges/ridge-"
+      + std::to_string(label_pair.first)  + "-"
       + std::to_string(label_pair.second) + "-"
-      + std::to_string(ridge_index) + ".jpg", image); 
+      + std::to_string(ridge_index) + ".jpg", image);
   }
 
   void save_ridge_polylines(
     const bool save_all = true) {
-    
+
     if (save_all)
       save_ridge_polylines_all_at_once();
-    else 
+    else
       save_ridge_polylines_one_by_one();
   }
 
   void save_ridge_polylines_one_by_one() {
 
     std::vector<Segment_2> segments;
-    for (std::size_t i = 0; i < m_ridges.size(); ++i) {    
+    for (std::size_t i = 0; i < m_ridges.size(); ++i) {
       for (std::size_t j = 0; j < m_ridges[i].contours.size(); ++j) {
         const auto& contour = m_ridges[i].contours[j];
         if (contour.is_degenerated) continue;
@@ -1670,22 +1670,22 @@ private:
 
         Saver saver;
         saver.save_polylines(
-          segments, 
-          "/Users/monet/Documents/lod/logs/buildings/tmp/ridges/ridge-contours-" + 
+          segments,
+          "/Users/monet/Documents/gf/lod/logs/buildings/tmp/ridges/ridge-contours-" +
           std::to_string(i) + "-" + std::to_string(j));
       }
     }
   }
 
   void save_ridge_polylines_all_at_once() {
-    
+
     std::vector<Segment_2> segments;
     /* const auto& ridge = m_ridges[0]; */
 
-    for (const auto& ridge : m_ridges) {    
+    for (const auto& ridge : m_ridges) {
       for (const auto& contour : ridge.contours) {
         if (contour.is_degenerated) continue;
-        
+
         const auto& items = contour.points;
         for (std::size_t k = 0; k < items.size() - 1; ++k) {
           const std::size_t kp = k + 1;
@@ -1695,10 +1695,10 @@ private:
         }
       }
     }
-    
+
     Saver saver;
     saver.save_polylines(
-      segments, "/Users/monet/Documents/lod/logs/buildings/tmp/ridge-contours");
+      segments, "/Users/monet/Documents/gf/lod/logs/buildings/tmp/ridge-contours");
   }
 };
 

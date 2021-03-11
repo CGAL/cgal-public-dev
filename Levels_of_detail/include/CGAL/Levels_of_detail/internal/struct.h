@@ -89,7 +89,7 @@ namespace internal {
   struct Triangulation {
 
     using Traits = GeomTraits;
-    
+
     using FT = typename Traits::FT;
     using Point_2 = typename Traits::Point_2;
     using Point_3 = typename Traits::Point_3;
@@ -130,16 +130,16 @@ namespace internal {
         return boost::none;
 
       std::vector<std::size_t> face(3);
-      for (auto fh = delaunay.finite_faces_begin(); 
+      for (auto fh = delaunay.finite_faces_begin();
       fh != delaunay.finite_faces_end(); ++fh) {
         if (!fh->info().tagged) continue;
-        
+
         for (std::size_t k = 0; k < 3; ++k) {
           const Point_2& q = fh->vertex(k)->point();
           const Point_3 p = Point_3(q.x(), q.y(), z);
           const std::size_t idx = indexer(p);
           if (idx == num_vertices) {
-            *(vertices++) = p; 
+            *(vertices++) = p;
             ++num_vertices;
           }
           face[k] = idx;
@@ -150,7 +150,7 @@ namespace internal {
     }
 
     template<typename OutputIterator>
-    boost::optional<OutputIterator> 
+    boost::optional<OutputIterator>
     output_boundary_edges(
       OutputIterator output,
       const bool use_interior = false) const {
@@ -204,7 +204,7 @@ namespace internal {
     }
 
     template<typename OutputIterator>
-    boost::optional<OutputIterator> 
+    boost::optional<OutputIterator>
     output_all_edges(OutputIterator output) const {
 
       if (empty())
@@ -254,7 +254,7 @@ namespace internal {
 
       const FT max_angle = FT(2);
       std::vector<std::size_t> face(3);
-      for (auto fh = delaunay.finite_faces_begin(); 
+      for (auto fh = delaunay.finite_faces_begin();
       fh != delaunay.finite_faces_end(); ++fh) {
         if (!fh->info().interior) continue;
 
@@ -269,7 +269,7 @@ namespace internal {
           const Point_3 p = get_point_3(fh->vertex(k));
           const std::size_t idx = indexer(p);
           if (idx == num_vertices) {
-            *(vertices++) = p; 
+            *(vertices++) = p;
             ++num_vertices;
           }
           face[k] = idx;
@@ -295,15 +295,15 @@ namespace internal {
         return boost::none;
 
       std::vector<std::size_t> face(3);
-      for (auto fh = delaunay.finite_faces_begin(); 
+      for (auto fh = delaunay.finite_faces_begin();
       fh != delaunay.finite_faces_end(); ++fh) {
-        
+
         for (std::size_t k = 0; k < 3; ++k) {
           const Point_2& q = fh->vertex(k)->point();
           const Point_3 p = Point_3(q.x(), q.y(), z);
           const std::size_t idx = indexer(p);
           if (idx == num_vertices) {
-            *(vertices++) = p; 
+            *(vertices++) = p;
             ++num_vertices;
           }
           face[k] = idx;
@@ -329,15 +329,15 @@ namespace internal {
         return boost::none;
 
       std::vector<std::size_t> face(3);
-      for (auto fh = delaunay.finite_faces_begin(); 
+      for (auto fh = delaunay.finite_faces_begin();
       fh != delaunay.finite_faces_end(); ++fh) {
-        
+
         for (std::size_t k = 0; k < 3; ++k) {
           const Point_2& q = fh->vertex(k)->point();
           const Point_3 p = Point_3(q.x(), q.y(), z);
           const std::size_t idx = indexer(p);
           if (idx == num_vertices) {
-            *(vertices++) = p; 
+            *(vertices++) = p;
             ++num_vertices;
           }
           face[k] = idx;
@@ -362,7 +362,7 @@ namespace internal {
 
       const FT max_angle = FT(2);
       std::vector<std::size_t> face(3);
-      for (auto fh = delaunay.finite_faces_begin(); 
+      for (auto fh = delaunay.finite_faces_begin();
       fh != delaunay.finite_faces_end(); ++fh) {
         if (fh->info().tagged) continue;
 
@@ -377,7 +377,7 @@ namespace internal {
           const Point_3 p = get_point_3(fh->vertex(k));
           const std::size_t idx = indexer(p);
           if (idx == num_vertices) {
-            *(vertices++) = p; 
+            *(vertices++) = p;
             ++num_vertices;
           }
           face[k] = idx;
@@ -402,15 +402,15 @@ namespace internal {
         return boost::none;
 
       std::vector<std::size_t> face(3);
-      for (auto fh = delaunay.finite_faces_begin(); 
+      for (auto fh = delaunay.finite_faces_begin();
       fh != delaunay.finite_faces_end(); ++fh) {
         if (!fh->info().tagged) continue;
-        
+
         for (std::size_t k = 0; k < 3; ++k) {
           const Point_3 p = get_point_3(fh->vertex(k));
           const std::size_t idx = indexer(p);
           if (idx == num_vertices) {
-            *(vertices++) = p; 
+            *(vertices++) = p;
             ++num_vertices;
           }
           face[k] = idx;
@@ -430,9 +430,9 @@ namespace internal {
     }
 
     FT area() const {
-      
+
       FT total_area = FT(0); Triangle_2 triangle;
-      for (auto fh = delaunay.finite_faces_begin(); 
+      for (auto fh = delaunay.finite_faces_begin();
       fh != delaunay.finite_faces_end(); ++fh) {
 
         triangle = Triangle_2(
@@ -451,7 +451,7 @@ namespace internal {
       const auto fh = delaunay.locate(p, type, stub);
       if (delaunay.is_infinite(fh) || type != Location_type::FACE)
         return q;
-      
+
       Point_3 p1, p2, p3;
       internal::point_3(fh, 0, p1);
       internal::point_3(fh, 1, p2);
@@ -536,7 +536,7 @@ namespace internal {
       std::size_t& num_vertices,
       VerticesOutputIterator vertices,
       FacesOutputIterator faces) const {
-      
+
       return triangulation.output_for_lod0(
         indexer, num_vertices, vertices, faces);
     }
@@ -550,7 +550,7 @@ namespace internal {
       std::size_t& num_vertices,
       VerticesOutputIterator vertices,
       FacesOutputIterator faces) const {
-      
+
       return triangulation.output_for_lod12(
         indexer, num_vertices, vertices, faces);
     }
@@ -565,22 +565,22 @@ namespace internal {
       VerticesOutputIterator vertices,
       FacesOutputIterator faces,
       const std::size_t object_index) const {
-      
+
       return triangulation.output_for_object(
         indexer, num_vertices, vertices, faces, object_index);
     }
 
     template<typename OutputIterator>
-    boost::optional<OutputIterator> 
+    boost::optional<OutputIterator>
     output_boundary_edges(OutputIterator output) const {
-      
+
       return triangulation.output_boundary_edges(output);
     }
 
     template<typename OutputIterator>
-    boost::optional<OutputIterator> 
+    boost::optional<OutputIterator>
     output_all_edges(OutputIterator output) const {
-      
+
       return triangulation.output_all_edges(output);
     }
   };
@@ -632,7 +632,7 @@ namespace internal {
 
           const std::size_t idx = indexer(p);
           if (idx == num_vertices) {
-            *(vertices++) = p; 
+            *(vertices++) = p;
             ++num_vertices;
           }
           face[k] = idx;
@@ -663,7 +663,7 @@ namespace internal {
           const Point_3& p = triangle[k];
           const std::size_t idx = indexer(p);
           if (idx == num_vertices) {
-            *(vertices++) = p; 
+            *(vertices++) = p;
             ++num_vertices;
           }
           face[k] = idx;
@@ -690,7 +690,7 @@ namespace internal {
           if (internal::are_equal_points_2(
             Point_2(segment.source().x(), segment.source().y()),
             Point_2(segment.target().x(), segment.target().y()))) {
-            
+
             Point_3 p;
             if (segment.source().z() > segment.target().z()) {
               p = tri.locate(segment.source());
@@ -717,7 +717,7 @@ namespace internal {
     using Triangle_3 = typename GeomTraits::Triangle_3;
     using Segment_3 = typename GeomTraits::Segment_3;
     using Indexer = internal::Indexer<Point_3>;
-    
+
     std::vector<Triangle_3> triangles;
     std::vector<Segment_3> segments;
 
@@ -744,7 +744,7 @@ namespace internal {
           const Point_3& p = triangle[k];
           const std::size_t idx = indexer(p);
           if (idx == num_vertices) {
-            *(vertices++) = p; 
+            *(vertices++) = p;
             ++num_vertices;
           }
           face[k] = idx;
@@ -774,7 +774,7 @@ namespace internal {
           const Point_3& p = triangle[k];
           const std::size_t idx = indexer(p);
           if (idx == num_vertices) {
-            *(vertices++) = p; 
+            *(vertices++) = p;
             ++num_vertices;
           }
           face[k] = idx;
@@ -787,10 +787,10 @@ namespace internal {
     template<typename OutputIterator>
     boost::optional<OutputIterator>
     output_wire(OutputIterator output) const {
-      
+
       if (empty())
         return boost::none;
-      
+
       for (const auto& segment : segments)
         *(output++) = segment;
       return output;
@@ -805,7 +805,7 @@ namespace internal {
     using Segment_2 = typename Traits::Segment_2;
 
     Segment_2 segment;
-    
+
     FT default_z = internal::max_value<FT>();
     FT z = default_z;
   };
@@ -861,10 +861,10 @@ namespace internal {
       std::size_t& num_vertices,
       VerticesOutputIterator vertices,
       FacesOutputIterator faces) const {
-      
+
       if (empty0())
         return boost::none;
-        
+
       return base0.output_for_lod0(indexer, num_vertices, vertices, faces);
     }
 
@@ -880,11 +880,11 @@ namespace internal {
       VerticesOutputIterator vertices,
       FacesOutputIterator faces,
       const bool out_tri = false) const {
-      
+
       if (empty1())
         return boost::none;
 
-      if (out_tri) 
+      if (out_tri)
         tri.output_for_lod0(indexer, num_vertices, vertices, faces);
       for (const auto& wall : walls1)
         wall.output_for_lod(tri, indexer, num_vertices, vertices, faces);
@@ -905,11 +905,11 @@ namespace internal {
       VerticesOutputIterator vertices,
       FacesOutputIterator faces,
       const bool out_tri = false) const {
-      
+
       if (empty2())
         return boost::none;
 
-      if (out_tri) 
+      if (out_tri)
         tri.output_for_lod0(indexer, num_vertices, vertices, faces);
       for (const auto& wall : walls2)
         wall.output_for_lod(tri, indexer, num_vertices, vertices, faces);
@@ -922,7 +922,7 @@ namespace internal {
     boost::optional<OutputIterator>
     output_lod0_wire(
       OutputIterator output) const {
-      
+
       if (empty0())
         return boost::none;
       return base0.triangulation.output_boundary_edges(output, true);
@@ -936,10 +936,10 @@ namespace internal {
       const InputTriangulation& tri,
       OutputIterator output,
       const bool intersect = false) const {
-      
+
       if (empty1())
         return boost::none;
-      
+
       if (!intersect)
         tri.output_boundary_edges(output, true);
       for (const auto& wall : walls1)
@@ -958,10 +958,10 @@ namespace internal {
       const InputTriangulation& tri,
       OutputIterator output,
       const bool intersect = false) const {
-      
+
       if (empty2())
         return boost::none;
-      
+
       if (!intersect)
         tri.output_boundary_edges(output, true);
       for (const auto& wall : walls2)
@@ -1020,7 +1020,7 @@ namespace internal {
 
           const std::size_t idx = indexer(p);
           if (idx == num_vertices) {
-            *(vertices++) = p; 
+            *(vertices++) = p;
             ++num_vertices;
           }
           face[k] = idx;
@@ -1051,7 +1051,7 @@ namespace internal {
           const Point_3& p = triangle[k];
           const std::size_t idx = indexer(p);
           if (idx == num_vertices) {
-            *(vertices++) = p; 
+            *(vertices++) = p;
             ++num_vertices;
           }
           face[k] = idx;
@@ -1132,7 +1132,7 @@ namespace internal {
           const Point_3& p = triangle[k];
           const std::size_t idx = indexer(p);
           if (idx == num_vertices) {
-            *(vertices++) = p; 
+            *(vertices++) = p;
             ++num_vertices;
           }
           face[k] = idx;
@@ -1162,7 +1162,7 @@ namespace internal {
           const Point_3& p = triangle[k];
           const std::size_t idx = indexer(p);
           if (idx == num_vertices) {
-            *(vertices++) = p; 
+            *(vertices++) = p;
             ++num_vertices;
           }
           face[k] = idx;
@@ -1175,10 +1175,10 @@ namespace internal {
     template<typename OutputIterator>
     boost::optional<OutputIterator>
     output_wire(OutputIterator output) const {
-      
+
       if (empty())
         return boost::none;
-      
+
       for (const auto& segment : segments)
         *(output++) = segment;
       return output;
@@ -1193,10 +1193,10 @@ namespace internal {
     using Point_2 = typename Traits::Point_2;
 
     Tree_model(
-      const Point_2 center_, 
-      const FT radius_, 
+      const Point_2 center_,
+      const FT radius_,
       const std::size_t cluster_index_) :
-    center(center_), radius(radius_), 
+    center(center_), radius(radius_),
     cluster_index(cluster_index_)
     { }
 
@@ -1261,7 +1261,7 @@ namespace internal {
       std::size_t& num_vertices,
       VerticesOutputIterator vertices,
       FacesOutputIterator faces) const {
-      
+
       if (empty0())
         return boost::none;
 
@@ -1280,11 +1280,11 @@ namespace internal {
       VerticesOutputIterator vertices,
       FacesOutputIterator faces,
       const bool out_tri = false) const {
-      
+
       if (empty1())
         return boost::none;
 
-      if (out_tri) 
+      if (out_tri)
         tri.output_for_lod0(indexer, num_vertices, vertices, faces);
       trunk1.output_for_lod(tri, indexer, num_vertices, vertices, faces);
       crown1.output_for_lod(indexer, num_vertices, vertices, faces);
@@ -1303,11 +1303,11 @@ namespace internal {
       VerticesOutputIterator vertices,
       FacesOutputIterator faces,
       const bool out_tri = false) const {
-      
+
       if (empty2())
         return boost::none;
 
-      if (out_tri) 
+      if (out_tri)
         tri.output_for_lod0(indexer, num_vertices, vertices, faces);
       trunk2.output_for_lod(tri, indexer, num_vertices, vertices, faces);
       crown2.output_for_lod(indexer, num_vertices, vertices, faces);
@@ -1318,7 +1318,7 @@ namespace internal {
     boost::optional<OutputIterator>
     output_lod0_wire(
       OutputIterator output) const {
-      
+
       if (empty0())
         return boost::none;
       return base0.triangulation.output_boundary_edges(output, true);
@@ -1332,7 +1332,7 @@ namespace internal {
       const InputTriangulation& tri,
       OutputIterator output,
       const bool intersect = false) const {
-      
+
       if (empty1())
         return boost::none;
 
@@ -1351,10 +1351,10 @@ namespace internal {
       const InputTriangulation& tri,
       OutputIterator output,
       const bool intersect = false) const {
-      
+
       if (empty2())
         return boost::none;
-      
+
       if (!intersect)
         tri.output_boundary_edges(output, true);
       trunk2.output_wire(tri, intersect, output);
@@ -1377,7 +1377,7 @@ namespace internal {
     using Indexer = internal::Indexer<Point_3>;
 
     Triangulation base;
-    
+
     Visibility_label visibility = Visibility_label::INSIDE;
     bool exterior = false;
     FT inside = FT(1);
@@ -1386,7 +1386,7 @@ namespace internal {
     std::size_t label = std::size_t(-1);
     std::vector<FT> probabilities;
     std::size_t index = std::size_t(-1);
-    
+
     std::vector<int> neighbors;
     std::vector<Segment_2> edges;
     std::unordered_map<int, bool> constraints;
@@ -1459,7 +1459,7 @@ namespace internal {
         const Point_3 p = Point_3(q.x(), q.y(), z);
         const std::size_t idx = indexer(p);
         if (idx == num_vertices) {
-          *(vertices++) = p; 
+          *(vertices++) = p;
           ++num_vertices;
         }
         face.push_back(idx);
@@ -1476,7 +1476,7 @@ namespace internal {
     using FT = typename Traits::FT;
     using Point_2 = typename Traits::Point_2;
     using Segment_2 = typename Traits::Segment_2;
-    
+
     std::pair<int, int> neighbors;
     Segment_2 segment;
     FT weight = FT(0);
@@ -1486,7 +1486,7 @@ namespace internal {
     }
 
     Partition_edge_2(
-      const Point_2 p, const Point_2 q, 
+      const Point_2 p, const Point_2 q,
       const int fidxi, const int fidxj) {
 
       segment = Segment_2(p, q);
@@ -1537,7 +1537,7 @@ namespace internal {
     }
 
     void compute_weight() {
-      
+
       CGAL_assertion(!empty());
 
       auto points = polygon;
@@ -1557,7 +1557,7 @@ namespace internal {
 
       if (angle_deg != FT(0) && angle_deg != FT(180))
         internal::rotate_polygon_3(angle_3d, axis, b, points);
-      
+
       std::vector<Point_2> poly;
       poly.reserve(points.size());
       for (const auto& p : points)
@@ -1597,7 +1597,7 @@ namespace internal {
           const Point_3& p = triangle[k];
           const std::size_t idx = indexer(p);
           if (idx == num_vertices) {
-            *(vertices++) = p; 
+            *(vertices++) = p;
             ++num_vertices;
           }
           face[k] = idx;
@@ -1615,7 +1615,7 @@ namespace internal {
     using FT = typename Traits::FT;
     using Point_3 = typename Traits::Point_3;
     using Indexer = internal::Indexer<Point_3>;
-    
+
     using Local_traits = Exact_predicates_inexact_constructions_kernel;
     using Local_point_3 = typename Local_traits::Point_3;
     using Delaunay_3 = CGAL::Delaunay_triangulation_3<Local_traits>;
@@ -1636,17 +1636,17 @@ namespace internal {
     }
 
     void compute_weight() {
-                  
+
       Delaunay_3 delaunay_3;
       for (const auto& p : vertices)
         delaunay_3.insert(Local_point_3(
-          CGAL::to_double(p.x()), 
-          CGAL::to_double(p.y()), 
+          CGAL::to_double(p.x()),
+          CGAL::to_double(p.y()),
           CGAL::to_double(p.z())));
 
       FT total_volume = FT(0);
-      for (auto cit = delaunay_3.finite_cells_begin(); 
-      cit != delaunay_3.finite_cells_end(); ++cit) {  
+      for (auto cit = delaunay_3.finite_cells_begin();
+      cit != delaunay_3.finite_cells_end(); ++cit) {
         const auto& tetrahedron = delaunay_3.tetrahedron(cit);
         const FT volume = tetrahedron.volume();
         total_volume += volume;
@@ -1704,10 +1704,10 @@ namespace internal {
   };
 
   template<
-  typename GeomTraits, 
-  typename InputRange, 
+  typename GeomTraits,
+  typename InputRange,
   typename PointMap,
-  typename SemanticMap, 
+  typename SemanticMap,
   typename VisibilityMap>
   struct Data_structure {
 
@@ -1722,9 +1722,9 @@ namespace internal {
 
     using Parameters = internal::Parameters<FT>;
 
-    using Point_map_3 = 
+    using Point_map_3 =
     internal::Item_property_map<Input_range, Point_map>;
-    using Point_map_3_to_2 = 
+    using Point_map_3_to_2 =
     internal::Point_2_from_point_3_property_map<Point_map, Point_2>;
     using Point_map_2 =
     internal::Item_property_map<Input_range, Point_map_3_to_2>;
@@ -1737,7 +1737,7 @@ namespace internal {
     const Semantic_map& semantic_map;
     const Parameters& parameters;
     const Visibility_map& visibility_map;
-    
+
     bool verbose;
 
     Point_map_3 point_map_3;
@@ -1746,12 +1746,12 @@ namespace internal {
     Visibility_map_d visibility_map_d;
 
     Data_structure(
-      const Input_range& input_range_, 
+      const Input_range& input_range_,
       const Point_map& point_map_,
       const Semantic_map& semantic_map_,
-      const Parameters& parameters_, 
+      const Parameters& parameters_,
       const Visibility_map& visibility_map_,
-      const bool verbose_ = false) : 
+      const bool verbose_ = false) :
     input_range(input_range_),
     point_map(point_map_),
     semantic_map(semantic_map_),
@@ -1761,10 +1761,10 @@ namespace internal {
     point_map_3(input_range, point_map),
     point_map_3_to_2(point_map),
     point_map_2(input_range, point_map_3_to_2),
-    visibility_map_d(input_range, visibility_map) 
+    visibility_map_d(input_range, visibility_map)
     { }
 
-    ~Data_structure() 
+    ~Data_structure()
     { }
 
     void points(
@@ -1773,7 +1773,7 @@ namespace internal {
 
       indices.clear();
       for (std::size_t i = 0; i < input_range.size(); ++i) {
-        const Semantic_label label = 
+        const Semantic_label label =
         get(semantic_map, *(input_range.begin() + i));
         if (label == output_label)
           indices.push_back(i);
@@ -1781,11 +1781,11 @@ namespace internal {
     }
 
     template<typename OutputIterator>
-    boost::optional<OutputIterator> 
+    boost::optional<OutputIterator>
     get_points(
       const Semantic_label output_label,
       OutputIterator output) const {
-      
+
       std::vector<std::size_t> indices;
       points(output_label, indices);
       for (const std::size_t idx : indices)

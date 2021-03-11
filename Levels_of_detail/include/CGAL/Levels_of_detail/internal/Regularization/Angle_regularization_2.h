@@ -38,7 +38,7 @@ namespace Levels_of_detail {
 namespace internal {
 
   template<
-    typename GeomTraits, 
+    typename GeomTraits,
     typename InputRange,
     typename SegmentMap>
   class Angle_regularization_2 {
@@ -59,20 +59,20 @@ namespace internal {
     using Relations_map = std::map <std::pair<std::size_t, std::size_t>, std::pair<int, std::size_t>>;
 
     Angle_regularization_2(
-      InputRange& input_range, 
+      InputRange& input_range,
       const FT theta_max = FT(25),
       const SegmentMap segment_map = SegmentMap()) :
     m_input_range(input_range),
     m_theta_max(CGAL::abs(theta_max)),
     m_segment_map(segment_map),
-    m_modified_segments_counter(0) { 
+    m_modified_segments_counter(0) {
 
       if (m_theta_max > FT(90))
         m_theta_max = FT(90);
     }
 
     FT target_value(const std::size_t i, const std::size_t j) {
- 
+
       CGAL_precondition(m_segments.size() > 0);
       CGAL_precondition(m_segments.find(i) != m_segments.end());
       CGAL_precondition(m_segments.find(j) != m_segments.end());
@@ -89,16 +89,16 @@ namespace internal {
       const FT tar_val = CGAL::abs(to_lower) < CGAL::abs(to_upper) ? to_lower : to_upper;
       if (CGAL::abs(tar_val) < bound(i) + bound(j)) {
         m_targets[std::make_pair(i, j)] = tar_val;
- 
+
         int rel_val;
         if (CGAL::abs(to_lower) < CGAL::abs(to_upper))
             rel_val = ((90 * static_cast<int>(mes90)) % 180 == 0 ? 0 : 1);
         else
             rel_val = ((90 * static_cast<int>(mes90 + 1.0)) % 180 == 0 ? 0 : 1);
-        
+
         m_relations[std::make_pair(i, j)] = rel_val;
-      } 
-  
+      }
+
       return tar_val;
     }
 
@@ -124,7 +124,7 @@ namespace internal {
       CGAL_precondition(m_targets.size() == m_relations.size());
 
       for (const auto & group : m_groups) {
-        if (group.size() < 2) continue; 
+        if (group.size() < 2) continue;
 
         parallel_groups_angle_map.clear();
         segments.clear();
@@ -149,7 +149,7 @@ namespace internal {
     }
 
     template<typename Range, typename IndexMap = CGAL::Identity_property_map<std::size_t>>
-  	void add_group(const Range& group, const IndexMap index_map = IndexMap()) { 
+  	void add_group(const Range& group, const IndexMap index_map = IndexMap()) {
       std::vector<std::size_t> gr;
       for (const auto & item : group) {
         const std::size_t seg_index = get(index_map, item);
@@ -179,7 +179,7 @@ namespace internal {
         max_length = CGAL::max(max_length, length);
         norms[segment.second.m_index] = length;
       }
-      
+
       CGAL_assertion(max_length > FT(0));
       for (std::size_t i = 0; i < norms.size(); ++i) {
         norms[i] /= max_length;
@@ -271,7 +271,7 @@ namespace internal {
 
         Vector v_dir = Vector(x, y);
         const Vector v_ort = Vector(-v_dir.y(), v_dir.x());
-        
+
         const FT a = v_ort.x();
         const FT b = v_ort.y();
 
@@ -293,20 +293,20 @@ namespace internal {
 
     void set_orientation(const std::size_t i, const FT a, const FT b, const FT c, const Vector &direction) {
       Vector l_direction = direction;
-      
-      if (l_direction.y() < FT(0) || (l_direction.y() == FT(0) && l_direction.x() < FT(0))) 
+
+      if (l_direction.y() < FT(0) || (l_direction.y() == FT(0) && l_direction.x() < FT(0)))
         l_direction = -l_direction;
       FT x1, y1, x2, y2;
       const Segment_data & seg_data = m_segments.at(i);
       const Point barycentre = seg_data.m_barycentre;
       const FT length = seg_data.m_length;
-      if (CGAL::abs(l_direction.x()) > CGAL::abs(l_direction.y())) { 
+      if (CGAL::abs(l_direction.x()) > CGAL::abs(l_direction.y())) {
         x1 = barycentre.x() - length * l_direction.x() / FT(2);
         x2 = barycentre.x() + length * l_direction.x() / FT(2);
 
         y1 = (-c - a * x1) / b;
         y2 = (-c - a * x2) / b;
-      } 
+      }
       else {
         y1 = barycentre.y() - length * l_direction.y() / FT(2);
         y2 = barycentre.y() + length * l_direction.y() / FT(2);
@@ -319,7 +319,7 @@ namespace internal {
 
       m_input_range[i] = Segment(source, target);
       ++m_modified_segments_counter;
-    } 
+    }
   };
 
 } // internal

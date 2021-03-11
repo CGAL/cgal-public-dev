@@ -54,7 +54,7 @@ namespace internal {
   typename InputRange,
   typename PointMap>
   class Visibility_3 {
-			
+
   public:
     using Traits = GeomTraits;
     using Input_range = InputRange;
@@ -97,7 +97,7 @@ namespace internal {
     { }
 
     void compute(Partition_3& partition) {
-      
+
       m_samples.clear();
       create_tree();
 
@@ -111,7 +111,7 @@ namespace internal {
         } else compute_face_label(face);
       }
     }
-    
+
   private:
     const Input_range& m_input_range;
     const Point_map& m_point_map;
@@ -135,7 +135,7 @@ namespace internal {
 
       m_queries.clear();
       m_queries.reserve(num_points);
-      
+
       m_roof_indices.clear();
       m_roof_indices.reserve(num_points);
 
@@ -154,7 +154,7 @@ namespace internal {
 
     void label_exterior_faces(
       std::vector<Face>& faces) const {
-      
+
       for (auto& face : faces) {
         face.exterior = false;
         const auto& neighbors = face.neighbors;
@@ -175,9 +175,9 @@ namespace internal {
       CGAL_assertion(
         CGAL::abs(stats.first + stats.second - FT(1)) < internal::tolerance<FT>());
 
-      if (stats.first > FT(1) / FT(2)) 
+      if (stats.first > FT(1) / FT(2))
         face.visibility = Visibility_label::INSIDE;
-      else 
+      else
         face.visibility = Visibility_label::OUTSIDE;
       face.inside = stats.first;
       face.outside = stats.second;
@@ -187,12 +187,12 @@ namespace internal {
 
       Point_3 b;
       internal::compute_barycenter_3(polyhedron.vertices, b);
-      if (is_above_building(b)) 
+      if (is_above_building(b))
         return std::make_pair(FT(0), FT(1));
-      if (is_below_building(b)) 
+      if (is_below_building(b))
         return std::make_pair(FT(0), FT(1));
-      if (is_outside_boundary(b)) 
-        return std::make_pair(FT(0), FT(1));        
+      if (is_outside_boundary(b))
+        return std::make_pair(FT(0), FT(1));
       return estimate_in_out_values_statistically(polyhedron);
     }
 
@@ -218,7 +218,7 @@ namespace internal {
       std::size_t in = 0, out = 0;
       m_samples.clear();
       create_samples(polyhedron, m_samples);
-      
+
       /* CGAL_assertion(m_samples.size() >= m_num_samples); */
 
       compute_stats(m_samples, in, out);
@@ -243,13 +243,13 @@ namespace internal {
       Delaunay_3 delaunay_3;
       for (const auto& p : vertices)
         delaunay_3.insert(Local_point_3(
-          CGAL::to_double(p.x()), 
-          CGAL::to_double(p.y()), 
+          CGAL::to_double(p.x()),
+          CGAL::to_double(p.y()),
           CGAL::to_double(p.z())));
 
       std::vector<Local_point_3> points;
-      for (auto cit = delaunay_3.finite_cells_begin(); 
-      cit != delaunay_3.finite_cells_end(); ++cit) {  
+      for (auto cit = delaunay_3.finite_cells_begin();
+      cit != delaunay_3.finite_cells_end(); ++cit) {
         const auto& tet = delaunay_3.tetrahedron(cit);
 
         const FT volume = CGAL::abs(tet.volume());
@@ -285,7 +285,7 @@ namespace internal {
           zs[m_roof_indices[idx]] += m_queries[idx].second;
           sum[m_roof_indices[idx]] += FT(1);
         }
-        
+
         std::size_t final_idx = 0; FT max_sum = FT(-1);
         for (std::size_t i = 0; i < sum.size(); ++i) {
           if (sum[i] > max_sum) {

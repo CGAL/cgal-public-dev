@@ -45,12 +45,12 @@ namespace Levels_of_detail {
     Semantic_from_label_map() { }
 
     Semantic_from_label_map(
-      Label_map label_map, 
+      Label_map label_map,
       const std::string gi_str,
       const std::string bi_str,
       const std::string ii_str,
-      const std::string vi_str) : 
-    m_label_map(label_map) { 
+      const std::string vi_str) :
+    m_label_map(label_map) {
       std::cout << "Setting semantic labels:" << std::endl;
 
       std::istringstream gi(gi_str);
@@ -83,7 +83,7 @@ namespace Levels_of_detail {
     }
 
     friend value_type get(
-      const Semantic_from_label_map& semantic_map, 
+      const Semantic_from_label_map& semantic_map,
       const key_type& key) {
 
       const int label = get(semantic_map.m_label_map, key);
@@ -99,7 +99,7 @@ namespace Levels_of_detail {
   struct Point_inserter {
     using Traits = GeomTraits;
     using Point_3 = typename Traits::Point_3;
-      
+
     using argument_type0 = std::pair<Point_3, std::size_t>;
     using argument_type1 = std::pair<Point_3, Semantic_label>;
     using result_type = void;
@@ -109,19 +109,19 @@ namespace Levels_of_detail {
 
     Point_set& m_point_set;
     Color_map m_red, m_green, m_blue;
-    Point_inserter(Point_set& point_set) : 
+    Point_inserter(Point_set& point_set) :
     m_point_set(point_set) {
-      m_red = 
+      m_red =
       m_point_set.template add_property_map<unsigned char>("r", 0).first;
-      m_green = 
+      m_green =
       m_point_set.template add_property_map<unsigned char>("g", 0).first;
-      m_blue = 
+      m_blue =
       m_point_set.template add_property_map<unsigned char>("b", 0).first;
     }
 
     void operator()(const argument_type0& arg) {
       const auto it = m_point_set.insert(arg.first);
-      if (arg.second == std::size_t(-1)) 
+      if (arg.second == std::size_t(-1))
         return;
       Random rand(arg.second);
       m_red[*it] = static_cast<unsigned char>(64 + rand.get_int(0, 192));
@@ -162,8 +162,8 @@ namespace Levels_of_detail {
     using Polylines = std::vector<Polyline>;
 
     Polylines &m_polylines;
-    Polyline_inserter(Polylines& polylines) : 
-    m_polylines(polylines) 
+    Polyline_inserter(Polylines& polylines) :
+    m_polylines(polylines)
     { }
 
     void add_segment(const Segment_3& segment) {
@@ -191,15 +191,15 @@ namespace Levels_of_detail {
     using argument_type0 = std::pair<Indices, Visibility_label>;
     using argument_type1 = std::pair<Indices, Urban_object_type>;
     using argument_type2 = std::pair<Indices, std::size_t>;
-    
+
     using result_type = void;
 
     std::vector<Indices>& m_polygons;
     std::vector<Color>& m_colors;
     Polygon_inserter(
       std::vector<Indices>& polygons,
-      std::vector<Color>& colors) : 
-    m_polygons(polygons), 
+      std::vector<Color>& colors) :
+    m_polygons(polygons),
     m_colors(colors)
     { }
 
@@ -222,13 +222,13 @@ namespace Levels_of_detail {
       CGAL::Color color;
       switch (arg.second) {
         case Urban_object_type::GROUND:
-        color = CGAL::Color(127, 105, 99);  
+        color = CGAL::Color(127, 105, 99);
         break;
         case Urban_object_type::BUILDING_WALL:
-        color = CGAL::Color(214, 214, 214);  
+        color = CGAL::Color(214, 214, 214);
         break;
         case Urban_object_type::BUILDING_ROOF:
-        color = CGAL::Color(255, 102, 51);  
+        color = CGAL::Color(255, 102, 51);
         break;
         case Urban_object_type::TREE_TRUNK:
         color = CGAL::Color(148, 82, 0);
@@ -237,7 +237,7 @@ namespace Levels_of_detail {
         color = CGAL::Color(0, 143, 0);
         break;
         default:
-        color = CGAL::Color(0, 0, 0);  
+        color = CGAL::Color(0, 0, 0);
         break;
       }
       m_colors.push_back(color);

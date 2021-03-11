@@ -30,10 +30,10 @@ namespace Levels_of_detail {
 
   /*!
     \ingroup PkgLevelsOfDetailEnumerations
-      
+
     \brief This enum enables to choose a type of input.
   */
-  enum class Input_type { 
+  enum class Input_type {
 
     /// Input is a set of points with labels.
 		POINT_SET = 0,
@@ -45,10 +45,10 @@ namespace Levels_of_detail {
 
   /*!
     \ingroup PkgLevelsOfDetailEnumerations
-      
+
     \brief This label represents a semantic class of an item.
   */
-  enum class Semantic_label { 
+  enum class Semantic_label {
 
     /// Ground points.
 		GROUND = 0,
@@ -60,7 +60,7 @@ namespace Levels_of_detail {
 		BUILDING_BOUNDARY = 2,
 
     /// Items treated as a building interior, e.g. roofs.
-    BUILDING_INTERIOR = 3, 
+    BUILDING_INTERIOR = 3,
 
     /// Any item that is not handled by the algorithm.
     UNCLASSIFIED = 4
@@ -69,7 +69,7 @@ namespace Levels_of_detail {
 
   /*!
     \ingroup PkgLevelsOfDetailEnumerations
-      
+
     \brief This label represents a position of an item with respect to an object.
   */
 	enum class Visibility_label {
@@ -84,10 +84,10 @@ namespace Levels_of_detail {
 
   /*!
     \ingroup PkgLevelsOfDetailEnumerations
-      
+
     \brief This enum enables to choose a type of extrusion for an object.
   */
-  enum class Extrusion_type { 
+  enum class Extrusion_type {
 
     /// Extrudes the footprint of an object to its average height.
     AVG = 0,
@@ -99,11 +99,11 @@ namespace Levels_of_detail {
 
   /*!
     \ingroup PkgLevelsOfDetailEnumerations
-      
+
     \brief This enum enables to choose a type of object reconstruction.
-  */ 
-  enum class Reconstruction_type { 
-			
+  */
+  enum class Reconstruction_type {
+
     /// Ground is represented as a plane.
     PLANAR_GROUND = 0,
 
@@ -141,9 +141,9 @@ namespace Levels_of_detail {
 
   /*!
     \ingroup PkgLevelsOfDetailEnumerations
-      
+
     \brief This enum represents different types of objects.
-  */ 
+  */
   enum class Urban_object_type {
 
     /// Ground.
@@ -165,10 +165,10 @@ namespace Levels_of_detail {
 
   /*!
     \ingroup PkgLevelsOfDetailEnumerations
-      
+
     \brief This enum enables to choose an intermediate step of the algorithm to
     retreive the corresponding data.
-  */ 
+  */
   enum class Intermediate_step {
 
     /// Input ground points.

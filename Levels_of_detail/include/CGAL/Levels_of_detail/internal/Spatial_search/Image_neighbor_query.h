@@ -98,13 +98,13 @@ namespace internal {
 
       if (m_use_version_4)
         get_grid_neighbors_4(i, j, m_ni, m_nj);
-      
+
       if (m_use_version_8)
         get_grid_neighbors_8(i, j, m_ni, m_nj);
 
       CGAL_assertion(m_ni.size() == m_nj.size());
       for (std::size_t k = 0; k < m_ni.size(); ++k) {
-        const std::size_t neighbor = 
+        const std::size_t neighbor =
           m_idx_map.at(std::make_pair(m_ni[k], m_nj[k]));
 
         if (m_seeds.size() > 0) {
@@ -124,7 +124,7 @@ namespace internal {
     const Pixels& m_pixels;
     const Idx_map& m_idx_map;
     const bool m_use_boundaries;
-    
+
     bool m_use_version_4;
     bool m_use_version_8;
 
@@ -133,7 +133,7 @@ namespace internal {
 
     void get_grid_neighbors_4(
       const std::size_t i, const std::size_t j,
-      Indices& ni, 
+      Indices& ni,
       Indices& nj) const {
 
       CGAL_assertion(i > 0 && j > 0);
@@ -146,7 +146,7 @@ namespace internal {
 
     void get_grid_neighbors_8(
       const std::size_t i, const std::size_t j,
-      Indices& ni, 
+      Indices& ni,
       Indices& nj) const {
 
       CGAL_assertion(i > 0 && j > 0);

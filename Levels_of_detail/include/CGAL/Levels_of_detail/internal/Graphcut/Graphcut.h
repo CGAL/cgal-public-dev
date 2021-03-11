@@ -58,14 +58,14 @@ namespace internal {
 
     Graphcut(
 			const FT graphcut_beta,
-			const bool use_max = false) : 
+			const bool use_max = false) :
     m_beta(graphcut_beta),
 		m_use_max(use_max)
     { }
 
     void apply(
 			Partition& partition) const {
-      
+
       if (partition.empty()) return;
       auto& pfaces = partition.faces;
       auto& pedges = partition.edges;
@@ -110,24 +110,24 @@ namespace internal {
 					object.weight /= max_value;
 
 			} else {
-				
+
 				for (auto& object : objects)
 					object.weight /= sum;
 			}
 		}
 
 		void set_graph_edges(
-      const std::vector<Edge>& pedges, 
+      const std::vector<Edge>& pedges,
       std::vector<Size_pair>& edges,
       std::vector<double>& edge_weights) const {
 
 			edges.clear();
 			edge_weights.clear();
 			for (const auto& pedge : pedges) {
-				
+
 				const FT edge_weight = pedge.weight;
 				const auto& neighbors = pedge.neighbors;
-				
+
 				const int idx1 = neighbors.first;
 				const int idx2 = neighbors.second;
 
@@ -154,7 +154,7 @@ namespace internal {
 		}
 
     void set_cost_matrix(
-      const std::vector<Face>& pfaces,  
+      const std::vector<Face>& pfaces,
       std::vector< std::vector<double> >& cost_matrix) const {
 
 			cost_matrix.clear();
@@ -185,14 +185,14 @@ namespace internal {
 
 		double get_graph_face_cost(
       const FT face_prob, const FT face_weight) const {
-			
+
 			const double weight = CGAL::to_double(face_weight);
 			const double value = (1.0 - CGAL::to_double(face_prob));
       return weight * value;
 		}
 
     void set_initial_labels(
-      const std::vector<Face>& pfaces,  
+      const std::vector<Face>& pfaces,
       std::vector<std::size_t>& labels) const {
 
 			labels.clear();

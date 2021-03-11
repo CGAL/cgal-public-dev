@@ -77,11 +77,11 @@ public:
   using Point_generator_seg = CGAL::Points_on_segment_2<Point_2>;
   using Point_generator_tri = CGAL::Random_points_in_triangle_3<Point_3>;
 
-  using Building_roofs_estimator = 
+  using Building_roofs_estimator =
     internal::Building_roofs_estimator<Traits, Points_3, Identity_map_3>;
-  using Building_walls_estimator = 
+  using Building_walls_estimator =
     internal::Building_walls_estimator<Traits>;
-  
+
   using Segment_merger = internal::Segment_merger<Traits>;
 
   Partition_23_adapter(
@@ -97,7 +97,7 @@ public:
   m_partition_2(partition_2),
   m_num_samples_per_segment(10),
   m_num_samples_per_triangle(100),
-  m_random(0) { 
+  m_random(0) {
     m_num_labels = update_labels();
   }
 
@@ -122,16 +122,16 @@ public:
 
     Saver<Traits> saver;
     saver.export_points(
-      points, 
+      points,
       updated_regions,
-      "/Users/monet/Documents/lod/logs/buildings/tmp/visibility_points_3");
+      "/Users/monet/Documents/gf/lod/logs/buildings/tmp/visibility_points_3");
   }
 
   bool get_approximate_roofs(
     std::vector<Approximate_face>& building_roofs) {
 
     building_roofs.clear();
-    
+
     Points_3 points;
     std::vector<Indices> regions;
     Identity_map_3 identity_map_3;
@@ -144,7 +144,7 @@ public:
 
   bool get_approximate_inner_walls(
     std::vector<Approximate_face>& building_inner_walls) {
-    
+
     std::vector<Segment_2> segments;
     create_inner_segments(segments);
     merge_segments(segments);
@@ -152,8 +152,8 @@ public:
 
     Saver<Traits> saver;
     saver.save_polylines(
-      segments, 
-      "/Users/monet/Documents/lod/logs/buildings/tmp/clean_internal_segments");
+      segments,
+      "/Users/monet/Documents/gf/lod/logs/buildings/tmp/clean_internal_segments");
 
     return true;
   }
@@ -164,7 +164,7 @@ private:
   const FT m_ordinate_bound_2;
   const FT m_max_height_difference;
   Partition_2& m_partition_2;
-  
+
   std::size_t m_num_labels;
   const std::size_t m_num_samples_per_segment;
   const std::size_t m_num_samples_per_triangle;
@@ -188,7 +188,7 @@ private:
     for (auto& pface : m_partition_2.faces) {
       if (pface.visibility == Visibility_label::OUTSIDE)
         continue;
-      
+
       for (std::size_t i = 0; i < labels.size(); ++i) {
         if (pface.label == labels[i]) {
           pface.plane = m_plane_map.at(pface.label);
@@ -244,8 +244,8 @@ private:
     Points_3& points,
     std::vector<Indices>& regions) {
 
-    points.clear(); 
-    
+    points.clear();
+
     regions.clear();
     regions.resize(m_num_labels);
 
@@ -272,7 +272,7 @@ private:
     for (const auto& pface : m_partition_2.faces) {
       if (pface.visibility == Visibility_label::OUTSIDE)
         continue;
-      
+
       const auto& neighbors = pface.neighbors;
       const auto& edges     = pface.edges;
 
@@ -302,7 +302,7 @@ private:
 
     std::vector<Point_2> samples;
     Point_generator_seg generator(s, t, m_num_samples_per_segment);
-    std::copy_n(generator, m_num_samples_per_segment - 1, 
+    std::copy_n(generator, m_num_samples_per_segment - 1,
     std::back_inserter(samples));
 
     FT max_diff = -FT(1);

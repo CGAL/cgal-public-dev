@@ -81,7 +81,7 @@ public:
   struct Pixel {
     Pixel() { }
     Pixel(
-      const std::size_t index_, 
+      const std::size_t index_,
       const std::size_t i_,
       const std::size_t j_,
       const bool is_boundary_,
@@ -114,7 +114,7 @@ public:
 
   struct Constraint {
     Constraint(
-      const Segment_2& segment_, 
+      const Segment_2& segment_,
       const Size_pair& labels_,
       const std::size_t comp_idx_) :
     segment(segment_),
@@ -156,8 +156,8 @@ public:
       segments.push_back(constr.segment);
 
     Saver<Traits> saver;
-    saver.save_polylines(segments, 
-      "/Users/monet/Documents/lod/logs/buildings/tmp/constraints");
+    saver.save_polylines(segments,
+      "/Users/monet/Documents/gf/lod/logs/buildings/tmp/constraints");
   }
 
 private:
@@ -191,9 +191,9 @@ private:
       for (std::size_t j = 0; j < original.cols; ++j) {
 
         if (
-          i == 0 || j == 0 || 
+          i == 0 || j == 0 ||
           i == original.rows - 1 || j == original.cols - 1) {
-          
+
           image.push_back(Pixel(count, i, j, true, std::size_t(-1)));
           seeds.push_back(std::size_t(-1));
 
@@ -202,9 +202,9 @@ private:
           const auto& cell = original.grid[i][j];
           const std::size_t label = m_image_ptr->get_label(
             cell.zr, cell.zg, cell.zb);
-          
+
           if (label != m_image_ptr->get_num_labels()) {
-            
+
             image.push_back(Pixel(count, i, j, false, label));
             seeds.push_back(count);
 
@@ -223,7 +223,7 @@ private:
       image, idx_map, m_image_ptr->get_num_labels());
     Planar_image_region planar_region(
       image, idx_map, m_image_ptr->get_num_labels());
-    
+
     Seed_map seed_map(seeds);
     Region_growing region_growing(
       seeds, neighbor_query, planar_region, seed_map);
@@ -240,7 +240,7 @@ private:
 
         if (new_label == std::size_t(-1))
           continue;
-        
+
         const auto& p = m_image_ptr->get_label_map().at(new_label);
         for (const std::size_t idx : region) {
           const std::size_t ii = image[idx].i;
@@ -254,12 +254,12 @@ private:
     }
 
     m_image_ptr->save_image(
-      "/Users/monet/Documents/lod/logs/buildings/tmp/image-clean.jpg", original);
+      "/Users/monet/Documents/gf/lod/logs/buildings/tmp/image-clean.jpg", original);
   }
 
   std::size_t get_best_label(
     Image_neighbor_query& neighbor_query,
-    const Image& image, 
+    const Image& image,
     const std::vector<std::size_t>& region) {
 
     const std::size_t ref_label = image[region[0]].label;
@@ -277,7 +277,7 @@ private:
         if (
           image[neighbor].label != std::size_t(-1) &&
           image[neighbor].label != ref_label) {
-          
+
           nums[image[neighbor].label] += 1;
         }
       }
@@ -305,7 +305,7 @@ private:
   }
 
   void find_label_pairs(
-    const Image& image, 
+    const Image& image,
     const Idx_map& idx_map,
     std::vector<Size_pair>& pairs) {
     pairs.clear();
@@ -327,7 +327,7 @@ private:
         if (
           image[neighbor].label != std::size_t(-1) &&
           image[neighbor].label != pixel.label) {
-          
+
           tmp.insert(
             std::make_pair(pixel.label, image[neighbor].label));
         }
@@ -337,10 +337,10 @@ private:
     for (const auto& item : tmp) {
       bool found = false;
       for (const auto& pair : pairs) {
-        if ( 
-          ( pair.first == item.first && pair.second == item.second ) || 
+        if (
+          ( pair.first == item.first && pair.second == item.second ) ||
           ( pair.second == item.first && pair.first == item.second )) {
-          
+
           found = true;
           break;
         }
@@ -348,13 +348,13 @@ private:
       if (!found)
         pairs.push_back(item);
     }
-    
+
     std::cout << "Num label pairs: " << pairs.size() << std::endl;
   }
 
   void add_internal_constraint(
     const Size_pair& pair,
-    const Image& image, 
+    const Image& image,
     const Idx_map& idx_map) {
 
     std::vector<Pixel> pixels;
@@ -369,8 +369,8 @@ private:
       cell.zb = 0;
     }
     m_image_ptr->save_image(
-      "/Users/monet/Documents/lod/logs/buildings/tmp/ridges/image-" 
-      + std::to_string(pair.first) + "-" + std::to_string(pair.second) + 
+      "/Users/monet/Documents/gf/lod/logs/buildings/tmp/ridges/image-"
+      + std::to_string(pair.first) + "-" + std::to_string(pair.second) +
       ".jpg", original); */
 
     add_path(pair, image, idx_map, pixels);
@@ -390,7 +390,7 @@ private:
     std::vector<std::size_t> neighbors;
     for (auto& pixel : image) {
       if (pixel.label == pair.first) {
-        
+
         neighbors.clear();
         neighbor_query(pixel.index, neighbors);
 
@@ -409,7 +409,7 @@ private:
 
   void add_path(
     const Size_pair& pair,
-    const Image& image, 
+    const Image& image,
     const Idx_map& idx_map,
     const std::vector<Pixel>& pixels) {
 
@@ -421,14 +421,14 @@ private:
     for (const auto& pixel : pixels)
       seeds[pixel.index] = pixel.index;
     neighbor_query.make_linear(seeds);
-    
+
     using Linear_image_region = internal::Linear_image_region<Traits, Pixel>;
     using Region_growing = internal::Region_growing<
       Seeds, Image_neighbor_query, Linear_image_region, Seed_map>;
 
     Linear_image_region linear_region(
       image, idx_map, m_image_ptr->get_num_labels());
-    
+
     Seed_map seed_map(seeds);
     Region_growing region_growing(
       seeds, neighbor_query, linear_region, seed_map);
@@ -437,8 +437,8 @@ private:
     region_growing.detect(std::back_inserter(regions));
 
     // std::cout << "Num components: " << regions.size() << std::endl;
-    for (std::size_t i = 0; i < regions.size(); ++i) 
-      handle_region_v2(i, pair, regions[i], image, idx_map); 
+    for (std::size_t i = 0; i < regions.size(); ++i)
+      handle_region_v2(i, pair, regions[i], image, idx_map);
   }
 
   void handle_region_v1(
@@ -458,11 +458,11 @@ private:
       image, idx_map, num_labels, false, false);
     set_priorities(image, neighbor_query, pixels);
 
-    std::sort(pixels.begin(), pixels.end(), 
-    [](const Pixel& a, const Pixel& b) -> bool { 
+    std::sort(pixels.begin(), pixels.end(),
+    [](const Pixel& a, const Pixel& b) -> bool {
       return a.priority < b.priority;
     });
-    
+
     std::size_t count = 0;
     Seeds seeds(image.size(), std::size_t(-1));
     for (auto& pixel : pixels) {
@@ -496,7 +496,7 @@ private:
         const std::size_t kp = k + 1;
         const auto& q1 = out[k];
         const auto& q2 = out[kp];
-        
+
         const auto s = m_image_ptr->get_point(q1);
         const auto t = m_image_ptr->get_point(q2);
 
@@ -543,14 +543,14 @@ private:
     const Size_pair& pair,
     std::vector<Segment_2>& polyline) {
 
-    std::cout << "Num segments " 
+    std::cout << "Num segments "
     << pair.first << "-" << pair.second << ": " << polyline.size() << std::endl;
 
     const auto& plane1 = m_image_ptr->get_plane_map().at(pair.first);
     const auto& plane2 = m_image_ptr->get_plane_map().at(pair.second);
 
     typename CGAL::cpp11::result_of<
-    Intersect_3(Plane_3, Plane_3)>::type result 
+    Intersect_3(Plane_3, Plane_3)>::type result
       = CGAL::intersection(plane1, plane2);
 
     Line_3 line; bool found = false;
@@ -600,12 +600,12 @@ private:
     const FT dot = CGAL::scalar_product(v1, v2);
     const FT angle_rad = static_cast<FT>(
       std::atan2(CGAL::to_double(det), CGAL::to_double(dot)));
-    const FT angle_deg = angle_rad * FT(180) / m_pi; 
+    const FT angle_deg = angle_rad * FT(180) / m_pi;
     return angle_deg;
   }
 
   FT get_angle_2(const FT angle) {
-    
+
     FT angle_2 = angle;
     if (angle_2 > FT(90)) angle_2 = FT(180) - angle_2;
     else if (angle_2 < -FT(90)) angle_2 = FT(180) + angle_2;
@@ -625,7 +625,7 @@ private:
 
     std::vector<std::size_t> neighbors;
     for (auto& pixel : pixels) {
-      
+
       neighbors.clear();
       neighbor_query(pixel.index, neighbors);
 
@@ -672,12 +672,12 @@ private:
     }
 
     const CGAL::Color color = CGAL::Color(0, 0, 0);
-    const std::string name = 
-    "/Users/monet/Documents/lod/logs/buildings/tmp/ridges/points-" + 
-    std::to_string(pair.first) + "-" + 
-    std::to_string(pair.second) + "-" + 
+    const std::string name =
+    "/Users/monet/Documents/gf/lod/logs/buildings/tmp/ridges/points-" +
+    std::to_string(pair.first) + "-" +
+    std::to_string(pair.second) + "-" +
     std::to_string(region_index);
-    
+
     Saver<Traits> saver;
     saver.export_points(points, color, name); */
 
@@ -700,7 +700,7 @@ private:
       wall_points_2);
 
     creator.create_boundaries(
-      wall_points_2, 
+      wall_points_2,
       approximate_boundaries_2);
 
     for (const auto& segment : approximate_boundaries_2)
@@ -709,7 +709,7 @@ private:
   }
 
   void create_triangulation() {
-    
+
     auto& tri = m_base.delaunay;
     tri.clear();
 
@@ -759,7 +759,7 @@ private:
     std::vector<Point_2> bbox;
     CGAL::Identity_property_map<Point_2> pmap;
     internal::bounding_box_2(points, pmap, bbox);
-    
+
     // Visibility.
     for (auto fit = tri.finite_faces_begin();
     fit != tri.finite_faces_end(); ++fit) {
@@ -797,7 +797,7 @@ private:
           const std::size_t idx = f1->index(f2);
           const auto edge = std::make_pair(f1, idx);
           if (tri.is_constrained(edge)) {
-            
+
             const auto vh1 = f1->vertex( (idx + 1) % 3);
             const auto vh2 = f1->vertex( (idx + 2) % 3);
 
@@ -847,7 +847,7 @@ private:
         const auto q1 = f2->vertex(j);
         const auto q2 = f2->vertex(jp);
 
-        if ( 
+        if (
           ( p1 == q1 && p2 == q2) ||
           ( p1 == q2 && p2 == q1) ) {
 
@@ -867,7 +867,7 @@ private:
 
     partition_2.faces.clear();
     partition_2.faces.reserve(tri.number_of_faces());
-    
+
     fmap.clear();
 
     Partition_face_2 pface;
@@ -912,7 +912,7 @@ private:
     fit != tri.finite_faces_end(); ++fit) {
       const Face_handle fh = static_cast<Face_handle>(fit);
 
-      auto& edges = partition_2.faces[idx].edges; 
+      auto& edges = partition_2.faces[idx].edges;
       auto& neighbors = partition_2.faces[idx].neighbors;
 
       edges.clear(); edges.reserve(3);
@@ -943,7 +943,7 @@ private:
 
     partition_2.edges.clear();
     partition_2.edges.reserve(tri.number_of_faces());
-    for (auto eh = tri.finite_edges_begin(); 
+    for (auto eh = tri.finite_edges_begin();
     eh != tri.finite_edges_end(); ++eh) {
       const Face_handle fh = eh->first;
       const std::size_t idx = eh->second;

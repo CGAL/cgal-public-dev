@@ -60,10 +60,10 @@ namespace internal {
 		using Node_id = typename Graph::node_id;
 
 		struct Graph_wrapper {
-			
+
 			Node_id* pNodes;
 			Graph* graph;
-			
+
 			Graph_wrapper(const unsigned int num_nodes) {
 				// +1 gives an extra infinite node
 				pNodes = new Node_id[num_nodes + 1];
@@ -83,8 +83,8 @@ namespace internal {
 			}
 			void add_edge(
 				const std::size_t idxi, const std::size_t idxj, const FT cost_value) {
-				graph->add_edge(pNodes[idxi], pNodes[idxj], 
-        	CGAL::to_double(cost_value), 
+				graph->add_edge(pNodes[idxi], pNodes[idxj],
+        	CGAL::to_double(cost_value),
         	CGAL::to_double(cost_value));
 			}
 			bool is_source(const std::size_t idx) const {
@@ -95,12 +95,12 @@ namespace internal {
 			}
 		};
 
-    Graphcut_depr(const FT graphcut_beta) : 
+    Graphcut_depr(const FT graphcut_beta) :
     m_beta(graphcut_beta)
     { }
 
     void apply(Partition& partition) const {
-      
+
       if (partition.empty()) return;
       auto& faces = partition.faces;
       auto& edges = partition.edges;
@@ -108,7 +108,7 @@ namespace internal {
 			compute_weights(faces);
 			compute_weights(edges);
 
-			const unsigned int num_nodes = 
+			const unsigned int num_nodes =
 			static_cast<unsigned int>(faces.size());
 			Graph_wrapper graph(num_nodes);
 			const unsigned int inf_node_index = num_nodes;
@@ -138,7 +138,7 @@ namespace internal {
 		}
 
     void set_graph_nodes(
-      const std::vector<Face>& faces,  
+      const std::vector<Face>& faces,
       Graph_wrapper& graph) const {
 
 			for (std::size_t i = 0; i < faces.size(); ++i) {
@@ -164,14 +164,14 @@ namespace internal {
 		}
 
 		FT get_graph_node_cost(
-      const FT node_value, 
+      const FT node_value,
       const FT node_weight) const {
-			
+
       return node_weight * node_value;
 		}
 
 		void set_infinite_node(
-      const std::size_t inf_node_index, 
+      const std::size_t inf_node_index,
       Graph_wrapper& graph) const {
 
 			const FT cost_in = FT(0);
@@ -181,8 +181,8 @@ namespace internal {
 		}
 
 		void set_graph_edges(
-      const int inf_node_index, 
-      const std::vector<Edge>& edges, 
+      const int inf_node_index,
+      const std::vector<Edge>& edges,
       Graph_wrapper& graph) const {
 
 			for (const auto& edge : edges) {
@@ -206,7 +206,7 @@ namespace internal {
 		void add_graph_edge(
 			const int i,
 			const int j,
-			const FT edge_weight, 
+			const FT edge_weight,
 			Graph_wrapper& graph) const {
 
 			CGAL_assertion(i >= 0 && j >= 0);
@@ -219,12 +219,12 @@ namespace internal {
 		}
 
 		void set_solution(
-      const Graph_wrapper& graph, 
+      const Graph_wrapper& graph,
       std::vector<Face>& faces) const {
 
 			for (std::size_t i = 0; i < faces.size(); ++i) {
 				auto& face = faces[i];
-				if (graph.is_source(i)) { 
+				if (graph.is_source(i)) {
           face.visibility = Visibility_label::INSIDE;
           continue;
 				}

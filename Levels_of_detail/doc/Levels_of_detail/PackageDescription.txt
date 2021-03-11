@@ -18,9 +18,9 @@ Property maps that can be used with the `CGAL::Levels_of_detail::Levels_of_detai
 
 \cgalPkgSummaryBegin
 \cgalPkgAuthors{Dmitry Anisimov, Simon Giraudot, Pierre Alliez, Florent Lafarge, and Andreas Fabri}
-\cgalPkgDesc{This CGAL component implements a geometry processing pipeline for reconstructing 
-a 3D model from a point set or polygon mesh that represents urban environment. 
-The returned model has various Levels Of Detail (LODs), which include footprints, 
+\cgalPkgDesc{This CGAL component implements a geometry processing pipeline for reconstructing
+a 3D model from a point set or polygon mesh that represents urban environment.
+The returned model has various Levels Of Detail (LODs), which include footprints,
 shoe boxes, and the full version with all details.}
 \cgalPkgManuals{Chapter_Levels_Of_Detail, PkgLevelsOfDetailRef}
 \cgalPkgSummaryEnd

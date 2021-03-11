@@ -838,13 +838,13 @@ namespace internal {
     using Polygon_2 = typename Partition_traits::Polygon_2;
     using Location_type = typename Triangulation::Delaunay::Locate_type;
 
-    Concave_hull_2(const Points_3& points) : 
+    Concave_hull_2(const Points_3& points) :
     m_points(points)
     { }
 
     void create(
       Points_3& output) {
-    
+
       flann_hull::PointVector input;
       input.reserve(m_points.size());
       for (const auto& p : m_points)
@@ -853,10 +853,10 @@ namespace internal {
       bool iterate = true; int k = 3;
       flann_hull::RemoveDuplicates(input);
       flann_hull::IdentifyPoints(input);
-      
+
       std::cout << "Hull input: " << input.size() << std::endl;
 
-      flann_hull::PointVector hull = 
+      flann_hull::PointVector hull =
         flann_hull::ConcaveHull(input, (size_t) k, iterate);
 
       std::cout << "Hull output: " << hull.size() << std::endl;
@@ -905,7 +905,7 @@ namespace internal {
           if (!tri.delaunay.is_infinite(fh)) {
             pixel.is_interior = true;
             found = true; break;
-          } 
+          }
         }
 
         if (!found)

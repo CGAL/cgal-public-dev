@@ -26,7 +26,7 @@
 
 #include <osqp/osqp.h>
 #include <Eigen/Sparse>
-#include <Eigen/Dense> 
+#include <Eigen/Dense>
 
 #include <map>
 #include <utility>
@@ -39,7 +39,7 @@ namespace internal {
 
   template<
     typename GeomTraits>
-  class OSQP_solver { 
+  class OSQP_solver {
 
   public:
     using Traits = GeomTraits;
@@ -49,8 +49,8 @@ namespace internal {
     using Dense_vector_FT = typename Eigen::Matrix<FT, Eigen::Dynamic, 1>;
 
     void solve(const std::size_t number_of_segments,
-               const std::size_t number_of_edges, 
-               const Sparse_matrix_FT & P_mat, 
+               const std::size_t number_of_edges,
+               const Sparse_matrix_FT & P_mat,
                const Sparse_matrix_FT & A_mat,
                const Dense_vector_FT & q_v,
                const Dense_vector_FT & l_v,
@@ -163,10 +163,10 @@ namespace internal {
       for (int i = 1; i <= A_mat.outerSize(); ++i) {
         const std::size_t coln = A_mat.innerVector(i-1).nonZeros();
         A_p[i] = A_p[i-1] + coln;
-      } 
+      }
     }
 
-    void build_vectors(const c_int n, const c_int m, 
+    void build_vectors(const c_int n, const c_int m,
                        const Dense_vector_FT & q_v,
                        const Dense_vector_FT & l_v,
                        const Dense_vector_FT & u_v,

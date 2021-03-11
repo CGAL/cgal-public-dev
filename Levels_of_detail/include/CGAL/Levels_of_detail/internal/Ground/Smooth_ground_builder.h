@@ -75,7 +75,7 @@ template<
       Face_handle face;
       FT max_error;
       std::vector<Point_iterator> inliers;
-      Candidate_face(Face_handle fh = Face_handle()) : 
+      Candidate_face(Face_handle fh = Face_handle()) :
       face(fh), max_error(FT(0)) { }
     };
 
@@ -131,16 +131,16 @@ template<
 
       for (std::size_t i = 0; i < bbox.size(); ++i) {
         const std::size_t ip = (i + 1) % bbox.size();
-        
+
         const Point_2& p = bbox[i];
         const Point_2& q = bbox[ip];
-        
+
         const Point_2 c = internal::middle_point_2(p, q);
         tri.insert(p); tri.insert(c);
       }
-      
+
       std::vector<std::size_t> neighbors;
-      for (auto vh = tri.finite_vertices_begin(); 
+      for (auto vh = tri.finite_vertices_begin();
       vh != tri.finite_vertices_end(); ++vh)
         if (vh->info().z == vh->info().default_z)
           vh->info().z = get_z(vh, neighbors);
@@ -151,7 +151,7 @@ template<
 
       Triangulation& tri = m_base::m_ground_base.triangulation.delaunay;
       std::vector<std::size_t> neighbors;
-      for (auto vh = tri.finite_vertices_begin(); 
+      for (auto vh = tri.finite_vertices_begin();
       vh != tri.finite_vertices_end(); ++vh)
         vh->info().z = get_z(vh, neighbors);
     }
@@ -161,7 +161,7 @@ template<
 
       std::vector<std::size_t> neighbors;
       for (std::size_t k = 0; k < 3; ++k) {
-        
+
         const Vertex_handle& vh = fh->vertex(k);
         const FT z = get_z(vh, neighbors);
         const std::size_t idx = fh->index(vh);
@@ -171,9 +171,9 @@ template<
     }
 
     FT get_z(
-      const Vertex_handle& vh, 
+      const Vertex_handle& vh,
       std::vector<std::size_t>& neighbors) const {
-      
+
       m_neighbor_query(vh->point(), neighbors);
       FT z = FT(0);
       for (const std::size_t nidx : neighbors)
@@ -213,9 +213,9 @@ template<
               candidate->face->vertex(0)->point(), FT(1),
               candidate->face->vertex(1)->point(), FT(1),
               candidate->face->vertex(2)->point(), FT(1));
-            
+
             hint = tri.locate(center, type, stub, hint);
-            if (type == Triangulation::VERTEX || !is_valid_face(tri, hint)) 
+            if (type == Triangulation::VERTEX || !is_valid_face(tri, hint))
             continue;
           } else continue;
         }
@@ -242,7 +242,7 @@ template<
         // Insert new vertex.
         const Vertex_handle v = tri.insert(center, hint);
         std::vector<Candidate_face_ptr> new_faces;
-        
+
         auto circ = tri.incident_faces(v);
         const auto start = circ;
         do {
@@ -259,12 +259,12 @@ template<
         for (auto pit = points.begin(); pit != points.end(); ++pit) {
           const Point_3& point_3 = get(m_point_map, **pit);
           const Point_2 point_2 = internal::point_2_from_point_3(point_3);
-        
+
           hint = tri.locate(point_2, hint);
           const auto filter = face_map.find(hint);
           CGAL_assertion(filter != face_map.end());
           Candidate_face_ptr cface = filter->second;
-          
+
           Triangle_3 triangle;
           internal::triangle_3(hint, triangle);
           const FT sq_dist = CGAL::squared_distance(point_3, triangle);
@@ -283,7 +283,7 @@ template<
       Face_map& face_map, Face_queue& todo, FT tolerance) {
       auto& tri = m_base::m_ground_base.triangulation.delaunay;
 
-      for(auto fit = tri.finite_faces_begin(); 
+      for(auto fit = tri.finite_faces_begin();
       fit != tri.finite_faces_end(); ++fit) {
         if (!is_valid_face(tri, fit)) continue;
         face_map.insert(std::make_pair(
@@ -294,14 +294,14 @@ template<
       for (auto pit = m_points.begin(); pit != m_points.end(); ++pit) {
         const Point_3& point_3 = get(m_point_map, *pit);
         const Point_2 point_2 = internal::point_2_from_point_3(point_3);
-        
+
         hint = tri.locate(point_2, hint);
         if (!is_valid_face(tri, hint)) continue;
 
         const auto filter = face_map.find(hint);
         CGAL_assertion(filter != face_map.end());
         Candidate_face_ptr candidate = filter->second;
-        
+
         Triangle_3 triangle;
         internal::triangle_3(hint, triangle);
         const FT sq_dist = CGAL::squared_distance(point_3, triangle);
@@ -319,7 +319,7 @@ template<
       const Point_2& pb = fh->vertex(1)->point();
       const Point_2& pc = fh->vertex(2)->point();
 
-      double area = 
+      double area =
       2.0 * CGAL::to_double(CGAL::area(pa, pb, pc));area = area * area;
       const double a = CGAL::to_double(CGAL::squared_distance(pb, pc));
       const double b = CGAL::to_double(CGAL::squared_distance(pc, pa));
@@ -341,7 +341,7 @@ template<
     }
 
     bool is_too_small(
-      const Face_handle& fh, 
+      const Face_handle& fh,
       const FT min_size) const {
       for (std::size_t ka = 0; ka < 3; ++ka) {
         const std::size_t kb = (ka + 1) % 3;
@@ -355,7 +355,7 @@ template<
 
     bool is_valid_face(
       const Triangulation& tri, const Face_handle& fh) const {
-      return !tri.is_infinite(fh) && 
+      return !tri.is_infinite(fh) &&
       fh->info().urban_tag == Urban_object_type::GROUND;
     }
   };

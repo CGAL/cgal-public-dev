@@ -110,12 +110,12 @@ namespace internal {
 
     using Size_pair = std::pair<std::size_t, std::size_t>;
 
-    using Identity_map_2 = 
+    using Identity_map_2 =
     CGAL::Identity_property_map<Point_2>;
     using Identity_map_3 =
     CGAL::Identity_property_map<Point_3>;
 
-    using Alpha_shapes_filtering_2 = 
+    using Alpha_shapes_filtering_2 =
     internal::Alpha_shapes_filtering_2<Traits>;
 
     using Alpha_expansion = CGAL::internal::Alpha_expansion_graph_cut_boost;
@@ -136,11 +136,11 @@ namespace internal {
 
     struct Cluster_item {
       Cluster_item(
-        const Point_3 _point, 
+        const Point_3 _point,
         const std::size_t _roof_idx) :
       input_point(_point),
       roof_idx(_roof_idx) { }
-      
+
       Point_3 input_point;
       Point_3 final_point;
       std::size_t roof_idx;
@@ -151,8 +151,8 @@ namespace internal {
     using Grid = std::map<Cell_id, Cell_data>;
 
     struct Image_cell {
-      
-      Image_cell() : 
+
+      Image_cell() :
       roof_idx(std::size_t(-1)),
       zr(FT(255)), zg(FT(255)), zb(FT(255)),
       is_interior(false),
@@ -167,8 +167,8 @@ namespace internal {
     struct Image {
 
       Image() : rows(0), cols(0) { }
-      Image(const std::size_t _rows, const std::size_t _cols) : 
-      rows(_rows), cols(_cols) { 
+      Image(const std::size_t _rows, const std::size_t _cols) :
+      rows(_rows), cols(_cols) {
         resize(_rows, _cols);
       }
 
@@ -214,7 +214,7 @@ namespace internal {
       point(Point_3(p.x(), p.y(), FT(0))),
       i(_i), j(_j),
       is_interior(_is_interior),
-      zr(_zr), zg(_zg), zb(_zb) 
+      zr(_zr), zg(_zg), zb(_zb)
       { }
 
       Point_3 point;
@@ -285,9 +285,9 @@ namespace internal {
     }
 
     Point_2 get_point(const int i, const int j) {
-      
+
       const Point_2 tr = Point_2(-m_tr.x(), -m_tr.y());
-      
+
       const long id_x = get_id_x(j);
       const long id_y = m_rows_max + 2 - long(i);
 
@@ -342,7 +342,7 @@ namespace internal {
         const double r = CGAL::to_double(zr_diff * zr_diff);
         const double g = CGAL::to_double(zg_diff * zg_diff);
         const double b = CGAL::to_double(zb_diff * zb_diff);
-        
+
         const FT d = static_cast<FT>(CGAL::sqrt(r + g + b));
         if (d < d_min) {
           d_min = d; label = pair.first;
@@ -359,7 +359,7 @@ namespace internal {
         Point_2 q = Point_2(p.x(), p.y());
         m_cluster.push_back(Cluster_item(Point_3(q.x(), q.y(), FT(0)), 1));
       }
-      save_cluster("/Users/monet/Documents/lod/logs/buildings/tmp/cluster-full");
+      save_cluster("/Users/monet/Documents/gf/lod/logs/buildings/tmp/cluster-full");
     }
 
     void create_cluster() {
@@ -377,22 +377,22 @@ namespace internal {
       }
       m_height_map[0] = m_val_max;
       m_num_labels = 1;
-      save_cluster("/Users/monet/Documents/lod/logs/buildings/tmp/cluster-origin");
+      save_cluster("/Users/monet/Documents/gf/lod/logs/buildings/tmp/cluster-origin");
     }
 
     void save_image(
       const std::string name,
       const Image& image) {
-      
+
       const std::size_t pixels_per_cell = get_pixels_per_cell(image);
       OpenCVImage cvimage(
-        image.rows * pixels_per_cell, 
-        image.cols * pixels_per_cell, 
+        image.rows * pixels_per_cell,
+        image.cols * pixels_per_cell,
         CV_8UC3, cv::Scalar(255, 255, 255));
 
       for (std::size_t i = 0; i < image.rows; ++i) {
         for (std::size_t j = 0; j < image.cols; ++j) {
-          
+
           const uchar zr = saturate_z(image.grid[i][j].zr);
           const uchar zg = saturate_z(image.grid[i][j].zg);
           const uchar zb = saturate_z(image.grid[i][j].zb);
@@ -411,7 +411,7 @@ namespace internal {
 
       using Tup = boost::tuple<Point_2, FT, std::size_t>;
       using Range = std::vector<Tup>;
-      
+
       Range range;
       for (std::size_t i = 0; i < roofs.size(); ++i) {
         for (std::size_t j = 0; j < roofs[i].size(); ++j) {
@@ -452,7 +452,7 @@ namespace internal {
           }
 
           const FT diff = CGAL::abs(maxz - point.z());
-          if (roof_idx != std::size_t(-1)) { 
+          if (roof_idx != std::size_t(-1)) {
             if (roof_idx == i) {
               m_cluster.push_back(Cluster_item(point, roof_idx));
             } else {
@@ -471,7 +471,7 @@ namespace internal {
         m_val_max = CGAL::max(val_max, m_val_max);
       }
       m_num_labels = roofs.size();
-      save_cluster("/Users/monet/Documents/lod/logs/buildings/tmp/cluster-origin");
+      save_cluster("/Users/monet/Documents/gf/lod/logs/buildings/tmp/cluster-origin");
 
       for (const std::size_t idx : unclassified) {
         const auto& point = get(m_point_map_3, *(m_input_range.begin() + idx));
@@ -508,7 +508,7 @@ namespace internal {
         m_val_max = CGAL::max(val_max, m_val_max);
       }
       m_num_labels = roofs.size();
-      save_cluster("/Users/monet/Documents/lod/logs/buildings/tmp/cluster-origin");
+      save_cluster("/Users/monet/Documents/gf/lod/logs/buildings/tmp/cluster-origin");
 
       for (const std::size_t idx : unclassified) {
         const auto& point = get(m_point_map_3, *(m_input_range.begin() + idx));
@@ -530,7 +530,7 @@ namespace internal {
 
 			internal::compute_angle_2(dir, y_dir, m_angle_2d);
       internal::compute_barycenter_2(points, m_b);
-      
+
       for (Point_2& p : points)
         internal::rotate_point_2(m_angle_2d, m_b, p);
 
@@ -544,7 +544,7 @@ namespace internal {
 
       for (std::size_t i = 0; i < points.size(); ++i) {
         const Point_2& p = points[i];
-        m_cluster[i].final_point = 
+        m_cluster[i].final_point =
           Point_3(p.x(), p.y(), m_cluster[i].input_point.z());
       }
     }
@@ -557,12 +557,12 @@ namespace internal {
 
       for (std::size_t i = 0; i < m_cluster.size(); ++i) {
         const auto& item = m_cluster[i];
-        
+
         const Point_3& point = item.final_point;
         get_cell_id(point, cell_id);
         m_grid[cell_id].push_back(i);
       }
-      save_grid("/Users/monet/Documents/lod/logs/buildings/tmp/grid");
+      save_grid("/Users/monet/Documents/gf/lod/logs/buildings/tmp/grid");
     }
 
     FT get_noise() {
@@ -570,7 +570,7 @@ namespace internal {
       const std::size_t n = 2;
       Point_2 p1 = get_point_from_id(0, 0);
       Point_2 p2 = get_point_from_id(0, n - 1);
-      
+
       const Point_2 tr = Point_2(-m_tr.x(), -m_tr.y());
 
       internal::translate_point_2(tr, p1);
@@ -578,7 +578,7 @@ namespace internal {
 
       internal::rotate_point_2(-m_angle_2d, m_b, p1);
       internal::rotate_point_2(-m_angle_2d, m_b, p2);
-      
+
       const FT noise = internal::distance(p1, p2);
       return noise;
     }
@@ -600,7 +600,7 @@ namespace internal {
       m_image.resize(rows, cols);
 
       initialize_image(m_image);
-      save_image("/Users/monet/Documents/lod/logs/buildings/tmp/image-origin.jpg", m_image);
+      save_image("/Users/monet/Documents/gf/lod/logs/buildings/tmp/image-origin.jpg", m_image);
       create_label_map(m_image);
 
       inpaint_image_opencv(m_image);
@@ -608,14 +608,14 @@ namespace internal {
       if (!use_triangulation)
         update_interior_pixels_after_paint_default(m_image);
       else {
-       
+
         if (tri.empty()) return;
         update_interior_pixels_after_paint_tri(tri, m_image);
       }
 
-      save_image("/Users/monet/Documents/lod/logs/buildings/tmp/image-paints.jpg", m_image);
+      save_image("/Users/monet/Documents/gf/lod/logs/buildings/tmp/image-paints.jpg", m_image);
       apply_graphcut(m_image);
-      save_image("/Users/monet/Documents/lod/logs/buildings/tmp/image-gcuted.jpg", m_image);
+      save_image("/Users/monet/Documents/gf/lod/logs/buildings/tmp/image-gcuted.jpg", m_image);
     }
 
     void create_inner_contours(const bool height_based) {
@@ -654,10 +654,10 @@ namespace internal {
         const auto& plane2 = m_plane_map.at(item.second);
 
         typename CGAL::cpp11::result_of<
-        Intersect_3(Plane_3, Plane_3)>::type result 
+        Intersect_3(Plane_3, Plane_3)>::type result
           = CGAL::intersection(plane1, plane2);
         if (result) {
-          if (const Plane_3* tmp = boost::get<Plane_3>(&*result)) 
+          if (const Plane_3* tmp = boost::get<Plane_3>(&*result))
             continue;
           else {
             const Line_3* line = boost::get<Line_3>(&*result);
@@ -680,31 +680,31 @@ namespace internal {
         for (std::size_t i = 0; i < bbox.size(); ++i) {
           const std::size_t ip = (i + 1) % bbox.size();
           const Segment_2 segment = Segment_2(bbox[i], bbox[ip]);
-          
+
           const Point_3 a = Point_3(segment.source().x(), segment.source().y(), FT(0));
           const Point_3 b = Point_3(segment.target().x(), segment.target().y(), FT(0));
-          const Point_3 c = Point_3(segment.source().x(), segment.source().y(), FT(10)); 
-          
+          const Point_3 c = Point_3(segment.source().x(), segment.source().y(), FT(10));
+
           const Plane_3 plane = Plane_3(a, b, c);
           const auto point = intersect_3(line, plane);
           if (point != Point_3(FT(0), FT(0), FT(0)))
             points.push_back(point);
         }
 
-        std::sort(points.begin(), points.end(), 
-          [&](Point_3& a, Point_3& b) { 
+        std::sort(points.begin(), points.end(),
+          [&](Point_3& a, Point_3& b) {
             const Point_2 q1 = Point_2(a.x(), a.y());
             const Point_2 q2 = Point_2(b.x(), b.y());
             const FT d1 = internal::distance(bary, q1);
             const FT d2 = internal::distance(bary ,q2);
             return d1 < d2;
            });
-        
+
         if (points.size() >= 2) {
           const Point_2 q1 = Point_2(points[0].x(), points[0].y());
           const Point_2 q2 = Point_2(points[1].x(), points[1].y());
 
-          std::vector<Segment_2> vec; 
+          std::vector<Segment_2> vec;
           vec.push_back(Segment_2(q1, q2));
           m_contours.push_back(vec);
         }
@@ -725,10 +725,10 @@ namespace internal {
       using Point_3 = typename Traits::Point_3;
       using Intersect_3 = typename Traits::Intersect_3;
 
-      typename CGAL::cpp11::result_of<Intersect_3(Line_3, Plane_3)>::type result 
+      typename CGAL::cpp11::result_of<Intersect_3(Line_3, Plane_3)>::type result
       = CGAL::intersection(line, plane);
       if (result) {
-        if (const Line_3* tmp = boost::get<Line_3>(&*result)) 
+        if (const Line_3* tmp = boost::get<Line_3>(&*result))
           return Point_3(FT(0), FT(0), FT(0));
         else {
           const Point_3* point = boost::get<Point_3>(&*result);
@@ -741,12 +741,12 @@ namespace internal {
     void add_roof_segments_test(
       const std::size_t label_ref,
       std::set<Size_pair>& label_sets) {
-      
+
       const std::size_t pixels_per_cell = get_pixels_per_cell(m_image);
 
       OpenCVImage mask(
-        m_image.rows * pixels_per_cell, 
-        m_image.cols * pixels_per_cell, 
+        m_image.rows * pixels_per_cell,
+        m_image.cols * pixels_per_cell,
         CV_8UC1, cv::Scalar(0, 0, 0));
 
       for (std::size_t i = 0; i < m_image.rows; ++i) {
@@ -793,12 +793,12 @@ namespace internal {
     void add_inner_segments(
       const std::size_t label_ref,
       const bool height_based) {
-      
+
       const std::size_t pixels_per_cell = get_pixels_per_cell(m_image);
 
       OpenCVImage mask(
-        m_image.rows * pixels_per_cell, 
-        m_image.cols * pixels_per_cell, 
+        m_image.rows * pixels_per_cell,
+        m_image.cols * pixels_per_cell,
         CV_8UC1, cv::Scalar(0, 0, 0));
 
       for (std::size_t i = 0; i < m_image.rows; ++i) {
@@ -829,7 +829,7 @@ namespace internal {
 
       Size_pair tmp, f1, f2;
       for (std::size_t i = 0; i < cnt_after.size(); ++i) {
-        
+
         const Size_pair ref = get_pair(cnt_after[i], 0, tmp, f1, f2);
         if (height_based) {
           if (is_inner_boundary_pixel(f1.first, f1.second, f2.first, f2.second))
@@ -856,7 +856,7 @@ namespace internal {
           const std::size_t ip = (i + 1) % contour.size();
           const auto& p1 = contour[i];
           const auto& p2 = contour[ip];
-          
+
           const auto x1 = p1.x;
           const auto y1 = p1.y;
           const auto x2 = p2.x;
@@ -895,7 +895,7 @@ namespace internal {
       std::vector<std::size_t> ni, nj;
       for (std::size_t l = seed; l < contour.size();) {
         const auto& p = contour[l];
-        
+
         const int pi = int(p.y) / pixels_per_cell;
         const int pj = int(p.x) / pixels_per_cell;
 
@@ -905,7 +905,7 @@ namespace internal {
         for (std::size_t k = 0; k < 8; ++k) {
           const std::size_t i = ni[k];
           const std::size_t j = nj[k];
-          
+
           const auto& cell = m_image.grid[i][j];
           if (cell.used) break;
           const std::size_t label = get_label(cell.zr, cell.zg, cell.zb);
@@ -932,12 +932,12 @@ namespace internal {
       for (; l < contour.size();) {
         const Size_pair pair = get_pair(contour, l, tmp, f1, f2);
 
-        if ( 
+        if (
           (pair.first == ref.first && pair.second == ref.second) ||
           (pair.first == ref.second && pair.second == ref.first) ) {
-        
+
           m_image.grid[tmp.first][tmp.second].used = true;
-          
+
           // Use it if you want to get points only along internal walls.
           // if (is_inner_boundary_pixel(f1.first, f1.second, f2.first, f2.second))
             result.push_back(contour[l]);
@@ -983,10 +983,10 @@ namespace internal {
         if (d.second)
           ids.push_back(d.first);
       }
-      
+
       if (ids.size() != 2)
         return std::make_pair(std::size_t(-1), std::size_t(-1));
-      
+
       tmp = std::make_pair(pi, pj);
       auto it = bla.begin();
       f1 = it->second; ++it;
@@ -998,12 +998,12 @@ namespace internal {
 
       m_contours.clear();
       m_approximate_boundaries_2.clear();
-      
+
       const std::size_t pixels_per_cell = get_pixels_per_cell(m_image);
 
       OpenCVImage mask(
-        m_image.rows * pixels_per_cell, 
-        m_image.cols * pixels_per_cell, 
+        m_image.rows * pixels_per_cell,
+        m_image.cols * pixels_per_cell,
         CV_8UC1, cv::Scalar(255, 255, 255));
 
       for (std::size_t i = 0; i < m_image.rows; ++i)
@@ -1011,7 +1011,7 @@ namespace internal {
           if (!m_image.grid[i][j].is_interior)
             create_pixel(i, j, pixels_per_cell, 0, mask);
 
-      save_opencv_image("/Users/monet/Documents/lod/logs/buildings/tmp/cv-mask.jpg", mask);
+      save_opencv_image("/Users/monet/Documents/gf/lod/logs/buildings/tmp/cv-mask.jpg", mask);
 
       std::vector< std::vector<cv::Point> > cnt_before, cnt_after;
       std::vector<cv::Vec4i> hierarchy;
@@ -1027,13 +1027,13 @@ namespace internal {
       if (cnt_after.size() == 0) return;
 
       OpenCVImage cnt(
-        m_image.rows * pixels_per_cell, 
-        m_image.cols * pixels_per_cell, 
+        m_image.rows * pixels_per_cell,
+        m_image.cols * pixels_per_cell,
         CV_8UC3, cv::Scalar(255, 255, 255));
 
       const cv::Scalar color = cv::Scalar(255, 0, 0);
       cv::drawContours(cnt, cnt_after, -1, color, 3);
-      save_opencv_image("/Users/monet/Documents/lod/logs/buildings/tmp/cv-contours.jpg", cnt);
+      save_opencv_image("/Users/monet/Documents/gf/lod/logs/buildings/tmp/cv-contours.jpg", cnt);
 
       std::vector<Segment_2> segments;
       const Point_2 tr = Point_2(-m_tr.x(), -m_tr.y());
@@ -1045,7 +1045,7 @@ namespace internal {
           const std::size_t ip = (i + 1) % contour.size();
           const auto& p1 = contour[i];
           const auto& p2 = contour[ip];
-          
+
           const auto x1 = p1.x;
           const auto y1 = p1.y;
           const auto x2 = p2.x;
@@ -1098,7 +1098,7 @@ namespace internal {
         const Point_2 c = Point_2(int(cvp.x), int(cvp.y));
         const Point_2 proj = line.projection(c);
         const FT length = internal::distance(c, proj);
-        
+
         if (std::floor(length) <= m_image_noise) {
 
           const int pi = int(c.y()) / pixels_per_cell;
@@ -1106,7 +1106,7 @@ namespace internal {
           Point_2 p = get_point_from_id(pi, pj);
           internal::translate_point_2(tr, p);
           internal::rotate_point_2(-m_angle_2d, m_b, p);
-          
+
           result.first.push_back(p);
 
           const int qi = int(proj.y()) / pixels_per_cell;
@@ -1166,7 +1166,7 @@ namespace internal {
     }
 
     void create_pixel(
-      const std::size_t i, const std::size_t j, 
+      const std::size_t i, const std::size_t j,
       const std::size_t pixels_per_cell,
       const unsigned char color,
       OpenCVImage& image) {
@@ -1179,9 +1179,9 @@ namespace internal {
     }
 
     void create_pixel(
-      const std::size_t i, const std::size_t j, 
+      const std::size_t i, const std::size_t j,
       const std::size_t pixels_per_cell,
-      const uchar zr, const uchar zg, const uchar zb, 
+      const uchar zr, const uchar zg, const uchar zb,
       OpenCVImage& image) {
 
       const std::size_t il = i * pixels_per_cell;
@@ -1231,7 +1231,7 @@ namespace internal {
 
               Point_2 p = get_point_from_id(i, j);
               Point_2 q = get_point_from_id(ii, jj);
-              
+
               internal::translate_point_2(tr, p);
               internal::translate_point_2(tr, q);
 
@@ -1283,7 +1283,7 @@ namespace internal {
       const std::size_t i2, const std::size_t j2,
       Image_neighbors& imn) {
       imn.neighbors.clear();
-      
+
       add_imn_neighbor(i1, j1 + 1, i2, j2 + 1, imn);
       add_imn_neighbor(i1, j1 - 1, i2, j2 - 1, imn);
       add_imn_neighbor(i1 + 1, j1, i2 + 1, j2, imn);
@@ -1301,7 +1301,7 @@ namespace internal {
       add_imn_neighbor(i1 + 1, j1 + 1, i2, j2, imn);
       add_imn_neighbor(i1 + 1, j1 - 1, i2, j2, imn);
       add_imn_neighbor(i1 - 1, j1 + 1, i2, j2, imn);
-      add_imn_neighbor(i1 - 1, j1 - 1, i2, j2, imn);  
+      add_imn_neighbor(i1 - 1, j1 - 1, i2, j2, imn);
     }
 
     void add_imn_neighbor(
@@ -1313,7 +1313,7 @@ namespace internal {
 
       Point_2 p = get_point_from_id(i1, j1);
       Point_2 q = get_point_from_id(i2, j2);
-      
+
       internal::translate_point_2(tr, p);
       internal::translate_point_2(tr, q);
 
@@ -1331,11 +1331,11 @@ namespace internal {
 
     void get_points_for_visibility_2(
       std::vector< std::pair<Point_2, bool> >& points) {
-      
+
       std::vector<Pixel> point_cloud;
       create_point_cloud(m_image, point_cloud);
       add_extra_levels(2, point_cloud);
-      
+
       points.clear();
       points.reserve(point_cloud.size());
       const Point_2 tr = Point_2(-m_tr.x(), -m_tr.y());
@@ -1350,7 +1350,7 @@ namespace internal {
       }
 
       save_regular_points(
-        points, "/Users/monet/Documents/lod/logs/buildings/tmp/visibility_points_2");
+        points, "/Users/monet/Documents/gf/lod/logs/buildings/tmp/visibility_points_2");
     }
 
     void get_points_for_visibility_3(
@@ -1360,7 +1360,7 @@ namespace internal {
       std::vector<Plane_3>& planes) {
 
       points.clear();
-      
+
       updated_regions.clear();
       updated_regions.resize(m_num_labels);
 
@@ -1399,9 +1399,9 @@ namespace internal {
       }
 
       m_saver.export_points(
-        points, 
+        points,
         updated_regions,
-        "/Users/monet/Documents/lod/logs/buildings/tmp/visibility_points_3");
+        "/Users/monet/Documents/gf/lod/logs/buildings/tmp/visibility_points_3");
     }
 
     void get_plane_map(std::map<std::size_t, Plane_3>& plane_map) {
@@ -1419,7 +1419,7 @@ namespace internal {
       std::size_t num_points = 0;
       for (const auto& roof_region : roof_regions)
         num_points += roof_region.size();
-      
+
       updated_regions.clear();
       updated_regions.resize(m_num_labels);
 
@@ -1478,9 +1478,9 @@ namespace internal {
       }
 
       m_saver.export_points(
-        points, 
+        points,
         updated_regions,
-        "/Users/monet/Documents/lod/logs/buildings/tmp/visibility_points_3");
+        "/Users/monet/Documents/gf/lod/logs/buildings/tmp/visibility_points_3");
     }
 
     void get_inner_boundary_points_2(
@@ -1503,7 +1503,7 @@ namespace internal {
 
               Point_2 p = get_point_from_id(i, j);
               Point_2 q = get_point_from_id(ii, jj);
-              
+
               internal::translate_point_2(tr, p);
               internal::translate_point_2(tr, q);
 
@@ -1523,9 +1523,9 @@ namespace internal {
       for (const auto& p : boundary_points_2)
         points.push_back(Point_3(p.x(), p.y(), FT(0)));
       m_saver.export_points(
-        points, 
-        Color(0, 0, 0), 
-        "/Users/monet/Documents/lod/logs/buildings/tmp/inner_points");
+        points,
+        Color(0, 0, 0),
+        "/Users/monet/Documents/gf/lod/logs/buildings/tmp/inner_points");
     }
 
   private:
@@ -1547,16 +1547,16 @@ namespace internal {
     std::vector<Cluster_item> m_cluster;
     FT m_val_min, m_val_max;
     std::size_t m_num_labels;
-    
+
     // Transform.
     Point_2 m_b, m_tr;
     FT m_angle_2d;
-    
+
     // Grid.
     Grid m_grid;
     long m_rows_min, m_rows_max;
     long m_cols_min, m_cols_max;
-    
+
     // Image.
     Image m_image;
     std::map<std::size_t, FT> m_height_map;
@@ -1577,7 +1577,7 @@ namespace internal {
     void add_extra_levels(
       const int levels,
       std::vector<Pixel>& point_cloud) {
-        
+
       for (int i = 0; i < m_image.rows; ++i) {
         for (int j = -levels; j < 0; ++j) {
           const Point_2 p = get_point_from_id(i, j);
@@ -1640,7 +1640,7 @@ namespace internal {
       for (std::size_t i = 0; i < regions.size(); ++i) {
         const auto& region = regions[i];
         roof.clear();
-  
+
         /* create_smart_plane(region, plane); */
         create_standard_plane(region, plane);
         internal::project_on_plane_3(
@@ -1654,7 +1654,7 @@ namespace internal {
     void create_smart_plane(
       const Indices& region,
       Plane_3& plane) {
-      
+
       using Neighbor_query =
       internal::K_neighbor_query<Traits, Indices, Point_map_3>;
       using Sorting =
@@ -1730,7 +1730,7 @@ namespace internal {
 
       Identity_map_2 identity_map_2;
       filtering.add_points(points, identity_map_2);
-      points.clear(); 
+      points.clear();
       filtering.get_samples(sampling_2, m_samples_per_face, points);
     }
 
@@ -1739,7 +1739,7 @@ namespace internal {
       const std::vector<Pair>& pairs,
       K_neighbor_query& neighbor_query,
       std::size_t& region_idx) {
-      
+
       Indices neighbors;
       neighbor_query(p, neighbors);
 
@@ -1749,8 +1749,8 @@ namespace internal {
         const std::size_t label = item.label;
         sums[label] += FT(1);
       }
-      
-      std::size_t final_label = std::size_t(-1); 
+
+      std::size_t final_label = std::size_t(-1);
       FT max_sum = -FT(1);
       for (std::size_t i = 0; i < sums.size(); ++i) {
         if (sums[i] > max_sum) {
@@ -1767,12 +1767,12 @@ namespace internal {
     }
 
     void get_cell_id(
-      const Point_3& point, 
+      const Point_3& point,
       Cell_id& cell_id) {
 
       const long id_x = get_id_value(point.x());
       const long id_y = get_id_value(point.y());
-      
+
       cell_id = std::make_pair(id_x, id_y);
 
       m_cols_min = CGAL::min(id_x, m_cols_min);
@@ -1800,7 +1800,7 @@ namespace internal {
 
           const long id_x = get_id_x(j-1);
           const long id_y = get_id_y(i-1);
-          
+
           const Cell_id cell_id = std::make_pair(id_x, id_y);
           if (m_grid.find(cell_id) != m_grid.end()) {
             ++numcells;
@@ -1829,7 +1829,7 @@ namespace internal {
       std::size_t roof_idx = std::size_t(-1);
       FT zr = FT(255), zg = FT(255), zb = FT(255);
       const bool success = get_pixel_data(indices, roof_idx, zr, zg, zb);
-      if (success) 
+      if (success)
         image.create_pixel(i, j, roof_idx, true, zr, zg, zb);
     }
 
@@ -1874,7 +1874,7 @@ namespace internal {
         for (std::size_t j = 1; j < image.cols - 1; ++j) {
           const auto& cell = image.grid[i][j];
           if (cell.roof_idx != std::size_t(-1)) {
-            
+
             const Point_3 color = Point_3(cell.zr, cell.zg, cell.zb);
             m_label_map[cell.roof_idx] = color;
             m_inv_label_map[color] = cell.roof_idx;
@@ -1885,15 +1885,15 @@ namespace internal {
 
     void inpaint_image_opencv(
       Image& image) {
-      
+
       OpenCVImage input(
-        image.rows, 
-        image.cols, 
+        image.rows,
+        image.cols,
         CV_8UC3, cv::Scalar(255, 255, 255));
 
       OpenCVImage mask(
-        image.rows, 
-        image.cols, 
+        image.rows,
+        image.cols,
         CV_8U, cv::Scalar(0, 0, 0));
 
       for (std::size_t i = 0; i < image.rows; ++i) {
@@ -1901,7 +1901,7 @@ namespace internal {
           const uchar zr = saturate_z(image.grid[i][j].zr);
           const uchar zg = saturate_z(image.grid[i][j].zg);
           const uchar zb = saturate_z(image.grid[i][j].zb);
-          
+
           cv::Vec3b& bgr = input.at<cv::Vec3b>(i, j);
           bgr[0] = zb;
           bgr[1] = zg;
@@ -1921,7 +1921,7 @@ namespace internal {
       for (std::size_t i = 1; i < colored.rows - 1; ++i) {
         for (std::size_t j = 1; j < colored.cols - 1; ++j) {
           const cv::Vec3b& bgr = inpainted.at<cv::Vec3b>(i, j);
-          
+
           const std::size_t roof_idx = image.grid[i][j].roof_idx;
           const bool is_interior = image.grid[i][j].is_interior;
 
@@ -2008,9 +2008,9 @@ namespace internal {
       filtering.set_interior_labels_tagged(point_cloud);
 
       m_saver.export_points(
-        clean, 
+        clean,
         Color(0, 0, 0),
-        "/Users/monet/Documents/lod/logs/buildings/tmp/clean");
+        "/Users/monet/Documents/gf/lod/logs/buildings/tmp/clean");
     }
 
     void create_alpha_shapes_line_sweep(
@@ -2034,7 +2034,7 @@ namespace internal {
         m_alpha_shape_size_2, m_noise_level);
 
       filtering.add_points_graphcut(
-        m_noise_level, m_region_growing_scale_3, m_region_growing_angle_3, 
+        m_noise_level, m_region_growing_scale_3, m_region_growing_angle_3,
         points);
       filtering.set_interior_labels_graphcut(
         m_noise_level, point_cloud);
@@ -2047,16 +2047,16 @@ namespace internal {
       points.end());
 
       m_saver.export_points(
-        points, 
+        points,
         Color(0, 0, 0),
-        "/Users/monet/Documents/lod/logs/buildings/tmp/simplified");
+        "/Users/monet/Documents/gf/lod/logs/buildings/tmp/simplified");
     }
 
     void create_concaveman(
       const Points_3& points_3) {
 
       typedef std::array<FT, 2> point_type;
-      
+
       std::vector<point_type> input_points;
       std::vector<int> input_hull;
 
@@ -2092,9 +2092,9 @@ namespace internal {
         result.push_back(Point_3(p[0], p[1], FT(0)));
 
       m_saver.export_points(
-        result, 
+        result,
         Color(0, 0, 0),
-        "/Users/monet/Documents/lod/logs/buildings/tmp/concave_hull_points");
+        "/Users/monet/Documents/gf/lod/logs/buildings/tmp/concave_hull_points");
     }
 
     void create_concave_hull(
@@ -2106,9 +2106,9 @@ namespace internal {
       hull.create(result);
 
       m_saver.export_points(
-        result, 
+        result,
         Color(0, 0, 0),
-        "/Users/monet/Documents/lod/logs/buildings/tmp/concave_hull_points");
+        "/Users/monet/Documents/gf/lod/logs/buildings/tmp/concave_hull_points");
 
       std::vector<Segment_2> segments;
       for (std::size_t i = 0; i < result.size(); ++i) {
@@ -2125,7 +2125,7 @@ namespace internal {
 
       m_saver.save_polylines(
         segments,
-        "/Users/monet/Documents/lod/logs/buildings/tmp/concave_hull_segments");
+        "/Users/monet/Documents/gf/lod/logs/buildings/tmp/concave_hull_segments");
 
       hull.set_interior_labels(result, point_cloud);
     }
@@ -2154,9 +2154,9 @@ namespace internal {
         points_3.push_back(Point_3(p.x(), p.y(), FT(0)));
 
       m_saver.export_points(
-        points_3, 
+        points_3,
         Color(0, 0, 0),
-        "/Users/monet/Documents/lod/logs/buildings/tmp/thinning");
+        "/Users/monet/Documents/gf/lod/logs/buildings/tmp/thinning");
     }
 
     void remove_outliers(Points_3& points) {
@@ -2166,9 +2166,9 @@ namespace internal {
       apply_outliers(points);
 
       m_saver.export_points(
-        points, 
+        points,
         Color(0, 0, 0),
-        "/Users/monet/Documents/lod/logs/buildings/tmp/outliers");
+        "/Users/monet/Documents/gf/lod/logs/buildings/tmp/outliers");
     }
 
     void apply_wlop(Points_3& points) {
@@ -2188,10 +2188,10 @@ namespace internal {
       std::vector<Point_3> input(points);
 
       input.erase(
-      CGAL::remove_outliers(input, 12, 
+      CGAL::remove_outliers(input, 12,
       CGAL::parameters::
       threshold_percent(5.0).
-      threshold_distance(0.0)), 
+      threshold_distance(0.0)),
       input.end());
 
       std::vector<Point_3>(input).swap(input);
@@ -2208,7 +2208,7 @@ namespace internal {
       }
 
       save_triangulation(
-        tri, "/Users/monet/Documents/lod/logs/buildings/tmp/triangulation");
+        tri, "/Users/monet/Documents/gf/lod/logs/buildings/tmp/triangulation");
     }
 
     void save_triangulation(
@@ -2219,8 +2219,8 @@ namespace internal {
       std::size_t num_vertices = 0;
       internal::Indexer<Point_3> indexer;
 
-      std::vector<Point_3> vertices; 
-      std::vector<Indices> faces; 
+      std::vector<Point_3> vertices;
+      std::vector<Indices> faces;
       std::vector<Color> fcolors;
 
       Polygon_inserter<Traits> inserter(faces, fcolors);
@@ -2241,7 +2241,7 @@ namespace internal {
 
       const Point_2 tr = Point_2(-m_tr.x(), -m_tr.y());
       for (const auto& pixel : point_cloud) {
-        
+
         Location_type type; int stub;
         Point_2 p = Point_2(pixel.point.x(), pixel.point.y());
         internal::translate_point_2(tr, p);
@@ -2282,9 +2282,9 @@ namespace internal {
     }
 
     void create_input_points(
-      Points_3& points, 
+      Points_3& points,
       const bool zero) {
-      
+
       points.clear();
       points.reserve(m_input_range.size());
       for (const std::size_t idx : m_input_range) {
@@ -2296,25 +2296,25 @@ namespace internal {
 
         if (zero)
           points.push_back(Point_3(q.x(), q.y(), FT(0)));
-        else 
+        else
           points.push_back(Point_3(q.x(), q.y(), p.z()));
       }
 
       m_saver.export_points(
-        points, 
+        points,
         Color(0, 0, 0),
-        "/Users/monet/Documents/lod/logs/buildings/tmp/original");
+        "/Users/monet/Documents/gf/lod/logs/buildings/tmp/original");
     }
 
     void create_input_points(
       const Image& image,
       Points_3& points) {
-      
+
       points.clear(); std::vector<std::size_t> ni, nj;
       for (std::size_t i = 1; i < image.rows - 1; ++i) {
         for (std::size_t j = 1; j < image.cols - 1; ++j) {
           const auto& cell = image.grid[i][j];
-          
+
           const bool is_interior = cell.is_interior;
           get_grid_neighbors_8(i, j, ni, nj);
           std::size_t count = 0;
@@ -2331,9 +2331,9 @@ namespace internal {
       }
 
       m_saver.export_points(
-        points, 
+        points,
         Color(0, 0, 0),
-        "/Users/monet/Documents/lod/logs/buildings/tmp/original");
+        "/Users/monet/Documents/gf/lod/logs/buildings/tmp/original");
     }
 
     void create_point_cloud(
@@ -2344,7 +2344,7 @@ namespace internal {
       for (std::size_t i = 0; i < image.rows; ++i) {
         for (std::size_t j = 0; j < image.cols; ++j) {
           const auto& cell = image.grid[i][j];
-          
+
           const bool is_interior = cell.is_interior;
           const Point_2 p = get_point_from_id(i, j);
           point_cloud.push_back(Pixel(p, i, j, is_interior,
@@ -2372,13 +2372,13 @@ namespace internal {
       set_initial_labels(image, idx_map, labels);
       apply_new_labels(idx_map, labels, image);
 
-      save_image("/Users/monet/Documents/lod/logs/buildings/tmp/image-labels.jpg", image);
+      save_image("/Users/monet/Documents/gf/lod/logs/buildings/tmp/image-labels.jpg", image);
 
       if (m_lidar) {
         std::vector<Size_pair> edges;
         std::vector<double> edge_weights;
         set_graphcut_edges(image, idx_map, edges, edge_weights);
-        
+
         std::vector< std::vector<double> > cost_matrix;
         set_cost_matrix(image, idx_map, cost_matrix);
 
@@ -2431,8 +2431,8 @@ namespace internal {
       for (std::size_t i = 1; i < image.rows - 1; ++i) {
         for (std::size_t j = 1; j < image.cols - 1; ++j) {
           const std::size_t pixel_idx = idx_map.at(std::make_pair(i, j));
-          
-          Point_3 color; 
+
+          Point_3 color;
           bool is_interior = image.grid[i][j].is_interior;
 
           if (labels[pixel_idx] == m_num_labels) {
@@ -2442,9 +2442,9 @@ namespace internal {
             color = m_label_map.at(labels[pixel_idx]);
             is_interior = true;
           }
-          
+
           const std::size_t roof_idx = image.grid[i][j].roof_idx;
-          labeled.create_pixel(i, j, roof_idx, is_interior, 
+          labeled.create_pixel(i, j, roof_idx, is_interior,
             color.x(), color.y(), color.z());
         }
       }
@@ -2465,13 +2465,13 @@ namespace internal {
           get_grid_neighbors_4(i, j, ni, nj);
           const std::size_t idxi = idx_map.at(std::make_pair(i, j));
 
-          for (std::size_t k = 0; k < 4; ++k) { 
+          for (std::size_t k = 0; k < 4; ++k) {
             const Size_pair pair = std::make_pair(ni[k], nj[k]);
             if (idx_map.find(pair) != idx_map.end()) {
 
               const std::size_t idxj = idx_map.at(pair);
               edges.push_back(std::make_pair(idxi, idxj));
-              
+
               const double edge_weight = create_edge_weight(
                 i, j, ni[k], nj[k], image);
               edge_weights.push_back(edge_weight);
@@ -2484,7 +2484,7 @@ namespace internal {
 
     void get_grid_neighbors_4(
       const std::size_t i, const std::size_t j,
-      std::vector<std::size_t>& ni, 
+      std::vector<std::size_t>& ni,
       std::vector<std::size_t>& nj) {
 
       ni.clear(); nj.clear();
@@ -2526,7 +2526,7 @@ namespace internal {
 
           create_probabilities(i, j, image, probabilities);
           for (std::size_t k = 0; k < m_num_labels + 1; ++k)
-            cost_matrix[k][pixel_idx] = 
+            cost_matrix[k][pixel_idx] =
               get_cost(image, i, j, probabilities[k]);
         }
       }
@@ -2575,7 +2575,7 @@ namespace internal {
 
     void get_grid_neighbors_8(
       const std::size_t i, const std::size_t j,
-      std::vector<std::size_t>& ni, 
+      std::vector<std::size_t>& ni,
       std::vector<std::size_t>& nj) {
 
       ni.clear(); nj.clear();
@@ -2597,7 +2597,7 @@ namespace internal {
       const Image& image,
       const std::size_t i, const std::size_t j,
       const double prob) {
-      
+
       const double weight = get_weight(i, j, image);
       return (1.0 - prob) * weight;
     }
@@ -2615,13 +2615,13 @@ namespace internal {
       const std::vector< std::vector<double> >& cost_matrix,
       std::vector<std::size_t>& labels) {
 
-      std::cout << "Initial labels (size " << 
+      std::cout << "Initial labels (size " <<
       labels.size() << ")" << std::endl;
 
       Alpha_expansion graphcut;
       graphcut(edges, edge_weights, cost_matrix, labels);
 
-      std::cout << "Final labels (size " << 
+      std::cout << "Final labels (size " <<
       labels.size() << ")" << std::endl;
     }
 
@@ -2661,7 +2661,7 @@ namespace internal {
     }
 
     void save_cluster(const std::string name) {
-      
+
       std::vector<Point_3> points;
       points.reserve(m_cluster.size());
       for (const auto& item: m_cluster)
@@ -2710,7 +2710,7 @@ namespace internal {
         if (!pixel.is_interior) continue;
         points.push_back(pixel.point);
       }
-        
+
       const Color color(0, 0, 0);
       m_saver.export_points(points, color, name);
     }
@@ -2726,7 +2726,7 @@ namespace internal {
 
       for (std::size_t i = 1; i < image.rows - 1; ++i) {
         for (std::size_t j = 1; j < image.cols - 1; ++j) {
-          
+
           const std::size_t pixel_idx = idx_map.at(std::make_pair(i, j));
           for (std::size_t k = 0; k < m_num_labels + 1; ++k) {
             const double prob = get_probability(cost_matrix[k][pixel_idx]);
@@ -2743,7 +2743,7 @@ namespace internal {
       }
 
       for (std::size_t k = 0; k < m_num_labels + 1; ++k) {
-        const std::string name = "/Users/monet/Documents/lod/logs/buildings/tmp/" 
+        const std::string name = "/Users/monet/Documents/gf/lod/logs/buildings/tmp/"
         + std::to_string(k) + "-image-probs.jpg";
         save_image(name, images[k]);
       }
@@ -2761,7 +2761,7 @@ namespace internal {
       points.reserve(input.size());
       for (const auto& p : input)
         points.push_back(Point_3(p.first.x(), p.first.y(), FT(0)));
-        
+
       const Color color(0, 0, 0);
       m_saver.export_points(points, color, name);
     }

@@ -45,7 +45,7 @@ namespace internal {
     using Polygon = std::vector<Point_3>;
 
     Coplanar_region(
-      const std::vector<Polygon>& faces) : 
+      const std::vector<Polygon>& faces) :
     m_faces(faces)
     { }
 
@@ -56,7 +56,7 @@ namespace internal {
 
     bool is_part_of_region(
       const std::size_t,
-      const std::size_t query_index, 
+      const std::size_t query_index,
       const std::vector<std::size_t>& region) const {
 
       CGAL_precondition(region.size() > 0);
@@ -77,7 +77,7 @@ namespace internal {
     const std::vector<Polygon>& m_faces;
 
     bool are_coplanar(
-      const std::size_t idx1, 
+      const std::size_t idx1,
       const std::size_t idx2) const {
 
       const Polygon& f1 = m_faces[idx1];
@@ -93,7 +93,7 @@ namespace internal {
 
 				for (std::size_t j = 0; j < f2.size(); ++j)
 					if (internal::are_coplanar_3(
-            f1[i], f1[ip], f1[ipp], f2[j])) 
+            f1[i], f1[ip], f1[ipp], f2[j]))
               ++count;
 			}
 			return count == f1.size() * f2.size();

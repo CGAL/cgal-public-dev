@@ -59,7 +59,7 @@ namespace internal {
     Estimate_normals_3(
       const Input_range& input_range,
       const Neighbor_query& neighbor_query,
-      const Point_map& point_map) : 
+      const Point_map& point_map) :
     m_input_range(input_range),
     m_neighbor_query(neighbor_query),
     m_point_map(point_map) {
@@ -67,19 +67,19 @@ namespace internal {
     }
 
     void get_normals(std::vector<Vector_3>& normals) const {
-                  
+
       normals.clear();
       normals.reserve(m_input_range.size());
 
       Plane_3 plane; Vector_3 normal;
       Indices neighbors;
       for (std::size_t i = 0; i < m_input_range.size(); ++i) {
-        
+
         neighbors.clear();
         m_neighbor_query(i, neighbors);
         internal::plane_from_points_3(
           neighbors, m_neighbor_query.point_map(), plane);
-        
+
         normal = plane.orthogonal_vector();
         const FT normal_length = internal::vector_length(normal);
         CGAL_precondition(normal_length > FT(0));

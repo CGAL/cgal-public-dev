@@ -39,10 +39,10 @@ using Point_inserter   = CGAL::Levels_of_detail::Point_inserter<Traits>;
 using Polygon_inserter = CGAL::Levels_of_detail::Polygon_inserter<Traits>;
 
 using LOD = CGAL::Levels_of_detail::Levels_of_detail<
-  Traits, 
-  Point_set, 
-  Point_map, 
-  Semantic_map, 
+  Traits,
+  Point_set,
+  Point_map,
+  Semantic_map,
   Visibility_map,
   CGAL::Tag_true>;
 
@@ -51,9 +51,9 @@ int main(int argc, char **argv) {
   // Load input data.
   Point_set point_set;
   std::cout << std::endl << "Input data: " << std::endl;
-  std::ifstream file(argc > 1 ? argv[1] : "data/lods.ply", 
+  std::ifstream file(argc > 1 ? argv[1] : "data/lods.ply",
   std::ios_base::binary);
-  file >> point_set; 
+  file >> point_set;
   file.close();
   std::cout << "File contains " << point_set.size() << " points" << std::endl;
 
@@ -70,8 +70,8 @@ int main(int argc, char **argv) {
 
   // Initialize LOD.
   LOD lod(
-    point_set, 
-    point_set.point_map(), 
+    point_set,
+    point_set.point_map(),
     semantic_map,
     visibility_map);
 
@@ -81,9 +81,9 @@ int main(int argc, char **argv) {
   lod.points(
     boost::make_function_output_iterator(inserter_igp),
     CGAL::Levels_of_detail::Intermediate_step::INPUT_GROUND_POINTS);
-  std::cout << "Number of ground points: " << points.size() 
+  std::cout << "Number of ground points: " << points.size()
   << std::endl << std::endl;
-  
+
 
   // Compute planar ground.
   Points vertices_pl; Indices_container faces_pl; Colors fcolors_pl;

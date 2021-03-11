@@ -43,9 +43,9 @@ namespace Levels_of_detail {
 namespace internal {
 
   template<
-  typename GeomTraits, 
-  typename InputRange, 
-  typename PointMap, 
+  typename GeomTraits,
+  typename InputRange,
+  typename PointMap,
   typename NormalMap>
   class Least_squares_line_fit_region {
 
@@ -73,12 +73,12 @@ namespace internal {
     using Sqrt = typename Get_sqrt::Sqrt;
 
     Least_squares_line_fit_region(
-      const Input_range& input_range, 
-      const FT distance_threshold, 
-      const FT angle_threshold, 
-      const FT min_length, 
-      const Point_map& point_map, 
-      const Normal_map& normal_map, 
+      const Input_range& input_range,
+      const FT distance_threshold,
+      const FT angle_threshold,
+      const FT min_length,
+      const Point_map& point_map,
+      const Normal_map& normal_map,
       const Traits traits = Traits()) :
     m_input_range(input_range),
     m_distance_threshold(distance_threshold),
@@ -94,7 +94,7 @@ namespace internal {
     m_scalar_product_2(traits.compute_scalar_product_2_object()),
     m_sqrt(Get_sqrt::sqrt_object(traits)) {
 
-      CGAL_precondition(m_input_range.size() > 0); 
+      CGAL_precondition(m_input_range.size() > 0);
 
       CGAL_precondition(m_distance_threshold >= FT(0));
       CGAL_precondition(m_normal_threshold >= FT(0) && m_normal_threshold <= FT(1));
@@ -108,7 +108,7 @@ namespace internal {
 
     bool is_part_of_region(
       const std::size_t,
-      const std::size_t query_index, 
+      const std::size_t query_index,
       const std::vector<std::size_t>&) const {
 
       CGAL_precondition(query_index >= 0);
@@ -122,18 +122,18 @@ namespace internal {
       CGAL_precondition(normal_length > FT(0));
       const Vector_2 query_normal = normal / normal_length;
 
-      const FT distance_to_fitted_line = 
+      const FT distance_to_fitted_line =
       m_sqrt(m_squared_distance_2(query_point, m_line_of_best_fit));
-      
-      const FT cos_value = 
+
+      const FT cos_value =
       CGAL::abs(m_scalar_product_2(query_normal, m_normal_of_best_fit));
 
-      return (( distance_to_fitted_line <= m_distance_threshold ) && 
+      return (( distance_to_fitted_line <= m_distance_threshold ) &&
         ( cos_value >= m_normal_threshold ));
     }
 
-    bool is_valid_region(const std::vector<std::size_t>& region) const { 
-      
+    bool is_valid_region(const std::vector<std::size_t>& region) const {
+
       if (region.size() < 2) return false;
       const FT squared_min_length = m_min_length * m_min_length;
       return ( internal::points_squared_length_2(
@@ -144,24 +144,24 @@ namespace internal {
 
       CGAL_precondition(region.size() > 0);
       if (region.size() == 1) { // create new reference line and normal
-                    
+
         CGAL_precondition(region[0] >= 0);
         CGAL_precondition(region[0] < m_input_range.size());
 
-        // The best fit line will be a line through this point with 
+        // The best fit line will be a line through this point with
         // its normal being the point's normal.
         const auto& key = *(m_input_range.begin() + region[0]);
 
         const Point_2& point = get(m_point_map, key);
         const Vector_2& normal = get(m_normal_map, key);
-                    
+
         const FT normal_length = m_sqrt(m_squared_length_2(normal));
-        
+
         CGAL_precondition(normal_length > FT(0));
-        m_normal_of_best_fit = 
+        m_normal_of_best_fit =
         normal / normal_length;
-        
-        m_line_of_best_fit = 
+
+        m_line_of_best_fit =
         Line_2(point, m_normal_of_best_fit).perpendicular(point);
 
       } else { // update reference line and normal
@@ -182,20 +182,20 @@ namespace internal {
         Local_line_2 fitted_line;
         Local_point_2 fitted_centroid;
 
-        // The best fit line will be a line fitted to all region points with 
+        // The best fit line will be a line fitted to all region points with
         // its normal being perpendicular to the line.
         CGAL::linear_least_squares_fitting_2(
-          points.begin(), points.end(), 
-          fitted_line, fitted_centroid, 
+          points.begin(), points.end(),
+          fitted_line, fitted_centroid,
           CGAL::Dimension_tag<0>());
-                    
-        m_line_of_best_fit = 
+
+        m_line_of_best_fit =
         Line_2(
-          static_cast<FT>(fitted_line.a()), 
-          static_cast<FT>(fitted_line.b()), 
+          static_cast<FT>(fitted_line.a()),
+          static_cast<FT>(fitted_line.b()),
           static_cast<FT>(fitted_line.c()));
-                    
-        const Vector_2 normal = 
+
+        const Vector_2 normal =
         m_line_of_best_fit.perpendicular(m_line_of_best_fit.point(0)).to_vector();
         const FT normal_length = m_sqrt(m_squared_length_2(normal));
 
@@ -206,14 +206,14 @@ namespace internal {
 
   private:
     const Input_range& m_input_range;
-            
+
     const FT m_distance_threshold;
     const FT m_normal_threshold;
     const FT m_min_length;
 
     const Point_map& m_point_map;
     const Normal_map& m_normal_map;
-            
+
     const Squared_length_2 m_squared_length_2;
     const Squared_distance_2 m_squared_distance_2;
     const Scalar_product_2 m_scalar_product_2;

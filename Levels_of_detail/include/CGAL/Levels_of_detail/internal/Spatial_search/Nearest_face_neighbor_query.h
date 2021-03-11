@@ -47,7 +47,7 @@ namespace internal {
 
     Nearest_face_neighbor_query(
       const std::vector<Polygon>& faces) :
-    m_faces(faces) { 
+    m_faces(faces) {
 
 			m_neighbors.clear();
       m_neighbors.reserve(m_faces.size());
@@ -84,7 +84,7 @@ namespace internal {
     }
 
 		bool share_edge(
-      const Polygon& f1, 
+      const Polygon& f1,
       const Polygon& f2) const {
 
       CGAL_assertion(f1.size() > 0);
@@ -95,7 +95,7 @@ namespace internal {
 				for (std::size_t j = 0; j < f2.size(); ++j) {
 					const std::size_t jp = (j + 1) % f2.size();
 					if (internal::are_equal_edges_3(
-            f1[i], f1[ip], f2[j], f2[jp])) 
+            f1[i], f1[ip], f2[j], f2[jp]))
 						return true;
 				}
 			}

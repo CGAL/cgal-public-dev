@@ -43,19 +43,19 @@ namespace internal {
   public:
     using Traits = GeomTraits;
     using FT = typename Traits::FT;
-    using Point_2 = typename Traits::Point_2; 
+    using Point_2 = typename Traits::Point_2;
 
     using Cell_id = std::pair<long, long>;
     using Cell_data = std::vector<std::size_t>;
     using Grid = std::map<Cell_id, Cell_data>;
 
-    Grid_based_filtering_2(const FT grid_cell_width_2) : 
-    m_grid_cell_width_2(grid_cell_width_2) 
+    Grid_based_filtering_2(const FT grid_cell_width_2) :
+    m_grid_cell_width_2(grid_cell_width_2)
     { }
 
     void apply(std::vector<Point_2>& range) const {
       CGAL_precondition(range.size() > 0);
-                  
+
       Grid grid;
       create_grid(range, grid);
       downsample(grid, range);
@@ -63,14 +63,14 @@ namespace internal {
 
   private:
     const FT m_grid_cell_width_2;
-    
+
     struct Cell_data_to_point {
       typedef std::size_t argument_type;
       typedef std::pair<Point_2, FT> result_type;
-      
+
       const std::vector<Point_2>& m_range;
-      Cell_data_to_point(const std::vector<Point_2>& range) : 
-      m_range(range) 
+      Cell_data_to_point(const std::vector<Point_2>& range) :
+      m_range(range)
       { }
 
       result_type operator()(const argument_type idx) const {
@@ -79,9 +79,9 @@ namespace internal {
     };
 
     void create_grid(
-      const std::vector<Point_2>& range, 
+      const std::vector<Point_2>& range,
       Grid& grid) const {
-                  
+
       Cell_id cell_id;
       grid.clear();
 
@@ -92,7 +92,7 @@ namespace internal {
     }
 
     void get_cell_id(
-      const Point_2& point, 
+      const Point_2& point,
       Cell_id& cell_id) const {
 
       const long id_x = get_id_value(point.x());
@@ -110,9 +110,9 @@ namespace internal {
     }
 
     void downsample(
-      const Grid& grid, 
+      const Grid& grid,
       std::vector<Point_2>& range) const {
-          
+
       std::vector<Point_2> output;
       CGAL_precondition(grid.size() != 0);
 
@@ -126,7 +126,7 @@ namespace internal {
     }
 
     const Point_2& get_cell_representative(
-      const std::vector<Point_2>& range, 
+      const std::vector<Point_2>& range,
       const Cell_data& cell_data) const {
 
       const Point_2 barycenter = CGAL::barycenter(
@@ -134,15 +134,15 @@ namespace internal {
           cell_data.begin(), Cell_data_to_point(range)),
         boost::make_transform_iterator(
           cell_data.end(), Cell_data_to_point(range)));
-        
+
       std::size_t min_id = 0;
       FT min_distance = internal::max_value<FT>();
-      for (std::size_t i = 0; i < cell_data.size(); ++i) {            
+      for (std::size_t i = 0; i < cell_data.size(); ++i) {
         const Point_2& point = range[cell_data[i]];
 
         const FT distance = internal::distance(point, barycenter);
         if (distance < min_distance) {
-          
+
           min_distance = distance;
           min_id = cell_data[i];
         }

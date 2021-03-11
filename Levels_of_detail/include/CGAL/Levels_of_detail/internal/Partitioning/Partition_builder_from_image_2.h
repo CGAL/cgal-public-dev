@@ -81,7 +81,7 @@ public:
   using Triangulation    = internal::Triangulation<Traits>;
   using Face_handle      = typename Triangulation::Delaunay::Face_handle;
   using Vertex_handle    = typename Triangulation::Delaunay::Vertex_handle;
-  using LF_circulator    = typename Triangulation::Delaunay::Line_face_circulator; 
+  using LF_circulator    = typename Triangulation::Delaunay::Line_face_circulator;
   using Partition_edge_2 = internal::Partition_edge_2<Traits>;
   using Partition_face_2 = internal::Partition_face_2<Traits>;
 
@@ -130,10 +130,10 @@ public:
 
     const Point_2& source() const {
       return source_;
-    } 
+    }
     const Point_2& target() const {
       return target_;
-    } 
+    }
   };
 
   struct Segment_wrapper {
@@ -151,13 +151,13 @@ public:
     Point_type saved_target_type = Point_type::DEFAULT;
     std::size_t source_bd_idx = std::size_t(-1);
     std::size_t target_bd_idx = std::size_t(-1);
-    
+
     const Point_2& source() const {
       return source_;
-    } 
+    }
     const Point_2& target() const {
       return target_;
-    } 
+    }
   };
 
   struct My_point {
@@ -170,7 +170,7 @@ public:
 
     const Point_2& point() const {
       return point_;
-    } 
+    }
   };
 
   struct Contour {
@@ -192,18 +192,18 @@ public:
     std::vector<Contour> contours;
     std::vector<Pixel> dual;
     Line_2 direction;
-    
+
     bool is_ridge = false;
-    
+
     FT noise_level;
     FT min_length_2;
     FT angle_bound_2;
     FT ordinate_bound_2;
-    
+
     void use_version_4() {
       m_use_version_8 = false;
     }
-    
+
     void use_version_8() {
       m_use_version_8 = true;
     }
@@ -252,7 +252,7 @@ public:
 
       const bool line_found = intersect_labels(plane_map, direction);
       for (auto& contour : contours) {
-        if (line_found) 
+        if (line_found)
           set_linear_points(direction, contour);
         simplify_contour(direction, contour);
       }
@@ -262,7 +262,7 @@ public:
       const std::vector<Segment_2>& boundaries,
       const std::vector<Point_pair>& boundary_queries,
       std::shared_ptr<KNQ_pair>& knq_ptr) {
-      
+
       for (auto& contour : contours)
         regularize_contour(
           boundaries, boundary_queries, knq_ptr, contour);
@@ -284,15 +284,15 @@ public:
     }
 
     void make_dual_grid() {
-      
-      /* save_original_grid(pixels, 
+
+      /* save_original_grid(pixels,
         Color(125, 0, 0), Color(0, 0, 125)); */
-      
+
       std::vector<Point_2> points;
       for (auto& pixel1 : pixels) {
         const auto& neighbors03 = pixel1.neighbors_03;
         const auto& neighbors47 = pixel1.neighbors_47;
-        
+
         std::size_t neighbors03_size = 0;
         for (const std::size_t neighbor : neighbors03)
           if (neighbor != std::size_t(-1))
@@ -304,7 +304,7 @@ public:
             neighbors47_size += 1;
 
         if (
-          neighbors03_size < 4 || 
+          neighbors03_size < 4 ||
           neighbors47_size < 4) continue;
         pixel1.used = true;
 
@@ -328,7 +328,7 @@ public:
         std::unique(
           points.begin(), points.end(), [](const Point_2& p, const Point_2& q) {
           return internal::are_equal_points_2(p, q);
-        }), 
+        }),
       points.end());
 
       dual.clear();
@@ -345,7 +345,7 @@ public:
       for (const auto& pixel1 : pixels) {
         const auto& neighbors = pixel1.neighbors_47;
         for (std::size_t i = 0; i < neighbors.size(); ++i) {
-          
+
           const std::size_t neighbor = neighbors[i];
           if (neighbor == std::size_t(-1)) continue;
           const auto& pixel2 = pixels[neighbor];
@@ -384,7 +384,7 @@ public:
     }
 
     void apply_contouring() {
-      
+
       segments.clear();
       for (const auto& pixel : dual) {
         const auto& neighbors = pixel.neighbors_47;
@@ -418,7 +418,7 @@ public:
 
       Saver saver;
       saver.save_polylines(
-        saved, "/Users/monet/Documents/lod/logs/buildings/tmp/ms_contour"); */
+        saved, "/Users/monet/Documents/gf/lod/logs/buildings/tmp/ms_contour"); */
     }
 
     std::size_t get_cell_idx(const Indices& ns) {
@@ -459,7 +459,7 @@ public:
         return 2;
       if (b0 == 1 && b1 == 1 && b2 == 1 && b3 == 0)
         return 3;
-      
+
       if (b0 == 1 && b1 == 0 && b2 == 0 && b3 == 0)
         return 4;
       if (b0 == 0 && b1 == 1 && b2 == 0 && b3 == 0)
@@ -488,7 +488,7 @@ public:
 
     void add_segment(
       const Pixel& px0, const Pixel& px1, const Pixel& px2) {
-      
+
       My_segment segment;
       segment.source_ = internal::middle_point_2(px0.point, px1.point);
       segment.target_ = internal::middle_point_2(px1.point, px2.point);
@@ -639,7 +639,7 @@ public:
       for (std::size_t i = 0; i < segs.size(); ++i) {
         seeds[i] = segs[i].index; idx_map[segs[i].index] = i;
       }
-      
+
       Seed_map seed_map(seeds);
       ONQ onq(segs, idx_map);
       OIR oir(segs, idx_map);
@@ -659,7 +659,7 @@ public:
         const auto& q = contour.points[contour.points.size() - 1].point();
         if (internal::are_equal_points_2(p, q))
           contour.is_closed = true;
-        else 
+        else
           contour.is_closed = false;
         /* std::cout << "is closed: " << contour.is_closed << std::endl; */
         contours.push_back(contour);
@@ -673,7 +673,7 @@ public:
 
       Indices ns, nt;
       for (std::size_t i = 0; i < segments.size(); ++i) {
-        segs[i].index = i; 
+        segs[i].index = i;
         segs[i].neighbors.clear();
 
         const auto& source = segments[i].source();
@@ -685,14 +685,14 @@ public:
         add_neighbors(nt, segs[i].neighbors);
       }
 
-      std::sort(segs.begin(), segs.end(), 
+      std::sort(segs.begin(), segs.end(),
       [](const Segment_wrapper& a, const Segment_wrapper& b) {
         return a.neighbors.size() < b.neighbors.size();
       });
     }
 
     void find_neighbors(
-      const std::size_t skip, 
+      const std::size_t skip,
       const Point_2& query, Indices& neighbors) {
       neighbors.clear();
 
@@ -733,7 +733,7 @@ public:
         if (
           internal::are_equal_points_2(curr.source(), next.source()) ||
           internal::are_equal_points_2(curr.source(), next.target()) ) {
-          
+
           mp.point_ = curr.target();
           mp.labels = curr.lt;
           contour.points.push_back(mp); continue;
@@ -742,7 +742,7 @@ public:
         if (
           internal::are_equal_points_2(curr.target(), next.source()) ||
           internal::are_equal_points_2(curr.target(), next.target()) ) {
-          
+
           mp.point_ = curr.source();
           mp.labels = curr.ls;
           contour.points.push_back(mp); continue;
@@ -753,7 +753,7 @@ public:
       const auto& next = segments[region[rs]];
 
       if (internal::are_equal_points_2(curr.source(), next.source()) ) {
-        
+
         mp.point_ = curr.source(); mp.labels = curr.ls;
         contour.points.push_back(mp);
         mp.point_ = next.target(); mp.labels = next.lt;
@@ -762,20 +762,20 @@ public:
       }
 
       if (internal::are_equal_points_2(curr.source(), next.target()) ) {
-        
+
         mp.point_ = curr.source(); mp.labels = curr.ls;
         contour.points.push_back(mp);
         mp.point_ = next.source(); mp.labels = next.ls;
-        contour.points.push_back(mp); 
+        contour.points.push_back(mp);
         return;
       }
-    
+
       if (internal::are_equal_points_2(curr.target(), next.source()) ) {
-        
+
         mp.point_ = curr.target(); mp.labels = curr.lt;
         contour.points.push_back(mp);
         mp.point_ = next.target(); mp.labels = next.lt;
-        contour.points.push_back(mp); 
+        contour.points.push_back(mp);
         return;
       }
 
@@ -784,7 +784,7 @@ public:
         mp.point_ = curr.target(); mp.labels = curr.lt;
         contour.points.push_back(mp);
         mp.point_ = next.source(); mp.labels = next.ls;
-        contour.points.push_back(mp); 
+        contour.points.push_back(mp);
         return;
       }
     }
@@ -792,7 +792,7 @@ public:
     bool intersect_labels(
       const std::map<std::size_t, Plane_3>& plane_map,
       Line_2& line_2) {
-      
+
       CGAL_assertion(label_pairs.size() == 1);
       const auto& label_pair = label_pairs[0];
 
@@ -800,7 +800,7 @@ public:
       const auto& plane2 = plane_map.at(label_pair.second);
 
       typename CGAL::cpp11::result_of<
-      Intersect_3(Plane_3, Plane_3)>::type result 
+      Intersect_3(Plane_3, Plane_3)>::type result
         = CGAL::intersection(plane1, plane2);
 
       Line_3 line_3; bool found = false;
@@ -815,7 +815,7 @@ public:
       const auto p2 = line_3.point(1);
       const auto q1 = Point_2(p1.x(), p1.y());
       const auto q2 = Point_2(p2.x(), p2.y());
-      
+
       line_2 = Line_2(q1, q2);
       return true;
     }
@@ -826,7 +826,7 @@ public:
 
       auto& items = contour.points;
       for (auto& item : items) {
-        
+
         const auto& p = item.point();
         const auto  q = line.projection(p);
 
@@ -845,14 +845,14 @@ public:
         if (item.belongs_to_line)
           end = i;
       }
-      
+
       if (start == std::size_t(-1) || end == std::size_t(-1))
         return;
 
       if (start == end) {
         items[start].belongs_to_line = false; return;
       }
-      
+
       if (start < end && !contour.is_closed) {
         for (std::size_t i = start; i <= end; ++i)
           items[i].belongs_to_line = true;
@@ -871,14 +871,14 @@ public:
 
         // Other points.
         if (!items[i].belongs_to_line) {
-          
+
           // Handle linear.
           if (linear.size() != 0)
             simplify_linear(line, items, linear, simplified);
           free.push_back(i);
           // std::cout << "free: " << i << std::endl;
         } else {
-          
+
           // Handle free.
           if (free.size() != 0)
             simplify_free(items, free, simplified);
@@ -921,9 +921,9 @@ public:
 
     void add_linear_point(
       const std::size_t idx,
-      const Line_2& line, 
+      const Line_2& line,
       std::vector<My_point>& simplified) {
-      
+
       auto p = simplified[idx].point();
       simplified[idx].point_ = line.projection(p);
       simplified[idx].type = Point_type::LINEAR;
@@ -948,7 +948,7 @@ public:
     }
 
     void simplify_linear(
-      const Line_2& line, 
+      const Line_2& line,
       const std::vector<My_point>& items,
       Indices& linear,
       std::vector<My_point>& simplified) {
@@ -976,7 +976,7 @@ public:
 
       for (const std::size_t idx : polyline)
         points.push_back(items[idx].point());
-      
+
       using Cost = CGAL::Polyline_simplification_2::Squared_distance_cost;
       using Stop = CGAL::Polyline_simplification_2::Stop_above_cost_threshold;
 
@@ -986,7 +986,7 @@ public:
       Stop stop(threshold);
       std::vector<Point_2> result;
       CGAL::Polyline_simplification_2::simplify(
-        points.begin(), points.end(), cost, stop, 
+        points.begin(), points.end(), cost, stop,
         std::back_inserter(result));
 
       for (const auto& p : result) {
@@ -1002,10 +1002,10 @@ public:
       const std::vector<My_point>& items,
       const Indices& polyline,
       std::vector<My_point>& simplified) {
-      
+
       const std::size_t nump = polyline.size();
       const auto& p = items[polyline[0]].point();
-      const auto& q = items[polyline[nump - 1]].point(); 
+      const auto& q = items[polyline[nump - 1]].point();
 
       const Point_2 s = line.projection(p);
       const Point_2 t = line.projection(q);
@@ -1056,7 +1056,7 @@ public:
       if (contour.is_closed) {
         regularize_closed_contour(
           boundaries, boundary_queries, knq_ptr, regs);
-      } 
+      }
       else {
         regularize_polyline(
           boundaries, boundary_queries, knq_ptr, regs);
@@ -1093,25 +1093,25 @@ public:
 
     void add_source_point(
       const My_point& query, Regular_segment& segment) {
-      
+
       segment.source_ = query.point();
       segment.source_type = query.type;
       segment.saved_source_type = query.saved_type;
       if (query.type == Point_type::BOUNDARY)
         segment.source_bd_idx = query.bd_idx;
-      else 
+      else
         segment.source_bd_idx = std::size_t(-1);
     }
 
     void add_target_point(
       const My_point& query, Regular_segment& segment) {
-      
+
       segment.target_ = query.point();
       segment.target_type = query.type;
       segment.saved_target_type = query.saved_type;
       if (query.type == Point_type::BOUNDARY)
         segment.target_bd_idx = query.bd_idx;
-      else 
+      else
         segment.target_bd_idx = std::size_t(-1);
     }
 
@@ -1139,7 +1139,7 @@ public:
 
       get_multiple_directions(
         true,
-        regs, boundaries, boundary_queries, regularizer, knq_ptr, 
+        regs, boundaries, boundary_queries, regularizer, knq_ptr,
         contours, bounds, skip, longest, groups);
       regularizer.set_data(bounds, skip, longest, groups);
 
@@ -1147,7 +1147,7 @@ public:
       regularizer.correct_directions(contours);
 
       /*
-      std::cout << "num longest (close): " << 
+      std::cout << "num longest (close): " <<
         regularizer.get_longest().size() << std::endl;
       for (const std::size_t idx : regularizer.get_groups()[0])
         std::cout << idx << " ";
@@ -1226,7 +1226,7 @@ public:
 
       for (const auto& reg : regs) {
         if (
-          reg.saved_source_type == Point_type::LINEAR && 
+          reg.saved_source_type == Point_type::LINEAR &&
           reg.saved_target_type == Point_type::LINEAR) {
 
           const auto& s = reg.source();
@@ -1254,10 +1254,10 @@ public:
         if (reg.source_type == Point_type::BOUNDARY) {
           unique.insert(reg.source_bd_idx); continue;
         }
-        
+
         const auto& query = reg.source();
         (*knq_ptr)(query, neighbors);
-        const std::size_t bd_idx = 
+        const std::size_t bd_idx =
           boundary_queries[neighbors[0]].second;
         unique.insert(bd_idx);
       }
@@ -1274,7 +1274,7 @@ public:
         closest.push_back(segment);
       }
 
-      std::sort(closest.begin(), closest.end(), 
+      std::sort(closest.begin(), closest.end(),
       [](const Segment_2& a, const Segment_2& b) {
         return a.squared_length() > b.squared_length();
       });
@@ -1290,10 +1290,10 @@ public:
 
       for (std::size_t i = 0; i < contours[0].size(); ++i) {
         auto& seg_pair = contours[0][i];
-        const auto& reg = regs[i];  
+        const auto& reg = regs[i];
 
         if (
-          reg.saved_source_type == Point_type::LINEAR && 
+          reg.saved_source_type == Point_type::LINEAR &&
           reg.saved_target_type == Point_type::LINEAR) {
 
           seg_pair.second = true;
@@ -1308,7 +1308,7 @@ public:
             longest[j], seg_pair.first);
           const FT angle_2 = regularizer.get_angle_2(angle);
 
-          if ( 
+          if (
             (CGAL::abs(angle_2) <= regularizer.get_bound_min()) ||
             (CGAL::abs(angle_2) >= regularizer.get_bound_max()) )  {
 
@@ -1329,10 +1329,10 @@ public:
 
       for (std::size_t i = 0; i < contours[0].size(); ++i) {
         auto& seg_pair = contours[0][i];
-        const auto& reg = regs[i];  
+        const auto& reg = regs[i];
 
         if (
-          reg.saved_source_type == Point_type::LINEAR && 
+          reg.saved_source_type == Point_type::LINEAR &&
           reg.saved_target_type == Point_type::LINEAR) {
 
           seg_pair.second = true;
@@ -1347,7 +1347,7 @@ public:
             longest[j], seg_pair.first);
           const FT angle_2 = regularizer.get_angle_2(angle);
 
-          if ( 
+          if (
             (CGAL::abs(angle_2) <= regularizer.get_bound_min()) ||
             (CGAL::abs(angle_2) >= regularizer.get_bound_max()) )  {
 
@@ -1382,7 +1382,7 @@ public:
 
       get_multiple_directions(
         false,
-        regs, boundaries, boundary_queries, regularizer, knq_ptr, 
+        regs, boundaries, boundary_queries, regularizer, knq_ptr,
         contours, bounds, skip, longest, groups);
 
       regularizer.unify_along_contours(contours[0], groups[0]);
@@ -1390,7 +1390,7 @@ public:
       regularizer.set_data(bounds, skip, longest, groups);
 
       /*
-      std::cout << "num longest (open): " << 
+      std::cout << "num longest (open): " <<
         regularizer.get_longest().size() << std::endl;
       for (const std::size_t idx : regularizer.get_groups()[0])
         std::cout << idx << " ";
@@ -1416,12 +1416,12 @@ public:
 
       new_regs[0].source_type   = regs[0].source_type;
       new_regs[0].source_bd_idx = regs[0].source_bd_idx;
-      
-      new_regs[new_regs.size() - 1].target_type   = 
+
+      new_regs[new_regs.size() - 1].target_type   =
         regs[regs.size() - 1].target_type;
-      new_regs[new_regs.size() - 1].target_bd_idx = 
+      new_regs[new_regs.size() - 1].target_bd_idx =
         regs[regs.size() - 1].target_bd_idx;
-      
+
       regs.clear(); regs = new_regs;
     }
 
@@ -1429,7 +1429,7 @@ public:
       const std::vector<Pixel>& pxs,
       const Color color0,
       const Color color1) {
-      
+
       std::vector<Point_3> points0, points1;
       points0.reserve(pxs.size());
       points1.reserve(pxs.size());
@@ -1444,15 +1444,15 @@ public:
       }
       Saver saver;
       saver.export_points(points0, color0,
-      "/Users/monet/Documents/lod/logs/buildings/tmp/ms_original0");
+      "/Users/monet/Documents/gf/lod/logs/buildings/tmp/ms_original0");
       saver.export_points(points1, color1,
-      "/Users/monet/Documents/lod/logs/buildings/tmp/ms_original1");
+      "/Users/monet/Documents/gf/lod/logs/buildings/tmp/ms_original1");
     }
 
     void save_dual_grid(
       const std::vector<Pixel>& pxs,
       const Color color) {
-      
+
       std::vector<Point_3> points;
       points.reserve(pxs.size());
       for (const auto& px : pxs) {
@@ -1461,7 +1461,7 @@ public:
       }
       Saver saver;
       saver.export_points(points, color,
-      "/Users/monet/Documents/lod/logs/buildings/tmp/ms_dual");
+      "/Users/monet/Documents/gf/lod/logs/buildings/tmp/ms_dual");
     }
   };
 
@@ -1486,7 +1486,7 @@ public:
   m_min_length_2(min_length_2),
   m_angle_bound_2(angle_bound_2),
   m_ordinate_bound_2(ordinate_bound_2),
-  m_pi(static_cast<FT>(CGAL_PI)) { 
+  m_pi(static_cast<FT>(CGAL_PI)) {
 
     m_partition_2.clear();
     create_image();
@@ -1526,7 +1526,7 @@ public:
       m_boundary, m_ridges, m_base);
     transform(m_base, m_partition_2);
     save_partition_2(
-      "/Users/monet/Documents/lod/logs/buildings/tmp/partition_step_1", false);
+      "/Users/monet/Documents/gf/lod/logs/buildings/tmp/partition_step_1", false);
   }
 
   void compute_visibility() {
@@ -1535,7 +1535,7 @@ public:
       m_lod0, m_base);
     transform(m_base, m_partition_2);
     save_partition_2(
-      "/Users/monet/Documents/lod/logs/buildings/tmp/partition_step_2", false);
+      "/Users/monet/Documents/gf/lod/logs/buildings/tmp/partition_step_2", false);
   }
 
   void label_faces() {
@@ -1546,7 +1546,7 @@ public:
       m_base);
     transform(m_base, m_partition_2);
     save_partition_2(
-      "/Users/monet/Documents/lod/logs/buildings/tmp/partition_step_3", true);
+      "/Users/monet/Documents/gf/lod/logs/buildings/tmp/partition_step_3", true);
   }
 
   void save_original_polylines(
@@ -1555,7 +1555,7 @@ public:
     /* const auto& ridge = m_ridges[8]; */
 
     std::vector<Segment_2> segments;
-    for (const auto& ridge : m_ridges) {    
+    for (const auto& ridge : m_ridges) {
       for (const auto& contour : ridge.contours) {
         const auto& items = contour.points;
 
@@ -1569,7 +1569,7 @@ public:
     }
     Saver saver;
     saver.save_polylines(
-      segments, "/Users/monet/Documents/lod/logs/buildings/tmp/contours-" + name);
+      segments, "/Users/monet/Documents/gf/lod/logs/buildings/tmp/contours-" + name);
   }
 
   void save_simplified_polylines(
@@ -1578,7 +1578,7 @@ public:
     /* const auto& ridge = m_ridges[8]; */
 
     std::vector<Segment_2> segments;
-    for (const auto& ridge : m_ridges) {    
+    for (const auto& ridge : m_ridges) {
       for (const auto& contour : ridge.contours) {
         const auto& items = contour.simplified;
 
@@ -1592,7 +1592,7 @@ public:
     }
     Saver saver;
     saver.save_polylines(
-      segments, "/Users/monet/Documents/lod/logs/buildings/tmp/contours-" + name);
+      segments, "/Users/monet/Documents/gf/lod/logs/buildings/tmp/contours-" + name);
   }
 
   void save_regularized_polylines(
@@ -1601,7 +1601,7 @@ public:
     /* const auto& ridge = m_ridges[8]; */
 
     std::vector<Segment_2> segments;
-    for (const auto& ridge : m_ridges) {    
+    for (const auto& ridge : m_ridges) {
       for (const auto& contour : ridge.contours) {
         const auto& items = contour.regularized;
 
@@ -1615,7 +1615,7 @@ public:
     }
     Saver saver;
     saver.save_polylines(
-      segments, "/Users/monet/Documents/lod/logs/buildings/tmp/contours-" + name);
+      segments, "/Users/monet/Documents/gf/lod/logs/buildings/tmp/contours-" + name);
   }
 
   void get_roof_planes(
@@ -1624,7 +1624,7 @@ public:
     const auto& plane_map = m_image_ptr->get_plane_map();
     roof_planes.clear();
     roof_planes.reserve(plane_map.size());
-    
+
     for (const auto& pair : plane_map) {
       const auto& plane = pair.second;
       roof_planes.push_back(plane);
@@ -1652,7 +1652,7 @@ private:
 
     create_boundary_queries();
     Point_pair_map pmap;
-    m_knq_ptr = 
+    m_knq_ptr =
       std::make_shared<KNQ_pair>(m_boundary_queries, FT(1), pmap);
   }
 
@@ -1664,13 +1664,13 @@ private:
 
     for (std::size_t i = 0; i < m_boundary.size(); ++i) {
       const auto& segment = m_boundary[i];
-          
+
       const auto& s = segment.source();
       const auto& t = segment.target();
 
       samples.clear();
       PS_generator generator(s, t, num_samples_per_segment);
-      std::copy_n(generator, num_samples_per_segment - 1, 
+      std::copy_n(generator, num_samples_per_segment - 1,
       std::back_inserter(samples));
 
       for (const auto& p : samples)
@@ -1679,7 +1679,7 @@ private:
   }
 
   void create_image() {
-    
+
     m_image.clear();
     const auto& original = m_image_ptr->get_image();
     const std::size_t num_labels = m_image_ptr->get_num_labels();
@@ -1697,7 +1697,7 @@ private:
         const auto& cell = original.grid[i][j];
         const std::size_t label = m_image_ptr->get_label(
           cell.zr, cell.zg, cell.zb);
-        
+
         if (label == num_labels) {
           impixel.label = std::size_t(-1);
           impixel.is_outer = true;
@@ -1716,7 +1716,7 @@ private:
         else
           seeds.push_back(impixel.index);
 
-        idx_map[std::make_pair(impixel.i, impixel.j)] = impixel.index; 
+        idx_map[std::make_pair(impixel.i, impixel.j)] = impixel.index;
         ++index;
       }
     }
@@ -1740,7 +1740,7 @@ private:
     const std::size_t rows, const std::size_t cols,
     const std::size_t i, const std::size_t j,
     const Idx_map& idx_map, Indices& neighbors) {
-    
+
     neighbors.clear();
     std::size_t ii, jj;
 
@@ -1749,7 +1749,7 @@ private:
       const std::size_t idx = idx_map.at(std::make_pair(ii, jj));
       neighbors.push_back(idx);
     }
-    
+
     if (j != cols - 1) {
       ii = i; jj = j + 1;
       const std::size_t idx = idx_map.at(std::make_pair(ii, jj));
@@ -1773,7 +1773,7 @@ private:
     const std::size_t rows, const std::size_t cols,
     const std::size_t i, const std::size_t j,
     const Idx_map& idx_map, Indices& neighbors) {
-    
+
     neighbors.clear();
     std::size_t ii, jj;
 
@@ -1823,11 +1823,11 @@ private:
     auto& original = m_image_ptr->get_image();
     for (const auto& region : regions) {
       if (region.size() <= 50) {
-        
+
         const std::size_t new_label = get_best_label(region);
         if (new_label == std::size_t(-1))
           continue;
-        
+
         const auto& p = m_image_ptr->get_label_map().at(new_label);
         for (const std::size_t idx : region) {
           const std::size_t i = pixels[idx].i;
@@ -1841,7 +1841,7 @@ private:
     }
 
     m_image_ptr->save_image(
-      "/Users/monet/Documents/lod/logs/buildings/tmp/image-clean.jpg", original);
+      "/Users/monet/Documents/gf/lod/logs/buildings/tmp/image-clean.jpg", original);
   }
 
   std::size_t get_best_label(
@@ -1853,12 +1853,12 @@ private:
     Indices neighbors;
     Indices nums(num_labels, 0);
     for (const std::size_t idx : region) {
-      
+
       const std::size_t ref_label = pixels[idx].label;
       CGAL_assertion(ref_label != std::size_t(-1));
       if (ref_label == std::size_t(-1))
         continue;
-      
+
       neighbors.clear();
       m_image(idx, neighbors);
 
@@ -1866,7 +1866,7 @@ private:
         if (
           pixels[neighbor].label != std::size_t(-1) &&
           pixels[neighbor].label != ref_label) {
-          
+
           nums[pixels[neighbor].label] += 1;
         }
       }
@@ -1880,13 +1880,13 @@ private:
         best_idx = i;
       }
     }
-    
+
     /* CGAL_assertion(best_idx != std::size_t(-1)); */
     return best_idx;
   }
 
   void create_label_pairs() {
-    
+
     const auto& pixels = m_image.pixels;
     auto& label_pairs = m_image.label_pairs;
 
@@ -1911,7 +1911,7 @@ private:
           CGAL_assertion(l1 != l2);
           if (l1 <= l2)
             unique.insert(std::make_pair(l1, l2));
-          else 
+          else
             unique.insert(std::make_pair(l2, l1));
         }
       }
@@ -1955,10 +1955,10 @@ private:
     std::set<std::size_t> unique;
     for (const auto& pixel : pixels) {
       if (pixel.label == label_pair.first) {
-        
+
         neighbors.clear();
         m_image(pixel.index, neighbors);
-        
+
         bool found = false;
         for (const std::size_t neighbor : neighbors) {
           if (pixels[neighbor].label == label_pair.second) {
@@ -1978,7 +1978,7 @@ private:
 
     std::map<std::size_t, std::size_t> mapping;
     std::size_t index = 0; Pixel rpixel;
-    
+
     rimage.clear();
     rimage.label_pairs.push_back(label_pair);
     rimage.num_labels = num_labels;
@@ -1988,7 +1988,7 @@ private:
       mapping[rpixel.index] = index;
       rpixel.index = index;
       ++index;
-      
+
       rimage.pixels.push_back(rpixel);
       if (rpixel.label == std::size_t(-1))
         rimage.seeds.push_back(rpixel.label);
@@ -2024,7 +2024,7 @@ private:
 
   void add_ridges(
     Image& rimage) {
-    
+
     const auto& rpixels = rimage.pixels;
     rimage.use_version_8();
     using Region_growing = internal::Region_growing<
@@ -2045,7 +2045,7 @@ private:
     const Image& rimage,
     const std::size_t rindex,
     const std::vector<Indices>& regions) {
-    
+
     const auto& region = regions[rindex];
     const auto& rpixels = rimage.pixels;
     const std::size_t num_labels = rimage.num_labels;
@@ -2060,7 +2060,7 @@ private:
 
     ridge.num_labels = num_labels;
     ridge.label_pairs = label_pairs;
-    
+
     std::map<std::size_t, std::size_t> mapping;
     std::size_t index = 0; Pixel rpixel;
 
@@ -2069,7 +2069,7 @@ private:
       mapping[rpixel.index] = index;
       rpixel.index = index;
       ++index;
-      
+
       ridge.pixels.push_back(rpixel);
       if (rpixel.label == std::size_t(-1))
         ridge.seeds.push_back(rpixel.label);
@@ -2086,7 +2086,7 @@ private:
     }
 
     /* save_ridge_image(ridge.label_pairs[0], rindex, ridge.pixels); */
-    
+
     ridge.is_ridge = true;
     m_ridges.push_back(ridge);
   }
@@ -2111,14 +2111,14 @@ private:
       for (auto& contour : m_ridges[i].contours) {
         if (contour.is_closed) continue;
         const auto& neighbors = contour.neighbors;
-        
+
         auto& items = contour.points;
         const std::size_t nump = items.size();
 
         for (std::size_t k = 0; k < nump; ++k) {
           const auto& query = items[k];
           find_corner_neighbors(query, neighbors, ns);
-          
+
           if (k > nump / 2 - 1) {
             for (const auto& n : ns)
               contour.ns1.insert(n);
@@ -2132,7 +2132,7 @@ private:
   }
 
   void search_for_neighbors(
-    const std::size_t skip, const My_point& query, 
+    const std::size_t skip, const My_point& query,
     std::set<Size_pair>& neighbors) {
 
     for (std::size_t i = 0; i < m_ridges.size(); ++i) {
@@ -2198,12 +2198,12 @@ private:
 
         if (contour.ns0.size() == 0)
           p.type = Point_type::BOUNDARY;
-        else 
+        else
           p.type = Point_type::CORNER;
 
         if (contour.ns1.size() == 0)
           q.type = Point_type::BOUNDARY;
-        else 
+        else
           q.type = Point_type::CORNER;
       }
     }
@@ -2251,7 +2251,7 @@ private:
     Indices closest;
     (*m_knq_ptr)(query.point(), closest);
     const std::size_t bd_idx = m_boundary_queries[closest[0]].second;
-    
+
     const auto& segment = m_boundary[bd_idx];
     const auto& s = segment.source();
     const auto& t = segment.target();
@@ -2264,11 +2264,11 @@ private:
   bool intersect_2(
     const Line_2& line_1, const Line_2& line_2,
     Point_2& in_point) {
-    
-    typename std::result_of<Intersect_2(Line_2, Line_2)>::type result 
+
+    typename std::result_of<Intersect_2(Line_2, Line_2)>::type result
     = CGAL::intersection(line_1, line_2);
     if (result) {
-      if (const Line_2* line = boost::get<Line_2>(&*result)) 
+      if (const Line_2* line = boost::get<Line_2>(&*result))
         return false;
       else {
         const Point_2* point = boost::get<Point_2>(&*result);
@@ -2295,7 +2295,7 @@ private:
     FT x = query.point().x();
     FT y = query.point().y();
 
-    for (const auto& n : ns) {  
+    for (const auto& n : ns) {
       const auto& contour = m_ridges[n.first].contours[n.second];
       const auto& items = contour.simplified;
       const std::size_t bd_idx = get_bd_idx(query, items);
@@ -2316,7 +2316,7 @@ private:
     const std::vector<My_point>& items) {
 
     const std::size_t nump = items.size();
-      
+
     const auto& p = items[0];
     const auto& q = items[nump - 1];
 
@@ -2347,7 +2347,7 @@ private:
     const std::vector<Segment_2>& boundary,
     const std::vector<Image>& ridges,
     Triangulation& base) {
-    
+
     auto& tri = base.delaunay;
     tri.clear();
 
@@ -2361,14 +2361,14 @@ private:
 
     std::vector<Vertex_handle> vhs;
     for (const auto& ridge : ridges) {
-      
+
       vhs.clear();
       for (const auto& contour : ridge.contours) {
-        
+
         const auto& items = contour.regularized;
         for (const auto& item : items)
           vhs.push_back(tri.insert(item.point()));
-        
+
         for (std::size_t i = 0; i < items.size() - 1; ++i) {
           const std::size_t ip = i + 1;
           if (vhs[i] != vhs[ip])
@@ -2407,7 +2407,7 @@ private:
     for (auto fh = tri.finite_faces_begin();
     fh != tri.finite_faces_end(); ++fh) {
       if (fh->info().interior) {
-        
+
         fh->info().probabilities.clear();
         fh->info().probabilities.resize(num_labels, FT(0));
       }
@@ -2439,7 +2439,7 @@ private:
 
         if (max_prob != FT(0))
           fh->info().label = best_label;
-        else 
+        else
           fh->info().label = std::size_t(-1);
       }
     }
@@ -2458,7 +2458,7 @@ private:
 
     const FT radius = FT(1);
     const std::size_t num_samples = 24;
-    
+
     std::vector<Point_2> samples1, samples2;
     samples1.reserve(num_samples / 2);
     samples2.reserve(num_samples / 2);
@@ -2489,7 +2489,7 @@ private:
           samples.push_back(sample);
         for (const auto& sample : samples2)
           samples.push_back(sample);
-        
+
         for (const auto& q : samples) {
           LF_circulator circ = tri.line_walk(p, q, fh);
           const LF_circulator end = circ;
@@ -2502,7 +2502,7 @@ private:
             LF_circulator f2 = circ;
 
             if (count != 0) {
-              if (f2->info().label != curr) 
+              if (f2->info().label != curr)
                 break;
             }
 
@@ -2516,7 +2516,7 @@ private:
             if (tri.is_infinite(f2)) break;
 
             if (f2->info().label != std::size_t(-1)) {
-              
+
               curr = f2->info().label; ++count;
               fh->info().probabilities[curr] += FT(1);
             }
@@ -2546,14 +2546,14 @@ private:
     auto& tri = base.delaunay;
     for (auto fh = tri.finite_faces_begin();
     fh != tri.finite_faces_end(); ++fh) {
-      
-      if (fh->info().interior && 
+
+      if (fh->info().interior &&
       fh->info().label == std::size_t(-1)) {
         const std::size_t num_labels = fh->info().probabilities.size();
-      
+
         std::vector<std::size_t> nums(num_labels, 0);
         for (std::size_t k = 0; k < 3; ++k)
-          if (!tri.is_infinite(fh->neighbor(k)) && 
+          if (!tri.is_infinite(fh->neighbor(k)) &&
             fh->neighbor(k)->info().label != std::size_t(-1))
           nums[fh->neighbor(k)->info().label] += 1;
 
@@ -2566,12 +2566,12 @@ private:
             max_val = val; best_label = i;
           }
         }
-        
+
         /* CGAL_assertion(best_label != std::size_t(-1)); */
-        
+
         if (best_label != std::size_t(-1))
           fh->info().label = best_label;
-        else 
+        else
           fh->info().label = 0;
       }
     }
@@ -2584,7 +2584,7 @@ private:
     for (auto fh = tri.finite_faces_begin();
     fh != tri.finite_faces_end(); ++fh) {
       if (fh->info().interior) {
-        
+
         std::set<std::size_t> unique;
         for (std::size_t k = 0; k < 3; ++k)
           if (!tri.is_infinite(fh->neighbor(k)))
@@ -2607,7 +2607,7 @@ private:
   }
 
   void create_points_on_circle(
-    const Point_2& center, 
+    const Point_2& center,
     const FT radius,
     const FT start,
     const std::size_t num_samples,
@@ -2621,9 +2621,9 @@ private:
     init *= m_pi; init /= FT(180);
 
     for (std::size_t i = 0; i < num_samples / 2; ++i) {
-      const double angle = 
+      const double angle =
         CGAL::to_double(init) + double(i) * CGAL::to_double(factor);
-      
+
       const FT cosa = static_cast<FT>(std::cos(angle));
       const FT sina = static_cast<FT>(std::sin(angle));
 
@@ -2649,7 +2649,7 @@ private:
         const auto q1 = f2->vertex(j);
         const auto q2 = f2->vertex(jp);
 
-        if ( 
+        if (
           ( p1 == q1 && p2 == q2) ||
           ( p1 == q2 && p2 == q1) ) {
 
@@ -2683,7 +2683,7 @@ private:
 
     partition_2.faces.clear();
     partition_2.faces.reserve(tri.number_of_faces());
-    
+
     fmap.clear();
 
     Partition_face_2 pface;
@@ -2730,7 +2730,7 @@ private:
     fit != tri.finite_faces_end(); ++fit) {
       const Face_handle fh = static_cast<Face_handle>(fit);
 
-      auto& edges = partition_2.faces[idx].edges; 
+      auto& edges = partition_2.faces[idx].edges;
       auto& neighbors = partition_2.faces[idx].neighbors;
 
       edges.clear(); edges.reserve(3);
@@ -2761,7 +2761,7 @@ private:
 
     partition_2.edges.clear();
     partition_2.edges.reserve(tri.number_of_faces());
-    for (auto eh = tri.finite_edges_begin(); 
+    for (auto eh = tri.finite_edges_begin();
     eh != tri.finite_edges_end(); ++eh) {
       const Face_handle fh = eh->first;
       const std::size_t idx = eh->second;
@@ -2795,10 +2795,10 @@ private:
       cell.zr = FT(0); cell.zg = FT(0); cell.zb = FT(0);
     }
     m_image_ptr->save_image(
-      "/Users/monet/Documents/lod/logs/buildings/tmp/ridges/ridge-" 
-      + std::to_string(label_pair.first)  + "-" 
+      "/Users/monet/Documents/gf/lod/logs/buildings/tmp/ridges/ridge-"
+      + std::to_string(label_pair.first)  + "-"
       + std::to_string(label_pair.second) + "-"
-      + std::to_string(ridge_index) + ".jpg", image); 
+      + std::to_string(ridge_index) + ".jpg", image);
   }
 
   void save_partition_2(
@@ -2809,8 +2809,8 @@ private:
     std::size_t num_vertices = 0;
     internal::Indexer<Point_3> indexer;
 
-    std::vector<Point_3> vertices; 
-    std::vector<Indices> faces; 
+    std::vector<Point_3> vertices;
+    std::vector<Indices> faces;
     std::vector<CGAL::Color> fcolors;
 
     Polygon_inserter<Traits> inserter(faces, fcolors);

@@ -38,10 +38,10 @@ using Visibility_map = CGAL::Levels_of_detail::Visibility_from_semantic_map<Sema
 using Polygon_inserter = CGAL::Levels_of_detail::Polygon_inserter<Traits>;
 
 using LOD = CGAL::Levels_of_detail::Levels_of_detail<
-  Traits, 
-  Point_set, 
-  Point_map, 
-  Semantic_map, 
+  Traits,
+  Point_set,
+  Point_map,
+  Semantic_map,
   Visibility_map,
   CGAL::Tag_true>;
 
@@ -50,9 +50,9 @@ int main(int argc, char **argv) {
   // Load input data.
   Point_set point_set;
   std::cout << std::endl << "Input data: " << std::endl;
-  std::ifstream file(argc > 1 ? argv[1] : "data/lods.ply", 
+  std::ifstream file(argc > 1 ? argv[1] : "data/lods.ply",
   std::ios_base::binary);
-  file >> point_set; 
+  file >> point_set;
   file.close();
   std::cout << "File contains " << point_set.size() << " points" << std::endl;
 
@@ -71,11 +71,11 @@ int main(int argc, char **argv) {
 
   // Initialize LOD.
   LOD lod(
-    point_set, 
-    point_set.point_map(), 
+    point_set,
+    point_set.point_map(),
     semantic_map,
     visibility_map);
-  
+
   // Compute all objects.
   lod.build(
     scale, noise_level);
@@ -89,7 +89,7 @@ int main(int argc, char **argv) {
     boost::make_function_output_iterator(inserter_lod0),
     CGAL::Levels_of_detail::Reconstruction_type::LOD0,
     ground_precision);
-  
+
   // Access LOD1.
   Points vertices_lod1; Indices_container faces_lod1; Colors fcolors_lod1;
   Polygon_inserter inserter_lod1(faces_lod1, fcolors_lod1);
@@ -98,7 +98,7 @@ int main(int argc, char **argv) {
     boost::make_function_output_iterator(inserter_lod1),
     CGAL::Levels_of_detail::Reconstruction_type::LOD1,
     ground_precision);
-  
+
   // Access LOD2.
   Points vertices_lod2; Indices_container faces_lod2; Colors fcolors_lod2;
   Polygon_inserter inserter_lod2(faces_lod2, fcolors_lod2);
@@ -107,8 +107,8 @@ int main(int argc, char **argv) {
     boost::make_function_output_iterator(inserter_lod2),
     CGAL::Levels_of_detail::Reconstruction_type::LOD2,
     ground_precision);
-  
-  
+
+
   std::cout << std::endl << std::endl;
   std::cout << "Number of lod0 faces: " << faces_lod0.size() << std::endl;
   std::cout << "Number of lod1 faces: " << faces_lod1.size() << std::endl;

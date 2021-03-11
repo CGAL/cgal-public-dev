@@ -431,12 +431,12 @@ public:
     }
 
     ~CircularList() {
-#ifdef DEBUG        
+#ifdef DEBUG
         std::cout << "~CircularList()" << std::endl;
 #endif
         auto node = m_last;
         while (true) {
-#ifdef DEBUG        
+#ifdef DEBUG
             // std::cout << (i++) << std::endl;
 #endif
             auto tmp = node;

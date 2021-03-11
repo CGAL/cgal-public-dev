@@ -72,17 +72,17 @@ namespace internal {
 
     using Sphere_neighbor_query =
     internal::Sphere_neighbor_query<Traits, Indices, Point_map_3>;
-    using Normal_estimator_3 = 
+    using Normal_estimator_3 =
     internal::Estimate_normals_3<Traits, Indices, Point_map_3, Sphere_neighbor_query>;
-    using LSPF_region = 
+    using LSPF_region =
     internal::Least_squares_plane_fit_region<Traits, Pair_range_3, First_of_pair_map, Second_of_pair_map>;
-    using OLPF_region = 
+    using OLPF_region =
     internal::Overlapping_region<Traits, Pair_range_3, First_of_pair_map, Second_of_pair_map, LSPF_region>;
     using LSPF_sorting =
     internal::Least_squares_plane_fit_sorting<Traits, Indices, Sphere_neighbor_query, Point_map_3>;
-    using Region_growing_3_lspf = 
+    using Region_growing_3_lspf =
     internal::Region_growing<Indices, Sphere_neighbor_query, LSPF_region, typename LSPF_sorting::Seed_map>;
-    using Region_growing_3_olpf = 
+    using Region_growing_3_olpf =
     internal::Region_growing<Indices, Sphere_neighbor_query, OLPF_region, typename LSPF_sorting::Seed_map>;
 
     using Groups = std::vector< std::set<std::size_t> >;
@@ -111,12 +111,12 @@ namespace internal {
       cluster.clear();
       const Vector_3 ref = Vector_3(FT(0), FT(0), FT(1));
       for (std::size_t i = 0; i < input.size(); ++i) {
-        
+
         const auto& vec = normals[i];
         FT angle = angle_3d(vec, ref);
         if (angle > FT(90)) angle = FT(180) - angle;
         angle = FT(90) - angle;
-        if (angle > region_growing_angle_3) 
+        if (angle > region_growing_angle_3)
           cluster.push_back(input[i]);
       }
 
@@ -127,9 +127,9 @@ namespace internal {
 
       Saver<Traits> saver;
       saver.export_points(
-        roof_points, 
+        roof_points,
         Color(0, 0, 0),
-        "/Users/monet/Documents/lod/logs/buildings/tmp/roof-points");
+        "/Users/monet/Documents/gf/lod/logs/buildings/tmp/roof-points");
     }
 
     void create_roof_regions(
@@ -189,8 +189,8 @@ namespace internal {
 
       Saver<Traits> saver;
       saver.export_points(
-        roof_regions, 
-        "/Users/monet/Documents/lod/logs/buildings/tmp/roof-regions");
+        roof_regions,
+        "/Users/monet/Documents/gf/lod/logs/buildings/tmp/roof-regions");
     }
 
   private:
@@ -282,7 +282,7 @@ namespace internal {
       std::vector<Indices>& roofs,
       Indices& unclassified,
       Pair_range_3& range) const {
-      
+
       std::vector<Vector_3> normals;
       Normal_estimator_3 estimator(
         cluster, neighbor_query, m_point_map_3);
@@ -300,7 +300,7 @@ namespace internal {
       First_of_pair_map point_map;
       Second_of_pair_map normal_map;
       LSPF_region lspf_region(
-        range, 
+        range,
         region_growing_noise_level_3,
         region_growing_angle_3,
         region_growing_min_area_3,
@@ -339,7 +339,7 @@ namespace internal {
       First_of_pair_map point_map;
       Second_of_pair_map normal_map;
       LSPF_region lspf_region(
-        range, 
+        range,
         region_growing_noise_level_3,
         region_growing_angle_3,
         region_growing_min_area_3,
@@ -380,7 +380,7 @@ namespace internal {
       const std::map<std::size_t, bool>& overlapping,
       std::vector<Indices>& roofs,
       Indices& unclassified) const {
-      
+
       std::vector<Indices> regions; Indices region;
       for (std::size_t k = 0; k < roofs.size(); ++k) {
         region.clear();
@@ -407,7 +407,7 @@ namespace internal {
       std::vector<Plane_3> planes;
       std::vector<Vector_3> normals;
       create_planes_and_normals(range, regions, planes, normals);
-      
+
       relabel_points(range, groups, planes, normals, roofs, unclassified);
     }
 
@@ -492,11 +492,11 @@ namespace internal {
         if (group.size() > 1) {
           const auto& point = range[i].first;
           const auto& normal = range[i].second;
-          const std::size_t k = 
+          const std::size_t k =
             estimate_best_roof_index(point, normal, group, planes, normals);
           if (k != std::size_t(-1))
             regions[k].push_back(i);
-          else 
+          else
             unclassified.push_back(i);
           continue;
         }
@@ -524,7 +524,7 @@ namespace internal {
           CGAL::sqrt(
             CGAL::to_double(
               CGAL::squared_distance(query_point, best_plane))));
-      
+
         const FT cos_value = CGAL::abs(
           CGAL::scalar_product(query_normal, best_normal));
 

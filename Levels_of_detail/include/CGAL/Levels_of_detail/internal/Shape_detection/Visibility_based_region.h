@@ -57,7 +57,7 @@ namespace internal {
 
     bool is_part_of_region(
       const std::size_t from_index,
-      const std::size_t to_index, 
+      const std::size_t to_index,
       const std::vector<std::size_t>& region) const {
 
       if (region.size() == 1) {
@@ -70,10 +70,10 @@ namespace internal {
       }
 
       CGAL_precondition(
-        from_index >= 0 && 
+        from_index >= 0 &&
         to_index >= 0);
       CGAL_precondition(
-        from_index < m_input_range.size() && 
+        from_index < m_input_range.size() &&
         to_index < m_input_range.size());
 
       // Constrained-based.
@@ -89,9 +89,9 @@ namespace internal {
     }
 
     bool is_valid_region(const std::vector<std::size_t>& region) const {
-      
+
       if (region.size() == 1) {
-        
+
         CGAL_precondition(region[0] >= 0);
         CGAL_precondition(region[0] < m_input_range.size());
         const auto& item = *(m_input_range.begin() + region[0]);

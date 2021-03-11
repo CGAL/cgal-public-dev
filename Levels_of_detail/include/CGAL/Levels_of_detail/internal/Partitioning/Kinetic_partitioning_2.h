@@ -64,9 +64,9 @@ namespace internal {
     using Kinetic_faces = std::list<Kinetic_face*>;
 
     struct Kinetic_model_2 {
-      
+
       Kinetic_Model* model;
-      Kinetic_model_2() { 
+      Kinetic_model_2() {
         model = new Kinetic_Model();
         model->reinit();
       }
@@ -98,7 +98,7 @@ namespace internal {
       const FT kinetic_min_face_width_2,
       const std::size_t kinetic_max_intersections_2) :
     m_min_face_width(kinetic_min_face_width_2),
-    m_max_intersections(kinetic_max_intersections_2), 
+    m_max_intersections(kinetic_max_intersections_2),
     m_bbox_scale(FT(2)),
     m_aspacing_scale(FT(4)),
     m_num_neighbors(6)
@@ -112,7 +112,7 @@ namespace internal {
       Kinetic_model_2 model;
 
       // We first compute translation factor and size of the bounding box and
-      // then translate all segments such that the bottom left corner of the 
+      // then translate all segments such that the bottom left corner of the
       // bounding box becomes (0, 0);
       Point_2 translation;
       std::pair<FT, FT> bbox_size;
@@ -147,10 +147,10 @@ namespace internal {
     const std::size_t m_num_neighbors;
 
     void compute_translation_and_bbox_size(
-      const std::vector<Segment_2>& segments, 
-      Point_2& translation, 
+      const std::vector<Segment_2>& segments,
+      Point_2& translation,
       std::pair<FT, FT>& bbox_size) const {
-                  
+
       std::vector<Point_2> bbox;
       internal::bounding_box_2(segments, bbox);
 
@@ -161,7 +161,7 @@ namespace internal {
       const FT lengthy = CGAL::abs(maxy - miny);
 
       // Position segments at the center of the bounding box.
-      translation = 
+      translation =
       Point_2(minx - lengthx / FT(2), miny - lengthy / FT(2));
 
       const FT bbox_width = lengthx * m_bbox_scale;
@@ -190,15 +190,15 @@ namespace internal {
     }
 
     void get_scale(
-      const std::pair<FT, FT>& bbox_size, 
-      const FT average_spacing, 
+      const std::pair<FT, FT>& bbox_size,
+      const FT average_spacing,
       std::pair<FT, FT>& scale) const {
 
       const FT x = bbox_size.first;
       const FT y = bbox_size.second;
 
       CGAL_assertion(
-        x > FT(0) && y > FT(0) && 
+        x > FT(0) && y > FT(0) &&
         average_spacing > FT(0));
 
       const FT x_num = x / average_spacing;
@@ -230,18 +230,18 @@ namespace internal {
     }
 
     void set_kinetic_segments(
-      const std::vector<Segment_2>& segments, 
+      const std::vector<Segment_2>& segments,
       Kinetic_model_2& model) const {
-                  
+
       CGAL_assertion(segments.size() > 0);
       auto& model_segments = model.segments();
 
       model_segments.clear();
       model_segments.reserve(segments.size());
       for (std::size_t i = 0; i < segments.size(); ++i) {
-        
+
         const Segment_2& segment = segments[i];
-        const double width = 
+        const double width =
         CGAL::sqrt(CGAL::to_double(segment.squared_length()));
 
         const Point_2& source = segment.source();
@@ -259,16 +259,16 @@ namespace internal {
     }
 
     void compute_partition(
-      const std::pair<FT, FT>& bbox_size, 
-      const std::pair<FT, FT>& scale, 
+      const std::pair<FT, FT>& bbox_size,
+      const std::pair<FT, FT>& scale,
       Kinetic_model_2& model) const {
 
       Propagation propagation;
 
-      const std::size_t rows = 
+      const std::size_t rows =
       static_cast<std::size_t>(
         std::ceil(CGAL::to_double(scale.second * bbox_size.second)));
-      const std::size_t cols = 
+      const std::size_t cols =
       static_cast<std::size_t>(
         std::ceil(CGAL::to_double(scale.first * bbox_size.first)));
 
@@ -281,9 +281,9 @@ namespace internal {
     }
 
     void create_partition(
-      const Point_2& translation, 
-      const std::pair<FT, FT>& scale, 
-      Kinetic_model_2& model, 
+      const Point_2& translation,
+      const std::pair<FT, FT>& scale,
+      Kinetic_model_2& model,
       Partition_2& partition) const {
 
       partition.clear();
@@ -297,10 +297,10 @@ namespace internal {
     }
 
     void create_partition_faces(
-      const Point_2& translation, 
-      const std::pair<FT, FT>& scale, 
+      const Point_2& translation,
+      const std::pair<FT, FT>& scale,
       const Kinetic_faces& faces,
-      std::unordered_map<int, int>& fmap, 
+      std::unordered_map<int, int>& fmap,
       Partition_2& partition) const {
 
       CGAL_assertion(faces.size() > 0);
@@ -321,7 +321,7 @@ namespace internal {
     }
 
     void create_polygon(
-      const Point_2& translation, 
+      const Point_2& translation,
       const std::pair<FT, FT>& scale,
       const Kinetic_face& face,
       std::vector<Point_2>& polygon) const {
@@ -333,7 +333,7 @@ namespace internal {
       const auto& vertices = face.vertices;
       CGAL_assertion(vertices.size() >= 3);
 
-      for (const auto& vertex : vertices) {  
+      for (const auto& vertex : vertices) {
         const auto& p = vertex.first->pt;
         const FT x = FT(p.x) / scale_x - translation.x();
         const FT y = FT(p.y) / scale_y - translation.y();
@@ -343,7 +343,7 @@ namespace internal {
     }
 
     void create_partition_neighbors(
-      const Point_2& translation, 
+      const Point_2& translation,
       const std::pair<FT, FT>& scale,
       const Kinetic_faces& kinetic_faces,
       const std::unordered_map<int, int>& fmap,
@@ -353,7 +353,7 @@ namespace internal {
       CGAL_assertion(fmap.size() > 0);
 
       std::size_t i = 0;
-      for (auto fit = kinetic_faces.begin(); 
+      for (auto fit = kinetic_faces.begin();
       fit != kinetic_faces.end(); ++fit, ++i) {
         const auto& kinetic_face = **fit;
         auto& partition_face = partition.faces[i];
@@ -364,7 +364,7 @@ namespace internal {
     }
 
     void create_partition_face_neighbors(
-      const Point_2& translation, 
+      const Point_2& translation,
       const std::pair<FT, FT>& scale,
       const std::unordered_map<int, int>& fmap,
       const Kinetic_face& kinetic_face,
@@ -410,11 +410,11 @@ namespace internal {
     }
 
     void get_segment(
-      const Point_2& translation, 
+      const Point_2& translation,
       const std::pair<FT, FT>& scale,
       const Kinetic_hedge& hedge,
       Segment_2& segment) const {
-        
+
       const FT scale_x = scale.first;
       const FT scale_y = scale.second;
 
@@ -425,18 +425,18 @@ namespace internal {
       const FT y1 = FT(p1.y) / scale_y - translation.y();
       const FT x2 = FT(p2.x) / scale_x - translation.x();
       const FT y2 = FT(p2.y) / scale_y - translation.y();
-        
+
       segment = Segment_2(Point_2(x1, y1), Point_2(x2, y2));
     }
 
     bool get_constraint(
       const Kinetic_hedge& hedge) const {
-        
+
       const auto& edge = hedge.e;
       const auto& p1 = edge->v1->pt;
       const auto& p2 = edge->v2->pt;
 
-      if (edge->type == INNER_EDGE) {  
+      if (edge->type == INNER_EDGE) {
         auto inner = static_cast<Inner_Edge *const>(edge);
 
         const auto& rays = inner->rays;
@@ -472,29 +472,29 @@ namespace internal {
       const Point_2& q1, const Point_2& q2) const {
 
       const Traits traits;
-      const auto res1 = 
+      const auto res1 =
       Barycentric_coordinates::compute_segment_coordinates_2(p1, p2, q1, traits);
-      const auto res2 = 
+      const auto res2 =
       Barycentric_coordinates::compute_segment_coordinates_2(p1, p2, q2, traits);
 
       const FT bval = -FT(1) / FT(10);
       const FT tval = FT(11) / FT(10);
 
-      if (res1[0] > bval && res1[1] > bval && 
+      if (res1[0] > bval && res1[1] > bval &&
           res1[0] < tval && res1[1] < tval) return true;
-      
-      if (res2[0] > bval && res2[1] > bval && 
+
+      if (res2[0] > bval && res2[1] > bval &&
           res2[0] < tval && res2[1] < tval) return true;
 
       // if (res1[0] > bval && res1[1] < tval) return true;
       // if (res2[0] > bval && res2[1] < tval) return true;
-      
+
       return false;
     }
 
     void create_partition_edges(
-      const Point_2& translation, 
-      const std::pair<FT, FT>& scale, 
+      const Point_2& translation,
+      const std::pair<FT, FT>& scale,
       const std::unordered_map<int, int>& fmap,
       Kinetic_edge* edge,
       Partition_2& partition) const {
@@ -511,12 +511,12 @@ namespace internal {
         const FT y1 = FT(p.y) / scale_y - translation.y();
         const FT x2 = FT(q.x) / scale_x - translation.x();
         const FT y2 = FT(q.y) / scale_y - translation.y();
-      
+
         const auto& hei = *(edge->v1_v2);
         const auto& hej = *(edge->v2_v1);
-        
+
         int face_id_i, face_id_j, fidxi, fidxj;
-      
+
         if (hei.f == nullptr) {
           fidxi = -1;
         } else {

@@ -29,7 +29,7 @@
 #include <string>
 
 namespace CGAL {
-namespace Levels_of_detail {  
+namespace Levels_of_detail {
 namespace internal {
 
   template<typename FT>
@@ -187,7 +187,7 @@ namespace internal {
 
     // Creation.
     std::size_t min_faces_per_footprint; // number
-    
+
     // Extrusion type.
     Extrusion_type extrusion_type; // see enum.h
 
@@ -224,10 +224,10 @@ namespace internal {
     // Path to the input data file.
     std::string data;
 
-    // Label indices defined in the ply header: 
-    // ground (gi), 
-    // building boundary (bi), 
-    // building interior (ii), 
+    // Label indices defined in the ply header:
+    // ground (gi),
+    // building boundary (bi),
+    // building interior (ii),
     // vegetation (vi).
     std::string gi, bi, ii, vi;
 
@@ -243,7 +243,7 @@ namespace internal {
     Ground_parameters<FT> ground;
 
     // Constructor.
-    Parameters() : 
+    Parameters() :
     data(""),
     gi("0"), bi("1"), ii("2"), vi("3"),
     scale(FT(4)),

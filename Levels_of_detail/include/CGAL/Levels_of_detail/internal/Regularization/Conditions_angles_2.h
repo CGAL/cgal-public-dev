@@ -45,9 +45,9 @@ namespace internal {
     m_moe(FT(1) / FT(4)) { }
 
     FT reference(const Segment_data & seg_data, const FT suffix) const {
-      FT val = seg_data.m_orientation + suffix; 
+      FT val = seg_data.m_orientation + suffix;
 
-      if (val < FT(0)) val += FT(180); 
+      if (val < FT(0)) val += FT(180);
       else if (val > FT(180)) val -= FT(180);
 
       return val;
@@ -55,10 +55,10 @@ namespace internal {
 
     int group_index(const FT val, const FT val_j, const int g_index) const {
       int g_j = -1;
-      for (int k = -1; k <= 1; ++k) {  
-        if (CGAL::abs(val_j - val + static_cast<FT>(k) * FT(180)) < m_moe) {  
+      for (int k = -1; k <= 1; ++k) {
+        if (CGAL::abs(val_j - val + static_cast<FT>(k) * FT(180)) < m_moe) {
           g_j = g_index;
-          break;  
+          break;
         }
       }
       return g_j;

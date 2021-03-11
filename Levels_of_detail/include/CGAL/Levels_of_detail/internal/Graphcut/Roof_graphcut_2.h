@@ -44,7 +44,7 @@ namespace internal {
 
   public:
     using Traits = GeomTraits;
-    
+
 		using Partition_2 = internal::Partition_2<Traits>;
 
     using FT = typename Traits::FT;
@@ -58,9 +58,9 @@ namespace internal {
     Roof_graphcut_2(
 			const std::size_t num_roofs,
 			const std::size_t num_labels,
-			const FT graphcut_beta) : // can be different from num_roofs! 
+			const FT graphcut_beta) : // can be different from num_roofs!
 		m_num_roofs(num_roofs),
-		m_num_labels(num_labels) { 
+		m_num_labels(num_labels) {
 
 			CGAL_assertion(m_num_roofs != std::size_t(-1));
 			CGAL_assertion(m_num_roofs > 0);
@@ -80,12 +80,12 @@ namespace internal {
 			/*
 			if (m_num_roofs != m_num_labels)
 				m_beta = FT(0);
-			else 
+			else
 				m_beta = graphcut_beta; */
     }
 
     bool apply(Partition_2& partition) const {
-      
+
       if (partition.empty()) return false;
 
       auto& pfaces = partition.faces;
@@ -126,11 +126,11 @@ namespace internal {
 			for (auto& pface : pfaces) {
 				if (pface.visibility == Visibility_label::OUTSIDE)
 					continue;
-				
+
 				pface.compute_weight();
 				sum += pface.weight;
 			}
-			
+
 			if (sum == FT(0))
 				return false;
 
@@ -139,9 +139,9 @@ namespace internal {
 			for (auto& pface : pfaces) {
 				if (pface.visibility == Visibility_label::OUTSIDE)
 					continue;
-			
+
 				pface.weight /= sum;
-				pface.index = count; 
+				pface.index = count;
 				++count;
 			}
 			return true;
@@ -154,14 +154,14 @@ namespace internal {
 			FT sum = FT(0);
 			for (auto& pedge : pedges) {
 				const auto& neighbors = pedge.neighbors;
-				
+
 				const int idx1 = neighbors.first;
 				const int idx2 = neighbors.second;
-					
+
 				if (idx1 < 0 && idx2 >= 0)
 					continue;
 				if (idx2 < 0 && idx1 >= 0)
-					continue;	
+					continue;
 
 				CGAL_assertion(idx1 >= 0);
 				const std::size_t id1 = static_cast<std::size_t>(idx1);
@@ -180,25 +180,25 @@ namespace internal {
 				sum += pedge.weight;
 			}
 
-			if (sum == FT(0)) 
+			if (sum == FT(0))
 				return false;
 
 			CGAL_assertion(sum > FT(0));
 			for (auto& pedge : pedges) {
 				const auto& neighbors = pedge.neighbors;
-				
+
 				const int idx1 = neighbors.first;
 				const int idx2 = neighbors.second;
-					
+
 				if (idx1 < 0 && idx2 >= 0)
 					continue;
 				if (idx2 < 0 && idx1 >= 0)
-					continue;	
+					continue;
 
 				CGAL_assertion(idx1 >= 0);
 				const std::size_t id1 = static_cast<std::size_t>(idx1);
 				CGAL_assertion(idx2 >= 0);
-				const std::size_t id2 = static_cast<std::size_t>(idx2);	
+				const std::size_t id2 = static_cast<std::size_t>(idx2);
 
 				if (pfaces[id1].visibility != pfaces[id2].visibility)
 					continue;
@@ -215,17 +215,17 @@ namespace internal {
 
     void set_graph_edges(
 			const std::vector<Face>& pfaces,
-      const std::vector<Edge>& pedges, 
+      const std::vector<Edge>& pedges,
       std::vector<Size_pair>& edges,
       std::vector<double>& edge_weights) const {
 
 			edges.clear();
 			edge_weights.clear();
 			for (const auto& pedge : pedges) {
-				
+
 				const FT edge_weight = pedge.weight;
 				const auto& neighbors = pedge.neighbors;
-				
+
 				const int idx1 = neighbors.first;
 				const int idx2 = neighbors.second;
 
@@ -261,7 +261,7 @@ namespace internal {
 		}
 
     void set_cost_matrix(
-      const std::vector<Face>& pfaces,  
+      const std::vector<Face>& pfaces,
       std::vector< std::vector<double> >& cost_matrix) const {
 
 			cost_matrix.clear();
@@ -275,7 +275,7 @@ namespace internal {
 			}
 
 			for (auto& vec : cost_matrix)
-				vec.resize(count);	
+				vec.resize(count);
 
 			count = 0;
 			for (const auto& pface : pfaces) {
@@ -285,10 +285,10 @@ namespace internal {
 				const FT face_weight = pface.weight;
 				CGAL_precondition(face_weight >= FT(0));
 				const auto& probabilities = pface.probabilities;
-				
+
 				for (std::size_t k = 0; k < m_num_roofs; ++k) {
 					const FT probability = probabilities[k];
-					cost_matrix[k][count] = 
+					cost_matrix[k][count] =
 						get_graph_face_cost(probability, face_weight);
 				}
 				++count;
@@ -297,23 +297,23 @@ namespace internal {
 
 		double get_graph_face_cost(
       const FT face_prob, const FT face_weight) const {
-			
+
 			const double weight = CGAL::to_double(face_weight);
 			const double value  = (1.0 - CGAL::to_double(face_prob));
       return weight * value;
 		}
 
     void set_initial_labels(
-      const std::vector<Face>& pfaces,  
+      const std::vector<Face>& pfaces,
       std::vector<std::size_t>& labels) const {
 
 			labels.clear();
 			for (const auto& pface : pfaces) {
-				if (pface.visibility == Visibility_label::OUTSIDE) 
+				if (pface.visibility == Visibility_label::OUTSIDE)
 					continue;
 				labels.push_back(pface.label);
 			}
-			
+
 			/* std::cout << "labels are set" << std::endl; */
 		}
 
@@ -325,7 +325,7 @@ namespace internal {
 
       Alpha_expansion graphcut;
       graphcut(edges, edge_weights, cost_matrix, labels);
-			
+
 			/* std::cout << "gc computed" << std::endl; */
     }
 

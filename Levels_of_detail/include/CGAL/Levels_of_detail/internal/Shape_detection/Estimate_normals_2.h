@@ -59,14 +59,14 @@ namespace internal {
     using Vector_2 = typename Traits::Vector_2;
     using Vector_3 = typename Traits::Vector_3;
     using Line_2 = typename Traits::Line_2;
-    
+
     using Indices = std::vector<std::size_t>;
     using Saver = Saver<Traits>;
 
     Estimate_normals_2(
-      const Input_range& input_range, 
+      const Input_range& input_range,
       const Neighbor_query& neighbor_query,
-      const Point_map& point_map) : 
+      const Point_map& point_map) :
     m_input_range(input_range),
     m_neighbor_query(neighbor_query),
     m_point_map(point_map) {
@@ -74,10 +74,10 @@ namespace internal {
     }
 
     void get_normals(std::vector<Vector_2>& normals) const {
-      
+
       normals.clear();
       normals.reserve(m_input_range.size());
-      
+
       Line_2 line; Vector_2 normal;
       Indices neighbors;
       for (std::size_t i = 0; i < m_input_range.size(); ++i) {
@@ -119,7 +119,7 @@ namespace internal {
       }
 
       saver.export_points_with_normals(
-        points3, normals3, "/Users/monet/Documents/lod/logs/buildings/tmp/normals");
+        points3, normals3, "/Users/monet/Documents/gf/lod/logs/buildings/tmp/normals");
     }
   };
 

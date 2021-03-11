@@ -38,8 +38,8 @@ namespace Levels_of_detail {
 namespace internal {
 
   template<
-  typename InputRange, 
-  typename NeighborQuery, 
+  typename InputRange,
+  typename NeighborQuery,
   typename RegionType,
   typename SeedMap = CGAL::Identity_property_map<std::size_t> >
   class Region_growing {
@@ -55,15 +55,15 @@ namespace internal {
     using Indices       = std::vector<std::size_t>;
 
     Region_growing(
-      const Input_range& input_range, 
-      Neighbor_query& neighbor_query, 
+      const Input_range& input_range,
+      Neighbor_query& neighbor_query,
       Region_type& region_type,
       const Seed_map seed_map = Seed_map()) :
     m_input_range(input_range),
     m_neighbor_query(neighbor_query),
     m_region_type(region_type),
     m_seed_map(seed_map),
-    m_use_overlap(false) { 
+    m_use_overlap(false) {
 
       CGAL_precondition(m_input_range.size() > 0);
       clear();
@@ -91,9 +91,9 @@ namespace internal {
           propagate(seed_index, region);
 
           // Check global conditions.
-          if (!m_region_type.is_valid_region(region)) 
+          if (!m_region_type.is_valid_region(region))
             revert(region);
-          else 
+          else
             *(regions++) = region;
         }
       }
@@ -102,7 +102,7 @@ namespace internal {
 
     template<typename OutputIterator>
     OutputIterator unassigned_items(OutputIterator output) const {
-      
+
       // Return indices of all unassigned items.
       for (std::size_t i = 0; i < m_input_range.size(); ++i) {
         const std::size_t seed_index = get(m_seed_map, i);
@@ -114,14 +114,14 @@ namespace internal {
         CGAL_precondition(
           seed_index >= 0 && seed_index < m_input_range.size());
 
-        if (!m_visited[seed_index]) 
+        if (!m_visited[seed_index])
           *(output++) = seed_index;
       }
       return output;
     }
 
     void clear() {
-                
+
       m_visited.clear();
       m_visited.resize(m_input_range.size(), false);
 
@@ -169,7 +169,7 @@ namespace internal {
 
       Indices neighbors;
       while (
-        !running_queue[depth_index].empty() || 
+        !running_queue[depth_index].empty() ||
         !running_queue[!depth_index].empty()) {
 
         // Call the next item index of the queue and remove it from the queue.
@@ -192,7 +192,7 @@ namespace internal {
 
           if (!m_use_overlap) {
 
-            if (!m_visited[neighbor_index] && 
+            if (!m_visited[neighbor_index] &&
               m_region_type.is_part_of_region(item_index, neighbor_index, region)) {
 
               // Add this neighbor to the other queue so that we can visit it later.
@@ -202,18 +202,18 @@ namespace internal {
             }
 
           } else {
-            
+
             if (m_region_type.is_already_visited(item_index, neighbor_index, m_visited[neighbor_index])) {
-              
+
               m_visited[neighbor_index] = true;
               running_queue[!depth_index].push(neighbor_index);
               region.push_back(neighbor_index);
 
             } else {
 
-              if (!m_extra[neighbor_index] && 
+              if (!m_extra[neighbor_index] &&
               m_region_type.is_part_of_region(item_index, neighbor_index, region)) {
-                
+
                 running_queue[!depth_index].push(neighbor_index);
                 m_extra[neighbor_index] = true;
               }

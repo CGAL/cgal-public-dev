@@ -116,7 +116,7 @@ namespace internal {
     void compute_multiple_directions(
       const std::vector<Segment_2>& segments_outer,
       const std::vector< std::vector<Segment_2> >& contours) {
-      
+
       std::vector< std::vector<Seg_pair> > contours_outer;
       create_contours_from_segments(segments_outer, contours_outer);
 
@@ -126,12 +126,12 @@ namespace internal {
       std::vector<Indices> groups_outer;
 
       get_multiple_directions(
-        contours_outer, 
+        contours_outer,
         bounds_outer, skip_outer, longest_outer, groups_outer);
 
       unify_along_contours(segments_outer, contours_outer, groups_outer);
       std::cout << "Num outer directions: " << longest_outer.size() << std::endl;
-      
+
       std::vector<Point_pair> pair_range;
       create_pair_range(contours_outer, groups_outer, pair_range);
 
@@ -149,7 +149,7 @@ namespace internal {
 
     void regularize_contours(
       std::vector< std::vector<Segment_2> >& contours) {
-      
+
       if (m_angle_bound == FT(0))
         return;
 
@@ -166,7 +166,7 @@ namespace internal {
     const FT m_min_length;
     const FT m_angle_bound;
     const FT m_angle_threshold;
-    
+
     const FT m_bound_min, m_bound_max;
     const FT m_pi;
 
@@ -185,7 +185,7 @@ namespace internal {
       std::size_t seg_idx = std::size_t(-1);
       FT max_length = -FT(1);
       for (std::size_t i = 0; i < segments.size(); ++i) {
-          
+
         const FT length = segments[i].squared_length();
         if (length > max_length) {
 
@@ -216,10 +216,10 @@ namespace internal {
       for (const auto& segment : segments) {
         const auto& s = segment.source();
         const auto& t = segment.target();
-        
+
         if (internal::distance(s, t) >= m_min_length * FT(2))
           contour.push_back(std::make_pair(segment, true));
-        else 
+        else
           contour.push_back(std::make_pair(segment, false));
       }
       contours.push_back(contour);
@@ -238,14 +238,14 @@ namespace internal {
       for (std::size_t k = 0; k < contours.size(); ++k)
         for (std::size_t i = 0; i < contours[k].size(); ++i)
           input.push_back(std::make_pair(k, i));
-      
+
       sort_input(contours, input);
       std::vector<bool> states(input.size(), false);
 
       bool apply = true; std::size_t gr_idx = 0;
       do {
         apply = get_next_direction(
-          contours, input, gr_idx, states, 
+          contours, input, gr_idx, states,
           bounds, skip, longest, groups);
           ++gr_idx;
       } while (apply);
@@ -255,7 +255,7 @@ namespace internal {
         bounds.push_back(std::make_pair(FT(45), FT(45)));
         const auto longest_pair = find_longest_segment(contours);
         skip.push_back(longest_pair);
-        const auto& longest_segment = 
+        const auto& longest_segment =
           (contours[skip[0].first][skip[0].second]).first;
         longest.push_back(longest_segment);
         make_default_groups(contours, 0, groups);
@@ -266,8 +266,8 @@ namespace internal {
       const std::vector< std::vector<Seg_pair> >& contours,
       std::vector<Size_pair>& input) {
 
-      std::sort(input.begin(), input.end(), 
-      [&contours](const Size_pair& a, const Size_pair& b) -> bool { 
+      std::sort(input.begin(), input.end(),
+      [&contours](const Size_pair& a, const Size_pair& b) -> bool {
         const FT length_1 = (contours[a.first][a.second]).first.squared_length();
         const FT length_2 = (contours[b.first][b.second]).first.squared_length();
         return length_1 > length_2;
@@ -292,9 +292,9 @@ namespace internal {
       }
       if (longest_idx == std::size_t(-1))
         return false;
-      
+
       const auto& longest_pair = input[longest_idx];
-      const Segment_2& longest_segment = 
+      const Segment_2& longest_segment =
         contours[longest_pair.first][longest_pair.second].first;
 
       for (std::size_t i = 0; i < states.size(); ++i) {
@@ -310,7 +310,7 @@ namespace internal {
           const FT angle = angle_degree_2(longest_segment, segment);
           const FT angle_2 = get_angle_2(angle);
 
-          if ( 
+          if (
             (CGAL::abs(angle_2) <= m_bound_min) ||
             (CGAL::abs(angle_2) >= m_bound_max) )  {
 
@@ -336,7 +336,7 @@ namespace internal {
       FT max_length = -FT(1);
       for (std::size_t k = 0; k < contours.size(); ++k) {
         for (std::size_t i = 0; i < contours[k].size(); ++i) {
-          
+
           const auto& segment = contours[k][i].first;
           const FT length = segment.squared_length();
           if (length > max_length) {
@@ -359,7 +359,7 @@ namespace internal {
         for (std::size_t i = 0; i < contours[k].size(); ++i) {
           if (contours[k][i].second)
             continue;
-          
+
           if (groups[k][i] == std::size_t(-1)) {
             const auto& segment = contours[k][i].first;
             find_corner(segment, segments, data);
@@ -419,7 +419,7 @@ namespace internal {
       const std::size_t n = segments_outer.size();
       for (std::size_t i = 0; i < n; ++i) {
         const auto& segment = segments_outer[i];
-        
+
         const auto& s = segment.source();
         const auto& t = segment.target();
 
@@ -441,19 +441,19 @@ namespace internal {
       const std::vector< std::vector<Seg_pair> >& contours,
       const std::vector<Indices>& groups,
       std::vector<Point_pair>& pair_range) {
-      
+
       pair_range.clear();
       std::vector<Point_2> samples;
       for (std::size_t k = 0; k < contours.size(); ++k) {
         for (std::size_t i = 0; i < contours[k].size(); ++i) {
           const auto& segment = contours[k][i].first;
-          
+
           const auto& s = segment.source();
           const auto& t = segment.target();
 
           samples.clear();
           Point_generator generator(s, t, m_num_samples_per_segment);
-          std::copy_n(generator, m_num_samples_per_segment - 1, 
+          std::copy_n(generator, m_num_samples_per_segment - 1,
           std::back_inserter(samples));
 
           const std::size_t gr_idx = groups[k][i];
@@ -485,60 +485,60 @@ namespace internal {
           FT abs_angle_i_2 = FT(0), abs_angle_j_2 = FT(0);
 
           get_best_angles(segment, pair_range, longest,
-          neighbor_query, neighbors, 
+          neighbor_query, neighbors,
           gr_idx_i, gr_idx_j, abs_angle_i_2, abs_angle_j_2);
 
           if (
-            abs_angle_i_2 <= FT(45) && abs_angle_j_2 <= FT(45) && 
+            abs_angle_i_2 <= FT(45) && abs_angle_j_2 <= FT(45) &&
             abs_angle_i_2 <= abs_angle_j_2) {
             groups[k][l] = gr_idx_i;
             continue;
           }
 
           if (
-            abs_angle_i_2 <= FT(45) && abs_angle_j_2 <= FT(45) && 
+            abs_angle_i_2 <= FT(45) && abs_angle_j_2 <= FT(45) &&
             abs_angle_i_2 > abs_angle_j_2) {
             groups[k][l] = gr_idx_j;
             continue;
           }
 
           if (
-            abs_angle_i_2 > FT(45) && abs_angle_j_2 > FT(45) && 
+            abs_angle_i_2 > FT(45) && abs_angle_j_2 > FT(45) &&
             abs_angle_i_2 > abs_angle_j_2) {
             groups[k][l] = gr_idx_i;
             continue;
           }
 
           if (
-            abs_angle_i_2 > FT(45) && abs_angle_j_2 > FT(45) && 
+            abs_angle_i_2 > FT(45) && abs_angle_j_2 > FT(45) &&
             abs_angle_i_2 <= abs_angle_j_2) {
             groups[k][l] = gr_idx_j;
             continue;
           }
 
           if (
-            abs_angle_i_2 <= FT(45) && abs_angle_j_2 > FT(45) && 
+            abs_angle_i_2 <= FT(45) && abs_angle_j_2 > FT(45) &&
             abs_angle_i_2 < ( FT(90) - abs_angle_j_2 ) ) {
             groups[k][l] = gr_idx_i;
             continue;
           }
 
           if (
-            abs_angle_i_2 <= FT(45) && abs_angle_j_2 > FT(45) && 
+            abs_angle_i_2 <= FT(45) && abs_angle_j_2 > FT(45) &&
             abs_angle_i_2 >= ( FT(90) - abs_angle_j_2 ) ) {
             groups[k][l] = gr_idx_j;
             continue;
           }
 
           if (
-            abs_angle_i_2 > FT(45) && abs_angle_j_2 <= FT(45) && 
+            abs_angle_i_2 > FT(45) && abs_angle_j_2 <= FT(45) &&
             abs_angle_j_2 < ( FT(90) - abs_angle_i_2 ) ) {
             groups[k][l] = gr_idx_j;
             continue;
           }
 
           if (
-            abs_angle_i_2 > FT(45) && abs_angle_j_2 <= FT(45) && 
+            abs_angle_i_2 > FT(45) && abs_angle_j_2 <= FT(45) &&
             abs_angle_j_2 >= ( FT(90) - abs_angle_i_2 ) ) {
             groups[k][l] = gr_idx_i;
             continue;
@@ -556,10 +556,10 @@ namespace internal {
       Indices& neighbors,
       std::size_t& gr_idx_i, std::size_t& gr_idx_j,
       FT& abs_angle_i_2, FT& abs_angle_j_2) {
-          
+
       const auto& s = segment.source();
       const auto& t = segment.target();
-          
+
       gr_idx_i = get_group_index(
         s, segment, pair_range, longest, neighbor_query, neighbors);
       gr_idx_j = get_group_index(
@@ -626,7 +626,7 @@ namespace internal {
         auto& segment = contour[i];
         const auto& longest_segment = m_longest[gr_idx];
         const auto& bounds = m_bounds[gr_idx];
-        
+
         const bool success = rotate_segment(longest_segment, bounds, segment);
         if (!success)
           m_groups[k][i] = std::size_t(-1);
@@ -649,9 +649,9 @@ namespace internal {
     }
 
     void rotate(
-      const FT angle_2, 
+      const FT angle_2,
       const FT ref_angle_2,
-      const Segment_2& longest_segment, 
+      const Segment_2& longest_segment,
       Segment_2& segment) {
 
       FT angle = angle_2;
@@ -661,7 +661,7 @@ namespace internal {
       Point_2 source = segment.source();
       Point_2 target = segment.target();
       const Point_2 b = internal::middle_point_2(source, target);
-      const FT angle_rad = angle * m_pi / FT(180); 
+      const FT angle_rad = angle * m_pi / FT(180);
       internal::rotate_point_2(angle_rad, b, source);
       internal::rotate_point_2(angle_rad, b, target);
       segment = Segment_2(source, target);
@@ -677,7 +677,7 @@ namespace internal {
       segments.reserve(n);
       segments.push_back(contour[0]);
       for (std::size_t i = 1; i < n - 1; ++i) {
-        
+
         const auto& si = contour[i];
         const std::size_t gr_idx = m_groups[k][i];
 
@@ -720,7 +720,7 @@ namespace internal {
         CGAL::abs(angle_mp_2) <= m_angle_threshold &&
         CGAL::abs(angle_mi_2) <= m_angle_threshold &&
         length <= m_min_length) {
-        
+
         rotate(angle_mi, FT(90), sm, si); // orthogonal case
         return;
       }
@@ -730,7 +730,7 @@ namespace internal {
         CGAL::abs(angle_mi_2) <= m_angle_threshold &&
         CGAL::abs(angle_in_2) <= m_angle_threshold &&
         length > m_min_length) {
-        
+
         rotate(angle_mi, FT(90), sm, si); // orthogonal case
         return;
       }
@@ -746,12 +746,12 @@ namespace internal {
 		  const FT dot = CGAL::scalar_product(v1, v2);
       const FT angle_rad = static_cast<FT>(
         std::atan2(CGAL::to_double(det), CGAL::to_double(dot)));
-      const FT angle_deg = angle_rad * FT(180) / m_pi; 
+      const FT angle_deg = angle_rad * FT(180) / m_pi;
       return angle_deg;
     }
 
     FT get_angle_2(const FT angle) {
-      
+
       FT angle_2 = angle;
       if (angle_2 > FT(90)) angle_2 = FT(180) - angle_2;
       else if (angle_2 < -FT(90)) angle_2 = FT(180) + angle_2;
@@ -761,17 +761,17 @@ namespace internal {
     void save_polylines(
       const std::vector<Segment_2>& segments,
       const std::string name) {
-      
+
       CGAL_assertion(segments.size() > 0);
       std::vector< std::vector<Point_3> > polylines(segments.size());
       for (std::size_t i = 0; i < segments.size(); ++i) {
         const Point_2& s = segments[i].source();
         const Point_2& t = segments[i].target();
-        
+
         polylines[i].push_back(Point_3(s.x(), s.y(), FT(0)));
         polylines[i].push_back(Point_3(t.x(), t.y(), FT(0)));
       }
-      
+
       Saver<Traits> saver;
       saver.export_polylines(polylines, name);
     }

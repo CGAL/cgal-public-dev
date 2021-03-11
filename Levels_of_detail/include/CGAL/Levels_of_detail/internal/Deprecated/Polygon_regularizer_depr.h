@@ -66,7 +66,7 @@ namespace internal {
     m_pi(static_cast<FT>(CGAL_PI)),
     m_angle_threshold(FT(5)),
     m_bound_min(m_angle_bound / FT(3)),
-    m_bound_max(FT(90) - m_bound_min) 
+    m_bound_max(FT(90) - m_bound_min)
     { }
 
     void compute_longest_direction(
@@ -135,7 +135,7 @@ namespace internal {
         for (std::size_t i = 0; i < contour.size(); ++i) {
           if (internal::distance(contour[i].source(), contour[i].target()) > m_min_length * FT(2))
             segments.push_back(std::make_pair(contour[i], true));
-          else 
+          else
             segments.push_back(std::make_pair(contour[i], false));
         }
         contours.push_back(segments);
@@ -145,13 +145,13 @@ namespace internal {
       for (std::size_t k = 0; k < contours.size(); ++k)
         for (std::size_t i = 0; i < contours[k].size(); ++i)
           input.push_back(std::make_pair(k, i));
-      
+
       sort_input(contours, input);
       std::vector<bool> states(input.size(), false);
 
       m_bounds.clear(); m_skip.clear();
       m_longest.clear(); m_groups.clear();
-      
+
       m_groups.resize(contours.size());
       for (std::size_t k = 0; k < contours.size(); ++k) {
         m_groups[k].resize(contours[k].size());
@@ -169,7 +169,7 @@ namespace internal {
 
       if (m_longest.size() == 0) {
         compute_longest_direction(cnt);
-        
+
         std::cout << "Num outer directions: " << m_longest.size() << std::endl;
         return;
       }
@@ -178,7 +178,7 @@ namespace internal {
       for (std::size_t k = 0; k < contours.size(); ++k) {
         for (std::size_t i = 0; i < contours[k].size(); ++i) {
           if (m_groups[k][i] == std::size_t(-1)) {
-            
+
             const std::size_t m = contours[k].size();
             std::size_t im = (i + m - 1) % m;
             std::size_t ip = (i + 1) % m;
@@ -227,9 +227,9 @@ namespace internal {
       }
       if (longest_idx == std::size_t(-1))
         return false;
-      
+
       const auto& longest_pair = input[longest_idx];
-      const Segment_2& longest = 
+      const Segment_2& longest =
         contours[longest_pair.first][longest_pair.second].first;
 
       // Fill in groups.
@@ -248,7 +248,7 @@ namespace internal {
             const FT angle = angle_degree_2(longest, si);
             const FT angle_2 = get_angle_2(angle);
 
-            if ( 
+            if (
               (CGAL::abs(angle_2) <= m_bound_min) ||
               (CGAL::abs(angle_2) >= m_bound_max) )  {
 
@@ -271,8 +271,8 @@ namespace internal {
       const std::vector< std::vector< std::pair<Segment_2, bool> > >& contours,
       std::vector<Size_pair>& input) {
 
-      std::sort(input.begin(), input.end(), 
-      [&contours](const Size_pair& a, const Size_pair& b) -> bool { 
+      std::sort(input.begin(), input.end(),
+      [&contours](const Size_pair& a, const Size_pair& b) -> bool {
         const FT length_1 = (contours[a.first][a.second]).first.squared_length();
         const FT length_2 = (contours[b.first][b.second]).first.squared_length();
         return length_1 > length_2;
@@ -281,7 +281,7 @@ namespace internal {
 
     void regularize_contours(
       std::vector< std::vector<Segment_2> >& contours) {
-      
+
       if (m_angle_bound == FT(0))
         return;
 
@@ -300,7 +300,7 @@ namespace internal {
         initials.push_back(clean); */
 
         initials.push_back(contour);
-        
+
         /* points.push_back(contour_points[k]); */
       }
 
@@ -316,7 +316,7 @@ namespace internal {
 
       contours = finals;
 
-      /*      
+      /*
       std::vector< std::vector<Segment_2> > result;
       apply_least_squares(initials, finals, points, result);
 
@@ -342,7 +342,7 @@ namespace internal {
 
         for (std::size_t kk = 0; kk < inp_segments.size(); ++kk) {
           const FT error = compute_error(fin_segments[kk], pts[kk].first);
-          if ( ( error <= pts[kk].second ) || 
+          if ( ( error <= pts[kk].second ) ||
                ( internal::distance(inp_segments[kk].source(), inp_segments[kk].target()) <= m_min_length ) ) {
             result[k].push_back(fin_segments[kk]);
           } else {
@@ -376,7 +376,7 @@ namespace internal {
 
       for (std::size_t i = 0; i < contour.size(); ++i) {
         const std::size_t gr_idx = m_groups[k][i];
-        if (k == m_skip[gr_idx].first && i == m_skip[gr_idx].second) 
+        if (k == m_skip[gr_idx].first && i == m_skip[gr_idx].second)
           continue;
         if (gr_idx == std::size_t(-1))
           continue;
@@ -395,7 +395,7 @@ namespace internal {
       const std::size_t n = contour.size();
       for (std::size_t i = 0; i < n; ++i) {
         const std::size_t gr_idx = m_groups[k][i];
-        if (k == m_skip[gr_idx].first && i == m_skip[gr_idx].second) 
+        if (k == m_skip[gr_idx].first && i == m_skip[gr_idx].second)
           continue;
         if (gr_idx == std::size_t(-1))
           continue;
@@ -416,7 +416,7 @@ namespace internal {
     bool connect_contour(
       std::vector<Segment_2>& contour,
       const bool split) {
-      
+
       std::vector<Segment_2> clean;
       std::vector<Segment_2> segments;
       std::vector<Segment_2> splitted;
@@ -432,7 +432,7 @@ namespace internal {
         return false;
 
       intersect_segments(segments);
-      
+
       if (split) {
         split_segments(segments, ratios, splitted);
         contour = splitted;
@@ -458,7 +458,7 @@ namespace internal {
       const std::vector<Segment_2>& contour,
       std::vector<Segment_2>& segments,
       std::vector< std::vector<FT> >& ratios) {
-      
+
       ratios.clear();
       segments.clear();
       const std::size_t n = contour.size();
@@ -487,17 +487,17 @@ namespace internal {
 
           ++max_count_in;
         } while (next_is_parallel && max_count_in < n * 2);
-        
+
         if (max_count_in >= n * 2)
           return false;
 
-        /* 
-        const auto data = find_longest_segment(tmp); 
+        /*
+        const auto data = find_longest_segment(tmp);
         segments.push_back(tmp[data.first][data.second]); */
 
         auto segment = find_central_segment(tmp[0]);
         const Line_2 line = Line_2(segment.source(), segment.target());
-        
+
         FT sum_length = FT(0);
         std::vector<Point_2> points;
         for (auto& seg : tmp[0]) {
@@ -510,14 +510,14 @@ namespace internal {
         }
         update_segment(points, segment);
         segments.push_back(segment);
-        const FT ref_length = 
+        const FT ref_length =
         internal::distance(segment.source(), segment.target());
 
         FT length = FT(0);
-        std::vector<FT> ds; 
+        std::vector<FT> ds;
         ds.push_back(length);
 
-        const FT error = (FT(1) - sum_length / ref_length) / 
+        const FT error = (FT(1) - sum_length / ref_length) /
           static_cast<FT>(tmp[0].size());
 
         for (std::size_t kk = 0; kk < tmp[0].size(); ++kk) {
@@ -554,7 +554,7 @@ namespace internal {
         for (std::size_t j = 0; j < ratios[i].size() - 1; ++j) {
           const std::size_t jp = j + 1;
 
-          const Vector_2 end1 = start + direction * (ratios[i][j]  * ref_length); 
+          const Vector_2 end1 = start + direction * (ratios[i][j]  * ref_length);
           const Vector_2 end2 = start + direction * (ratios[i][jp] * ref_length);
 
           const Point_2 source = Point_2(end1.x(), end1.y());
@@ -575,12 +575,12 @@ namespace internal {
       const Vector_2 ref_vector = segment.to_vector();
       Point_2 ref_point;
       internal::compute_barycenter_2(points, ref_point);
-      
+
       Point_2 p, q;
       for (const auto& point : points) {
         const Vector_2 curr_vector(ref_point, point);
         const FT value = CGAL::scalar_product(curr_vector, ref_vector);
-        
+
         if (value < min_proj_value) {
           min_proj_value = value;
           p = point; }
@@ -617,10 +617,10 @@ namespace internal {
 
       const std::size_t n = contour.size();
       for (std::size_t i = 0; i < n; ++i) {
-        
+
         const std::size_t im = (i + n - 1) % n;
         const std::size_t ip = (i + 1) % n;
-        
+
         const auto& si = contour[i];
         const auto& sm = contour[im];
         const auto& sp = contour[ip];
@@ -637,14 +637,14 @@ namespace internal {
 
       const std::size_t n = segments.size();
       for (std::size_t i = 0; i < n; ++i) {
-        
+
         const std::size_t im = (i + n - 1) % n;
         const std::size_t ip = (i + 1) % n;
-        
+
         auto& si = segments[i];
         const auto& sm = segments[im];
         const auto& sp = segments[ip];
-        
+
         intersect_segment(sm, si, sp);
       }
     }
@@ -671,7 +671,7 @@ namespace internal {
       FT max_length = -FT(1);
       for (std::size_t k = 0; k < contours.size(); ++k) {
         for (std::size_t i = 0; i < contours[k].size(); ++i) {
-          
+
           const FT length = contours[k][i].squared_length();
           if (length > max_length) {
 
@@ -690,7 +690,7 @@ namespace internal {
       std::size_t seg_idx = std::size_t(-1);
       FT max_length = -FT(1);
       for (std::size_t i = 0; i < contour.size(); ++i) {
-          
+
         const FT length = contour[i].squared_length();
         if (length > max_length) {
 
@@ -775,11 +775,11 @@ namespace internal {
     bool intersect_2(
       const Line_2& line_1, const Line_2& line_2,
       Point_2& in_point) {
-      
-      typename std::result_of<Intersect_2(Line_2, Line_2)>::type result 
+
+      typename std::result_of<Intersect_2(Line_2, Line_2)>::type result
       = CGAL::intersection(line_1, line_2);
       if (result) {
-        if (const Line_2* line = boost::get<Line_2>(&*result)) 
+        if (const Line_2* line = boost::get<Line_2>(&*result))
           return false;
         else {
           const Point_2* point = boost::get<Point_2>(&*result);
@@ -799,12 +799,12 @@ namespace internal {
 		  const FT dot = CGAL::scalar_product(v1, v2);
       const FT angle_rad = static_cast<FT>(
         std::atan2(CGAL::to_double(det), CGAL::to_double(dot)));
-      const FT angle_deg = angle_rad * FT(180) / m_pi; 
+      const FT angle_deg = angle_rad * FT(180) / m_pi;
       return angle_deg;
     }
 
     FT get_angle_2(const FT angle) {
-      
+
       FT angle_2 = angle;
       if (angle_2 > FT(90)) angle_2 = FT(180) - angle_2;
       else if (angle_2 < -FT(90)) angle_2 = FT(180) + angle_2;
@@ -812,9 +812,9 @@ namespace internal {
     }
 
     void rotate(
-      const FT angle_2, 
+      const FT angle_2,
       const FT ref_angle_2,
-      const Segment_2& longest, 
+      const Segment_2& longest,
       Segment_2& si) {
 
       FT angle = angle_2;
@@ -824,7 +824,7 @@ namespace internal {
       Point_2 source_i = si.source();
       Point_2 target_i = si.target();
       const Point_2 b = internal::middle_point_2(source_i, target_i);
-      const FT angle_rad = angle * m_pi / FT(180); 
+      const FT angle_rad = angle * m_pi / FT(180);
       internal::rotate_point_2(angle_rad, b, source_i);
       internal::rotate_point_2(angle_rad, b, target_i);
       si = Segment_2(source_i, target_i);

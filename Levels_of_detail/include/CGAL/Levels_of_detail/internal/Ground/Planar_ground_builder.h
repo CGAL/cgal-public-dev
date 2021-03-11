@@ -106,11 +106,11 @@ namespace internal {
     void tag_faces(
       const Urban_object& object,
       const Triangulation& base) {
-      
+
       if (base.number_of_faces() == 0) return;
       Triangulation& tri = m_ground_base.triangulation.delaunay;
 
-      // Tag all faces that belong to this object. 
+      // Tag all faces that belong to this object.
       for (auto fh = tri.finite_faces_begin();
       fh != tri.finite_faces_end(); ++fh) {
         if (is_valid(fh, base)) {
@@ -122,13 +122,13 @@ namespace internal {
       }
     }
 
-    void finilize() { 
+    void finilize() {
       set_real_heights();
       set_face_heights();
     }
 
     template<typename OutputIterator>
-    boost::optional<OutputIterator> 
+    boost::optional<OutputIterator>
     output_wire(OutputIterator output) const {
       return m_ground_base.triangulation.output_boundary_edges(output);
     }
@@ -140,7 +140,7 @@ namespace internal {
     bool is_valid(
       const FH& query,
       const Triangulation& base) const {
-      
+
       if (query->info().tagged)
         return false;
 
@@ -148,7 +148,7 @@ namespace internal {
         query->vertex(0)->point(), FT(1),
         query->vertex(1)->point(), FT(1),
         query->vertex(2)->point(), FT(1));
-      
+
       const Face_handle fh = base.locate(b);
       return !base.is_infinite(fh) && fh->info().tagged;
     }
@@ -157,19 +157,19 @@ namespace internal {
 
       const Plane_3& plane = m_ground_base.plane;
       Triangulation& tri = m_ground_base.triangulation.delaunay;
-      for (auto vh = tri.finite_vertices_begin(); 
+      for (auto vh = tri.finite_vertices_begin();
       vh != tri.finite_vertices_end(); ++vh)
         vh->info().z = internal::position_on_plane_3(vh->point(), plane).z();
     }
 
     void set_face_heights() {
-      
+
       Triangulation& tri = m_ground_base.triangulation.delaunay;
-      for (auto fh = tri.finite_faces_begin(); 
+      for (auto fh = tri.finite_faces_begin();
       fh != tri.finite_faces_end(); ++fh) {
         for (std::size_t k = 0; k < 3; ++k) {
-          
-          const Vertex_handle& vh = fh->vertex(k); 
+
+          const Vertex_handle& vh = fh->vertex(k);
           const std::size_t idx = fh->index(vh);
           CGAL_assertion(idx >= 0 && idx < 3);
           fh->info().z[idx] = vh->info().z;

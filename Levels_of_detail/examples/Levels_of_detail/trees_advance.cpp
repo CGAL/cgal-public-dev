@@ -41,10 +41,10 @@ using Polygon_inserter  = CGAL::Levels_of_detail::Polygon_inserter<Traits>;
 using Polyline_inserter = CGAL::Levels_of_detail::Polyline_inserter<Traits>;
 
 using LOD = CGAL::Levels_of_detail::Levels_of_detail<
-  Traits, 
-  Point_set, 
-  Point_map, 
-  Semantic_map, 
+  Traits,
+  Point_set,
+  Point_map,
+  Semantic_map,
   Visibility_map,
   CGAL::Tag_true>;
 
@@ -53,9 +53,9 @@ int main(int argc, char **argv) {
   // Load input data.
   Point_set point_set;
   std::cout << std::endl << "Input data: " << std::endl;
-  std::ifstream file(argc > 1 ? argv[1] : "data/lods.ply", 
+  std::ifstream file(argc > 1 ? argv[1] : "data/lods.ply",
   std::ios_base::binary);
-  file >> point_set; 
+  file >> point_set;
   file.close();
   std::cout << "File contains " << point_set.size() << " points" << std::endl;
 
@@ -68,7 +68,7 @@ int main(int argc, char **argv) {
   const FT min_height                       = FT(3);
   const FT min_radius_2                     = FT(2);
   const std::size_t min_faces_per_footprint = 12;
-  const CGAL::Levels_of_detail::Extrusion_type extrusion_type = 
+  const CGAL::Levels_of_detail::Extrusion_type extrusion_type =
   CGAL::Levels_of_detail::Extrusion_type::MAX;
 
   // Define a map from a user-defined label to the LOD semantic label.
@@ -81,8 +81,8 @@ int main(int argc, char **argv) {
 
   // Initialize LOD.
   LOD lod(
-    point_set, 
-    point_set.point_map(), 
+    point_set,
+    point_set.point_map(),
     semantic_map,
     visibility_map);
 
@@ -92,7 +92,7 @@ int main(int argc, char **argv) {
   lod.points(
     boost::make_function_output_iterator(inserter_ivp),
     CGAL::Levels_of_detail::Intermediate_step::INPUT_VEGETATION_POINTS);
-  std::cout << "Number of vegetation points: " << points.size() 
+  std::cout << "Number of vegetation points: " << points.size()
   << std::endl << std::endl;
 
 
@@ -136,7 +136,7 @@ int main(int argc, char **argv) {
     CGAL::Levels_of_detail::Intermediate_step::TREE_FOOTPRINTS);
   std::cout << "Number of footprint faces: " << faces.size() << std::endl;
 
-  
+
   // Extrude tree footprints - STEP 3.
   lod.extrude_tree_footprints(
     extrusion_type);
@@ -148,7 +148,7 @@ int main(int argc, char **argv) {
     std::back_inserter(vertices),
     boost::make_function_output_iterator(inserter_etb),
     CGAL::Levels_of_detail::Intermediate_step::EXTRUDED_TREE_BOUNDARIES);
-  std::cout << "Number of extruded boundary faces: " 
+  std::cout << "Number of extruded boundary faces: "
   << faces.size() << std::endl;
 
   vertices.clear(); faces.clear(); fcolors.clear();
@@ -157,7 +157,7 @@ int main(int argc, char **argv) {
     std::back_inserter(vertices),
     boost::make_function_output_iterator(inserter_etf),
     CGAL::Levels_of_detail::Intermediate_step::EXTRUDED_TREE_FOOTPRINTS);
-  std::cout << "Number of extruded footprint faces: " 
+  std::cout << "Number of extruded footprint faces: "
   << faces.size() << std::endl;
 
 
@@ -171,7 +171,7 @@ int main(int argc, char **argv) {
     std::back_inserter(vertices),
     boost::make_function_output_iterator(inserter_ttr),
     CGAL::Levels_of_detail::Intermediate_step::TREE_TRUNKS);
-  std::cout << "Number of trunk faces: " 
+  std::cout << "Number of trunk faces: "
   << faces.size() << std::endl;
 
   vertices.clear(); faces.clear(); fcolors.clear();
@@ -180,7 +180,7 @@ int main(int argc, char **argv) {
     std::back_inserter(vertices),
     boost::make_function_output_iterator(inserter_tcr),
     CGAL::Levels_of_detail::Intermediate_step::TREE_CROWNS);
-  std::cout << "Number of crown faces: " 
+  std::cout << "Number of crown faces: "
   << faces.size() << std::endl;
 
 

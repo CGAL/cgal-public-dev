@@ -28,13 +28,13 @@ Extra options:
 Do not forget to change the path below to the folder for saving results.
 Inside this folder, you need to create 4 folders: buildings/ground/lods/trees.
 
-All intermediate steps are saved in these folders. The final result is saved 
+All intermediate steps are saved in these folders. The final result is saved
 in the directory, where these folders are placed.
 */
 
 int main(int argc, char **argv) {
 
-  const std::string path_to_save = "/Users/monet/Documents/lod/logs/";
+  const std::string path_to_save = "/Users/monet/Documents/gf/lod/logs/";
   Wrapper wrapper(argc, argv, path_to_save);
 
   wrapper.execute();

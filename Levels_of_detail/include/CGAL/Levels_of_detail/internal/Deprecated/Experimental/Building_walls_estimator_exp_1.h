@@ -28,7 +28,7 @@
 // // Add extra walls, which originate from the roof boundaries.
 // westimator.add_extra_walls(
 //   m_cluster,
-//   m_data.point_map_3, 
+//   m_data.point_map_3,
 //   m_roof_points_3,
 //   m_data.parameters.buildings.alpha_shape_size_2,
 //   m_building_walls);
@@ -88,7 +88,7 @@ namespace internal {
     using CDT = typename Triangulation::Delaunay;
     using Vertex_handle = typename CDT::Vertex_handle;
     using Face_handle = typename CDT::Face_handle;
-    using Edge = typename CDT::Edge; 
+    using Edge = typename CDT::Edge;
 
     using Vhs = std::vector<Vertex_handle>;
     using Vh_pair = std::pair<Vertex_handle, Vertex_handle>;
@@ -100,12 +100,12 @@ namespace internal {
     m_boundaries(boundaries),
     m_bottom_z(bottom_z),
     m_top_z(top_z),
-    m_max_num_iters(100) 
+    m_max_num_iters(100)
     { }
 
     void estimate(
       std::vector<Approximate_face>& walls) const {
-      
+
       if (m_boundaries.empty())
         return;
 
@@ -130,7 +130,7 @@ namespace internal {
 
       const Point_2& s = boundary.segment.source();
       const Point_2& t = boundary.segment.target();
-      
+
       face.clear();
       face.reserve(4);
 
@@ -176,7 +176,7 @@ namespace internal {
         for (const auto& p : points3)
           points2.push_back(internal::point_2_from_point_3(p));
         apply_filtering(alpha_shape_size_2, points2);
-        
+
         segments.clear();
         const FT scale = alpha_shape_size_2 / FT(2);
         compute_optimal_transport(
@@ -213,7 +213,7 @@ namespace internal {
         // const std::string pname =
         // "/Users/monet/Documents/lod/logs/buildings/groups/point-set-" + std::to_string(psi);
         // saver.export_points(tmp, color, pname);
-        
+
         // std::vector< std::vector<Point_3> > polylines(segments.size());
         // for (std::size_t i = 0; i < segments.size(); ++i) {
         //   const auto& s = segments[i].source();
@@ -238,7 +238,7 @@ namespace internal {
     void apply_filtering(
       const FT alpha_shape_size_2,
       std::vector<Point_2>& points2) const {
-      
+
       using Identity_map_2 = CGAL::Identity_property_map<Point_2>;
       using Alpha_shapes_filtering_2 = internal::Alpha_shapes_filtering_2<Traits>;
 
@@ -256,10 +256,10 @@ namespace internal {
       const std::vector<Point_2>& points2,
       const FT scale,
       std::vector<Segment_2>& segments) const {
-      
+
       using Identity_map_2 = CGAL::Identity_property_map<Point_2>;
       using Otr = CGAL::Optimal_transportation_reconstruction_2<Traits, Identity_map_2>;
-      
+
       Identity_map_2 identity_map_2;
       Otr otr(points2, identity_map_2);
       otr.run_under_wasserstein_tolerance(scale);
@@ -321,11 +321,11 @@ namespace internal {
 
       Point_3 b;
       internal::compute_barycenter_3(faces, region, b);
-                
+
       std::vector<Polygon> rotated;
       if (angle_deg != FT(0) && angle_deg != FT(180))
         internal::rotate_polygons_3(faces, region, angle_3d, axis, b, rotated);
-      
+
       CDT cdt;
       triangulate(rotated, cdt);
       if (cdt.number_of_faces() == 0)
@@ -335,7 +335,7 @@ namespace internal {
       success = create_merged_face(cdt, merged_face);
       if (!success || merged_face.size() < 3) return;
       fix_orientation(merged_face);
-      
+
       Approximate_face face;
       if (angle_deg != FT(0) && angle_deg != FT(180))
         internal::rotate_polygon_3(merged_face, -angle_3d, axis, b, face.polygon);
@@ -343,7 +343,7 @@ namespace internal {
     }
 
     void triangulate(
-      const std::vector<Polygon>& faces, 
+      const std::vector<Polygon>& faces,
       CDT& cdt) const {
 
 			std::vector<Vhs> vhs;
@@ -354,10 +354,10 @@ namespace internal {
     }
 
     void insert_points(
-      const std::vector<Polygon>& faces, 
-      CDT& cdt, 
+      const std::vector<Polygon>& faces,
+      CDT& cdt,
       std::vector<Vhs>& vhs) const {
-                
+
       CGAL_assertion(faces.size() > 0);
       cdt.clear(); vhs.clear();
       vhs.resize(faces.size());
@@ -374,8 +374,8 @@ namespace internal {
     }
 
     void update_constraints(
-      const std::vector<Polygon>& faces, 
-      const std::vector<Vhs>& vhs, 
+      const std::vector<Polygon>& faces,
+      const std::vector<Vhs>& vhs,
       std::vector<Vh_pair>& updated_vhs) const {
 
       CGAL_assertion(faces.size() > 0);
@@ -393,8 +393,8 @@ namespace internal {
     }
 
     bool is_boundary_edge(
-      const Point_3& p1, const Point_3& p2, 
-      const std::size_t face_index, 
+      const Point_3& p1, const Point_3& p2,
+      const std::size_t face_index,
       const std::vector<Polygon>& faces) const {
 
       CGAL_assertion(faces.size() > 0);
@@ -403,7 +403,7 @@ namespace internal {
         for (std::size_t j = 0; j < faces[i].size(); ++j) {
           const std::size_t jp = (j + 1) % faces[i].size();
           if (internal::are_equal_edges_3(
-            p1, p2, faces[i][j], faces[i][jp])) 
+            p1, p2, faces[i][j], faces[i][jp]))
             return false;
         }
       }
@@ -411,9 +411,9 @@ namespace internal {
     }
 
     void insert_constraints(
-      const std::vector<Vh_pair>& updated_vhs, 
+      const std::vector<Vh_pair>& updated_vhs,
       CDT& cdt) const {
-                
+
       CGAL_assertion(updated_vhs.size() > 0);
       for (const auto& vh : updated_vhs) {
         if (vh.first != vh.second)
@@ -422,7 +422,7 @@ namespace internal {
     }
 
     bool create_merged_face(
-      const CDT& cdt, 
+      const CDT& cdt,
       Polygon& merged_face) const {
 
       merged_face.clear();
@@ -436,10 +436,10 @@ namespace internal {
     }
 
     bool find_first_face_handle(
-      const CDT& cdt, 
+      const CDT& cdt,
       Face_handle& fh) const {
 
-      for (auto fit = cdt.finite_faces_begin(); 
+      for (auto fit = cdt.finite_faces_begin();
       fit != cdt.finite_faces_end(); ++fit) {
         fh = static_cast<Face_handle>(fit);
 
@@ -453,7 +453,7 @@ namespace internal {
 
         for (std::size_t k = 0; k < 3; ++k) {
           const Edge edge = std::make_pair(fh, k);
-          if (cdt.is_constrained(edge)) 
+          if (cdt.is_constrained(edge))
             return true;
         }
       }
@@ -461,32 +461,32 @@ namespace internal {
     }
 
     bool traverse_cdt(
-      const Face_handle& fh, 
-      const CDT& cdt, 
+      const Face_handle& fh,
+      const CDT& cdt,
       Polygon& face) const {
-                
+
       Edge edge; face.clear();
       const bool success = find_first_edge(fh, cdt, edge);
       if (!success) return false;
 
       CGAL_assertion(edge.second >= 0 && edge.second <= 2);
       auto vh = edge.first->vertex((edge.second + 2) % 3);
-      auto end = vh;                
-      if (vh->info().z == vh->info().default_z) 
+      auto end = vh;
+      if (vh->info().z == vh->info().default_z)
         return false;
 
       const auto& p = vh->point();
       face.push_back(Point_3(p.x(), p.y(), vh->info().z));
-      std::size_t num_iters = 0; 
+      std::size_t num_iters = 0;
       do {
         get_next_vertex_handle(cdt, vh, edge);
         const auto& q = vh->point();
-        if (vh->info().z == vh->info().default_z) 
+        if (vh->info().z == vh->info().default_z)
           return false;
         if (vh == end) break;
 
         face.push_back(Point_3(q.x(), q.y(), vh->info().z));
-        if (num_iters == m_max_num_iters) 
+        if (num_iters == m_max_num_iters)
           return false;
         ++num_iters;
       } while (vh != end);
@@ -494,21 +494,21 @@ namespace internal {
     }
 
     bool find_first_edge(
-      const Face_handle& fh, 
-      const CDT& cdt, 
+      const Face_handle& fh,
+      const CDT& cdt,
       Edge& edge) const {
 
-      for (std::size_t k = 0; k < 3; ++k) {              
+      for (std::size_t k = 0; k < 3; ++k) {
         edge = std::make_pair(fh, k);
-        if (cdt.is_constrained(edge)) 
+        if (cdt.is_constrained(edge))
           return true;
       }
       return false;
     }
 
     void get_next_vertex_handle(
-      const CDT& cdt, 
-      Vertex_handle& vh, 
+      const CDT& cdt,
+      Vertex_handle& vh,
       Edge& edge) const {
 
       const std::size_t idx = edge.first->index(vh);
@@ -534,7 +534,7 @@ namespace internal {
           const auto& q = face[j];
 
           if (i == j) continue;
-          if (internal::are_equal_points_3(p, q)) 
+          if (internal::are_equal_points_3(p, q))
             return false;
         }
       }
@@ -549,7 +549,7 @@ namespace internal {
       for (const auto& p : face)
         polygon_2.push_back(Point_2(p.x(), p.y()));
       if (CGAL::orientation_2(
-      polygon_2.begin(), polygon_2.end()) == CGAL::CLOCKWISE) 
+      polygon_2.begin(), polygon_2.end()) == CGAL::CLOCKWISE)
         std::reverse(face.begin(), face.end());
     }
   };

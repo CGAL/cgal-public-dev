@@ -34,7 +34,7 @@
 //   if (m_partition_3.empty()) return;
 //   const Visibility_3_exp_2 visibility(
 //     m_cluster,
-//     m_data.point_map_3, 
+//     m_data.point_map_3,
 //     m_building,
 //     m_roof_points_3,
 //     visibility_scale_3);
@@ -68,7 +68,7 @@ namespace internal {
   typename InputRange,
   typename PointMap>
   class Visibility_3_exp_2 {
-			
+
   public:
     using Traits = GeomTraits;
     using Input_range = InputRange;
@@ -104,7 +104,7 @@ namespace internal {
     { }
 
     void compute(Partition_3& partition) const {
-      
+
       if (partition.empty()) return;
       label_exterior_faces(partition.faces);
       for (auto& face : partition.faces) {
@@ -115,21 +115,21 @@ namespace internal {
         } else compute_face_label(face);
       }
     }
-    
+
   private:
     const Input_range& m_input_range;
     const Point_map& m_point_map;
     const Building& m_building;
     const std::vector<Indices>& m_roof_points_3;
     // const FT m_distance_tolerance;
-    
+
     // Internal parameters.
     // const FT m_angle_threshold;
     const FT m_height_offset;
 
     void label_exterior_faces(
       std::vector<Face>& faces) const {
-      
+
       for (auto& face : faces) {
         face.exterior = false;
         const auto& neighbors = face.neighbors;
@@ -150,9 +150,9 @@ namespace internal {
       CGAL_assertion(
         CGAL::abs(stats.first + stats.second - FT(1)) < internal::tolerance<FT>());
 
-      if (stats.first > FT(1) / FT(2)) 
+      if (stats.first > FT(1) / FT(2))
         face.visibility = Visibility_label::INSIDE;
-      else 
+      else
         face.visibility = Visibility_label::OUTSIDE;
       face.inside = stats.first;
       face.outside = stats.second;
@@ -162,16 +162,16 @@ namespace internal {
 
       Point_3 b;
       internal::compute_barycenter_3(polyhedron.vertices, b);
-      if (is_above_building(b)) 
+      if (is_above_building(b))
         return std::make_pair(FT(0), FT(1));
-      if (is_below_building(b)) 
+      if (is_below_building(b))
         return std::make_pair(FT(0), FT(1));
-      if (is_outside_boundary(b)) 
+      if (is_outside_boundary(b))
         return std::make_pair(FT(0), FT(1));
-      // if (is_out_of_building(b)) 
+      // if (is_out_of_building(b))
       //   return std::make_pair(FT(1) / FT(5), FT(4) / FT(5));
-      // if (has_vertices_outside(polyhedron)) 
-      //   return std::make_pair(FT(2) / FT(5), FT(3) / FT(5));          
+      // if (has_vertices_outside(polyhedron))
+      //   return std::make_pair(FT(2) / FT(5), FT(3) / FT(5));
       return estimate_in_out_values_statistically(polyhedron, b);
       // return std::make_pair(FT(1), FT(0));
     }
@@ -193,7 +193,7 @@ namespace internal {
     }
 
     // bool is_out_of_building(const Point_3& query) const {
-                
+
     //   const Point_2 p = Point_2(query.x(), query.y());
 
     //   const auto& tri = m_building.base1.triangulation.delaunay;
@@ -205,7 +205,7 @@ namespace internal {
     //       fh->vertex(1)->point(),
     //       fh->vertex(2)->point());
 
-    //     if (internal::is_within_triangle_2(p, triangle, m_distance_tolerance)) 
+    //     if (internal::is_within_triangle_2(p, triangle, m_distance_tolerance))
     //       return false;
     //   }
     //   return true;
@@ -217,7 +217,7 @@ namespace internal {
     //   for (const auto& p : polyhedron.vertices) {
     //     const bool is_out = is_out_of_building(p);
     //     if (is_out) ++count;
-    //     if (is_out && count > 0) 
+    //     if (is_out && count > 0)
     //       return true;
     //   }
     //   return false;
@@ -235,13 +235,13 @@ namespace internal {
         polygon.clear();
         for (const std::size_t idx : face)
           polygon.push_back(polyhedron.vertices[idx]);
-        if (is_vertical(polygon)) 
+        if (is_vertical(polygon))
           continue;
         process_face(polygon, indices, in, out);
       }
       process_middle_plane(b, indices, in, out);
-        
-      if (in == 0 && out == 0) 
+
+      if (in == 0 && out == 0)
         return std::make_pair(FT(1) / FT(5), FT(4) / FT(5));
 
       const FT tmp_in = static_cast<FT>(in);
@@ -266,9 +266,9 @@ namespace internal {
     }
 
     void process_face(
-      const std::vector<Point_3>& poly_3, 
-      std::vector<std::size_t>& indices, 
-      std::size_t& in, 
+      const std::vector<Point_3>& poly_3,
+      std::vector<std::size_t>& indices,
+      std::size_t& in,
       std::size_t& out) const {
 
       Point_3 b;
@@ -285,19 +285,19 @@ namespace internal {
 	      poly_2.push_back(q);
       }
 
-      if (!CGAL::is_simple_2(poly_2.begin(), poly_2.end())) 
+      if (!CGAL::is_simple_2(poly_2.begin(), poly_2.end()))
         return;
 
       for (const auto& region : m_roof_points_3) {
         for (const std::size_t idx : region) {
           const auto& p = get(m_point_map, *(m_input_range.begin() + idx));
-          
+
           FT z = internal::max_value<FT>();
           const Point_2 query = Point_2(p.x(), p.y());
-          if (is_inside_polygon(query, poly_2)) 
-            z = internal::intersect_with_polygon_3(p, poly_3, 
+          if (is_inside_polygon(query, poly_2))
+            z = internal::intersect_with_polygon_3(p, poly_3,
             m_building.bottom_z, m_building.top_z);
-          if (z == internal::max_value<FT>()) 
+          if (z == internal::max_value<FT>())
             continue;
 
           indices.push_back(idx);
@@ -312,7 +312,7 @@ namespace internal {
       const std::vector<Point_2>& polygon) const {
 
       CGAL_assertion(polygon.size() > 0);
-      if (!CGAL::is_simple_2(polygon.begin(), polygon.end())) 
+      if (!CGAL::is_simple_2(polygon.begin(), polygon.end()))
         return false;
 
       const Point_2& ref = polygon[0];
@@ -324,17 +324,17 @@ namespace internal {
         const Point_2& p3 = polygon[ip];
         const Triangle_2 triangle = Triangle_2(p1, p2, p3);
 
-        if (triangle.has_on_bounded_side(query) || 
-            triangle.has_on_boundary(query)) 
+        if (triangle.has_on_bounded_side(query) ||
+            triangle.has_on_boundary(query))
           return true;
       }
       return false;
     }
 
     void process_middle_plane(
-      const Point_3& b, 
-      const std::vector<std::size_t>& indices, 
-      size_t& in, 
+      const Point_3& b,
+      const std::vector<std::size_t>& indices,
+      size_t& in,
       size_t& out) const {
 
       Line_3 line;
@@ -353,9 +353,9 @@ namespace internal {
 
     bool is_inside_building( // it is a useless test!!
       const FT curr_z, const FT real_z) const {
-    
+
       return (
-      curr_z > m_building.bottom_z - m_height_offset && 
+      curr_z > m_building.bottom_z - m_height_offset &&
       curr_z < real_z + m_height_offset );
     }
   };

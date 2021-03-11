@@ -38,10 +38,10 @@ using Visibility_map = CGAL::Levels_of_detail::Visibility_from_semantic_map<Sema
 using Polygon_inserter = CGAL::Levels_of_detail::Polygon_inserter<Traits>;
 
 using LOD = CGAL::Levels_of_detail::Levels_of_detail<
-  Traits, 
-  Point_set, 
-  Point_map, 
-  Semantic_map, 
+  Traits,
+  Point_set,
+  Point_map,
+  Semantic_map,
   Visibility_map,
   CGAL::Tag_true>;
 
@@ -50,9 +50,9 @@ int main(int argc, char **argv) {
   // Load input data.
   Point_set point_set;
   std::cout << std::endl << "Input data: " << std::endl;
-  std::ifstream file(argc > 1 ? argv[1] : "data/lods.ply", 
+  std::ifstream file(argc > 1 ? argv[1] : "data/lods.ply",
   std::ios_base::binary);
-  file >> point_set; 
+  file >> point_set;
   file.close();
   std::cout << "File contains " << point_set.size() << " points" << std::endl;
 
@@ -70,11 +70,11 @@ int main(int argc, char **argv) {
 
   // Initialize LOD.
   LOD lod(
-    point_set, 
-    point_set.point_map(), 
+    point_set,
+    point_set.point_map(),
     semantic_map,
     visibility_map);
-  
+
   // Compute trees.
   lod.build_trees(
     scale, noise_level);

@@ -49,12 +49,12 @@ namespace internal {
     using Indices = std::vector<std::size_t>;
 
     bool is_already_visited(
-      const std::size_t, const std::size_t, const bool) const { 
+      const std::size_t, const std::size_t, const bool) const {
       return false;
     }
 
     bool is_part_of_region(
-      const std::size_t, const std::size_t, 
+      const std::size_t, const std::size_t,
       const Indices& region) const {
 
       CGAL_precondition(region.size() > 0);

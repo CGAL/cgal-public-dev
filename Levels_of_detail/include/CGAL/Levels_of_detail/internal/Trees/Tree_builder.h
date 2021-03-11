@@ -72,7 +72,7 @@ namespace internal {
       const Tree_model& model,
       const std::vector<Iterator>& cluster,
       const Point_map& point_map,
-      const std::size_t min_faces_per_footprint,  
+      const std::size_t min_faces_per_footprint,
       Tree& tree) const {
 
       create_bottom_z(cluster, point_map, tree);
@@ -97,7 +97,7 @@ namespace internal {
     void add_lod2(
       const Tree_model& model,
       Tree& tree) const {
-    
+
       const std::size_t n = tree.edges1.size();
       create_edges2(model, n, tree);
       create_base2(model, tree);
@@ -107,8 +107,8 @@ namespace internal {
 
   private:
     void create_bottom_z(
-      const std::vector<Iterator>& cluster, 
-      const Point_map& point_map, 
+      const std::vector<Iterator>& cluster,
+      const Point_map& point_map,
       Tree& tree) const {
 
       CGAL_assertion(!cluster.empty());
@@ -123,8 +123,8 @@ namespace internal {
 
     void create_top_z(
       const Extrusion_type extrusion_type,
-      const std::vector<Iterator>& cluster, 
-      const Point_map& point_map, 
+      const std::vector<Iterator>& cluster,
+      const Point_map& point_map,
       Tree& tree) const {
 
       switch (extrusion_type) {
@@ -141,8 +141,8 @@ namespace internal {
     }
 
     void create_top_z_avg(
-      const std::vector<Iterator>& cluster, 
-      const Point_map& point_map, 
+      const std::vector<Iterator>& cluster,
+      const Point_map& point_map,
       Tree& tree) const {
 
       CGAL_assertion(!cluster.empty());
@@ -155,8 +155,8 @@ namespace internal {
     }
 
     void create_top_z_max(
-      const std::vector<Iterator>& cluster, 
-      const Point_map& point_map, 
+      const std::vector<Iterator>& cluster,
+      const Point_map& point_map,
       Tree& tree) const {
 
       CGAL_assertion(!cluster.empty());
@@ -180,7 +180,7 @@ namespace internal {
 
     void create_edges1(
       Tree& tree) const {
-      
+
       const auto& edges0 = tree.edges0;
       CGAL_assertion(!edges0.empty());
       auto& edges1 = tree.edges1;
@@ -191,24 +191,24 @@ namespace internal {
       const Tree_model& model,
       const std::size_t n,
       Tree& tree) const {
-      
+
       create_edges(
-        model.center, model.trunk2_radius(), n, tree.bottom_z, 
+        model.center, model.trunk2_radius(), n, tree.bottom_z,
         tree.edges2);
     }
 
     void create_base0(
-      const Tree_model& model, 
+      const Tree_model& model,
       Tree& tree) const {
-      
+
       create_base(
-        tree.edges0, tree.index, tree.bottom_z, 
+        tree.edges0, tree.index, tree.bottom_z,
         tree.base0.triangulation.delaunay);
     }
 
     void create_base1(
       Tree& tree) const {
-      
+
       const auto& base0 = tree.base0;
       CGAL_assertion(!base0.empty());
       auto& base1 = tree.base1;
@@ -216,11 +216,11 @@ namespace internal {
     }
 
     void create_base2(
-      const Tree_model& model, 
+      const Tree_model& model,
       Tree& tree) const {
-      
+
       create_base(
-        tree.edges2, tree.index, tree.bottom_z, 
+        tree.edges2, tree.index, tree.bottom_z,
         tree.base2.triangulation.delaunay);
     }
 
@@ -243,7 +243,7 @@ namespace internal {
 
     void create_crown1(
       Tree& tree) const {
-    
+
       auto& crown = tree.crown1;
       std::vector<Triangle_3>& triangles = crown.triangles;
       std::vector<Segment_3>& segments = crown.segments;
@@ -254,7 +254,7 @@ namespace internal {
       triangles.reserve(tri.number_of_faces());
       for (auto fh = tri.finite_faces_begin();
       fh != tri.finite_faces_end(); ++fh) {
-        
+
         const Point_2& a = fh->vertex(0)->point();
         const Point_2& b = fh->vertex(1)->point();
         const Point_2& c = fh->vertex(2)->point();
@@ -298,7 +298,7 @@ namespace internal {
       for (; i < num_sections; ++i) {
         create_crown_section(n, model, i, i + 1, a, b);
         add_wire_section(model, i, i + 1, a, b, segments);
-        add_crown_section(model, i, i + 1, a, b, triangles); 
+        add_crown_section(model, i, i + 1, a, b, triangles);
       }
       add_last_wire_section(model, i, i + 1, b, segments);
       add_last_crown_section(model, i, i + 1, b, triangles);
@@ -306,7 +306,7 @@ namespace internal {
 
     void create_edges(
       const Point_2& center,
-      const FT radius, 
+      const FT radius,
       const std::size_t n,
       const FT z,
       std::vector<Edge>& edges) const {
@@ -314,7 +314,7 @@ namespace internal {
       // Create boundary points.
       std::vector<Point_2> points(n);
       for (std::size_t i = 0; i < n; ++i) {
-        const FT angle = FT(2) * static_cast<FT>(CGAL_PI) * 
+        const FT angle = FT(2) * static_cast<FT>(CGAL_PI) *
         (static_cast<FT>(i) / static_cast<FT>(n));
 
         points[i] = center + Vector_2(
@@ -336,7 +336,7 @@ namespace internal {
     }
 
     void create_base(
-      const std::vector<Edge>& edges,  
+      const std::vector<Edge>& edges,
       const std::size_t index,
       const FT z,
       Triangulation& tri) const {
@@ -355,7 +355,7 @@ namespace internal {
       }
 
       // Update faces.
-      for (auto fh = tri.finite_faces_begin(); 
+      for (auto fh = tri.finite_faces_begin();
       fh != tri.finite_faces_end(); ++fh) {
         fh->info().urban_tag = Urban_object_type::TREE_CROWN;
         fh->info().object_index = index;
@@ -378,12 +378,12 @@ namespace internal {
       segments.clear();
       segments.reserve(edges.size());
 
-      for (const auto& edge : edges) {  
+      for (const auto& edge : edges) {
         const Segment_2& seg = edge.segment;
 
         const Point_2& s = seg.source();
         const Point_2& t = seg.target();
-        
+
         const Point_3 p1 = Point_3(s.x(), s.y(), bottom_z);
         const Point_3 p2 = Point_3(t.x(), t.y(), bottom_z);
         const Point_3 p3 = Point_3(t.x(), t.y(), top_z);
@@ -519,7 +519,7 @@ namespace internal {
         const Point_3 a = Point_3(p1.x(), p1.y(), z0);
         const Point_3 b = Point_3(p2.x(), p2.y(), z0);
         const Point_3 c = Point_3(center.x(), center.y(), z1);
-        
+
         segments.push_back(Segment_3(a, b));
         segments.push_back(Segment_3(a, c));
       }

@@ -67,7 +67,7 @@ public:
 
     partition_2.clear();
 
-    if (contours.size() == 0) 
+    if (contours.size() == 0)
       return;
 
     // Create triangulation.
@@ -110,7 +110,7 @@ public:
 
     partition_2.clear();
 
-    if (segments.size() < 3) 
+    if (segments.size() < 3)
       return;
 
     // Create triangulation.
@@ -149,7 +149,7 @@ private:
 
     partition_2.faces.clear();
     partition_2.faces.reserve(tri.number_of_faces());
-    
+
     fmap.clear();
 
     Partition_face_2 pface;
@@ -194,7 +194,7 @@ private:
     fit != tri.finite_faces_end(); ++fit) {
       const Face_handle fh = static_cast<Face_handle>(fit);
 
-      auto& edges = partition_2.faces[idx].edges; 
+      auto& edges = partition_2.faces[idx].edges;
       auto& neighbors = partition_2.faces[idx].neighbors;
 
       edges.clear(); edges.reserve(3);
@@ -225,7 +225,7 @@ private:
 
     partition_2.edges.clear();
     partition_2.edges.reserve(tri.number_of_faces());
-    for (auto eh = tri.finite_edges_begin(); 
+    for (auto eh = tri.finite_edges_begin();
     eh != tri.finite_edges_end(); ++eh) {
       const Face_handle fh = eh->first;
       const std::size_t idx = eh->second;
@@ -267,7 +267,7 @@ private:
     std::vector<Point_2> bbox;
     CGAL::Identity_property_map<Point_2> pmap;
     internal::bounding_box_2(points, pmap, bbox);
-    
+
     // Visibility.
     for (auto fit = tri.finite_faces_begin();
     fit != tri.finite_faces_end(); ++fit) {
@@ -336,7 +336,7 @@ private:
         const auto q1 = f2->vertex(j);
         const auto q2 = f2->vertex(jp);
 
-        if ( 
+        if (
           ( p1 == q1 && p2 == q2) ||
           ( p1 == q2 && p2 == q1) ) {
 

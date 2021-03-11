@@ -34,7 +34,7 @@ namespace Levels_of_detail {
 namespace internal {
 
   template<
-  typename GeomTraits, 
+  typename GeomTraits,
   typename NeighborQuery>
   class Thinning_2 {
 
@@ -52,11 +52,11 @@ namespace internal {
     { }
 
     void apply(std::vector<Point_2>& points) const {
-      
+
       if (points.empty())
         return;
 
-      std::vector<Point_2> tmp; 
+      std::vector<Point_2> tmp;
       tmp.reserve(points.size());
       Line_2 line;
       std::vector<std::size_t> neighbors;

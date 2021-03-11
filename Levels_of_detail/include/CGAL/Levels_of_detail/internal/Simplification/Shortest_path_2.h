@@ -74,12 +74,12 @@ namespace internal {
     const Weight_t max_weight = std::numeric_limits<FT>::infinity();
 
     struct Neighbor {
-      
+
       Vertex_t target;
       Weight_t weight;
-      
+
       Neighbor(
-        Vertex_t arg_target, Weight_t arg_weight) : 
+        Vertex_t arg_target, Weight_t arg_weight) :
       target(arg_target), weight(arg_weight) { }
     };
 
@@ -122,12 +122,12 @@ namespace internal {
       const std::vector< std::vector<Point_2> >& regions,
       const std::vector<Segment_2>& segments,
       std::vector< std::vector<Segment_2> >& contours) const {
-      
+
       std::vector<GSegment> gsegments;
       create_graph_segments(regions, segments, gsegments);
 
       std::vector<GNode> gnodes;
-      std::map<std::size_t, std::pair<std::size_t, std::size_t> > gmap; 
+      std::map<std::size_t, std::pair<std::size_t, std::size_t> > gmap;
       create_graph_nodes_gsegments(gsegments, gmap, gnodes);
 
       std::vector<GComponent> gcomponents;
@@ -138,7 +138,7 @@ namespace internal {
       std::vector<Segment_2> out_segments;
       for (const auto& out_contour : out_contours) {
         if (out_contour.size() == 0) continue;
-        
+
         out_segments.clear();
         for (std::size_t i = 0; i < out_contour.size() - 1; ++i) {
           const std::size_t ip = i + 1;
@@ -162,8 +162,8 @@ namespace internal {
       CGAL_assertion(segments.size() == regions.size());
 
       gsegments.clear();
-      gsegments.reserve(segments.size()); 
-      
+      gsegments.reserve(segments.size());
+
       GSegment gsegment;
       for (std::size_t i = 0; i < segments.size(); ++i) {
         const auto& segment = segments[i];
@@ -175,8 +175,8 @@ namespace internal {
         gsegments.push_back(gsegment);
       }
 
-      std::sort(gsegments.begin(), gsegments.end(), 
-      [](const GSegment& a, const GSegment& b) -> bool { 
+      std::sort(gsegments.begin(), gsegments.end(),
+      [](const GSegment& a, const GSegment& b) -> bool {
         return a.distance() > b.distance();
       });
     }
@@ -185,7 +185,7 @@ namespace internal {
       const std::vector<GSegment>& gsegments,
       std::map<std::size_t, std::pair<std::size_t, std::size_t> >& gmap,
       std::vector<GNode>& gnodes) const {
-      
+
       gnodes.clear();
       gnodes.reserve(gsegments.size() * 2);
       gmap.clear();
@@ -193,7 +193,7 @@ namespace internal {
       GNode gnode1, gnode2; std::size_t count = 0;
       for (std::size_t i = 0; i < gsegments.size(); ++i) {
         const auto& segment = gsegments[i].segment;
-        
+
         const auto& s = segment.source();
         const auto& t = segment.target();
 
@@ -219,10 +219,10 @@ namespace internal {
       const FT radius = m_noise_level / FT(2);
       create_graph_neighbors_tree(
         radius, false, -1, -1, gnodes);
-      
+
       std::vector<GNode> sorted = gnodes;
-      std::sort(sorted.begin(), sorted.end(), 
-      [](const GNode& a, const GNode& b) -> bool { 
+      std::sort(sorted.begin(), sorted.end(),
+      [](const GNode& a, const GNode& b) -> bool {
         return a.neighbors.size() < b.neighbors.size();
       });
 
@@ -246,7 +246,7 @@ namespace internal {
           auto& gn = component[i];
           gn.idx = i; gn.neighbors.clear();
         }
-        
+
         std::list<Vertex_t> path;
         FT path_length = FT(-1);
 
@@ -255,9 +255,9 @@ namespace internal {
         create_graph_neighbors_all(false, -1, -1, component);
 
         for (std::size_t j = 0; j < component.size(); ++j) {
-          for (std::size_t i = 0; i < component.size(); ++i) {      
+          for (std::size_t i = 0; i < component.size(); ++i) {
             apply_dijkstra(j, i, component, tmp);
-            
+
             clean.clear();
             for (const int idx : tmp) clean.push_back(idx);
             if (clean.size() == 0) continue;
@@ -299,7 +299,7 @@ namespace internal {
       for (const auto& neighbor : neighbors) {
         auto& gnode = gnodes[neighbor.target];
         if (gnode.used) continue;
-        
+
         component.push_back(gnode);
         gnode.used = true;
 
@@ -370,7 +370,7 @@ namespace internal {
         for (const auto& gnode_j : gnodes) {
           const std::size_t j = gnode_j.idx;
           if (i == j) continue;
-          
+
           if (connected) {
             if (i == start && j == end) {
               neighbors_i.push_back(Neighbor(j, max_weight));
@@ -406,11 +406,11 @@ namespace internal {
       dijkstra_compute_paths(
         start, adjacency_list, min_distance, previous);
       path = dijkstra_get_shortest_path_to(end, previous);
-      
+
       /*
       std::cout << "Shortest path found : ";
       std::copy(
-        path.begin(), path.end(), 
+        path.begin(), path.end(),
         std::ostream_iterator<Vertex_t>(std::cout, " "));
       std::cout << std::endl; */
     }
@@ -420,7 +420,7 @@ namespace internal {
       const Adjacency_list_t& adjacency_list,
       std::vector<Weight_t>& min_distance,
       std::vector<Vertex_t>& previous) const {
-        
+
       int n = adjacency_list.size();
 
       min_distance.clear();
@@ -433,25 +433,25 @@ namespace internal {
       std::set< std::pair<Weight_t, Vertex_t> > vertex_queue;
       vertex_queue.insert(
         std::make_pair(min_distance[source], source));
-    
+
       while (!vertex_queue.empty()) {
-        
+
         Weight_t dist = vertex_queue.begin()->first;
         Vertex_t u = vertex_queue.begin()->second;
         vertex_queue.erase(vertex_queue.begin());
-  
+
         const std::vector<Neighbor>& neighbors = adjacency_list[u];
         for (
           typename std::vector<Neighbor>::const_iterator neighbor_iter = neighbors.begin();
           neighbor_iter != neighbors.end();
           neighbor_iter++) {
-          
+
           Vertex_t v = neighbor_iter->target;
           Weight_t weight = neighbor_iter->weight;
           Weight_t distance_through_u = dist + weight;
-        
+
           if (distance_through_u < min_distance[v]) {
-            
+
             vertex_queue.erase(std::make_pair(min_distance[v], v));
             min_distance[v] = distance_through_u;
             previous[v] = u;
@@ -462,9 +462,9 @@ namespace internal {
     }
 
     std::list<Vertex_t> dijkstra_get_shortest_path_to(
-      Vertex_t vertex, 
+      Vertex_t vertex,
       const std::vector<Vertex_t>& previous) const {
-      
+
       std::list<Vertex_t> path;
       for ( ; vertex != -1; vertex = previous[vertex])
         path.push_front(vertex);
@@ -475,7 +475,7 @@ namespace internal {
       const std::list<Vertex_t>& path,
       const std::vector<GNode>& gnodes,
       std::vector<Point_2>& contour) const {
-      
+
       contour.clear();
       contour.reserve(path.size());
       for (const int idx : path)

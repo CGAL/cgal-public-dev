@@ -76,7 +76,7 @@ public:
   using Triangle_3 = typename Traits::Triangle_3;
   using Intersect_2 = typename Traits::Intersect_2;
   using Intersect_3 = typename Traits::Intersect_3;
-  
+
   using Image = internal::Image<Traits>;
   using Point_type = typename Image::Point_type;
 
@@ -93,8 +93,8 @@ public:
     const std::vector<Segment_2>& boundary,
     std::vector<Vertex>& vertices,
     std::vector<Edge>& edges,
-    std::vector<Halfedge>& halfedges, 
-    std::vector<Face>& faces, 
+    std::vector<Halfedge>& halfedges,
+    std::vector<Face>& faces,
     const Image& image,
     const std::map<std::size_t, Plane_3>& plane_map,
     const FT min_length_2,
@@ -113,7 +113,7 @@ public:
   m_pi(static_cast<FT>(CGAL_PI)),
   m_angle_threshold(FT(5)),
   m_bound_min(m_angle_bound_2),
-  m_bound_max(FT(90) - m_bound_min) 
+  m_bound_max(FT(90) - m_bound_min)
   { }
 
   void set_face_edges(
@@ -128,7 +128,7 @@ public:
 
   void regularize_face(
     Face& face) {
-    
+
     CGAL_assertion(m_segments.size() != 0);
     /* if (m_angle_bound_2 == FT(0))
       return; */
@@ -156,7 +156,7 @@ public:
         snap_from(edge);
         continue;
       }
-      
+
       if (to.type == Point_type::OUTER_BOUNDARY) {
         snap_to(edge);
         continue;
@@ -201,7 +201,7 @@ private:
 
       if (CGAL::collinear_are_ordered_along_line(
         bound.source(), proj, bound.target())) {
-        
+
         const Triangle_2 triangle = Triangle_2(from.point, to.point, proj);
         const FT area = CGAL::abs(triangle.area());
         if (area < FT(2))
@@ -239,7 +239,7 @@ private:
 
       if (CGAL::collinear_are_ordered_along_line(
         bound.source(), proj, bound.target())) {
-        
+
         const Triangle_2 triangle = Triangle_2(from.point, to.point, proj);
         const FT area = CGAL::abs(triangle.area());
         if (area < FT(2))
@@ -340,7 +340,7 @@ private:
   }
 
   void regularize_positive(
-    const std::size_t start, 
+    const std::size_t start,
     const Indices& indices,
     const Indices& vs,
     const std::size_t end) {
@@ -396,7 +396,7 @@ private:
     }
 
     for (std::size_t i = idx - 1; i >= 0; i-=1) {
-      if (!m_vertices[vs[i]].state) 
+      if (!m_vertices[vs[i]].state)
         return m_vertices[vs[i]].point;
     }
     return m_vertices[vs[0]].point;
@@ -418,13 +418,13 @@ private:
     }
 
     for (std::size_t i = idx + 1; i < vs.size(); i+=1) {
-      if (!m_vertices[vs[i]].state) 
+      if (!m_vertices[vs[i]].state)
         return m_vertices[vs[i]].point;
     }
     return m_vertices[vs[vs.size() - 1]].point;
   }
 
-  void regularize_negative( 
+  void regularize_negative(
     const std::size_t start,
     const Indices& input,
     const Indices& vs,
@@ -476,9 +476,9 @@ private:
 
     const Triangle_2 triangle = Triangle_2(p1, p2, p3);
     const FT area = CGAL::abs(triangle.area());
-    
+
     /* std::cout << area << std::endl << std::endl; */
-    
+
     if (area < FT(2))
       vertex.state = true;
   }
@@ -493,12 +493,12 @@ private:
     const FT dot = CGAL::scalar_product(v1, v2);
     const FT angle_rad = static_cast<FT>(
       std::atan2(CGAL::to_double(det), CGAL::to_double(dot)));
-    const FT angle_deg = angle_rad * FT(180) / m_pi; 
+    const FT angle_deg = angle_rad * FT(180) / m_pi;
     return angle_deg;
   }
 
   FT get_angle_2(const FT angle) {
-    
+
     FT angle_2 = angle;
     if (angle_2 > FT(90)) angle_2 = FT(180) - angle_2;
     else if (angle_2 < -FT(90)) angle_2 = FT(180) + angle_2;
@@ -513,10 +513,10 @@ private:
     segments.reserve(edges.size());
     for (const auto& edge : edges)
       segments.push_back(edge.segment);
-    
+
     Saver saver;
     saver.save_polylines(
-      segments, "/Users/monet/Documents/lod/logs/buildings/tmp/contours/contour-" + 
+      segments, "/Users/monet/Documents/gf/lod/logs/buildings/tmp/contours/contour-" +
       std::to_string(face_index));
   }
 };

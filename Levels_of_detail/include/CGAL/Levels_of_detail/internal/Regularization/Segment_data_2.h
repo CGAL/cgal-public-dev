@@ -31,7 +31,7 @@ namespace Levels_of_detail {
 namespace internal {
 
   template<
-    typename GeomTraits>
+  typename GeomTraits>
   struct Segment_data_2 {
 
   public:

@@ -36,8 +36,8 @@ namespace Levels_of_detail {
 namespace internal {
 
   template<
-    typename GeomTraits, 
-    typename InputRange, 
+    typename GeomTraits,
+    typename InputRange,
     typename SegmentMap>
   class Delaunay_neighbor_query_2 {
 
@@ -56,12 +56,12 @@ namespace internal {
     using Indices_map = std::vector <std::vector <std::size_t>>;
 
     Delaunay_neighbor_query_2(
-      InputRange& input_range, 
+      InputRange& input_range,
       const SegmentMap segment_map = SegmentMap()) :
     m_input_range(input_range),
     m_segment_map(segment_map) { }
 
-    void operator()(const std::size_t query_index, std::vector<std::size_t> & neighbors) { 
+    void operator()(const std::size_t query_index, std::vector<std::size_t> & neighbors) {
       neighbors.clear();
       if(m_map_of_neighbors.size() == 0)
         return;
@@ -70,7 +70,7 @@ namespace internal {
     }
 
     template<typename Range, typename IndexMap = CGAL::Identity_property_map<std::size_t>>
-  	void add_group(const Range& group, const IndexMap index_map = IndexMap()) { 
+  	void add_group(const Range& group, const IndexMap index_map = IndexMap()) {
       std::vector<std::size_t> gr;
       for (const auto & item : group) {
         const std::size_t seg_index = get(index_map, item);
@@ -79,7 +79,7 @@ namespace internal {
 
       if (gr.size() > 1) {
         build_delaunay_triangulation(gr);
-        find_neighbors(); 
+        find_neighbors();
       }
     }
 
@@ -115,13 +115,13 @@ namespace internal {
         Vertex_circulator vc(vit);
         do {
           if(!m_dt.is_infinite(vc)) {
-            CGAL_precondition(vit->info() >= 0 && vit->info() < m_input_range.size() 
+            CGAL_precondition(vit->info() >= 0 && vit->info() < m_input_range.size()
               && vc->info() >= 0 && vc->info() < m_input_range.size());
             m_map_of_neighbors[vit->info()].push_back(vc->info());
           }
           --vc;
         } while (vc != m_dt.incident_vertices(vit));
-      } 
+      }
     }
   };
 

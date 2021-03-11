@@ -52,35 +52,35 @@ namespace internal {
     using FT = typename Traits::FT;
     using Indices = std::vector<std::size_t>;
 
-    using Neighbor_query = 
+    using Neighbor_query =
     internal::Sphere_neighbor_query<Traits, Input_range, Point_map>;
-    using Connected_component_region = 
+    using Connected_component_region =
     internal::Connected_component_region;
-    using Region_growing = 
+    using Region_growing =
     internal::Region_growing<Input_range, Neighbor_query, Connected_component_region>;
 
     Connected_components(
       const Input_range& input_range,
       const Point_map& point_map,
       const FT scale,
-      const std::size_t min_cluster_size) : 
+      const std::size_t min_cluster_size) :
     m_input_range(input_range),
     m_point_map(point_map),
     m_scale(scale),
-    m_min_cluster_size(min_cluster_size) { 
-      
+    m_min_cluster_size(min_cluster_size) {
+
       CGAL_precondition(m_input_range.size() > 0);
     }
 
     template<typename Cluster>
     void create_clusters(std::vector<Cluster>& clusters) const {
-      
+
       Neighbor_query neighbor_query(
         m_input_range, m_scale, m_point_map);
       Connected_component_region region_type(m_min_cluster_size);
       Region_growing region_growing(
         m_input_range, neighbor_query, region_type);
-      
+
       std::vector<Indices> regions;
       region_growing.detect(std::back_inserter(regions));
 

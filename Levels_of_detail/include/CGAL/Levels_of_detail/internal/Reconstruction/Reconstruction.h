@@ -68,12 +68,12 @@ namespace internal {
 
     Reconstruction(
       const Data_structure& data,
-      const Ground& ground, 
-      const Trees& trees, 
+      const Ground& ground,
+      const Trees& trees,
       const Buildings& buildings) :
     m_data(data),
-    m_ground(ground), 
-    m_trees(trees), 
+    m_ground(ground),
+    m_trees(trees),
     m_buildings(buildings)
     { }
 
@@ -107,10 +107,10 @@ namespace internal {
     }
 
     template<typename OutputIterator>
-    boost::optional<OutputIterator> 
+    boost::optional<OutputIterator>
     output_wire0(
       OutputIterator output) const {
-      
+
       std::vector<Tree_ptr> trees;
       m_trees.get_trees(trees);
       std::vector<Building_ptr> buildings;
@@ -128,7 +128,7 @@ namespace internal {
     }
 
     template<typename OutputIterator>
-    boost::optional<OutputIterator> 
+    boost::optional<OutputIterator>
     output_wire1(
       OutputIterator output,
       const FT ground_precision) const {
@@ -136,7 +136,7 @@ namespace internal {
     }
 
     template<typename OutputIterator>
-    boost::optional<OutputIterator> 
+    boost::optional<OutputIterator>
     output_wire2(
       OutputIterator output,
       const FT ground_precision) const {
@@ -150,12 +150,12 @@ namespace internal {
     const Buildings& m_buildings;
 
     template<typename OutputIterator>
-    boost::optional<OutputIterator> 
+    boost::optional<OutputIterator>
     output_wire12(
       const Reconstruction_type type,
       const FT ground_precision,
       OutputIterator output) const {
-      
+
       std::vector<Tree_ptr> trees;
       m_trees.get_trees(trees);
       std::vector<Building_ptr> buildings;
@@ -190,7 +190,7 @@ namespace internal {
       VerticesOutputIterator vertices,
       FacesOutputIterator faces) const {
 
-      if (m_data.verbose) 
+      if (m_data.verbose)
         std::cout << std::endl << "- Computing LOD0" << std::endl;
 
       std::vector<Tree_ptr> trees;
@@ -216,8 +216,8 @@ namespace internal {
       VerticesOutputIterator vertices,
       FacesOutputIterator faces,
       const FT ground_precision) const {
-      
-      if (m_data.verbose) 
+
+      if (m_data.verbose)
         std::cout << std::endl << "- Computing LOD1" << std::endl;
       return lod12(vertices, faces, Reconstruction_type::LOD1, ground_precision);
     }
@@ -231,7 +231,7 @@ namespace internal {
       FacesOutputIterator faces,
       const FT ground_precision) const {
 
-      if (m_data.verbose) 
+      if (m_data.verbose)
         std::cout << std::endl << "- Computing LOD2" << std::endl;
       return lod12(vertices, faces, Reconstruction_type::LOD2, ground_precision);
     }
@@ -240,7 +240,7 @@ namespace internal {
     void add_footprints(
       Builder& builder,
       const std::vector<Tree_ptr>& trees,
-      const std::vector<Building_ptr>& buildings, 
+      const std::vector<Building_ptr>& buildings,
       const Reconstruction_type type) const {
 
       builder.initialize();
@@ -255,10 +255,10 @@ namespace internal {
     typename Builder,
     typename Urban_object>
     void add_constraints(
-      Builder& builder, 
+      Builder& builder,
       const std::vector<Urban_object>& objects,
       const Reconstruction_type type) const {
-      
+
       switch (type) {
         case Reconstruction_type::LOD0: {
           for (const auto& object : objects)
@@ -275,8 +275,8 @@ namespace internal {
             builder.add_constraints(object->edges2);
           return;
         }
-        default: { 
-          return; 
+        default: {
+          return;
         }
       }
     }
@@ -285,10 +285,10 @@ namespace internal {
     typename Builder,
     typename Urban_object>
     void tag_faces(
-      Builder& builder, 
+      Builder& builder,
       const std::vector<Urban_object>& objects,
       const Reconstruction_type type) const {
-      
+
       switch (type) {
         case Reconstruction_type::LOD0: {
           for (const auto& object : objects)
@@ -337,7 +337,7 @@ namespace internal {
       // Output.
       Indexer indexer;
       std::size_t num_vertices = 0;
-  
+
       if (!trees.empty()) output_urban_objects(
         ground_base.triangulation,
         trees, "trees", type,
@@ -363,7 +363,7 @@ namespace internal {
       VerticesOutputIterator vertices,
       FacesOutputIterator faces) const {
 
-      if (m_data.verbose) 
+      if (m_data.verbose)
         std::cout << "* adding " << name << std::endl;
 
       switch (type) {

@@ -93,7 +93,7 @@ public:
       points.clear(); indices.clear(); std::size_t idx = 0;
       for (auto& item : items) {
         if (!item.second) {
-            
+
           const auto& p = get(m_point_map_2, *(m_input_range.begin() + item.first));
           Location_type type; int stub;
           const auto fh = tri.locate(p, type, stub);
@@ -107,7 +107,7 @@ public:
 
       // Compute total face area.
       FT face_area = FT(0);
-      for (auto fh = tri.finite_faces_begin(); 
+      for (auto fh = tri.finite_faces_begin();
       fh != tri.finite_faces_end(); ++fh) {
 
         const Triangle_2 triangle = Triangle_2(

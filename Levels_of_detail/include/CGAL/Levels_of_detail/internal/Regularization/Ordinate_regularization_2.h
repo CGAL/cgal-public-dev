@@ -39,7 +39,7 @@ namespace Levels_of_detail {
 namespace internal {
 
   template<
-    typename GeomTraits, 
+    typename GeomTraits,
     typename InputRange,
     typename SegmentMap>
   class Ordinate_regularization_2 {
@@ -81,7 +81,7 @@ namespace internal {
       if (CGAL::abs(tar_val) < bound(i) + bound(j)) {
         m_targets[std::make_pair(i, j)] = tar_val;
       }
-  
+
       return tar_val;
     }
 
@@ -98,7 +98,7 @@ namespace internal {
       Targets_map targets;
 
       for (const auto & group : m_parallel_groups) {
-        if (group.size() < 2) continue; 
+        if (group.size() < 2) continue;
 
         collinear_groups_by_ordinates.clear();
         segments.clear();
@@ -114,7 +114,7 @@ namespace internal {
     }
 
     template<typename Range, typename IndexMap = CGAL::Identity_property_map<std::size_t>>
-  	void add_group(const Range& group, const IndexMap index_map = IndexMap()) { 
+  	void add_group(const Range& group, const IndexMap index_map = IndexMap()) {
       std::vector<std::size_t> gr;
       for (const auto & item : group) {
         const std::size_t seg_index = get(index_map, item);
@@ -142,7 +142,7 @@ namespace internal {
         max_length = CGAL::max(max_length, length);
         norms[segment.second.m_index] = length;
       }
-      
+
       for (std::size_t i = 0; i < norms.size(); ++i) {
         norms[i] /= max_length;
         norms[i] *= m_d_max;
@@ -181,7 +181,7 @@ namespace internal {
         seg_data.m_reference_coordinates = internal::transform_coordinates(
                 seg_data.m_barycentre, frame_origin, seg_data.m_orientation);
         m_segments.emplace(seg_index, seg_data);
-      } 
+      }
     }
 
     void build_grouping_data(const std::vector <std::size_t> & group,
@@ -272,7 +272,7 @@ namespace internal {
 
       Point new_source = Point(source.x() + difference * final_normal.x(), source.y() + difference * final_normal.y());
       Point new_target = Point(target.x() + difference * final_normal.x(), target.y() + difference * final_normal.y());
-      
+
       const FT bx = (new_source.x() + new_target.x()) / FT(2);
       const FT by = (new_source.y() + new_target.y()) / FT(2);
 
@@ -287,7 +287,7 @@ namespace internal {
       Segment_data & seg_data = m_segments.at(i);
 
       seg_data.m_direction = direction;
-      if (seg_data.m_direction.y() < FT(0) || (seg_data.m_direction.y() == FT(0) && seg_data.m_direction.x() < FT(0))) 
+      if (seg_data.m_direction.y() < FT(0) || (seg_data.m_direction.y() == FT(0) && seg_data.m_direction.x() < FT(0)))
         seg_data.m_direction = -seg_data.m_direction;
 
       Vector final_normal = Vector(-seg_data.m_direction.y(), seg_data.m_direction.x());
@@ -298,12 +298,12 @@ namespace internal {
 
       if (CGAL::abs(seg_data.m_direction.x()) > CGAL::abs(seg_data.m_direction.y())) {
         x1 = source.x() + difference * final_normal.x();
-        x2 = target.x() + difference * final_normal.x(); 
+        x2 = target.x() + difference * final_normal.x();
 
         y1 = (-c - a * x1) / b;
         y2 = (-c - a * x2) / b;
-      } 
-      else {    
+      }
+      else {
         y1 = source.y() + difference * final_normal.y();
         y2 = target.y() + difference * final_normal.y();
 

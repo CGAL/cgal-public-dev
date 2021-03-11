@@ -85,9 +85,9 @@ public:
 
   using Identity_map_2 = CGAL::Identity_property_map<Point_2>;
 
-  using K_neighbor_query = 
+  using K_neighbor_query =
     internal::K_neighbor_query<Traits, Input_range, Point_map_2>;
-  using Sphere_neighbor_query = 
+  using Sphere_neighbor_query =
     internal::Sphere_neighbor_query<Traits, Input_range, Point_map_2>;
 
   Visibility_2(
@@ -126,7 +126,7 @@ public:
       const auto& polygon = face.outer_polygon;
 
       if (polygon.size() < 3) {
-        
+
         face.visibility = Visibility_label::OUTSIDE;
         face.inside = FT(0); face.outside = FT(1); continue;
       }
@@ -139,7 +139,7 @@ public:
         const auto& p1 = polygon[i];
         const auto& p2 = polygon[ip];
         const Triangle_2 triangle = Triangle_2(p0, p1, p2);
-        
+
         const FT area = CGAL::abs(triangle.area());
         if (area <= FT(1) / FT(1000))
           continue;
@@ -148,10 +148,10 @@ public:
         Point_generator generator(triangle, m_random);
         std::copy_n(
           generator, m_samples_per_triangle, std::back_inserter(samples));
-        
+
         for (const auto& p : samples) {
           neighbor_query(p, neighbors);
-          
+
           // Use with sphere neighbor query!
           if (neighbors.size() == 0) out += FT(1);
           else in += FT(1);
@@ -176,7 +176,7 @@ public:
       face.inside = in; face.outside = out;
     }
 
-    // save_samples(samples, "/Users/monet/Documents/lod/logs/buildings/tmp/samples");
+    // save_samples(samples, "/Users/monet/Documents/gf/lod/logs/buildings/tmp/samples");
   }
 
 private:
@@ -185,7 +185,7 @@ private:
   const Visibility_map& m_visibility_map;
 
   Random m_random;
-  
+
   const FT m_k;
   const FT m_radius;
 
@@ -197,7 +197,7 @@ private:
   void save_samples(
     const std::vector<Point_2>& samples,
     const std::string name) {
-    
+
     std::vector<Point_3> points;
     points.reserve(samples.size());
     for (const auto& p: samples)

@@ -104,17 +104,17 @@ namespace internal {
     void merge_segments(
       std::vector<Segment_2>& segments,
       const bool use_weighted = true) {
-      
+
       std::vector<Segment_2> merged;
 
       std::size_t num_groups = 0;
-      std::vector<Segment_2> group; 
+      std::vector<Segment_2> group;
       std::vector<bool> states(segments.size(), false);
 
       for (std::size_t i = 0; i < segments.size(); ++i) {
         const auto& segment_i = segments[i];
         if (states[i]) continue;
-        
+
         create_collinear_group(
           m_ordinate_bound, segments, segment_i, i, states, group);
 
@@ -125,7 +125,7 @@ namespace internal {
           ref_segment = group[seg_idx];
         }
         const bool success = create_merged_segment(group, ref_segment);
-        
+
         if (success) {
           merged.push_back(ref_segment); ++num_groups;
         }
@@ -145,7 +145,7 @@ namespace internal {
         m_ordinate_bound, segments_outer, segments_inner);
       connect_to_corners(
         segments_outer, segments_inner);
-      
+
       std::vector<Segment_2> clean;
       remove_zero_length_segments(segments_inner, clean);
       segments_inner = clean;
@@ -155,7 +155,7 @@ namespace internal {
     const FT m_ordinate_bound;
     const FT m_angle_threshold;
     const FT m_pi;
-    
+
     const std::size_t m_k;
     const std::size_t m_num_samples_per_segment;
 
@@ -176,23 +176,23 @@ namespace internal {
         create_collinear_group(
           ordinate_bound,
           segments_inner, segment_i, std::size_t(-1), states, group);
-        
+
         if (group.size() > 0) {
           Segment_2 ref_segment = segment_i;
           const bool success = create_merged_segment(group, ref_segment);
-          
+
           if (success) {
             merged.push_back(ref_segment);
             ++num_groups;
           }
         }
       }
-      
+
       for (std::size_t i = 0; i < segments_inner.size(); ++i) {
         if (states[i]) continue;
         merged.push_back(segments_inner[i]);
       }
-      
+
       segments_inner = merged;
       std::cout << "Num collinear groups (wrt outer): " << num_groups << std::endl;
     }
@@ -212,21 +212,21 @@ namespace internal {
         states[i] = true;
       }
 
-      const auto p = 
+      const auto p =
         internal::middle_point_2(segment_i.source(), segment_i.target());
       for (std::size_t j = 0; j < segments.size(); ++j) {
         const auto& segment_j = segments[j];
         if (states[j]) continue;
-        
+
         const FT angle   = angle_degree_2(segment_i, segment_j);
         const FT angle_2 = get_angle_2(angle);
 
         if (CGAL::abs(angle_2) <= m_angle_threshold) {
           const Line_2 line = Line_2(segment_j.source(), segment_j.target());
-            
+
           const auto q = line.projection(p);
           const FT distance = internal::distance(p, q);
-          
+
           if (distance <= ordinate_bound) {
             group.push_back(segment_j); states[j] = true;
           }
@@ -238,9 +238,9 @@ namespace internal {
       const std::vector<Segment_2>& group,
       Segment_2& ref_segment) {
 
-      const Line_2 line = 
+      const Line_2 line =
         Line_2(ref_segment.source(), ref_segment.target());
-      
+
       if (line.a() == FT(0) && line.b() == FT(0) && line.c() == FT(0))
         return false;
 
@@ -267,12 +267,12 @@ namespace internal {
       const Vector_2 ref_vector = segment.to_vector();
       Point_2 ref_point;
       internal::compute_barycenter_2(points, ref_point);
-      
+
       Point_2 p, q;
       for (const auto& point : points) {
         const Vector_2 curr_vector(ref_point, point);
         const FT value = CGAL::scalar_product(curr_vector, ref_vector);
-        
+
         if (value < min_proj_value) {
           min_proj_value = value;
           p = point; }
@@ -289,9 +289,9 @@ namespace internal {
       std::vector<FT> weights;
       compute_distance_weights(segments, weights);
       const Segment_2 ref_segment = find_central_segment(segments);
-      const Segment_2 result = 
+      const Segment_2 result =
         compute_weighted_segment(segments, weights, ref_segment);
-      
+
       if (result.source() == result.target())
         return ref_segment;
       return result;
@@ -306,10 +306,10 @@ namespace internal {
 
       FT sum_distance = FT(0);
       for (const auto& segment : segments) {
-        const FT distance = 
+        const FT distance =
           internal::distance(segment.source(), segment.target());
         sum_distance += distance;
-      
+
         weights.push_back(distance);
       }
 
@@ -351,7 +351,7 @@ namespace internal {
       std::size_t seg_idx = std::size_t(-1);
       FT max_length = -FT(1);
       for (std::size_t i = 0; i < segments.size(); ++i) {
-          
+
         const FT length = segments[i].squared_length();
         if (length > max_length) {
 
@@ -373,7 +373,7 @@ namespace internal {
       const Point_2 b = internal::middle_point_2(s, t);
 
       Vector_2 dir = Vector_2(FT(0), FT(0));
-      for (std::size_t i = 0; i < weights.size(); ++i) {  
+      for (std::size_t i = 0; i < weights.size(); ++i) {
         const FT weight = weights[i];
 
         const Segment_2& segment = segments[i];
@@ -406,7 +406,7 @@ namespace internal {
 
       std::vector<Point_pair> pair_range;
       create_pair_range(segments_outer, pair_range);
-      
+
       Point_map point_map;
       K_neighbor_query neighbor_query(pair_range, FT(m_k), point_map);
 
@@ -418,7 +418,7 @@ namespace internal {
         neighbor_query(s, neighbors);
         update_point(
           segments_outer, pair_range, neighbors, s);
-        
+
         neighbor_query(t, neighbors);
         update_point(
           segments_outer, pair_range, neighbors, t);
@@ -430,7 +430,7 @@ namespace internal {
     void create_pair_range(
       const std::vector<Segment_2>& segments_outer,
       std::vector<Point_pair>& pair_range) {
-      
+
       create_range(segments_outer, pair_range);
       find_corners(segments_outer, pair_range);
     }
@@ -438,18 +438,18 @@ namespace internal {
     void create_range(
       const std::vector<Segment_2>& segments_outer,
       std::vector<Point_pair>& pair_range) {
-      
+
       pair_range.clear();
       std::vector<Point_2> samples; Range_data data;
       for (std::size_t i = 0; i < segments_outer.size(); ++i) {
         const auto& segment = segments_outer[i];
-        
+
         const auto& s = segment.source();
         const auto& t = segment.target();
 
         samples.clear();
         Point_generator generator(s, t, m_num_samples_per_segment);
-        std::copy_n(generator, m_num_samples_per_segment - 1, 
+        std::copy_n(generator, m_num_samples_per_segment - 1,
         std::back_inserter(samples));
 
         data.is_corner = true;
@@ -470,10 +470,10 @@ namespace internal {
 
       std::size_t num_corners = 0;
       for (auto& pair : pair_range) {
-        
+
         const auto& p = pair.first;
         auto& data = pair.second;
-        
+
         if (data.is_corner) {
           const bool success = find_corner(p, segments_outer, data);
           if (success) ++num_corners;
@@ -505,7 +505,7 @@ namespace internal {
     void update_point(
       const std::vector<Segment_2>& segments_outer,
       const std::vector<Point_pair>& pair_range,
-      const Indices& neighbors, 
+      const Indices& neighbors,
       Point_2& query) {
 
       for (const std::size_t idx : neighbors) {
@@ -514,7 +514,7 @@ namespace internal {
         const auto& data = pair_range[idx].second;
 
         if (data.seg_i != std::size_t(-1) && data.seg_j != std::size_t(-1)) {
-        
+
           const auto& segment_i = segments_outer[data.seg_i];
           const auto& segment_j = segments_outer[data.seg_j];
 
@@ -543,12 +543,12 @@ namespace internal {
 		  const FT dot = CGAL::scalar_product(v1, v2);
       const FT angle_rad = static_cast<FT>(
         std::atan2(CGAL::to_double(det), CGAL::to_double(dot)));
-      const FT angle_deg = angle_rad * FT(180) / m_pi; 
+      const FT angle_deg = angle_rad * FT(180) / m_pi;
       return angle_deg;
     }
 
     FT get_angle_2(const FT angle) {
-      
+
       FT angle_2 = angle;
       if (angle_2 > FT(90)) angle_2 = FT(180) - angle_2;
       else if (angle_2 < -FT(90)) angle_2 = FT(180) + angle_2;
@@ -558,17 +558,17 @@ namespace internal {
     void save_polylines(
       const std::vector<Segment_2>& segments,
       const std::string name) {
-      
+
       CGAL_assertion(segments.size() > 0);
       std::vector< std::vector<Point_3> > polylines(segments.size());
       for (std::size_t i = 0; i < segments.size(); ++i) {
         const Point_2& s = segments[i].source();
         const Point_2& t = segments[i].target();
-        
+
         polylines[i].push_back(Point_3(s.x(), s.y(), FT(0)));
         polylines[i].push_back(Point_3(t.x(), t.y(), FT(0)));
       }
-      
+
       Saver<Traits> saver;
       saver.export_polylines(polylines, name);
     }

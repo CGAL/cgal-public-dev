@@ -39,6 +39,7 @@ namespace internal {
   class Stored_neighbor_query {
 
   public:
+
     using Traits = GeomTraits;
     using Input_range = InputRange;
 

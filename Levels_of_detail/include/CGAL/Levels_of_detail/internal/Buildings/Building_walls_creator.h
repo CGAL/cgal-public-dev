@@ -66,7 +66,7 @@ namespace internal {
     using Vector_3 = typename Traits::Vector_3;
     using Segment_2 = typename Traits::Segment_2;
     using Line_2 = typename Traits::Line_2;
-    
+
     using Points_2 = std::vector<Point_2>;
     using Vectors_2 = std::vector<Vector_2>;
 
@@ -81,7 +81,7 @@ namespace internal {
     using First_of_pair_map = CGAL::First_of_pair_property_map<Pair_item_2>;
     using Second_of_pair_map = CGAL::Second_of_pair_property_map<Pair_item_2>;
 
-    using Boundary_point_map_2 = 
+    using Boundary_point_map_2 =
     internal::Item_property_map<Points_2, Identity_map>;
 
     using K_neighbor_query =
@@ -106,11 +106,11 @@ namespace internal {
       Points_3& wall_points, Points_3& roof_points,
       Vectors_3& wall_normals, Vectors_3& roof_normals) {
 
-      using Identity_map_3 = 
+      using Identity_map_3 =
         CGAL::Identity_property_map<Point_3>;
       using SNQ =
         internal::Sphere_neighbor_query<Traits, Points_3, Identity_map_3>;
-      using NE3 = 
+      using NE3 =
         internal::Estimate_normals_3<Traits, Points_3, Identity_map_3, SNQ>;
 
       // Compute normals.
@@ -125,8 +125,8 @@ namespace internal {
 
       // Create wall and roof points.
       create_wall_and_roof_points(
-        region_growing_angle_3, 
-        input_points, input_normals, 
+        region_growing_angle_3,
+        input_points, input_normals,
         wall_points, roof_points,
         wall_normals, roof_normals);
     }
@@ -143,7 +143,7 @@ namespace internal {
 
       const Vector_3 ref = Vector_3(FT(0), FT(0), FT(1));
       for (std::size_t i = 0; i < input_points.size(); ++i) {
-        
+
         const auto& p = input_points[i];
         const auto& n = input_normals[i];
 
@@ -151,12 +151,12 @@ namespace internal {
         if (angle > FT(90)) angle = FT(180) - angle;
         angle = FT(90) - angle;
         if (angle <= region_growing_angle_3) {
-          
+
           wall_points.push_back(p);
           wall_normals.push_back(n);
 
         } else {
-          
+
           roof_points.push_back(p);
           roof_normals.push_back(n);
         }
@@ -169,7 +169,7 @@ namespace internal {
       const FT region_growing_angle_2,
       const FT region_growing_min_length_2,
       std::vector<Indices>& regions) {
-      
+
       Identity_map identity_map;
       Sphere_neighbor_query neighbor_query(
         m_boundary_points_2, region_growing_scale_2, identity_map);
@@ -188,7 +188,7 @@ namespace internal {
       const FT region_growing_min_length_2,
       Neighbor_query& neighbor_query,
       std::vector<Indices>& regions) {
-    
+
       apply_region_growing(
         region_growing_noise_level_2,
         region_growing_angle_2,
@@ -208,7 +208,7 @@ namespace internal {
       Boundary_point_map_2 point_map_2(
         m_boundary_points_2, identity_map);
 
-      Line_2 line; Point_2 p, q; 
+      Line_2 line; Point_2 p, q;
       std::vector<std::size_t> indices;
       for (const auto& item_range : regions) {
         indices.clear();
@@ -239,7 +239,7 @@ namespace internal {
       Boundary_point_map_2 point_map_2(
         m_boundary_points_2, identity_map);
 
-      Line_2 line; Point_2 p, q; 
+      Line_2 line; Point_2 p, q;
       std::vector<std::size_t> indices;
       for (std::size_t j = 0; j < regions.size(); ++j) {
         const auto& item_range = regions[j];
@@ -262,17 +262,17 @@ namespace internal {
     void save_polylines(
       const std::vector<Segment_2>& segments,
       const std::string name) {
-      
+
       CGAL_assertion(segments.size() > 0);
       std::vector< std::vector<Point_3> > polylines(segments.size());
       for (std::size_t i = 0; i < segments.size(); ++i) {
         const Point_2& s = segments[i].source();
         const Point_2& t = segments[i].target();
-        
+
         polylines[i].push_back(Point_3(s.x(), s.y(), FT(0)));
         polylines[i].push_back(Point_3(t.x(), t.y(), FT(0)));
       }
-      
+
       Saver saver;
       saver.export_polylines(polylines, name);
     }
@@ -285,7 +285,7 @@ namespace internal {
         return;
 
       segments.clear();
-        
+
       Identity_map identity_map;
       Otr otr(m_boundary_points_2, identity_map);
       otr.run_under_wasserstein_tolerance(noise_level);
@@ -311,13 +311,13 @@ namespace internal {
       regions.clear();
       Identity_map identity_map;
 
-      using Normal_estimator_2 = 
+      using Normal_estimator_2 =
       internal::Estimate_normals_2<Traits, Points_2, Identity_map, Neighbor_query>;
-      using LSLF_region = 
+      using LSLF_region =
       internal::Least_squares_line_fit_region<Traits, Pair_range_2, First_of_pair_map, Second_of_pair_map>;
       using LSLF_sorting =
       internal::Least_squares_line_fit_sorting<Traits, Points_2, Neighbor_query, Identity_map>;
-      using Region_growing_2 = 
+      using Region_growing_2 =
       internal::Region_growing<Points_2, Neighbor_query, LSLF_region, typename LSLF_sorting::Seed_map>;
 
       Vectors_2 normals;
@@ -334,7 +334,7 @@ namespace internal {
       First_of_pair_map point_map;
       Second_of_pair_map normal_map;
       LSLF_region region(
-        range, 
+        range,
         region_growing_noise_level_2,
         region_growing_angle_2,
         region_growing_min_length_2,

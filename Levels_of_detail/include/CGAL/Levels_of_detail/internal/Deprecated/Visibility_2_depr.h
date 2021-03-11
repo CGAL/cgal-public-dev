@@ -42,7 +42,7 @@
   //     points, visibility_scale_2, m_data.point_map_2);
   //   const Visibility_2 visibility(
   //     points,
-  //     visibility_query, 
+  //     visibility_query,
   //     m_data.point_map_2,
   //     m_data.visibility_map_d);
   //   visibility.compute(m_partition_2);
@@ -94,7 +94,7 @@ namespace internal {
       const Input_range& input_range,
       const Neighbor_query& neighbor_query,
       const Point_map_2& point_map_2,
-      const Visibility_map& visibility_map) : 
+      const Visibility_map& visibility_map) :
     m_input_range(input_range),
     m_neighbor_query(neighbor_query),
     m_point_map_2(point_map_2),
@@ -103,7 +103,7 @@ namespace internal {
     { }
 
     void compute(Partition_2& partition) const {
-      
+
       if (partition.empty()) return;
       label_exterior_faces(partition.faces);
       for (auto& face : partition.faces)
@@ -124,11 +124,11 @@ namespace internal {
 
     void label_exterior_faces(
       std::vector<Face>& faces) const {
-      
+
       // std::vector<Point_2> bbox;
       // internal::bounding_box_2(m_input_range, m_point_map_2, bbox);
       for (auto& face : faces) {
-        
+
         face.exterior = false;
         const auto& neighbors = face.neighbors;
         for (const int idx : neighbors) {
@@ -155,7 +155,7 @@ namespace internal {
     //   const Point_2& top = bbox[2];
     //   const auto& tri = face.base.delaunay;
 
-    //   for (auto fh = tri.finite_faces_begin(); 
+    //   for (auto fh = tri.finite_faces_begin();
     //   fh != tri.finite_faces_end(); ++fh) {
 
     //     const Point_2 b = CGAL::barycenter(
@@ -174,20 +174,20 @@ namespace internal {
 
       std::vector< std::pair<Triangle_2, FT> > probability;
       create_probability(face, probability);
-              
+
       const FT mean_value = compute_mean_value(probability);
       CGAL_assertion(mean_value >= FT(0) && mean_value <= FT(1));
       if (mean_value > FT(1) / FT(2))
         face.visibility = Visibility_label::INSIDE;
       else
         face.visibility = Visibility_label::OUTSIDE;
-      
+
       face.inside = mean_value;
       face.outside = FT(1) - mean_value;
     }
 
     void create_probability(
-      const Face& face, 
+      const Face& face,
       std::vector< std::pair<Triangle_2, FT> >& probability) const {
 
       const auto& tri = face.base.delaunay;
@@ -197,7 +197,7 @@ namespace internal {
       FT area = FT(0); Triangle_2 triangle;
       for (auto fh = tri.finite_faces_begin();
       fh != tri.finite_faces_end(); ++fh) {
-        
+
         triangle = Triangle_2(
           fh->vertex(0)->point(),
           fh->vertex(1)->point(),
@@ -223,7 +223,7 @@ namespace internal {
           value += get_function_value(point, neighbors);
         mean_value += value;
       }
-      
+
       mean_value /= static_cast<FT>(m_num_probes);
       return mean_value;
     }
@@ -233,7 +233,7 @@ namespace internal {
       Point_2& point) const {
 
       const FT key = static_cast<FT>(
-        CGAL::to_double(probability.back().second) * 
+        CGAL::to_double(probability.back().second) *
         (rand() / static_cast<double>(RAND_MAX)));
 
       for (std::size_t i = 0; i < probability.size() - 1; ++i) {
@@ -242,8 +242,8 @@ namespace internal {
           return;
         }
       }
-      std::cerr << 
-        "Error (compute_random_point_in_triangles()): probability is out of range!" 
+      std::cerr <<
+        "Error (compute_random_point_in_triangles()): probability is out of range!"
       << std::endl;
       point = Point_2(FT(0), FT(0));
     }
@@ -251,7 +251,7 @@ namespace internal {
     void compute_random_point_in_triangle(
       const Triangle_2& triangle,
       Point_2& point) const {
-      
+
       const Vector_2 v(triangle[0], triangle[1]);
       const Vector_2 w(triangle[0], triangle[2]);
       point = triangle[0];
@@ -272,10 +272,10 @@ namespace internal {
     FT get_function_value(
       const Point_2& p,
       const std::vector<std::size_t>& neighbors) const {
-      
+
       std::size_t final_idx = 0; FT min_dist = internal::max_value<FT>();
       for (std::size_t i = 0; i < neighbors.size(); ++i) {
-        const Point_2& q = 
+        const Point_2& q =
         get(m_point_map_2, *(m_input_range.begin() + neighbors[i]));
         const FT sq_dist = CGAL::squared_distance(p, q);
         if (sq_dist < min_dist) {
@@ -284,7 +284,7 @@ namespace internal {
         }
       }
 
-      const double value = 
+      const double value =
       get(m_visibility_map, *(m_input_range.begin() + neighbors[final_idx]));
       return static_cast<FT>(value);
     }

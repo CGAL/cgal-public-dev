@@ -75,7 +75,7 @@ public:
   using Triangle_3 = typename Traits::Triangle_3;
   using Intersect_2 = typename Traits::Intersect_2;
   using Intersect_3 = typename Traits::Intersect_3;
-  
+
   using Image = internal::Image<Traits>;
   using Point_type = typename Image::Point_type;
 
@@ -91,7 +91,7 @@ public:
     const std::vector<Segment_2>& boundary,
     std::vector<Vertex>& vertices,
     std::vector<Edge>& edges,
-    std::vector<Halfedge>& halfedges, 
+    std::vector<Halfedge>& halfedges,
     const Image& image,
     const std::map<std::size_t, Plane_3>& plane_map,
     const FT noise_level_2) :
@@ -102,7 +102,7 @@ public:
   m_image(image),
   m_plane_map(plane_map),
   m_noise_level_2(noise_level_2),
-  m_pi(static_cast<FT>(CGAL_PI)) 
+  m_pi(static_cast<FT>(CGAL_PI))
   { }
 
   void simplify_face(const Face& face) {
@@ -112,18 +112,18 @@ public:
       const auto& he = m_halfedges[he_idx];
       const std::size_t query_idx = he.from_vertex;
       auto& vertex = m_vertices[query_idx];
-      
+
       if (vertex.type == Point_type::OUTER_CORNER) {
         simplify_both(free, linear); continue;
       }
 
       if (vertex.type == Point_type::OUTER_BOUNDARY) {
-        simplify_both(free, linear); 
+        simplify_both(free, linear);
         project_linear_vertex(vertex); continue;
       }
 
       if (vertex.type == Point_type::CORNER) {
-        simplify_both(free, linear); 
+        simplify_both(free, linear);
         project_linear_vertex(vertex); continue;
       }
 
@@ -189,7 +189,7 @@ private:
   }
 
   void project_linear_vertex(Vertex& vertex) {
-    
+
     for (const std::size_t label : vertex.labels) {
       if (label == std::size_t(-1)) {
         /*
@@ -268,7 +268,7 @@ private:
 
     const FT distance = internal::distance(res, vertex.point);
     if (distance < m_noise_level_2) {
-      
+
       if (vertex.type == Point_type::CORNER) {
         /* vertex.point = res; */
         vertex.used = true;
@@ -306,7 +306,7 @@ private:
     const auto p2 = line_3.point(1);
     const auto q1 = Point_2(p1.x(), p1.y());
     const auto q2 = Point_2(p2.x(), p2.y());
-    
+
     line_2 = Line_2(q1, q2);
     return true;
   }
@@ -325,7 +325,7 @@ private:
       }
     }
     if (!found) return false;
-    
+
     point_2 = Point_2(point_3.x(), point_3.y());
     return true;
   }
@@ -333,11 +333,11 @@ private:
   bool intersect_2(
     const Line_2& line_1, const Line_2& line_2,
     Point_2& in_point) {
-    
-    typename std::result_of<Intersect_2(Line_2, Line_2)>::type result 
+
+    typename std::result_of<Intersect_2(Line_2, Line_2)>::type result
     = CGAL::intersection(line_1, line_2);
     if (result) {
-      if (const Line_2* line = boost::get<Line_2>(&*result)) 
+      if (const Line_2* line = boost::get<Line_2>(&*result))
         return false;
       else {
         const Point_2* point = boost::get<Point_2>(&*result);
@@ -349,14 +349,14 @@ private:
 
   void simplify_linear_polyline(
     const Indices& polyline) {
-    
+
     const std::size_t nump = polyline.size();
     auto& p = m_vertices[polyline[0]];
     auto& q = m_vertices[polyline[nump - 1]];
 
     project_linear_vertex(p);
     project_linear_vertex(q);
-    
+
     for (std::size_t i = 1; i < nump - 1; ++i) {
       auto& vertex = m_vertices[polyline[i]];
       project_linear_vertex(vertex);
@@ -383,7 +383,7 @@ private:
 
   void simplify_free_polyline(
     const Indices& polyline) {
-    
+
     /*
     bool found = false;
     for (const std::size_t idx : polyline) {
@@ -405,7 +405,7 @@ private:
 
     for (const std::size_t idx : polyline)
       points.push_back(m_vertices[idx].point);
-    
+
     using Cost = CGAL::Polyline_simplification_2::Squared_distance_cost;
     using Stop = CGAL::Polyline_simplification_2::Stop_above_cost_threshold;
 
@@ -415,7 +415,7 @@ private:
     Stop stop(threshold);
     std::vector<Point_2> result;
     CGAL::Polyline_simplification_2::simplify(
-      points.begin(), points.end(), cost, stop, 
+      points.begin(), points.end(), cost, stop,
       std::back_inserter(result));
 
     for (const std::size_t idx : polyline) {
@@ -432,7 +432,7 @@ private:
   }
 
   bool is_simplified(
-    const Point_2& query, 
+    const Point_2& query,
     const std::vector<Point_2>& points) {
 
     for (const auto& point : points) {

@@ -45,9 +45,9 @@ namespace Levels_of_detail {
 namespace internal {
 
   template<
-  typename GeomTraits, 
-  typename InputRange, 
-  typename PointMap, 
+  typename GeomTraits,
+  typename InputRange,
+  typename PointMap,
   typename NormalMap,
   typename DefaultRegion>
   class Overlapping_region {
@@ -77,14 +77,14 @@ namespace internal {
     using Size_pair = std::pair<std::size_t, std::size_t>;
 
     Overlapping_region(
-      const Input_range& input_range, 
-      const std::vector<Indices>& roofs, 
+      const Input_range& input_range,
+      const std::vector<Indices>& roofs,
       Region& region,
-      const FT distance_threshold, 
-      const FT angle_threshold, 
-      const Point_map& point_map, 
+      const FT distance_threshold,
+      const FT angle_threshold,
+      const Point_map& point_map,
       const Normal_map& normal_map,
-      const Traits traits = Traits()) : 
+      const Traits traits = Traits()) :
     m_input_range(input_range),
     m_roofs(roofs),
     m_region(region),
@@ -101,7 +101,7 @@ namespace internal {
     m_sqrt(Get_sqrt::sqrt_object(traits)) {
 
       CGAL_precondition(m_input_range.size() > 0);
-      
+
       CGAL_precondition(m_distance_threshold >= FT(0));
       CGAL_precondition(m_normal_threshold >= FT(0) && m_normal_threshold <= FT(1));
 
@@ -115,7 +115,7 @@ namespace internal {
       Input_range range;
       for (std::size_t k = 0; k < m_roofs.size(); ++k) {
         const auto& roof = m_roofs[k];
-        
+
         range.clear();
         for (const std::size_t idx : roof)
           range.push_back(m_input_range[idx]);
@@ -147,7 +147,7 @@ namespace internal {
       const std::size_t roof_idx = m_roof_map.at(query_index);
       if (
         !is_visited &&
-        roof_idx != std::size_t(-1) && 
+        roof_idx != std::size_t(-1) &&
         m_current_roof_idx != std::size_t(-1) &&
         roof_idx == m_current_roof_idx)
         return true;
@@ -156,7 +156,7 @@ namespace internal {
 
     bool is_part_of_region(
       const std::size_t stub,
-      const std::size_t query_index, 
+      const std::size_t query_index,
       const std::vector<std::size_t>& region) {
 
       if (m_current_roof_idx == std::size_t(-1))
@@ -174,18 +174,18 @@ namespace internal {
 
       const auto& key = *(m_input_range.begin() + query_index);
       const Point_3& query_point = get(m_point_map, key);
-      
+
       const Vector_3& normal = get(m_normal_map, key);
       const FT normal_length = m_sqrt(m_squared_length_3(normal));
       const Vector_3 query_normal = normal / normal_length;
 
-      const FT distance_to_fitted_plane = 
+      const FT distance_to_fitted_plane =
       m_sqrt(m_squared_distance_3(query_point, plane_of_best_fit));
-      
-      const FT cos_value = 
+
+      const FT cos_value =
       CGAL::abs(m_scalar_product_3(query_normal, normal_of_best_fit));
 
-      const bool result = (( distance_to_fitted_plane <= m_distance_threshold ) && 
+      const bool result = (( distance_to_fitted_plane <= m_distance_threshold ) &&
         ( cos_value >= m_normal_threshold ));
 
       if (result)
@@ -212,7 +212,7 @@ namespace internal {
       for (std::size_t i = 0; i < m_groups.size(); ++i) {
         if (m_groups[i].size() > 1) {
           ++count; overlapping[i] = true;
-        } else 
+        } else
           overlapping[i] = false;
       }
       std::cout << "Num overlapping points: " << count << std::endl;
@@ -240,7 +240,7 @@ namespace internal {
     const Sqrt m_sqrt;
 
     std::map<std::size_t, std::size_t> m_roof_map;
-    
+
     std::map<std::size_t, Plane_3> m_planes;
     std::map<std::size_t, Vector_3> m_normals;
 

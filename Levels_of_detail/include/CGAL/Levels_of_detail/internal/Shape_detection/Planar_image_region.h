@@ -55,13 +55,13 @@ namespace internal {
     { }
 
     bool is_already_visited(
-      const std::size_t, const std::size_t, const bool) const { 
+      const std::size_t, const std::size_t, const bool) const {
       return false;
     }
 
     bool is_part_of_region(
       const std::size_t from_index,
-      const std::size_t to_index, 
+      const std::size_t to_index,
       const Indices& region) const {
 
       CGAL_precondition(region.size() > 0);

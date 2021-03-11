@@ -89,7 +89,7 @@ namespace internal {
     using BaseTri = typename Triangulation::Delaunay;
     using LF_circulator = typename BaseTri::Line_face_circulator;
     using F_handle = typename BaseTri::Face_handle;
-    
+
     using FBI = typename Triangulation::CFB;
     using FB  = CGAL::Alpha_shape_face_base_2<Traits, FBI>;
     using VBI = typename Triangulation::VBI;
@@ -112,7 +112,7 @@ namespace internal {
       const FT alpha) :
     m_noise_level(noise_level),
     m_alpha(alpha),
-    m_pi(static_cast<FT>(CGAL_PI)) { 
+    m_pi(static_cast<FT>(CGAL_PI)) {
 
       CGAL_precondition(m_alpha > FT(0));
     }
@@ -123,20 +123,20 @@ namespace internal {
       const Point_map& point_map,
       const std::vector< std::vector<Segment_2> >& contours,
       Triangulation& result) {
-      
+
       Delaunay triangulation;
       insert_points(indices, point_map, triangulation);
       Alpha_shape_2 alpha_shape(
         triangulation, m_alpha, Alpha_shape_2::GENERAL);
       tag_faces(alpha_shape);
-      save_triangulation(alpha_shape, 
-        "/Users/monet/Documents/lod/logs/buildings/tmp/alpha_shape-original", false);
-      
+      save_triangulation(alpha_shape,
+        "/Users/monet/Documents/gf/lod/logs/buildings/tmp/alpha_shape-original", false);
+
       BaseTri& delaunay = result.delaunay;
       convert(indices, point_map, contours, alpha_shape, delaunay);
       use_graphcut(delaunay);
-      save_triangulation(delaunay, 
-        "/Users/monet/Documents/lod/logs/buildings/tmp/delaunay-clean", false);
+      save_triangulation(delaunay,
+        "/Users/monet/Documents/gf/lod/logs/buildings/tmp/delaunay-clean", false);
     }
 
   private:
@@ -145,11 +145,11 @@ namespace internal {
     const FT m_pi;
 
     template<
-    typename Range, 
+    typename Range,
     typename Point_map,
     typename Base>
     void insert_points(
-      const Range& range, 
+      const Range& range,
       const Point_map& point_map,
       Base& base) {
 
@@ -186,7 +186,7 @@ namespace internal {
 
       for (auto fh = alpha_shape.finite_faces_begin();
       fh != alpha_shape.finite_faces_end(); ++fh) {
-        
+
         bool found = false;
         for (std::size_t k = 0; k < 3; ++k) {
           const auto fhn = fh->neighbor(k);
@@ -201,7 +201,7 @@ namespace internal {
     }
 
     void propagate_alpha_shape(
-      const Alpha_shape_2& alpha_shape, 
+      const Alpha_shape_2& alpha_shape,
       Face_handle fh) {
 
       if (alpha_shape.classify(fh) == Alpha_shape_2::INTERIOR)
@@ -225,8 +225,8 @@ namespace internal {
       std::size_t num_vertices = 0;
       internal::Indexer<Point_3> indexer;
 
-      std::vector<Point_3> vertices; 
-      std::vector<Indices> faces; 
+      std::vector<Point_3> vertices;
+      std::vector<Indices> faces;
       std::vector<Color> fcolors;
 
       Polygon_inserter<Traits> inserter(faces, fcolors);
@@ -234,9 +234,9 @@ namespace internal {
       auto output_faces = boost::make_function_output_iterator(inserter);
 
       output_triangulation(
-        base, indexer, num_vertices, 
+        base, indexer, num_vertices,
         output_vertices, output_faces, z, out_labels);
-      
+
       Saver<Traits> saver;
       saver.export_polygon_soup(vertices, faces, fcolors, path);
     }
@@ -256,23 +256,23 @@ namespace internal {
       const bool out_labels) const {
 
       std::vector<std::size_t> face(3);
-      for (auto fh = base.finite_faces_begin(); 
+      for (auto fh = base.finite_faces_begin();
       fh != base.finite_faces_end(); ++fh) {
         if (!fh->info().tagged) continue;
-        
+
         for (std::size_t k = 0; k < 3; ++k) {
           const Point_2& q = fh->vertex(k)->point();
           const Point_3 p = Point_3(q.x(), q.y(), z);
           const std::size_t idx = indexer(p);
           if (idx == num_vertices) {
-            *(vertices++) = p; 
+            *(vertices++) = p;
             ++num_vertices;
           }
           face[k] = idx;
         }
         if (out_labels)
           *(faces++) = std::make_pair(face, fh->info().label);
-        else 
+        else
           *(faces++) = std::make_pair(face, 1);
       }
     }
@@ -298,18 +298,18 @@ namespace internal {
 
       for (auto fh = base.finite_faces_begin();
       fh != base.finite_faces_end(); ++fh) {
-        
+
         const Point_2 b = CGAL::barycenter(
           fh->vertex(0)->point(), FT(1),
           fh->vertex(1)->point(), FT(1),
           fh->vertex(2)->point(), FT(1));
-        
+
         Location_type type; int stub;
         const auto bh = alpha_shape.locate(b, type, stub);
 
         if (bh->info().tagged)
           fh->info().tagged = true;
-        else 
+        else
           fh->info().tagged = false;
       }
     }
@@ -318,20 +318,20 @@ namespace internal {
       BaseTri& base) {
 
       set_object_indices(base);
-      
+
       clear_labels(base);
-      
+
       resize_probabilities(base);
 
-      save_triangulation(base, 
-        "/Users/monet/Documents/lod/logs/buildings/tmp/delaunay-original", true);
+      save_triangulation(base,
+        "/Users/monet/Documents/gf/lod/logs/buildings/tmp/delaunay-original", true);
 
       compute_in_out(base);
 
       update_labels(base);
 
-      save_triangulation(base, 
-        "/Users/monet/Documents/lod/logs/buildings/tmp/delaunay-approx", true);
+      save_triangulation(base,
+        "/Users/monet/Documents/gf/lod/logs/buildings/tmp/delaunay-approx", true);
 
       const FT beta = FT(1);
 
@@ -349,9 +349,9 @@ namespace internal {
       graphcut(edges, edge_weights, cost_matrix, labels);
 
       set_new_labels(labels, base);
-      
-      save_triangulation(base, 
-        "/Users/monet/Documents/lod/logs/buildings/tmp/delaunay-graphcut", true);
+
+      save_triangulation(base,
+        "/Users/monet/Documents/gf/lod/logs/buildings/tmp/delaunay-graphcut", true);
 
       update_tags(base);
     }
@@ -374,9 +374,9 @@ namespace internal {
 
       for (auto fh = base.finite_faces_begin();
       fh != base.finite_faces_end(); ++fh) {
-        if (fh->info().tagged) 
+        if (fh->info().tagged)
           fh->info().label = 1;
-        else 
+        else
           fh->info().label = 0;
       }
     }
@@ -387,7 +387,7 @@ namespace internal {
       for (auto fh = base.finite_faces_begin();
       fh != base.finite_faces_end(); ++fh) {
         if (!fh->info().tagged) continue;
-        
+
         fh->info().probabilities.clear();
         fh->info().probabilities.resize(2, FT(0));
       }
@@ -431,11 +431,11 @@ namespace internal {
       for (auto fh = base.finite_faces_begin();
       fh != base.finite_faces_end(); ++fh) {
         if (!fh->info().tagged) continue;
-        
+
         for (std::size_t k = 0; k < 3; ++k) {
           const auto fhn = fh->neighbor(k);
           if (fhn->info().tagged) continue;
-          
+
           const std::size_t idx = fh->index(fhn);
           const Edge edge = std::make_pair(fh, idx);
           add_statistics_from_alpha_shape_boundary(edge, base);
@@ -449,11 +449,11 @@ namespace internal {
       for (auto fh = base.finite_faces_begin();
       fh != base.finite_faces_end(); ++fh) {
         if (!fh->info().tagged) continue;
-        
+
         for (std::size_t k = 0; k < 3; ++k) {
           const auto fhn = fh->neighbor(k);
           if (!fhn->info().tagged) continue;
-          
+
           const std::size_t idx = fh->index(fhn);
           const Edge edge = std::make_pair(fh, idx);
           add_statistics_from_detected_boundary(edge, base);
@@ -484,7 +484,7 @@ namespace internal {
       for (std::size_t k = 0; k < num_samples / 2; ++k) {
         const auto& p1 = samples1[k];
         const auto& p2 = samples2[k];
-        
+
         apply_line_walk_from_alpha_shape_boundary(
           center, p1, fh, base);
         apply_line_walk_from_alpha_shape_boundary(
@@ -518,7 +518,7 @@ namespace internal {
       for (std::size_t k = 0; k < num_samples / 2; ++k) {
         const auto& p1 = samples1[k];
         const auto& p2 = samples2[k];
-        
+
         apply_line_walk_from_detected_boundary(
           center, p1, fh, base);
         apply_line_walk_from_detected_boundary(
@@ -544,7 +544,7 @@ namespace internal {
 
       const std::size_t num_regions = regions.size();
       if (num_regions == 0) return;
-        
+
       std::vector<FT> weights;
       compute_angle_weights(p1, p2, regions, weights);
 
@@ -553,12 +553,12 @@ namespace internal {
         std::size_t count = 0;
         const auto& region = regions[0];
         const std::size_t num_faces = region.size();
-        
+
         const auto q1 = get_point(region[0]);
         const auto q2 = get_point(region[num_faces - 1]);
 
         const FT distance = internal::distance(q1, q2);
-        if (distance < m_noise_level) {         
+        if (distance < m_noise_level) {
           for (std::size_t i = 0; i < region.size(); ++i) {
             region[i]->info().probabilities[0] += FT(1) * weights[count];
             ++count;
@@ -579,7 +579,7 @@ namespace internal {
         if (regions[0].size() > regions[1].size()) {
           rg_idx0 = 1; rg_idx1 = 0;
         }
-        
+
         const auto& region0 = regions[0];
         for (std::size_t i = 0; i < region0.size(); ++i) {
           region0[i]->info().probabilities[rg_idx0] += FT(1) * weights[count];
@@ -591,7 +591,7 @@ namespace internal {
           region1[i]->info().probabilities[rg_idx1] += FT(1) * weights[count];
           ++count;
         }
-        
+
         return;
       }
 
@@ -617,7 +617,7 @@ namespace internal {
           region1[i]->info().probabilities[0] += FT(1) * weights[count];
           ++count;
         }
-        
+
         return;
       }
     }
@@ -630,7 +630,7 @@ namespace internal {
       std::size_t num_weights = 0;
       for (const auto& region : regions)
         num_weights += region.size();
-      
+
       const std::size_t num_regions = regions.size();
 
       if (num_regions == 0)
@@ -650,13 +650,13 @@ namespace internal {
           weights.resize(num_weights, FT(1));
         else
           weights.resize(num_weights, FT(0));
-        
+
         return;
       }
 
       FT product = FT(1);
       const Segment_2 segment1 = Segment_2(p1, p2);
-      
+
       std::vector<FT> angles;
       for (std::size_t i = 0; i < num_regions - 1; ++i) {
         const std::size_t ip = i + 1;
@@ -678,7 +678,7 @@ namespace internal {
 
         const FT angle_d = angle_degree_2(segment1, segment2);
         const FT angle_2 = CGAL::abs(get_angle_2(angle_d));
-        
+
         const FT angle = angle_2 * static_cast<FT>(CGAL_PI) / FT(180);
         angles.push_back(angle);
       }
@@ -718,12 +718,12 @@ namespace internal {
 		  const FT dot = CGAL::scalar_product(v1, v2);
       const FT angle_rad = static_cast<FT>(
         std::atan2(CGAL::to_double(det), CGAL::to_double(dot)));
-      const FT angle_deg = angle_rad * FT(180) / m_pi; 
+      const FT angle_deg = angle_rad * FT(180) / m_pi;
       return angle_deg;
     }
 
     FT get_angle_2(const FT angle) {
-      
+
       FT angle_2 = angle;
       if (angle_2 > FT(90)) angle_2 = FT(180) - angle_2;
       else if (angle_2 < -FT(90)) angle_2 = FT(180) + angle_2;
@@ -737,7 +737,7 @@ namespace internal {
       std::size_t num_weights = 0;
       for (const auto& region : regions)
         num_weights += region.size();
-      
+
       weights.clear();
       weights.reserve(num_weights);
 
@@ -752,7 +752,7 @@ namespace internal {
 
           if (distance < m_noise_level)
             distances.push_back(-FT(1));
-          else 
+          else
             distances.push_back(distance);
         }
       }
@@ -765,7 +765,7 @@ namespace internal {
 
       if (sum_distance != FT(0)) {
         for (const auto& distance : distances) {
-          
+
           FT weight = FT(1);
           if (distance != -FT(1))
             weight = FT(0);
@@ -784,7 +784,7 @@ namespace internal {
       if (num_regions == 0) return;
 
       if (num_regions > 0) {
-        
+
         const auto& region = regions[0];
         const auto q1 = get_point(region[0]);
         for (auto fh : region) {
@@ -796,9 +796,9 @@ namespace internal {
             fh->info().probabilities[1] += FT(1);
         }
       }
-        
+
       if (num_regions > 1) {
-        
+
         const auto& region = regions[num_regions - 1];
         const std::size_t num_faces = region.size();
         const auto q1 = get_point(region[num_faces - 1]);
@@ -846,12 +846,12 @@ namespace internal {
         std::size_t count = 0;
         const auto& region = regions[0];
         const std::size_t num_faces = region.size();
-        
+
         const auto q1 = get_point(region[0]);
         const auto q2 = get_point(region[num_faces - 1]);
 
         const FT distance = internal::distance(q1, q2);
-        if (distance < m_noise_level) {         
+        if (distance < m_noise_level) {
           for (std::size_t i = 0; i < region.size(); ++i) {
             region[i]->info().probabilities[0] += FT(1) * weights[count];
             ++count;
@@ -864,7 +864,7 @@ namespace internal {
         }
 
         return;
-      } 
+      }
 
       if (num_regions >= 2) {
 
@@ -882,7 +882,7 @@ namespace internal {
           region1[i]->info().probabilities[0] += FT(1) * weights[count];
           ++count;
         }
-        
+
         return;
       }
     }
@@ -928,8 +928,8 @@ namespace internal {
         LF_circulator f2 = circ;
 
         if (base.is_infinite(f2) || !f2->info().tagged) {
-          if (!region.empty()) 
-            regions.push_back(region); 
+          if (!region.empty())
+            regions.push_back(region);
           break;
         }
 
@@ -940,13 +940,13 @@ namespace internal {
 
           if (base.is_constrained(edge)) {
             if (!region.empty())
-              regions.push_back(region); 
+              regions.push_back(region);
             region.clear();
           }
         }
         region.push_back(f2);
       } while (circ != end);
-      
+
       return true;
     }
 
@@ -990,10 +990,10 @@ namespace internal {
       for (std::size_t k = 0; k < num_samples / 2; ++k) {
         const auto& p1 = samples1[k];
         const auto& p2 = samples2[k];
-        
+
         const auto pair = get_in_out_value(
           base, center, p1, p2, fh);
-        
+
         inside  += pair.first;
         outside += pair.second;
       }
@@ -1012,7 +1012,7 @@ namespace internal {
     }
 
     void create_points_on_circle(
-      const Point_2& center, 
+      const Point_2& center,
       const FT radius,
       const FT start,
       const std::size_t num_samples,
@@ -1020,7 +1020,7 @@ namespace internal {
 
       samples.clear();
       samples.reserve(num_samples);
-      
+
       FT factor = FT(360) / static_cast<FT>(num_samples);
       factor *= static_cast<FT>(CGAL_PI); factor /= FT(180);
 
@@ -1028,9 +1028,9 @@ namespace internal {
       init *= static_cast<FT>(CGAL_PI); init /= FT(180);
 
       for (std::size_t i = 0; i < num_samples / 2; ++i) {
-        const double angle = 
+        const double angle =
           CGAL::to_double(init) + double(i) * CGAL::to_double(factor);
-        
+
         const FT cosa = static_cast<FT>(std::cos(angle));
         const FT sina = static_cast<FT>(std::sin(angle));
 
@@ -1101,7 +1101,7 @@ namespace internal {
           const auto q1 = f2->vertex(j);
           const auto q2 = f2->vertex(jp);
 
-          if ( 
+          if (
             ( p1 == q1 && p2 == q2) ||
             ( p1 == q2 && p2 == q1) ) {
 
@@ -1122,7 +1122,7 @@ namespace internal {
         const auto& probabilities = fh->info().probabilities;
         if (probabilities[1] >= FT(1) / FT(2)) // inside
           fh->info().label = 1;
-        else 
+        else
           fh->info().label = 0;
       }
     }
@@ -1158,7 +1158,7 @@ namespace internal {
         const auto fhn = fh->neighbor(idx);
 
         if (fh->info().tagged && fhn->info().tagged) {
-          
+
           const std::size_t idxi =  fh->info().object_index;
           const std::size_t idxj = fhn->info().object_index;
           edges.push_back(std::make_pair(idxi, idxj));
@@ -1196,11 +1196,11 @@ namespace internal {
       for (auto fh = base.finite_faces_begin();
       fh != base.finite_faces_end(); ++fh) {
         if (!fh->info().tagged) continue;
-        
+
         const auto& p0 = fh->vertex(0)->point();
         const auto& p1 = fh->vertex(1)->point();
         const auto& p2 = fh->vertex(2)->point();
-        
+
         const Triangle_2 triangle = Triangle_2(p0, p1, p2);
         const FT area = CGAL::abs(triangle.area());
 
@@ -1233,12 +1233,12 @@ namespace internal {
     void set_new_labels(
       const std::vector<std::size_t>& labels,
       BaseTri& base) {
-      
+
       std::size_t count = 0;
       for (auto fh = base.finite_faces_begin();
       fh != base.finite_faces_end(); ++fh) {
         if (!fh->info().tagged) continue;
-        
+
         fh->info().label = labels[count];
         ++count;
       }
@@ -1250,7 +1250,7 @@ namespace internal {
       for (auto fh = base.finite_faces_begin();
       fh != base.finite_faces_end(); ++fh) {
         if (!fh->info().tagged) continue;
-        
+
         bool found = false;
         for (std::size_t k = 0; k < 3; ++k) {
           const auto fhn = fh->neighbor(k);
@@ -1266,7 +1266,7 @@ namespace internal {
     }
 
     void propagate_base(
-      const BaseTri& base, 
+      const BaseTri& base,
       F_handle fh) {
 
       if (fh->info().label == 0)

@@ -89,10 +89,10 @@ namespace internal {
     using Vertex_handle = typename Triangulation::Vertex_handle;
     using Face_circulator = typename Triangulation::Face_circulator;
     using Face_handle = typename Triangulation::Face_handle;
-    
+
     using Polygon = std::vector<Point_3>;
     using Indices = std::vector<std::size_t>;
-    
+
     using Nearest_face_neighbor_query = internal::Nearest_face_neighbor_query<Traits>;
     using Coplanar_region = internal::Coplanar_region<Traits>;
     using Region_growing = internal::Region_growing<
@@ -138,11 +138,11 @@ namespace internal {
 
     void add_lod2_from_partition_3(
       Building& building) const {
-    
+
       std::vector<Face_3> roofs;
       std::vector<Segment_3> segments;
       create_roofs(building.bottom_z, roofs);
-      
+
       create_edges2(roofs, segments, building);
       create_base2(roofs, building);
 
@@ -173,7 +173,7 @@ namespace internal {
       const Cluster& cluster,
       const Point_map& point_map,
       Building& building) const {
-    
+
       if (cluster.empty()) return false;
       const FT default_z = internal::max_value<FT>();
 
@@ -187,8 +187,8 @@ namespace internal {
 
     bool create_top_z(
       const Extrusion_type extrusion_type,
-      const Cluster& cluster, 
-      const Point_map& point_map, 
+      const Cluster& cluster,
+      const Point_map& point_map,
       Building& building) const {
 
       switch (extrusion_type) {
@@ -202,8 +202,8 @@ namespace internal {
     }
 
     bool create_top_z_avg(
-      const Cluster& cluster, 
-      const Point_map& point_map, 
+      const Cluster& cluster,
+      const Point_map& point_map,
       Building& building) const {
 
       if (cluster.empty()) return false;
@@ -217,8 +217,8 @@ namespace internal {
     }
 
     bool create_top_z_max(
-      const Cluster& cluster, 
-      const Point_map& point_map, 
+      const Cluster& cluster,
+      const Point_map& point_map,
       Building& building) const {
 
       if (cluster.empty()) return false;
@@ -239,28 +239,28 @@ namespace internal {
       auto& edges = building.edges0;
       const FT bottom_z = building.bottom_z;
       edges.clear();
-      
+
       Boundary edge;
       for (const std::size_t fidx : findices) {
-        
+
         const auto& face = m_partition.faces[fidx];
         const auto& neighbors = face.neighbors;
-        
+
         const auto& nedges = face.edges;
         CGAL_assertion(nedges.size() == neighbors.size());
-        
+
         // const auto& nconstr = face.constraints;
         // CGAL_assertion(nconstr.size() > 0);
 
         for (std::size_t i = 0; i < neighbors.size(); ++i) {
           const int nidx = neighbors[i];
           if (
-            nidx < 0 || 
-            // nconstr.at(nidx) || 
+            nidx < 0 ||
+            // nconstr.at(nidx) ||
             m_partition.faces[nidx].visibility == Visibility_label::OUTSIDE) {
-            
+
             edge.segment = nedges[i];
-            edge.z = bottom_z; 
+            edge.z = bottom_z;
             edges.push_back(edge);
           }
         }
@@ -269,7 +269,7 @@ namespace internal {
 
     void create_edges1(
       Building& building) const {
-      
+
       const auto& edges0 = building.edges0;
       CGAL_assertion(!edges0.empty());
       auto& edges1 = building.edges1;
@@ -278,7 +278,7 @@ namespace internal {
 
     void create_edges2_from_edges1(
       Building& building) const {
-      
+
       const auto& edges1 = building.edges1;
       CGAL_assertion(!edges1.empty());
       auto& edges2 = building.edges2;
@@ -289,14 +289,14 @@ namespace internal {
       const std::vector<Face_3>& roofs,
       std::vector<Segment_3>& segments,
       Building& building) const {
-      
+
       if (roofs.empty()) return;
       auto& edges = building.edges2;
       const FT bottom_z = building.bottom_z;
 
       Boundary edge;
       edges.clear(); segments.clear();
-      
+
       for (std::size_t i = 0; i < roofs.size(); ++i) {
         const auto& polygon = roofs[i].polygon;
         for (std::size_t j = 0; j < polygon.size(); ++j) {
@@ -310,7 +310,7 @@ namespace internal {
             const Point_2 q1 = Point_2(p1.x(), p1.y());
             const Point_2 q2 = Point_2(p2.x(), p2.y());
             edge.segment = Segment_2(q1, q2);
-            edge.z = bottom_z; 
+            edge.z = bottom_z;
             edges.push_back(edge);
           }
         }
@@ -334,8 +334,8 @@ namespace internal {
       }
 
       // Update faces.
-      update_faces(index, z, tri);      
-      for (auto fh = tri.finite_faces_begin(); 
+      update_faces(index, z, tri);
+      for (auto fh = tri.finite_faces_begin();
       fh != tri.finite_faces_end(); ++fh) {
 
         const Point_2 b = CGAL::barycenter(
@@ -363,7 +363,7 @@ namespace internal {
 
     void create_base1(
       Building& building) const {
-      
+
       const auto& base0 = building.base0;
       CGAL_assertion(!base0.empty());
       auto& base1 = building.base1;
@@ -372,7 +372,7 @@ namespace internal {
 
     void create_base2_from_base1(
       Building& building) const {
-      
+
       const auto& base1 = building.base1;
       CGAL_assertion(!base1.empty());
       auto& base2 = building.base2;
@@ -382,7 +382,7 @@ namespace internal {
     void create_base2(
       const std::vector<Face_3>& roofs,
       Building& building) const {
-      
+
       if (roofs.empty()) return;
 
       const auto& edges = building.edges2;
@@ -405,7 +405,7 @@ namespace internal {
 
       // Update faces.
       update_faces(index, z, tri);
-      for (auto fh = tri.finite_faces_begin(); 
+      for (auto fh = tri.finite_faces_begin();
       fh != tri.finite_faces_end(); ++fh) {
 
         const Point_2 b = CGAL::barycenter(
@@ -434,19 +434,19 @@ namespace internal {
       const FT bottom_z = building.bottom_z;
       const FT top_z = building.top_z;
       auto& walls = building.walls1;
-      
+
       std::vector<Polygon> polygons;
       polygons.resize(edges.size());
-      for (std::size_t i = 0; i < edges.size(); ++i) {  
+      for (std::size_t i = 0; i < edges.size(); ++i) {
         const auto& edge = edges[i];
         const Point_2& s = edge.segment.source();
         const Point_2& t = edge.segment.target();
-        
+
         const Point_3 p1 = Point_3(s.x(), s.y(), bottom_z);
         const Point_3 p2 = Point_3(t.x(), t.y(), bottom_z);
         const Point_3 p3 = Point_3(t.x(), t.y(), top_z);
         const Point_3 p4 = Point_3(s.x(), s.y(), top_z);
-        
+
         polygons[i] = {p1, p2, p3, p4};
       }
       create_planar_items(polygons, true, walls);
@@ -465,10 +465,10 @@ namespace internal {
       const auto& tri = base.delaunay;
       for (auto fh = tri.finite_faces_begin();
       fh != tri.finite_faces_end(); ++fh) {
-        
+
         for (std::size_t k = 0; k < 3; ++k) {
           const auto& fhn = fh->neighbor(k);
-          
+
           const std::size_t i1 = (k + 1) % 3;
           const std::size_t j1 = (k + 2) % 3;
 
@@ -516,7 +516,7 @@ namespace internal {
 
       const auto& s = f->vertex(i)->point();
       const auto& t = f->vertex(j)->point();
-  
+
       const FT sz = f->info().z[i];
       const FT tz = f->info().z[j];
 
@@ -524,7 +524,7 @@ namespace internal {
       const Point_3 p2 = Point_3(t.x(), t.y(), bottom_z);
       const Point_3 p3 = Point_3(t.x(), t.y(), tz);
       const Point_3 p4 = Point_3(s.x(), s.y(), sz);
-      
+
       polygons.push_back({p1, p2, p3, p4});
     }
 
@@ -535,7 +535,7 @@ namespace internal {
       const Face_handle& f1,
       const Face_handle& f2,
       std::vector<Polygon>& polygons) const {
-      
+
       const auto& s = f1->vertex(i1)->point();
       const auto& t = f1->vertex(j1)->point();
 
@@ -546,7 +546,7 @@ namespace internal {
       const FT tz2 = f2->info().z[j2];
 
       if (
-        CGAL::abs(sz1 - sz2) < m_distance_threshold && 
+        CGAL::abs(sz1 - sz2) < m_distance_threshold &&
         CGAL::abs(tz1 - tz2) < m_distance_threshold)
         return;
 
@@ -556,7 +556,7 @@ namespace internal {
       const Point_3 p4 = Point_3(s.x(), s.y(), sz1);
       const Point_3 p5 = Point_3(t.x(), t.y(), tz2);
       const Point_3 p6 = Point_3(s.x(), s.y(), sz2);
-      
+
       polygons.push_back({p1, p2, p3, p4});
       polygons.push_back({p1, p2, p5, p6});
     }
@@ -572,16 +572,16 @@ namespace internal {
 
       std::vector<Polygon> polygons;
       polygons.resize(segments.size());
-      for (std::size_t i = 0; i < segments.size(); ++i) {  
+      for (std::size_t i = 0; i < segments.size(); ++i) {
         const auto& segment = segments[i];
         const Point_3& s = segment.source();
         const Point_3& t = segment.target();
-        
+
         const Point_3 p1 = Point_3(s.x(), s.y(), bottom_z);
         const Point_3 p2 = Point_3(t.x(), t.y(), bottom_z);
         const Point_3 p3 = Point_3(t.x(), t.y(), t.z());
         const Point_3 p4 = Point_3(s.x(), s.y(), s.z());
-        
+
         polygons[i] = {p1, p2, p3, p4};
       }
       create_planar_items(polygons, true, walls);
@@ -589,11 +589,11 @@ namespace internal {
 
     void create_roofs1(
       Building& building) const {
-    
+
       const auto& edges = building.edges1;
       const FT top_z = building.top_z;
       auto& roofs = building.roofs1;
-      
+
       CGAL_assertion(!building.base1.empty());
       const auto& tri = building.base1.triangulation.delaunay;
 
@@ -604,7 +604,7 @@ namespace internal {
       for (auto fh = tri.finite_faces_begin();
       fh != tri.finite_faces_end(); ++fh) {
         if (!fh->info().tagged) continue;
-        
+
         const Point_2& a = fh->vertex(0)->point();
         const Point_2& b = fh->vertex(1)->point();
         const Point_2& c = fh->vertex(2)->point();
@@ -623,7 +623,7 @@ namespace internal {
 
         const Point_3 a = Point_3(p1.x(), p1.y(), top_z);
         const Point_3 b = Point_3(p2.x(), p2.y(), top_z);
-        
+
         roofs[0].segments.push_back(Segment_3(a, b));
       }
     }
@@ -641,7 +641,7 @@ namespace internal {
     }
 
     void create_triangulation(
-      const std::vector<Plane_3>& roof_planes, 
+      const std::vector<Plane_3>& roof_planes,
       Base_triangulation& base) const {
 
       create_constrained_triangulation(base.delaunay);
@@ -649,7 +649,7 @@ namespace internal {
       update_heights(roof_planes, base.delaunay);
 
       save_triangulation(
-        base, "/Users/monet/Documents/lod/logs/buildings/tmp/delaunay");
+        base, "/Users/monet/Documents/gf/lod/logs/buildings/tmp/delaunay");
     }
 
     void create_constrained_triangulation(
@@ -658,7 +658,7 @@ namespace internal {
       tri.clear();
       const auto& faces = m_partition.faces;
       for (const auto& face : faces) {
-        
+
         const std::size_t label = face.label;
         const auto& segments = face.edges;
         const auto& neighbors = face.neighbors;
@@ -704,8 +704,8 @@ namespace internal {
 
         for (const auto& face : faces) {
           const auto& del = face.base.delaunay;
-          
-          if (del.number_of_vertices() < 3) 
+
+          if (del.number_of_vertices() < 3)
             continue;
 
           const auto bh = del.locate(b);
@@ -724,7 +724,7 @@ namespace internal {
       std::vector<Face_circulator> fhs;
       for (auto fh = tri.finite_faces_begin();
       fh != tri.finite_faces_end(); ++fh) {
-        
+
         for (std::size_t k = 0; k < 3; ++k) {
           const auto& vh = fh->vertex(k);
           Face_circulator fc = tri.incident_faces(vh, fh);
@@ -737,7 +737,7 @@ namespace internal {
     }
 
     void get_fhs(
-      Face_circulator& fc, 
+      Face_circulator& fc,
       std::vector<Face_circulator>& fhs) const {
 
       fhs.clear();
@@ -757,7 +757,7 @@ namespace internal {
       for (const auto& fh : fhs) {
         const std::size_t label = fh->info().label;
         if (label != std::size_t(-1))
-          pairs[label] = label;       
+          pairs[label] = label;
       }
 
       if (pairs.size() == 0)
@@ -821,7 +821,7 @@ namespace internal {
 
       if (CGAL::abs(z1 - z2) < m_distance_threshold)
         return (z1 + z2) / FT(2);
-      
+
       const std::size_t label = fh->info().label;
       const auto& plane = roof_planes[label];
       const Point_3 q = internal::position_on_plane_3(p, plane);
@@ -870,7 +870,7 @@ namespace internal {
       zs.reserve(groups.size());
 
       for (const auto& group : groups) {
-        
+
         FT z = FT(0);
         for (const std::size_t label : group) {
           const auto& plane = roof_planes[label];
@@ -892,7 +892,7 @@ namespace internal {
       zs.reserve(groups.size());
 
       for (const auto& group : groups) {
-        
+
         FT z = -internal::max_value<FT>();
         for (const std::size_t label : group) {
           const auto& plane = roof_planes[label];
@@ -913,7 +913,7 @@ namespace internal {
       zs.reserve(groups.size());
 
       for (const auto& group : groups) {
-        
+
         FT z = internal::max_value<FT>();
         for (const std::size_t label : group) {
           const auto& plane = roof_planes[label];
@@ -1032,8 +1032,8 @@ namespace internal {
       const std::size_t index,
       const FT z,
       Triangulation& tri) const {
-      
-      for (auto fh = tri.finite_faces_begin(); 
+
+      for (auto fh = tri.finite_faces_begin();
       fh != tri.finite_faces_end(); ++fh) {
         fh->info().urban_tag = Urban_object_type::BUILDING_ROOF;
         fh->info().object_index = index;
@@ -1048,7 +1048,7 @@ namespace internal {
       std::vector<Face_3>& roofs) const {
 
       // Create bounds.
-      std::vector<Face_3> bounds; 
+      std::vector<Face_3> bounds;
       create_bounds(bounds);
 
       // Find roofs.
@@ -1079,7 +1079,7 @@ namespace internal {
       for (const auto& polyhedron : polyhedrons) {
         if (polyhedron.visibility == Visibility_label::OUTSIDE)
           continue;
-        
+
         const auto& neighbors = polyhedron.neighbors;
         for (std::size_t i = 0; i < neighbors.size(); ++i) {
           const int idx = neighbors[i];
@@ -1097,7 +1097,7 @@ namespace internal {
     }
 
     bool is_inside_polygon(
-      const Point_2& query, 
+      const Point_2& query,
       const std::vector<Point_3>& poly_3) const {
 
       std::vector<Point_2> poly_2;
@@ -1107,12 +1107,12 @@ namespace internal {
 
     bool is_interior_edge(
       const Point_3& p1, const Point_3& p2,
-      const std::size_t curr_idx, 
+      const std::size_t curr_idx,
       const std::vector<Face_3>& faces) const {
 
       for (std::size_t i = 0; i < faces.size(); ++i) {
         if (i == curr_idx) continue;
-        
+
         const auto& polygon = faces[i].polygon;
         for (std::size_t j = 0; j < polygon.size(); ++j) {
           const std::size_t jp = (j + 1) % polygon.size();
@@ -1143,7 +1143,7 @@ namespace internal {
       items.clear(); items.reserve(regions.size());
       Indices neighbors; Item item;
       for (const auto& region : regions) {
-        
+
         item.triangles.clear();
         item.segments.clear();
         for (const std::size_t idx : region) {
@@ -1190,16 +1190,16 @@ namespace internal {
       Indices skip;
       const auto& poly1 = polygons[pidx];
       for (std::size_t i = 0; i < poly1.size(); ++i) {
-        const std::size_t ip = (i + 1) % poly1.size();  
-        
+        const std::size_t ip = (i + 1) % poly1.size();
+
         bool found = false;
         for (const std::size_t idx : indices) {
-          if (idx == pidx) continue; 
-          
+          if (idx == pidx) continue;
+
           const auto& poly2 = polygons[idx];
           for (std::size_t j = 0; j < poly2.size(); ++j) {
             const std::size_t jp = (j + 1) % poly2.size();
-            
+
             if (internal::are_equal_edges_3(
               poly1[i], poly1[ip], poly2[j], poly2[jp])) {
               skip.push_back(i);
@@ -1230,8 +1230,8 @@ namespace internal {
       std::size_t num_vertices = 0;
       internal::Indexer<Point_3> indexer;
 
-      std::vector<Point_3> vertices; 
-      std::vector<Indices> faces; 
+      std::vector<Point_3> vertices;
+      std::vector<Indices> faces;
       std::vector<CGAL::Color> fcolors;
 
       Polygon_inserter<Traits> inserter(faces, fcolors);
@@ -1240,7 +1240,7 @@ namespace internal {
 
       base.output_with_label_color(
         indexer, num_vertices, output_vertices, output_faces, z);
-      
+
       Saver<Traits> saver;
       saver.export_polygon_soup(vertices, faces, fcolors, path);
     }

@@ -100,7 +100,7 @@ namespace internal {
     using Point_3 = typename Traits::Point_3;
     using Segment_2 = typename Traits::Segment_2;
     using Plane_3 = typename Traits::Plane_3;
-    
+
     using Points_3 = std::vector<std::size_t>;
     using Point_map_3 = typename Data_structure::Point_map_3;
 
@@ -123,7 +123,7 @@ namespace internal {
     using Partition_23_adapter = internal::Partition_23_adapter<Traits>;
 
     using Building_builder_3 = internal::Building_builder<Traits, Partition_3, Points_3, Point_map_3>;
-    
+
     using Generic_simplifier = internal::Generic_simplifier<Traits, Point_map_3>;
     using Regularization = internal::Regularization<Traits>;
 
@@ -137,7 +137,7 @@ namespace internal {
       const Data_structure& data,
       const Points_3& input,
       const std::vector<Point_3>& better_cluster,
-      Building& building) : 
+      Building& building) :
     m_data(data),
     m_input(input),
     m_better_cluster(better_cluster),
@@ -145,8 +145,8 @@ namespace internal {
     m_empty(false),
     m_num_roofs(std::size_t(-1)),
     m_num_labels(std::size_t(-1)),
-    m_is_image_created(false) { 
-      
+    m_is_image_created(false) {
+
       if (input.empty())
         m_empty = true;
     }
@@ -154,7 +154,7 @@ namespace internal {
     void detect_roofs() {
 
       /* detect_roofs_2_v1(true); */
-      
+
       /* detect_roofs_2_v2(); */
 
       /* detect_roofs_2_v3(); */
@@ -229,17 +229,17 @@ namespace internal {
     }
 
     void detect_roofs_2_v3() {
-      
+
       detect_roofs_2_v2();
     }
 
     void detect_roofs_2_v4() {
-      
+
       detect_roofs_2_v2();
     }
 
     void detect_roofs_3() {
-      
+
       if (empty())
         return;
 
@@ -286,25 +286,25 @@ namespace internal {
       /* compute_roofs_2_v1(true, true); */
 
       /* compute_roofs_2_v2(); */
-      
+
       /* compute_roofs_2_v3(); */
 
       /* compute_roofs_2_v4(); */
 
       compute_roofs_3(true);
-      
+
       /* compute_roofs_23(); */
     }
 
     void compute_roofs_2_v1(
-      const bool construct, 
+      const bool construct,
       const bool with_gc) {
 
       if (empty())
         return;
 
       partition_2(
-        m_data.parameters.buildings.kinetic_min_face_width_2, 
+        m_data.parameters.buildings.kinetic_min_face_width_2,
         m_data.parameters.buildings.kinetic_max_intersections_2);
 
       compute_visibility_2();
@@ -362,7 +362,7 @@ namespace internal {
     }
 
     void compute_roofs_3(const bool use_image) {
-      
+
       if (empty())
         return;
 
@@ -404,7 +404,7 @@ namespace internal {
     }
 
     template<typename OutputIterator>
-    boost::optional<OutputIterator> 
+    boost::optional<OutputIterator>
     get_roof_points(
       OutputIterator output,
       std::size_t& roof_index) const {
@@ -425,30 +425,30 @@ namespace internal {
     template<
     typename VerticesOutputIterator,
     typename FacesOutputIterator>
-    boost::optional< std::pair<VerticesOutputIterator, FacesOutputIterator> > 
+    boost::optional< std::pair<VerticesOutputIterator, FacesOutputIterator> >
     get_approximate_bounds(
       Indexer& indexer,
       std::size_t& num_vertices,
       VerticesOutputIterator vertices,
       FacesOutputIterator faces,
       const std::size_t building_index) const {
-      
+
       if (m_building_ground.polygon.empty() &&
           m_building_outer_walls.empty() &&
           m_building_inner_walls.empty() &&
           m_building_roofs.empty())
         return boost::none;
 
-      m_building_ground.output_for_object( 
+      m_building_ground.output_for_object(
       indexer, num_vertices, vertices, faces, building_index);
       for (const auto& wall : m_building_outer_walls)
-        wall.output_for_object( 
+        wall.output_for_object(
       indexer, num_vertices, vertices, faces, building_index);
       for (const auto& wall : m_building_inner_walls)
-        wall.output_for_object( 
+        wall.output_for_object(
       indexer, num_vertices, vertices, faces, building_index);
       for (const auto& roof : m_building_roofs)
-        roof.output_for_object( 
+        roof.output_for_object(
       indexer, num_vertices, vertices, faces, building_index);
       return std::make_pair(vertices, faces);
     }
@@ -456,14 +456,14 @@ namespace internal {
     template<
     typename VerticesOutputIterator,
     typename FacesOutputIterator>
-    boost::optional< std::pair<VerticesOutputIterator, FacesOutputIterator> > 
+    boost::optional< std::pair<VerticesOutputIterator, FacesOutputIterator> >
     get_partitioning_3(
       Indexer& indexer,
       std::size_t& num_vertices,
       VerticesOutputIterator vertices,
       FacesOutputIterator faces,
       const std::size_t building_index) const {
-      
+
       if (m_partition_3.faces.empty())
         return boost::none;
 
@@ -476,14 +476,14 @@ namespace internal {
     template<
     typename VerticesOutputIterator,
     typename FacesOutputIterator>
-    boost::optional< std::pair<VerticesOutputIterator, FacesOutputIterator> > 
+    boost::optional< std::pair<VerticesOutputIterator, FacesOutputIterator> >
     get_walls_corresponding_to_roofs(
       Indexer& indexer,
       std::size_t& num_vertices,
       VerticesOutputIterator vertices,
       FacesOutputIterator faces,
       const std::size_t building_index) const {
-      
+
       if (m_building.walls2.empty())
         return boost::none;
 
@@ -496,14 +496,14 @@ namespace internal {
     template<
     typename VerticesOutputIterator,
     typename FacesOutputIterator>
-    boost::optional< std::pair<VerticesOutputIterator, FacesOutputIterator> > 
+    boost::optional< std::pair<VerticesOutputIterator, FacesOutputIterator> >
     get_roofs(
       Indexer& indexer,
       std::size_t& num_vertices,
       VerticesOutputIterator vertices,
       FacesOutputIterator faces,
       const std::size_t building_index) const {
-      
+
       if (m_building.roofs2.empty())
         return boost::none;
 
@@ -518,7 +518,7 @@ namespace internal {
     const Points_3& m_input;
     const std::vector<Point_3>& m_better_cluster;
     Building& m_building;
-    
+
     bool m_empty;
     Points_3 m_cluster;
     std::vector<Indices> m_roof_points_3;
@@ -531,7 +531,7 @@ namespace internal {
 
     std::shared_ptr<Generic_simplifier> m_simplifier_ptr;
     std::shared_ptr<Partition_23_adapter> m_partion_23_adapter_ptr;
-    
+
     std::vector<Segment_2> m_partitioning_constraints_2;
     std::vector< std::vector<Segment_2> > m_inner_wall_contours;
     std::vector< std::vector<Segment_2> > m_inner_roof_contours;
@@ -546,7 +546,7 @@ namespace internal {
     void create_input_cluster_3(
       const FT region_growing_scale_3,
       const FT region_growing_angle_3) {
-      
+
       if (empty()) return;
 
       const Building_roofs_creator creator(m_data.point_map_3);
@@ -565,9 +565,9 @@ namespace internal {
       const FT region_growing_distance_to_line_3,
       const FT alpha_shape_size_2,
       const FT max_height_difference) {
-        
+
       if (empty()) return;
-      
+
       const Building_roofs_creator creator(m_data.point_map_3);
       creator.create_roof_regions(
         m_cluster,
@@ -592,7 +592,7 @@ namespace internal {
       const FT angle_bound_2,
       const FT ordinate_bound_2,
       const bool use_lidar) {
-        
+
       // Roofs.
       bool success = add_approximate_roofs();
       if (!success) return;
@@ -609,7 +609,7 @@ namespace internal {
 
       const Building_walls_estimator westimator(
         m_building.edges1,
-        bottom_z, 
+        bottom_z,
         top_z);
 
       success = add_outer_walls(westimator);
@@ -655,7 +655,7 @@ namespace internal {
         const Point_2 t = Point_2(p1.x(), p1.y());
         outer.push_back(Segment_2(s, t));
       }
-      
+
       Segment_merger merger(ordinate_bound_2);
       merger.merge_segments_with_outer_boundary(outer, segments);
 
@@ -664,7 +664,7 @@ namespace internal {
     }
 
     bool add_approximate_roofs() {
-      
+
       const Building_roofs_estimator restimator(
         m_cluster,
         m_data.point_map_3,
@@ -689,7 +689,7 @@ namespace internal {
 
     bool add_outer_walls(
       const Building_walls_estimator& westimator) {
-     
+
       westimator.estimate(m_building_outer_walls);
 
       // Safety feature to protect buildings with insufficient number of walls.
@@ -813,12 +813,12 @@ namespace internal {
       }
 
       Saver<Traits> saver;
-      saver.save_polylines(m_partitioning_constraints_2, 
-      "/Users/monet/Documents/lod/logs/buildings/tmp/interior-edges-kinetic");
+      saver.save_polylines(m_partitioning_constraints_2,
+      "/Users/monet/Documents/gf/lod/logs/buildings/tmp/interior-edges-kinetic");
     }
 
     void regularize_inner_contours(
-      const bool regularize_angles, 
+      const bool regularize_angles,
       const bool regularize_ordinates,
       const bool snap,
       const FT min_length_2,
@@ -844,7 +844,7 @@ namespace internal {
       }
 
       save_contours(contours,
-      "/Users/monet/Documents/lod/logs/buildings/tmp/interior-" 
+      "/Users/monet/Documents/gf/lod/logs/buildings/tmp/interior-"
       + name + "-edges-after");
 
       segments.clear();
@@ -854,19 +854,19 @@ namespace internal {
 
       Segment_merger merger(ordinate_bound_2);
 
-      if (regularize_ordinates)  
+      if (regularize_ordinates)
         merger.merge_segments(segments);
 
       Saver<Traits> saver;
       saver.save_polylines(segments,
-        "/Users/monet/Documents/lod/logs/buildings/tmp/interior-" 
+        "/Users/monet/Documents/gf/lod/logs/buildings/tmp/interior-"
       + name + "-edges-merged");
 
       if (snap)
         merger.snap_segments(outer_segments, segments);
 
       saver.save_polylines(segments,
-      "/Users/monet/Documents/lod/logs/buildings/tmp/interior-" 
+      "/Users/monet/Documents/gf/lod/logs/buildings/tmp/interior-"
       + name + "-edges-snapped");
     }
 
@@ -874,19 +874,19 @@ namespace internal {
       const bool height_based,
       const std::string name,
       std::vector< std::vector<Segment_2> >& contours) {
-      
+
       m_simplifier_ptr->create_inner_contours(height_based);
       m_simplifier_ptr->get_contours(
         contours);
 
       save_contours(contours,
-      "/Users/monet/Documents/lod/logs/buildings/tmp/interior-" 
+      "/Users/monet/Documents/gf/lod/logs/buildings/tmp/interior-"
       + name + "-edges-before");
     }
 
     void create_roof_contours_test(
       std::vector< std::vector<Segment_2> >& contours) {
-      
+
       std::vector<Segment_2> segments;
       for (const auto& edge : m_building.edges1)
         segments.push_back(edge.segment);
@@ -896,7 +896,7 @@ namespace internal {
         contours);
 
       save_contours(contours,
-      "/Users/monet/Documents/lod/logs/buildings/tmp/interior-roof-edges-before");
+      "/Users/monet/Documents/gf/lod/logs/buildings/tmp/interior-roof-edges-before");
     }
 
     bool create_image(
@@ -917,13 +917,13 @@ namespace internal {
 
       Saver<Traits> saver;
       saver.save_polylines(segments,
-      "/Users/monet/Documents/lod/logs/buildings/tmp/boundary-edges");
+      "/Users/monet/Documents/gf/lod/logs/buildings/tmp/boundary-edges");
 
       if (m_cluster.empty() || m_roof_points_3.empty())
         return false;
 
       m_simplifier_ptr = std::make_shared<Generic_simplifier>(
-        m_cluster, 
+        m_cluster,
         m_data.point_map_3,
         grid_cell_width_2,
         alpha_shape_size_2,
@@ -932,7 +932,7 @@ namespace internal {
         image_noise_2,
         min_length_2,
         noise_level,
-        region_growing_scale_3, 
+        region_growing_scale_3,
         region_growing_angle_3,
         use_lidar);
 
@@ -965,7 +965,7 @@ namespace internal {
       const std::size_t kinetic_max_intersections_2) {
 
       if (m_partitioning_constraints_2.empty()) return;
-      
+
 			const Kinetic_partitioning_2 kinetic(
         kinetic_min_face_width_2,
         kinetic_max_intersections_2);
@@ -974,12 +974,12 @@ namespace internal {
         m_partition_2);
 
       save_partition_2(
-        "/Users/monet/Documents/lod/logs/buildings/tmp/partition_2", false);
+        "/Users/monet/Documents/gf/lod/logs/buildings/tmp/partition_2", false);
       std::cout << "partition finished" << std::endl;
     }
 
     void partition_2_from_image_v1() {
-      
+
     }
 
     void partition_2_from_image_v2(
@@ -1000,10 +1000,10 @@ namespace internal {
       Traits, std::shared_ptr<Generic_simplifier> >;
 
       Partition_builder_from_image_2 builder(
-        boundary, m_building.base0.triangulation, 
+        boundary, m_building.base0.triangulation,
         m_simplifier_ptr, m_partition_2,
         min_length_2, angle_bound_2, ordinate_bound_2);
-      
+
       builder.build();
       builder.add_constraints();
       builder.compute_visibility();
@@ -1033,10 +1033,10 @@ namespace internal {
       Traits, std::shared_ptr<Generic_simplifier> >;
 
       Partition_builder_from_image_2 builder(
-        boundary, m_building.base0.triangulation, 
+        boundary, m_building.base0.triangulation,
         m_simplifier_ptr, m_partition_2,
         noise_level, min_length_2, angle_bound_2, ordinate_bound_2);
-      
+
       builder.build();
       builder.get_roof_planes(m_roof_planes);
 
@@ -1070,16 +1070,16 @@ namespace internal {
       LOD2_image_reconstruction builder(
         m_input, m_data.point_map_3,
         boundary, m_building.directions,
-        m_building.base0.triangulation, 
+        m_building.base0.triangulation,
         m_simplifier_ptr, m_partition_2,
-        noise_level_2, 
-        min_length_2, angle_bound_2, ordinate_bound_2, 
+        noise_level_2,
+        min_length_2, angle_bound_2, ordinate_bound_2,
         max_height_difference, beta, m_building.top_z);
-      
+
       builder.build();
       builder.simplify();
       builder.create_tree();
-      
+
       builder.regularize();
       builder.get_roof_planes(m_roof_planes);
       builder.get_lod2(m_building);
@@ -1094,8 +1094,8 @@ namespace internal {
       std::size_t num_vertices = 0;
       internal::Indexer<Point_3> indexer;
 
-      std::vector<Point_3> vertices; 
-      std::vector<Indices> faces; 
+      std::vector<Point_3> vertices;
+      std::vector<Indices> faces;
       std::vector<CGAL::Color> fcolors;
 
       Polygon_inserter<Traits> inserter(faces, fcolors);
@@ -1111,13 +1111,13 @@ namespace internal {
             indexer, num_vertices, output_vertices, output_faces, z);
         }
       }
-      
+
       Saver<Traits> saver;
       saver.export_polygon_soup(vertices, faces, fcolors, path);
     }
 
     void compute_visibility_2() {
-      
+
       if (m_partition_2.empty()) return;
 
       std::vector<Point_3> points;
@@ -1138,7 +1138,7 @@ namespace internal {
       m_num_roofs  = updated_regions.size();
       m_num_labels = visibility.number_of_actual_roofs(m_partition_2);
 
-      std::cout << "Num roofs/labels: " 
+      std::cout << "Num roofs/labels: "
         << m_num_roofs << "/" << m_num_labels << std::endl;
 
       if (m_num_roofs == 0 || m_num_labels == 0) {
@@ -1146,9 +1146,9 @@ namespace internal {
       }
 
       save_partition_2(
-        "/Users/monet/Documents/lod/logs/buildings/tmp/visibility_inout_2", false);
+        "/Users/monet/Documents/gf/lod/logs/buildings/tmp/visibility_inout_2", false);
       save_partition_2(
-        "/Users/monet/Documents/lod/logs/buildings/tmp/visibility_roofs_2", true);
+        "/Users/monet/Documents/gf/lod/logs/buildings/tmp/visibility_roofs_2", true);
       std::cout << "visibility finished" << std::endl;
     }
 
@@ -1167,7 +1167,7 @@ namespace internal {
       }
 
       save_partition_2(
-        "/Users/monet/Documents/lod/logs/buildings/tmp/graphcut_roofs_2", true);
+        "/Users/monet/Documents/gf/lod/logs/buildings/tmp/graphcut_roofs_2", true);
       std::cout << "graphcut finished" << std::endl;
     }
 
@@ -1224,7 +1224,7 @@ namespace internal {
       const FT angle_bound_2,
       const bool use_lidar,
       const Building_walls_estimator& westimator) {
-      
+
       // Create image.
       const bool success = create_image(
         grid_cell_width_2,
@@ -1245,7 +1245,7 @@ namespace internal {
 
       // Create region growing based segments.
       std::vector<Segment_2> segments;
-      create_segments_region_growing(points, segments); 
+      create_segments_region_growing(points, segments);
 
       // Regularize segments with the global regularizer.
       regularize_segments_global(angle_bound_2, segments);
@@ -1271,7 +1271,7 @@ namespace internal {
     }
 
     void create_segments_region_growing(
-      const std::vector<Point_2>& points, 
+      const std::vector<Point_2>& points,
       std::vector<Segment_2>& segments) {
 
       Building_walls_creator creator(points);
@@ -1285,8 +1285,8 @@ namespace internal {
 
       creator.create_boundaries(regions, segments);
       Saver<Traits> saver;
-      saver.save_polylines(segments, 
-      "/Users/monet/Documents/lod/logs/buildings/tmp/interior-edges-before");
+      saver.save_polylines(segments,
+      "/Users/monet/Documents/gf/lod/logs/buildings/tmp/interior-edges-before");
     }
 
     void regularize_segments_global(
@@ -1300,8 +1300,8 @@ namespace internal {
         angle_bound_2);
 
       Saver<Traits> saver;
-      saver.save_polylines(segments, 
-      "/Users/monet/Documents/lod/logs/buildings/tmp/interior-edges-after");
+      saver.save_polylines(segments,
+      "/Users/monet/Documents/gf/lod/logs/buildings/tmp/interior-edges-after");
     }
 
     void compute_partition_data_23(
@@ -1323,7 +1323,7 @@ namespace internal {
       CGAL_assertion(top_z > bottom_z);
       top_z -= (top_z - bottom_z) / FT(2);
 
-      m_partion_23_adapter_ptr = 
+      m_partion_23_adapter_ptr =
         std::make_shared<Partition_23_adapter>(
           plane_map,
           bottom_z, top_z,
@@ -1343,7 +1343,7 @@ namespace internal {
       // Outer walls.
       const Building_walls_estimator westimator(
         m_building.edges1,
-        bottom_z, 
+        bottom_z,
         top_z);
 
       m_building_outer_walls.clear();
@@ -1394,7 +1394,7 @@ namespace internal {
           updated_regions,
           stub);
       else {
-       
+
         /*
         m_partion_23_adapter_ptr->get_points_for_visibility_3(
           points,
@@ -1404,14 +1404,14 @@ namespace internal {
         compute_roof_visibility_3();
         return;
       }
-      
+
       using Identity_map_3 = CGAL::Identity_property_map<Point_3>;
       using Visibility_3 = internal::Visibility_3<Traits, std::vector<Point_3>, Identity_map_3>;
       Identity_map_3 identity_map_3;
 
       Visibility_3 visibility(
         points,
-        identity_map_3, 
+        identity_map_3,
         m_building,
         updated_regions);
       visibility.compute(m_partition_3);
@@ -1421,7 +1421,7 @@ namespace internal {
 
     void compute_roof_visibility_3() {
 
-      if (m_partition_2.empty() || m_partition_3.empty()) 
+      if (m_partition_2.empty() || m_partition_3.empty())
         return;
 
       using Visibility_3 = internal::Roof_visibility_3<Traits>;
@@ -1468,7 +1468,7 @@ namespace internal {
       if (m_building.roofs2.empty() || m_building.walls2.empty())
         m_empty = true;
 
-      std::cout << "builder finished: " << 
+      std::cout << "builder finished: " <<
       m_building.walls2.size() << " " << m_building.roofs2.size() << std::endl;
     }
   };

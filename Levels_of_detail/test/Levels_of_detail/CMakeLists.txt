@@ -2,10 +2,11 @@
 # compiling a set of CGAL applications.
 project(Levels_of_detail_Tests)
 
-# cmake_policy(SET CMP0042 NEW) // kinetic 3
+# kinetic 3
+cmake_policy(SET CMP0042 NEW)
 
 cmake_minimum_required(VERSION 3.1)
-set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD 14)
 
 # CGAL and its components.
 find_package(CGAL QUIET COMPONENTS Core)
@@ -16,11 +17,11 @@ if(NOT CGAL_FOUND)
 endif()
 
 # Required by kinetic3.
-set(CMAKE_CXX_FLAGS 
-"${CMAXE_CXX_FLAGS} -fdeclspec")
+# set(CMAKE_CXX_FLAGS
+# "${CMAXE_CXX_FLAGS} -DBOOST_NO_CXX11_SCOPED_ENUMS -fdeclspec")
 
-# set(CMAKE_CXX_FLAGS 
-# "${CMAXE_CXX_FLAGS} -fdeclspec -Wno-format -Wno-ignored-attributes -Wno-parentheses -Wno-return-type -Wno-macro-redefined -Wno-switch -Wno-logical-op-parentheses -Wno-deprecated-declarations -Wno-user-defined-warnings -Wno-unused-result")
+set(CMAKE_CXX_FLAGS
+"${CMAXE_CXX_FLAGS} -DBOOST_NO_CXX11_SCOPED_ENUMS -fdeclspec -Wno-format -Wno-ignored-attributes -Wno-parentheses -Wno-return-type -Wno-macro-redefined -Wno-switch -Wno-logical-op-parentheses -Wno-deprecated-declarations -Wno-user-defined-warnings -Wno-unused-result")
 
 # Include a helper file.
 include(${CGAL_USE_FILE})
@@ -82,57 +83,57 @@ set(KINETIC_LIBRARY3 kinetic3)
 
 set(sources
 test_lod_basic.cpp
-# ../../include/CGAL/Levels_of_detail/internal/Partitioning/Kinetic/src/event_queue.cpp
-# ../../include/CGAL/Levels_of_detail/internal/Partitioning/Kinetic/src/event.cpp
-# ../../include/CGAL/Levels_of_detail/internal/Partitioning/Kinetic/src/intersection_line.cpp
-# ../../include/CGAL/Levels_of_detail/internal/Partitioning/Kinetic/src/octree_base_vertex.cpp
-# ../../include/CGAL/Levels_of_detail/internal/Partitioning/Kinetic/src/octree_base.cpp
-# ../../include/CGAL/Levels_of_detail/internal/Partitioning/Kinetic/src/oriented_bounding_box_2.cpp
-# ../../include/CGAL/Levels_of_detail/internal/Partitioning/Kinetic/src/oriented_bounding_box_3.cpp
-# ../../include/CGAL/Levels_of_detail/internal/Partitioning/Kinetic/src/oriented_bounding_box.cpp
-# ../../include/CGAL/Levels_of_detail/internal/Partitioning/Kinetic/src/parameters.cpp
-# ../../include/CGAL/Levels_of_detail/internal/Partitioning/Kinetic/src/partition_edge.cpp
-# ../../include/CGAL/Levels_of_detail/internal/Partitioning/Kinetic/src/partition_facet.cpp
-# ../../include/CGAL/Levels_of_detail/internal/Partitioning/Kinetic/src/partition_multiple.cpp
-# ../../include/CGAL/Levels_of_detail/internal/Partitioning/Kinetic/src/partition_polyhedron.cpp
-# ../../include/CGAL/Levels_of_detail/internal/Partitioning/Kinetic/src/partition_simple.cpp
-# ../../include/CGAL/Levels_of_detail/internal/Partitioning/Kinetic/src/partition_vertex_octree.cpp
-# ../../include/CGAL/Levels_of_detail/internal/Partitioning/Kinetic/src/partition_vertex.cpp
-# ../../include/CGAL/Levels_of_detail/internal/Partitioning/Kinetic/src/partition.cpp
-# ../../include/CGAL/Levels_of_detail/internal/Partitioning/Kinetic/src/planar_segment.cpp
-# ../../include/CGAL/Levels_of_detail/internal/Partitioning/Kinetic/src/ply_in.cpp
-# ../../include/CGAL/Levels_of_detail/internal/Partitioning/Kinetic/src/point_cloud_vertex.cpp
-# ../../include/CGAL/Levels_of_detail/internal/Partitioning/Kinetic/src/polygon_directions.cpp
-# ../../include/CGAL/Levels_of_detail/internal/Partitioning/Kinetic/src/polygon_edge.cpp
-# ../../include/CGAL/Levels_of_detail/internal/Partitioning/Kinetic/src/polygon_group.cpp
-# ../../include/CGAL/Levels_of_detail/internal/Partitioning/Kinetic/src/polygon_link.cpp
-# ../../include/CGAL/Levels_of_detail/internal/Partitioning/Kinetic/src/polygon_node.cpp
-# ../../include/CGAL/Levels_of_detail/internal/Partitioning/Kinetic/src/polygon_segment_r.cpp
-# ../../include/CGAL/Levels_of_detail/internal/Partitioning/Kinetic/src/polygon_segment_s.cpp
-# ../../include/CGAL/Levels_of_detail/internal/Partitioning/Kinetic/src/polygon_segment.cpp
-# ../../include/CGAL/Levels_of_detail/internal/Partitioning/Kinetic/src/polygon_set.cpp
-# ../../include/CGAL/Levels_of_detail/internal/Partitioning/Kinetic/src/polygon_tree.cpp
-# ../../include/CGAL/Levels_of_detail/internal/Partitioning/Kinetic/src/polygon_vertex_octree_data.cpp
-# ../../include/CGAL/Levels_of_detail/internal/Partitioning/Kinetic/src/polygon_vertex_octree.cpp
-# ../../include/CGAL/Levels_of_detail/internal/Partitioning/Kinetic/src/polygon_vertex_r.cpp
-# ../../include/CGAL/Levels_of_detail/internal/Partitioning/Kinetic/src/polygon_vertex_s.cpp
-# ../../include/CGAL/Levels_of_detail/internal/Partitioning/Kinetic/src/polygon_vertex.cpp
-# ../../include/CGAL/Levels_of_detail/internal/Partitioning/Kinetic/src/polygon.cpp
-# ../../include/CGAL/Levels_of_detail/internal/Partitioning/Kinetic/src/propagation_multiple.cpp
-# ../../include/CGAL/Levels_of_detail/internal/Partitioning/Kinetic/src/propagation_simple.cpp
-# ../../include/CGAL/Levels_of_detail/internal/Partitioning/Kinetic/src/propagation.cpp
-# ../../include/CGAL/Levels_of_detail/internal/Partitioning/Kinetic/src/segment_translation.cpp
-# ../../include/CGAL/Levels_of_detail/internal/Partitioning/Kinetic/src/segment.cpp
-# ../../include/CGAL/Levels_of_detail/internal/Partitioning/Kinetic/src/stats.cpp
-# ../../include/CGAL/Levels_of_detail/internal/Partitioning/Kinetic/src/support_plane_construct.cpp
-# ../../include/CGAL/Levels_of_detail/internal/Partitioning/Kinetic/src/support_plane_draw.cpp
-# ../../include/CGAL/Levels_of_detail/internal/Partitioning/Kinetic/src/support_plane_event_handlers.cpp
-# ../../include/CGAL/Levels_of_detail/internal/Partitioning/Kinetic/src/support_plane_object.cpp
-# ../../include/CGAL/Levels_of_detail/internal/Partitioning/Kinetic/src/support_plane_segment_initializers.cpp
-# ../../include/CGAL/Levels_of_detail/internal/Partitioning/Kinetic/src/support_plane_stopping_condition.cpp
-# ../../include/CGAL/Levels_of_detail/internal/Partitioning/Kinetic/src/support_plane.cpp
-# ../../include/CGAL/Levels_of_detail/internal/Partitioning/Kinetic/src/universe.cpp
-# ../../include/CGAL/Levels_of_detail/internal/Partitioning/Kinetic/src/vars.cpp
+../../include/CGAL/Levels_of_detail/internal/Partitioning/Kinetic/src/event_queue.cpp
+../../include/CGAL/Levels_of_detail/internal/Partitioning/Kinetic/src/event.cpp
+../../include/CGAL/Levels_of_detail/internal/Partitioning/Kinetic/src/intersection_line.cpp
+../../include/CGAL/Levels_of_detail/internal/Partitioning/Kinetic/src/octree_base_vertex.cpp
+../../include/CGAL/Levels_of_detail/internal/Partitioning/Kinetic/src/octree_base.cpp
+../../include/CGAL/Levels_of_detail/internal/Partitioning/Kinetic/src/oriented_bounding_box_2.cpp
+../../include/CGAL/Levels_of_detail/internal/Partitioning/Kinetic/src/oriented_bounding_box_3.cpp
+../../include/CGAL/Levels_of_detail/internal/Partitioning/Kinetic/src/oriented_bounding_box.cpp
+../../include/CGAL/Levels_of_detail/internal/Partitioning/Kinetic/src/parameters.cpp
+../../include/CGAL/Levels_of_detail/internal/Partitioning/Kinetic/src/partition_edge.cpp
+../../include/CGAL/Levels_of_detail/internal/Partitioning/Kinetic/src/partition_facet.cpp
+../../include/CGAL/Levels_of_detail/internal/Partitioning/Kinetic/src/partition_multiple.cpp
+../../include/CGAL/Levels_of_detail/internal/Partitioning/Kinetic/src/partition_polyhedron.cpp
+../../include/CGAL/Levels_of_detail/internal/Partitioning/Kinetic/src/partition_simple.cpp
+../../include/CGAL/Levels_of_detail/internal/Partitioning/Kinetic/src/partition_vertex_octree.cpp
+../../include/CGAL/Levels_of_detail/internal/Partitioning/Kinetic/src/partition_vertex.cpp
+../../include/CGAL/Levels_of_detail/internal/Partitioning/Kinetic/src/partition.cpp
+../../include/CGAL/Levels_of_detail/internal/Partitioning/Kinetic/src/planar_segment.cpp
+../../include/CGAL/Levels_of_detail/internal/Partitioning/Kinetic/src/ply_in.cpp
+../../include/CGAL/Levels_of_detail/internal/Partitioning/Kinetic/src/point_cloud_vertex.cpp
+../../include/CGAL/Levels_of_detail/internal/Partitioning/Kinetic/src/polygon_directions.cpp
+../../include/CGAL/Levels_of_detail/internal/Partitioning/Kinetic/src/polygon_edge.cpp
+../../include/CGAL/Levels_of_detail/internal/Partitioning/Kinetic/src/polygon_group.cpp
+../../include/CGAL/Levels_of_detail/internal/Partitioning/Kinetic/src/polygon_link.cpp
+../../include/CGAL/Levels_of_detail/internal/Partitioning/Kinetic/src/polygon_node.cpp
+../../include/CGAL/Levels_of_detail/internal/Partitioning/Kinetic/src/polygon_segment_r.cpp
+../../include/CGAL/Levels_of_detail/internal/Partitioning/Kinetic/src/polygon_segment_s.cpp
+../../include/CGAL/Levels_of_detail/internal/Partitioning/Kinetic/src/polygon_segment.cpp
+../../include/CGAL/Levels_of_detail/internal/Partitioning/Kinetic/src/polygon_set.cpp
+../../include/CGAL/Levels_of_detail/internal/Partitioning/Kinetic/src/polygon_tree.cpp
+../../include/CGAL/Levels_of_detail/internal/Partitioning/Kinetic/src/polygon_vertex_octree_data.cpp
+../../include/CGAL/Levels_of_detail/internal/Partitioning/Kinetic/src/polygon_vertex_octree.cpp
+../../include/CGAL/Levels_of_detail/internal/Partitioning/Kinetic/src/polygon_vertex_r.cpp
+../../include/CGAL/Levels_of_detail/internal/Partitioning/Kinetic/src/polygon_vertex_s.cpp
+../../include/CGAL/Levels_of_detail/internal/Partitioning/Kinetic/src/polygon_vertex.cpp
+../../include/CGAL/Levels_of_detail/internal/Partitioning/Kinetic/src/polygon.cpp
+../../include/CGAL/Levels_of_detail/internal/Partitioning/Kinetic/src/propagation_multiple.cpp
+../../include/CGAL/Levels_of_detail/internal/Partitioning/Kinetic/src/propagation_simple.cpp
+../../include/CGAL/Levels_of_detail/internal/Partitioning/Kinetic/src/propagation.cpp
+../../include/CGAL/Levels_of_detail/internal/Partitioning/Kinetic/src/segment_translation.cpp
+../../include/CGAL/Levels_of_detail/internal/Partitioning/Kinetic/src/segment.cpp
+../../include/CGAL/Levels_of_detail/internal/Partitioning/Kinetic/src/stats.cpp
+../../include/CGAL/Levels_of_detail/internal/Partitioning/Kinetic/src/support_plane_construct.cpp
+../../include/CGAL/Levels_of_detail/internal/Partitioning/Kinetic/src/support_plane_draw.cpp
+../../include/CGAL/Levels_of_detail/internal/Partitioning/Kinetic/src/support_plane_event_handlers.cpp
+../../include/CGAL/Levels_of_detail/internal/Partitioning/Kinetic/src/support_plane_object.cpp
+../../include/CGAL/Levels_of_detail/internal/Partitioning/Kinetic/src/support_plane_segment_initializers.cpp
+../../include/CGAL/Levels_of_detail/internal/Partitioning/Kinetic/src/support_plane_stopping_condition.cpp
+../../include/CGAL/Levels_of_detail/internal/Partitioning/Kinetic/src/support_plane.cpp
+../../include/CGAL/Levels_of_detail/internal/Partitioning/Kinetic/src/universe.cpp
+../../include/CGAL/Levels_of_detail/internal/Partitioning/Kinetic/src/vars.cpp
 )
 
 # OSQP.
@@ -141,7 +142,7 @@ find_package(osqp REQUIRED)
 # FLANN.
 add_library(flann SHARED IMPORTED)
 set_property(TARGET flann
-             PROPERTY IMPORTED_LOCATION /usr/local/Cellar/flann/1.9.1_9/lib/libflann.dylib)
+             PROPERTY IMPORTED_LOCATION /usr/local/Cellar/flann/1.9.1_10/lib/libflann.dylib)
 set(FLANN_LIBRARY flann)
 
 # Creating entries for all C++ files with "main" routine.

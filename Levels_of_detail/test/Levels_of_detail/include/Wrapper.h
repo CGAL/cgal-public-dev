@@ -1,10 +1,10 @@
 #ifndef CGAL_LOD_WRAPPER_H
 #define CGAL_LOD_WRAPPER_H
 
-#if defined(WIN32) || defined(_WIN32) 
+#if defined(WIN32) || defined(_WIN32)
 #define _SR_ "\\"
-#else 
-#define _SR_ "/" 
+#else
+#define _SR_ "/"
 #endif
 
 // STL includes.
@@ -48,7 +48,7 @@ namespace Levels_of_detail {
     using Parameters = internal::Parameters<FT>;
     using Terminal_parser = Terminal_parser<FT>;
     using Point_set = Point_set_3<Point_3>;
-    
+
     using Points = std::vector<Point_3>;
     using Points_container = std::vector<Points>;
     using Indices = std::vector<std::size_t>;
@@ -62,17 +62,17 @@ namespace Levels_of_detail {
     using Visibility_map = Visibility_from_semantic_map<Semantic_map>;
 
     using LOD = Levels_of_detail<
-    Traits, 
-    Point_set, 
-    Point_map, 
-    Semantic_map, 
+    Traits,
+    Point_set,
+    Point_map,
+    Semantic_map,
     Visibility_map,
     CGAL::Tag_true>;
 
     Wrapper(
-      int argc, 
-      char **argv, 
-      const std::string path_to_save) : 
+      int argc,
+      char **argv,
+      const std::string path_to_save) :
     m_terminal_parser(argc, argv, path_to_save),
     m_path(path_to_save),
     m_path_gr(m_path + "ground" + std::string(_SR_)),
@@ -86,7 +86,7 @@ namespace Levels_of_detail {
     m_make_all(false)
     { }
 
-    void execute() {           
+    void execute() {
       parse_terminal();
       load_input_data();
       execute_pipeline();
@@ -117,7 +117,7 @@ namespace Levels_of_detail {
 
       // Required parameters.
       m_terminal_parser.add_str_parameter("-data", m_parameters.data);
-                
+
       // Label indices.
       m_terminal_parser.add_str_parameter("-gi", m_parameters.gi);
       m_terminal_parser.add_str_parameter("-bi", m_parameters.bi);
@@ -127,7 +127,7 @@ namespace Levels_of_detail {
       // Main parameters.
       m_terminal_parser.add_val_parameter("-scale", m_parameters.scale);
       m_terminal_parser.add_val_parameter("-noise", m_parameters.noise_level);
-      
+
       m_terminal_parser.add_bool_parameter("-lidar", m_parameters.lidar);
 
       m_terminal_parser.add_bool_parameter("-make_ground", m_make_ground);
@@ -136,7 +136,7 @@ namespace Levels_of_detail {
       m_terminal_parser.add_bool_parameter("-make_lod01", m_make_lod01);
       m_terminal_parser.add_bool_parameter("-make_lod2", m_make_lod2);
       m_terminal_parser.add_bool_parameter("-make_all", m_make_all);
-      
+
 
       // Update.
       m_parameters.update_dependent();
@@ -168,7 +168,7 @@ namespace Levels_of_detail {
       m_terminal_parser.add_val_parameter("-vis_scale_2", m_parameters.buildings.visibility_scale_2);
       m_terminal_parser.add_val_parameter("-gc_beta_2", m_parameters.buildings.graphcut_beta_2);
 
-      // Detecting building roofs. 
+      // Detecting building roofs.
       m_terminal_parser.add_val_parameter("-rg_scale_3", m_parameters.buildings.region_growing_scale_3);
       m_terminal_parser.add_val_parameter("-rg_noise_3", m_parameters.buildings.region_growing_noise_level_3);
       m_terminal_parser.add_val_parameter("-rg_angle_3", m_parameters.buildings.region_growing_angle_3);
@@ -200,19 +200,19 @@ namespace Levels_of_detail {
     void load_input_data() {
       std::cout << std::endl << "Input data: " << std::endl;
       std::ifstream file(m_parameters.data.c_str(), std::ios_base::binary);
-      file >> m_point_set; 
+      file >> m_point_set;
       file.close();
-      std::cout << "File contains " << m_point_set.size() 
+      std::cout << "File contains " << m_point_set.size()
       << " points" << std::endl;
 
       if (are_label_data_defined()) {
-        std::cout << 
-          "Label data are defined!" 
+        std::cout <<
+          "Label data are defined!"
         << std::endl << std::endl;
         m_label_map = m_point_set. template property_map<int>("label").first;
       } else {
-        std::cerr << 
-          "Label data are not defined!" 
+        std::cerr <<
+          "Label data are not defined!"
         << std::endl << std::endl;
         exit(EXIT_FAILURE);
       }
@@ -233,7 +233,7 @@ namespace Levels_of_detail {
       }
 
       // Define a map from a user-defined label to the LOD semantic label.
-      Semantic_map semantic_map(m_label_map, 
+      Semantic_map semantic_map(m_label_map,
       m_parameters.gi,
       m_parameters.bi,
       m_parameters.ii,
@@ -248,7 +248,7 @@ namespace Levels_of_detail {
 
       // Create LOD.
       LOD lod(
-        m_point_set, 
+        m_point_set,
         m_point_set.point_map(),
         semantic_map,
         m_parameters,
@@ -257,8 +257,8 @@ namespace Levels_of_detail {
 
       /*
       std::cout << std::endl << "COMPLETE:" << std::endl;
-      lod.build(); 
-      lod.build_trees(); 
+      lod.build();
+      lod.build_trees();
       lod.build_buildings(); */
 
       std::cout << std::endl << "STEPS:" << std::endl;
@@ -269,10 +269,10 @@ namespace Levels_of_detail {
         save_ground_input(lod);
 
         if (m_make_lod01 || m_make_lod2) {
-          save_ground(lod, 
+          save_ground(lod,
           Reconstruction_type::PLANAR_GROUND, m_parameters.ground.precision,
           m_path + "planar_ground");
-          save_ground(lod, 
+          save_ground(lod,
           Reconstruction_type::SMOOTH_GROUND, m_parameters.ground.precision,
           m_path + "smooth_ground");
         }
@@ -341,24 +341,24 @@ namespace Levels_of_detail {
 
       // LODs.
       if (m_make_lod01) {
-        save_lod(lod, 
-        Reconstruction_type::LOD0, m_parameters.ground.precision, 
+        save_lod(lod,
+        Reconstruction_type::LOD0, m_parameters.ground.precision,
         m_path + "LOD0");
-        save_lod(lod, 
-        Reconstruction_type::LOD1, m_parameters.ground.precision, 
+        save_lod(lod,
+        Reconstruction_type::LOD1, m_parameters.ground.precision,
         m_path + "LOD1");
       }
 
       if (m_make_lod2) {
-        save_lod(lod, 
-        Reconstruction_type::LOD2, m_parameters.ground.precision, 
+        save_lod(lod,
+        Reconstruction_type::LOD2, m_parameters.ground.precision,
         m_path + "LOD2");
       }
     }
 
     // Results.
     void save_ground(
-      const LOD& lod, 
+      const LOD& lod,
       const Reconstruction_type ground_type,
       const FT ground_precision,
       const std::string path) {
@@ -371,13 +371,13 @@ namespace Levels_of_detail {
         boost::make_function_output_iterator(inserter),
         ground_type,
         ground_precision);
-    
+
       if (success)
         m_saver.export_polygon_soup(vertices, faces, fcolors, path);
     }
 
     void save_trees(
-      const LOD& lod, 
+      const LOD& lod,
       const Reconstruction_type lod_type,
       const std::string path) {
 
@@ -388,13 +388,13 @@ namespace Levels_of_detail {
         std::back_inserter(vertices),
         boost::make_function_output_iterator(inserter),
         lod_type);
-    
+
       if (success)
         m_saver.export_polygon_soup(vertices, faces, fcolors, path);
     }
 
     void save_buildings(
-      const LOD& lod, 
+      const LOD& lod,
       const Reconstruction_type lod_type,
       const std::string path) {
 
@@ -405,7 +405,7 @@ namespace Levels_of_detail {
         std::back_inserter(vertices),
         boost::make_function_output_iterator(inserter),
         lod_type);
-    
+
       if (success)
         m_saver.export_polygon_soup(vertices, faces, fcolors, path);
     }
@@ -424,32 +424,32 @@ namespace Levels_of_detail {
         boost::make_function_output_iterator(inserter),
         lod_type,
         ground_precision);
-      
+
       if (success)
         m_saver.export_polygon_soup(vertices, faces, fcolors, path);
     }
 
     // Inermediate ground.
     void save_ground_input(const LOD& lod) {
-      save_points(lod, 
+      save_points(lod,
       Intermediate_step::INPUT_GROUND_POINTS,
       m_path_gr + "0_ground_points");
     }
 
     // Inermediate trees.
     void save_trees_input(const LOD& lod) {
-      save_points(lod, 
+      save_points(lod,
       Intermediate_step::INPUT_VEGETATION_POINTS,
       m_path_tr + "0_vegetation_points");
     }
 
     void save_tree_clusters(const LOD& lod) {
-      save_points(lod, Intermediate_step::TREE_CLUSTERS, 
+      save_points(lod, Intermediate_step::TREE_CLUSTERS,
       m_path_tr + "trees_1_clusters");
     }
 
     void save_trees_before_extrusion(const LOD& lod) {
-      save_points(lod, Intermediate_step::TREE_POINTS, 
+      save_points(lod, Intermediate_step::TREE_POINTS,
       m_path_tr + "trees_2_points");
       save_polylines(lod, Intermediate_step::TREE_BOUNDARIES,
       m_path_tr + "trees_3_boundaries");
@@ -473,24 +473,24 @@ namespace Levels_of_detail {
 
     // Inermediate buildings.
     void save_buildings_input(const LOD& lod) {
-      save_points(lod, 
+      save_points(lod,
       Intermediate_step::INPUT_BUILDING_BOUNDARY_POINTS,
       m_path_bu + "01_building_boundary_points");
-      save_points(lod, 
+      save_points(lod,
       Intermediate_step::INPUT_BUILDING_INTERIOR_POINTS,
       m_path_bu + "02_building_interior_points");
     }
 
     void save_building_clusters(const LOD& lod) {
-      save_points(lod, Intermediate_step::BUILDING_CLUSTERS, 
+      save_points(lod, Intermediate_step::BUILDING_CLUSTERS,
       m_path_bu + "buildings_1_clusters");
     }
 
     void save_buildings_before_extrusion1(const LOD& lod) {
-      save_points(lod, Intermediate_step::BUILDING_BOUNDARY_POINTS, 
+      save_points(lod, Intermediate_step::BUILDING_BOUNDARY_POINTS,
       m_path_bu + "buildings_2_boundary_points");
       /*
-      save_points(lod, Intermediate_step::BUILDING_WALL_POINTS, 
+      save_points(lod, Intermediate_step::BUILDING_WALL_POINTS,
       m_path_bu + "buildings_2_wall_points"); */
       save_polylines(lod, Intermediate_step::BUILDING_APPROXIMATE_BOUNDARIES,
       m_path_bu + "buildings_3_approximate_boundaries");
@@ -513,7 +513,7 @@ namespace Levels_of_detail {
     }
 
     void save_roofs_before_extraction(const LOD& lod) {
-      save_points(lod, Intermediate_step::BUILDING_ROOF_POINTS, 
+      save_points(lod, Intermediate_step::BUILDING_ROOF_POINTS,
       m_path_bu + "buildings_9_roof_points");
       save_mesh(lod, Intermediate_step::APPROXIMATE_BUILDING_BOUNDS,
       m_path_bu + "buildings_10_approximate_bounds");
@@ -532,7 +532,7 @@ namespace Levels_of_detail {
 
     // Helpers.
     void save_points(
-      const LOD& lod, 
+      const LOD& lod,
       const Intermediate_step step,
       const std::string path) {
 
@@ -575,10 +575,10 @@ namespace Levels_of_detail {
 
       Point_set point_set(true);
       std::ifstream in(
-        "/Users/monet/Documents/lod/results/exp46-meeting/florent/data/bu22/bu22-upsampled-oriented.ply", 
+        "/Users/monet/Documents/lod/results/exp46-meeting/florent/data/bu22/bu22-upsampled-oriented.ply",
         std::ios_base::binary);
       in.precision(20);
-      in >> point_set; 
+      in >> point_set;
       in.close();
 
       FT x = FT(0), y = FT(0), z = FT(0);
@@ -610,16 +610,16 @@ namespace Levels_of_detail {
 
       std::stringstream out;
       out.precision(20);
-      out << 
-			"ply" 				             +  std::string(_NL_) + ""     << 
-			"format ascii 1.0"         +  std::string(_NL_) + ""     << 
-      "comment VCGLIB generated" +  std::string(_NL_) + ""     << 
-			"element vertex " << points.size() << "" + std::string(_NL_) + "" << 
-			"property float x"         +  std::string(_NL_) + ""     << 
-			"property float y"         +  std::string(_NL_) + ""     << 
+      out <<
+			"ply" 				             +  std::string(_NL_) + ""     <<
+			"format ascii 1.0"         +  std::string(_NL_) + ""     <<
+      "comment VCGLIB generated" +  std::string(_NL_) + ""     <<
+			"element vertex " << points.size() << "" + std::string(_NL_) + "" <<
+			"property float x"         +  std::string(_NL_) + ""     <<
+			"property float y"         +  std::string(_NL_) + ""     <<
 			"property float z"         +  std::string(_NL_) + "" 		 <<
-      "property float nx"        +  std::string(_NL_) + ""     << 
-			"property float ny"        +  std::string(_NL_) + ""     << 
+      "property float nx"        +  std::string(_NL_) + ""     <<
+			"property float ny"        +  std::string(_NL_) + ""     <<
 			"property float nz"        +  std::string(_NL_) + "" 		 <<
       "element face 0"           +  std::string(_NL_) + "" 		 <<
       "property list uchar int vertex_indices" +  std::string(_NL_) + "" <<
@@ -627,9 +627,9 @@ namespace Levels_of_detail {
 
       for (std::size_t i = 0; i < points.size(); ++i)
         out << points[i] << " " << normals[i] << std::endl;
-      
+
       std::ofstream file(
-        "/Users/monet/Documents/lod/results/exp46-meeting/florent/data/bu22/bu22-upsampled-oriented-cheated.ply", 
+        "/Users/monet/Documents/lod/results/exp46-meeting/florent/data/bu22/bu22-upsampled-oriented-cheated.ply",
         std::ios_base::out);
 
       file.precision(20);

@@ -50,11 +50,11 @@ namespace internal {
     m_tolerance(FT(1) / FT(1000000)),
     m_moe(FT(0)) { }
 
-    void make_groups(const FT max_bound, const std::size_t n, 
+    void make_groups(const FT max_bound, const std::size_t n,
                        const std::map <std::size_t, Segment_data> & segments,
                        const std::vector<FT> & qp_result,
                        std::map<FT, std::vector<std::size_t>> & groups_by_value,
-                       const Targets_map & targets, const Relations_map & relations = Relations_map()) { 
+                       const Targets_map & targets, const Relations_map & relations = Relations_map()) {
       CGAL_precondition(n > 0);
       CGAL_precondition(max_bound > 0);
       CGAL_precondition(qp_result.size() > 0);
@@ -62,7 +62,7 @@ namespace internal {
       m_cond.set_margin_of_error(max_bound);
       m_moe = m_cond.get_margin_of_error();
       CGAL_postcondition(m_moe > 0);
-      
+
       groups_by_value.clear();
       m_groups.clear();
       m_segments_to_groups_hashmap.clear();
@@ -76,11 +76,11 @@ namespace internal {
       build_initial_groups(n, targets, relations, qp_result);
       build_map_of_values(qp_result, segments);
 
-      // Try to assign segments whose orientation has not been optimized thanks 
+      // Try to assign segments whose orientation has not been optimized thanks
       // to the regularization process, to an existing group.
       assign_segments_to_groups(segments);
       build_groups_by_value(groups_by_value);
-    } 
+    }
 
   private:
     const FT m_tolerance;
@@ -89,7 +89,7 @@ namespace internal {
     std::map<std::size_t, int> m_segments_to_groups_hashmap;
     std::map <std::size_t, std::vector<std::size_t>> m_groups;
     std::map<int, FT> m_values;
-    
+
     void build_initial_groups(const std::size_t n,
                               const Targets_map & targets, const Relations_map & relations,
                               const std::vector<FT> & qp_result) {
@@ -108,7 +108,7 @@ namespace internal {
         }
         CGAL_postcondition(r == 0 || r == 1);
 
-        if (CGAL::abs(qp_result[n + p]) >= m_tolerance) { 
+        if (CGAL::abs(qp_result[n + p]) >= m_tolerance) {
           if(rel_it != relations.end()) ++rel_it;
           continue;
         }
@@ -136,7 +136,7 @@ namespace internal {
             if (r == 0) merge_two_groups(g_i, g_j);
             break;
         }
-  
+
         if(rel_it != relations.end()) ++rel_it;
       }
     }
@@ -150,18 +150,18 @@ namespace internal {
           const std::size_t seg_index = sm_i.first;
           const Segment_data & seg_data = segments.at(seg_index);
           const FT val = m_cond.reference(seg_data, qp_result[seg_index]);
-          
-          // Check if the angle that seems to be associated to this group of 
+
+          // Check if the angle that seems to be associated to this group of
           // segments is not too close to another value.
           int g_j = -1;
           for (const auto & it_m : m_values) {
-            if (CGAL::abs(it_m.second - val) < m_moe) 
+            if (CGAL::abs(it_m.second - val) < m_moe)
               g_j = it_m.first;
           }
 
-          if (g_j == -1) 
+          if (g_j == -1)
             m_values[g_i] = val;
-          else                       
+          else
             merge_two_groups(g_j, g_i);
         }
       }
@@ -185,11 +185,11 @@ namespace internal {
             if (g_j != -1) break;
           }
 
-          if (g_j == -1) {   
+          if (g_j == -1) {
             m_values.size() > 0 ? g_i = m_values.rbegin()->first + 1 : g_i = 0;
             m_values[g_i] = val;
-          } 
-          else 
+          }
+          else
             g_i = g_j;
 
           m_segments_to_groups_hashmap[seg_index] = g_i;
@@ -201,16 +201,16 @@ namespace internal {
     void build_groups_by_value(std::map <FT, std::vector<std::size_t>> & groups_by_value) {
       for (const auto & it_m : m_values) {
         const FT val = it_m.second;
-        if (groups_by_value.find(val) == groups_by_value.end()) 
+        if (groups_by_value.find(val) == groups_by_value.end())
           groups_by_value[val] = std::vector<std::size_t>();
       }
 
       for (const auto & sm_i : m_segments_to_groups_hashmap) {
-        const FT val = m_values.at(sm_i.second);     
-        if (groups_by_value.find(val) != groups_by_value.end()) 
+        const FT val = m_values.at(sm_i.second);
+        if (groups_by_value.find(val) != groups_by_value.end())
           groups_by_value[val].push_back(sm_i.first);
       }
-    } 
+    }
 
     int check_group_status(const int g_i, const int g_j) const {
       if (g_i == -1 && g_j == -1) return 1;
@@ -224,7 +224,7 @@ namespace internal {
       m_segments_to_groups_hashmap[i] = g;
       m_segments_to_groups_hashmap[j] = g;
       m_groups[g].push_back(i);
-      m_groups[g].push_back(j); 
+      m_groups[g].push_back(j);
       ++g;
     }
 
@@ -250,7 +250,7 @@ namespace internal {
         m_segments_to_groups_hashmap[gr] = g_i;
         m_groups[g_i].push_back(gr);
       }
-      m_groups[g_j].clear(); 
+      m_groups[g_j].clear();
     }
   };
 

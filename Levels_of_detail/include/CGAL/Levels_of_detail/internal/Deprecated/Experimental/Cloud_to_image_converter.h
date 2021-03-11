@@ -122,19 +122,19 @@ namespace internal {
     using Size_pair = std::pair<std::size_t, std::size_t>;
     using Double_pair = std::pair<double, std::size_t>;
 
-    using K_neighbor_query = 
+    using K_neighbor_query =
     internal::K_neighbor_query<Traits, Indices, Point_map_3>;
-    
-    using Normal_estimator_3 = 
+
+    using Normal_estimator_3 =
     internal::Estimate_normals_3<Traits, Indices, Point_map_3, K_neighbor_query>;
 
-    using Building_roofs_creator = 
+    using Building_roofs_creator =
     internal::Building_roofs_creator<Traits, Point_map_3>;
 
-    using Identity_map_2 = 
+    using Identity_map_2 =
     CGAL::Identity_property_map<Point_2>;
 
-    using Alpha_shapes_filtering_2 = 
+    using Alpha_shapes_filtering_2 =
     internal::Alpha_shapes_filtering_2<Traits>;
 
     using Alpha_expansion = CGAL::internal::Alpha_expansion_graph_cut_boost;
@@ -142,11 +142,11 @@ namespace internal {
     using Segment_range = std::vector<Segment_2>;
     using Segment_map = CGAL::Identity_property_map<Segment_2>;
 
-    using Neighbor_query = 
+    using Neighbor_query =
     internal::Delaunay_neighbor_query_2<Traits, Segment_range, Segment_map>;
-    using Regularization_type_angles = 
+    using Regularization_type_angles =
     internal::Angle_regularization_2<Traits, Segment_range, Segment_map>;
-    using Regularization_type_ordinates = 
+    using Regularization_type_ordinates =
     internal::Ordinate_regularization_2<Traits, Segment_range, Segment_map>;
 
     using Shape_regularization_angles = internal::Shape_regularization
@@ -162,7 +162,7 @@ namespace internal {
         const bool _is_interior) :
       point(Point_3(p.x(), p.y(), FT(0))),
       i(_i), j(_j),
-      is_interior(_is_interior) 
+      is_interior(_is_interior)
       { }
 
       Point_3 point;
@@ -173,11 +173,11 @@ namespace internal {
 
     struct Cluster_item {
       Cluster_item(
-        const Point_3 _point, 
+        const Point_3 _point,
         const std::size_t _idx) :
       input_point(_point),
       idx(_idx) { }
-      
+
       Point_3 input_point;
       Point_3 final_point;
       std::size_t idx;
@@ -188,8 +188,8 @@ namespace internal {
     using Grid = std::map<Cell_id, Cell_data>;
 
     struct Image_cell {
-      
-      Image_cell() : 
+
+      Image_cell() :
       roof_idx(-1),
       zr(FT(125)), zg(FT(0)), zb(FT(0)),
       is_interior(false) { }
@@ -202,8 +202,8 @@ namespace internal {
     struct Image {
 
       Image() : rows(0), cols(0) { }
-      Image(const long _rows, const long _cols) : 
-      rows(_rows), cols(_cols) { 
+      Image(const long _rows, const long _cols) :
+      rows(_rows), cols(_cols) {
         resize(_rows, _cols);
       }
 
@@ -239,11 +239,11 @@ namespace internal {
       void recolor_pixel(
         const long i, const long j,
         const FT zr, const FT zg, const FT zb) {
-        
+
         auto& pixel = grid[i][j];
         pixel.zr = zr;
         pixel.zg = zg;
-        pixel.zb = zb; 
+        pixel.zb = zb;
         pixel.is_interior = true;
       } */
 
@@ -321,21 +321,21 @@ namespace internal {
     std::vector<Cluster_item> m_cluster;
     Image m_image;
     Points_2 m_boundary_points_2;
-    
+
     std::vector<Segment_2> m_segments;
-    
+
     FT m_val_min, m_val_max;
-    
+
     Point_2 m_b, m_tr;
     FT m_angle_2d;
-    
+
     Grid m_grid;
     long m_rows_min, m_rows_max;
     long m_cols_min, m_cols_max;
-    
+
     const std::size_t m_samples_per_face;
     const long m_pixels_per_cell;
-    
+
     // m_lsd_scale(FT(5) / FT(10)), // should be in [0,1) - not used!
     // const FT m_lsd_scale;
 
@@ -395,14 +395,14 @@ namespace internal {
       for (std::size_t i = 0; i < m_roof_regions.size(); ++i) {
         const auto& roof_region = m_roof_regions[i];
         roof.clear();
-  
+
         internal::plane_from_points_3(
         m_clean_input, m_point_map_3, roof_region, plane);
         internal::project_on_plane_3(
         m_clean_input, m_point_map_3, roof_region, plane, roof);
         sample_roof_region(plane, roof);
         m_roofs.push_back(roof);
-        
+
         const FT height = get_roof_height(roof);
         m_height_map[i] = height;
       }
@@ -445,7 +445,7 @@ namespace internal {
 
       Identity_map_2 identity_map_2;
       filtering.add_points(points, identity_map_2);
-      points.clear(); 
+      points.clear();
       filtering.get_samples(sampling_2, m_samples_per_face, points);
     }
 
@@ -477,7 +477,7 @@ namespace internal {
 
 			internal::compute_angle_2(dir, y_dir, m_angle_2d);
       internal::compute_barycenter_2(points, m_b);
-      
+
       for (Point_2& p : points)
         internal::rotate_point_2(m_angle_2d, m_b, p);
 
@@ -491,7 +491,7 @@ namespace internal {
 
       for (std::size_t i = 0; i < points.size(); ++i) {
         const Point_2& p = points[i];
-        m_cluster[i].final_point = 
+        m_cluster[i].final_point =
           Point_3(p.x(), p.y(), m_cluster[i].input_point.z());
       }
     }
@@ -506,7 +506,7 @@ namespace internal {
 
       for (std::size_t i = 0; i < m_cluster.size(); ++i) {
         const auto& item = m_cluster[i];
-        
+
         const Point_3& point = item.final_point;
         get_cell_id(point, cell_id);
         m_grid[cell_id].push_back(i);
@@ -526,22 +526,22 @@ namespace internal {
         points.push_back(Point_3(q.x(), q.y(), FT(0)));
       }
 
-      const FT average_spacing = 
+      const FT average_spacing =
       CGAL::compute_average_spacing<CGAL::Sequential_tag>(
         points, 6, CGAL::parameters::point_map(
           CGAL::Identity_property_map<Point_3>()).
           geom_traits(Traits()));
-      
+
       m_grid_cell_width_2_int = average_spacing / FT(2);
     }
 
     void get_cell_id(
-      const Point_3& point, 
+      const Point_3& point,
       Cell_id& cell_id) {
 
       const long id_x = get_id_value(point.x());
       const long id_y = get_id_value(point.y());
-      
+
       cell_id = std::make_pair(id_x, id_y);
 
       m_cols_min = CGAL::min(id_x, m_cols_min);
@@ -597,12 +597,12 @@ namespace internal {
 
       initialize_image(m_image);
       save_image("/Users/monet/Documents/lod/logs/buildings/image-origin.jpg", m_image);
-      
+
       inpaint_image_opencv(m_image);
       update_interior_pixels(m_image);
       save_point_cloud("/Users/monet/Documents/lod/logs/buildings/point-cloud", m_image);
       save_image("/Users/monet/Documents/lod/logs/buildings/image-paints.jpg", m_image);
-      
+
       apply_graphcut(m_image);
       save_image("/Users/monet/Documents/lod/logs/buildings/image-gcuted.jpg", m_image);
 
@@ -625,7 +625,7 @@ namespace internal {
 
           const long id_x = get_id_x(j-1);
           const long id_y = get_id_y(i-1);
-          
+
           const Cell_id cell_id = std::make_pair(id_x, id_y);
           if (m_grid.find(cell_id) != m_grid.end()) {
             ++numcells;
@@ -652,7 +652,7 @@ namespace internal {
         translate_point_2(m_tr, q);
         points.push_back(Point_3(q.x(), q.y(), FT(0)));
       }
-      
+
       const Color color(0, 0, 0);
       const std::string name = "/Users/monet/Documents/lod/logs/buildings/alpha-input";
       m_saver.export_points(points, color, name);
@@ -683,7 +683,7 @@ namespace internal {
       for (long i = 0; i < image.rows; ++i) {
         for (long j = 0; j < image.cols; ++j) {
           const auto& cell = image.grid[i][j];
-          
+
           const bool is_interior = cell.is_interior;
           const Point_2 p = get_point_from_id(i, j);
           point_cloud.push_back(Pixel(p, i, j, is_interior));
@@ -712,7 +712,7 @@ namespace internal {
       const long i, const long j,
       const Cell_data& indices,
       Image& image) {
-    
+
       const auto& pair = max_z_height(indices);
       init_pixel(i, j, pair.first, pair.second, image);
     }
@@ -743,11 +743,11 @@ namespace internal {
       const long i, const long j,
       const Cell_data& indices,
       Image& image) {
-      
+
       const FT val = average_z_height(indices);
       init_pixel(i, j, 0, val, image);
-    } 
-    
+    }
+
     FT average_z_height(const Cell_data& indices) {
       CGAL_assertion(indices.size() > 0);
       FT val = FT(0);
@@ -763,7 +763,7 @@ namespace internal {
       const std::size_t roof_idx,
       const FT val,
       Image& image) {
-    
+
       const FT nor = normalize_z(val);
       image.create_pixel(i, j, roof_idx, true, nor, nor, nor);
     }
@@ -775,15 +775,15 @@ namespace internal {
 
     void inpaint_image_opencv(
       Image& image) {
-      
+
       OpenCVImage input(
-        image.rows, 
-        image.cols, 
+        image.rows,
+        image.cols,
         CV_8UC3, cv::Scalar(0, 0, 125));
 
       OpenCVImage mask(
-        image.rows, 
-        image.cols, 
+        image.rows,
+        image.cols,
         CV_8U, cv::Scalar(0, 0, 0));
 
       for (std::size_t i = 0; i < image.rows; ++i) {
@@ -791,7 +791,7 @@ namespace internal {
           const uchar zr = saturate_z(image.grid[i][j].zr);
           const uchar zg = saturate_z(image.grid[i][j].zg);
           const uchar zb = saturate_z(image.grid[i][j].zb);
-          
+
           cv::Vec3b& bgr = input.at<cv::Vec3b>(i, j);
           bgr[0] = zb;
           bgr[1] = zg;
@@ -811,7 +811,7 @@ namespace internal {
       for (std::size_t i = 1; i < colored.rows - 1; ++i) {
         for (std::size_t j = 1; j < colored.cols - 1; ++j) {
           const cv::Vec3b& bgr = inpainted.at<cv::Vec3b>(i, j);
-          
+
           const std::size_t roof_idx = image.grid[i][j].roof_idx;
           const bool is_interior = image.grid[i][j].is_interior;
 
@@ -842,7 +842,7 @@ namespace internal {
       std::vector<Size_pair> edges;
       std::vector<double> edge_weights;
       set_graphcut_edges(image, idx_map, edges, edge_weights);
-      
+
       std::vector< std::vector<double> > cost_matrix;
       set_cost_matrix(image, idx_map, label_map, cost_matrix);
 
@@ -854,7 +854,7 @@ namespace internal {
       const Image& image,
       std::map<std::size_t, std::size_t>& label_map,
       std::map<std::size_t, std::size_t>& inv_label_map) {
-      
+
       label_map.clear();
       for (std::size_t i = 1; i < image.rows - 1; ++i) {
         for (std::size_t j = 1; j < image.cols - 1; ++j) {
@@ -867,7 +867,7 @@ namespace internal {
       }
       m_num_labels = label_map.size();
       std::cout << "Num labels: " << m_num_labels << std::endl;
-      
+
       std::size_t count = 0;
       for (auto& pair : label_map) {
         inv_label_map[count] = pair.first;
@@ -908,17 +908,17 @@ namespace internal {
       for (std::size_t i = 1; i < image.rows - 1; ++i) {
         for (std::size_t j = 1; j < image.cols - 1; ++j) {
           if (!image.grid[i][j].is_interior) continue;
-          
+
           get_grid_neighbors_4(i, j, ni, nj);
           const std::size_t idxi = idx_map.at(std::make_pair(i, j));
 
-          for (std::size_t k = 0; k < 4; ++k) { 
+          for (std::size_t k = 0; k < 4; ++k) {
             const Size_pair pair = std::make_pair(ni[k], nj[k]);
             if (idx_map.find(pair) != idx_map.end()) {
 
               const std::size_t idxj = idx_map.at(pair);
               edges.push_back(std::make_pair(idxi, idxj));
-              
+
               const double edge_weight = create_edge_weight(
                 i, j, ni[k], nj[k], image);
               edge_weights.push_back(edge_weight);
@@ -933,7 +933,7 @@ namespace internal {
 
     void get_grid_neighbors_4(
       const std::size_t i, const std::size_t j,
-      std::vector<std::size_t>& ni, 
+      std::vector<std::size_t>& ni,
       std::vector<std::size_t>& nj) {
 
       ni.clear(); nj.clear();
@@ -949,7 +949,7 @@ namespace internal {
 
     void get_grid_neighbors_8(
       const std::size_t i, const std::size_t j,
-      std::vector<std::size_t>& ni, 
+      std::vector<std::size_t>& ni,
       std::vector<std::size_t>& nj) {
 
       ni.clear(); nj.clear();
@@ -999,7 +999,7 @@ namespace internal {
 
           create_probabilities(i, j, image, label_map, probabilities);
           for (std::size_t k = 0; k < m_num_labels; ++k)
-            cost_matrix[k][pixel_idx] = 
+            cost_matrix[k][pixel_idx] =
               get_cost(image, i, j, probabilities[k]);
         }
       }
@@ -1010,7 +1010,7 @@ namespace internal {
       const Image& image,
       const std::size_t i, const std::size_t j,
       const double prob) {
-      
+
       const double weight = get_weight(i, j, image);
       return (1.0 - prob) * weight;
     }
@@ -1032,7 +1032,7 @@ namespace internal {
       //   return penalize;
       // if (is_corner_config(i, j, 5, 6, 7, ni, nj, image))
       //   return penalize;
-    
+
       // if (is_bad_config(i, j, 1, 2, 3, 5, 6, 7, ni, nj, image))
       //   return penalize;
       // if (is_bad_config(i, j, 3, 4, 5, 7, 0, 1, ni, nj, image))
@@ -1064,7 +1064,7 @@ namespace internal {
       if (idx5 == std::size_t(-1)) return false;
 
       return (
-        (idx0 == idx1 && idx1 == idx2) && 
+        (idx0 == idx1 && idx1 == idx2) &&
         (idx3 == idx4 && idx4 == idx5) &&
         (idx0 != idx3) );
     }
@@ -1094,7 +1094,7 @@ namespace internal {
       if (idx == std::size_t(-1)) return false;
 
       return (
-        (idx0 == idx1 && idx1 == idx2) && 
+        (idx0 == idx1 && idx1 == idx2) &&
         (idx0 != idxprev || idx2 != idxnext) &&
         (idx != idx0) );
     }
@@ -1109,8 +1109,8 @@ namespace internal {
       const FT value = cell.zr;
       const std::size_t key = get_key(value);
       return key;
-    }   
-    */ 
+    }
+    */
 
     double get_probability(const double cost) {
       return 1.0 - cost;
@@ -1128,11 +1128,11 @@ namespace internal {
       for (std::size_t i = 1; i < image.rows - 1; ++i) {
         for (std::size_t j = 1; j < image.cols - 1; ++j) {
           if (!image.grid[i][j].is_interior) continue;
-          
+
           const std::size_t pixel_idx = idx_map.at(std::make_pair(i, j));
           for (std::size_t k = 0; k < m_num_labels; ++k) {
             const double prob = get_probability(cost_matrix[k][pixel_idx]);
-            
+
             const FT z = FT(prob) * FT(255);
             images[k].create_pixel(i, j, 0, true, z, z, z);
           }
@@ -1140,7 +1140,7 @@ namespace internal {
       }
 
       for (std::size_t k = 0; k < m_num_labels; ++k) {
-        const std::string name = "/Users/monet/Documents/lod/logs/buildings/images/" 
+        const std::string name = "/Users/monet/Documents/lod/logs/buildings/images/"
         + std::to_string(k) + "-image-probs.jpg";
         save_image(name, images[k]);
       }
@@ -1206,10 +1206,10 @@ namespace internal {
       for (std::size_t i = 1; i < image.rows - 1; ++i) {
         for (std::size_t j = 1; j < image.cols - 1; ++j) {
           if (!image.grid[i][j].is_interior) continue;
-          
+
           std::size_t key = get_key(image.grid[i][j].zr);
           update_key(label_map, key);
-          
+
           const std::size_t pixel_idx = idx_map.at(std::make_pair(i, j));
           labels[pixel_idx] = label_map.at(key);
         }
@@ -1225,7 +1225,7 @@ namespace internal {
 
       for (const auto& pair : label_map) {
         const std::size_t key = pair.first;
-        
+
         std::size_t diff;
         if (key >= label) diff = key - label;
         else diff = label - key;
@@ -1244,13 +1244,13 @@ namespace internal {
       const std::vector< std::vector<double> >& probability_matrix,
       std::vector<std::size_t>& labels) {
 
-      std::cout << "Initial labels (size " << 
+      std::cout << "Initial labels (size " <<
       labels.size() << ")" << std::endl;
 
       Alpha_expansion graphcut;
       graphcut(edges, edge_weights, probability_matrix, labels);
 
-      std::cout << "Final labels (size " << 
+      std::cout << "Final labels (size " <<
       labels.size() << ")" << std::endl;
     }
 
@@ -1264,14 +1264,14 @@ namespace internal {
       for (std::size_t i = 1; i < image.rows - 1; ++i) {
         for (std::size_t j = 1; j < image.cols - 1; ++j) {
           if (!image.grid[i][j].is_interior) continue;
-          
+
           const std::size_t pixel_idx = idx_map.at(std::make_pair(i, j));
           const std::size_t z = inv_label_map.at(labels[pixel_idx]);
 
           const FT zr = FT(z * m_clamp);
           const FT zg = FT(z * m_clamp);
           const FT zb = FT(z * m_clamp);
-          
+
           const std::size_t roof_idx = image.grid[i][j].roof_idx;
           const bool is_interior = image.grid[i][j].is_interior;
           labeled.create_pixel(i, j, roof_idx, is_interior, zr, zg, zb);
@@ -1282,7 +1282,7 @@ namespace internal {
 
     /*
     void apply_lsd() {
-      
+
       OpenCVImage image;
       read_gray_scale_opencv_image(
         "/Users/monet/Documents/lod/logs/buildings/image-gcuted.jpg", image);
@@ -1295,7 +1295,7 @@ namespace internal {
       ls->detect(image, lines_std);
 
       save_opencv_lines(
-        "/Users/monet/Documents/lod/logs/buildings/result-lsd.jpg", 
+        "/Users/monet/Documents/lod/logs/buildings/result-lsd.jpg",
         image, ls, lines_std);
 
       create_segments(lines_std);
@@ -1336,7 +1336,7 @@ namespace internal {
     } */
 
     void save_cluster(const std::string name) {
-      
+
       std::vector<Point_3> points;
       points.reserve(m_cluster.size());
       for (const auto& item: m_cluster)
@@ -1379,17 +1379,17 @@ namespace internal {
       const std::string name,
       const Image& image,
       const bool interior = false) {
-      
+
       OpenCVImage cvimage(
-        image.rows * m_pixels_per_cell, 
-        image.cols * m_pixels_per_cell, 
+        image.rows * m_pixels_per_cell,
+        image.cols * m_pixels_per_cell,
         CV_8UC3, cv::Scalar(0, 0, 125));
-      // std::cout << "Resolution (opencv): " << 
+      // std::cout << "Resolution (opencv): " <<
       // cvimage.cols << "x" << cvimage.rows << std::endl;
 
       for (long i = 0; i < image.rows; ++i) {
         for (long j = 0; j < image.cols; ++j) {
-          
+
           if (!interior) {
             const uchar zr = saturate_z(image.grid[i][j].zr);
             const uchar zg = saturate_z(image.grid[i][j].zg);
@@ -1417,8 +1417,8 @@ namespace internal {
     }
 
     void create_pixel(
-      const long i, const long j, 
-      const uchar zr, const uchar zg, const uchar zb, 
+      const long i, const long j,
+      const uchar zr, const uchar zg, const uchar zb,
       OpenCVImage& image) {
 
       const long il = i * m_pixels_per_cell;
@@ -1444,7 +1444,7 @@ namespace internal {
       const cv::Ptr<cv::LineSegmentDetector>& ls,
       const vector<cv::Vec4f>& lines_std) {
 
-      OpenCVImage drawn_lines(image); 
+      OpenCVImage drawn_lines(image);
       ls->drawSegments(drawn_lines, lines_std);
       save_opencv_image(name, drawn_lines);
     }
@@ -1462,7 +1462,7 @@ namespace internal {
         if (!pixel.is_interior) continue;
         points.push_back(pixel.point);
       }
-        
+
       const Color color(0, 0, 0);
       m_saver.export_points(points, color, name);
     }
@@ -1484,7 +1484,7 @@ namespace internal {
 
               Point_2 p = get_point_from_id(i, j);
               Point_2 q = get_point_from_id(ii, jj);
-              
+
               translate_point_2(tr, p);
               translate_point_2(tr, q);
 
@@ -1505,7 +1505,7 @@ namespace internal {
       points.reserve(m_boundary_points_2.size());
       for (const auto& p : m_boundary_points_2)
         points.push_back(Point_3(p.x(), p.y(), FT(0)));
-      
+
       const Color color(0, 0, 0);
       m_saver.export_points(points, color, name);
     }
@@ -1546,10 +1546,10 @@ namespace internal {
     }
 
     void create_segments() {
-      
+
       using Otr = CGAL::Optimal_transportation_reconstruction_2<
       Traits, Identity_map_2>;
-      
+
       Identity_map_2 identity_map_2;
       m_segments.clear();
       Otr otr(m_boundary_points_2, identity_map_2);
@@ -1565,14 +1565,14 @@ namespace internal {
     }
 
     void save_polylines(const std::string name) {
-      
+
       std::cout << "Num segments: " << m_segments.size() << std::endl;
       CGAL_assertion(m_segments.size() > 0);
       std::vector< std::vector<Point_3> > polylines(m_segments.size());
       for (std::size_t i = 0; i < m_segments.size(); ++i) {
         const Point_2& s = m_segments[i].source();
         const Point_2& t = m_segments[i].target();
-        
+
         polylines[i].push_back(Point_3(s.x(), s.y(), FT(0)));
         polylines[i].push_back(Point_3(t.x(), t.y(), FT(0)));
       }

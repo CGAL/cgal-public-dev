@@ -80,14 +80,14 @@ public:
   using Image_creator = internal::Image_creator<Traits, Image_ptr>;
   using Image_data_structure = internal::Image_data_structure<Traits>;
   using Image_tree = internal::Image_tree<
-    Traits, 
-    typename Image_data_structure::Vertex, 
-    typename Image_data_structure::Edge, 
-    typename Image_data_structure::Halfedge, 
+    Traits,
+    typename Image_data_structure::Vertex,
+    typename Image_data_structure::Edge,
+    typename Image_data_structure::Halfedge,
     typename Image_data_structure::Face,
     typename Image_data_structure::Edge_type,
     typename Image_data_structure::Face_type>;
-  
+
   using Random = CGAL::Random;
   using Indices = std::vector<std::size_t>;
   using Sphere_neighbor_query =
@@ -124,9 +124,9 @@ public:
   m_top_z(top_z),
   m_pi(static_cast<FT>(CGAL_PI)),
   m_random(0),
-  m_image_creator( 
+  m_image_creator(
     m_image_ptr, m_boundary, m_noise_level_2),
-    m_snq(m_all_points, FT(1), m_point_map) { 
+    m_snq(m_all_points, FT(1), m_point_map) {
 
     m_partition_2.clear();
   }
@@ -135,13 +135,13 @@ public:
     m_image_creator.create_image();
     m_image_creator.clean_image();
     m_image_creator.create_label_pairs();
-    
+
     /* m_image_creator.create_ridges_with_contours_v1(); */
     /* m_image_creator.create_ridges_with_contours_v2(); */
-    
+
     m_image_creator.create_ridges_with_contours_v3();
     m_data_structure_ptr = std::make_shared<Image_data_structure>(
-      m_boundary, 
+      m_boundary,
       m_image_creator.get_ridges(),
       m_image_creator.get_image(),
       m_image_ptr->get_plane_map(),
@@ -151,7 +151,7 @@ public:
       m_ordinate_bound_2,
       m_max_height_difference,
       m_top_z);
-      
+
     m_data_structure_ptr->clear();
     m_data_structure_ptr->build();
   }
@@ -166,7 +166,7 @@ public:
   }
 
   void create_tree() {
-    
+
     if (m_data_structure_ptr->faces().size() == 0)
       return;
 
@@ -182,7 +182,7 @@ public:
       m_data_structure_ptr->edges(),
       m_data_structure_ptr->halfedges(),
       m_data_structure_ptr->faces());
-    
+
     m_tree_ptr->build();
     m_tree_ptr->check_tree_information(false, true);
 
@@ -196,21 +196,21 @@ public:
       m_tree_ptr->cut(i);
       m_data_structure_ptr->save_all_faces_ply(i, "tree");
     }
-    
+
     if (m_tree_ptr->num_levels() == 0)
       return;
 
     if (m_data_structure_ptr->faces().size() > 1) {
-      
+
       std::cout << "cut 1" << std::endl;
       m_tree_ptr->cut(1); // 1 - base level
       std::cout << "cut finished" << std::endl;
       m_tree_ptr->merge_faces();
       /* m_data_structure_ptr->save_faces_ply("faces1"); */
     }
-    
+
     if (m_data_structure_ptr->faces().size() > 1) {
-      
+
       std::cout << "cut 2" << std::endl;
       m_tree_ptr->remove_one_neighbor_faces();
       std::cout << "cut finished" << std::endl;
@@ -246,7 +246,7 @@ public:
     const auto& plane_map = m_image_ptr->get_plane_map();
     roof_planes.clear();
     roof_planes.reserve(plane_map.size());
-    
+
     for (const auto& pair : plane_map) {
       const auto& plane = pair.second;
       roof_planes.push_back(plane);
@@ -288,7 +288,7 @@ private:
   const FT m_beta;
   const FT m_top_z;
   const FT m_pi;
-  
+
   Random m_random;
   Image_creator m_image_creator;
   std::shared_ptr<Image_data_structure> m_data_structure_ptr;
@@ -301,7 +301,7 @@ private:
 
     std::vector<Segment_3> outer_segments_3;
     m_data_structure_ptr->get_wall_outer_segments(outer_segments_3);
-    
+
     std::vector<Segment_3> inner_segments_3;
     m_data_structure_ptr->get_wall_inner_segments(inner_segments_3);
 
@@ -324,15 +324,15 @@ private:
     std::vector<Wall>& walls) {
 
     if (segments_3.empty()) return;
-    for (const auto& segment_3 : segments_3) {  
+    for (const auto& segment_3 : segments_3) {
       const Point_3& s = segment_3.source();
       const Point_3& t = segment_3.target();
-        
+
       const Point_3 p1 = Point_3(s.x(), s.y(), bottom_z);
       const Point_3 p2 = Point_3(t.x(), t.y(), bottom_z);
       const Point_3 p3 = Point_3(t.x(), t.y(), t.z());
       const Point_3 p4 = Point_3(s.x(), s.y(), s.z());
-        
+
       Wall wall;
       wall.triangles.push_back(Triangle_3(p1, p2, p3));
       wall.triangles.push_back(Triangle_3(p3, p4, p1));
@@ -347,9 +347,9 @@ private:
     std::ofstream outfile;
     outfile.precision(20);
     outfile.open(
-      "/Users/monet/Documents/lod/logs/buildings/02_building_interior_points.ply", 
+      "/Users/monet/Documents/lod/logs/buildings/02_building_interior_points.ply",
       std::ios_base::app);
-    
+
     std::vector<Point_3> samples;
     using Point_generator = CGAL::Random_points_in_triangle_3<Point_3>;
 
@@ -364,14 +364,14 @@ private:
   void create_building_roofs(
     const FT top_z,
     std::vector<Roof>& roofs) {
-    
+
     std::vector<Triangle_set_3> triangle_sets_3;
     m_data_structure_ptr->get_roof_triangles(triangle_sets_3);
-    
+
     roofs.clear();
     if (triangle_sets_3.empty()) return;
     for (const auto& triangle_set_3 : triangle_sets_3) {
-      
+
       Roof roof;
       for (const auto& triangle_3 : triangle_set_3)
         roof.triangles.push_back(triangle_3);

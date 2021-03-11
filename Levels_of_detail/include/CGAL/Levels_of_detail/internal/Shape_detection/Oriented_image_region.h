@@ -51,19 +51,19 @@ namespace internal {
     Oriented_image_region(
       std::vector<Segment_wrapper>& wrappers,
       const Indices& idx_map,
-      const std::size_t min_num = 2) : 
+      const std::size_t min_num = 2) :
     m_wrappers(wrappers),
     m_idx_map(idx_map),
-    m_min_num(min_num) 
+    m_min_num(min_num)
     { }
 
     bool is_already_visited(
-      const std::size_t, const std::size_t, const bool) const { 
+      const std::size_t, const std::size_t, const bool) const {
       return false;
     }
 
     bool is_part_of_region(
-      const std::size_t, const std::size_t, 
+      const std::size_t, const std::size_t,
       const Indices& region) const {
 
       CGAL_precondition(region.size() > 0);

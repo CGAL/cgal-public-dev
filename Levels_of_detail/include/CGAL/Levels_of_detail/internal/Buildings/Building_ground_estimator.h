@@ -60,10 +60,10 @@ namespace internal {
 
     void estimate(
       Approximate_face& ground) const {
-      
+
       FT minx = internal::max_value<FT>(), miny = internal::max_value<FT>();
       FT maxx = -internal::max_value<FT>(), maxy = -internal::max_value<FT>();
-      
+
       for (auto fh = m_base.finite_faces_begin();
       fh != m_base.finite_faces_end(); ++fh) {
         for (std::size_t k = 0; k < 3; ++k) {

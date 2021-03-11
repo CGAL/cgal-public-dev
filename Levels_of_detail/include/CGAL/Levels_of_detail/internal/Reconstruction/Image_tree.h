@@ -82,7 +82,7 @@ public:
   using Segment_3 = typename Traits::Segment_3;
   using Plane_3 = typename Traits::Plane_3;
   using Triangle_2 = typename Traits::Triangle_2;
-  
+
   using Image = internal::Image<Traits>;
   using Point_type = typename Image::Point_type;
 
@@ -149,7 +149,7 @@ public:
       const bool is_visited) const { return false; }
 
     bool is_part_of_region(
-      const std::size_t, const std::size_t, 
+      const std::size_t, const std::size_t,
       const std::vector<std::size_t>&) const {
       return true;
     }
@@ -159,7 +159,7 @@ public:
     }
 
     void update(const std::vector<std::size_t>&) { }
-  
+
   private:
     const std::vector<Face>& m_faces;
     const Indices& m_indices;
@@ -212,7 +212,7 @@ public:
     void traverse_children(
       const std::size_t node_idx,
       Indices& faces) {
-      
+
       faces.clear();
       if (node_idx == std::size_t(-1)) return;
       const auto& node = nodes[node_idx];
@@ -234,7 +234,7 @@ public:
     const FT beta,
     std::vector<Vertex>& vertices,
     std::vector<Edge>& edges,
-    std::vector<Halfedge>& halfedges, 
+    std::vector<Halfedge>& halfedges,
     std::vector<Face>& faces) :
   m_boundary(boundary),
   m_directions(directions),
@@ -248,7 +248,7 @@ public:
   m_pi(static_cast<FT>(CGAL_PI)),
   m_bound_min(FT(10)),
   m_bound_max(FT(80)),
-  m_beta(beta) { 
+  m_beta(beta) {
 
     /*
     m_directions.clear();
@@ -256,8 +256,8 @@ public:
     m_directions.push_back(m_boundary[seg_idx]); */
 
     std::cout << "num directions: " << m_directions.size() << std::endl;
-    std::sort(m_directions.begin(), m_directions.end(), 
-    [](const Segment_2& a, const Segment_2& b) -> bool { 
+    std::sort(m_directions.begin(), m_directions.end(),
+    [](const Segment_2& a, const Segment_2& b) -> bool {
       return a.squared_length() > b.squared_length();
     });
   }
@@ -281,19 +281,19 @@ public:
     for (auto& face : m_faces) {
       if (face.neighbors.size() == 1)
         face.label = m_faces[face.neighbors[0]].label;
-      
-      for (auto fh = face.tri.delaunay.finite_faces_begin(); 
+
+      for (auto fh = face.tri.delaunay.finite_faces_begin();
       fh != face.tri.delaunay.finite_faces_end(); ++fh)
         fh->info().label = face.label;
     }
 
     Indices indices;
     indices.reserve(m_faces.size());
-    for (std::size_t i = 0; i < m_faces.size(); ++i) 
+    for (std::size_t i = 0; i < m_faces.size(); ++i)
       indices.push_back(i);
-    
-    std::sort(indices.begin(), indices.end(), 
-    [&](const std::size_t i, const std::size_t j) -> bool { 
+
+    std::sort(indices.begin(), indices.end(),
+    [&](const std::size_t i, const std::size_t j) -> bool {
       return m_faces[i].neighbors.size() < m_faces[j].neighbors.size();
     });
   }
@@ -350,7 +350,7 @@ public:
         set_default_edges();
       }
     }
-    
+
     m_faces = faces;
     sort_faces();
     create_face_neighbors();
@@ -385,13 +385,13 @@ public:
     std::cout << "num vertices: " << m_vertices.size() << std::endl;
     for (const auto& vertex : m_vertices) {
       if (
-        vertex.type != Point_type::FREE && 
+        vertex.type != Point_type::FREE &&
         vertex.type != Point_type::LINEAR) {
-        
-        std::cout << 
-        int(vertex.type) << " : " << 
+
+        std::cout <<
+        int(vertex.type) << " : " <<
         vertex.bd_idx << " , " <<
-        vertex.labels.size() << " , " << 
+        vertex.labels.size() << " , " <<
         vertex.hedges.size() << " , " <<
         vertex.neighbors.size() << " , " <<
         vertex.faces.size() << std::endl;
@@ -400,39 +400,39 @@ public:
   }
 
   void check_edge_information() {
-    
+
     std::cout << "num edges: " << m_edges.size() << std::endl;
     std::cout << "num halfedges: " << m_halfedges.size() << std::endl;
     for (const auto& edge : m_edges) {
-      std::cout << 
-        int(edge.type) << " : " << 
-        edge.labels.first << " " << 
+      std::cout <<
+        int(edge.type) << " : " <<
+        edge.labels.first << " " <<
         edge.labels.second << std::endl;
     }
   }
 
   void check_halfedge_information() {
-    
+
     std::cout << "num edges: " << m_edges.size() << std::endl;
     std::cout << "num halfedges: " << m_halfedges.size() << std::endl;
     for (const auto& he : m_halfedges) {
       std::cout <<
-      he.from_vertex << " " << he.to_vertex << " : " <<  
+      he.from_vertex << " " << he.to_vertex << " : " <<
       int(m_vertices[he.from_vertex].type) << " " <<
       int(m_vertices[he.to_vertex].type) << " : " <<
-      he.index << " " << 
-      he.edg_idx << " " << 
-      he.next << " " << 
+      he.index << " " <<
+      he.edg_idx << " " <<
+      he.next << " " <<
       he.opposite << std::endl;
     }
   }
 
   void check_face_information() {
-    
+
     std::cout << "num faces: " << m_faces.size() << std::endl;
     for (const auto& face : m_faces) {
       std::cout <<
-      face.index << " : " << 
+      face.index << " : " <<
       int(face.type) << " , " <<
       face.label << " , " <<
       face.probs.size() << " , " <<
@@ -450,9 +450,9 @@ public:
     if (check_nodes) {
       std::cout << "num nodes: " << m_tree.nodes.size() << std::endl;
       for (const auto& node : m_tree.nodes) {
-        std::cout << 
-        node.index << " : " << 
-        int(node.type) << " , " << 
+        std::cout <<
+        node.index << " : " <<
+        int(node.type) << " , " <<
         node.face_index << " , " <<
         node.label << " , " <<
         node.children.size() << std::endl;
@@ -473,7 +473,7 @@ public:
 private:
   const std::vector<Segment_2>& m_boundary;
   const std::map<std::size_t, Plane_3>& m_plane_map;
-  
+
   const FT m_min_length_2;
   const FT m_max_height_difference;
 
@@ -481,12 +481,12 @@ private:
   std::vector<Edge>& m_edges;
   std::vector<Halfedge>& m_halfedges;
   std::vector<Face>& m_faces;
-  
+
   const FT m_pi;
   const FT m_bound_min;
   const FT m_bound_max;
   const FT m_beta;
-  
+
   Tree m_tree;
   std::vector<Segment_2> m_directions;
 
@@ -499,7 +499,7 @@ private:
     for (auto& vertex : m_vertices) {
       if (vertex.type == Point_type::CORNER) {
 
-        unique.clear();    
+        unique.clear();
         for (const std::size_t he_idx : vertex.hedges) {
           const auto& edge = m_edges[m_halfedges[he_idx].edg_idx];
 
@@ -528,8 +528,8 @@ private:
 
   void sort_faces() {
 
-    std::sort(m_faces.begin(), m_faces.end(), 
-    [](const Face& f1, const Face& f2) -> bool { 
+    std::sort(m_faces.begin(), m_faces.end(),
+    [](const Face& f1, const Face& f2) -> bool {
       return f1.area > f2.area;
     });
     for (std::size_t i = 0; i < m_faces.size(); ++i)
@@ -596,12 +596,12 @@ private:
   void set_face_types() {
 
     for (auto& face : m_faces) {
-      
+
       std::size_t count = 0;
       for (const std::size_t he_idx : face.hedges) {
         const auto& vertex = m_vertices[m_halfedges[he_idx].from_vertex];
         for (const std::size_t label : vertex.labels) {
-          if (label == std::size_t(-1)) { 
+          if (label == std::size_t(-1)) {
             ++count; break;
           }
         }
@@ -674,10 +674,10 @@ private:
     std::vector<Segment_2> segments;
 
     std::size_t count = 0;
-    const std::size_t start = he.index; 
+    const std::size_t start = he.index;
     std::size_t curr = start;
     do {
-      
+
       hedges.push_back(curr);
       m_edges[m_halfedges[curr].edg_idx].used = true;
 
@@ -688,7 +688,7 @@ private:
 
       const auto& s = m_vertices[other.from_vertex].point;
       const auto& t = m_vertices[other.to_vertex].point;
-      
+
       segments.push_back(Segment_2(s, t));
       curr = other.next;
 
@@ -702,12 +702,12 @@ private:
 
         Saver saver;
         saver.save_polylines(
-        segments, "/Users/monet/Documents/lod/logs/buildings/tmp/debug-count");
+        segments, "/Users/monet/Documents/gf/lod/logs/buildings/tmp/debug-count");
         exit(EXIT_FAILURE);
       }
 
       if (curr == std::size_t(-1)) {
-        
+
         std::cout.precision(30);
         std::cout << "Error: traverse() failed!" << std::endl;
         std::cout << "Ref label: " << ref_label << std::endl;
@@ -716,7 +716,7 @@ private:
 
         Saver saver;
         saver.save_polylines(
-        segments, "/Users/monet/Documents/lod/logs/buildings/tmp/debug-fail");
+        segments, "/Users/monet/Documents/gf/lod/logs/buildings/tmp/debug-fail");
         exit(EXIT_FAILURE);
       }
       ++count;
@@ -742,15 +742,15 @@ private:
 
     for (const std::size_t other_idx : to.hedges) {
       const auto& other = m_halfedges[other_idx];
-      if (other.edg_idx == he.edg_idx) 
+      if (other.edg_idx == he.edg_idx)
         continue;
-      
+
       if (other.index == start) {
         he.next = other.index; return;
       }
 
       if (
-        other.next != std::size_t(-1) || 
+        other.next != std::size_t(-1) ||
         m_halfedges[other.opposite].next != std::size_t(-1)) {
         return;
       }
@@ -769,7 +769,7 @@ private:
         l2 = m_faces[f2].label;
 
       if (l1 == ref_label && l2 != ref_label) {
-        he.next = other.index; 
+        he.next = other.index;
         return;
       }
       if (l2 == ref_label && l1 != ref_label) {
@@ -795,19 +795,19 @@ private:
 
     const std::size_t m = face.hedges.size();
     for (std::size_t i = 0; i < m; ++i) {
-      
+
       const std::size_t hi  = face.hedges[i];
       auto& curr = m_vertices[m_halfedges[hi].from_vertex];
       const auto& edge = m_edges[m_halfedges[hi].edg_idx];
-      
+
       const std::size_t f1 = edge.faces.first;
       const std::size_t f2 = edge.faces.second;
-      
-      if (f1 != std::size_t(-1) && f2 != std::size_t(-1)) 
+
+      if (f1 != std::size_t(-1) && f2 != std::size_t(-1))
         continue;
       if (curr.type == Point_type::OUTER_CORNER)
         continue;
-      
+
       bool skip = true;
       for (const std::size_t he_idx : curr.hedges) {
         const auto& tmp = m_edges[m_halfedges[he_idx].edg_idx];
@@ -842,8 +842,8 @@ private:
     std::vector<Edge> edges;
     create_face_edges(face, edges);
     if (edges.size() == 0) {
-      std::cout << 
-      "Warning: empty face, create_face_triangulation(), image tree!" 
+      std::cout <<
+      "Warning: empty face, create_face_triangulation(), image tree!"
       << std::endl;
       return false;
     }
@@ -856,7 +856,7 @@ private:
       const auto vh2 = tri.insert(t);
       vh1->info().object_index = edge.from_vertex;
       vh2->info().object_index = edge.to_vertex;
-      
+
       if (vh1 != vh2)
         tri.insert_constraint(vh1, vh2);
     }
@@ -918,7 +918,7 @@ private:
       if (in > FT(1) / FT(2)) {
         fh->info().interior = true;
         fh->info().tagged   = true;
-      } else { 
+      } else {
         fh->info().interior = false;
         fh->info().tagged   = false;
       }
@@ -931,7 +931,7 @@ private:
 
     bbox.clear();
     const auto& tri = face.tri.delaunay;
-    
+
     std::vector<Point_2> points;
     for (auto fh = tri.finite_faces_begin();
     fh != tri.finite_faces_end(); ++fh) {
@@ -962,7 +962,7 @@ private:
         const auto q1 = f2->vertex(j);
         const auto q2 = f2->vertex(jp);
 
-        if ( 
+        if (
           ( p1 == q1 && p2 == q2) ||
           ( p1 == q2 && p2 == q1) ) {
 
@@ -999,7 +999,7 @@ private:
 
       const Triangle_2 triangle = Triangle_2(p0, p1, p2);
       face.area += triangle.area();
-    } 
+    }
   }
 
   void set_original_labels() {
@@ -1014,7 +1014,7 @@ private:
   }
 
   void build_skeleton() {
-    
+
     using Polygon_2 = CGAL::Polygon_2<Traits>;
 
     Polygon_2 polygon;
@@ -1023,13 +1023,13 @@ private:
     auto iss = CGAL::create_interior_straight_skeleton_2(polygon);
 
     std::vector<Segment_2> segments;
-    for (auto he = iss->halfedges_begin(); 
+    for (auto he = iss->halfedges_begin();
     he != iss->halfedges_end(); ++he) {
       if (
-        he->is_bisector() && 
-        ( ( he->id() % 2 ) == 0 ) && 
-        !he->has_infinite_time() && 
-        !he->opposite()->has_infinite_time()) { 
+        he->is_bisector() &&
+        ( ( he->id() % 2 ) == 0 ) &&
+        !he->has_infinite_time() &&
+        !he->opposite()->has_infinite_time()) {
 
         auto segment = Segment_2(
           he->vertex()->point(), he->opposite()->vertex()->point());
@@ -1040,7 +1040,7 @@ private:
 
     Saver saver;
     saver.save_polylines(
-    segments, "/Users/monet/Documents/lod/logs/buildings/tmp/skeleton");
+    segments, "/Users/monet/Documents/gf/lod/logs/buildings/tmp/skeleton");
   }
 
   bool has_boundary_vertex(
@@ -1078,7 +1078,7 @@ private:
     std::size_t seg_idx = std::size_t(-1);
     FT max_length = -FT(1);
     for (std::size_t i = 0; i < segments.size(); ++i) {
-        
+
       const FT length = segments[i].squared_length();
       if (length > max_length) {
 
@@ -1119,7 +1119,7 @@ private:
       node.face_index = std::size_t(-1);
       node.label = std::size_t(-1);
     }
-    
+
     node.type = Node_type::ROOT;
     nodes.push_back(node);
 
@@ -1155,11 +1155,11 @@ private:
   }
 
   void create_tree_levels_with_graphcut() {
-    
+
     m_tree.levels.clear();
     compute_face_weights();
     std::cout << "faces: " << m_faces.size() << std::endl;
-    
+
     std::vector<Edges> face_edges(m_faces.size());
     for (std::size_t i = 0; i < m_faces.size(); ++i) {
       const auto& face = m_faces[i];
@@ -1167,7 +1167,7 @@ private:
       create_face_edges(face, edges);
     }
     update_edge_neighbors(face_edges);
-    
+
     Edges graph_edges;
     create_graph_edges(face_edges, graph_edges);
     compute_edge_weights(graph_edges);
@@ -1249,7 +1249,7 @@ private:
         edge.faces.second = find_neighbor_face(i, v1, v2);
         if (edge.faces.second == std::size_t(-1))
           edge.type = Edge_type::BOUNDARY;
-        else 
+        else
           edge.type = Edge_type::INTERNAL;
       }
     }
@@ -1295,7 +1295,7 @@ private:
         edge.faces.second = find_neighbor_face(i, v1, v2, face_edges);
         if (edge.faces.second == std::size_t(-1))
           edge.type = Edge_type::BOUNDARY;
-        else 
+        else
           edge.type = Edge_type::INTERNAL;
       }
     }
@@ -1344,7 +1344,7 @@ private:
       }
     }
 
-    std::cout << "edges: " << 
+    std::cout << "edges: " <<
       numa - numb << " = " << all_edges.size() << std::endl;
   }
 
@@ -1367,12 +1367,12 @@ private:
       const std::size_t f1 = edge.faces.first;
       const std::size_t f2 = edge.faces.second;
 
-      edge.length = 
+      edge.length =
         compute_edge_length(f1, f2, face_edges);
     }
 
-    std::sort(graph_edges.begin(), graph_edges.end(), 
-    [](const Edge& a, const Edge& b) -> bool { 
+    std::sort(graph_edges.begin(), graph_edges.end(),
+    [](const Edge& a, const Edge& b) -> bool {
       return a.get_length() > b.get_length();
     });
 
@@ -1421,7 +1421,7 @@ private:
 
     double sum = 0.0;
     for (auto& edge : graph_edges) {
-      edge.weight = get_edge_weight(edge); 
+      edge.weight = get_edge_weight(edge);
       if (edge.weight >= 0.0)
         sum += edge.weight;
     }
@@ -1441,7 +1441,7 @@ private:
 
     double maxv = -1.0;
     for (auto& edge : graph_edges) {
-      edge.weight = get_edge_weight(edge); 
+      edge.weight = get_edge_weight(edge);
       if (edge.weight >= 0.0)
         maxv = CGAL::max(maxv, edge.weight);
     }
@@ -1534,14 +1534,14 @@ private:
         if (m_faces[i].label == label)
           indices.push_back(i);
 
-      std::sort(indices.begin(), indices.end(), 
-      [&](const std::size_t id1, const std::size_t id2) -> bool { 
+      std::sort(indices.begin(), indices.end(),
+      [&](const std::size_t id1, const std::size_t id2) -> bool {
         return m_faces[id1].area > m_faces[id2].area;
       });
 
       for (const std::size_t idx : indices) {
         if (m_faces[idx].label == m_faces[idx].original) {
-          level.push_back(idx + 1); m_faces[idx].level = 1; 
+          level.push_back(idx + 1); m_faces[idx].level = 1;
           break;
         }
       }
@@ -1570,7 +1570,7 @@ private:
 
     auto& nodes  = m_tree.nodes;
     auto& levels = m_tree.levels;
-    
+
     Indices level;
     std::size_t count = nodes.size() - 1;
 
@@ -1607,7 +1607,7 @@ private:
         node.label = std::size_t(-1);
         node.type = Node_type::CHILD;
         nodes.push_back(node);
-        
+
         level.push_back(node.index);
         nodes[idx].children.push_back(node.index);
       }
@@ -1631,7 +1631,7 @@ private:
   }
 
   void create_label_mappings() {
-    
+
     m_dr_mapping.clear();
     m_op_mapping.clear();
 
@@ -1639,7 +1639,7 @@ private:
     for (const auto& face : m_faces) {
       if (m_dr_mapping.find(face.label) == m_dr_mapping.end()) {
         m_dr_mapping[face.label] = count;
-        m_op_mapping[count] = face.label; 
+        m_op_mapping[count] = face.label;
         ++count;
       }
     }
@@ -1672,9 +1672,9 @@ private:
       gc_edge_weights.push_back(get_edge_cost(edge));
 
       /*
-      std::cout << 
+      std::cout <<
       int(edge.type) << " : " <<
-      gc_edges.back().first << " " << gc_edges.back().second << " " << 
+      gc_edges.back().first << " " << gc_edges.back().second << " " <<
       gc_edge_weights.back() << std::endl; */
     }
   }
@@ -1694,7 +1694,7 @@ private:
     std::vector<double> probabilities;
     for (std::size_t i = 0; i < m_faces.size(); ++i) {
       const auto& face = m_faces[i];
-      
+
       probabilities.clear();
       probabilities.resize(num_labels, 0.0);
 
@@ -1732,7 +1732,7 @@ private:
 
   void normalize_with_sum(
     std::vector<double>& probabilities) {
-    
+
     double sum = 0.0;
     for (const auto& value : probabilities)
       sum += value;
@@ -1745,7 +1745,7 @@ private:
 
   void normalize_with_max(
     std::vector<double>& probabilities) {
-    
+
     double maxv = -1.0;
     for (const auto& value : probabilities)
       maxv = CGAL::max(maxv, value);
@@ -1788,7 +1788,7 @@ private:
       const auto& nface = m_faces[nf];
       const std::size_t idx = m_dr_mapping.at(nface.label);
       probabilities[idx] += 1.0;
-    } 
+    }
   }
 
   void create_length_probabilities(
@@ -1805,7 +1805,7 @@ private:
       const std::size_t idx = m_dr_mapping.at(nface.label);
       const double length = static_cast<double>(edge.compute_length());
       probabilities[idx] += 1.0 * length;
-    } 
+    }
   }
 
   void create_big_length_probabilities(
@@ -1832,7 +1832,7 @@ private:
         probabilities[idx1] += 1.0 * length;
       else
         probabilities[idx2] += 1.0 * length;
-    } 
+    }
   }
 
   void create_stable_probabilities(
@@ -1851,14 +1851,14 @@ private:
     for (const auto& edge : edges) {
       if (edge.type != Edge_type::BOUNDARY)
         add_internal_edge_weight(edge, probabilities);
-    } 
+    }
   }
 
   void add_boundary_edge_weight(
     const Edge& edge,
     std::vector<double>& probabilities) {
 
-    const double length = 
+    const double length =
       static_cast<double>(edge.compute_length());
     const std::size_t i1 = get_first_index(edge);
 
@@ -1871,7 +1871,7 @@ private:
     const Edge& edge,
     std::vector<double>& probabilities) {
 
-    const double length = 
+    const double length =
       static_cast<double>(edge.compute_length());
 
     const std::size_t i1 = get_first_index(edge);
@@ -1925,13 +1925,13 @@ private:
     const auto& v2 = m_vertices[edge.to_vertex];
 
     if (
-      v1.type == Point_type::OUTER_CORNER && 
+      v1.type == Point_type::OUTER_CORNER &&
       v2.type == Point_type::OUTER_CORNER) return 1.0;
     return 0.0;
   }
 
   double get_adjacency_rate(const Edge& edge) {
-    
+
     const std::size_t f1 = edge.faces.first;
     const std::size_t f2 = edge.faces.second;
 
@@ -1945,7 +1945,7 @@ private:
     const auto& t = edge.segment.target();
 
     const auto mid = internal::middle_point_2(s, t);
-    
+
     const FT z1 = internal::position_on_plane_3(mid, plane1).z();
     const FT z2 = internal::position_on_plane_3(mid, plane2).z();
 
@@ -1970,7 +1970,7 @@ private:
     auto normal2 = plane2.orthogonal_vector();
     internal::normalize(normal2);
 
-    const FT angle_deg = 
+    const FT angle_deg =
       CGAL::abs(internal::angle_3d(normal1, normal2));
     if (CGAL::abs(angle_deg) < m_bound_min) return 1.0;
     return 0.0;
@@ -1978,7 +1978,7 @@ private:
 
   double get_parallelism_rate(const Edge& edge) {
 
-    if (comply_by_angle_and_distance(edge)) 
+    if (comply_by_angle_and_distance(edge))
       return 1.0;
     return 0.0;
   }
@@ -1991,9 +1991,9 @@ private:
         direction, edge.segment);
       const FT angle_2 = get_angle_2(angle);
 
-      if ( 
+      if (
         (CGAL::abs(angle_2) <= m_bound_min) ||
-        (CGAL::abs(angle_2) >= m_bound_max) ) 
+        (CGAL::abs(angle_2) >= m_bound_max) )
         return true;
     }
     return false;
@@ -2003,8 +2003,8 @@ private:
     const Edge& edge) {
 
     const FT elength = edge.compute_length();
-    for (const auto& direction : m_directions) {   
-      const FT dlength = 
+    for (const auto& direction : m_directions) {
+      const FT dlength =
         internal::distance(direction.source(), direction.target());
       if (elength < dlength / FT(2))
         continue;
@@ -2013,9 +2013,9 @@ private:
         direction, edge.segment);
       const FT angle_2 = get_angle_2(angle);
 
-      if ( 
+      if (
         (CGAL::abs(angle_2) <= m_bound_min) ||
-        (CGAL::abs(angle_2) >= m_bound_max) ) 
+        (CGAL::abs(angle_2) >= m_bound_max) )
         return true;
     }
     return false;
@@ -2024,7 +2024,7 @@ private:
   double get_face_cost(
     const Face& face,
     const double probability) {
-    
+
     return (1.0 - probability) * face.weight;
   }
 
@@ -2055,12 +2055,12 @@ private:
   void create_base_level_naive(
     const std::vector<Edges>& face_edges) {
 
-    if (m_faces.size() == 1) 
+    if (m_faces.size() == 1)
       return;
 
     auto& nodes  = m_tree.nodes;
     auto& levels = m_tree.levels;
-    
+
     const FT avg_area = compute_average_face_area();
     const FT eps = avg_area / FT(4);
 
@@ -2072,7 +2072,7 @@ private:
 
       for (const auto& edge : edges) {
         if (comply_by_angle_and_distance(edge)) {
-          level.push_back(i + 1); 
+          level.push_back(i + 1);
           face.level = 1; break;
         }
       }
@@ -2103,12 +2103,12 @@ private:
     const FT dot = CGAL::scalar_product(v1, v2);
     const FT angle_rad = static_cast<FT>(
       std::atan2(CGAL::to_double(det), CGAL::to_double(dot)));
-    const FT angle_deg = angle_rad * FT(180) / m_pi; 
+    const FT angle_deg = angle_rad * FT(180) / m_pi;
     return angle_deg;
   }
 
   FT get_angle_2(const FT angle) {
-    
+
     FT angle_2 = angle;
     if (angle_2 > FT(90)) angle_2 = FT(180) - angle_2;
     else if (angle_2 < -FT(90)) angle_2 = FT(180) + angle_2;
@@ -2117,8 +2117,8 @@ private:
 
   void create_sublevels_naive(
     const std::vector<Edges>& face_edges) {
-    
-    if (m_faces.size() == 1) 
+
+    if (m_faces.size() == 1)
       return;
 
     Indices level;
@@ -2135,7 +2135,7 @@ private:
     } while (!completed && deep <= 100);
 
     if (deep > 100) {
-      std::cerr << 
+      std::cerr <<
       "ERROR: too many iterations, create_sublevels()!" << std::endl;
       exit(1);
     }
@@ -2154,7 +2154,7 @@ private:
       const auto& edges = face_edges[i];
       auto& face = m_faces[i];
       if (face.level != std::size_t(-1)) continue;
-      
+
       completed = false;
       const auto& neighbors = face.neighbors;
       const std::size_t best_face = get_best_face(
@@ -2183,7 +2183,7 @@ private:
     const std::size_t query_label,
     const Indices& neighbors) {
 
-    if (query_label == std::size_t(-1)) 
+    if (query_label == std::size_t(-1))
       return std::size_t(-1);
     const auto& nodes = m_tree.nodes;
 
@@ -2216,7 +2216,7 @@ private:
         auto normal = plane.orthogonal_vector();
         internal::normalize(normal);
 
-        const FT angle_deg = 
+        const FT angle_deg =
           CGAL::abs(internal::angle_3d(query_normal, normal));
         if (angle_deg < min_angle) {
           min_angle = angle_deg;
@@ -2228,7 +2228,7 @@ private:
   }
 
   void cut_along_tree(const std::size_t lidx) {
-    
+
     if (lidx == std::size_t(-1)) return;
     const auto& nodes = m_tree.nodes;
     const auto& level = m_tree.levels[lidx];
@@ -2256,7 +2256,7 @@ private:
     }
 
     for (auto& face : m_faces) {
-      for (auto fh = face.tri.delaunay.finite_faces_begin(); 
+      for (auto fh = face.tri.delaunay.finite_faces_begin();
       fh != face.tri.delaunay.finite_faces_end(); ++fh)
         fh->info().label = face.label;
     }
@@ -2268,7 +2268,7 @@ private:
 
     edges.clear();
     for (std::size_t i = 0; i < face.hedges.size(); ++i) {
-      
+
       const std::size_t he_idx = face.hedges[i];
       const auto& he = m_halfedges[he_idx];
       const std::size_t from = he.from_vertex;
@@ -2278,7 +2278,7 @@ private:
       const auto& t = m_vertices[to];
 
       if (!s.skip && !t.skip) {
-        
+
         Edge edge;
         edge.from_vertex = from;
         edge.to_vertex = to;

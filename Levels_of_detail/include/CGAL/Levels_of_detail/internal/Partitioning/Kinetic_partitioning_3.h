@@ -36,18 +36,17 @@
 #include <CGAL/Timer.h>
 
 // Kinetic includes.
-#include "kinetic3/defs_cgal.h"
-#include "kinetic3/universe.h"
-#include "kinetic3/propagation_simple.h"
-#include "kinetic3/propagation_multiple.h"
-#include "kinetic3/support_plane.h"
+// #include "kinetic3/defs_cgal.h"
+// #include "kinetic3/universe.h"
+// #include "kinetic3/propagation_simple.h"
+// #include "kinetic3/propagation_multiple.h"
+// #include "kinetic3/support_plane.h"
 
-/*
 #include <CGAL/Levels_of_detail/internal/Partitioning/Kinetic/include/defs_cgal.h>
 #include <CGAL/Levels_of_detail/internal/Partitioning/Kinetic/include/universe.h>
 #include <CGAL/Levels_of_detail/internal/Partitioning/Kinetic/include/propagation_simple.h>
 #include <CGAL/Levels_of_detail/internal/Partitioning/Kinetic/include/propagation_multiple.h>
-#include <CGAL/Levels_of_detail/internal/Partitioning/Kinetic/include/support_plane.h> */
+#include <CGAL/Levels_of_detail/internal/Partitioning/Kinetic/include/support_plane.h>
 
 // Internal includes.
 #include <CGAL/Levels_of_detail/internal/utils.h>
@@ -69,7 +68,7 @@ namespace internal {
     using Partition_3 = internal::Partition_3<Traits>;
     using Edge = typename Partition_3::Edge;
     using Face = typename Partition_3::Face;
-    
+
     using Polygon = std::vector<Point_3>;
 
     // Kinetic.
@@ -107,17 +106,17 @@ namespace internal {
     m_z_scale(FT(10)),
     m_fixed_disc_radius(FT(1) / FT(1000)),
     m_num_points_in_disc(25),
-    m_random(0)  
+    m_random(0)
     { }
 
     void compute(Partition_3& partition) {
-      
+
       /*
       if (m_outer_walls.empty() || m_roofs.empty())
         return; */
 
       JP_polygons jp_polygons;
-      const std::size_t input_size = 
+      const std::size_t input_size =
       1 + m_outer_walls.size() + m_inner_walls.size() + m_roofs.size();
       jp_polygons.reserve(input_size);
       set_ground(jp_polygons);
@@ -166,16 +165,16 @@ namespace internal {
     }
 
     void process_polygon(
-      Polygon &polygon, 
-      JP_polygons& jp_polygons, 
-      const FT scale, 
+      Polygon &polygon,
+      JP_polygons& jp_polygons,
+      const FT scale,
       const FT z_extender) {
 
       if (polygon.size() == 0) return;
       internal::scale_polygon_3(scale, z_extender, polygon);
       internal::perturb_polygon_vertices_3(
         m_fixed_disc_radius, m_num_points_in_disc, m_random, polygon);
-                
+
       JP_polygon jp_polygon;
       jp_polygon.reserve(polygon.size());
 
@@ -192,7 +191,7 @@ namespace internal {
 
       JP_kinetic_propagation kinetic(jp_polygons);
       Skippy::Universe::params->K = m_max_intersections;
-      
+
       /*
       Skippy::Universe::params->output_polyhedrons = true;
       Skippy::Universe::params->basename = "/Users/monet/Documents/lod/logs/polyhedrons/kinetic"; */
@@ -217,7 +216,7 @@ namespace internal {
     }
 
     void set_output(
-      const JP_kinetic_propagation& kinetic, 
+      const JP_kinetic_propagation& kinetic,
       Partition_3& partition) const {
 
       std::unordered_map<int, int> fmap;
@@ -226,14 +225,14 @@ namespace internal {
     }
 
     void add_faces(
-      const JP_kinetic_propagation& kinetic, 
+      const JP_kinetic_propagation& kinetic,
       Partition_3& partition,
       std::unordered_map<int, int>& fmap) const {
 
       partition.faces.clear(); int face_id = 0;
-      for (auto it = kinetic.partition->polyhedrons_begin(); 
+      for (auto it = kinetic.partition->polyhedrons_begin();
       it != kinetic.partition->polyhedrons_end(); ++it) {
-        
+
         add_face(kinetic.partition->planes, *it, partition.faces);
         CGAL_assertion((*it)->id >= 0);
         fmap[(*it)->id] = face_id;
@@ -242,17 +241,17 @@ namespace internal {
 
       // Neighbors.
       std::size_t i = 0;
-      for (auto it = kinetic.partition->polyhedrons_begin(); 
+      for (auto it = kinetic.partition->polyhedrons_begin();
       it != kinetic.partition->polyhedrons_end(); ++it, ++i) {
         const JP_polyhedron* polyhedron = *it;
 
         const int poly_id = polyhedron->id;
         partition.faces[i].neighbors.clear();
 
-        for (auto fit = polyhedron->facets_begin(); 
+        for (auto fit = polyhedron->facets_begin();
         fit != polyhedron->facets_end(); ++fit) {
           const JP_facet* facet = fit->first;
-          
+
           int id = -1;
           const JP_polyhedron* poly1 = facet->get_polyhedron_1();
           const JP_polyhedron* poly2 = facet->get_polyhedron_2();
@@ -283,30 +282,30 @@ namespace internal {
 
       JP_conversions conversions;
       JP_sequences sequences_per_side;
-      
+
       Face face;
       get_polyhedron_vertices(
         planes,
-        polyhedron, 
+        polyhedron,
         sequences_per_side, conversions,
         face.vertices);
       get_polyhedron_faces(
-        sequences_per_side, conversions, 
+        sequences_per_side, conversions,
         face.faces);
       faces.push_back(face);
     }
 
     void get_polyhedron_vertices(
       const std::vector<Skippy::CGAL_Plane>& planes,
-      const JP_polyhedron* polyhedron,  
-      JP_sequences& sequences_per_side, 
+      const JP_polyhedron* polyhedron,
+      JP_sequences& sequences_per_side,
       JP_conversions& conversions,
       std::vector<Point_3>& vertices) const {
 
       /*
       std::vector<Skippy::CGAL_Plane> planes;
       planes.reserve(Skippy::Universe::map_of_planes.size());
-      for (auto it = Skippy::Universe::map_of_planes.begin(); 
+      for (auto it = Skippy::Universe::map_of_planes.begin();
       it != Skippy::Universe::map_of_planes.end(); ++it)
         planes.push_back((*it)->plane); */
 
@@ -315,32 +314,32 @@ namespace internal {
       JP_sequence_set vertices_used;
       JP_sequence facet_vertices;
 
-      for (auto fit = polyhedron->facets_begin(); 
-      fit != polyhedron->facets_end(); ++fit) {  
+      for (auto fit = polyhedron->facets_begin();
+      fit != polyhedron->facets_end(); ++fit) {
         const JP_facet* facet = fit->first;
 
         facet_vertices.clear();
         facet->get_circular_sequence_of_vertices(planes, facet_vertices, !fit->second);
-        for (auto vit = facet_vertices.begin(); 
-        vit != facet_vertices.end(); ++vit) 
+        for (auto vit = facet_vertices.begin();
+        vit != facet_vertices.end(); ++vit)
           vertices_used.insert(*vit);
-                    
+
         sequences_per_side.push_back(facet_vertices);
       }
 
       // Vertices.
       vertices.clear();
       conversions.clear();
-      for (auto vit = vertices_used.begin(); 
+      for (auto vit = vertices_used.begin();
       vit != vertices_used.end(); ++vit) {
-                    
+
         const auto* v = *vit;
         const auto& p = v->M;
 
         const FT x = static_cast<FT>(CGAL::to_double(p.x()));
         const FT y = static_cast<FT>(CGAL::to_double(p.y()));
         const FT z = static_cast<FT>(CGAL::to_double(p.z()));
-                    
+
         const Point_3 vertex = Point_3(x, y, z);
         vertices.push_back(vertex);
         conversions[v] = static_cast<int>(vertices.size()) - 1;
@@ -348,20 +347,20 @@ namespace internal {
     }
 
     void get_polyhedron_faces(
-      const JP_sequences& sequences_per_side, 
-      const JP_conversions& conversions, 
+      const JP_sequences& sequences_per_side,
+      const JP_conversions& conversions,
       std::vector< std::vector<std::size_t> >& faces) const {
-      
+
       // Faces.
       faces.clear(); std::vector<std::size_t> face;
-      for (auto sit = sequences_per_side.begin(); 
+      for (auto sit = sequences_per_side.begin();
       sit != sequences_per_side.end(); ++sit) {
         const auto& sequence = *sit;
 
         face.clear();
         for (auto vit = sequence.begin(); vit != sequence.end(); ++vit) {
           const int idx = conversions.at(*vit);
-          CGAL_assertion(idx >= 0); 
+          CGAL_assertion(idx >= 0);
           face.push_back(static_cast<std::size_t>(idx));
         }
         faces.push_back(face);
@@ -369,21 +368,21 @@ namespace internal {
     }
 
     void add_edges(
-      const JP_kinetic_propagation& kinetic, 
+      const JP_kinetic_propagation& kinetic,
       const std::unordered_map<int, int>& fmap,
       Partition_3& partition) const {
 
       /*
       std::vector<Skippy::CGAL_Plane> planes;
       planes.reserve(Skippy::Universe::map_of_planes.size());
-      for (auto it = Skippy::Universe::map_of_planes.begin(); 
+      for (auto it = Skippy::Universe::map_of_planes.begin();
       it != Skippy::Universe::map_of_planes.end(); ++it)
         planes.push_back((*it)->plane); */
-      
+
       const auto& planes = kinetic.partition->planes;
       auto& edges = partition.edges;
       edges.clear();
-      
+
       JP_facet_vertices v;
       kinetic.partition->get_all_vertices_sorted_by_identifier(v);
       std::vector<Point_3> vertices;
@@ -401,10 +400,10 @@ namespace internal {
       JP_sequence facet_vertices;
       const auto& facets = kinetic.partition->facets;
       std::vector<int> indices;
-      
+
       Edge edge; int id1, id2;
       for (const auto& facet : facets) {
-        for (auto fit = facet.begin(); fit != facet.end(); ++fit) {                        
+        for (auto fit = facet.begin(); fit != facet.end(); ++fit) {
           const JP_facet* f = *fit;
 
           const JP_polyhedron* poly1 = f->get_polyhedron_1();
@@ -438,8 +437,8 @@ namespace internal {
           f->get_circular_sequence_of_vertices(planes, facet_vertices, true);
 
           indices.clear();
-          for (auto vit = facet_vertices.begin(); 
-          vit != facet_vertices.end(); ++vit) 
+          for (auto vit = facet_vertices.begin();
+          vit != facet_vertices.end(); ++vit)
             indices.push_back((*vit)->id);
 
           edge.polygon.clear();
@@ -450,8 +449,8 @@ namespace internal {
           }
 
           // 6 faces of the bbox + 1 ground face + num walls
-          const std::size_t rem = 7 + m_outer_walls.size() + m_inner_walls.size(); 
-          if (f->p >= rem) 
+          const std::size_t rem = 7 + m_outer_walls.size() + m_inner_walls.size();
+          if (f->p >= rem)
             edge.plane_index = f->p - rem;
           edges.push_back(edge);
         }

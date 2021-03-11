@@ -72,8 +72,8 @@ namespace internal {
     using Partition_2 = internal::Partition_2<Traits>;
     using Face = typename Partition_2::Face;
 
-    using K_neighbor_query = 
-    internal::K_neighbor_query<Traits, std::vector< std::pair<Point_2, double> >, 
+    using K_neighbor_query =
+    internal::K_neighbor_query<Traits, std::vector< std::pair<Point_2, double> >,
     CGAL::First_of_pair_property_map< std::pair<Point_2, double> > >;
     using Location_type = typename Triangulation<Traits>::Delaunay::Locate_type;
 
@@ -81,7 +81,7 @@ namespace internal {
       const Data_structure& data,
       const std::vector<std::size_t>& boundary_points,
       const std::vector<std::size_t>& interior_points,
-      Partition_2 &partition_2) : 
+      Partition_2 &partition_2) :
     m_data(data),
     m_boundary_points(boundary_points),
     m_interior_points(interior_points),
@@ -107,7 +107,7 @@ namespace internal {
       m_input_range.clear();
       for (const auto& face : m_partition_2.faces) {
         const auto& tri = face.base.delaunay;
-        
+
         // Ground.
         for (const auto& idx : gr) {
           const auto& p = get(m_data.point_map_2, idx);
@@ -131,11 +131,11 @@ namespace internal {
             p, get(m_data.visibility_map_d, idx)));
           }
         }
-        
+
         // Buildings.
         for (auto& item : items) {
           if (!item.second) {
-            
+
             const auto& p = get(m_data.point_map_2, item.first);
             Location_type type; int stub;
             const auto fh = tri.locate(p, type, stub);
@@ -168,7 +168,7 @@ namespace internal {
     std::vector< std::pair<Point_2, double> > m_input_range;
 
     void estimate_visibility() const {
-      
+
       if (m_partition_2.empty()) return;
       label_exterior_faces(m_partition_2.faces);
       for (auto& face : m_partition_2.faces)
@@ -182,7 +182,7 @@ namespace internal {
 
     void label_exterior_faces(
       std::vector<Face>& faces) const {
-      
+
       for (auto& face : faces) {
         face.exterior = false;
         const auto& neighbors = face.neighbors;
@@ -201,20 +201,20 @@ namespace internal {
 
       std::vector< std::pair<Triangle_2, FT> > probability;
       create_probability(face, probability);
-              
+
       const FT mean_value = compute_mean_value(probability);
       CGAL_assertion(mean_value >= FT(0) && mean_value <= FT(1));
       if (mean_value > FT(1) / FT(2))
         face.visibility = Visibility_label::INSIDE;
       else
         face.visibility = Visibility_label::OUTSIDE;
-      
+
       face.inside = mean_value;
       face.outside = FT(1) - mean_value;
     }
 
     void create_probability(
-      const Face& face, 
+      const Face& face,
       std::vector< std::pair<Triangle_2, FT> >& probability) const {
 
       const auto& tri = face.base.delaunay;
@@ -224,7 +224,7 @@ namespace internal {
       FT area = FT(0); Triangle_2 triangle;
       for (auto fh = tri.finite_faces_begin();
       fh != tri.finite_faces_end(); ++fh) {
-        
+
         triangle = Triangle_2(
           fh->vertex(0)->point(),
           fh->vertex(1)->point(),
@@ -250,7 +250,7 @@ namespace internal {
           value += get_function_value(point, neighbors);
         mean_value += value;
       }
-      
+
       mean_value /= static_cast<FT>(m_num_probes);
       return mean_value;
     }
@@ -260,7 +260,7 @@ namespace internal {
       Point_2& point) const {
 
       const FT key = static_cast<FT>(
-        CGAL::to_double(probability.back().second) * 
+        CGAL::to_double(probability.back().second) *
         (rand() / static_cast<double>(RAND_MAX)));
 
       for (std::size_t i = 0; i < probability.size() - 1; ++i) {
@@ -269,8 +269,8 @@ namespace internal {
           return;
         }
       }
-      std::cerr << 
-        "Error (compute_random_point_in_triangles()): probability is out of range!" 
+      std::cerr <<
+        "Error (compute_random_point_in_triangles()): probability is out of range!"
       << std::endl;
       point = Point_2(FT(0), FT(0));
     }
@@ -278,8 +278,8 @@ namespace internal {
     FT get_function_value(
       const Point_2& p,
       const std::vector<std::size_t>& neighbors) const {
-      
-      const double value = 
+
+      const double value =
       get(m_visibility_map, *(m_input_range.begin() + neighbors[0]));
       return static_cast<FT>(value);
     }

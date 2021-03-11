@@ -33,7 +33,7 @@
 //   if (m_partition_3.empty()) return;
 //   Visibility_3_exp_1 visibility(
 //     m_cluster,
-//     m_data.point_map_3, 
+//     m_data.point_map_3,
 //     m_building,
 //     m_roof_points_3,
 //     m_data.parameters.buildings.alpha_shape_size_2,
@@ -73,7 +73,7 @@ namespace internal {
   typename InputRange,
   typename PointMap>
   class Visibility_3_exp_1 {
-			
+
   public:
     using Traits = GeomTraits;
     using Input_range = InputRange;
@@ -91,14 +91,14 @@ namespace internal {
     using Indices = std::vector<std::size_t>;
     using Partition_2 = internal::Partition_2<Traits>;
     using Partition_3 = internal::Partition_3<Traits>;
-   
+
     using Edge = typename Partition_3::Edge;
     using Face = typename Partition_2::Face;
 
     using Building = internal::Building<Traits>;
     using Roof = typename Building::Roof;
     using Wall = typename Building::Wall;
-    
+
     using Points_2 = std::vector<Point_2>;
     using Points_3 = std::vector<Point_3>;
 
@@ -129,7 +129,7 @@ namespace internal {
     { }
 
     void compute(Partition_3& partition) {
-      
+
       m_building.walls2.clear();
       m_building.roofs2.clear();
 
@@ -159,9 +159,9 @@ namespace internal {
           const auto& p = get(m_point_map, *(m_input_range.begin() + idx));
           points.push_back(p);
         }
-        
+
         // Saver saver;
-        // const std::string rname = 
+        // const std::string rname =
         // "/Users/monet/Documents/lod/logs/buildings/groups/polygon-soup-" + std::to_string(i);
         // saver.export_polygon_soup(group, color, rname);
         // const std::string pname =
@@ -171,7 +171,7 @@ namespace internal {
         add_walls_and_roofs(group); // hack!
       }
     }
-    
+
   private:
     const Input_range& m_input_range;
     const Point_map& m_point_map;
@@ -191,7 +191,7 @@ namespace internal {
       Roof roof; Wall wall;
       for (const auto& polygon : polygons) {
         const Point_3& ref = polygon[0];
-        
+
         // Roofs.
         roof.triangles.clear();
         for (std::size_t i = 1; i < polygon.size() - 1; ++i) {
@@ -214,11 +214,11 @@ namespace internal {
           const auto& p2 = polygon[ip];
 
           const Triangle_3 tri1 = Triangle_3(
-            Point_3(p1.x(), p1.y(), m_building.bottom_z), 
+            Point_3(p1.x(), p1.y(), m_building.bottom_z),
             Point_3(p2.x(), p2.y(), m_building.bottom_z),
             p2);
           const Triangle_3 tri2 = Triangle_3(
-            p2, 
+            p2,
             p1,
             Point_3(p1.x(), p1.y(), m_building.bottom_z));
           wall.triangles.push_back(tri1);
@@ -232,7 +232,7 @@ namespace internal {
       const std::vector<Edge>& edges,
       std::vector<Indices>& groups,
       std::vector<Points_3>& polygons) const {
-      
+
       groups.resize(edges.back().plane_index + 1);
       Point_3 b; std::size_t poly_idx = 0;
       for (const auto& edge : edges) {
@@ -250,7 +250,7 @@ namespace internal {
 
       std::vector<Indices> new_groups;
       for (const auto& group : groups)
-        if (!group.empty()) 
+        if (!group.empty())
           new_groups.push_back(group);
       groups = new_groups;
     }
@@ -287,7 +287,7 @@ namespace internal {
           const auto& p = get(m_point_map, *(m_input_range.begin() + idx));
           tmp_points.push_back(p);
         }
-        
+
         apply_region_2d_visibility(i, tmp_points, tmp_polygons, groups[i]);
       }
     }
@@ -299,7 +299,7 @@ namespace internal {
       Indices& group) const {
 
       Point_3 b;
-      compute_barycenter(points, polygons, b);      
+      compute_barycenter(points, polygons, b);
       Plane_3 plane;
       Identity_map_3 identity_map_3;
       internal::plane_from_points_3(points, identity_map_3, plane);
@@ -313,7 +313,7 @@ namespace internal {
 
       // Saver saver;
       // const Color color = Color(0, 0, 0);
-      // const std::string rname = 
+      // const std::string rname =
       // "/Users/monet/Documents/lod/logs/buildings/rotated/polygon-soup-" + std::to_string(id);
       // saver.export_polygon_soup(polygons_save, color, rname);
       // const std::string pname =
@@ -325,7 +325,7 @@ namespace internal {
 
       Indices new_group;
       for (std::size_t i = 0; i < partition_2.faces.size(); ++i)
-        if (partition_2.faces[i].visibility == Visibility_label::INSIDE) 
+        if (partition_2.faces[i].visibility == Visibility_label::INSIDE)
           new_group.push_back(group[i]);
       group = new_group;
     }
@@ -347,7 +347,7 @@ namespace internal {
 
       const FT x = (b1.x() + b2.x()) / FT(2);
       const FT y = (b1.y() + b2.y()) / FT(2);
-      const FT z = (b1.z() + b2.z()) / FT(2); 
+      const FT z = (b1.z() + b2.z()) / FT(2);
 
       b = Point_3(x, y, z);
     }
@@ -363,7 +363,7 @@ namespace internal {
         const Point_2 q = internal::to_2d(p, b, plane);
         points_2d.push_back(q);
         points_save.push_back(Point_3(q.x(), q.y(), FT(0)));
-      } 
+      }
     }
 
     void create_2d_polygons(
@@ -396,10 +396,10 @@ namespace internal {
         indices.push_back(i);
       Identity_map_2 identity_map_2;
       Point_map_2 point_map_2(points, identity_map_2);
-      
+
       const Visibility_2 visibility(
-        stub, indices, 
-        point_map_2, 
+        stub, indices,
+        point_map_2,
         m_alpha_shape_size_2, FT(1) / FT(5));
 
       for (const auto& polygon : polygons)

@@ -39,7 +39,7 @@ namespace Levels_of_detail {
 namespace internal {
 
   template<
-  typename GeomTraits, 
+  typename GeomTraits,
   typename InputRange,
   typename PointMap>
   class Building_roofs_estimator {
@@ -63,7 +63,7 @@ namespace internal {
     using Identity_map_2 = CGAL::Identity_property_map<Point_2>;
 
     Building_roofs_estimator(
-      const Input_range& input_range, 
+      const Input_range& input_range,
       const Point_map& point_map,
       const std::vector<Indices>& roof_points_3) :
     m_input_range(input_range),
@@ -74,7 +74,7 @@ namespace internal {
     void estimate(
       std::vector<Approximate_face>& roofs) const {
 
-      roofs.clear();      
+      roofs.clear();
       if (m_roof_points_3.empty())
         return;
 
@@ -97,11 +97,11 @@ namespace internal {
       Plane_3 plane;
       internal::plane_from_points_3(
         m_input_range, m_point_map, indices, plane);
-      
+
       Points_3 points_3;
       internal::project_on_plane_3(
         m_input_range, m_point_map, indices, plane, points_3);
-      
+
       Point_3 b3;
       internal::compute_barycenter_3(points_3, b3);
 
@@ -154,7 +154,7 @@ namespace internal {
 					std::isnan(CGAL::to_double(boundary[3].y())) ||
 					std::isnan(CGAL::to_double(boundary[3].z()))  ) return false;
 
-			if (boundary.size() < 3) 
+			if (boundary.size() < 3)
         return false;
       return true;
 		}

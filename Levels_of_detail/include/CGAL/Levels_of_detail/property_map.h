@@ -44,21 +44,21 @@ namespace Levels_of_detail {
     the item is classified as facade, a visibility value can be set to 0.5 to show
     that this item can equallly belong both to the building's interior and exterior.
 
-    \tparam SemanticMap 
-    must be an `LvaluePropertyMap` whose key type is the value type of the 
+    \tparam SemanticMap
+    must be an `LvaluePropertyMap` whose key type is the value type of the
     input range and value type is `CGAL::Levels_of_detail::Semantic_label`.
-  */    
+  */
   template<typename SemanticMap>
   struct Visibility_from_semantic_map {
 
   public:
-    
+
     /// \name Types
     /// @{
-  
+
     /// Key type.
     typedef typename boost::property_traits<SemanticMap>::key_type key_type;
-    
+
     /// Value type.
     typedef double value_type;
 
@@ -83,8 +83,8 @@ namespace Levels_of_detail {
     /*!
       \brief initializes a visibility map with a semantic map.
     */
-    Visibility_from_semantic_map(SemanticMap semantic_map) : 
-    m_semantic_map(semantic_map) 
+    Visibility_from_semantic_map(SemanticMap semantic_map) :
+    m_semantic_map(semantic_map)
     { }
 
     /// @}
@@ -96,11 +96,11 @@ namespace Levels_of_detail {
       \brief returns a visibility value for a given key.
     */
     friend value_type get(
-      const Visibility_from_semantic_map& visibility_map, 
+      const Visibility_from_semantic_map& visibility_map,
       const key_type& key) {
 
       const Semantic_label label = get(visibility_map.m_semantic_map, key);
-        
+
       if (label == Semantic_label::BUILDING_INTERIOR)
         return 1.0;
       if (label == Semantic_label::BUILDING_BOUNDARY)

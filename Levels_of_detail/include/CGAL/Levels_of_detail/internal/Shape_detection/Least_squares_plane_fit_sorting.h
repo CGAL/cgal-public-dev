@@ -63,18 +63,18 @@ namespace internal {
       const Point_map& point_map) :
     m_input_range(input_range),
     m_neighbor_query(neighbor_query),
-    m_point_map(point_map) { 
-      
+    m_point_map(point_map) {
+
       CGAL_precondition(m_input_range.size() > 0);
-      
+
       m_order.resize(m_input_range.size());
-      for (std::size_t i = 0; i < m_input_range.size(); ++i) 
+      for (std::size_t i = 0; i < m_input_range.size(); ++i)
         m_order[i] = i;
       m_scores.resize(m_input_range.size());
     }
 
     void sort() {
-      
+
       compute_scores();
       CGAL_postcondition(m_scores.size() > 0);
 
@@ -100,7 +100,7 @@ namespace internal {
       std::vector<Local_point_3> points;
 
       for (std::size_t i = 0; i < m_input_range.size(); ++i) {
-        
+
         neighbors.clear();
         m_neighbor_query(i, neighbors);
         neighbors.push_back(i);
@@ -120,8 +120,8 @@ namespace internal {
         Local_point_3 fitted_centroid;
 
         m_scores[i] = linear_least_squares_fitting_3(
-          points.begin(), points.end(), 
-          fitted_plane, fitted_centroid, 
+          points.begin(), points.end(),
+          fitted_plane, fitted_centroid,
           CGAL::Dimension_tag<0>());
       }
     }
@@ -129,7 +129,7 @@ namespace internal {
     const Input_range& m_input_range;
     Neighbor_query& m_neighbor_query;
     const Point_map& m_point_map;
-    
+
     std::vector<std::size_t> m_order;
     std::vector<Local_FT> m_scores;
 

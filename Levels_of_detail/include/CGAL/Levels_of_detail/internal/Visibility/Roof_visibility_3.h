@@ -49,7 +49,7 @@ namespace internal {
 
   template<typename GeomTraits>
   class Roof_visibility_3 {
-			
+
   public:
     using Traits = GeomTraits;
 
@@ -69,7 +69,7 @@ namespace internal {
     using Local_point_3 = typename Local_traits::Point_3;
     using Delaunay_3 = CGAL::Delaunay_triangulation_3<Local_traits>;
     using Generator = CGAL::Random_points_in_tetrahedron_3<Local_point_3>;
-    
+
     using Delaunay = typename Triangulation<Traits>::Delaunay;
     using Location_type = typename Delaunay::Locate_type;
 
@@ -89,24 +89,24 @@ namespace internal {
       label_exterior_faces(partition_3.faces);
       for (auto& pface : partition_3.faces) {
         if (pface.exterior) {
-          
+
           pface.visibility = Visibility_label::OUTSIDE;
           pface.inside  = FT(0);
           pface.outside = FT(1);
         } else compute_face_label(pface);
       }
     }
-    
+
   private:
     const Partition_2& m_partition_2;
-    const FT m_bottom_z; 
+    const FT m_bottom_z;
     const FT m_top_z;
     const std::size_t m_num_samples;
     Random m_random;
 
     void label_exterior_faces(
       std::vector<Face_3>& faces) const {
-      
+
       for (auto& face : faces) {
         face.exterior = false;
         const auto& neighbors = face.neighbors;
@@ -126,9 +126,9 @@ namespace internal {
       CGAL_assertion(
         CGAL::abs(stats.first + stats.second - FT(1)) < internal::tolerance<FT>());
 
-      if (stats.first >= FT(1) / FT(2)) 
+      if (stats.first >= FT(1) / FT(2))
         face.visibility = Visibility_label::INSIDE;
-      else 
+      else
         face.visibility = Visibility_label::OUTSIDE;
       face.inside  = stats.first;
       face.outside = stats.second;
@@ -138,11 +138,11 @@ namespace internal {
 
       Point_3 b;
       internal::compute_barycenter_3(polyhedron.vertices, b);
-      if (is_above_building(b)) 
+      if (is_above_building(b))
         return std::make_pair(FT(0), FT(1));
-      if (is_below_building(b)) 
-        return std::make_pair(FT(0), FT(1));      
-      if (is_outside_boundary(b)) 
+      if (is_below_building(b))
+        return std::make_pair(FT(0), FT(1));
+      if (is_outside_boundary(b))
         return std::make_pair(FT(0), FT(1));
       return estimate_in_out_values_statistically(polyhedron);
     }
@@ -166,7 +166,7 @@ namespace internal {
         Location_type type; int stub;
         const auto fh = base.delaunay.locate(p, type, stub);
         if (
-          type != Delaunay::OUTSIDE_CONVEX_HULL && 
+          type != Delaunay::OUTSIDE_CONVEX_HULL &&
           type != Delaunay::OUTSIDE_AFFINE_HULL)
           return true;
       }
@@ -203,13 +203,13 @@ namespace internal {
       Delaunay_3 delaunay_3;
       for (const auto& p : vertices)
         delaunay_3.insert(Local_point_3(
-          CGAL::to_double(p.x()), 
-          CGAL::to_double(p.y()), 
+          CGAL::to_double(p.x()),
+          CGAL::to_double(p.y()),
           CGAL::to_double(p.z())));
 
       std::vector<Local_point_3> points;
-      for (auto cit = delaunay_3.finite_cells_begin(); 
-      cit != delaunay_3.finite_cells_end(); ++cit) {  
+      for (auto cit = delaunay_3.finite_cells_begin();
+      cit != delaunay_3.finite_cells_end(); ++cit) {
         const auto& tet = delaunay_3.tetrahedron(cit);
 
         const FT volume = CGAL::abs(tet.volume());
@@ -251,7 +251,7 @@ namespace internal {
         Location_type type; int stub;
         const auto fh = base.delaunay.locate(p, type, stub);
         if (
-          type != Delaunay::OUTSIDE_CONVEX_HULL && 
+          type != Delaunay::OUTSIDE_CONVEX_HULL &&
           type != Delaunay::OUTSIDE_AFFINE_HULL) {
 
           const auto& plane = pface.plane;

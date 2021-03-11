@@ -50,7 +50,7 @@ namespace internal {
 
     int group_index(const FT val, const FT val_j, const int g_index) const {
       int g_j = -1;
-      if (CGAL::abs(val_j - val) < m_moe)  
+      if (CGAL::abs(val_j - val) < m_moe)
         g_j = g_index;
       return g_j;
     }

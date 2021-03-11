@@ -76,7 +76,7 @@ public:
   using Triangle_3 = typename Traits::Triangle_3;
   using Intersect_2 = typename Traits::Intersect_2;
   using Intersect_3 = typename Traits::Intersect_3;
-  
+
   using Image = internal::Image<Traits>;
   using Point_type = typename Image::Point_type;
 
@@ -93,7 +93,7 @@ public:
     const std::vector<Segment_2>& boundary,
     std::vector<Vertex>& vertices,
     std::vector<Edge>& edges,
-    std::vector<Halfedge>& halfedges, 
+    std::vector<Halfedge>& halfedges,
     const Image& image,
     const std::map<std::size_t, Plane_3>& plane_map,
     const FT min_length_2,
@@ -111,7 +111,7 @@ public:
   m_pi(static_cast<FT>(CGAL_PI)),
   m_angle_threshold(FT(5)),
   m_bound_min(m_angle_bound_2),
-  m_bound_max(FT(90) - m_bound_min) 
+  m_bound_max(FT(90) - m_bound_min)
   { }
 
   void set_face_edges(
@@ -157,7 +157,7 @@ public:
         from.state = true;
       }
     } */
-    
+
     /* save_face_contour(m_segments, face.index); */
   }
 
@@ -209,7 +209,7 @@ private:
         vertex.type == Point_type::CORNER /* ||
         vertex.type == Point_type::OUTER_CORNER ||
         vertex.type == Point_type::OUTER_BOUNDARY */ ) {
-        
+
         regularize_positive(start, indices);
         return;
       }
@@ -239,7 +239,7 @@ private:
         vertex.type == Point_type::CORNER /* ||
         vertex.type == Point_type::OUTER_CORNER ||
         vertex.type == Point_type::OUTER_BOUNDARY */ ) {
-        
+
         const std::size_t end = (curr + n - 1) % n;
         regularize_negative(indices, end);
         return;
@@ -253,7 +253,7 @@ private:
   }
 
   void regularize_positive(
-    const std::size_t start, 
+    const std::size_t start,
     const Indices& indices) {
 
     if (indices.size() == 0)
@@ -296,7 +296,7 @@ private:
     }
   }
 
-  void regularize_negative( 
+  void regularize_negative(
     const Indices& input,
     const std::size_t end) {
 
@@ -350,12 +350,12 @@ private:
     const FT dot = CGAL::scalar_product(v1, v2);
     const FT angle_rad = static_cast<FT>(
       std::atan2(CGAL::to_double(det), CGAL::to_double(dot)));
-    const FT angle_deg = angle_rad * FT(180) / m_pi; 
+    const FT angle_deg = angle_rad * FT(180) / m_pi;
     return angle_deg;
   }
 
   FT get_angle_2(const FT angle) {
-    
+
     FT angle_2 = angle;
     if (angle_2 > FT(90)) angle_2 = FT(180) - angle_2;
     else if (angle_2 < -FT(90)) angle_2 = FT(180) + angle_2;
@@ -370,10 +370,10 @@ private:
     segments.reserve(edges.size());
     for (const auto& edge : edges)
       segments.push_back(edge.segment);
-    
+
     Saver saver;
     saver.save_polylines(
-      segments, "/Users/monet/Documents/lod/logs/buildings/tmp/contours/contour-" + 
+      segments, "/Users/monet/Documents/gf/lod/logs/buildings/tmp/contours/contour-" +
       std::to_string(face_index));
   }
 };

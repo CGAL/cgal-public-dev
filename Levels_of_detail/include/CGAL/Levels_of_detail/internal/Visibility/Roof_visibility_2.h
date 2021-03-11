@@ -53,7 +53,7 @@ namespace internal {
 
   template<typename GeomTraits>
   class Roof_visibility_2 {
-			
+
   public:
     using Traits = GeomTraits;
 
@@ -93,7 +93,7 @@ namespace internal {
       compute_in_out_visibility(partition);
       compute_roof_visibility(partition);
     }
-    
+
     const std::size_t number_of_actual_roofs(
       const Partition_2& partition) const {
       return compute_number_of_actual_roofs(partition);
@@ -103,7 +103,7 @@ namespace internal {
     const std::vector<Point_3>& m_input_range;
     const Building& m_building;
     const std::vector<Indices>& m_roof_points_3;
-    
+
     const std::size_t m_num_samples;
     std::vector<Point_2> m_samples;
     const std::size_t m_k;
@@ -137,7 +137,7 @@ namespace internal {
         const auto& polygon = face.outer_polygon;
 
         if (polygon.size() < 3) {
-          
+
           face.visibility = Visibility_label::OUTSIDE;
           face.inside = FT(0); face.outside = FT(1); continue;
         }
@@ -158,9 +158,9 @@ namespace internal {
 
           const Triangle_2 triangle = Triangle_2(p0, p1, p2);
           const FT area = CGAL::abs(triangle.area());
-          
+
           if (
-            bh->info().tagged && 
+            bh->info().tagged &&
             type == Triangulation::Delaunay::FACE &&
             area > FT(1) / FT(1000))
             ++count;
@@ -192,7 +192,7 @@ namespace internal {
 
       m_queries.clear();
       m_queries.reserve(num_points);
-      
+
       m_roof_indices.clear();
       m_roof_indices.reserve(num_points);
 
@@ -233,10 +233,10 @@ namespace internal {
         Point_generator generator(triangle, m_random);
         std::copy_n(
           generator, m_num_samples, std::back_inserter(m_samples));
-        
+
         for (const auto& p : m_samples) {
           (*m_neighbor_query_ptr)(p, neighbors);
-          
+
           for (const std::size_t idx : neighbors) {
             const std::size_t label = m_queries[idx].second;
             max_count[label] += 1;
@@ -254,15 +254,15 @@ namespace internal {
           max_value = value; face_label = i;
         }
       }
-      
+
       face.label = face_label;
       face.probabilities.clear();
       face.probabilities.resize(max_count.size(), FT(0));
 
       if (max_value != -1) {
         for (std::size_t i = 0; i < max_count.size(); ++i) {
-          
-          const FT probability = 
+
+          const FT probability =
             static_cast<FT>(max_count[i]) / static_cast<FT>(max_value);
           face.probabilities[i] = probability;
         }

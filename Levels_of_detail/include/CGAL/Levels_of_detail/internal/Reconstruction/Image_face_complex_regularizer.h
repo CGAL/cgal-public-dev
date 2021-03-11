@@ -76,7 +76,7 @@ public:
   using Triangle_3 = typename Traits::Triangle_3;
   using Intersect_2 = typename Traits::Intersect_2;
   using Intersect_3 = typename Traits::Intersect_3;
-  
+
   using Image = internal::Image<Traits>;
   using Point_type = typename Image::Point_type;
 
@@ -93,7 +93,7 @@ public:
     const std::vector<Segment_2>& boundary,
     std::vector<Vertex>& vertices,
     std::vector<Edge>& edges,
-    std::vector<Halfedge>& halfedges, 
+    std::vector<Halfedge>& halfedges,
     const Image& image,
     const std::map<std::size_t, Plane_3>& plane_map,
     const FT min_length_2,
@@ -111,7 +111,7 @@ public:
   m_pi(static_cast<FT>(CGAL_PI)),
   m_angle_threshold(FT(5)),
   m_bound_min(m_angle_bound_2),
-  m_bound_max(FT(90) - m_bound_min) 
+  m_bound_max(FT(90) - m_bound_min)
   { }
 
   void set_face_edges(
@@ -169,7 +169,7 @@ public:
     success = connect_contour(edges);
     if (success) {
       save_face_contour(edges, face.index);
-      
+
       for (auto& edge : edges) {
         auto& vertex = m_vertices[edge.from_vertex];
         if (!vertex.state) {
@@ -219,7 +219,7 @@ private:
 
     m_segments.clear();
     for (std::size_t i = 0; i < face.hedges.size(); ++i) {
-      
+
       const std::size_t he_idx = face.hedges[i];
       const auto& he = m_halfedges[he_idx];
       const std::size_t from = he.from_vertex;
@@ -229,7 +229,7 @@ private:
       const auto& t = m_vertices[to];
 
       if (!s.skip && !t.skip) {
-        
+
         Edge edge;
         edge.from_vertex = from;
         edge.to_vertex = to;
@@ -283,8 +283,8 @@ private:
     const std::size_t value) {
 
     CGAL_assertion(m_segments.size() != 0);
-    
-    m_group.clear(); 
+
+    m_group.clear();
     m_group.resize(m_segments.size(), value);
   }
 
@@ -323,7 +323,7 @@ private:
       const auto& to = m_vertices[edge.to_vertex];
 
       if (
-        from.type == Point_type::LINEAR && 
+        from.type == Point_type::LINEAR &&
         to.type == Point_type::LINEAR) {
         linear_segment = edge.segment;
         return true;
@@ -343,7 +343,7 @@ private:
       }
     }
 
-    std::sort(boundaries.begin(), boundaries.end(), 
+    std::sort(boundaries.begin(), boundaries.end(),
     [](const Segment_2& a, const Segment_2& b) {
       return a.squared_length() > b.squared_length();
     });
@@ -382,7 +382,7 @@ private:
         const FT angle = angle_degree_2(m_longest[j], edge.segment);
         const FT angle_2 = get_angle_2(angle);
 
-        if ( 
+        if (
           (CGAL::abs(angle_2) <= m_bound_min) ||
           (CGAL::abs(angle_2) >= m_bound_max) )  {
 
@@ -402,12 +402,12 @@ private:
     const FT dot = CGAL::scalar_product(v1, v2);
     const FT angle_rad = static_cast<FT>(
       std::atan2(CGAL::to_double(det), CGAL::to_double(dot)));
-    const FT angle_deg = angle_rad * FT(180) / m_pi; 
+    const FT angle_deg = angle_rad * FT(180) / m_pi;
     return angle_deg;
   }
 
   FT get_angle_2(const FT angle) {
-    
+
     FT angle_2 = angle;
     if (angle_2 > FT(90)) angle_2 = FT(180) - angle_2;
     else if (angle_2 < -FT(90)) angle_2 = FT(180) + angle_2;
@@ -419,7 +419,7 @@ private:
     for (std::size_t i = 0; i < m_segments.size(); ++i) {
       const auto& edge = m_segments[i];
       if (edge.skip) continue;
-      
+
       if (m_group[i] == std::size_t(-1)) {
 
         const std::size_t m = m_segments.size();
@@ -456,7 +456,7 @@ private:
     const std::size_t n = m_segments.size();
     Indices group; group.reserve(n);
     for (std::size_t i = 0; i < n; ++i) {
-      
+
       const std::size_t im = (i + n - 1) % n;
       const std::size_t ip = (i + 1) % n;
 
@@ -487,7 +487,7 @@ private:
       segments.push_back(edge.segment);
     }
 
-    std::sort(segments.begin(), segments.end(), 
+    std::sort(segments.begin(), segments.end(),
     [](const Segment_2& a, const Segment_2& b) {
       return a.squared_length() > b.squared_length();
     });
@@ -495,7 +495,7 @@ private:
     CGAL_assertion(segments.size() != 0);
     m_longest.push_back(segments[0]);
     m_bounds.push_back(std::make_pair(FT(45), FT(45)));
-    
+
     for (std::size_t i = 0; i < m_segments.size(); ++i) {
       auto& edge = m_segments[i];
 
@@ -540,7 +540,7 @@ private:
   }
 
   bool rotate_segment(
-    const Segment_2& longest_segment, 
+    const Segment_2& longest_segment,
     const FT_pair& bounds,
     Segment_2& segment) {
 
@@ -555,9 +555,9 @@ private:
   }
 
   void rotate(
-    const FT angle_2, 
+    const FT angle_2,
     const FT ref_angle_2,
-    const Segment_2& longest_segment, 
+    const Segment_2& longest_segment,
     Segment_2& segment) {
 
     FT angle = angle_2;
@@ -568,7 +568,7 @@ private:
     Point_2 target = segment.target();
 
     const Point_2 b = internal::middle_point_2(source, target);
-    const FT angle_rad = angle * m_pi / FT(180); 
+    const FT angle_rad = angle * m_pi / FT(180);
 
     internal::rotate_point_2(angle_rad, b, source);
     internal::rotate_point_2(angle_rad, b, target);
@@ -628,8 +628,8 @@ private:
     for (std::size_t i = 0; i < num_edges; ++i) {
       const auto& edge_i = edges[i];
       if (states[i]) continue;
-      
-      group.clear(); 
+
+      group.clear();
       group.push_back(edge_i);
 
       if (edge_i.skip) {
@@ -637,18 +637,18 @@ private:
         ++gr_idx; continue;
       }
       states[i] = true;
-      
+
       const std::size_t ip = (i + 1) % num_edges;
       if (ip != 0) {
         for (std::size_t j = ip; j < num_edges; ++j) {
           const auto& edge_j = edges[j];
           if (edge_j.skip) break;
-          
+
           const FT angle = angle_degree_2(
             edge_i.segment, edge_j.segment);
           const FT angle_2 = get_angle_2(angle);
 
-          if (CGAL::abs(angle_2) <= m_angle_threshold) {          
+          if (CGAL::abs(angle_2) <= m_angle_threshold) {
             group.push_back(edge_j); states[j] = true;
           } else break;
         }
@@ -667,8 +667,8 @@ private:
       indices.push_back(i);
 
     // Sort.
-    std::sort(indices.begin(), indices.end(), 
-    [&edges](const std::size_t idx1, const std::size_t idx2) -> bool { 
+    std::sort(indices.begin(), indices.end(),
+    [&edges](const std::size_t idx1, const std::size_t idx2) -> bool {
       const FT length_1 = edges[idx1].segment.squared_length();
       const FT length_2 = edges[idx2].segment.squared_length();
       return length_1 > length_2;
@@ -686,13 +686,13 @@ private:
       const int idxi = static_cast<int>(indices[i]);
       const auto& edge_i = edges[idxi];
       if (states[idxi]) continue;
-      
-      group.clear(); 
+
+      group.clear();
       group.push_back(edge_i);
       seg_map[idxi] = gr_idx;
       states[idxi] = true;
 
-      const auto p = 
+      const auto p =
       internal::middle_point_2(
         edge_i.segment.source(), edge_i.segment.target());
 
@@ -702,12 +702,12 @@ private:
         for (int j = idxip; j < edges.size(); ++j) {
           const auto& edge_j = edges[j];
           if (states[j]) break;
-                
+
           const Line_2 line = Line_2(
             edge_j.segment.source(), edge_j.segment.target());
           const auto q = line.projection(p);
           const FT distance = internal::distance(p, q);
-          
+
           if (distance <= m_ordinate_bound_2) {
             group.push_back(edge_j); states[j] = true;
             seg_map[j] = gr_idx;
@@ -722,12 +722,12 @@ private:
         while (j >= 0) {
           const auto& edge_j = edges[j];
           if (states[j]) break;
-      
+
           const Line_2 line = Line_2(
             edge_j.segment.source(), edge_j.segment.target());
           const auto q = line.projection(p);
           const FT distance = internal::distance(p, q);
-          
+
           if (distance <= m_ordinate_bound_2) {
             group.push_back(edge_j); states[j] = true;
             seg_map[j] = gr_idx;
@@ -744,7 +744,7 @@ private:
     std::vector<Line_2> lines;
     lines.reserve(groups.size());
     for (const auto& group : groups) {
-            
+
       const Segment_2 segment = find_weighted_segment(group);
       const Line_2 line = Line_2(segment.source(), segment.target());
       lines.push_back(line);
@@ -755,7 +755,7 @@ private:
     for (std::size_t i = 0; i < edges.size(); ++i) {
       const std::size_t gr_idx = seg_map.at(i);
       const Line_2& line = lines[gr_idx];
-      
+
       auto& edge = edges[i];
 
       const auto& s = edge.segment.source();
@@ -780,7 +780,7 @@ private:
 
       result.push_back(edges[i]);
       if (gri != grj) {
-        
+
         const auto& edgei = edges[i];
         const auto& edgej = edges[ip];
 
@@ -807,7 +807,7 @@ private:
   bool connect_contour(std::vector<Edge>& edges) {
 
     bool success = false;
-    
+
     success = clean_segments(edges);
     if (!success) return false;
 
@@ -843,7 +843,7 @@ private:
   bool filter_out_wrong_segments(
     const std::vector<Edge>& edges,
     std::vector<Edge>& filtered) {
-    
+
     filtered.clear();
     const std::size_t n = edges.size();
     const std::size_t start = find_initial_index(edges);
@@ -861,14 +861,14 @@ private:
       const std::size_t curr = i;
 
       Segment_2 segment;
-      const FT sum_length = 
+      const FT sum_length =
       create_segment_from_parallel_segments(parallel_edges, segment);
-      
+
       const auto& prev_edge = edges[prev];
       const auto& curr_edge = edges[curr];
 
       if (parallel_edges.size() > 1) {
-        
+
         Edge extra;
         extra.from_vertex = prev_edge.to_vertex;
         extra.to_vertex = curr_edge.from_vertex;
@@ -893,10 +893,10 @@ private:
     const std::size_t n = edges.size();
     for (std::size_t i = 0; i < n; ++i) {
       if (edges[i].skip) continue;
-      
+
       const std::size_t im = (i + n - 1) % n;
       const std::size_t ip = (i + 1) % n;
-      
+
       const auto& si = edges[i].segment;
       const auto& sm = edges[im].segment;
       const auto& sp = edges[ip].segment;
@@ -927,10 +927,10 @@ private:
     const std::vector<Edge>& edges,
     std::vector<Edge>& parallel_edges,
     std::size_t& seed) {
-      
+
     parallel_edges.clear();
     const std::size_t n = edges.size();
-    
+
     std::size_t i = seed;
     bool next_is_parallel = false;
     std::size_t max_count = 0;
@@ -964,13 +964,13 @@ private:
     Segment_2& result) {
 
     Segment_2 ref_segment = find_weighted_segment(parallel_edges);
-    const Line_2 line = 
+    const Line_2 line =
     Line_2(ref_segment.source(), ref_segment.target());
-    
+
     FT sum_length = FT(0);
     std::vector<Point_2> points;
     for (const auto& edge : parallel_edges) {
-      
+
       const Point_2 p = line.projection(edge.segment.source());
       const Point_2 q = line.projection(edge.segment.target());
 
@@ -990,9 +990,9 @@ private:
     std::vector<FT> weights;
     compute_distance_weights(edges, weights);
     const Segment_2 ref_segment = find_central_segment(edges);
-    const Segment_2 result = 
+    const Segment_2 result =
       compute_weighted_segment(edges, weights, ref_segment);
-    
+
     if (result.source() == result.target())
       return ref_segment;
     return result;
@@ -1007,7 +1007,7 @@ private:
 
     FT sum_distance = FT(0);
     for (const auto& edge : edges) {
-      const FT distance = 
+      const FT distance =
         internal::distance(
           edge.segment.source(), edge.segment.target());
       sum_distance += distance;
@@ -1031,7 +1031,7 @@ private:
 
     tmp.clear();
     for (const auto& edge : edges) {
-      if (edge.skip) 
+      if (edge.skip)
         tmp.push_back(edge);
     }
     if (tmp.size() != 0)
@@ -1089,7 +1089,7 @@ private:
     const Point_2 b = internal::middle_point_2(s, t);
 
     Vector_2 dir = Vector_2(FT(0), FT(0));
-    for (std::size_t i = 0; i < weights.size(); ++i) {  
+    for (std::size_t i = 0; i < weights.size(); ++i) {
       const FT weight = weights[i];
 
       const Segment_2& segment = edges[i].segment;
@@ -1116,12 +1116,12 @@ private:
     const Vector_2 ref_vector = segment.to_vector();
     Point_2 ref_point;
     internal::compute_barycenter_2(points, ref_point);
-    
+
     Point_2 p, q;
     for (const auto& point : points) {
       const Vector_2 curr_vector(ref_point, point);
       const FT value = CGAL::scalar_product(curr_vector, ref_vector);
-      
+
       if (value < min_proj_value) {
         min_proj_value = value;
         p = point; }
@@ -1148,7 +1148,7 @@ private:
     std::vector<Line_2> lines;
     lines.reserve(groups.size());
     for (const auto& group : groups) {
-            
+
       const Segment_2 segment = find_central_segment(group);
       const Line_2 line = Line_2(segment.source(), segment.target());
       lines.push_back(line);
@@ -1190,30 +1190,30 @@ private:
     for (std::size_t i = 0; i < edges.size(); ++i) {
       const auto& edge_i = edges[i];
       if (states[i]) continue;
-      
-      group.clear(); 
+
+      group.clear();
       group.push_back(edge_i);
       seg_map[i] = gr_idx;
       states[i] = true;
-      
+
       const auto p = internal::middle_point_2(
         edge_i.segment.source(), edge_i.segment.target());
       for (std::size_t j = 0; j < edges.size(); ++j) {
         const auto& edge_j = edges[j];
         if (states[j]) continue;
-        
+
         const FT angle   = angle_degree_2(edge_i.segment, edge_j.segment);
         const FT angle_2 = get_angle_2(angle);
 
-        if (CGAL::abs(angle_2) <= m_angle_threshold) { 
+        if (CGAL::abs(angle_2) <= m_angle_threshold) {
           const Line_2 line = Line_2(
             edge_j.segment.source(), edge_j.segment.target());
 
           const auto q = line.projection(p);
           const FT distance = internal::distance(p, q);
-          
+
           if (distance <= m_ordinate_bound_2) {
-            group.push_back(edge_j); 
+            group.push_back(edge_j);
             seg_map[j] = gr_idx;
             states[j] = true;
           }
@@ -1231,13 +1231,13 @@ private:
     const std::size_t n = edges.size();
     for (std::size_t i = 0; i < n; ++i) {
       const std::size_t ip = (i + 1) % n;
-      
-      auto& edi = edges[i]; 
+
+      auto& edi = edges[i];
       auto& edp = edges[ip];
 
       auto& si = edi.segment;
       auto& sp = edp.segment;
-      
+
       if (!edi.skip) {
         if (!edp.skip) {
           intersect_segment(si, sp);
@@ -1279,7 +1279,7 @@ private:
     Point_2 source, target, point;
     const bool success = intersect_2(line_1, line_2, point);
     if (success) {
-      
+
       source = si.source();
       target = si.target();
       target = point;
@@ -1295,11 +1295,11 @@ private:
   bool intersect_2(
     const Line_2& line_1, const Line_2& line_2,
     Point_2& in_point) {
-    
-    typename std::result_of<Intersect_2(Line_2, Line_2)>::type result 
+
+    typename std::result_of<Intersect_2(Line_2, Line_2)>::type result
     = CGAL::intersection(line_1, line_2);
     if (result) {
-      if (const Line_2* line = boost::get<Line_2>(&*result)) 
+      if (const Line_2* line = boost::get<Line_2>(&*result))
         return false;
       else {
         const Point_2* point = boost::get<Point_2>(&*result);
@@ -1322,7 +1322,7 @@ private:
       const auto& t = edge.segment.target();
 
       if (
-        std::isnan(CGAL::to_double(s.x())) || std::isnan(CGAL::to_double(s.y())) || 
+        std::isnan(CGAL::to_double(s.x())) || std::isnan(CGAL::to_double(s.y())) ||
         std::isnan(CGAL::to_double(t.x())) || std::isnan(CGAL::to_double(t.y())) )
       return false;
     }
@@ -1338,14 +1338,14 @@ private:
 
     for (const auto& edge : edges) {
       segments.push_back(edge.segment);
-      
+
       /* segments.push_back(Segment_2(
         m_vertices[edge.from_vertex].point, m_vertices[edge.to_vertex].point)); */
     }
-    
+
     Saver saver;
     saver.save_polylines(
-      segments, "/Users/monet/Documents/lod/logs/buildings/tmp/contours/contour-" + 
+      segments, "/Users/monet/Documents/gf/lod/logs/buildings/tmp/contours/contour-" +
       std::to_string(face_index));
   }
 };

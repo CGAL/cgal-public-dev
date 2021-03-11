@@ -2,7 +2,7 @@ Levels Of Detail
 
 Dmitry Anisimov, Simon Giraudot, Pierre Alliez, Florent Lafarge, Andreas Fabri
 
-This CGAL component implements a geometry processing pipeline for reconstructing 
-a 3D model from a point set or polygon mesh that represents urban environment. 
-The returned model has various Levels Of Detail (LODs), which include footprints, 
+This CGAL component implements a geometry processing pipeline for reconstructing
+a 3D model from a point set or polygon mesh that represents urban environment.
+The returned model has various Levels Of Detail (LODs), which include footprints,
 shoe boxes, and the full version with all details.

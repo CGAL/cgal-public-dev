@@ -45,8 +45,8 @@ namespace Levels_of_detail {
 namespace internal {
 
   template<
-  typename GeomTraits, 
-  typename InputRange, 
+  typename GeomTraits,
+  typename InputRange,
   typename PointMap>
   class Tree_model_estimator {
 
@@ -63,7 +63,7 @@ namespace internal {
     using Iterator = typename Input_range::const_iterator;
     using Iterators = std::vector<Iterator>;
     using Tree_model = internal::Tree_model<Traits>;
-    
+
   private:
     const std::vector<Iterators>& m_clusters;
     const Point_map& m_point_map;
@@ -73,8 +73,8 @@ namespace internal {
       using return_type = std::pair<Point_3, FT>;
 
       const Point_map& m_point_map;
-      Point_from_iterator_and_pmap(const Point_map& point_map) : 
-      m_point_map(point_map) 
+      Point_from_iterator_and_pmap(const Point_map& point_map) :
+      m_point_map(point_map)
       { }
 
       return_type operator()(const argument_type& arg) const {
@@ -84,14 +84,14 @@ namespace internal {
 
   public:
     Tree_model_estimator(
-      const std::vector<Iterators>& clusters, 
-      const Point_map& point_map) : 
-    m_clusters(clusters), 
+      const std::vector<Iterators>& clusters,
+      const Point_map& point_map) :
+    m_clusters(clusters),
     m_point_map(point_map)
     { }
 
     void estimate_model_parameters(
-      const FT min_radius_2, 
+      const FT min_radius_2,
       std::vector<Tree_model>& models) const {
 
       std::vector<Tree_model> tmp_models;
@@ -109,7 +109,7 @@ namespace internal {
 
         // Sort points.
         Iterators cluster = m_clusters[cluster_index];
-        std::sort(cluster.begin(), cluster.end(), 
+        std::sort(cluster.begin(), cluster.end(),
         [&](const Iterator& a, const Iterator& b) -> bool {
           return get(m_point_map, *a).z() < get(m_point_map, *b).z();
         });
@@ -127,7 +127,7 @@ namespace internal {
           if (z > val) {
             n = i; break; }
         }
-        
+
         const std::size_t m = size - n;
         const std::size_t idx0 = n;
         const std::size_t idx1 = std::size_t(n + m / 10.0);
@@ -206,7 +206,7 @@ namespace internal {
     }
 
     void clean_models(
-      const FT min_radius_2, 
+      const FT min_radius_2,
       std::vector<Tree_model>& input,
       std::vector<Tree_model>& output) const {
 
@@ -219,7 +219,7 @@ namespace internal {
       for (const auto& a : input) {
         if (a.radius < min_radius_2)
           continue;
-        
+
         bool okay = true;
         Circle_2 circle_a(a.center, a.radius * a.radius);
         for (const auto& b : output) {
@@ -235,7 +235,7 @@ namespace internal {
       }
     }
   };
-    
+
 } // internal
 } // Levels_of_detail
 } // CGAL

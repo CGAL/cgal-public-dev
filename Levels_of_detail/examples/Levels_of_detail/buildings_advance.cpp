@@ -41,10 +41,10 @@ using Polygon_inserter  = CGAL::Levels_of_detail::Polygon_inserter<Traits>;
 using Polyline_inserter = CGAL::Levels_of_detail::Polyline_inserter<Traits>;
 
 using LOD = CGAL::Levels_of_detail::Levels_of_detail<
-  Traits, 
-  Point_set, 
-  Point_map, 
-  Semantic_map, 
+  Traits,
+  Point_set,
+  Point_map,
+  Semantic_map,
   Visibility_map,
   CGAL::Tag_true>;
 
@@ -53,9 +53,9 @@ int main(int argc, char **argv) {
   // Load input data.
   Point_set point_set;
   std::cout << std::endl << "Input data: " << std::endl;
-  std::ifstream file(argc > 1 ? argv[1] : "data/lods.ply", 
+  std::ifstream file(argc > 1 ? argv[1] : "data/lods.ply",
   std::ios_base::binary);
-  file >> point_set; 
+  file >> point_set;
   file.close();
   std::cout << "File contains " << point_set.size() << " points" << std::endl;
 
@@ -75,7 +75,7 @@ int main(int argc, char **argv) {
   const std::size_t min_faces_per_footprint     = 1;
   const FT visibility_scale_2                   = FT(4);
   const FT graphcut_beta_2                      = FT(1) / FT(10);
-  const CGAL::Levels_of_detail::Extrusion_type extrusion_type = 
+  const CGAL::Levels_of_detail::Extrusion_type extrusion_type =
   CGAL::Levels_of_detail::Extrusion_type::MAX;
   const FT region_growing_scale_3               = FT(2);
   const FT region_growing_noise_level_3         = FT(2);
@@ -96,8 +96,8 @@ int main(int argc, char **argv) {
 
   // Initialize LOD.
   LOD lod(
-    point_set, 
-    point_set.point_map(), 
+    point_set,
+    point_set.point_map(),
     semantic_map,
     visibility_map);
 
@@ -107,7 +107,7 @@ int main(int argc, char **argv) {
   lod.points(
     boost::make_function_output_iterator(inserter_ibb),
     CGAL::Levels_of_detail::Intermediate_step::INPUT_BUILDING_BOUNDARY_POINTS);
-  std::cout << "Number of building boundary points: " << points.size() 
+  std::cout << "Number of building boundary points: " << points.size()
   << std::endl;
 
   points.clear();
@@ -115,7 +115,7 @@ int main(int argc, char **argv) {
   lod.points(
     boost::make_function_output_iterator(inserter_ibi),
     CGAL::Levels_of_detail::Intermediate_step::INPUT_BUILDING_INTERIOR_POINTS);
-  std::cout << "Number of building interior points: " << points.size() 
+  std::cout << "Number of building interior points: " << points.size()
   << std::endl << std::endl;
 
 
@@ -197,7 +197,7 @@ int main(int argc, char **argv) {
     CGAL::Levels_of_detail::Intermediate_step::BUILDING_FOOTPRINTS);
   std::cout << "Number of footprint faces: " << faces.size() << std::endl;
 
-  
+
   // Extrude building footprints - STEP 4.
   lod.extrude_building_footprints(
     extrusion_type);
@@ -209,7 +209,7 @@ int main(int argc, char **argv) {
     std::back_inserter(vertices),
     boost::make_function_output_iterator(inserter_ebb),
     CGAL::Levels_of_detail::Intermediate_step::EXTRUDED_BUILDING_BOUNDARIES);
-  std::cout << "Number of extruded boundary faces: " 
+  std::cout << "Number of extruded boundary faces: "
   << faces.size() << std::endl;
 
   vertices.clear(); faces.clear(); fcolors.clear();
@@ -218,7 +218,7 @@ int main(int argc, char **argv) {
     std::back_inserter(vertices),
     boost::make_function_output_iterator(inserter_ebf),
     CGAL::Levels_of_detail::Intermediate_step::EXTRUDED_BUILDING_FOOTPRINTS);
-  std::cout << "Number of extruded footprint faces: " 
+  std::cout << "Number of extruded footprint faces: "
   << faces.size() << std::endl;
 
 
@@ -242,13 +242,13 @@ int main(int argc, char **argv) {
     std::back_inserter(vertices),
     boost::make_function_output_iterator(inserter_abb1),
     CGAL::Levels_of_detail::Intermediate_step::APPROXIMATE_BUILDING_BOUNDS);
-  std::cout << "Number of approximate bound faces 1: " 
+  std::cout << "Number of approximate bound faces 1: "
   << faces.size() << std::endl;
 
 
   // Compute building roofs - STEP 6.
   lod.compute_building_roofs(
-    kinetic_max_intersections_3, 
+    kinetic_max_intersections_3,
     visibility_scale_3, graphcut_beta_3);
 
   // Access intermediate steps.
@@ -258,7 +258,7 @@ int main(int argc, char **argv) {
     std::back_inserter(vertices),
     boost::make_function_output_iterator(inserter_abb2),
     CGAL::Levels_of_detail::Intermediate_step::APPROXIMATE_BUILDING_BOUNDS);
-  std::cout << "Number of approximate bound faces 2: " 
+  std::cout << "Number of approximate bound faces 2: "
   << faces.size() << std::endl;
 
   vertices.clear(); faces.clear(); fcolors.clear();
@@ -275,7 +275,7 @@ int main(int argc, char **argv) {
     std::back_inserter(vertices),
     boost::make_function_output_iterator(inserter_bwa),
     CGAL::Levels_of_detail::Intermediate_step::BUILDING_WALLS);
-  std::cout << "Number of wall faces: " 
+  std::cout << "Number of wall faces: "
   << faces.size() << std::endl;
 
   vertices.clear(); faces.clear(); fcolors.clear();
@@ -284,7 +284,7 @@ int main(int argc, char **argv) {
     std::back_inserter(vertices),
     boost::make_function_output_iterator(inserter_bro),
     CGAL::Levels_of_detail::Intermediate_step::BUILDING_ROOFS);
-  std::cout << "Number of roof faces: " 
+  std::cout << "Number of roof faces: "
   << faces.size() << std::endl;
 
 

@@ -38,12 +38,12 @@ namespace Levels_of_detail {
 
     using Color_map = typename Point_set::template Property_map<unsigned char>;
 
-    Saver() { 
-      out.precision(20); 
+    Saver() {
+      out.precision(20);
     }
 
-    void clear() { 
-      out.str(std::string()); 
+    void clear() {
+      out.str(std::string());
     }
 
     void export_points(
@@ -165,7 +165,7 @@ namespace Levels_of_detail {
 
     template<typename Color>
     void export_polygon_soup(
-      const std::vector< std::vector<Point_3> >& polygons, 
+      const std::vector< std::vector<Point_3> >& polygons,
       const Color color,
       const std::string file_path) {
 
@@ -192,13 +192,13 @@ namespace Levels_of_detail {
     }
 
     template<
-    typename Vertices, 
-    typename Faces, 
+    typename Vertices,
+    typename Faces,
     typename Colors>
     void export_polygon_soup(
-      const Vertices& vertices, 
+      const Vertices& vertices,
       const Faces& faces,
-      const Colors& fcolors, 
+      const Colors& fcolors,
       const std::string file_path) {
 
       if (vertices.size() == 0 || faces.size() == 0)
@@ -225,32 +225,32 @@ namespace Levels_of_detail {
     void save_polylines(
       const std::vector<Segment_2>& segments,
       const std::string name) {
-      
+
       std::vector< std::vector<Point_3> > polylines(segments.size());
       for (std::size_t i = 0; i < segments.size(); ++i) {
         const Point_2& s = segments[i].source();
         const Point_2& t = segments[i].target();
-        
+
         polylines[i].push_back(Point_3(s.x(), s.y(), FT(0)));
         polylines[i].push_back(Point_3(t.x(), t.y(), FT(0)));
       }
-      
+
       export_polylines(polylines, name);
     }
 
   private:
     std::stringstream out;
 
-    inline std::string data() const { 
-      return out.str(); 
+    inline std::string data() const {
+      return out.str();
     }
 
     void save(const std::string file_path) const {
       std::ofstream file(file_path.c_str(), std::ios_base::out);
 
       if (!file)
-        std::cerr << std::endl << 
-          "ERROR: Error saving file " << file_path 
+        std::cerr << std::endl <<
+          "ERROR: Error saving file " << file_path
         << std::endl << std::endl;
 
       file << data();
@@ -260,12 +260,12 @@ namespace Levels_of_detail {
     void add_ply_header_points(
       const std::size_t size) {
 
-      out << 
-			"ply" 				         +  std::string(_NL_) + ""               			 << 
-			"format ascii 1.0"     +  std::string(_NL_) + ""     			           << 
-			"element vertex "      << size        << "" + std::string(_NL_) + "" << 
-			"property double x"    +  std::string(_NL_) + ""    			           << 
-			"property double y"    +  std::string(_NL_) + ""    			           << 
+      out <<
+			"ply" 				         +  std::string(_NL_) + ""               			 <<
+			"format ascii 1.0"     +  std::string(_NL_) + ""     			           <<
+			"element vertex "      << size        << "" + std::string(_NL_) + "" <<
+			"property double x"    +  std::string(_NL_) + ""    			           <<
+			"property double y"    +  std::string(_NL_) + ""    			           <<
 			"property double z"    +  std::string(_NL_) + "" 				             <<
 			"property uchar red"   +  std::string(_NL_) + "" 				             <<
 			"property uchar green" +  std::string(_NL_) + "" 				             <<
@@ -276,38 +276,38 @@ namespace Levels_of_detail {
     void add_ply_header_normals(
       const std::size_t size) {
 
-      out << 
-			"ply" 				         +  std::string(_NL_) + ""               			 << 
-			"format ascii 1.0"     +  std::string(_NL_) + ""     			           << 
-			"element vertex "      << size        << "" + std::string(_NL_) + "" << 
-			"property double x"    +  std::string(_NL_) + ""    			           << 
-			"property double y"    +  std::string(_NL_) + ""    			           << 
+      out <<
+			"ply" 				         +  std::string(_NL_) + ""               			 <<
+			"format ascii 1.0"     +  std::string(_NL_) + ""     			           <<
+			"element vertex "      << size        << "" + std::string(_NL_) + "" <<
+			"property double x"    +  std::string(_NL_) + ""    			           <<
+			"property double y"    +  std::string(_NL_) + ""    			           <<
 			"property double z"    +  std::string(_NL_) + "" 				             <<
-      "property double nx"   +  std::string(_NL_) + ""    			           << 
-			"property double ny"   +  std::string(_NL_) + ""    			           << 
+      "property double nx"   +  std::string(_NL_) + ""    			           <<
+			"property double ny"   +  std::string(_NL_) + ""    			           <<
 			"property double nz"   +  std::string(_NL_) + "" 				             <<
 			"end_header"           +  std::string(_NL_) + "";
     }
 
     void add_ply_header_mesh(
-      const std::size_t num_vertices, 
+      const std::size_t num_vertices,
       const std::size_t num_faces) {
 
-      out << 
-			"ply" 				         +  std::string(_NL_) + ""               			<< 
-			"format ascii 1.0"     +  std::string(_NL_) + ""     			          << 
-			"element vertex "      << num_vertices     << "" + std::string(_NL_) + "" << 
-			"property double x"    +  std::string(_NL_) + ""    			          << 
-			"property double y"    +  std::string(_NL_) + ""    			          << 
+      out <<
+			"ply" 				         +  std::string(_NL_) + ""               			<<
+			"format ascii 1.0"     +  std::string(_NL_) + ""     			          <<
+			"element vertex "      << num_vertices     << "" + std::string(_NL_) + "" <<
+			"property double x"    +  std::string(_NL_) + ""    			          <<
+			"property double y"    +  std::string(_NL_) + ""    			          <<
 			"property double z"    +  std::string(_NL_) + "" 				            <<
-			"element face "        << num_faces        << "" + std::string(_NL_) + "" << 
+			"element face "        << num_faces        << "" + std::string(_NL_) + "" <<
 			"property list uchar int vertex_indices"         + std::string(_NL_) + "" <<
 			"property uchar red"   +  std::string(_NL_) + "" 				            <<
 			"property uchar green" +  std::string(_NL_) + "" 				            <<
 			"property uchar blue"  +  std::string(_NL_) + "" 				            <<
 			"end_header"           +  std::string(_NL_) + "";
     }
-      
+
   }; // Saver
 
 } // namespace Levels_of_detail

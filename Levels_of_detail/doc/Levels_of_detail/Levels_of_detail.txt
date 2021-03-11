@@ -7,13 +7,13 @@ namespace CGAL {
 \authors Dmitry Anisimov, Simon Giraudot, Pierre Alliez, Florent Lafarge, Andreas Fabri
 
 
-\section Levels_Of_Detail_Introduction Introduction 
+\section Levels_Of_Detail_Introduction Introduction
 
 Given some physical measurements of the hybrid urban environment, the goal of this
 package is to provide a way to convert these measurements into their simplified
-digital representation. This digital representation should conform to the CityGML 
-standard and thus contain a set of meaningful Levels Of Detail (LODs). In particular, 
-the returned model can be represented as a set of footprints, shoe boxes, and the 
+digital representation. This digital representation should conform to the CityGML
+standard and thus contain a set of meaningful Levels Of Detail (LODs). In particular,
+the returned model can be represented as a set of footprints, shoe boxes, and the
 full version with all details as shown in the Figure \cgalFigureRef{LOD_teaser}.
 
 \cgalFigureBegin{LOD_teaser, teaser.png}
@@ -32,7 +32,7 @@ scheme shown in the Figure \cgalFigureRef{LOD_design} of organizing the objects.
 
 \cgalFigureBegin{LOD_design, design.png}
 Package's design. All urban objects are first separately reconstructed and then
-combined into final LODs. 
+combined into final LODs.
 \cgalFigureEnd
 
 The main idea behind this scheme is to have several parallel pipelines for reconstructing
@@ -44,9 +44,9 @@ urban objects cannot be combined, however their LODs can still be accessed direc
 each type. In fact, any step that is represented in the scheme as a box can be accessed.
 
 The enty point to the package is a set of items, where an item can be either a point
-or a convex polygon. Each item must be associated with the `CGAL::Levels_of_detail::Semantic_label` 
-that represents an object type. For example, in the Figure \cgalFigureRef{LOD_teaser}, 
-the input is a point set, which consists of points labeled as ground (light brown), 
+or a convex polygon. Each item must be associated with the `CGAL::Levels_of_detail::Semantic_label`
+that represents an object type. For example, in the Figure \cgalFigureRef{LOD_teaser},
+the input is a point set, which consists of points labeled as ground (light brown),
 vegetation (green), building facades (light gray), and building roofs (orange).
 
 If input is a set of polygons, then we densly sample each polygon, add these points
@@ -55,7 +55,7 @@ we assume that we have a point set as our input.
 
 The output depends on the step in the pipeline. If this is one of the intermediate steps,
 then the output can vary. If this is one of the final steps, the output is a triangle soup,
-where each triangle has an index of the corresponding reconstructed object and/or its 
+where each triangle has an index of the corresponding reconstructed object and/or its
 `CGAL::Levels_of_detail::Urban_object_type`.
 
 
@@ -63,8 +63,8 @@ where each triangle has an index of the corresponding reconstructed object and/o
 
 Since the reconstruction pipeline is rather complicated, it uses quite a few internal
 parameters to get a model that will fit well to all input data, however all these parameters
-can be set automatically using only two user-defined values, which higly depend 
-on the input data set and thus cannot be well predicted (see the 
+can be set automatically using only two user-defined values, which higly depend
+on the input data set and thus cannot be well predicted (see the
 Figure \cgalFigureRef{LOD_parameters}).
 
 \cgalFigureBegin{LOD_parameters, parameters.png}
@@ -72,13 +72,13 @@ Scale and noise level parameters.
 \cgalFigureEnd
 
 - `scale`: defines a size of the nearest neighbor search around a point, the bigger
-this value, the more points are assumed to be a part of the connected component (e.g., 
+this value, the more points are assumed to be a part of the connected component (e.g.,
 in the picture above, these are all orange points inside an ellipse, which cotribute
 to the corresponding building roof). The same parameter is used for trees (see green points
 and triangles in the picture above). If this value is too small, the final output
-can be oversegmented. In general, this value is about average spacing between input points. 
+can be oversegmented. In general, this value is about average spacing between input points.
 
-- `noise level`: the maximum accepted distance from the point to the part of the 
+- `noise level`: the maximum accepted distance from the point to the part of the
 reconstructed object (e.g., in the picture above, this is the maximum distance from
 grey points to the corresponding building wall). The same parameter is used for trees
 (see green points and triangles in the picture above). If this value is too small,
@@ -100,13 +100,13 @@ or smooth (c).
 \cgalFigureEnd
 
 As it was mentioned above, the ground component is the most important one since the
-final LODs with all objects cannot be reconstructed without it. The ground can be 
-reconstructed either as planar or smooth (see the Figure \cgalFigureRef{LOD_ground}) 
-upon all input points, which are labeled as ground. The planar ground is simply a 2D 
-bounding box of all ground points placed on the least squares best fit plane to these 
-points. This type of ground is used in LOD0. The smooth ground is a Delaunay triangulation 
-that approximates the surface represented by all ground points and respects the maximum 
-distance criteria defined by the `ground_precision` parameter as discussed in Section 
+final LODs with all objects cannot be reconstructed without it. The ground can be
+reconstructed either as planar or smooth (see the Figure \cgalFigureRef{LOD_ground})
+upon all input points, which are labeled as ground. The planar ground is simply a 2D
+bounding box of all ground points placed on the least squares best fit plane to these
+points. This type of ground is used in LOD0. The smooth ground is a Delaunay triangulation
+that approximates the surface represented by all ground points and respects the maximum
+distance criteria defined by the `ground_precision` parameter as discussed in Section
 \ref Levels_Of_Detail_Parameters. This type of ground is used in LOD1 and LOD2.
 
 In the example below, we show how to reconstruct both planar and smooth ground for
@@ -119,7 +119,7 @@ the given point set and retrieve the final models.
 
 Performance of smooth ground depends on the quality of the final ground that is
 a user-defined value `ground_precision` (see Section \ref Levels_Of_Detail_Parameters).
-In the table below, we present how the reconstruction timing evolves with the 
+In the table below, we present how the reconstruction timing evolves with the
 increased output precision.
 
 
@@ -134,19 +134,19 @@ as ground and reconstruct both planar and smooth ground upon these points.
 \section Levels_Of_Detail_Trees Trees
 
 \cgalFigureBegin{LOD_trees, trees.png}
-Given vegetation points (a), trees can be reconstructed either as discs (b), 
+Given vegetation points (a), trees can be reconstructed either as discs (b),
 cylinders (c), or full tree models with trunks and crowns (d).
 \cgalFigureEnd
 
-As for the ground, the package provides different ways to reconstruct trees. The 
+As for the ground, the package provides different ways to reconstruct trees. The
 trees are reconstructed upon all input points, which are labeled as vegetation. The
-package provides three levels of detail: discs, cylinders, and full models with trunks 
-and crowns (see the Figure \cgalFigureRef{LOD_trees}). The discs are created by clustering 
-all vegetation points into connected components, projecting them on the 2D plane, clustering 
-potential tree points using a 2D grid, and computing the center and radius of all points, 
-which belong to the same cell. The cylinders are discs extruded to the average or maximum 
-height of all points from the corresponding cells. The full tree models are obtained by 
-fitting tree icons with a few degrees of freedom to all cell points. Each tree is returned 
+package provides three levels of detail: discs, cylinders, and full models with trunks
+and crowns (see the Figure \cgalFigureRef{LOD_trees}). The discs are created by clustering
+all vegetation points into connected components, projecting them on the 2D plane, clustering
+potential tree points using a 2D grid, and computing the center and radius of all points,
+which belong to the same cell. The cylinders are discs extruded to the average or maximum
+height of all points from the corresponding cells. The full tree models are obtained by
+fitting tree icons with a few degrees of freedom to all cell points. Each tree is returned
 on its own and placed on the horizontal plane through the lowest point of the corresponding cell.
 
 In the example below, we show how to reconstruct trees with different levels of detail
@@ -157,17 +157,17 @@ and retrieve the final models.
 
 \subsection Levels_Of_Detail_TreesPerformance Performance
 
-The slowest steps of the pipeline for reconstructing trees are clustering and icon fitting, 
-however as it can be seen from the table below, even for rather dense input sets, 
+The slowest steps of the pipeline for reconstructing trees are clustering and icon fitting,
+however as it can be seen from the table below, even for rather dense input sets,
 the final reconstruction time is quite small.
 
 
 \subsection Levels_Of_Detail_TreesAdvance Advance
 
 If the user wants more control of the reconstruction pipeline rather than calling
-the default `CGAL::Levels_of_detail::Levels_of_detail::build_trees()` function for 
-complete generation of all trees, we also provide an advance reconstruction interface. 
-This interface enables to generate tree models step by step, where the user has control 
+the default `CGAL::Levels_of_detail::Levels_of_detail::build_trees()` function for
+complete generation of all trees, we also provide an advance reconstruction interface.
+This interface enables to generate tree models step by step, where the user has control
 over all intermediate parameters. These steps include:
 
 - `CGAL::Levels_of_detail::Levels_of_detail::initialize_trees()` - initializes all
@@ -175,18 +175,18 @@ internal data structures with `scale` and `noise_level` parameters. The `cluster
 parameter enables to set a scale for the clustering step, which can differ from the default
 `scale`. The default `scale` will still be used in all other related steps.
 
-- `CGAL::Levels_of_detail::Levels_of_detail::compute_tree_footprints()` - computes 
+- `CGAL::Levels_of_detail::Levels_of_detail::compute_tree_footprints()` - computes
 discs, which represent all detected trees. The parameter `grid_cell_width_2` controls
 the maximum width of the grid cell from the corresponding step, `min_height` and `min_radius_2`
 enable to reject all trees, whose height and radius do not fit to the input values, and
-`min_faces_per_footprint` enable to set the number of triangles per disc, the more 
+`min_faces_per_footprint` enable to set the number of triangles per disc, the more
 triangles, the better disc quality, but more complex the final model. After this step,
 the user can retrieve the LOD0 for all trees without performing any steps, required for
 LOD1 and LOD2 and so reducing the overall time stamp if only LOD0 is required.
 
 - `CGAL::Levels_of_detail::Levels_of_detail::extrude_tree_footprints()` - extrudes
 all discs to the average or maximum height of all related vegetation points, which
-is set by the parameter `extrusion_type`. After this step, the user can retrieve 
+is set by the parameter `extrusion_type`. After this step, the user can retrieve
 the LOD1 for all trees without performing any steps, required for LOD2 and so reducing
 the overall time stamp if only LOD1 is required.
 
@@ -194,7 +194,7 @@ the overall time stamp if only LOD1 is required.
 to all related vegetation points based on the results from the previous steps. After
 this step, the user can retrieve the final LOD2 models.
 
-Doing step by step generation, the user is also able to access data for all intemediate 
+Doing step by step generation, the user is also able to access data for all intemediate
 steps, which include input vegetation points, vegetation clusters, tree points, 2D tree
 boundaries, tree discs, extruded tree boundaries and discs, tree trunks and tree crowns,
 final LOD0, LOD1, and LOD2. The example below illustrates how to achieve this.
@@ -205,8 +205,8 @@ final LOD0, LOD1, and LOD2. The example below illustrates how to achieve this.
 \section Levels_Of_Detail_Buildings Buildings
 
 \cgalFigureBegin{LOD_buildings, buildings.png}
-Given building boundary (light grey) and/or interior (orange) points (a), buildings 
-can be reconstructed either as footprints (b), extruded footprints (c), or full 
+Given building boundary (light grey) and/or interior (orange) points (a), buildings
+can be reconstructed either as footprints (b), extruded footprints (c), or full
 building models with walls and roofs (d).
 \cgalFigureEnd
 
@@ -217,11 +217,11 @@ The footprints are created by clustering all building points into connected comp
 projecting these points on the 2D plane, filtering out all interior points, fitting
 lines to all boundary points, creating a 2D partition upon these lines, filtering
 out all partition faces, which do not belong to the building interior. Then these 2D
-faces are extruded to the average or maximum height of all related building points. To compute 
+faces are extruded to the average or maximum height of all related building points. To compute
 building roofs, we first detect all planar and non-vertical components among building points,
 we then create a 3D partition upon these planar components and filter out all partition faces,
-which do not contribute to the final roofs. The walls are adjusted with respect to the 
-computed roofs. Each building is returned on its own and placed on the horizontal plane 
+which do not contribute to the final roofs. The walls are adjusted with respect to the
+computed roofs. Each building is returned on its own and placed on the horizontal plane
 through the lowest point of the corresponding cluster.
 
 In the example below, we show how to reconstruct buildings with different levels of detail
@@ -234,7 +234,7 @@ and retrieve the final models.
 
 The slowest steps of the pipeline for reconstructing buildings are 3D partitioning
 and filtering out all unnecessary partition faces. While LOD0 and LOD1 are almost
-fully reconstructed in 2D and hence extremely fast even for large and dense point sets, 
+fully reconstructed in 2D and hence extremely fast even for large and dense point sets,
 the LOD2 part is significantly slower due to the two steps above, as you can see in
 the table below.
 
@@ -242,9 +242,9 @@ the table below.
 \subsection Levels_Of_Detail_BuildingsAdvance Advance
 
 If the user wants more control of the reconstruction pipeline rather than calling
-the default `CGAL::Levels_of_detail::Levels_of_detail::build_buildings()` function for 
-complete generation of all buildings, we also provide an advance reconstruction interface. 
-This interface enables to generate building models step by step, where the user has control 
+the default `CGAL::Levels_of_detail::Levels_of_detail::build_buildings()` function for
+complete generation of all buildings, we also provide an advance reconstruction interface.
+This interface enables to generate building models step by step, where the user has control
 over all intermediate parameters. These steps include:
 
 - `CGAL::Levels_of_detail::Levels_of_detail::initialize_buildings()` - initializes all
@@ -258,23 +258,23 @@ enable to control the filtering step. The bigger these values, the more points w
 Four other region growing related parameters enable to control the region growing line
 detection step (see more in `CGAL::Shape_detection::Region_growing`).
 
-- `CGAL::Levels_of_detail::Levels_of_detail::compute_building_footprints()` - computes 
-2D partition and detects all its faces, which contribute to the building footprints. The 
-parameter `kinetic_min_face_width_2` enables to set a threshold on the min accepted 
-width of the face, and the parameter `kinetic_max_intersections_2` sets the maximum number 
+- `CGAL::Levels_of_detail::Levels_of_detail::compute_building_footprints()` - computes
+2D partition and detects all its faces, which contribute to the building footprints. The
+parameter `kinetic_min_face_width_2` enables to set a threshold on the min accepted
+width of the face, and the parameter `kinetic_max_intersections_2` sets the maximum number
 of intersections among input lines (the more this value, the more refined the parition).
 The parameter `min_faces_per_footprint` controls the min number of faces a building must have.
 The parameter `visibility_scale_2` enables to choose the maximum scale for detecting all
 internal building faces. The smaller the value, the more precise the search. Finally,
 the parameter `graphcut_beta_2` controls the quality of the final cleaning. The value
-is in between 0 and 1. The closer to 1, the more internal faces are rejected. 
-After this step, the user can retrieve the LOD0 for all buildings without performing any 
-steps, required for LOD1 and LOD2 and so reducing the overall time stamp if only 
+is in between 0 and 1. The closer to 1, the more internal faces are rejected.
+After this step, the user can retrieve the LOD0 for all buildings without performing any
+steps, required for LOD1 and LOD2 and so reducing the overall time stamp if only
 LOD0 is required.
 
 - `CGAL::Levels_of_detail::Levels_of_detail::extrude_building_footprints()` - extrudes
-all building footprints to the average or maximum height of all related building points, 
-which is set by the parameter `extrusion_type`. After this step, the user can retrieve 
+all building footprints to the average or maximum height of all related building points,
+which is set by the parameter `extrusion_type`. After this step, the user can retrieve
 the LOD1 for all buildings without performing any steps, required for LOD2 and so reducing
 the overall time stamp if only LOD1 is required.
 
@@ -283,19 +283,19 @@ planar roofs for each building. Analogously to the 2D case, the user can set a f
 region growing related parameters to control detection quality (see more in
 `CGAL::Shape_detection::Region_growing`).
 
-- `CGAL::Levels_of_detail::Levels_of_detail::compute_building_roofs()` - computes 
+- `CGAL::Levels_of_detail::Levels_of_detail::compute_building_roofs()` - computes
 3D partition and detects all its faces, which contribute to the building roofs.
-Analogously to the 2D case, the parameter `kinetic_max_intersections_3` enables to 
-set the maximum number of intersections among polygons, which approximate roof regions 
-detected in the previous step. The parameter `visibility_scale_3` enables to choose 
-the maximum scale for detecting all roof faces. The smaller the value, the more precise 
-the search. Finally, the parameter `graphcut_beta_3` controls the quality of the final 
-cleaning. The value is in between 0 and 1. The closer to 1, the more roof faces are 
+Analogously to the 2D case, the parameter `kinetic_max_intersections_3` enables to
+set the maximum number of intersections among polygons, which approximate roof regions
+detected in the previous step. The parameter `visibility_scale_3` enables to choose
+the maximum scale for detecting all roof faces. The smaller the value, the more precise
+the search. Finally, the parameter `graphcut_beta_3` controls the quality of the final
+cleaning. The value is in between 0 and 1. The closer to 1, the more roof faces are
 rejected. After this step, the user can retrieve the final LOD2 models.
 
-Doing step by step generation, the user is able to access data for all intemediate 
-steps, which include input building interior and boundary (if any) points, 
-building clusters, 2D building boundary points, 2D building wall points, 2D approximate 
+Doing step by step generation, the user is able to access data for all intemediate
+steps, which include input building interior and boundary (if any) points,
+building clusters, 2D building boundary points, 2D building wall points, 2D approximate
 building boundaries, building footprints, extruded boundaries and footprints,
 roof points, approximate roofs, exact walls and roofs, final LOD0, LOD1, and LOD2.
 The example below illustrates how to achieve this.
@@ -306,16 +306,16 @@ The example below illustrates how to achieve this.
 \section Levels_Of_Detail_LODs LODs
 
 \cgalFigureBegin{LOD_lods, lods.png}
-Given input points with various semantic labels (a), the package returns the 
+Given input points with various semantic labels (a), the package returns the
 reconstructed model with either LOD0 (b), LOD1 (c), or LOD2 (d).
 \cgalFigureEnd
 
 The reconstructed model of the whole input point set is obtained through the process
-of placing all reconstructed objects onto the ground (see the Figure \cgalFigureRef{LOD_lods}). 
-The final result depends on the user choice what has to be reconstructed. For example, 
-if the user has built only LOD0 and LOD1 of trees and nothing else, the final result will be 
-LOD0 and LOD1 of trees placed on the planar and smooth ground respectively. The LOD2 
-will contain only the smooth ground with no other objects. The example below illustrates 
+of placing all reconstructed objects onto the ground (see the Figure \cgalFigureRef{LOD_lods}).
+The final result depends on the user choice what has to be reconstructed. For example,
+if the user has built only LOD0 and LOD1 of trees and nothing else, the final result will be
+LOD0 and LOD1 of trees placed on the planar and smooth ground respectively. The LOD2
+will contain only the smooth ground with no other objects. The example below illustrates
 the point.
 
 \cgalExample{Levels_of_detail/lods.cpp}
@@ -324,7 +324,7 @@ the point.
 \subsection Levels_Of_Detail_LODsPerformance Performance
 
 The timing to run the whole pipeline is the sum of timings to reconstruct all available
-objects and ground. The combination step is negligible. The final timing is shown 
+objects and ground. The combination step is negligible. The final timing is shown
 in the table below.
 
 
@@ -335,9 +335,9 @@ and generic lod was developed by Dmitry Anisimov and Simon Giraudot supervised
 by and with help of Pierre Alliez, Florent Lafarge, and Andreas Fabri.
 
 \section gbc_acknowledgments Acknowledgments
-The authors wish to thank 
-<a target="_blank" href="http://www-sop.inria.fr/members/Jean-Philippe.Bauchet/">Jean-Philippe Bauchet</a> 
-for helpful comments and discussions. We also appreciate the great effort invested 
+The authors wish to thank
+<a target="_blank" href="http://www-sop.inria.fr/members/Jean-Philippe.Bauchet/">Jean-Philippe Bauchet</a>
+for helpful comments and discussions. We also appreciate the great effort invested
 in this package by our reviewers.
 
 */

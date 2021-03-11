@@ -14,7 +14,7 @@ if(NOT CGAL_FOUND)
 endif()
 
 # Required by kinetic3.
-set(CMAKE_CXX_FLAGS 
+set(CMAKE_CXX_FLAGS
 "${CMAXE_CXX_FLAGS} -fdeclspec")
 
 # Include a helper file.
