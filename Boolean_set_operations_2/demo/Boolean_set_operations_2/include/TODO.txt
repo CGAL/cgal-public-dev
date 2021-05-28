@@ -1,0 +1,3 @@
+Look into MainWindow.h and figure out a way to add it into CmakeLists.txt
+(currently it is disabled)
+Add support for Polyline curves i.e. add PolylineCurves.h just like BezierCurves.h
