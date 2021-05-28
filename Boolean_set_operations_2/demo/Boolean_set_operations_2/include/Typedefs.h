@@ -57,6 +57,9 @@
 #include "QT5/BezierCurves.h"
 //#include <CGAL/Gps_circle_segment_traits_2.h>
 
+
+//todo:- go through this file and clean it up as required
+
 typedef CGAL::Exact_predicates_exact_constructions_kernel        Kernel;
 typedef Kernel::Point_2                            Point_2;
 typedef CGAL::Polygon_2<Kernel>                    Polygon_2;

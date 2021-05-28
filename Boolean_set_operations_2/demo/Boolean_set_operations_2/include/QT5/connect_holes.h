@@ -18,7 +18,7 @@
 //
 // Author(s)     : Ron Wein   <wein@post.tau.ac.il>
 //                 Ronnie Gandhi <ronniegandhi19999@gmail.com>
-//						 Guy Zucker	<guyzucke@post.tau.ac.il>	
+//				   Guy Zucker	<guyzucke@post.tau.ac.il>
 
 #ifndef CGAL_CONNECT_HOLES_H
 #define CGAL_CONNECT_HOLES_H

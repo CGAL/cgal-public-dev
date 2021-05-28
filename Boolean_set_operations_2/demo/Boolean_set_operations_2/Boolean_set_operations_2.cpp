@@ -18,10 +18,10 @@
 // SPDX-License-Identifier: GPL-3.0+
 //
 // Author(s) : Ronnie Gandhi<ronniegandhi19999@gmail.com>
-//         Apurva Bhatt <response2apurva@gmail.com>
-//             Efi Fogel <efifogel@gmain.com>
+//             Apurva Bhatt <response2apurva@gmail.com>
+//             Efi Fogel <efifogel@gmail.com>
 
-//The demo contains no error handling
+//TODO:- add error handling
 
 #include <fstream>
 #include <string>
