@@ -1,3 +1,9 @@
 Look into MainWindow.h and figure out a way to add it into CmakeLists.txt
 (currently it is disabled)
 Add support for Polyline curves i.e. add PolylineCurves.h just like BezierCurves.h
+
+Crash 1:- Crash occurs(not always) when we perform any operation other than NOT on any two bezier curves(Segmentation Fault(core dumped) as the message)
+Crash 2:- Crash occurs(not always) when we try to make an intersecting bezier curve(Segmentation Fault(core dumped) as the message)
+
+Bug 1:- In bezier curves the complement,union and intersection operation is a little flawed and leaves a space empty space on the screen.
+Bug 2:- In bezier curves when we make intersecting curves mostly they're not what is wanted by the user.
