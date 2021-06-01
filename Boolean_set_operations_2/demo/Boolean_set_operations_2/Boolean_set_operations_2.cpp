@@ -141,8 +141,11 @@ void error_handler(char const* what, char const* expr, char const* file,
 // Typedefs
 typedef CGAL::Qt::Circular_set_graphics_item<Circular_polygon_set,
                                              Circular_traits>   Circular_GI;
-typedef CGAL::Qt::Linear_set_graphics_item<Linear_polygon_set, Linear_traits>
-                                                                Linear_GI;
+typedef CGAL::Qt::Linear_set_graphics_item<Linear_polygon_set,
+                                             Linear_traits>     Linear_GI;
+//typedef CGAL::Qt::Bezier_set_graphics_item<Bezier_polygon_set,
+//                                           Bezier_gps_traits>       Bezier_GI;
+
 
 // Functions to show errors
 void show_warning(std::string aS)
@@ -552,10 +555,20 @@ private:
 
 
 //A class for connecting GUI and this file
-class Circular_rep : public Rep<Circular_GI, Circular_polygon_set,
-                                Circular_traits>
+class Linear_rep : public Rep<Linear_GI, Linear_polygon_set, Linear_traits>
 {
-  typedef Rep<Circular_GI, Circular_polygon_set,Circular_traits> Base;
+
+    typedef Rep<Linear_GI, Linear_polygon_set, Linear_traits> Base;
+public:
+    Linear_rep () : Base() {}
+
+    virtual int type() const { return 1; }
+};
+
+//A class for connecting GUI and this file
+class Circular_rep : public Rep<Circular_GI, Circular_polygon_set, Circular_traits>
+{
+  typedef Rep<Circular_GI, Circular_polygon_set, Circular_traits> Base;
 
 public:
   Circular_rep () : Base() {}
@@ -563,6 +576,7 @@ public:
   virtual int type() const { return 2; }
 };
 
+//A class for connecting GUI and this file
 class Bezier_rep : public Rep_o<Bezier_GI, Bezier_polygon_set>
 {
   typedef Rep_o<Bezier_GI, Bezier_polygon_set> Base ;
@@ -575,16 +589,6 @@ public:
 } ;
 
 
-//A class for connecting GUI and this file
-class Linear_rep : public Rep<Linear_GI, Linear_polygon_set, Linear_traits>
-{
-
-typedef Rep<Linear_GI, Linear_polygon_set, Linear_traits> Base;
-public:
-  Linear_rep () : Base() {}
-
-  virtual int type() const { return 1; }
-};
 
 class Curve_set {
   // a conatiner which deletes an object when last shared_ptr gets deleted or
@@ -7379,6 +7383,7 @@ void MainWindow::zoomToFit()
 }
 
 
+//function to detect whether the bucket is occupied or not
 void MainWindow::show_not_empty_warning()
 {
   QMessageBox msgBox;
@@ -7406,6 +7411,7 @@ void MainWindow::resizeEvent(QResizeEvent* e)
   modelChanged();
 }
 
+//all the information in the help/about section
 void MainWindow::on_aboutCGAL_triggered()
 {
 	QString title = "About CGAL";
@@ -7688,6 +7694,7 @@ void MainWindow::processInput(CGAL::Object o)
 //Main part
 #include "Boolean_set_operations_2.moc"
 #include <CGAL/Qt/resources.h>
+
 int main(int argc, char* argv[])
 {
   //QApplication a(argc, argv);
@@ -7706,7 +7713,7 @@ int main(int argc, char* argv[])
   catch (const std::exception& e)
   {
     std::string s = e.what();
-    show_error("Exception throne during run of the program:\n" + s);
+    show_error("Exception thrown during run of the program:\n" + s);
   }
 }
 
