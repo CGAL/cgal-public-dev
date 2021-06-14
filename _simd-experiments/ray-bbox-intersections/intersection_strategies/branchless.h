@@ -5,7 +5,7 @@
 // This implementation is a modification of the version described in the paper,
 // with the goal of improving auto-vectorization
 
-bool intersect_branchless(const BBox &bbox, const Ray &ray, float rmin, float rmax) {
+inline bool intersect_branchless(const BBox &bbox, const Ray &ray, float rmin, float rmax) {
 
     // Determine bounds x, y, and z
     double xmin = (bbox.bounds()[ray.sign()[0]].x() - ray.origin().x()) * ray.inv_direction().x();

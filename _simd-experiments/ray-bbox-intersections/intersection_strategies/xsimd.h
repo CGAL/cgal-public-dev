@@ -24,7 +24,7 @@ bool intersect_xsimd(const BBox &bbox, const Ray &ray, float rmin, float rmax) {
           bbox.bounds()[1 - ray.sign()[0]].x(),
           bbox.bounds()[1 - ray.sign()[1]].y(),
           bbox.bounds()[1 - ray.sign()[2]].z(),
-          std::numeric_limits<float>::min()
+          std::numeric_limits<double>::min()
   );
 
   // Apply transform to all bounds
