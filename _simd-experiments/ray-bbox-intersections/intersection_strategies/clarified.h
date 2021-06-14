@@ -9,8 +9,9 @@
 // As explained [here](https://cgal.geometryfactory.com/CGAL/Members/wiki/GSoC2021/AABB_tree#Examining_Ray-BBox_Intersection)
 // This implementation is a modification of the version described in the paper, with the goal of improving readability
 
-#pragma omp declare simd
-bool intersect_clarified(const BBox &bbox, const Ray &ray, float rmin, float rmax) {
+namespace clarified {
+
+  inline bool intersect(const BBox &bbox, const Ray &ray, float rmin, float rmax) {
 
     // Determine bounds for x and y
     double xmin = (bbox.bounds()[ray.sign()[0]].x() - ray.origin().x()) * ray.inv_direction().x();
@@ -39,6 +40,8 @@ bool intersect_clarified(const BBox &bbox, const Ray &ray, float rmin, float rma
 
     // The ray intercepts if this region overlaps with the bounds provided
     return (min < rmax) && (max > rmin);
+  }
+
 }
 
 #endif //RAY_BBOX_INTERSECTIONS_CLARIFIED_H

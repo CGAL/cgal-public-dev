@@ -7,8 +7,9 @@
 
 // As explained [here](http://people.csail.mit.edu/amy/papers/box-jgt.ps)
 // This implementation generally sticks close to the one described in the paper
+namespace improved {
 
-bool intersect_improved(const BBox &bbox, const Ray &ray, float t0, float t1) {
+  inline bool intersect(const BBox &bbox, const Ray &ray, float t0, float t1) {
 
     double tmin, tmax, tymin, tymax, tzmin, tzmax;
 
@@ -30,6 +31,8 @@ bool intersect_improved(const BBox &bbox, const Ray &ray, float t0, float t1) {
     if (tzmax < tmax) tmax = tzmax;
 
     return (tmin < t1) && (tmax > t0);
+
+  }
 
 }
 

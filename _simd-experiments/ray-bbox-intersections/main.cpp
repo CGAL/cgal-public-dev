@@ -89,31 +89,31 @@ int main() {
       smits_method_times.push_back(time([&] {
         const auto &ray = scenario.first;
         for (const auto &bbox : scenario.second)
-          sum += intersect_smits_method(bbox, ray, t0, t1);
+          sum += smits_method::intersect(bbox, ray, t0, t1);
       }));
 
       improved_times.push_back(time([&] {
         const auto &ray = scenario.first;
         for (const auto &bbox : scenario.second)
-          sum += intersect_improved(bbox, ray, t0, t1);
+          sum += improved::intersect(bbox, ray, t0, t1);
       }));
 
       clarified_times.push_back(time([&] {
         const auto &ray = scenario.first;
         for (const auto &bbox : scenario.second)
-          sum += intersect_clarified(bbox, ray, t0, t1);
+          sum += clarified::intersect(bbox, ray, t0, t1);
       }));
 
       branchless_times.push_back(time([&] {
         const auto &ray = scenario.first;
         for (const auto &bbox : scenario.second)
-          sum += intersect_branchless(bbox, ray, t0, t1);
+          sum += branchless::intersect(bbox, ray, t0, t1);
       }));
 
       xsimd_times.push_back(time([&] {
         const auto &ray = scenario.first;
         for (const auto &bbox : scenario.second)
-          sum += intersect_xsimd(bbox, ray, t0, t1);
+          sum += xsimd::intersect(bbox, ray, t0, t1);
       }));
 
     }
