@@ -67,7 +67,6 @@ struct xNode {
       xsimd::load_aligned(coord, bbzmax);
     }
   }
-  }
 };
 
 
