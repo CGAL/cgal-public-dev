@@ -12,7 +12,7 @@
 #include "intersection_strategies/improved.h"
 #include "intersection_strategies/clarified.h"
 #include "intersection_strategies/branchless.h"
-#include "intersection_strategies/std_simd.h"
+#include "intersection_strategies/xsimd.h"
 
 using std::chrono::high_resolution_clock;
 using std::chrono::duration_cast;
@@ -68,7 +68,7 @@ double time(const std::function<void(void)> &f) {
 int main() {
 
   long N = 3742217;
-  long R = 100;
+  long R = 10;
 
   auto t0 = -std::numeric_limits<double>::infinity();
   auto t1 = std::numeric_limits<double>::infinity();
@@ -78,7 +78,7 @@ int main() {
   if (!file.is_open()) exit(1);
   auto scenarios = load_scenarios(file, N);
 
-  std::vector<double> smits_method_times, improved_times, clarified_times, branchless_times, std_simd_times;
+  std::vector<double> smits_method_times, improved_times, clarified_times, branchless_times, xsimd_times;
 
   for (int i = 0; i < R; ++i) {
 
@@ -110,10 +110,10 @@ int main() {
           sum += intersect_branchless(bbox, ray, t0, t1);
       }));
 
-      std_simd_times.push_back(time([&] {
+      xsimd_times.push_back(time([&] {
         const auto &ray = scenario.first;
         for (const auto &bbox : scenario.second)
-          sum += intersect_std_simd(bbox, ray, t0, t1);
+          sum += intersect_xsimd(bbox, ray, t0, t1);
       }));
 
     }
@@ -132,7 +132,7 @@ int main() {
   std::cout << "Branchless:\t\t"
             << std::accumulate(branchless_times.begin(), branchless_times.end(), 0.0) / (double) R
             << std::endl;
-  std::cout << "Std-simd:\t\t"
-            << std::accumulate(std_simd_times.begin(), std_simd_times.end(), 0.0) / (double) R
+  std::cout << "XSimd:\t\t\t"
+            << std::accumulate(xsimd_times.begin(), xsimd_times.end(), 0.0) / (double) R
             << std::endl;
 }
