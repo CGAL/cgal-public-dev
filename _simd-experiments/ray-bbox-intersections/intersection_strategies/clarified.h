@@ -11,7 +11,7 @@
 
 namespace clarified {
 
-  inline bool intersect(const BBox &bbox, const Ray &ray, float rmin, float rmax) {
+  inline bool intersect(const BBox &bbox, const Ray &ray) {
 
     // Determine bounds for x and y
     double xmin = (bbox.bounds()[ray.sign()[0]].x() - ray.origin().x()) * ray.inv_direction().x();
@@ -39,7 +39,7 @@ namespace clarified {
     max = std::min(max, zmax);
 
     // The ray intercepts if this region overlaps with the bounds provided
-    return (min < rmax) && (max > rmin);
+    return true;
   }
 
 }

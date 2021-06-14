@@ -10,7 +10,7 @@
 
 namespace smits_method {
 
-  inline bool intersect(const BBox &bbox, const Ray &ray, float t0, float t1) {
+  inline bool intersect(const BBox &bbox, const Ray &ray) {
     double tmin, tmax, tymin, tymax, tzmin, tzmax;
 
     if (ray.direction().x() >= 0) {
@@ -45,7 +45,7 @@ namespace smits_method {
     if (tzmin > tmin) tmin = tzmin;
     if (tzmax < tmax) tmax = tzmax;
 
-    return (tmin < t1) && (tmax > t0);
+    return true;
   }
 
 }

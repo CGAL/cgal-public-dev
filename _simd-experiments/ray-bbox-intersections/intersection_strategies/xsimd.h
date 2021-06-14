@@ -9,7 +9,7 @@
 
 namespace xsimd {
 
-  inline bool intersect(const BBox &bbox, const Ray &ray, float rmin, float rmax) {
+  inline bool intersect(const BBox &bbox, const Ray &ray) {
 
     // Determine intermediate value for minimum bounds
     xsimd::batch<double, 4> min(
@@ -40,7 +40,7 @@ namespace xsimd {
     double overall_max = std::min({max[0], max[1], max[2]});
 
     // The ray intercepts if this region exists and overlaps with the bounds provided
-    return (overall_max > overall_min) && (overall_min < rmax) && (overall_max > rmin);
+    return (overall_max > overall_min);
   }
 
 }

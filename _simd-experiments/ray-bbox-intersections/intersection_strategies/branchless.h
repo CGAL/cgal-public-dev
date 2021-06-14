@@ -7,7 +7,7 @@
 
 namespace branchless {
 
-  inline bool intersect(const BBox &bbox, const Ray &ray, float rmin, float rmax) {
+  inline bool intersect(const BBox &bbox, const Ray &ray) {
 
     // Determine bounds x, y, and z
     double xmin = (bbox.bounds()[ray.sign()[0]].x() - ray.origin().x()) * ray.inv_direction().x();
@@ -22,7 +22,7 @@ namespace branchless {
     double max = std::min({xmax, ymax, zmax});
 
     // The ray intercepts if this region overlaps with the interval provided
-    return (max > min) && (min < rmax) && (max > rmin);
+    return (max > min);
   }
 
 }
