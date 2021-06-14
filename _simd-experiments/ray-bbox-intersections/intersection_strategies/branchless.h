@@ -5,7 +5,9 @@
 // This implementation is a modification of the version described in the paper,
 // with the goal of improving auto-vectorization
 
-inline bool intersect_branchless(const BBox &bbox, const Ray &ray, float rmin, float rmax) {
+namespace branchless {
+
+  inline bool intersect(const BBox &bbox, const Ray &ray, float rmin, float rmax) {
 
     // Determine bounds x, y, and z
     double xmin = (bbox.bounds()[ray.sign()[0]].x() - ray.origin().x()) * ray.inv_direction().x();
@@ -21,6 +23,8 @@ inline bool intersect_branchless(const BBox &bbox, const Ray &ray, float rmin, f
 
     // The ray intercepts if this region overlaps with the interval provided
     return (max > min) && (min < rmax) && (max > rmin);
+  }
+
 }
 
 
