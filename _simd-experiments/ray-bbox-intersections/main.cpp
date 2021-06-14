@@ -70,9 +70,6 @@ int main() {
   long N = 3742217;
   long R = 10;
 
-  auto t0 = -std::numeric_limits<double>::infinity();
-  auto t1 = std::numeric_limits<double>::infinity();
-
   // Load test data
   auto file = std::ifstream("data/remeshing_intersections_3742217.txt");
   if (!file.is_open()) exit(1);
@@ -89,31 +86,31 @@ int main() {
       smits_method_times.push_back(time([&] {
         const auto &ray = scenario.first;
         for (const auto &bbox : scenario.second)
-          sum += smits_method::intersect(bbox, ray, t0, t1);
+          sum += smits_method::intersect(bbox, ray);
       }));
 
       improved_times.push_back(time([&] {
         const auto &ray = scenario.first;
         for (const auto &bbox : scenario.second)
-          sum += improved::intersect(bbox, ray, t0, t1);
+          sum += improved::intersect(bbox, ray);
       }));
 
       clarified_times.push_back(time([&] {
         const auto &ray = scenario.first;
         for (const auto &bbox : scenario.second)
-          sum += clarified::intersect(bbox, ray, t0, t1);
+          sum += clarified::intersect(bbox, ray);
       }));
 
       branchless_times.push_back(time([&] {
         const auto &ray = scenario.first;
         for (const auto &bbox : scenario.second)
-          sum += branchless::intersect(bbox, ray, t0, t1);
+          sum += branchless::intersect(bbox, ray);
       }));
 
       xsimd_times.push_back(time([&] {
         const auto &ray = scenario.first;
         for (const auto &bbox : scenario.second)
-          sum += xsimd::intersect(bbox, ray, t0, t1);
+          sum += xsimd::intersect(bbox, ray);
       }));
 
     }

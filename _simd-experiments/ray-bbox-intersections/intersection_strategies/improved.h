@@ -9,7 +9,7 @@
 // This implementation generally sticks close to the one described in the paper
 namespace improved {
 
-  inline bool intersect(const BBox &bbox, const Ray &ray, float t0, float t1) {
+  inline bool intersect(const BBox &bbox, const Ray &ray) {
 
     double tmin, tmax, tymin, tymax, tzmin, tzmax;
 
@@ -30,7 +30,7 @@ namespace improved {
     if (tzmin > tmin) tmin = tzmin;
     if (tzmax < tmax) tmax = tzmax;
 
-    return (tmin < t1) && (tmax > t0);
+    return true;
 
   }
 
