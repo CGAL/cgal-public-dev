@@ -12,8 +12,8 @@ typedef CGAL::Bbox_3  Bbox_3;
 struct xRay {
   xsimd::batch<double, 4> originx, originy, originz;
   xsimd::batch<double, 4> directionx, directiony, directionz;
-  xsimd::batch<double, 4> inversex;
-  xsimd::batch<double, 4> signx;
+  xsimd::batch<double, 4> inversex, inversey, inversez;
+  xsimd::batch<double, 4> signx, signy, signz;
 
   xRay(const Ray_3& r)
   {
@@ -24,9 +24,14 @@ struct xRay {
     directiony.broadcast(r.direction().dy());
     directionz.broadcast(r.direction().dz());
 
-    inversex.broadcast(1.0);
-    inversex  /= directionx;
-    // signx =
+
+    inversex.broadcast(1.0 / r.direction().dx());
+    inversey.broadcast(1.0 / r.direction().dy());
+    inversez.broadcast(1.0 / r.direction().dz());
+
+    signx.broadcast( (r.direction().dx()>=0)?1:-1 );
+    signy.broadcast( (r.direction().dy()>=0)?1:-1 );
+    signz.broadcast( (r.direction().dz()>=0)?1:-1 );
   }
 
 };
@@ -37,8 +42,31 @@ struct xNode {
 
   xNode(const Bbox_3 bb0, const Bbox_3 bb1, const Bbox_3 bb2, const Bbox_3 bb3)
   {
-    double coord[4] = { bb0.xmin(), bb1.xmin(), bb2.xmin(), bb3.xmin() };
-    xsimd::load_aligned(coord, bbxmin);
+    {
+      double coord[4] = { bb0.xmin(), bb1.xmin(), bb2.xmin(), bb3.xmin() };
+      xsimd::load_aligned(coord, bbxmin);
+    }
+    {
+      double coord[4] = { bb0.ymin(), bb1.ymin(), bb2.ymin(), bb3.ymin() };
+      xsimd::load_aligned(coord, bbymin);
+    }
+    {
+      double coord[4] = { bb0.zmin(), bb1.zmin(), bb2.zmin(), bb3.zmin() };
+      xsimd::load_aligned(coord, bbzmin);
+    }
+    {
+      double coord[4] = { bb0.xmax(), bb1.xmax(), bb2.xmax(), bb3.xmax() };
+      xsimd::load_aligned(coord, bbxmax);
+    }
+    {
+      double coord[4] = { bb0.ymax(), bb1.ymax(), bb2.ymax(), bb3.ymax() };
+      xsimd::load_aligned(coord, bbymax);
+    }
+    {
+      double coord[4] = { bb0.zmax(), bb1.zmax(), bb2.zmax(), bb3.zmax() };
+      xsimd::load_aligned(coord, bbzmax);
+    }
+  }
   }
 };
 
