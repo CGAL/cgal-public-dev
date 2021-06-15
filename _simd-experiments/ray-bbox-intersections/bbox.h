@@ -16,6 +16,10 @@ struct BBox {
     assert(min.z <= max.z);
   }
 
+  std::array<std::reference_wrapper<const Vector3<T>>, 2> bounds() const {
+    return {std::cref(min), std::cref(max)};
+  }
+
   friend std::istream &operator>>(std::istream &input, BBox &bbox) {
     input >> bbox.min >> bbox.max;
     assert(bbox.min.x <= bbox.max.x);
