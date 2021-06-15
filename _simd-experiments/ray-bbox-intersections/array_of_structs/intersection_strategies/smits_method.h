@@ -1,9 +1,9 @@
 #ifndef RAY_BBOX_INTERSECTIONS_SMITS_METHOD_H
 #define RAY_BBOX_INTERSECTIONS_SMITS_METHOD_H
 
-#include "../bbox.h"
-#include "../ray.h"
-#include "../vector3.h"
+#include "../../bbox.h"
+#include "../../ray.h"
+#include "../../vector3.h"
 
 // As explained [here](http://people.csail.mit.edu/amy/papers/box-jgt.ps)
 // This implementation generally sticks close to the one described in the paper

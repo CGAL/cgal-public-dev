@@ -6,16 +6,15 @@
 #include <chrono>
 #include <algorithm>
 #include <fstream>
-#include "ray.h"
-#include "bbox.h"
+
+#include "../vector3.h"
+#include "../ray.h"
+#include "../bbox.h"
 
 std::vector<std::pair<Ray<double>, std::vector<BBox<double>>>> load_scenarios(std::ifstream &file, long N) {
   std::vector<std::pair<Ray<double>, std::vector<BBox<double>>>> scenarios;
 
-  T px, py, pz, qx, qy, qz,
-          bxmin, bymin, bzmin, bxmax, bymax, bzmax;
-
-  std::vector<T> px, py, pz, qx, qy, qz,
+  double px, py, pz, qx, qy, qz,
           bxmin, bymin, bzmin, bxmax, bymax, bzmax;
 
   for (int i = 0; i < N; ++i) {
@@ -44,17 +43,6 @@ std::vector<std::pair<Ray<double>, std::vector<BBox<double>>>> load_scenarios(st
   for (const auto &scenario : scenarios) count += scenario.second.size();
 
   return scenarios;
-}
-
-double time(const std::function<void(void)> &f) {
-
-  auto start = std::chrono::_V2::high_resolution_clock::now();
-  {
-    f();
-  }
-  auto end = std::chrono::_V2::high_resolution_clock::now();
-
-  return (end - start).count();
 }
 
 #endif //RAY_BBOX_INTERSECTIONS_LOAD_H
