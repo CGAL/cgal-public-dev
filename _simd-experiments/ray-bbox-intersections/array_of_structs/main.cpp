@@ -24,14 +24,13 @@ int main() {
 
 
   long N = 3742217;
-  long R = 10;
+  long R = 100;
 
   // Load test data
   auto file = std::ifstream("../data/remeshing_intersections_3742217.txt");
   if (!file.is_open()) return EXIT_FAILURE;
   auto queries = load_queries<double>(file, N);
-  std::cout << "Loaded "
-            << std::accumulate(queries.begin(), queries.end(), 0,
+  std::cout << "Loaded " << std::accumulate(queries.begin(), queries.end(), 0,
                                [](const auto &a, const Query<double> &b) { return a + b.boxes.size(); })
             << " scenarios "
             << "divided into " << queries.size() << " queries." << std::endl;
@@ -50,12 +49,11 @@ int main() {
         for (const auto &bbox : query.boxes)
           smits_method_results.push_back(smits_method::intersect(bbox, query.ray));
       }));
-//
-//      improved_times.push_back(time([&] {
-//        const auto &ray = query.first;
-//        for (const auto &bbox : query.second)
-//          sum += improved::intersect(bbox, ray);
-//      }));
+
+      improved_times.push_back(time([&] {
+        for (const auto &bbox : query.boxes)
+          improved_results.push_back(improved::intersect(bbox, query.ray));
+      }));
 //
 //      clarified_times.push_back(time([&] {
 //        const auto &ray = query.first;
@@ -77,6 +75,8 @@ int main() {
 //
 
     }
+
+    if (smits_method_results != improved_results) throw std::logic_error("Incorrect results");
 
     std::cout << "\tHitrate: "
               << std::accumulate(smits_method_results.begin(), smits_method_results.end(), 0.0) * 100.0 /

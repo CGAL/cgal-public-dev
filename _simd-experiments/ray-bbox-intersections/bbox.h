@@ -20,7 +20,7 @@ struct BBox {
     return {std::cref(min), std::cref(max)};
   }
 
-  friend std::istream &operator>>(std::istream &input, BBox &bbox) {
+  inline friend std::istream &operator>>(std::istream &input, BBox &bbox) {
     input >> bbox.min >> bbox.max;
     assert(bbox.min.x <= bbox.max.x);
     assert(bbox.min.y <= bbox.max.y);
