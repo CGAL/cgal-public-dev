@@ -7,7 +7,7 @@
 
 template <typename T>
 class BBox {
-private:
+protected:
 
     std::array<Vector3<T>, 2> b;
 
