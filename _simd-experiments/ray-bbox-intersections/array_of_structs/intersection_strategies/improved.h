@@ -14,24 +14,20 @@ namespace improved {
 
     double tmin, tmax, tymin, tymax, tzmin, tzmax;
 
-    tmin = (bbox.bounds()[ray.sign()[0]].x() - ray.origin().x()) * ray.inv_direction().x();
-    tmax = (bbox.bounds()[1 - ray.sign()[0]].x() - ray.origin().x()) * ray.inv_direction().x();
+    tmin = (bbox.bounds()[ray.sign[0]].get().x - ray.origin.x) * ray.inv_direction.x;
+    tmax = (bbox.bounds()[1 - ray.sign[0]].get().x - ray.origin.x) * ray.inv_direction.x;
 
-    tymin = (bbox.bounds()[ray.sign()[1]].y() - ray.origin().y()) * ray.inv_direction().y();
-    tymax = (bbox.bounds()[1 - ray.sign()[1]].y() - ray.origin().y()) * ray.inv_direction().y();
+    tymin = (bbox.bounds()[ray.sign[1]].get().y - ray.origin.y) * ray.inv_direction.y;
+    tymax = (bbox.bounds()[1 - ray.sign[1]].get().y - ray.origin.y) * ray.inv_direction.y;
 
     if ((tmin > tymax) || (tymin > tmax)) return false;
     if (tymin > tmin) tmin = tymin;
     if (tymax < tmax) tmax = tymax;
 
-    tzmin = (bbox.bounds()[ray.sign()[2]].z() - ray.origin().z()) * ray.inv_direction().z();
-    tzmax = (bbox.bounds()[1 - ray.sign()[2]].z() - ray.origin().z()) * ray.inv_direction().z();
+    tzmin = (bbox.bounds()[ray.sign[2]].get().z - ray.origin.z) * ray.inv_direction.z;
+    tzmax = (bbox.bounds()[1 - ray.sign[2]].get().z - ray.origin.z) * ray.inv_direction.z;
 
-    if ((tmin > tzmax) || (tzmin > tmax)) return false;
-    if (tzmin > tmin) tmin = tzmin;
-    if (tzmax < tmax) tmax = tzmax;
-
-    return true;
+    return !((tmin > tzmax) || (tzmin > tmax));
 
   }
 

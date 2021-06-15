@@ -14,7 +14,7 @@ struct Vector3 {
            other.z == this->z;
   }
 
-  friend std::istream &operator>>(std::istream &input, Vector3 &vector3) {
+  inline friend std::istream &operator>>(std::istream &input, Vector3 &vector3) {
     input >> vector3.x >> vector3.y >> vector3.z;
     return input;
   }
