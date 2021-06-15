@@ -1,9 +1,9 @@
 #ifndef RAY_BBOX_INTERSECTIONS_XSIMD_H
 #define RAY_BBOX_INTERSECTIONS_XSIMD_H
 
-#include "../bbox.h"
-#include "../ray.h"
-#include "../vector3.h"
+#include "../../bbox.h"
+#include "../../ray.h"
+#include "../../vector3.h"
 
 #include <xsimd/xsimd.hpp>
 

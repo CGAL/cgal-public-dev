@@ -1,10 +1,9 @@
 #ifndef RAY_BBOX_INTERSECTIONS_CLARIFIED_H
 #define RAY_BBOX_INTERSECTIONS_CLARIFIED_H
 
-#include "../bbox.h"
-#include "../ray.h"
-#include "../vector3.h"
-
+#include "../../bbox.h"
+#include "../../ray.h"
+#include "../../vector3.h"
 
 // As explained [here](https://cgal.geometryfactory.com/CGAL/Members/wiki/GSoC2021/AABB_tree#Examining_Ray-BBox_Intersection)
 // This implementation is a modification of the version described in the paper, with the goal of improving readability
