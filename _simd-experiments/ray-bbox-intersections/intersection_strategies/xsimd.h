@@ -9,7 +9,8 @@
 
 namespace xsimd {
 
-  inline bool intersect(const BBox &bbox, const Ray &ray) {
+  template<typename T>
+  inline bool intersect(const BBox<T> &bbox, const Ray<T> &ray) {
 
     // Determine intermediate value for minimum bounds
     xsimd::batch<double, 4> min(

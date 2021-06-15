@@ -4,16 +4,17 @@
 #include <array>
 #include "vector3.h"
 
+template <typename T>
 class Ray {
 private:
-  Vector3 o, d;
+  Vector3<T> o, d;
 
-  Vector3 inv{0, 0, 0};
+  Vector3<T> inv{0, 0, 0};
   std::array<int, 3> s;
 
 public:
 
-  Ray(const Vector3 &origin, const Vector3 &direction) : o(origin), d(direction) {
+  Ray(const Vector3<T> &origin, const Vector3<T> &direction) : o(origin), d(direction) {
 
     inv = {
             1 / direction.x(),
@@ -29,11 +30,11 @@ public:
 
   }
 
-  [[nodiscard]] const Vector3 &origin() const { return o; };
+  [[nodiscard]] const Vector3<T> &origin() const { return o; };
 
-  [[nodiscard]] const Vector3 &direction() const { return d; };
+  [[nodiscard]] const Vector3<T> &direction() const { return d; };
 
-  [[nodiscard]] const Vector3 &inv_direction() const { return inv; };
+  [[nodiscard]] const Vector3<T> &inv_direction() const { return inv; };
 
   [[nodiscard]] const decltype(s) &sign() const { return s; }
 

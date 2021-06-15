@@ -9,7 +9,8 @@
 // This implementation generally sticks close to the one described in the paper
 namespace improved {
 
-  inline bool intersect(const BBox &bbox, const Ray &ray) {
+  template<typename T>
+  inline bool intersect(const BBox<T> &bbox, const Ray<T> &ray) {
 
     double tmin, tmax, tymin, tymax, tzmin, tzmax;
 
