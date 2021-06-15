@@ -10,7 +10,8 @@
 
 namespace smits_method {
 
-  inline bool intersect(const BBox &bbox, const Ray &ray) {
+  template<typename T>
+  inline bool intersect(const BBox<T> &bbox, const Ray<T> &ray) {
     double tmin, tmax, tymin, tymax, tzmin, tzmax;
 
     if (ray.direction().x() >= 0) {

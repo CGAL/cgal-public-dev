@@ -7,7 +7,8 @@
 
 namespace branchless {
 
-  inline bool intersect(const BBox &bbox, const Ray &ray) {
+  template<typename T>
+  inline bool intersect(const BBox<T> &bbox, const Ray<T> &ray) {
 
     // Determine bounds x, y, and z
     double xmin = (bbox.bounds()[ray.sign()[0]].x() - ray.origin().x()) * ray.inv_direction().x();

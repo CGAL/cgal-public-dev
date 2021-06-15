@@ -11,7 +11,8 @@
 
 namespace clarified {
 
-  inline bool intersect(const BBox &bbox, const Ray &ray) {
+  template<typename T>
+  inline bool intersect(const BBox<T> &bbox, const Ray<T> &ray) {
 
     // Determine bounds for x and y
     double xmin = (bbox.bounds()[ray.sign()[0]].x() - ray.origin().x()) * ray.inv_direction().x();

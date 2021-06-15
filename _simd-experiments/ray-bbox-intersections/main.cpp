@@ -19,8 +19,8 @@ using std::chrono::duration_cast;
 using std::chrono::duration;
 using std::chrono::milliseconds;
 
-std::vector<std::pair<Ray, std::vector<BBox>>> load_scenarios(std::ifstream &file, long N) {
-  std::vector<std::pair<Ray, std::vector<BBox>>> scenarios;
+std::vector<std::pair<Ray<double>, std::vector<BBox<double>>>> load_scenarios(std::ifstream &file, long N) {
+  std::vector<std::pair<Ray<double>, std::vector<BBox<double>>>> scenarios;
 
   double px, py, pz, qx, qy, qz,
           bxmin, bymin, bzmin, bxmax, bymax, bzmax;
@@ -43,7 +43,7 @@ std::vector<std::pair<Ray, std::vector<BBox>>> load_scenarios(std::ifstream &fil
 
     // Only create a new scenario when the query ray has changed
     if (scenarios.empty() || !(ray == scenarios.back().first))
-      scenarios.emplace_back(ray, std::vector<BBox>());
+      scenarios.emplace_back(ray, std::vector<BBox<double>>());
 
     scenarios.back().second.push_back(box);
   }

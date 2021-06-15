@@ -5,14 +5,15 @@
 
 #include <cassert>
 
+template <typename T>
 class BBox {
 private:
 
-    std::array<Vector3, 2> b;
+    std::array<Vector3<T>, 2> b;
 
 public:
 
-    BBox(const Vector3 &min, const Vector3 &max) : b{min, max} {
+    BBox(const Vector3<T> &min, const Vector3<T> &max) : b{min, max} {
         assert(min.x() <= max.x());
         assert(min.y() <= max.y());
         assert(min.z() <= max.z());
