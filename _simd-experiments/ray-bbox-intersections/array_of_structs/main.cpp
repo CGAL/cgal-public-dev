@@ -2,7 +2,6 @@
 #include <random>
 #include <chrono>
 #include <algorithm>
-#include <fstream>
 
 #include "util.h"
 
@@ -20,17 +19,6 @@ using std::chrono::high_resolution_clock;
 using std::chrono::duration_cast;
 using std::chrono::duration;
 using std::chrono::milliseconds;
-
-double time(const std::function<void(void)> &f) {
-
-  auto start = high_resolution_clock::now();
-  {
-    f();
-  }
-  auto end = high_resolution_clock::now();
-
-  return (end - start).count();
-}
 
 int main() {
 

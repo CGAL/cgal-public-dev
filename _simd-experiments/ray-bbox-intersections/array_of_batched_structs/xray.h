@@ -1,15 +1,14 @@
 #ifndef RAY_BBOX_INTERSECTIONS_XRAY_H
 #define RAY_BBOX_INTERSECTIONS_XRAY_H
 
-#include "ray.h"
-
 #include <xsimd/xsimd.hpp>
 
 template<typename T, int N>
-class XRay : Ray<xsimd::batch<T, N>> {
-public:
+struct XRay {
 
-  XRay(Ray<T> ray) {
+  XVector3<T, N> o, d;
+
+  XRay(XVector3<T, N> origin, XVector3<T, N> direction) : o(origin), d(direction) {
 
   }
 };

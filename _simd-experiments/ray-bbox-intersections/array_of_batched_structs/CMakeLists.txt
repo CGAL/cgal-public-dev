@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.13)
-project(ray-bbox-intersections)
+project(ray-bbox-intersections-array_of_batched_structs)
 set(CMAKE_CXX_STANDARD 17)
 
 #set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall")
