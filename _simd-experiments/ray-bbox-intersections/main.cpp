@@ -117,19 +117,32 @@ int main() {
     std::cout << i << ":\t" << (float) sum / (float) (N * 5) << std::endl;
   }
 
-  std::cout << "Smits' Method:\t"
+  std::cout << "{| class=\"wikitable\"" << std::endl;
+  std::cout << "|+ Time to Complete " << N << " Intersection Tests" << std::endl;
+  std::cout << "| Smits' Method || "
             << std::accumulate(smits_method_times.begin(), smits_method_times.end(), 0.0) / (double) R
+            << " ms"
             << std::endl;
-  std::cout << "Improved:\t\t"
+  std::cout << "|-" << std::endl;
+  std::cout << "| Improved || "
             << std::accumulate(improved_times.begin(), improved_times.end(), 0.0) / (double) R
+            << " ms"
             << std::endl;
-  std::cout << "Clarified:\t\t"
+  std::cout << "|-" << std::endl;
+  std::cout << "| Clarified || "
             << std::accumulate(clarified_times.begin(), clarified_times.end(), 0.0) / (double) R
+            << " ms"
             << std::endl;
-  std::cout << "Branchless:\t\t"
+  std::cout << "|-" << std::endl;
+  std::cout << "| Branchless || "
             << std::accumulate(branchless_times.begin(), branchless_times.end(), 0.0) / (double) R
+            << " ms"
             << std::endl;
-  std::cout << "XSimd:\t\t\t"
+  std::cout << "|-" << std::endl;
+  std::cout << "| XSimd || "
             << std::accumulate(xsimd_times.begin(), xsimd_times.end(), 0.0) / (double) R
+            << " ms"
             << std::endl;
+  std::cout << "|-" << std::endl;
+  std::cout << "|}";
 }

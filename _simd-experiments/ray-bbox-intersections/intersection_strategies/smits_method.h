@@ -42,8 +42,6 @@ namespace smits_method {
     }
 
     if ((tmin > tzmax) || (tzmin > tmax)) return false;
-    if (tzmin > tmin) tmin = tzmin;
-    if (tzmax < tmax) tmax = tzmax;
 
     return true;
   }
