@@ -4,6 +4,8 @@
 #include <algorithm>
 #include <fstream>
 
+#include "util.h"
+
 #include "vector3.h"
 #include "ray.h"
 #include "bbox.h"
@@ -18,41 +20,6 @@ using std::chrono::high_resolution_clock;
 using std::chrono::duration_cast;
 using std::chrono::duration;
 using std::chrono::milliseconds;
-
-std::vector<std::pair<Ray<double>, std::vector<BBox<double>>>> load_scenarios(std::ifstream &file, long N) {
-  std::vector<std::pair<Ray<double>, std::vector<BBox<double>>>> scenarios;
-
-  double px, py, pz, qx, qy, qz,
-          bxmin, bymin, bzmin, bxmax, bymax, bzmax;
-
-  for (int i = 0; i < N; ++i) {
-
-    // Read ray data
-    file >> px >> py >> pz
-         >> qx >> qy >> qz;
-    Vector3 origin = {px, py, pz};
-    Vector3 direction = {qx, qy, qz};
-    Ray ray = {origin, direction};
-
-    // Read box data
-    file >> bxmin >> bymin >> bzmin
-         >> bxmax >> bymax >> bzmax;
-    Vector3 min = {bxmin, bymin, bzmin};
-    Vector3 max = {bxmax, bymax, bzmax};
-    BBox box = {min, max};
-
-    // Only create a new scenario when the query ray has changed
-    if (scenarios.empty() || !(ray == scenarios.back().first))
-      scenarios.emplace_back(ray, std::vector<BBox<double>>());
-
-    scenarios.back().second.push_back(box);
-  }
-
-  long count = 0;
-  for (const auto &scenario : scenarios) count += scenario.second.size();
-
-  return scenarios;
-}
 
 double time(const std::function<void(void)> &f) {
 

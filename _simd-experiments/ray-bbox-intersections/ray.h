@@ -6,7 +6,7 @@
 
 template <typename T>
 class Ray {
-private:
+protected:
   Vector3<T> o, d;
 
   Vector3<T> inv{0, 0, 0};

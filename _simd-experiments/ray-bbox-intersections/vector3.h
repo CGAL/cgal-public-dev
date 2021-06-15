@@ -3,9 +3,9 @@
 
 template <typename T>
 class Vector3 {
-private:
+protected:
 
-  T val[3];
+  std::array<T, 3> val;
 
 public:
 
