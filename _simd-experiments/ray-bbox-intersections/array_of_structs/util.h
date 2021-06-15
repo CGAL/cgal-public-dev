@@ -1,20 +1,21 @@
-//
-// Created by jackcamp on 6/15/21.
-//
-
 #ifndef RAY_BBOX_INTERSECTIONS_LOAD_H
 #define RAY_BBOX_INTERSECTIONS_LOAD_H
 
+#include <iostream>
+#include <random>
+#include <chrono>
+#include <algorithm>
+#include <fstream>
 #include "ray.h"
 #include "bbox.h"
-
-#include "xray.h"
-#include "xbbox.h"
 
 std::vector<std::pair<Ray<double>, std::vector<BBox<double>>>> load_scenarios(std::ifstream &file, long N) {
   std::vector<std::pair<Ray<double>, std::vector<BBox<double>>>> scenarios;
 
-  double px, py, pz, qx, qy, qz,
+  T px, py, pz, qx, qy, qz,
+          bxmin, bymin, bzmin, bxmax, bymax, bzmax;
+
+  std::vector<T> px, py, pz, qx, qy, qz,
           bxmin, bymin, bzmin, bxmax, bymax, bzmax;
 
   for (int i = 0; i < N; ++i) {
@@ -35,7 +36,6 @@ std::vector<std::pair<Ray<double>, std::vector<BBox<double>>>> load_scenarios(st
 
     // Only create a new scenario when the query ray has changed
     if (scenarios.empty() || !(ray == scenarios.back().first))
-      scenarios.emplace_back(ray, std::vector<BBox<double>>());
 
     scenarios.back().second.push_back(box);
   }
@@ -46,24 +46,15 @@ std::vector<std::pair<Ray<double>, std::vector<BBox<double>>>> load_scenarios(st
   return scenarios;
 }
 
-std::vector<std::pair<XRay<double, 4>, std::vector<XBBox<double, 4>>>>
-load_vector_scenarios(std::ifstream &file, long N) {
-  auto scalar_scenarios = load_scenarios(file, N);
-  std::vector<std::pair<XRay<double, 4>, std::vector<XBBox<double, 4>>>> vector_scenarios;
+double time(const std::function<void(void)> &f) {
 
-  for (const auto &scenario : scalar_scenarios) {
-    vector_scenarios.emplace_back(XRay<double, 4>(scenario.first), std::vector<XBBox<double, 4>>());
-    const auto &boxes = scenario.second;
-
-    for (int b = 3; b < boxes.size(); b += 4) {
-
-      vector_scenarios.back().second.emplace_back(std::array<BBox<double>, 4>{
-              boxes[b - 3], boxes[b - 2], boxes[b - 1], boxes[b]
-      });
-    }
+  auto start = std::chrono::_V2::high_resolution_clock::now();
+  {
+    f();
   }
+  auto end = std::chrono::_V2::high_resolution_clock::now();
 
-  return vector_scenarios;
+  return (end - start).count();
 }
 
 #endif //RAY_BBOX_INTERSECTIONS_LOAD_H

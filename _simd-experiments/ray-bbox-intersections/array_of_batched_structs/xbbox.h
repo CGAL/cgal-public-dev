@@ -3,17 +3,15 @@
 #ifndef RAY_BBOX_INTERSECTIONS_XBBOX_H
 #define RAY_BBOX_INTERSECTIONS_XBBOX_H
 
-#include "bbox.h"
-
 #include <xsimd/xsimd.hpp>
 
 template<typename T, int N>
-class XBBox : BBox<xsimd::batch<T, N>> {
-public:
+struct XBBox {
 
-  explicit XBBox(std::array<BBox<T>, N> boxes) {
+  std::array<XVector3<T, N>, 2> arr;
 
-  }
+  explicit XBBox(XVector3<T, N> min, XVector3<T, N> max) : arr(min, max) {}
+
 };
 
 #endif //RAY_BBOX_INTERSECTIONS_XBBOX_H
