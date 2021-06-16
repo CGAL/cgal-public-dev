@@ -4,10 +4,13 @@
 
 #include "../bbox.h"
 
-template<typename T>
-struct VBBox : BBox<std::vector<T>> {
+#include <xsimd/xsimd.hpp>
 
-  VBBox(const std::vector<BBox<T>> &boxes) {
+template<typename T>
+struct VBBox : BBox<std::vector<T, xsimd::aligned_allocator<T, 16>>> {
+
+  explicit VBBox(const std::vector<BBox<T>> &boxes) :
+  BBox<std::vector<T, xsimd::aligned_allocator<T, 16>>>(VVector3<T>(), VVector3<T>()) {
 
     std::vector<Vector3<T>> mins, maxs;
 
