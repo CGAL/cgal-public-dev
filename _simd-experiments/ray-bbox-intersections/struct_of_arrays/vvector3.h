@@ -5,8 +5,12 @@
 
 #include <vector>
 
+#include <xsimd/xsimd.hpp>
+
 template<typename T>
-struct VVector3 : Vector3<std::vector<T>> {
+struct VVector3 : Vector3<std::vector<T, xsimd::aligned_allocator<T, 16>>> {
+
+  VVector3() : Vector3<std::vector<T, xsimd::aligned_allocator<T, 16>>>({}, {}, {}) {}
 
   VVector3(const std::vector<Vector3<T>> &vectors) {
     for (const auto &v : vectors) {
