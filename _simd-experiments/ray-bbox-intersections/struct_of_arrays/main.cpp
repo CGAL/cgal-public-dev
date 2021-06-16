@@ -44,6 +44,11 @@ int main() {
   // Convert test data to vector format
   auto vqueries = pack_queries(queries);
 
+  std::cout << vqueries.size() << std::endl;
+  for (const VQuery<double> &q : vqueries)
+    std::cout << q.vbox.min.x.size() << std::endl;
+
+
   std::vector<double> explicit_times, implicit_times;
 
   for (int i = 0; i < R; ++i) {
@@ -54,13 +59,11 @@ int main() {
     for (const auto &query : vqueries) {
 
       explicit_times.push_back(time([&] {
-        auto results = xsimd::intersect(query.vbox, query.ray);
-        explicit_results.insert(explicit_results.end(), results.begin(), results.end());
+        xsimd::intersect(query.vbox, query.ray, explicit_results);
       }));
 
       implicit_times.push_back(time([&] {
-        auto results = implicit::intersect(query.vbox, query.ray);
-        implicit_results.insert(implicit_results.end(), results.begin(), results.end());
+        implicit::intersect(query.vbox, query.ray, implicit_results);
       }));
     }
 

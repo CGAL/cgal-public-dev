@@ -25,14 +25,9 @@ namespace implicit {
   }
 
   template<typename T>
-  std::vector<bool> intersect(const VBBox<T> &vbbox, const Ray<T> &ray) {
-    std::vector<bool> results;
-
-    for (std::size_t i = 0; i < vbbox.min.x.size(); ++i) {
+  void intersect(const VBBox<T> &vbbox, const Ray<T> &ray, std::vector<bool> &results) {
+    for (std::size_t i = 0; i < vbbox.min.x.size(); ++i)
       results.push_back(intersect(vbbox, ray, i));
-    }
-
-    return results;
   }
 
 }

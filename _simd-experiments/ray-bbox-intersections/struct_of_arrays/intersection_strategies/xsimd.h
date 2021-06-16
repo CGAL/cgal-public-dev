@@ -12,13 +12,11 @@
 namespace xsimd {
 
   template<typename T>
-  std::vector<bool> intersect(const VBBox<T> &vbbox, const Ray<T> &ray) {
+  void intersect(const VBBox<T> &vbbox, const Ray<T> &ray, std::vector<bool> &results) {
 
     std::size_t data_size = vbbox.min.x.size();
     constexpr std::size_t batch_size = xsimd::simd_type<double>::size;
     std::size_t aligned_size = data_size - (data_size % batch_size);
-
-    std::vector<bool> results;
 
     // Load each batch from the vectorized box type
     for (std::size_t i = 0; i < aligned_size; i += batch_size) {
@@ -51,8 +49,6 @@ namespace xsimd {
       // TODO This is just a placeholder!
       results.push_back(false);
     }
-
-    return results;
   }
 
   template<typename T, std::size_t N>
