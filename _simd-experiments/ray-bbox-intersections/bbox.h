@@ -7,21 +7,27 @@
 #include <functional>
 
 template<typename T>
-struct BBox {
+class BBox {
+protected:
 
-  Vector3<T> min, max;
+  std::array<Vector3<T>, 2> _bounds;
 
-  BBox(const Vector3<T> &min, const Vector3<T> &max) : min(min), max(max) {}
+public:
 
-  std::array<std::reference_wrapper<const Vector3<T>>, 2> bounds() const {
-    return {std::cref(min), std::cref(max)};
-  }
+  BBox(const Vector3<T> &min, const Vector3<T> &max) : _bounds{min, max} {}
+
+  const std::array<Vector3<T>, 2> &bounds() const { return _bounds; }
+
+  const Vector3<T> &min() const { return _bounds[0]; }
+
+  const Vector3<T> &max() const { return _bounds[1]; }
 
   inline friend std::istream &operator>>(std::istream &input, BBox &bbox) {
-    input >> bbox.min >> bbox.max;
-    assert(bbox.min.x <= bbox.max.x);
-    assert(bbox.min.y <= bbox.max.y);
-    assert(bbox.min.z <= bbox.max.z);
+    input >> bbox._bounds[0] >> bbox._bounds[1];
+
+    for (int i = 0; i < 3; ++i)
+      assert(bbox.min().arr()[i] <= bbox.max().arr()[i]);
+
     return input;
   }
 };

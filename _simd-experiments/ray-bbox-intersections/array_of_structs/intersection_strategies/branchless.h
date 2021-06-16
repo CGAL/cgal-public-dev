@@ -10,15 +10,15 @@ namespace branchless {
   template<typename T>
   inline bool intersect(const BBox<T> &bbox, const Ray<T> &ray) {
 
-    // Determine bounds for x, y, and z
-    double xmin = (bbox.bounds()[ray.sign.x].get().x - ray.origin.x) * ray.inv_direction.x;
-    double xmax = (bbox.bounds()[1 - ray.sign.x].get().x - ray.origin.x) * ray.inv_direction.x;
-    double ymin = (bbox.bounds()[ray.sign.y].get().y - ray.origin.y) * ray.inv_direction.y;
-    double ymax = (bbox.bounds()[1 - ray.sign.y].get().y - ray.origin.y) * ray.inv_direction.y;
-    double zmin = (bbox.bounds()[ray.sign.z].get().z - ray.origin.z) * ray.inv_direction.z;
-    double zmax = (bbox.bounds()[1 - ray.sign.z].get().z - ray.origin.z) * ray.inv_direction.z;
+    // Determine bounds x, y, and z
+    double xmin = (bbox.bounds()[ray.sign().x()].x() - ray.origin().x()) * ray.inv_direction().x();
+    double xmax = (bbox.bounds()[1 - ray.sign().x()].x() - ray.origin().x()) * ray.inv_direction().x();
+    double ymin = (bbox.bounds()[ray.sign().y()].y() - ray.origin().y()) * ray.inv_direction().y();
+    double ymax = (bbox.bounds()[1 - ray.sign().y()].y() - ray.origin().y()) * ray.inv_direction().y();
+    double zmin = (bbox.bounds()[ray.sign().z()].z() - ray.origin().z()) * ray.inv_direction().z();
+    double zmax = (bbox.bounds()[1 - ray.sign().z()].z() - ray.origin().z()) * ray.inv_direction().z();
 
-    // Determine the bounds() of the overlapping region
+    // Determine the bounds of the overlapping region
     double min = std::max({xmin, ymin, zmin});
     double max = std::min({xmax, ymax, zmax});
 

@@ -46,7 +46,7 @@ int main() {
 
   std::cout << vqueries.size() << std::endl;
   for (const VQuery<double> &q : vqueries)
-    std::cout << q.vbox.min.x.size() << std::endl;
+    std::cout << q.vbox.min().x().size() << std::endl;
 
 
   std::vector<double> explicit_times, implicit_times;
