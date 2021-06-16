@@ -12,18 +12,55 @@
 namespace xsimd {
 
   template<typename T>
-  inline std::vector<bool, xsimd::aligned_allocator<T, 16>> intersect(const VBBox<T> &bbox, const Ray<T> &ray) {
+  std::vector<bool> intersect(const VBBox<T> &vbbox, const Ray<T> &ray) {
 
-    std::size_t data_size = bbox.min.x.size();
+    std::size_t data_size = vbbox.min.x.size();
     constexpr std::size_t batch_size = xsimd::simd_type<double>::size;
     std::size_t aligned_size = data_size - (data_size % batch_size);
 
+    std::vector<bool> results;
+
+    // Load each batch from the vectorized box type
     for (int i = 0; i < aligned_size; i += batch_size) {
 
-      // TODO Build an xsimd bbox
+      auto xmin = xsimd::load_aligned(&vbbox.min.x[i]);
+      auto ymin = xsimd::load_aligned(&vbbox.min.y[i]);
+      auto zmin = xsimd::load_aligned(&vbbox.min.z[i]);
+
+      auto xmax = xsimd::load_aligned(&vbbox.max.x[i]);
+      auto ymax = xsimd::load_aligned(&vbbox.max.y[i]);
+      auto zmax = xsimd::load_aligned(&vbbox.max.z[i]);
+
+      auto min = Vector3(xmin, ymin, zmin);
+      auto max = Vector3(xmax, ymax, zmax);
+
+      auto box = BBox(min, max);
+
+      // Perform intersection tests for that batch, save the results to the output array
+      auto result = intersect(box, ray);
+
+      // Add results to output
+      // TODO: Is there a faster way to save the results?
+      for (int j = 0; j < batch_size; ++j) {
+        results.push_back(result[j]);
+      }
     }
 
-    std::vector<bool> results;
+    // Perform scalar operations on leftover values
+    for (int i = aligned_size; i < data_size; ++i) {
+      // TODO This is just a placeholder!
+      results.push_back(false);
+    }
+
+    return results;
+  }
+
+  template<typename T, std::size_t N>
+  inline xsimd::batch_bool<T, N> intersect(const BBox<xsimd::batch<T, N>> &xbbox, const Ray<T> &ray) {
+
+    // TODO
+    return xbbox.min.x > 0;
+
   }
 }
 

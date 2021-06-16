@@ -11,11 +11,7 @@ struct BBox {
 
   Vector3<T> min, max;
 
-  BBox(const Vector3<T> &min, const Vector3<T> &max) : min(min), max(max) {
-    assert(min.x <= max.x);
-    assert(min.y <= max.y);
-    assert(min.z <= max.z);
-  }
+  BBox(const Vector3<T> &min, const Vector3<T> &max) : min(min), max(max) {}
 
   std::array<std::reference_wrapper<const Vector3<T>>, 2> bounds() const {
     return {std::cref(min), std::cref(max)};
