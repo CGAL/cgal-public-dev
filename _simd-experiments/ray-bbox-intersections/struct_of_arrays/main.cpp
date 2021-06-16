@@ -1,21 +1,25 @@
 
+#include "../util.h"
+
 #include "vvector3.h"
 #include "vbbox.h"
-#include "vray.h"
 
-auto load(std::ifstream &file, long N) {
+#include <fstream>
 
-}
+template<typename T>
+struct VQuery {
+  Ray<T> ray;
+  VBBox<T> vbox;
+};
 
-double time(const std::function<void(void)> &f) {
+template<typename T>
+auto pack_queries(std::vector<Query<T>> queries) {
+  std::vector<VQuery<T>> vqueries;
 
-  auto start = std::chrono::_V2::high_resolution_clock::now();
-  {
-    f();
-  }
-  auto end = std::chrono::_V2::high_resolution_clock::now();
+  for (const Query<T> &query : queries)
+    vqueries.push_back({query.ray, VBBox<T>(query.boxes)});
 
-  return (end - start).count();
+  return vqueries;
 }
 
 int main() {
