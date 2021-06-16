@@ -23,13 +23,13 @@ namespace xsimd {
     // Load each batch from the vectorized box type
     for (std::size_t i = 0; i < aligned_size; i += batch_size) {
 
-      auto xmin = xsimd::load_aligned(&vbbox.min.x[i]);
-      auto ymin = xsimd::load_aligned(&vbbox.min.y[i]);
-      auto zmin = xsimd::load_aligned(&vbbox.min.z[i]);
+      auto xmin = xsimd::load_unaligned(&vbbox.min.x[i]);
+      auto ymin = xsimd::load_unaligned(&vbbox.min.y[i]);
+      auto zmin = xsimd::load_unaligned(&vbbox.min.z[i]);
 
-      auto xmax = xsimd::load_aligned(&vbbox.max.x[i]);
-      auto ymax = xsimd::load_aligned(&vbbox.max.y[i]);
-      auto zmax = xsimd::load_aligned(&vbbox.max.z[i]);
+      auto xmax = xsimd::load_unaligned(&vbbox.max.x[i]);
+      auto ymax = xsimd::load_unaligned(&vbbox.max.y[i]);
+      auto zmax = xsimd::load_unaligned(&vbbox.max.z[i]);
 
       auto min = Vector3(xmin, ymin, zmin);
       auto max = Vector3(xmax, ymax, zmax);

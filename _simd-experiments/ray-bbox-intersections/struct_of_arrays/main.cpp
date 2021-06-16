@@ -64,8 +64,6 @@ int main() {
       }));
     }
 
-    for (auto r : implicit_results) std::cout << r;
-
     // Check results for correctness
     // TODO
 
