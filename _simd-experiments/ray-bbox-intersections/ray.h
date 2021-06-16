@@ -10,7 +10,7 @@ struct Ray {
   Vector3<T> origin, direction;
 
   Vector3<T> inv_direction{0, 0, 0};
-  std::array<int, 3> sign;
+  Vector3<short> sign{0, 0, 0};
 
   Ray(const Vector3<T> &origin, const Vector3<T> &direction) : origin(origin), direction(direction) {
 

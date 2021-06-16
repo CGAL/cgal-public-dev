@@ -14,17 +14,17 @@ namespace xsimd {
 
     // Determine intermediate value for minimum bounds()
     xsimd::batch<double, 4> min(
-            bbox.bounds()[ray.sign[0]].get().x,
-            bbox.bounds()[ray.sign[1]].get().y,
-            bbox.bounds()[ray.sign[2]].get().z,
+            bbox.bounds()[ray.sign.x].get().x,
+            bbox.bounds()[ray.sign.y].get().y,
+            bbox.bounds()[ray.sign.z].get().z,
             std::numeric_limits<double>::max()
     );
 
     // Determine intermediate value for maximum bounds()
     xsimd::batch<double, 4> max(
-            bbox.bounds()[1 - ray.sign[0]].get().x,
-            bbox.bounds()[1 - ray.sign[1]].get().y,
-            bbox.bounds()[1 - ray.sign[2]].get().z,
+            bbox.bounds()[1 - ray.sign.x].get().x,
+            bbox.bounds()[1 - ray.sign.y].get().y,
+            bbox.bounds()[1 - ray.sign.z].get().z,
             std::numeric_limits<double>::min()
     );
 
