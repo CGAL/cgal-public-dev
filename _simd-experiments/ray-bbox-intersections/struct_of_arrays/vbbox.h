@@ -8,10 +8,10 @@
 #include <iostream>
 
 template<typename T>
-struct VBBox : BBox<std::vector<T, xsimd::aligned_allocator<T, 16>>> {
+struct VBBox : BBox<std::vector<T>> {
 
   explicit VBBox(const std::vector<BBox<T>> &boxes) :
-  BBox<std::vector<T, xsimd::aligned_allocator<T, 16>>>({{}, {}, {}}, {{}, {}, {}}) {
+  BBox<std::vector<T>>({{}, {}, {}}, {{}, {}, {}}) {
 
     std::vector<Vector3<T>> mins, maxs;
 
