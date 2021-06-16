@@ -3,6 +3,7 @@
 
 #include <fstream>
 #include <unordered_map>
+#include <chrono>
 
 #include "ray.h"
 #include "bbox.h"

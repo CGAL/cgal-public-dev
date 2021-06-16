@@ -4,6 +4,7 @@
 #include "vector3.h"
 
 #include <cassert>
+#include <functional>
 
 template<typename T>
 struct BBox {
