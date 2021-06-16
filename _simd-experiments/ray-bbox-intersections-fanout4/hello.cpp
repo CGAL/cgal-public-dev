@@ -40,7 +40,7 @@ struct xRay {
 struct xNode {
   xsimd::batch<double, 4> bbxmin, bbxmax, bbymin, bbymax, bbzmin, bbzmax;
 
-  xNode(const Bbox_3 bb0, const Bbox_3 bb1, const Bbox_3 bb2, const Bbox_3 bb3)
+  xNode(const Bbox_3& bb0, const Bbox_3& bb1, const Bbox_3& bb2, const Bbox_3& bb3)
   {
     {
       double coord[4] = { bb0.xmin(), bb1.xmin(), bb2.xmin(), bb3.xmin() };
