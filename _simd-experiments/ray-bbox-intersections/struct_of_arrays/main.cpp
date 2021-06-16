@@ -1,11 +1,10 @@
 
 #include "../util.h"
 
-#include "vvector3.h"
 #include "vbbox.h"
 
 #include "intersection_strategies/xsimd.h"
-//#include "intersection_strategies/branchless.h"
+#include "intersection_strategies/implicit.h"
 
 #include <iostream>
 #include <numeric>
@@ -59,14 +58,20 @@ int main() {
         explicit_results.insert(explicit_results.end(), results.begin(), results.end());
       }));
 
+      implicit_times.push_back(time([&] {
+        auto results = implicit::intersect(query.vbox, query.ray);
+        implicit_results.insert(implicit_results.end(), results.begin(), results.end());
+      }));
     }
+
+    for (auto r : implicit_results) std::cout << r;
 
     // Check results for correctness
     // TODO
 
     std::cout << "\tHit-rate: "
-              << std::accumulate(explicit_results.begin(), explicit_results.end(), 0.0) * 100.0 /
-                 (double) explicit_results.size()
+              << std::accumulate(implicit_results.begin(), implicit_results.end(), 0.0) * 100.0 /
+                 (double) implicit_results.size()
               << "%" << std::endl;
   }
 
@@ -75,6 +80,11 @@ int main() {
   std::cout << "|+ Time to Complete " << N << " Intersection Tests" << std::endl;
   std::cout << "| Explicit SIMD || "
             << std::accumulate(explicit_times.begin(), explicit_times.end(), 0.0) / (double) R
+            << " ms"
+            << std::endl;
+  std::cout << "|-" << std::endl;
+  std::cout << "| Implicit SIMD || "
+            << std::accumulate(implicit_times.begin(), implicit_times.end(), 0.0) / (double) R
             << " ms"
             << std::endl;
   std::cout << "|-" << std::endl;
