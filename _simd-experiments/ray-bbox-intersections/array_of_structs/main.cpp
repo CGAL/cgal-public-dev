@@ -64,29 +64,22 @@ int main() {
         for (const auto &bbox : query.boxes)
           branchless_results.push_back(branchless::intersect(bbox, query.ray));
       }));
-//
-//      branchless_times.push_back(time([&] {
-//        const auto &ray = query.first;
-//        for (const auto &bbox : query.second)
-//          sum += branchless::intersect(bbox, ray);
-//      }));
-//
-//      xsimd_times.push_back(time([&] {
-//        const auto &ray = query.first;
-//        for (const auto &bbox : query.second)
-//          sum += xsimd::intersect(bbox, ray);
-//      }));
-//
+
+      xsimd_times.push_back(time([&] {
+        for (const auto &bbox : query.boxes)
+          xsimd_results.push_back(xsimd::intersect(bbox, query.ray));
+      }));
 
     }
 
     // Check results for correctness
     if (smits_method_results != improved_results ||
         smits_method_results != clarified_results ||
-        smits_method_results != branchless_results)
+        smits_method_results != branchless_results ||
+        smits_method_results != xsimd_results)
       throw std::logic_error("Incorrect results");
 
-    std::cout << "\tHitrate: "
+    std::cout << "\tHit-rate: "
               << std::accumulate(smits_method_results.begin(), smits_method_results.end(), 0.0) * 100.0 /
                  (double) smits_method_results.size()
               << "%" << std::endl;
