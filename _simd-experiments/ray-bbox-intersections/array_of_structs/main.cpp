@@ -31,7 +31,7 @@ int main() {
   if (!file.is_open()) return EXIT_FAILURE;
   auto queries = load_queries<double>(file, N);
   std::cout << "Loaded " << std::accumulate(queries.begin(), queries.end(), 0,
-                               [](const auto &a, const Query<double> &b) { return a + b.boxes.size(); })
+                                            [](const auto &a, const Query<double> &b) { return a + b.boxes.size(); })
             << " scenarios "
             << "divided into " << queries.size() << " queries." << std::endl;
 
@@ -39,7 +39,7 @@ int main() {
   std::vector<double> smits_method_times, improved_times, clarified_times, branchless_times, xsimd_times;
 
   for (int i = 0; i < R; ++i) {
-    std::cout << i + 1 << "/" << R  << std::endl;
+    std::cout << i + 1 << "/" << R << std::endl;
 
     std::vector<bool> smits_method_results, improved_results, clarified_results, branchless_results, xsimd_results;
 
@@ -54,12 +54,16 @@ int main() {
         for (const auto &bbox : query.boxes)
           improved_results.push_back(improved::intersect(bbox, query.ray));
       }));
-//
-//      clarified_times.push_back(time([&] {
-//        const auto &ray = query.first;
-//        for (const auto &bbox : query.second)
-//          sum += clarified::intersect(bbox, ray);
-//      }));
+
+      clarified_times.push_back(time([&] {
+        for (const auto &bbox : query.boxes)
+          clarified_results.push_back(clarified::intersect(bbox, query.ray));
+      }));
+
+      branchless_times.push_back(time([&] {
+        for (const auto &bbox : query.boxes)
+          branchless_results.push_back(branchless::intersect(bbox, query.ray));
+      }));
 //
 //      branchless_times.push_back(time([&] {
 //        const auto &ray = query.first;
@@ -76,7 +80,11 @@ int main() {
 
     }
 
-    if (smits_method_results != improved_results) throw std::logic_error("Incorrect results");
+    // Check results for correctness
+    if (smits_method_results != improved_results ||
+        smits_method_results != clarified_results ||
+        smits_method_results != branchless_results)
+      throw std::logic_error("Incorrect results");
 
     std::cout << "\tHitrate: "
               << std::accumulate(smits_method_results.begin(), smits_method_results.end(), 0.0) * 100.0 /
