@@ -30,7 +30,7 @@ int main() {
 
 
   long N = 3742217;
-//  long R = 100;
+  long R = 100;
 
   // Load test data
   auto file = std::ifstream("../data/remeshing_intersections_3742217.txt");
@@ -45,4 +45,38 @@ int main() {
   // Convert test data to vector format
   auto vqueries = pack_queries(queries);
 
+  std::vector<double> explicit_times, implicit_times;
+
+  for (int i = 0; i < R; ++i) {
+    std::cout << i + 1 << "/" << R << std::endl;
+
+    std::vector<bool> explicit_results, implicit_results;
+
+    for (const auto &query : vqueries) {
+
+      explicit_times.push_back(time([&] {
+        auto results = xsimd::intersect(query.vbox, query.ray);
+        explicit_results.insert(explicit_results.end(), results.begin(), results.end());
+      }));
+
+    }
+
+    // Check results for correctness
+    // TODO
+
+    std::cout << "\tHit-rate: "
+              << std::accumulate(explicit_results.begin(), explicit_results.end(), 0.0) * 100.0 /
+                 (double) explicit_results.size()
+              << "%" << std::endl;
+  }
+
+  std::cout << std::endl;
+  std::cout << "{| class=\"wikitable\"" << std::endl;
+  std::cout << "|+ Time to Complete " << N << " Intersection Tests" << std::endl;
+  std::cout << "| Explicit SIMD || "
+            << std::accumulate(explicit_times.begin(), explicit_times.end(), 0.0) / (double) R
+            << " ms"
+            << std::endl;
+  std::cout << "|-" << std::endl;
+  std::cout << "|}";
 }
