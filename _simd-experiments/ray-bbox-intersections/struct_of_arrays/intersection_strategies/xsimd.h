@@ -21,7 +21,7 @@ namespace xsimd {
     std::vector<bool> results;
 
     // Load each batch from the vectorized box type
-    for (int i = 0; i < aligned_size; i += batch_size) {
+    for (std::size_t i = 0; i < aligned_size; i += batch_size) {
 
       auto xmin = xsimd::load_aligned(&vbbox.min.x[i]);
       auto ymin = xsimd::load_aligned(&vbbox.min.y[i]);
@@ -41,13 +41,13 @@ namespace xsimd {
 
       // Add results to output
       // TODO: Is there a faster way to save the results?
-      for (int j = 0; j < batch_size; ++j) {
+      for (std::size_t j = 0; j < batch_size; ++j) {
         results.push_back(result[j]);
       }
     }
 
     // Perform scalar operations on leftover values
-    for (int i = aligned_size; i < data_size; ++i) {
+    for (std::size_t i = aligned_size; i < data_size; ++i) {
       // TODO This is just a placeholder!
       results.push_back(false);
     }
