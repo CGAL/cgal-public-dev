@@ -19,13 +19,13 @@ namespace xsimd {
     // When the ray is negative, flip the box's bounds
 
     xsimd::batch<T, N> min_bound_x = (ray.sign().x()) ? xbbox.max().x() : xbbox.min().x();
-    xsimd::batch<T, N> max_bound_x = (ray.sign().x()) ? xbbox.max().x() : xbbox.min().x();
+    xsimd::batch<T, N> max_bound_x = (!ray.sign().x()) ? xbbox.max().x() : xbbox.min().x();
 
     xsimd::batch<T, N> min_bound_y = (ray.sign().y()) ? xbbox.max().y() : xbbox.min().y();
-    xsimd::batch<T, N> max_bound_y = (ray.sign().y()) ? xbbox.max().y() : xbbox.min().y();
+    xsimd::batch<T, N> max_bound_y = (!ray.sign().y()) ? xbbox.max().y() : xbbox.min().y();
 
     xsimd::batch<T, N> min_bound_z = (ray.sign().z()) ? xbbox.max().z() : xbbox.min().z();
-    xsimd::batch<T, N> max_bound_z = (ray.sign().z()) ? xbbox.max().z() : xbbox.min().z();
+    xsimd::batch<T, N> max_bound_z = (!ray.sign().z()) ? xbbox.max().z() : xbbox.min().z();
 
     // Calculate bounds for each axis
 
@@ -41,7 +41,7 @@ namespace xsimd {
     // Consolidate bounds into the segment of intersection
 
     xsimd::batch<T, N> max = xsimd::min(max_x, xsimd::min(max_y, max_z));
-    xsimd::batch<T, N> min = xsimd::max(min_x, xsimd::min(min_y, min_z));
+    xsimd::batch<T, N> min = xsimd::max(min_x, xsimd::max(min_y, min_z));
 
     // Intersection exists if the segment has non-negative length
 
@@ -82,9 +82,9 @@ namespace xsimd {
     }
 
     // Perform scalar operations on leftover values
-    implicit::intersect(vbbox, ray, results);
+    for (std::size_t i = aligned_size; i < data_size; ++i)
+      results.push_back(implicit::intersect(vbbox.getr(i), ray));
   }
-
 }
 
 #endif //RAY_BBOX_INTERSECTIONS_ARRAY_OF_STRUCTS_XSIMD_H
