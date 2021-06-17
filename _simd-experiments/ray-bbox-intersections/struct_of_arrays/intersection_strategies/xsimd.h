@@ -4,12 +4,49 @@
 #include "../../ray.h"
 #include "../vbbox.h"
 
+#include "implicit.h"
+
 #include <xsimd/xsimd.hpp>
 
 // Created with the help of xsimd's documentation
 // https://xsimd.readthedocs.io/en/latest/basic_usage.html
 
 namespace xsimd {
+
+  template<typename T, std::size_t N>
+  inline xsimd::batch_bool<T, N> intersect(const BBox<xsimd::batch<T, N>> &xbbox, const Ray<T> &ray) {
+
+    // When the ray is negative, flip the box's bounds
+
+    xsimd::batch<T, N> min_bound_x = (ray.sign().x()) ? xbbox.max().x() : xbbox.min().x();
+    xsimd::batch<T, N> max_bound_x = (ray.sign().x()) ? xbbox.max().x() : xbbox.min().x();
+
+    xsimd::batch<T, N> min_bound_y = (ray.sign().y()) ? xbbox.max().y() : xbbox.min().y();
+    xsimd::batch<T, N> max_bound_y = (ray.sign().y()) ? xbbox.max().y() : xbbox.min().y();
+
+    xsimd::batch<T, N> min_bound_z = (ray.sign().z()) ? xbbox.max().z() : xbbox.min().z();
+    xsimd::batch<T, N> max_bound_z = (ray.sign().z()) ? xbbox.max().z() : xbbox.min().z();
+
+    // Calculate bounds for each axis
+
+    xsimd::batch<T, N> min_x = (min_bound_x - ray.origin().x()) * ray.inv_direction().x();
+    xsimd::batch<T, N> max_x = (max_bound_x - ray.origin().x()) * ray.inv_direction().x();
+
+    xsimd::batch<T, N> min_y = (min_bound_y - ray.origin().y()) * ray.inv_direction().y();
+    xsimd::batch<T, N> max_y = (max_bound_y - ray.origin().y()) * ray.inv_direction().y();
+
+    xsimd::batch<T, N> min_z = (min_bound_z - ray.origin().z()) * ray.inv_direction().z();
+    xsimd::batch<T, N> max_z = (max_bound_z - ray.origin().z()) * ray.inv_direction().z();
+
+    // Consolidate bounds into the segment of intersection
+
+    xsimd::batch<T, N> max = xsimd::min(max_x, xsimd::min(max_y, max_z));
+    xsimd::batch<T, N> min = xsimd::max(min_x, xsimd::min(min_y, min_z));
+
+    // Intersection exists if the segment has non-negative length
+
+    return max >= min;
+  }
 
   template<typename T>
   void intersect(const VBBox<T> &vbbox, const Ray<T> &ray, std::vector<bool> &results) {
@@ -45,19 +82,9 @@ namespace xsimd {
     }
 
     // Perform scalar operations on leftover values
-    for (std::size_t i = aligned_size; i < data_size; ++i) {
-      // TODO This is just a placeholder!
-      results.push_back(false);
-    }
+    implicit::intersect(vbbox, ray, results);
   }
 
-  template<typename T, std::size_t N>
-  inline xsimd::batch_bool<T, N> intersect(const BBox<xsimd::batch<T, N>> &xbbox, const Ray<T> &ray) {
-
-    // TODO
-    return xbbox.min().x() > 0;
-
-  }
 }
 
 #endif //RAY_BBOX_INTERSECTIONS_ARRAY_OF_STRUCTS_XSIMD_H

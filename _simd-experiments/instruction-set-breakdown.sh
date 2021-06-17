@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-set -euo pipefail
+set -euox pipefail
 
 # A short script to determine the prevalence of different SIMD instruction sets
 
@@ -11,8 +11,9 @@ BIN_FILE=$1
 FUNC_NAME=${2:-all}
 
 # Decompile the bin file
-ASM_FILE="$BIN_FILE.asm"
-objdump --demangle --disassemble="$FUNC_NAME" "$BIN_FILE" > "$ASM_FILE"
+ASM_FILE="${BIN_FILE}.asm"
+#objdump --demangle --disassemble="$FUNC_NAME" "$BIN_FILE" > "$ASM_FILE"
+objdump --demangle --disassemble-all "$BIN_FILE" > "$ASM_FILE"
 
 
 # Determine the count of each type of instruction

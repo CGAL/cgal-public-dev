@@ -24,7 +24,7 @@ namespace implicit {
     return (max >= min);
   }
 
-  inline bool intersect(const BBox<const double *>& bbox, const Ray<double> &ray) {
+  inline bool intersect(const BBox<const double *> &bbox, const Ray<double> &ray) {
 
     // Determine bounds x, y, and z
     double xmin = (*(bbox.bounds()[ray.sign().x()].x()) - ray.origin().x()) * ray.inv_direction().x();
