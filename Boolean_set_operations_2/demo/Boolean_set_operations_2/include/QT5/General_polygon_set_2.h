@@ -49,7 +49,7 @@ public:
   typedef Dcel_                                           Dcel;
 
   typedef General_polygon_set_on_surface_2 <Traits_2,
-    typename Default_planar_topology<Traits_2, Dcel >::Traits>
+  typename Default_planar_topology<Traits_2, Dcel >::Traits>
                                                           Base;
 
   typedef CGAL::Arrangement_2<Traits_2, Dcel>             Arrangement_2;
@@ -57,7 +57,7 @@ public:
   typedef typename Base::Polygon_2                        Polygon_2;
   typedef typename Base::Polygon_with_holes_2             Polygon_with_holes_2;
 
-  // default costructor
+  // default constructor
   General_polygon_set_2() : Base() {}
 
   // constructor with traits object

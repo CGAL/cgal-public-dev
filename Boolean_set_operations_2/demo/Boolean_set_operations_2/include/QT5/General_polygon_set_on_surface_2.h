@@ -80,7 +80,7 @@ public:
 
 public:
 
-  // default costructor
+  // default constructor
   General_polygon_set_on_surface_2() : Base()
   {}
 
