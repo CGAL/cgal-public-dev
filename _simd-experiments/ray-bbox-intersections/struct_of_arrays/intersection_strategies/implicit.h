@@ -24,10 +24,46 @@ namespace implicit {
     return (max >= min);
   }
 
+  inline bool intersect(const BBox<const double *>& bbox, const Ray<double> &ray) {
+
+    // Determine bounds x, y, and z
+    double xmin = (*(bbox.bounds()[ray.sign().x()].x()) - ray.origin().x()) * ray.inv_direction().x();
+    double xmax = (*(bbox.bounds()[1 - ray.sign().x()].x()) - ray.origin().x()) * ray.inv_direction().x();
+    double ymin = (*(bbox.bounds()[ray.sign().y()].y()) - ray.origin().y()) * ray.inv_direction().y();
+    double ymax = (*(bbox.bounds()[1 - ray.sign().y()].y()) - ray.origin().y()) * ray.inv_direction().y();
+    double zmin = (*(bbox.bounds()[ray.sign().z()].z()) - ray.origin().z()) * ray.inv_direction().z();
+    double zmax = (*(bbox.bounds()[1 - ray.sign().z()].z()) - ray.origin().z()) * ray.inv_direction().z();
+
+    // Determine the bounds of the overlapping region
+    double min = std::max({xmin, ymin, zmin});
+    double max = std::min({xmax, ymax, zmax});
+
+    // The ray intercepts if this region overlaps with the interval provided
+    return (max >= min);
+  }
+
+  inline bool intersect(BBox<std::reference_wrapper<const double>> bbox, const Ray<double> &ray) {
+
+    // Determine bounds x, y, and z
+    double xmin = (bbox.bounds()[ray.sign().x()].x() - ray.origin().x()) * ray.inv_direction().x();
+    double xmax = (bbox.bounds()[1 - ray.sign().x()].x() - ray.origin().x()) * ray.inv_direction().x();
+    double ymin = (bbox.bounds()[ray.sign().y()].y() - ray.origin().y()) * ray.inv_direction().y();
+    double ymax = (bbox.bounds()[1 - ray.sign().y()].y() - ray.origin().y()) * ray.inv_direction().y();
+    double zmin = (bbox.bounds()[ray.sign().z()].z() - ray.origin().z()) * ray.inv_direction().z();
+    double zmax = (bbox.bounds()[1 - ray.sign().z()].z() - ray.origin().z()) * ray.inv_direction().z();
+
+    // Determine the bounds of the overlapping region
+    double min = std::max({xmin, ymin, zmin});
+    double max = std::min({xmax, ymax, zmax});
+
+    // The ray intercepts if this region overlaps with the interval provided
+    return (max >= min);
+  }
+
   template<typename T>
   void intersect(const VBBox<T> &vbbox, const Ray<T> &ray, std::vector<bool> &results) {
     for (std::size_t i = 0; i < vbbox.min().x().size(); ++i)
-      results.push_back(intersect(vbbox, ray, i));
+      results.push_back(intersect(vbbox.getr(i), ray));
   }
 
 }

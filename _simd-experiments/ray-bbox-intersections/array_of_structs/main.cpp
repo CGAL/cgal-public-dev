@@ -23,7 +23,7 @@ using std::chrono::milliseconds;
 int main() {
 
 
-  long N = 3742217;
+  long N = 1000; // 3742217;
   long R = 100;
 
   // Load test data
