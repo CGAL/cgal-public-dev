@@ -12,7 +12,12 @@ struct VBBox : public BBox<std::vector<T>> {
 public:
 
   explicit VBBox(const std::vector<BBox<T>> &boxes) :
-  BBox<std::vector<T>>({{}, {}, {}}, {{}, {}, {}}) {
+          BBox<std::vector<T>>({{},
+                                {},
+                                {}},
+                               {{},
+                                {},
+                                {}}) {
 
     std::vector<Vector3<T>> mins, maxs;
 
@@ -32,6 +37,21 @@ public:
       this->_bounds[1].y().push_back(v.y());
       this->_bounds[1].z().push_back(v.z());
     }
+  }
+
+  BBox<const T *> getp(std::size_t i) const {
+    return {Vector3<const T *>{&(this->min().x()[i]), &(this->min().y()[i]), &(this->min().z()[i])},
+            Vector3<const T *>{&(this->max().x()[i]), &(this->max().y()[i]), &(this->max().z()[i])}};
+  }
+
+  BBox<std::reference_wrapper<const T>> getr(std::size_t i) const {
+    return {Vector3<std::reference_wrapper<const T>>{std::cref(this->min().x()[i]),
+                                                     std::cref(this->min().y()[i]),
+                                                     std::cref(this->min().z()[i])},
+            Vector3<std::reference_wrapper<const T>>{std::cref(this->max().x()[i]),
+                                                     std::cref(this->max().y()[i]),
+                                                     std::cref(this->max().z()[i])}
+    };
   }
 };
 

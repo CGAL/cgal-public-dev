@@ -11,7 +11,7 @@ protected:
   Vector3<T> _origin, _direction;
 
   Vector3<T> _inv_direction{0, 0, 0};
-  Vector3<short> _sign{0, 0, 0};
+  Vector3<int> _sign{0, 0, 0};
 
 public:
 
@@ -33,7 +33,7 @@ public:
   const Vector3<T> &origin() const { return _origin; }
   const Vector3<T> &direction() const { return _direction; }
   const Vector3<T> &inv_direction() const { return _inv_direction; }
-  const Vector3<short> &sign() const { return _sign; }
+  const Vector3<int> &sign() const { return _sign; }
 
   bool operator==(const Ray &other) const {
     return other.direction() == this->direction() &&
