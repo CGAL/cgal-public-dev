@@ -44,11 +44,6 @@ int main() {
   // Convert test data to vector format
   auto vqueries = pack_queries(queries);
 
-  std::cout << vqueries.size() << std::endl;
-  for (const VQuery<double> &q : vqueries)
-    std::cout << q.vbox.min().x().size() << std::endl;
-
-
   std::vector<double> explicit_times, implicit_times;
 
   for (int i = 0; i < R; ++i) {
@@ -65,10 +60,12 @@ int main() {
       implicit_times.push_back(time([&] {
         implicit::intersect(query.vbox, query.ray, implicit_results);
       }));
+
     }
 
     // Check results for correctness
-    // TODO
+    if (implicit_results != explicit_results)
+      throw std::logic_error("Incorrect results");
 
     std::cout << "\tHit-rate: "
               << std::accumulate(implicit_results.begin(), implicit_results.end(), 0.0) * 100.0 /
