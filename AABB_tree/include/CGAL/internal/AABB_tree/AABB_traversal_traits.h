@@ -263,6 +263,17 @@ public:
     return m_traits.do_intersect_object()(query, node.bbox());
   }
 
+#ifdef FANOUT_4
+  void do_intersect(const Query& query, const Node& node, bool& leftleft, bool& leftright, bool& rightleft, bool& rightright) const
+  {
+    std::cout << "Testing 4 grand children" << std::endl;
+    leftleft =  m_traits.do_intersect_object()(query, node.left_child().left_child().bbox());
+    leftright =  m_traits.do_intersect_object()(query, node.left_child().right_child().bbox());
+    rightleft =  m_traits.do_intersect_object()(query, node.right_child().left_child().bbox());
+    rightright =  m_traits.do_intersect_object()(query, node.right_child().right_child().bbox());
+  }
+#endif
+
   bool is_intersection_found() const { return m_is_found; }
 
 private:
