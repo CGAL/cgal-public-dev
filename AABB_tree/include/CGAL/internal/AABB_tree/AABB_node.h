@@ -68,6 +68,11 @@ public:
                  Traversal_traits& traits,
                  const std::size_t nb_primitives) const;
 
+  template<class Traversal_traits, class Query>
+  void traversal4(const Query& query,
+                  Traversal_traits& traits,
+                  const std::size_t nb_primitives) const;
+
 private:
   typedef AABBTraits AABB_traits;
   typedef AABB_node<AABB_traits> Node;
@@ -152,6 +157,72 @@ AABB_node<Tr>::traversal(const Query& query,
   }
 }
 
+#ifdef FANOUT_4
+template<typename Tr>
+template<class Traversal_traits, class Query>
+void
+AABB_node<Tr>::traversal4(const Query& query,
+                         Traversal_traits& traits,
+                         const std::size_t nb_primitives) const
+{
+  if(nb_primitives > 7){
+    bool cont = true;
+    bool leftleft, leftright, rightleft, rightright;
+    traits.do_intersect(query, *this, leftleft, leftright, rightleft, rightright); // this uses xsimd
+    if(leftleft){
+      left_child().left_child().traversal4(query, traits, nb_primitives/4);
+      cont = traits.go_further();
+    }
+
+    if(cont && leftright){
+      left_child().right_child().traversal4(query, traits, nb_primitives/4);
+      cont = traits.go_further();
+    }
+
+    if(cont && rightleft){
+      right_child().left_child().traversal4(query, traits, nb_primitives/4);
+      cont = traits.go_further();
+    }
+
+    if(cont && rightright){
+      right_child().right_child().traversal4(query, traits, nb_primitives/4);
+    }
+  }
+
+
+  // Recursive traversal
+  switch(nb_primitives)
+  {
+  case 2:
+    traits.intersection(query, left_data());
+    if( traits.go_further() )
+    {
+      traits.intersection(query, right_data());
+    }
+    break;
+  case 3:
+    traits.intersection(query, left_data());
+    if( traits.go_further() && traits.do_intersect(query, right_child()) )
+    {
+      right_child().traversal(query, traits, 2);
+    }
+    break;
+  default:
+    if( traits.do_intersect(query, left_child()) )
+    {
+      left_child().traversal(query, traits, nb_primitives/2);
+      if( traits.go_further() && traits.do_intersect(query, right_child()) )
+      {
+        right_child().traversal(query, traits, nb_primitives-nb_primitives/2);
+      }
+    }
+    else if( traits.do_intersect(query, right_child()) )
+    {
+      right_child().traversal(query, traits, nb_primitives-nb_primitives/2);
+    }
+  }
+}
+#endif
 } // end namespace CGAL
 
 #endif // CGAL_AABB_NODE_H
