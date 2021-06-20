@@ -14,6 +14,43 @@
 namespace xsimd {
 
   template<typename T, std::size_t N>
+  inline xsimd::batch_bool<T, N> intersect(const BBox<xsimd::batch<T, N>> &xbbox,
+                                           const Vector3<xsimd::batch<T, N>> &origin,
+                                           const Vector3<xsimd::batch<T, N>> &inv_direction, const Vector3<int> sign) {
+
+    // When the ray is negative, flip the box's bounds
+
+    xsimd::batch<T, N> min_bound_x = (sign.x()) ? xbbox.max().x() : xbbox.min().x();
+    xsimd::batch<T, N> max_bound_x = (!sign.x()) ? xbbox.max().x() : xbbox.min().x();
+
+    xsimd::batch<T, N> min_bound_y = (sign.y()) ? xbbox.max().y() : xbbox.min().y();
+    xsimd::batch<T, N> max_bound_y = (!sign.y()) ? xbbox.max().y() : xbbox.min().y();
+
+    xsimd::batch<T, N> min_bound_z = (sign.z()) ? xbbox.max().z() : xbbox.min().z();
+    xsimd::batch<T, N> max_bound_z = (!sign.z()) ? xbbox.max().z() : xbbox.min().z();
+
+    // Calculate bounds for each axis
+
+    xsimd::batch<T, N> min_x = (min_bound_x - origin.x()) * inv_direction.x();
+    xsimd::batch<T, N> max_x = (max_bound_x - origin.x()) * inv_direction.x();
+
+    xsimd::batch<T, N> min_y = (min_bound_y - origin.y()) * inv_direction.y();
+    xsimd::batch<T, N> max_y = (max_bound_y - origin.y()) * inv_direction.y();
+
+    xsimd::batch<T, N> min_z = (min_bound_z - origin.z()) * inv_direction.z();
+    xsimd::batch<T, N> max_z = (max_bound_z - origin.z()) * inv_direction.z();
+
+    // Consolidate bounds into the segment of intersection
+
+    xsimd::batch<T, N> max = xsimd::min(max_x, xsimd::min(max_y, max_z));
+    xsimd::batch<T, N> min = xsimd::max(min_x, xsimd::max(min_y, min_z));
+
+    // Intersection exists if the segment has non-negative length
+
+    return max >= min;
+  }
+
+  template<typename T, std::size_t N>
   inline xsimd::batch_bool<T, N> intersect(const BBox<xsimd::batch<T, N>> &xbbox, const Ray<T> &ray) {
 
     // When the ray is negative, flip the box's bounds
@@ -55,6 +92,19 @@ namespace xsimd {
     constexpr std::size_t batch_size = xsimd::simd_type<double>::size;
     std::size_t aligned_size = data_size - (data_size % batch_size);
 
+    // Create a broadcasted-batch ray
+    Vector3<xsimd::batch<T, batch_size>> origin{
+            xsimd::batch<T, batch_size>(ray.origin().x()),
+            xsimd::batch<T, batch_size>(ray.origin().y()),
+            xsimd::batch<T, batch_size>(ray.origin().z())
+    };
+    Vector3<xsimd::batch<T, batch_size>> inv_direction{
+            xsimd::batch<T, batch_size>(ray.inv_direction().x()),
+            xsimd::batch<T, batch_size>(ray.inv_direction().y()),
+            xsimd::batch<T, batch_size>(ray.inv_direction().z())
+    };
+    Vector3<int> sign = ray.sign();
+
     // Load each batch from the vectorized box type
     for (std::size_t i = 0; i < aligned_size; i += batch_size) {
 
@@ -72,7 +122,7 @@ namespace xsimd {
       auto box = BBox(min, max);
 
       // Perform intersection tests for that batch, save the results to the output array
-      auto result = intersect(box, ray);
+      auto result = intersect(box, origin, inv_direction, sign);
 
       // Add results to output
       // TODO: Is there a faster way to save the results?
