@@ -11,5 +11,5 @@ add_executable(array_of_structs
 add_executable(struct_of_arrays
         struct_of_arrays/main.cpp)
 
-add_executable(array_of_batched_structs
-        array_of_batched_structs/main.cpp)
+add_executable(array_of_structs_of_arrays
+        array_of_structs_of_arrays/main.cpp)
