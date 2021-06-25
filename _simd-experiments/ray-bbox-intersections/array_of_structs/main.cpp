@@ -88,6 +88,9 @@ int main() {
   std::cout << std::endl;
   std::cout << "{| class=\"wikitable\"" << std::endl;
   std::cout << "|+ Time to Complete " << N << " Intersection Tests" << std::endl;
+  std::cout << "|-" << std::endl;
+  std::cout << "! Implementation !! Time" << std::endl;
+  std::cout << "|-" << std::endl;
   std::cout << "| Smits' Method || "
             << std::accumulate(smits_method_times.begin(), smits_method_times.end(), 0.0) / (double) R
             << " ms"

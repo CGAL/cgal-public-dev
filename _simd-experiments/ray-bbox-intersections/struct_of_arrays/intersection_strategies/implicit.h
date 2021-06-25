@@ -3,6 +3,8 @@
 
 #include <iostream>
 
+#include "../vbbox.h"
+
 namespace implicit {
 
   template<typename T>
