@@ -1,5 +1,4 @@
-#ifndef RAY_BBOX_INTERSECTIONS_ARRAY_OF_STRUCTS_XSIMD_H
-#define RAY_BBOX_INTERSECTIONS_ARRAY_OF_STRUCTS_XSIMD_H
+#pragma once
 
 #include "../../ray.h"
 #include "../vbbox.h"
@@ -136,5 +135,3 @@ namespace xsimd {
       results.push_back(implicit::intersect(vbbox.getr(i), ray));
   }
 }
-
-#endif //RAY_BBOX_INTERSECTIONS_ARRAY_OF_STRUCTS_XSIMD_H

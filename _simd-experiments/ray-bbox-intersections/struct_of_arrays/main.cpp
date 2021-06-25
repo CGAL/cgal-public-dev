@@ -76,6 +76,9 @@ int main() {
   std::cout << std::endl;
   std::cout << "{| class=\"wikitable\"" << std::endl;
   std::cout << "|+ Time to Complete " << N << " Intersection Tests" << std::endl;
+  std::cout << "|-" << std::endl;
+  std::cout << "! Implementation !! Time" << std::endl;
+  std::cout << "|-" << std::endl;
   std::cout << "| Explicit SIMD || "
             << std::accumulate(explicit_times.begin(), explicit_times.end(), 0.0) / (double) R
             << " ms"
