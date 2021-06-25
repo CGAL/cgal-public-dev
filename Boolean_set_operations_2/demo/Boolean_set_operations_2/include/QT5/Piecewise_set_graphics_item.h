@@ -36,10 +36,8 @@ class Piecewise_set_graphics_item :
 {
   //Gps_traits class contains traits on which the operations are going to be
   // conducted
-
   //general polygon set
   typedef Piecewise_set_        Piecewise_set;
-
   typedef Draw_piece_           Draw_piece;
   typedef Piece_bbox_           Piece_bbox;
 
@@ -49,12 +47,12 @@ class Piecewise_set_graphics_item :
   // base is just used for initializing Piecewise_region_graphics_item no use
   // of it in the current class
   typedef Piecewise_region_graphics_item<Gps_traits, Draw_piece, Piece_bbox>
-                                Base;
+                                         Base;
 
   //a container for polygon with holes
   typedef std::vector<Region> Region_vector;
 
-  //an itertor for polygon with holes container
+  //an iterator for polygon with holes container
   typedef typename Region_vector::const_iterator Region_const_iterator;
 
 public:

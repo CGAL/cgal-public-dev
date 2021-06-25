@@ -28,7 +28,8 @@
 #include "QT5/Piecewise_graphics_item_base.h"
 
 using namespace std;
-//This class is used by Graphics_view_circular_polygon and Graphics_view_linear_polygon. It helps them in drawing the outer boundary of a set of polygon_with_holes. It helps in GUI
+//This class is used by Graphics_view_circular_polygon and Graphics_view_linear_polygon.
+// It helps them in drawing the outer boundary of a set of polygon_with_holes. It helps in GUI
 
 namespace CGAL {
 namespace Qt {
@@ -83,7 +84,6 @@ protected:
 protected:
   //vector of Gps_traits::Curves_2
   Boundary_pieces* m_boundary;
-
   Draw_piece m_piece_drawer;
   Piece_bbox m_piece_BBox;
 };

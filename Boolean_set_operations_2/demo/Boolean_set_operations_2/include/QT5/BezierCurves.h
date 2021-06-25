@@ -26,14 +26,15 @@
 #include "Typedefs.h"
 
 #include <CGAL/value_type_traits.h>
-#include "QT5/BoundaryPiecesGraphicsItem.h"
+#include <CGAL/Arr_Bezier_curve_traits_2.h>
 #include <CGAL/Qt/Converter.h>
+
+#include "QT5/BoundaryPiecesGraphicsItem.h"
 #include "QT5/PiecewiseSetGraphicsItem.h"
 
 #define USE_CLIPPING
 
 namespace CGAL {
-
 namespace Qt {
 
 struct Bezier_helper
@@ -214,12 +215,12 @@ struct Bezier_bbox
   {
     return CGAL::bbox_2(aBC.control_points_begin(), aBC.control_points_end());
   }
-} ;
+};
 
 struct Bezier_X_monotone_bbox
 {
   template<class Bezier_X_monotone_curve>
-  Bbox_2 operator()( Bezier_X_monotone_curve const& aBXMC ) const 
+  CGAL::Bbox_2 operator()( Bezier_X_monotone_curve const& aBXMC ) const
   {
     typedef typename Bezier_X_monotone_curve::Rat_kernel::Point_2 Rat_point_2 ;
     std::vector<Rat_point_2> lQ ;
@@ -231,13 +232,14 @@ struct Bezier_X_monotone_bbox
 struct Draw_bezier_curve
 {
   template<class Bezier_curve, class Path>
-  void operator()( Bezier_curve const& aBC, Path& aPath, int aIdx ) const 
+  void operator()
+  ( Bezier_curve const& aBC, Path& aPath, int aIdx ) const
   {
     typedef typename Bezier_curve::Bounding_traits::NT BoundNT ;
     typedef typename Bezier_curve::Rat_kernel::Point_2 Rat_point_2 ;
         
     typedef std::vector<Rat_point_2> Rat_point_vector ;
-        
+
     typedef Simple_cartesian<double> Linear_kernel ;
        
     typedef Qt::Converter<Linear_kernel> Converter ;
@@ -339,7 +341,6 @@ struct Draw_bezier_X_monotone_curve
     }
     else
     {
-      
       Linear_point_vector lSample ;
       
       Bezier_helper::sample_X_monotone_curve(aBXMC,true,std::back_inserter(lSample), BoundNT(1e-4) );
@@ -391,47 +392,72 @@ struct Draw_bezier_X_monotone_curve
 #endif
 
 template<class Bezier_boundary_pieces>
-class Bezier_boundary_pieces_graphics_item : public Boundary_pieces_graphics_item_bezier<Bezier_boundary_pieces,Draw_bezier_curve,Bezier_bbox>
+class Bezier_boundary_pieces_graphics_item :
+        public Boundary_pieces_graphics_item_bezier<Bezier_boundary_pieces,
+                                                    Draw_bezier_curve,Bezier_bbox>
 {
-  typedef Boundary_pieces_graphics_item_bezier<Bezier_boundary_pieces,Draw_bezier_curve,Bezier_bbox> Base ;
-  
+  typedef Boundary_pieces_graphics_item_bezier<Bezier_boundary_pieces,
+                                               Draw_bezier_curve,Bezier_bbox> Base ;
 public :
-
-  Bezier_boundary_pieces_graphics_item( Bezier_boundary_pieces* aPieces ) : Base(aPieces) {}
+  Bezier_boundary_pieces_graphics_item( Bezier_boundary_pieces* aPieces ) :
+                                        Base(aPieces) {}
 } ;
 
+
 template<class Bezier_boundary>
-class Bezier_boundary_graphics_item : public Piecewise_boundary_graphics_item_bezier<Bezier_boundary,Draw_bezier_X_monotone_curve,Bezier_X_monotone_bbox>
+class Bezier_boundary_graphics_item :
+        public Piecewise_boundary_graphics_item_bezier<Bezier_boundary,
+                                                       Draw_bezier_X_monotone_curve,Bezier_X_monotone_bbox>
 {
-  typedef Piecewise_boundary_graphics_item_bezier<Bezier_boundary,Draw_bezier_X_monotone_curve,Bezier_X_monotone_bbox> Base ;
+  typedef Piecewise_boundary_graphics_item_bezier<Bezier_boundary,Draw_bezier_X_monotone_curve,
+                                                  Bezier_X_monotone_bbox> Base ;
   
 public :
 
   Bezier_boundary_graphics_item( Bezier_boundary* aBoundary ) : Base(aBoundary) {}
-} ;
+};
 
 template<class Bezier_region>
-class Bezier_region_graphics_item : public Piecewise_region_graphics_item_bezier<Bezier_region,Draw_bezier_X_monotone_curve,Bezier_X_monotone_bbox>
+class Bezier_region_graphics_item :
+        public Piecewise_region_graphics_item_bezier<Bezier_region,
+                                                     Draw_bezier_X_monotone_curve,
+                                                     Bezier_X_monotone_bbox>
 {
-
   typedef Piecewise_region_graphics_item_bezier<Bezier_region,Draw_bezier_X_monotone_curve,Bezier_X_monotone_bbox> Base ;
-  
 public:
-
-  Bezier_region_graphics_item(Bezier_region* aRegion ) : Base(aRegion) {}  
-} ;
+  Bezier_region_graphics_item(Bezier_region* aRegion ) : Base(aRegion) {}
+};
 
 template<class Bezier_set>
-class Bezier_set_graphics_item : public Piecewise_set_graphics_item_bezier<Bezier_set,Draw_bezier_X_monotone_curve,Bezier_X_monotone_bbox>
+class Bezier_set_graphics_item :
+        public Piecewise_set_graphics_item_bezier<Bezier_set,
+                                                  Draw_bezier_X_monotone_curve,
+                                                  Bezier_X_monotone_bbox>
 {
-
-  typedef Piecewise_set_graphics_item_bezier<Bezier_set,Draw_bezier_X_monotone_curve,Bezier_X_monotone_bbox> Base ;
-  
+  typedef Piecewise_set_graphics_item_bezier<Bezier_set,
+                                             Draw_bezier_X_monotone_curve,
+                                             Bezier_X_monotone_bbox> Base ;
 public:
-
   Bezier_set_graphics_item(Bezier_set* aSet) : Base(aSet) {}
-} ;
+};
 
+/*
+template <typename Bezier_set, typename Gps_traits>
+class Bezier_set_graphics_item :
+    public Piecewise_set_graphics_item_bezier<Bezier_set, Gps_traits,
+                                              Draw_bezier_X_monotone_curve,
+                                              Bezier_X_monotone_bbox>
+{
+            //Helper<Circular_traits> HC;
+    typedef Piecewise_set_graphics_item_bezier<Bezier_set, Gps_traits,
+                                               Draw_bezier_X_monotone_curve,
+                                               Bezier_X_monotone_bbox>         Base;
+
+public:
+  Bezier_set_graphics_item(Bezier_set* aSet, Gps_traits Bezier_gps_traits) :
+    Base(aSet ,Bezier_gps_traits)
+  {}
+};*/
 
 } // namespace Qt
 } // namespace CGAL

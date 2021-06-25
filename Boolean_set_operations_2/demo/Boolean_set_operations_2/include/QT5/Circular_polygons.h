@@ -155,14 +155,13 @@ struct Draw_circular_X_monotone_curve {
 
 struct Draw_circular_curve {
   template <typename Circle_segment_2, typename Path>
-  void operator()(Circle_segment_2 const& curve, Path& aPath, int aIdx) const
+  void operator()
+  (Circle_segment_2 const& curve, Path& aPath, int aIdx) const
   {
     //typedef Simple_cartesian<double> Circular_Linear_kernel;
-
     //typedef Point_2<Circular_Linear_kernel> Circular_Linear_point;
 
     typedef Qt::Converter<Kernel> Converter;
-
     Converter convert;
 
     if (curve.is_circular()) {
@@ -235,32 +234,27 @@ class Circular_boundary_pieces_graphics_item :
                                         Draw_circular_curve,Circular_bbox> Base;
 public :
   Circular_boundary_pieces_graphics_item(Circular_boundary_pieces* aPieces) :
-    Base(aPieces)
-  {}
+                                         Base(aPieces) {}
 };
+
 /*
 template<class Circular_boundary>
 class Circular_boundary_graphics_item : public Piecewise_boundary_graphics_item<Circular_boundary,Draw_circular_X_monotone_curve,Circular_X_monotone_bbox>
 {
   typedef Piecewise_boundary_graphics_item<Circular_boundary,Draw_circular_X_monotone_curve,Circular_X_monotone_bbox> Base;
-
 public :
-
   Circular_boundary_graphics_item(Circular_boundary* aBoundary) : Base(aBoundary) {}
 };
-*/
-/*
-template<class Circular_region>
-class Circular_region_graphics_item : public Piecewise_region_graphics_item<Circular_region,Draw_circular_X_monotone_curve,Circular_X_monotone_bbox>
+
+template<class Circular_set>
+class Circular_set_graphics_item : public Piecewise_region_graphics_item<Circular_set,Draw_circular_X_monotone_curve,Circular_X_monotone_bbox>
 {
-
-  typedef Piecewise_region_graphics_item<Circular_region,Draw_circular_X_monotone_curve,Circular_X_monotone_bbox> Base;
-
+  typedef Piecewise_region_graphics_item<Circular_set,Draw_circular_X_monotone_curve,Circular_X_monotone_bbox> Base;
 public:
-
-  Circular_region_graphics_item(Circular_region* aRegion) : Base(aRegion) {}
+  Circular_set_graphics_item(Circular_set aSet) : Base(aSet) {}
 };
 */
+
 template <typename Circular_set, typename Gps_traits>
 class Circular_set_graphics_item :
     public Piecewise_set_graphics_item<Circular_set, Gps_traits,
@@ -274,8 +268,8 @@ class Circular_set_graphics_item :
 
 public:
 
-  Circular_set_graphics_item(Circular_set* aSet,Gps_traits Circular_traits) :
-    Base(aSet, Circular_traits)
+  Circular_set_graphics_item(Circular_set* aSet, Gps_traits Circular_traits) :
+    Base(aSet ,Circular_traits)
   {}
 };
 

@@ -82,8 +82,7 @@ protected:
   virtual void draw_model (QPainterPath& aPath)
   { if (m_region) draw_region(*m_region,aPath); }
 
-  void update_region_bbox(Piecewise_region const& aRegion,
-                          Piecewise_graphics_item_base::Bbox_builder& aBboxBuilder);
+  void update_region_bbox(Piecewise_region const& aRegion,Piecewise_graphics_item_base::Bbox_builder& aBboxBuilder);
   void draw_region(Piecewise_region const& aRegion, QPainterPath& aPath);
 
 protected:

@@ -120,21 +120,15 @@ template<class Linear_boundary>
 class Linear_boundary_graphics_item : public Piecewise_boundary_graphics_item<Linear_boundary,Draw_linear_X_monotone_curve,Linear_X_monotone_bbox>
 {
   typedef Piecewise_boundary_graphics_item<Linear_boundary,Draw_linear_X_monotone_curve,Linear_X_monotone_bbox> Base;
-
 public :
-
   Linear_boundary_graphics_item(Linear_boundary* aBoundary) : Base(aBoundary) {}
 };
-*/
-/*
+
 template<class Linear_region>
 class Linear_region_graphics_item : public Piecewise_region_graphics_item<Linear_region,Draw_linear_X_monotone_curve,Linear_X_monotone_bbox>
 {
-
   typedef Piecewise_region_graphics_item<Linear_region,Draw_linear_X_monotone_curve,Linear_X_monotone_bbox> Base;
-
 public:
-
   Linear_region_graphics_item(Linear_region* aRegion) : Base(aRegion) {}
 };
 */

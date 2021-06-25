@@ -23,42 +23,41 @@
 #ifndef CGAL_QT_PIECEWISE_BOUNDARY_GRAPHICS_ITEM_BEZIER_H
 #define CGAL_QT_PIECEWISE_BOUNDARY_GRAPHICS_ITEM_BEZIER_H
 
+#include <CGAL/iterator.h>
 #include "QT5/PiecewiseGraphicsItemBase.h"
+#include "Typedefs.h"
 
 namespace CGAL {
-
 namespace Qt {
 
-template <class Piecewise_boundary_, class Draw_piece_, class Piece_bbox_>
+template <class Piecewise_boundary_  , class Draw_piece_, class Piece_bbox_>
 class Piecewise_boundary_graphics_item_bezier : public Piecewise_graphics_item_base_bezier
 {
   typedef Piecewise_boundary_ Piecewise_boundary ;
+ // typedef typename Gps_traits::Polygon_2 Piecewise_boundary;
   typedef Draw_piece_         Draw_piece ;
   typedef Piece_bbox_         Piece_bbox ;
   
   typedef typename Piecewise_boundary::Curve_const_iterator Curve_piece_const_iterator ;
+  //typedef typename Gps_traits::Curve_const_iterator  Curve_piece_const_iterator;
 
 public:
 
   Piecewise_boundary_graphics_item_bezier( Piecewise_boundary* aBoundary
-                                  , Draw_piece   const& aPieceDrawer = Draw_piece()
-                                  , Piece_bbox   const& aPieceBBox   = Piece_bbox()
-                                  )
+                                         , Draw_piece   const& aPieceDrawer = Draw_piece()
+                                         , Piece_bbox   const& aPieceBBox   = Piece_bbox())
     :
     mBoundary   (aBoundary)
    ,mPieceDrawer(aPieceDrawer)
    ,mPieceBBox  (aPieceBBox)
-  {}  
+  {}
 
 public:
-
   virtual bool isModelEmpty() const { return !mBoundary || mBoundary->is_empty() ; }
-  
+
 protected:
-  
-  Piecewise_boundary_graphics_item_bezier( Draw_piece const& aPieceDrawer = Draw_piece() 
-                                  , Piece_bbox const& aPieceBBox   = Piece_bbox()
-                                  )
+  Piecewise_boundary_graphics_item_bezier( Draw_piece const& aPieceDrawer = Draw_piece()
+                                         , Piece_bbox const& aPieceBBox   = Piece_bbox())
     :
     mBoundary   (0)
    ,mPieceDrawer(aPieceDrawer)
@@ -67,40 +66,40 @@ protected:
   
   virtual void update_bbox( Bbox_builder& aBboxBuilder)
   {
-    if ( mBoundary ) 
-      update_boundary_bbox(*mBoundary, aBboxBuilder ) ;
+    if ( mBoundary ) update_boundary_bbox(*mBoundary, aBboxBuilder ) ;
   }    
 
   virtual void draw_model ( QPainterPath& aPath ) 
   {
-    if ( mBoundary )
-      draw_boundary(*mBoundary,aPath);  
+    if ( mBoundary ) draw_boundary(*mBoundary,aPath);
   }
 
-  void update_boundary_bbox( Piecewise_boundary const& aBoundary, Bbox_builder& aBboxBuilder )
+  void update_boundary_bbox( Piecewise_boundary const& aBoundary,
+                             Bbox_builder& aBboxBuilder )
   {
     for( Curve_piece_const_iterator pit = aBoundary.curves_begin(); pit != aBoundary.curves_end(); ++ pit )
       aBboxBuilder.add(mPieceBBox(*pit));
   }
   
-  void draw_boundary( Piecewise_boundary const& aBoundary, QPainterPath& aPath ) ;
+  void draw_boundary(Piecewise_boundary const& aBoundary,
+                     QPainterPath& aPath ) ;
   
 protected:
 
   Piecewise_boundary* mBoundary;
+ // Gps_traits*         mTraits;
   Draw_piece          mPieceDrawer ;
   Piece_bbox          mPieceBBox ;    
 };
 
 template <class B, class D, class P>
-void Piecewise_boundary_graphics_item_bezier<B,D,P>::draw_boundary( Piecewise_boundary const& aBoundary, QPainterPath& aPath )
+void Piecewise_boundary_graphics_item_bezier<B,D,P>::
+        draw_boundary( Piecewise_boundary const& aBoundary, QPainterPath& aPath )
 {
   int c = 0 ;
   for( Curve_piece_const_iterator pit = aBoundary.curves_begin(); pit != aBoundary.curves_end(); ++ pit, ++c )
     mPieceDrawer(*pit,aPath,c);
 }
-
-
 } // namespace Qt
 } // namespace CGAL
 

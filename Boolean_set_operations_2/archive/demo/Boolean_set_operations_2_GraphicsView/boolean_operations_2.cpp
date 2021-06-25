@@ -164,7 +164,6 @@ struct Rep_base
 } ;
 
 
-
 template<class GI_, class Set_>
 class Rep : public Rep_base
 {
@@ -297,7 +296,6 @@ class Bezier_rep : public Rep<Bezier_GI, Bezier_polygon_set>
   typedef Rep<Bezier_GI, Bezier_polygon_set> Base ;
 
 public:
-
 
   Bezier_rep () : Base() {}
 
@@ -1343,25 +1341,18 @@ void MainWindow::processInput(CGAL::Object o )
 void MainWindow::on_actionIntersection_triggered()
 {
   bool lDone = false ;
-
   QCursor old = this->cursor();
   this->setCursor(Qt::WaitCursor);
 
   if ( !blue_set().is_empty() && !red_set().is_empty() )
   {
-    result_set().assign( red_set() ) ;
+    result_set().assign   (red_set()) ;
     result_set().intersect(blue_set());
     lDone = true ;
   }
 
   this->setCursor(old);
-
-  if ( lDone )
-  {
-    //SetViewBlue(false); SetViewRed(false); SetViewResult(true);
-
-    modelChanged();
-  }
+  if(lDone)  modelChanged();
 }
 
 void MainWindow::on_actionUnion_triggered()

@@ -30,23 +30,37 @@ namespace CGAL {
 namespace Qt {
 
 template <class Piecewise_region_, class Draw_piece_, class Piece_bbox_>
-class Piecewise_region_graphics_item_bezier : public Piecewise_boundary_graphics_item_bezier< typename Piecewise_region_::General_polygon_2, Draw_piece_, Piece_bbox_ > 
+class Piecewise_region_graphics_item_bezier :
+        public Piecewise_boundary_graphics_item_bezier< typename Piecewise_region_::General_polygon_2,
+                                                                 Draw_piece_,
+                                                                 Piece_bbox_ >
+        /*public Piecewise_boundary_graphics_item_bezier<Gps_traits, Draw_piece_,
+                                                Piece_bbox_>*/
+
 {
-  typedef Piecewise_boundary_graphics_item_bezier< typename Piecewise_region_::General_polygon_2, Draw_piece_, Piece_bbox_> Base ;
+  typedef Piecewise_boundary_graphics_item_bezier< typename Piecewise_region_::General_polygon_2,
+                                                            Draw_piece_, Piece_bbox_>
+                                                            Base ;
+
+  /*typedef Piecewise_boundary_graphics_item_bezier<Gps_traits, Draw_piece_, Piece_bbox_>
+                                           Base;*/
+//  typedef typename Gps_traits::Polygon_with_holes_2 Piecewise_region;
   
   typedef Piecewise_region_ Piecewise_region ;
   typedef Draw_piece_       Draw_piece ;
   typedef Piece_bbox_       Piece_bbox ;
   
-  typedef typename Piecewise_region::Hole_const_iterator Hole_const_itertator ;
+  typedef typename Piecewise_region::Hole_const_iterator Hole_const_iterator ;
+//  typedef typename Gps_traits::Hole_const_iterator Hole_const_iterator;
   
 public:
 
-  Piecewise_region_graphics_item_bezier( Piecewise_region* aRegion, Draw_piece const& aPieceDrawer = Draw_piece(), Piece_bbox const& aPieceBBox = Piece_bbox() )
+  Piecewise_region_graphics_item_bezier(
+          Piecewise_region* aRegion, Draw_piece const& aPieceDrawer = Draw_piece(), Piece_bbox const& aPieceBBox = Piece_bbox() )
     :
      Base(aPieceDrawer, aPieceBBox)
     ,mRegion(aRegion)
-  {}  
+  {}
 
 public:
 
@@ -77,6 +91,7 @@ protected:
 protected:
 
   Piecewise_region* mRegion;
+   // Gps_traits* m_traits;
 };
 
 template <class R, class D, class P>
@@ -84,7 +99,7 @@ void Piecewise_region_graphics_item_bezier<R,D,P>::update_region_bbox( Piecewise
 {
   this->update_boundary_bbox( aRegion.outer_boundary(), aBboxBuilder ) ;//"This" added for qt5 version !
   
-  for( Hole_const_itertator hit = aRegion.holes_begin(); hit != aRegion.holes_end(); ++ hit )
+  for( Hole_const_iterator hit = aRegion.holes_begin(); hit != aRegion.holes_end(); ++ hit )
     this->update_boundary_bbox(*hit,aBboxBuilder);//"This" added for qt5 version !
 }
 
@@ -93,7 +108,7 @@ void Piecewise_region_graphics_item_bezier<R,D,P>::draw_region( Piecewise_region
 {
   this->draw_boundary( aRegion.outer_boundary(), aPath ) ;//This added for qt5 version !
   
-  for( Hole_const_itertator hit = aRegion.holes_begin(); hit != aRegion.holes_end(); ++ hit )
+  for( Hole_const_iterator hit = aRegion.holes_begin(); hit != aRegion.holes_end(); ++ hit )
     this->draw_boundary(*hit,aPath);//"This" added for qt5 version !
 }
 

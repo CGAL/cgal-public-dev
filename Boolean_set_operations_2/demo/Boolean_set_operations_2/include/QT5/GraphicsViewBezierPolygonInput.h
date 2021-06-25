@@ -25,6 +25,9 @@
 #define CGAL_QT_GRAPHICS_VIEW_BEZIER_POLYGON_INPUT_H
 
 #include <CGAL/auto_link/Qt.h>
+#include <CGAL/Qt/GraphicsViewInput.h>
+#include <CGAL/Qt/Converter.h>
+#include <CGAL/Arr_Bezier_curve_traits_2.h>
 
 #include <QPolygonF>
 #include <QPointF>
@@ -32,12 +35,10 @@
 #include <QGraphicsScene>
 #include <QGraphicsSceneMouseEvent>
 
-#include <CGAL/Qt/GraphicsViewInput.h>
-#include <CGAL/Qt/Converter.h>
+
 #include "QT5/BezierCurves.h"
 
 namespace CGAL {
-
 namespace Qt {
 
   template <class Traits_>
@@ -46,12 +47,12 @@ namespace Qt {
   public:
 
     typedef Traits_ Traits ;
-    
-    typedef CGAL::Gps_traits_2<Traits> Bezier_gps_traits;
-    
+    typedef CGAL::Gps_traits_2<Traits>                    Bezier_gps_traits;
+   // typedef CGAL::Gps_traits_2<Traits>                    Bezier_traits;
     typedef typename Traits::Curve_2                      Bezier_curve;
     typedef typename Traits::X_monotone_curve_2           Bezier_X_monotone_curve;
     typedef typename Bezier_gps_traits::General_polygon_2 Bezier_polygon;
+   // typedef typename Bezier_traits::General_polygon_2     Bezier_polygon;
     typedef typename Traits::Rat_kernel::Vector_2         Vector ;
     typedef typename Traits::Rat_kernel::Point_2          Point ;
     
@@ -71,7 +72,7 @@ namespace Qt {
       , mHandlePen       ( QColor(0,0,255) )
       , mBezierGI        ( 0               )
       , m_bound_rect     ( true            )
-      , m_last_bezier  ( false           )
+      , m_last_bezier    ( false           )
       , m_last           ( false           )
     {
       mOngoingPieceGI = new GI(&mOngoingPieceCtr) ;
@@ -97,9 +98,7 @@ namespace Qt {
       mScene->addItem(mBezierGI);
     }
     
-    ~GraphicsViewBezierPolygonInput()
-    {
-    }
+    ~GraphicsViewBezierPolygonInput(){}
     
     bool eventFilter(QObject *obj, QEvent *aEvent)
     {
@@ -157,6 +156,8 @@ namespace Qt {
             mState   = HandleOngoing;
             rHandled = true;
             break;
+
+            default: break; //!todo handle default case
         }
       }
 
@@ -180,7 +181,6 @@ namespace Qt {
     bool mouseMoveEvent(QGraphicsSceneMouseEvent *aEvent)
     {
       bool rHandled = false ;
-      
       Point lP = cvt(aEvent->scenePos());
       
       switch (mState)
@@ -250,6 +250,8 @@ namespace Qt {
             mState   = PieceEnded;
             rHandled = true;
             break;
+
+            default: break; //!todo add default case handling
         }
       }
       else if ( aEvent->button() == ::Qt::RightButton )
@@ -268,9 +270,10 @@ namespace Qt {
             ReStart();
             rHandled = true;
             break;
+
+            default: break; //!todo handle default case
         }    
       }
-      
       return rHandled ;
     }
     
@@ -290,7 +293,6 @@ namespace Qt {
         mState   = Start;
         rHandled = true;
       }
-
       return rHandled ;
     }
 
@@ -299,7 +301,7 @@ namespace Qt {
   public:
 
     Bezier_curve const* ongoing_piece() const { return mOngoingPieceCtr.size() == 1 ? &mOngoingPieceCtr[0] : NULL ; }
-    
+
     void ReStart()
     {
       mPrevH0 = mH0 = mH1 = boost::optional<Point>();
@@ -374,9 +376,9 @@ namespace Qt {
     void UpdateOngoingPiece()
     {
       if ( mOngoingPieceCtr.size() > 0 )
-        mOngoingPieceCtr.clear();
-      mOngoingPieceCtr.push_back(CreatePiece());  
-      mOngoingPieceGI->modelChanged();
+           mOngoingPieceCtr.clear();
+           mOngoingPieceCtr.push_back(CreatePiece());
+           mOngoingPieceGI->modelChanged();
     }      
     
     void CommitOngoingPiece( Point const& aP )
@@ -399,9 +401,10 @@ namespace Qt {
       if ( squared_distance(mP0,aP) >= 9 )
       {
         mH1 = aP ;
-        mHandle1GI->setLine( to_double(mP0.x()), to_double(mP0.y()), to_double(mH1->x()), to_double(mH1->y()));
+        mHandle1GI->setLine( to_double(mP0.x()), to_double(mP0.y()),
+                             to_double(mH1->x()), to_double(mH1->y()));
         mHandle1GI->show();
-        
+
         mH0 = boost::optional<Point>();
         mHandle0GI->hide();
       }
@@ -431,7 +434,6 @@ namespace Qt {
       }
     }
         
-
     void CloseCurrBundary()
     {
       if ( mBezierPolygonPieces.size() > 0 && ongoing_piece()!= NULL  && !m_last_bezier)
@@ -474,10 +476,13 @@ namespace Qt {
         std::vector<CGAL::Object>::const_iterator xoit;
         
         make_x_monotone ( *it, std::back_inserter (x_objs));
-        
+
+        Bezier_X_monotone_curve xcv;
+        xoit = x_objs.begin();
+        CGAL::assign(xcv,*xoit);
+
         for (xoit = x_objs.begin(); xoit != x_objs.end(); ++xoit) 
         {
-          Bezier_X_monotone_curve xcv;
           if (CGAL::assign (xcv, *xoit))
             xcvs.push_back (xcv);
         }    
@@ -545,7 +550,6 @@ namespace Qt {
     }
     
   public:
-  
     QGraphicsScene*    mScene ;
     GI*                mBezierGI ; 
     GI*                mOngoingPieceGI ; 

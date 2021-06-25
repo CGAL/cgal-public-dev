@@ -79,7 +79,7 @@ protected:
     void add (Bbox_2 const& aBbox)
     {
       if (bbox) bbox = *bbox + aBbox;
-      else bbox = aBbox;
+      else      bbox =         aBbox;
     }
     boost::optional<Bbox_2> bbox;
   };

@@ -35,30 +35,32 @@
 #include <QPainter>
 #include <QBrush>
 #include <QPen>
-
+#include "Typedefs.h"
 namespace CGAL {
-
 namespace Qt {
 
 class Piecewise_graphics_item_base_bezier : public GraphicsItem
 {
 protected:
-
+//constructor
   Piecewise_graphics_item_base_bezier() {}
   
 public:
 
   void updateBoundingBox();
-  
+
+//updating the box
   void modelChanged()
   {
     updateBoundingBox();
+    //updates the widget
     update();
   }
   
   QRectF boundingRect() const { return mBounding_rect ; }
   
-  void paint(QPainter* aPainter, const QStyleOptionGraphicsItem* aOption, QWidget* aWidget);
+  void paint(QPainter* aPainter, const QStyleOptionGraphicsItem* aOption,
+             QWidget* aWidget);
   
   const QBrush& brush() const { return mBrush; }
   
@@ -69,16 +71,15 @@ public:
   void setPen(const QPen& aPen) { mPen = aPen; }
 
 protected:
-
+//a converter
   typedef Converter< Simple_cartesian<double> > ToQtConverter;
   
   struct Bbox_builder
   {
     void add ( Bbox_2 const& aBbox ) 
     {
-      if ( bbox )
-           bbox = *bbox + aBbox;
-      else bbox =         aBbox;
+      if ( bbox ) bbox = *bbox + aBbox;
+      else        bbox =         aBbox;
     }
     
     boost::optional<Bbox_2> bbox ;
@@ -86,9 +87,9 @@ protected:
 
   virtual bool isModelEmpty() const = 0 ;
   
-  virtual void draw_model ( QPainterPath& aPath ) = 0 ;
+  virtual void draw_model (QPainterPath& aPath) = 0 ;
   
-  virtual void update_bbox( Bbox_builder& aBBoxBuilder ) = 0 ;
+  virtual void update_bbox(Bbox_builder& aBBoxBuilder) = 0 ;
 
 protected:
 
@@ -98,12 +99,14 @@ protected:
 };
 
 
-void Piecewise_graphics_item_base_bezier::paint( QPainter* aPainter, const QStyleOptionGraphicsItem* aOption, QWidget* aWidget )
+void Piecewise_graphics_item_base_bezier::
+paint( QPainter* aPainter,
+       const QStyleOptionGraphicsItem* /*aOption*/,
+       QWidget* /*aWidget */)
 {
   if ( ! isModelEmpty() )
   {
     QPainterPath lPath ;
-    
     draw_model(lPath);
     
     aPainter->setPen  (mPen );

@@ -48,7 +48,7 @@ public:
   { return !m_boundary || m_boundary->is_empty(); }
 
 protected:
-  //preotected constructor and default
+  //protected constructor and default
   Piecewise_boundary_graphics_item(Draw_piece const& aPieceDrawer = Draw_piece(),
                                    Piece_bbox const& aPieceBBox = Piece_bbox()) :
     m_boundary(0),
@@ -89,6 +89,7 @@ protected:
 };
 
 //for drawing boundary of each polygon
+
 template <class B, class D, class P>
 void Piecewise_boundary_graphics_item<B,D,P>::
 draw_boundary(Piecewise_boundary const& aBoundary, QPainterPath& aPath)

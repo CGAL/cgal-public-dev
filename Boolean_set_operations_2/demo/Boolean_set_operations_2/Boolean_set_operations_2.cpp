@@ -110,8 +110,10 @@
 #include "QT5/MinkowskiSum.h"   //for future supports
 #include "QT5/Circular_polygons.h"
 #include "QT5/Linear_polygons.h"
+#include "QT5/BezierCurves.h"
 #include "QT5/Graphics_view_circular_polygon_input.h"
 #include "QT5/Graphics_view_linear_polygon_input.h"
+#include "QT5/GraphicsViewBezierPolygonInput.h"
 #include "QT5/Graphics_view_minkowski_input.h"
 #include "QT5/General_polygon_2.h"
 #include "QT5/General_polygon_set_2.h"
@@ -121,8 +123,6 @@
 #include "QT5/Gps_traits_2.h"
 #include "QT5/connect_holes.h"
 #include "QT5/Polygon_set_2.h"
-#include "QT5/BezierCurves.h"
-#include "QT5/GraphicsViewBezierPolygonInput.h"
 
 #include "ui_Boolean_set_operations_2.h"
 
@@ -144,8 +144,11 @@ typedef CGAL::Qt::Circular_set_graphics_item<Circular_polygon_set,
                                              Circular_traits>   Circular_GI;
 typedef CGAL::Qt::Linear_set_graphics_item<Linear_polygon_set,
                                              Linear_traits>     Linear_GI;
+
+
+
 //typedef CGAL::Qt::Bezier_set_graphics_item<Bezier_polygon_set,
-//                                           Bezier_gps_traits>       Bezier_GI;
+  //                                         Bezier_traits>      Bezier_GI;
 
 
 // Functions to show errors
@@ -258,11 +261,6 @@ enum {
   BLUE_GROUP, RED_GROUP, BLACK_GROUP, BROWN_GROUP, YELLOW_GROUP,
   MAGENTA_GROUP, AQUA_GROUP,  RESULT_GROUP};
 
-// enum {
-//   COMPLEMENT_OP, INTERSECTION_OP, UNION_OP, DIFFERENCE_OP, SYMMETRIC_DIFFERENCE_OP,
-//   MINKOWSKI_SUM_OP, COPY_OP, MOVE_OP, CLEAR_OP, START_OP};
-
-
 
 //A way to maintain 5 category of polygons namely linear,circular,bezier, polyline(to be added later)
 //enum generates errors so, we will use LINEAR_TYPE = 1 ,CIRCULAR_TYPE = 2 ,BEZIER_TYPE = 3 ,POLYLINE_TYPE = 4 and CONIC_TYPE = 5(Not this year)
@@ -291,7 +289,6 @@ QBrush sBrushes[] = {
 };
 //**************************************
 
-
 //A base call for rep class
 struct Rep_base {
   virtual ~Rep_base() {}
@@ -299,23 +296,22 @@ struct Rep_base {
   virtual int type () const = 0;
 
   virtual CGAL::Qt::GraphicsItem* gi() const = 0;
-  virtual CGAL::Qt::GraphicsItem* gi() = 0;
+  virtual CGAL::Qt::GraphicsItem* gi()       = 0;
 
-  virtual void set_pen(QPen const& aPen) = 0;
-  virtual void set_brush(QBrush const& aBrush) = 0;
+  virtual void set_pen   (QPen   const& aPen)   = 0;
+  virtual void set_brush (QBrush const& aBrush) = 0;
 
   virtual QRectF bounding_rect() const { return gi()->boundingRect(); }
 
   virtual bool is_empty() const = 0;
 
-  virtual void clear() = 0;
-  virtual void complement() = 0;
-  virtual void assign(Rep_base const& aOther) = 0;
-  virtual void intersect(Rep_base const& aOther) = 0;
-  virtual void join(Rep_base const& aOther) = 0;
-  virtual void difference(Rep_base const& aOther) = 0;
+  virtual void clear               ()                       = 0;
+  virtual void complement          ()                       = 0;
+  virtual void assign              (Rep_base const& aOther) = 0;
+  virtual void intersect           (Rep_base const& aOther) = 0;
+  virtual void join                (Rep_base const& aOther) = 0;
+  virtual void difference          (Rep_base const& aOther) = 0;
   virtual void symmetric_difference(Rep_base const& aOther) = 0;
-  //virtual void minkowski_sum_2(Rep_base const& aOther) = 0;
 };
 
 //Class for initializing Rep class.
@@ -323,20 +319,21 @@ struct Rep_base {
 template <typename GI_, typename Set_, typename Gps_traits>
 class Rep : public Rep_base {
 public:
-  typedef GI_  GI;
-  typedef Set_ Set;
+  typedef GI_                    GI;
+  typedef Set_                   Set;
+
   typedef Rep<GI,Set,Gps_traits> Self;
 
   Rep() { m_GI = new GI(&m_set,m_traits); }
 
   Set const& set() const { return m_set; }
-  Set & set() { return m_set; }
+  Set      & set()       { return m_set; }
 
   virtual CGAL::Qt::GraphicsItem* gi() const { return m_GI; }
   virtual CGAL::Qt::GraphicsItem* gi()       { return m_GI; }
 
-  virtual void set_pen(QPen const& aPen) { m_GI->setPen  (aPen);   }
-  virtual void set_brush(QBrush const& aBrush) { m_GI->setBrush(aBrush); }
+  virtual void set_pen   (QPen   const& aPen)   { m_GI->setPen   (aPen);   }
+  virtual void set_brush (QBrush const& aBrush) { m_GI->setBrush (aBrush); }
 
   virtual bool is_empty() const { return m_set.is_empty(); }
 
@@ -425,11 +422,8 @@ public:
     }
   }
 
-  static Self const& cast(Rep_base const& aOther)
-  { return dynamic_cast<Self const&>(aOther); }
-
-  static Self& cast(Rep_base& aOther)
-  { return dynamic_cast<Self&>(aOther); }
+  static Self const& cast(Rep_base const& aOther){ return dynamic_cast<Self const&>(aOther); }
+  static Self      & cast(Rep_base      & aOther){ return dynamic_cast<Self      &>(aOther); }
 
 private:
   //For maintaining all drawing operations
@@ -441,40 +435,38 @@ protected:
   Gps_traits m_traits;
 };
 
-
 //Implementing Bezier's rep class
 template<class GI_, class Set_>
 class Rep_o : public Rep_base
 {
 public:
-
   typedef GI_  GI  ;
   typedef Set_ Set ;
 
   typedef Rep_o<GI,Set> Self ;
 
-  Rep_o() { mGI = new GI(&mSet) ; }
+  Rep_o() { m_GI = new GI(&m_set) ; }
 
-  Set const& set() const { return mSet ; }
-  Set      & set()       { return mSet ; }
+  Set const& set() const { return m_set ; }
+  Set      & set()       { return m_set ; }
 
-  virtual CGAL::Qt::GraphicsItem* gi() const { return mGI; }
-  virtual CGAL::Qt::GraphicsItem* gi()       { return mGI; }
+  virtual CGAL::Qt::GraphicsItem* gi() const { return m_GI; }
+  virtual CGAL::Qt::GraphicsItem* gi()       { return m_GI; }
 
-  virtual void set_pen  ( QPen   const& aPen   ) { mGI->setPen  (aPen);   }
-  virtual void set_brush( QBrush const& aBrush ) { mGI->setBrush(aBrush); }
+  virtual void set_pen  ( QPen   const& aPen   ) { m_GI->setPen  (aPen);   }
+  virtual void set_brush( QBrush const& aBrush ) { m_GI->setBrush(aBrush); }
 
-  virtual bool is_empty() const { return mSet.is_empty() ; }
+  virtual bool is_empty() const { return m_set.is_empty() ; }
 
   virtual void clear()
   {
     try
     {
-      mSet.clear() ;
+      m_set.clear() ;
     }
     catch(...)
     {
-      //show_error("Exception thrown during boolean operation");
+      show_error("Exception thrown during boolean operation clear");
     }
   }
 
@@ -482,11 +474,11 @@ public:
   {
     try
     {
-      mSet.complement();
+      m_set.complement();
     }
     catch(...)
     {
-      //show_error("Exception thrown during boolean operation");
+      show_error("Exception thrown during boolean operation complement");
     }
   }
 
@@ -494,11 +486,11 @@ public:
   {
     try
     {
-      mSet = cast(aOther).mSet;
+      m_set = cast(aOther).m_set;
     }
     catch(...)
     {
-      //show_error("Exception thrown during boolean operation");
+      show_error("Exception thrown during boolean operation assign");
     }
   }
 
@@ -506,23 +498,32 @@ public:
   {
     try
     {
-      mSet.intersection( cast(aOther).mSet);
+      cout<<"in try"<<endl;
+      m_set.symmetric_difference(cast(aOther).m_set);
     }
     catch(...)
     {
-      //show_error("Exception thrown during boolean operation");
+      std::cout<<"in catch"<<endl;
+      show_error("Exception thrown during boolean operation intersect");
     }
   }
 
+/*
+virtual void intersect( Rep_base const& aOther )
+  {
+    cout<<"in try"<<endl;
+    m_set.symmetric_difference(cast(aOther).m_set);
+  }
+ */
   virtual void join( Rep_base const& aOther )
   {
     try
     {
-      mSet.join( cast(aOther).mSet);
+      m_set.join( cast(aOther).m_set);
     }
     catch(...)
     {
-      //show_error("Exception thrown during boolean operation");
+      show_error("Exception thrown during boolean operation union");
     }
   }
 
@@ -530,72 +531,65 @@ public:
   {
     try
     {
-      mSet.difference( cast(aOther).mSet);
+      m_set.difference( cast(aOther).m_set);
     }
     catch(...)
     {
-      //show_error("Exception thrown during boolean operation");
+      show_error("Exception thrown during boolean operation difference");
     }
   }
 
   virtual void symmetric_difference( Rep_base const& aOther )
   {
+    std::cout<<"In old symmetric difference"<<endl;
     try
     {
-      mSet.symmetric_difference( cast(aOther).mSet);
+       std::cout<<"in try"<<endl;
+      m_set.symmetric_difference( cast(aOther).m_set);
     }
     catch(...)
     {
-      //show_error("Exception thrown during boolean operation");
+        std::cout<<"catch"<<endl;
+      show_error("Exception thrown during boolean operation symmetric difference");
     }
   }
   static Self const& cast( Rep_base const& aOther ) { return dynamic_cast<Self const&>(aOther); }
   static Self      & cast( Rep_base      & aOther ) { return dynamic_cast<Self      &>(aOther); }
 
 private:
-
-  GI* mGI;
-  Set mSet ;
-} ;
+  GI* m_GI;
+  Set m_set;
+};
 
 
 //A class for connecting linear polygon GUI and this file
 class Linear_rep : public Rep<Linear_GI, Linear_polygon_set, Linear_traits>
 {
-
     typedef Rep<Linear_GI, Linear_polygon_set, Linear_traits> Base;
 public:
     Linear_rep () : Base() {}
-
     virtual int type() const { return 1; }
 };
 
 //A class for connecting circular polygon GUI and this file
-class Circular_rep : public Rep<Circular_GI, Circular_polygon_set, Circular_traits>
+class Circular_rep : public Rep<Circular_GI, Circular_polygon_set,Circular_traits>
 {
-  typedef Rep<Circular_GI, Circular_polygon_set, Circular_traits> Base;
-
+  typedef Rep<Circular_GI, Circular_polygon_set,Circular_traits> Base;
 public:
   Circular_rep () : Base() {}
-
   virtual int type() const { return 2; }
 };
 
 //A class for connecting bezier polygon GUI and this file
 class Bezier_rep : public Rep_o<Bezier_GI, Bezier_polygon_set>
 {
-  typedef Rep_o<Bezier_GI, Bezier_polygon_set> Base ;
-
+  typedef Rep_o<Bezier_GI, Bezier_polygon_set> Base;
 public:
-
   Bezier_rep () : Base() {}
-
   virtual int type() const { return 3; }
-} ;
+};
 
-
-// a container which deletes an object when last shared_ptr gets deleted or
-// re-initiated
+// a container which deletes an object when last shared_ptr gets deleted or re-initiated
 class Curve_set {
   typedef boost::shared_ptr<Rep_base> Rep_ptr;
 
@@ -607,24 +601,24 @@ public:
   void reset_type(int aType)
   {
     //setting shared_ptr for respective polygon
-    if (aType == 1) m_rep = Rep_ptr(new Linear_rep());
-    else if(aType == 2) m_rep=Rep_ptr(new Circular_rep());
-    else if(aType == 3) m_rep=Rep_ptr(new Bezier_rep());
+    if      (aType == 1) m_rep = Rep_ptr(new Linear_rep());
+    else if (aType == 2) m_rep = Rep_ptr(new Circular_rep());
+    else if (aType == 3) m_rep = Rep_ptr(new Bezier_rep());
 
     //setting pen and brush
     m_rep->set_pen  (m_pen);
     m_rep->set_brush(m_brush);
   }
 
-
   CGAL::Qt::GraphicsItem const* gi() const { return m_rep->gi(); }
-  CGAL::Qt::GraphicsItem* gi() { return m_rep->gi(); }
+  CGAL::Qt::GraphicsItem      * gi()       { return m_rep->gi(); }
 
   QRectF bounding_rect() const { return m_rep->bounding_rect(); }
 
   bool is_empty() const { return !m_rep || m_rep->is_empty(); }
 
   void clear() { m_rep->clear(); }
+
   //boolean operations
   void complement () { m_rep->complement(); }
 
@@ -640,12 +634,21 @@ public:
 
   void intersect(Curve_set const& aOther)
   {
+    std::cout<<"in the function intersect"<<endl;
     if (is_linear() && aOther.is_linear())
       get_linear_rep()->intersect(*aOther.get_linear_rep());
-    else if (is_circular() && aOther.is_circular())
-      get_circular_rep()->intersect(*aOther.get_circular_rep());
-    else if ( is_bezier() && aOther.is_bezier() )
-      get_bezier_rep()->intersect( *aOther.get_bezier_rep());
+    else if (is_circular() && aOther.is_circular()) {
+        get_circular_rep()->intersect(*aOther.get_circular_rep());
+     }
+    else if ( is_bezier() && aOther.is_bezier() ) {
+        try {
+            get_bezier_rep()->intersect(*aOther.get_bezier_rep());
+            std::cout << "in void intersect Bezier" << endl;
+        }
+        catch (...) {
+            std::cout << "in catch" << endl;
+        }
+    }
   }
 
   void join(Curve_set const& aOther)
@@ -670,12 +673,15 @@ public:
 
   void symmetric_difference(Curve_set const& aOther)
   {
+    std::cout<<"in sym diff"<<endl;
     if (is_linear() && aOther.is_linear())
       get_linear_rep()->symmetric_difference(*aOther.get_linear_rep());
     else if (is_circular() && aOther.is_circular())
       get_circular_rep()->symmetric_difference(*aOther.get_circular_rep());
-    else if ( is_bezier() && aOther.is_bezier() )
-      get_bezier_rep()->symmetric_difference( *aOther.get_bezier_rep());
+    else if ( is_bezier() && aOther.is_bezier() ) {
+        std::cout << "directed to bezier" <<endl;
+        get_bezier_rep()->symmetric_difference(*aOther.get_bezier_rep());
+    }
   }
 
   void change_brush_color(QBrush aBrush)
@@ -693,48 +699,33 @@ public:
   const Rep_base& rep() const { return *m_rep; }
   Rep_base& rep() { return *m_rep; }
 
-  bool is_linear() const { return m_rep->type() == 1; }
+  bool is_linear()   const { return m_rep->type() == 1; }
   bool is_circular() const { return m_rep->type() == 2; }
   bool is_bezier  () const { return m_rep->type() == 3; }
-  //bool is_mink() const { return m_rep->type() == 4; }
 
 //to get rep for linear polygons
-  const Linear_rep* get_linear_rep() const
-  { return dynamic_cast<Linear_rep const*>(boost::get_pointer(m_rep)); }
-
-  Linear_rep* get_linear_rep()
-  { return dynamic_cast<Linear_rep*>(boost::get_pointer(m_rep)); }
+  const Linear_rep* get_linear_rep() const { return dynamic_cast<Linear_rep const*>(boost::get_pointer(m_rep)); }
+  Linear_rep*       get_linear_rep()       { return dynamic_cast<Linear_rep      *>(boost::get_pointer(m_rep)); }
 
   //to get Linear_polygon_set
   const Linear_polygon_set& linear() const { return get_linear_rep()->set(); }
-  Linear_polygon_set& linear() { return get_linear_rep()->set(); }
+  Linear_polygon_set&       linear()       { return get_linear_rep()->set(); }
 
-//to get rep for circular polygons
-  const Circular_rep* get_circular_rep() const
-  { return dynamic_cast<Circular_rep const*>(boost::get_pointer(m_rep)); }
-
-  Circular_rep* get_circular_rep()
-  { return dynamic_cast<Circular_rep*  >(boost::get_pointer(m_rep)); }
+  //to get rep for circular polygons
+  const Circular_rep* get_circular_rep() const { return dynamic_cast<Circular_rep const*>(boost::get_pointer(m_rep)); }
+  Circular_rep*       get_circular_rep()       { return dynamic_cast<Circular_rep      *>(boost::get_pointer(m_rep)); }
 
   //to get Circular_polygon_set
-  const Circular_polygon_set& circular() const
-  { return get_circular_rep()->set(); }
+  const Circular_polygon_set& circular() const { return get_circular_rep()->set(); }
+  Circular_polygon_set&       circular()       { return get_circular_rep()->set(); }
 
-  Circular_polygon_set& circular() { return get_circular_rep()->set(); }
+  //get rep for bezier polygons
+  Bezier_rep const* get_bezier_rep() const{ return dynamic_cast<Bezier_rep   const*>( boost::get_pointer(m_rep) ); }
+  Bezier_rep      * get_bezier_rep()      { return dynamic_cast<Bezier_rep*        >( boost::get_pointer(m_rep) ); }
 
-//get rep for bezier polygons
-  const Bezier_rep* get_bezier_rep() const
-  { return dynamic_cast<Bezier_rep   const*>( boost::get_pointer(m_rep) ); }
-
-  Bezier_rep* get_bezier_rep()
-  { return dynamic_cast<Bezier_rep*  >( boost::get_pointer(m_rep) ); }
   //to get Bezier_polygon_set
-  const Bezier_polygon_set& bezier() const
-  { return get_bezier_rep()->set(); }
-
-  Bezier_polygon_set& bezier() { return get_bezier_rep ()->set(); }
-
-
+  const Bezier_polygon_set& bezier() const { return get_bezier_rep()->set(); }
+  Bezier_polygon_set&       bezier()       { return get_bezier_rep()->set(); }
 
 public:
   //drawing tools
@@ -746,13 +737,12 @@ public:
 };
 
 typedef std::vector<Curve_set>                  Curve_set_container;
-
 typedef Curve_set_container::const_iterator     Curve_set_const_iterator;
 typedef Curve_set_container::iterator           Curve_set_iterator;
 
 // This container is for returning different color polygons while performing an operation
 class State_current{
-  // COMPLEMENT_OP = 0
+  /* COMPLEMENT_OP = 0
   // INTERSECTION_OP = 1
   // UNION_OP = 2
   // DIFFERENCE_OP = 3
@@ -762,7 +752,7 @@ class State_current{
   // MOVE_OP = 7
   // CLEAR_OP = 9
   // DELETE_ALL_OP = 10
-  // START_OP = 11
+  // START_OP = 11*/
 
 public:
   State_current( size_t operation_name, size_t aType);
@@ -777,17 +767,17 @@ public:
   //sets the current active group
   Curve_set& active_set(size_t m_color_active)  { return set(m_color_active); }
 
-  Curve_set& move_set(size_t m_color_move)  { return set(m_color_move); }
+  Curve_set& move_set(size_t m_color_move)      { return set(m_color_move);   }
 
   //setting curve
-  Curve_set& blue_set() { return set(BLUE_GROUP); }
-  Curve_set& red_set() { return set(RED_GROUP); }
-  Curve_set& black_set() { return set(BLACK_GROUP); }
-  Curve_set& brown_set() { return set(BROWN_GROUP); }
-  Curve_set& yellow_set() { return set(YELLOW_GROUP); }
-  Curve_set& magenta_set() { return set(MAGENTA_GROUP); }
-  Curve_set& aqua_set() { return set(AQUA_GROUP); }
-  Curve_set& result_set() {return set(RESULT_GROUP);}
+  Curve_set& blue_set()     { return set(BLUE_GROUP);   }
+  Curve_set& red_set()      { return set(RED_GROUP);    }
+  Curve_set& black_set()    { return set(BLACK_GROUP);  }
+  Curve_set& brown_set()    { return set(BROWN_GROUP);  }
+  Curve_set& yellow_set()   { return set(YELLOW_GROUP); }
+  Curve_set& magenta_set()  { return set(MAGENTA_GROUP);}
+  Curve_set& aqua_set()     { return set(AQUA_GROUP);   }
+  Curve_set& result_set()   { return set(RESULT_GROUP);  }
 
   void ToggleView(size_t aGROUP, bool a_check)
   {
@@ -1036,7 +1026,6 @@ private:
   bool m_magenta_sym_diff;
   bool m_aqua_sym_diff;
 
-
   bool m_blue_mink;
   bool m_red_mink;
   bool m_black_mink;
@@ -1060,7 +1049,7 @@ private:
   bool m_clear_magenta;
   bool m_clear_aqua;
 
-  bool minkowksi_sum_operated;
+  bool minkowski_sum_operated;
   bool m_disjoint;
 
   size_t m_state_num;
@@ -1431,7 +1420,7 @@ MainWindow::MainWindow() :
   m_color_visible(7), //default
   m_color_complement(0), //default
   m_blue_int               (true), //default
-  minkowksi_sum_operated   (false), //default
+  minkowski_sum_operated   (false), //default
   m_red_int                (true), //default
   m_black_int              (false), //default
   m_brown_int              (false), //default
@@ -1513,7 +1502,7 @@ MainWindow::MainWindow() :
     // INTERSECTION_OP = 1
     // UNION_OP = 2
     // DIFFERENCE_OP = 3
-    // SYMMETRIC_dIFFERENCE_OP = 4
+    // SYMMETRIC_DIFFERENCE_OP = 4
     // MINKOWSKI_SUM_OP = 5
     // RESET_OP = 6
     // COPY_OP = 7
@@ -1830,7 +1819,6 @@ void MainWindow::on_showBlue_toggled(bool a_check)
 	if (m_color_visible==7) VisibleHeader->setChecked(true);
 	//else VisibleHeader->setChecked(false);
 }
-
 void MainWindow::on_showRed_toggled(bool a_check)
 { states_stack.back().ToggleView(RED_GROUP, a_check);
   if(a_check)
@@ -1876,7 +1864,6 @@ void MainWindow::on_showRed_toggled(bool a_check)
 	if (m_color_visible==7) VisibleHeader->setChecked(true);
 	// else VisibleHeader->setChecked(false);
 }
-
 void MainWindow::on_showBlack_toggled(bool a_check)
 { states_stack.back().ToggleView(BLACK_GROUP, a_check);
   if(a_check)
@@ -1922,7 +1909,6 @@ void MainWindow::on_showBlack_toggled(bool a_check)
 	if (m_color_visible==7) VisibleHeader->setChecked(true);
 	//else VisibleHeader->setChecked(false);
 }
-
 void MainWindow::on_showBrown_toggled(bool a_check)
 { states_stack.back().ToggleView(BROWN_GROUP, a_check);
   if(a_check)
@@ -1968,7 +1954,6 @@ void MainWindow::on_showBrown_toggled(bool a_check)
 	if (m_color_visible==7) VisibleHeader->setChecked(true);
 	//else VisibleHeader->setChecked(false);
 }
-
 void MainWindow::on_showYellow_toggled(bool a_check)
 { states_stack.back().ToggleView(YELLOW_GROUP, a_check);
   if(a_check)
@@ -2014,7 +1999,6 @@ void MainWindow::on_showYellow_toggled(bool a_check)
 	if (m_color_visible==7) VisibleHeader->setChecked(true);
 	//else VisibleHeader->setChecked(false);
 }
-
 void MainWindow::on_showMagenta_toggled(bool a_check)
 { states_stack.back().ToggleView(MAGENTA_GROUP, a_check);
   if(a_check)
@@ -2060,7 +2044,6 @@ void MainWindow::on_showMagenta_toggled(bool a_check)
 	if (m_color_visible==7) VisibleHeader->setChecked(true);
 	//else VisibleHeader->setChecked(false);
 }
-
 void MainWindow::on_showAqua_toggled(bool a_check)
 { states_stack.back().ToggleView(AQUA_GROUP, a_check);
   if(a_check)
@@ -2227,7 +2210,6 @@ void MainWindow::on_showBlueComp_toggled(bool aCheck)
     showBlueComp->setChecked(false);
   }
 }
-
 void MainWindow::on_showRedComp_toggled(bool aCheck)
 {
   if(aCheck)
@@ -2246,7 +2228,6 @@ void MainWindow::on_showRedComp_toggled(bool aCheck)
     showRedComp->setChecked(false);
   }
 }
-
 void MainWindow::on_showBlackComp_toggled(bool aCheck)
 {
   if(aCheck)
@@ -2265,7 +2246,6 @@ void MainWindow::on_showBlackComp_toggled(bool aCheck)
     showBlackComp->setChecked(false);
   }
 }
-
 void MainWindow::on_showBrownComp_toggled(bool aCheck)
 {
   if(aCheck)
@@ -2284,7 +2264,6 @@ void MainWindow::on_showBrownComp_toggled(bool aCheck)
     showBrownComp->setChecked(false);
   }
 }
-
 void MainWindow::on_showYellowComp_toggled(bool aCheck)
 {
   if(aCheck)
@@ -2303,7 +2282,6 @@ void MainWindow::on_showYellowComp_toggled(bool aCheck)
     showYellowComp->setChecked(false);
   }
 }
-
 void MainWindow::on_showMagentaComp_toggled(bool aCheck)
 {
   if(aCheck)
@@ -2322,7 +2300,6 @@ void MainWindow::on_showMagentaComp_toggled(bool aCheck)
     showMagentaComp->setChecked(false);
   }
 }
-
 void MainWindow::on_showAquaComp_toggled(bool aCheck)
 {
   if(aCheck)
@@ -2361,7 +2338,6 @@ void MainWindow::on_copyBlue_toggled(bool aCheck)
     copyBlue->setChecked(false);
   }
 }
-
 void MainWindow::on_copyRed_toggled(bool aCheck)
 {
   if(aCheck)
@@ -2379,7 +2355,6 @@ void MainWindow::on_copyRed_toggled(bool aCheck)
     copyRed->setChecked(false);
   }
 }
-
 void MainWindow::on_copyBlack_toggled(bool aCheck)
 {
   if(aCheck)
@@ -2398,7 +2373,6 @@ void MainWindow::on_copyBlack_toggled(bool aCheck)
     copyBlack->setChecked(false);
   }
 }
-
 void MainWindow::on_copyBrown_toggled(bool aCheck)
 {
   if(aCheck)
@@ -2417,7 +2391,6 @@ void MainWindow::on_copyBrown_toggled(bool aCheck)
     copyBrown->setChecked(false);
   }
 }
-
 void MainWindow::on_copyYellow_toggled(bool aCheck)
 {
   if(aCheck)
@@ -2436,7 +2409,6 @@ void MainWindow::on_copyYellow_toggled(bool aCheck)
     copyYellow->setChecked(false);
   }
 }
-
 void MainWindow::on_copyMagenta_toggled(bool aCheck)
 {
   if(aCheck)
@@ -2455,7 +2427,6 @@ void MainWindow::on_copyMagenta_toggled(bool aCheck)
     copyMagenta->setChecked(false);
   }
 }
-
 void MainWindow::on_copyAqua_toggled(bool aCheck)
 {
   if(aCheck)
@@ -2493,7 +2464,6 @@ void MainWindow::on_moveBlue_toggled(bool aCheck)
     moveBlue->setChecked(false);
   }
 }
-
 void MainWindow::on_moveRed_toggled(bool aCheck)
 {
   if(aCheck)
@@ -2512,7 +2482,6 @@ void MainWindow::on_moveRed_toggled(bool aCheck)
     moveRed->setChecked(false);
   }
 }
-
 void MainWindow::on_moveBlack_toggled(bool aCheck)
 {
   if(aCheck)
@@ -2531,7 +2500,6 @@ void MainWindow::on_moveBlack_toggled(bool aCheck)
     moveBlack->setChecked(false);
   }
 }
-
 void MainWindow::on_moveBrown_toggled(bool aCheck)
 {
   if(aCheck)
@@ -2550,7 +2518,6 @@ void MainWindow::on_moveBrown_toggled(bool aCheck)
     copyBrown->setChecked(false);
   }
 }
-
 void MainWindow::on_moveYellow_toggled(bool aCheck)
 {
   if(aCheck)
@@ -2569,7 +2536,6 @@ void MainWindow::on_moveYellow_toggled(bool aCheck)
     moveYellow->setChecked(false);
   }
 }
-
 void MainWindow::on_moveMagenta_toggled(bool aCheck)
 {
   if(aCheck)
@@ -2588,7 +2554,6 @@ void MainWindow::on_moveMagenta_toggled(bool aCheck)
     moveMagenta->setChecked(false);
   }
 }
-
 void MainWindow::on_moveAqua_toggled(bool aCheck)
 {
   if(aCheck)
@@ -2620,7 +2585,6 @@ void MainWindow::on_showBlueInt_toggled(bool aCheck)
     m_blue_int = false;
   }
 }
-
 void MainWindow::on_showRedInt_toggled(bool aCheck)
 {
   if(aCheck)
@@ -2633,7 +2597,6 @@ void MainWindow::on_showRedInt_toggled(bool aCheck)
   }
 
 }
-
 void MainWindow::on_showBlackInt_toggled(bool aCheck)
 {
   if(aCheck)
@@ -2646,7 +2609,6 @@ void MainWindow::on_showBlackInt_toggled(bool aCheck)
   }
 
 }
-
 void MainWindow::on_showBrownInt_toggled(bool aCheck)
 {
   if(aCheck)
@@ -2659,7 +2621,6 @@ void MainWindow::on_showBrownInt_toggled(bool aCheck)
   }
 
 }
-
 void MainWindow::on_showYellowInt_toggled(bool aCheck)
 {
 
@@ -2672,7 +2633,6 @@ void MainWindow::on_showYellowInt_toggled(bool aCheck)
     m_yellow_int = false;
   }
 }
-
 void MainWindow::on_showMagentaInt_toggled(bool aCheck)
 {
   if(aCheck)
@@ -2685,7 +2645,6 @@ void MainWindow::on_showMagentaInt_toggled(bool aCheck)
   }
 
 }
-
 void MainWindow::on_showAquaInt_toggled(bool aCheck)
 {
   if(aCheck)
@@ -2710,7 +2669,6 @@ void MainWindow::on_showBlueUnion_toggled(bool aCheck)
     m_blue_union = false;
   }
 }
-
 void MainWindow::on_showRedUnion_toggled(bool aCheck)
 {
   if(aCheck)
@@ -2723,7 +2681,6 @@ void MainWindow::on_showRedUnion_toggled(bool aCheck)
   }
 
 }
-
 void MainWindow::on_showBlackUnion_toggled(bool aCheck)
 {
 
@@ -2736,7 +2693,6 @@ void MainWindow::on_showBlackUnion_toggled(bool aCheck)
     m_black_union = false;
   }
 }
-
 void MainWindow::on_showBrownUnion_toggled(bool aCheck)
 {
 
@@ -2749,7 +2705,6 @@ void MainWindow::on_showBrownUnion_toggled(bool aCheck)
     m_brown_union = false;
   }
 }
-
 void MainWindow::on_showYellowUnion_toggled(bool aCheck)
 {
 
@@ -2762,7 +2717,6 @@ void MainWindow::on_showYellowUnion_toggled(bool aCheck)
     m_yellow_union = false;
   }
 }
-
 void MainWindow::on_showMagentaUnion_toggled(bool aCheck)
 {
   if(aCheck)
@@ -2774,7 +2728,6 @@ void MainWindow::on_showMagentaUnion_toggled(bool aCheck)
     m_magenta_union = false;
   }
 }
-
 void MainWindow::on_showAquaUnion_toggled(bool aCheck)
 {
   if(aCheck)
@@ -2829,7 +2782,6 @@ void MainWindow::on_showBlueDiff_toggled(bool aCheck)
     }
   }
 }
-
 void MainWindow::on_showRedDiff_toggled(bool aCheck)
 {
   if(aCheck)
@@ -2871,7 +2823,6 @@ void MainWindow::on_showRedDiff_toggled(bool aCheck)
     }
   }
 }
-
 void MainWindow::on_showBlackDiff_toggled(bool aCheck)
 {
   if(aCheck)
@@ -2913,7 +2864,6 @@ void MainWindow::on_showBlackDiff_toggled(bool aCheck)
     }
   }
 }
-
 void MainWindow::on_showBrownDiff_toggled(bool aCheck)
 {
   if(aCheck)
@@ -2955,7 +2905,6 @@ void MainWindow::on_showBrownDiff_toggled(bool aCheck)
     }
   }
 }
-
 void MainWindow::on_showYellowDiff_toggled(bool aCheck)
 {
   if(aCheck)
@@ -2997,7 +2946,6 @@ void MainWindow::on_showYellowDiff_toggled(bool aCheck)
     }
   }
 }
-
 void MainWindow::on_showMagentaDiff_toggled(bool aCheck)
 {
   if(aCheck)
@@ -3039,7 +2987,6 @@ void MainWindow::on_showMagentaDiff_toggled(bool aCheck)
     }
   }
 }
-
 void MainWindow::on_showAquaDiff_toggled(bool aCheck)
 {
   if(aCheck)
@@ -3094,7 +3041,6 @@ void MainWindow::on_showBlueSym_Diff_toggled(bool aCheck)
     m_blue_sym_diff = false;
   }
 }
-
 void MainWindow::on_showRedSym_Diff_toggled(bool aCheck)
 {
 
@@ -3107,7 +3053,6 @@ void MainWindow::on_showRedSym_Diff_toggled(bool aCheck)
     m_red_sym_diff = false;
   }
 }
-
 void MainWindow::on_showBlackSym_Diff_toggled(bool aCheck)
 {
   if(aCheck)
@@ -3119,7 +3064,6 @@ void MainWindow::on_showBlackSym_Diff_toggled(bool aCheck)
     m_black_sym_diff = false;
   }
 }
-
 void MainWindow::on_showBrownSym_Diff_toggled(bool aCheck)
 {
   if(aCheck)
@@ -3131,7 +3075,6 @@ void MainWindow::on_showBrownSym_Diff_toggled(bool aCheck)
     m_brown_sym_diff = false;
   }
 }
-
 void MainWindow::on_showYellowSym_Diff_toggled(bool aCheck)
 {
   if(aCheck)
@@ -3143,7 +3086,6 @@ void MainWindow::on_showYellowSym_Diff_toggled(bool aCheck)
     m_yellow_sym_diff = false;
   }
 }
-
 void MainWindow::on_showMagentaSym_Diff_toggled(bool aCheck)
 {
   if(aCheck)
@@ -3155,7 +3097,6 @@ void MainWindow::on_showMagentaSym_Diff_toggled(bool aCheck)
     m_magenta_sym_diff = false;
   }
 }
-
 void MainWindow::on_showAquaSym_Diff_toggled(bool aCheck)
 {
   if(aCheck)
@@ -3210,7 +3151,6 @@ void MainWindow::on_showBlueMink_Sum_toggled(bool aCheck)
     }
   }
 }
-
 void MainWindow::on_showRedMink_Sum_toggled(bool aCheck)
 {
   if(aCheck)
@@ -3252,7 +3192,6 @@ void MainWindow::on_showRedMink_Sum_toggled(bool aCheck)
     }
   }
 }
-
 void MainWindow::on_showBlackMink_Sum_toggled(bool aCheck)
 {
   if(aCheck)
@@ -3294,7 +3233,6 @@ void MainWindow::on_showBlackMink_Sum_toggled(bool aCheck)
     }
   }
 }
-
 void MainWindow::on_showBrownMink_Sum_toggled(bool aCheck)
 {
   if(aCheck)
@@ -3336,7 +3274,6 @@ void MainWindow::on_showBrownMink_Sum_toggled(bool aCheck)
     }
   }
 }
-
 void MainWindow::on_showYellowMink_Sum_toggled(bool aCheck)
 {
   if(aCheck)
@@ -3378,7 +3315,6 @@ void MainWindow::on_showYellowMink_Sum_toggled(bool aCheck)
     }
   }
 }
-
 void MainWindow::on_showMagentaMink_Sum_toggled(bool aCheck)
 {
   if(aCheck)
@@ -3420,7 +3356,6 @@ void MainWindow::on_showMagentaMink_Sum_toggled(bool aCheck)
     }
   }
 }
-
 void MainWindow::on_showAquaMink_Sum_toggled(bool aCheck)
 {
   if(aCheck)
@@ -3462,7 +3397,6 @@ void MainWindow::on_showAquaMink_Sum_toggled(bool aCheck)
     }
   }
 }
-
 
 //////////###################### Add Color Plus Button ###########################////////////
 //done in GSoC 2020
@@ -3611,7 +3545,6 @@ void MainWindow::on_actionAddColor_triggered()
 }
 
 //////#########Remove Color Minus
-
 //minus color button clicked
 void MainWindow::on_actionMinusColor_triggered()
 {
@@ -3803,7 +3736,7 @@ void MainWindow::on_actionUndo_triggered()
     // INTERSECTION_OP = 1
     // UNION_OP = 2
     // DIFFERENCE_OP = 3
-    // SYMMETRIC_dIFFERENCE_OP = 4
+    // SYMMETRIC_DIFFERENCE_OP = 4
     // MINKOWSKI_SUM_OP = 5
     // RESET_OP = 6
     // COPY_OP = 7
@@ -3856,7 +3789,6 @@ void MainWindow::on_actionUndo_triggered()
   }
 }
 
-//
 void MainWindow::on_actionNew_triggered()
 {
   /* while(m_state_num>1)
@@ -3909,14 +3841,14 @@ void MainWindow::on_actionNew_triggered()
   states_stack.back().magenta_bezier_sources().clear();
   states_stack.back().result_bezier_sources().clear();
 
-  SetViewBlue  (true);
-  SetViewRed   (true);
-  SetViewBlack (true);
-  SetViewBrown (true);
-  SetViewYellow (true);
+  SetViewBlue    (true);
+  SetViewRed     (true);
+  SetViewBlack   (true);
+  SetViewBrown   (true);
+  SetViewYellow  (true);
   SetViewMagenta (true);
-  SetViewAqua (true);
-  SetViewResult(true);
+  SetViewAqua    (true);
+  SetViewResult  (true);
 
   actionAddColor -> setEnabled(true);
   actionMinusColor -> setEnabled(false);
@@ -4229,7 +4161,7 @@ void MainWindow::on_actionDeleteAll_triggered()
     // INTERSECTION_OP = 1
     // UNION_OP = 2
     // DIFFERENCE_OP = 3
-    // SYMMETRIC_dIFFERENCE_OP = 4
+    // SYMMETRIC_DIFFERENCE_OP = 4
     // MINKOWSKI_SUM_OP = 5
     // RESET_OP = 6
     // COPY_OP = 7
@@ -4388,7 +4320,6 @@ void MainWindow::on_drawBlue_toggled(bool /* a_check */)
     m_bezier_input -> mHandle1GI -> setPen(sPens[0]);
   }
 }
-
 void MainWindow::on_drawRed_toggled(bool /* a_check */)
 {
   m_color_active = 1;
@@ -4413,7 +4344,6 @@ void MainWindow::on_drawRed_toggled(bool /* a_check */)
     m_bezier_input -> mHandle1GI -> setPen(sPens[1]);
   }
 }
-
 void MainWindow::on_drawBlack_toggled(bool /* a_check */)
 {
   m_color_active = 2;
@@ -4438,7 +4368,6 @@ void MainWindow::on_drawBlack_toggled(bool /* a_check */)
     m_bezier_input -> mHandle1GI -> setPen(sPens[2]);
   }
 }
-
 void MainWindow::on_drawBrown_toggled(bool /* a_check */)
 {
   m_color_active = 3;
@@ -4463,7 +4392,6 @@ void MainWindow::on_drawBrown_toggled(bool /* a_check */)
     m_bezier_input -> mHandle1GI -> setPen(sPens[3]);
   }
 }
-
 void MainWindow::on_drawYellow_toggled(bool /* a_check */)
 {
   m_color_active = 4;
@@ -4488,7 +4416,6 @@ void MainWindow::on_drawYellow_toggled(bool /* a_check */)
     m_bezier_input -> mHandle1GI -> setPen(sPens[4]);
   }
 }
-
 void MainWindow::on_drawMagenta_toggled(bool /* a_check */)
 {
   m_color_active = 5;
@@ -4513,7 +4440,6 @@ void MainWindow::on_drawMagenta_toggled(bool /* a_check */)
     m_bezier_input -> mHandle1GI -> setPen(sPens[5]);
   }
 }
-
 void MainWindow::on_drawAqua_toggled(bool /* a_check */)
 {
   m_color_active = 6;
@@ -4564,7 +4490,6 @@ void MainWindow::on_actionOpenBezier_triggered()
 }
 
 //To be done in GSoC2020
-
 /*for converting linear part of circular polygon to circular part
 /*Circular_polygon linearPart_2_circ(Circular_Linear_polygon const& pgn)
 {
@@ -4607,7 +4532,6 @@ linearPart_2_circ(Circular_Linear_polygon_with_holes const& pwh)
 //     rCP.add_hole( linear_2_circ(*hi)  );
 //   return rCP;
 // }*/
-
 
 bool MainWindow::read_linear( QString aFileName, Linear_polygon_set& rSet, Linear_region_source_container& rSources )
 {
@@ -4995,15 +4919,6 @@ bool MainWindow::read_bezier ( QString aFileName)
   }
   return rOK ;
 }
-
-//symmetric diff errors(resolved)
-/* result of symmetric difference
-// CGAL error: warning violation!
-// Expr: holes_disjoint
-// File: /home/ronnie8888/Documents/cgal-public-dev/Boolean_set_operations_2/include/CGAL/Boolean_set_operations_2/Gps_polygon_validation.h
-// Line: 788
-// Explanation:Holes of the PWH intersect amongst themselves or with outer boundary*/
-
 Bezier_curve MainWindow::read_bezier_curve ( std::istream& is, bool aDoubleFormat )
 {
   // Read the number of control points.
@@ -5340,7 +5255,6 @@ bool save_bezier_result ( QString aFileName, Bezier_polygon_set const& aSet )
 //   return rOK ;
 
 // }*/
-
 //"file:save active bucket" button pressed
 void MainWindow::on_actionSaveCurrentBucket_triggered()
 {
@@ -5642,7 +5556,7 @@ void MainWindow::on_actionComplementH_toggled(bool aChecked)
     // INTERSECTION_OP = 1
     // UNION_OP = 2
     // DIFFERENCE_OP = 3
-    // SYMMETRIC_dIFFERENCE_OP = 4
+    // SYMMETRIC_DIFFERENCE_OP = 4
     // MINKOWSKI_SUM_OP = 5
     // RESET_OP = 6
     // COPY_OP = 7
@@ -5792,7 +5706,8 @@ void MainWindow::on_actionIntersectionH_toggled(bool aChecked)
 {
   if(actionIntersectionH->isChecked())
   {
-	bool lDone = false;
+    std::cout<<"Intersection"<<endl;
+    bool lDone = false;
     QCursor old = this->cursor();
     this->setCursor(Qt::WaitCursor);
 
@@ -5810,7 +5725,7 @@ void MainWindow::on_actionIntersectionH_toggled(bool aChecked)
     // INTERSECTION_OP = 1
     // UNION_OP = 2
     // DIFFERENCE_OP = 3
-    // SYMMETRIC_dIFFERENCE_OP = 4
+    // SYMMETRIC_DIFFERENCE_OP = 4
     // MINKOWSKI_SUM_OP = 5
     // RESET_OP = 6
     // COPY_OP = 7
@@ -5831,7 +5746,7 @@ void MainWindow::on_actionIntersectionH_toggled(bool aChecked)
         show_not_empty_warning();
       }
     }
-
+    cout<<m_bezier_active<<" "<<m_color_active<<endl;
 	switch(m_color_active)
 	{
 	  case 0:
@@ -5844,8 +5759,8 @@ void MainWindow::on_actionIntersectionH_toggled(bool aChecked)
 	      else if (!states_stack.back().aqua_set().is_empty() && m_aqua_int) states_stack.back().result_set().assign(states_stack.back().aqua_set());
 
 	      if (m_blue_int) states_stack.back().result_set().intersect(states_stack.back().blue_set());
-	      if (m_red_int) states_stack.back().result_set().intersect(states_stack.back().red_set());
-	      if (m_black_int) states_stack.back().result_set().intersect(states_stack.back().black_set());
+	      if (m_red_int) states_stack.back().blue_set().intersect(states_stack.back().red_set());
+	      if (m_black_int) states_stack.back().blue_set().intersect(states_stack.back().black_set());
 	      if (m_brown_int) states_stack.back().result_set().intersect(states_stack.back().brown_set());
 	      if (m_yellow_int) states_stack.back().result_set().intersect(states_stack.back().yellow_set());
 	      if (m_magenta_int) states_stack.back().result_set().intersect(states_stack.back().magenta_set());
@@ -5853,7 +5768,11 @@ void MainWindow::on_actionIntersectionH_toggled(bool aChecked)
 
 	      states_stack.back().result_set().difference(states_stack.back().blue_set());
 	      states_stack.back().blue_set().join(states_stack.back().result_set());
-	      states_stack.back().result_set().clear();states_stack.back().result_linear_sources().clear();states_stack.back().result_circular_sources().clear();states_stack.back().result_bezier_sources().clear();
+	      states_stack.back().result_set().clear();
+	      states_stack.back().result_linear_sources().clear();
+	      states_stack.back().result_circular_sources().clear();
+	      states_stack.back().result_bezier_sources().clear();
+	      std::cout<<"Blue"<<endl;
 	  break;
 
 	  case 1:
@@ -5875,7 +5794,11 @@ void MainWindow::on_actionIntersectionH_toggled(bool aChecked)
 
 	      states_stack.back().result_set().difference(states_stack.back().red_set());
 	      states_stack.back().red_set().join(states_stack.back().result_set());
-	      states_stack.back().result_set().clear();states_stack.back().result_linear_sources().clear();states_stack.back().result_circular_sources().clear();states_stack.back().result_bezier_sources().clear();
+	      states_stack.back().result_set().clear();
+	      states_stack.back().result_linear_sources().clear();
+	      states_stack.back().result_circular_sources().clear();
+	      states_stack.back().result_bezier_sources().clear();
+	      std::cout<<"Red"<<endl;
 	  break;
 
 	  case 2:
@@ -5897,7 +5820,11 @@ void MainWindow::on_actionIntersectionH_toggled(bool aChecked)
 
 	      states_stack.back().result_set().difference(states_stack.back().black_set());
 	      states_stack.back().black_set().join(states_stack.back().result_set());
-	      states_stack.back().result_set().clear();states_stack.back().result_linear_sources().clear();states_stack.back().result_circular_sources().clear();states_stack.back().result_bezier_sources().clear();
+	      states_stack.back().result_set().clear();
+	      states_stack.back().result_linear_sources().clear();
+	      states_stack.back().result_circular_sources().clear();
+	      states_stack.back().result_bezier_sources().clear();
+	      std::cout<<"Black"<<endl;
 	  break;
 
 	  case 3:
@@ -5919,7 +5846,10 @@ void MainWindow::on_actionIntersectionH_toggled(bool aChecked)
 
 	      states_stack.back().result_set().difference(states_stack.back().brown_set());
 	      states_stack.back().brown_set().join(states_stack.back().result_set());
-	      states_stack.back().result_set().clear();states_stack.back().result_linear_sources().clear();states_stack.back().result_circular_sources().clear();states_stack.back().result_bezier_sources().clear();
+	      states_stack.back().result_set().clear();states_stack.back().result_linear_sources().clear();
+	      states_stack.back().result_circular_sources().clear();
+	      states_stack.back().result_bezier_sources().clear();
+	      std::cout<<"Brown"<<endl;
 	  break;
 
 	  case 4:
@@ -5941,7 +5871,10 @@ void MainWindow::on_actionIntersectionH_toggled(bool aChecked)
 
 	      states_stack.back().result_set().difference(states_stack.back().yellow_set());
 	      states_stack.back().yellow_set().join(states_stack.back().result_set());
-	      states_stack.back().result_set().clear();states_stack.back().result_linear_sources().clear();states_stack.back().result_circular_sources().clear();states_stack.back().result_bezier_sources().clear();
+	      states_stack.back().result_set().clear();states_stack.back().result_linear_sources().clear();
+	      states_stack.back().result_circular_sources().clear();
+	      states_stack.back().result_bezier_sources().clear();
+	      std::cout<<"Yellow"<<endl;
 	  break;
 
 	  case 5:
@@ -5963,7 +5896,11 @@ void MainWindow::on_actionIntersectionH_toggled(bool aChecked)
 
           states_stack.back().result_set().difference(states_stack.back().magenta_set());
           states_stack.back().magenta_set().join(states_stack.back().result_set());
-          states_stack.back().result_set().clear();states_stack.back().result_linear_sources().clear();states_stack.back().result_circular_sources().clear();states_stack.back().result_bezier_sources().clear();
+          states_stack.back().result_set().clear();
+          states_stack.back().result_linear_sources().clear();
+          states_stack.back().result_circular_sources().clear();
+          states_stack.back().result_bezier_sources().clear();
+          std::cout<<"Magenta"<<endl;
       break;
 
 	  case 6:
@@ -5985,16 +5922,20 @@ void MainWindow::on_actionIntersectionH_toggled(bool aChecked)
 
 	      states_stack.back().result_set().difference(states_stack.back().aqua_set());
 	      states_stack.back().aqua_set().join(states_stack.back().result_set());
-	      states_stack.back().result_set().clear();states_stack.back().result_linear_sources().clear();states_stack.back().result_circular_sources().clear();states_stack.back().result_bezier_sources().clear();
+	      states_stack.back().result_set().clear();states_stack.back().result_linear_sources().clear();
+	      states_stack.back().result_circular_sources().clear();
+	      states_stack.back().result_bezier_sources().clear();
+	      std::cout<<"Aqua"<<endl;
 	  break;
 
 	  default: break;
 	}
 
-  actionIntersectionH->setChecked(false);
-  lDone = true;
-  this->setCursor(old);
-  if (lDone) modelChanged();
+    actionIntersectionH->setChecked(false);
+    cout<<"End of Intersection"<<endl;
+    lDone = true;
+    this->setCursor(old);
+    if (lDone) modelChanged();
   }
 }
 
@@ -6111,9 +6052,11 @@ void MainWindow::on_actionDifferenceH_toggled(bool aChecked)
 	        else if (color2 == 4) states_stack.back().result_set().difference(states_stack.back().yellow_set());
 	        else if (color2 == 5) states_stack.back().result_set().difference(states_stack.back().magenta_set());
 	        else if (color2 == 6) states_stack.back().result_set().difference(states_stack.back().aqua_set());
+
 	        states_stack.back().result_set().difference(states_stack.back().blue_set());
 	        states_stack.back().blue_set().join(states_stack.back().result_set());
-	        states_stack.back().result_set().clear();states_stack.back().result_linear_sources().clear();states_stack.back().result_circular_sources().clear();states_stack.back().result_bezier_sources().clear();
+	        states_stack.back().result_set().clear();states_stack.back().result_linear_sources().clear();
+	        states_stack.back().result_circular_sources().clear();states_stack.back().result_bezier_sources().clear();
 	      break;
 
 	      case 1:if(color1 == 0) states_stack.back().result_set().assign(states_stack.back().blue_set());
@@ -6242,11 +6185,20 @@ void MainWindow::on_actionDifferenceH_toggled(bool aChecked)
   }
 }
 
+//symmetric diff errors(resolved)
+/* result of symmetric difference
+// CGAL error: warning violation!
+// Expr: holes_disjoint
+// File: /home/ronnie8888/Documents/cgal-public-dev/Boolean_set_operations_2/include/CGAL/Boolean_set_operations_2/Gps_polygon_validation.h
+// Line: 788
+// Explanation:Holes of the PWH intersect amongst themselves or with outer boundary*/
 //symmetric difference
+
 void MainWindow::on_actionSymmetric_DifferenceH_toggled(bool aChecked)
 {
   if(actionSymmetric_DifferenceH->isChecked())
   {
+    std::cout<<"IN sym_diff main"<<std::endl;
     bool lDone = false;
 	QCursor old = this->cursor();
 	this->setCursor(Qt::WaitCursor);
@@ -6287,7 +6239,7 @@ void MainWindow::on_actionSymmetric_DifferenceH_toggled(bool aChecked)
         show_not_empty_warning();
       }
     }
-
+    std::cout<<m_color_active<<" "<<m_bezier_active<<endl;
 	switch(m_color_active)
 	{
         case 0:
@@ -6305,6 +6257,7 @@ void MainWindow::on_actionSymmetric_DifferenceH_toggled(bool aChecked)
 	        if (!states_stack.back().yellow_set().is_empty() && m_yellow_sym_diff) states_stack.back().result_set().symmetric_difference(states_stack.back().yellow_set());
 	        if (!states_stack.back().magenta_set().is_empty() && m_magenta_sym_diff) states_stack.back().result_set().symmetric_difference(states_stack.back().magenta_set());
 	        if (!states_stack.back().aqua_set().is_empty() && m_aqua_sym_diff) states_stack.back().result_set().symmetric_difference(states_stack.back().aqua_set());
+
 	            states_stack.back().result_set().difference(states_stack.back().blue_set());
 	            states_stack.back().blue_set().join(states_stack.back().result_set());
 	            states_stack.back().result_set().clear();states_stack.back().result_linear_sources().clear();states_stack.back().result_circular_sources().clear();states_stack.back().result_bezier_sources().clear();
@@ -6325,6 +6278,7 @@ void MainWindow::on_actionSymmetric_DifferenceH_toggled(bool aChecked)
 	        if (!states_stack.back().yellow_set().is_empty() && m_yellow_sym_diff) states_stack.back().result_set().symmetric_difference(states_stack.back().yellow_set());
 	        if (!states_stack.back().magenta_set().is_empty() && m_magenta_sym_diff) states_stack.back().result_set().symmetric_difference(states_stack.back().magenta_set());
 	        if (!states_stack.back().aqua_set().is_empty() && m_aqua_sym_diff) states_stack.back().result_set().symmetric_difference(states_stack.back().aqua_set());
+
 	            states_stack.back().result_set().difference(states_stack.back().red_set());
 	            states_stack.back().red_set().join(states_stack.back().result_set());
 	            states_stack.back().result_set().clear();states_stack.back().result_linear_sources().clear();states_stack.back().result_circular_sources().clear();states_stack.back().result_bezier_sources().clear();
@@ -6345,6 +6299,7 @@ void MainWindow::on_actionSymmetric_DifferenceH_toggled(bool aChecked)
 	        if (!states_stack.back().yellow_set().is_empty() && m_yellow_sym_diff) states_stack.back().result_set().symmetric_difference(states_stack.back().yellow_set());
 	        if (!states_stack.back().magenta_set().is_empty() && m_magenta_sym_diff) states_stack.back().result_set().symmetric_difference(states_stack.back().magenta_set());
 	        if (!states_stack.back().aqua_set().is_empty() && m_aqua_sym_diff) states_stack.back().result_set().symmetric_difference(states_stack.back().aqua_set());
+
 	            states_stack.back().result_set().difference(states_stack.back().black_set());
 	            states_stack.back().black_set().join(states_stack.back().result_set());
 	            states_stack.back().result_set().clear();states_stack.back().result_linear_sources().clear();states_stack.back().result_circular_sources().clear();states_stack.back().result_bezier_sources().clear();
@@ -6365,9 +6320,12 @@ void MainWindow::on_actionSymmetric_DifferenceH_toggled(bool aChecked)
 	        if (!states_stack.back().yellow_set().is_empty() && m_yellow_sym_diff) states_stack.back().result_set().symmetric_difference(states_stack.back().yellow_set());
 	        if (!states_stack.back().magenta_set().is_empty() && m_magenta_sym_diff) states_stack.back().result_set().symmetric_difference(states_stack.back().magenta_set());
 	        if (!states_stack.back().aqua_set().is_empty() && m_aqua_sym_diff) states_stack.back().result_set().symmetric_difference(states_stack.back().aqua_set());\
+
 	            states_stack.back().result_set().difference(states_stack.back().brown_set());
 	            states_stack.back().brown_set().join(states_stack.back().result_set());
-	            states_stack.back().result_set().clear();states_stack.back().result_linear_sources().clear();states_stack.back().result_circular_sources().clear();states_stack.back().result_bezier_sources().clear();
+	            states_stack.back().result_set().clear();states_stack.back().result_linear_sources().clear();
+	            states_stack.back().result_circular_sources().clear();states_stack.back().result_bezier_sources().clear();
+	            std::cout<<"BROWN"<<endl;
 	    break;
 
 	    case 4:
@@ -6385,6 +6343,7 @@ void MainWindow::on_actionSymmetric_DifferenceH_toggled(bool aChecked)
 	        if (!states_stack.back().yellow_set().is_empty() && m_yellow_sym_diff) states_stack.back().result_set().symmetric_difference(states_stack.back().yellow_set());
 	        if (!states_stack.back().magenta_set().is_empty() && m_magenta_sym_diff) states_stack.back().result_set().symmetric_difference(states_stack.back().magenta_set());
 	        if (!states_stack.back().aqua_set().is_empty() && m_aqua_sym_diff) states_stack.back().result_set().symmetric_difference(states_stack.back().aqua_set());
+
 	            states_stack.back().result_set().difference(states_stack.back().yellow_set());
 	            states_stack.back().yellow_set().join(states_stack.back().result_set());
 	            states_stack.back().result_set().clear();states_stack.back().result_linear_sources().clear();states_stack.back().result_circular_sources().clear();states_stack.back().result_bezier_sources().clear();
@@ -6406,6 +6365,7 @@ void MainWindow::on_actionSymmetric_DifferenceH_toggled(bool aChecked)
 	        if (!states_stack.back().yellow_set().is_empty() && m_yellow_sym_diff) states_stack.back().result_set().symmetric_difference(states_stack.back().yellow_set());
 	        if (!states_stack.back().magenta_set().is_empty() && m_magenta_sym_diff) states_stack.back().result_set().symmetric_difference(states_stack.back().magenta_set());
 	        if (!states_stack.back().aqua_set().is_empty() && m_aqua_sym_diff) states_stack.back().result_set().symmetric_difference(states_stack.back().aqua_set());
+
 	            states_stack.back().result_set().difference(states_stack.back().magenta_set());
 	            states_stack.back().magenta_set().join(states_stack.back().result_set());
 	            states_stack.back().result_set().clear();states_stack.back().result_linear_sources().clear();states_stack.back().result_circular_sources().clear();states_stack.back().result_bezier_sources().clear();
@@ -6426,6 +6386,7 @@ void MainWindow::on_actionSymmetric_DifferenceH_toggled(bool aChecked)
 	        if (!states_stack.back().yellow_set().is_empty() && m_yellow_sym_diff) states_stack.back().result_set().symmetric_difference(states_stack.back().yellow_set());
 	        if (!states_stack.back().magenta_set().is_empty() && m_magenta_sym_diff) states_stack.back().result_set().symmetric_difference(states_stack.back().magenta_set());
 	        if (!states_stack.back().aqua_set().is_empty() && m_aqua_sym_diff) states_stack.back().result_set().symmetric_difference(states_stack.back().aqua_set());
+
 	            states_stack.back().result_set().difference(states_stack.back().aqua_set());
 	            states_stack.back().aqua_set().join(states_stack.back().result_set());
 	            states_stack.back().result_set().clear();states_stack.back().result_linear_sources().clear();states_stack.back().result_circular_sources().clear();states_stack.back().result_bezier_sources().clear();
@@ -6433,6 +6394,7 @@ void MainWindow::on_actionSymmetric_DifferenceH_toggled(bool aChecked)
 	  }
 
     actionSymmetric_DifferenceH->setChecked(false);
+	std::cout<<"End of Symmetric Difference"<<endl;
     lDone = true;
     this->setCursor(old);
     if (lDone) modelChanged();
@@ -6485,6 +6447,7 @@ void MainWindow::on_actionUnionH_toggled(bool aChecked)
         show_not_empty_warning();
       }
     }
+    std::cout<<m_color_active<<" "<<m_bezier_active<<endl;
 
 	switch(m_color_active)
 	{
@@ -6541,6 +6504,7 @@ void MainWindow::on_actionUnionH_toggled(bool aChecked)
 
 	        states_stack.back().result_set().difference(states_stack.back().brown_set());
 	        states_stack.back().brown_set().join(states_stack.back().result_set());
+	        std::cout<<"BROWN"<<endl;
 	        states_stack.back().result_set().clear();states_stack.back().result_linear_sources().clear();states_stack.back().result_circular_sources().clear();states_stack.back().result_bezier_sources().clear();
 	    break;
 
@@ -7016,7 +6980,7 @@ void MainWindow::on_actionMinkowski_SumH_toggled(bool aChecked)
           }
           else ask_user_ok("Minkowski Sum Operation Error", "resultant polygon is unbounded\n");
           lDone = true;
-          minkowksi_sum_operated = true;
+          minkowski_sum_operated = true;
         }
 
         else
@@ -7495,10 +7459,8 @@ void MainWindow::processInput(CGAL::Object o)
   modelChanged();
 }
 
-
 #include "Boolean_set_operations_2.moc"
 #include <CGAL/Qt/resources.h>
-
 
 //the main function
 int main(int argc, char* argv[])

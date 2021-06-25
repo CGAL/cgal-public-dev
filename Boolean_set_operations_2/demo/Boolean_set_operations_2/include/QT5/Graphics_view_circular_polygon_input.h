@@ -267,8 +267,7 @@ public:
   }
 
 public:
-  
-  
+
   Circular_curve const* ongoing_piece() const
   { return (mOngoingPieceCtr.size() == 1) ? &mOngoingPieceCtr[0] : NULL; }
 
@@ -383,19 +382,21 @@ public:
       for (auto it = mCircularPolygonPieces.begin();
            it != mCircularPolygonPieces.end(); ++ it)
       {
-        std::vector<CGAL::Object> x_objs;
+        std::vector<CGAL::Object>                 x_objs;
         std::vector<CGAL::Object>::const_iterator xoit;
         //cout<<"point 1"<<endl;
         make_x_monotone(*it, std::back_inserter(x_objs));
-        //cout<<"add curves"<<endl;
+        /*cout<<"add curves"<<endl;
         //cout<<"point 2"<<endl;
-        //exception handling: if user draws a line and ends polygon
+        //exception handling: if user draws a line and ends polygon*/
         Circular_X_monotone_curve xcv;
         xoit = x_objs.begin();
         CGAL::assign(xcv,*xoit);
         if (xcv.is_linear() && mCircularPolygonPieces.size() == 1) return;
-        for (xoit = x_objs.begin(); xoit != x_objs.end(); ++xoit) {
-          if (CGAL::assign(xcv, *xoit)) xcvs.push_back(xcv);
+        for (xoit = x_objs.begin(); xoit != x_objs.end(); ++xoit)
+        {
+          if (CGAL::assign(xcv, *xoit))
+              xcvs.push_back(xcv);
         }
         //cout<<"point 3"<<endl;
       }
@@ -435,7 +436,7 @@ public:
 
   void get_BoundingRect()
   {
-      // mOngoingPieceCtr.push_back(Linear_curve(Point(-10000000,-10000000),Point(-10000000,10000000)));
+      /* mOngoingPieceCtr.push_back(Linear_curve(Point(-10000000,-10000000),Point(-10000000,10000000)));
       // mOngoingPieceCtr.push_back(Linear_curve(Point(-10000000,10000000),Point(10000000,10000000)));
       // mOngoingPieceCtr.push_back(Linear_curve(Point(10000000,10000000),Point(10000000,-10000000)));
 
@@ -445,7 +446,7 @@ public:
 
       // m_bound_rect = true;
       // CommitCurrLinearPolygon();
-      // ReStart();
+      // ReStart();*/
 
       m_bound_rect = true;
 
