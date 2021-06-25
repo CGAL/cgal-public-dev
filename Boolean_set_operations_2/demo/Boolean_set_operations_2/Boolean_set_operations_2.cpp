@@ -499,7 +499,7 @@ public:
     try
     {
       cout<<"in try"<<endl;
-      m_set.symmetric_difference(cast(aOther).m_set);
+      m_set.intersection(cast(aOther).m_set);
     }
     catch(...)
     {
