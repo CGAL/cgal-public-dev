@@ -2,13 +2,14 @@
 #include <fstream>
 #include <algorithm>
 
+#include <CGAL/boost/graph/Named_function_parameters.h>
 #include <CGAL/Exact_predicates_exact_constructions_kernel.h>
 #include <CGAL/Polyhedron_3.h>
 #include <CGAL/IO/Polyhedron_iostream.h>
 #include <CGAL/boost/graph/graph_traits_Polyhedron_3.h>
 #include <CGAL/Set_movable_separability_3/Single_mold_translational_casting/top_facets.h>
 #include <CGAL/Set_movable_separability_3/lp_wrapper.h>
-#include <CGAL/boost/graph/named_function_params.h>
+// #include <CGAL/boost/graph/named_function_params.h>
 
 //typedef CGAL::Exact_predicates_inexact_constructions_kernel Kernel;
 typedef CGAL::Exact_predicates_exact_constructions_kernel Kernel;
@@ -67,8 +68,7 @@ int main(int argc, char* argv[])
   Direction_3 outDirection;
   bool outDirectionExists;
 
-  CGAL::cgal_bgl_named_params<bool, CGAL::all_default_t, boost::no_property>
-    params;
+  CGAL::Named_function_parameters<bool, CGAL::internal_np::all_default_t> params;
   std::list<Top_facet> top_facets;
 
   std::transform(poly.facets_begin(), poly.facets_end(), poly.planes_begin(),

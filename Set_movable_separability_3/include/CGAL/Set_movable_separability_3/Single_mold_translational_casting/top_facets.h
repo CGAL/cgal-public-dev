@@ -53,9 +53,9 @@ class Get_kernel {
     Default_kernel;
 
 public:
-  typedef typename boost::lookup_named_param_def<CGAL::geom_traits_t,
-                                                 NamedParameters,
-                                                 Default_kernel>::type
+  typedef typename CGAL::internal_np::Lookup_named_param_def<CGAL::geom_traits_t,
+                                                       NamedParameters,
+                                                       Default_kernel>::type
     type;
 };
 
