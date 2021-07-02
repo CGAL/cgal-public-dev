@@ -462,7 +462,7 @@ public:
   {
     try
     {
-      m_set.clear() ;
+      m_set.clear();
     }
     catch(...)
     {
@@ -5255,6 +5255,7 @@ bool save_bezier_result ( QString aFileName, Bezier_polygon_set const& aSet )
 //   return rOK ;
 
 // }*/
+
 //"file:save active bucket" button pressed
 void MainWindow::on_actionSaveCurrentBucket_triggered()
 {

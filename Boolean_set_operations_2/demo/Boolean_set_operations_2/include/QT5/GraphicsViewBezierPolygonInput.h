@@ -296,8 +296,7 @@ namespace Qt {
       return rHandled ;
     }
 
-    
-    
+
   public:
 
     Bezier_curve const* ongoing_piece() const { return mOngoingPieceCtr.size() == 1 ? &mOngoingPieceCtr[0] : NULL ; }
