@@ -42,6 +42,11 @@ int main() {
     std::cout << i + 1 << "/" << R << std::endl;
 
     std::vector<bool> smits_method_results, improved_results, clarified_results, branchless_results, xsimd_results;
+    smits_method_results.reserve(N);
+    improved_results.reserve(N);
+    clarified_results.reserve(N);
+    branchless_results.reserve(N);
+    xsimd_results.reserve(N);
 
     for (const auto &query : queries) {
 
