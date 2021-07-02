@@ -80,6 +80,25 @@ typedef std::vector<Linear_polygon_with_holes>                   Linear_region_s
 typedef std::vector<Linear_curve>                                Linear_boundary_source ;
 typedef std::vector<Linear_boundary_source>                      Linear_region_source ;
 
+
+//Polyline Traits
+//Kernel defined above we'll be using the same kernel
+typedef CGAL::General_polygon_2<Kernel>                             General_polygon_2;
+typedef CGAL::General_polygon_with_holes_2<Kernel>                  General_polygon_with_holes_2;
+
+typedef CGAL::Arr_segment_traits_2<Kernel>                                 Segment_traits_2;
+typedef CGAL::Gps_traits_2<CGAL::Arr_polyline_traits_2<Segment_traits_2> > Polyline_traits;
+typedef Polyline_traits::General_polygon_with_holes_2                      Polyline_polygon_with_holes;
+typedef Polyline_traits::Polygon_2                                         Polyline_polygon;
+typedef CGAL::General_polygon_set_2<Polyline_traits>                       Polyline_polygon_set;
+typedef Polyline_traits::Curve_2                                           Polyline_curve;
+
+typedef std::vector<Polyline_polygon_with_holes>                          Polyline_region_source_container;
+typedef std::vector<Polyline_curve>                                       Polyline_boundary_source ;
+typedef std::vector<Polyline_boundary_source>                             Polyline_region_source ;
+
+
+
 // Circlular polygons
 #ifdef CGAL_USE_GMP
   typedef CGAL::Gmpq                     Base_nt;
@@ -90,7 +109,6 @@ typedef std::vector<Linear_boundary_source>                      Linear_region_s
 typedef CGAL::Lazy_exact_nt<Base_nt> Coord_type;
 struct Gps_circular_kernel : public CGAL::Cartesian<Coord_type> {};
 
-//typedef Linear_kernel                             Circular_Linear_kernel;//check out for future may generate a bug
 /*
 typedef CGAL::Simple_cartesian<double>            Linear_kernel ;
 typedef CGAL::Polygon_2<Linear_kernel>            Linear_polygon;
