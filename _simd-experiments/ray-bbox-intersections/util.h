@@ -4,6 +4,7 @@
 #include <fstream>
 #include <unordered_map>
 #include <chrono>
+#include <list>
 
 #include "ray.h"
 #include "bbox.h"
@@ -30,7 +31,7 @@ auto load_queries(std::ifstream &file, std::size_t N) {
 
     // If this ray is different from the last, begin a new query
     if (queries.empty() || queries.back().ray != ray)
-      queries.push_back({ray, std::vector<BBox<T>>()});
+      queries.push_back(Query<T>{ray, {}});
 
     // Add the latest box to the existing query
     queries.back().boxes.push_back(box);
