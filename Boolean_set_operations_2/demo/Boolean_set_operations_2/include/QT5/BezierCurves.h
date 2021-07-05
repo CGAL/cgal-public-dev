@@ -228,7 +228,7 @@ struct Bezier_X_monotone_bbox
     Bezier_helper::clip(aBXMC,lQ);
     return CGAL::bbox_2(lQ.begin(), lQ.end());
   }
-} ;
+};
 
 struct Draw_bezier_curve
 {

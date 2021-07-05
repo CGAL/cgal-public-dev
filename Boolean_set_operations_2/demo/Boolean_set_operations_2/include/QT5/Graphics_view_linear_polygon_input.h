@@ -103,7 +103,7 @@ public:
   //destructor
   ~Graphics_view_linear_polygon_input() {}
 
-  //decision making:wether to accept the event or reject it
+  //decision making:whether to accept the event or reject it
   bool eventFilter(QObject* obj, QEvent* aEvent)
   {
     bool rHandled = false;
@@ -554,9 +554,7 @@ public:
   int mState;
 
   bool m_bound_rect;
-
   bool m_is_mink;
-
   bool m_hole;
 
   Point mP0;

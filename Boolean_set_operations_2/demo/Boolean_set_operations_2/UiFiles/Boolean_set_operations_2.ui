@@ -172,6 +172,12 @@
            <attribute name="toolBarBreak" >
             <bool>false</bool>
            </attribute>
+           <property name="iconSize">
+            <size>
+             <width>32</width>
+             <height>32</height>
+            </size>
+           </property>
            <addaction name="actionInsertLinear"/>
            </widget>
          </item>
@@ -183,6 +189,12 @@
            <attribute name="toolBarBreak" >
             <bool>false</bool>
            </attribute>
+           <property name="iconSize">
+            <size>
+             <width>32</width>
+             <height>32</height>
+            </size>
+           </property>
            <addaction name="actionInsertCircular"/>
           </widget>
          </item>
@@ -194,9 +206,45 @@
            <attribute name="toolBarBreak" >
             <bool>false</bool>
            </attribute>
+           <property name="iconSize">
+            <size>
+             <width>32</width>
+             <height>32</height>
+            </size>
+           </property>
+           <property name="layoutDirection">
+            <enum>Qt::RightToLeft</enum>
+           </property>
            <addaction name="actionInsertBezier" />
            </widget>
          </item>
+         <item>
+          <widget class="QToolBar" name="operationsTootBar03" >
+           <attribute name="toolBarArea" >
+            <enum>TopToolBarArea</enum>
+           </attribute>
+           <attribute name="toolBarBreak" >
+            <bool>false</bool>
+           </attribute>
+           <property name="iconSize">
+            <size>
+             <width>32</width>
+             <height>32</height>
+            </size>
+           </property>
+           <property name="layoutDirection">
+            <enum>Qt::RightToLeft</enum>
+           </property>
+           <addaction name="actionInsertBezier" />
+           </widget>
+         </item>
+        </layout>
+       </item>  
+       <item>
+        <layout class="QHBoxLayout" name="horizontalLayout_3">
+         <property name="spacing">
+          <number>2</number>
+         </property> 
          <item>
           <widget class="QToolBar" name="operationsTootBar1" >
            <attribute name="toolBarArea" >

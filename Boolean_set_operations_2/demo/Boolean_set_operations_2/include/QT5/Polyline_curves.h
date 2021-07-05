@@ -19,14 +19,76 @@
 //
 // Author(s) : Fernando Cacciola <fernando.cacciola@geometryfactory.com>
 //			   Kabir Kedia <kabirkedia0111@gmail.com>
-
-
 #ifndef CGAL_POLYLINE_CURVES_H
 #define CGAL_POLYLINE_CURVES_H
 
 #include <iostream>
 
+#include <CGAL/Qt/Converter.h>
 #include <CGAL/Arr_polyline_traits_2.h>
+
 #include "Typedefs.h"
+#include "QT5/Piecewise_set_graphics_item.h"
+#include "QT5/Boundary_pieces_graphics_item.h"
+
+namespace CGAL {
+    namespace Qt {
+        struct Polyline_X_monotone_bbox {
+            template<typename X_monotone_polyline_segment_2>
+            CGAL::Bbox_2 operator()(X_monotone_polyline_segment_2 const &aC) const { return aC.bbox(); }
+        };
+
+        struct Polyline_bbox {
+            template<class Polyline_segment_2>
+            CGAL::Bbox_2 operator()(Polyline_segment_2 const &aC) const {
+                double x_min = to_double(aC.source().x());
+                double x_max = to_double(aC.target().x());
+                double y_min = to_double(aC.source().y());
+                double y_max = to_double(aC.target().y());
+                if (x_min > x_max) {
+                    std::swap(x_min, x_max);
+                    std::swap(y_min, y_max);
+                }
+
+                if (y_min > y_max) std::swap(y_min, y_max);
+
+                return Bbox_2(x_min, y_min, x_max, y_max);
+            }
+        };
+
+        struct Draw_polyline_X_monotone_curve {};
+
+        struct Draw_polyline_curve {};
+
+        template<typename Polyline_boundary_pieces>
+        class Polyline_boundary_pieces_graphics_item :
+                public Boundary_pieces_graphics_item<Polyline_boundary_pieces,
+                                                     Draw_polyline_curve, Polyline_bbox> {
+            typedef Boundary_pieces_graphics_item <Polyline_boundary_pieces,
+                                                   Draw_polyline_curve,
+                                                   Polyline_bbox> Base;
+        public :
+            Polyline_boundary_pieces_graphics_item(Polyline_boundary_pieces *aPieces) :
+                    Base(aPieces)
+                    {}
+        };
+
+        template<typename Polyline_set, typename Gps_traits>
+        class Polyline_set_graphics_item :
+                public Piecewise_set_graphics_item<Polyline_set, Gps_traits,
+                                                   Draw_polyline_X_monotone_curve,
+                                                   Polyline_X_monotone_bbox> {
+
+            typedef Piecewise_set_graphics_item <Polyline_set, Gps_traits,
+                                                 Draw_polyline_X_monotone_curve,
+                                                 Polyline_X_monotone_bbox> Base;
+
+        public:
+
+            Polyline_set_graphics_item(Polyline_set *aSet, Gps_traits Polyline_traits) :
+                    Base(aSet, Polyline_traits) {}
+        };
+    }
+}
 
 #endif //CGAL_POLYLINE_CURVES_H
