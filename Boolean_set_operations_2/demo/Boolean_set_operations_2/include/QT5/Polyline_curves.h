@@ -56,7 +56,11 @@ namespace CGAL {
             }
         };
 
-        struct Draw_polyline_X_monotone_curve {};
+        struct Draw_polyline_X_monotone_curve {
+            typedef Qt::Converter<Kernel> Converter;
+            Converter convert;
+
+        };
 
         struct Draw_polyline_curve {};
 
