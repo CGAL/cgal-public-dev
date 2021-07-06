@@ -53,8 +53,9 @@
     <addaction name="actionNew" />
     <addaction name="separator" />
     <addaction name="actionOpenLinear" />
-    <addaction name="actionOpenDXF" />f
+    <addaction name="actionOpenDXF" />
     <addaction name="actionOpenBezier" />
+    <addaction name="actionOpenPolyline" />
     <addaction name="separator" />
     <addaction name="actionSaveCurrentBucket" />
     <addaction name="separator" />
@@ -67,6 +68,7 @@
       <addaction name="actionInsertLinear"/> 
       <addaction name="actionInsertCircular"/>
       <addaction name="actionInsertBezier" />
+      <addaction name="actionInsertPolyline" />
       <addaction name="separator"/>
       <addaction name="actionAddColor" />
       <addaction name="actionMinusColor" />
@@ -235,7 +237,7 @@
            <property name="layoutDirection">
             <enum>Qt::RightToLeft</enum>
            </property>
-           <addaction name="actionInsertBezier" />
+           <addaction name="actionInsertPolyline" />
            </widget>
          </item>
         </layout>
@@ -2935,7 +2937,7 @@
     <string>&amp;Pan</string>
    </property>
    <property name="shortcut">
-    <string>Ctrl+P</string>
+    <string>Ctrl+shift+P</string>
    </property>
   </action>
   <action name="actionAddColor">
@@ -3028,6 +3030,18 @@
     <string>Ctrl+B</string>
    </property>
   </action>
+  <action name="actionOpenPolyline" >
+   <property name="icon" >
+    <iconset resource="boolean_operations_2.qrc" >
+     <normaloff>:/cgal/fileToolbar/fileOpen.png</normaloff>:/cgal/fileToolbar/fileOpen.png</iconset>
+   </property>
+   <property name="text" >
+    <string>&amp;Open Polylines</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+P</string>
+   </property>
+  </action>
   <action name="actionSaveCurrentBucket" >
    <property name="icon" >
     <iconset resource="boolean_operations_2.qrc" >
@@ -3040,7 +3054,7 @@
     <string>Ctrl+Shift+S</string>
    </property>
   </action>
-   <action name="actionQuit" >
+  <action name="actionQuit" >
    <property name="text" >
     <string>&amp;Quit</string>
    </property>
@@ -3065,6 +3079,25 @@
    </property>
    <property name="toolTip" >
     <string>Draw Bezier Polygon</string>
+   </property>
+  </action>
+  <action name="actionInsertPolyline" >
+   <property name="checkable" >
+    <bool>true</bool>
+   </property>
+   <property name="checked" >
+    <bool>false</bool>
+   </property>
+   <property name="icon" >
+    <iconset resource="boolean_operations_2.qrc" >
+     <normaloff>:/cgal/icons/resources/insert_polyline.xpm</normaloff>:/cgal/icons/resources/insert_polyline.xpm
+    </iconset>
+   </property>
+   <property name="text" >
+    <string>Draw Polylines</string>
+   </property>
+   <property name="toolTip" >
+    <string>Draw Polylines </string>
    </property>
   </action>
  </widget>

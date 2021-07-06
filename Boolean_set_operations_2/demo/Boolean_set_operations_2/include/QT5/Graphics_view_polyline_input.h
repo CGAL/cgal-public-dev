@@ -81,25 +81,20 @@ namespace CGAL {
             , m_last             ( false           )
             {
                 mOngoingPieceGI = new GI(&mOngoingPieceCtr) ;
-                mHandle0GI      = new QGraphicsLineItem();
-                mHandle1GI      = new QGraphicsLineItem();
+                mHandleGI       = new QGraphicsLineItem();
 
                 mOngoingPieceGI->setPen(mOngoingCurvePen);
-                mHandle0GI     ->setPen(mHandlePen);
-                mHandle1GI     ->setPen(mHandlePen);
+                mHandleGI      ->setPen(mHandlePen);
 
-                mHandle0GI->setLine(0,0,1,1);
-                mHandle1GI->setLine(0,0,1,1);
-                mHandle0GI->hide();
-                mHandle1GI->hide();
+                mHandleGI->setLine(0,0,1,1);
+                mHandleGI->hide();
 
                 mPolylineGI = new GI(&mPolylinePolygonPieces) ;
 
                 mPolylineGI->setPen(mPolylinePolygonPen);
 
                 mScene->addItem(mOngoingPieceGI);
-                mScene->addItem(mHandle0GI);
-                mScene->addItem(mHandle1GI);
+                mScene->addItem(mHandleGI);
                 mScene->addItem(mPolylineGI);
             }
 
@@ -148,6 +143,7 @@ namespace CGAL {
 
                 if ( aEvent->button() == ::Qt::LeftButton )
                 {
+                    //!
                     switch (mState)
                     {
                         case Start:
@@ -243,8 +239,7 @@ namespace CGAL {
 
                         case FirstHandleOngoing:
                             UpdateVeryFirstHandle(lP);
-                            mPrevH0  = mH1 ;
-                            mH1      = boost::optional<Point>();
+                            mH      = boost::optional<Point>();
                             mState   = PieceOngoing;
                             rHandled = true;
                             break;
@@ -308,7 +303,7 @@ namespace CGAL {
 
             void ReStart()
             {
-                mPrevH0 = mH0 = mH1 = boost::optional<Point>();
+                mH     = boost::optional<Point>();
                 mState = Start ;
             }
 
@@ -332,55 +327,24 @@ namespace CGAL {
                     mP0 = mPolylinePolygonPieces.back().control_point(mPolylinePolygonPieces.back().number_of_control_points()-1);
                     UpdateOngoingPiece();
                 }
-                mPrevH0 = mH0 = mH1 = boost::optional<Point>();
+                mH = boost::optional<Point>();
             }
 
             void HideHandles()
             {
-                mHandle0GI->hide();
-                mHandle1GI->hide();
+                mHandleGI->hide();
             }
 
             Polyline_curve CreatePiece()
             {
-                if ( mPrevH0 && mH1 && *mPrevH0 != *mH1 && *mPrevH0 != mP0 && *mH1 != mP1 )
-                {
-                    Point lControlPoints[4] = { mP0
-                            , *mPrevH0
-                            , *mH1
-                            , mP1
-                    } ;
-                    return Polyline_curve( lControlPoints, lControlPoints + 4 ) ;
-                }
-                else if ( mPrevH0 && !mH1 && *mPrevH0 != mP0 && *mPrevH0 != mP1 )
-                {
-                    Point lControlPoints[3] = { mP0
-                            , *mPrevH0
-                            , mP1
-                    } ;
-                    return Polyline_curve ( lControlPoints, lControlPoints + 3 ) ;
-                }
-                else if ( !mPrevH0 && mH1 && *mH1 != mP0 && *mH1 != mP1 )
-                {
-                    Point lControlPoints[3] = { mP0
-                            , *mH1
-                            , mP1
-                    } ;
-                    return Polyline_curve ( lControlPoints, lControlPoints + 3 ) ;
-                }
-                else
-                {
-                    Point lControlPoints[2] = { mP0
-                            , mP1
-                    } ;
-                    return Polyline_curve( lControlPoints, lControlPoints + 2 ) ;
-                }
+                return Polyline_curve(mP0, mP1);
             }
 
             void UpdateOngoingPiece()
             {
                 if ( mOngoingPieceCtr.size() > 0 )
                     mOngoingPieceCtr.clear();
+
                 mOngoingPieceCtr.push_back(CreatePiece());
                 mOngoingPieceGI->modelChanged();
             }
@@ -395,8 +359,7 @@ namespace CGAL {
                     mOngoingPieceGI->modelChanged();
                     mP0 = mP1 ;
                     mP1 = aP ;
-                    mPrevH0 = mH0 ;
-                    mH0 = mH1 = boost::optional<Point>();
+                    mH = boost::optional<Point>();
                 }
             }
 
@@ -404,18 +367,16 @@ namespace CGAL {
             {
                 if ( squared_distance(mP0,aP) >= 9 )
                 {
-                    mH1 = aP ;
-                    mHandle1GI->setLine( to_double(mP0.x()), to_double(mP0.y()),
-                                         to_double(mH1->x()), to_double(mH1->y()));
-                    mHandle1GI->show();
+                    mH = aP ;
+                    mHandleGI->setLine( to_double(mP0.x()), to_double(mP0.y()));
+                    mHandleGI->show();
 
-                    mH0 = boost::optional<Point>();
-                    mHandle0GI->hide();
+                    mH = boost::optional<Point>();
                 }
                 else
                 {
                     HideHandles();
-                    mH0 = mH1 = boost::optional<Point>();
+                    mH = boost::optional<Point>();
                 }
             }
 
@@ -423,18 +384,15 @@ namespace CGAL {
             {
                 if ( squared_distance(mP1,aP) >= 9 )
                 {
-                    mH0 = aP ;
-                    mH1 = mP1 - (aP - mP1);
+                    mH = aP ;
 
-                    mHandle0GI->setLine( to_double(mP1.x()), to_double(mP1.y()), to_double(mH0->x()), to_double(mH0->y()));
-                    mHandle1GI->setLine( to_double(mP1.x()), to_double(mP1.y()), to_double(mH1->x()), to_double(mH1->y()));
-                    mHandle0GI->show();
-                    mHandle1GI->show();
+                    mHandleGI->setLine( to_double(mP1.x()), to_double(mP1.y()), to_double(mH->x()), to_double(mH->y()));
+                    mHandleGI->show();
                 }
                 else
                 {
                     HideHandles();
-                    mH0 = mH1 = boost::optional<Point>();
+                    mH = boost::optional<Point>();
                 }
             }
 
@@ -462,7 +420,7 @@ namespace CGAL {
                 mPolylinePolygonPieces.clear();
                 mPolylineGI->modelChanged() ;
 
-                mPrevH0 = mH0 = mH1 = boost::optional<Point>();
+                mH = boost::optional<Point>();
 
                 HideHandles();
             }
@@ -557,8 +515,7 @@ namespace CGAL {
             QGraphicsScene*    mScene ;
             GI*                mPolylineGI ;
             GI*                mOngoingPieceGI ;
-            QGraphicsLineItem* mHandle0GI ;
-            QGraphicsLineItem* mHandle1GI ;
+            QGraphicsLineItem* mHandleGI ;
 
             QPen mPolylinePolygonPen ;
             QPen mOngoingCurvePen ;
@@ -576,10 +533,7 @@ namespace CGAL {
             Point mP0;
             Point mP1;
 
-            boost::optional<Point> mPrevH0;
-            boost::optional<Point> mH0;
-            boost::optional<Point> mH1;
-
+            boost::optional<Point> mH;
         }; // end class Graphics_view_polyline_input
 
     }//namespace Qt

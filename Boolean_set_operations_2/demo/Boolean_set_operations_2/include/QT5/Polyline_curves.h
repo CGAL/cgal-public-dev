@@ -57,8 +57,13 @@ namespace CGAL {
         };
 
         struct Draw_polyline_X_monotone_curve {
-            typedef Qt::Converter<Kernel> Converter;
-            Converter convert;
+            template <typename X_monotone_polyline_segment_2, typename Path>
+            void operator()(X_monotone_polyline_segment_2 const& curve, Path& aPath,
+                            int aIdx) const
+            {
+                typedef Qt::Converter<Kernel> Converter;
+                Converter convert;
+            }
 
         };
 
