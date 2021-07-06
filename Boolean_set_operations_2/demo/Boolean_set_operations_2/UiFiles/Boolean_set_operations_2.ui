@@ -55,7 +55,7 @@
     <addaction name="actionOpenLinear" />
     <addaction name="actionOpenDXF" />
     <addaction name="actionOpenBezier" />
-    <addaction name="actionOpenPolyline" />
+    <addaction name="actionOpenPolyline" />f
     <addaction name="separator" />
     <addaction name="actionSaveCurrentBucket" />
     <addaction name="separator" />
