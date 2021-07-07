@@ -111,7 +111,7 @@
 #include "QT5/Circular_polygons.h"
 #include "QT5/Linear_polygons.h"
 #include "QT5/BezierCurves.h"
-//#include "QT5/Polyline_curves.h"
+#include "QT5/Polyline_curves.h"
 #include "QT5/Graphics_view_circular_polygon_input.h"
 #include "QT5/Graphics_view_linear_polygon_input.h"
 //#include "QT5/Graphics_view_polyline_input.h"
@@ -150,7 +150,7 @@ typedef CGAL::Qt::Linear_set_graphics_item<Linear_polygon_set,
 
 
 //typedef CGAL::Qt::Bezier_set_graphics_item<Bezier_polygon_set,
-  //                                         Bezier_traits>      Bezier_GI;
+//                                         Bezier_traits>      Bezier_GI;
 
 
 // Functions to show errors

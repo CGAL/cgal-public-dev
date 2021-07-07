@@ -59,20 +59,48 @@ namespace CGAL {
         struct Draw_polyline_X_monotone_curve {
             template <typename X_monotone_polyline_segment_2, typename Path>
             void operator()(X_monotone_polyline_segment_2 const& curve, Path& aPath,
-                            int aIdx) const
-            {
-                typedef Qt::Converter<Kernel> Converter;
-                Converter convert;
-            }
+                            int aIdx) const {
 
+                typedef Simple_cartesian<double> Kernel;
+                typedef Point_2 <Kernel> Linear_point;
+                typedef CGAL::Qt::Converter<Kernel> Converter;
+                Converter convert;
+                Linear_point ps(CGAL::to_double(curve.source().x()),
+                                CGAL::to_double(curve.source().y()));
+                Linear_point pt(CGAL::to_double(curve.target().x()),
+                                CGAL::to_double(curve.target().y()));
+
+                if (aIdx == 0) aPath.moveTo(convert(ps));
+                else aPath.lineTo(convert(ps));
+                aPath.lineTo(convert(pt));
+            }
         };
 
-        struct Draw_polyline_curve {};
+        struct Draw_polyline_curve {
+            template <typename Linear_segment_2, class Path>
+            void operator()(Linear_segment_2 const& curve, Path& aPath, int aIdx) const {
+                //commenting it gives errors
+                typedef Simple_cartesian<double> Kernel;
+                typedef Point_2 <Kernel> Linear_point;
+                typedef Qt::Converter<Kernel> Converter;
+                Converter convert;
+
+                Linear_point ps(CGAL::to_double(curve.source().x()),
+                                CGAL::to_double(curve.source().y()));
+                Linear_point pt(CGAL::to_double(curve.target().x()),
+                                CGAL::to_double(curve.target().y()));
+
+                if (aIdx == 0) aPath.moveTo(convert(ps));
+                else aPath.lineTo(convert(ps));
+                aPath.lineTo(convert(pt));
+            }
+        };
 
         template<typename Polyline_boundary_pieces>
         class Polyline_boundary_pieces_graphics_item :
                 public Boundary_pieces_graphics_item<Polyline_boundary_pieces,
-                                                     Draw_polyline_curve, Polyline_bbox> {
+                                                     Draw_polyline_curve, Polyline_bbox>
+                                                     {
             typedef Boundary_pieces_graphics_item <Polyline_boundary_pieces,
                                                    Draw_polyline_curve,
                                                    Polyline_bbox> Base;
@@ -97,7 +125,7 @@ namespace CGAL {
             Polyline_set_graphics_item(Polyline_set *aSet, Gps_traits Polyline_traits) :
                     Base(aSet, Polyline_traits) {}
         };
-    }
-}
+    }//namespace Qt
+}//namespace CGAL
 
 #endif //CGAL_POLYLINE_CURVES_H

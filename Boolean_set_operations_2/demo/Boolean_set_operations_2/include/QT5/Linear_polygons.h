@@ -82,23 +82,22 @@ struct Draw_linear_X_monotone_curve {
 
 struct Draw_linear_curve {
   template <typename Linear_segment_2, class Path>
-  void operator()(Linear_segment_2 const& curve, Path& aPath, int aIdx) const
-  {
-    //typedef Simple_cartesian<double> Linear_kernel;
+  void operator()(Linear_segment_2 const& curve, Path& aPath, int aIdx) const {
+      //typedef Simple_cartesian<double> Linear_kernel;
 
-    //commenting it gives errors
-    typedef Point_2<Kernel>             Linear_point;
-    typedef Qt::Converter<Kernel>       Converter;
-    Converter convert;
+      //commenting it gives errors
+      typedef Point_2 <Kernel> Linear_point;
+      typedef Qt::Converter<Kernel> Converter;
+      Converter convert;
 
-    Linear_point ps(CGAL::to_double(curve.source().x()),
-                    CGAL::to_double(curve.source().y()));
-    Linear_point pt(CGAL::to_double(curve.target().x()),
-                    CGAL::to_double(curve.target().y()));
+      Linear_point ps(CGAL::to_double(curve.source().x()),
+                      CGAL::to_double(curve.source().y()));
+      Linear_point pt(CGAL::to_double(curve.target().x()),
+                      CGAL::to_double(curve.target().y()));
 
-    if (aIdx == 0) aPath.moveTo(convert(ps));
-    else aPath.lineTo(convert(ps));
-    aPath.lineTo(convert(pt));
+      if (aIdx == 0) aPath.moveTo(convert(ps));
+      else aPath.lineTo(convert(ps));
+      aPath.lineTo(convert(pt));
   }
 };
 
