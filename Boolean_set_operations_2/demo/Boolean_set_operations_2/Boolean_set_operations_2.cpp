@@ -82,6 +82,7 @@
 #include <CGAL/Arr_Bezier_curve_traits_2.h>
 #include <CGAL/Arr_circle_segment_traits_2.h>
 #include <CGAL/Arr_conic_traits_2.h>
+#include <CGAL/Arr_polyline_traits_2.h>
 #include <CGAL/Iso_rectangle_2.h>
 #include <CGAL/Gps_traits_2.h>
 #include <CGAL/minkowski_sum_2.h>
@@ -111,7 +112,7 @@
 #include "QT5/Circular_polygons.h"
 #include "QT5/Linear_polygons.h"
 #include "QT5/BezierCurves.h"
-#include "QT5/Polyline_curves.h"
+//#include "QT5/Polyline_curves.h"
 #include "QT5/Graphics_view_circular_polygon_input.h"
 #include "QT5/Graphics_view_linear_polygon_input.h"
 //#include "QT5/Graphics_view_polyline_input.h"
