@@ -272,10 +272,10 @@ public:
   ///! \name Visitor types.
   //@{
 
-  typedef Arr_construction_sl_visitor<CHelper>
+  typedef Arr_construction_ss_visitor<CHelper>
     Sweep_line_construction_visitor;
 
-  typedef Arr_insertion_sl_visitor<IHelper>
+  typedef Arr_insertion_ss_visitor<IHelper>
     Sweep_line_insertion_visitor;
 
   typedef Sweep_line_construction_visitor
@@ -283,11 +283,11 @@ public:
 
   template <class OutputIterator_>
   struct Sweep_line_batched_point_location_visitor :
-    public Arr_batched_pl_sl_visitor<BplHelper, OutputIterator_>
+    public Arr_batched_pl_ss_visitor<BplHelper, OutputIterator_>
   {
     typedef OutputIterator_                             Output_iterator;
 
-    typedef Arr_batched_pl_sl_visitor<BplHelper, Output_iterator>   Base;
+    typedef Arr_batched_pl_ss_visitor<BplHelper, Output_iterator>   Base;
     typedef typename Base::Traits_2                                 Traits_2;
     typedef typename Base::Event                                    Event;
     typedef typename Base::Subcurve                                 Subcurve;
@@ -300,10 +300,10 @@ public:
 
   template <class OutputIterator_>
   struct Sweep_line_vertical_decomposition_visitor :
-    public Arr_vert_decomp_sl_visitor<VdHelper, OutputIterator_>
+    public Arr_vert_decomp_ss_visitor<VdHelper, OutputIterator_>
   {
     typedef OutputIterator_                             Output_iterator;
-    typedef Arr_vert_decomp_sl_visitor<VdHelper,Output_iterator>  Base;
+    typedef Arr_vert_decomp_ss_visitor<VdHelper,Output_iterator>  Base;
 
     typedef typename Base::Traits_2                     Traits_2;
     typedef typename Base::Event                        Event;
@@ -317,7 +317,7 @@ public:
 
   template <class ArrangementA_, class ArrangementB_, class OverlayTraits_>
   struct Sweep_line_overlay_visitor :
-    public Arr_overlay_sl_visitor
+    public Arr_overlay_ss_visitor
   <_Overlay_helper<Arr_overlay_traits_2<Geometry_traits_2,ArrangementA_,
     ArrangementB_>,
     ArrangementA_, ArrangementB_>, OverlayTraits_>
@@ -333,7 +333,7 @@ public:
     typedef _Overlay_helper<Geom_ovl_traits_2,ArrangementA_2,ArrangementB_2>
                                                         Ovl_helper;
 
-    typedef Arr_overlay_sl_visitor<Ovl_helper,Overlay_traits>   Base;
+    typedef Arr_overlay_ss_visitor<Ovl_helper,Overlay_traits>   Base;
 
     typedef typename Base::Traits_2                     Traits_2;
     typedef typename Base::Event                        Event;
