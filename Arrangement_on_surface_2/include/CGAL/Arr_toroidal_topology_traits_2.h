@@ -32,16 +32,15 @@
 #include <CGAL/Arrangement_2/Arr_traits_adaptor_2.h>
 #include <CGAL/Surface_sweep_2/Arr_construction_event.h>
 #include <CGAL/Surface_sweep_2/Arr_construction_subcurve.h>
-#include <CGAL/Surface_sweep_2/Arr_construction_sl_visitor.h>
+#include <CGAL/Surface_sweep_2/Arr_construction_ss_visitor.h>
 #include <CGAL/Surface_sweep_2/Arr_basic_insertion_traits_2.h>
-#include <CGAL/Surface_sweep_2/Arr_basic_insertion_sl_visitor.h>
 #include <CGAL/Surface_sweep_2/Arr_insertion_traits_2.h>
-#include <CGAL/Surface_sweep_2/Arr_insertion_sl_visitor.h>
+#include <CGAL/Surface_sweep_2/Arr_insertion_ss_visitor.h>
 #include <CGAL/Surface_sweep_2/Arr_overlay_subcurve.h>
 #include <CGAL/Surface_sweep_2/Arr_overlay_traits_2.h>
-#include <CGAL/Surface_sweep_2/Arr_overlay_sl_visitor.h>
-#include <CGAL/Surface_sweep_2/Arr_batched_pl_sl_visitor.h>
-#include <CGAL/Surface_sweep_2/Arr_vert_decomp_sl_visitor.h>
+#include <CGAL/Surface_sweep_2/Arr_overlay_ss_visitor.h>
+#include <CGAL/Surface_sweep_2/Arr_batched_pl_ss_visitor.h>
+#include <CGAL/Surface_sweep_2/Arr_vert_decomp_ss_visitor.h>
 #include <CGAL/Arr_point_location/Arr_batched_point_location_traits_2.h>
 
 #include <CGAL/Arr_topology_traits/Arr_toroidal_construction_helper.h>
@@ -281,9 +280,6 @@ public:
 
   typedef Sweep_line_construction_visitor
     Sweep_line_non_intersecting_construction_visitor;
-
-  typedef Arr_basic_insertion_sl_visitor<BIHelper>
-    Sweep_line_non_intersecting_insertion_visitor;
 
   template <class OutputIterator_>
   struct Sweep_line_batched_point_location_visitor :
