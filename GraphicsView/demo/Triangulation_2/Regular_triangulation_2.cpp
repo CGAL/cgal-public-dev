@@ -94,6 +94,7 @@ MainWindow::MainWindow()
                    dgi, SLOT(modelChanged()));
 
   dgi->setVerticesPen(QPen(Qt::red, 0, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin));
+  dgi->setEdgesPen(QPen(Qt::black, 0, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin));
   scene.addItem(dgi);
 
   // Add a GraphicItem for the Powerdiagram diagram
@@ -259,7 +260,7 @@ MainWindow::on_actionLoadPoints_triggered()
     {
 #if BOOST_VERSION >= 105600 && (! defined(BOOST_GCC) || BOOST_GCC >= 40500)
       std::vector<K::Point_3> points_3;
-      CGAL::read_multi_point_WKT(ifs, points_3);
+      CGAL::IO::read_multi_point_WKT(ifs, points_3);
       for(const K::Point_3& p : points_3)
       {
         points.push_back(Weighted_point_2(K::Point_2(p.x(), p.y()), p.z()));
@@ -307,7 +308,7 @@ MainWindow::on_actionSavePoints_triggered()
                                       vit->point().y(),
                                       vit->point().weight()));
       }
-      CGAL::write_multi_point_WKT(ofs, points_3);
+      CGAL::IO::write_multi_point_WKT(ofs, points_3);
 #endif
     }
     else

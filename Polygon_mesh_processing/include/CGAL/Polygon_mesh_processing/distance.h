@@ -866,8 +866,8 @@ sample_triangle_mesh(const TriangleMesh& tm,
  *
  * @tparam PointRange a model of the concept `RandomAccessContainer` whose value type is the point type.
  * @tparam TriangleRange a model of the concept `RandomAccessContainer`
- *                      whose value_type is itself a model of the concept `RandomAccessContainer`
- *                      whose value_type is an unsigned integral value.
+ *                      whose `value_type` is itself a model of the concept `RandomAccessContainer`
+ *                      whose `value_type` is an unsigned integral value.
  * @tparam PointOutputIterator a model of `OutputIterator` holding objects of the same type as `PointRange`'s value type
  * @tparam NamedParameters a sequence of \ref bgl_namedparameters "Named Parameters"
  *
@@ -1064,9 +1064,9 @@ double approximate_Hausdorff_distance(
  * `tm1` and `np1` as parameter.
  *
  * A parallel version is provided and requires the executable to be
- * linked against the <a href="https://www.threadingbuildingblocks.org">Intel TBB library</a>.
+ * linked against the <a href="https://github.com/oneapi-src/oneTBB">Intel TBB library</a>.
  * To control the number of threads used, the user may use the `tbb::task_scheduler_init` class.
- * See the <a href="https://www.threadingbuildingblocks.org/documentation">TBB documentation</a>
+ * See the <a href="https://software.intel.com/content/www/us/en/develop/documentation/onetbb-documentation/top.html">TBB documentation</a>
  * for more details.
  *
  * @tparam Concurrency_tag enables sequential versus parallel algorithm.

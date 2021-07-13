@@ -48,7 +48,7 @@ public:
   typedef typename Base::Hole_const_iterator         Hole_const_iterator;
   typedef typename Base::Size                        Size;
 
-  /*! Default constructor. */
+  /*! %Default constructor. */
   Polygon_with_holes_2 () :
     Base()
   {}
@@ -103,7 +103,7 @@ std::ostream& operator<<(std::ostream &os,
 {
   typename Polygon_with_holes_2<Kernel_,Container_>::Hole_const_iterator i;
 
-  switch(get_mode(os)) {
+  switch(IO::get_mode(os)) {
     case IO::ASCII :
       os << p.outer_boundary() << ' ' << p.number_of_holes()<<' ';
       for (i = p.holes_begin(); i != p.holes_end(); ++i) {
@@ -146,8 +146,7 @@ std::ostream& operator<<(std::ostream &os,
 /*!
 This operator imports a polygon with holes from the input stream `in`.
 
-An ASCII and a binary format exist. The stream detects the format
-automatically and can read both.
+Both ASCII and binary formats are supported, and the format is automatically detected.
 
 The format consists of the number of points of the outer boundary followed
 by the points themselves in counterclockwise order, followed by the number of holes,
