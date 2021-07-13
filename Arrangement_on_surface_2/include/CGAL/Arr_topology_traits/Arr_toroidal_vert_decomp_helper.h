@@ -28,13 +28,12 @@
 
 namespace CGAL {
 
-#include <CGAL/Sweep_line_empty_visitor.h>
-
 /*! \class Arr_toroidal_vert_decomp_helper
  * A helper class for the vertical decomposition sweep-line visitor, suitable
  * for an Arrangement_on_surface_2 instantiated with a topology-traits class.
  */
-template <class Traits_, class Arrangement_>
+template <class Traits_, class Arrangement_, typename Event_,
+          typename Subcurve_>
 class Arr_toroidal_vert_decomp_helper
 {
 public:
@@ -42,13 +41,11 @@ public:
   typedef Traits_                                      Traits_2;
   typedef typename Traits_2::X_monotone_curve_2        X_monotone_curve_2;
   typedef Arrangement_                                 Arrangement_2;
+  typedef Event_                                       Event;
+  typedef Subcurve_                                    Subcurve;
 
   typedef typename Arrangement_2::Face_const_handle    Face_const_handle;
   typedef typename Arrangement_2::Vertex_const_handle  Vertex_const_handle;
-
-  typedef Sweep_line_empty_visitor<Traits_2>           Base_visitor;
-  typedef typename Base_visitor::Event                 Event;
-  typedef typename Base_visitor::Subcurve              Subcurve;
 
 protected:
 

@@ -27,7 +27,6 @@
  * Definition of the Arr_toroidal_construction_helper class-template.
  */
 
-#include <CGAL/Sweep_line_empty_visitor.h>
 #include <CGAL/Unique_hash_map.h>
 
 namespace CGAL {
@@ -47,9 +46,6 @@ public:
 
   typedef typename Traits_2::X_monotone_curve_2           X_monotone_curve_2;
   typedef typename Traits_2::Point_2                      Point_2;
-
-  typedef Sweep_line_empty_visitor<Traits_2, Subcurve, Event>
-                                                          Base_visitor;
 
   typedef typename Arrangement_2::Vertex_handle           Vertex_handle;
   typedef typename Arrangement_2::Halfedge_handle         Halfedge_handle;

@@ -27,7 +27,7 @@
  * Definition of the Arr_toroidal_insertion_helper class-template.
  */
 
-#include <CGAL/Sweep_line_2/Arr_construction_ss_visitor.h>
+#include <CGAL/Surface_sweep_2/Arr_construction_ss_visitor.h>
 #include <CGAL/Arr_topology_traits/Arr_toroidal_construction_helper.h>
 
 namespace CGAL {
@@ -54,9 +54,6 @@ public:
 
   typedef Arr_toroidal_construction_helper<Traits_2, Arrangement_2, Event,
                                             Subcurve>   Base;
-
-  typedef Sweep_line_empty_visitor<Traits_2, Subcurve, Event>
-                                                        Base_visitor;
 
   typedef Arr_toroidal_insertion_helper<Traits_2, Arrangement_2, Event,
                                          Subcurve>      Self;
