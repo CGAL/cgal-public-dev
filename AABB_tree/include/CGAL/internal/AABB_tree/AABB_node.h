@@ -41,7 +41,7 @@ public:
   /// Constructor
   AABB_node()
     : m_bbox()
-    , m_children({nullptr, nullptr})      {};
+    , m_children({static_cast<Node *>(nullptr), static_cast<Node *>(nullptr)})      {};
 
   AABB_node(Self&& node) = default;
 
@@ -76,28 +76,28 @@ private:
 public:
   /// Helper functions
   const Node& left_child() const
-                     { return *static_cast<Node*>(m_children[0]); }
+                     { return *boost::get<Node*>(m_children[0]); }
   const Node& right_child() const
-                     { return *static_cast<Node*>(m_children[1]); }
+                     { return *boost::get<Node*>(m_children[1]); }
   const Primitive& left_data() const
-                     { return *static_cast<Primitive*>(m_children[0]); }
+                     { return *boost::get<Primitive*>(m_children[0]); }
   const Primitive& right_data() const
-                     { return *static_cast<Primitive*>(m_children[1]); }
+                     { return *boost::get<Primitive*>(m_children[1]); }
   template <class Left, class Right>
   void set_children(Left& l, Right& r)
   {
-    m_children[0] = static_cast<void*>(std::addressof(l));
-    m_children[1] = static_cast<void*>(std::addressof(r));
+    m_children[0] = std::addressof(l);
+    m_children[1] = std::addressof(r);
   }
   void set_bbox(const Bounding_box& bbox)
   {
     m_bbox = bbox;
   }
 
-  Node& left_child() { return *static_cast<Node*>(m_children[0]); }
-  Node& right_child() { return *static_cast<Node*>(m_children[1]); }
-  Primitive& left_data() { return *static_cast<Primitive*>(m_children[0]); }
-  Primitive& right_data() { return *static_cast<Primitive*>(m_children[1]); }
+  Node& left_child() { return *boost::get<Node*>(m_children[0]); }
+  Node& right_child() { return *boost::get<Node*>(m_children[1]); }
+  Primitive& left_data() { return *boost::get<Primitive*>(m_children[0]); }
+  Primitive& right_data() { return *boost::get<Primitive*>(m_children[1]); }
 
 private:
   /// node bounding box
@@ -105,7 +105,7 @@ private:
 
   /// children nodes, either pointing towards children (if children are not leaves),
   /// or pointing toward input primitives (if children are leaves).
-  std::array<void *, 2> m_children;
+  std::array<boost::variant<Node *, Primitive *>, 2> m_children;
 
 };  // end class AABB_node
 
