@@ -1243,6 +1243,9 @@ public:
     OutputIterator_ operator()(const Point_2& source, const Point_2& target,
                                OutputIterator_ oi) const
     {
+      typedef boost::variant<Point_2, X_monotone_curve_2>
+        Make_x_monotone_result;
+
       FT xs = source.x();
       FT ys = source.y();
       FT xt = target.x();
@@ -1273,7 +1276,7 @@ public:
         Point_2 from(xs, ys);
         Point_2 to(x_next_y, 1);
         X_monotone_curve_2 xcv = ctr(from, to);
-        *oi++ = make_object(xcv);
+        *oi++ = Make_x_monotone_result(xcv);
         xs = x_next_y;
         // \todo The decrementor operator is not supported for the Epec kernel?
         // --yt_quotient;
@@ -1285,7 +1288,7 @@ public:
         FT x_next_y = m_slope + xs;
         Point_2 to(x_next_y, 1);
         X_monotone_curve_2 xcv = ctr(curr, to);
-        *oi++ = make_object(xcv);
+        *oi++ = Make_x_monotone_result(xcv);
         xs = x_next_y;
         // --yt_quotient;
         // \todo The decrementor operator is not supported for the Epec kernel?
@@ -1296,7 +1299,7 @@ public:
       if (yt_reminder != 0) {
         Point_2 to(xt, Compose()(yt_reminder, yt_den));
         X_monotone_curve_2 xcv = ctr(curr, to);
-        *oi++ = make_object(xcv);
+        *oi++ = Make_x_monotone_result(xcv);
       }
       return oi;
     }
@@ -1313,17 +1316,19 @@ public:
     template<typename OutputIterator_>
     OutputIterator_ operator()(const Curve_2& cv, OutputIterator_ oi) const
     {
+      typedef boost::variant<Point_2, X_monotone_curve_2>
+        Make_x_monotone_result;
       if (cv.is_degenerate()) {
         // The curve is a degenerate point---wrap it with an object:
-        *oi++ = make_object(cv.right());
+        *oi++ = Make_x_monotone_result(cv.right());
         return oi;
       }
 
       if (cv.is_x_monotone()) {
         // The curve is monotone---wrap it with an object:
-        // *oi++ = make_object(X_monotone_curve_2(c));
+        // *oi++ = Make_x_monotone_result(X_monotone_curve_2(c));
         const X_monotone_curve_2* xcv = &cv;
-        *oi++ = make_object(*xcv);
+        *oi++ = Make_x_monotone_result(*xcv);
         return oi;
       }
 
@@ -1489,8 +1494,11 @@ public:
        */
       result_type operator()(const typename Kernel::Point_2& p) const
       {
+        typedef std::pair<Point_2, Multiplicity>        Intersection_point;
+        typedef boost::variant<Intersection_point, X_monotone_curve_2>
+                                                        Intersection_result;
         std::pair<typename Traits::Point_2, Multiplicity> po(Point_2(p), 1);
-        *m_oi++ = make_object(po);
+        *m_oi++ = Intersection_result(Intersection_point(po));
       }
 
       /*! Handle the case where the intersection is a segment.
@@ -1498,10 +1506,13 @@ public:
        */
       result_type operator()(const typename Kernel::Segment_2& s) const
       {
+        typedef std::pair<Point_2, Multiplicity>        Intersection_point;
+        typedef boost::variant<Intersection_point, X_monotone_curve_2>
+                                                        Intersection_result;
         typename Traits::Construct_x_monotone_curve_2 ctr =
           m_traits.construct_x_monotone_curve_2_object();
         X_monotone_curve_2 xcv = ctr(Point_2(s.source()), Point_2(s.target()));
-        *m_oi++ = make_object(xcv);
+        *m_oi++ = Intersection_result(xcv);
       }
     };
 
