@@ -173,9 +173,10 @@ public:
 
     if(begin == end) return;
 
+    Rational_segment_3* (*addrof)(Rational_segment_3&) =
+      &std::addressof<Rational_segment_3>;
     std::vector<const Rational_segment_3*> segs;
-    std::transform(begin, end, std::back_inserter(segs),
-                   &std::addressof<Rational_segment_3>);
+    std::transform(begin, end, std::back_inserter(segs), addrof);
 
     if (segs.empty()) return;
 
