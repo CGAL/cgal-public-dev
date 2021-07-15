@@ -39,7 +39,7 @@ namespace CGAL {
 
     /// Constructor
     AABB_node()
-            : m_bbox(), m_children(nullptr) {};
+            : m_bbox(), m_children(static_cast<Node *>(nullptr)) {};
 
     AABB_node(Self &&node) = default;
 
@@ -74,15 +74,18 @@ namespace CGAL {
 
   public:
     /// Helper functions
-    const Node &left_child() const { return boost::get<Node>(m_children[0]); }
+    const Node &left_child() const { return boost::get<Node *>(m_children)[0]; }
 
-    const Node &right_child() const { return boost::get<Node>(m_children[1]); }
+    const Node &right_child() const { return boost::get<Node *>(m_children)[1]; }
 
-    const Primitive &left_data() const { return *boost::get<Primitive *>(m_children[0]); }
+    const Primitive &data() const { return *boost::get<Primitive *>(m_children); }
 
-    const Primitive &right_data() const { return *boost::get<Primitive *>(m_children[1]); }
+    const Primitive &left_data() const { return left_child().data(); }
 
-    void set_children(boost::variant<Node, Primitive *> *children) {
+    const Primitive &right_data() const { return right_child().data(); }
+
+    template<class T>
+    void set_children(T *children) {
       m_children = children;
     }
 
@@ -90,13 +93,15 @@ namespace CGAL {
       m_bbox = bbox;
     }
 
-    Node &left_child() { return boost::get<Node>(m_children[0]); }
+    Node &left_child() { return boost::get<Node *>(m_children)[0]; }
 
-    Node &right_child() { return boost::get<Node>(m_children[1]); }
+    Node &right_child() { return boost::get<Node *>(m_children)[1]; }
 
-    Primitive &left_data() { return *boost::get<Primitive *>(m_children[0]); }
+    Primitive &data() { return *boost::get<Primitive *>(m_children); }
 
-    Primitive &right_data() { return *boost::get<Primitive *>(m_children[1]); }
+    Primitive &left_data() { return left_child().data(); }
+
+    Primitive &right_data() { return right_child().data(); }
 
   private:
     /// node bounding box
@@ -105,7 +110,7 @@ namespace CGAL {
     /// children nodes, either pointing towards children (if children are not leaves),
     /// or pointing toward input primitives (if children are leaves).
 //  std::array<boost::variant<nullptr_t, Node *, Primitive *>, 2> m_children;
-    boost::variant<Node, Primitive *> *m_children;
+    boost::variant<Node *, Primitive *> m_children;
 
   };  // end class AABB_node
 

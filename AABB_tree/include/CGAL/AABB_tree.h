@@ -599,7 +599,7 @@ namespace CGAL {
     // set of input primitives
     Primitives m_primitives;
     // tree nodes. first node is the root node
-    std::vector<boost::variant<Node, Primitive *>> m_nodes; // TODO
+    std::vector<Node> m_nodes; // TODO
 #ifdef CGAL_HAS_THREADS
     mutable CGAL_MUTEX build_mutex; // mutex used to protect const calls inducing build() and build_kd_tree()
 #endif
@@ -619,13 +619,12 @@ namespace CGAL {
 #endif
           const_cast< AABB_tree<AABBTraits> * >(this)->build();
       }
-      return std::addressof(boost::get<Node>(m_nodes[0]));
+      return std::addressof(m_nodes[0]);
     }
 
     Node &new_node() {
-      // TODO
       m_nodes.emplace_back(Node{});
-      return boost::get<Node>(m_nodes.back());
+      return m_nodes.back();
     }
 
   private:
@@ -758,30 +757,28 @@ namespace CGAL {
                         const Tr &traits) {
     node.set_bbox(compute_bbox(first, beyond));
 
-    // sort primitives along longest axis aabb
-    split_primitives(first, beyond, node.bbox());
+    if (range == 1) {
+      // If there's only one primitive, this is a leaf node
+      node.template set_children(&*first);
 
-    switch (range) {
-      case 2:
-        // If there are only a pair of primitives, make this a leaf node
-        m_nodes.emplace_back(&*first);
-        m_nodes.emplace_back(&*(first + 1));
-        node.set_children(&*(m_nodes.end() - 2));
-        break;
-      case 3:
-        m_nodes.emplace_back(&*first);
-        m_nodes.emplace_back(Node{});
-        node.set_children(&*(m_nodes.end() - 2));
-        expand(node.right_child(), first + 1, beyond, 2, compute_bbox, split_primitives, traits);
-        break;
-      default:
-        const std::size_t new_range = range / 2;
-        m_nodes.emplace_back(Node{});
-        m_nodes.emplace_back(Node{});
-        node.set_children(&*(m_nodes.end() - 2));
-        expand(node.left_child(), first, first + new_range, new_range, compute_bbox, split_primitives, traits);
-        expand(node.right_child(), first + new_range, beyond, range - new_range, compute_bbox, split_primitives,
-               traits);
+    } else {
+      // Otherwise, the node needs to be split (recursively)
+
+      // sort primitives along longest axis aabb
+      split_primitives(first, beyond, node.bbox());
+
+      // The primitives should be approximately equally split between the two children
+      const std::size_t new_range = range / 2;
+
+      // Create a couple more nodes, to serve as the children
+      m_nodes.emplace_back(Node{});
+      m_nodes.emplace_back(Node{});
+      node.set_children(&*(m_nodes.end() - 2));
+
+      // Recursively subdivide the two new nodes
+      expand(node.left_child(), first, first + new_range, new_range, compute_bbox, split_primitives, traits);
+      expand(node.right_child(), first + new_range, beyond, range - new_range, compute_bbox, split_primitives,
+             traits);
     }
   }
 
