@@ -41,7 +41,7 @@ public:
   /// Constructor
   AABB_node()
     : m_bbox()
-    , m_children({static_cast<Node *>(nullptr), static_cast<Node *>(nullptr)})      {};
+    , m_children(nullptr)      {};
 
   AABB_node(Self&& node) = default;
 
@@ -76,26 +76,25 @@ private:
 public:
   /// Helper functions
   const Node& left_child() const
-                     { return *boost::get<Node*>(m_children[0]); }
+                     { return boost::get<Node>(m_children[0]); }
   const Node& right_child() const
-                     { return *boost::get<Node*>(m_children[1]); }
+                     { return boost::get<Node>(m_children[1]); }
   const Primitive& left_data() const
                      { return *boost::get<Primitive*>(m_children[0]); }
   const Primitive& right_data() const
                      { return *boost::get<Primitive*>(m_children[1]); }
-  template <class Left, class Right>
-  void set_children(Left& l, Right& r)
+
+  void set_children(boost::variant<Node, Primitive *> *children)
   {
-    m_children[0] = std::addressof(l);
-    m_children[1] = std::addressof(r);
+    m_children = children;
   }
   void set_bbox(const Bounding_box& bbox)
   {
     m_bbox = bbox;
   }
 
-  Node& left_child() { return *boost::get<Node*>(m_children[0]); }
-  Node& right_child() { return *boost::get<Node*>(m_children[1]); }
+  Node& left_child() { return boost::get<Node>(m_children[0]); }
+  Node& right_child() { return boost::get<Node>(m_children[1]); }
   Primitive& left_data() { return *boost::get<Primitive*>(m_children[0]); }
   Primitive& right_data() { return *boost::get<Primitive*>(m_children[1]); }
 
@@ -105,7 +104,8 @@ private:
 
   /// children nodes, either pointing towards children (if children are not leaves),
   /// or pointing toward input primitives (if children are leaves).
-  std::array<boost::variant<Node *, Primitive *>, 2> m_children;
+//  std::array<boost::variant<nullptr_t, Node *, Primitive *>, 2> m_children;
+  boost::variant<Node, Primitive *> *m_children;
 
 };  // end class AABB_node
 

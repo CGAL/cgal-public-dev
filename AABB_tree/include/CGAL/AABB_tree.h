@@ -598,7 +598,7 @@ public:
     // set of input primitives
     Primitives m_primitives;
     // tree nodes. first node is the root node
-    std::vector<Node> m_nodes;
+    std::vector<boost::variant<Node, Primitive *>> m_nodes; // TODO
     #ifdef CGAL_HAS_THREADS
     mutable CGAL_MUTEX build_mutex; // mutex used to protect const calls inducing build() and build_kd_tree()
     #endif
@@ -618,13 +618,14 @@ public:
 #endif
         const_cast< AABB_tree<AABBTraits>* >(this)->build();
       }
-      return std::addressof(m_nodes[0]);
+      return std::addressof(boost::get<Node>(m_nodes[0]));
     }
 
     Node& new_node()
     {
-      m_nodes.emplace_back();
-      return m_nodes.back();
+      // TODO
+      m_nodes.emplace_back(Node{});
+      return boost::get<Node>(m_nodes.back());
     }
   private:
     const Primitive& singleton_data() const {
@@ -772,15 +773,22 @@ public:
     switch(range)
     {
     case 2:
-      node.set_children(*first, *(first+1));
+      // If there are only a pair of primitives, make this a leaf node
+      m_nodes.emplace_back(&*first);
+      m_nodes.emplace_back(&*(first + 1));
+      node.set_children(&*(m_nodes.end() - 2));
       break;
     case 3:
-      node.set_children(*first, new_node());
+      m_nodes.emplace_back(&*first);
+      m_nodes.emplace_back(Node{});
+      node.set_children(&*(m_nodes.end() - 2));
       expand(node.right_child(), first+1, beyond, 2, compute_bbox, split_primitives, traits);
       break;
     default:
       const std::size_t new_range = range/2;
-      node.set_children(new_node(), new_node());
+      m_nodes.emplace_back(Node{});
+      m_nodes.emplace_back(Node{});
+      node.set_children(&*(m_nodes.end() - 2));
       expand(node.left_child(), first, first + new_range, new_range, compute_bbox, split_primitives, traits);
       expand(node.right_child(), first + new_range, beyond, range - new_range, compute_bbox, split_primitives, traits);
     }
@@ -807,7 +815,7 @@ public:
     if(m_primitives.size() > 1) {
 
       // allocates tree nodes
-      m_nodes.reserve(m_primitives.size()-1);
+      m_nodes.reserve(2 * m_primitives.size()-1);
 
       // constructs the tree
       expand(new_node(),
