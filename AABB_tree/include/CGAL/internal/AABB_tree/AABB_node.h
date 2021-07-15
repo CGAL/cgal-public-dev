@@ -76,20 +76,6 @@ namespace CGAL {
   public:
     /// Helper functions
 
-    CGAL::Iterator_range<const Node *> children() const {
-      return {boost::get<Node *>(m_children), boost::get<Node *>(m_children) + 2};
-    }
-
-    const Node &left_child() const { return boost::get<Node *>(m_children)[0]; }
-
-    const Node &right_child() const { return boost::get<Node *>(m_children)[1]; }
-
-    const Primitive &data() const { return *boost::get<Primitive *>(m_children); }
-
-    const Primitive &left_data() const { return left_child().data(); }
-
-    const Primitive &right_data() const { return right_child().data(); }
-
     template<class T>
     void set_children(T *children) {
       m_children = children;
@@ -103,15 +89,32 @@ namespace CGAL {
       return {boost::get<Node *>(m_children), boost::get<Node *>(m_children) + 2};
     }
 
-    Node &left_child() { return boost::get<Node *>(m_children)[0]; }
-
-    Node &right_child() { return boost::get<Node *>(m_children)[1]; }
+    CGAL::Iterator_range<const Node *> children() const {
+      return {boost::get<Node *>(m_children), boost::get<Node *>(m_children) + 2};
+    }
 
     Primitive &data() { return *boost::get<Primitive *>(m_children); }
 
+    const Primitive &data() const { return *boost::get<Primitive *>(m_children); }
+
+  public:
+    // Deprecated
+
+    Node &left_child() { return *(children().begin()); }
+
+    const Node &left_child() const { return *(children().begin()); }
+
+    Node &right_child() { return *(children().begin() + 1); }
+
+    const Node &right_child() const { return *(children().begin() + 1); }
+
     Primitive &left_data() { return left_child().data(); }
 
+    const Primitive &left_data() const { return left_child().data(); }
+
     Primitive &right_data() { return right_child().data(); }
+
+    const Primitive &right_data() const { return right_child().data(); }
 
   private:
     /// node bounding box
