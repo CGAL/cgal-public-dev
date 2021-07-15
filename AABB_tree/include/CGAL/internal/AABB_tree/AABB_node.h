@@ -21,6 +21,7 @@
 #include <CGAL/intersections.h>
 #include <CGAL/Bbox_3.h>
 #include <vector>
+#include <CGAL/Iterator_range.h>
 
 namespace CGAL {
 
@@ -74,6 +75,11 @@ namespace CGAL {
 
   public:
     /// Helper functions
+
+    CGAL::Iterator_range<const Node *> children() const {
+      return {boost::get<Node *>(m_children), boost::get<Node *>(m_children) + 2};
+    }
+
     const Node &left_child() const { return boost::get<Node *>(m_children)[0]; }
 
     const Node &right_child() const { return boost::get<Node *>(m_children)[1]; }
@@ -93,6 +99,10 @@ namespace CGAL {
       m_bbox = bbox;
     }
 
+    CGAL::Iterator_range<Node *> children() {
+      return {boost::get<Node *>(m_children), boost::get<Node *>(m_children) + 2};
+    }
+
     Node &left_child() { return boost::get<Node *>(m_children)[0]; }
 
     Node &right_child() { return boost::get<Node *>(m_children)[1]; }
@@ -107,9 +117,6 @@ namespace CGAL {
     /// node bounding box
     Bounding_box m_bbox;
 
-    /// children nodes, either pointing towards children (if children are not leaves),
-    /// or pointing toward input primitives (if children are leaves).
-//  std::array<boost::variant<nullptr_t, Node *, Primitive *>, 2> m_children;
     boost::variant<Node *, Primitive *> m_children;
 
   };  // end class AABB_node
@@ -121,29 +128,25 @@ namespace CGAL {
   AABB_node<Tr>::traversal(const Query &query,
                            Traversal_traits &traits,
                            const std::size_t nb_primitives) const {
-    // Recursive traversal
-    switch (nb_primitives) {
-      case 2:
-        traits.intersection(query, left_data());
-        if (traits.go_further()) {
-          traits.intersection(query, right_data());
-        }
-        break;
-      case 3:
-        traits.intersection(query, left_data());
-        if (traits.go_further() && traits.do_intersect(query, right_child())) {
-          right_child().traversal(query, traits, 2);
-        }
-        break;
-      default:
-        if (traits.do_intersect(query, left_child())) {
-          left_child().traversal(query, traits, nb_primitives / 2);
-          if (traits.go_further() && traits.do_intersect(query, right_child())) {
-            right_child().traversal(query, traits, nb_primitives - nb_primitives / 2);
-          }
-        } else if (traits.do_intersect(query, right_child())) {
-          right_child().traversal(query, traits, nb_primitives - nb_primitives / 2);
-        }
+
+    // This is a Depth-first traversal
+
+    if (nb_primitives == 1) {
+
+      // If there's only one primitive, we've reached a leaf node
+      traits.intersection(query, data());
+
+    } else {
+
+      // FIXME we need to determine the number of primitives in each child node
+
+      // Otherwise, recursively search the child nodes
+      // FIXME do this in a way that's independent of the number of child nodes
+      if (traits.do_intersect(query, left_child()))
+        left_child().traversal(query, traits, nb_primitives / 2);
+      if (traits.go_further() && traits.do_intersect(query, right_child()))
+        right_child().traversal(query, traits, nb_primitives - nb_primitives / 2);
+
     }
   }
 
