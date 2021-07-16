@@ -102,7 +102,7 @@ int main()
   std::cout << bbox_center << std::endl;
   std::cout << max_extent << std::endl;
 
-  const int NB_RAYS = 1000;
+  const int NB_RAYS = 100000;
   std::vector<Point> v1, v2;
   v1.reserve(NB_RAYS); v2.reserve(NB_RAYS);
 

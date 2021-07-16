@@ -95,94 +95,39 @@ namespace CGAL {
         Node_ptr_with_ft current = pq.top();
         pq.pop();
 
-        // Behavior depends on the number of primitives
-        switch (current.nb_primitives) {
+        if (current.nb_primitives == 1) {
+          // If this node is a leaf, directly check for intersection
 
-          // Leaf node, primitives on left and right
-          case 2: {
+          // Only check this node if we're not told to skip it
+          if (!skip(current.node->data().id())) {
 
-            // If we're not skipping the left primitive
-            if (!skip(current.node->left_data().id())) {
+            // Check if it intersects with the query ray, using the functor we created before
+            intersection = intersection_obj(query, current.node->data());
+            if (intersection) {
 
-              // Check if it intersects with the query ray, using the functor we created before
-              intersection = intersection_obj(query, current.node->left_data());
-              if (intersection) {
+              // If it did intersect, use our distance heuristic to estimate how close the first intersection is
+              FT ray_distance = boost::apply_visitor(param_visitor, intersection->first);
 
-                // If it did intersect, use our distance heuristic to estimate how close the first intersection is
-                FT ray_distance = boost::apply_visitor(param_visitor, intersection->first);
-
-                // If this intersection is closer than the previous best, update the closest intersection
-                if (ray_distance < t) {
-                  t = ray_distance;
-                  p = intersection;
-                }
+              // If this intersection is closer than the previous best, update the closest intersection
+              if (ray_distance < t) {
+                t = ray_distance;
+                p = intersection;
               }
             }
-
-            // If we're not skipping the right primitive
-            if (!skip(current.node->right_data().id())) {
-
-              // Check if it intersects with the query ray, using the functor we created before
-              intersection = intersection_obj(query, current.node->right_data());
-              if (intersection) {
-
-                // If it did intersect, use our distance heuristic to estimate how close the first intersection is
-                FT ray_distance = boost::apply_visitor(param_visitor, intersection->first);
-
-                // If this intersection is closer than the previous best, update the closest intersection
-                if (ray_distance < t) {
-                  t = ray_distance;
-                  p = intersection;
-                }
-              }
-            }
-            break;
           }
 
-            // Left leaf, inner node on right
-          case 3: {
+        } else {
+          // If the node has children, add them to the queue to be checked later
 
-            // If we're not skipping the left primitive
-            if (!skip(current.node->left_data().id())) {
+          // If the ray passes through the left child's bounding box, add it to the queue
+          const Node *child = &(current.node->left_child());
+          boost::optional<FT> dist = intersection_distance_obj(query, child->bbox());
+          if (dist) pq.push(Node_ptr_with_ft(child, *dist, current.nb_primitives / 2));
 
-              // Check if it intersects with the query ray, using the functor we created before
-              intersection = intersection_obj(query, current.node->left_data());
-              if (intersection) {
-
-                // If it did intersect, use our distance heuristic to estimate how close the first intersection is
-                FT ray_distance = boost::apply_visitor(param_visitor, intersection->first);
-
-                // If this intersection is closer than the previous best, update the closest intersection
-                if (ray_distance < t) {
-                  t = ray_distance;
-                  p = intersection;
-                }
-              }
-            }
-
-            // If the ray passes through the right child's bounding box, add it to the queue
-            const Node *child = &(current.node->right_child());
-            boost::optional<FT> dist = intersection_distance_obj(query, child->bbox());
-            if (dist) pq.push(Node_ptr_with_ft(child, *dist, 2));
-
-            break;
-          }
-
-            // Inner node on both left and right
-          default: {
-
-            // If the ray passes through the left child's bounding box, add it to the queue
-            const Node *child = &(current.node->left_child());
-            boost::optional<FT> dist = intersection_distance_obj(query, child->bbox());
-            if (dist) pq.push(Node_ptr_with_ft(child, *dist, current.nb_primitives / 2));
-
-            // If the ray passes through the right child's bounding box, add it to the queue
-            child = &(current.node->right_child());
-            dist = intersection_distance_obj(query, child->bbox());
-            if (dist) pq.push(Node_ptr_with_ft(child, *dist, current.nb_primitives - current.nb_primitives / 2));
-
-            break;
-          }
+          // If the ray passes through the right child's bounding box, add it to the queue
+          child = &(current.node->right_child());
+          dist = intersection_distance_obj(query, child->bbox());
+          if (dist) pq.push(Node_ptr_with_ft(child, *dist, current.nb_primitives - current.nb_primitives / 2));
         }
       }
 
