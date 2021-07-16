@@ -40,7 +40,7 @@ namespace CGAL {
 
     /// Constructor
     AABB_node()
-            : m_bbox(), m_children(static_cast<Node *>(nullptr)) {};
+            : m_bbox(), m_children(static_cast<Primitive *>(nullptr)) {};
 
     AABB_node(Self &&node) = default;
 
@@ -85,12 +85,12 @@ namespace CGAL {
       m_bbox = bbox;
     }
 
-    CGAL::Iterator_range<Node *> children() {
-      return {boost::get<Node *>(m_children), boost::get<Node *>(m_children) + 2};
+    std::array<Node, 2> &children() {
+      return *boost::get<std::array<Node, 2> *>(m_children);
     }
 
-    CGAL::Iterator_range<const Node *> children() const {
-      return {boost::get<Node *>(m_children), boost::get<Node *>(m_children) + 2};
+    const std::array<Node, 2> &children() const {
+      return *boost::get<std::array<Node, 2> *>(m_children);
     }
 
     Primitive &data() { return *boost::get<Primitive *>(m_children); }
@@ -112,7 +112,7 @@ namespace CGAL {
     /// node bounding box
     Bounding_box m_bbox;
 
-    boost::variant<Node *, Primitive *> m_children;
+    boost::variant<std::array<Node, 2> *, Primitive *> m_children;
 
   };  // end class AABB_node
 

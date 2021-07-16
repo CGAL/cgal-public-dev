@@ -771,11 +771,11 @@ namespace CGAL {
       // TODO this is ugly
       m_nodes.emplace_back(Node{});
       m_nodes.emplace_back(Node{});
-      node.set_children(&*(m_nodes.end() - 2));
+      node.set_children(reinterpret_cast<std::array<Node, 2> *>(&*(m_nodes.end() - 2)));
 
       // Construct each of the child nodes
       ConstPrimitiveIterator node_first = first;
-      for(auto &child : node.children()) {
+      for (auto &child : node.children()) {
 
         // Determine how many primitives this node should hold
         const std::size_t num_primitives = node.num_primitives(child, range);
