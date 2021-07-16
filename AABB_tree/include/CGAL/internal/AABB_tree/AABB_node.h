@@ -108,14 +108,6 @@ namespace CGAL {
 
     const Node &right_child() const { return *(children().begin() + 1); }
 
-    Primitive &left_data() { return left_child().data(); }
-
-    const Primitive &left_data() const { return left_child().data(); }
-
-    Primitive &right_data() { return right_child().data(); }
-
-    const Primitive &right_data() const { return right_child().data(); }
-
   private:
     /// node bounding box
     Bounding_box m_bbox;
