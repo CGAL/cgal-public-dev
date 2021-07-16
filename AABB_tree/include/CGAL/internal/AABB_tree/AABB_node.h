@@ -97,16 +97,16 @@ namespace CGAL {
 
     const Primitive &data() const { return *boost::get<Primitive *>(m_children); }
 
-  public:
-    // Deprecated
-
-    Node &left_child() { return *(children().begin()); }
-
-    const Node &left_child() const { return *(children().begin()); }
-
-    Node &right_child() { return *(children().begin() + 1); }
-
-    const Node &right_child() const { return *(children().begin() + 1); }
+    // TODO This is inefficient, perhaps nodes should know their own size?
+    std::size_t num_primitives(const Node &child, std::size_t total_num_primitives) const {
+      // Assumes that primitives are distributed as evenly as possible between children
+      // When there are leftover primitives, they go to earlier nodes first
+      std::size_t child_index = &child - children().begin();
+      std::size_t leftover_primitives = total_num_primitives % 2;
+      std::size_t base_num_primitives = floor((double) total_num_primitives / (double) 2);
+      std::size_t result = base_num_primitives + (child_index < leftover_primitives ? 1 : 0);
+      return result;
+    }
 
   private:
     /// node bounding box
@@ -137,11 +137,10 @@ namespace CGAL {
 
       // Otherwise, recursively search the child nodes
       // FIXME do this in a way that's independent of the number of child nodes
-      if (traits.do_intersect(query, left_child()))
-        left_child().traversal(query, traits, nb_primitives / 2);
-      if (traits.go_further() && traits.do_intersect(query, right_child()))
-        right_child().traversal(query, traits, nb_primitives - nb_primitives / 2);
-
+      for (const auto &child : children()){
+        if (traits.do_intersect(query, child))
+          child.traversal(query, traits, num_primitives(child, nb_primitives));
+      }
     }
   }
 

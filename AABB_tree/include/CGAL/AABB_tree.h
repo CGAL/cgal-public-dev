@@ -767,18 +767,29 @@ namespace CGAL {
       // sort primitives along longest axis aabb
       split_primitives(first, beyond, node.bbox());
 
-      // The primitives should be approximately equally split between the two children
-      const std::size_t new_range = range / 2;
-
       // Create a couple more nodes, to serve as the children
+      // TODO this is ugly
       m_nodes.emplace_back(Node{});
       m_nodes.emplace_back(Node{});
       node.set_children(&*(m_nodes.end() - 2));
 
-      // Recursively subdivide the two new nodes
-      expand(node.left_child(), first, first + new_range, new_range, compute_bbox, split_primitives, traits);
-      expand(node.right_child(), first + new_range, beyond, range - new_range, compute_bbox, split_primitives,
-             traits);
+      // Construct each of the child nodes
+      ConstPrimitiveIterator node_first = first;
+      for(auto &child : node.children()) {
+
+        // Determine how many primitives this node should hold
+        const std::size_t num_primitives = node.num_primitives(child, range);
+
+        // The end of this node's range is determined by its number of primitives
+        ConstPrimitiveIterator node_beyond = node_first + num_primitives;
+
+        // Recursively subdivide the child nodes
+        expand(child, node_first, node_beyond, num_primitives,
+               compute_bbox, split_primitives, traits);
+
+        // The next node should start where this one ended
+        node_first = node_beyond;
+      }
     }
   }
 

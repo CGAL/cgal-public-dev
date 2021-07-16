@@ -117,17 +117,11 @@ namespace CGAL {
           }
 
         } else {
-          // If the node has children, add them to the queue to be checked later
-
-          // If the ray passes through the left child's bounding box, add it to the queue
-          const Node *child = &(current.node->left_child());
-          boost::optional<FT> dist = intersection_distance_obj(query, child->bbox());
-          if (dist) pq.push(Node_ptr_with_ft(child, *dist, current.nb_primitives / 2));
-
-          // If the ray passes through the right child's bounding box, add it to the queue
-          child = &(current.node->right_child());
-          dist = intersection_distance_obj(query, child->bbox());
-          if (dist) pq.push(Node_ptr_with_ft(child, *dist, current.nb_primitives - current.nb_primitives / 2));
+          // If the node has children, add each of them to the queue to be checked later
+          for (const auto &child : current.node->children()) {
+            boost::optional<FT> dist = intersection_distance_obj(query, child.bbox());
+            if (dist) pq.push(Node_ptr_with_ft(&child, *dist, current.node->num_primitives(child, current.nb_primitives)));
+          }
         }
       }
 
