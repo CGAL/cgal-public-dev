@@ -176,7 +176,6 @@ namespace Qt {
       
       return rHandled ;
     }
-    
 
     bool mouseMoveEvent(QGraphicsSceneMouseEvent *aEvent)
     {

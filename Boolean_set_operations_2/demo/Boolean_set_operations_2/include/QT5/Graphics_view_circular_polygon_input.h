@@ -66,17 +66,17 @@ public:
   //constructor
   Graphics_view_circular_polygon_input(QObject* aParent,
                                        QGraphicsScene* aScene) :
-    GraphicsViewInput(aParent),
-    mScene(aScene),
-    mOngoingPieceGI(new GI(&mOngoingPieceCtr)),
-    mHandleGI(new QGraphicsLineItem()),
-    mCircularPolygonPen(QColor(0, 255, 0)),
-    mOngoingCurvePen(QColor(255, 215, 0)),
-    mHandlePen(QColor(255, 165, 0)),
-    mState(Start),
-    m_bound_rect(true),
-    m_last_circular(false),
-    m_last(false)
+    GraphicsViewInput         (aParent),
+    mScene                    (aScene),
+    mOngoingPieceGI           (new GI(&mOngoingPieceCtr)),
+    mHandleGI                 (new QGraphicsLineItem()),
+    mCircularPolygonPen       (QColor(0, 255, 0)),
+    mOngoingCurvePen          (QColor(255, 215, 0)),
+    mHandlePen                (QColor(255, 165, 0)),
+    mState                    (Start),
+    m_bound_rect              (true),
+    m_last_circular           (false),
+    m_last                    (false)
   {
     mOngoingPieceGI->setPen(mOngoingCurvePen);
     mHandleGI->setPen(mHandlePen);
@@ -123,8 +123,7 @@ public:
 public:
   //a set of all states of drawing a circular polygon
   enum State {
-    Start, PieceStarted, PieceOngoing, HandleOngoing, PieceEnded, CurveEnded
-  };
+    Start, PieceStarted, PieceOngoing, HandleOngoing, PieceEnded, CurveEnded};
 
   Point cvt(QPointF const& aP) const { return Point(aP.x(), aP.y()); }
 

@@ -80,6 +80,7 @@
 #include <CGAL/General_polygon_set_2.h>
 #include <CGAL/CORE_algebraic_number_traits.h>
 #include <CGAL/Arr_Bezier_curve_traits_2.h>
+#include <CGAL/Arr_polyline_traits_2.h>
 #include <CGAL/Arr_circle_segment_traits_2.h>
 #include <CGAL/Arr_conic_traits_2.h>
 #include <CGAL/Iso_rectangle_2.h>
@@ -114,7 +115,7 @@
 #include "QT5/Polyline_curves.h"
 #include "QT5/Graphics_view_circular_polygon_input.h"
 #include "QT5/Graphics_view_linear_polygon_input.h"
-//#include "QT5/Graphics_view_polyline_input.h"
+#include "QT5/Graphics_view_polyline_input.h"
 #include "QT5/GraphicsViewBezierPolygonInput.h"
 #include "QT5/Graphics_view_minkowski_input.h"
 #include "QT5/General_polygon_2.h"
@@ -146,7 +147,8 @@ typedef CGAL::Qt::Circular_set_graphics_item<Circular_polygon_set,
                                              Circular_traits>   Circular_GI;
 typedef CGAL::Qt::Linear_set_graphics_item<Linear_polygon_set,
                                              Linear_traits>     Linear_GI;
-
+typedef CGAL::Qt::Polyline_set_graphics_item<Polyline_polygon_set,
+                                             Polyline_traits>    Polyline_GI;
 
 
 //typedef CGAL::Qt::Bezier_set_graphics_item<Bezier_polygon_set,
@@ -582,6 +584,15 @@ public:
   virtual int type() const { return 2; }
 };
 
+//A class for connecting polyline polygon GUI and this file
+class Polyline_rep : public Rep<Polyline_GI, Polyline_polygon_set,Polyline_traits>
+{
+    typedef Rep<Polyline_GI, Polyline_polygon_set,Polyline_traits> Base;
+public:
+    Polyline_rep () : Base() {}
+    virtual int type() const { return 4; }
+};
+
 //A class for connecting bezier polygon GUI and this file
 class Bezier_rep : public Rep_o<Bezier_GI, Bezier_polygon_set>
 {
@@ -606,6 +617,7 @@ public:
     if      (aType == 1) m_rep = Rep_ptr(new Linear_rep());
     else if (aType == 2) m_rep = Rep_ptr(new Circular_rep());
     else if (aType == 3) m_rep = Rep_ptr(new Bezier_rep());
+    else if (aType == 4) m_rep = Rep_ptr(new Polyline_rep());
 
     //setting pen and brush
     m_rep->set_pen  (m_pen);
@@ -632,25 +644,21 @@ public:
       get_circular_rep()->assign(*aOther.get_circular_rep());
     else if (is_bezier() && aOther.is_bezier())
       get_bezier_rep()->assign( *aOther.get_bezier_rep()) ;
+    else if (is_polyline() && aOther.is_polyline())
+      get_polyline_rep()->assign( *aOther.get_polyline_rep()) ;
   }
 
   void intersect(Curve_set const& aOther)
   {
     std::cout<<"in the function intersect"<<endl;
     if (is_linear() && aOther.is_linear())
-      get_linear_rep()->intersect(*aOther.get_linear_rep());
-    else if (is_circular() && aOther.is_circular()) {
+        get_linear_rep()->intersect(*aOther.get_linear_rep());
+    else if (is_circular() && aOther.is_circular())
         get_circular_rep()->intersect(*aOther.get_circular_rep());
-     }
-    else if ( is_bezier() && aOther.is_bezier() ) {
-        try {
-            get_bezier_rep()->intersect(*aOther.get_bezier_rep());
-            std::cout << "in void intersect Bezier" << endl;
-        }
-        catch (...) {
-            std::cout << "in catch" << endl;
-        }
-    }
+    else if ( is_bezier() && aOther.is_bezier() )
+        get_bezier_rep()->intersect(*aOther.get_bezier_rep());
+    else if ( is_polyline() && aOther.is_polyline() )
+        get_polyline_rep()->intersect(*aOther.get_polyline_rep());
   }
 
   void join(Curve_set const& aOther)
@@ -661,6 +669,8 @@ public:
       get_circular_rep()->join(*aOther.get_circular_rep());
     else if ( is_bezier() && aOther.is_bezier() )
       get_bezier_rep()->join( *aOther.get_bezier_rep());
+    else if ( is_polyline() && aOther.is_polyline() )
+      get_polyline_rep()->join(*aOther.get_polyline_rep());
   }
 
   void difference(Curve_set const& aOther)
@@ -671,6 +681,8 @@ public:
       get_circular_rep()->difference(*aOther.get_circular_rep());
     else if ( is_bezier() && aOther.is_bezier() )
       get_bezier_rep()->difference( *aOther.get_bezier_rep());
+    else if ( is_polyline() && aOther.is_polyline() )
+      get_polyline_rep()->difference(*aOther.get_polyline_rep());
   }
 
   void symmetric_difference(Curve_set const& aOther)
@@ -680,10 +692,10 @@ public:
       get_linear_rep()->symmetric_difference(*aOther.get_linear_rep());
     else if (is_circular() && aOther.is_circular())
       get_circular_rep()->symmetric_difference(*aOther.get_circular_rep());
-    else if ( is_bezier() && aOther.is_bezier() ) {
-        std::cout << "directed to bezier" <<endl;
-        get_bezier_rep()->symmetric_difference(*aOther.get_bezier_rep());
-    }
+    else if ( is_bezier() && aOther.is_bezier() )
+      get_bezier_rep()->symmetric_difference(*aOther.get_bezier_rep());
+    else if ( is_polyline() && aOther.is_polyline() )
+      get_polyline_rep()->symmetric_difference(*aOther.get_polyline_rep());
   }
 
   void change_brush_color(QBrush aBrush)
@@ -704,6 +716,7 @@ public:
   bool is_linear()   const { return m_rep->type() == 1; }
   bool is_circular() const { return m_rep->type() == 2; }
   bool is_bezier  () const { return m_rep->type() == 3; }
+  bool is_polyline() const { return m_rep->type() == 4; }
 
 //to get rep for linear polygons
   const Linear_rep* get_linear_rep() const { return dynamic_cast<Linear_rep const*>(boost::get_pointer(m_rep)); }
@@ -728,6 +741,14 @@ public:
   //to get Bezier_polygon_set
   const Bezier_polygon_set& bezier() const { return get_bezier_rep()->set(); }
   Bezier_polygon_set&       bezier()       { return get_bezier_rep()->set(); }
+
+  //to get rep for polylines
+ const Polyline_rep* get_polyline_rep() const{ return dynamic_cast<Polyline_rep   const*>( boost::get_pointer(m_rep) ); }
+  Polyline_rep     * get_polyline_rep()      { return dynamic_cast<Polyline_rep        *>( boost::get_pointer(m_rep) ); }
+
+  //to get Polyline_polygon_set
+  const Polyline_polygon_set& polyline() const { return get_polyline_rep()->set(); }
+  Polyline_polygon_set&       polyline()       { return get_polyline_rep()->set(); }
 
 public:
   //drawing tools
@@ -866,7 +887,32 @@ public:
   { return m_result_bezier_sources; }
 
 
-  //choosing colors in case of linear polygons
+  //returns polyline containers
+  Polyline_region_source_container& blue_polyline_sources()
+  { return m_blue_polyline_sources; }
+
+  Polyline_region_source_container& red_polyline_sources()
+  { return m_red_polyline_sources; }
+
+  Polyline_region_source_container& black_polyline_sources()
+  { return m_black_polyline_sources; }
+
+  Polyline_region_source_container& brown_polyline_sources()
+  { return m_brown_polyline_sources; }
+
+  Polyline_region_source_container& yellow_polyline_sources()
+  { return m_yellow_polyline_sources; }
+
+  Polyline_region_source_container& magenta_polyline_sources()
+  { return m_magenta_polyline_sources; }
+
+  Polyline_region_source_container& aqua_polyline_sources()
+  { return m_aqua_polyline_sources; }
+
+  Polyline_region_source_container& result_polyline_sources()
+  { return m_result_polyline_sources; }
+
+    //choosing colors in case of linear polygons
   Linear_region_source_container& active_linear_sources(size_t m_color_active)
   {
    switch(m_color_active) {
@@ -922,6 +968,24 @@ public:
     CGAL_warning_msg(true, "Should not reach here!");
     return m_blue_bezier_sources;
   }
+//choosing colors in case of polyline polygons
+  Polyline_region_source_container& active_polyline_sources(size_t m_color_active)
+  {
+    switch(m_color_active) {
+      case 0: return m_blue_polyline_sources;
+      case 1: return m_red_polyline_sources;
+      case 2: return m_black_polyline_sources;
+      case 3: return m_brown_polyline_sources;
+      case 4: return m_yellow_polyline_sources;
+      case 5: return m_magenta_polyline_sources;
+      case 6: return m_aqua_polyline_sources;
+      case 7: return m_result_polyline_sources;
+
+      default: break;
+    }
+    CGAL_warning_msg(true, "Should not reach here!");
+    return m_blue_polyline_sources;
+  }
 
 
 public:
@@ -954,7 +1018,16 @@ public:
   Bezier_region_source_container m_aqua_bezier_sources;
   Bezier_region_source_container m_result_bezier_sources;
 
-  //size_t m_state_num;
+  Polyline_region_source_container m_blue_polyline_sources;
+  Polyline_region_source_container m_red_polyline_sources;
+  Polyline_region_source_container m_black_polyline_sources;
+  Polyline_region_source_container m_brown_polyline_sources;
+  Polyline_region_source_container m_yellow_polyline_sources;
+  Polyline_region_source_container m_magenta_polyline_sources;
+  Polyline_region_source_container m_aqua_polyline_sources;
+  Polyline_region_source_container m_result_polyline_sources;
+
+    //size_t m_state_num;
   size_t m_operation;
   size_t m_type;
 };
@@ -991,6 +1064,7 @@ private:
   //keep it intact for now check it out
   bool m_circular_active;
   bool m_bezier_active;
+  bool m_polyline_active;
 
   //to determine which type is currently active
   size_t m_color_active;
@@ -1063,9 +1137,11 @@ private:
 
   state_container states_stack;
 
-  CGAL::Qt::Graphics_view_linear_polygon_input<Kernel>* m_linear_input;
-  CGAL::Qt::Graphics_view_circular_polygon_input<Kernel>* m_circular_input;
+  CGAL::Qt::Graphics_view_linear_polygon_input<Kernel>*    m_linear_input;
+  CGAL::Qt::Graphics_view_circular_polygon_input<Kernel>*  m_circular_input;
   CGAL::Qt::GraphicsViewBezierPolygonInput<Bezier_traits>* m_bezier_input ;
+  CGAL::Qt::Graphics_view_polyline_input<Kernel>*          m_polyline_input ;
+
 
 public:
   MainWindow();
@@ -1095,6 +1171,7 @@ public slots:
   void on_actionInsertLinear_toggled               (bool aChecked);
   void on_actionInsertCircular_toggled             (bool aChecked);
   void on_actionInsertBezier_toggled               (bool aChecked);
+  void on_actionInsertPolyline_toggled             (bool aChecked);
   void on_showColorBucket_toggled                  (bool aChecked);
   void on_sceneDockWidget_visibilityChanged        (bool visible);
   void on_infoDockWidget_visibilityChanged         (bool visible);
@@ -1104,6 +1181,7 @@ public slots:
   void on_actionOpenLinear_triggered();
   void on_actionOpenDXF_triggered();
   void on_actionOpenBezier_triggered();
+  void on_actionOpenPolyline_triggered();
   void wheelEvent(QWheelEvent *event);
   void on_actionSaveCurrentBucket_triggered();
   void on_actionAddColor_triggered();
@@ -1223,6 +1301,8 @@ public slots:
                    Linear_region_source_container& rSources);
   bool read_circular ( QString aFileName, Circular_polygon_set& rSet,
                      Circular_region_source_container& rSources );
+  bool read_polyline ( QString aFilename, Polyline_polygon_set& rSet,
+                       Polyline_region_source_container& rSources);
   bool read_bezier ( QString aFileName );
   Bezier_curve read_bezier_curve ( std::istream& is, bool aDoubleFormat );
 
@@ -1244,7 +1324,7 @@ private:
     // MOVE_OP = 8
       if(operation_name == 12)
       {
-        if(!m_circular_active && !m_bezier_active)
+        if(!m_circular_active && !m_bezier_active && !m_polyline_active)
         {
           State_current m_state = State_current(operation_name, 1);
           states_stack.push_back(m_state);
@@ -1253,7 +1333,7 @@ private:
           for (auto si = states_stack.back().m_curve_sets.begin(); si != states_stack.back().m_curve_sets.end(); ++ si)
             { link_GI(si->gi());}
         }
-        else if(!m_bezier_active)
+        else if(!m_bezier_active && !m_polyline_active)
         {
           State_current m_state = State_current(operation_name, 2);
           states_stack.push_back(m_state);
@@ -1262,9 +1342,18 @@ private:
           for (auto si = states_stack.back().m_curve_sets.begin(); si != states_stack.back().m_curve_sets.end(); ++ si)
             { link_GI(si->gi());}
         }
-        else
+        else if(!m_polyline_active)
         {
           State_current m_state = State_current(operation_name, 3);
+          states_stack.push_back(m_state);
+          states_stack.back();
+
+          for (auto si = states_stack.back().m_curve_sets.begin(); si != states_stack.back().m_curve_sets.end(); ++ si)
+            { link_GI(si->gi());}
+        }
+        else
+        {
+          State_current m_state = State_current(operation_name, 4);
           states_stack.push_back(m_state);
           states_stack.back();
 
@@ -1274,7 +1363,7 @@ private:
       }
       else
       {
-          if(!m_circular_active && !m_bezier_active)
+          if(!m_circular_active && !m_bezier_active && !m_polyline_active)
           {
               State_current m_state_x = State_current(operation_name, 1);
 
@@ -1298,7 +1387,7 @@ private:
               modelChanged();
 
           }
-          else if(!m_bezier_active)
+          else if(!m_bezier_active && !m_polyline_active)
           {
               State_current m_state_x = State_current(operation_name, 2);
 
@@ -1322,7 +1411,7 @@ private:
 
               modelChanged();
           }
-          else
+          else if(!m_polyline_active)
           {
             State_current m_state_x = State_current(operation_name, 3);
 
@@ -1345,6 +1434,29 @@ private:
 
             modelChanged();
 
+          }
+          else
+          {
+            State_current m_state_x = State_current(operation_name, 4);
+
+            for (int i=0;i<8;i++)
+            {
+                m_state_x.m_curve_sets[i].assign(states_stack.back().m_curve_sets[i]);
+            }
+
+            modelChanged();
+
+            for (auto si = states_stack.back().m_curve_sets.begin(); si != states_stack.back().m_curve_sets.end(); ++ si)
+              {  unlink_GI(si->gi());}
+
+            modelChanged();
+
+            states_stack.push_back(m_state_x);
+
+            for (auto si = states_stack.back().m_curve_sets.begin(); si != states_stack.back().m_curve_sets.end(); ++ si)
+              {  link_GI(si->gi());}
+
+            modelChanged();
           }
       }
 
@@ -1405,6 +1517,8 @@ private:
 
   bool ensure_linear_mode();
 
+  bool ensure_polyline_mode();
+
   //bool ensure_mink_mode();
 
 };
@@ -1414,6 +1528,7 @@ MainWindow::MainWindow() :
   DemosMainWindow(),
   m_bezier_active(false), //default
   m_circular_active(false), //default
+  m_polyline_active(false), //default
   m_color_active(0), //default
   m_color_move(1111), //default
   m_color_copy(1111),//default
@@ -1523,10 +1638,10 @@ MainWindow::MainWindow() :
   actionUse_OpenGL->setVisible(false);
 
   //initializing classes to draw respective polygons using mouse
-  //todo: add this functionality for polyline curves
   m_bezier_input = new CGAL::Qt::GraphicsViewBezierPolygonInput<Bezier_traits>(this, &m_scene);
   m_linear_input = new CGAL::Qt::Graphics_view_linear_polygon_input<Kernel>(this, &m_scene);
   m_circular_input = new CGAL::Qt::Graphics_view_circular_polygon_input<Kernel>(this, &m_scene);
+  m_polyline_input = new CGAL::Qt::Graphics_view_polyline_input<Kernel>(this, &m_scene);
 
 
   //connecting GUI and the code base
@@ -1535,6 +1650,9 @@ MainWindow::MainWindow() :
   QObject::connect(m_circular_input, SIGNAL(generate(CGAL::Object)), this,
                    SLOT(processInput(CGAL::Object)));
   QObject::connect(m_bezier_input, SIGNAL(generate(CGAL::Object)), this,
+                   SLOT(processInput(CGAL::Object)));
+  std::cout<<"crash pt1"<<std::endl;
+  QObject::connect(m_polyline_input, SIGNAL(generate(CGAL::Object)), this,
                    SLOT(processInput(CGAL::Object)));
 
   m_scene.installEventFilter(m_linear_input);
@@ -1763,6 +1881,7 @@ MainWindow::MainWindow() :
   actionOpenLinear->setEnabled(true);
   actionOpenDXF->setEnabled(false);
   actionOpenBezier->setEnabled(false);
+  actionOpenPolyline->setEnabled(false);
 
   states_stack.back().blue_set().clear();
   states_stack.back().red_set().clear();
@@ -1782,17 +1901,21 @@ void MainWindow::on_showBlue_toggled(bool a_check)
   {
     if(m_color_visible==0)
     {
-      if(!m_circular_active && !m_bezier_active)
+      if(!m_circular_active && !m_bezier_active && !m_polyline_active)
       {
         m_scene.installEventFilter(m_linear_input);
       }
-      else if(!m_bezier_active)
+      else if(!m_bezier_active && !m_polyline_active)
       {
         m_scene.installEventFilter(m_circular_input);
       }
-      else
+      else if(!m_polyline_active)
       {
         m_scene.installEventFilter(m_bezier_input);
+      }
+      else
+      {
+        m_scene.installEventFilter(m_polyline_input);
       }
     }
     m_color_visible++;
@@ -1812,9 +1935,11 @@ void MainWindow::on_showBlue_toggled(bool a_check)
       m_scene.removeEventFilter(m_linear_input);
       m_scene.removeEventFilter(m_bezier_input);
       m_scene.removeEventFilter(m_circular_input);
+      m_scene.removeEventFilter(m_polyline_input);
       m_linear_input->Reset();
       m_circular_input->Reset();
       m_bezier_input->Reset();
+      m_polyline_input->Reset();
     }
     drawBlue->setEnabled(false);
   }
@@ -1827,17 +1952,21 @@ void MainWindow::on_showRed_toggled(bool a_check)
   {
     if(m_color_visible==0)
     {
-      if(!m_circular_active && !m_bezier_active)
+      if(!m_circular_active && !m_bezier_active && !m_polyline_active)
       {
         m_scene.installEventFilter(m_linear_input);
       }
-      else if(!m_bezier_active)
+      else if(!m_bezier_active && !m_polyline_active)
       {
         m_scene.installEventFilter(m_circular_input);
       }
-      else
+      else if(!m_bezier_active)
       {
         m_scene.installEventFilter(m_bezier_input);
+      }
+      else
+      {
+        m_scene.installEventFilter(m_polyline_input);
       }
     }
     m_color_visible++;
@@ -1857,9 +1986,11 @@ void MainWindow::on_showRed_toggled(bool a_check)
       m_scene.removeEventFilter(m_linear_input);
       m_scene.removeEventFilter(m_bezier_input);
       m_scene.removeEventFilter(m_circular_input);
+      m_scene.removeEventFilter(m_polyline_input);
       m_linear_input->Reset();
       m_circular_input->Reset();
       m_bezier_input->Reset();
+      m_polyline_input->Reset();
     }
     drawRed->setEnabled(false);
   }
@@ -1872,17 +2003,21 @@ void MainWindow::on_showBlack_toggled(bool a_check)
   {
     if(m_color_visible==0)
     {
-      if(!m_circular_active && !m_bezier_active)
+      if(!m_circular_active && !m_bezier_active && !m_polyline_active)
       {
         m_scene.installEventFilter(m_linear_input);
       }
-      else if(!m_bezier_active)
+      else if(!m_bezier_active && !m_polyline_active)
       {
         m_scene.installEventFilter(m_circular_input);
       }
-      else
+      else if(!m_polyline_active)
       {
         m_scene.installEventFilter(m_bezier_input);
+      }
+      else
+      {
+        m_scene.installEventFilter(m_polyline_input);
       }
     }
     m_color_visible++;
@@ -1902,9 +2037,12 @@ void MainWindow::on_showBlack_toggled(bool a_check)
       m_scene.removeEventFilter(m_linear_input);
       m_scene.removeEventFilter(m_bezier_input);
       m_scene.removeEventFilter(m_circular_input);
+      m_scene.removeEventFilter(m_polyline_input);
+
       m_linear_input->Reset();
       m_circular_input->Reset();
       m_bezier_input->Reset();
+      m_polyline_input->Reset();
     }
     drawBlack->setEnabled(false);
   }
@@ -1917,17 +2055,21 @@ void MainWindow::on_showBrown_toggled(bool a_check)
   {
     if(m_color_visible==0)
     {
-      if(!m_circular_active && !m_bezier_active)
+      if(!m_circular_active && !m_bezier_active && !m_polyline_active)
       {
         m_scene.installEventFilter(m_linear_input);
       }
-      else if(!m_bezier_active)
+      else if(!m_bezier_active && !m_polyline_active)
       {
         m_scene.installEventFilter(m_circular_input);
       }
-      else
+      else if(m_polyline_active)
       {
         m_scene.installEventFilter(m_bezier_input);
+      }
+      else
+      {
+        m_scene.installEventFilter(m_polyline_input);
       }
     }
     m_color_visible++;
@@ -1947,9 +2089,11 @@ void MainWindow::on_showBrown_toggled(bool a_check)
       m_scene.removeEventFilter(m_linear_input);
       m_scene.removeEventFilter(m_bezier_input);
       m_scene.removeEventFilter(m_circular_input);
+      m_scene.removeEventFilter(m_polyline_input);
       m_linear_input->Reset();
       m_circular_input->Reset();
       m_bezier_input->Reset();
+      m_polyline_input->Reset();
     }
     drawBrown->setEnabled(false);
   }
@@ -1962,17 +2106,21 @@ void MainWindow::on_showYellow_toggled(bool a_check)
   {
     if(m_color_visible==0)
     {
-      if(!m_circular_active && !m_bezier_active)
+      if(!m_circular_active && !m_bezier_active && !m_polyline_active)
       {
         m_scene.installEventFilter(m_linear_input);
       }
-      else if(!m_bezier_active)
+      else if(!m_bezier_active && !m_polyline_active)
       {
         m_scene.installEventFilter(m_circular_input);
       }
-      else
+      else if(!m_polyline_active)
       {
         m_scene.installEventFilter(m_bezier_input);
+      }
+      else
+      {
+        m_scene.installEventFilter(m_polyline_input);
       }
     }
     m_color_visible++;
@@ -1992,9 +2140,11 @@ void MainWindow::on_showYellow_toggled(bool a_check)
       m_scene.removeEventFilter(m_linear_input);
       m_scene.removeEventFilter(m_bezier_input);
       m_scene.removeEventFilter(m_circular_input);
+      m_scene.removeEventFilter(m_polyline_input);
       m_linear_input->Reset();
       m_circular_input->Reset();
       m_bezier_input->Reset();
+      m_polyline_input->Reset();
     }
     drawYellow->setEnabled(false);
   }
@@ -2007,17 +2157,21 @@ void MainWindow::on_showMagenta_toggled(bool a_check)
   {
     if(m_color_visible==0)
     {
-      if(!m_circular_active && !m_bezier_active)
+      if(!m_circular_active && !m_bezier_active && !m_polyline_active)
       {
         m_scene.installEventFilter(m_linear_input);
       }
-      else if(!m_bezier_active)
+      else if(!m_bezier_active && !m_polyline_active)
       {
         m_scene.installEventFilter(m_circular_input);
       }
-      else
+      else if(m_polyline_active)
       {
         m_scene.installEventFilter(m_bezier_input);
+      }
+      else
+      {
+        m_scene.installEventFilter(m_polyline_input);
       }
     }
     m_color_visible++;
@@ -2037,9 +2191,11 @@ void MainWindow::on_showMagenta_toggled(bool a_check)
       m_scene.removeEventFilter(m_linear_input);
       m_scene.removeEventFilter(m_bezier_input);
       m_scene.removeEventFilter(m_circular_input);
+      m_scene.removeEventFilter(m_polyline_input);
       m_linear_input->Reset();
       m_circular_input->Reset();
       m_bezier_input->Reset();
+      m_polyline_input->Reset();
     }
     drawMagenta->setEnabled(false);
   }
@@ -2052,17 +2208,21 @@ void MainWindow::on_showAqua_toggled(bool a_check)
   {
     if(m_color_visible==0)
     {
-      if(!m_circular_active && !m_bezier_active)
+      if(!m_circular_active && !m_bezier_active && !m_polyline_active)
       {
         m_scene.installEventFilter(m_linear_input);
       }
-      else if(!m_bezier_active)
+      else if(!m_bezier_active && !m_polyline_active)
       {
         m_scene.installEventFilter(m_circular_input);
       }
-      else
+      else if(!m_polyline_active)
       {
         m_scene.installEventFilter(m_bezier_input);
+      }
+      else
+      {
+        m_scene.installEventFilter(m_polyline_input);
       }
     }
     m_color_visible++;
@@ -2082,9 +2242,11 @@ void MainWindow::on_showAqua_toggled(bool a_check)
       m_scene.removeEventFilter(m_linear_input);
       m_scene.removeEventFilter(m_bezier_input);
       m_scene.removeEventFilter(m_circular_input);
+      m_scene.removeEventFilter(m_polyline_input);
       m_linear_input->Reset();
       m_circular_input->Reset();
       m_bezier_input->Reset();
+      m_polyline_input->Reset();
     }
     drawAqua->setEnabled(false);
   }
@@ -3559,6 +3721,7 @@ void MainWindow::on_actionMinusColor_triggered()
     states_stack.back().brown_circular_sources().clear();
     states_stack.back().brown_linear_sources().clear();
     states_stack.back().brown_bezier_sources().clear();
+    states_stack.back().brown_polyline_sources().clear();
 
     m_visible_brown = false;
     showBrown -> setVisible(false);
@@ -3603,6 +3766,7 @@ void MainWindow::on_actionMinusColor_triggered()
     states_stack.back().yellow_circular_sources().clear();
     states_stack.back().yellow_linear_sources().clear();
     states_stack.back().yellow_bezier_sources().clear();
+    states_stack.back().yellow_polyline_sources().clear();
 
     m_visible_yellow = false;
     showYellow -> setVisible(false);
@@ -3646,6 +3810,7 @@ void MainWindow::on_actionMinusColor_triggered()
     states_stack.back().magenta_circular_sources().clear();
     states_stack.back().magenta_linear_sources().clear();
     states_stack.back().magenta_bezier_sources().clear();
+    states_stack.back().magenta_polyline_sources().clear();
 
     m_visible_magenta = false;
     showMagenta -> setVisible(false);
@@ -3689,6 +3854,7 @@ void MainWindow::on_actionMinusColor_triggered()
     states_stack.back().aqua_circular_sources().clear();
     states_stack.back().aqua_linear_sources().clear();
     states_stack.back().aqua_bezier_sources().clear();
+    states_stack.back().aqua_polyline_sources().clear();
 
     m_visible_aqua = false;
     showAqua -> setVisible(false);
@@ -3843,6 +4009,14 @@ void MainWindow::on_actionNew_triggered()
   states_stack.back().magenta_bezier_sources().clear();
   states_stack.back().result_bezier_sources().clear();
 
+  states_stack.back().blue_polyline_sources().clear();
+  states_stack.back().red_polyline_sources().clear();
+  states_stack.back().black_polyline_sources().clear();
+  states_stack.back().brown_polyline_sources().clear();
+  states_stack.back().yellow_polyline_sources().clear();
+  states_stack.back().magenta_polyline_sources().clear();
+  states_stack.back().result_polyline_sources().clear();
+
   SetViewBlue    (true);
   SetViewRed     (true);
   SetViewBlack   (true);
@@ -3866,6 +4040,7 @@ void MainWindow::on_actionNew_triggered()
   m_linear_input->Reset();
   m_circular_input->Reset();
   m_bezier_input->Reset();
+  m_polyline_input->Reset();
 
   m_pan = false;
 
@@ -3898,23 +4073,33 @@ void MainWindow::on_actionNew_triggered()
   actionMinkowski_SumH -> setChecked(false);
 
   m_reset = true;
-  if(!m_circular_active && !m_bezier_active)
+  if(!m_circular_active && !m_bezier_active && !m_polyline_active)
   {
     actionInsertLinear -> setChecked(true);
     actionInsertCircular -> setChecked(false);
     actionInsertBezier -> setChecked(false);
+    actionInsertPolyline ->setChecked(false);
   }
-  else if(!m_bezier_active)
+  else if(!m_bezier_active && !m_polyline_active)
   {
     actionInsertLinear -> setChecked(false);
     actionInsertCircular -> setChecked(true);
     actionInsertBezier -> setChecked(false);
+    actionInsertPolyline ->setChecked(false);
+  }
+  else if(!m_polyline_active)
+  {
+    actionInsertLinear -> setChecked(false);
+    actionInsertCircular -> setChecked(false);
+    actionInsertBezier -> setChecked(true);
+    actionInsertPolyline ->setChecked(false);
   }
   else
   {
     actionInsertLinear -> setChecked(false);
     actionInsertCircular -> setChecked(false);
-    actionInsertBezier -> setChecked(true);
+    actionInsertBezier -> setChecked(false);
+    actionInsertPolyline ->setChecked(true);
   }
 
   m_reset = false;
@@ -4172,13 +4357,20 @@ void MainWindow::on_actionDeleteAll_triggered()
     // DELETEALL_OP = 10
     // START_OP = 11*/
 
-    states_stack.back().blue_set().clear();states_stack.back().blue_circular_sources().clear();states_stack.back().blue_bezier_sources().clear();states_stack.back().blue_linear_sources().clear();
-    states_stack.back().red_set().clear();states_stack.back().red_circular_sources().clear();states_stack.back().red_bezier_sources().clear();states_stack.back().red_linear_sources().clear();
-    states_stack.back().black_set().clear();states_stack.back().black_circular_sources().clear();states_stack.back().black_bezier_sources().clear();states_stack.back().black_linear_sources().clear();
-    states_stack.back().brown_set().clear();states_stack.back().brown_circular_sources().clear();states_stack.back().brown_bezier_sources().clear();states_stack.back().brown_linear_sources().clear();
-    states_stack.back().yellow_set().clear();states_stack.back().yellow_circular_sources().clear();states_stack.back().yellow_bezier_sources().clear();states_stack.back().yellow_linear_sources().clear();
-    states_stack.back().magenta_set().clear();states_stack.back().magenta_circular_sources().clear();states_stack.back().magenta_bezier_sources().clear();states_stack.back().magenta_linear_sources().clear();
-    states_stack.back().aqua_set().clear();states_stack.back().aqua_circular_sources().clear();states_stack.back().aqua_bezier_sources().clear();states_stack.back().aqua_linear_sources().clear();
+    states_stack.back().blue_set().clear();states_stack.back().blue_circular_sources().clear();states_stack.back().blue_bezier_sources().clear();
+    states_stack.back().blue_linear_sources().clear();states_stack.back().blue_polyline_sources().clear();
+    states_stack.back().red_set().clear();states_stack.back().red_circular_sources().clear();states_stack.back().red_bezier_sources().clear();
+    states_stack.back().red_linear_sources().clear();states_stack.back().red_polyline_sources().clear();
+    states_stack.back().black_set().clear();states_stack.back().black_circular_sources().clear();states_stack.back().black_bezier_sources().clear();
+    states_stack.back().black_linear_sources().clear();states_stack.back().black_polyline_sources().clear();
+    states_stack.back().brown_set().clear();states_stack.back().brown_circular_sources().clear();states_stack.back().brown_bezier_sources().clear();
+    states_stack.back().brown_linear_sources().clear();states_stack.back().brown_polyline_sources().clear();
+    states_stack.back().yellow_set().clear();states_stack.back().yellow_circular_sources().clear();states_stack.back().yellow_bezier_sources().clear();
+    states_stack.back().brown_linear_sources().clear();states_stack.back().brown_polyline_sources().clear();
+    states_stack.back().magenta_set().clear();states_stack.back().magenta_circular_sources().clear();states_stack.back().magenta_bezier_sources().clear();
+    states_stack.back().magenta_linear_sources().clear();states_stack.back().magenta_polyline_sources().clear();
+    states_stack.back().aqua_set().clear();states_stack.back().aqua_circular_sources().clear();states_stack.back().aqua_bezier_sources().clear();
+    states_stack.back().aqua_linear_sources().clear();states_stack.back().aqua_polyline_sources().clear();
 
     on_actionDeleteResult();
   }
@@ -4198,7 +4390,8 @@ void MainWindow::on_actionDeleteResult()
 
     if (true)
     {
-      states_stack.back().result_set().clear();states_stack.back().result_circular_sources().clear();states_stack.back().result_bezier_sources().clear();states_stack.back().result_linear_sources().clear();
+      states_stack.back().result_set().clear();states_stack.back().result_circular_sources().clear();states_stack.back().result_bezier_sources().clear();
+      states_stack.back().result_linear_sources().clear();states_stack.back().result_polyline_sources().clear();
       lDone = true;
     }
     if (lDone) modelChanged();
@@ -4242,13 +4435,15 @@ void MainWindow::on_actionClearH_toggled(bool aChecked)
 	  states_stack.back().blue_linear_sources().clear();
 	  states_stack.back().blue_circular_sources().clear();
 	  states_stack.back().blue_bezier_sources().clear();
-	}
+      states_stack.back().blue_polyline_sources().clear();
+    }
 	if(clearBlack -> isChecked())
 	{
 	  states_stack.back().black_set().clear();
 	  states_stack.back().black_linear_sources().clear();
 	  states_stack.back().black_circular_sources().clear();
 	  states_stack.back().black_bezier_sources().clear();
+      states_stack.back().black_polyline_sources().clear();
 	}
 	if(clearRed -> isChecked())
 	{
@@ -4256,6 +4451,7 @@ void MainWindow::on_actionClearH_toggled(bool aChecked)
 	  states_stack.back().red_linear_sources().clear();
 	  states_stack.back().red_circular_sources().clear();
 	  states_stack.back().red_bezier_sources().clear();
+	  states_stack.back().red_polyline_sources().clear();
 	}
 	if(clearBrown -> isChecked())
 	{
@@ -4263,6 +4459,7 @@ void MainWindow::on_actionClearH_toggled(bool aChecked)
 	  states_stack.back().brown_linear_sources().clear();
 	  states_stack.back().brown_circular_sources().clear();
 	  states_stack.back().brown_bezier_sources().clear();
+      states_stack.back().brown_polyline_sources().clear();
 	}
 	if(clearYellow -> isChecked())
 	{
@@ -4270,6 +4467,7 @@ void MainWindow::on_actionClearH_toggled(bool aChecked)
 	  states_stack.back().yellow_linear_sources().clear();
 	  states_stack.back().yellow_circular_sources().clear();
 	  states_stack.back().yellow_bezier_sources().clear();
+      states_stack.back().yellow_polyline_sources().clear();
 	}
 	if(clearMagenta -> isChecked())
 	{
@@ -4277,6 +4475,7 @@ void MainWindow::on_actionClearH_toggled(bool aChecked)
         states_stack.back().magenta_linear_sources().clear();
         states_stack.back().magenta_circular_sources().clear();
         states_stack.back().magenta_bezier_sources().clear();
+        states_stack.back().magenta_polyline_sources().clear();
     }
 	if(clearAqua -> isChecked())
 	{
@@ -4284,6 +4483,7 @@ void MainWindow::on_actionClearH_toggled(bool aChecked)
 	  states_stack.back().aqua_linear_sources().clear();
 	  states_stack.back().aqua_circular_sources().clear();
 	  states_stack.back().aqua_bezier_sources().clear();
+	  states_stack.back().aqua_polyline_sources().clear();
 	}
 
 	if(!(clearBlue -> isChecked()) && !(clearRed -> isChecked()) && !(clearBlack -> isChecked()) && !(clearBrown -> isChecked()) && !(clearYellow -> isChecked()) && !(clearMagenta -> isChecked()) && !(clearAqua -> isChecked()))
@@ -4314,13 +4514,20 @@ void MainWindow::on_drawBlue_toggled(bool /* a_check */)
     m_circular_input -> mCircularGI -> setPen(sPens[0]);
     m_circular_input -> mHandleGI -> setPen(sPens[0]);
   }
-  else
+  else if(states_stack.back().blue_set().is_bezier())
   {
     m_bezier_input -> mOngoingPieceGI -> setPen(sPens[0]);
     m_bezier_input -> mBezierGI -> setPen(sPens[0]);
     m_bezier_input -> mHandle0GI -> setPen(sPens[0]);
     m_bezier_input -> mHandle1GI -> setPen(sPens[0]);
   }
+  else
+  {
+    m_polyline_input -> mOngoingPieceGI -> setPen(sPens[0]);
+    m_polyline_input -> mPolylineGI -> setPen(sPens[0]);
+    m_polyline_input -> mHandleGI -> setPen(sPens[0]);
+  }
+
 }
 void MainWindow::on_drawRed_toggled(bool /* a_check */)
 {
@@ -4338,13 +4545,20 @@ void MainWindow::on_drawRed_toggled(bool /* a_check */)
     m_circular_input -> mCircularGI -> setPen(sPens[1]);
     m_circular_input -> mHandleGI -> setPen(sPens[1]);
   }
-  else
+  else if(states_stack.back().red_set().is_bezier())
   {
     m_bezier_input -> mOngoingPieceGI -> setPen(sPens[1]);
     m_bezier_input -> mBezierGI -> setPen(sPens[1]);
     m_bezier_input -> mHandle0GI -> setPen(sPens[1]);
     m_bezier_input -> mHandle1GI -> setPen(sPens[1]);
   }
+  else
+  {
+    m_polyline_input -> mOngoingPieceGI -> setPen(sPens[1]);
+    m_polyline_input -> mPolylineGI -> setPen(sPens[1]);
+    m_polyline_input -> mHandleGI -> setPen(sPens[1]);
+  }
+
 }
 void MainWindow::on_drawBlack_toggled(bool /* a_check */)
 {
@@ -4362,13 +4576,20 @@ void MainWindow::on_drawBlack_toggled(bool /* a_check */)
     m_circular_input -> mCircularGI -> setPen(sPens[2]);
     m_circular_input -> mHandleGI -> setPen(sPens[2]);
   }
-  else
+  else if(states_stack.back().black_set().is_bezier())
   {
     m_bezier_input -> mOngoingPieceGI -> setPen(sPens[2]);
     m_bezier_input -> mBezierGI -> setPen(sPens[2]);
     m_bezier_input -> mHandle0GI -> setPen(sPens[2]);
     m_bezier_input -> mHandle1GI -> setPen(sPens[2]);
   }
+  else
+  {
+    m_polyline_input -> mOngoingPieceGI -> setPen(sPens[2]);
+    m_polyline_input -> mPolylineGI -> setPen(sPens[2]);
+    m_polyline_input -> mHandleGI -> setPen(sPens[2]);
+  }
+
 }
 void MainWindow::on_drawBrown_toggled(bool /* a_check */)
 {
@@ -4386,13 +4607,20 @@ void MainWindow::on_drawBrown_toggled(bool /* a_check */)
     m_circular_input -> mCircularGI -> setPen(sPens[3]);
     m_circular_input -> mHandleGI -> setPen(sPens[3]);
   }
-  else
+  else if(states_stack.back().brown_set().is_bezier())
   {
     m_bezier_input -> mOngoingPieceGI -> setPen(sPens[3]);
     m_bezier_input -> mBezierGI -> setPen(sPens[3]);
     m_bezier_input -> mHandle0GI -> setPen(sPens[3]);
     m_bezier_input -> mHandle1GI -> setPen(sPens[3]);
   }
+  else
+  {
+    m_polyline_input -> mOngoingPieceGI -> setPen(sPens[3]);
+    m_polyline_input -> mPolylineGI -> setPen(sPens[3]);
+    m_polyline_input -> mHandleGI -> setPen(sPens[3]);
+  }
+
 }
 void MainWindow::on_drawYellow_toggled(bool /* a_check */)
 {
@@ -4410,13 +4638,20 @@ void MainWindow::on_drawYellow_toggled(bool /* a_check */)
     m_circular_input -> mCircularGI -> setPen(sPens[4]);
     m_circular_input -> mHandleGI -> setPen(sPens[4]);
   }
-  else
+  else if (states_stack.back().yellow_set().is_bezier())
   {
     m_bezier_input -> mOngoingPieceGI -> setPen(sPens[4]);
     m_bezier_input -> mBezierGI -> setPen(sPens[4]);
     m_bezier_input -> mHandle0GI -> setPen(sPens[4]);
     m_bezier_input -> mHandle1GI -> setPen(sPens[4]);
   }
+  else
+  {
+    m_polyline_input -> mOngoingPieceGI -> setPen(sPens[4]);
+    m_polyline_input -> mPolylineGI -> setPen(sPens[4]);
+    m_polyline_input -> mHandleGI -> setPen(sPens[4]);
+  }
+
 }
 void MainWindow::on_drawMagenta_toggled(bool /* a_check */)
 {
@@ -4434,13 +4669,20 @@ void MainWindow::on_drawMagenta_toggled(bool /* a_check */)
     m_circular_input -> mCircularGI -> setPen(sPens[5]);
     m_circular_input -> mHandleGI -> setPen(sPens[5]);
   }
-  else
+  else if(states_stack.back().magenta_set().is_bezier())
   {
     m_bezier_input -> mOngoingPieceGI -> setPen(sPens[5]);
     m_bezier_input -> mBezierGI -> setPen(sPens[5]);
     m_bezier_input -> mHandle0GI -> setPen(sPens[5]);
     m_bezier_input -> mHandle1GI -> setPen(sPens[5]);
   }
+  else
+  {
+    m_polyline_input -> mOngoingPieceGI -> setPen(sPens[5]);
+    m_polyline_input -> mPolylineGI -> setPen(sPens[5]);
+    m_polyline_input -> mHandleGI -> setPen(sPens[5]);
+  }
+
 }
 void MainWindow::on_drawAqua_toggled(bool /* a_check */)
 {
@@ -4458,13 +4700,20 @@ void MainWindow::on_drawAqua_toggled(bool /* a_check */)
     m_circular_input -> mCircularGI -> setPen(sPens[6]);
     m_circular_input -> mHandleGI -> setPen(sPens[6]);
   }
-  else
+  else if(states_stack.back().aqua_set().is_bezier())
   {
     m_bezier_input -> mOngoingPieceGI -> setPen(sPens[6]);
     m_bezier_input -> mBezierGI -> setPen(sPens[6]);
     m_bezier_input -> mHandle0GI -> setPen(sPens[6]);
     m_bezier_input -> mHandle1GI -> setPen(sPens[6]);
   }
+  else
+  {
+    m_polyline_input -> mOngoingPieceGI -> setPen(sPens[6]);
+    m_polyline_input -> mPolylineGI -> setPen(sPens[6]);
+    m_polyline_input -> mHandleGI -> setPen(sPens[6]);
+  }
+
 }
 
 //extra utilities
@@ -4490,6 +4739,15 @@ void MainWindow::on_actionOpenBezier_triggered()
                                     tr("Open Bezier Polygon"), "./data",
                                     tr("Bezier Curve files (*.bps)") ));
 }
+
+void MainWindow::on_actionOpenPolyline_triggered()
+{
+    open(QFileDialog::getOpenFileName(this,
+                                      tr("Open Polyline Polygon"), "./data",
+                                      tr("Polyline Curve files (*.bps)") ));
+}
+
+
 
 //To be done in GSoC2020
 /*for converting linear part of circular polygon to circular part
@@ -4808,6 +5066,11 @@ bool MainWindow::read_circular ( QString aFileName, Circular_polygon_set& rSet, 
     }
   }
   return rOK ;
+}
+
+bool MainWindow::read_polyline( QString aFilename, Polyline_polygon_set &rSet, Polyline_region_source_container& rSources)
+{
+    return false;
 }
 
 bool MainWindow::read_bezier ( QString aFileName)
@@ -5154,6 +5417,11 @@ bool save_circular ( QString aFileName, Circular_polygon_set& rSet )
   return rOK ;
 }
 
+bool save_polyline ( QString aFilename, Polyline_polygon_set& rSet )
+{
+    return false;
+}
+
 //bezier file in saved in two parts
 void save_bezier_polygon( std::ostream& out_file, Bezier_polygon const& aBP )
 {
@@ -5283,6 +5551,16 @@ void MainWindow::on_actionSaveCurrentBucket_triggered()
       show_error("Cannot save bezier polygon set.");
     }
   }
+  else if (m_polyline_active)
+  {
+    if ( !save_polyline(QFileDialog::getSaveFileName(this,
+    tr("Save Result Polyline Polygon Set"), "/data/index.pps", tr("Polyline Curve files (*.pps)") )
+            ,states_stack.back().active_set(m_color_active).polyline())
+            )
+    {
+      show_error("Cannot save polyline polygon set.");
+    }
+  }
   else
   {
     if ( !save_linear(QFileDialog::getSaveFileName(this,
@@ -5328,7 +5606,7 @@ bool MainWindow::ensure_circular_mode()
 
     if (! lProceed)
       lProceed = ask_user_yesno("Circular mode switch",
-        "You are about to load a circular poygon, but there are linear/bezier curves already loaded.\n" \
+        "You are about to load a circular poygon, but there are linear/bezier/polyline curves already loaded.\n" \
         "Both types are not interoperable. In order to proceed, the polygons must be removed first.\n" \
         "Once deleted you cannot undo the action.\n" \
         "Yes to remove and proceed?\n");
@@ -5337,8 +5615,10 @@ bool MainWindow::ensure_circular_mode()
       switch_sets_type(2);
       m_linear_input->Reset();
       m_bezier_input->Reset();
+      m_polyline_input->Reset();
       m_circular_active = true;
       m_bezier_active  = false;
+      m_polyline_active = false;
     }
   }
   return m_circular_active;
@@ -5355,7 +5635,7 @@ bool MainWindow::ensure_bezier_mode()
 
     if ( ! lProceed )
       lProceed = ask_user_yesno("Bezier mode switch",
-        "You are about to load a Bezier curve, but there are linear/bezier polygons already loaded.\n" \
+        "You are about to load a Bezier curve, but there are linear/bezier/polyline polygons already loaded.\n" \
         "Both types are not interoperable. In order to proceed, the polygons must be removed first.\n" \
         "Once deleted you cannot undo the action.\n" \
         "Yes to remove and proceed?\n") ;
@@ -5365,8 +5645,10 @@ bool MainWindow::ensure_bezier_mode()
       switch_sets_type(3);
       m_circular_input->Reset();
       m_linear_input->Reset();
+      m_polyline_input->Reset();
       m_bezier_active = true;
       m_circular_active = false;
+      m_polyline_active = false;
     }
   }
   return m_bezier_active ;
@@ -5374,7 +5656,7 @@ bool MainWindow::ensure_bezier_mode()
 
 bool MainWindow::ensure_linear_mode()
 {
-  if (m_circular_active || m_bezier_active) {
+  if (m_circular_active || m_bezier_active || m_polyline_active) {
     bool lProceed = states_stack.back().blue_set().is_empty() && states_stack.back().red_set().is_empty() &&
       states_stack.back().black_set().is_empty() && states_stack.back().brown_set().is_empty() &&
       states_stack.back().yellow_set().is_empty() && states_stack.back().magenta_set().is_empty() &&
@@ -5382,7 +5664,7 @@ bool MainWindow::ensure_linear_mode()
 
     if (! lProceed)
       lProceed = ask_user_yesno("Linear mode switch",
-        "You are about to load a linear poygon, but there are circular/bezier polygons already loaded.\n" \
+        "You are about to load a linear poygon, but there are circular/bezier/polyline polygons already loaded.\n" \
         "Both types are not interoperable. In order to proceed, the polygons must be removed first.\n" \
         "Once deleted you cannot undo the action.\n" \
         "Yes to remove and proceed?\n");
@@ -5391,12 +5673,42 @@ bool MainWindow::ensure_linear_mode()
       switch_sets_type(1);
       m_circular_input->Reset();
       m_bezier_input->Reset();
+      m_polyline_input->Reset();
       m_circular_active = false;
       m_bezier_active = false;
+      m_polyline_active = false;
     }
   }
   return !m_circular_active;
 }
+bool MainWindow::ensure_polyline_mode()
+{
+    if (!m_polyline_active) {
+        bool lProceed = states_stack.back().blue_set().is_empty() && states_stack.back().red_set().is_empty() &&
+                        states_stack.back().black_set().is_empty() && states_stack.back().brown_set().is_empty() &&
+                        states_stack.back().yellow_set().is_empty() && states_stack.back().magenta_set().is_empty() &&
+                        states_stack.back().aqua_set().is_empty() && states_stack.back().result_set().is_empty();
+
+        if (! lProceed)
+            lProceed = ask_user_yesno("Linear mode switch",
+                                      "You are about to load a polyline polygon, but there are circular/bezier/linear polygons already loaded.\n" \
+        "Both types are not interoperable. In order to proceed, the polygons must be removed first.\n" \
+        "Once deleted you cannot undo the action.\n" \
+        "Yes to remove and proceed?\n");
+
+        if (lProceed) {
+            switch_sets_type(4);
+            m_circular_input->Reset();
+            m_bezier_input->Reset();
+            m_linear_input->Reset();
+            m_circular_active = false;
+            m_bezier_active = false;
+            m_polyline_active = true;
+        }
+    }
+    return m_polyline_active;
+}
+
 
 //load polygons from file that is "file:open" clicked
 void MainWindow::open(QString fileName)
@@ -5406,17 +5718,25 @@ void MainWindow::open(QString fileName)
     if(fileName.endsWith(".lps"))
     {
       if ( ensure_linear_mode() )
-        lRead = read_linear(fileName,states_stack.back().active_set(m_color_active).linear(), states_stack.back().active_linear_sources(m_color_active) ) ;
+        lRead = read_linear(fileName,states_stack.back().active_set(m_color_active).linear(),
+                            states_stack.back().active_linear_sources(m_color_active) ) ;
     }
     else if (fileName.endsWith(".cps"))
     {
       if (ensure_circular_mode())
-        lRead = read_circular(fileName,states_stack.back().active_set(m_color_active).circular(), states_stack.back().active_circular_sources(m_color_active) ) ;
+        lRead = read_circular(fileName,states_stack.back().active_set(m_color_active).circular(),
+                              states_stack.back().active_circular_sources(m_color_active) ) ;
     }
     else if (fileName.endsWith(".bps"))
     {
       if ( ensure_bezier_mode() )
         lRead = read_bezier(fileName);
+    }
+    else if (fileName.endsWith(".pps"))
+    {
+      if ( ensure_polyline_mode())
+        lRead = read_polyline(fileName,states_stack.back().active_set(m_color_active).polyline(),
+                              states_stack.back().active_polyline_sources(m_color_active));
     }
     if (lRead) {
       modelChanged();
@@ -5446,8 +5766,10 @@ void MainWindow::on_actionInsertCircular_toggled(bool aChecked)
       actionOpenLinear->setEnabled(false);
       actionOpenDXF->setEnabled(true);
       actionOpenBezier->setEnabled(false);
+      actionOpenPolyline->setEnabled(false);
       actionInsertLinear->setChecked( false );
       actionInsertBezier->setChecked( false );
+      actionInsertPolyline->setChecked(false);
       m_scene.installEventFilter(m_circular_input);
       on_actionDeleteResult();
       actionMinkowski_SumH -> setEnabled(false);
@@ -5483,8 +5805,10 @@ void MainWindow::on_actionInsertBezier_toggled(bool aChecked)
         actionOpenLinear->setEnabled(false);
         actionOpenDXF->setEnabled(false);
         actionOpenBezier->setEnabled(true);
+        actionOpenPolyline->setEnabled(false);
         actionInsertLinear->setChecked( false );
         actionInsertCircular->setChecked( false );
+        actionInsertPolyline->setChecked(false);
         m_scene.installEventFilter(m_bezier_input);
         on_actionDeleteResult();
 
@@ -5500,6 +5824,45 @@ void MainWindow::on_actionInsertBezier_toggled(bool aChecked)
   	    actionInsertBezier->setChecked(false);
       }
   }
+}
+
+void MainWindow::on_actionInsertPolyline_toggled(bool aChecked)
+{
+    if(aChecked)
+    {
+        this->graphicsView->setDragMode(QGraphicsView::NoDrag);
+        if(ensure_polyline_mode())
+        {
+            if(!m_pan && !m_reset)
+            {
+                while(m_state_num>1)
+                {
+                    on_actionUndo_triggered();
+                }
+            }
+
+            actionPAN->setChecked(false);
+            m_pan = false;
+            actionOpenLinear->setEnabled(false);
+            actionOpenDXF->setEnabled(false);
+            actionOpenBezier->setEnabled(false);
+            actionOpenPolyline->setEnabled(true);
+            actionInsertLinear->setChecked(false);
+            actionInsertBezier->setChecked(false);
+            actionInsertCircular->setChecked(false);
+            m_scene.installEventFilter(m_polyline_input);
+            on_actionDeleteResult();
+            actionMinkowski_SumH -> setEnabled(false);
+
+            m_polyline_input -> mOngoingPieceGI -> setPen(sPens[m_color_active]);
+            m_polyline_input -> mPolylineGI -> setPen(sPens[m_color_active]);
+            m_polyline_input -> mHandleGI -> setPen(sPens[m_color_active]);
+        }
+        else
+        {
+            actionInsertPolyline->setChecked(false);
+        }
+    }
 }
 
 void MainWindow::on_actionInsertLinear_toggled(bool aChecked)
@@ -5522,8 +5885,10 @@ void MainWindow::on_actionInsertLinear_toggled(bool aChecked)
       actionOpenLinear->setEnabled(true);
       actionOpenDXF->setEnabled(false);
       actionOpenBezier->setEnabled(false);
+      actionOpenPolyline->setEnabled(false);
       actionInsertCircular->setChecked( false );
       actionInsertBezier->setChecked( false );
+      actionInsertPolyline->setChecked(false);
       m_scene.installEventFilter(m_linear_input);
       on_actionDeleteResult();
 
@@ -5573,17 +5938,21 @@ void MainWindow::on_actionComplementH_toggled(bool aChecked)
     states_stack.back().result_circular_sources().clear();
     states_stack.back().result_bezier_sources().clear();
 
-    if(!m_circular_active && !m_bezier_active)
+    if(!m_circular_active && !m_bezier_active && !m_polyline_active)
     {
       m_linear_input->get_BoundingRect();
     }
-    else if(!m_bezier_active)
+    else if(!m_bezier_active && !m_polyline_active)
     {
       m_circular_input->get_BoundingRect();
     }
-    else
+    else if(!m_polyline_active)
     {
       m_bezier_input->get_BoundingRect();
+    }
+    else
+    {
+      m_polyline_input->get_BoundingRect();
     }
     //m_circular_input->get_BoundingRect();
 
@@ -5608,7 +5977,9 @@ void MainWindow::on_actionComplementH_toggled(bool aChecked)
         case 6: if(!states_stack.back().aqua_set().is_empty()) {states_stack.back().result_set().difference(states_stack.back().aqua_set());} break;
       }
         states_stack.back().blue_set().join(states_stack.back().result_set());
-        states_stack.back().result_set().clear();states_stack.back().result_linear_sources().clear();states_stack.back().result_circular_sources().clear();states_stack.back().result_bezier_sources().clear();
+        states_stack.back().result_set().clear();states_stack.back().result_linear_sources().clear();
+        states_stack.back().result_circular_sources().clear();states_stack.back().result_bezier_sources().clear();
+        states_stack.back().result_polyline_sources().clear();
       break;
 
       case 1:switch(m_color_complement)
@@ -5622,7 +5993,9 @@ void MainWindow::on_actionComplementH_toggled(bool aChecked)
         case 6: if(!states_stack.back().aqua_set().is_empty()) {states_stack.back().result_set().difference(states_stack.back().aqua_set());} break;
       }
         states_stack.back().red_set().join(states_stack.back().result_set());
-        states_stack.back().result_set().clear();states_stack.back().result_linear_sources().clear();states_stack.back().result_circular_sources().clear();states_stack.back().result_bezier_sources().clear();
+        states_stack.back().result_set().clear();states_stack.back().result_linear_sources().clear();
+        states_stack.back().result_circular_sources().clear();states_stack.back().result_bezier_sources().clear();
+        states_stack.back().result_polyline_sources().clear();
       break;
 
       case 2:switch(m_color_complement)
@@ -5636,7 +6009,9 @@ void MainWindow::on_actionComplementH_toggled(bool aChecked)
         case 6: if(!states_stack.back().aqua_set().is_empty()) {states_stack.back().result_set().difference(states_stack.back().aqua_set());} break;
       }
         states_stack.back().black_set().join(states_stack.back().result_set());
-        states_stack.back().result_set().clear();states_stack.back().result_linear_sources().clear();states_stack.back().result_circular_sources().clear();states_stack.back().result_bezier_sources().clear();
+        states_stack.back().result_set().clear();states_stack.back().result_linear_sources().clear();
+        states_stack.back().result_circular_sources().clear();states_stack.back().result_bezier_sources().clear();
+        states_stack.back().result_polyline_sources().clear();
       break;
 
       case 3:switch(m_color_complement)
@@ -5650,7 +6025,9 @@ void MainWindow::on_actionComplementH_toggled(bool aChecked)
         case 6: if(!states_stack.back().aqua_set().is_empty()) {states_stack.back().result_set().difference(states_stack.back().aqua_set());} break;
       }
         states_stack.back().brown_set().join(states_stack.back().result_set());
-        states_stack.back().result_set().clear();states_stack.back().result_linear_sources().clear();states_stack.back().result_circular_sources().clear();states_stack.back().result_bezier_sources().clear();
+        states_stack.back().result_set().clear();states_stack.back().result_linear_sources().clear();
+        states_stack.back().result_circular_sources().clear();states_stack.back().result_bezier_sources().clear();
+        states_stack.back().result_polyline_sources().clear();
       break;
 
       case 4:switch(m_color_complement)
@@ -5664,7 +6041,9 @@ void MainWindow::on_actionComplementH_toggled(bool aChecked)
         case 6: if(!states_stack.back().aqua_set().is_empty()) {states_stack.back().result_set().difference(states_stack.back().aqua_set());} break;
       }
         states_stack.back().yellow_set().join(states_stack.back().result_set());
-        states_stack.back().result_set().clear();states_stack.back().result_linear_sources().clear();states_stack.back().result_circular_sources().clear();states_stack.back().result_bezier_sources().clear();
+        states_stack.back().result_set().clear();states_stack.back().result_linear_sources().clear();
+        states_stack.back().result_circular_sources().clear();states_stack.back().result_bezier_sources().clear();
+        states_stack.back().result_polyline_sources().clear();
       break;
 
       case 5:switch(m_color_complement)
@@ -5678,7 +6057,9 @@ void MainWindow::on_actionComplementH_toggled(bool aChecked)
         case 6: if(!states_stack.back().aqua_set().is_empty()) {states_stack.back().result_set().difference(states_stack.back().aqua_set());} break;
       }
         states_stack.back().magenta_set().join(states_stack.back().result_set());
-        states_stack.back().result_set().clear();states_stack.back().result_linear_sources().clear();states_stack.back().result_circular_sources().clear();states_stack.back().result_bezier_sources().clear();
+        states_stack.back().result_set().clear();states_stack.back().result_linear_sources().clear();
+        states_stack.back().result_circular_sources().clear();states_stack.back().result_bezier_sources().clear();
+        states_stack.back().result_polyline_sources().clear();
       break;
 
       case 6:switch(m_color_complement)
@@ -5692,7 +6073,9 @@ void MainWindow::on_actionComplementH_toggled(bool aChecked)
         case 6: if(!states_stack.back().aqua_set().is_empty()) {states_stack.back().result_set().difference(states_stack.back().aqua_set());} break;
       }
         states_stack.back().aqua_set().join(states_stack.back().result_set());
-        states_stack.back().result_set().clear();states_stack.back().result_linear_sources().clear();states_stack.back().result_circular_sources().clear();states_stack.back().result_bezier_sources().clear();
+        states_stack.back().result_set().clear();states_stack.back().result_linear_sources().clear();
+        states_stack.back().result_circular_sources().clear();states_stack.back().result_bezier_sources().clear();
+        states_stack.back().result_polyline_sources().clear();
       break;
 
       default : break;
@@ -5741,6 +6124,7 @@ void MainWindow::on_actionIntersectionH_toggled(bool aChecked)
 	states_stack.back().result_linear_sources().clear();
 	states_stack.back().result_circular_sources().clear();
 	states_stack.back().result_bezier_sources().clear();
+    states_stack.back().result_polyline_sources().clear();
 
     if(!states_stack.back().active_set(m_color_active).is_empty())
     {
@@ -5775,6 +6159,7 @@ void MainWindow::on_actionIntersectionH_toggled(bool aChecked)
 	      states_stack.back().result_linear_sources().clear();
 	      states_stack.back().result_circular_sources().clear();
 	      states_stack.back().result_bezier_sources().clear();
+          states_stack.back().result_polyline_sources().clear();
 	      std::cout<<"Blue"<<endl;
 	  break;
 
@@ -5801,6 +6186,7 @@ void MainWindow::on_actionIntersectionH_toggled(bool aChecked)
 	      states_stack.back().result_linear_sources().clear();
 	      states_stack.back().result_circular_sources().clear();
 	      states_stack.back().result_bezier_sources().clear();
+          states_stack.back().result_polyline_sources().clear();
 	      std::cout<<"Red"<<endl;
 	  break;
 
@@ -5827,6 +6213,7 @@ void MainWindow::on_actionIntersectionH_toggled(bool aChecked)
 	      states_stack.back().result_linear_sources().clear();
 	      states_stack.back().result_circular_sources().clear();
 	      states_stack.back().result_bezier_sources().clear();
+          states_stack.back().result_polyline_sources().clear();
 	      std::cout<<"Black"<<endl;
 	  break;
 
@@ -5852,6 +6239,7 @@ void MainWindow::on_actionIntersectionH_toggled(bool aChecked)
 	      states_stack.back().result_set().clear();states_stack.back().result_linear_sources().clear();
 	      states_stack.back().result_circular_sources().clear();
 	      states_stack.back().result_bezier_sources().clear();
+          states_stack.back().result_polyline_sources().clear();
 	      std::cout<<"Brown"<<endl;
 	  break;
 
@@ -5877,6 +6265,7 @@ void MainWindow::on_actionIntersectionH_toggled(bool aChecked)
 	      states_stack.back().result_set().clear();states_stack.back().result_linear_sources().clear();
 	      states_stack.back().result_circular_sources().clear();
 	      states_stack.back().result_bezier_sources().clear();
+          states_stack.back().result_polyline_sources().clear();
 	      std::cout<<"Yellow"<<endl;
 	  break;
 
@@ -5903,6 +6292,7 @@ void MainWindow::on_actionIntersectionH_toggled(bool aChecked)
           states_stack.back().result_linear_sources().clear();
           states_stack.back().result_circular_sources().clear();
           states_stack.back().result_bezier_sources().clear();
+          states_stack.back().result_polyline_sources().clear();
           std::cout<<"Magenta"<<endl;
       break;
 
@@ -5928,6 +6318,7 @@ void MainWindow::on_actionIntersectionH_toggled(bool aChecked)
 	      states_stack.back().result_set().clear();states_stack.back().result_linear_sources().clear();
 	      states_stack.back().result_circular_sources().clear();
 	      states_stack.back().result_bezier_sources().clear();
+          states_stack.back().result_polyline_sources().clear();
 	      std::cout<<"Aqua"<<endl;
 	  break;
 
@@ -6030,6 +6421,7 @@ void MainWindow::on_actionDifferenceH_toggled(bool aChecked)
 	  states_stack.back().result_linear_sources().clear();
 	  states_stack.back().result_circular_sources().clear();
 	  states_stack.back().result_bezier_sources().clear();
+      states_stack.back().result_polyline_sources().clear();
 
       if(!states_stack.back().active_set(m_color_active).is_empty())
       {
@@ -6059,7 +6451,8 @@ void MainWindow::on_actionDifferenceH_toggled(bool aChecked)
 	        states_stack.back().result_set().difference(states_stack.back().blue_set());
 	        states_stack.back().blue_set().join(states_stack.back().result_set());
 	        states_stack.back().result_set().clear();states_stack.back().result_linear_sources().clear();
-	        states_stack.back().result_circular_sources().clear();states_stack.back().result_bezier_sources().clear();
+	        states_stack.back().result_circular_sources().clear();states_stack.back().result_polyline_sources().clear();
+	        states_stack.back().result_bezier_sources().clear();
 	      break;
 
 	      case 1:if(color1 == 0) states_stack.back().result_set().assign(states_stack.back().blue_set());
@@ -6078,7 +6471,9 @@ void MainWindow::on_actionDifferenceH_toggled(bool aChecked)
 	        else if (color2 == 6) states_stack.back().result_set().difference(states_stack.back().aqua_set());
 	        states_stack.back().result_set().difference(states_stack.back().red_set());
 	        states_stack.back().red_set().join(states_stack.back().result_set());
-	        states_stack.back().result_set().clear();states_stack.back().result_linear_sources().clear();states_stack.back().result_circular_sources().clear();states_stack.back().result_bezier_sources().clear();
+	        states_stack.back().result_set().clear();states_stack.back().result_linear_sources().clear();
+	        states_stack.back().result_circular_sources().clear();states_stack.back().result_polyline_sources().clear();
+	        states_stack.back().result_bezier_sources().clear();
 	      break;
 
 	      case 2:if(color1 == 0) states_stack.back().result_set().assign(states_stack.back().blue_set());
@@ -6097,7 +6492,9 @@ void MainWindow::on_actionDifferenceH_toggled(bool aChecked)
 	        else if (color2 == 6) states_stack.back().result_set().difference(states_stack.back().aqua_set());
             states_stack.back().result_set().difference(states_stack.back().black_set());
             states_stack.back().black_set().join(states_stack.back().result_set());
-            states_stack.back().result_set().clear();states_stack.back().result_linear_sources().clear();states_stack.back().result_circular_sources().clear();states_stack.back().result_bezier_sources().clear();
+            states_stack.back().result_set().clear();states_stack.back().result_linear_sources().clear();
+            states_stack.back().result_circular_sources().clear();states_stack.back().result_polyline_sources().clear();
+            states_stack.back().result_bezier_sources().clear();
           break;
 
 	      case 3:if(color1 == 0) states_stack.back().result_set().assign(states_stack.back().blue_set());
@@ -6116,7 +6513,9 @@ void MainWindow::on_actionDifferenceH_toggled(bool aChecked)
 	        else if (color2 == 6) states_stack.back().result_set().difference(states_stack.back().aqua_set());
             states_stack.back().result_set().difference(states_stack.back().brown_set());
             states_stack.back().brown_set().join(states_stack.back().result_set());
-            states_stack.back().result_set().clear();states_stack.back().result_linear_sources().clear();states_stack.back().result_circular_sources().clear();states_stack.back().result_bezier_sources().clear();
+            states_stack.back().result_set().clear();states_stack.back().result_linear_sources().clear();
+            states_stack.back().result_circular_sources().clear();states_stack.back().result_polyline_sources().clear();
+            states_stack.back().result_bezier_sources().clear();
           break;
 
 	      case 4:if(color1 == 0) states_stack.back().result_set().assign(states_stack.back().blue_set());
@@ -6135,7 +6534,9 @@ void MainWindow::on_actionDifferenceH_toggled(bool aChecked)
 	        else if (color2 == 6) states_stack.back().result_set().difference(states_stack.back().aqua_set());
             states_stack.back().result_set().difference(states_stack.back().yellow_set());
             states_stack.back().yellow_set().join(states_stack.back().result_set());
-            states_stack.back().result_set().clear();states_stack.back().result_linear_sources().clear();states_stack.back().result_circular_sources().clear();states_stack.back().result_bezier_sources().clear();
+            states_stack.back().result_set().clear();states_stack.back().result_linear_sources().clear();
+            states_stack.back().result_circular_sources().clear();states_stack.back().result_polyline_sources().clear();
+            states_stack.back().result_bezier_sources().clear();
           break;
 
 	      case 5:if(color1 == 0) states_stack.back().result_set().assign(states_stack.back().blue_set());
@@ -6154,7 +6555,9 @@ void MainWindow::on_actionDifferenceH_toggled(bool aChecked)
 	        else if (color2 == 6) states_stack.back().result_set().difference(states_stack.back().aqua_set());
             states_stack.back().result_set().difference(states_stack.back().magenta_set());
             states_stack.back().magenta_set().join(states_stack.back().result_set());
-            states_stack.back().result_set().clear();states_stack.back().result_linear_sources().clear();states_stack.back().result_circular_sources().clear();states_stack.back().result_bezier_sources().clear();
+            states_stack.back().result_set().clear();states_stack.back().result_linear_sources().clear();
+            states_stack.back().result_circular_sources().clear();states_stack.back().result_polyline_sources().clear();
+            states_stack.back().result_bezier_sources().clear();
           break;
 
 	      case 6:if(color1 == 0) states_stack.back().result_set().assign(states_stack.back().blue_set());
@@ -6173,7 +6576,9 @@ void MainWindow::on_actionDifferenceH_toggled(bool aChecked)
 	        else if (color2 == 6) states_stack.back().result_set().difference(states_stack.back().aqua_set());
             states_stack.back().result_set().difference(states_stack.back().aqua_set());
             states_stack.back().aqua_set().join(states_stack.back().result_set());
-            states_stack.back().result_set().clear();states_stack.back().result_linear_sources().clear();states_stack.back().result_circular_sources().clear();states_stack.back().result_bezier_sources().clear();
+            states_stack.back().result_set().clear();states_stack.back().result_linear_sources().clear();
+            states_stack.back().result_circular_sources().clear();states_stack.back().result_polyline_sources().clear();
+            states_stack.back().result_bezier_sources().clear();
           break;
 	  }
 	  lDone = true;
@@ -6234,6 +6639,7 @@ void MainWindow::on_actionSymmetric_DifferenceH_toggled(bool aChecked)
 	states_stack.back().result_linear_sources().clear();
 	states_stack.back().result_circular_sources().clear();
 	states_stack.back().result_bezier_sources().clear();
+	states_stack.back().result_polyline_sources().clear();
 
     if(!states_stack.back().active_set(m_color_active).is_empty())
     {
@@ -6263,7 +6669,9 @@ void MainWindow::on_actionSymmetric_DifferenceH_toggled(bool aChecked)
 
 	            states_stack.back().result_set().difference(states_stack.back().blue_set());
 	            states_stack.back().blue_set().join(states_stack.back().result_set());
-	            states_stack.back().result_set().clear();states_stack.back().result_linear_sources().clear();states_stack.back().result_circular_sources().clear();states_stack.back().result_bezier_sources().clear();
+	            states_stack.back().result_set().clear();states_stack.back().result_linear_sources().clear();
+	            states_stack.back().result_circular_sources().clear();states_stack.back().result_polyline_sources().clear();
+	            states_stack.back().result_bezier_sources().clear();
 	    break;
 
 	    case 1:
@@ -6284,7 +6692,9 @@ void MainWindow::on_actionSymmetric_DifferenceH_toggled(bool aChecked)
 
 	            states_stack.back().result_set().difference(states_stack.back().red_set());
 	            states_stack.back().red_set().join(states_stack.back().result_set());
-	            states_stack.back().result_set().clear();states_stack.back().result_linear_sources().clear();states_stack.back().result_circular_sources().clear();states_stack.back().result_bezier_sources().clear();
+	            states_stack.back().result_set().clear();states_stack.back().result_linear_sources().clear();
+	            states_stack.back().result_circular_sources().clear();states_stack.back().result_polyline_sources().clear();
+	            states_stack.back().result_bezier_sources().clear();
 	    break;
 
 	    case 2:
@@ -6305,7 +6715,9 @@ void MainWindow::on_actionSymmetric_DifferenceH_toggled(bool aChecked)
 
 	            states_stack.back().result_set().difference(states_stack.back().black_set());
 	            states_stack.back().black_set().join(states_stack.back().result_set());
-	            states_stack.back().result_set().clear();states_stack.back().result_linear_sources().clear();states_stack.back().result_circular_sources().clear();states_stack.back().result_bezier_sources().clear();
+	            states_stack.back().result_set().clear();states_stack.back().result_linear_sources().clear();
+	            states_stack.back().result_circular_sources().clear();states_stack.back().result_polyline_sources().clear();
+	            states_stack.back().result_bezier_sources().clear();
 	    break;
 
 	    case 3:
@@ -6327,7 +6739,8 @@ void MainWindow::on_actionSymmetric_DifferenceH_toggled(bool aChecked)
 	            states_stack.back().result_set().difference(states_stack.back().brown_set());
 	            states_stack.back().brown_set().join(states_stack.back().result_set());
 	            states_stack.back().result_set().clear();states_stack.back().result_linear_sources().clear();
-	            states_stack.back().result_circular_sources().clear();states_stack.back().result_bezier_sources().clear();
+	            states_stack.back().result_circular_sources().clear();states_stack.back().result_polyline_sources().clear();
+	            states_stack.back().result_bezier_sources().clear();
 	            std::cout<<"BROWN"<<endl;
 	    break;
 
@@ -6349,7 +6762,9 @@ void MainWindow::on_actionSymmetric_DifferenceH_toggled(bool aChecked)
 
 	            states_stack.back().result_set().difference(states_stack.back().yellow_set());
 	            states_stack.back().yellow_set().join(states_stack.back().result_set());
-	            states_stack.back().result_set().clear();states_stack.back().result_linear_sources().clear();states_stack.back().result_circular_sources().clear();states_stack.back().result_bezier_sources().clear();
+	            states_stack.back().result_set().clear();states_stack.back().result_linear_sources().clear();
+	            states_stack.back().result_circular_sources().clear();states_stack.back().result_polyline_sources().clear();
+	            states_stack.back().result_bezier_sources().clear();
 	    break;
 
 
@@ -6371,7 +6786,9 @@ void MainWindow::on_actionSymmetric_DifferenceH_toggled(bool aChecked)
 
 	            states_stack.back().result_set().difference(states_stack.back().magenta_set());
 	            states_stack.back().magenta_set().join(states_stack.back().result_set());
-	            states_stack.back().result_set().clear();states_stack.back().result_linear_sources().clear();states_stack.back().result_circular_sources().clear();states_stack.back().result_bezier_sources().clear();
+	            states_stack.back().result_set().clear();states_stack.back().result_linear_sources().clear();
+	            states_stack.back().result_circular_sources().clear();states_stack.back().result_polyline_sources().clear();
+	            states_stack.back().result_bezier_sources().clear();
 	    break;
 
 	    case 6:
@@ -6392,7 +6809,9 @@ void MainWindow::on_actionSymmetric_DifferenceH_toggled(bool aChecked)
 
 	            states_stack.back().result_set().difference(states_stack.back().aqua_set());
 	            states_stack.back().aqua_set().join(states_stack.back().result_set());
-	            states_stack.back().result_set().clear();states_stack.back().result_linear_sources().clear();states_stack.back().result_circular_sources().clear();states_stack.back().result_bezier_sources().clear();
+	            states_stack.back().result_set().clear();states_stack.back().result_linear_sources().clear();
+	            states_stack.back().result_circular_sources().clear();states_stack.back().result_polyline_sources().clear();
+	            states_stack.back().result_bezier_sources().clear();
 	    break;
 	  }
 
@@ -6442,6 +6861,7 @@ void MainWindow::on_actionUnionH_toggled(bool aChecked)
 	states_stack.back().result_linear_sources().clear();
 	states_stack.back().result_circular_sources().clear();
 	states_stack.back().result_bezier_sources().clear();
+    states_stack.back().result_polyline_sources().clear();
 
     if(!states_stack.back().active_set(m_color_active).is_empty())
     {
@@ -6465,7 +6885,9 @@ void MainWindow::on_actionUnionH_toggled(bool aChecked)
 
 	        states_stack.back().result_set().difference(states_stack.back().blue_set());
 	        states_stack.back().blue_set().join(states_stack.back().result_set());
-	        states_stack.back().result_set().clear();states_stack.back().result_linear_sources().clear();states_stack.back().result_circular_sources().clear();states_stack.back().result_bezier_sources().clear();
+	        states_stack.back().result_set().clear();states_stack.back().result_linear_sources().clear();
+	        states_stack.back().result_circular_sources().clear();states_stack.back().result_polyline_sources().clear();
+	        states_stack.back().result_bezier_sources().clear();
 	    break;
 
 	    case 1:
@@ -6479,7 +6901,9 @@ void MainWindow::on_actionUnionH_toggled(bool aChecked)
 
 	        states_stack.back().result_set().difference(states_stack.back().red_set());
 	        states_stack.back().red_set().join(states_stack.back().result_set());
-	        states_stack.back().result_set().clear();states_stack.back().result_linear_sources().clear();states_stack.back().result_circular_sources().clear();states_stack.back().result_bezier_sources().clear();
+	        states_stack.back().result_set().clear();states_stack.back().result_linear_sources().clear();
+	        states_stack.back().result_circular_sources().clear();states_stack.back().result_polyline_sources().clear();
+	        states_stack.back().result_bezier_sources().clear();
 	    break;
 
 	    case 2:
@@ -6493,7 +6917,9 @@ void MainWindow::on_actionUnionH_toggled(bool aChecked)
 
 	        states_stack.back().result_set().difference(states_stack.back().black_set());
 	        states_stack.back().black_set().join(states_stack.back().result_set());
-	        states_stack.back().result_set().clear();states_stack.back().result_linear_sources().clear();states_stack.back().result_circular_sources().clear();states_stack.back().result_bezier_sources().clear();
+	        states_stack.back().result_set().clear();states_stack.back().result_linear_sources().clear();
+	        states_stack.back().result_circular_sources().clear();states_stack.back().result_polyline_sources().clear();
+	        states_stack.back().result_bezier_sources().clear();
 	    break;
 
 	    case 3:
@@ -6508,7 +6934,9 @@ void MainWindow::on_actionUnionH_toggled(bool aChecked)
 	        states_stack.back().result_set().difference(states_stack.back().brown_set());
 	        states_stack.back().brown_set().join(states_stack.back().result_set());
 	        std::cout<<"BROWN"<<endl;
-	        states_stack.back().result_set().clear();states_stack.back().result_linear_sources().clear();states_stack.back().result_circular_sources().clear();states_stack.back().result_bezier_sources().clear();
+	        states_stack.back().result_set().clear();states_stack.back().result_linear_sources().clear();
+	        states_stack.back().result_circular_sources().clear();states_stack.back().result_polyline_sources().clear();
+	        states_stack.back().result_bezier_sources().clear();
 	    break;
 
 	    case 4:
@@ -6522,7 +6950,9 @@ void MainWindow::on_actionUnionH_toggled(bool aChecked)
 
 	        states_stack.back().result_set().difference(states_stack.back().yellow_set());
 	        states_stack.back().yellow_set().join(states_stack.back().result_set());
-	        states_stack.back().result_set().clear();states_stack.back().result_linear_sources().clear();states_stack.back().result_circular_sources().clear();states_stack.back().result_bezier_sources().clear();
+	        states_stack.back().result_set().clear();states_stack.back().result_linear_sources().clear();
+	        states_stack.back().result_circular_sources().clear();states_stack.back().result_polyline_sources().clear();
+	        states_stack.back().result_bezier_sources().clear();
 	    break;
 
 	    case 5:
@@ -6536,7 +6966,9 @@ void MainWindow::on_actionUnionH_toggled(bool aChecked)
 
 	        states_stack.back().result_set().difference(states_stack.back().magenta_set());
 	        states_stack.back().magenta_set().join(states_stack.back().result_set());
-	        states_stack.back().result_set().clear();states_stack.back().result_linear_sources().clear();states_stack.back().result_circular_sources().clear();states_stack.back().result_bezier_sources().clear();
+	        states_stack.back().result_set().clear();states_stack.back().result_linear_sources().clear();
+	        states_stack.back().result_circular_sources().clear();states_stack.back().result_polyline_sources().clear();
+	        states_stack.back().result_bezier_sources().clear();
 	    break;
 
 	    case 6:
@@ -6550,7 +6982,9 @@ void MainWindow::on_actionUnionH_toggled(bool aChecked)
 
 	        states_stack.back().result_set().difference(states_stack.back().aqua_set());
 	        states_stack.back().aqua_set().join(states_stack.back().result_set());
-	        states_stack.back().result_set().clear();states_stack.back().result_linear_sources().clear();states_stack.back().result_circular_sources().clear();states_stack.back().result_bezier_sources().clear();
+	        states_stack.back().result_set().clear();states_stack.back().result_linear_sources().clear();
+	        states_stack.back().result_circular_sources().clear();states_stack.back().result_polyline_sources().clear();
+	        states_stack.back().result_bezier_sources().clear();
 	    break;
 	  }
 
@@ -6597,6 +7031,7 @@ void MainWindow::on_actionCopyH_toggled(bool aChecked)
     states_stack.back().result_linear_sources().clear();
     states_stack.back().result_circular_sources().clear();
     states_stack.back().result_bezier_sources().clear();
+    states_stack.back().result_polyline_sources().clear();
 
     switch(m_color_copy)
     {
@@ -6619,6 +7054,7 @@ void MainWindow::on_actionCopyH_toggled(bool aChecked)
     states_stack.back().result_linear_sources().clear();
     states_stack.back().result_circular_sources().clear();
     states_stack.back().result_bezier_sources().clear();
+    states_stack.back().result_polyline_sources().clear();
     this->setCursor(old);
     if (lDone) modelChanged();
   }
@@ -6660,6 +7096,7 @@ void MainWindow::on_actionMoveH_toggled(bool aChecked)
     states_stack.back().result_linear_sources().clear();
     states_stack.back().result_circular_sources().clear();
     states_stack.back().result_bezier_sources().clear();
+    states_stack.back().result_polyline_sources().clear();
 
     switch(m_color_move_ext)
     {
@@ -6678,6 +7115,7 @@ void MainWindow::on_actionMoveH_toggled(bool aChecked)
     states_stack.back().result_linear_sources().clear();
     states_stack.back().result_circular_sources().clear();
     states_stack.back().result_bezier_sources().clear();
+    states_stack.back().result_polyline_sources().clear();
 
     lDone = true;
     m_color_cm = 1; //copy
@@ -6768,7 +7206,7 @@ void MainWindow::on_actionMinkowski_SumH_toggled(bool aChecked)
     QCursor old = this->cursor();
     this->setCursor(Qt::WaitCursor);
 
-    if (!m_circular_active && !m_bezier_active)
+    if (!m_circular_active && !m_bezier_active && !m_polyline_active)
     {
       actionComplementH->setChecked(false);
       actionUnionH->setChecked(false);
@@ -7035,27 +7473,45 @@ void MainWindow::on_actionPAN_triggered()
   if(!m_pan)
   {
     //get_new_state(7);
-    if (!m_circular_active && !m_bezier_active)
+    if (!m_circular_active && !m_bezier_active && !m_polyline_active)
     {
       m_scene.removeEventFilter(m_linear_input);
       m_scene.removeEventFilter(m_bezier_input);
       m_scene.removeEventFilter(m_circular_input);
+      m_scene.removeEventFilter(m_polyline_input);
       m_linear_input->Reset();
       m_circular_input->Reset();
       m_bezier_input->Reset();
+      m_polyline_input->Reset();
       actionInsertLinear->setChecked( false );
       this->graphicsView->setDragMode(QGraphicsView::ScrollHandDrag);
     }
 
-    else if(!m_bezier_active)
+    else if(!m_bezier_active && !m_polyline_active)
     {
       m_scene.removeEventFilter(m_linear_input);
       m_scene.removeEventFilter(m_bezier_input);
       m_scene.removeEventFilter(m_circular_input);
+      m_scene.removeEventFilter(m_polyline_input);
       m_linear_input->Reset();
       m_circular_input->Reset();
       m_bezier_input->Reset();
+      m_polyline_input->Reset();
       actionInsertCircular->setChecked( false );
+      this->graphicsView->setDragMode(QGraphicsView::ScrollHandDrag);
+    }
+
+    else if(!m_polyline_active)
+    {
+      m_scene.removeEventFilter(m_linear_input);
+      m_scene.removeEventFilter(m_bezier_input);
+      m_scene.removeEventFilter(m_circular_input);
+      m_scene.removeEventFilter(m_polyline_input);
+      m_linear_input->Reset();
+      m_circular_input->Reset();
+      m_bezier_input->Reset();
+      m_polyline_input->Reset();
+      actionInsertBezier->setChecked( false );
       this->graphicsView->setDragMode(QGraphicsView::ScrollHandDrag);
     }
 
@@ -7064,10 +7520,12 @@ void MainWindow::on_actionPAN_triggered()
       m_scene.removeEventFilter(m_linear_input);
       m_scene.removeEventFilter(m_bezier_input);
       m_scene.removeEventFilter(m_circular_input);
+      m_scene.removeEventFilter(m_polyline_input);
       m_linear_input->Reset();
       m_circular_input->Reset();
       m_bezier_input->Reset();
-      actionInsertBezier->setChecked( false );
+      m_polyline_input->Reset();
+      actionInsertPolyline->setChecked( false );
       this->graphicsView->setDragMode(QGraphicsView::ScrollHandDrag);
     }
 
@@ -7079,17 +7537,21 @@ void MainWindow::on_actionPAN_triggered()
 
   else
   {
-    if(! (m_circular_active || m_bezier_active) )
+    if(! (m_circular_active || m_bezier_active) || m_polyline_active)
     {
       actionInsertLinear->setChecked(true);
     }
     else if(m_circular_active)
     {
-      actionInsertCircular ->setChecked(true);
+      actionInsertCircular->setChecked(true);
     }
-    else
+    else if(m_bezier_active)
     {
-      actionInsertBezier ->setChecked(true);
+      actionInsertBezier->setChecked(true);
+    }
+    else if(m_polyline_active)
+    {
+      actionInsertPolyline->setChecked(true);
     }
     m_pan = false;
     modelChanged();
@@ -7346,10 +7808,15 @@ void MainWindow::exception_handler()
       m_circular_input -> Reset();
       m_circular_input -> mState = m_circular_input -> Start;
     }
-    else
+    else if(ensure_bezier_mode())
     {
       m_bezier_input -> Reset();
       m_bezier_input -> mState = m_bezier_input -> Start;
+    }
+    else
+    {
+      m_polyline_input -> Reset();
+      m_polyline_input -> mState = m_polyline_input -> Start;
     }
   }
   catch(const std::exception& e)
@@ -7364,6 +7831,7 @@ void MainWindow::processInput(CGAL::Object o)
   std::pair<Bezier_polygon,Bezier_boundary_source>     lBI ;
   Linear_polygon lLI;
   Circular_polygon lCI;
+  Polyline_polygon lPI;
 
   try
   {
@@ -7428,7 +7896,7 @@ void MainWindow::processInput(CGAL::Object o)
       }
     }
 
-    else if ( CGAL::assign(lCI, o) )
+    else if (CGAL::assign(lCI, o) )
     {
       if ( ensure_circular_mode() )
       {
@@ -7451,8 +7919,31 @@ void MainWindow::processInput(CGAL::Object o)
         }
       }
     }
-  }
 
+    else if (CGAL::assign(lPI, o) )
+    {
+        if ( ensure_polyline_mode() )
+        {
+            CGAL::Orientation o = lPI.orientation();
+            if ( o == CGAL::CLOCKWISE )
+                lPI.reverse_orientation();
+
+            Polyline_polygon_with_holes lPPWH(lPI);
+
+            if(!m_polyline_input->isboundingRect())
+            {
+                get_new_state(11);
+                states_stack.back().active_set(m_color_active).polyline().join(lPPWH) ;
+                states_stack.back().active_polyline_sources(m_color_active).push_back(lPPWH);
+            }
+            else
+            {
+                states_stack.back().result_set().polyline().join(lPPWH) ;
+                states_stack.back().result_polyline_sources().push_back(lPPWH);
+            }
+        }
+    }
+  }
   catch(const std::exception& e)
   {
       //std::string s = e.what();
@@ -7486,18 +7977,3 @@ int main(int argc, char* argv[])
     show_error("Exception thrown during run of the program:\n" + s);
   }
 }
-
-//errors in main
-/* CGAL error: precondition violation!
-// Expr: ! is_degen
-// File: /home/ronnie8888/Documents/cgal-public-dev/Arrangement_on_surface_2/include/CGAL/Arr_segment_traits_2.h
-// Line: 145
-// Explanation:Cannot construct a degenerate segment
-
-// Exception throne during run of the program:
-// CGAL error: precondition violation!
-// Expr: pgn1.is_simple()
-// File: /home/ronnie8888/Documents/cgal-public-dev/Minkowski_sum_2/include/CGAL/Minkowski_sum_2/Minkowski_sum_by_reduced_convolution_2.h
-// Line: 102
-// Explanation:
- */
