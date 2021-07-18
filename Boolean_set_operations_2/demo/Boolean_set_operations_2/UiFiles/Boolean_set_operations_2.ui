@@ -231,6 +231,9 @@
              <height>32</height>
             </size>
            </property>
+           <property name="orientation">
+            <enum>Qt::Vertical</enum>
+           </property>
            <addaction name="actionInsertPolyline" />
            </widget>
          </item>
@@ -323,6 +326,9 @@
            <attribute name="toolBarArea" >
             <enum>TopToolBarArea</enum>
            </attribute>
+           <property name="orientation">
+            <enum>Qt::Vertical</enum>
+           </property>
            <attribute name="toolBarBreak" >
             <bool>false</bool>
            </attribute>
