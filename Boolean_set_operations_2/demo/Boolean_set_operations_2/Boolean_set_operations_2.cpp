@@ -5690,7 +5690,7 @@ bool MainWindow::ensure_polyline_mode()
                         states_stack.back().aqua_set().is_empty() && states_stack.back().result_set().is_empty();
 
         if (! lProceed)
-            lProceed = ask_user_yesno("Linear mode switch",
+            lProceed = ask_user_yesno("Polyline mode switch",
                                       "You are about to load a polyline polygon, but there are circular/bezier/linear polygons already loaded.\n" \
         "Both types are not interoperable. In order to proceed, the polygons must be removed first.\n" \
         "Once deleted you cannot undo the action.\n" \
@@ -5886,7 +5886,7 @@ void MainWindow::on_actionInsertLinear_toggled(bool aChecked)
       actionOpenDXF->setEnabled(false);
       actionOpenBezier->setEnabled(false);
       actionOpenPolyline->setEnabled(false);
-      actionInsertCircular->setChecked( false );
+      actionInsertCircular->setChecked(false);
       actionInsertBezier->setChecked( false );
       actionInsertPolyline->setChecked(false);
       m_scene.installEventFilter(m_linear_input);
@@ -7813,7 +7813,7 @@ void MainWindow::exception_handler()
       m_bezier_input -> Reset();
       m_bezier_input -> mState = m_bezier_input -> Start;
     }
-    else
+    else if(ensure_polyline_mode())
     {
       m_polyline_input -> Reset();
       m_polyline_input -> mState = m_polyline_input -> Start;
@@ -7861,7 +7861,7 @@ void MainWindow::processInput(CGAL::Object o)
       }
     }
 
-    if (CGAL::assign(lLI, o))
+    else if (CGAL::assign(lLI, o))
     {
       if (ensure_linear_mode())
       {

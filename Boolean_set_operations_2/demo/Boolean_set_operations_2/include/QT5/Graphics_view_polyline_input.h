@@ -402,17 +402,6 @@ namespace CGAL {
             }
 
             void get_BoundingRect() {
-                /* mOngoingPieceCtr.push_back(Linear_curve(Point(-10000000,-10000000),Point(-10000000,10000000)));
-                // mOngoingPieceCtr.push_back(Linear_curve(Point(-10000000,10000000),Point(10000000,10000000)));
-                // mOngoingPieceCtr.push_back(Linear_curve(Point(10000000,10000000),Point(10000000,-10000000)));
-
-                // mLinearPolygonPieces.push_back(mOngoingPieceCtr[0]);
-                // mLinearPolygonPieces.push_back(mOngoingPieceCtr[1]);
-                // mLinearPolygonPieces.push_back(mOngoingPieceCtr[2]);
-
-                // m_bound_rect = true;
-                // CommitCurrLinearPolygon();
-                // ReStart();*/
 
                 m_bound_rect = true;
 
