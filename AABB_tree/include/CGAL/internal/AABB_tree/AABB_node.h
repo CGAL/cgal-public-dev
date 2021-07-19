@@ -42,7 +42,7 @@ namespace CGAL {
 
     /// Constructor
     AABB_node()
-            : m_bbox(), m_children(static_cast<Primitive *>(nullptr)) {};
+            : m_bbox(), m_contents(static_cast<Primitive *>(nullptr)) {};
 
     AABB_node(Self &&node) = default;
 
@@ -80,7 +80,7 @@ namespace CGAL {
 
     template<class T>
     void set_children(T *children) {
-      m_children = children;
+      m_contents = children;
     }
 
     void set_bbox(const Bounding_box &bbox) {
@@ -88,16 +88,16 @@ namespace CGAL {
     }
 
     std::array<Node, N> &children() {
-      return *boost::get<std::array<Node, N> *>(m_children);
+      return *static_cast<std::array<Node, N> *>(m_contents);
     }
 
     const std::array<Node, N> &children() const {
-      return *boost::get<std::array<Node, N> *>(m_children);
+      return *static_cast<std::array<Node, N> *>(m_contents);
     }
 
-    Primitive &data() { return *boost::get<Primitive *>(m_children); }
+    Primitive &data() { return *static_cast<Primitive *>(m_contents); }
 
-    const Primitive &data() const { return *boost::get<Primitive *>(m_children); }
+    const Primitive &data() const { return *static_cast<Primitive *>(m_contents); }
 
     // TODO This is inefficient, perhaps nodes should know their own size?
     std::size_t num_primitives(const Node &child, std::size_t total_num_primitives) const {
@@ -114,7 +114,8 @@ namespace CGAL {
     /// node bounding box
     Bounding_box m_bbox;
 
-    boost::variant<std::array<Node, N> *, Primitive *> m_children;
+    // Points to either children or a primitive
+    void *m_contents;
 
   };  // end class AABB_node
 
