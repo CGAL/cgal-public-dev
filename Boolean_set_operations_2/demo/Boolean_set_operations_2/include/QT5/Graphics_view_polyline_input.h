@@ -41,27 +41,27 @@ namespace CGAL {
         template<typename Kernel_>
         class Graphics_view_polyline_input : public GraphicsViewInput {
         public:
-               int print_err(int x)
-               {
-                   std::cout<<"here "<<x<<std::endl;
-                   return x;
-               }
+            int print_err(int x) {
+                std::cout << "here " << x << std::endl;
+                return x;
+            }
+
             typedef CGAL::Exact_predicates_exact_constructions_kernel Kernel1;
-            typedef Kernel1::Point_2 Point_2;
-            typedef CGAL::Polygon_2<Kernel1> Polygon_2;
-            typedef CGAL::Polygon_with_holes_2<Kernel1> Polygon_with_holes_2;
-            typedef std::list <Polygon_with_holes_2> Pgn_with_holes_2_container;
+            typedef Kernel1::Point_2                                  Point_2;
+            typedef CGAL::Polygon_2<Kernel1>                          Polygon_2;
+            typedef CGAL::Polygon_with_holes_2<Kernel1>               Polygon_with_holes_2;
+            typedef std::list <Polygon_with_holes_2>                  Pgn_with_holes_2_container;
 
             typedef Kernel_ Kernel;
-            typedef Polyline_traits                                  Gps_traits;
-            typedef typename Gps_traits::Curve_2                      Polyline_curve;
-            typedef typename Gps_traits::X_monotone_curve_2           Polyline_X_monotone_curve;
-            typedef typename Gps_traits::Polygon_2                    Polyline_polygon;
-            typedef typename Gps_traits::Point_2                      Polyline_point;
-            typedef typename Kernel::FT                               FT;
-            typedef typename Kernel::Vector_2                         Vector;
-            typedef typename Kernel::Point_2                          Point;
-            typedef std::vector <Polyline_curve>                      Polyline_curve_vector;
+            typedef Polyline_traits Gps_traits;
+            typedef typename Gps_traits::Curve_2            Polyline_curve;
+            typedef typename Gps_traits::X_monotone_curve_2 Polyline_X_monotone_curve;
+            typedef typename Gps_traits::Polygon_2          Polyline_polygon;
+            typedef typename Gps_traits::Point_2            Polyline_point;
+            typedef typename Kernel::FT                     FT;
+            typedef typename Kernel::Vector_2               Vector;
+            typedef typename Kernel::Point_2                Point;
+            typedef std::vector <Polyline_curve> Polyline_curve_vector;
 
             typedef typename Polyline_curve_vector::const_iterator
                     const_polyline_curve_iterator;
@@ -69,30 +69,27 @@ namespace CGAL {
 
             typedef Polyline_boundary_pieces_graphics_item <Polyline_curve_vector> GI;
 
+            typedef CGAL::Arr_segment_traits_2<Kernel>                                          Segment_traits_2;
+            typedef CGAL::Gps_traits_2<CGAL::Arr_polycurve_traits_2<Segment_traits_2> >         Base;
+            typedef typename Base::X_monotone_subcurve_2                                        X_monotone_subcurve_2;
+
 
             //constructor
-            Graphics_view_polyline_input(QObject* aParent, QGraphicsScene* aScene)
-            :
-              GraphicsViewInput  ( aParent         )
-            , mScene             ( aScene          )
-            //, mPolylineGI        (new GI(&mPolylinePolygonPieces))
-            , mOngoingPieceGI    (new GI(&mOngoingPieceCtr))
-            , mHandleGI          (new QGraphicsLineItem())
-            , mPolylinePolygonPen( QColor(0,255,0) )
-            , mOngoingCurvePen   ( QColor(255,0,0) )
-            , mHandlePen         ( QColor(0,0,255) )
-            , mState             (Start            )
-            , m_bound_rect       ( true            )
-            , m_last_polyline    ( false           )
-            , m_last             ( false           )
-            {
+            Graphics_view_polyline_input(QObject *aParent, QGraphicsScene *aScene)
+                    :
+                    GraphicsViewInput(aParent), mScene(aScene)
+                    //, mPolylineGI        (new GI(&mPolylinePolygonPieces))
+                    , mOngoingPieceGI(new GI(&mOngoingPieceCtr)), mHandleGI(new QGraphicsLineItem()),
+                    mPolylinePolygonPen(QColor(0, 255, 0)), mOngoingCurvePen(QColor(255, 0, 0)),
+                    mHandlePen(QColor(0, 0, 255)), mState(Start), m_bound_rect(true), m_last_polyline(false),
+                    m_last(false) {
                 mOngoingPieceGI->setPen(mOngoingCurvePen);
-                mHandleGI      ->setPen(mHandlePen);
+                mHandleGI->setPen(mHandlePen);
 
-                mHandleGI->setLine(0,0,1,1);
+                mHandleGI->setLine(0, 0, 1, 1);
                 mHandleGI->hide();
 
-                mPolylineGI = new GI(&mPolylinePolygonPieces) ;
+                mPolylineGI = new GI(&mPolylinePolygonPieces);
 
                 mPolylineGI->setPen(mPolylinePolygonPen);
 
@@ -101,39 +98,35 @@ namespace CGAL {
                 mScene->addItem(mPolylineGI);
             }
 
-            ~Graphics_view_polyline_input(){}
+            ~Graphics_view_polyline_input() {}
 
-            bool eventFilter(QObject *obj, QEvent *aEvent)
-            {
+            bool eventFilter(QObject *obj, QEvent *aEvent) {
                 bool rHandled = false;
-                if (aEvent->type() == QEvent::GraphicsSceneMousePress){
-                    rHandled = mousePressEvent( static_cast<QGraphicsSceneMouseEvent *>(aEvent) ) ;
-                }
-                else if (aEvent->type() == QEvent::GraphicsSceneMouseRelease){
-                    rHandled = mouseReleaseEvent( static_cast<QGraphicsSceneMouseEvent *>(aEvent) ) ;
-                }
-                else if (aEvent->type() == QEvent::GraphicsSceneMouseMove){
-                    rHandled = mouseMoveEvent( static_cast<QGraphicsSceneMouseEvent *>(aEvent) ) ;
-                }
-                else if (aEvent->type() == QEvent::KeyPress){
-                    rHandled = keyPressEvent( static_cast<QKeyEvent *>(aEvent) ) ;
+                if (aEvent->type() == QEvent::GraphicsSceneMousePress) {
+                    rHandled = mousePressEvent(static_cast<QGraphicsSceneMouseEvent *>(aEvent));
+                } else if (aEvent->type() == QEvent::GraphicsSceneMouseRelease) {
+                    rHandled = mouseReleaseEvent(static_cast<QGraphicsSceneMouseEvent *>(aEvent));
+                } else if (aEvent->type() == QEvent::GraphicsSceneMouseMove) {
+                    rHandled = mouseMoveEvent(static_cast<QGraphicsSceneMouseEvent *>(aEvent));
+                } else if (aEvent->type() == QEvent::KeyPress) {
+                    rHandled = keyPressEvent(static_cast<QKeyEvent *>(aEvent));
                 }
 
-                if ( !rHandled )
+                if (!rHandled)
                     rHandled = QObject::eventFilter(obj, aEvent);
 
-                return rHandled ;
-                std::cout<<"eventFilter is okay"<<std::endl;
+                return rHandled;
             }
 
         public:
-            enum State{ Start, PieceStarted, PieceOngoing, HandleOngoing, PieceEnded, CurveEnded} ;
+            enum State {
+                Start, PieceStarted, PieceOngoing, HandleOngoing, PieceEnded, CurveEnded
+            };
 
-            Point cvt ( QPointF const& aP ) const { return Point(aP.x(),aP.y()) ; }
+            Point cvt(QPointF const &aP) const { return Point(aP.x(), aP.y()); }
 
             //All functions related to mouse activity
-            bool mousePressEvent(QGraphicsSceneMouseEvent* aEvent)
-            {
+            bool mousePressEvent(QGraphicsSceneMouseEvent *aEvent) {
                 bool rHandled = false;
                 m_bound_rect = false;
                 Point lP = cvt(aEvent->scenePos());
@@ -147,16 +140,17 @@ namespace CGAL {
                             break;
 
                         case PieceOngoing:
-                            mP1    = lP;
+                            mP1 = lP;
                             mState = HandleOngoing;
                             rHandled = true;
                             break;
 
-                        default: break; //! \todo handle default case
+                        default:
+                            break; //! \todo handle default case
                     }
                 }
-                //right click to complete the polygon
-                else  if (aEvent->button() == ::Qt::RightButton) {
+                    //right click to complete the polygon
+                else if (aEvent->button() == ::Qt::RightButton) {
                     switch (mState) {
                         case PieceOngoing:
                             // allowing user to complete polygon
@@ -165,14 +159,14 @@ namespace CGAL {
                             rHandled = true;
                             break;
 
-                        default: break; //! \todo handle default case
+                        default:
+                            break; //! \todo handle default case
                     }
                 }
                 return rHandled;
             }
 
-            bool mouseMoveEvent(QGraphicsSceneMouseEvent* aEvent)
-            {
+            bool mouseMoveEvent(QGraphicsSceneMouseEvent *aEvent) {
                 bool rHandled = false;
 
                 Point lP = cvt(aEvent->scenePos());
@@ -185,8 +179,7 @@ namespace CGAL {
                         break;
 
                     case HandleOngoing:
-                        if(m_last)
-                        {
+                        if (m_last) {
                             Point ps(mPolylinePolygonPieces.front()[0].source().x(),
                                      mPolylinePolygonPieces.front()[0].source().y());
                             mP1 = ps;
@@ -202,14 +195,14 @@ namespace CGAL {
                         rHandled = true;
                         break;
 
-                    default: break; //! \todo handle default case
+                    default:
+                        break; //! \todo handle default case
                 }
 
                 return rHandled;
             }
 
-            bool mouseReleaseEvent(QGraphicsSceneMouseEvent* aEvent)
-            {
+            bool mouseReleaseEvent(QGraphicsSceneMouseEvent *aEvent) {
                 bool rHandled = false;
                 Point lP = cvt(aEvent->scenePos());
                 if (aEvent->button() == ::Qt::LeftButton) {
@@ -226,15 +219,13 @@ namespace CGAL {
                             rHandled = true;
                             break;
 
-                        default: break; //! \todo handle default case
+                        default:
+                            break; //! \todo handle default case
                     }
-                }
-                else if (aEvent->button() == ::Qt::RightButton) {
+                } else if (aEvent->button() == ::Qt::RightButton) {
                     switch (mState) {
                         case HandleOngoing:
-                            //cout<<"hello in Graphics_view_polyline_polygon"<<endl;
-                            if(m_last_polyline)
-                            {
+                            if (m_last_polyline) {
                                 HideHandle();
                                 CommitOngoingPiece(lP);
                             }
@@ -242,27 +233,25 @@ namespace CGAL {
                             CommitCurrPolylinePolygon();
                             ReStart();
                             rHandled = true;
-                            //cout<<"right click over"<<endl;
+                          //  cout << "right click over" << endl;
                             break;
 
-                        default: break; //! \todo handle default case
+                        default:
+                            break; //! \todo handle default case
                     }
                 }
                 return rHandled;
             }
 
-            bool keyPressEvent(QKeyEvent* aEvent)
-            {
+            bool keyPressEvent(QKeyEvent *aEvent) {
                 bool rHandled = false;
 
                 if ((aEvent->key() == ::Qt::Key_Delete) ||
-                    (aEvent->key() == ::Qt::Key_Backspace))
-                {
+                    (aEvent->key() == ::Qt::Key_Backspace)) {
                     RemoveLastPiece();
                     mState = (mPolylinePolygonPieces.size() > 0) ? PieceEnded : Start;
                     rHandled = true;
-                }
-                else if (aEvent->key() == ::Qt::Key_Escape) {
+                } else if (aEvent->key() == ::Qt::Key_Escape) {
                     Reset();
                     mState = Start;
                     rHandled = true;
@@ -272,19 +261,16 @@ namespace CGAL {
 
         public:
 
-            Polyline_curve const* ongoing_piece() const
-            {
+            Polyline_curve const *ongoing_piece() const {
                 return (mOngoingPieceCtr.size() == 1) ? &mOngoingPieceCtr[0] : NULL;
             }
 
-            void ReStart()
-            {
+            void ReStart() {
                 mH = boost::optional<Point>();
                 mState = Start;
             }
 
-            void Reset()
-            {
+            void Reset() {
                 mPolylinePolygonPieces.clear();
                 mOngoingPieceCtr.clear();
                 mPolylineGI->modelChanged();
@@ -292,46 +278,40 @@ namespace CGAL {
                 ReStart();
             }
 
-            void HideHandle()
-            {
+            void HideHandle() {
                 mHandleGI->hide();
             }
 
             //change this
-            Polyline_curve CreatePiece()
-            {
+            Polyline_curve CreatePiece() {
                 Gps_traits poly_tr;
                 auto construct_poly = poly_tr.construct_curve_2_object();
-                return Polyline_curve(construct_poly(mP0,mP1));
+                return Polyline_curve(construct_poly(mP0, mP1));
             }
 
-            void RemoveLastPiece()
-            {
+            void RemoveLastPiece() {
                 mPolylinePolygonPieces.pop_back();
                 mOngoingPieceCtr.clear();
                 mPolylineGI->modelChanged();
                 mOngoingPieceGI->modelChanged();
-                if (mPolylinePolygonPieces.size() > 0)
-                {
+                if (mPolylinePolygonPieces.size() > 0) {
                     auto xx = mPolylinePolygonPieces.back().number_of_subcurves();
-                    Point pt(mPolylinePolygonPieces.back()[xx-1].target().x(),
-                             mPolylinePolygonPieces.back()[xx-1].target().y());
+                    Point pt(mPolylinePolygonPieces.back()[xx - 1].target().x(),
+                             mPolylinePolygonPieces.back()[xx - 1].target().y());
                     mP0 = pt;
                     UpdateOngoingPiece();
                 }
                 mH = boost::optional<Point>();
             }
 
-            void UpdateOngoingPiece()
-            {
+            void UpdateOngoingPiece() {
                 if (mOngoingPieceCtr.size() > 0) mOngoingPieceCtr.clear();
                 mOngoingPieceCtr.push_back(CreatePiece());
                 //cout<<"hi"<<endl;
                 mOngoingPieceGI->modelChanged();
             }
 
-            void CommitOngoingPiece(Point const& aP)
-            {
+            void CommitOngoingPiece(Point const &aP) {
                 if (ongoing_piece()) {
                     mPolylinePolygonPieces.push_back(*ongoing_piece());
                     mPolylineGI->modelChanged();
@@ -343,27 +323,21 @@ namespace CGAL {
                 }
             }
 
-            void UpdateHandle(Point const& aP)
-            {
-                if (squared_distance(mP1,aP) >= 4)
-                {
+            void UpdateHandle(Point const &aP) {
+                if (squared_distance(mP1, aP) >= 4) {
                     mH = aP;
                     mHandleGI->setLine(to_double(mP1.x()), to_double(mP1.y()),
                                        to_double(mH->x()), to_double(mH->y()));
                     mHandleGI->show();
-                }
-                else
-                {
+                } else {
                     HideHandle();
                     mH = boost::optional<Point>();
                 }
             }
 
-            Point cvt(QPointF const& aP)
-            { return Point(aP.x(), aP.y()); }
+            Point cvt(QPointF const &aP) { return Point(aP.x(), aP.y()); }
 
-            void CommitCurrPolylinePolygon()
-            {
+            void CommitCurrPolylinePolygon() {
                 GeneratePolylinePolygon();
                 mOngoingPieceCtr.clear();
                 //cout<<"mOngoingPieceCtr"<<endl;
@@ -380,70 +354,54 @@ namespace CGAL {
             }
 
             //main function to generate polyline polygon. Change this according to the GraphicsViewCurveInput.h
-            void GeneratePolylinePolygon()
-            {
+            void GeneratePolylinePolygon() {
                 if (mPolylinePolygonPieces.size() > 0) {
+                //    cout<<"Start"<<endl;
                     Gps_traits traits;
                     auto make_x_monotone = traits.make_x_monotone_2_object();
 
-                    std::vector<Polyline_X_monotone_curve> xcvs;
+                    std::vector <Polyline_X_monotone_curve> xcvs;
                     for (auto it = mPolylinePolygonPieces.begin();
-                         it != mPolylinePolygonPieces.end(); ++ it)
-                    {
-                        std::vector<CGAL::Object>                 x_objs;
+                         it != mPolylinePolygonPieces.end(); ++it) {
+                        std::vector <CGAL::Object> x_objs;
                         std::vector<CGAL::Object>::const_iterator xoit;
-                        //cout<<"point 1"<<endl;
+
                         make_x_monotone(*it, std::back_inserter(x_objs));
-                        /*cout<<"add curves"<<endl;
-                        //cout<<"point 2"<<endl;
-                        //exception handling: if user draws a line and ends polygon*/
+
+
                         Polyline_X_monotone_curve xcv;
                         xoit = x_objs.begin();
-                        CGAL::assign(xcv,*xoit);
-                        for (xoit = x_objs.begin(); xoit != x_objs.end(); ++xoit)
-                        {
+                        CGAL::assign(xcv, *xoit);
+                        for (xoit = x_objs.begin(); xoit != x_objs.end(); ++xoit) {
                             if (CGAL::assign(xcv, *xoit))
                                 xcvs.push_back(xcv);
                         }
-                        //cout<<"point 3"<<endl;
                     }
+                    if (xcvs.size() > 0) {
+                        if (!m_last_polyline) {
+                            Polyline_point const &first_point = xcvs.front()[0].source();
+                            Polyline_point const &last_point = xcvs.back()[xcvs.back().number_of_subcurves() -1].target();
+                            FT fxs = first_point.x();
+                            FT fys = first_point.y();
+                            FT lxs = last_point.x();
+                            FT lys = last_point.y();
+                        //    cout<<"point"<<endl;
+                            Gps_traits x;
+                            X_monotone_subcurve_2 seg=x.subcurve_traits_2()->
+                                    construct_x_monotone_curve_2_object()(Point(fxs,fys),Point(lxs,lys));
 
-                    if (xcvs.size() > 0)
-                    {
-                        //cout<<"point 4"<<endl;
-
-                    /*   if(!m_last_polyline)
-                        {
-                            Arc_point const& first_point = xcvs.front().source();
-                            Arc_point const& last_point =  xcvs.back().target();
-
-                            CGAL_assertion(!first_point.x().is_extended() &&
-                                           !first_point.y().is_extended());
-                            CGAL_assertion(!last_point. x().is_extended() &&
-                                           !last_point .y().is_extended());
-                            FT fxs = first_point.x().alpha();
-                            FT fys = first_point.y().alpha();
-                            FT lxs = last_point .x().alpha();
-                            FT lys = last_point .y().alpha();
-                            xcvs.push_back(Polyline_X_monotone_curve(Point(lxs,lys),
-                                                                     Point(fxs,fys)));
-                        }*/
-
-                        m_last          = false;
-                        m_last_polyline = false;
-
-                        //cout<<"add curves if polyline"<<endl;
-                        Polyline_polygon pp(xcvs.begin(), xcvs.end());
-                        //cout<<"point 5"<<endl;
-                        emit(generate(CGAL::make_object(pp)));
-                        //cout<<"point 6"<<endl;
+                            xcvs.push_back(Polyline_X_monotone_curve(seg));
+                        }
                     }
+                    m_last = false;
+                    m_last_polyline = false;
+
+                    Polyline_polygon pp(xcvs.begin(), xcvs.end());
+                    emit(generate(CGAL::make_object(pp)));
                 }
-                //cout<<"generated polyline polygon"<<endl;
             }
 
-            void get_BoundingRect()
-            {
+            void get_BoundingRect() {
                 /* mOngoingPieceCtr.push_back(Linear_curve(Point(-10000000,-10000000),Point(-10000000,10000000)));
                 // mOngoingPieceCtr.push_back(Linear_curve(Point(-10000000,10000000),Point(10000000,10000000)));
                 // mOngoingPieceCtr.push_back(Linear_curve(Point(10000000,10000000),Point(10000000,-10000000)));
@@ -458,57 +416,56 @@ namespace CGAL {
 
                 m_bound_rect = true;
 
-                mP0 = Point(-15500000,-10000000);
+                mP0 = Point(-15500000, -10000000);
                 mState = PieceStarted;
 
                 mState = PieceOngoing;
-                mP1 = Point(-15500000,10000000);
+                mP1 = Point(-15500000, 10000000);
                 UpdateOngoingPiece();
 
-                mP1 = Point(-15500000,10000000);
+                mP1 = Point(-15500000, 10000000);
                 mState = HandleOngoing;
                 HideHandle();
-                CommitOngoingPiece(Point(-15500000,10000000));
-                mState   = PieceEnded;
+                CommitOngoingPiece(Point(-15500000, 10000000));
+                mState = PieceEnded;
 
-                mState   = PieceOngoing;
-                mP1 = Point(15500000,10000000);
+                mState = PieceOngoing;
+                mP1 = Point(15500000, 10000000);
                 UpdateOngoingPiece();
 
-                mP1 = Point(15500000,10000000);
+                mP1 = Point(15500000, 10000000);
                 mState = HandleOngoing;
                 HideHandle();
-                CommitOngoingPiece(Point(15500000,10000000));
-                mState   = PieceEnded;
+                CommitOngoingPiece(Point(15500000, 10000000));
+                mState = PieceEnded;
 
-                mState   = PieceOngoing;
-                mP1 = Point(15500000,-10000000);
+                mState = PieceOngoing;
+                mP1 = Point(15500000, -10000000);
                 UpdateOngoingPiece();
 
-                mP1 = Point(15500000,-10000000);
+                mP1 = Point(15500000, -10000000);
                 mState = HandleOngoing;
                 HideHandle();
-                CommitOngoingPiece(Point(15500000,-10000000));
-                mState   = PieceEnded;
+                CommitOngoingPiece(Point(15500000, -10000000));
+                mState = PieceEnded;
 
-                mState   = PieceOngoing;
-                mP1 = Point(-9000000,-9000000);
+                mState = PieceOngoing;
+                mP1 = Point(-9000000, -9000000);
                 UpdateOngoingPiece();
 
                 CommitCurrPolylinePolygon();
                 ReStart();
             }
 
-            bool isboundingRect()
-            {
+            bool isboundingRect() {
                 return m_bound_rect;
             }
 
         public:
-            QGraphicsScene* mScene;
-            GI* mPolylineGI;
-            GI* mOngoingPieceGI;
-            QGraphicsLineItem* mHandleGI;
+            QGraphicsScene *mScene;
+            GI *mPolylineGI;
+            GI *mOngoingPieceGI;
+            QGraphicsLineItem *mHandleGI;
 
             QPen mPolylinePolygonPen;
             QPen mOngoingCurvePen;
@@ -526,7 +483,7 @@ namespace CGAL {
             Point mP0;
             Point mP1;
 
-            boost::optional<Point> mH;
+            boost::optional <Point> mH;
         };
 
     } // namespace Qt

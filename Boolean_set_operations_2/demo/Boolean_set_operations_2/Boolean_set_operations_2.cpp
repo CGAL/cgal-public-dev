@@ -1652,7 +1652,6 @@ MainWindow::MainWindow() :
                    SLOT(processInput(CGAL::Object)));
   QObject::connect(m_bezier_input, SIGNAL(generate(CGAL::Object)), this,
                    SLOT(processInput(CGAL::Object)));
-  std::cout<<"crash pt1"<<std::endl;
   QObject::connect(m_polyline_input, SIGNAL(generate(CGAL::Object)), this,
                    SLOT(processInput(CGAL::Object)));
 
