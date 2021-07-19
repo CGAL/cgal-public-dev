@@ -769,9 +769,9 @@ namespace CGAL {
 
       // Create a couple more nodes, to serve as the children
       // TODO this is ugly
-      m_nodes.emplace_back(Node{});
-      m_nodes.emplace_back(Node{});
-      node.set_children(reinterpret_cast<std::array<Node, 2> *>(&*(m_nodes.end() - 2)));
+      for (int i = 0; i < Node::N; ++i)
+        m_nodes.emplace_back();
+      node.set_children(reinterpret_cast<std::array<Node, Node::N> *>(&*(m_nodes.end() - Node::N)));
 
       // Construct each of the child nodes
       ConstPrimitiveIterator node_first = first;
@@ -784,8 +784,9 @@ namespace CGAL {
         ConstPrimitiveIterator node_beyond = node_first + num_primitives;
 
         // Recursively subdivide the child nodes
-        expand(child, node_first, node_beyond, num_primitives,
-               compute_bbox, split_primitives, traits);
+        if (num_primitives > 0) // If there are any empty children, don't split them!
+          expand(child, node_first, node_beyond, num_primitives,
+                 compute_bbox, split_primitives, traits);
 
         // The next node should start where this one ended
         node_first = node_beyond;
@@ -814,7 +815,7 @@ namespace CGAL {
     if (m_primitives.size() > 1) {
 
       // allocates tree nodes
-      m_nodes.reserve(2 * m_primitives.size() - 1);
+      m_nodes.reserve(Node::N * m_primitives.size() - 1);
 
       // constructs the tree
       expand(new_node(),

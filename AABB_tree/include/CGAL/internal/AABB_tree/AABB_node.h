@@ -38,6 +38,8 @@ namespace CGAL {
   public:
     typedef typename AABBTraits::Bounding_box Bounding_box;
 
+    static const size_t N = 2;
+
     /// Constructor
     AABB_node()
             : m_bbox(), m_children(static_cast<Primitive *>(nullptr)) {};
@@ -85,12 +87,12 @@ namespace CGAL {
       m_bbox = bbox;
     }
 
-    std::array<Node, 2> &children() {
-      return *boost::get<std::array<Node, 2> *>(m_children);
+    std::array<Node, N> &children() {
+      return *boost::get<std::array<Node, N> *>(m_children);
     }
 
-    const std::array<Node, 2> &children() const {
-      return *boost::get<std::array<Node, 2> *>(m_children);
+    const std::array<Node, N> &children() const {
+      return *boost::get<std::array<Node, N> *>(m_children);
     }
 
     Primitive &data() { return *boost::get<Primitive *>(m_children); }
@@ -102,8 +104,8 @@ namespace CGAL {
       // Assumes that primitives are distributed as evenly as possible between children
       // When there are leftover primitives, they go to earlier nodes first
       std::size_t child_index = &child - children().begin();
-      std::size_t leftover_primitives = total_num_primitives % 2;
-      std::size_t base_num_primitives = floor((double) total_num_primitives / (double) 2);
+      std::size_t leftover_primitives = total_num_primitives % N;
+      std::size_t base_num_primitives = floor((double) total_num_primitives / (double) N);
       std::size_t result = base_num_primitives + (child_index < leftover_primitives ? 1 : 0);
       return result;
     }
@@ -112,7 +114,7 @@ namespace CGAL {
     /// node bounding box
     Bounding_box m_bbox;
 
-    boost::variant<std::array<Node, 2> *, Primitive *> m_children;
+    boost::variant<std::array<Node, N> *, Primitive *> m_children;
 
   };  // end class AABB_node
 
