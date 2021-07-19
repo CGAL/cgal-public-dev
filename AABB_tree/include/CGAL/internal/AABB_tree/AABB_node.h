@@ -100,14 +100,17 @@ namespace CGAL {
     const Primitive &data() const { return *static_cast<Primitive *>(m_contents); }
 
     // TODO This is inefficient, perhaps nodes should know their own size?
-    std::size_t num_primitives(const Node &child, std::size_t total_num_primitives) const {
+    std::size_t num_primitives(const Node &child, std::size_t total_count) const {
       // Assumes that primitives are distributed as evenly as possible between children
       // When there are leftover primitives, they go to earlier nodes first
       std::size_t child_index = &child - children().begin();
-      std::size_t leftover_primitives = total_num_primitives % N;
-      std::size_t base_num_primitives = floor((double) total_num_primitives / (double) N);
-      std::size_t result = base_num_primitives + (child_index < leftover_primitives ? 1 : 0);
-      return result;
+      return num_primitives(child_index, total_count);
+    }
+
+    std::size_t num_primitives(std::size_t index, std::size_t total_count) const {
+      // Assumes that primitives are distributed as evenly as possible between children
+      // When there are leftover primitives, they go to earlier nodes first
+      return total_count / N + (index < total_count % N);
     }
 
   private:
@@ -136,12 +139,9 @@ namespace CGAL {
 
     } else {
 
-      // FIXME we need to determine the number of primitives in each child node
-
       // Otherwise, recursively search the child nodes
-      // FIXME do this in a way that's independent of the number of child nodes
       for (const auto &child : children()){
-        if (traits.do_intersect(query, child))
+        if (traits.go_further() && traits.do_intersect(query, child))
           child.traversal(query, traits, num_primitives(child, nb_primitives));
       }
     }
