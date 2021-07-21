@@ -9,6 +9,8 @@
 #include <CGAL/Triangle_3.h>
 #include <CGAL/Bbox_3.h>
 
+#include <CGAL/Timer.h>
+
 using namespace CGAL;
 typedef Exact_predicates_inexact_constructions_kernel K;
 
@@ -67,14 +69,26 @@ int main() {
   Triangle_generator triangle_generator(point_generator, point_generator, point_generator);
   std::copy_n(triangle_generator, T, std::back_inserter(triangle_targets));
 
-  // Benchmark R times, so that tests are interleaved
+  // Separate timers for each intersection, keeping track of combined elapsed time of all intersections
+  Timer bbox_bbox_timer, ray_bbox_timer, ray_primitive_timer;
+
+  // Benchmark R times, so that tests can be interleaved
   for (int r = 0; r < R; ++r) {
 
     // Time bbox-bbox intersection
+    bbox_bbox_timer.start();
+    // TODO
+    bbox_bbox_timer.stop();
 
     // Time ray-bbox intersection
+    ray_bbox_timer.start();
+    // TODO
+    ray_bbox_timer.stop();
 
     // Time ray-primitive intersection
+    ray_primitive_timer.start();
+    // TODO
+    ray_primitive_timer.stop();
 
   }
 
