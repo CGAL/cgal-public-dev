@@ -38,7 +38,7 @@ typedef Join_input_iterator_2<Point_generator, Point_generator, Bbox_creator> Bb
 
 
 int main() {
-  std::size_t Q = 100;
+  std::size_t Q = 1'000;
   std::size_t T = 1'000;
   std::size_t R = 100;
 
@@ -105,8 +105,15 @@ int main() {
     ray_primitive_timer.stop();
   }
 
-  // Divide times to produce averages
+  // The total count of intersections will be used in calculating averages
+  double total_num_intersections = R * Q * T;
 
   // Display results
+  std::cout << "\n"
+            << "Intersection times between different types (seconds per intersection)\n"
+            << "bbox-bbox: " << bbox_bbox_timer.time() / total_num_intersections << "\n"
+            << "ray-bbox: " << ray_bbox_timer.time() / total_num_intersections << "\n"
+            << "ray-primitive: " << ray_primitive_timer.time() / total_num_intersections << "\n"
+            << std::endl;
 
 }
