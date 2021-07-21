@@ -135,13 +135,13 @@ namespace internal {
                           const BFT& bxmin, const BFT& bymin, const BFT& bzmin,
                           const BFT& bxmax, const BFT& bymax, const BFT& bzmax)
   {
-    std::cout.precision(17);
-    if (std::is_same<FT, double>::value)
-      std::cout << px << " " << py << " " << pz << " "
-                << qx << " " << qy << " " << qz << " "
-                << bxmin << " " << bymin << " " << bzmin << " "
-                << bxmax << " " << bymax << " " << bzmax << " "
-                << "\n";
+//    std::cout.precision(17);
+//    if (std::is_same<FT, double>::value)
+//      std::cout << px << " " << py << " " << pz << " "
+//                << qx << " " << qy << " " << qz << " "
+//                << bxmin << " " << bymin << " " << bzmin << " "
+//                << bxmax << " " << bymax << " " << bzmax << " "
+//                << "\n";
 
     if( ( (px >= bxmin) && (px <= bxmax) &&
           (py >= bymin) && (py <= bymax) &&
