@@ -38,24 +38,23 @@ typedef Join_input_iterator_2<Point_generator, Point_generator, Bbox_creator> Bb
 
 
 int main() {
-  std::size_t Q = 100'000;
-  std::size_t T = 100'000;
-  std::size_t R = 1'000;
+  std::size_t Q = 100;
+  std::size_t T = 1'000;
+  std::size_t R = 100;
 
   // All test data will be randomly generated
   // Shapes used for testing will be confined to a cubic region
-  CGAL::Random_points_in_cube_3<Point, Point_creator> point_generator(1.0);
 
   // Generate rays to cast
   std::vector<Ray> ray_queries;
   ray_queries.reserve(Q);
-  Ray_generator ray_generator(point_generator, point_generator);
+  Ray_generator ray_generator(Point_generator{}, Point_generator{});
   std::copy_n(ray_generator, Q, std::back_inserter(ray_queries));
 
   // Generate boxes to cast
   std::vector<Bbox> bbox_queries;
   bbox_queries.reserve(Q);
-  Bbox_generator bbox_generator(point_generator, point_generator);
+  Bbox_generator bbox_generator(Point_generator{}, Point_generator{});
   std::copy_n(bbox_generator, Q, std::back_inserter(bbox_queries));
 
   // Generate boxes to hit
@@ -64,10 +63,10 @@ int main() {
   std::copy_n(bbox_generator, T, std::back_inserter(bbox_targets));
 
   // Generate primitives (triangles) to hit
-  std::vector<Triangle> triangle_targets;
-  triangle_targets.reserve(T);
-  Triangle_generator triangle_generator(point_generator, point_generator, point_generator);
-  std::copy_n(triangle_generator, T, std::back_inserter(triangle_targets));
+  std::vector<Triangle> primitive_targets;
+  primitive_targets.reserve(T);
+  Triangle_generator primitive_generator(Point_generator{}, Point_generator{}, Point_generator{});
+  std::copy_n(primitive_generator, T, std::back_inserter(primitive_targets));
 
   // Separate timers for each intersection, keeping track of combined elapsed time of all intersections
   Timer bbox_bbox_timer, ray_bbox_timer, ray_primitive_timer;
@@ -75,21 +74,35 @@ int main() {
   // Benchmark R times, so that tests can be interleaved
   for (int r = 0; r < R; ++r) {
 
+    // Draw a progress bar (this benchmark can be pretty slow)
+    std::cout << "[";
+    for (int i = 0; i < 100; ++i)
+      std::cout << (i <= (100 * r / R) ? "=" : " ");
+    std::cout << "] (" << r << "/" << R << ")\r" << std::flush;
+
     // Time bbox-bbox intersection
     bbox_bbox_timer.start();
-    // TODO
+    for (const auto &query : bbox_queries) {
+      for (const auto &target : bbox_targets)
+        do_intersect(query, target);
+    }
     bbox_bbox_timer.stop();
 
     // Time ray-bbox intersection
     ray_bbox_timer.start();
-    // TODO
+    for (const auto &query : ray_queries) {
+      for (const auto &target : bbox_targets)
+        do_intersect(query, target);
+    }
     ray_bbox_timer.stop();
 
     // Time ray-primitive intersection
     ray_primitive_timer.start();
-    // TODO
+    for (const auto &query : ray_queries) {
+      for (const auto &target : primitive_targets)
+        do_intersect(query, target);
+    }
     ray_primitive_timer.stop();
-
   }
 
   // Divide times to produce averages
