@@ -368,7 +368,7 @@ public:
         FT lys = last_point .y();
         xcvs.push_back(Linear_X_monotone_curve( Point(lxs,lys), Point(fxs,fys)));
         Linear_polygon lp(xcvs.begin(), xcvs.end());
-        emit(generate(CGAL::make_object(lp)));
+        emit(generate(boost::variant<Linear_polygon>(lp)));
       }
     }
   }

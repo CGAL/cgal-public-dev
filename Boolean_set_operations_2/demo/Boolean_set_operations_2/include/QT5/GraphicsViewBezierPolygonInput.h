@@ -491,7 +491,7 @@ namespace Qt {
         m_last = false;
         m_last_bezier = false;
         Bezier_polygon bp(xcvs.begin(), xcvs.end());
-        emit(generate(CGAL::make_object( std::make_pair(bp,mBezierPolygonPieces))));
+        emit(generate(boost::variant<std::pair<Bezier_polygon,Bezier_curve_vector> >(std::make_pair(bp,mBezierPolygonPieces))));
       }  
     }
 

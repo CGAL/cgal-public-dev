@@ -5869,6 +5869,7 @@ void MainWindow::on_actionInsertLinear_toggled(bool aChecked)
 {
   if(aChecked)
   {
+    cout<<"in insert func"<<endl;
     this->graphicsView->setDragMode(QGraphicsView::NoDrag);
     if (ensure_linear_mode())
     {
@@ -5885,9 +5886,11 @@ void MainWindow::on_actionInsertLinear_toggled(bool aChecked)
       actionOpenLinear->setEnabled(true);
       actionOpenDXF->setEnabled(false);
       actionOpenBezier->setEnabled(false);
+      cout<<"above polyline"<<endl;
       actionOpenPolyline->setEnabled(false);
       actionInsertCircular->setChecked(false);
       actionInsertBezier->setChecked( false );
+      cout<<"error here???"<<endl;
       actionInsertPolyline->setChecked(false);
       m_scene.installEventFilter(m_linear_input);
       on_actionDeleteResult();
@@ -5898,6 +5901,7 @@ void MainWindow::on_actionInsertLinear_toggled(bool aChecked)
   	{
   	  actionInsertLinear->setChecked(false);
   	}
+    cout<<"end of function"<<endl;
   }
 }
 

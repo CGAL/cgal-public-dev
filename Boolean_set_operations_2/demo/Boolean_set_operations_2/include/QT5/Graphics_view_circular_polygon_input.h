@@ -426,7 +426,7 @@ public:
         //cout<<"add curves if circular"<<endl;
         Circular_polygon cp(xcvs.begin(), xcvs.end());
         //cout<<"point 5"<<endl;
-        emit(generate(CGAL::make_object(cp)));
+        emit(generate(boost::variant<Circular_polygon>(cp)));
         //cout<<"point 6"<<endl;
       }
     }

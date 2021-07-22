@@ -344,19 +344,18 @@ namespace CGAL {
                 mOngoingPieceGI->modelChanged();
 
                 mPolylinePolygonPieces.clear();
-                //cout<<"mPolylinePolygonPieces"<<endl;
+               // cout<<"mPolylinePolygonPieces"<<endl;
                 mPolylineGI->modelChanged();
 
                 mH = boost::optional<Point>();
 
                 HideHandle();
-                //cout<<"polygon is comitted"<<endl;
+               // cout<<"polygon is comitted"<<endl;
             }
 
             //main function to generate polyline polygon. Change this according to the GraphicsViewCurveInput.h
             void GeneratePolylinePolygon() {
                 if (mPolylinePolygonPieces.size() > 0) {
-                //    cout<<"Start"<<endl;
                     Gps_traits traits;
                     auto make_x_monotone = traits.make_x_monotone_2_object();
 
@@ -385,7 +384,7 @@ namespace CGAL {
                             FT fys = first_point.y();
                             FT lxs = last_point.x();
                             FT lys = last_point.y();
-                        //    cout<<"point"<<endl;
+                            //cout<<"point"<<endl;
                             Gps_traits x;
                             X_monotone_subcurve_2 seg=x.subcurve_traits_2()->
                                     construct_x_monotone_curve_2_object()(Point(fxs,fys),Point(lxs,lys));
@@ -396,12 +395,16 @@ namespace CGAL {
                     m_last = false;
                     m_last_polyline = false;
 
+                   //cout<<"almost done b"<<endl;
                     Polyline_polygon pp(xcvs.begin(), xcvs.end());
-                    emit(generate(CGAL::make_object(pp)));
+                    //cout<<"Fault"<<endl;
+                    emit(generate(boost::variant<Polyline_polygon>(pp)));
+                    //cout<<"done "<<endl;
                 }
             }
 
             void get_BoundingRect() {
+                cout<<"HI"<<endl;
 
                 m_bound_rect = true;
 
@@ -441,7 +444,6 @@ namespace CGAL {
                 mState = PieceOngoing;
                 mP1 = Point(-9000000, -9000000);
                 UpdateOngoingPiece();
-
                 CommitCurrPolylinePolygon();
                 ReStart();
             }
