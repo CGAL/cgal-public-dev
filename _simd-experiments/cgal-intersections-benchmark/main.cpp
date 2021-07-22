@@ -44,6 +44,9 @@ int main() {
   std::size_t T = 10'000;
   std::size_t R = 100;
 
+  // The total count of intersections will be used in calculating averages
+  std::size_t total_num_intersections = R * Q * T;
+
   // All test data will be randomly generated
   // Shapes used for testing will be confined to a cubic region
 
@@ -75,6 +78,11 @@ int main() {
 
   // Benchmark R times, so that tests can be interleaved
   for (int r = 0; r < R; ++r) {
+    std::vector<bool> bbox_bbox_results, ray_bbox_results, boxed_ray_bbox_results, ray_primitive_results;
+    bbox_bbox_results.reserve(total_num_intersections);
+    ray_bbox_results.reserve(total_num_intersections);
+    boxed_ray_bbox_results.reserve(total_num_intersections);
+    ray_primitive_results.reserve(total_num_intersections);
 
     // Draw a progress bar (this benchmark can be pretty slow)
     std::cout << "[";
@@ -86,7 +94,7 @@ int main() {
     bbox_bbox_timer.start();
     for (const auto &query : bbox_queries) {
       for (const auto &target : bbox_targets)
-        do_intersect(query, target);
+        bbox_bbox_results.emplace_back(do_intersect(query, target));
     }
     bbox_bbox_timer.stop();
 
@@ -94,7 +102,7 @@ int main() {
     ray_bbox_timer.start();
     for (const auto &query : ray_queries) {
       for (const auto &target : bbox_targets)
-        do_intersect(query, target);
+        ray_bbox_results.emplace_back(do_intersect(query, target));
     }
     ray_bbox_timer.stop();
 
@@ -102,7 +110,7 @@ int main() {
     boxed_ray_bbox_timer.start();
     for (const auto &query : ray_queries) {
       for (const auto &target : bbox_targets)
-        do_intersect(Boxed_query<Ray>(query), target);
+        boxed_ray_bbox_results.emplace_back(do_intersect(Boxed_query<Ray>(query), target));
     }
     boxed_ray_bbox_timer.stop();
 
@@ -110,21 +118,20 @@ int main() {
     ray_primitive_timer.start();
     for (const auto &query : ray_queries) {
       for (const auto &target : primitive_targets)
-        do_intersect(query, target);
+        ray_primitive_results.emplace_back(do_intersect(query, target));
     }
     ray_primitive_timer.stop();
-  }
 
-  // The total count of intersections will be used in calculating averages
-  double total_num_intersections = R * Q * T;
+    if (ray_bbox_results != boxed_ray_bbox_results) return EXIT_FAILURE;
+  }
 
   // Display results
   std::cout << "\n"
             << "Intersection times between different types (seconds per intersection)\n"
-            << "bbox-bbox: " << bbox_bbox_timer.time() / total_num_intersections << "\n"
-            << "ray-bbox: " << ray_bbox_timer.time() / total_num_intersections << "\n"
-            << "boxed-ray-bbox: " << boxed_ray_bbox_timer.time() / total_num_intersections << "\n"
-            << "ray-primitive: " << ray_primitive_timer.time() / total_num_intersections << "\n"
+            << "bbox-bbox: " << bbox_bbox_timer.time() / (double) total_num_intersections << "\n"
+            << "ray-bbox: " << ray_bbox_timer.time() / (double) total_num_intersections << "\n"
+            << "boxed-ray-bbox: " << boxed_ray_bbox_timer.time() / (double) total_num_intersections << "\n"
+            << "ray-primitive: " << ray_primitive_timer.time() / (double) total_num_intersections << "\n"
             << std::endl;
 
 }
