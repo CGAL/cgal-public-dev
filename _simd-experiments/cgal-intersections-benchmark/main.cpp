@@ -11,11 +11,13 @@
 
 #include <CGAL/Timer.h>
 
+#include "boxed_query.h"
+
 using namespace CGAL;
 typedef Exact_predicates_inexact_constructions_kernel K;
 
 typedef K::Point_3 Point;
-typedef K::Ray_3 Ray;
+typedef K::Segment_3 Ray; // FIXME this is a temporary test
 typedef K::Triangle_3 Triangle;
 typedef Bbox_3 Bbox;
 
@@ -39,7 +41,7 @@ typedef Join_input_iterator_2<Point_generator, Point_generator, Bbox_creator> Bb
 
 int main() {
   std::size_t Q = 1'000;
-  std::size_t T = 1'000;
+  std::size_t T = 10'000;
   std::size_t R = 100;
 
   // All test data will be randomly generated
@@ -69,7 +71,7 @@ int main() {
   std::copy_n(primitive_generator, T, std::back_inserter(primitive_targets));
 
   // Separate timers for each intersection, keeping track of combined elapsed time of all intersections
-  Timer bbox_bbox_timer, ray_bbox_timer, ray_primitive_timer;
+  Timer bbox_bbox_timer, ray_bbox_timer, boxed_ray_bbox_timer, ray_primitive_timer;
 
   // Benchmark R times, so that tests can be interleaved
   for (int r = 0; r < R; ++r) {
@@ -96,6 +98,14 @@ int main() {
     }
     ray_bbox_timer.stop();
 
+    // Time boxed-ray-bbox intersection
+    boxed_ray_bbox_timer.start();
+    for (const auto &query : ray_queries) {
+      for (const auto &target : bbox_targets)
+        do_intersect(Boxed_query<Ray>(query), target);
+    }
+    boxed_ray_bbox_timer.stop();
+
     // Time ray-primitive intersection
     ray_primitive_timer.start();
     for (const auto &query : ray_queries) {
@@ -113,6 +123,7 @@ int main() {
             << "Intersection times between different types (seconds per intersection)\n"
             << "bbox-bbox: " << bbox_bbox_timer.time() / total_num_intersections << "\n"
             << "ray-bbox: " << ray_bbox_timer.time() / total_num_intersections << "\n"
+            << "boxed-ray-bbox: " << boxed_ray_bbox_timer.time() / total_num_intersections << "\n"
             << "ray-primitive: " << ray_primitive_timer.time() / total_num_intersections << "\n"
             << std::endl;
 
