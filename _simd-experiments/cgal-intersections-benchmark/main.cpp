@@ -17,9 +17,10 @@ using namespace CGAL;
 typedef Exact_predicates_inexact_constructions_kernel K;
 
 typedef K::Point_3 Point;
-typedef K::Segment_3 Ray; // FIXME this is a temporary test
+typedef K::Ray_3 Ray; // FIXME this is a temporary test
 typedef K::Triangle_3 Triangle;
 typedef Bbox_3 Bbox;
+typedef K::Iso_cuboid_3 Iso_cuboid;
 
 typedef Creator_uniform_3<double, Point> Point_creator;
 typedef CGAL::Random_points_in_cube_3<Point, Point_creator> Point_generator;
@@ -28,9 +29,8 @@ typedef Creator_uniform_2<Point, Ray> Ray_creator;
 typedef Creator_uniform_3<Point, Triangle> Triangle_creator;
 
 struct Bbox_creator {
-  Bbox operator()(const Point &min, const Point &size) const {
-    return {min.x(), min.y(), min.z(),
-            min.x() + size.x(), min.y() + size.y(), min.z() + size.z()};
+  Bbox operator()(const Point &a, const Point &b) const {
+    return a.bbox() + b.bbox();
   }
 };
 
@@ -49,6 +49,7 @@ int main() {
 
   // All test data will be randomly generated
   // Shapes used for testing will be confined to a cubic region
+  Iso_cuboid boundary{{-1.0, -1.0, -1.0}, {1.0, 1.0, 1.0}};
 
   // Generate rays to cast
   std::vector<Ray> ray_queries;
@@ -88,7 +89,7 @@ int main() {
     std::cout << "[";
     for (int i = 0; i < 100; ++i)
       std::cout << (i <= (100 * r / R) ? "=" : " ");
-    std::cout << "] (" << r << "/" << R << ")\r" << std::flush;
+    std::cout << "] (" << r + 1 << "/" << R << ")\r" << std::flush;
 
     // Time bbox-bbox intersection
     bbox_bbox_timer.start();
@@ -109,8 +110,9 @@ int main() {
     // Time boxed-ray-bbox intersection
     boxed_ray_bbox_timer.start();
     for (const auto &query : ray_queries) {
+      auto boxed_query = Boxed_query<Ray>(query, boundary);
       for (const auto &target : bbox_targets)
-        boxed_ray_bbox_results.emplace_back(do_intersect(Boxed_query<Ray>(query), target));
+        boxed_ray_bbox_results.emplace_back(do_intersect(boxed_query, target));
     }
     boxed_ray_bbox_timer.stop();
 
@@ -122,7 +124,9 @@ int main() {
     }
     ray_primitive_timer.stop();
 
-    if (ray_bbox_results != boxed_ray_bbox_results) return EXIT_FAILURE;
+    // Make sure the boxed query strategy didn't produce an inaccurate result
+    if (ray_bbox_results != boxed_ray_bbox_results)
+      throw std::logic_error("boxed queries produced an incorrect result!");
   }
 
   // Display results
