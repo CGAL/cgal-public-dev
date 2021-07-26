@@ -5107,33 +5107,32 @@ bool MainWindow::read_bezier ( QString aFileName)
           // Read the curves one by one, and construct the general polygon these
           // curve form (the outer boundary and the holes inside it).
 
-          std::list<Bezier_X_monotone_curve> xcvs;
+          std::vector<Bezier_X_monotone_curve> xcvs;
 
           for ( unsigned int k = 0; k < n_curves; ++ k )
           {
             // Read the current curve and subdivide it into x-monotone subcurves.
 
-            std::list<CGAL::Object>                 x_objs;
-            Bezier_X_monotone_curve                 xcv;
-            Bezier_traits                           traits;
-            Bezier_traits::Make_x_monotone_2        make_x_monotone = traits.make_x_monotone_2_object();
+            typedef typename Bezier_traits::Point_2                Point_2;
+            typedef boost::variant<Bezier_X_monotone_curve ,Point_2> Make_x_monotone_result;
+            Bezier_X_monotone_curve                                xcv;
+            Bezier_traits                                          traits;
+            std::vector<Make_x_monotone_result >                   x_objs;
+            Bezier_traits::Make_x_monotone_2 make_x_monotone
+            = traits.make_x_monotone_2_object();
+
 
             Bezier_curve b = read_bezier_curve(in_file, lDoubleFormat);
             if ( b.number_of_control_points() >= 2 )
             {
               bb_source.push_back(b);
-              //TRACE( "region " << r << " boundary " << b << " curve " << k );
-
               make_x_monotone (b, std::back_inserter (x_objs));
 
-              for (auto xoit = x_objs.begin(); xoit != x_objs.end(); ++xoit)
+              for(auto i=0;i<x_objs.size();++i)
               {
-                if (CGAL::assign (xcv, *xoit))
-                {
-                  // TRACE( " X montonote: " << xcv.source() << " -> " << xcv.target() << ( xcv.is_directed_right()
-                  // ? " RIGHT":" LEFT") << ( xcv.is_vertical() ? " VERTICAL" : "")) ;
-                  xcvs.push_back (xcv);
-                }
+                  auto* xcv = boost::get<Bezier_X_monotone_curve>(&x_objs[i]);
+                  CGAL_assertion(xcv != nullptr);
+                  xcvs.push_back(*xcv);
               }
             }
           }
