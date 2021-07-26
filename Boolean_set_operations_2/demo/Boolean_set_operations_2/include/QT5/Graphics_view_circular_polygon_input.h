@@ -371,35 +371,29 @@ public:
     //cout<<"polygon is comitted"<<endl;
   }
 
-  void GenerateCircularPolygon()
-  {
-    if (mCircularPolygonPieces.size() > 0) {
-      Gps_traits traits;
-      auto make_x_monotone = traits.make_x_monotone_2_object();
-
-      std::vector<Circular_X_monotone_curve> xcvs;
-      for (auto it = mCircularPolygonPieces.begin();
-           it != mCircularPolygonPieces.end(); ++ it)
+  void GenerateCircularPolygon() {
+      if (mCircularPolygonPieces.size() > 0)
       {
-        std::vector<CGAL::Object>                 x_objs;
-        std::vector<CGAL::Object>::const_iterator xoit;
-        //cout<<"point 1"<<endl;
-        make_x_monotone(*it, std::back_inserter(x_objs));
-        /*cout<<"add curves"<<endl;
-        //cout<<"point 2"<<endl;
-        //exception handling: if user draws a line and ends polygon*/
-        Circular_X_monotone_curve xcv;
-        xoit = x_objs.begin();
-        CGAL::assign(xcv,*xoit);
-        if (xcv.is_linear() && mCircularPolygonPieces.size() == 1) return;
-        for (xoit = x_objs.begin(); xoit != x_objs.end(); ++xoit)
-        {
-          if (CGAL::assign(xcv, *xoit))
-              xcvs.push_back(xcv);
-        }
-        //cout<<"point 3"<<endl;
-      }
+        Gps_traits traits;
+        auto make_x_monotone = traits.make_x_monotone_2_object();
+        typedef boost::variant <Circular_X_monotone_curve, Arc_point>
+                Make_x_monotone_result;
 
+
+        std::vector <Circular_X_monotone_curve> xcvs;
+        for (auto it = mCircularPolygonPieces.begin();it != mCircularPolygonPieces.end(); ++it)
+        {
+            std::vector <Make_x_monotone_result> x_objs;
+            make_x_monotone(*it, std::back_inserter(x_objs));
+
+            auto* xcv = boost::get<Circular_X_monotone_curve>(&x_objs[0]);
+            if ((*xcv).is_linear() && mCircularPolygonPieces.size() == 1) return;
+            for (auto i = 0; i < x_objs.size(); ++i) {
+                auto *xcv = boost::get<Circular_X_monotone_curve>(&x_objs[i]);
+                CGAL_assertion(xcv != nullptr);
+                xcvs.push_back(*xcv);
+            }
+        }
       if (xcvs.size() > 0) {
         //cout<<"point 4"<<endl;
 

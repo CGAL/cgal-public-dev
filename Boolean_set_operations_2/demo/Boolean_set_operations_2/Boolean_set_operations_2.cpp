@@ -177,7 +177,7 @@ void error(std::string aS)
 void error_handler(char const* what, char const* expr, char const* file,
                    int line, char const* msg)
 {
-  if(expr != "first != last" && expr !="_inc_to_right != cv._inc_to_right" && line != 1684 && expr != "is_new == true")// && expr != "comp_f(object, nodeP->object) != LARGER" && expr != "! _predP->is_valid() || comp_f(object, _predP->object) != SMALLER")
+  if(expr != "first != last" && expr !="_inc_to_right != cv._inc_to_right" && line != 1684 && expr != "is_new == true")
   {
     std::ostringstream ss;
 
@@ -4748,7 +4748,6 @@ void MainWindow::on_actionOpenPolyline_triggered()
 }
 
 
-
 //To be done in GSoC2020
 /*for converting linear part of circular polygon to circular part
 /*Circular_polygon linearPart_2_circ(Circular_Linear_polygon const& pgn)
@@ -4840,6 +4839,7 @@ bool MainWindow::read_linear( QString aFileName, Linear_polygon_set& rSet, Linea
           std::vector<Linear_X_monotone_curve> xcvs;
           Gps_traits traits;
           typename Gps_traits::Make_x_monotone_2 make_x_monotone = traits.make_x_monotone_2_object();
+          typedef boost::variant <Linear_X_monotone_curve, Linear_point> Make_x_monotone_result;
 
           for(unsigned int j=0; j< n_points; ++j)
           {
@@ -4856,15 +4856,14 @@ bool MainWindow::read_linear( QString aFileName, Linear_polygon_set& rSet, Linea
           for (auto it = mLinearPolygonPieces.begin();
                it != mLinearPolygonPieces.end(); ++it)
           {
-            std::vector<CGAL::Object> x_objs;
-            std::vector<CGAL::Object>::const_iterator xoit;
+            std::vector<Make_x_monotone_result> x_objs;
 
             make_x_monotone(*it, std::back_inserter(x_objs));
-
-            for (xoit = x_objs.begin(); xoit != x_objs.end(); ++xoit)
+            for(auto i=0;i<x_objs.size();++i)
             {
-              Linear_X_monotone_curve xcv;
-              if (CGAL::assign(xcv, *xoit)) xcvs.push_back (xcv);
+                auto* xcv = boost::get<Linear_X_monotone_curve>(&x_objs[i]);
+                CGAL_assertion(xcv != nullptr);
+                xcvs.push_back(*xcv);
             }
           }
 
@@ -4997,28 +4996,24 @@ bool MainWindow::read_circular ( QString aFileName, Circular_polygon_set& rSet, 
           {
             Gps_traits traits;
             auto make_x_monotone = traits.make_x_monotone_2_object();
+            typedef boost::variant <Circular_X_monotone_curve, Arc_point>
+                    Make_x_monotone_result;
 
             std::vector<Circular_X_monotone_curve> xcvs;
-            for (auto it = mCircularPolygonPieces.begin(); it != mCircularPolygonPieces.end(); ++ it)
+            for (auto it = mCircularPolygonPieces.begin();it != mCircularPolygonPieces.end(); ++it)
             {
-              std::vector<CGAL::Object> x_objs;
-              std::vector<CGAL::Object>::const_iterator xoit;
-              //cout<<"point 1"<<endl;
+              std::vector <Make_x_monotone_result> x_objs;
               make_x_monotone(*it, std::back_inserter(x_objs));
-              //cout<<"add curves"<<endl;
-              //cout<<"point 2"<<endl;
-              //exception handling: if user draws a line and ends polygon
-              Circular_X_monotone_curve xcv;
-              xoit = x_objs.begin();
-              CGAL::assign(xcv,*xoit);
-              //if (xcv.is_linear() && mCircularPolygonPieces.size() == 1) return;
 
-              for (xoit = x_objs.begin(); xoit != x_objs.end(); ++xoit)
+              auto* xcv = boost::get<Circular_X_monotone_curve>(&x_objs[0]);
+              //if ((*xcv).is_linear() && mCircularPolygonPieces.size() == 1) return;
+              for (auto i = 0; i < x_objs.size(); ++i)
               {
-                if (CGAL::assign(xcv, *xoit)) xcvs.push_back(xcv);
+                auto *xcv = boost::get<Circular_X_monotone_curve>(&x_objs[i]);
+                CGAL_assertion(xcv != nullptr);
+                xcvs.push_back(*xcv);
               }
             }
-
             if (xcvs.size() > 0)
             {
               Circular_polygon cp(xcvs.begin(), xcvs.end());
@@ -5119,7 +5114,6 @@ bool MainWindow::read_bezier ( QString aFileName)
             // Read the current curve and subdivide it into x-monotone subcurves.
 
             std::list<CGAL::Object>                 x_objs;
-            std::list<CGAL::Object>::const_iterator xoit;
             Bezier_X_monotone_curve                 xcv;
             Bezier_traits                           traits;
             Bezier_traits::Make_x_monotone_2        make_x_monotone = traits.make_x_monotone_2_object();
@@ -5132,7 +5126,7 @@ bool MainWindow::read_bezier ( QString aFileName)
 
               make_x_monotone (b, std::back_inserter (x_objs));
 
-              for (xoit = x_objs.begin(); xoit != x_objs.end(); ++xoit)
+              for (auto xoit = x_objs.begin(); xoit != x_objs.end(); ++xoit)
               {
                 if (CGAL::assign (xcv, *xoit))
                 {
@@ -5681,6 +5675,7 @@ bool MainWindow::ensure_linear_mode()
   }
   return !m_circular_active;
 }
+
 bool MainWindow::ensure_polyline_mode()
 {
     if (!m_polyline_active) {
@@ -5869,7 +5864,7 @@ void MainWindow::on_actionInsertLinear_toggled(bool aChecked)
 {
   if(aChecked)
   {
-    cout<<"in insert func"<<endl;
+    cout<<"in insert linear function"<<endl;
     this->graphicsView->setDragMode(QGraphicsView::NoDrag);
     if (ensure_linear_mode())
     {
@@ -6597,15 +6592,7 @@ void MainWindow::on_actionDifferenceH_toggled(bool aChecked)
   }
 }
 
-//symmetric diff errors(resolved)
-/* result of symmetric difference
-// CGAL error: warning violation!
-// Expr: holes_disjoint
-// File: /home/ronnie8888/Documents/cgal-public-dev/Boolean_set_operations_2/include/CGAL/Boolean_set_operations_2/Gps_polygon_validation.h
-// Line: 788
-// Explanation:Holes of the PWH intersect amongst themselves or with outer boundary*/
 //symmetric difference
-
 void MainWindow::on_actionSymmetric_DifferenceH_toggled(bool aChecked)
 {
   if(actionSymmetric_DifferenceH->isChecked())
@@ -7804,6 +7791,7 @@ void MainWindow::exception_handler()
   {
     if(ensure_linear_mode())
     {
+      cout<<"HERE in exception handler"<<endl;
       m_linear_input -> Reset();
       m_linear_input -> mState = m_linear_input -> Start;
     }

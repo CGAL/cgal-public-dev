@@ -465,25 +465,20 @@ namespace Qt {
     {
       Traits traits ;
       typename Traits::Make_x_monotone_2 make_x_monotone = traits.make_x_monotone_2_object();
+      typedef boost::variant<Bezier_X_monotone_curve ,Point> Make_x_monotone_result;
       
       std::vector<Bezier_X_monotone_curve> xcvs;
 
       for ( const_bezier_curve_iterator it = mBezierPolygonPieces.begin() ; it != mBezierPolygonPieces.end() ; ++ it )
-      {       
-        std::vector<CGAL::Object>                 x_objs;
-        std::vector<CGAL::Object>::const_iterator xoit;
-        
+      {
+        std::vector<Make_x_monotone_result>       x_objs;
         make_x_monotone ( *it, std::back_inserter (x_objs));
-
-        Bezier_X_monotone_curve xcv;
-        xoit = x_objs.begin();
-        CGAL::assign(xcv,*xoit);
-
-        for (xoit = x_objs.begin(); xoit != x_objs.end(); ++xoit) 
+        for(auto i=0;i<x_objs.size();++i)
         {
-          if (CGAL::assign (xcv, *xoit))
-            xcvs.push_back (xcv);
-        }    
+            auto* xcv = boost::get<Bezier_X_monotone_curve>(&x_objs[i]);
+            CGAL_assertion(xcv != nullptr);
+            xcvs.push_back(*xcv);
+        }
       }
       
       if ( xcvs.size() > 0 )

@@ -358,22 +358,21 @@ namespace CGAL {
                 if (mPolylinePolygonPieces.size() > 0) {
                     Gps_traits traits;
                     auto make_x_monotone = traits.make_x_monotone_2_object();
+                    typedef boost::variant<Polyline_X_monotone_curve ,Polyline_point>
+                            Make_x_monotone_result;
 
                     std::vector <Polyline_X_monotone_curve> xcvs;
                     for (auto it = mPolylinePolygonPieces.begin();
-                         it != mPolylinePolygonPieces.end(); ++it) {
-                        std::vector <CGAL::Object> x_objs;
-                        std::vector<CGAL::Object>::const_iterator xoit;
-
+                         it != mPolylinePolygonPieces.end(); ++it)
+                    {
+                        std::vector<Make_x_monotone_result> x_objs;
                         make_x_monotone(*it, std::back_inserter(x_objs));
 
-
-                        Polyline_X_monotone_curve xcv;
-                        xoit = x_objs.begin();
-                        CGAL::assign(xcv, *xoit);
-                        for (xoit = x_objs.begin(); xoit != x_objs.end(); ++xoit) {
-                            if (CGAL::assign(xcv, *xoit))
-                                xcvs.push_back(xcv);
+                        for(auto i=0;i<x_objs.size();++i)
+                        {
+                            auto* xcv = boost::get<Polyline_X_monotone_curve > (&x_objs[i]);
+                            CGAL_assertion(xcv != nullptr);
+                            xcvs.push_back(*xcv);
                         }
                     }
                     if (xcvs.size() > 0) {

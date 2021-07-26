@@ -344,21 +344,22 @@ public:
 	      Gps_traits traits;
 	      typename Gps_traits::Make_x_monotone_2 make_x_monotone =
 	        traits.make_x_monotone_2_object();
+	      typedef boost::variant<Linear_X_monotone_curve,Linear_point>
+            Make_x_monotone_result;
 
 	      std::vector<Linear_X_monotone_curve> xcvs;
 	      for (auto it = mLinearPolygonPieces.begin();
 	           it != mLinearPolygonPieces.end(); ++it)
 	      {
-	        std::vector<CGAL::Object> x_objs;
-	        std::vector<CGAL::Object>::const_iterator xoit;
-
+	        std::vector<Make_x_monotone_result> x_objs;
 	        make_x_monotone(*it, std::back_inserter(x_objs));
-	        //cout<<"add curves"<<endl;
 
-	        for (xoit = x_objs.begin(); xoit != x_objs.end(); ++xoit) {
-	          Linear_X_monotone_curve xcv;
-	          if (CGAL::assign(xcv, *xoit)) xcvs.push_back (xcv);
-	        }
+	        for(auto i=0;i<x_objs.size();++i)
+            {
+                auto* xcv = boost::get<Linear_X_monotone_curve>(&x_objs[i]);
+                CGAL_assertion(xcv != nullptr);
+                xcvs.push_back(*xcv);
+            }
 	      }
 
 	      if (xcvs.size() > 0) {
@@ -370,7 +371,7 @@ public:
 	        FT lys = last_point .y();
 	        xcvs.push_back(Linear_X_monotone_curve( Point(lxs,lys), Point(fxs,fys)));
 	        Linear_polygon lp(xcvs.begin(), xcvs.end());
-	        emit(generate(CGAL::make_object(lp)));
+	        emit(generate(boost::variant<Linear_polygon>(lp)));
 	      }
 	    }
 	  }

@@ -24,6 +24,7 @@
 #define CGAL_QT_GRAPHICS_VIEW_LINEAR_POLYGON_INPUT_H
 
 #include <limits>
+#include <typeinfo>
 
 #include <CGAL/auto_link/Qt.h>
 #include <CGAL/Qt/GraphicsViewInput.h>
@@ -332,7 +333,6 @@ public:
     mLinearGI->modelChanged();
 
     mH = boost::optional<Point>();
-
     HideHandle();
   }
 
@@ -342,20 +342,27 @@ public:
       Gps_traits traits;
       typename Gps_traits::Make_x_monotone_2 make_x_monotone =
         traits.make_x_monotone_2_object();
+      typedef boost::variant<Linear_X_monotone_curve,Linear_point>
+              Make_x_monotone_result;
 
       std::vector<Linear_X_monotone_curve> xcvs;
       for (auto it = mLinearPolygonPieces.begin();
            it != mLinearPolygonPieces.end(); ++it)
       {
-        std::vector<CGAL::Object> x_objs;
-        std::vector<CGAL::Object>::const_iterator xoit;
+        std::vector<Make_x_monotone_result> x_objs;
 
         make_x_monotone(*it, std::back_inserter(x_objs));
-        //cout<<"add curves"<<endl;
 
-        for (xoit = x_objs.begin(); xoit != x_objs.end(); ++xoit) {
+        /*for (auto xoit = x_objs.begin(); xoit != x_objs.end(); ++xoit)
+        {
           Linear_X_monotone_curve xcv;
           if (CGAL::assign(xcv, *xoit)) xcvs.push_back (xcv);
+        }*/
+        for(auto i=0;i<x_objs.size();++i)
+        {
+            auto* xcv = boost::get<Linear_X_monotone_curve>(&x_objs[i]);
+            CGAL_assertion(xcv != nullptr);
+            xcvs.push_back(*xcv);
         }
       }
 
