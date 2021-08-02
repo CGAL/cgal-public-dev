@@ -1159,6 +1159,7 @@ public slots:
 
   //for all the operations such as union, complement, difference
   void processInput(CGAL::Object o);
+  void processInput(boost::variant<Linear_polygon> &lp);
   void on_actionUndo_triggered();
   void on_actionNew_triggered();
   void on_actionAxis_triggered();
@@ -1648,6 +1649,8 @@ MainWindow::MainWindow() :
   //connecting GUI and the code base
   QObject::connect(m_linear_input, SIGNAL(generate(CGAL::Object)), this,
                    SLOT(processInput(CGAL::Object)));
+  //QObject::connect(m_linear_input, SIGNAL(generate(boost::variant<Linear_polygon>)), this,
+  //                 SLOT(processInput(boost::variant<Linear_polygon>)));
   QObject::connect(m_circular_input, SIGNAL(generate(CGAL::Object)), this,
                    SLOT(processInput(CGAL::Object)));
   QObject::connect(m_bezier_input, SIGNAL(generate(CGAL::Object)), this,
@@ -4744,7 +4747,7 @@ void MainWindow::on_actionOpenPolyline_triggered()
 {
     open(QFileDialog::getOpenFileName(this,
                                       tr("Open Polyline Polygon"), "./data",
-                                      tr("Polyline Curve files (*.bps)") ));
+                                      tr("Polyline Curve files (*.mps)") ));
 }
 
 
@@ -5063,10 +5066,148 @@ bool MainWindow::read_circular ( QString aFileName, Circular_polygon_set& rSet, 
   return rOK ;
 }
 
-bool MainWindow::read_polyline( QString aFilename, Polyline_polygon_set &rSet, Polyline_region_source_container& rSources)
+bool MainWindow::read_polyline( QString aFileName, Polyline_polygon_set &rSet, Polyline_region_source_container& rSources)
 {
-    return false;
+    bool rOK = false ;
+
+    std::ifstream in_file (qPrintable(aFileName));
+    if ( in_file )
+    {
+        try
+        {
+            typedef Polyline_traits                         Gps_traits;
+            typedef typename Gps_traits::X_monotone_curve_2 Polyline_X_monotone_curve;
+            typedef typename Gps_traits::Curve_2            Polyline_curve;
+            typedef std::vector<Polyline_curve>             Polyline_curve_vector;
+            typedef typename Gps_traits::X_monotone_curve_2 Polyline_X_monotone_curve;
+            typedef typename Gps_traits::Polygon_2          Polyline_polygon;
+            typedef typename Gps_traits::Point_2            Polyline_point;
+            typedef typename Kernel::Point_2                Point;
+            typedef typename Kernel::FT                     FT;
+            Polyline_curve_vector mPolylinePolygonPieces;
+
+            typedef CGAL::Arr_segment_traits_2<Kernel>                                          Segment_traits_2;
+            typedef CGAL::Gps_traits_2<CGAL::Arr_polycurve_traits_2<Segment_traits_2> >         Base;
+            typedef typename Base::X_monotone_subcurve_2                                        X_monotone_subcurve_2;
+
+            std::string format ;
+            std::getline(in_file,format);
+
+            bool lDoubleFormat = ( format.length() >= 6 && format.substr(0,6) == "DOUBLE") ;
+            unsigned int n_regions ;
+            in_file >> n_regions;
+
+            for ( unsigned int r = 0 ; r < n_regions ; ++ r )
+            {
+                //number of linear polygon including holes
+                unsigned int n_boundaries;
+                in_file >> n_boundaries;
+
+                std::vector<Polyline_polygon> Polyline_polygons;
+
+                for ( unsigned int r = 0 ; r < n_boundaries ; ++ r )
+                {
+                    // number of points in linear polygon
+                    unsigned int n_points;
+                    in_file >> n_points;
+                    std::vector<Point> points;
+
+                    std::vector<Polyline_X_monotone_curve> xcvs;
+                    Gps_traits traits;
+                    typename Gps_traits::Make_x_monotone_2 make_x_monotone = traits.make_x_monotone_2_object();
+                    typedef boost::variant <Polyline_X_monotone_curve, Polyline_point> Make_x_monotone_result;
+
+
+                    for(unsigned int j=0; j< n_points; ++j)
+                    {
+                        double x,y;
+                        in_file>> x >> y;
+                        points.push_back(Point(x,y));
+                        if(j>0)
+                        {
+                            Gps_traits x;
+                            X_monotone_subcurve_2 seg=x.subcurve_traits_2()->
+                                    construct_x_monotone_curve_2_object()(points[points.size() - 2 ],points[points.size() - 1]);
+
+                            mPolylinePolygonPieces.push_back(Polyline_curve(seg));
+                        }
+                    }
+                    points.clear();
+
+                    for (auto it = mPolylinePolygonPieces.begin();
+                    it != mPolylinePolygonPieces.end(); ++it)
+                    {
+                        std::vector<Make_x_monotone_result> x_objs;
+
+                        make_x_monotone(*it, std::back_inserter(x_objs));
+                        for(auto i=0;i<x_objs.size();++i)
+                        {
+                            auto* xcv = boost::get<Polyline_X_monotone_curve>(&x_objs[i]);
+                            CGAL_assertion(xcv != nullptr);
+                            xcvs.push_back(*xcv);
+                        }
+                    }
+cout<<"reached generate polyline function"<<endl;
+                    if (xcvs.size() > 0)
+                    {
+                        Polyline_point const& first_point = xcvs.front()[0].source();
+                        Polyline_point const& last_point =  xcvs.back()[xcvs.back().number_of_subcurves() -1].target();
+                        FT fxs = first_point.x();
+                        FT fys = first_point.y();
+                        FT lxs = last_point .x();
+                        FT lys = last_point .y();
+
+                        Gps_traits x;
+                        X_monotone_subcurve_2 seg=x.subcurve_traits_2()->
+                                construct_x_monotone_curve_2_object()(Point(fxs,fys),Point(lxs,lys));
+
+                        xcvs.push_back(Polyline_X_monotone_curve(seg));
+                        Polyline_polygon pp(xcvs.begin(), xcvs.end());
+cout<<"polyline polygon has been generated"<<endl;
+                        CGAL::Orientation orient = pp.orientation();
+                        if (orient == CGAL::CLOCKWISE)
+                        {
+                            pp.reverse_orientation();
+                        }
+                        Polyline_polygon_with_holes lPPWH(pp);
+cout<<"work completed"<<endl;
+                        if(r==0)
+                        {
+                            get_new_state(11);
+                            cout<<"above fault"<<endl;
+                            states_stack.back().active_set
+                            (m_color_active).polyline().join(Polyline_polygon_with_holes(pp) );
+                            cout<<"above fault 2"<<endl;
+                            states_stack.back().active_polyline_sources(m_color_active).push_back(lPPWH);
+                            cout<<"fault in joining lCPWH?"<<endl;
+                        }
+                        else
+                        {
+                            states_stack.back().result_set().clear();
+                            states_stack.back().result_polyline_sources().clear();
+                            states_stack.back().result_set().polyline().join(lPPWH);
+                            states_stack.back().result_polyline_sources().push_back(lPPWH);
+                            states_stack.back().active_set(m_color_active).difference(states_stack.back().result_set());
+                            states_stack.back().result_set().clear();
+                            states_stack.back().result_polyline_sources().clear();
+                            cout<<"result container clear"<<endl;
+                        }
+                        mPolylinePolygonPieces.clear();
+                    }
+                }
+cout<<"almost end of function"<<endl;
+                rOK = true ;
+            }
+        }
+        catch(...)
+        {
+            show_warning("Exception ocurred during reading of linear polygon set.");
+        }
+    }
+cout<<"full end of religion"<<endl;
+    return rOK ;
 }
+
 
 bool MainWindow::read_bezier ( QString aFileName)
 {
@@ -5410,9 +5551,71 @@ bool save_circular ( QString aFileName, Circular_polygon_set& rSet )
   return rOK ;
 }
 
-bool save_polyline ( QString aFilename, Polyline_polygon_set& rSet )
+bool save_polyline ( QString aFileName, Polyline_polygon_set& rSet )
 {
-    return false;
+    bool rOK = false ;
+
+    Polyline_polygon_set                        pps;
+    typedef typename Kernel::Point_2            Point;
+    std::list<Polygon_2>                        pgns;
+
+    std::ofstream out_file( qPrintable(aFileName) );
+    if ( out_file )
+    {
+        out_file << "DOUBLE" << std::endl;
+        std::vector<Polyline_polygon_with_holes> lpwh_container;
+
+        rSet.polygons_with_holes( std::back_inserter(lpwh_container));
+
+        out_file << lpwh_container.size() << std::endl;
+
+        for( std::vector<Polyline_polygon_with_holes>::const_iterator rit = lpwh_container.begin();
+        rit != lpwh_container.end() ; ++ rit )
+        {
+            Polyline_polygon_with_holes lpwh = *rit;
+
+            out_file << " " << (1 + lpwh.number_of_holes() ) << std::endl;
+
+            int cc = lpwh.outer_boundary().size();
+            int lc = cc - 1;
+            out_file << "  " <<  cc << std::endl;
+            int i = 0;
+
+            for ( Polyline_polygon::Curve_const_iterator cit = lpwh.outer_boundary().curves_begin(); cit != lpwh.outer_boundary().curves_end(); ++ cit,++ i)
+            {
+                auto it = cit->points_begin();
+                while (it != cit->points_end())
+                {
+                    auto pt=*it;
+                    out_file << "   " << CGAL::to_double(pt.x()) << " " << CGAL::to_double(pt.y()) << std::endl;
+                    *it++;
+                }
+            }
+            // out_file << "   " << CGAL::to_double(lpwh.outer_boundary().curves_begin()->source().x()) << " " << CGAL::to_double(lpwh.outer_boundary().curves_begin()->source().y()) << std::endl ;
+
+            for ( Polyline_polygon_with_holes::Hole_const_iterator hit = lpwh.holes_begin() ; hit != lpwh.holes_end() ; ++ hit )
+            {
+                int cc = hit->size();
+                int lc = cc - 1;
+                out_file << "  " <<  cc << std::endl;
+                int i = 0;
+
+                for ( Polyline_polygon::Curve_const_iterator cit = hit->curves_begin(); cit != hit->curves_end(); ++ cit,++ i)
+                {
+                    auto it = cit->points_begin();
+                    while (it != cit->points_end())
+                    {
+                        auto pt=*it;
+                        out_file << "   " << CGAL::to_double(pt.x()) << " " << CGAL::to_double(pt.y()) << std::endl;
+                        *it++;
+                    }
+                }
+                // out_file << "   " << CGAL::to_double(hit->curves_begin()->source().x()) << " " << CGAL::to_double(hit->curves_begin()->source().y()) << std::endl ;
+            }
+            rOK = true;
+        }
+    }
+    return rOK;
 }
 
 //bezier file in saved in two parts
@@ -5547,9 +5750,10 @@ void MainWindow::on_actionSaveCurrentBucket_triggered()
   else if (m_polyline_active)
   {
     if ( !save_polyline(QFileDialog::getSaveFileName(this,
-    tr("Save Result Polyline Polygon Set"), "/data/index.pps", tr("Polyline Curve files (*.pps)") )
-            ,states_stack.back().active_set(m_color_active).polyline())
+    tr("Save Result Polyline Polygon Set"), "/data/index.mps", tr("Polyline Curve files (*.mps)") )
+            ,states_stack.back().active_set(m_color_active).polyline()
             )
+       )
     {
       show_error("Cannot save polyline polygon set.");
     }
@@ -5670,6 +5874,7 @@ bool MainWindow::ensure_linear_mode()
       m_circular_active = false;
       m_bezier_active = false;
       m_polyline_active = false;
+      cout<<"End of ensure_linear_polygon()"<<endl;
     }
   }
   return !m_circular_active;
@@ -5703,7 +5908,6 @@ bool MainWindow::ensure_polyline_mode()
     return m_polyline_active;
 }
 
-
 //load polygons from file that is "file:open" clicked
 void MainWindow::open(QString fileName)
 {
@@ -5726,7 +5930,7 @@ void MainWindow::open(QString fileName)
       if ( ensure_bezier_mode() )
         lRead = read_bezier(fileName);
     }
-    else if (fileName.endsWith(".pps"))
+    else if (fileName.endsWith(".mps"))
     {
       if ( ensure_polyline_mode())
         lRead = read_polyline(fileName,states_stack.back().active_set(m_color_active).polyline(),
@@ -5884,7 +6088,6 @@ void MainWindow::on_actionInsertLinear_toggled(bool aChecked)
       actionOpenPolyline->setEnabled(false);
       actionInsertCircular->setChecked(false);
       actionInsertBezier->setChecked( false );
-      cout<<"error here???"<<endl;
       actionInsertPolyline->setChecked(false);
       m_scene.installEventFilter(m_linear_input);
       on_actionDeleteResult();
@@ -5895,7 +6098,7 @@ void MainWindow::on_actionInsertLinear_toggled(bool aChecked)
   	{
   	  actionInsertLinear->setChecked(false);
   	}
-    cout<<"end of function"<<endl;
+    cout<<"end of insert linear"<<endl;
   }
 }
 
@@ -7937,11 +8140,43 @@ void MainWindow::processInput(CGAL::Object o)
   }
   catch(const std::exception& e)
   {
-      //std::string s = e.what();
-      //exception_handler();
     on_actionUndo_triggered();
   }
   modelChanged();
+}
+
+void MainWindow::processInput(boost::variant<Linear_polygon> &lp)
+{
+    auto* lLI=boost::get<Linear_polygon>(&lp);
+    try {
+        if (ensure_linear_mode()) {
+            CGAL::Orientation orient = (*lLI).orientation();
+            if (orient == CGAL::CLOCKWISE) {
+                (*lLI).reverse_orientation();
+            }
+            Linear_polygon_with_holes lCPWH(*lLI);
+
+            if (!m_linear_input->isboundingRect() && !m_linear_input->ishole()) {
+                if (!m_linear_input->is_mink()) {
+                    get_new_state(11);
+                }
+                states_stack.back().active_set(m_color_active).linear().join(lCPWH);
+                states_stack.back().active_linear_sources(m_color_active).push_back(lCPWH);
+            } else {
+                states_stack.back().result_set().linear().join(lCPWH);
+                states_stack.back().result_linear_sources().push_back(lCPWH);
+                if (m_linear_input->ishole()) {
+                    states_stack.back().active_set(m_color_active).difference(states_stack.back().result_set());
+                    states_stack.back().result_set().clear();
+                    states_stack.back().result_linear_sources().clear();
+                }
+            }
+        }
+    }
+    catch(const std::exception& e)
+    {
+        on_actionUndo_triggered();
+    }
 }
 
 #include "Boolean_set_operations_2.moc"
