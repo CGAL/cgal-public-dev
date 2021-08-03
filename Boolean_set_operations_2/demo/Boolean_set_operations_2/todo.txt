@@ -1,12 +1,4 @@
-Add Polyline support as mentioned in include/todo.txt
-
-Ask Efi about how he wants the interface.
-My preference will be to keep everything as it is just add a new option in file menu to create a window for a particular curve as
-operations between different curves are not possible.
-Currently the demo is very confusing. Buckets and all. It is very confusing. Simplify it for everyone.
-
-Add about CGAL,Minkowski sum in the about button in the taskbar
-
-Add functionality to console(It will be written in C++)
-
-Add the information box as it is in the polyhedron demo(to be addressed by Efi first)
+Bugs related to polyline:-
+1. Complement operation bug :- On pressing the complement button the demo crashes. The exact line causing this has been identified but the cause is unknown
+2. Switch Error bug	     :- On switching between polyline and any other type of polygon a crash occurs. This occurs becuase of a bad alloc or double free i.e the pointer pointing to polyline polygon 					has been freed twice. Exactly what line is causing this error is unknown
+3. Read File bug 	     :- The save operation has been successful however when I try to read the polygon the demo crashes. Cause has not been identified but the reason has been identified.

@@ -54,14 +54,15 @@ namespace CGAL {
 
             typedef Kernel_ Kernel;
             typedef Polyline_traits Gps_traits;
-            typedef typename Gps_traits::Curve_2            Polyline_curve;
-            typedef typename Gps_traits::X_monotone_curve_2 Polyline_X_monotone_curve;
-            typedef typename Gps_traits::Polygon_2          Polyline_polygon;
-            typedef typename Gps_traits::Point_2            Polyline_point;
-            typedef typename Kernel::FT                     FT;
-            typedef typename Kernel::Vector_2               Vector;
-            typedef typename Kernel::Point_2                Point;
-            typedef std::vector <Polyline_curve> Polyline_curve_vector;
+            typedef typename Gps_traits::Curve_2                        Polyline_curve;
+            typedef typename Gps_traits::X_monotone_curve_2             Polyline_X_monotone_curve;
+            typedef typename Gps_traits::Polygon_2                      Polyline_polygon;
+            typedef typename Gps_traits::Point_2                        Polyline_point;
+            typedef typename Gps_traits::General_polygon_with_holes_2   Polyline_polygon_with_holes;
+            typedef typename Kernel::FT                                 FT;
+            typedef typename Kernel::Vector_2                           Vector;
+            typedef typename Kernel::Point_2                            Point;
+            typedef std::vector <Polyline_curve>                        Polyline_curve_vector;
 
             typedef typename Polyline_curve_vector::const_iterator
                     const_polyline_curve_iterator;
@@ -340,30 +341,29 @@ namespace CGAL {
             void CommitCurrPolylinePolygon() {
                 GeneratePolylinePolygon();
                 mOngoingPieceCtr.clear();
-                //cout<<"mOngoingPieceCtr"<<endl;
+
                 mOngoingPieceGI->modelChanged();
 
                 mPolylinePolygonPieces.clear();
-               // cout<<"mPolylinePolygonPieces"<<endl;
                 mPolylineGI->modelChanged();
 
                 mH = boost::optional<Point>();
 
                 HideHandle();
-               // cout<<"polygon is comitted"<<endl;
             }
 
-            //main function to generate polyline polygon. Change this according to the GraphicsViewCurveInput.h
-            void GeneratePolylinePolygon() {
-                if (mPolylinePolygonPieces.size() > 0) {
+            //main function to generate polyline polygon
+            void GeneratePolylinePolygon()
+            {
+                if (mPolylinePolygonPieces.size() > 0)
+                {
                     Gps_traits traits;
                     auto make_x_monotone = traits.make_x_monotone_2_object();
                     typedef boost::variant<Polyline_X_monotone_curve ,Polyline_point>
                             Make_x_monotone_result;
 
                     std::vector <Polyline_X_monotone_curve> xcvs;
-                    for (auto it = mPolylinePolygonPieces.begin();
-                         it != mPolylinePolygonPieces.end(); ++it)
+                    for (auto it = mPolylinePolygonPieces.begin();it != mPolylinePolygonPieces.end(); ++it)
                     {
                         std::vector<Make_x_monotone_result> x_objs;
                         make_x_monotone(*it, std::back_inserter(x_objs));
@@ -375,8 +375,10 @@ namespace CGAL {
                             xcvs.push_back(*xcv);
                         }
                     }
-                    if (xcvs.size() > 0) {
-                        if (!m_last_polyline) {
+                    if (xcvs.size() > 0)
+                    {
+                        if (!m_last_polyline)
+                        {
                             Polyline_point const &first_point = xcvs.front()[0].source();
                             Polyline_point const &last_point = xcvs.back()[xcvs.back().number_of_subcurves() -1].target();
                             FT fxs = first_point.x();
@@ -390,21 +392,87 @@ namespace CGAL {
 
                             xcvs.push_back(Polyline_X_monotone_curve(seg));
                         }
-                    }
-                    m_last = false;
-                    m_last_polyline = false;
+                        m_last = false;
+                        m_last_polyline = false;
 
-                   //cout<<"almost done b"<<endl;
-                    Polyline_polygon pp(xcvs.begin(), xcvs.end());
-                    //cout<<"Fault"<<endl;
-                    emit(generate(boost::variant<Polyline_polygon>(pp)));
-                    //cout<<"done "<<endl;
+                        //cout<<"almost done b"<<endl;
+                        Polyline_polygon pp(xcvs.begin(), xcvs.end());
+                        //cout<<"Fault"<<endl;
+                        emit(generate(boost::variant<Polyline_polygon>(pp)));
+                        //cout<<"done "<<endl;
+                    }
+                }
+            }
+
+            //for complement operations
+            void CommitComplementCurrPolylinePolygon()
+            {
+                GenerateComplementPolylinePolygon();
+                mOngoingPieceCtr.clear();
+                mOngoingPieceGI->modelChanged();
+
+                mPolylinePolygonPieces.clear();
+                mPolylineGI->modelChanged();
+
+                mH = boost::optional<Point>();
+
+                HideHandle();
+            }
+
+            //for complement operations
+            void GenerateComplementPolylinePolygon()
+            {
+                if (mPolylinePolygonPieces.size() > 0)
+                {
+                    Gps_traits traits;
+                    auto make_x_monotone = traits.make_x_monotone_2_object();
+                    typedef boost::variant<Polyline_X_monotone_curve ,Polyline_point>
+                    Make_x_monotone_result;
+
+                    std::vector <Polyline_X_monotone_curve> xcvs;
+                    for (auto it = mPolylinePolygonPieces.begin();it != mPolylinePolygonPieces.end(); ++it)
+                    {
+                        std::vector<Make_x_monotone_result> x_objs;
+                        make_x_monotone(*it, std::back_inserter(x_objs));
+
+                        for(auto i=0;i<x_objs.size();++i)
+                        {
+                            auto* xcv = boost::get<Polyline_X_monotone_curve > (&x_objs[i]);
+                            CGAL_assertion(xcv != nullptr);
+                            xcvs.push_back(*xcv);
+                        }
+                    }
+                    if (xcvs.size() > 0)
+                    {
+                        if (!m_last_polyline)
+                        {
+                            Polyline_point const &first_point = xcvs.front()[0].source();
+                            Polyline_point const &last_point = xcvs.back()[xcvs.back().number_of_subcurves() -1].target();
+                            FT fxs = first_point.x();
+                            FT fys = first_point.y();
+                            FT lxs = last_point.x();
+                            FT lys = last_point.y();
+                            //cout<<"point"<<endl;
+                            Gps_traits x;
+                            X_monotone_subcurve_2 seg=x.subcurve_traits_2()->
+                                    construct_x_monotone_curve_2_object()(Point(fxs,fys),Point(lxs,lys));
+
+                            xcvs.push_back(Polyline_X_monotone_curve(seg));
+                        }
+                        m_last = false;
+                        m_last_polyline = false;
+
+                        cout<<"almost done"<<endl;
+                        Polyline_polygon pp(xcvs.begin(), xcvs.end());
+                        Polyline_polygon_with_holes ppwh(pp);
+                        cout<<"Fault"<<endl;
+                        emit(generate(boost::variant<Polyline_polygon_with_holes>(ppwh)));
+                        cout<<"done "<<endl;
+                    }
                 }
             }
 
             void get_BoundingRect() {
-                cout<<"HI"<<endl;
-
                 m_bound_rect = true;
 
                 mP0 = Point(-15500000, -10000000);
@@ -443,7 +511,7 @@ namespace CGAL {
                 mState = PieceOngoing;
                 mP1 = Point(-9000000, -9000000);
                 UpdateOngoingPiece();
-                CommitCurrPolylinePolygon();
+                CommitComplementCurrPolylinePolygon();
                 ReStart();
             }
 

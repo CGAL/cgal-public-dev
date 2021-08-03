@@ -4891,6 +4891,7 @@ bool MainWindow::read_linear( QString aFileName, Linear_polygon_set& rSet, Linea
             if(r==0)
             {
               get_new_state(11);
+              cout<<typeid(states_stack.back().active_set(m_color_active).linear()).name()<<endl<< typeid(lCPWH).name()<<"\n\n"<<endl;
               states_stack.back().active_set(m_color_active).linear().join(lCPWH);
               states_stack.back().active_linear_sources(m_color_active).push_back(lCPWH);
             }
@@ -5036,6 +5037,7 @@ bool MainWindow::read_circular ( QString aFileName, Circular_polygon_set& rSet, 
               {
                 // processInput(CGAL::make_object(cp));
                 get_new_state(11);
+                cout<<typeid(states_stack.back().active_set(m_color_active).circular()).name()<<endl<< typeid(lCPWH).name()<<"\n\n"<<endl;
                 states_stack.back().active_set(m_color_active).circular().join(lCPWH);
                 states_stack.back().active_circular_sources(m_color_active).push_back(lCPWH);
               }
@@ -5169,24 +5171,24 @@ cout<<"polyline polygon has been generated"<<endl;
                         {
                             pp.reverse_orientation();
                         }
-                        Polyline_polygon_with_holes lPPWH(pp);
+                        Polyline_polygon_with_holes PPWH(pp);
 cout<<"work completed"<<endl;
                         if(r==0)
                         {
                             get_new_state(11);
-                            cout<<"above fault"<<endl;
-                            states_stack.back().active_set
-                            (m_color_active).polyline().join(Polyline_polygon_with_holes(pp) );
+                            auto x=states_stack.back().active_set(m_color_active).polyline();
+                            cout<<typeid(x).name()<<endl<< typeid(PPWH).name()<<"\n\n"<<"above fault"<<endl;
+                            x.join(PPWH);
                             cout<<"above fault 2"<<endl;
-                            states_stack.back().active_polyline_sources(m_color_active).push_back(lPPWH);
-                            cout<<"fault in joining lCPWH?"<<endl;
+                            states_stack.back().active_polyline_sources(m_color_active).push_back(PPWH);
+                            cout<<"fault in joining PPWH?"<<endl;
                         }
                         else
                         {
                             states_stack.back().result_set().clear();
                             states_stack.back().result_polyline_sources().clear();
-                            states_stack.back().result_set().polyline().join(lPPWH);
-                            states_stack.back().result_polyline_sources().push_back(lPPWH);
+                            states_stack.back().result_set().polyline().join(PPWH);
+                            states_stack.back().result_polyline_sources().push_back(PPWH);
                             states_stack.back().active_set(m_color_active).difference(states_stack.back().result_set());
                             states_stack.back().result_set().clear();
                             states_stack.back().result_polyline_sources().clear();
@@ -5207,7 +5209,6 @@ cout<<"almost end of function"<<endl;
 cout<<"full end of religion"<<endl;
     return rOK ;
 }
-
 
 bool MainWindow::read_bezier ( QString aFileName)
 {
@@ -6047,6 +6048,7 @@ void MainWindow::on_actionInsertPolyline_toggled(bool aChecked)
             actionOpenPolyline->setEnabled(true);
             actionInsertLinear->setChecked(false);
             actionInsertBezier->setChecked(false);
+
             actionInsertCircular->setChecked(false);
             m_scene.installEventFilter(m_polyline_input);
             on_actionDeleteResult();
