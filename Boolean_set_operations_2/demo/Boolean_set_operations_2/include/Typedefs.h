@@ -57,8 +57,6 @@
 
 #include "QT5/Polygon_set_2.h"
 #include "QT5/BezierCurves.h"
-//#include "QT5/Polyline_curves.h"
-
 
 //todo:- go through this file and clean it up as required
 
@@ -83,21 +81,19 @@ typedef std::vector<Linear_boundary_source>                      Linear_region_s
 
 //Polyline Traits
 //Kernel defined above we'll be using the same kernel
-typedef CGAL::General_polygon_2<Kernel>                             General_polygon_2;
-typedef CGAL::General_polygon_with_holes_2<Kernel>                  General_polygon_with_holes_2;
+//typedef CGAL::General_polygon_2<Kernel>                             General_polygon_2;
+//typedef CGAL::General_polygon_with_holes_2<Kernel>                  General_polygon_with_holes_2;
 
 typedef CGAL::Arr_segment_traits_2<Kernel>                                 Segment_traits_2;
 typedef CGAL::Gps_traits_2<CGAL::Arr_polyline_traits_2<Segment_traits_2> > Polyline_traits;
-typedef Polyline_traits::General_polygon_with_holes_2                      Polyline_polygon_with_holes;
 typedef Polyline_traits::Polygon_2                                         Polyline_polygon;
 typedef CGAL::General_polygon_set_2<Polyline_traits>                       Polyline_polygon_set;
 typedef Polyline_traits::Curve_2                                           Polyline_curve;
+typedef Polyline_traits::General_polygon_with_holes_2                      Polyline_polygon_with_holes;
 
 typedef std::vector<Polyline_polygon_with_holes>                          Polyline_region_source_container;
 typedef std::vector<Polyline_curve>                                       Polyline_boundary_source ;
 typedef std::vector<Polyline_boundary_source>                             Polyline_region_source ;
-
-
 
 // Circlular polygons
 #ifdef CGAL_USE_GMP

@@ -394,12 +394,8 @@ namespace CGAL {
                         }
                         m_last = false;
                         m_last_polyline = false;
-
-                        //cout<<"almost done b"<<endl;
                         Polyline_polygon pp(xcvs.begin(), xcvs.end());
-                        //cout<<"Fault"<<endl;
                         emit(generate(boost::variant<Polyline_polygon>(pp)));
-                        //cout<<"done "<<endl;
                     }
                 }
             }
@@ -452,22 +448,22 @@ namespace CGAL {
                             FT fys = first_point.y();
                             FT lxs = last_point.x();
                             FT lys = last_point.y();
-                            //cout<<"point"<<endl;
+                            //cout<<fxs<<" "<<fys<<endl<<lxs<<" "<<lys<<"\n\n";
+                            //comment out the below two lines to see why they are important
+                            fxs=fxs*-1;
+                            lxs=lxs*-1;
                             Gps_traits x;
                             X_monotone_subcurve_2 seg=x.subcurve_traits_2()->
                                     construct_x_monotone_curve_2_object()(Point(fxs,fys),Point(lxs,lys));
 
                             xcvs.push_back(Polyline_X_monotone_curve(seg));
                         }
+
                         m_last = false;
                         m_last_polyline = false;
 
-                        cout<<"almost done"<<endl;
                         Polyline_polygon pp(xcvs.begin(), xcvs.end());
-                        Polyline_polygon_with_holes ppwh(pp);
-                        cout<<"Fault"<<endl;
-                        emit(generate(boost::variant<Polyline_polygon_with_holes>(ppwh)));
-                        cout<<"done "<<endl;
+                        emit(generate(boost::variant<Polyline_polygon>(pp)));
                     }
                 }
             }

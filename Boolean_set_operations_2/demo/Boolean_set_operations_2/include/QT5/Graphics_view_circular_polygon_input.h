@@ -420,7 +420,6 @@ public:
         //cout<<"add curves if circular"<<endl;
         Circular_polygon cp(xcvs.begin(), xcvs.end());
         //cout<<"point 5"<<endl;
-        emit(generate(boost::variant<Circular_polygon>(cp)));
         //cout<<"point 6"<<endl;
       }
     }
@@ -429,18 +428,6 @@ public:
 
   void get_BoundingRect()
   {
-      /* mOngoingPieceCtr.push_back(Linear_curve(Point(-10000000,-10000000),Point(-10000000,10000000)));
-      // mOngoingPieceCtr.push_back(Linear_curve(Point(-10000000,10000000),Point(10000000,10000000)));
-      // mOngoingPieceCtr.push_back(Linear_curve(Point(10000000,10000000),Point(10000000,-10000000)));
-
-      // mLinearPolygonPieces.push_back(mOngoingPieceCtr[0]);
-      // mLinearPolygonPieces.push_back(mOngoingPieceCtr[1]);
-      // mLinearPolygonPieces.push_back(mOngoingPieceCtr[2]);
-
-      // m_bound_rect = true;
-      // CommitCurrLinearPolygon();
-      // ReStart();*/
-
       m_bound_rect = true;
 
       mP0 = Point(-15500000,-10000000);

@@ -503,23 +503,13 @@ public:
   {
     try
     {
-      cout<<"in try"<<endl;
       m_set.intersection(cast(aOther).m_set);
     }
     catch(...)
     {
-      std::cout<<"in catch"<<endl;
       show_error("Exception thrown during boolean operation intersect");
     }
   }
-
-/*
-virtual void intersect( Rep_base const& aOther )
-  {
-    cout<<"in try"<<endl;
-    m_set.symmetric_difference(cast(aOther).m_set);
-  }
- */
   virtual void join( Rep_base const& aOther )
   {
     try
@@ -546,15 +536,12 @@ virtual void intersect( Rep_base const& aOther )
 
   virtual void symmetric_difference( Rep_base const& aOther )
   {
-    std::cout<<"In old symmetric difference"<<endl;
     try
     {
-       std::cout<<"in try"<<endl;
       m_set.symmetric_difference( cast(aOther).m_set);
     }
     catch(...)
     {
-        std::cout<<"catch"<<endl;
       show_error("Exception thrown during boolean operation symmetric difference");
     }
   }
@@ -651,7 +638,6 @@ public:
 
   void intersect(Curve_set const& aOther)
   {
-    std::cout<<"in the function intersect"<<endl;
     if (is_linear() && aOther.is_linear())
         get_linear_rep()->intersect(*aOther.get_linear_rep());
     else if (is_circular() && aOther.is_circular())
@@ -688,7 +674,6 @@ public:
 
   void symmetric_difference(Curve_set const& aOther)
   {
-    std::cout<<"in sym diff"<<endl;
     if (is_linear() && aOther.is_linear())
       get_linear_rep()->symmetric_difference(*aOther.get_linear_rep());
     else if (is_circular() && aOther.is_circular())
@@ -744,8 +729,8 @@ public:
   Bezier_polygon_set&       bezier()       { return get_bezier_rep()->set(); }
 
   //to get rep for polylines
- const Polyline_rep* get_polyline_rep() const{ return dynamic_cast<Polyline_rep   const*>( boost::get_pointer(m_rep) ); }
-  Polyline_rep     * get_polyline_rep()      { return dynamic_cast<Polyline_rep        *>( boost::get_pointer(m_rep) ); }
+  const Polyline_rep* get_polyline_rep() const{ return dynamic_cast<Polyline_rep   const*>( boost::get_pointer(m_rep) ); }
+  Polyline_rep      * get_polyline_rep()      { return dynamic_cast<Polyline_rep        *>( boost::get_pointer(m_rep) ); }
 
   //to get Polyline_polygon_set
   const Polyline_polygon_set& polyline() const { return get_polyline_rep()->set(); }
@@ -5149,7 +5134,6 @@ bool MainWindow::read_polyline( QString aFileName, Polyline_polygon_set &rSet, P
                             xcvs.push_back(*xcv);
                         }
                     }
-cout<<"reached generate polyline function"<<endl;
                     if (xcvs.size() > 0)
                     {
                         Polyline_point const& first_point = xcvs.front()[0].source();
@@ -5165,20 +5149,18 @@ cout<<"reached generate polyline function"<<endl;
 
                         xcvs.push_back(Polyline_X_monotone_curve(seg));
                         Polyline_polygon pp(xcvs.begin(), xcvs.end());
-cout<<"polyline polygon has been generated"<<endl;
                         CGAL::Orientation orient = pp.orientation();
                         if (orient == CGAL::CLOCKWISE)
                         {
                             pp.reverse_orientation();
                         }
                         Polyline_polygon_with_holes PPWH(pp);
-cout<<"work completed"<<endl;
                         if(r==0)
                         {
                             get_new_state(11);
                             auto x=states_stack.back().active_set(m_color_active).polyline();
                             cout<<typeid(x).name()<<endl<< typeid(PPWH).name()<<"\n\n"<<"above fault"<<endl;
-                            x.join(PPWH);
+                            x.intersection(PPWH);
                             cout<<"above fault 2"<<endl;
                             states_stack.back().active_polyline_sources(m_color_active).push_back(PPWH);
                             cout<<"fault in joining PPWH?"<<endl;
@@ -5192,12 +5174,10 @@ cout<<"work completed"<<endl;
                             states_stack.back().active_set(m_color_active).difference(states_stack.back().result_set());
                             states_stack.back().result_set().clear();
                             states_stack.back().result_polyline_sources().clear();
-                            cout<<"result container clear"<<endl;
                         }
                         mPolylinePolygonPieces.clear();
                     }
                 }
-cout<<"almost end of function"<<endl;
                 rOK = true ;
             }
         }
@@ -5206,10 +5186,8 @@ cout<<"almost end of function"<<endl;
             show_warning("Exception ocurred during reading of linear polygon set.");
         }
     }
-cout<<"full end of religion"<<endl;
     return rOK ;
 }
-
 bool MainWindow::read_bezier ( QString aFileName)
 {
 
@@ -5288,7 +5266,9 @@ bool MainWindow::read_bezier ( QString aFileName)
           if(b==0)
           {
             get_new_state(11);
-            states_stack.back().active_set(m_color_active).bezier().join( Bezier_polygon_with_holes(pgn) ) ;
+            auto x = states_stack.back().active_set(m_color_active).bezier();
+            cout<<typeid(x).name()<<endl<<typeid(pgn).name()<<"\n\n";
+            states_stack.back().active_set(m_color_active).bezier().join( Bezier_polygon_with_holes(pgn));
             Bezier_region_source br ;
             br.push_back (bb_source);
             states_stack.back().active_bezier_sources(m_color_active).push_back(br);
@@ -5866,7 +5846,6 @@ bool MainWindow::ensure_linear_mode()
         "Both types are not interoperable. In order to proceed, the polygons must be removed first.\n" \
         "Once deleted you cannot undo the action.\n" \
         "Yes to remove and proceed?\n");
-
     if (lProceed) {
       switch_sets_type(1);
       m_circular_input->Reset();
@@ -5875,7 +5854,7 @@ bool MainWindow::ensure_linear_mode()
       m_circular_active = false;
       m_bezier_active = false;
       m_polyline_active = false;
-      cout<<"End of ensure_linear_polygon()"<<endl;
+      //cout<<"End of ensure_linear_polygon()"<<endl;
     }
   }
   return !m_circular_active;
@@ -6069,7 +6048,7 @@ void MainWindow::on_actionInsertLinear_toggled(bool aChecked)
 {
   if(aChecked)
   {
-    cout<<"in insert linear function"<<endl;
+    //cout<<"in insert linear function"<<endl;
     this->graphicsView->setDragMode(QGraphicsView::NoDrag);
     if (ensure_linear_mode())
     {
@@ -6080,13 +6059,11 @@ void MainWindow::on_actionInsertLinear_toggled(bool aChecked)
           on_actionUndo_triggered();
         }
       }
-
       actionPAN->setChecked(false);
       m_pan = false;
       actionOpenLinear->setEnabled(true);
       actionOpenDXF->setEnabled(false);
       actionOpenBezier->setEnabled(false);
-      cout<<"above polyline"<<endl;
       actionOpenPolyline->setEnabled(false);
       actionInsertCircular->setChecked(false);
       actionInsertBezier->setChecked( false );
@@ -6100,7 +6077,6 @@ void MainWindow::on_actionInsertLinear_toggled(bool aChecked)
   	{
   	  actionInsertLinear->setChecked(false);
   	}
-    cout<<"end of insert linear"<<endl;
   }
 }
 
@@ -6295,7 +6271,7 @@ void MainWindow::on_actionIntersectionH_toggled(bool aChecked)
 {
   if(actionIntersectionH->isChecked())
   {
-    std::cout<<"Intersection"<<endl;
+    //std::cout<<"Intersection"<<endl;
     bool lDone = false;
     QCursor old = this->cursor();
     this->setCursor(Qt::WaitCursor);
@@ -6336,7 +6312,7 @@ void MainWindow::on_actionIntersectionH_toggled(bool aChecked)
         show_not_empty_warning();
       }
     }
-    cout<<m_bezier_active<<" "<<m_color_active<<endl;
+    //cout<<m_bezier_active<<" "<<m_color_active<<endl;
 	switch(m_color_active)
 	{
 	  case 0:
@@ -6363,7 +6339,7 @@ void MainWindow::on_actionIntersectionH_toggled(bool aChecked)
 	      states_stack.back().result_circular_sources().clear();
 	      states_stack.back().result_bezier_sources().clear();
           states_stack.back().result_polyline_sources().clear();
-	      std::cout<<"Blue"<<endl;
+	      //std::cout<<"Blue"<<endl;
 	  break;
 
 	  case 1:
@@ -6390,7 +6366,7 @@ void MainWindow::on_actionIntersectionH_toggled(bool aChecked)
 	      states_stack.back().result_circular_sources().clear();
 	      states_stack.back().result_bezier_sources().clear();
           states_stack.back().result_polyline_sources().clear();
-	      std::cout<<"Red"<<endl;
+	      //std::cout<<"Red"<<endl;
 	  break;
 
 	  case 2:
@@ -6417,7 +6393,7 @@ void MainWindow::on_actionIntersectionH_toggled(bool aChecked)
 	      states_stack.back().result_circular_sources().clear();
 	      states_stack.back().result_bezier_sources().clear();
           states_stack.back().result_polyline_sources().clear();
-	      std::cout<<"Black"<<endl;
+	      //std::cout<<"Black"<<endl;
 	  break;
 
 	  case 3:
@@ -6443,7 +6419,7 @@ void MainWindow::on_actionIntersectionH_toggled(bool aChecked)
 	      states_stack.back().result_circular_sources().clear();
 	      states_stack.back().result_bezier_sources().clear();
           states_stack.back().result_polyline_sources().clear();
-	      std::cout<<"Brown"<<endl;
+	      //std::cout<<"Brown"<<endl;
 	  break;
 
 	  case 4:
@@ -6469,7 +6445,7 @@ void MainWindow::on_actionIntersectionH_toggled(bool aChecked)
 	      states_stack.back().result_circular_sources().clear();
 	      states_stack.back().result_bezier_sources().clear();
           states_stack.back().result_polyline_sources().clear();
-	      std::cout<<"Yellow"<<endl;
+	      //std::cout<<"Yellow"<<endl;
 	  break;
 
 	  case 5:
@@ -6496,7 +6472,7 @@ void MainWindow::on_actionIntersectionH_toggled(bool aChecked)
           states_stack.back().result_circular_sources().clear();
           states_stack.back().result_bezier_sources().clear();
           states_stack.back().result_polyline_sources().clear();
-          std::cout<<"Magenta"<<endl;
+          //std::cout<<"Magenta"<<endl;
       break;
 
 	  case 6:
@@ -6522,14 +6498,14 @@ void MainWindow::on_actionIntersectionH_toggled(bool aChecked)
 	      states_stack.back().result_circular_sources().clear();
 	      states_stack.back().result_bezier_sources().clear();
           states_stack.back().result_polyline_sources().clear();
-	      std::cout<<"Aqua"<<endl;
+	      //std::cout<<"Aqua"<<endl;
 	  break;
 
 	  default: break;
 	}
 
     actionIntersectionH->setChecked(false);
-    cout<<"End of Intersection"<<endl;
+    //cout<<"End of Intersection"<<endl;
     lDone = true;
     this->setCursor(old);
     if (lDone) modelChanged();
@@ -6801,7 +6777,6 @@ void MainWindow::on_actionSymmetric_DifferenceH_toggled(bool aChecked)
 {
   if(actionSymmetric_DifferenceH->isChecked())
   {
-    std::cout<<"IN sym_diff main"<<std::endl;
     bool lDone = false;
 	QCursor old = this->cursor();
 	this->setCursor(Qt::WaitCursor);
@@ -6843,7 +6818,6 @@ void MainWindow::on_actionSymmetric_DifferenceH_toggled(bool aChecked)
         show_not_empty_warning();
       }
     }
-    std::cout<<m_color_active<<" "<<m_bezier_active<<endl;
 	switch(m_color_active)
 	{
         case 0:
@@ -6936,7 +6910,6 @@ void MainWindow::on_actionSymmetric_DifferenceH_toggled(bool aChecked)
 	            states_stack.back().result_set().clear();states_stack.back().result_linear_sources().clear();
 	            states_stack.back().result_circular_sources().clear();states_stack.back().result_polyline_sources().clear();
 	            states_stack.back().result_bezier_sources().clear();
-	            std::cout<<"BROWN"<<endl;
 	    break;
 
 	    case 4:
@@ -7011,7 +6984,6 @@ void MainWindow::on_actionSymmetric_DifferenceH_toggled(bool aChecked)
 	  }
 
     actionSymmetric_DifferenceH->setChecked(false);
-	std::cout<<"End of Symmetric Difference"<<endl;
     lDone = true;
     this->setCursor(old);
     if (lDone) modelChanged();
@@ -7065,7 +7037,6 @@ void MainWindow::on_actionUnionH_toggled(bool aChecked)
         show_not_empty_warning();
       }
     }
-    std::cout<<m_color_active<<" "<<m_bezier_active<<endl;
 
 	switch(m_color_active)
 	{
@@ -7128,7 +7099,6 @@ void MainWindow::on_actionUnionH_toggled(bool aChecked)
 
 	        states_stack.back().result_set().difference(states_stack.back().brown_set());
 	        states_stack.back().brown_set().join(states_stack.back().result_set());
-	        std::cout<<"BROWN"<<endl;
 	        states_stack.back().result_set().clear();states_stack.back().result_linear_sources().clear();
 	        states_stack.back().result_circular_sources().clear();states_stack.back().result_polyline_sources().clear();
 	        states_stack.back().result_bezier_sources().clear();
@@ -7995,7 +7965,7 @@ void MainWindow::exception_handler()
   {
     if(ensure_linear_mode())
     {
-      cout<<"HERE in exception handler"<<endl;
+      //cout<<"HERE in exception handler"<<endl;
       m_linear_input -> Reset();
       m_linear_input -> mState = m_linear_input -> Start;
     }
@@ -8028,7 +7998,7 @@ void MainWindow::processInput(CGAL::Object o)
   Linear_polygon lLI;
   Circular_polygon lCI;
   Polyline_polygon lPI;
-
+//<<"in process input"<<endl;
   try
   {
     if(CGAL::assign(lBI, o))
@@ -8059,8 +8029,10 @@ void MainWindow::processInput(CGAL::Object o)
 
     else if (CGAL::assign(lLI, o))
     {
+        //cout<<"above linear in process input"<<endl;
       if (ensure_linear_mode())
       {
+          //cout<<"inside braces"<<endl;
         CGAL::Orientation orient = lLI.orientation();
         if (orient == CGAL::CLOCKWISE)
         {
