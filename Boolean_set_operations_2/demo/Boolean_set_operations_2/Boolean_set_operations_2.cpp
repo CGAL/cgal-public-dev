@@ -4872,6 +4872,7 @@ bool MainWindow::read_linear( QString aFileName, Linear_polygon_set& rSet, Linea
               lp.reverse_orientation();
             }
             Linear_polygon_with_holes lCPWH(lp);
+            cout<<lCPWH<<"\n\n";
 
             if(r==0)
             {
@@ -5155,15 +5156,15 @@ bool MainWindow::read_polyline( QString aFileName, Polyline_polygon_set &rSet, P
                             pp.reverse_orientation();
                         }
                         Polyline_polygon_with_holes PPWH(pp);
+                        cout<<PPWH<<"\n\n";
                         if(r==0)
                         {
                             get_new_state(11);
                             auto x=states_stack.back().active_set(m_color_active).polyline();
-                            cout<<typeid(x).name()<<endl<< typeid(PPWH).name()<<"\n\n"<<"above fault"<<endl;
-                            x.intersection(PPWH);
+                            cout<<typeid(x).name()<<endl<< typeid(PPWH).name()<<"\n"<<"above fault"<<endl;
+                            states_stack.back().active_set(m_color_active).polyline().join(PPWH);
                             cout<<"above fault 2"<<endl;
                             states_stack.back().active_polyline_sources(m_color_active).push_back(PPWH);
-                            cout<<"fault in joining PPWH?"<<endl;
                         }
                         else
                         {
@@ -5180,6 +5181,7 @@ bool MainWindow::read_polyline( QString aFileName, Polyline_polygon_set &rSet, P
                 }
                 rOK = true ;
             }
+            cout<<"end of read polyline"<<endl;
         }
         catch(...)
         {
@@ -5655,54 +5657,6 @@ bool save_bezier_result ( QString aFileName, Bezier_polygon_set const& aSet )
   return rOK ;
 }
 
-/* bool save_bezier_sources ( QString aFileName, Bezier_region_source_container const& aSources )
-// {
-//   bool rOK = false ;
-
-//   std::ofstream out_file( qPrintable(aFileName) ) ;
-//   if ( out_file )
-//   {
-//     out_file << std::setprecision(19);
-
-//     out_file << "DOUBLE" << std::endl ;
-
-//     out_file << aSources.size() << std::endl ;
-
-//     for( Bezier_region_source_container::const_iterator rit = aSources.begin();
-//       rit != aSources.end() ; ++ rit )
-//     {
-//       Bezier_region_source const& br = *rit ;
-
-//       out_file << "  " << br.size() << std::endl ;
-
-//       for( Bezier_region_source::const_iterator bit = br.begin(); bit != br.end() ; ++ bit )
-//       {
-//         Bezier_boundary_source const& bb = *bit ;
-
-//         out_file << "   " << bb.size() << std::endl ;
-
-//         for ( Bezier_boundary_source::const_iterator cit = bb.begin() ; cit != bb.end() ; ++ cit )
-//         {
-//           Bezier_curve const& bc = *cit ;
-
-//           out_file << "    " << bc.number_of_control_points() << std::endl ;
-
-//           for ( Bezier_curve::Control_point_iterator pit = bc.control_points_begin() ;
-//            pit != bc.control_points_end() ; ++ pit )
-//           {
-//             out_file << "     " << CGAL::to_double(pit->x()) << " " << CGAL::to_double(pit->y()) << std::endl ;
-//           }
-//         }
-//       }
-//     }
-
-//     rOK = true ;
-//   }
-
-//   return rOK ;
-
-// }*/
-
 //"file:save active bucket" button pressed
 void MainWindow::on_actionSaveCurrentBucket_triggered()
 {
@@ -6048,7 +6002,6 @@ void MainWindow::on_actionInsertLinear_toggled(bool aChecked)
 {
   if(aChecked)
   {
-    //cout<<"in insert linear function"<<endl;
     this->graphicsView->setDragMode(QGraphicsView::NoDrag);
     if (ensure_linear_mode())
     {
@@ -6312,7 +6265,6 @@ void MainWindow::on_actionIntersectionH_toggled(bool aChecked)
         show_not_empty_warning();
       }
     }
-    //cout<<m_bezier_active<<" "<<m_color_active<<endl;
 	switch(m_color_active)
 	{
 	  case 0:
@@ -7965,7 +7917,6 @@ void MainWindow::exception_handler()
   {
     if(ensure_linear_mode())
     {
-      //cout<<"HERE in exception handler"<<endl;
       m_linear_input -> Reset();
       m_linear_input -> mState = m_linear_input -> Start;
     }
@@ -8029,10 +7980,8 @@ void MainWindow::processInput(CGAL::Object o)
 
     else if (CGAL::assign(lLI, o))
     {
-        //cout<<"above linear in process input"<<endl;
       if (ensure_linear_mode())
       {
-          //cout<<"inside braces"<<endl;
         CGAL::Orientation orient = lLI.orientation();
         if (orient == CGAL::CLOCKWISE)
         {
