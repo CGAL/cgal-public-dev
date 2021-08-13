@@ -375,9 +375,9 @@ public:
         FT lys = last_point .y();
         xcvs.push_back(Linear_X_monotone_curve( Point(lxs,lys), Point(fxs,fys)));
         Linear_polygon lp(xcvs.begin(), xcvs.end());
-        for (auto &i:xcvs)
+       /* for (auto &i:xcvs)
             cout<<i<<endl;
-        cout<<endl;
+        cout<<endl;*/
         emit(generate(boost::variant<Linear_polygon>(lp)));
       }
     }
