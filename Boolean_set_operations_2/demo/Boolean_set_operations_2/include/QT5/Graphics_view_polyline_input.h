@@ -388,12 +388,15 @@ namespace CGAL {
                             //cout<<"point"<<endl;
                             Gps_traits x;
                             X_monotone_subcurve_2 seg=x.subcurve_traits_2()->
-                                    construct_x_monotone_curve_2_object()(Point(fxs,fys),Point(lxs,lys));
+                                    construct_x_monotone_curve_2_object()(Point(lxs,lys),Point(fxs,fys));//
 
                             xcvs.push_back(Polyline_X_monotone_curve(seg));
                         }
                         m_last = false;
                         m_last_polyline = false;
+                        /*for(auto &i:xcvs)
+                            cout<<i<<endl;
+                        cout<<endl;*/
                         Polyline_polygon pp(xcvs.begin(), xcvs.end());
                         emit(generate(boost::variant<Polyline_polygon>(pp)));
                     }
