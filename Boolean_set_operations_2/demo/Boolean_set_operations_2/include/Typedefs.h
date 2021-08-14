@@ -58,7 +58,6 @@
 #include "QT5/Polygon_set_2.h"
 #include "QT5/BezierCurves.h"
 
-//todo:- go through this file and clean it up as required
 
 //Linear Polygons
 
@@ -78,12 +77,7 @@ typedef std::vector<Linear_polygon_with_holes>                   Linear_region_s
 typedef std::vector<Linear_curve>                                Linear_boundary_source ;
 typedef std::vector<Linear_boundary_source>                      Linear_region_source ;
 
-
-//Polyline Traits
-//Kernel defined above we'll be using the same kernel
-//typedef CGAL::General_polygon_2<Kernel>                             General_polygon_2;
-//typedef CGAL::General_polygon_with_holes_2<Kernel>                  General_polygon_with_holes_2;
-
+//Polyline traits. Kernel is same as linear
 typedef CGAL::Arr_segment_traits_2<Kernel>                                 Segment_traits_2;
 typedef CGAL::Gps_traits_2<CGAL::Arr_polyline_traits_2<Segment_traits_2> > Polyline_traits;
 typedef Polyline_traits::Polygon_2                                         Polyline_polygon;
@@ -147,7 +141,6 @@ typedef Bezier_traits::X_monotone_curve_2               Bezier_X_monotone_curve;
 typedef Bezier_traits::Point_2                          Bezier_point;
 typedef CGAL::Gps_traits_2<Bezier_traits>               Bezier_gps_traits;
 typedef Bezier_gps_traits::General_polygon_2            Bezier_polygon;
-//typedef Bezier_traits::General_polygon_2                Bezier_polygon;
 typedef std::vector<Bezier_polygon>                     Bezier_polygon_vector ;
 typedef Bezier_gps_traits::General_polygon_with_holes_2 Bezier_polygon_with_holes;
 typedef CGAL::General_polygon_set_2<Bezier_gps_traits>  Bezier_polygon_set ;

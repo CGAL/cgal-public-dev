@@ -201,65 +201,6 @@ void error_handler(char const *what, char const *expr, char const *file,
 }
 
 
-//Errors
-/*
-// opened data bezier complement
-// CGAL error: precondition violation!
-// Expr: comp_f(object, nodeP->object) != LARGER
-// File: /home/ronnie8888/Documents/cgal-public-dev/STL_Extension/include/CGAL/Multiset.h
-// Line: 2140
-// Explanation:
-
-// opened data sym diff
-// CGAL error: precondition violation!
-// Expr: ! _predP->is_valid() || comp_f(object, _predP->object) != SMALLER
-// File: /home/ronnie8888/Documents/cgal-public-dev/STL_Extension/include/CGAL/Multiset.h
-// Line: 2142
-// Explanation:
-
-// CGAL error: precondition violation!
-// Expr: comp_f(object, parentP->object) != SMALLER
-// File: /home/ronnie8888/Documents/cgal-public-dev/STL_Extension/include/CGAL/Multiset.h
-// Line: 2128
-// Explanation:
-
-// CGAL error: warning violation!
-// Expr: holes_disjoint
-// File: /home/ronnie8888/Documents/cgal-public-dev/Boolean_set_operations_2/include/CGAL/Boolean_set_operations_2/Gps_polygon_validation.h
-// Line: 788
-// Explanation:Holes of the PWH intersect amongst themselves or with outer boundary
-
-
-
-// CGAL error: assertion violation!
-// Expr:
-// File: /home/ronnie8888/Documents/cgal-public-dev/Arrangement_on_surface_2/include/CGAL/Arr_geometry_traits/Bezier_point_2.h
-// Line: 1684
-// Explanation:
-
-// CGAL error: assertion violation!
-// Expr: is_new == true
-// File: /home/ronnie8888/Documents/cgal-public-dev/Arrangement_on_surface_2/include/CGAL/Surface_sweep_2/Arr_overlay_ss_visitor.h
-// Line: 209
-// Explanation:
-
-// CGAL error: assertion violation!
-// Expr: _inc_to_right != cv._inc_to_right
-// File: /home/ronnie8888/Documents/cgal-public-dev/Arrangement_on_surface_2/include/CGAL/Arr_geometry_traits/Bezier_x_monotone_2.h
-// Line: 1122
-// Explanation:
-
-// CGAL error: precondition violation!
-// Expr: ! is_degen
-// File: /home/ronnie8888/Documents/cgal-public-dev/Arrangement_on_surface_2/include/CGAL/Arr_segment_traits_2.h
-// Line: 145
-// Explanation:Cannot construct a degenerate segment
-
-*/
-//A way to maintain 3 set of polygons namely red,blue and result for all
-// boolean operations
-
-
 enum {
     BLUE_GROUP, RED_GROUP, BLACK_GROUP, BROWN_GROUP, YELLOW_GROUP,
     MAGENTA_GROUP, AQUA_GROUP, RESULT_GROUP
@@ -291,7 +232,6 @@ QBrush sBrushes[] = {
         QBrush(QColor(0, 255, 255, 75)),         //aqua
         QBrush(QColor(0, 0, 0, 0)),              //Result
 };
-//**************************************
 
 //A base call for rep class
 struct Rep_base {
@@ -3576,11 +3516,6 @@ void MainWindow::on_actionUndo_triggered() {
 }
 
 void MainWindow::on_actionNew_triggered() {
-    /* while(m_state_num>1)
-  // {
-  //   on_actionUndo_triggered();
-  // }
-*/
 
     if (m_state_num > 1) get_new_state(6);
 
@@ -3648,12 +3583,6 @@ void MainWindow::on_actionNew_triggered() {
     actionMinusColor->setEnabled(false);
 
     m_disjoint = false;
-    // empty_warn = true;
-
-    /* if(m_grid)
-  // {
-  //   on_actionAxis_triggered();
-  // }*/
 
     m_linear_input->Reset();
     m_circular_input->Reset();
@@ -4316,51 +4245,6 @@ void MainWindow::on_actionOpenPolyline_triggered() {
                                       tr("Open Polyline Polygon"), "./data",
                                       tr("Polyline Curve files (*.mps)")));
 }
-
-
-//To be done in GSoC2020
-/*for converting linear part of circular polygon to circular part
-/*Circular_polygon linearPart_2_circ(Circular_Linear_polygon const& pgn)
-{
-  CGAL::Cartesian_converter<Kernel,Kernel> convert;
-  Circular_polygon rCP;
-  for (auto ei = pgn.edges_begin(); ei != pgn.edges_end(); ++ei) {
-    if (ei->source() != ei->target())
-      rCP.push_back(Circular_X_monotone_curve(convert(ei->source()),
-                                              convert(ei->target())));
-  }
-  return rCP;
-}
-//for converting linear part of circular polygon with holes to circular part
-Circular_polygon_with_holes
-linearPart_2_circ(Circular_Linear_polygon_with_holes const& pwh)
-{
-  Circular_polygon_with_holes rCP(linearPart_2_circ(pwh.outer_boundary()));
-  for (auto hi = pwh.holes_begin(); hi != pwh.holes_end(); ++ hi)
-    rCP.add_hole(linearPart_2_circ(*hi) );
-  return rCP;
-}*/
-/*Circular_polygon linear_2_circ( Linear_polygon const& pgn )
-// {
-//   CGAL::Cartesian_converter<Linear_kernel,Gps_circular_kernel> convert ;
-
-//   Circular_polygon rCP;
-
-//   for( Linear_polygon::Edge_const_iterator ei = pgn.edges_begin(); ei != pgn.edges_end(); ++ei )
-//   {
-//     if  ( ei->source() != ei->target() )
-//       rCP.push_back( Circular_X_monotone_curve( convert(ei->source()), convert(ei->target())) );
-//   }
-//   return rCP;
-// }
-// Circular_polygon_with_holes linear_2_circ( Linear_polygon_with_holes const& pwh )
-// {
-//   Circular_polygon_with_holes rCP( linear_2_circ(pwh.outer_boundary()) ) ;
-
-//   for( Linear_polygon_with_holes::Hole_const_iterator hi = pwh.holes_begin(); hi != pwh.holes_end(); ++ hi )
-//     rCP.add_hole( linear_2_circ(*hi)  );
-//   return rCP;
-// }*/
 
 bool MainWindow::read_linear(QString aFileName, Linear_polygon_set &rSet, Linear_region_source_container &rSources) {
     bool rOK = false;
@@ -5204,7 +5088,8 @@ void MainWindow::on_actionSaveCurrentBucket_triggered() {
 }
 
 //check out
-void MainWindow::switch_set_type(Curve_set &aSet, int aType) {
+void MainWindow::switch_set_type(Curve_set &aSet, int aType)
+{
     unlink_GI(aSet.gi());
     aSet.reset_type(aType);
     link_GI(aSet.gi());
@@ -5288,7 +5173,7 @@ bool MainWindow::ensure_linear_mode() {
             lProceed = ask_user_yesno("Linear mode switch",
                                       "You are about to load a linear poygon, but there are circular/bezier/polyline polygons already loaded.\n" \
         "Both types are not interoperable. In order to proceed, the polygons must be removed first.\n" \
-        "Once deleted you cannot undo the action.\n" \
+        "Once deleted you cannot undo the action.\n"
         "Yes to remove and proceed?\n");
         if (lProceed) {
             switch_sets_type(1);

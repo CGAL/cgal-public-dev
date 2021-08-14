@@ -79,7 +79,6 @@ namespace CGAL {
             Graphics_view_polyline_input(QObject *aParent, QGraphicsScene *aScene)
                     :
                     GraphicsViewInput(aParent), mScene(aScene)
-                    //, mPolylineGI        (new GI(&mPolylinePolygonPieces))
                     , mOngoingPieceGI(new GI(&mOngoingPieceCtr)), mHandleGI(new QGraphicsLineItem()),
                     mPolylinePolygonPen(QColor(0, 255, 0)), mOngoingCurvePen(QColor(255, 0, 0)),
                     mHandlePen(QColor(0, 0, 255)), mState(Start), m_bound_rect(true), m_last_polyline(false),
