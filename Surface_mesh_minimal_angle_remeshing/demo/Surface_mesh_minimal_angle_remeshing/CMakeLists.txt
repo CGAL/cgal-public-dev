@@ -1,6 +1,6 @@
 # This is the CMake script for compiling the CGALRemeshing.
 
-project( CGALRemeshing )
+project( Minimal_angle_remeshing_Demo )
 
 # Find includes in corresponding build directories
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
