@@ -1024,12 +1024,9 @@ protected
 //defining QT slots for GUI integration
 public
     slots:
+    //for all the operations such as union, complement, difference
 
-            //for all the operations such as union, complement, difference
-            void processInput(CGAL::Object
-    o);
-
-    void processInput(boost::variant <Linear_polygon> &lp);
+    void processInput(CGAL::Object o);
 
     void on_actionUndo_triggered();
 
@@ -5175,16 +5172,21 @@ bool MainWindow::ensure_linear_mode() {
         "Both types are not interoperable. In order to proceed, the polygons must be removed first.\n" \
         "Once deleted you cannot undo the action.\n"
         "Yes to remove and proceed?\n");
+
+       // cout<<"Linear Mode"<<endl;
         if (lProceed) {
+            //cout<<"fault 1"<<endl;
             switch_sets_type(1);
             m_circular_input->Reset();
             m_bezier_input->Reset();
             m_polyline_input->Reset();
             m_circular_active = false;
             m_bezier_active = false;
+            //cout<<"fault 3"<<endl;
             m_polyline_active = false;
             //cout<<"End of ensure_linear_polygon()"<<endl;
         }
+        //cout<<"end of this function"<<endl;
     }
     return !m_circular_active;
 }
@@ -7336,7 +7338,7 @@ void MainWindow::on_actionPAN_triggered() {
     }
 }
 
-//??????
+//add colors(represented by wheel)
 void MainWindow::wheelEvent(QWheelEvent *event) {
 
     this->graphicsView->setTransformationAnchor(QGraphicsView::AnchorViewCenter);
@@ -7575,7 +7577,7 @@ void MainWindow::processInput(CGAL::Object o) {
     Linear_polygon lLI;
     Circular_polygon lCI;
     Polyline_polygon lPI;
-//<<"in process input"<<endl;
+    //cout<<"in process input"<<endl;
     try {
         if (CGAL::assign(lBI, o)) {
             if (ensure_bezier_mode()) {
@@ -7660,38 +7662,6 @@ void MainWindow::processInput(CGAL::Object o) {
         on_actionUndo_triggered();
     }
     modelChanged();
-}
-
-void MainWindow::processInput(boost::variant <Linear_polygon> &lp) {
-    auto *lLI = boost::get<Linear_polygon>(&lp);
-    try {
-        if (ensure_linear_mode()) {
-            CGAL::Orientation orient = (*lLI).orientation();
-            if (orient == CGAL::CLOCKWISE) {
-                (*lLI).reverse_orientation();
-            }
-            Linear_polygon_with_holes lCPWH(*lLI);
-
-            if (!m_linear_input->isboundingRect() && !m_linear_input->ishole()) {
-                if (!m_linear_input->is_mink()) {
-                    get_new_state(11);
-                }
-                states_stack.back().active_set(m_color_active).linear().join(lCPWH);
-                states_stack.back().active_linear_sources(m_color_active).push_back(lCPWH);
-            } else {
-                states_stack.back().result_set().linear().join(lCPWH);
-                states_stack.back().result_linear_sources().push_back(lCPWH);
-                if (m_linear_input->ishole()) {
-                    states_stack.back().active_set(m_color_active).difference(states_stack.back().result_set());
-                    states_stack.back().result_set().clear();
-                    states_stack.back().result_linear_sources().clear();
-                }
-            }
-        }
-    }
-    catch (const std::exception &e) {
-        on_actionUndo_triggered();
-    }
 }
 
 #include "Boolean_set_operations_2.moc"
