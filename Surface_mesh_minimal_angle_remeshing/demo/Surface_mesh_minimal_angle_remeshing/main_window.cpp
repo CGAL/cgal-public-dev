@@ -1,13 +1,13 @@
-#include "Main_window.h"
+#include "main_window.h"
 // Qt
 //#include <QFileDialog>
 //#include <qsettings.h>
 // local
-#include "ui_Main_window.h"
-#include "ui_Isotropic_parameters.h"
-#include "Isotropic_parameters.h"
-#include "ui_MinAngle_parameters.h"
-#include "MinAngle_parameters.h"
+#include "ui_main_window.h"
+#include "ui_isotropic_parameters.h"
+#include "isotropic_parameters.h"
+#include "ui_minimal_angle_parameters.h"
+#include "minimal_angle_parameters.h"
 
 MainWindow::MainWindow(QWidget *parent)
   : CGAL::Qt::DemosMainWindow(parent) {

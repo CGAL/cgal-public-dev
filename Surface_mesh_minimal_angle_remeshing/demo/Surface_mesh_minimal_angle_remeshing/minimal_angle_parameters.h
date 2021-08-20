@@ -12,7 +12,7 @@
 #ifndef CGAL_MINANGLE_PARAMETERS_H
 #define CGAL_MINANGLE_PARAMETERS_H
 
-#include "ui_MinAngle_parameters.h"
+#include "ui_minimal_angle_parameters.h"
 
 class MinAngleParameters : public QDialog, private Ui_MinAngleParametersDialog {
   Q_OBJECT

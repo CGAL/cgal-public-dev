@@ -2,7 +2,7 @@
 #include <QMimeData>
 #include <CGAL/Qt/resources.h>
 #include <QLabel>
-#include "Main_window.h"
+#include "main_window.h"
 
 int main(int argc, char **argv) {
   QApplication app(argc, argv);
@@ -33,11 +33,11 @@ int main(int argc, char **argv) {
   return app.exec();
 }
 
-#include "Scene.cpp"
-#include "Scene_moc.cpp"
-#include "Viewer.cpp"
-#include "Viewer_moc.cpp"
-#include "Main_window.cpp"
-#include "Main_window_moc.cpp"
-#include "Isotropic_parameters_moc.cpp"
-#include "MinAngle_parameters_moc.cpp"
+#include "scene.cpp"
+#include "scene_moc.cpp"
+#include "viewer.cpp"
+#include "viewer_moc.cpp"
+#include "main_window.cpp"
+#include "main_window_moc.cpp"
+#include "isotropic_parameters_moc.cpp"
+#include "minimal_angle_parameters_moc.cpp"

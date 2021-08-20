@@ -22,7 +22,7 @@
 //#include <CGAL/Qt/qglviewer.h>
 
 // local
-#include "Viewer.h"
+#include "viewer.h"
 #include "types.h"
 
 class Scene : public QObject {

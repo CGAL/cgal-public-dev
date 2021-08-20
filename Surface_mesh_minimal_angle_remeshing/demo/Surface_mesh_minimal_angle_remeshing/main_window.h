@@ -16,7 +16,7 @@
 //#include <QtOpenGL/qgl.h>
 #include <CGAL/Qt/DemosMainWindow.h>
 // local
-#include "Scene.h"
+#include "scene.h"
 
 //class Viewer;
 namespace Ui {

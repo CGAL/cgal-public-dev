@@ -1,4 +1,4 @@
-# This is the CMake script for compiling the CGALRemeshing.
+# This is the CMake script for compiling the Minimal_angle_remeshing_Demo.
 
 project( Minimal_angle_remeshing_Demo )
 
@@ -30,47 +30,47 @@ include( ${CGAL_USE_FILE} )
 
 if(CGAL_FOUND AND CGAL_Qt5_FOUND AND Qt5_FOUND)
 
-  qt5_wrap_ui( UI_FILES Main_window.ui Isotropic_parameters.ui MinAngle_parameters.ui)
+  qt5_wrap_ui( UI_FILES Main_window.ui isotropic_parameters.ui minimal_angle_parameters.ui)
 
   include(AddFileDependencies)
 
-  qt5_generate_moc( "Main_window.h" "${CMAKE_CURRENT_BINARY_DIR}/Main_window_moc.cpp" )
-  add_file_dependencies( Main_window_moc.cpp "${CMAKE_CURRENT_SOURCE_DIR}/Main_window.h" )
+  qt5_generate_moc( "main_window.h" "${CMAKE_CURRENT_BINARY_DIR}/main_window_moc.cpp" )
+  add_file_dependencies( main_window_moc.cpp "${CMAKE_CURRENT_SOURCE_DIR}/main_window.h" )
 
-  qt5_generate_moc( "Viewer.h" "${CMAKE_CURRENT_BINARY_DIR}/Viewer_moc.cpp" )
-  add_file_dependencies( Viewer_moc.cpp "${CMAKE_CURRENT_SOURCE_DIR}/Viewer.h" )
+  qt5_generate_moc( "viewer.h" "${CMAKE_CURRENT_BINARY_DIR}/viewer_moc.cpp" )
+  add_file_dependencies( viewer_moc.cpp "${CMAKE_CURRENT_SOURCE_DIR}/viewer.h" )
 
-  qt5_generate_moc( "Scene.h" "${CMAKE_CURRENT_BINARY_DIR}/Scene_moc.cpp" )
-  add_file_dependencies( Scene_moc.cpp "${CMAKE_CURRENT_SOURCE_DIR}/Scene.h" )
+  qt5_generate_moc( "scene.h" "${CMAKE_CURRENT_BINARY_DIR}/scene_moc.cpp" )
+  add_file_dependencies( scene_moc.cpp "${CMAKE_CURRENT_SOURCE_DIR}/scene.h" )
 
-  qt5_generate_moc( "Isotropic_parameters.h" "${CMAKE_CURRENT_BINARY_DIR}/Isotropic_parameters_moc.cpp" )
-  add_file_dependencies( Isotropic_parameters_moc.cpp "${CMAKE_CURRENT_SOURCE_DIR}/Isotropic_parameters.h" )
+  qt5_generate_moc( "isotropic_parameters.h" "${CMAKE_CURRENT_BINARY_DIR}/isotropic_parameters_moc.cpp" )
+  add_file_dependencies( isotropic_parameters_moc.cpp "${CMAKE_CURRENT_SOURCE_DIR}/isotropic_parameters.h" )
 
-  qt5_generate_moc( "MinAngle_parameters.h" "${CMAKE_CURRENT_BINARY_DIR}/MinAngle_parameters_moc.cpp" )
-  add_file_dependencies( MinAngle_parameters_moc.cpp "${CMAKE_CURRENT_SOURCE_DIR}/MinAngle_parameters.h" )
+  qt5_generate_moc( "minimal_angle_parameters.h" "${CMAKE_CURRENT_BINARY_DIR}/minimal_angle_parameters_moc.cpp" )
+  add_file_dependencies( minimal_angle_parameters_moc.cpp "${CMAKE_CURRENT_SOURCE_DIR}/minimal_angle_parameters.h" )
 
-  qt5_add_resources ( CGAL_Qt5_RESOURCE_FILES CGAL_remeshing.qrc )
+  qt5_add_resources ( CGAL_Qt5_RESOURCE_FILES minimal_angle_remeshing_demo.qrc )
 
-  add_file_dependencies( CGAL_remeshing.cpp "${CMAKE_CURRENT_BINARY_DIR}/Main_window_moc.cpp"
-                                       "${CMAKE_CURRENT_BINARY_DIR}/Viewer_moc.cpp"
-                                       "${CMAKE_CURRENT_BINARY_DIR}/Scene_moc.cpp" 
-	                       "${CMAKE_CURRENT_BINARY_DIR}/Isotropic_parameters_moc.cpp"
-		       "${CMAKE_CURRENT_BINARY_DIR}/MinAngle_parameters_moc.cpp")
+  add_file_dependencies( minimal_angle_remeshing_demo.cpp "${CMAKE_CURRENT_BINARY_DIR}/main_window_moc.cpp"
+                                       "${CMAKE_CURRENT_BINARY_DIR}/viewer_moc.cpp"
+                                       "${CMAKE_CURRENT_BINARY_DIR}/scene_moc.cpp" 
+	                       "${CMAKE_CURRENT_BINARY_DIR}/isotropic_parameters_moc.cpp"
+		       "${CMAKE_CURRENT_BINARY_DIR}/minimal_angle_parameters_moc.cpp")
 
-  add_executable  ( CGALRemeshing CGAL_remeshing.cpp ${UI_FILES} ${CGAL_Qt5_RESOURCE_FILES} 
+  add_executable  ( Minimal_angle_remeshing_Demo minimal_angle_remeshing_demo.cpp ${UI_FILES} ${CGAL_Qt5_RESOURCE_FILES} 
     #${CGAL_Qt5_MOC_FILES}
     )
   # Link with Qt libraries
-  target_link_libraries( CGALRemeshing PRIVATE
+  target_link_libraries( Minimal_angle_remeshing_Demo PRIVATE
     Qt5::OpenGL Qt5::Gui Qt5::Xml
     CGAL::CGAL
     CGAL::CGAL_Qt5
     )
 
-  add_to_cached_list( CGAL_EXECUTABLE_TARGETS CGALRemeshing )
+  add_to_cached_list( CGAL_EXECUTABLE_TARGETS Minimal_angle_remeshing_Demo )
 
   include(${CGAL_MODULES_DIR}/CGAL_add_test.cmake)
-  cgal_add_compilation_test(CGALRemeshing)
+  cgal_add_compilation_test(Minimal_angle_remeshing_Demo)
 
 else (CGAL_FOUND AND CGAL_Qt5_FOUND AND Qt5_FOUND)
 

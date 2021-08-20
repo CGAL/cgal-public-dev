@@ -1,5 +1,5 @@
-#include "Viewer.h"
-#include "Scene.h"
+#include "viewer.h"
+#include "scene.h"
 #include <QMouseEvent>
 #include <QGLFunctions>
 #include <CGAL/Qt/CreateOpenGLContext.h>

@@ -12,7 +12,7 @@
 #ifndef CGAL_ISOTROPIC_PARAMETERS_H
 #define CGAL_ISOTROPIC_PARAMETERS_H
 
-#include "ui_Isotropic_parameters.h"
+#include "ui_isotropic_parameters.h"
 
 class IsotropicParameters : public QDialog, private Ui_IsotropicParametersDialog {
   Q_OBJECT
