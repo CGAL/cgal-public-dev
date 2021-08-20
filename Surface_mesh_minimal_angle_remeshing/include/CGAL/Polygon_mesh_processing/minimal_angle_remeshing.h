@@ -9,8 +9,8 @@
 //
 // Author(s)     : Kaimo Hu
 
-#ifndef CGAL_SURFACE_MESH_MINIMAL_ANGLE_REMESHING_H
-#define CGAL_SURFACE_MESH_MINIMAL_ANGLE_REMESHING_H
+#ifndef CGAL_SURFACE_MESH_MINIMAL_ANGLE_REMESHING_MINIMAL_ANGLE_REMESHING_H
+#define CGAL_SURFACE_MESH_MINIMAL_ANGLE_REMESHING_MINIMAL_ANGLE_REMESHING_H
 
 #include <CGAL/Polygon_mesh_processing/internal/named_function_params.h>
 #include <CGAL/Polygon_mesh_processing/internal/named_params_helper.h>
@@ -583,4 +583,4 @@ void minimal_angle_remeshing(TriangleMesh& tm)
 
 } } // end of CGAL::Polygon_mesh_processing
 
-#endif  // CGAL_SURFACE_MESH_MINIMAL_ANGLE_REMESHING_H //
+#endif  // CGAL_SURFACE_MESH_MINIMAL_ANGLE_REMESHING_MINIMAL_ANGLE_REMESHING_H //
