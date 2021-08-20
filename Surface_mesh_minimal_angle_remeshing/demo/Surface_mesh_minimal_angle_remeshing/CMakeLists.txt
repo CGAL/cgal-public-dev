@@ -1,6 +1,6 @@
-# This is the CMake script for compiling the Minimal_angle_remeshing_Demo.
+# This is the CMake script for compiling the Surface_mesh_minimal_angle_remeshing Demo.
 
-project( Minimal_angle_remeshing_Demo )
+project( Surface_mesh_minimal_angle_remeshing_Demo )
 
 # Find includes in corresponding build directories
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
@@ -57,20 +57,20 @@ if(CGAL_FOUND AND CGAL_Qt5_FOUND AND Qt5_FOUND)
 	                       "${CMAKE_CURRENT_BINARY_DIR}/isotropic_parameters_moc.cpp"
 		       "${CMAKE_CURRENT_BINARY_DIR}/minimal_angle_parameters_moc.cpp")
 
-  add_executable  ( Minimal_angle_remeshing_Demo minimal_angle_remeshing_demo.cpp ${UI_FILES} ${CGAL_Qt5_RESOURCE_FILES} 
+  add_executable  ( Surface_mesh_minimal_angle_remeshing_Demo minimal_angle_remeshing_demo.cpp ${UI_FILES} ${CGAL_Qt5_RESOURCE_FILES} 
     #${CGAL_Qt5_MOC_FILES}
     )
   # Link with Qt libraries
-  target_link_libraries( Minimal_angle_remeshing_Demo PRIVATE
+  target_link_libraries( Surface_mesh_minimal_angle_remeshing_Demo PRIVATE
     Qt5::OpenGL Qt5::Gui Qt5::Xml
     CGAL::CGAL
     CGAL::CGAL_Qt5
     )
 
-  add_to_cached_list( CGAL_EXECUTABLE_TARGETS Minimal_angle_remeshing_Demo )
+  add_to_cached_list( CGAL_EXECUTABLE_TARGETS Surface_mesh_minimal_angle_remeshing_Demo )
 
   include(${CGAL_MODULES_DIR}/CGAL_add_test.cmake)
-  cgal_add_compilation_test(Minimal_angle_remeshing_Demo)
+  cgal_add_compilation_test(Surface_mesh_minimal_angle_remeshing_Demo)
 
 else (CGAL_FOUND AND CGAL_Qt5_FOUND AND Qt5_FOUND)
 
