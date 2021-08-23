@@ -577,6 +577,27 @@ public:
         root_node()->template traversal_with_priority_and_group_traversal(m_primitives, query, traits, m_primitives.size(), 0, group_traversal_bound);
       }
     }
+#ifdef FANOUT_4
+    /// \internal
+    template <class Query, class Traversal_traits>
+    void traversal4(const Query& query, Traversal_traits& traits) const
+    {
+			if(size() > 7){
+				root_node()->template traversal4<Traversal_traits,Query>(query, traits, m_primitives.size());
+			}else{
+				switch(size())
+					{
+					case 0:
+						break;
+					case 1:
+						traits.intersection(query, singleton_data());
+						break;
+					default: // if(size() >= 2)
+						root_node()->template traversal<Traversal_traits,Query>(query, traits, m_primitives.size());
+					}
+			}
+    }
+#endif
 
   private:
     typedef AABB_node<AABBTraits> Node;
