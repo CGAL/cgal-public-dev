@@ -57,11 +57,11 @@ public:
   }
 
   QRectF boundingRect() const { return mBounding_rect ; }
-  
+
   void paint(QPainter* aPainter, const QStyleOptionGraphicsItem* aOption, QWidget* aWidget);
-  
+
   const QBrush& brush() const { return mBrush; }
-  
+
   void setBrush(const QBrush& aBrush ) { mBrush = aBrush; }
 
   const QPen& pen() const{ return mPen; }

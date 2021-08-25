@@ -134,27 +134,27 @@ Isotropic remeshing.
 \cgalFigureEnd
 
 \subsubsection Minimal Angle Remeshing
-The incremental error-bounded and feature preserving surface remeshing algorithm with minimal 
-angle improvement introduced by Hu et al. \cgalCite{hu2017TVCG} is implemented in this package. 
-This algorithm iteratively performs carefully prioritized local operations, such as edge split, 
-edge collapse, edge flips (optional), vertex relocate and Laplacian smoothing, whenever they do 
-not violate the approximation error bound and improve the mesh otherwise. By greedily searching 
-for the coarsest mesh with minimal interior angle above the `minimal angle threshold` and the 
-`maximal error threshold` provided by the user, this approach can explicitly control the 
-approximation error and implicitly preserve the sharp features, such as creases, boundaries, 
+The incremental error-bounded and feature preserving surface remeshing algorithm with minimal
+angle improvement introduced by Hu et al. \cgalCite{hu2017TVCG} is implemented in this package.
+This algorithm iteratively performs carefully prioritized local operations, such as edge split,
+edge collapse, edge flips (optional), vertex relocate and Laplacian smoothing, whenever they do
+not violate the approximation error bound and improve the mesh otherwise. By greedily searching
+for the coarsest mesh with minimal interior angle above the `minimal angle threshold` and the
+`maximal error threshold` provided by the user, this approach can explicitly control the
+approximation error and implicitly preserve the sharp features, such as creases, boundaries,
 darts, cusps, corners and tips.
 
-A triangular mesh can be remeshed using the function 
-`CGAL::Polygon_mesh_processing::minimal_angle_remeshing()`, as illustrated by 
-\cgalFigureRef{minimal_angle_remeshing}. A lot of parameters are provided to make the algorithm 
-more flexible, but only the max_error_threshold, min_angle_threshold and max_mesh_complexity 
-are essential to control the optimization process. In most cases, users are supposed to perform 
+A triangular mesh can be remeshed using the function
+`CGAL::Polygon_mesh_processing::minimal_angle_remeshing()`, as illustrated by
+\cgalFigureRef{minimal_angle_remeshing}. A lot of parameters are provided to make the algorithm
+more flexible, but only the max_error_threshold, min_angle_threshold and max_mesh_complexity
+are essential to control the optimization process. In most cases, users are supposed to perform
 the remeshing using the parameters with default values.
 
 \cgalFigureBegin{minimal_angle_remeshing, minimal_angle_remeshing.png}
-Minimal angle remeshing. The input surface mesh (a) has 7.2k vertices. From (b) to (e) are the 
-results with different min_angle_threshold. The angle distributions and their corresponding 
-approximation error are show below each result, in blue bars and red curves respectively. The 
+Minimal angle remeshing. The input surface mesh (a) has 7.2k vertices. From (b) to (e) are the
+results with different min_angle_threshold. The angle distributions and their corresponding
+approximation error are show below each result, in blue bars and red curves respectively. The
 max_error_threshold is set to 0.2\% of the diagonal length of the input surface mesh's bounding
 box.
 \cgalFigureEnd
