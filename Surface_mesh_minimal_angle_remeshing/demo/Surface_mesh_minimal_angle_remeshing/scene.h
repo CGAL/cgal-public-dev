@@ -584,7 +584,7 @@ class Scene : public QObject {
 
  private:
   // 1) general data
-  // 1.1£© rendeing data
+  // 1.1ï¼‰ rendeing data
   ManipulatedFrame *m_frame;
   QOpenGLFunctions_2_1 *gl;
   bool gl_init;
