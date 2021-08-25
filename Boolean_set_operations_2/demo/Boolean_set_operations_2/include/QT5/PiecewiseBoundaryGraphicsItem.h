@@ -48,33 +48,33 @@ public:
     mBoundary   (aBoundary)
    ,mPieceDrawer(aPieceDrawer)
    ,mPieceBBox  (aPieceBBox)
-  {}  
+  {}
 
 public:
 
   virtual bool isModelEmpty() const { return !mBoundary || mBoundary->is_empty() ; }
 
 protected:
-  
-  Piecewise_boundary_graphics_item_bezier( Draw_piece const& aPieceDrawer = Draw_piece() 
+
+  Piecewise_boundary_graphics_item_bezier( Draw_piece const& aPieceDrawer = Draw_piece()
                                   , Piece_bbox const& aPieceBBox   = Piece_bbox()
                                   )
     :
     mBoundary   (0)
    ,mPieceDrawer(aPieceDrawer)
    ,mPieceBBox  (aPieceBBox)
-  {}  
+  {}
 
   virtual void update_bbox( Bbox_builder& aBboxBuilder)
   {
-    if ( mBoundary ) 
+    if ( mBoundary )
       update_boundary_bbox(*mBoundary, aBboxBuilder ) ;
   }
 
-  virtual void draw_model ( QPainterPath& aPath ) 
+  virtual void draw_model ( QPainterPath& aPath )
   {
     if ( mBoundary )
-      draw_boundary(*mBoundary,aPath);  
+      draw_boundary(*mBoundary,aPath);
   }
 
   void update_boundary_bbox( Piecewise_boundary const& aBoundary, Bbox_builder& aBboxBuilder )

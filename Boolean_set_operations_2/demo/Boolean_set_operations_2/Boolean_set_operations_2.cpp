@@ -221,7 +221,7 @@ void error_handler(char const* what, char const* expr, char const* file,
 
 
 // CGAL error: assertion violation!
-// Expr: 
+// Expr:
 // File: /home/ronnie8888/Documents/cgal-public-dev/Arrangement_on_surface_2/include/CGAL/Arr_geometry_traits/Bezier_point_2.h
 // Line: 1684
 // Explanation:
@@ -254,13 +254,13 @@ enum {
 };
 
 // enum {
-//   COMPLEMENT_OP, INTERSECTION_OP, UNION_OP, DIFFERENCE_OP, SYMMETRIC_dIFFERENCE_OP, 
+//   COMPLEMENT_OP, INTERSECTION_OP, UNION_OP, DIFFERENCE_OP, SYMMETRIC_dIFFERENCE_OP,
 //   MINKOWSKI_SUM_OP, COPY_OP, MOVE_OP, CLEAR_OP, START_OP};
 
 
 
 //A way to maintain 3 category of polygons namely linear,circular
-//enum genrates errors so, we wil use LINEAR_TYPE=1, CIRCULAR_TYPE=2and BEZIER_TPYE = 3 CONIC_TYPE = 4 
+//enum genrates errors so, we wil use LINEAR_TYPE=1, CIRCULAR_TYPE=2and BEZIER_TPYE = 3 CONIC_TYPE = 4
 //enum { LINEAR_TYPE, CIRCULAR_TYPE, BEZIER_TYPE,CONIC_TYPE};
 
 //dawing tools
@@ -912,7 +912,7 @@ public:
   }
 
 
-  //Same for Bezier 
+  //Same for Bezier
 
   Bezier_region_source_container& blue_bezier_sources()
   {
@@ -1586,10 +1586,10 @@ MainWindow::MainWindow() :
   m_yellow_mink(false), //default
   m_magenta_mink(false), //default
   m_aqua_mink(false), //default
-  m_visible_black(true), //default 
-  m_visible_brown(false), //default 
-  m_visible_yellow(false), //default 
-  m_visible_magenta(false), //default 
+  m_visible_black(true), //default
+  m_visible_brown(false), //default
+  m_visible_yellow(false), //default
+  m_visible_magenta(false), //default
   m_visible_aqua(false), //default
   empty_warn(true), // default
   m_disjoint(false), //default
@@ -1865,7 +1865,7 @@ MainWindow::MainWindow() :
   //clear
   this->graphicsView->setTransformationAnchor(QGraphicsView::AnchorViewCenter);
 
-  // axis 
+  // axis
   QPen* dashedLine{ new QPen(QBrush(Qt::black), 1, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin) };
   // dashedLine->setCosmetic(true);
   dashedLine->setWidth(0);
@@ -4774,7 +4774,7 @@ linearPart_2_circ(Circular_Linear_polygon_with_holes const& pwh)
 //   {
 //     if  ( ei->source() != ei->target() )
 //       rCP.push_back( Circular_X_monotone_curve( convert(ei->source()), convert(ei->target())) );
-//   }  
+//   }
 //   return rCP;
 // }
 // Circular_polygon_with_holes linear_2_circ( Linear_polygon_with_holes const& pwh )
@@ -5134,7 +5134,7 @@ bool MainWindow::read_bezier(QString aFileName)
               {
                 if (CGAL::assign(xcv, *xoit))
                 {
-                  // TRACE( " X montonote: " << xcv.source() << " -> " << xcv.target() << ( xcv.is_directed_right() 
+                  // TRACE( " X montonote: " << xcv.source() << " -> " << xcv.target() << ( xcv.is_directed_right()
                   // ? " RIGHT":" LEFT") << ( xcv.is_vertical() ? " VERTICAL" : "")) ;
                   xcvs.push_back(xcv);
                 }
@@ -5537,7 +5537,7 @@ bool save_bezier_result(QString aFileName, Bezier_polygon_set const& aSet)
 
 //     out_file << aSources.size() << std::endl ;
 
-//     for( Bezier_region_source_container::const_iterator rit = aSources.begin(); 
+//     for( Bezier_region_source_container::const_iterator rit = aSources.begin();
 //       rit != aSources.end() ; ++ rit )
 //     {
 //       Bezier_region_source const& br = *rit ;
@@ -5562,7 +5562,7 @@ bool save_bezier_result(QString aFileName, Bezier_polygon_set const& aSet)
 //             out_file << "     " << CGAL::to_double(pit->x()) << " " << CGAL::to_double(pit->y()) << std::endl ;
 //           }
 //         }
-//       } 
+//       }
 //     }
 
 //     rOK = true ;
@@ -7360,7 +7360,7 @@ void MainWindow::on_actionPAN_triggered()
     }
     else if (!m_bezier_active)
     {
-      //m_scene.removeEventFilter(m_mink_input); 
+      //m_scene.removeEventFilter(m_mink_input);
       m_scene.removeEventFilter(m_linear_input);
       m_scene.removeEventFilter(m_bezier_input);
       m_scene.removeEventFilter(m_circular_input);

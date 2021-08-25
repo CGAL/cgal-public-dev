@@ -48,17 +48,17 @@ namespace CGAL {
 
     // Polygon_2 type is required by GeneralPolygonSetTraits Concept
     typedef CGAL::Polygon_2<Kernel_, Container_>          Polygon_2;
-    // Polygon_2 is a model of the GeneralPolygon2 concept. 
+    // Polygon_2 is a model of the GeneralPolygon2 concept.
     typedef  Polygon_2                                    General_polygon_2;
 
-    // Polygon_with_holes_2 can be a simple polygon , with holes that are 
+    // Polygon_with_holes_2 can be a simple polygon , with holes that are
     // entirely inside him , or some vertices of the polygon and its holes
     // may overlap.
 
     // Polygon_with_holes_2 type required by GeneralPolygonSetTraits Concept.
     typedef CGAL::Polygon_with_holes_2<Kernel_, Container_>
       Polygon_with_holes_2;
-    // Polygon_with_Holes_2 is a model of the GeneralPolygonWithHoles2 concept. 
+    // Polygon_with_Holes_2 is a model of the GeneralPolygonWithHoles2 concept.
     typedef  Polygon_with_holes_2                 General_polygon_with_holes_2;
     typedef typename Base::X_monotone_curve_2     X_monotone_curve_2;
 

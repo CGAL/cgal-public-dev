@@ -66,7 +66,7 @@ public:
       dual_points.end(),
       std::back_inserter(hull));
 
-    // dualize and translate back 
+    // dualize and translate back
     for (unsigned int i = 0; i < hull.size(); i++)
     {
       const Point& a = hull[i];
@@ -118,7 +118,7 @@ public:
 
   Vector unit_normal(const Vector& v)
   {
-    Vector normal(v.y(), -v.x()); // 90 deg CW rotation 
+    Vector normal(v.y(), -v.x()); // 90 deg CW rotation
     return normalize(normal);
   }
 

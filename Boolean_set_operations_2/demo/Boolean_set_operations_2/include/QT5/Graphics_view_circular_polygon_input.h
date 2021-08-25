@@ -230,7 +230,7 @@ public:
        case HandleOngoing:
         //cout<<"hello in Graphics_view_circular_polygon"<<endl;
         if(m_last_circular)
-        { 
+        {
           HideHandle();
           CommitOngoingPiece(lP);
         }

@@ -31,7 +31,7 @@ class MinAngleParameters : public QDialog, private Ui_MinAngleParametersDialog {
     sample_strategy_types.append("Adaptive");
     cb_sample_strategy->addItems(sample_strategy_types);
     cb_sample_strategy->setCurrentIndex(1);
-    // fill the items in cb_face_relocate_type, 
+    // fill the items in cb_face_relocate_type,
     //                   cb_edge_relocate_type,
     //                   cb_vertex_relocate_type
     QStringList optimize_types;
@@ -162,7 +162,7 @@ class MinAngleParameters : public QDialog, private Ui_MinAngleParametersDialog {
 
   double get_feature_difference_delta() const { return sb_feature_difference_delta->value(); }
   void set_feature_difference_delta(double value) { sb_feature_difference_delta->setValue(value); }
- 
+
   double get_feature_control_delta() const { return sb_feature_control_delta->value(); }
   void set_feature_control_delta(double value) { sb_feature_control_delta->setValue(value); }
 

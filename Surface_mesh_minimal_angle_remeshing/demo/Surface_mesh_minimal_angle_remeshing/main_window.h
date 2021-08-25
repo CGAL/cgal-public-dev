@@ -92,7 +92,7 @@ class MainWindow : public CGAL::Qt::DemosMainWindow {
   void on_actionMinAngle_parameter_settings_triggered();
   void on_actionMinAngle_remesh_properties_triggered();
   void on_actionTest_triggered();
-  
+
   // view menu
   void on_actionView_input_triggered();                           // input
   void on_actionView_remesh_triggered();                          // remesh
@@ -112,7 +112,7 @@ class MainWindow : public CGAL::Qt::DemosMainWindow {
   void on_actionView_vertex_capacities_triggered();
   void on_actionView_vertex_weights_triggered();
   void on_actionView_normal_dihedrals_triggered();                // edge samples properties
-  void on_actionView_edge_feature_intensities_triggered();        
+  void on_actionView_edge_feature_intensities_triggered();
   void on_actionView_edge_capacities_triggered();
   void on_actionView_edge_weights_triggered();
   void on_actionView_face_feature_intensities_triggered();        // face samples properties

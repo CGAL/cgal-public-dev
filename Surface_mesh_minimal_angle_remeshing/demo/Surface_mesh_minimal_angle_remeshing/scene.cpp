@@ -12,8 +12,8 @@
 // #include <CGAL/Polygon_mesh_processing/minimal_angle_remeshing.h>
 #include "../../include/CGAL/Polygon_mesh_processing/minimal_angle_remeshing.h"
 
-Scene::Scene() 
-  : m_frame(new ManipulatedFrame()), 
+Scene::Scene()
+  : m_frame(new ManipulatedFrame()),
     gl_init(false),
     are_buffers_initialized(false),
     gl(NULL),
@@ -21,7 +21,7 @@ Scene::Scene()
     m_pRemesh(NULL) {
   // 1) member data initialization
   startTimer(0);
-  m_bbox = Bbox(DOUBLE_MAX, DOUBLE_MAX, DOUBLE_MAX, 
+  m_bbox = Bbox(DOUBLE_MAX, DOUBLE_MAX, DOUBLE_MAX,
                 DOUBLE_MIN, DOUBLE_MIN, DOUBLE_MIN);
   // 2) view option initialization
   m_view_input = false;
@@ -38,7 +38,7 @@ Scene::Scene()
   m_view_edge_out_start_points = false;
   m_view_edge_out_end_points = false;
   m_view_edge_out_links = false;
-  m_view_vertex_in_start_points = false; 
+  m_view_vertex_in_start_points = false;
   m_view_vertex_in_end_points = false;
   m_view_vertex_in_links = false;
   m_view_vertex_out_start_points = false;
@@ -203,12 +203,12 @@ void Scene::compile_shaders() {
     "    gl_FragColor = ret_color;\n"
     "}\n"
   };
-  QOpenGLShader *light_vertex_shader = 
+  QOpenGLShader *light_vertex_shader =
       new QOpenGLShader(QOpenGLShader::Vertex);
   if (!light_vertex_shader->compileSourceCode(light_vertex_source)) {
     std::cerr << "Compiling light vertex source FAILED" << std::endl;
   }
-  QOpenGLShader *light_fragment_shader = 
+  QOpenGLShader *light_fragment_shader =
       new QOpenGLShader(QOpenGLShader::Fragment);
   if (!light_fragment_shader->compileSourceCode(light_fragment_source)) {
     std::cerr << "Compiling light fragment source FAILED" << std::endl;
@@ -630,7 +630,7 @@ void Scene::initialize_buffers() {
   // Vertex out end points
   vao[VAOs::ka_Vertex_out_end].bind();
   vbo[VBOs::kb_Vertex_out_end_points].bind();
-  vbo[VBOs::kb_Vertex_out_end_points].allocate( 
+  vbo[VBOs::kb_Vertex_out_end_points].allocate(
       pos_vertex_out_end_points.data(),
       static_cast<int>(pos_vertex_out_end_points.size() * sizeof(float)));
   points_vertexLocation = rendering_program.attributeLocation("vertex");
@@ -838,7 +838,7 @@ void Scene::draw(CGAL::QGLViewer *viewer) {
     if (pos_remesh_normal_edges.size() > 0 &&
       (m_render_type == k_classifications || m_view_mesh_edges)) {
       gl->glDisable(GL_LIGHTING);
-      if (m_render_type == k_classifications || 
+      if (m_render_type == k_classifications ||
           pos_remesh_boundaries.empty()) {
         gl->glLineWidth(1.0f);
       }
@@ -919,7 +919,7 @@ void Scene::draw(CGAL::QGLViewer *viewer) {
       vao[VAOs::ka_Face_in_end].release();
     }
     // face out start points
-    if (m_view_face_out_start_points && 
+    if (m_view_face_out_start_points &&
         pos_face_out_start_points.size() > 0) {
       vao[VAOs::ka_Face_out_start].bind();
       attrib_buffers(viewer);
@@ -1147,7 +1147,7 @@ void Scene::compute_elements() {
   if (m_view_remesh && m_pRemesh != NULL) {
     // step 1: compute the faces
     Color face_color(200, 150, 150);
-    compute_faces(false, face_color, &pos_remesh_faces, 
+    compute_faces(false, face_color, &pos_remesh_faces,
         &pos_remesh_face_normals, &pos_remesh_face_colors,
         &pos_remesh_boundaries, &pos_remesh_samples);
     // step 2: compute the edges
@@ -1226,7 +1226,7 @@ void Scene::compute_elements() {
   }
 }
 
-void Scene::compute_faces(bool is_input, Color face_color, 
+void Scene::compute_faces(bool is_input, Color face_color,
     std::vector<float> *pos_faces, std::vector<float> *pos_face_normals,
     std::vector<float> *pos_face_colors, std::vector<float> *pos_boundaries,
     std::vector<float> *pos_samples) const {
@@ -1251,7 +1251,7 @@ void Scene::compute_faces(bool is_input, Color face_color,
         pos_samples);
     break;
   case DrawType::k_vertex_voronoi:
-    compute_vertex_voronois(is_input, sum_theta_value, dihedral_theta_value, 
+    compute_vertex_voronois(is_input, sum_theta_value, dihedral_theta_value,
         pos_faces, pos_face_normals, pos_face_colors, pos_boundaries,
         pos_samples);
     break;
@@ -1321,7 +1321,7 @@ void Scene::compute_mesh_faces(bool is_input, Color face_color,
 void Scene::compute_all_voronois(bool is_input, FT sum_theta_value,
     FT dihedral_theta_value, std::vector<float> *pos_faces,
     std::vector<float> *pos_face_normals, std::vector<float> *pos_face_colors,
-    std::vector<float> *pos_boundaries, 
+    std::vector<float> *pos_boundaries,
     std::vector<float> *pos_samples) const {
   // step 1: compute all the minimal value and maximal value
   const Mesh_properties *mesh_properties = get_mesh_properties(is_input);
@@ -1356,7 +1356,7 @@ void Scene::compute_all_voronois(bool is_input, FT sum_theta_value,
   compute_all_samples(is_input, pos_samples);
 }
 
-void Scene::compute_vertex_voronois(bool is_input, FT sum_theta_value, 
+void Scene::compute_vertex_voronois(bool is_input, FT sum_theta_value,
     FT dihedral_theta_value, std::vector<float> *pos_faces,
     std::vector<float> *pos_face_normals, std::vector<float> *pos_face_colors,
     std::vector<float> *pos_boundaries,
@@ -1445,7 +1445,7 @@ void Scene::compute_edge_voronois(bool is_input, FT sum_theta_value,
 void Scene::compute_face_voronois(bool is_input, FT sum_theta_value,
     FT dihedral_theta_value, std::vector<float> *pos_faces,
     std::vector<float> *pos_face_normals, std::vector<float> *pos_face_colors,
-    std::vector<float> *pos_boundaries, 
+    std::vector<float> *pos_boundaries,
     std::vector<float> *pos_samples) const {
   const Mesh_properties *mesh_properties = get_mesh_properties(is_input);
   // step 1: compute the minimal and maximal values
@@ -1472,7 +1472,7 @@ void Scene::compute_face_voronois(bool is_input, FT sum_theta_value,
     const Normal &normal = mesh_properties->get_face_normal(*fi);
     Point_list samples;
     Color_list colors;
-    get_face_sample_normalized_colors(is_input, *fi, min_value, 
+    get_face_sample_normalized_colors(is_input, *fi, min_value,
                                       max_value, 240, &samples, &colors);
     Bvd bvd(mesh_properties->triangle(*fi));
     bvd.compute_voronoi_cells_and_boundaries(samples, normal, colors,
@@ -1483,7 +1483,7 @@ void Scene::compute_face_voronois(bool is_input, FT sum_theta_value,
 }
 
 void Scene::compute_edge_normal_dihedrals(bool is_input,
-    FT dihedral_theta_value, std::vector<float> *pos_faces, 
+    FT dihedral_theta_value, std::vector<float> *pos_faces,
     std::vector<float> *pos_face_normals, std::vector<float> *pos_face_colors,
     std::vector<float> *pos_boundaries) const {
   const Mesh_properties *mesh_properties = get_mesh_properties(is_input);
@@ -1513,7 +1513,7 @@ void Scene::compute_edge_normal_dihedrals(bool is_input,
       const Point &a = mesh.point(mesh.target(hd));
       const Point b = mesh_properties->centroid(fd);
       const Point &c = mesh.point(mesh.source(hd));
-      compute_triangle(a, b, c, normal, color, pos_faces, pos_face_normals, 
+      compute_triangle(a, b, c, normal, color, pos_faces, pos_face_normals,
                        pos_face_colors);
     }
   }
@@ -1532,7 +1532,7 @@ void Scene::compute_edge_normal_dihedrals(bool is_input,
 }
 
 void Scene::compute_edge_sample_properties(bool is_input, FT sum_theta_value,
-    FT dihedral_theta_value, std::vector<float> *pos_faces, 
+    FT dihedral_theta_value, std::vector<float> *pos_faces,
     std::vector<float> *pos_face_normals, std::vector<float> *pos_face_colors,
     std::vector<float> *pos_boundaries,
     std::vector<float> *pos_samples) const {
@@ -1563,7 +1563,7 @@ void Scene::compute_edge_sample_properties(bool is_input, FT sum_theta_value,
       hd = mesh.opposite(hd);
     }
     // step 2.1: compute the samples
-    const Link_list &edge_out_links = 
+    const Link_list &edge_out_links =
         mesh_properties->get_halfedge_out_links(hd);
     for (auto cit = edge_out_links.begin();
       cit != edge_out_links.end(); ++cit) {
@@ -1581,7 +1581,7 @@ void Scene::compute_edge_sample_properties(bool is_input, FT sum_theta_value,
     }
     points.push_back(mesh.point(mesh.target(hd)));
     Color_list colors;
-    get_edge_sample_normalized_colors(is_input, hd, min_value, 
+    get_edge_sample_normalized_colors(is_input, hd, min_value,
                                       max_value, 240, &colors);
     face_descriptor fd = mesh.face(hd);        // first triangle
     Point c = mesh_properties->centroid(fd);
@@ -1723,7 +1723,7 @@ Color Scene::get_vertex_sample_normalized_color(bool is_input,
   return get_rgb_color(h, value, 1.0);
 }
 
-void Scene::get_all_sample_normalized_colors(bool is_input, 
+void Scene::get_all_sample_normalized_colors(bool is_input,
     face_descriptor fd, FT min_value, FT max_value, FT h, Point_list *samples,
     Color_list *colors) const {
   // calculate the samples and their weights
@@ -1875,7 +1875,7 @@ void Scene::get_disturbed_border_samples_with_weights(bool is_input,
     if (mesh_properties->get_halfedge_normal_dihedral(h) == -1.0) {
       h = mesh.opposite(h);
     }
-    const Link_list &edge_out_links = 
+    const Link_list &edge_out_links =
         mesh_properties->get_halfedge_out_links(h);
     for (Link_list_const_iter cit = edge_out_links.begin();
       cit != edge_out_links.end(); ++cit) {
@@ -1946,7 +1946,7 @@ void Scene::compute_min_radian_edges(bool is_input,
   pos_min_radian_edges->resize(0);
   FT min_radian = CGAL_PI;
   const Mesh_properties* mesh_properties = get_mesh_properties(is_input);
-  halfedge_descriptor min_radian_hd = 
+  halfedge_descriptor min_radian_hd =
       mesh_properties->calculate_minimal_radian(&min_radian);
   if (min_radian != CGAL_PI) {
     const Mesh &mesh = mesh_properties->get_mesh();
@@ -2049,7 +2049,7 @@ void Scene::compute_edge_start_points(bool is_input,
     if (mesh_properties->get_halfedge_normal_dihedral(hd) == -1.0) {
       hd = mesh.opposite(hd);
     }
-    const Link_list &edge_out_links = 
+    const Link_list &edge_out_links =
         mesh_properties->get_halfedge_out_links(hd);
     for (auto it = edge_out_links.begin();
       it != edge_out_links.end(); ++it) {
@@ -2070,7 +2070,7 @@ void Scene::compute_edge_end_points(bool is_input,
     if (mesh_properties->get_halfedge_normal_dihedral(hd) == -1.0) {
       hd = mesh.opposite(hd);
     }
-    const Link_list &edge_out_links = 
+    const Link_list &edge_out_links =
         mesh_properties->get_halfedge_out_links(hd);
     for (auto it = edge_out_links.begin();
       it != edge_out_links.end(); ++it) {
@@ -2091,7 +2091,7 @@ void Scene::compute_edge_links(bool is_input,
     if (mesh_properties->get_halfedge_normal_dihedral(hd) == -1.0) {
       hd = mesh.opposite(hd);
     }
-    const Link_list &edge_out_links = 
+    const Link_list &edge_out_links =
         mesh_properties->get_halfedge_out_links(hd);
     for (auto it = edge_out_links.begin();
       it != edge_out_links.end(); ++it) {
@@ -2302,7 +2302,7 @@ bool Scene::read_ply(std::ifstream &in, Mesh *mesh) const {
         int index2 = std::stoi(tokens[vertex_index + 2]);
         int index3 = std::stoi(tokens[vertex_index + 3]);
         mesh->add_face(vertex_descriptors[index1],
-                       vertex_descriptors[index2], 
+                       vertex_descriptors[index2],
                        vertex_descriptors[index3]);
       }
     }
@@ -2518,7 +2518,7 @@ void Scene::save_remesh_as(QString file_name) {
     std::cout << "Please open a file first" << std::endl;
   }
   else {
-    m_minangle_remesh.save_remesh_as(file_name.toStdString());    
+    m_minangle_remesh.save_remesh_as(file_name.toStdString());
   }
 }
 
@@ -2559,8 +2559,8 @@ void Scene::toggle_view_input() {
   }
 }
 
-void Scene::toggle_view_remesh() { 
-  m_view_remesh = !m_view_remesh; 
+void Scene::toggle_view_remesh() {
+  m_view_remesh = !m_view_remesh;
   if (m_view_remesh) {
     changed();
   }
@@ -2604,7 +2604,7 @@ void Scene::toggle_view_face_errors() {
 }
 
 void Scene::toggle_view_element_classifications() {
-  set_draw_render_types(DrawType::k_vertex_voronoi, 
+  set_draw_render_types(DrawType::k_vertex_voronoi,
                         RenderType::k_classifications);
   changed();
 }
@@ -2895,8 +2895,8 @@ void Scene::isotropic_remeshing() {
     timer.start();
     std::cout << std::endl << "Isotropic remeshing...";
     PMP::isotropic_remeshing(
-        faces(*m_pRemesh), 
-        m_target_edge_length, 
+        faces(*m_pRemesh),
+        m_target_edge_length,
         *m_pRemesh,
         PMP::parameters::number_of_iterations(m_smooth_iteration_count)
         .protect_constraints(true)  //i.e. protect border, here
@@ -2916,7 +2916,7 @@ void Scene::test() {
     CGAL::Timer timer;
     timer.start();
     std::cout << std::endl << "Minimal angle remeshing...";
-    /* PMP::minimal_angle_remeshing(*m_pRemesh, 
+    /* PMP::minimal_angle_remeshing(*m_pRemesh,
       CGAL::parameters::min_angle_threshold(15.0).verbose_progress(false)); */
     PMP::minimal_angle_remeshing(*m_pRemesh);
     m_minangle_remesh.set_remesh(m_pRemesh, false);

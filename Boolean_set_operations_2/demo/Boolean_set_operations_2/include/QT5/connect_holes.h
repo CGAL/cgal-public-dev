@@ -138,7 +138,7 @@ namespace CGAL {
     Vertex_handle                          v_top;
     Comparison_result                      res;
     //construct vertex hash map (default data is false) and insert top vertices
-    //handles as keys (key vertex data value is true) 
+    //handles as keys (key vertex data value is true)
     typedef typename CGAL::Unique_hash_map<Vertex_const_handle, bool> V_map;
     V_map top_vertices(false, arr.number_of_faces());
 
@@ -291,7 +291,7 @@ namespace CGAL {
     if (he_han->face() != uf)
       he_han = he_han->twin();
     CGAL_assertion(he_han->face() == uf);
-    //std::cout << "outer boundary:" <<std::endl;   
+    //std::cout << "outer boundary:" <<std::endl;
     //std::cout << "(" << he_han->target()->point() << ")" <<std::endl
     //calculate num of vertices on outer boundary for hash map creation.
     std::size_t size = 1;
@@ -425,7 +425,7 @@ namespace CGAL {
          Target must be added to output and state changed.
          */
         if ((!next->twin()->face()->visited())
-          //case of antenna          
+          //case of antenna
           || (next->face() == next->twin()->face())) {
           /*if (!skip_print)
              std::cout << "curr edge is ((" << curr->source()->point() << "),( " << curr->target()->point() << "))" <<std::endl;

@@ -28,10 +28,10 @@ namespace Polygon_mesh_processing {
 /*!
 * \ingroup PMP_meshing_grp
 * @brief remeshes a triangule mesh using a minimal angle optimization approach.
-* This operation applies carefully prioritized local operations to greedily 
-* search for the coarsest mesh with minimal interior angle threshold and the 
-* approximation error threshold defined by the user. The local operations 
-* include edge split, edge collapse, edge flip (optional), vertex relocation, 
+* This operation applies carefully prioritized local operations to greedily
+* search for the coarsest mesh with minimal interior angle threshold and the
+* approximation error threshold defined by the user. The local operations
+* include edge split, edge collapse, edge flip (optional), vertex relocation,
 * and projection to the initial triangular mesh.
 *
 * @tparam TriangleMesh model of `MutableFaceGraph`.
@@ -44,22 +44,22 @@ namespace Polygon_mesh_processing {
 * @tparam NamedParameters a sequence of \ref bgl_namedparameters "Named Parameters"
 *
 * @param tm the triangle mesh to be remeshed
-* @param np an optional sequence of \ref bgl_namedparameters "Named Parameters" 
+* @param np an optional sequence of \ref bgl_namedparameters "Named Parameters"
 * among the ones listed below
 *
 *
 * \cgalNamedParamsBegin
-* 
+*
 *   \cgalParamNBegin{geom_traits}
 *     \cgalParamDescription{an instance of a geometric traits class}
 *     \cgalParamType{a class model of `Kernel`}
-*     \cgalParamDefault{a \cgal Kernel deduced from the point type, 
+*     \cgalParamDefault{a \cgal Kernel deduced from the point type,
 *                       using `CGAL::Kernel_traits`}
 *     \cgalParamExtra{The geometric traits class must be compatible with the
 *                     vertex point type.}
 *     \cgalParamExtra{Exact constructions kernels are not supported by this function.}
 *   \cgalParamNEnd
-* 
+*
 *   \cgalParamNBegin{max_error_threshold}
 *     \cgalParamDescription{The approximation error, expressed as the percentage of
 *                           diagonal length of the input surface mesh.}
@@ -72,20 +72,20 @@ namespace Polygon_mesh_processing {
 *     \cgalParamDefault{30}
 *   \cgalParamNEnd
 *   \cgalParamNBegin{max_mesh_complexity}
-*     \cgalParamDescription{The maximal mesh complexity that the remesh surface mesh should 
-*                           maintain, expressed as the number of vertices of the remesh 
+*     \cgalParamDescription{The maximal mesh complexity that the remesh surface mesh should
+*                           maintain, expressed as the number of vertices of the remesh
 *                           surface mesh.}
 *     \cgalParamType{unsigned int}
 *     \cgalParamDefault{100000000}
 *   \cgalParamNEnd
 *   \cgalParamNBegin{smooth_angle_delta}
-*     \cgalParamDescription{The minimal step for angle improvement. If a local operator 
-*                           improves the minimal angle less than this value, then it is 
+*     \cgalParamDescription{The minimal step for angle improvement. If a local operator
+*                           improves the minimal angle less than this value, then it is
 *                           considered the minimal angle has not been improved.}
 *     \cgalParamType{double}
 *     \cgalParamDefault{0.1}
 *   \cgalParamNEnd
-* 
+*
 *   \cgalParamNBegin{apply_edge_flip}
 *     \cgalParamDescription{Indicates whether we apply the local operator `Edge_flip` when
 *                           improving the minimal angle. Experiments show that enable the edge
@@ -94,8 +94,8 @@ namespace Polygon_mesh_processing {
 *     \cgalParamDefault{`true`}
 *   \cgalParamNEnd
 *   \cgalParamNBegin{edge_flip_strategy}
-*     \cgalParamDescription{Indicates whether we want to improve the minimal angle, or the vertex 
-*                           valences when flipping an edge. Experiments show that 
+*     \cgalParamDescription{Indicates whether we want to improve the minimal angle, or the vertex
+*                           valences when flipping an edge. Experiments show that
 *                           `Improve_the_minimal_angle` is better.}
 *     \cgalParamType{EdgeFlipStrategy}
 *     \cgalParamDefault{EdgeFlipStrategy::k_improve_angle}
@@ -115,12 +115,12 @@ namespace Polygon_mesh_processing {
 *     \cgalParamType{Boolean}
 *     \cgalParamDefault{`true`}
 *   \cgalParamNEnd
-* 
+*
 *   \cgalParamNBegin{relocate_strategy}
-*     \cgalParamDescription{The options for `Vertex_relocation`, we now have barycenter or CVT 
+*     \cgalParamDescription{The options for `Vertex_relocation`, we now have barycenter or CVT
 *                           barycenter. Barycenter is simply the average of the one-ring vertices,
-*                           which is also called Laplacian-operation. Instead, the CVT barycenter 
-*                           is the Centroid Voronoi Tessellation center of the one-ring vertices. 
+*                           which is also called Laplacian-operation. Instead, the CVT barycenter
+*                           is the Centroid Voronoi Tessellation center of the one-ring vertices.
 *                           Experiments show that the CVT barycenter is better.}
 *     \cgalParamType{RelocateStrategy}
 *     \cgalParamDefault{RelocateStrategy::k_cvt_barycenter}
@@ -134,59 +134,59 @@ namespace Polygon_mesh_processing {
 *     \cgalParamDefault{`false`}
 *   \cgalParamNEnd
 *   \cgalParamNBegin{use_local_aabb_tree}
-*     \cgalParamDescription{Indicates whether we construct the local AABB tree or not when 
-*                           simulating the edge collapse operator. If it is true, we use the 
-*                           constructed local AABB tree to update the links from input surface 
-*                           mesh to remesh surface mesh; Otherwise, we update the links directly. 
-*                           Experiments show that the efficiencies for both cases are almost the 
+*     \cgalParamDescription{Indicates whether we construct the local AABB tree or not when
+*                           simulating the edge collapse operator. If it is true, we use the
+*                           constructed local AABB tree to update the links from input surface
+*                           mesh to remesh surface mesh; Otherwise, we update the links directly.
+*                           Experiments show that the efficiencies for both cases are almost the
 *                           same.}
 *     \cgalParamType{Boolean}
 *     \cgalParamDefault{`true`}
 *   \cgalParamNEnd
 *   \cgalParamNBegin{collapsed_list_size}
-*     \cgalParamDescription{In some rare cases, the software traps into local dead loops (e.g., 
-*                           edge split -> edge collapse -> edge split ->edge collapse...). Hence, 
+*     \cgalParamDescription{In some rare cases, the software traps into local dead loops (e.g.,
+*                           edge split -> edge collapse -> edge split ->edge collapse...). Hence,
 *                           we maintain a global collapse list, such that if an edge is collapsed
 *                           not long ago (recorded in the list), we deny the edge collapse when it
 *                           can be in later steps. This parameter indicates the maximum size of
-*                           the collapse list. The larger this value is, the less possibility that 
-*                           the software traps into local dead loops, but higher computational and 
+*                           the collapse list. The larger this value is, the less possibility that
+*                           the software traps into local dead loops, but higher computational and
 *                           memory cost. Experiments show that this strategy is really effective.}
 *     \cgalParamType{unsigned int}
 *     \cgalParamDefault{10}
 *   \cgalParamNEnd
 *
 *   \cgalParamNBegin{decrease_max_errors}
-*     \cgalParamDescription{Due to the randomness of sampling, sometimes the max error threshold 
-*                           cannot be strictly bounded to the threshold. If this parameter is 
-*                           enabled, we explicitly decrease the max error as long as we find the 
-*                           Hausdorff distance between the input and the remesh exceeds the 
-*                           threshold. This will make sure the approximation error is strictly 
+*     \cgalParamDescription{Due to the randomness of sampling, sometimes the max error threshold
+*                           cannot be strictly bounded to the threshold. If this parameter is
+*                           enabled, we explicitly decrease the max error as long as we find the
+*                           Hausdorff distance between the input and the remesh exceeds the
+*                           threshold. This will make sure the approximation error is strictly
 *                           bounded regardless of the sampling randomness.}
 *     \cgalParamType{Boolean}
 *     \cgalParamDefault{`true`}
 *   \cgalParamNEnd
 *   \cgalParamNBegin{verbose_progress}
-*     \cgalParamDescription{If this parameter is enabled, we output the detailed information when 
-*                           each local operator is applied. The detailed information may include 
-*                           current maximal error, minimal angle, or the size of the dynamic 
+*     \cgalParamDescription{If this parameter is enabled, we output the detailed information when
+*                           each local operator is applied. The detailed information may include
+*                           current maximal error, minimal angle, or the size of the dynamic
 *                           priority queue.}
 *     \cgalParamType{Boolean}
 *     \cgalParamDefault{`true`}
 *   \cgalParamNEnd
 *   \cgalParamNBegin{apply_initial_mesh_simplification}
 *     \cgalParamDescription{If this parameter is enabled, we apply the initial mesh simplification
-*                           before improving the minimal angles. This reduces the mesh complexity 
+*                           before improving the minimal angles. This reduces the mesh complexity
 *                           around 20-30% on average.}
 *     \cgalParamType{Boolean}
 *     \cgalParamDefault{`true`}
 *   \cgalParamNEnd
 *   \cgalParamNBegin{apply_final_vertex_relocation}
-*     \cgalParamDescription{If this parameter is enabled, we apply the final vertex relocation 
-*                           after improving the minimal angles to the min angle threshold. This 
-*                           will improve the average quality of the triangles with respect to the 
-*                           parameter `Smooth angle delta`. The smaller `Smooth angle delta` is 
-*                           set, the better results we get along with the higher computational 
+*     \cgalParamDescription{If this parameter is enabled, we apply the final vertex relocation
+*                           after improving the minimal angles to the min angle threshold. This
+*                           will improve the average quality of the triangles with respect to the
+*                           parameter `Smooth angle delta`. The smaller `Smooth angle delta` is
+*                           set, the better results we get along with the higher computational
 *                           cost.}
 *     \cgalParamType{Boolean}
 *     \cgalParamDefault{`true`}
@@ -203,156 +203,156 @@ namespace Polygon_mesh_processing {
 *     \cgalParamDefault{10}
 *   \cgalParamNEnd
 *   \cgalParamNBegin{max_samples_per_area}
-*     \cgalParamDescription{The maximal number of samplers per unit area. This parameter is 
+*     \cgalParamDescription{The maximal number of samplers per unit area. This parameter is
 *                           used to avoid too dense sampling.}
 *     \cgalParamType{unsigned int}
 *     \cgalParamDefault{10000}
 *   \cgalParamNEnd
 *   \cgalParamNBegin{min_samples_per_triangle}
-*     \cgalParamDescription{The minimal number of samples per triangle. This parameter is used 
-*                           to guarantee that each triangle, no matter how small it is, has 
+*     \cgalParamDescription{The minimal number of samples per triangle. This parameter is used
+*                           to guarantee that each triangle, no matter how small it is, has
 *                           certain number of samples on it.}
 *     \cgalParamType{unsigned int}
 *     \cgalParamDefault{1}
 *   \cgalParamNEnd
-* 
+*
 *   \cgalParamNBegin{bvd_iteration_count}
-*     \cgalParamDescription{The large this parameter is, the more uniform the samples in the 
-*                           facets are. However, the computational cost will be dramatically 
+*     \cgalParamDescription{The large this parameter is, the more uniform the samples in the
+*                           facets are. However, the computational cost will be dramatically
 *                           higher as well.}
 *     \cgalParamType{unsigned int}
 *     \cgalParamDefault{1}
 *   \cgalParamNEnd
 *   \cgalParamNBegin{sample_number_strategy}
-*     \cgalParamDescription{The option of sample number strategy on remesh surface mesh. If it 
-*                           is `Fixed`, then the number of samples per facet is roughly the same 
-*                           as the one on the input surface mesh; If it is `Variable`, then the 
-*                           number of samples per facet is variable with respect to the size of 
-*                           facets of the remesh surface mesh: the more facets the remesh surface 
-*                           mesh has, the smaller number of samples we generate on each facet of 
-*                           the remesh surface mesh. The `Variable` option makes the total 
-*                           samples on the input surface mesh and remesh surface mesh roughly the 
+*     \cgalParamDescription{The option of sample number strategy on remesh surface mesh. If it
+*                           is `Fixed`, then the number of samples per facet is roughly the same
+*                           as the one on the input surface mesh; If it is `Variable`, then the
+*                           number of samples per facet is variable with respect to the size of
+*                           facets of the remesh surface mesh: the more facets the remesh surface
+*                           mesh has, the smaller number of samples we generate on each facet of
+*                           the remesh surface mesh. The `Variable` option makes the total
+*                           samples on the input surface mesh and remesh surface mesh roughly the
 *                           same.}
 *     \cgalParamType{SampleNumberStrategy}
 *     \cgalParamDefault{SampleNumberStrategy::k_fixed}
 *   \cgalParamNEnd
 *   \cgalParamNBegin{sample_strategy}
-*     \cgalParamDescription{The option of sample strategy. If it is `uniform`, then the number 
-*                           of samples per facet is proportional to its area; If it is `adaptive`, 
+*     \cgalParamDescription{The option of sample strategy. If it is `uniform`, then the number
+*                           of samples per facet is proportional to its area; If it is `adaptive`,
 *                           then the number of samples per facet is roughly the same.}
 *     \cgalParamType{SampleStrategy}
 *     \cgalParamDefault{SampleStrategy::k_adaptive}
 *   \cgalParamNEnd
 *   \cgalParamNBegin{use_stratified_sampling}
-*     \cgalParamDescription{If this parameter is enabled, the vertex samples, edge samples and 
-*                           the facet samples partition the area of the surface mesh, 
-*                           respectively (we call the partition area as the capacity of each 
-*                           sample); If it is disabled, all the three types of samples will 
-*                           partition the area of the surface mesh together. In the former case, 
-*                           the feature samples (include the vertex samples and the edge samples) 
-*                           own higher area weights; while in the latter case, all the samples 
-*                           have the same area weights. Enabling this parameter preserves 
-*                           features better, but sacrifices the overall approximation error, 
+*     \cgalParamDescription{If this parameter is enabled, the vertex samples, edge samples and
+*                           the facet samples partition the area of the surface mesh,
+*                           respectively (we call the partition area as the capacity of each
+*                           sample); If it is disabled, all the three types of samples will
+*                           partition the area of the surface mesh together. In the former case,
+*                           the feature samples (include the vertex samples and the edge samples)
+*                           own higher area weights; while in the latter case, all the samples
+*                           have the same area weights. Enabling this parameter preserves
+*                           features better, but sacrifices the overall approximation error,
 *                           because the facet samples dominates all the samples.}
 *     \cgalParamType{Boolean}
 *     \cgalParamDefault{`false`}
 *   \cgalParamNEnd
 *
 *   \cgalParamNBegin{sum_theta}
-*     \cgalParamDescription{The maximal value of Gaussian curvature, expressed as the times of PI. 
-*                           If a Gaussian curvature exceeds some value, it will be clamped to this 
+*     \cgalParamDescription{The maximal value of Gaussian curvature, expressed as the times of PI.
+*                           If a Gaussian curvature exceeds some value, it will be clamped to this
 *                           value.}
 *     \cgalParamType{double}
 *     \cgalParamDefault{1.0}
 *   \cgalParamNEnd
 *   \cgalParamNBegin{sum_delta}
-*     \cgalParamDescription{The scale of the Gaussian curvature. If dividing a Gaussian curvature 
-*                           with this scale and the result exceeds Sum theta (PI), then it is 
+*     \cgalParamDescription{The scale of the Gaussian curvature. If dividing a Gaussian curvature
+*                           with this scale and the result exceeds Sum theta (PI), then it is
 *                           clamped to Sum theta (PI).}
 *     \cgalParamType{double}
 *     \cgalParamDefault{0.5}
 *   \cgalParamNEnd
 *   \cgalParamNBegin{dihedral_theta}
-*     \cgalParamDescription{The maximal value of large dihedral angle value, expressed as the 
-*                           times of PI. If the large dihedral angle exceeds some value, it will 
+*     \cgalParamDescription{The maximal value of large dihedral angle value, expressed as the
+*                           times of PI. If the large dihedral angle exceeds some value, it will
 *                           be clamped to this value.}
 *     \cgalParamType{double}
 *     \cgalParamDefault{1.0}
 *   \cgalParamNEnd
 *   \cgalParamNBegin{dihedral_delta}
-*     \cgalParamDescription{The scale of the large dihedral angle. If dividing the large dihedral 
-*                           angle with this scale and the result exceeds Dihedral theta (PI), 
+*     \cgalParamDescription{The scale of the large dihedral angle. If dividing the large dihedral
+*                           angle with this scale and the result exceeds Dihedral theta (PI),
 *                           then it is clamped to Dihedral theta (PI).}
 *     \cgalParamType{double}
 *     \cgalParamDefault{0.5}
 *   \cgalParamNEnd
-* 
+*
 *   \cgalParamNBegin{feature_difference_delta}
-*     \cgalParamDescription{This parameter is only used when getting the initial position of the 
-*                           vertex after applying edge collapse. If the feature intensity 
-*                           difference between the two end points is smaller than their maximal 
-*                           value multiplied with this parameter, then the midpoint will be 
-*                           selected as the initial position; otherwise, the end point with 
+*     \cgalParamDescription{This parameter is only used when getting the initial position of the
+*                           vertex after applying edge collapse. If the feature intensity
+*                           difference between the two end points is smaller than their maximal
+*                           value multiplied with this parameter, then the midpoint will be
+*                           selected as the initial position; otherwise, the end point with
 *                           higher feature intensity will be selected.}
 *     \cgalParamType{double}
 *     \cgalParamDefault{0.15}
 *   \cgalParamNEnd
 *   \cgalParamNBegin{feature_control_delta}
-*     \cgalParamDescription{This parameter is used for vertex classification. Please refer to 
+*     \cgalParamDescription{This parameter is used for vertex classification. Please refer to
 *                           Fig. 10 in the paper for more detailed explanation.}
 *     \cgalParamType{double}
 *     \cgalParamDefault{0.5}
 *   \cgalParamNEnd
 *   \cgalParamNBegin{inherit_element_types}
-*     \cgalParamDescription{If this parameter is enabled, we calculate the edge types (crease 
-*                           edge or non-crease edge) of the remesh surface mesh in advance, 
-*                           and then maintain the edge types explicitly during the whole 
-*                           remeshing process. Otherwise, we calculate the edge types according 
+*     \cgalParamDescription{If this parameter is enabled, we calculate the edge types (crease
+*                           edge or non-crease edge) of the remesh surface mesh in advance,
+*                           and then maintain the edge types explicitly during the whole
+*                           remeshing process. Otherwise, we calculate the edge types according
 *                           to the given parameters each time when a local operator is applied.}
 *     \cgalParamType{Boolean}
 *     \cgalParamDefault{`false`}
 *   \cgalParamNEnd
 *   \cgalParamNBegin{use_feature_intensity_weights}
-*     \cgalParamDescription{If this parameter is enabled, the weight for each sample is its 
-*                           according area multiplied by its feature intensity; Otherwise, 
-*                           the weight is its according area. Enabling this parameter keeps the 
+*     \cgalParamDescription{If this parameter is enabled, the weight for each sample is its
+*                           according area multiplied by its feature intensity; Otherwise,
+*                           the weight is its according area. Enabling this parameter keeps the
 *                           features better.}
 *     \cgalParamType{Boolean}
 *     \cgalParamDefault{`false`}
 *   \cgalParamNEnd
-* 
+*
 *   \cgalParamNBegin{vertex_optimize_count}
-*     \cgalParamDescription{The number of iterations we perform when optimizing a vertex position. 
-*                           Please refer to the first row of Fig. 15 in the paper for more 
+*     \cgalParamDescription{The number of iterations we perform when optimizing a vertex position.
+*                           Please refer to the first row of Fig. 15 in the paper for more
 *                           details.}
 *     \cgalParamType{unsigned int}
 *     \cgalParamDefault{2}
 *   \cgalParamNEnd
 *   \cgalParamNBegin{vertex_optimize_ratio}
-*     \cgalParamDescription{The ratio to get to the optimal position when optimizing a vertex 
-*                           position. Refer to the second row of Fig. 15 in the paper for more 
+*     \cgalParamDescription{The ratio to get to the optimal position when optimizing a vertex
+*                           position. Refer to the second row of Fig. 15 in the paper for more
 *                           details.}
 *     \cgalParamType{double}
 *     \cgalParamDefault{0.9}
 *   \cgalParamNEnd
 *   \cgalParamNBegin{stencil_ring_size}
-*     \cgalParamDescription{The stencil ring size when collecting the samples from input surface 
-*                           mesh to remesh surface mesh. Please refer to the gray region of 
-*                           Fig. 3 as well as the discussion in Sec. 6.1 in the paper for more 
+*     \cgalParamDescription{The stencil ring size when collecting the samples from input surface
+*                           mesh to remesh surface mesh. Please refer to the gray region of
+*                           Fig. 3 as well as the discussion in Sec. 6.1 in the paper for more
 *                           details.}
 *     \cgalParamType{unsigned int}
 *     \cgalParamDefault{1}
 *   \cgalParamNEnd
 *   \cgalParamNBegin{optimize_strategy}
-*     \cgalParamDescription{Options for vertex position optimization. If it is `Approximation`, 
-*                           then the vertex position is just the optimal position we calculated; 
-*                           otherwise, the vertex position is the projection of the optimal 
-*                           position to the input surface mesh. Please refer to Sec. 6.2 in the 
+*     \cgalParamDescription{Options for vertex position optimization. If it is `Approximation`,
+*                           then the vertex position is just the optimal position we calculated;
+*                           otherwise, the vertex position is the projection of the optimal
+*                           position to the input surface mesh. Please refer to Sec. 6.2 in the
 *                           paper for more details.}
 *     \cgalParamType{OptimizeStrategy}
 *     \cgalParamDefault{OptimizeStrategy::k_approximation}
 *   \cgalParamNEnd
-* 
+*
 *   \cgalParamNBegin{face_optimize_type}
 *     \cgalParamDescription{The facet sample types used for optimizing a vertex position.}
 *     \cgalParamType{OptimizeType}
@@ -367,15 +367,15 @@ namespace Polygon_mesh_processing {
 *
 *   \cgalParamNBegin{vertex_optimize_type}
 *     \cgalParamDescription{The vertex sample types used for optimizing a vertex position.
-*                           `Optimize after local operations`: If this parameter is enabled, 
-*                           we perform the vertex position optimization after each local 
+*                           `Optimize after local operations`: If this parameter is enabled,
+*                           we perform the vertex position optimization after each local
 *                           operator is applied.}
 *     \cgalParamType{OptimizeType}
 *     \cgalParamDefault{OptimizeType::k_both}
 *   \cgalParamNEnd
 *
 *   \cgalParamNBegin{optimize_after_local_operations}
-*     \cgalParamDescription{If this parameter is enabled, we perform the vertex position 
+*     \cgalParamDescription{If this parameter is enabled, we perform the vertex position
 *                           optimization after each local operator is applied.}
 *     \cgalParamType{Boolean}
 *     \cgalParamDefault{`true`}
@@ -396,7 +396,7 @@ void minimal_angle_remeshing(TriangleMesh& tm, const NamedParameters& np)
 
   // step 2: setup the parameters
   // 2.1: general parameters
-  //double max_error_threshold = choose_parameter(get_parameter(np, 
+  //double max_error_threshold = choose_parameter(get_parameter(np,
   //  internal_np::max_error_threshold), 0.2);
   //remesher.set_max_error_threshold(max_error_threshold);
   remesher.set_max_error_threshold(0.2);

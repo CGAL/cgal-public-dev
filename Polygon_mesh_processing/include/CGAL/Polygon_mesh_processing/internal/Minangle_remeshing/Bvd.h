@@ -341,7 +341,7 @@ private:
   }
   //
   // Visual elements
-  // 
+  //
   void compute_bounded_cell_and_boundaries(Vertex_handle v,
     const Vector_3 &normal, const CGAL::Color &color,
     std::vector<float> *pos_faces, std::vector<float> *pos_face_normals,
@@ -439,7 +439,7 @@ private:
       std::cerr << red << "polygon with degree < 3" << white << std::endl;
       return;
     }
-    Point_2 p0 = polygon[0]; // pivot 
+    Point_2 p0 = polygon[0]; // pivot
     int nb_triangles = int(polygon.size() - 2);
     for (int i = 0; i < nb_triangles; i++) {
       Point_2 p1 = polygon[(i + 1) % polygon.size()];

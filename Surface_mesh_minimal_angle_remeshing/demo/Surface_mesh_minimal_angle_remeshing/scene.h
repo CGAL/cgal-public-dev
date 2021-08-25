@@ -193,7 +193,7 @@ class Scene : public QObject {
   void set_apply_final_vertex_relocation(bool value) {
     m_minangle_remesh.get_remesher()->set_apply_final_vertex_relocation(value);
   }
-  
+
   int get_samples_per_face_in() const {
     return m_minangle_remesh.get_remesher()->get_samples_per_face_in();
   }
@@ -258,11 +258,11 @@ class Scene : public QObject {
     m_minangle_remesh.get_remesher()->set_use_stratified_sampling(value);
   }
 
-  double get_sum_theta() const { 
+  double get_sum_theta() const {
     return m_minangle_remesh.get_remesher()->get_sum_theta();
   }
 
-  void set_sum_theta(double value) { 
+  void set_sum_theta(double value) {
     m_minangle_remesh.get_remesher()->set_sum_theta(value);
   }
 
@@ -439,9 +439,9 @@ class Scene : public QObject {
   void reset_from_input();                      // min angle remeshing menu
   void generate_links();
   void remesh_properties();
-  void minangle_remeshing();                           
+  void minangle_remeshing();
   void initial_mesh_simplification();
-  void split_local_longest_edge();  
+  void split_local_longest_edge();
   void increase_minimal_angle();
   void maximize_minimal_angle();
   void final_vertex_relocation();
@@ -482,31 +482,31 @@ class Scene : public QObject {
       std::vector<float> *pos_face_colors) const;
   void compute_all_voronois(bool is_input, FT sum_theta_value,
       FT dihedral_theta_value, std::vector<float> *pos_faces,
-      std::vector<float> *pos_face_normals, 
+      std::vector<float> *pos_face_normals,
       std::vector<float> *pos_face_colors,std::vector<float> *pos_boundaries,
       std::vector<float> *pos_samples) const;
   void compute_vertex_voronois(bool is_input, FT sum_theta_value,
       FT dihedral_theta_value, std::vector<float> *pos_faces,
-      std::vector<float> *pos_face_normals, 
+      std::vector<float> *pos_face_normals,
       std::vector<float> *pos_face_colors, std::vector<float> *pos_boundaries,
       std::vector<float> *pos_samples) const;
   void compute_edge_voronois(bool is_input, FT sum_theta_value,
-      FT dihedral_theta_value, std::vector<float> *pos_faces, 
-      std::vector<float> *pos_face_normals, 
+      FT dihedral_theta_value, std::vector<float> *pos_faces,
+      std::vector<float> *pos_face_normals,
       std::vector<float> *pos_face_colors, std::vector<float> *pos_boundaries,
       std::vector<float> *pos_samples) const;
   void compute_face_voronois(bool is_input, FT sum_theta_value,
       FT dihedral_theta_value, std::vector<float> *pos_faces,
-      std::vector<float> *pos_face_normals, 
+      std::vector<float> *pos_face_normals,
       std::vector<float> *pos_face_colors, std::vector<float> *pos_boundaries,
       std::vector<float> *pos_samples) const;
-  void compute_edge_normal_dihedrals(bool is_input, FT dihedral_theta_value, 
+  void compute_edge_normal_dihedrals(bool is_input, FT dihedral_theta_value,
       std::vector<float> *pos_faces, std::vector<float> *pos_face_normals,
-      std::vector<float> *pos_face_colors, 
+      std::vector<float> *pos_face_colors,
       std::vector<float> *pos_boundaries) const;
   void compute_edge_sample_properties(bool is_input, FT sum_theta_value,
       FT dihedral_theta_value, std::vector<float> *pos_faces,
-      std::vector<float> *pos_face_normals, 
+      std::vector<float> *pos_face_normals,
       std::vector<float> *pos_face_colors, std::vector<float> *pos_boundaries,
       std::vector<float> *pos_samples) const;
   Color get_vertex_sample_normalized_color(bool is_input, vertex_descriptor vd,
@@ -514,15 +514,15 @@ class Scene : public QObject {
   Color get_vertex_classification_color(bool is_input,
                                         vertex_descriptor vd) const;
   void get_all_sample_normalized_colors(bool is_input, face_descriptor fd,
-      FT min_value, FT max_value, FT h, Point_list *samples, 
+      FT min_value, FT max_value, FT h, Point_list *samples,
       Color_list *colors) const;
   void get_edge_sample_normalized_colors(bool is_input, halfedge_descriptor hd,
       FT min_value, FT max_value, FT h, Color_list *colors) const;
   void get_face_sample_normalized_colors(bool is_input, face_descriptor fd,
       FT min_value, FT max_value, FT h, Point_list *samples,
       Color_list *colors) const;
-  void get_disturbed_border_samples_with_weights(bool is_input, 
-      face_descriptor fd, FT disturb_ratio, 
+  void get_disturbed_border_samples_with_weights(bool is_input,
+      face_descriptor fd, FT disturb_ratio,
       std::map<Point, double, Point_Comp> *disturbed_border_samples) const;
   void compute_all_samples(bool is_input,
                            std::vector<float> *pos_samples) const;
@@ -565,11 +565,11 @@ class Scene : public QObject {
   void inline compute_segment(const Point &p, const Point &q,
                               std::vector<float> *pos) const;
   void inline compute_point(const Point &point,std::vector<float> *pos) const;
-  void inline compute_normal(const Normal &normal, 
+  void inline compute_normal(const Normal &normal,
                              std::vector<float> *pos) const;
   void inline compute_color(const Color &color, std::vector<float> *pos) const;
   Color get_rgb_color(FT h, FT s, FT v) const;
-  
+
   // 2) opeartions
   void reset();         // reset from input
   void update_bbox();
@@ -680,7 +680,7 @@ class Scene : public QObject {
   int mvpLocation_with_light;
   int fLocation_with_light;
   int colorLocation_with_light;
-  
+
   // 3) rendering variables
   bool m_view_input;
   bool m_view_remesh;

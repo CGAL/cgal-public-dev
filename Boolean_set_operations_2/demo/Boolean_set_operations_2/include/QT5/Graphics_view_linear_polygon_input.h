@@ -431,7 +431,7 @@ public:
     Polygon_2 hole;
 
     int i;
-    
+
     for(Polygon_with_holes_2::Hole_const_iterator hi = polygon.holes_begin(); hi != polygon.holes_end(); ++ hi )
     {
       hole =*hi;
@@ -482,7 +482,7 @@ public:
     Point_2 pt;
 
     int i=0;
-    
+
     for (vit = polygon.outer_boundary().vertices_begin(); vit != polygon.outer_boundary().vertices_end(); ++vit)
     {
       if(i==0)

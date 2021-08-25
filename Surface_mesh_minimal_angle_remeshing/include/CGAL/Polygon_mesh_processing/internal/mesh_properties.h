@@ -4288,7 +4288,7 @@ class Mesh_properties {
       set_halfedge_is_crease(get_opposite(hd), false);
     }
   }
-  
+
   // 10) properties access
   inline void reset_face_tags(int value, const Face_list &faces) {
     for (auto it = faces.begin(); it != faces.end(); ++it) {
