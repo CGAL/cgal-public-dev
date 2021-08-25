@@ -9,11 +9,10 @@
 //
 // Author(s)     : Kaimo Hu
 
-#ifndef CGAL_SURFACE_MESH_MINIMAL_ANGLE_REMESHING_POLYGON_KERNEL_H
-#define CGAL_SURFACE_MESH_MINIMAL_ANGLE_REMESHING_POLYGON_KERNEL_H
+#ifndef SURFACE_MESH_MINIMAL_ANGLE_REMESHING_POLYGON_KERNEL_H
+#define SURFACE_MESH_MINIMAL_ANGLE_REMESHING_POLYGON_KERNEL_H
 
 // CGAL
-#include <../../../Installation/include/CGAL/license/Polygon_mesh_processing/minimal_angle_remeshing.h>
 #include <CGAL/convex_hull_2.h>
 // local
 #include "console_color.h"
@@ -129,4 +128,4 @@ public:
   }
 };
 
-#endif // CGAL_SURFACE_MESH_MINIMAL_ANGLE_REMESHING_POLYGON_KERNEL_H
+#endif // SURFACE_MESH_MINIMAL_ANGLE_REMESHING_POLYGON_KERNEL_H

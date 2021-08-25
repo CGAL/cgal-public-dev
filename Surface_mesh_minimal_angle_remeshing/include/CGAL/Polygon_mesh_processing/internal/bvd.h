@@ -9,14 +9,13 @@
 //
 // Author(s)     : Kaimo Hu
 
-#ifndef CGAL_SURFACE_MESH_MINIMAL_ANGLE_REMESHING_BVD_H
-#define CGAL_SURFACE_MESH_MINIMAL_ANGLE_REMESHING_BVD_H
+#ifndef SURFACE_MESH_MINIMAL_ANGLE_REMESHING_BVD_H
+#define SURFACE_MESH_MINIMAL_ANGLE_REMESHING_BVD_H
 
 #undef min
 #undef max
 
 // CGAL
-#include <../../../Installation/include/CGAL/license/Polygon_mesh_processing/minimal_angle_remeshing.h>
 #include <CGAL/Delaunay_triangulation_2.h>
 #include <CGAL/Polygon_2.h>
 // local
@@ -596,4 +595,4 @@ private:
   Aff_transform_3 m_to_3d;
 };
 
-#endif // CGAL_SURFACE_MESH_MINIMAL_ANGLE_REMESHING_BVD_H
+#endif // SURFACE_MESH_MINIMAL_ANGLE_REMESHING_BVD_H
