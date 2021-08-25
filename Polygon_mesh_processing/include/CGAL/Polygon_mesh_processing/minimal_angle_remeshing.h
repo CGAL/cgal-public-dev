@@ -12,6 +12,7 @@
 #ifndef CGAL_POLYGON_MESH_PROCESSING_MINIMAL_ANGLE_REMESHING_H
 #define CGAL_POLYGON_MESH_PROCESSING_MINIMAL_ANGLE_REMESHING_H
 
+#include <CGAL/license/minimal_angle_remeshing.h>
 #include <CGAL/Polygon_mesh_processing/internal/minangle_remesh_impl.h>
 #include <CGAL/Polygon_mesh_processing/internal/named_function_params.h>
 #include <CGAL/Polygon_mesh_processing/internal/named_params_helper.h>
