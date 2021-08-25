@@ -15,7 +15,7 @@
 // $URL$
 // $Id$
 // SPDX-License-Identifier: GPL-3.0+
-// 
+//
 //
 // Author(s) : Fernando Cacciola <fernando.cacciola@geometryfactory.com>
 //             Ronnie Gandhi<ronniegandhi19999@gmail.com>
@@ -27,66 +27,66 @@
 
 namespace CGAL {
 
-namespace Qt {
+  namespace Qt {
 
 
 
 
-template <class Boundary_pieces_, class Draw_piece_, class Piece_bbox_>
-class Boundary_pieces_graphics_item_bezier : public Piecewise_graphics_item_base_bezier
-{
-  typedef Boundary_pieces_ Boundary_pieces ;
-  typedef Draw_piece_      Draw_piece ;
-  typedef Piece_bbox_      Piece_bbox ;
-  
-  typedef typename Boundary_pieces::const_iterator Piece_const_iterator ;
-
-public:
-
-  Boundary_pieces_graphics_item_bezier( Boundary_pieces*    aBoundary
-                               , Draw_piece   const& aPieceDrawer = Draw_piece()
-                               , Piece_bbox   const& aPieceBBox   = Piece_bbox()
-                               )
-    :
-     mBoundary   (aBoundary)
-    ,mPieceDrawer(aPieceDrawer)
-    ,mPieceBBox  (aPieceBBox)
-  {}  
-
-public:
-
-  virtual bool isModelEmpty() const { return !mBoundary || mBoundary->size() == 0 ; }
-  
-protected:
-  
-  virtual void update_bbox( Bbox_builder& aBboxBuilder)
-  {
-    if ( mBoundary ) 
+    template <class Boundary_pieces_, class Draw_piece_, class Piece_bbox_>
+    class Boundary_pieces_graphics_item_bezier : public Piecewise_graphics_item_base_bezier
     {
-      for( Piece_const_iterator pit = mBoundary->begin(); pit != mBoundary->end(); ++ pit )
-        aBboxBuilder.add(mPieceBBox(*pit));
-    }  
-  }    
+      typedef Boundary_pieces_ Boundary_pieces;
+      typedef Draw_piece_      Draw_piece;
+      typedef Piece_bbox_      Piece_bbox;
 
-  virtual void draw_model ( QPainterPath& aPath ) 
-  {
-    if ( mBoundary )
-    {
-      int c = 0 ;
-      for( Piece_const_iterator pit = mBoundary->begin(); pit != mBoundary->end(); ++ pit, ++c )
-        mPieceDrawer(*pit,aPath,c);
-    }  
-  }
+      typedef typename Boundary_pieces::const_iterator Piece_const_iterator;
 
-protected:
+    public:
 
-  Boundary_pieces* mBoundary;
-  Draw_piece       mPieceDrawer ;
-  Piece_bbox       mPieceBBox ;    
-};
+      Boundary_pieces_graphics_item_bezier(Boundary_pieces* aBoundary
+        , Draw_piece   const& aPieceDrawer = Draw_piece()
+        , Piece_bbox   const& aPieceBBox = Piece_bbox()
+      )
+        :
+        mBoundary(aBoundary)
+        , mPieceDrawer(aPieceDrawer)
+        , mPieceBBox(aPieceBBox)
+      {}
+
+    public:
+
+      virtual bool isModelEmpty() const { return !mBoundary || mBoundary->size() == 0; }
+
+    protected:
+
+      virtual void update_bbox(Bbox_builder& aBboxBuilder)
+      {
+        if (mBoundary)
+        {
+          for (Piece_const_iterator pit = mBoundary->begin(); pit != mBoundary->end(); ++pit)
+            aBboxBuilder.add(mPieceBBox(*pit));
+        }
+      }
+
+      virtual void draw_model(QPainterPath& aPath)
+      {
+        if (mBoundary)
+        {
+          int c = 0;
+          for (Piece_const_iterator pit = mBoundary->begin(); pit != mBoundary->end(); ++pit, ++c)
+            mPieceDrawer(*pit, aPath, c);
+        }
+      }
+
+    protected:
+
+      Boundary_pieces* mBoundary;
+      Draw_piece       mPieceDrawer;
+      Piece_bbox       mPieceBBox;
+    };
 
 
-} // namespace Qt
+  } // namespace Qt
 } // namespace CGAL
 
 #endif // CGAL_QT_BOUNDARY_PIECES_GRAPHICS_ITEM_BEZIER_H

@@ -15,7 +15,7 @@
 // $URL$
 // $Id$
 // SPDX-License-Identifier: GPL-3.0+
-// 
+//
 //
 // Author(s) : Fernando Cacciola <fernando.cacciola@geometryfactory.com>
 //             Ronnie Gandhi <ronniegandhi19999@gmail.com>
@@ -35,7 +35,7 @@ class Piecewise_boundary_graphics_item_bezier : public Piecewise_graphics_item_b
   typedef Piecewise_boundary_ Piecewise_boundary ;
   typedef Draw_piece_         Draw_piece ;
   typedef Piece_bbox_         Piece_bbox ;
-  
+
   typedef typename Piecewise_boundary::Curve_const_iterator Curve_piece_const_iterator ;
 
 public:
@@ -53,7 +53,7 @@ public:
 public:
 
   virtual bool isModelEmpty() const { return !mBoundary || mBoundary->is_empty() ; }
-  
+
 protected:
   
   Piecewise_boundary_graphics_item_bezier( Draw_piece const& aPieceDrawer = Draw_piece() 
@@ -64,12 +64,12 @@ protected:
    ,mPieceDrawer(aPieceDrawer)
    ,mPieceBBox  (aPieceBBox)
   {}  
-  
+
   virtual void update_bbox( Bbox_builder& aBboxBuilder)
   {
     if ( mBoundary ) 
       update_boundary_bbox(*mBoundary, aBboxBuilder ) ;
-  }    
+  }
 
   virtual void draw_model ( QPainterPath& aPath ) 
   {
@@ -82,14 +82,14 @@ protected:
     for( Curve_piece_const_iterator pit = aBoundary.curves_begin(); pit != aBoundary.curves_end(); ++ pit )
       aBboxBuilder.add(mPieceBBox(*pit));
   }
-  
+
   void draw_boundary( Piecewise_boundary const& aBoundary, QPainterPath& aPath ) ;
-  
+
 protected:
 
   Piecewise_boundary* mBoundary;
   Draw_piece          mPieceDrawer ;
-  Piece_bbox          mPieceBBox ;    
+  Piece_bbox          mPieceBBox ;
 };
 
 template <class B, class D, class P>

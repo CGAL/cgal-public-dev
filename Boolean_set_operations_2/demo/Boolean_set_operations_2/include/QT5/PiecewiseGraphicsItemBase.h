@@ -15,7 +15,7 @@
 // $URL$
 // $Id$
 // SPDX-License-Identifier: GPL-3.0+
-// 
+//
 //
 // Author(s) : Fernando Cacciola <fernando.cacciola@geometryfactory.com>
 //             Ronnie Gandhi <ronniegandhi19999@gmail.com>
@@ -45,17 +45,17 @@ class Piecewise_graphics_item_base_bezier : public GraphicsItem
 protected:
 
   Piecewise_graphics_item_base_bezier() {}
-  
+
 public:
 
   void updateBoundingBox();
-  
+
   void modelChanged()
   {
     updateBoundingBox();
     update();
   }
-  
+
   QRectF boundingRect() const { return mBounding_rect ; }
   
   void paint(QPainter* aPainter, const QStyleOptionGraphicsItem* aOption, QWidget* aWidget);
@@ -71,23 +71,23 @@ public:
 protected:
 
   typedef Converter< Simple_cartesian<double> > ToQtConverter;
-  
+
   struct Bbox_builder
   {
-    void add ( Bbox_2 const& aBbox ) 
+    void add ( Bbox_2 const& aBbox )
     {
       if ( bbox )
            bbox = *bbox + aBbox;
       else bbox =         aBbox;
     }
-    
-    boost::optional<Bbox_2> bbox ;
+
+    boost::optional<Bbox_2> bbox;
   } ;
 
   virtual bool isModelEmpty() const = 0 ;
-  
+
   virtual void draw_model ( QPainterPath& aPath ) = 0 ;
-  
+
   virtual void update_bbox( Bbox_builder& aBBoxBuilder ) = 0 ;
 
 protected:
@@ -103,9 +103,9 @@ void Piecewise_graphics_item_base_bezier::paint( QPainter* aPainter, const QStyl
   if ( ! isModelEmpty() )
   {
     QPainterPath lPath ;
-    
+
     draw_model(lPath);
-    
+
     aPainter->setPen  (mPen );
     aPainter->setBrush(mBrush);
     aPainter->drawPath(lPath);
@@ -119,16 +119,16 @@ void Piecewise_graphics_item_base_bezier::updateBoundingBox()
   if ( ! isModelEmpty() )
   {
     prepareGeometryChange();
-    
+
     Bbox_builder lBBoxBuilder ;
-    
+
     update_bbox(lBBoxBuilder);
-    
-    if ( lBBoxBuilder.bbox ) 
+
+    if ( lBBoxBuilder.bbox )
     {
       ToQtConverter to_Qt ;
       mBounding_rect = to_Qt(*lBBoxBuilder.bbox);
-    }  
+    }
   }
 }
 

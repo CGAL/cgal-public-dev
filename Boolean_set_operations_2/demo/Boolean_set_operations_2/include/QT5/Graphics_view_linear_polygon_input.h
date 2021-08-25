@@ -73,7 +73,7 @@ public:
   typedef Linear_boundary_pieces_graphics_item<Linear_curve_vector> GI;
 
   //constructor
-  Graphics_view_linear_polygon_input(QObject* aParent, QGraphicsScene* aScene) :
+  Graphics_view_linear_polygon_input(QObject* aParent, QGraphicsScene* aScene):
     GraphicsViewInput(aParent),
     mScene(aScene),
     mLinearGI(new GI(&mLinearPolygonPieces)),

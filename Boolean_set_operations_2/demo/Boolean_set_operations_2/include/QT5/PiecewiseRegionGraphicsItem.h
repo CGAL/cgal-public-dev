@@ -15,7 +15,7 @@
 // $URL$
 // $Id$
 // SPDX-License-Identifier: GPL-3.0+
-// 
+//
 //
 // Author(s) : Fernando Cacciola <fernando.cacciola@geometryfactory.com>
 //             Ronnie Gandhi <ronniegandhi19999@gmail.com>
@@ -30,7 +30,7 @@ namespace CGAL {
 namespace Qt {
 
 template <class Piecewise_region_, class Draw_piece_, class Piece_bbox_>
-class Piecewise_region_graphics_item_bezier : public Piecewise_boundary_graphics_item_bezier< typename Piecewise_region_::General_polygon_2, Draw_piece_, Piece_bbox_ > 
+class Piecewise_region_graphics_item_bezier : public Piecewise_boundary_graphics_item_bezier< typename Piecewise_region_::General_polygon_2, Draw_piece_, Piece_bbox_ >
 {
   typedef Piecewise_boundary_graphics_item_bezier< typename Piecewise_region_::General_polygon_2, Draw_piece_, Piece_bbox_> Base ;
   
@@ -39,7 +39,7 @@ class Piecewise_region_graphics_item_bezier : public Piecewise_boundary_graphics
   typedef Piece_bbox_       Piece_bbox ;
   
   typedef typename Piecewise_region::Hole_const_iterator Hole_const_itertator ;
-  
+
 public:
 
   Piecewise_region_graphics_item_bezier( Piecewise_region* aRegion, Draw_piece const& aPieceDrawer = Draw_piece(), Piece_bbox const& aPieceBBox = Piece_bbox() )
@@ -51,24 +51,24 @@ public:
 public:
 
   virtual bool isModelEmpty() const { return !mRegion || mRegion->outer_boundary().size() ; }
-  
+
 protected:
-  
+
   Piecewise_region_graphics_item_bezier( Draw_piece const& aPieceDrawer = Draw_piece(), Piece_bbox const& aPieceBBox = Piece_bbox() )
     :
      Base(aPieceDrawer, aPieceBBox)
-  {}  
-  
+  {}
+
   virtual void update_bbox( Piecewise_graphics_item_base_bezier::Bbox_builder& aBboxBuilder)
   {
     if ( mRegion ) 
       update_region_bbox(*mRegion, aBboxBuilder ) ;
-  }    
+  }
 
-  virtual void draw_model ( QPainterPath& aPath ) 
+  virtual void draw_model ( QPainterPath& aPath )
   {
     if ( mRegion )
-      draw_region(*mRegion,aPath);  
+      draw_region(*mRegion,aPath);
   }
 
   void update_region_bbox( Piecewise_region const& aRegion, Piecewise_graphics_item_base_bezier::Bbox_builder& aBboxBuilder ) ;
@@ -92,7 +92,7 @@ template <class R, class D, class P>
 void Piecewise_region_graphics_item_bezier<R,D,P>::draw_region( Piecewise_region const& aRegion, QPainterPath& aPath )
 {
   this->draw_boundary( aRegion.outer_boundary(), aPath ) ;//This added for qt5 version !
-  
+
   for( Hole_const_itertator hit = aRegion.holes_begin(); hit != aRegion.holes_end(); ++ hit )
     this->draw_boundary(*hit,aPath);//"This" added for qt5 version !
 }

@@ -70,18 +70,18 @@ typedef CGAL::General_polygon_set_2<Linear_traits>    Linear_polygon_set;
 typedef Linear_traits::Curve_2                        Linear_curve;
 
 typedef std::vector<Linear_polygon_with_holes>  Linear_region_source_container;
-typedef std::vector<Linear_curve>               Linear_boundary_source ;
-typedef std::vector<Linear_boundary_source>     Linear_region_source ;
+typedef std::vector<Linear_curve>               Linear_boundary_source;
+typedef std::vector<Linear_boundary_source>     Linear_region_source;
 
 // Circlular polygons
 
 #ifdef CGAL_USE_GMP
 
-  typedef CGAL::Gmpq                     Base_nt;
+typedef CGAL::Gmpq                     Base_nt;
 
 #else
 
-  typedef CGAL::Quotient<CGAL::MP_Float> Base_nt;
+typedef CGAL::Quotient<CGAL::MP_Float> Base_nt;
 
 #endif
 
@@ -113,12 +113,12 @@ typedef Circular_traits::Polygon_2                 Circular_polygon;
 //check out the change
 //typedef CGAL::General_polygon_with_holes_2<Circular_polygon>   Circular_polygon_with_holes;
 typedef Circular_traits::General_polygon_with_holes_2
-  Circular_polygon_with_holes;
+Circular_polygon_with_holes;
 
 typedef CGAL::General_polygon_set_2<Circular_traits>    Circular_polygon_set;
 
 typedef std::vector<Circular_polygon_with_holes>
-  Circular_region_source_container ;
+Circular_region_source_container;
 
 
 // Bezier Curves typedefs
@@ -129,26 +129,26 @@ typedef CGAL::CORE_algebraic_number_traits            Bezier_nt_traits;
 typedef Bezier_nt_traits::Rational                    Bezier_rational;
 typedef Bezier_nt_traits::Algebraic                   Bezier_algebraic;
 
-struct Bezier_rat_kernel  : public CGAL::Cartesian<Bezier_rational>  {};
-struct Bezier_alg_kernel  : public CGAL::Cartesian<Bezier_algebraic> {};
+struct Bezier_rat_kernel : public CGAL::Cartesian<Bezier_rational> {};
+struct Bezier_alg_kernel : public CGAL::Cartesian<Bezier_algebraic> {};
 
 struct Bezier_traits : public CGAL::Arr_Bezier_curve_traits_2<Bezier_rat_kernel, Bezier_alg_kernel, Bezier_nt_traits> {};
-  
+
 typedef Bezier_rat_kernel::Point_2                      Bezier_rat_point;
 typedef Bezier_traits::Curve_2                          Bezier_curve;
 typedef Bezier_traits::X_monotone_curve_2               Bezier_X_monotone_curve;
 typedef Bezier_traits::Point_2                          Bezier_point;
 typedef CGAL::Gps_traits_2<Bezier_traits>               Bezier_gps_traits;
 typedef Bezier_gps_traits::General_polygon_2            Bezier_polygon;
-typedef std::vector<Bezier_polygon>                     Bezier_polygon_vector ;
+typedef std::vector<Bezier_polygon>                     Bezier_polygon_vector;
 typedef Bezier_gps_traits::General_polygon_with_holes_2 Bezier_polygon_with_holes;
-typedef CGAL::General_polygon_set_2<Bezier_gps_traits>  Bezier_polygon_set ;
+typedef CGAL::General_polygon_set_2<Bezier_gps_traits>  Bezier_polygon_set;
 
 typedef CGAL::Qt::Bezier_set_graphics_item<Bezier_polygon_set> Bezier_GI;
 
-typedef std::vector<Bezier_curve>                Bezier_boundary_source ;
-typedef std::vector<Bezier_boundary_source>      Bezier_region_source ;
-typedef std::vector<Bezier_region_source>        Bezier_region_source_container ;
+typedef std::vector<Bezier_curve>                Bezier_boundary_source;
+typedef std::vector<Bezier_boundary_source>      Bezier_region_source;
+typedef std::vector<Bezier_region_source>        Bezier_region_source_container;
 
 #endif
 

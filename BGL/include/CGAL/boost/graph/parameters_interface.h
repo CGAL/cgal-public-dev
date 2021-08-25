@@ -258,7 +258,7 @@ CGAL_add_named_parameter(face_optimize_type_t,face_optimize_type,face_optimize_t
 CGAL_add_named_parameter(edge_optimize_type_t,edge_optimize_type,edge_optimize_type)
 CGAL_add_named_parameter(vertex_optimize_type_t,vertex_optimize_type,vertex_optimize_type)
 CGAL_add_named_parameter(optimize_after_local_operations_t,optimize_after_local_operations,optimize_after_local_operations)
-  
+
 // List of named parameters used in Shape_regularization package
 CGAL_add_named_parameter(minimum_length_t, minimum_length, minimum_length)
 CGAL_add_named_parameter(maximum_angle_t, maximum_angle, maximum_angle)

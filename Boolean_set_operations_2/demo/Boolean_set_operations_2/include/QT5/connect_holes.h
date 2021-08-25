@@ -18,7 +18,7 @@
 //
 // Author(s) : Ron Wein <wein@post.tau.ac.il>
 //             Ronnie Gandhi <ronniegandhi19999@gmail.com>
-//             Guy Zucker  <guyzucke@post.tau.ac.il>  
+//             Guy Zucker  <guyzucke@post.tau.ac.il>
 
 #ifndef CGAL_CONNECT_HOLES_H
 #define CGAL_CONNECT_HOLES_H
@@ -137,7 +137,7 @@ namespace CGAL {
     typename Kernel::Compare_x_2           comp_x = ker.compare_x_2_object();
     Vertex_handle                          v_top;
     Comparison_result                      res;
-    //construct vertex hash map (default data is false) and insert top vertices 
+    //construct vertex hash map (default data is false) and insert top vertices
     //handles as keys (key vertex data value is true) 
     typedef typename CGAL::Unique_hash_map<Vertex_const_handle, bool> V_map;
     V_map top_vertices(false, arr.number_of_faces());
@@ -218,7 +218,7 @@ namespace CGAL {
 
         arr.insert_at_vertices(Segment_2(v_top->point(), v_above->point()),
           v_top, v_above);
-        //std::cout << "connected ((" << v_top->point() << "),( " << v_above->point() << "))" <<std::endl;                      
+        //std::cout << "connected ((" << v_top->point() << "),( " << v_above->point() << "))" <<std::endl;
       }
       else if (CGAL::assign(he, vrs_iter->second.second))
       {
@@ -246,8 +246,8 @@ namespace CGAL {
           // v_top and ip.
           arr.insert_at_vertices(Segment_2(v_top->point(), ip),
             he_above, v_top);
-          //added for debugging      
-          //std::cout << "connected ((" << v_top->point() << "),( " << ip << "))" <<std::endl;     
+          //added for debugging
+          //std::cout << "connected ((" << v_top->point() << "),( " << ip << "))" <<std::endl;
         }
       }
       else
@@ -271,14 +271,14 @@ namespace CGAL {
     (starting and finishing at the same key vertice). Once the hole traversal is completed
     return to search state*/
 
-    //start state is search state  
+    //start state is search state
     bool marking_hole_state = false;
 
     /*flags used for printing the edges for debugging purposes
     bool skip_print = false;
     bool antenna_trav = false; */
 
-    //marker of first vertex of hole that is being traversed  
+    //marker of first vertex of hole that is being traversed
     Vertex_handle hole_start, empty_handle;
 
     /*create a hash map container for outer boundary key vertices (degree>2
@@ -292,14 +292,14 @@ namespace CGAL {
       he_han = he_han->twin();
     CGAL_assertion(he_han->face() == uf);
     //std::cout << "outer boundary:" <<std::endl;   
-    //std::cout << "(" << he_han->target()->point() << ")" <<std::endl; 
-    //calculate num of vertices on outer boundary for hash map creation.  
+    //std::cout << "(" << he_han->target()->point() << ")" <<std::endl
+    //calculate num of vertices on outer boundary for hash map creation.
     std::size_t size = 1;
     Halfedge_const_handle begin = he_han;
     he_han = he_han->next();
     CGAL_assertion(he_han->face() == uf);
     while (he_han != begin) {
-      //std::cout << "(" << he_han->target()->point() << ")" <<std::endl;  
+      //std::cout << "(" << he_han->target()->point() << ")" <<std::endl;
       if (he_han->target()->degree() > 2)
         size++;
       he_han = he_han->next();
@@ -317,12 +317,12 @@ namespace CGAL {
       CGAL_assertion(he_han->face() == uf);
       if (he_han->target()->degree() > 2)
         ver_map[he_han->target()] = true;
-      //std::cout << "(" << he_han->target()->point() << ")" <<std::endl;  
+      //std::cout << "(" << he_han->target()->point() << ")" <<std::endl;
       he_han = he_han->next();
     }
     //std::cout << "outer boundary finished" <<std::endl;
 
-    //get iterator to edge on outer boundary 
+    //get iterator to edge on outer boundary
     first = f->outer_ccb();
     //std::cout << "first edge is ((" << first->source()->point() << "),(" << first->target()->point() << "))" <<std::endl;
     Halfedge_const_iterator  start, curr, next;
@@ -345,28 +345,28 @@ namespace CGAL {
 
         //case we are starting to traverse an antenna
         if (curr->face() == curr->twin()->face()) {
-          //antenna_trav = true ;
-          //std::cout << "curr edge is ((" << curr->source()->point() << "),( " << curr->target()->point() << "))" <<std::endl;        
+          //antenna_trav = true;
+          //std::cout << "curr edge is ((" << curr->source()->point() << "),( " << curr->target()->point() << "))" <<std::endl;
           *oi = curr->target()->point();
           ++oi;
           curr = curr->next();
         }
         Face_handle curr_face;
-        //Traversal of the hole               
+        //Traversal of the hole
         while (hole_start != arr.non_const_handle(curr->target())) {
           curr_face = arr.non_const_handle(curr->twin()->face());
           /*mark the hole as a hole that has been traversed to save
            multiple traversals*/
           curr_face->set_visited(true);
-          //std::cout << "curr edge is ((" << curr->source()->point() << "),( " << curr->target()->point() << "))" <<std::endl;        
+          //std::cout << "curr edge is ((" << curr->source()->point() << "),( " << curr->target()->point() << "))" <<std::endl;
           *oi = curr->target()->point();
           ++oi;
           //"turn inside" instead of next if target is located on outer boundary
-          //(a key vertex encountered while traversing a hole)        
+          //(a key vertex encountered while traversing a hole)
           if (ver_map.is_defined(curr->target())) {
             curr = curr->twin()->prev()->twin();
           }
-          else {//regular advance  
+          else {//regular advance
             curr = curr->next();
           }
         } //exited loop target is the hole marking start vertex
@@ -378,14 +378,14 @@ namespace CGAL {
         return to searching the outer boundary*/
       }
       else
-      {//search for next hole to traverse       
+      {//search for next hole to traverse
 
         /*Treatment of 4 possible cases (can be narrowed to 3) - the
          first two cannot co-exist here as vertices with degree of 2 that are
          not on the unbounded face will be encountered when traversing holes
          (different state) */
         next = curr->next();
-        //unified 2 simple cases of traversal along outer boundary 
+        //unified 2 simple cases of traversal along outer boundary
         /* case target() is a simple vertice with a single possible edge on path.
         add it to output and continue searching for a hole. This is when traversing
         along the outer polygon boundary*/
@@ -434,7 +434,7 @@ namespace CGAL {
              //can be reached after an antenna
              antenna_trav=false;
           }*/
-          //insert target point to result output iterator     
+          //insert target point to result output iterator
           *oi = curr->target()->point();
           ++oi;
           hole_start = arr.non_const_handle(curr->target());
@@ -458,14 +458,14 @@ namespace CGAL {
           /*if (traversed_holes.find(arr.non_const_handle(curr->twin()->face())) == traversed_holes.end())
             std::cout << "curr edge is ((" << curr->source()->point() << "),( " << curr->target()->point() << "))" <<std::endl;
           */
-          //case this is the last half edge of an antenna 
+          //case this is the last half edge of an antenna
           /*if (antenna_trav == true) {
             std::cout << "curr edge is ((" << curr->source()->point() << "),( " << curr->target()->point() << "))" <<std::endl;
             antenna_trav = false;
           }
           skip_print = true; */
           curr = next->twin()->next()->twin();
-          //maintain the same state 
+          //maintain the same state
           continue;
           /*now curr->target() has remained the same but curr->next() will
           be adjacent to a different hole or curr->next->twin->face()
