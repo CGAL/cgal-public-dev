@@ -126,7 +126,7 @@ function `CGAL::Polygon_mesh_processing::split_long_edges()` should be called on
 constrained edges before remeshing.
 
 \cgalFigureBegin{iso_remeshing, iso_remeshing.png}
-Isotropic remeshing. 
+Isotropic remeshing.
 (a) Triangulated input surface mesh.
 (b) Surface uniformly and entirely remeshed.
 (c) Selection of a range of faces to be remeshed.
