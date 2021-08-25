@@ -16,7 +16,7 @@
 // $Id$
 // SPDX-License-Identifier: GPL-3.0+
 //
-// Author(s) :  Ronnie Gandhi <ronniegandhi19999@gmail.com>
+// Author(s) : Ronnie Gandhi <ronniegandhi19999@gmail.com>
 
 #ifndef EXACT_OFFSET_H
 #define EXACT_OFFSET_H
@@ -38,8 +38,8 @@ typedef Traits::Polygon_with_holes_2                      Polygon_with_holes_2_1
 
 template <typename Polygon_2> Polygon_with_holes_2_12 app_offsetting(const Polygon_2_12 & P, const typename Kernel::FT & r)
 {
-	Polygon_with_holes_2_12 offset = CGAL::approximated_offset_2(P,r,0.00001);
-	return offset;
+  Polygon_with_holes_2_12 offset = CGAL::approximated_offset_2(P,r,0.00001);
+  return offset;
 }
 
 #endif

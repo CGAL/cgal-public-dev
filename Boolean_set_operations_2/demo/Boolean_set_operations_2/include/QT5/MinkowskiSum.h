@@ -29,11 +29,10 @@
 
 namespace CGAL{
 namespace Qt{
-	class MinkowskiSum{
+  class MinkowskiSum{
 
 };
 }
-} 
-
+}
 
 #endif

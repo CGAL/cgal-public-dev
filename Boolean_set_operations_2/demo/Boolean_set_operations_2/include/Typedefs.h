@@ -174,8 +174,8 @@ typedef std::vector<Bezier_region_source>        Bezier_region_source_container 
 //typedef  Conic_traits::Rat_circle_2                     Conic_rat_circle;
 //typedef  Conic_traits::Rat_line_2                       Conic_rat_line;
 //typedef  CGAL::Gps_traits_2<Conic_traits>               Conic_gps_traits;
-//typedef  Conic_gps_traits::General_polygon_2		Conic_polygon;
-//typedef  std::vector<Conic_polygon> 			Conic_polygon_vector;
+//typedef  Conic_gps_traits::General_polygon_2            Conic_polygon;
+//typedef  std::vector<Conic_polygon>                     Conic_polygon_vector;
 //typedef  Conic_gps_traits::General_polygon_with_holes_2 Conic_polygon_with_holes;
 //typedef  CGAL::General_polygon_set_2<Conic_gps_traits>  Conic_polygon_set;
 

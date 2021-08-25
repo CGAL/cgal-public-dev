@@ -83,20 +83,20 @@ public:
   //
   // public API
   //
-  void run(Point_list &point_list) {
+  void run(Point_list& point_list) {
     // point_list contains only the inner samples
     Point_iter pi;
     for (pi = point_list.begin(); pi != point_list.end(); pi++) {
       add_point(*pi);
     }
     point_list.clear();
-    get_centroids(std::back_inserter(point_list));	// this is error_proven
+    get_centroids(std::back_inserter(point_list));  // this is error_proven
   }
 
-  void compute_voronoi_cells_and_boundaries(const Point_list &samples,
-    const Vector_3 &normal, const Color_list &colors,
-    std::vector<float> *pos_faces, std::vector<float> *pos_face_normals,
-    std::vector<float> *pos_face_colors, std::vector<float> *pos_boundaries) {
+  void compute_voronoi_cells_and_boundaries(const Point_list& samples,
+    const Vector_3& normal, const Color_list& colors,
+    std::vector<float>* pos_faces, std::vector<float>* pos_face_normals,
+    std::vector<float>* pos_face_colors, std::vector<float>* pos_boundaries) {
     // step 1: build the map between points and colors
     std::map<Point_2, CGAL::Color> point_color_map;
     Point_const_iter pit;
@@ -110,8 +110,8 @@ public:
     // step 2: compute the voronoi cells and boundaries
     CGAL::Color color;
     for (Finite_vertices_iterator v = Dt::finite_vertices_begin();
-        v != Dt::finite_vertices_end(); ++v) {
-      const Point_2 &q = v->point();
+      v != Dt::finite_vertices_end(); ++v) {
+      const Point_2& q = v->point();
       color = point_color_map[q];
       compute_bounded_cell_and_boundaries(v, normal, color,
         pos_faces, pos_face_normals, pos_face_colors, pos_boundaries);
@@ -157,11 +157,11 @@ private:
     Vector_3 translate = point - CGAL::ORIGIN;
 
     Vector_3 u = plane.base1();
-    u = u / std::sqrt(u*u);
+    u = u / std::sqrt(u * u);
     Vector_3 v = plane.base2();
-    v = v / std::sqrt(v*v);
+    v = v / std::sqrt(v * v);
     Vector_3 w = plane.orthogonal_vector();
-    w = w / std::sqrt(w*w);
+    w = w / std::sqrt(w * w);
 
     return Aff_transform_3(u.x(), v.x(), w.x(), translate.x(),
       u.y(), v.y(), w.y(), translate.y(),
@@ -239,7 +239,7 @@ private:
     FT sum_areas = 0.0;
     Point_2 pivot = polygon[0]; // pivot vertex
     int nb_triangles = (int)polygon.size() - 2;
-    for (int i = 0; i<nb_triangles; i++) {
+    for (int i = 0; i < nb_triangles; i++) {
       Point_2 p1 = polygon[(i + 1) % polygon.size()];
       Point_2 p2 = polygon[(i + 2) % polygon.size()];
       Triangle_2 triangle(pivot, p1, p2);
@@ -319,7 +319,7 @@ private:
     Vector_2 sum_vec = CGAL::NULL_VECTOR;
     Point_2 pivot = polygon[0]; // pivot vertex
     int nb_triangles = (int)polygon.size() - 2;
-    for (int i = 0; i<nb_triangles; i++) {
+    for (int i = 0; i < nb_triangles; i++) {
       Point_2 p1 = polygon[(i + 1) % polygon.size()];
       Point_2 p2 = polygon[(i + 2) % polygon.size()];
       Triangle_2 triangle(pivot, p1, p2);
@@ -342,9 +342,9 @@ private:
   // Visual elements
   // 
   void compute_bounded_cell_and_boundaries(Vertex_handle v,
-    const Vector_3 &normal, const CGAL::Color &color,
-    std::vector<float> *pos_faces, std::vector<float> *pos_face_normals,
-    std::vector<float> *pos_face_colors, std::vector<float> *pos_boundaries) const {
+    const Vector_3& normal, const CGAL::Color& color,
+    std::vector<float>* pos_faces, std::vector<float>* pos_face_normals,
+    std::vector<float>* pos_face_colors, std::vector<float>* pos_boundaries) const {
     std::vector<Point_2> cell;
     if (compute_bounded_cell(v, std::back_inserter(cell))) {
       if (cell.size() < 3) {
@@ -357,8 +357,8 @@ private:
     }
   }
 
-  void compute_polygon_boundary(const std::vector<Point_2> &polygon,
-    std::vector<float> *pos_boundaries) const {
+  void compute_polygon_boundary(const std::vector<Point_2>& polygon,
+    std::vector<float>* pos_boundaries) const {
     int size = static_cast<int>(polygon.size());
     for (int i = 0; i < size; ++i) {
       int j = (i + 1) % size;
@@ -369,10 +369,10 @@ private:
     }
   }
 
-  void compute_polygon(const std::vector<Point_2> &polygon,
-    const Vector_3 &normal, const CGAL::Color &color,
-    std::vector<float> *pos_faces, std::vector<float> *pos_face_normals,
-    std::vector<float> *pos_face_colors) const {
+  void compute_polygon(const std::vector<Point_2>& polygon,
+    const Vector_3& normal, const CGAL::Color& color,
+    std::vector<float>* pos_faces, std::vector<float>* pos_face_normals,
+    std::vector<float>* pos_face_colors) const {
     std::vector<Point_2> points(3, polygon[0]);
     int nb_triangles = static_cast<int>(polygon.size() - 2);
     for (int i = 0; i < nb_triangles; i++) {
@@ -385,11 +385,11 @@ private:
     }
   }
 
-  void compute_triangle(const std::vector<Point_2> &points,
-    const Vector_3 &normal, const CGAL::Color &color,
-    std::vector<float> *pos_faces, std::vector<float> *pos_face_normals,
-    std::vector<float> *pos_face_colors) const {
-    for (const Point_2 &p_2 : points) {
+  void compute_triangle(const std::vector<Point_2>& points,
+    const Vector_3& normal, const CGAL::Color& color,
+    std::vector<float>* pos_faces, std::vector<float>* pos_face_normals,
+    std::vector<float>* pos_face_colors) const {
+    for (const Point_2& p_2 : points) {
       Point_3 p_3 = map_from_2d_to_3d(p_2);
       compute_point(p_3, pos_faces);
       compute_normal(normal, pos_face_normals);
@@ -397,22 +397,22 @@ private:
     }
   }
 
-  void inline compute_point(const Point_3 &p,
-    std::vector<float> *pos_faces) const {
+  void inline compute_point(const Point_3& p,
+    std::vector<float>* pos_faces) const {
     pos_faces->push_back(p.x());
     pos_faces->push_back(p.y());
     pos_faces->push_back(p.z());
   }
 
-  void inline compute_normal(const Vector_3 &normal,
-    std::vector<float> *pos_face_normals) const {
+  void inline compute_normal(const Vector_3& normal,
+    std::vector<float>* pos_face_normals) const {
     pos_face_normals->push_back(normal.x());
     pos_face_normals->push_back(normal.y());
     pos_face_normals->push_back(normal.z());
   }
 
-  void inline compute_color(const CGAL::Color &color,
-    std::vector<float> *pos_face_colors) const {
+  void inline compute_color(const CGAL::Color& color,
+    std::vector<float>* pos_face_colors) const {
     pos_face_colors->push_back(color.red() / 255.0f);
     pos_face_colors->push_back(color.green() / 255.0f);
     pos_face_colors->push_back(color.blue() / 255.0f);
@@ -560,7 +560,7 @@ private:
   template <class Query> // Segment_2, Ray_2 or Ray_2
   bool intersect_domain(const Query& query,
     std::vector<Point_2>& intersections) const {
-    for (int i = 0; i<3; i++) {
+    for (int i = 0; i < 3; i++) {
       Point_2 intersection;
       Segment_2 segment(m_triangle_2d[i], m_triangle_2d[(i + 1) % 3]);
       CGAL::Object object = CGAL::intersection(query, segment);

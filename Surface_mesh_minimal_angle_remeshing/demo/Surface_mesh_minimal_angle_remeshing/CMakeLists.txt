@@ -54,8 +54,8 @@ if(CGAL_FOUND AND CGAL_Qt5_FOUND AND Qt5_FOUND)
   add_file_dependencies( minimal_angle_remeshing_demo.cpp "${CMAKE_CURRENT_BINARY_DIR}/main_window_moc.cpp"
                                        "${CMAKE_CURRENT_BINARY_DIR}/viewer_moc.cpp"
                                        "${CMAKE_CURRENT_BINARY_DIR}/scene_moc.cpp" 
-	                       "${CMAKE_CURRENT_BINARY_DIR}/isotropic_parameters_moc.cpp"
-		       "${CMAKE_CURRENT_BINARY_DIR}/minimal_angle_parameters_moc.cpp")
+                                       "${CMAKE_CURRENT_BINARY_DIR}/isotropic_parameters_moc.cpp"
+                                       "${CMAKE_CURRENT_BINARY_DIR}/minimal_angle_parameters_moc.cpp")
 
   add_executable  ( Surface_mesh_minimal_angle_remeshing_Demo minimal_angle_remeshing_demo.cpp ${UI_FILES} ${CGAL_Qt5_RESOURCE_FILES} 
     #${CGAL_Qt5_MOC_FILES}

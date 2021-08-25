@@ -91,7 +91,7 @@ public:
       add_point(*pi);
     }
     point_list.clear();
-    get_centroids(std::back_inserter(point_list));	// this is error_proven
+    get_centroids(std::back_inserter(point_list));  // this is error_proven
   }
 
   void compute_voronoi_cells_and_boundaries(const Point_list &samples,
