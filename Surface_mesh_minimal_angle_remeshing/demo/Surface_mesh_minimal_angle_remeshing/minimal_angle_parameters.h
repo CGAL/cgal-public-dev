@@ -9,8 +9,8 @@
 //
 // Author(s)     : Kaimo Hu
 
-#ifndef CGAL_MINANGLE_PARAMETERS_H
-#define CGAL_MINANGLE_PARAMETERS_H
+#ifndef CGAL_MINIMAL_ANGLE_REMESHING_DEMO_MINANGLE_PARAMETERS_H
+#define CGAL_MINIMAL_ANGLE_REMESHING_DEMO_MINANGLE_PARAMETERS_H
 
 #include "ui_minimal_angle_parameters.h"
 
@@ -198,4 +198,4 @@ class MinAngleParameters : public QDialog, private Ui_MinAngleParametersDialog {
   void set_optimize_after_local_operations(bool value) { cb_optimize_after_local_operations->setChecked(value); }
 };
 
-#endif // CGAL_MINANGLE_PARAMETERS_H
+#endif // CGAL_MINIMAL_ANGLE_REMESHING_DEMO_MINANGLE_PARAMETERS_H

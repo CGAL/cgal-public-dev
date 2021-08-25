@@ -9,11 +9,13 @@
 //
 // Author(s)     : Kaimo Hu
 
-#ifndef CGAL_POLYGON_KERNEL_H
-#define CGAL_POLYGON_KERNEL_H
+#ifndef CGAL_POLYGON_MESH_PROCESSING_POLYGON_KERNEL_H
+#define CGAL_POLYGON_MESH_PROCESSING_POLYGON_KERNEL_H
 
+// C/C++
+#include <CGAL/license/minimal_angle_remeshing.h>
 #include <CGAL/convex_hull_2.h>
-
+// local
 #include "console_color.h"
 
 template <class Kernel>
@@ -127,4 +129,4 @@ public:
   }
 };
 
-#endif // CGAL_POLYGON_KERNEL_H
+#endif // CGAL_POLYGON_MESH_PROCESSING_POLYGON_KERNEL_H

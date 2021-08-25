@@ -9,8 +9,8 @@
 //
 // Author(s)     : Kaimo Hu
 
-#ifndef CGAL_TYPES_H
-#define CGAL_TYPES_H
+#ifndef CGAL_MINIMAL_ANGLE_REMESHING_DEMO_TYPES_H
+#define CGAL_MINIMAL_ANGLE_REMESHING_DEMO_TYPES_H
 
 // CGAL
 #include <CGAL/Simple_cartesian.h>
@@ -91,4 +91,4 @@ struct halfedge2edge {
   std::vector<edge_descriptor> &m_edges;
 };
 
-#endif // CGAL_TYPES_H
+#endif // CGAL_MINIMAL_ANGLE_REMESHING_DEMO_TYPES_H

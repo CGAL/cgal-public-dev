@@ -9,8 +9,8 @@
 //
 // Author(s)     : Kaimo Hu
 
-#ifndef SRC_INTERNAL_MINANGLE_REMESHING_MINANGLE_REMESH_IMPL_H_
-#define SRC_INTERNAL_MINANGLE_REMESHING_MINANGLE_REMESH_IMPL_H_
+#ifndef CGAL_SURFACE_MESH_MINIMAL_ANGLE_REMESHING_MINANGLE_REMESH_IMPL_H
+#define CGAL_SURFACE_MESH_MINIMAL_ANGLE_REMESHING_MINANGLE_REMESH_IMPL_H
 
 // C/C++
 #include <list>
@@ -19,6 +19,8 @@
 #include <string>
 #include <algorithm>
 #include <utility>
+// CGAL
+#include <../../../Installation/include/CGAL/license/Polygon_mesh_processing/minimal_angle_remeshing.h>
 // local
 #include "mesh_properties.h"
 
@@ -1073,4 +1075,4 @@ class Minangle_remesher {
 }  // namespace Polygon_mesh_processing
 }  // namespace CGAL
 
-#endif  // SRC_INTERNAL_MINANGLE_REMESHING_MINANGLE_REMESH_IMPL_H_
+#endif  // CGAL_SURFACE_MESH_MINIMAL_ANGLE_REMESHING_MINANGLE_REMESH_IMPL_H

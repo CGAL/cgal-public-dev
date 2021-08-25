@@ -9,8 +9,8 @@
 //
 // Author(s)     : Kaimo Hu
 
-#ifndef CGAL_SCENE_H
-#define CGAL_SCENE_H
+#ifndef CGAL_MINIMAL_ANGLE_REMESHING_DEMO_SCENE_H
+#define CGAL_MINIMAL_ANGLE_REMESHING_DEMO_SCENE_H
 
 //#include <QtOpenGL/qgl.h>
 //#include <QtCore/qglobal.h>
@@ -744,4 +744,4 @@ class Scene : public QObject {
 
 }; // end class Scene
 
-#endif // CGAL_SCENE_H
+#endif // CGAL_MINIMAL_ANGLE_REMESHING_DEMO_SCENE_H

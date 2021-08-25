@@ -9,8 +9,8 @@
 //
 // Author(s)     : Kaimo Hu
 
-#ifndef CGAL_MAINWINDOW_H
-#define CGAL_MAINWINDOW_H
+#ifndef CGAL_MINIMAL_ANGLE_REMESHING_DEMO_MAIN_WINDOW_H
+#define CGAL_MINIMAL_ANGLE_REMESHING_DEMO_MAIN_WINDOW_H
 
 // Qt
 //#include <QtOpenGL/qgl.h>
@@ -148,4 +148,4 @@ private:
   Ui::MainWindow *ui;
 };
 
-#endif // CGAL_MAINWINDOW_H
+#endif // CGAL_MINIMAL_ANGLE_REMESHING_DEMO_MAIN_WINDOW_H

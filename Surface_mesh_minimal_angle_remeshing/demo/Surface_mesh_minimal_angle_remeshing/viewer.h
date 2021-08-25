@@ -9,8 +9,8 @@
 //
 // Author(s)     : Kaimo Hu
 
-#ifndef CGAL_VIEWER_H
-#define CGAL_VIEWER_H
+#ifndef CGAL_MINIMAL_ANGLE_REMESHING_DEMO_VIEWER_H
+#define CGAL_MINIMAL_ANGLE_REMESHING_DEMO_VIEWER_H
 
 #include <QMap>
 #include <CGAL/Qt/qglviewer.h>
@@ -43,4 +43,4 @@ class Viewer : public CGAL::QGLViewer {
   bool m_custom_mouse;
 }; // end class Viewer
 
-#endif // CGAL_VIEWER_H
+#endif // CGAL_MINIMAL_ANGLE_REMESHING_DEMO_VIEWER_H

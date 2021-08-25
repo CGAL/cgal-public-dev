@@ -9,8 +9,8 @@
 //
 // Author(s)     : Kaimo Hu
 
-#ifndef SRC_MINANGLE_REMESH_H_
-#define SRC_MINANGLE_REMESH_H_
+#ifndef CGAL_MINIMAL_ANGLE_REMESHING_DEMO_MINANGLE_ANGLE_REMESH_H
+#define CGAL_MINIMAL_ANGLE_REMESHING_DEMO_MINANGLE_ANGLE_REMESH_H
 
 #include <string>
 
@@ -187,4 +187,4 @@ class Minangle_remesh {
 }   // namespace Polygon_mesh_processing
 }   // namespace CGAL
 
-#endif  // SRC_MINANGLE_REMESH_H_
+#endif  // CGAL_MINIMAL_ANGLE_REMESHING_DEMO_MINANGLE_ANGLE_REMESH_H

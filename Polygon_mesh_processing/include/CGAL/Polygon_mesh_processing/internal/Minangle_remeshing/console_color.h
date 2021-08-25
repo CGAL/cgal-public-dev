@@ -9,10 +9,14 @@
 //
 // Author(s)     : Kaimo Hu
 
-#ifndef CGAL_CONSOLE_COLOR_H
-#define CGAL_CONSOLE_COLOR_H
+#ifndef CGAL_POLYGON_MESH_PROCESSING_CONSOLE_COLOR_H
+#define CGAL_POLYGON_MESH_PROCESSING_CONSOLE_COLOR_H
 
+// C/C++
 #include <iostream>
+// CGAL
+#include <CGAL/license/minimal_angle_remeshing.h>
+
 
 #if defined(WIN32)
 #include <windows.h>
@@ -73,4 +77,4 @@ inline std::ostream& white(std::ostream &s)
     return s;
 }
 
-#endif // CGAL_CONSOLE_COLOR_H
+#endif // CGAL_POLYGON_MESH_PROCESSING_CONSOLE_COLOR_H

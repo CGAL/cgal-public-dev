@@ -9,8 +9,8 @@
 //
 // Author(s)     : Kaimo Hu
 
-#ifndef CGAL_BVD_H
-#define CGAL_BVD_H
+#ifndef CGAL_POLYGON_MESH_PROCESSING_BVD_H
+#define CGAL_POLYGON_MESH_PROCESSING_BVD_H
 
 #undef min
 #undef max
@@ -596,5 +596,4 @@ private:
   Aff_transform_3 m_to_3d;
 };
 
-#endif // CGAL_BVD_H
-
+#endif // CGAL_POLYGON_MESH_PROCESSING_BVD_H

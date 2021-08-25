@@ -9,8 +9,8 @@
 //
 // Author(s)     : Kaimo Hu
 
-#ifndef CGAL_ISOTROPIC_PARAMETERS_H
-#define CGAL_ISOTROPIC_PARAMETERS_H
+#ifndef CGAL_MINIMAL_ANGLE_REMESHING_DEMO_ISOTROPIC_PARAMETERS_H
+#define CGAL_MINIMAL_ANGLE_REMESHING_DEMO_ISOTROPIC_PARAMETERS_H
 
 #include "ui_isotropic_parameters.h"
 
@@ -37,4 +37,4 @@ public:
   void set_smooth_iteration_count(double value) { sb_smooth_iteration_count->setValue(value); }
 };
 
-#endif // CGAL_ISOTROPIC_PARAMETERS_H
+#endif // CGAL_MINIMAL_ANGLE_REMESHING_DEMO_ISOTROPIC_PARAMETERS_H
