@@ -24,20 +24,17 @@
   intersection the unit sphere with a rational plane.
 */
 
-
 #ifndef SPHERICAL_POWER_DIAGRAM_2_H
 #define SPHERICAL_POWER_DIAGRAM_2_H
 
-
 #include <CGAL/Arr_geodesic_arc_on_sphere_traits_2.h>
-
 #include <CGAL/Envelope_voronoi_2/envelope_voronoi_assertions.h>
 
 namespace CGAL {
 
 template <class T_Kernel>
-class Spherical_power_diagram_traits_2
-: public Arr_geodesic_arc_on_sphere_traits_2<T_Kernel>
+class Spherical_power_diagram_traits_2 :
+    public Arr_geodesic_arc_on_sphere_traits_2<T_Kernel>
 {
 public:
   typedef T_Kernel                                             Kernel;
@@ -60,16 +57,14 @@ public:
   /*! \todo Get rid of the local var. 'ker'. Pass it through the constructor
    * instead!
    */
-  class Site_2 : public Plane_3
-  {
+  class Site_2 : public Plane_3 {
   public:
     Site_2() {}
 
     /*! The site represents a circle on the sphere that is contined in the
      * given plane.
      */
-    Site_2(const Plane_3& p) : Plane_3(p)
-    {
+    Site_2(const Plane_3& p) : Plane_3(p) {
       CGAL_envelope_voronoi_precondition_code(Kernel ker;);
       CGAL_envelope_voronoi_precondition_code
         (Point_3 o = ker.construct_point_3_object()(CGAL::ORIGIN););
@@ -79,8 +74,7 @@ public:
 
     /*! The site represents a point on the sphere (power circle of radius 0).
      */
-    Site_2(const typename Kernel::Point_3& p)
-    {
+    Site_2(const typename Kernel::Point_3& p) {
       Kernel ker;
       Point_3 o = ker.construct_point_3_object()(CGAL::ORIGIN);
 
@@ -105,8 +99,7 @@ protected:
       \param s2 The second site.
       \return The plane that creates the bisector between the two sites.
   */
-  static Plane_3 bisector_plane (const Site_2& s1, const Site_2& s2)
-  {
+  static Plane_3 bisector_plane(const Site_2& s1, const Site_2& s2) {
     Kernel k;
     CGAL_envelope_voronoi_precondition(k.equal_3_object() (s1, s2) == false);
     typename Kernel::Intersect_3 intersect = k.intersect_3_object();
@@ -226,32 +219,40 @@ public:
     }
   };
 
+  //!
   Compare_distance_at_point_2 compare_distance_at_point_2_object() const
-  {
-    return Compare_distance_at_point_2();
-  }
+  { return Compare_distance_at_point_2(); }
 
-
-  class Construct_point_on_x_monotone_2
-  {
+  //!
+  class Construct_point_on_x_monotone_2 {
     /*! The function constructs a point on an x-monotone curve.
       \todo Maybe move this to the geodesic traits.
     */
+  private:
+    typedef Self Traits;
+
+    //! The base traits (in case it has state).
+    const Traits* m_traits;
+
   public:
-    Point_2 operator() (const X_monotone_curve_2& xcurve) const
-    {
-      Kernel kernel;
+    /*! Constructor
+     * \param traits the traits instance
+     */
+    Construct_point_on_x_monotone_2(const Traits* traits) : m_traits(traits) {}
 
-      typename Kernel::Construct_point_3 cons_point_3 =
-        kernel.construct_point_3_object();
-      typename Kernel::Construct_ray_3 cons_ray_3 =
-        kernel.construct_ray_3_object();
-      typename Kernel::Construct_vector_3 cons_vector_3 =
-        kernel.construct_vector_3_object();
-      typename Kernel::Construct_direction_3 cons_dir_3 =
-        kernel.construct_direction_3_object();
+    //!
+    Point_2 operator() (const X_monotone_curve_2& xcurve) const {
+      const Kernel& kernel = *m_traits;
+      auto cons_point_3 = kernel.construct_point_3_object();
+      auto cons_ray_3 = kernel.construct_ray_3_object();
+      auto cons_vector_3 = kernel.construct_vector_3_object();
+      auto cons_cross = kernel.construct_cross_product_vector_3_object();
+      auto cons_dir_3 = kernel.construct_direction_3_object();
+      auto cons_opp_dir = kernel.construct_opposite_direction_3_object();
+      auto cons_opp_vec = kernel.construct_opposite_vector_3_object();
+      auto eq = kernel.equal_3_object();
 
-
+      auto cons_point_2 = m_traits->construct_point_2_object();
 
       Point_2 s = xcurve.source();
       Point_2 t = xcurve.target();
@@ -269,41 +270,31 @@ public:
       Ray_3 ray_norm = cons_ray_3(o, xcurve.normal());
       Vector_3 vec_norm = cons_vector_3(ray_norm);
 
-
-      if (kernel.equal_3_object()(dir_s,
-                                  kernel.construct_opposite_direction_3_object()
-                                  (dir_t)))
-      {
-        Vector_3 vec_res =
-          kernel.construct_cross_product_vector_3_object()
-          (vec_t, vec_norm);
-        return kernel.construct_direction_3_object()(vec_res);
+      if (eq(dir_s, cons_opp_dir(dir_t))) {
+        Vector_3 vec_res = cons_cross(vec_t, vec_norm);
+        return cons_point_2(cons_dir_3(vec_res));
       }
 
       Vector_3 vec_res = vec_s + vec_t;
-
-      Vector_3 cross =
-        kernel.construct_cross_product_vector_3_object()(vec_s, vec_t);
+      Vector_3 cross = cons_cross(vec_s, vec_t);
       Direction_3 dir_cross = cons_dir_3(cross);
 
-      if (kernel.equal_3_object()(dir_cross, xcurve.normal()) == false)
-        vec_res = kernel.construct_opposite_vector_3_object()(vec_res);
+      if (eq(dir_cross, xcurve.normal()) == false)
+        vec_res = cons_opp_vec(vec_res);
 
-      return kernel.construct_direction_3_object()(vec_res);
+      return cons_point_2(cons_dir_3(vec_res));
     }
   };
 
+  //!
   Construct_point_on_x_monotone_2 construct_point_on_x_monotone_2_object() const
-  {
-    return Construct_point_on_x_monotone_2();
-  }
+  { return Construct_point_on_x_monotone_2(this); }
 
-  class Compare_dominance_2
-  {
+  //!
+  class Compare_dominance_2 {
   public:
     Comparison_result operator()(const Site_2& h1,
                                  const Site_2& h2) const
-
     {
       // One site dominates the other only if they are the same cite
       CGAL_envelope_voronoi_assertion_code(Kernel k;);
@@ -312,48 +303,45 @@ public:
     }
   };
 
+  //!
   Compare_dominance_2 compare_dominance_2_object() const
-  {
-    return Compare_dominance_2();
-  }
+  { return Compare_dominance_2(); }
 
-  class Compare_distance_above_2
-  {
+  //!
+  class Compare_distance_above_2 {
   private:
     typedef Self Traits;
 
-    /*! The base traits instance (in case it has state) */
-    const Traits * m_traits;
+    //! The base traits (in case it has state).
+    const Traits* m_traits;
 
   public:
     /*! Constructor
      * \param traits the traits instance
      */
-  Compare_distance_above_2(const Traits * traits) : m_traits(traits) {}
+    Compare_distance_above_2(const Traits* traits) : m_traits(traits) {}
 
-
+    //!
     Comparison_result operator()(const Site_2& h1,
                                  const Site_2& h2,
                                  const X_monotone_curve_2& cv) const
     {
       typedef typename Kernel::FT                         FT;
 
-      Kernel kernel;
+      const Kernel& kernel = *m_traits;
 
-      typename Kernel::Construct_orthogonal_vector_3 ortho =
-        kernel.construct_orthogonal_vector_3_object();
+      auto ortho = kernel.construct_orthogonal_vector_3_object();
       Vector_3 v1 = ortho(h1);
       Vector_3 v2 = ortho(h2);
 
-      typename Kernel::Construct_opposite_vector_3 oppo =
-        kernel.construct_opposite_vector_3_object();
+      auto oppo = kernel.construct_opposite_vector_3_object();
       v1 = oppo(v1);
       v2 = oppo(v2);
 
-      typename Kernel::Construct_direction_3 dire =
-        kernel.construct_direction_3_object();
-      Point_2 d1 = Point_2(dire(v1));
-      Point_2 d2 = Point_2(dire(v2));
+      auto dire = kernel.construct_direction_3_object();
+      auto ctp = m_traits->construct_point_2_object();
+      Point_2 d1 = Point_2(ctp(dire(v1)));
+      Point_2 d2 = Point_2(ctp(dire(v2)));
 
       Comparison_result res = m_traits->compare_y(d1, d2);
       if (res != EQUAL)
@@ -382,31 +370,39 @@ public:
       else
         res = kernel.oriented_side_3_object()(cv_plane, translate(o, v2));
 
-      if (cv.is_directed_right())
-        return res;
+      if (cv.is_directed_right()) return res;
       return CGAL::opposite(res);
     }
   };
 
+  //!
   Compare_distance_above_2 compare_distance_above_2_object() const
-  {
-    return Compare_distance_above_2(this);
-  }
+  { return Compare_distance_above_2(this); }
 
   /*! class Given to circles on a sphere (represented as planed intersecting
     the sphere) create their bisector on the unit sphere. A precondition is
     that both of the planes intersect the unit sphere.
   */
-  class Construct_bisector_2
-  {
-  public:
+  class Construct_bisector_2 {
+  private:
+    typedef Self Traits;
 
+    //! The base traits (in case it has state)
+    const Traits* m_traits;
+
+  public:
+    /*! Constructor
+     * \param traits the traits instance
+     */
+    Construct_bisector_2(const Traits* traits) : m_traits(traits) {}
+
+    //!
     template <class OutputIterator>
       OutputIterator operator()(const Site_2& s1,
                                 const Site_2& s2,
                                 OutputIterator o) const
     {
-      Kernel kernel;
+      const Kernel& kernel = *m_traits;
 
       // check that both planes intersect the unit sphere.
       CGAL_envelope_voronoi_precondition_code (Point_3 origin = \
@@ -441,35 +437,33 @@ public:
       Direction_3 d2 = kernel.construct_direction_3_object() (v2);
       Direction_3 d3 = kernel.construct_opposite_direction_3_object() (d1);
       Direction_3 d4 = kernel.construct_opposite_direction_3_object() (d2);
+      auto p1 = m_traits->construct_point_2_object()(d1);
+      auto p2 = m_traits->construct_point_2_object()(d2);
+      auto p3 = m_traits->construct_point_2_object()(d3);
+      auto p4 = m_traits->construct_point_2_object()(d4);
 
-      Curve_2 c1 (d1, d2);
-      Curve_2 c2 (d2, d3);
-      Curve_2 c3 (d3, d4);
-      Curve_2 c4 (d4, d1);
+      Curve_2 c1 = m_traits->construct_curve_2_object()(p1, p2);
+      Curve_2 c2 = m_traits->construct_curve_2_object()(p2, p3);
+      Curve_2 c3 = m_traits->construct_curve_2_object()(p3, p4);
+      Curve_2 c4 = m_traits->construct_curve_2_object()(p4, p1);
 #endif
 
       // Temporary!!! Initiating new traits locally.
       typedef std::list<CGAL::Object>                  Object_list;
       Object_list x_monotones;
 
-      Base base;
-
 #if defined(CGAL_FULL_X_MONOTONE_GEODESIC_ARC_ON_SPHERE_IS_SUPPORTED)
-      base.make_x_monotone_2_object()(c, std::back_inserter(x_monotones));
+      m_traits->make_x_monotone_2_object()(c, std::back_inserter(x_monotones));
 #else
-      base.make_x_monotone_2_object()(c1, std::back_inserter(x_monotones));
-      base.make_x_monotone_2_object()(c2, std::back_inserter(x_monotones));
-      base.make_x_monotone_2_object()(c3, std::back_inserter(x_monotones));
-      base.make_x_monotone_2_object()(c4, std::back_inserter(x_monotones));
+      m_traits->make_x_monotone_2_object()(c1, std::back_inserter(x_monotones));
+      m_traits->make_x_monotone_2_object()(c2, std::back_inserter(x_monotones));
+      m_traits->make_x_monotone_2_object()(c3, std::back_inserter(x_monotones));
+      m_traits->make_x_monotone_2_object()(c4, std::back_inserter(x_monotones));
 #endif
 
-      for (Object_list::iterator it = x_monotones.begin();
-           it != x_monotones.end();
-           ++it)
-      {
+      for (auto it = x_monotones.begin(); it != x_monotones.end(); ++it) {
         X_monotone_curve_2 curve;
-        if (assign(curve, *it))
-        {
+        if (assign(curve, *it)) {
           *o++ = curve;
           continue;
         }
@@ -482,11 +476,7 @@ public:
   };
 
   Construct_bisector_2 construct_bisector_2_object() const
-  {
-    return Construct_bisector_2();
-  }
-
-
+  { return Construct_bisector_2(this); }
 };
 
 } //namespace CGAL
