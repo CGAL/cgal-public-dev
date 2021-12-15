@@ -110,9 +110,10 @@ public:
     m_point_type = LTS_VERTEX_INTERIOR;
   }
 
-  Lines_through_segments_point_adapt_2(const typename Rational_arc_traits_arr_on_plane_2::Point_2& p,
-                                       const Rational& rat_x,
-                                       const Rational& rat_y)
+  Lines_through_segments_point_adapt_2
+  (const typename Rational_arc_traits_arr_on_plane_2::Point_2& p,
+   const Rational& rat_x,
+   const Rational& rat_y)
   {
     Lines_through_segments_traits_on_plane_adapt<
     Traits_3>  traits_2_adapt;
@@ -143,7 +144,8 @@ public:
   }
 
 
-  Lines_through_segments_point_adapt_2(const typename Rational_arc_traits_arr_on_plane_2::Point_2& p)
+  Lines_through_segments_point_adapt_2
+  (const typename Rational_arc_traits_arr_on_plane_2::Point_2& p)
   {
     Lines_through_segments_traits_on_plane_adapt<
     Traits_3>   traits_2_adapt;
@@ -195,8 +197,9 @@ public:
     m_y = y;
   }
 
-  Lines_through_segments_point_adapt_2(const typename Rational_arc_traits_arr_on_plane_2::Algebraic_real_1& number,
-                                       Point_type ver_type)
+  Lines_through_segments_point_adapt_2
+  (const typename Rational_arc_traits_arr_on_plane_2::Algebraic_real_1& number,
+   Point_type ver_type)
   {
     Lines_through_segments_traits_on_plane_adapt<
     Traits_3>  traits_2_adapt;
@@ -224,8 +227,7 @@ public:
   }
 
 
-  Lines_through_segments_point_adapt_2(const Rational& x, const Rational& y)
-  {
+  Lines_through_segments_point_adapt_2(const Rational& x, const Rational& y) {
     m_x = x;
     m_y = y;
     m_rat_x = x;
@@ -236,16 +238,14 @@ public:
     m_orig_point = Point(x,y);
   }
 
-  Number_type x() const
-  {
+  Number_type x() const {
     CGAL_assertion(m_point_type != LTS_VERTEX_X_MINUS_INFINITY &&
                    m_point_type != LTS_VERTEX_X_PLUS_INFINITY);
 
     return m_x;
   }
 
-  Point_type type() const
-  {
+  Point_type type() const {
     return m_point_type;
   }
 
@@ -257,8 +257,7 @@ public:
     return m_y;
   }
 
-  void get_original_point(Point& point) const
-  {
+  void get_original_point(Point& point) const {
 
     CGAL_assertion(m_original_point_created);
     point = m_orig_point;
@@ -270,11 +269,10 @@ public:
     CGAL_assertion(m_rat_rep_exists);
     return Rational_point_2(m_rat_x,m_rat_y);
   }
+
 private:
-  bool operator==(const Self& point_2)
-  {
-    switch (point_2.m_point_type)
-    {
+  bool operator==(const Self& point_2) {
+    switch (point_2.m_point_type) {
      case LTS_VERTEX_INTERIOR:
       if (this->m_point_type == LTS_VERTEX_INTERIOR &&
           this->m_x == point_2.m_x && this->m_y == point_2.m_y)
@@ -312,10 +310,8 @@ private:
   }
 
 public:
-  bool operator<(const Self& point_2) const
-  {
-    switch (point_2.m_point_type)
-    {
+  bool operator<(const Self& point_2) const {
+    switch (point_2.m_point_type) {
      case LTS_VERTEX_INTERIOR:
      case LTS_VERTEX_Y_MINUS_INFINITY:
      case LTS_VERTEX_Y_PLUS_INFINITY:
@@ -323,11 +319,9 @@ public:
           this->m_point_type == LTS_VERTEX_Y_MINUS_INFINITY ||
           this->m_point_type == LTS_VERTEX_Y_PLUS_INFINITY)
       {
-        if (this->m_x < point_2.m_x)
-          return true;
+        if (this->m_x < point_2.m_x) return true;
 
-        if (this->m_x == point_2.m_x)
-        {
+        if (this->m_x == point_2.m_x) {
           if (this->m_point_type == LTS_VERTEX_INTERIOR &&
               point_2.m_point_type == LTS_VERTEX_INTERIOR &&
               this->m_y < point_2.m_y)
@@ -343,8 +337,7 @@ public:
         }
       }
 
-      if (this->m_point_type == LTS_VERTEX_X_MINUS_INFINITY)
-        return true;
+      if (this->m_point_type == LTS_VERTEX_X_MINUS_INFINITY) return true;
       break;
 
      case LTS_VERTEX_X_MINUS_INFINITY:
@@ -365,8 +358,7 @@ public:
     return false;
   }
 
-  virtual std::string to_string() const
-  {
+  virtual std::string to_string() const {
     std::ostringstream o;
     o << "Point (";
 
@@ -399,88 +391,75 @@ private:
   typedef Lines_through_segments_point_adapt_3                  Self;
   typedef Traits_3_                                             Traits_3;
 
+public:
+  typedef typename Point::Direction_3                           Direction_3;
+  typedef typename Point::Location_type                         Location_type;
+
+private:
   Number_type m_z;
+  Location_type m_location;
 
 public:
-  Lines_through_segments_point_adapt_3()
-  {
-  }
+  Lines_through_segments_point_adapt_3() {}
 
-  Lines_through_segments_point_adapt_3(const Point& p)
-  {
+  Lines_through_segments_point_adapt_3(const Point& p) {
     this->m_orig_point = p;
     this->m_x = p.dx();
     this->m_y = p.dy();
-    m_z = p.dz();
     this->m_original_point_created = true;
+    m_z = p.dz();
+    m_location = p.location();
   }
 
   Lines_through_segments_point_adapt_3(const Self& p) :
     Lines_through_segments_point_adapt_2<Traits_3, Point, Number_type>(p)
   {
+    m_location = p.m_location;
     m_z = p.m_z;
   }
 
-  template <typename N_x,typename N_y,typename N_z>
-  Lines_through_segments_point_adapt_3(N_x x,N_y y,N_z z)
-  {
+  template <typename N_x, typename N_y, typename N_z>
+  Lines_through_segments_point_adapt_3(N_x x, N_y y, N_z z, Location_type loc) {
     this->m_x = x;
     this->m_y = y;
+    m_location = loc;
     m_z = z;
     this->m_original_point_created = false;
   }
 
-  Number_type z() const
-  {
-    return this->m_z;
+  Number_type z() const { return this->m_z; }
+
+  Number_type dx() const { return this->m_x; }
+  Number_type dy() const { return this->m_y; }
+  Number_type dz() const { return this->m_z; }
+
+  Point get_original_point() const {
+    if (this->m_original_point_created) return this->m_orig_point;
+    else {
+      Direction_3 d(this->m_x, this->m_y, this->m_z);
+      return Point(d, m_location);
+    }
   }
 
-  Number_type dx() const
-  {
-    return this->m_x;
-  }
-  Number_type dy() const
-  {
-    return this->m_y;
-  }
-  Number_type dz() const
-  {
-    return this->m_z;
+  void get_original_point(Point& point) const {
+    if (this->m_original_point_created) point = this->m_orig_point;
+    else {
+      Direction_3 d(this->m_x, this->m_y, this->m_z);
+      point = Point(d, m_location);
+    }
   }
 
-  Point get_original_point() const
-  {
-    if (this->m_original_point_created)
-      return this->m_orig_point;
-    else
-      return Point(this->m_x,this->m_y,this->m_z);
-  }
-
-  void get_original_point(Point& point) const
-  {
-    if (this->m_original_point_created)
-      point = this->m_orig_point;
-    else
-      point = Point(this->m_x,this->m_y,this->m_z);
-  }
-
-
-  std::string to_string() const
-  {
+  std::string to_string() const {
     std::ostringstream o;
     if (this->m_original_point_created)
-    {
       o << this->m_orig_point << std::endl;
+    else {
+      Direction_3 d(this->m_x, this->m_y, this->m_z);
+      o << Point(d, m_location) << std::endl;
     }
-    else
-    {
-      o << Point(this->m_x,this->m_y,this->m_z) << std::endl;
-    }
-
     return o.str();
   }
 };
-
 
 } //namespace CGAL
 
