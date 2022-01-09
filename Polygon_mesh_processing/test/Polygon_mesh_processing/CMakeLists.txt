@@ -1,13 +1,11 @@
 # Created by the script cgal_create_CMakeLists
 # This is the CMake script for compiling a set of CGAL applications.
 
-cmake_minimum_required(VERSION 3.1...3.20)
+cmake_minimum_required(VERSION 3.1...3.22)
 project(Polygon_mesh_processing_Tests)
 
 # CGAL and its components
 find_package(CGAL REQUIRED COMPONENTS Core)
-
-include(${CGAL_USE_FILE})
 
 # Boost and its components
 find_package(Boost REQUIRED)
@@ -54,6 +52,7 @@ else()
   message(STATUS "Examples that use OpenMesh will not be compiled.")
 endif()
 
+create_single_source_cgal_program("test_hausdorff_bounded_error_distance.cpp")
 create_single_source_cgal_program("test_pmp_read_polygon_mesh.cpp")
 create_single_source_cgal_program("connected_component_polyhedron.cpp")
 create_single_source_cgal_program("connected_component_surface_mesh.cpp")
@@ -109,7 +108,16 @@ create_single_source_cgal_program("triangulate_hole_with_cdt_2_test.cpp")
 create_single_source_cgal_program("test_pmp_polyhedral_envelope.cpp")
 #  create_single_source_cgal_program("test_pmp_repair_self_intersections.cpp")
 
+find_package(METIS)
+include(CGAL_METIS_support)
+if(TARGET CGAL::METIS_support)
+  target_link_libraries(test_hausdorff_bounded_error_distance PUBLIC CGAL::METIS_support)
+else()
+  message(STATUS "Tests, which use the METIS library will not be compiled.")
+endif()
+
 if(TARGET CGAL::TBB_support)
+  target_link_libraries(test_hausdorff_bounded_error_distance PUBLIC CGAL::TBB_support)
   target_link_libraries(test_pmp_distance PUBLIC CGAL::TBB_support)
   target_link_libraries(orient_polygon_soup_test PUBLIC CGAL::TBB_support)
   target_link_libraries(self_intersection_surface_mesh_test
