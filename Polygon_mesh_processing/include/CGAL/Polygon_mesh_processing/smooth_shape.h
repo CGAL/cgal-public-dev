@@ -53,7 +53,7 @@ namespace Polygon_mesh_processing {
 * @param tmesh a polygon mesh with triangulated surface patches to be smoothed.
 * @param faces the range of triangular faces defining one or several surface patches to be smoothed.
 * @param time a time step that corresponds to the speed by which the surface is smoothed.
-*        A larger time step results in faster convergence but details may be distorted to have a larger extent
+*        A larger time step results in faster convergence but details may be distorted to a larger extent
 *        compared to more iterations with a smaller step. Typical values scale in the interval (1e-6, 1].
 * @param np an optional sequence of \ref bgl_namedparameters "Named Parameters" among the ones listed below
 *
@@ -115,7 +115,7 @@ void smooth_shape(const FaceRange& faces,
   typedef typename internal_np::Lookup_named_param_def<
                      internal_np::vertex_is_constrained_t,
                      NamedParameters,
-                     Constant_property_map<vertex_descriptor, bool> >::type  VCMap;
+                     Static_boolean_property_map<vertex_descriptor, false> >::type  VCMap;
 
   using parameters::choose_parameter;
   using parameters::get_parameter;
@@ -124,7 +124,7 @@ void smooth_shape(const FaceRange& faces,
   VertexPointMap vpmap = choose_parameter(get_parameter(np, internal_np::vertex_point),
                                           get_property_map(CGAL::vertex_point, tmesh));
   VCMap vcmap = choose_parameter(get_parameter(np, internal_np::vertex_is_constrained),
-                                 Constant_property_map<vertex_descriptor, bool>(false));
+                                 Static_boolean_property_map<vertex_descriptor, false>());
   const unsigned int nb_iterations = choose_parameter(get_parameter(np, internal_np::number_of_iterations), 1);
 
 #if defined(CGAL_EIGEN3_ENABLED)
@@ -201,6 +201,7 @@ void smooth_shape(const FaceRange& faces,
   }
 }
 
+/// \cond SKIP_IN_MANUAL
 template<typename TriangleMesh, typename FaceRange>
 void smooth_shape(const FaceRange& faces,
                   TriangleMesh& tmesh,
@@ -223,6 +224,7 @@ void smooth_shape(TriangleMesh& tmesh,
 {
   smooth_shape(faces(tmesh), tmesh, time, parameters::all_default());
 }
+/// \endcond
 
 } // Polygon_mesh_processing
 } // CGAL

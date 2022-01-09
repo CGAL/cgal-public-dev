@@ -238,23 +238,21 @@ class Quick_multiscale_approximate_knn_distance<Kernel, typename Kernel::Point_2
   template <typename PointMap>
   struct Pmap_to_3d
   {
-    PointMap point_map;
     typedef typename Kernel::Point_3 value_type;
-    typedef const value_type& reference;
+    typedef value_type reference;
     typedef typename Kernel::Point_2 key_type;
-    typedef boost::lvalue_property_map_tag category;
+    typedef boost::readable_property_map_tag category;
+
+    PointMap point_map;
 
     Pmap_to_3d () { }
-    Pmap_to_3d (PointMap point_map)
-      : point_map (point_map) { }
+    Pmap_to_3d (PointMap point_map) : point_map (point_map) { }
 
-    friend inline value_type get (const Pmap_to_3d& pmap, key_type p)
+    friend inline value_type get (const Pmap_to_3d& pmap, const key_type& p)
     {
-      typename boost::property_traits<PointMap>::reference
-        p2 = get(pmap.point_map, p);
+      const typename boost::property_traits<PointMap>::value_type& p2 = get(pmap.point_map, p);
       return value_type (p2.x(), p2.y(), 0.);
     }
-
   };
 
   struct Sort_by_distance_to_point
@@ -385,7 +383,7 @@ public:
     FT nb = 0.;
     std::size_t index = 0;
 
-    typename boost::property_traits<PointMap>::reference
+    const typename boost::property_traits<PointMap>::value_type&
       pquery = get(point_map, *query);
     for (std::size_t t = 0; t < m_point_sets.size(); ++ t)
       {
@@ -449,7 +447,7 @@ public:
    \tparam OutputIterator is used to store the computed scales. It accepts
    values of type `std::size_t`.
 
-   \param points input point range.
+   \param points input point range
    \param queries range of locations where scale must be estimated
    \param output iterator to store the computed scales
    \param np an optional sequence of \ref bgl_namedparameters "Named Parameters" among the ones listed below
@@ -497,7 +495,7 @@ estimate_local_k_neighbor_scales(
   using parameters::get_parameter;
 
   typedef typename CGAL::GetPointMap<PointRange, NamedParameters>::const_type PointMap;
-  typedef typename Point_set_processing_3::GetQueryPointMap<QueryPointRange, NamedParameters>::const_type QueryPointMap;
+  typedef typename CGAL::GetPointMap<QueryPointRange, NamedParameters, true, internal_np::query_point_t>::const_type QueryPointMap;
   typedef typename Point_set_processing_3::GetK<PointRange, NamedParameters>::Kernel Kernel;
 
   typedef typename boost::property_traits<PointMap>::value_type Point_d;
@@ -546,7 +544,7 @@ estimate_local_k_neighbor_scales(
    \tparam PointRange is a model of `ConstRange`. The value type of
    its iterator is the key type of the named parameter `point_map`.
 
-   \param points input point range.
+   \param points input point range
    \param np an optional sequence of \ref bgl_namedparameters "Named Parameters" among the ones listed below
 
    \cgalNamedParamsBegin
@@ -617,7 +615,7 @@ estimate_global_k_neighbor_scale(const PointRange& points)
    \tparam OutputIterator is used to store the computed scales. It accepts
    values of type `geom_traits::FT`.
 
-   \param points input point range.
+   \param points input point range
    \param queries range of locations where scale must be estimated
    \param output iterator to store the computed scales
    \param np an optional sequence of \ref bgl_namedparameters "Named Parameters" among the ones listed below
@@ -665,7 +663,7 @@ estimate_local_range_scales(
   using parameters::get_parameter;
 
   typedef typename CGAL::GetPointMap<PointRange, NamedParameters>::const_type PointMap;
-  typedef typename Point_set_processing_3::GetQueryPointMap<QueryPointRange, NamedParameters>::const_type QueryPointMap;
+  typedef typename CGAL::GetPointMap<QueryPointRange, NamedParameters, true, internal_np::query_point_t>::const_type QueryPointMap;
   typedef typename Point_set_processing_3::GetK<PointRange, NamedParameters>::Kernel Kernel;
 
   typedef typename boost::property_traits<PointMap>::value_type Point_d;
@@ -714,7 +712,7 @@ estimate_local_range_scales(
    \tparam PointRange is a model of `ConstRange`. The value type of
    its iterator is the key type of the named parameter `point_map`.
 
-   \param points input point range.
+   \param points input point range
    \param np an optional sequence of \ref bgl_namedparameters "Named Parameters" among the ones listed below
 
    \cgalNamedParamsBegin
