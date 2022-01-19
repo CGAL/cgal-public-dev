@@ -79,8 +79,7 @@ namespace Barycentric_coordinates{
     OutIterator c_begin,
     const GeomTraits& traits) {
 
-    return internal::tetrahedron_coordinates_impl(
-      p0, p1, p2, p3, query, c_begin, traits);
+    return internal::tetrahedron_coordinates_impl(p0, p1, p2, p3, query, c_begin, traits);
   }
 
   //return iterator(infer from point_3)
@@ -97,8 +96,7 @@ namespace Barycentric_coordinates{
 
     using GeomTraits = typename Kernel_traits<Point_3>::Kernel;
     const GeomTraits traits;
-    return tetrahedron_coordinates(
-      p0, p1, p2, p3, query, c_begin, traits);
+    return tetrahedron_coordinates(p0, p1, p2, p3, query, c_begin, traits);
   }
 
   /*!
@@ -153,8 +151,7 @@ namespace Barycentric_coordinates{
     using FT = typename GeomTraits::FT;
     std::vector<FT> coordinates;
     coordinates.reserve(4);
-    internal::tetrahedron_coordinates_impl(
-      p0, p1, p2, p3, query, std::back_inserter(coordinates), traits);
+    internal::tetrahedron_coordinates_impl(p0, p1, p2, p3, query, std::back_inserter(coordinates), traits);
     CGAL_assertion(coordinates.size() == 4);
     return {coordinates[0], coordinates[1], coordinates[2], coordinates[3]};
   }
@@ -171,8 +168,7 @@ namespace Barycentric_coordinates{
 
     using GeomTraits = typename Kernel_traits<Point_3>::Kernel;
     const GeomTraits traits;
-    return tetrahedron_coordinates_in_array(
-      p0, p1, p2, p3, query, traits);
+    return tetrahedron_coordinates_in_array(p0, p1, p2, p3, query, traits);
   }
 
 }

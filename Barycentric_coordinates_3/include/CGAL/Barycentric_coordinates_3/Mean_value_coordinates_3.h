@@ -71,13 +71,13 @@ namespace Barycentric_coordinates {
      /// \endcond
 
     /// Number type.
-	  typedef typename GeomTraits::FT FT;
+    using FT = typename GeomTraits::FT;
 
     /// Point type.
-    typedef typename GeomTraits::Point_3 Point_3;
+    using Point_3 = GeomTraits::Point_3;
 
-    /// %Vector type.
-    typedef typename GeomTraits::Vector_3 Vector_3;
+    /// Vector type.
+    using Vector_3 = typename GeomTraits::Vector_3;
 
     /// @}
 
