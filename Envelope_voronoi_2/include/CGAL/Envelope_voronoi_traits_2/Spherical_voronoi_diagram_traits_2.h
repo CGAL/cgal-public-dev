@@ -79,9 +79,11 @@ class Spherical_voronoi_diagram_traits_2 :
     // not general directions to avoid the need for sqrt.
     Kernel kernel;
 
-    CGAL_envelope_voronoi_precondition (kernel.equal_3_object()(p1, p2) != true);
-    CGAL_envelope_voronoi_precondition_msg (p1.dx()*p1.dx() + p1.dy()*p1.dy() + p1.dz()*p1.dz() == 1, "The directions must be normalized.");
-    CGAL_envelope_voronoi_precondition_msg (p2.dx()*p2.dx() + p2.dy()*p2.dy() + p2.dz()*p2.dz() == 1, "The directions must be normalized.");
+    CGAL_envelope_voronoi_precondition_code(const Direction_3& d1 = p1);
+    CGAL_envelope_voronoi_precondition_code(const Direction_3& d2 = p2);
+    CGAL_envelope_voronoi_precondition(! kernel.equal_3_object()(d1, d2));
+    CGAL_envelope_voronoi_precondition_msg(p1.dx()*p1.dx() + p1.dy()*p1.dy() + p1.dz()*p1.dz() == 1, "The directions must be normalized.");
+    CGAL_envelope_voronoi_precondition_msg(p2.dx()*p2.dx() + p2.dy()*p2.dy() + p2.dz()*p2.dz() == 1, "The directions must be normalized.");
 
 //    typedef typename Kernel::Vector_3     Vector_3;
 //    typedef typename Kernel::FT           FT;
