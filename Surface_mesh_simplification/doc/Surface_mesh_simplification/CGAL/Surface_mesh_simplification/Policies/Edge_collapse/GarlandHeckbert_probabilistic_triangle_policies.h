@@ -4,15 +4,15 @@ namespace Surface_mesh_simplification {
 /*!
 \ingroup PkgSurfaceMeshSimplificationRef
 
-\deprecated This class is deprecated since \cgal 5.5 and the introduction of variations
-of Garland-Heckbert policies (Section \ref SurfaceMeshSimplificationGarlandHeckbertStrategy).
-The class `GarlandHeckbert_plane_policies` is the modern equivalent to this class.
+The class `GarlandHeckbert_probabilistic_triangle_policies` regroups the cost and placement policies
+based on the "Probabilistic Triangle" strategy of Trettner and Kobbelt \cgalCite{tk-frqmpq-20}.
+This policy enhances the original Garland-Heckbert quadric error metrics,
+by adding notions of variance (i.e., noise) to the positions of the vertices and the normals of faces.
+Compared to the "classic" triangle strategy, this strategy sacrifices tightness to the input
+for speed and quality of the result (Section \ref SurfaceMeshSimplificationGarlandHeckbertStrategy).
 
-The class `GarlandHeckbert_policies` regroups the cost and placement policies
-based on the Garland-Heckbert strategy (Section \ref SurfaceMeshSimplificationGarlandHeckbertStrategy),
-both oracles must indeed be used together as they internally use and share information
-associating quadrics to vertices.
-
+Both the cost and the placement policies must be used together as they internally use
+and share information associating quadrics to vertices.
 Note however, that they may still be wrapped with behavior modifying classes
 such as `Constrained_placement` or `Bounded_normal_change_placement`.
 
@@ -23,9 +23,12 @@ such as `Constrained_placement` or `Bounded_normal_change_placement`.
 
 These policies depend on the third party \ref thirdpartyEigen library.
 
+\sa `GarlandHeckbert_plane_policies`
+\sa `GarlandHeckbert_probabilistic_plane_policies`
+\sa `GarlandHeckbert_triangle_policies`
 */
 template <typename TriangleMesh, typename GeomTraits>
-class GarlandHeckbert_policies
+class GarlandHeckbert_probabilistic_triangle_policies
 {
 public:
   /// The type of the Garland Heckbert cost functor, a model of the concept `GetCost`
@@ -38,9 +41,9 @@ public:
   /// @{
 
   /*!
-  Initializes the Garland-Heckbert policies.
+  initializes the Garland-Heckbert "Probabilistic Triangle" policies.
   */
-  GarlandHeckbert_policies(TriangleMesh& tmesh);
+  GarlandHeckbert_probabilistic_triangle_policies(TriangleMesh& tmesh);
 
   /// @}
 
@@ -51,7 +54,6 @@ public:
   const Get_placement& get_placement() const;
 
   /// @}
-
 };
 
 } // namespace Surface_mesh_simplification
