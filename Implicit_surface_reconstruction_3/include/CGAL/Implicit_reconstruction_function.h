@@ -1061,7 +1061,7 @@ private:
     SparseLinearAlgebraTraits_d solver, ///< sparse linear solver
     double lambda)
   {
-    CGAL_TRACE("Calls solve_poisson()\n");
+    CGAL_TRACE_STREAM << "Calls solve_poisson()" << std::endl;
 
     double time_init = clock();
 
@@ -1076,7 +1076,7 @@ private:
     m_tr->index_all_vertices(true); // index all unconstrained vertices
     unsigned int nb_variables = static_cast<unsigned int>(m_tr->number_of_vertices()-1);
 
-    CGAL_TRACE("  Number of variables: %ld\n", (long)(nb_variables));
+    CGAL_TRACE_STREAM << "  Number of variables: " << (long)(nb_variables) << std::endl;
 
     // Assemble linear system A*X=B
     typename SparseLinearAlgebraTraits_d::Matrix A(nb_variables); // matrix is symmetric definite positive
@@ -1105,9 +1105,8 @@ private:
     clear_duals();
     clear_normals();
     duration_assembly = (clock() - time_init)/CLOCKS_PER_SEC;
-    CGAL_TRACE("  Creates matrix: done (%.2lf s)\n", duration_assembly);
-
-    CGAL_TRACE("  Solve sparse linear system...\n");
+    CGAL_TRACE_STREAM << "  Creates matrix: done ( " << duration_assembly << " s)" << std::endl;
+    CGAL_TRACE_STREAM << "  Solve sparse linear system..." << std::endl;
 
     // Solve "A*X = B". On success, solution is (1/D) * X.
     time_init = clock();
@@ -1117,7 +1116,7 @@ private:
     CGAL_surface_reconstruction_points_assertion(D == 1.0);
     duration_solve = (clock() - time_init)/CLOCKS_PER_SEC;
 
-    CGAL_TRACE("  Solve sparse linear system: done (%.2lf s)\n", duration_solve);
+    CGAL_TRACE_STREAM << "  Solve sparse linear system: done ( " << duration_solve << " s)" << std::endl;
 
     // copy function's values to vertices
     unsigned int index = 0;
@@ -1125,7 +1124,7 @@ private:
       if(!m_tr->is_constrained(v))
         v->f() = X[index++];
 
-    CGAL_TRACE("End of solve_poisson()\n");
+    CGAL_TRACE_STREAM << "End of solve_poisson()" << std::endl;
 
     return true;
   }
@@ -1141,7 +1140,7 @@ private:
                       double bilaplacian,
                       double laplacian)
   {
-    CGAL_TRACE("Calls solve_spectral()\n");
+    CGAL_TRACE_STREAM << "Calls solve_spectral()" << std::endl;
 
     double time_init = clock();
 
@@ -1157,7 +1156,7 @@ private:
     const int nb_variables = static_cast<int>(m_tr->number_of_vertices());
     const int nb_input_vertices = m_tr->nb_input_vertices();
     //const int nb_insides = static_cast<int>(m_tr->nb_inside_vertices());
-  	CGAL_TRACE("  %d input vertices out of %d\n", nb_input_vertices, nb_variables);
+  	CGAL_TRACE_STREAM << "  " << nb_input_vertices << " input vertices out of " << nb_variables << std::endl;
 
     //std::ofstream oFileT("triangulation.off", std::ios::out);
     //oFileT << *m_tr;
@@ -1175,7 +1174,7 @@ private:
 
     initialize_duals();
 
-    CGAL_TRACE("  Begin calculation: (%.2lf s)\n", (clock() - time_init) / CLOCKS_PER_SEC);
+    CGAL_TRACE_STREAM << "  Begin calculation: (" << (clock() - time_init) / CLOCKS_PER_SEC << " s)" << std::endl;
     Finite_vertices_iterator v, e;
     double duration_cal = 0., duration_assign= 0.;
     for(v = m_tr->finite_vertices_begin(), e = m_tr->finite_vertices_end();
@@ -1186,8 +1185,8 @@ private:
         assemble_spectral_row(v, AA, L, F, V_inv, V, N, fitting, confidence_map, duration_assign, duration_cal, flag_boundary);
     }
 
-    CGAL_TRACE("  Calculate elem: total (%.2lf s)\n", duration_cal / CLOCKS_PER_SEC);
-    CGAL_TRACE("  Assign: total (%.2lf s)\n", duration_assign / CLOCKS_PER_SEC);
+    CGAL_TRACE_STREAM << "  Calculate elem: total (" << duration_cal / CLOCKS_PER_SEC << " s)" << std::endl;
+    CGAL_TRACE_STREAM << "  Assign: total (" << duration_assign / CLOCKS_PER_SEC << " s)" << std::endl;
 
     //double time_b = clock();
 
@@ -1245,8 +1244,8 @@ private:
 */
     clear_duals();
     duration_assembly = (clock() - time_init) / CLOCKS_PER_SEC;
-    CGAL_TRACE("  Creates matrix: done (%.2lf s)\n", duration_assembly);
-    CGAL_TRACE("  Solve generalized eigenvalue problem...\n");
+    CGAL_TRACE_STREAM << "  Creates matrix: done (" << duration_assembly << " s)" << std::endl;
+    CGAL_TRACE_STREAM << "  Solve generalized eigenvalue problem..." << std::endl;
 
     // Solve generalized eigenvalue problem
     time_init = clock();
@@ -1254,7 +1253,7 @@ private:
 
     duration_solve = (clock() - time_init) / CLOCKS_PER_SEC;
 
-    CGAL_TRACE("  Solve generalized eigenvalue problem: done (%.2lf s)\n", duration_solve);
+    CGAL_TRACE_STREAM << "  Solve generalized eigenvalue problem: done (" << duration_solve << " s)" << std::endl;
 
     /*
     EMatrix AX = EA * X;
@@ -1271,7 +1270,7 @@ private:
       index += 1;
     }
 
-    CGAL_TRACE("End of solve_spectral()\n");
+    CGAL_TRACE_STREAM << "End of solve_spectral()" << std::endl;
 
     return true;
   }
@@ -1284,7 +1283,7 @@ private:
   template <typename MatType, typename RMatType, int SelectionRule>
   void spectral_solver(const MatType& A, const MatType& B, const MatType& L, RMatType& X, int k = 1, int m = 37)
   {
-      CGAL_TRACE("Begin solving spectra...\n");
+      CGAL_TRACE_STREAM << "Begin solving spectra..." << std::endl;
       OpType op(A);
       BOpType Bop(B);
       // Make sure B is positive definite and the decompoition is successful
@@ -1295,10 +1294,10 @@ private:
       //int nconv = eigs.compute();
 	  eigs.compute();
 
-      CGAL_TRACE("Problem solved!\n");
+      CGAL_TRACE_STREAM << "Problem solved!" << std::endl;
 
       if(eigs.info() != Spectra::SUCCESSFUL)
-        CGAL_TRACE("  Spectra failed! %d\n", eigs.info());
+        CGAL_TRACE_STREAM << "  Spectra failed! " << eigs.info() << std::endl;
 
       X = eigs.eigenvectors();
   }
@@ -1307,7 +1306,7 @@ private:
   template <typename MatType>
   void save_smallest_eigvec(const MatType& A, const std::string outfile, const int nb_variables, const double tol = 1e-8, int k = 5, int m = 37, int n = 5)
   {
-      CGAL_TRACE("Begin finding smallest eigenvector...\n");
+      CGAL_TRACE_STREAM << "Begin finding smallest eigenvector..." << std::endl;
       VopType op(A);
 
       Spectra::SymEigsSolver<FT, Spectra::SMALLEST_ALGE, VopType> eigs(&op, k, m);
@@ -1519,7 +1518,7 @@ private:
   template <typename MatType>
   void check_spd(const MatType& A, int k = 5, int m = 37)
   {
-      CGAL_TRACE("Begin checking eigenvalue...\n");
+      CGAL_TRACE_STREAM << "Begin checking eigenvalue..." << std::endl;
       VopType op(A);
       // Make sure B is positive definite and the decompoition is successful
       assert(op.info() == Spectra::SUCCESSFUL);

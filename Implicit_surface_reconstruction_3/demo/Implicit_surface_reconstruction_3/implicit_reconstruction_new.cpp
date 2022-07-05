@@ -13,7 +13,6 @@
 // CGAL
 #include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
 #include <CGAL/Timer.h>
-#include <CGAL/trace.h>
 #include <CGAL/Memory_sizer.h>
 #include <CGAL/Polyhedron_3.h>
 #include <CGAL/Surface_mesh_default_triangulation_3.h>
@@ -23,7 +22,7 @@
 #include <CGAL/Implicit_reconstruction_function.h>
 #include <CGAL/Point_with_normal_3.h>
 #include <CGAL/property_map.h>
-#include <CGAL/IO/read_xyz_points.h>
+#include <CGAL/IO/read_points.h>
 #include <CGAL/compute_average_spacing.h>
 #include <CGAL/Polygon_mesh_processing/compute_normal.h>
 #include <CGAL/IO/Polyhedron_iostream.h>
@@ -107,11 +106,11 @@ int main(int argc, char * argv[])
       ("size,s", po::value<int>()->default_value(500), "The number of slice")
       ("x", po::value<double>()->default_value(0), "The chosen x coordinate")
       ("isovalue,a", po::value<double>()->default_value(0.), "The isovalue to extract")
-      ("octree,c", po::value<bool>()->default_value(false), "Use Octree Refinement / Delaunay Refinement")
-      ("octree_debug,d", po::value<bool>()->default_value(false), "Octree Refinement Debug Mode ")
-      ("poisson,p", po::value<bool>()->default_value(false), "Use spectral (false) / poisson (true)")
-      ("vals,v", po::value<bool>()->default_value(false), "Save function value for all points in a ply file (true/false)")
-      ("marching,m", po::value<bool>()->default_value(true), "Use marching tet to reconstruct surface")
+      ("octree,c", po::bool_switch()->default_value(false), "Use Octree Refinement / Delaunay Refinement")
+      ("octree_debug,d", po::bool_switch()->default_value(false), "Octree Refinement Debug Mode ")
+      ("poisson", po::bool_switch()->default_value(false), "Use spectral (false) / poisson (true)")
+      ("vals,v", po::bool_switch()->default_value(false), "Save function value for all points in a ply file (true/false)")
+      ("marching,m", po::bool_switch()->default_value(true), "Use marching tet to reconstruct surface")
       ("sm_angle", po::value<double>()->default_value(20.), "The min triangle angle (degrees).")
       ("sm_radius", po::value<double>()->default_value(100.), "The max triangle size w.r.t. point set average spacing.")
       ("sm_distance", po::value<double>()->default_value(0.25), "The approximation error w.r.t. point set average spacing.");
@@ -185,51 +184,10 @@ int main(int argc, char * argv[])
 
     // If OFF file format
     std::cerr << "Open " << input_filename << " for reading..." << std::endl;
-    std::string extension = input_filename.substr(input_filename.find_last_of('.'));
-    if (extension == ".off" || extension == ".OFF")
-    {
-      // Reads the mesh file in a polyhedron
-      std::ifstream stream(input_filename.c_str());
-      Polyhedron input_mesh;
-      CGAL::scan_OFF(stream, input_mesh, true /* verbose */);
-      if(!stream || !input_mesh.is_valid() || input_mesh.empty())
-      {
-        std::cerr << "Error: cannot read file " << input_filename << std::endl;
-        accumulated_fatal_err = EXIT_FAILURE;
-        continue;
-      }
 
-      // Converts Polyhedron vertices to point set.
-      // Computes vertices normal from connectivity.
-      BOOST_FOREACH(boost::graph_traits<Polyhedron>::vertex_descriptor v, 
-                    vertices(input_mesh)){
-        const Point& p = v->point();
-        Vector n = CGAL::Polygon_mesh_processing::compute_vertex_normal(v,input_mesh);
-        points.push_back(std::make_pair(p, n));
-      }
-    }
-    // If XYZ file format
-    else if (extension == ".xyz" || extension == ".XYZ" ||
-             extension == ".pwn" || extension == ".PWN")
-    {
-      // Reads the point set file in points[].
-      // Note: read_xyz_points_and_normals() requires an iterator over points
-      // + property maps to access each point's position and normal.
-      // The position property map can be omitted here as we use iterators over Point_3 elements.
-      std::ifstream stream(input_filename.c_str());
-      if (!stream ||
-          !CGAL::read_xyz_points(
-                                stream,
-                                std::back_inserter(points),
-                                CGAL::parameters::point_map(Point_map()).
-                                normal_map(Normal_map())))
-      {
-        std::cerr << "Error: cannot read file " << input_filename << std::endl;
-        accumulated_fatal_err = EXIT_FAILURE;
-        continue;
-      }
-    }
-    else
+    if(!CGAL::IO::read_points(input_filename, std::back_inserter(points),
+                              CGAL::parameters::point_map(Point_map())
+                                               .normal_map(Normal_map())))
     {
       std::cerr << "Error: cannot read file " << input_filename << std::endl;
       accumulated_fatal_err = EXIT_FAILURE;
