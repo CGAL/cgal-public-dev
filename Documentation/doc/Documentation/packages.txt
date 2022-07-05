@@ -98,6 +98,7 @@
 \cgalPackageSection{PartReconstruction,Shape Reconstruction}
 
 \package_listing{Poisson_surface_reconstruction_3}
+\package_listing{Implicit_surface_reconstruction_3}
 \package_listing{Scale_space_reconstruction_3}
 \package_listing{Advancing_front_surface_reconstruction}
 \package_listing{Polygonal_surface_reconstruction}
@@ -163,7 +164,6 @@
 \package_listing{Stream_support}
 
 \cgalPackageSection{PartVisualization,Visualization}
-
 \package_listing{GraphicsView}
 \package_listing{CGAL_ipelets}
 

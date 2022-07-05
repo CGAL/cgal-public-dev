@@ -1,0 +1,4 @@
+
+Surface Reconstruction from Point Sets
+
+This CGAL package implements 2 implicit surface reconstruction methods: Poisson Surface Reconstruction and Spectral Surface Reconstruction. The input is an unorganized point set with oriented normals (Poisson) / unoriented normals (Spectral).
