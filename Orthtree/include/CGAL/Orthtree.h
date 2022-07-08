@@ -108,6 +108,11 @@ public:
   typedef Dimension_tag<(2 << (Dimension::value-1))> Degree;
 
   /*!
+   * \brief The Edge-tree type.
+   */
+  class Edge;
+
+  /*!
    * \brief The Sub-tree / Orthant type.
    */
   class Node;
@@ -538,6 +543,17 @@ public:
     Construct_bbox_d construct_bbox
       = m_traits.construct_bbox_d_object();
     return construct_bbox(min_corner, max_corner);
+  }
+
+  std::pair<Point, Point> segment(const Edge &edge) const {
+    Bbox box = bbox(edge.getCell());
+    int c1, c2;
+    std::tie(c1, c2) = edge.corners();
+
+    Point p1 (c1&4 ? box.xmax() : box.xmin(), c1&2 ? box.ymax() : box.ymin(), c1&1 ? box.zmax() : box.zmin());
+    Point p2 (c2&4 ? box.xmax() : box.xmin(), c2&2 ? box.ymax() : box.ymin(), c2&1 ? box.zmax() : box.zmin());
+
+    return std::make_pair(p1, p2);
   }
 
   /// @}
