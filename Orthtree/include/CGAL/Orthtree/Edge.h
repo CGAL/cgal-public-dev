@@ -42,7 +42,7 @@ public:
 
     Edge* findMinimalEdge() {
         if(child1 == nullptr) return this;
-        else if(child1->value1 * child1->value2 < 0) return child1->findMinimalEdge();
+        else if(child1->value1 * child1->value2 <= 0) return child1->findMinimalEdge();
         else return child2->findMinimalEdge();
     }
 
@@ -53,7 +53,7 @@ public:
     std::pair<int,int> corners() const { return std::make_pair(corner1, corner2); }
 
 private:
-    const Node& cell;
+    const Node cell;
     int corner1;
     FT value1;
     int corner2;

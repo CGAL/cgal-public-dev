@@ -15,12 +15,13 @@ class EdgeStore {
     typedef typename Octree<Traits_, PointRange_, PointMap_>::Node Node;
     typedef typename Octree<Traits_, PointRange_, PointMap_>::Edge Edge;
     typedef typename Octree<Traits_, PointRange_, PointMap_>::Bbox Bbox;
+    typedef typename Octree<Traits_, PointRange_, PointMap_>::Point Point;
 
     typedef CGAL::Vector_3<Traits_> Vector;
 
     typedef typename Traits_::FT FT;
 
-    std::map<typename Node::Global_coordinates, std::array<Edge*, 12>> edgeLists;
+    std::map<Node, std::array<Edge*, 12>> edgeLists;
 
     const Octree<Traits_, PointRange_, PointMap_>& tree;
 
@@ -31,7 +32,7 @@ public:
     EdgeStore(const Octree<Traits_, PointRange_, PointMap_>& tree, std::function<FT(Vector)> func)
     : tree(tree), func(func) {}
 
-    const std::array<Edge*, 12>& get(const Node& n) const { return edgeLists.at(n.global_coordinates()); }
+    const std::array<Edge*, 12>& get(const Node& n) const { return edgeLists.at(n); }
 
     void addRoot(const Node& root) {
         int ind = 0;
@@ -47,7 +48,7 @@ public:
                 }
             }
         }
-        edgeLists[root.global_coordinates()] = edges;
+        edgeLists[root] = edges;
     }
 
     void addNode(const Node& node) {
@@ -55,7 +56,7 @@ public:
         auto coords = node.local_coordinates();
         size_t corner = coords[0]*4 + coords[1]*2 + coords[2]*1;
 
-        std::array<Edge*, 12> parentEdges = edgeLists[parent.global_coordinates()];
+        std::array<Edge*, 12> parentEdges = edgeLists[parent];
 
         int ind = 0;
         Bbox b = tree.bbox(node);
@@ -66,14 +67,20 @@ public:
                 if (i != j){
                     if (i == corner) {
                         if (parentEdges[ind]->getChild1() == nullptr) {
-                            Vector p (j&4 ? b.xmax() : b.xmin(), j&2 ? b.ymax() : b.ymin(), j&1 ? b.zmax() : b.zmin());
+                            std::pair<Point,Point> seg = tree.segment(*(parentEdges[ind]));
+                            Vector p1 (seg.first.x(), seg.first.y(), seg.first.z());
+                            Vector p2 (seg.second.x(), seg.second.y(), seg.second.z());
+                            Vector p ((p1 + p2) / 2);
                             parentEdges[ind]->divide(node, parent[j], func(p));
                         }
                         edges[ind++] = parentEdges[ind]->getChild1();
                     }
                     else if (j == corner) {
                         if (parentEdges[ind]->getChild2() == nullptr) {
-                            Vector p (i&4 ? b.xmax() : b.xmin(), i&2 ? b.ymax() : b.ymin(), i&1 ? b.zmax() : b.zmin());
+                            std::pair<Point,Point> seg = tree.segment(*(parentEdges[ind]));
+                            Vector p1 (seg.first.x(), seg.first.y(), seg.first.z());
+                            Vector p2 (seg.second.x(), seg.second.y(), seg.second.z());
+                            Vector p ((p1 + p2) / 2);
                             parentEdges[ind]->divide(parent[i], node, func(p));
                         }
                         edges[ind++] = parentEdges[ind]->getChild2();
@@ -86,7 +93,7 @@ public:
                 }
             }
         }
-        edgeLists[node.global_coordinates()] = edges;
+        edgeLists[node] = edges;
     }
 
 };

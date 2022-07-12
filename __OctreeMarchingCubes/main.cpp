@@ -65,7 +65,7 @@ Point vertex_interpolation(const Vector& r1, const Vector& r2, const FT d1, cons
     }
 
     if (mu < 0.f || mu > 1.f) {
-        printf("ERROR: isolevel is not between points\n");  // TODO
+        throw("ERROR: isolevel is not between points\n");  // TODO
     }
 
     const Vector res = r2 * mu + r1 * (1 - mu);
@@ -76,13 +76,6 @@ Point vertex_interpolation(const Vector& r1, const Vector& r2, const FT d1, cons
 void processNode(const Octree& octree, const Edges& edges, const Octree::Node& node, ImplicitFunction f, std::vector<Point>& points) {
 
     Octree::Bbox b = octree.bbox(node);
-    //std::vector<std::pair<Vector,FT>> corners(8);
-
-    // pre-calculating corner values
-    /*for (int i = 0; i < 8; ++i) {
-        Vector p (i&4 ? b.xmax() : b.xmin(), i&2 ? b.ymax() : b.ymin(), i&1 ? b.zmax() : b.zmin());
-        corners[i] = std::make_pair(p, f(p));
-    }*/
 
     for(auto edge : edges.get(node)){
         std::pair<Point,Point> seg = octree.segment(*edge);
@@ -98,23 +91,13 @@ void processNode(const Octree& octree, const Edges& edges, const Octree::Node& n
         }
     }
 
-    // iterating through edges
-    /*for (int i = 0; i < 8; ++i) {
-        for (int k = 0; k <= 2; ++k) {
-            int j = i | (1 << k);
-            if (i != j && corners[i].second * corners[j].second < 0) {
-                points.push_back(vertex_interpolation(corners[i].first, corners[j].first, corners[i].second, corners[j].second));
-                // todo: traverse edge tree and find proper location
-            }
-        }
-    }*/
     // todo: order points to get a closed polygon
 }
 
 int main() {
     ImplicitFunction sphere = [](Vector p){ return sqrt(p.x()*p.x() + p.y()*p.y() + p.z()*p.z()) - 0.5; };
     Point_set points; // This is only here because Orthtree constructor requires it
-    Octree octree(Octree::Bbox(-1,-1,-1,1,1,1), points);
+    Octree octree(Octree::Bbox(-1.1,-1.1,-1.1,1.1,1.1,1.1), points);
     octree.refine(Split_by_closeness(sphere, octree));
 
     Edges edges(octree, sphere);
@@ -133,11 +116,11 @@ int main() {
     for (Octree::Node node : octree.traverse<Preorder_traversal>()) {
         //std::cout << node << std::endl;
         //std::cout << octree.bbox(node) << std::endl;
-
-        processNode(octree, edges, node, sphere, ps);
+        if(node.is_leaf())
+            processNode(octree, edges, node, sphere, ps);
     }
     //std::cout << octree.depth() << std::endl;
-    //std::cout << ps.size() << std::endl;
+    std::cout << ps.size() << std::endl;
 
     // writing out resulting points to file
     // expected result: some points will not match, where cells have different size (seems like that happens)
