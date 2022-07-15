@@ -54,7 +54,8 @@ public:
     void addNode(const Node& node) {
         Node parent = node.parent();
         auto coords = node.local_coordinates();
-        size_t corner = coords[0]*4 + coords[1]*2 + coords[2]*1;
+        //size_t corner = coords[0]*4 + coords[1]*2 + coords[2]*1;
+        size_t corner = coords[0]*1 + coords[1]*2 + coords[2]*4; // this does not feel right, seems contrary to local_coordinates doc
 
         std::array<Edge*, 12> parentEdges = edgeLists[parent];
 
