@@ -772,8 +772,8 @@ public:
         const Point& p1 = cell->vertex(edge->second)->point();
         const Point& p2 = cell->vertex(edge->third)->point();
 
-        unsigned int i1 = std::min(cell->vertex(edge->second)->index(), cell->vertex(edge->third)->index());
-        unsigned int i2 = std::max(cell->vertex(edge->second)->index(), cell->vertex(edge->third)->index());
+        unsigned int i1 = (std::min)(cell->vertex(edge->second)->index(), cell->vertex(edge->third)->index());
+        unsigned int i2 = (std::max)(cell->vertex(edge->second)->index(), cell->vertex(edge->third)->index());
 
         if(std::abs(v1) < 1e-8)
           m_pts.push_back(p1);
@@ -820,7 +820,7 @@ public:
           size_t i1 = v->vertex(i)->index();
           size_t i2 = v->vertex(j)->index();
 
-          typename Edge_hash_map::const_iterator got = m_edge_map.find(std::make_pair(std::min(i1, i2), std::max(i1, i2)));
+          typename Edge_hash_map::const_iterator got = m_edge_map.find(std::make_pair((std::min)(i1, i2), (std::max)(i1, i2)));
 
           if (got != m_edge_map.end()) {
             cell_points.push_back(got->second);

@@ -445,7 +445,7 @@ public:
     // m_tr = new Triangulation;
     // m_Bary = new std::vector<boost::array<double,9> >;
 
-    Dual.clear();
+    Dual.clear();  
     Normal.clear();
   }
 
@@ -511,7 +511,6 @@ public:
 	  forward_constructor(points, PointMap(), NormalMap(), visitor);
     first_delaunay_refinement(visitor);
 	}
-
 
   }
 
@@ -1161,8 +1160,6 @@ private:
     //std::ofstream oFileT("triangulation.off", std::ios::out);
     //oFileT << *m_tr;
 
-    //check_ratio_radius_edge();
-
     // Assemble matrices
     Matrix AA(nb_variables), L(nb_variables), F(nb_variables); // matrix is symmetric definite positive
     Matrix V_inv(nb_variables), N(nb_variables), V(nb_variables);
@@ -1208,10 +1205,15 @@ private:
       //B = EL * EV_inv * EL * bilaplacian + EL * laplacian + F.eigen_object();
       //B = EL * EV_inv * EL * bilaplacian + EL * laplacian + EV * F.eigen_object();
       //B = EL.transpose() * EL * bilaplacian + EL * laplacian + F.eigen_object();
+      std::ofstream file("EL_mat.txt");
+      file << EMatrix(EL);
+      file.close();
       B = EL * EL * bilaplacian + EL * laplacian + F.eigen_object();
     }
-/*
+
+    check_ratio_radius_edge();
     dihedral_angle_per_cell();
+/*
     save_steiner_point();
 
     std::cerr << "Check A...." << std::endl;
@@ -1249,8 +1251,9 @@ private:
 
     // Solve generalized eigenvalue problem
     time_init = clock();
+    //spectral_solver<ESMatrix, EMatrix, (int)Spectra::SortRule::LargestAlge>(EA, B, EL, X);
     spectral_solver<ESMatrix, EMatrix, Spectra::LARGEST_ALGE>(EA, B, EL, X);
-
+    
     duration_solve = (clock() - time_init) / CLOCKS_PER_SEC;
 
     CGAL_TRACE_STREAM << "  Solve generalized eigenvalue problem: done (" << duration_solve << " s)" << std::endl;
@@ -1283,17 +1286,20 @@ private:
   template <typename MatType, typename RMatType, int SelectionRule>
   void spectral_solver(const MatType& A, const MatType& B, const MatType& L, RMatType& X, int k = 1, int m = 37)
   {
+      std::ofstream file("B_mat.txt");
+      file << EMatrix(B);
+      file.close();
+
       CGAL_TRACE_STREAM << "Begin solving spectra..." << std::endl;
       OpType op(A);
       BOpType Bop(B);
       // Make sure B is positive definite and the decompoition is successful
-      assert(Bop.info() == Spectra::SUCCESSFUL);
-
+      assert(Bop.info() == Spectra::SUCCESSFUL); // TODO
       Spectra::SymGEigsSolver<FT, SelectionRule, OpType, BOpType, Spectra::GEIGS_CHOLESKY> eigs(&op, &Bop, k, m);
       eigs.init();
       //int nconv = eigs.compute();
 	  eigs.compute();
-
+      
       CGAL_TRACE_STREAM << "Problem solved!" << std::endl;
 
       if(eigs.info() != Spectra::SUCCESSFUL)
@@ -1418,7 +1424,8 @@ private:
     {
       //double min_cotan = 1e7;
       Point center = bounding_sphere().center();
-
+      
+      // dihedral cotan
       for(int i = 0; i < 3; i++)
         for(int j = i + 1; j < 4; j++)
         {
@@ -1430,6 +1437,7 @@ private:
       Vector point_from_center = cb->vertex(0)->point() - center;
       FT length_pc = std::sqrt(point_from_center * point_from_center);
       out << std::to_string(length_pc) << std::endl;
+      
     }
 
     out.close();
@@ -1445,10 +1453,11 @@ private:
                                         cb->vertex(1)->point(),
                                         cb->vertex(2)->point(),
                                         cb->vertex(3)->point());
-      std::cerr << circum << std::endl;
+      //std::cerr << circum << std::endl;
       double radius = std::sqrt((cb->vertex(0)->point() - circum) * (cb->vertex(0)->point() - circum));
 
       double short_edge = std::sqrt((cb->vertex(0)->point() - cb->vertex(1)->point()) * (cb->vertex(0)->point() - cb->vertex(1)->point()));
+      double long_edge = short_edge;
       double min_cotan = 1e7;
 
       for(int i = 0; i < 3; i++)
@@ -1459,10 +1468,12 @@ private:
 
           Vector edge = cb->vertex(i)->point() - cb->vertex(j)->point();
           double len_edge = std::sqrt(edge * edge);
-          if(len_edge < short_edge) short_edge = len_edge;
+          if (len_edge < short_edge) short_edge = len_edge;
+          if (len_edge > long_edge) long_edge = len_edge;
         }
-
-      out << std::to_string(radius / short_edge) << " " << std::to_string(std::sqrt((cb->vertex(0)->point() - center) * (cb->vertex(0)->point() - center)));
+      
+      
+      out << std::to_string(radius / short_edge) << " " << std::to_string(long_edge / short_edge) << " " << std::to_string(std::sqrt((cb->vertex(0)->point() - center) * (cb->vertex(0)->point() - center)));
       out << " " << min_cotan;
       out << " " << cb->vertex(0)->point().x() << " " << cb->vertex(0)->point().y() << " " << cb->vertex(0)->point().z();
       out << " " << cb->vertex(1)->point().x() << " " << cb->vertex(1)->point().y() << " " << cb->vertex(1)->point().z();
@@ -2479,7 +2490,7 @@ private:
     time_init = clock();
     AA.set_coef(vi->index(), vi->index(), mdiagonal, true);
     L.set_coef(vi->index(), vi->index(), diagonal, true);
-    V_inv.set_coef(vi->index(), vi->index(), std::min(1.0 / vol, 1e7), true);
+    V_inv.set_coef(vi->index(), vi->index(), (std::min)(1.0 / vol, 1e7), true);
     V.set_coef(vi->index(), vi->index(), vol, true);
 
     if(vi->type() == Triangulation::INPUT)

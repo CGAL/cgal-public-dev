@@ -63,13 +63,13 @@ struct IntPoint_3
 
   uint32_t& operator[] (int i) 
   {
-	assert(i < 0 || i > 2);
+	assert(i >= 0 && i <= 2);
 	return m_coords[i];
   }    
   
   const uint32_t& operator[] (int i) const
   {
-	assert(i < 0 || i > 2);
+    assert(i >= 0 && i <= 2);
 	return m_coords[i];
   }   
   
@@ -351,7 +351,7 @@ class Octree
       boost::function<Point(PointRange_t&)> pwn_it_to_point_it = boost::bind(&PointRange_t::first, _1);
       Iso_cuboid bbox = CGAL::bounding_box(boost::make_transform_iterator(pwn.begin(), pwn_it_to_point_it), 
                                            boost::make_transform_iterator(pwn.end(), pwn_it_to_point_it));
-      Point bbox_centroid = midpoint(bbox.min(), bbox.max());
+      Point bbox_centroid = midpoint((bbox.min)(), (bbox.max)());
       
       // scale bbox
       bbox = bbox.transform(Aff_transformation_3<Kernel>(SCALING, enlarge_ratio));
@@ -362,16 +362,16 @@ class Octree
 	  FT z_len = bbox.zmax() - bbox.zmin();
 	  FT max_len = ( x_len < y_len ) ? y_len : x_len;
 	  max_len = ( max_len < z_len ) ? z_len : max_len;
-	  bbox = Iso_cuboid(bbox.min(), bbox.min() + max_len*Vector(1.0,1.0,1.0));
+	  bbox = Iso_cuboid((bbox.min)(), (bbox.min)() + max_len*Vector(1.0,1.0,1.0));
 	  
 	  // translate bbox back to initial centroid
-      Point bbox_transformed_centroid = midpoint(bbox.min(), bbox.max());
+      Point bbox_transformed_centroid = midpoint((bbox.min)(), (bbox.max)());
       Vector diff_centroid = bbox_centroid - bbox_transformed_centroid;
       bbox = bbox.transform(Aff_transformation_3<Kernel>(TRANSLATION, diff_centroid));
      
       // save octree attributes
-	  m_bbox_min = bbox.min();
-	  m_bbox_side = bbox.max()[0] - m_bbox_min[0];
+	  m_bbox_min = (bbox.min)();
+	  m_bbox_side = (bbox.max)()[0] - m_bbox_min[0];
       for (InputIterator it = pwn.cbegin(); it != pwn.cend(); it++)
         m_root.add_point(it);
     }
