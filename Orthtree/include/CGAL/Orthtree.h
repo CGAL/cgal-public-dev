@@ -544,16 +544,19 @@ public:
       = m_traits.construct_bbox_d_object();
     return construct_bbox(min_corner, max_corner);
   }
+    /*!
+    \brief returns the line segment specified by an edge.
 
+   */
   std::pair<Point, Point> segment(const Edge &edge) const {
-    Bbox box = bbox(edge.getCell());
-    int c1, c2;
-    std::tie(c1, c2) = edge.corners();
-
-    Point p1 (c1&4 ? box.xmax() : box.xmin(), c1&2 ? box.ymax() : box.ymin(), c1&1 ? box.zmax() : box.zmin());
-    Point p2 (c2&4 ? box.xmax() : box.xmin(), c2&2 ? box.ymax() : box.ymin(), c2&1 ? box.zmax() : box.zmin());
-
-    return std::make_pair(p1, p2);
+    FT size = m_side_per_depth[edge.depth()];
+    Array p1;
+    Array p2;
+    for (int i = 0; i < Dimension::value; i++) {
+      p1[i] = m_bbox_min[i] + (edge.global_coordinates()[i] * size);
+      p2[i] = m_bbox_min[i] + (edge.global_coordinates()[i + Dimension::value] * size);
+    }
+    return std::make_pair(Point(p1[0], p1[1], p1[2]), Point(p2[0], p2[1], p2[2]));
   }
 
   /// @}

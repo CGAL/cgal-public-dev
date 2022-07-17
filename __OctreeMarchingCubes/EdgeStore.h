@@ -17,6 +17,8 @@ class EdgeStore {
     typedef typename Octree<Traits_, PointRange_, PointMap_>::Bbox Bbox;
     typedef typename Octree<Traits_, PointRange_, PointMap_>::Point Point;
 
+    typedef CGAL::Orthtree_traits_3<Traits_> Traits3;
+
     typedef CGAL::Vector_3<Traits_> Vector;
 
     typedef typename Traits_::FT FT;
@@ -44,7 +46,7 @@ public:
                 if (i != j){
                     Vector p1 (i&4 ? b.xmax() : b.xmin(), i&2 ? b.ymax() : b.ymin(), i&1 ? b.zmax() : b.zmin());
                     Vector p2 (j&4 ? b.xmax() : b.xmin(), j&2 ? b.ymax() : b.ymin(), j&1 ? b.zmax() : b.zmin());
-                    edges[ind++] = new Edge(root, i, j, func(p1), func(p2));
+                    edges[ind++] = new Edge({(i&4)>>2, (i&2)>>1, i&1, (j&4)>>2, (j&2)>>1, j&1}, 0, func(p1), func(p2));
                 }
             }
         }
@@ -53,18 +55,19 @@ public:
 
     void addNode(const Node& node) {
         Node parent = node.parent();
+        auto coords1 = node.global_coordinates();
         auto coords = node.local_coordinates();
-        //size_t corner = coords[0]*4 + coords[1]*2 + coords[2]*1;
-        size_t corner = coords[0]*1 + coords[1]*2 + coords[2]*4; // this does not feel right, seems contrary to local_coordinates doc
+        size_t corner = coords[0]*4 + coords[1]*2 + coords[2]*1;
+        size_t corner2 = coords[0]*1 + coords[1]*2 + coords[2]*4; // node child indexing uses this sceme for some reason...
 
         std::array<Edge*, 12> parentEdges = edgeLists[parent];
 
         int ind = 0;
         Bbox b = tree.bbox(node);
         std::array<Edge*, 12> edges;
-        for (int i = 0; i < 8; ++i) {
-            for (int k = 0; k <= 2; ++k) {
-                int j = i | (1 << k);
+        for (unsigned i = 0; i < 8; ++i) {
+            for (unsigned k = 0; k <= 2; ++k) {
+                unsigned j = i | (1 << k);
                 if (i != j){
                     if (i == corner) {
                         if (parentEdges[ind]->getChild1() == nullptr) {
@@ -72,7 +75,7 @@ public:
                             Vector p1 (seg.first.x(), seg.first.y(), seg.first.z());
                             Vector p2 (seg.second.x(), seg.second.y(), seg.second.z());
                             Vector p ((p1 + p2) / 2);
-                            parentEdges[ind]->divide(node, parent[j], func(p));
+                            parentEdges[ind]->divide(func(p));
                         }
                         edges[ind++] = parentEdges[ind]->getChild1();
                     }
@@ -82,14 +85,31 @@ public:
                             Vector p1 (seg.first.x(), seg.first.y(), seg.first.z());
                             Vector p2 (seg.second.x(), seg.second.y(), seg.second.z());
                             Vector p ((p1 + p2) / 2);
-                            parentEdges[ind]->divide(parent[i], node, func(p));
+                            parentEdges[ind]->divide(func(p));
                         }
                         edges[ind++] = parentEdges[ind]->getChild2();
                     }
-                    else {
+                    else { // edge is not the child of any other edge
+                        Edge* sameEdge = nullptr;
+                        auto c = node.global_coordinates();
+                        std::array<std::uint32_t, 6> coords {c[0] + ((i&4)>>2), c[1] + ((i&2)>>1), c[2] + (i&1)
+                                                , c[0] + ((j&4)>>2), c[1] + ((j&2)>>1), c[2] + (j&1)};
+                        std::array<typename Traits3::Adjacency, 6> adjacencies 
+                            {Traits3::LEFT,Traits3::RIGHT,Traits3::DOWN,Traits3::UP,Traits3::BACK,Traits3::FRONT};
+                        for(auto a : adjacencies) {
+                            Node neighbour = node.adjacent_node(a);
+                            auto edges = edgeLists.find(neighbour);
+                            if(edges != edgeLists.end())
+                                for(auto edge : edges->second) {
+                                    if(edge->global_coordinates() == coords)
+                                        sameEdge = edge;
+                                }
+                        }
                         Vector p1 (i&4 ? b.xmax() : b.xmin(), i&2 ? b.ymax() : b.ymin(), i&1 ? b.zmax() : b.zmin());
                         Vector p2 (j&4 ? b.xmax() : b.xmin(), j&2 ? b.ymax() : b.ymin(), j&1 ? b.zmax() : b.zmin());
-                        edges[ind++] = new Edge(node, i, j, func(p1), func(p2));
+                        edges[ind++] = sameEdge == nullptr 
+                            ? new Edge(coords, node.depth(), func(p1), func(p2)) 
+                            : sameEdge;
                     }
                 }
             }
