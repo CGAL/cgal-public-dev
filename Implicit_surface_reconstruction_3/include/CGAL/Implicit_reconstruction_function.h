@@ -66,6 +66,7 @@
 
 //Mesh
 #include <CGAL/Surface_mesh.h>
+#include <CGAL/Surface_mesh/IO/OFF.h>
 
 /*!
   \file Poisson_reconstruction_function.h
@@ -1419,11 +1420,16 @@ private:
   void dihedral_angle_per_cell()
   {
     std::ofstream out("cotan.txt");
+    
+    // store bad cells as tet soup in a surface mesh
+    // currently stores all tet seperatly so vertices might be duplicated but I assume this is ok
+    Mesh bad_tet_soup;
 
     for(Finite_cells_iterator cb = m_tr->finite_cells_begin(); cb != m_tr->finite_cells_end(); cb++)
     {
       //double min_cotan = 1e7;
       Point center = bounding_sphere().center();
+      bool isbad = false;
       
       // dihedral cotan
       for(int i = 0; i < 3; i++)
@@ -1431,6 +1437,16 @@ private:
         {
           double cotan = cotan_per_edge(cb, i, j);
           //if(cotan < min_cotan) min_cotan = cotan;
+          if (abs(cotan) > 28.6 && !isbad) // if dihedral angle less than 2 degree
+          {
+              Mesh::Vertex_index v_idx[4];
+              for (int k = 0; k < 4; k++)
+                  v_idx[k] = bad_tet_soup.add_vertex(cb->vertex(k)->point());
+              bad_tet_soup.add_face(v_idx[0], v_idx[1], v_idx[2]);
+              bad_tet_soup.add_face(v_idx[0], v_idx[1], v_idx[3]);
+              bad_tet_soup.add_face(v_idx[0], v_idx[2], v_idx[3]);
+              bad_tet_soup.add_face(v_idx[1], v_idx[2], v_idx[3]);
+          }
           out << std::to_string(cotan) << " ";
         }
 
@@ -1439,8 +1455,12 @@ private:
       out << std::to_string(length_pc) << std::endl;
       
     }
-
+    
     out.close();
+    
+    std::ofstream out2("bad_tet.off");
+    CGAL::IO::write_OFF(out2, bad_tet_soup);
+    out2.close();
   }
 
   void check_ratio_radius_edge()
