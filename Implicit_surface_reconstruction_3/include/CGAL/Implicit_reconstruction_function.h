@@ -1423,8 +1423,9 @@ private:
     
     // store bad cells as tet soup in a surface mesh
     // currently stores all tet seperatly so vertices might be duplicated but I assume this is ok
-    Mesh bad_tet_soup;
-
+    //Mesh bad_tet_soup;
+    std::vector<Point> vertices;
+    
     for(Finite_cells_iterator cb = m_tr->finite_cells_begin(); cb != m_tr->finite_cells_end(); cb++)
     {
       //double min_cotan = 1e7;
@@ -1437,15 +1438,19 @@ private:
         {
           double cotan = cotan_per_edge(cb, i, j);
           //if(cotan < min_cotan) min_cotan = cotan;
-          if (abs(cotan) > 28.6 && !isbad) // if dihedral angle less than 2 degree
+          if (abs(cotan) > 19.1 && !isbad) // if dihedral angle less than 3 degree
           {
-              Mesh::Vertex_index v_idx[4];
+              isbad = true;
+              //Mesh::Vertex_index v_idx[4];
               for (int k = 0; k < 4; k++)
-                  v_idx[k] = bad_tet_soup.add_vertex(cb->vertex(k)->point());
-              bad_tet_soup.add_face(v_idx[0], v_idx[1], v_idx[2]);
-              bad_tet_soup.add_face(v_idx[0], v_idx[1], v_idx[3]);
-              bad_tet_soup.add_face(v_idx[0], v_idx[2], v_idx[3]);
-              bad_tet_soup.add_face(v_idx[1], v_idx[2], v_idx[3]);
+                  vertices.push_back(cb->vertex(k)->point());
+              //    v_idx[k] = bad_tet_soup.add_vertex(cb->vertex(k)->point());
+              //std::cout << v_idx[0] << " " << v_idx[1] << " " << v_idx[2] << " " << v_idx[3] << std::endl;
+              // there is a problem with adding face so the connectivity is manually written
+              //bad_tet_soup.add_face(v_idx[0], v_idx[1], v_idx[2]);
+              //bad_tet_soup.add_face(v_idx[0], v_idx[1], v_idx[3]);
+              //bad_tet_soup.add_face(v_idx[0], v_idx[2], v_idx[3]);
+              //bad_tet_soup.add_face(v_idx[1], v_idx[2], v_idx[3]);
           }
           out << std::to_string(cotan) << " ";
         }
@@ -1458,8 +1463,18 @@ private:
     
     out.close();
     
+    // manually write OFF file
     std::ofstream out2("bad_tet.off");
-    CGAL::IO::write_OFF(out2, bad_tet_soup);
+    out2 << "OFF\n" << vertices.size() << " " << vertices.size() << " 0\n\n";
+    for (int i = 0; i != vertices.size(); i++) {
+        out2 << vertices[i] << std::endl;
+    }
+    for (int i = 0; i <= vertices.size(); i=i+4) {
+        out2 << 3 << " " << i << " " << i + 1 << " " << i + 2 << "\n";
+        out2 << 3 << " " << i << " " << i + 1 << " " << i + 3 << "\n";
+        out2 << 3 << " " << i << " " << i + 2 << " " << i + 3 << "\n";
+        out2 << 3 << " " << i+1 << " " << i + 2 << " " << i + 3 << "\n";
+    }
     out2.close();
   }
 
