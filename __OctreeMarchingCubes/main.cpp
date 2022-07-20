@@ -187,7 +187,7 @@ std::vector<Point> processNode(const Octree& octree,
 
     int ind = 0;
     std::vector<int> visited {ind};
-    for(int i = 0; i <= unorderedPolygonWithFaces.size(); ++i) {
+    for(int i = 0; i < unorderedPolygonWithFaces.size(); ++i) {
         polygon.push_back(unorderedPolygonWithFaces[ind].first);
         std::pair<int,int> faces = unorderedPolygonWithFaces[ind].second;
         for(int j = 0; j < unorderedPolygonWithFaces.size(); ++j) {
@@ -195,7 +195,7 @@ std::vector<Point> processNode(const Octree& octree,
             bool face1 = el.second.first == faces.first || el.second.first == faces.second;
             bool face2 = el.second.second == faces.first || el.second.second == faces.second;
             if((std::find(visited.begin(), visited.end(), j) == visited.end()
-                || j == 0 && i == unorderedPolygonWithFaces.size()) && (face1 || face2)) {
+                || j == 0 && i == unorderedPolygonWithFaces.size() - 1) && (face1 || face2)) {
                 int face = face1 ? el.second.first : el.second.second;
                 std::vector<Point> internal_points = processFace(octree, edges, node, f, sides[face], polygon.back());
                 for (auto it : internal_points) {
