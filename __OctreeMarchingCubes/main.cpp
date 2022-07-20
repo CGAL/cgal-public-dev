@@ -177,7 +177,7 @@ std::vector<Point> processNode(const Octree& octree,
             std::pair<Point,Point> minSeg = octree.segment(minEdge);
             Vector p1 (minSeg.first.x(), minSeg.first.y(), minSeg.first.z());
             Vector p2 (minSeg.second.x(), minSeg.second.y(), minSeg.second.z());
-            unorderedPolygonWithFaces.push_back(std::make_pair(vertex_interpolation(p1, p2, f(p1), f(p2)), 
+            unorderedPolygonWithFaces.push_back(std::make_pair(vertex_interpolation(p1, p2, f(p1), f(p2)),
                 cornersToFaces(edge->corners(node))));
         }
     }

@@ -94,7 +94,7 @@ public:
                         auto c = node.global_coordinates();
                         std::array<std::uint32_t, 6> coords {c[0] + ((i&4)>>2), c[1] + ((i&2)>>1), c[2] + (i&1)
                                                 , c[0] + ((j&4)>>2), c[1] + ((j&2)>>1), c[2] + (j&1)};
-                        std::array<typename Traits3::Adjacency, 6> adjacencies 
+                        std::array<typename Traits3::Adjacency, 6> adjacencies
                             {Traits3::LEFT,Traits3::RIGHT,Traits3::DOWN,Traits3::UP,Traits3::BACK,Traits3::FRONT};
                         for(auto a : adjacencies) {
                             Node neighbour = node.adjacent_node(a);
@@ -107,8 +107,8 @@ public:
                         }
                         Vector p1 (i&4 ? b.xmax() : b.xmin(), i&2 ? b.ymax() : b.ymin(), i&1 ? b.zmax() : b.zmin());
                         Vector p2 (j&4 ? b.xmax() : b.xmin(), j&2 ? b.ymax() : b.ymin(), j&1 ? b.zmax() : b.zmin());
-                        edges[ind++] = sameEdge == nullptr 
-                            ? new Edge(coords, node.depth(), func(p1), func(p2)) 
+                        edges[ind++] = sameEdge == nullptr
+                            ? new Edge(coords, node.depth(), func(p1), func(p2))
                             : sameEdge;
                     }
                 }

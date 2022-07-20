@@ -67,10 +67,10 @@ public:
 
     // the two corner points of the given node that are on this edge
     std::pair<int,int> corners(Node n) const {
-        int corner1 = (Global_coordinates[0] > n.global_coordinates()[0])*4 
+        int corner1 = (Global_coordinates[0] > n.global_coordinates()[0])*4
             + (Global_coordinates[1] > n.global_coordinates()[1])*2
             + (Global_coordinates[2] > n.global_coordinates()[2])*1;
-        int corner2 = (Global_coordinates[3] > n.global_coordinates()[0])*4 
+        int corner2 = (Global_coordinates[3] > n.global_coordinates()[0])*4
             + (Global_coordinates[4] > n.global_coordinates()[1])*2
             + (Global_coordinates[5] > n.global_coordinates()[2])*1;
         return std::make_pair(corner1, corner2);
