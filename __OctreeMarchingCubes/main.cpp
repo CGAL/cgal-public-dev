@@ -19,6 +19,8 @@ typedef Point_set::Point_map Point_map;
 typedef CGAL::Octree<Kernel, Point_set, Point_map> Octree;
 typedef CGAL::Orthtrees::Preorder_traversal Preorder_traversal;
 
+typedef CGAL::Orthtree_traits_3<Kernel>::Adjacency Adjacency;
+
 typedef CGAL::Polyhedron_3<Kernel> Polyhedron;
 typedef Polyhedron::HalfedgeDS HalfedgeDS;
 typedef Polyhedron::Vertex_handle Vertex_handle;
@@ -89,12 +91,77 @@ std::pair<int,int> cornersToFaces(std::pair<int,int> corners) {
     return std::make_pair(faces[0], faces[1]);
 }
 
-// appends the vertices extracted from a given cell to the vector passed as reference
-void processNode(const Octree& octree,
+std::array<Adjacency, 6> sides {Adjacency::LEFT, Adjacency::DOWN, Adjacency::BACK, Adjacency::RIGHT, Adjacency::UP, Adjacency::FRONT};
+
+bool is_inside(Octree::Bbox b, Point p) {
+    return b.xmin() <= p.x() && p.x() <= b.xmax()
+        && b.ymin() <= p.y() && p.y() <= b.ymax()
+        && b.zmin() <= p.z() && p.z() <= b.zmax();
+}
+
+std::vector<Point> processNode(const Octree& octree,
+    const Edges& edges,
+    const Octree::Node& node,
+    ImplicitFunction f);
+
+std::vector<Point> processFace(const Octree& octree,
     const Edges& edges,
     const Octree::Node& node,
     ImplicitFunction f,
-    std::vector<std::vector<Point>>& polyhedron) {
+    Adjacency adj,
+    Point start) {
+
+    Octree::Node neighbour = node.adjacent_node(adj);
+
+    if (neighbour.is_leaf())
+        return std::vector<Point>{};
+
+    std::vector<std::vector<Point>> segments;
+
+    unsigned mask = (!(adj & ~1) ? 1 : adj & ~1);
+    int ind = 0, startv = -1, startp = -1;
+    for (unsigned i = 0; i < 8; ++i) {
+        if ( !(adj & 1) != !(mask & i) ) { // if the neighbour's child with index i is along the given side of the cell
+            Octree::Node child = neighbour[i];
+            std::vector<Point> polygon = processNode(octree, edges, child, f); // this is inefficient, we should just get the edges
+            std::vector<Point> segment;
+            for(int i = 0; i < polygon.size(); ++i) {
+                if (is_inside(octree.bbox(node), polygon[i])) { // to be avoided in later versions
+                    segment.push_back(polygon[i]);
+                    if (polygon[i] == start) {
+                        startv = ind;
+                        startp = segment.size() - 1;
+                    }
+                }
+            }
+            if(segment.size() > 0) {
+                segments.push_back(segment);
+                ++ind;
+            }
+        }
+    }
+
+    std::vector<Point> polyline;
+
+    int v = startv, p = !startp; // what if it is just an internal polyline?
+    for (int i = 0; i < segments.size(); ++i) {
+        polyline.push_back(segments[v][p]);
+        for (int j = 0; j < segments.size(); ++j) if (v != j) {
+            if (segments[j][0] == polyline.back()) { v = j; p = 1; break; }
+            if (segments[j][1] == polyline.back()) { v = j; p = 0; break; }
+        }
+    }
+    polyline.pop_back();
+
+    return polyline;
+
+}
+
+// returns the vertices extracted from a given cell, ordered as a polyline
+std::vector<Point> processNode(const Octree& octree,
+    const Edges& edges,
+    const Octree::Node& node,
+    ImplicitFunction f) {
 
     Octree::Bbox b = octree.bbox(node);
 
@@ -114,20 +181,26 @@ void processNode(const Octree& octree,
                 cornersToFaces(edge->corners(node))));
         }
     }
-    if(unorderedPolygonWithFaces.size() == 0) return;
+    if(unorderedPolygonWithFaces.size() == 0) return std::vector<Point> {};
 
     std::vector<Point> polygon;
 
     int ind = 0;
     std::vector<int> visited {ind};
-    for(int i = 0; i < unorderedPolygonWithFaces.size(); ++i) {
+    for(int i = 0; i <= unorderedPolygonWithFaces.size(); ++i) {
         polygon.push_back(unorderedPolygonWithFaces[ind].first);
         std::pair<int,int> faces = unorderedPolygonWithFaces[ind].second;
         for(int j = 0; j < unorderedPolygonWithFaces.size(); ++j) {
             auto& el = unorderedPolygonWithFaces[j];
-            if(std::find(visited.begin(), visited.end(), j) == visited.end() && 
-                (el.second.first == faces.first || el.second.second == faces.first
-                || el.second.first == faces.second || el.second.second == faces.second)) {
+            bool face1 = el.second.first == faces.first || el.second.first == faces.second;
+            bool face2 = el.second.second == faces.first || el.second.second == faces.second;
+            if((std::find(visited.begin(), visited.end(), j) == visited.end()
+                || j == 0 && i == unorderedPolygonWithFaces.size()) && (face1 || face2)) {
+                int face = face1 ? el.second.first : el.second.second;
+                std::vector<Point> internal_points = processFace(octree, edges, node, f, sides[face], polygon.back());
+                for (auto it : internal_points) {
+                    polygon.push_back(it);
+                }
                 ind = j;
                 visited.push_back(ind);
                 break;
@@ -135,9 +208,7 @@ void processNode(const Octree& octree,
         }
     }
 
-    if(polygon.size() > 0){
-        polyhedron.push_back(polygon);
-    }
+    return polygon;
 }
 
 int main() {
@@ -162,8 +233,11 @@ int main() {
     for (Octree::Node node : octree.traverse<Preorder_traversal>()) {
         //std::cout << node << std::endl;
         //std::cout << octree.bbox(node) << std::endl;
-        if(node.is_leaf())
-            processNode(octree, edges, node, sphere, faces);
+        if(node.is_leaf()) {
+            std::vector<Point> polygon = processNode(octree, edges, node, sphere);
+            if(polygon.size() > 0)
+                faces.push_back(polygon);
+        }
     }
     //std::cout << octree.depth() << std::endl;
     std::cout << faces.size() << std::endl;
