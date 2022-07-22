@@ -46,7 +46,7 @@ struct Split_by_closeness {
         FT z = computeMiddle(b.zmin(), b.zmax(), n.global_coordinates()[2], n.depth());
         Vector mid{x,y,z}; // note: oct.barycenter(n) does not give correct result here
 
-        return (n.depth() <= 1 || func(Vector(mid.x(), mid.y(), mid.z())) < 0.05) && n.depth() <= 3; // custom predicate, can be different
+        return (n.depth() <= 1 || func(Vector(mid.x(), mid.y(), mid.z())) < 0.05) && n.depth() <= 4; // custom predicate, can be different
     }
 
     private:
@@ -99,11 +99,6 @@ bool is_inside(Octree::Bbox b, Point p) {
         && b.zmin() <= p.z() && p.z() <= b.zmax();
 }
 
-std::vector<Point> processNode(const Octree& octree,
-    const Edges& edges,
-    const Octree::Node& node,
-    ImplicitFunction f);
-
 std::vector<Point> processFace(const Octree& octree,
     const Edges& edges,
     const Octree::Node& node,
@@ -119,39 +114,53 @@ std::vector<Point> processFace(const Octree& octree,
     std::vector<std::vector<Point>> segments;
 
     unsigned mask = (!(adj & ~1) ? 1 : adj & ~1);
+    std::queue<Octree::Node> toDivide, leafNeighbours;
+    toDivide.push(neighbour);
+    while (!toDivide.empty()) {
+        Octree::Node n = toDivide.front();
+        for (unsigned i = 0; i < 8; ++i) {
+            if ( !(adj & 1) != !(mask & i) ) { // if the node's child with index i is along the given side of the cell
+                if (n[i].is_leaf())
+                    leafNeighbours.push(n[i]);
+                else
+                    toDivide.push(n[i]);
+            }
+        }
+        toDivide.pop();
+    }
+
     int ind = 0, startv = -1, startp = -1;
-    for (unsigned i = 0; i < 8; ++i) {
-        if ( !(adj & 1) != !(mask & i) ) { // if the neighbour's child with index i is along the given side of the cell
-            Octree::Node child = neighbour[i];
-            std::array<Octree::Edge*, 12> child_edges = edges.get(child);
-            std::vector<Point> segment;
-            for(int i = 0; i < 12; ++i) {
-                auto edge = child_edges[i]->findMinimalEdge();
-                auto endpoints = octree.segment(*edge);
-                auto corners = child_edges[i]->corners(child);
-                // if the corners are on the shared face with `node`
-                bool c1in = !(corners.first & (4 / mask)) != !(adj & 1);
-                bool c2in = !(corners.second & (4 / mask)) != !(adj & 1);
-                if (c1in && c2in) {
-                    auto vals = edge->values();
-                    if (vals.first * vals.second <= 0) {
-                        auto point = vertex_interpolation(
-                            Vector(endpoints.first.x(), endpoints.first.y(), endpoints.first.z()),
-                            Vector(endpoints.second.x(), endpoints.second.y(), endpoints.second.z()),
-                            vals.first, vals.second);
-                        segment.push_back(point);
-                        if ((point - start).squared_length() < 1e-6 * (endpoints.first - endpoints.second).squared_length()) {
-                            startv = ind;
-                            startp = segment.size() - 1;
-                        }
+    while (!leafNeighbours.empty()) {
+        Octree::Node child = leafNeighbours.front();
+        std::array<Octree::Edge*, 12> child_edges = edges.get(child);
+        std::vector<Point> segment;
+        for(int i = 0; i < 12; ++i) {
+            auto edge = child_edges[i]->findMinimalEdge();
+            auto endpoints = octree.segment(*edge);
+            auto corners = child_edges[i]->corners(child);
+            // if both corners are on the shared face with `node`
+            bool c1in = !(corners.first & (4 / mask)) != !(adj & 1);
+            bool c2in = !(corners.second & (4 / mask)) != !(adj & 1);
+            if (c1in && c2in) {
+                auto vals = edge->values();
+                if (vals.first * vals.second <= 0) {
+                    auto point = vertex_interpolation(
+                        Vector(endpoints.first.x(), endpoints.first.y(), endpoints.first.z()),
+                        Vector(endpoints.second.x(), endpoints.second.y(), endpoints.second.z()),
+                        vals.first, vals.second);
+                    segment.push_back(point);
+                    if ((point - start).squared_length() < 1e-6 * (endpoints.first - endpoints.second).squared_length()) {
+                        startv = ind;
+                        startp = segment.size() - 1;
                     }
                 }
             }
-            if(segment.size() > 0) {
-                segments.push_back(segment);
-                ++ind;
-            }
         }
+        if(segment.size() > 0) {
+            segments.push_back(segment);
+            ++ind;
+        }
+        leafNeighbours.pop();
     }
 
     std::vector<Point> polyline;
