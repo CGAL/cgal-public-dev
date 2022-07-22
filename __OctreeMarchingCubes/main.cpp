@@ -123,14 +123,27 @@ std::vector<Point> processFace(const Octree& octree,
     for (unsigned i = 0; i < 8; ++i) {
         if ( !(adj & 1) != !(mask & i) ) { // if the neighbour's child with index i is along the given side of the cell
             Octree::Node child = neighbour[i];
-            std::vector<Point> polygon = processNode(octree, edges, child, f); // this is inefficient, we should just get the edges
+            std::array<Octree::Edge*, 12> child_edges = edges.get(child);
             std::vector<Point> segment;
-            for(int i = 0; i < polygon.size(); ++i) {
-                if (is_inside(octree.bbox(node), polygon[i])) { // to be avoided in later versions
-                    segment.push_back(polygon[i]);
-                    if (polygon[i] == start) {
-                        startv = ind;
-                        startp = segment.size() - 1;
+            for(int i = 0; i < 12; ++i) {
+                auto edge = child_edges[i]->findMinimalEdge();
+                auto endpoints = octree.segment(*edge);
+                auto corners = child_edges[i]->corners(child);
+                // if the corners are on the shared face with `node`
+                bool c1in = !(corners.first & (4 / mask)) != !(adj & 1);
+                bool c2in = !(corners.second & (4 / mask)) != !(adj & 1);
+                if (c1in && c2in) {
+                    auto vals = edge->values();
+                    if (vals.first * vals.second <= 0) {
+                        auto point = vertex_interpolation(
+                            Vector(endpoints.first.x(), endpoints.first.y(), endpoints.first.z()),
+                            Vector(endpoints.second.x(), endpoints.second.y(), endpoints.second.z()),
+                            vals.first, vals.second);
+                        segment.push_back(point);
+                        if ((point - start).squared_length() < 1e-6 * (endpoints.first - endpoints.second).squared_length()) {
+                            startv = ind;
+                            startp = segment.size() - 1;
+                        }
                     }
                 }
             }
@@ -151,7 +164,8 @@ std::vector<Point> processFace(const Octree& octree,
             if (segments[j][1] == polyline.back()) { v = j; p = 0; break; }
         }
     }
-    polyline.pop_back();
+    if(polyline.size() > 0)
+        polyline.pop_back();
 
     return polyline;
 
@@ -177,7 +191,8 @@ std::vector<Point> processNode(const Octree& octree,
             std::pair<Point,Point> minSeg = octree.segment(minEdge);
             Vector p1 (minSeg.first.x(), minSeg.first.y(), minSeg.first.z());
             Vector p2 (minSeg.second.x(), minSeg.second.y(), minSeg.second.z());
-            unorderedPolygonWithFaces.push_back(std::make_pair(vertex_interpolation(p1, p2, f(p1), f(p2)),
+            auto vals = minEdge.values();
+            unorderedPolygonWithFaces.push_back(std::make_pair(vertex_interpolation(p1, p2, vals.first, vals.second),
                 cornersToFaces(edge->corners(node))));
         }
     }

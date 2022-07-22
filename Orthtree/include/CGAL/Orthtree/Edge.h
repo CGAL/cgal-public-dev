@@ -75,6 +75,7 @@ public:
             + (Global_coordinates[5] > n.global_coordinates()[2])*1;
         return std::make_pair(corner1, corner2);
     }
+    std::pair<FT,FT> values() const { return std::make_pair(value1, value2); }
     std::array<std::uint32_t, 6> global_coordinates() const { return Global_coordinates; }
     int depth() const { return Depth; }
 
