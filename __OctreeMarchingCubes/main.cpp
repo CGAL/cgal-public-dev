@@ -3,6 +3,7 @@
 #include <CGAL/Point_set_3.h>
 #include <CGAL/Polyhedron_incremental_builder_3.h>
 #include <CGAL/Polyhedron_3.h>
+#include<CGAL/Aff_transformation_3.h>
 
 #include "EdgeStore.h"
 
@@ -46,7 +47,7 @@ struct Split_by_closeness {
         FT z = computeMiddle(b.zmin(), b.zmax(), n.global_coordinates()[2], n.depth());
         Vector mid{x,y,z}; // note: oct.barycenter(n) does not give correct result here
 
-        return (n.depth() <= 1 || func(Vector(mid.x(), mid.y(), mid.z())) < 0.05) && n.depth() <= 4; // custom predicate, can be different
+        return (n.depth() <= 1 || func(Vector(mid.x(), mid.y(), mid.z())) < 0.05) && n.depth() <= 3; // custom predicate, can be different
     }
 
     private:
@@ -108,7 +109,7 @@ std::vector<Point> processFace(const Octree& octree,
 
     Octree::Node neighbour = node.adjacent_node(adj);
 
-    if (neighbour.is_leaf())
+    if (neighbour.is_null() || neighbour.is_leaf())
         return std::vector<Point>{};
 
     std::vector<std::vector<Point>> segments;
@@ -236,12 +237,33 @@ std::vector<Point> processNode(const Octree& octree,
 }
 
 int main() {
-    ImplicitFunction sphere = [](Vector p){ return sqrt(p.x()*p.x() + p.y()*p.y() + p.z()*p.z()) - 0.5; };
+    ImplicitFunction sphere = [](Vector p) { return sqrt(p.x()*p.x() + p.y()*p.y() + p.z()*p.z()) - 0.5; };
+    ImplicitFunction cube = [](Vector p) {
+        return std::max({std::abs(p.x()), std::abs(p.y()), std::abs(p.z())}) - 0.5;
+    };
+    ImplicitFunction rotcube = [](Vector p) {
+        double cosa = cos(1), sina = sin(1), cosb = cos(0.5), sinb = sin(0.5);
+        Kernel::Aff_transformation_3 rot1(
+            1.0, 0.0, 0.0,
+            0.0, cosa, -sina,
+            0.0, sina, cosa);
+        Kernel::Aff_transformation_3 rot2(
+            cosb, -sinb, 0.0,
+            sinb, cosb, 0.0,
+            0.0, 0.0, 1.0);
+        Vector q = rot2(rot1(p));
+        return std::max({std::abs(q.x()), std::abs(q.y()), std::abs(q.z())}) - 0.5;
+    };
+    ImplicitFunction torus = [](Vector p) {
+        return pow(sqrt(p.x()*p.x() + p.y()*p.y()) - 0.5, 2) + p.z()*p.z() - 0.2*0.2;
+    };
+
+    ImplicitFunction& func = sphere;
     Point_set points; // This is only here because Orthtree constructor requires it
     Octree octree(Octree::Bbox(-1.1,-1.1,-1.1,1.1,1.1,1.1), points);
-    octree.refine(Split_by_closeness(sphere, octree));
+    octree.refine(Split_by_closeness(func, octree));
 
-    Edges edges(octree, sphere);
+    Edges edges(octree, func);
 
     // Add edges to container
     for (Octree::Node node : octree.traverse<Preorder_traversal>()) {
@@ -258,7 +280,7 @@ int main() {
         //std::cout << node << std::endl;
         //std::cout << octree.bbox(node) << std::endl;
         if(node.is_leaf()) {
-            std::vector<Point> polygon = processNode(octree, edges, node, sphere);
+            std::vector<Point> polygon = processNode(octree, edges, node, func);
             if(polygon.size() > 0)
                 faces.push_back(polygon);
         }
