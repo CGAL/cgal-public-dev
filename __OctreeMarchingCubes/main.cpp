@@ -76,19 +76,39 @@ Point vertex_interpolation(const Vector& r1, const Vector& r2, const FT d1, cons
 }
 
 // returns the two faces along the segment between the two corners
+// this function is really messy, but seems working; maybe it would be better to use tables instead
+// would be better to use the same ordering as Orthtree_traits_3<>::Adjacency
 std::pair<int,int> cornersToFaces(std::pair<int,int> corners) {
     int p0 = corners.first, p1 = corners.second;
     int x0 = (p0&4) >> 2, y0 = (p0&2) >> 1, z0 = p0&1;
     int x1 = (p1&4) >> 2, y1 = (p1&2) >> 1, z1 = p1&1;
-    std::vector<int> faces;
+    std::vector<int> faces {-1, -1};
     // exactly 2 will match
-    if(x0 == x1)
-        faces.push_back(x0*3);
-    if(y0 == y1)
-        faces.push_back(y0*3+1);
-    if(z0 == z1)
-        faces.push_back(z0*3+2);
-    assert(faces.size() == 2);
+    if(x0 == x1) {
+        if(z0 < z1 || y0 > y1)
+            faces[0] = x0*3;
+        else
+            faces[1] = x0*3;
+    }
+    if(y0 == y1) {
+        if(x0 < x1 || z0 > z1)
+            faces[0] = y0*3+1;
+        else
+            faces[1] = y0*3+1;
+    }
+    if(z0 == z1) {
+        if(y0 < y1 || x0 > x1)
+            faces[0] = z0*3+2;
+        else
+            faces[1] = z0*3+2;
+
+    }
+    if(p0 == 0 || p0 == 7 || p1 == 0 || p1 == 7) {
+        auto tmp = faces[0];
+        faces[0] = faces[1];
+        faces[1] = tmp;
+    }
+    assert(faces[0] != -1 && faces[1] != -1);
     return std::make_pair(faces[0], faces[1]);
 }
 
@@ -196,14 +216,16 @@ std::vector<Point> processNode(const Octree& octree,
         Vector p1 (seg.first.x(), seg.first.y(), seg.first.z());
         Vector p2 (seg.second.x(), seg.second.y(), seg.second.z());
 
-        if(f(p1) * f(p2) < 0) {
+        if(edge->values().first * edge->values().second < 0) {
             Octree::Edge minEdge = *(edge->findMinimalEdge());
             std::pair<Point,Point> minSeg = octree.segment(minEdge);
             Vector p1 (minSeg.first.x(), minSeg.first.y(), minSeg.first.z());
             Vector p2 (minSeg.second.x(), minSeg.second.y(), minSeg.second.z());
             auto vals = minEdge.values();
+            auto corners = edge->corners(node);
+            if (vals.second < 0) { auto tmp = corners.first; corners.first = corners.second; corners.second = tmp;  }
             unorderedPolygonWithFaces.push_back(std::make_pair(vertex_interpolation(p1, p2, vals.first, vals.second),
-                cornersToFaces(edge->corners(node))));
+                cornersToFaces(corners)));
         }
     }
     if(unorderedPolygonWithFaces.size() == 0) return std::vector<Point> {};
@@ -217,8 +239,8 @@ std::vector<Point> processNode(const Octree& octree,
         std::pair<int,int> faces = unorderedPolygonWithFaces[ind].second;
         for(int j = 0; j < unorderedPolygonWithFaces.size(); ++j) {
             auto& el = unorderedPolygonWithFaces[j];
-            bool face1 = el.second.first == faces.first || el.second.first == faces.second;
-            bool face2 = el.second.second == faces.first || el.second.second == faces.second;
+            bool face1 = el.second.first == faces.first || (ind != 0 && el.second.first == faces.second);
+            bool face2 = el.second.second == faces.first || (ind != 0 && el.second.second == faces.second);
             if((std::find(visited.begin(), visited.end(), j) == visited.end()
                 || j == 0 && i == unorderedPolygonWithFaces.size() - 1) && (face1 || face2)) {
                 int face = face1 ? el.second.first : el.second.second;
