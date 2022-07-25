@@ -45,8 +45,8 @@ if ( CGAL_FOUND )
     message(STATUS "NOTICE: Spectra was not found, tests won't be compiled.")
   endif()
 
-  if(NOT EIGEN3_FOUND OR NOT SPECTRA_FOUND)
-  #if(NOT EIGEN3_FOUND)
+  #if(NOT EIGEN3_FOUND OR NOT SPECTRA_FOUND)
+  if(NOT EIGEN3_FOUND)
     return()
   endif()
 

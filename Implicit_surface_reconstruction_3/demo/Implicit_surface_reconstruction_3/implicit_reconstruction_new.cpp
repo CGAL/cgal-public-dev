@@ -28,6 +28,7 @@
 #include <CGAL/IO/Polyhedron_iostream.h>
 #include <CGAL/IO/Polyhedron_VRML_1_ostream.h>
 
+
 #include <list>
 #include <cstdlib>
 #include <fstream>
@@ -240,7 +241,7 @@ int main(int argc, char * argv[])
 	function.initialize_point_map(points, Point_map(), Normal_map(), flag_octree, flag_octree_debug);
 
     std::cerr << "Initialization: " << reconstruction_timer.time() << " seconds\n";
-  
+    
     // Computes the Implicit indicator function f()
     // at each vertex of the triangulation.
     std::cerr << "Computes implicit function...\n";

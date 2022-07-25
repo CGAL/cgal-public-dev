@@ -27,6 +27,7 @@
 #include <algorithm>
 #include <cmath>
 #include <iterator>
+#include <unordered_map>
 
 #include <CGAL/IO/trace.h>
 #include <CGAL/Reconstruction_triangulation_3.h>
@@ -50,6 +51,7 @@
 #include <CGAL/enum.h>
 #include <CGAL/Kernel/global_functions.h>
 #include <CGAL/Mesh_3/Octree_3.h>
+#include <CGAL/Modifiable_priority_queue.h>
 
 #include <boost/shared_ptr.hpp>
 #include <boost/array.hpp>
@@ -1158,6 +1160,10 @@ private:
     //const int nb_insides = static_cast<int>(m_tr->nb_inside_vertices());
   	CGAL_TRACE_STREAM << "  " << nb_input_vertices << " input vertices out of " << nb_variables << std::endl;
 
+    dihedral_angle_per_cell("bad_tet_octree.off");
+    perturb_sliver(3);
+    dihedral_angle_per_cell("bad_tet_octree_perturb.off");
+    
     //std::ofstream oFileT("triangulation.off", std::ios::out);
     //oFileT << *m_tr;
 
@@ -1195,7 +1201,6 @@ private:
 
     EV_inv = EV_inv * ::pow(radius, 3);
     EV = EV / ::pow(radius, 3);
-
     if(flag_boundary){
       EL = EL + N.eigen_object();
       EL = EL / radius;
@@ -1206,14 +1211,15 @@ private:
       //B = EL * EV_inv * EL * bilaplacian + EL * laplacian + F.eigen_object();
       //B = EL * EV_inv * EL * bilaplacian + EL * laplacian + EV * F.eigen_object();
       //B = EL.transpose() * EL * bilaplacian + EL * laplacian + F.eigen_object();
-      std::ofstream file("EL_mat.txt");
-      file << EMatrix(EL);
-      file.close();
+      //std::ofstream file("EL_mat.txt");
+      //file << EMatrix(EL);
+      //file.close();
       B = EL * EL * bilaplacian + EL * laplacian + F.eigen_object();
     }
+    
+    //check_ratio_radius_edge();
+    //dihedral_angle_per_cell();
 
-    check_ratio_radius_edge();
-    dihedral_angle_per_cell();
 /*
     save_steiner_point();
 
@@ -1287,9 +1293,9 @@ private:
   template <typename MatType, typename RMatType, int SelectionRule>
   void spectral_solver(const MatType& A, const MatType& B, const MatType& L, RMatType& X, int k = 1, int m = 37)
   {
-      std::ofstream file("B_mat.txt");
-      file << EMatrix(B);
-      file.close();
+      //std::ofstream file("B_mat.txt");
+      //file << EMatrix(B);
+      //file.close();
 
       CGAL_TRACE_STREAM << "Begin solving spectra..." << std::endl;
       OpType op(A);
@@ -1416,10 +1422,11 @@ private:
         std::cerr << "Check failed! " << eigs.info() << std::endl;
 
   }
-
-  void dihedral_angle_per_cell()
+  
+  // stores bad tet  soup and dihedral statistics into files
+  void dihedral_angle_per_cell(std::string name) 
   {
-    std::ofstream out("cotan.txt");
+    // std::ofstream out("cotan.txt");
     
     // store bad cells as tet soup in a surface mesh
     // currently stores all tet seperatly so vertices might be duplicated but I assume this is ok
@@ -1452,24 +1459,24 @@ private:
               //bad_tet_soup.add_face(v_idx[0], v_idx[2], v_idx[3]);
               //bad_tet_soup.add_face(v_idx[1], v_idx[2], v_idx[3]);
           }
-          out << std::to_string(cotan) << " ";
+          // out << std::to_string(cotan) << " ";
         }
 
       Vector point_from_center = cb->vertex(0)->point() - center;
       FT length_pc = std::sqrt(point_from_center * point_from_center);
-      out << std::to_string(length_pc) << std::endl;
+      //out << std::to_string(length_pc) << std::endl;
       
     }
     
-    out.close();
+    //out.close();
     
     // manually write OFF file
-    std::ofstream out2("bad_tet.off");
-    out2 << "OFF\n" << vertices.size() << " " << vertices.size() << " 0\n\n";
-    for (int i = 0; i != vertices.size(); i++) {
+    std::ofstream out2(name);
+    out2 << "OFF\n" << vertices.size() << " " << vertices.size() << " 0\n\n"; // header
+    for (int i = 0; i != vertices.size(); i++) { // vertices
         out2 << vertices[i] << std::endl;
     }
-    for (int i = 0; i <= vertices.size(); i=i+4) {
+    for (int i = 0; i <= vertices.size(); i=i+4) { // face
         out2 << 3 << " " << i << " " << i + 1 << " " << i + 2 << "\n";
         out2 << 3 << " " << i << " " << i + 1 << " " << i + 3 << "\n";
         out2 << 3 << " " << i << " " << i + 2 << " " << i + 3 << "\n";
@@ -2756,6 +2763,390 @@ private:
       case 5: color[0] = 255;     color[1] = 0;       color[2] = 255 - x; break;
     }
   }
+
+  // start of sliver perturb related code
+    template< typename FT
+        , typename Vertex_handle
+        , typename Point_3
+        , typename Perturbation>
+        class PVertex_
+    {
+    public:
+        typedef PVertex_<FT,
+            Vertex_handle,
+            Point_3,
+            Perturbation> Self;
+
+        /// Constructor
+        PVertex_()
+            : vertex_handle_()
+            , incident_sliver_nb_(0)
+            , min_value_((std::numeric_limits<double>::max)())
+            , try_nb_(0)
+            , p_perturbation_(nullptr)
+            , id_()
+            , is_interior_()
+        { }
+
+        PVertex_(const Vertex_handle& vh, size_t id)
+            : vertex_handle_(vh)
+            , incident_sliver_nb_(0)
+            , min_value_((std::numeric_limits<double>::max)())
+            , try_nb_(0)
+            , p_perturbation_(nullptr)
+            , id_(id)
+            , is_interior_(has_finite_voronoi_cell(vh))
+        { }
+
+        /// Associated vertex
+        const Vertex_handle& vertex() const { return vertex_handle_; }
+        void set_vertex(const Vertex_handle& vh) { vertex_handle_ = vh; }
+
+        /// Incident slivers number
+        unsigned int sliver_nb() const { return incident_sliver_nb_; }
+        void set_sliver_nb(const unsigned int n) { incident_sliver_nb_ = n; }
+
+        /// Current perturbation
+        const Perturbation* perturbation() const { return p_perturbation_; }
+        void set_perturbation(const Perturbation* p) { p_perturbation_ = p; }
+
+        /// Is perturbable
+        bool is_perturbable() const
+        {
+            return ((nullptr != perturbation()) && (sliver_nb() != 0) );
+        }
+
+        /// Min sliver value
+        const FT& min_value() const { return min_value_; }
+        void set_min_value(const FT& min_value){ min_value_ = min_value; }
+
+        /// Try nb
+        const unsigned int& try_nb() const { return try_nb_; }
+        void set_try_nb(const unsigned int& try_nb) { try_nb_ = try_nb; }
+        void increment_try_nb() { ++try_nb_; }
+
+        /// Id
+        void set_id(const size_t& id) { id_ = id; }
+        size_t id() const { return id_; }
+
+        /// Interior
+        void set_is_interior(const bool& is_interior) { is_interior_ = is_interior; }
+        bool is_interior() const { return is_interior_; }
+
+        /// Operators
+        bool operator==(const Self& pv) const { return ( id() == pv.id() ); }
+
+        bool operator<(const Self& pv) const
+        {
+            // vertex type (smallest-interior first)
+            //if ( vertex()->in_dimension() != pv.vertex()->in_dimension() )
+            //    return vertex()->in_dimension() > pv.vertex()->in_dimension();
+            // nb incident slivers (smallest first)
+            if (is_interior() && !pv.is_interior())
+                return true;
+            else if (!is_interior() && pv.is_interior())
+                return false;
+            else if ( sliver_nb() != pv.sliver_nb() )
+                return sliver_nb() < pv.sliver_nb();
+            // min angle (smallest first)
+            else if ( min_value() != pv.min_value() )
+                return min_value() < pv.min_value();
+            // try nb (smallest first)
+            else if ( try_nb() != pv.try_nb() )
+                return try_nb() < pv.try_nb();
+            // TODO: perturbation type (smallest first) 
+            //else if ( perturbation() != pv.perturbation() )
+            //    return *perturbation() < *pv.perturbation();
+            return ( id() < pv.id() ); // all characteristics are the same!
+        }
+
+        /// Dummy functions
+        void update_saved_erase_counter() {}
+        bool is_zombie() { return false; }
+
+        friend std::ostream& operator<<(std::ostream& os, const PVertex_& pv) {
+            std::string type = pv.is_interior() ? "interior" : "boundary";
+            os << "vertex("<< type <<"):" << pv.id() << "\tsliver_count:" << pv.sliver_nb() << "\tmin_value:" << pv.min_value() << std::endl;
+            return os;
+        }
+
+    private:
+        /// Private datas
+        Vertex_handle vertex_handle_;
+        unsigned int incident_sliver_nb_;
+        FT min_value_;
+        unsigned int try_nb_;
+        const Perturbation* p_perturbation_;
+        size_t id_;
+        bool is_interior_;
+    };
+
+   class Perturbation {
+       boost::shared_ptr<Triangulation>& m_tr_;
+   public:
+       Perturbation (boost::shared_ptr<Triangulation> m_tr)
+           : m_tr_(m_tr)
+       {}
+
+       Vector compute_gradient_vector(
+               const Vertex_handle& v,
+               const std::vector<Cell_handle>& slivers) const
+       {
+           switch (slivers.size())
+           {
+           case 1:
+               return compute_gradient_vector_(v, slivers.front());
+               break;
+           case 2:
+           {
+               Vector v1 = compute_gradient_vector_(v, slivers.front());
+               Vector v2 = compute_gradient_vector_(v, slivers.back());
+               if( v1 * v2 > 0 )
+                   // "+0.5" because sq_radius has to go up
+                   return 0.5*(v1 + v2);
+               break;
+           }
+           default:
+               break;
+           }
+
+           // May happen if sq_radius_gradient is not relevant for this vertex
+           return CGAL::NULL_VECTOR;
+       }
+       Vector compute_gradient_vector_(const Vertex_handle& v, const Cell_handle& cell) const
+       {
+           typename Gt::Construct_translated_point_3 translate =
+               m_tr_->geom_traits().construct_translated_point_3_object();
+
+           unsigned int index = cell->index(v);
+
+           const Point& wvp = m_tr_->point(cell, index);
+           const Point& wp2 = m_tr_->point(cell, (index+1)&3);
+           const Point& wp3 = m_tr_->point(cell, (index+2)&3);
+           const Point& wp4 = m_tr_->point(cell, (index+3)&3);
+
+           // translate the tet so that 'wp4' is the origin
+           Vector translate_to_origin(CGAL::ORIGIN, wp4);
+           const Point& p1 = translate(wvp, - translate_to_origin);
+           const Point& p2 = translate(wp2, - translate_to_origin);
+           const Point& p3 = translate(wp3, - translate_to_origin);
+           
+           // pre-compute everything
+           FT sq_p1 = p1.x()*p1.x() + p1.y()*p1.y() + p1.z()*p1.z();
+           FT sq_p2 = p2.x()*p2.x() + p2.y()*p2.y() + p2.z()*p2.z();
+           FT sq_p3 = p3.x()*p3.x() + p3.y()*p3.y() + p3.z()*p3.z();
+
+           // every derivative is computed w.r.t p1 (x1, y1, z1)
+           FT da_dx = p2.y()*p3.z() - p3.y()*p2.z();
+           FT da_dy = p2.z()*p3.x() - p2.x()*p3.z();
+           FT da_dz = p2.x()*p3.y() - p3.x()*p2.y();
+
+           FT dDx_dx = -2*p1.x()*da_dx;
+           FT dDx_dy = -2*p1.y()*da_dx + sq_p2*p3.z() - sq_p3*p2.z();
+           FT dDx_dz = -2*p1.z()*da_dx - sq_p2*p3.y() + sq_p3*p2.y();
+
+           FT dDy_dx = -2*p1.x()*da_dy - sq_p2*p3.z() + sq_p3*p2.z();
+           FT dDy_dy = -2*p1.y()*da_dy;
+           FT dDy_dz = -2*p1.z()*da_dy + sq_p2*p3.x() - sq_p3*p2.x();
+
+           FT dDz_dx = -2*p1.x()*da_dz + sq_p2*p3.y() - sq_p3*p2.y();
+           FT dDz_dy = -2*p1.y()*da_dz - sq_p2*p3.x() + sq_p3*p2.x();
+           FT dDz_dz = -2*p1.z()*da_dz;
+
+           FT a  = p1.x()*da_dx + p1.y()*da_dy + p1.z()*da_dz;
+           if ( CGAL_NTS is_zero(a) )
+               return CGAL::NULL_VECTOR;
+           
+           FT Dx = -sq_p1*da_dx + p1.y()*(sq_p2*p3.z() - sq_p3*p2.z()) - p1.z()*(sq_p2*p3.y() - sq_p3*p2.y());
+           FT Dy = -sq_p1*da_dy - p1.x()*(sq_p2*p3.z() - sq_p3*p2.z()) + p1.z()*(sq_p2*p3.x() - sq_p3*p2.x());
+           FT Dz = -sq_p1*da_dz + p1.x()*(sq_p2*p3.y() - sq_p3*p2.y()) - p1.y()*(sq_p2*p3.x() - sq_p3*p2.x());
+
+           // compute gradient vector
+           FT sum_sqD = Dx*Dx + Dy*Dy + Dz*Dz;
+           FT gx = (Dx*dDx_dx + Dy*dDy_dx + Dz*dDz_dx) / (2.0*a*a) - (da_dx * sum_sqD) / (2.0*a*a*a);
+           FT gy = (Dx*dDx_dy + Dy*dDy_dy + Dz*dDz_dy) / (2.0*a*a) - (da_dy * sum_sqD) / (2.0*a*a*a);
+           FT gz = (Dx*dDx_dz + Dy*dDy_dz + Dz*dDz_dz) / (2.0*a*a) - (da_dz * sum_sqD) / (2.0*a*a*a);
+
+           return Vector(gx, gy, gz);
+       };
+       
+   };
+   
+    typedef PVertex_<FT,
+        Vertex_handle,
+        Point,
+        Perturbation> PVertex;
+
+    class PVertex_id
+    {
+    public:
+        typedef boost::readable_property_map_tag category;
+        typedef typename size_t value_type;
+        typedef PVertex key_type;
+
+        value_type operator[] (const key_type& pv) const { return pv.id(); }
+
+        friend inline
+            value_type get(const PVertex_id& m, const key_type& k)
+        {
+            return m[k];
+        }
+    };
+
+    typedef std::less<PVertex> less_PVertex;
+    typedef Modifiable_priority_queue<PVertex, less_PVertex, PVertex_id> PQueue;
+
+    // input lower bound in degree
+    void perturb_sliver(double sliver_lb) 
+    {
+        // 0. perturber vector ???
+        Perturbation perturbation_placeholder(m_tr);
+
+        // 1. found all slivers, construct vertices and add to a priority queue
+        double tan_ub = tan(sliver_lb / 180 * boost::math::constants::pi<double>()); // TODO: is double ok?
+        int count = 0;
+        std::unordered_map<unsigned int, PVertex> PVertex_buffer_map; // TODO: not familiar with boost, using STL
+        for(Finite_cells_iterator cb = m_tr->finite_cells_begin(); cb != m_tr->finite_cells_end(); cb++)
+        {
+            double min_angle_tan = 1/largest_cot(cb);
+            if (tan_ub > min_angle_tan) // if sliver
+            {
+                count++;
+                //std::cout << "sliver at :" << cb->vertex(0)->index() << " " << cb->vertex(1)->index() << " " << cb->vertex(2)->index() << " " << cb->vertex(3)->index() << std::endl;
+                for (int i = 0; i < 4; i++) 
+                {
+                    unsigned int v_idx = cb->vertex(i)->index();
+                    PVertex& pv = PVertex_buffer_map[v_idx];
+                    if(pv.sliver_nb() ==0)
+                    {
+                        pv.set_vertex(cb->vertex(i));
+                        pv.set_id(v_idx);
+                        pv.set_sliver_nb(1);
+                        pv.set_min_value(min_angle_tan); // stores tan value corresponding to min dihedral angle
+                        pv.set_perturbation(&perturbation_placeholder);
+                        pv.set_is_interior(has_finite_voronoi_cell(cb->vertex(i)));
+                    }
+                    else
+                    {
+                        pv.set_sliver_nb(pv.sliver_nb()+1);
+                        if(min_angle_tan < pv.min_value())
+                            pv.set_min_value(min_angle_tan);
+                    }
+                }
+            }
+        }
+        // build queue
+        //std::cout << "total:" << count << "\tmax:" << m_tr->number_of_vertices() << std::endl;
+        PQueue pqueue(m_tr->number_of_vertices());
+        for (const auto & i : PVertex_buffer_map)
+            update_priority_queue(i.second, pqueue);
+        
+        // 2. compute perturbation vector for each sliver
+        //    * how do we switch the grad formula if multiple slivers are presented for a single vertex
+        //    * what does apply_perturbation do??
+        while (!pqueue.empty())
+        {
+            // get vector of sliver cells
+            PVertex pv = pqueue.top_and_pop();
+            std::vector<Cell_handle> cells, slivers;
+            m_tr->incident_cells(pv.vertex(), std::back_inserter(cells));
+            for (auto c : cells) { // extract slivers into a vector
+                double min_angle_tan = 1/largest_cot(c);
+                if (tan_ub > min_angle_tan) 
+                    slivers.push_back(c);
+            }
+            // compute perturbation vector
+            Vector grad = perturbation_placeholder.compute_gradient_vector(pv.vertex(), slivers);
+            if (grad != CGAL::NULL_VECTOR)
+            {
+                FT grad_length = sqrt(grad * grad);
+                FT norm_length = sqrt(min_incident_edge_sq_length(pv.vertex()));
+                FT alpha = 0.2;
+                pv.vertex()->point() = pv.vertex()->point() - grad / grad_length * norm_length * alpha; // update
+                //std::cout << grad << std::endl; // this is so big???
+            }
+            //else
+                //std::cout << "Grad is Null!";
+            // get length as norm 
+            //std::cout << pv;
+            
+        }
+        
+        // 3. what are stopping conditions?
+        
+        return;
+    }
+
+    int update_priority_queue(const PVertex& pv, PQueue& pqueue) const
+    {
+        if ( pqueue.contains(pv) )
+        {
+            if ( pv.is_perturbable() )
+            {
+                pqueue.update(pv);
+                return 0;
+            }
+            else
+            {
+                pqueue.erase(pv);
+                return -1;
+            }
+        }
+        else
+        {
+            if ( pv.is_perturbable() )
+            {
+                pqueue.push(pv);
+                return 1;
+            }
+        }
+
+        return 0;
+    }
+
+    FT largest_cot(Cell_handle cell)
+    {
+        double max_cotan = -1e7; // TODO: might be bad, not so sure about double/FT
+        for(int i = 0; i < 3; i++)
+            for (int j = i + 1; j < 4; j++)
+            {
+                double cotan = cotan_per_edge(cell, i, j);
+                if(cotan > max_cotan) max_cotan = cotan;
+            }
+        return max_cotan;
+    };
+
+    FT edge_sq_length(const Edge& e)
+    {
+        typename Geom_traits::Compute_squared_distance_3 sq_distance =
+            m_tr->geom_traits().compute_squared_distance_3_object();
+        
+        const Point& p = m_tr->point(e.first, e.second);
+        const Point& q = m_tr->point(e.first, e.third);
+
+        return sq_distance(p,q);
+    }
+
+    FT min_incident_edge_sq_length(const Vertex_handle& v)
+    {
+        CGAL_precondition(!m_tr->is_infinite(v));
+
+        // Get all incident edges
+        std::vector<Edge> edges;
+        m_tr->finite_incident_edges(v, std::back_inserter(edges));
+        CGAL_assertion(!edges.empty());
+
+        // Get squared min length
+        typename std::vector<Edge>::iterator eit = edges.begin();
+        FT min_sq_length = edge_sq_length(*eit++);
+
+        for ( ; eit != edges.end() ; ++eit )
+        {
+            min_sq_length = (std::min)(min_sq_length, edge_sq_length(*eit));
+        }
+        
+        return min_sq_length;
+    }
 
 }; // end of Implicit_reconstruction_function
 

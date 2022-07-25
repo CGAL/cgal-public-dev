@@ -1006,7 +1006,6 @@ public:
   }
 
 }; // end of Reconstruction_triangulation_3
-
 } //namespace CGAL
 
 #include <CGAL/enable_warnings.h>
