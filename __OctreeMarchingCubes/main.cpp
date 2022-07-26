@@ -59,7 +59,6 @@ struct Split_by_closeness {
 
 // returns the two faces along the segment between the two corners
 // this function is really messy, but seems working; maybe it would be better to use tables instead
-// would be better to use the same ordering as Orthtree_traits_3<>::Adjacency
 std::pair<int,int> cornersToFaces(std::pair<int,int> corners) {
     int p0 = corners.first, p1 = corners.second;
     int x0 = (p0&4) >> 2, y0 = (p0&2) >> 1, z0 = p0&1;
@@ -68,21 +67,21 @@ std::pair<int,int> cornersToFaces(std::pair<int,int> corners) {
     // exactly 2 will match
     if(x0 == x1) {
         if(z0 < z1 || y0 > y1)
-            faces[0] = x0*3;
+            faces[0] = x0;
         else
-            faces[1] = x0*3;
+            faces[1] = x0;
     }
     if(y0 == y1) {
         if(x0 < x1 || z0 > z1)
-            faces[0] = y0*3+1;
+            faces[0] = y0+2;
         else
-            faces[1] = y0*3+1;
+            faces[1] = y0+2;
     }
     if(z0 == z1) {
         if(y0 < y1 || x0 > x1)
-            faces[0] = z0*3+2;
+            faces[0] = z0+4;
         else
-            faces[1] = z0*3+2;
+            faces[1] = z0+4;
 
     }
     if(p0 == 0 || p0 == 7 || p1 == 0 || p1 == 7) {
@@ -93,8 +92,6 @@ std::pair<int,int> cornersToFaces(std::pair<int,int> corners) {
     assert(faces[0] != -1 && faces[1] != -1);
     return std::make_pair(faces[0], faces[1]);
 }
-
-std::array<Adjacency, 6> sides {Adjacency::LEFT, Adjacency::DOWN, Adjacency::BACK, Adjacency::RIGHT, Adjacency::UP, Adjacency::FRONT};
 
 bool is_inside(Octree::Bbox b, Point p) {
     return b.xmin() <= p.x() && p.x() <= b.xmax()
@@ -240,7 +237,7 @@ std::vector<size_t> processNode(const Octree& octree,
             if((std::find(visited.begin(), visited.end(), j) == visited.end()
                 || j == 0 && i == unorderedPolygonWithFaces.size() - 1) && (face1 || face2)) {
                 int face = face1 ? el.second.first : el.second.second;
-                std::vector<size_t> internal_points = processFace(octree, edges, node, f, sides[face], points[polygon.back()], points);
+                std::vector<size_t> internal_points = processFace(octree, edges, node, f, Adjacency(face), points[polygon.back()], points);
                 for (auto it : internal_points) {
                     polygon.push_back(it);
                 }
