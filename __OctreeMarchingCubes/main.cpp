@@ -102,7 +102,6 @@ bool is_inside(Octree::Bbox b, Point p) {
         && b.zmin() <= p.z() && p.z() <= b.zmax();
 }
 
-std::map<Octree::Node, std::vector<size_t>> pointsInCells;
 std::map<Edge, size_t> edge_points_in_mesh;
 
 size_t addPoint(Octree::Node n, const Edge& e, std::vector<Point>& points) {
@@ -111,17 +110,7 @@ size_t addPoint(Octree::Node n, const Edge& e, std::vector<Point>& points) {
         return i->second;
 
     Point p = e.extract_isovertex();
-    for (auto it : sides) {
-        Octree::Node neighbour = n.adjacent_node(it);
-        for (auto ind : pointsInCells[neighbour]) {
-            if ((points[ind] - p).squared_length() < 1e-6) {
-                pointsInCells[n].push_back(ind);
-                return ind;
-            }
-        }
-    }
     size_t ind = points.size();
-    pointsInCells[n].push_back(ind);
     edge_points_in_mesh[e] = ind;
     points.push_back(p);
     return ind;
