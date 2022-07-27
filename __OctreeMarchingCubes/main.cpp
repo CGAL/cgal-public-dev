@@ -52,7 +52,7 @@ private:
     }
 };
 
-int main() {
+int main(int argc, char** argv) {
     ImplicitFunction sphere = [](Vector p) { return sqrt(p.x()*p.x() + p.y()*p.y() + p.z()*p.z()) - 0.5; };
     ImplicitFunction cube = [](Vector p) {
         return std::max({std::abs(p.x()), std::abs(p.y()), std::abs(p.z())}) - 0.5;
@@ -73,8 +73,30 @@ int main() {
     ImplicitFunction torus = [](Vector p) {
         return pow(sqrt(p.x()*p.x() + p.y()*p.y()) - 0.5, 2) + p.z()*p.z() - 0.2*0.2;
     };
+    ImplicitFunction tanglecube = [](Vector p) {
+        double x = 2*p.x(), y = 2*p.y(), z = 2*p.z();
+        double x2=x*x, y2=y*y, z2=z*z;
+        double x4=x2*x2, y4=y2*y2, z4=z2*z2;
+        return x4 - 5*x2 + y4 - 5*y2 + z4 - 5*z2 + 11.8;
+    };
 
-    ImplicitFunction& func = sphere;
+    ImplicitFunction func;
+    if(argc >= 2 && std::string(argv[1]) == "--function") {
+        if(std::string(argv[2]) == "sphere")
+            func = sphere;
+        else if(std::string(argv[2]) == "cube")
+            func = cube;
+        else if(std::string(argv[2]) == "rotcube")
+            func = rotcube;
+        else if(std::string(argv[2]) == "torus")
+            func = torus;
+        else if(std::string(argv[2]) == "tanglecube")
+            func = tanglecube;
+        else exit(1);
+    }
+    else
+        func = sphere;
+
     Point_set points; // This is only here because Orthtree constructor requires it
     Octree octree(Octree::Bbox(-1.2,-1.2,-1.2,1.2,1.2,1.2), points);
     octree.refine(Split_by_closeness(func, octree));
