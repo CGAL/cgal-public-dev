@@ -46,9 +46,9 @@ public:
         int ind = 0;
         Bbox b = tree.bbox(root);
         std::array<Edge*, 12> edges;
-        for (int i = 0; i < 8; ++i) {
-            for (int k = 0; k <= 2; ++k) {
-                int j = i | (1 << k);
+        for (unsigned i = 0; i < 8; ++i) {
+            for (unsigned k = 0; k <= 2; ++k) {
+                unsigned j = i | (1 << k);
                 if (i != j){
                     Vector p1 (i&4 ? b.xmax() : b.xmin(), i&2 ? b.ymax() : b.ymin(), i&1 ? b.zmax() : b.zmin());
                     Vector p2 (j&4 ? b.xmax() : b.xmin(), j&2 ? b.ymax() : b.ymin(), j&1 ? b.zmax() : b.zmin());
