@@ -15,7 +15,7 @@
 #include <CGAL/Orthtree/Node.h>
 #include <CGAL/Octree.h>
 
-#include "Edge.h"
+#include "Octree_edge.h"
 
 #include <map>
 

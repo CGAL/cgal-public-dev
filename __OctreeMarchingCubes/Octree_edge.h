@@ -63,7 +63,7 @@ public:
             , Depth + 1, this, midValue, value2);
     }
 
-    Octree_edge* find_minimal_edge() {
+    const Octree_edge* find_minimal_edge() const {
         if(child1 == nullptr) return this;
         else if(child1->value1 * child1->value2 <= 0) return child1->find_minimal_edge();
         else return child2->find_minimal_edge();
@@ -91,9 +91,7 @@ public:
         out << "{ ( " << c[0] << " " << c[1] << " " << c[2] << " ) ( " << c[3] << " " << c[4] << " " << c[5] << " ) " << edge.depth() << " }" << std::endl;
         return out;
     }
-    /*!
-    \brief returns the line segment specified by an edge, with respect to an octree.
-   */
+
     std::pair<Point, Point> segment() const {
         typename Tree::Bbox box = tree.bbox(tree.root());
         std::array<FT, 3> p1;
