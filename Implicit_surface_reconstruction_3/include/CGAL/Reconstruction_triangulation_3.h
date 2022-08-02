@@ -651,7 +651,7 @@ public:
           ++v)
       {
           Point p = v->point();
-          Vector n= normal(v);
+          Vector n= normal(v) * 0.1; // for visualization
           //if (diff_normal_map.find(v))
           //    n = diff_normal_map[v];
           //else

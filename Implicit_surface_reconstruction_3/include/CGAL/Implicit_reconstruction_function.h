@@ -386,6 +386,7 @@ private:
 
   PointRange m_octree_pwn;
   std::vector<Point> m_octree_steiner;
+  PointRange* m_points;
 
   mutable std::vector<Point> Dual;
   mutable std::vector<Vector> Normal;
@@ -474,6 +475,7 @@ public:
 							bool use_octree,
 							bool octree_debug_visu)
   {
+    m_points = std::addressof(points);
 	m_average_spacing = CGAL::compute_average_spacing<CGAL::Sequential_tag>
 						(points, 6, CGAL::parameters::point_map(point_map));
 	Implicit_visitor visitor = Implicit_visitor();
@@ -531,22 +533,12 @@ public:
 	}
 
     // remove slivers
+    //dihedral_angle_per_cell("bad_tet_test.off");
     CGAL_TRACE_STREAM << "removing slivers in triangulation...\n";
     m_tr->index_all_vertices();
-    dihedral_angle_per_cell("bad_tet_test.off");
     remove_sliver<Geom_traits, Triangulation>(m_tr, 5);
-    dihedral_angle_per_cell("bad_tet_perturb_test.off");
-    // estimate normal
-    KDTree kdtree;
-    int count = 0;
-    for (InputIterator it = points.cbegin(); it != points.cend(); it++)
-    {
-        count++;
-        kdtree.insert(Point_with_ni(it->first, it->second, count));
-    }
-    for (Finite_vertices_iterator v = m_tr->finite_vertices_begin(); v != m_tr->finite_vertices_end(); ++v)
-        m_tr->set_normal(v, estimate_normal(v->point(), m_average_spacing, kdtree));
-    //m_tr->dump_all_points("all_points");
+    //dihedral_angle_per_cell("bad_tet_perturb_test.off");
+    
   }
 
   /// \endcond
@@ -734,9 +726,22 @@ public:
   bool compute_poisson_implicit_function(
                                  SparseLinearAlgebraTraits_d solver, // = SparseLinearAlgebraTraits_d(),
                                  Visitor visitor,
-                                 double average_spacing_ratio = 5.0) // this parameter should be passed to second delaunay refinement
+                                 double average_spacing_ratio = 3.0) // this parameter should be passed to second delaunay refinement / normal estimation
   {
     CGAL::Timer task_timer; task_timer.start();
+
+    // estimate normal
+    CGAL_TRACE_STREAM << "Estimate normal vector...\n";
+    KDTree kdtree;
+    int count = 0;
+    for (InputIterator it = m_points->cbegin(); it != m_points->cend(); it++)
+    {
+        count++;
+        kdtree.insert(Point_with_ni(it->first, it->second, count));
+    }
+    for (Finite_vertices_iterator v = m_tr->finite_vertices_begin(); v != m_tr->finite_vertices_end(); ++v)
+        m_tr->set_normal(v, estimate_normal(v->point(), average_spacing_ratio * m_average_spacing, kdtree));
+    //m_tr->dump_all_points("normal_buddha");
 
 #ifdef CGAL_DIV_NON_NORMALIZED
     CGAL_TRACE_STREAM << "Solve Poisson equation with non-normalized divergence...\n";
