@@ -31,6 +31,9 @@
 #include <CGAL/Orthogonal_k_neighbor_search.h>
 #include <CGAL/Search_traits_3.h>
 #include <CGAL/Search_traits_adapter.h>
+#include <CGAL/Splitters.h>
+#include <CGAL/Fuzzy_sphere.h>
+#include <CGAL/Kd_tree.h>
 
 #include <stack>
 #include <queue>
@@ -324,6 +327,15 @@ class Octree
     typedef typename Kernel::Iso_cuboid_3   	Iso_cuboid;
     typedef typename PointRange::const_iterator InputIterator;
     typedef typename std::list<InputIterator> 	IterList;
+
+    typedef std::tuple<Point, Vector, std::size_t>                                  Point_with_ni;
+    typedef std::vector<Point_with_ni>                                              PniList;
+    typedef CGAL::Nth_of_tuple_property_map<0, Point_with_ni>                       Point_map_ni;
+    typedef CGAL::Search_traits_3<Kernel>                                           SearchBase_3;
+    typedef CGAL::Search_traits_adapter<Point_with_ni, Point_map_ni, SearchBase_3>  SearchTraits_3;
+    typedef CGAL::Sliding_midpoint<SearchTraits_3>                                  Splitter;
+    typedef CGAL::Kd_tree<SearchTraits_3, Splitter, CGAL::Tag_true>                 KDTree;
+    typedef CGAL::Fuzzy_sphere<SearchTraits_3>                                      KDSphere;
 
   private: // data members :
     Node        m_root;        			  /* root node of the octree */
@@ -812,6 +824,49 @@ class Octree
 	  {
         out_file << point[0] << " " << point[1] << " " << point[2] << "\n"; 
       }
+    }
+
+    double kernel_function(double dist, double h) // h -> kernel radius, dist -> dist from query to input point
+    {
+        double value = 0.;
+        double ratio = dist / h;
+
+        if(ratio >= 1.)
+            return value;
+
+        value = std::pow(1. - std::pow(ratio, 2), 4);
+
+        return value;
+    }
+
+
+    Vector estimate_normal(Point& query, double radius)
+    {
+        PniList nbs;
+        Vector normal = Vector(0., 0., 0.);
+
+        KDSphere circle(query, radius);
+        m_kdtree.search(std::back_inserter(nbs), circle);
+
+        // if there is no neighbor, return NULL_VECTOR
+        if(nbs.size() == 0)
+            return normal;
+
+        for(int i = 0; i < nbs.size(); i++)
+        {
+            double dist = std::sqrt(CGAL::squared_distance(std::get<0>(nbs[i]), query));
+            //double dist = (query - nbs[i].first) * nbs[i].second;
+            double weight = kernel_function(dist, radius);
+            normal += weight * std::get<1>(nbs[i]); // normal of neighbor
+        }
+
+        if(!CGAL::is_valid(normal))
+        {
+            std::cout << "Found non valid normal! " << std::endl;
+            normal = CGAL::NULL_VECTOR;
+        }
+
+        return normal;
     }
 
 }; // end class Octree
