@@ -31,9 +31,6 @@
 #include <CGAL/Orthogonal_k_neighbor_search.h>
 #include <CGAL/Search_traits_3.h>
 #include <CGAL/Search_traits_adapter.h>
-#include <CGAL/Splitters.h>
-#include <CGAL/Fuzzy_sphere.h>
-#include <CGAL/Kd_tree.h>
 
 #include <stack>
 #include <queue>
@@ -328,15 +325,6 @@ class Octree
     typedef typename PointRange::const_iterator InputIterator;
     typedef typename std::list<InputIterator> 	IterList;
 
-    typedef std::tuple<Point, Vector, std::size_t>                                  Point_with_ni;
-    typedef std::vector<Point_with_ni>                                              PniList;
-    typedef CGAL::Nth_of_tuple_property_map<0, Point_with_ni>                       Point_map_ni;
-    typedef CGAL::Search_traits_3<Kernel>                                           SearchBase_3;
-    typedef CGAL::Search_traits_adapter<Point_with_ni, Point_map_ni, SearchBase_3>  SearchTraits_3;
-    typedef CGAL::Sliding_midpoint<SearchTraits_3>                                  Splitter;
-    typedef CGAL::Kd_tree<SearchTraits_3, Splitter, CGAL::Tag_true>                 KDTree;
-    typedef CGAL::Fuzzy_sphere<SearchTraits_3>                                      KDSphere;
-
   private: // data members :
     Node        m_root;        			  /* root node of the octree */
 	uint8_t		m_max_depth_reached = 0;  /* octree actual highest depth reached */
@@ -347,20 +335,16 @@ class Octree
 	FT			m_bbox_side;			  /* input bounding box side length (cube) */
 	std::vector<FT> m_side_per_depth;	  /* side length per node's depth */
 	std::vector<size_t> m_unit_per_depth; /* number of unit node (smallest) inside one node for each depth for one axis */		
-    KDTree m_kdtree;
-    FT m_average_spacing;
-        
+
   public: // functions :
     Octree(
         PointRange& pwn, 
         PointMap &point_map,
         NormalMap &normal_map,
-        const FT average_spacing,
         const FT enlarge_ratio = 1.2):
         m_ranges(pwn),
         m_points_map(point_map),
-        m_normals_map(normal_map),
-        m_average_spacing(average_spacing)
+        m_normals_map(normal_map)
     {
       // compute bbox
       typedef typename PointRange::value_type PointRange_t;
@@ -390,15 +374,6 @@ class Octree
 	  m_bbox_side = (bbox.max)()[0] - m_bbox_min[0];
       for (InputIterator it = pwn.cbegin(); it != pwn.cend(); it++)
         m_root.add_point(it);
-      //for (InputIterator it = pwn.cbegin(); it != pwn.cend(); it++)
-      //  m_kdtree.insert(it->first);
-      int count = 0;
-      for (InputIterator it = pwn.cbegin(); it != pwn.cend(); it++)
-      {
-          count++;
-          m_kdtree.insert(Point_with_ni(it->first, it->second, count));
-      }
-          //std::cout << it->first << std::endl;
     }
  
     ~Octree()
@@ -474,15 +449,13 @@ class Octree
 		Vector bary_normal = CGAL::NULL_VECTOR;
 		for(const InputIterator &pwn_it : node->points()) 
 		{
-		  // bary_normal += compute_weighted_normal(bary_position, pwn_it);
-          bary_normal = estimate_normal(bary_position, m_average_spacing);
-          std::cout << "normal:" << bary_normal << std::endl;
+		  bary_normal += compute_weighted_normal(bary_position, pwn_it);
+		  
 		  for(int child_id = 0; child_id < 8; child_id++)
 		  {
 			IntPoint corner_loc = node_corners_location[child_id];
-			//Vector weighted_normal = compute_weighted_normal(compute_corner_position(corner_loc), pwn_it);
-            Vector weighted_normal = estimate_normal(compute_corner_position(corner_loc), m_average_spacing);
-            std::cout << "normal:" << bary_normal << std::endl;
+			Vector weighted_normal = compute_weighted_normal(compute_corner_position(corner_loc), pwn_it);
+			
 			auto find = corner_normals.find(corner_loc);
 			if(find == corner_normals.end()) 
 			{
@@ -839,49 +812,6 @@ class Octree
 	  {
         out_file << point[0] << " " << point[1] << " " << point[2] << "\n"; 
       }
-    }
-
-    double kernel_function(double dist, double h) // h -> kernel radius, dist -> dist from query to input point
-    {
-        double value = 0.;
-        double ratio = dist / h;
-
-        if(ratio >= 1.)
-            return value;
-
-        value = std::pow(1. - std::pow(ratio, 2), 4);
-
-        return value;
-    }
-
-
-    Vector estimate_normal(Point& query, FT radius)
-    {
-        PniList nbs;
-        Vector normal = Vector(0., 0., 0.);
-
-        KDSphere circle(query, radius);
-        m_kdtree.search(std::back_inserter(nbs), circle);
-
-        // if there is no neighbor, return NULL_VECTOR
-        if(nbs.size() == 0)
-            return normal;
-
-        for(int i = 0; i < nbs.size(); i++)
-        {
-            FT dist = std::sqrt(CGAL::squared_distance(std::get<0>(nbs[i]), query));
-            //double dist = (query - nbs[i].first) * nbs[i].second;
-            FT weight = kernel_function(dist, radius);
-            normal += weight * std::get<1>(nbs[i]); // normal of neighbor
-        }
-
-        if(!CGAL::is_valid(normal))
-        {
-            std::cout << "Found non valid normal! " << std::endl;
-            normal = CGAL::NULL_VECTOR;
-        }
-
-        return normal;
     }
 
 }; // end class Octree

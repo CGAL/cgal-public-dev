@@ -52,6 +52,11 @@
 #include <CGAL/Kernel/global_functions.h>
 #include <CGAL/Mesh_3/Octree_3.h>
 #include <CGAL/perturb_sliver.h>
+#include <CGAL/Search_traits_3.h>
+#include <CGAL/Search_traits_adapter.h>
+#include <CGAL/Splitters.h>
+#include <CGAL/Fuzzy_sphere.h>
+#include <CGAL/Kd_tree.h>
 
 #include <boost/shared_ptr.hpp>
 #include <boost/array.hpp>
@@ -277,6 +282,16 @@ private:
   typedef typename Triangulation::All_cells_iterator       All_cells_iterator;
   typedef typename Triangulation::Locate_type Locate_type;
 
+  // for normal diffuse
+  typedef std::tuple<Point, Vector, std::size_t>                                  Point_with_ni;
+  typedef std::vector<Point_with_ni>                                              PniList;
+  typedef CGAL::Nth_of_tuple_property_map<0, Point_with_ni>                       Point_map_ni;
+  typedef CGAL::Search_traits_3<Geom_traits>                                      SearchBase_3;
+  typedef CGAL::Search_traits_adapter<Point_with_ni, Point_map_ni, SearchBase_3>  SearchTraits_3;
+  typedef CGAL::Sliding_midpoint<SearchTraits_3>                                  Splitter;
+  typedef CGAL::Kd_tree<SearchTraits_3, Splitter, CGAL::Tag_true>                 KDTree;
+  typedef CGAL::Fuzzy_sphere<SearchTraits_3>                                      KDSphere;
+
   enum Cache_state { UNINITIALIZED, BUSY, INITIALIZED };
   // Thread-safe cache for barycentric coordinates of a cell
   class Cached_bary_coord
@@ -466,7 +481,7 @@ public:
     {
       CGAL_TRACE_STREAM << "init octree...\n";
 	  typedef typename OCTREE::Octree<Geom_traits, PointRange, PointMap, NormalMap> Octree;
-      Octree octree(points, point_map, normal_map, m_average_spacing);
+      Octree octree(points, point_map, normal_map);
 	  if(octree_debug_visu)
 	  {
 		octree.dump_bbox("bbox_scaled_isotrope");
@@ -512,9 +527,26 @@ public:
 	else
 	{
 	  forward_constructor(points, PointMap(), NormalMap(), visitor);
-    first_delaunay_refinement(visitor);
+      first_delaunay_refinement(visitor);
 	}
 
+    // remove slivers
+    CGAL_TRACE_STREAM << "removing slivers in triangulation...\n";
+    m_tr->index_all_vertices();
+    dihedral_angle_per_cell("bad_tet_test.off");
+    remove_sliver<Geom_traits, Triangulation>(m_tr, 5);
+    dihedral_angle_per_cell("bad_tet_perturb_test.off");
+    // estimate normal
+    KDTree kdtree;
+    int count = 0;
+    for (InputIterator it = points.cbegin(); it != points.cend(); it++)
+    {
+        count++;
+        kdtree.insert(Point_with_ni(it->first, it->second, count));
+    }
+    for (Finite_vertices_iterator v = m_tr->finite_vertices_begin(); v != m_tr->finite_vertices_end(); ++v)
+        m_tr->set_normal(v, estimate_normal(v->point(), m_average_spacing, kdtree));
+    //m_tr->dump_all_points("all_points");
   }
 
   /// \endcond
@@ -652,6 +684,48 @@ public:
     return counter;
   }
 
+  FT kernel_function(FT dist, FT h) // h -> kernel radius, dist -> dist from query to input point
+  {
+      FT value = 0.;
+      FT ratio = dist / h;
+
+      if(ratio >= 1.)
+          return value;
+
+      value = std::pow(1. - std::pow(ratio, 2), 4);
+
+      return value;
+  }
+
+
+  Vector estimate_normal(Point& query, FT radius, KDTree &kdtree)
+  {
+      PniList nbs;
+      Vector normal = Vector(0., 0., 0.);
+
+      KDSphere circle(query, radius);
+      kdtree.search(std::back_inserter(nbs), circle);
+
+      // if there is no neighbor, return NULL_VECTOR
+      if(nbs.size() == 0)
+          return normal;
+
+      for(int i = 0; i < nbs.size(); i++)
+      {
+          FT dist = std::sqrt(CGAL::squared_distance(std::get<0>(nbs[i]), query));
+          //double dist = (query - nbs[i].first) * nbs[i].second;
+          FT weight = kernel_function(dist, radius);
+          normal += weight * std::get<1>(nbs[i]); // normal of neighbor
+      }
+
+      if(!CGAL::is_valid(normal))
+      {
+          std::cout << "Found non valid normal! " << std::endl;
+          normal = CGAL::NULL_VECTOR;
+      }
+
+      return normal;
+  }
 
   // Poisson surface reconstruction
   // This variant requires all parameters.
@@ -672,6 +746,7 @@ public:
 
     // Computes the Poisson indicator function operator()
     // at each vertex of the triangulation.
+
     double lambda = 0.1;
     if ( ! solve_poisson(solver, lambda) )
     {
@@ -1160,19 +1235,9 @@ private:
     //const int nb_insides = static_cast<int>(m_tr->nb_inside_vertices());
   	CGAL_TRACE_STREAM << "  " << nb_input_vertices << " input vertices out of " << nb_variables << std::endl;
 
-    int count = 0;
-    Finite_vertices_iterator v_, e_;
-    for (v_ = m_tr->finite_vertices_begin(),
-        e_ = m_tr->finite_vertices_end();
-        v_ != e_;
-        v_++)
-        if (v_->type() == Triangulation::INPUT)
-            count++;
-    std::cout << "#input:" << count << std::endl;
-
-    dihedral_angle_per_cell("bad_tet_octree_test.off");
-    remove_sliver<Geom_traits, Triangulation>(*m_tr, 3);
-    dihedral_angle_per_cell("bad_tet_octree_perturb_test.off");
+    //dihedral_angle_per_cell("bad_tet_octree_test.off");
+    //remove_sliver<Geom_traits, Triangulation>(*m_tr, 3);
+    //dihedral_angle_per_cell("bad_tet_octree_perturb_test.off");
     
     
     //std::ofstream oFileT("triangulation.off", std::ios::out);

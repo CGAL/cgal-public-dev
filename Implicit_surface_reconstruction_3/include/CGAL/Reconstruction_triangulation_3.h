@@ -323,6 +323,9 @@ public:
   //Mesh
   typedef CGAL::Surface_mesh<Point>                           Mesh;
 
+  //Diffused normal 
+  typedef std::unordered_map<Vertex_handle, Vector>                               DiffNormalMap;
+
   // Marching Tet
   struct HashEdgePair {
     template <class T1, class T2>
@@ -363,6 +366,7 @@ public:
   std::list<double> fractions;
   Vertex_handle constrained_vertex;
   NormalMap normals;
+  DiffNormalMap diff_normal_map;
 
 
 public:
@@ -618,10 +622,42 @@ public:
 
   Vector normal(Vertex_handle v) const
   {
-    if(v->type() == INPUT)
-      return get(normals, *(v->input_iterator()));
-    else
-      return CGAL::NULL_VECTOR;
+      if (v->type() == INPUT)
+          return diff_normal_map.find(v)->second;
+          //return get(normals, *(v->input_iterator()));
+      else
+          return CGAL::NULL_VECTOR;
+  }
+
+  void set_normal(Vertex_handle v, Vector n)
+  {
+      if (n != CGAL::NULL_VECTOR)
+      {
+          //Vector& normal = get(normals, *(v->input_iterator()));
+          diff_normal_map[v] = n;
+          v->type() = INPUT;
+      }
+      else
+          v->type() = STEINER;
+  }
+
+  void dump_all_points(const std::string &filename)
+  {
+      std::cout << " dump all triangulation points " + filename + "\n";
+      std::ofstream out_file(filename+".xyz");
+      for (Finite_vertices_iterator v = finite_vertices_begin(),
+          e = finite_vertices_end();
+          v != e;
+          ++v)
+      {
+          Point p = v->point();
+          Vector n= normal(v);
+          //if (diff_normal_map.find(v))
+          //    n = diff_normal_map[v];
+          //else
+          //    n = CGAL::NULL_VECTOR;
+          out_file << p[0] << " " << p[1] << " " << p[2] << " " << n[0] << " " << n[1] << " " << n[2] << std::endl;
+      }
   }
 
   /*

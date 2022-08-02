@@ -1,3 +1,6 @@
+#ifndef CGAL_IMPLICIT_RECONSTRUCTION_PERTURB_SLIVER_H
+#define CGAL_IMPLICIT_RECONSTRUCTION_PERTURB_SLIVER_H
+
 #include <unordered_map>
 #include <vector>
 
@@ -28,7 +31,7 @@ namespace CGAL{
     private:
 
         // class member
-        boost::shared_ptr<Triangulation> m_tr;
+        boost::shared_ptr<Triangulation> & m_tr;
 
         enum PerturbationMethod { NULL_METHOD, RADIUS, VOLUME, RANDOM };
 
@@ -182,8 +185,8 @@ namespace CGAL{
 
     // public function
     public:
-        Sliver_perturbation_removal(Tr& tr)
-            : m_tr(&tr)
+        Sliver_perturbation_removal(boost::shared_ptr<Triangulation> & m_tr)
+            : m_tr(m_tr)
         {}
         
         // input lower bound in degree
@@ -193,7 +196,7 @@ namespace CGAL{
             FT tan_ub = tan(threshold / 180.0 * boost::math::constants::pi<double>());
             std::unordered_map<unsigned int, PVertex> PVertex_buffer_map;
 
-            int count = 0;
+            //int count = 0;
             for (Finite_cells_iterator cb = m_tr->finite_cells_begin(); cb != m_tr->finite_cells_end(); cb++)
             {
                 FT min_angle_tan = 1 / largest_cot(cb);
@@ -202,8 +205,8 @@ namespace CGAL{
                     for (int i = 0; i < 4; i++)
                     {
                         unsigned int v_idx = cb->vertex(i)->index();
-                        if (cb->vertex(i)->type() == Triangulation::Point_type::STEINER)
-                        {
+                        //if (cb->vertex(i)->type() == Triangulation::Point_type::STEINER)
+                        //{
                             PVertex& pv = PVertex_buffer_map[v_idx];
                             if (pv.sliver_nb() == 0)
                             {
@@ -220,13 +223,13 @@ namespace CGAL{
                                 if (min_angle_tan < pv.min_value())
                                     pv.set_min_value(min_angle_tan);
                             }
-                        }
+                        //}
                     }
-                    count++;
+                    //count++;
                 }
                 
             }
-            std::cout << "slivers number:" << count << std::endl;
+            //std::cout << "slivers number:" << count << std::endl;
             // build queue
             PQueue pqueue(m_tr->number_of_vertices());
             for (const auto& i : PVertex_buffer_map)
@@ -237,8 +240,11 @@ namespace CGAL{
             {
                 // get vector of sliver cells
                 PVertex pv = pqueue.top_and_pop();
+                if ((!force_empty && pv.try_nb() == 2) || (force_empty && pv.try_nb() == 5)) // avoid infinite loop
+                    break; 
                 int iter = 0;
                 Point old_pos = pv.vertex()->point();
+                unsigned char type = pv.vertex()->type();
                 while (iter<5)
                 {
                     iter++;
@@ -246,11 +252,11 @@ namespace CGAL{
                     std::vector<Cell_handle> slivers = get_slivers(pv, tan_ub);
                     if (slivers.size() == 0)
                         break;
-                    Vector pertubation_vec = compute_displacement(pv, slivers, 0.5);
+                    Vector pertubation_vec = compute_displacement(pv, slivers, 0.4);
                     if (pertubation_vec != CGAL::NULL_VECTOR)
                     {
                         m_tr->move(pv.vertex(), old_pos + pertubation_vec);
-                        // check if slivers number decrease
+                        // check retry condition
                         std::vector<Cell_handle> new_slivers = get_slivers(pv, tan_ub); // move method should give a same vertex handler
                         if (force_empty)
                         {
@@ -272,16 +278,18 @@ namespace CGAL{
                 if (iter == 5) // reinsert with random perturbation
                 {
                     std::vector<Cell_handle> slivers = get_slivers(pv, tan_ub);
-                    Vector pertubation_vec = compute_displacement(pv, slivers, 0.25); // a short random move to 
+                    Vector pertubation_vec = compute_displacement(pv, slivers, 0.2); // a short random move 
                     pv.set_vertex(m_tr->move(pv.vertex(), old_pos+pertubation_vec));
+                    pv.vertex()->type() = type;
                     std::vector<Cell_handle> new_slivers = get_slivers(pv, tan_ub);
                     pv.set_sliver_nb(new_slivers.size());
+                    pv.increment_try_nb();
                     pqueue.push(pv);
                 }
-                pv.vertex()->type() = Triangulation::Point_type::STEINER; // TODO: what should I do with this??
+                //pv.vertex()->type() = type; 
+                //pv.vertex()->type() = Triangulation::Point_type::STEINER; 
             }
-
-            return true;
+            return true; // TODO: should I add timeout?
         }
 
     private:
@@ -402,7 +410,7 @@ namespace CGAL{
         std::vector<Cell_handle> get_slivers(const PVertex& pv, FT tan_ub)
         {
             std::vector<Cell_handle> cells, slivers;
-            m_tr->incident_cells(pv.vertex(), std::back_inserter(cells));
+            m_tr->finite_incident_cells(pv.vertex(), std::back_inserter(cells));
             for (auto c : cells) { // extract slivers into a vector
                 double min_angle_tan = 1 / largest_cot(c);
                 if (tan_ub > min_angle_tan)
@@ -587,7 +595,7 @@ namespace CGAL{
     // wrapper
     template<class Gt,
         class Tr>
-    bool remove_sliver(Tr& tr, double threshold)
+    bool remove_sliver(boost::shared_ptr<Tr>& tr, double threshold)
     {
         Sliver_perturbation_removal<Gt, Tr> perturber(tr);
         bool p1 = perturber.perturb(threshold + 1, false);
@@ -596,3 +604,4 @@ namespace CGAL{
     }
 
 }
+#endif // CGAL_IMPLICIT_RECONSTRUCTION_PERTURB_SLIVER_H
