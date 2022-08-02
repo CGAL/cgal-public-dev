@@ -347,16 +347,20 @@ class Octree
 	FT			m_bbox_side;			  /* input bounding box side length (cube) */
 	std::vector<FT> m_side_per_depth;	  /* side length per node's depth */
 	std::vector<size_t> m_unit_per_depth; /* number of unit node (smallest) inside one node for each depth for one axis */		
-
+    KDTree m_kdtree;
+    FT m_average_spacing;
+        
   public: // functions :
     Octree(
         PointRange& pwn, 
         PointMap &point_map,
         NormalMap &normal_map,
+        const FT average_spacing,
         const FT enlarge_ratio = 1.2):
         m_ranges(pwn),
         m_points_map(point_map),
-        m_normals_map(normal_map)
+        m_normals_map(normal_map),
+        m_average_spacing(average_spacing)
     {
       // compute bbox
       typedef typename PointRange::value_type PointRange_t;
@@ -386,6 +390,15 @@ class Octree
 	  m_bbox_side = (bbox.max)()[0] - m_bbox_min[0];
       for (InputIterator it = pwn.cbegin(); it != pwn.cend(); it++)
         m_root.add_point(it);
+      //for (InputIterator it = pwn.cbegin(); it != pwn.cend(); it++)
+      //  m_kdtree.insert(it->first);
+      int count = 0;
+      for (InputIterator it = pwn.cbegin(); it != pwn.cend(); it++)
+      {
+          count++;
+          m_kdtree.insert(Point_with_ni(it->first, it->second, count));
+      }
+          //std::cout << it->first << std::endl;
     }
  
     ~Octree()
@@ -461,13 +474,15 @@ class Octree
 		Vector bary_normal = CGAL::NULL_VECTOR;
 		for(const InputIterator &pwn_it : node->points()) 
 		{
-		  bary_normal += compute_weighted_normal(bary_position, pwn_it);
-		  
+		  // bary_normal += compute_weighted_normal(bary_position, pwn_it);
+          bary_normal = estimate_normal(bary_position, m_average_spacing);
+          std::cout << "normal:" << bary_normal << std::endl;
 		  for(int child_id = 0; child_id < 8; child_id++)
 		  {
 			IntPoint corner_loc = node_corners_location[child_id];
-			Vector weighted_normal = compute_weighted_normal(compute_corner_position(corner_loc), pwn_it);
-			
+			//Vector weighted_normal = compute_weighted_normal(compute_corner_position(corner_loc), pwn_it);
+            Vector weighted_normal = estimate_normal(compute_corner_position(corner_loc), m_average_spacing);
+            std::cout << "normal:" << bary_normal << std::endl;
 			auto find = corner_normals.find(corner_loc);
 			if(find == corner_normals.end()) 
 			{
@@ -840,7 +855,7 @@ class Octree
     }
 
 
-    Vector estimate_normal(Point& query, double radius)
+    Vector estimate_normal(Point& query, FT radius)
     {
         PniList nbs;
         Vector normal = Vector(0., 0., 0.);
@@ -854,9 +869,9 @@ class Octree
 
         for(int i = 0; i < nbs.size(); i++)
         {
-            double dist = std::sqrt(CGAL::squared_distance(std::get<0>(nbs[i]), query));
+            FT dist = std::sqrt(CGAL::squared_distance(std::get<0>(nbs[i]), query));
             //double dist = (query - nbs[i].first) * nbs[i].second;
-            double weight = kernel_function(dist, radius);
+            FT weight = kernel_function(dist, radius);
             normal += weight * std::get<1>(nbs[i]); // normal of neighbor
         }
 

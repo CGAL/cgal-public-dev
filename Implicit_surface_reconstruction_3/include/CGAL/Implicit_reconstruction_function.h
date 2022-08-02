@@ -466,7 +466,7 @@ public:
     {
       CGAL_TRACE_STREAM << "init octree...\n";
 	  typedef typename OCTREE::Octree<Geom_traits, PointRange, PointMap, NormalMap> Octree;
-      Octree octree(points, point_map, normal_map);
+      Octree octree(points, point_map, normal_map, m_average_spacing);
 	  if(octree_debug_visu)
 	  {
 		octree.dump_bbox("bbox_scaled_isotrope");
