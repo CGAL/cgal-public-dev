@@ -502,6 +502,45 @@ class Octree
 	  }
 	}
 
+    template <class OutputPwnIterator>	
+    void generate_points_with_null_normal(OutputPwnIterator output_pwn)
+    {
+        std::set<IntPoint> all_corner_locations;
+        std::map<IntPoint, Vector> corner_normals;
+
+        // 1. for each leaf, insert barycenter pwn and get corner unique location
+        std::queue<Node *> leaf_nodes;
+        fill_leaf_queue(&m_root, leaf_nodes);
+        while(!leaf_nodes.empty()) 
+        {
+            Node *node = leaf_nodes.front();
+            leaf_nodes.pop();	  
+
+            IntPoint node_corners_location[8];
+            for(int child_id = 0; child_id < 8; child_id++)
+            {
+                node_corners_location[child_id] = get_corner_location(node, child_id);
+                all_corner_locations.insert(node_corners_location[child_id]);
+            }
+
+            Point bary_position = compute_barycenter_position(node);
+
+            *output_pwn =  std::make_pair(bary_position, CGAL::NULL_VECTOR);
+            output_pwn++;
+
+        }
+
+        // 2. for each corner location, insert corner pwn 
+        for(const IntPoint &corner_location : all_corner_locations)
+        {
+            Point corner_position = compute_corner_position(corner_location);
+
+            *output_pwn =  std::make_pair(corner_position, CGAL::NULL_VECTOR);
+            output_pwn++;
+
+        }
+    }
+
   void fill_leaf_queue(Node *node, std::queue<Node *> &queue)
   {
     if (node->is_leaf()) 

@@ -482,6 +482,7 @@ public:
     m_points = std::addressof(points);
 	m_average_spacing = CGAL::compute_average_spacing<CGAL::Sequential_tag>
 						(points, 6, CGAL::parameters::point_map(point_map));
+    m_tr->initialize_bounding_sphere(points);
 	Implicit_visitor visitor = Implicit_visitor();
     if(use_octree)
     {
@@ -518,17 +519,18 @@ public:
 
       CGAL_TRACE_STREAM << "generate octree new points with normal...\n";
       octree.generate_points(std::back_inserter(m_octree_pwn), std::back_inserter(m_octree_steiner));
-	  if(octree_debug_visu)
+      //octree.generate_points_with_null_normal(std::back_inserter(m_octree_pwn));
+      if(octree_debug_visu)
 	  {
 		octree.dump_octree_pwn("octree_pwn", m_octree_pwn);
-		octree.dump_octree_point("octree_steiner", m_octree_steiner);
+		//octree.dump_octree_point("octree_steiner", m_octree_steiner);
 	  }
 
       CGAL_TRACE_STREAM << "creates implicit triangulation...\n";
       m_tr->insert(m_octree_pwn, point_map, visitor);
       //m_tr->intialize_normal(normal_map);
 	  for (auto steiner = m_octree_steiner.begin(); steiner != m_octree_steiner.end(); steiner++)
-		m_tr->insert(*steiner, Triangulation::Point_type::STEINER, Cell_handle(), visitor);
+	      m_tr->insert(*steiner, Triangulation::STEINER, Cell_handle(), visitor);
     }
 	else
 	{
@@ -538,9 +540,9 @@ public:
 
     // remove slivers
     //dihedral_angle_per_cell("bad_tet_test.off");
-    CGAL_TRACE_STREAM << "removing slivers in triangulation...\n";
     m_tr->index_all_vertices();
-    remove_sliver<Geom_traits, Triangulation>(m_tr, 5);
+    CGAL_TRACE_STREAM << "removing slivers in triangulation...\n";
+    //remove_sliver<Geom_traits, Triangulation>(m_tr, 10);
     //dihedral_angle_per_cell("bad_tet_perturb_test.off");
     
   }
@@ -1207,7 +1209,7 @@ private:
     F.setFromTriplets(FTriplets.begin(), FTriplets.end());
     FTriplets.clear();    
 
-    lambda = std::max(lambda, 1e-8); // prevent lambda to be 0
+    lambda = (std::max)(lambda, 1e-8); // prevent lambda to be 0
     A = A + (lambda / static_cast<double>(nb_inputs)) * F.transpose() * F;
 
     duration_assembly = (clock() - time_init)/CLOCKS_PER_SEC;

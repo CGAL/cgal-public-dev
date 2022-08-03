@@ -23,11 +23,13 @@ namespace CGAL{
         typedef typename Geom_traits::Vector_3 Vector;
 
         // Triangulation types
-        typedef typename Triangulation::Edge   Edge;
-        typedef typename Triangulation::Vertex_handle Vertex_handle;
-        typedef typename Triangulation::Cell_handle   Cell_handle;
-        typedef typename Triangulation::Finite_cells_iterator    Finite_cells_iterator;
+        typedef typename Triangulation::Edge                         Edge;
+        typedef typename Triangulation::Vertex_handle                Vertex_handle;
+        typedef typename Triangulation::Cell_handle                  Cell_handle;
+        typedef typename Triangulation::Finite_cells_iterator        Finite_cells_iterator;
     
+        typedef typename std::pair<std::vector<Cell_handle>, FT>     Sliver_info;
+
     private:
 
         // class member
@@ -196,7 +198,7 @@ namespace CGAL{
             FT tan_ub = tan(threshold / 180.0 * boost::math::constants::pi<double>());
             std::unordered_map<unsigned int, PVertex> PVertex_buffer_map;
 
-            //int count = 0;
+            int count = 0;
             for (Finite_cells_iterator cb = m_tr->finite_cells_begin(); cb != m_tr->finite_cells_end(); cb++)
             {
                 FT min_angle_tan = 1 / largest_cot(cb);
@@ -225,7 +227,7 @@ namespace CGAL{
                             }
                         //}
                     }
-                    //count++;
+                    count++;
                 }
                 
             }
@@ -240,7 +242,7 @@ namespace CGAL{
             {
                 // get vector of sliver cells
                 PVertex pv = pqueue.top_and_pop();
-                if ((!force_empty && pv.try_nb() == 2) || (force_empty && pv.try_nb() == 5)) // avoid infinite loop
+                if ((!force_empty && pv.try_nb() == 3) || (force_empty && pv.try_nb() == 5)) // avoid infinite loop
                     break; 
                 int iter = 0;
                 Point old_pos = pv.vertex()->point();
@@ -249,27 +251,36 @@ namespace CGAL{
                 {
                     iter++;
                     // compute perturbation vector
-                    std::vector<Cell_handle> slivers = get_slivers(pv, tan_ub);
+                    Sliver_info info = get_slivers(pv, tan_ub);
+                    std::vector<Cell_handle> slivers = info.first;
                     if (slivers.size() == 0)
                         break;
-                    Vector pertubation_vec = compute_displacement(pv, slivers, 0.4);
+                    Vector pertubation_vec = compute_displacement(pv, slivers, 0.6);
                     if (pertubation_vec != CGAL::NULL_VECTOR)
                     {
                         m_tr->move(pv.vertex(), old_pos + pertubation_vec);
                         // check retry condition
-                        std::vector<Cell_handle> new_slivers = get_slivers(pv, tan_ub); // move method should give a same vertex handler
+                        Sliver_info new_info = get_slivers(pv, tan_ub); // move method should give a same vertex handler
+                        std::vector<Cell_handle> new_slivers = new_info.first;
                         if (force_empty)
                         {
-                            if (new_slivers.size() != 0) // if not 0, force slivers to be removed
+                            if (new_slivers.size() != 0 || (new_info.second < info.second)) // if not 0, force slivers to be removed
                             {
                                 pv.next_perturbation();
                                 pv.set_vertex(m_tr->move(pv.vertex(), old_pos));
                             }
+                            else 
+                                pv.set_min_value(new_info.second);
                         }
-                        else if (new_slivers.size() >= slivers.size()) // if not better, revert and reinsert
-                        {   
-                            pv.next_perturbation();
-                            pv.set_vertex(m_tr->move(pv.vertex(), old_pos));
+                        else 
+                        {
+                            if ((new_slivers.size() > slivers.size()) || (new_info.second < info.second)) // if not better, revert and reinsert
+                            {   
+                                pv.next_perturbation();
+                                pv.set_vertex(m_tr->move(pv.vertex(), old_pos));
+                            }
+                            else 
+                                pv.set_min_value(new_info.second);
                         }
                     }
                     else
@@ -277,19 +288,16 @@ namespace CGAL{
                 }
                 if (iter == 5) // reinsert with random perturbation
                 {
-                    std::vector<Cell_handle> slivers = get_slivers(pv, tan_ub);
-                    Vector pertubation_vec = compute_displacement(pv, slivers, 0.2); // a short random move 
-                    pv.set_vertex(m_tr->move(pv.vertex(), old_pos+pertubation_vec));
-                    pv.vertex()->type() = type;
-                    std::vector<Cell_handle> new_slivers = get_slivers(pv, tan_ub);
-                    pv.set_sliver_nb(new_slivers.size());
+                    //std::vector<Cell_handle> slivers = get_slivers(pv, tan_ub).first;
+                    //Vector pertubation_vec = compute_displacement(pv, slivers, 0.25); // a short random move 
+                    //pv.set_vertex(m_tr->move(pv.vertex(), old_pos+pertubation_vec));
+                    //std::vector<Cell_handle> new_slivers = get_slivers(pv, tan_ub).first;
+                    //pv.set_sliver_nb(new_slivers.size());
                     pv.increment_try_nb();
                     pqueue.push(pv);
                 }
-                //pv.vertex()->type() = type; 
-                //pv.vertex()->type() = Triangulation::Point_type::STEINER; 
             }
-            return true; // TODO: should I add timeout?
+            return true; 
         }
 
     private:
@@ -407,16 +415,21 @@ namespace CGAL{
             return min_sq_length;
         }
 
-        std::vector<Cell_handle> get_slivers(const PVertex& pv, FT tan_ub)
+        Sliver_info get_slivers(const PVertex& pv, FT tan_ub)
         {
+            FT min_of_min = 1e7;
             std::vector<Cell_handle> cells, slivers;
             m_tr->finite_incident_cells(pv.vertex(), std::back_inserter(cells));
             for (auto c : cells) { // extract slivers into a vector
                 double min_angle_tan = 1 / largest_cot(c);
                 if (tan_ub > min_angle_tan)
+                { 
+                    if (min_of_min > min_angle_tan)
+                        min_of_min = min_angle_tan;
                     slivers.push_back(c);
+                }
             }
-            return slivers;
+            return Sliver_info(slivers, min_of_min);
         }
         
         Vector compute_displacement(const PVertex& pv, std::vector<Cell_handle> slivers, FT alpha) 

@@ -428,15 +428,28 @@ public:
     return sphere;
   }
 
-  void initialize_bounding_sphere() const
+  //void initialize_bounding_sphere() const
+  //{
+  //    boost::function<Point(Point_with_iterator)> f = boost::bind(&Point_with_iterator::first, _1);
+
+  //    Iso_cuboid ic = bounding_box(boost::make_transform_iterator(points.begin(), f),
+  //                                 boost::make_transform_iterator(points.end(), f));
+  //    Point center = midpoint((ic.min)(), (ic.max)());
+  //    sphere = Sphere(center, squared_distance(center, (ic.max)()));
+  //}
+
+  void initialize_bounding_sphere(PointRange & points) const
   {
-    boost::function<Point(Point_with_iterator)> f = boost::bind(&Point_with_iterator::first, _1);
+    typedef std::pair<Point, Vector> Point_with_normal;
+    boost::function<Point(Point_with_normal)> f = boost::bind(&Point_with_normal::first, _1);
 
     Iso_cuboid ic = bounding_box(boost::make_transform_iterator(points.begin(), f),
                                  boost::make_transform_iterator(points.end(), f));
     Point center = midpoint((ic.min)(), (ic.max)());
     sphere = Sphere(center, squared_distance(center, (ic.max)()));
   }
+
+
 
   /// Insert point in the triangulation.
   /// Default type is STEINER.
@@ -525,7 +538,7 @@ public:
 
     std::size_t n = points.size();
 
-    initialize_bounding_sphere();
+    //initialize_bounding_sphere();
 
     // typedef typename PointRange::iterator Iterator_traits;
     typedef typename PointRange::difference_type Diff_t;
