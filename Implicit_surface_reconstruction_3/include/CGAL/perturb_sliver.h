@@ -65,7 +65,7 @@ namespace CGAL{
                 , try_nb_(0)
                 , p_perturbation_(NULL_METHOD)
                 , id_(id)
-                , is_interior_(has_finite_voronoi_cell(vh))
+                , is_interior_(this->has_finite_voronoi_cell(vh))
             { }
 
             /// Associated vertex
@@ -166,7 +166,7 @@ namespace CGAL{
         {
         public:
             typedef boost::readable_property_map_tag category;
-            typedef typename size_t value_type;
+            typedef size_t value_type;
             typedef PVertex key_type;
 
             value_type operator[] (const key_type& pv) const { return pv.id(); }

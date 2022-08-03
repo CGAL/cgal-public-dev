@@ -111,7 +111,7 @@ int main(int argc, char * argv[])
       ("octree_debug,d", po::bool_switch()->default_value(false), "Octree Refinement Debug Mode ")
       ("poisson", po::bool_switch()->default_value(false), "Use spectral (false) / poisson (true)")
       ("vals,v", po::bool_switch()->default_value(false), "Save function value for all points in a ply file (true/false)")
-      ("marching,m", po::bool_switch()->default_value(true), "Use marching tet to reconstruct surface")
+      ("marching,m", po::bool_switch()->default_value(false), "Use marching tet to reconstruct surface")
       ("sm_angle", po::value<double>()->default_value(20.), "The min triangle angle (degrees).")
       ("sm_radius", po::value<double>()->default_value(100.), "The max triangle size w.r.t. point set average spacing.")
       ("sm_distance", po::value<double>()->default_value(0.25), "The approximation error w.r.t. point set average spacing.");

@@ -365,7 +365,6 @@ public:
   std::size_t fraction;
   std::list<double> fractions;
   Vertex_handle constrained_vertex;
-  NormalMap normals;
   DiffNormalMap diff_normal_map;
 
 
@@ -393,6 +392,7 @@ public:
   using Base::finite_edges_end;
   using Base::all_vertices_begin;
   using Base::all_vertices_end;
+  using Base::locate;
 
   using Base::geom_traits;
   /// \endcond
@@ -618,13 +618,12 @@ public:
       return v;
   }
 
-  void intialize_normal(NormalMap normal_map) { normals = normal_map; }
-
   Vector normal(Vertex_handle v) const
   {
-      if (v->type() == INPUT)
-          return diff_normal_map.find(v)->second;
-          //return get(normals, *(v->input_iterator()));
+      auto got = diff_normal_map.find(v);
+
+      if (got != diff_normal_map.end())
+          return got->second;
       else
           return CGAL::NULL_VECTOR;
   }
@@ -632,13 +631,12 @@ public:
   void set_normal(Vertex_handle v, Vector n)
   {
       if (n != CGAL::NULL_VECTOR)
-      {
-          //Vector& normal = get(normals, *(v->input_iterator()));
-          diff_normal_map[v] = n;
-          v->type() = INPUT;
-      }
-      else
-          v->type() = STEINER;
+        diff_normal_map.insert({v, n});
+  }
+
+  void clear_normal_map()
+  {
+    diff_normal_map.clear();
   }
 
   void dump_all_points(const std::string &filename)

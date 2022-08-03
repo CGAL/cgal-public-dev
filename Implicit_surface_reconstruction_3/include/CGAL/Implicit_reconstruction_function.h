@@ -36,6 +36,7 @@
 #ifdef CGAL_EIGEN3_ENABLED
 #include <Eigen/Core>
 #include <Eigen/SparseCore>
+#include <Eigen/IterativeLinearSolvers>
 #include <CGAL/Eigen_solver_traits.h>
 #include <Eigen/Eigenvalues>
 #else
@@ -355,7 +356,10 @@ private:
 
   typedef typename CGAL::Eigen_sparse_matrix<FT>            Matrix;
   typedef typename Eigen::SparseMatrix<FT>                  ESMatrix;
+  typedef typename std::vector<Eigen::Triplet<FT> >         ESTripleList;
   typedef typename Eigen::Matrix<FT, Eigen::Dynamic, Eigen::Dynamic>  EMatrix;
+  typedef typename Eigen::Matrix<FT, Eigen::Dynamic, 1>     EVector;
+  typedef typename Eigen::ConjugateGradient<ESMatrix, Eigen::Lower|Eigen::Upper>  ESolver;
   typedef typename CGAL::Covariance_matrix_3<Geom_traits>   Covariance;
 
   typedef typename Spectra::SparseSymMatProd<FT>    OpType;
@@ -417,7 +421,7 @@ private:
       point_map,
       visitor);
 
-    m_tr->intialize_normal(normal_map);
+    //m_tr->intialize_normal(normal_map);
 
     // Prints status
     CGAL_TRACE_STREAM << "Creates Implicit triangulation: " << task_timer.time() << " seconds, "
@@ -522,7 +526,7 @@ public:
 
       CGAL_TRACE_STREAM << "creates implicit triangulation...\n";
       m_tr->insert(m_octree_pwn, point_map, visitor);
-      m_tr->intialize_normal(normal_map);
+      //m_tr->intialize_normal(normal_map);
 	  for (auto steiner = m_octree_steiner.begin(); steiner != m_octree_steiner.end(); steiner++)
 		m_tr->insert(*steiner, Triangulation::Point_type::STEINER, Cell_handle(), visitor);
     }
@@ -730,7 +734,7 @@ public:
   {
     CGAL::Timer task_timer; task_timer.start();
 
-    // estimate normal
+    // estimate normal for computing divergence
     CGAL_TRACE_STREAM << "Estimate normal vector...\n";
     KDTree kdtree;
     int count = 0;
@@ -752,7 +756,7 @@ public:
     // Computes the Poisson indicator function operator()
     // at each vertex of the triangulation.
 
-    double lambda = 0.1;
+    double lambda = 0.01;
     if ( ! solve_poisson(solver, lambda) )
     {
       std::cerr << "Error: cannot solve Poisson equation" << std::endl;
@@ -1135,12 +1139,9 @@ private:
 
   /// Poisson Surface Reconstruction.
   /// Returns false on error.
-  ///
-  /// @commentheading Template parameters:
-  /// @param SparseLinearAlgebraTraits_d Symmetric definite positive sparse linear solver.
   template <class SparseLinearAlgebraTraits_d>
   bool solve_poisson(
-    SparseLinearAlgebraTraits_d solver, ///< sparse linear solver
+    SparseLinearAlgebraTraits_d old_solver, ///< sparse linear solver
     double lambda)
   {
     CGAL_TRACE_STREAM << "Calls solve_poisson()" << std::endl;
@@ -1154,48 +1155,74 @@ private:
     initialize_barycenters();
 
     // get #variables
-    constrain_one_vertex_on_convex_hull();
-    m_tr->index_all_vertices(true); // index all unconstrained vertices
-    unsigned int nb_variables = static_cast<unsigned int>(m_tr->number_of_vertices()-1);
+    m_tr->index_all_vertices(false); // index all vertices
+    unsigned int nb_variables = static_cast<unsigned int>(m_tr->number_of_vertices());
+    unsigned int nb_inputs = static_cast<unsigned int>(m_points->size());
 
     CGAL_TRACE_STREAM << "  Number of variables: " << (long)(nb_variables) << std::endl;
 
     // Assemble linear system A*X=B
-    typename SparseLinearAlgebraTraits_d::Matrix A(nb_variables); // matrix is symmetric definite positive
-    typename SparseLinearAlgebraTraits_d::Vector X(nb_variables), B(nb_variables);
+    ESMatrix A(nb_variables, nb_variables); // laplacian matrix is symmetric definite positive
+    ESMatrix F(nb_inputs, nb_variables); // data fitting matrix 
+    EVector X(nb_variables); // function value -> to be solved
+    EVector B(nb_variables); // divergence
+
+    ESTripleList ATriplets, FTriplets;
+    ATriplets.reserve(16 * nb_variables);
+    FTriplets.reserve(4 * nb_inputs);
 
     initialize_duals();
 #ifndef CGAL_DIV_NON_NORMALIZED
     initialize_cell_normals();
 #endif
+
+    // Laplacian matrix and divergence vector
     Finite_vertices_iterator v, e;
     for(v = m_tr->finite_vertices_begin(),
         e = m_tr->finite_vertices_end();
         v != e;
         ++v)
     {
-      if(!m_tr->is_constrained(v)) {
 #ifdef CGAL_DIV_NON_NORMALIZED
-        B[v->index()] = div(v); // rhs -> divergent
+      B[v->index()] = div(v); // rhs -> divergent
 #else // not defined(CGAL_DIV_NORMALIZED)
-        B[v->index()] = div_normalized(v); // rhs -> divergent
+      B[v->index()] = div_normalized(v); // rhs -> divergent
 #endif // not defined(CGAL_DIV_NORMALIZED)
-        assemble_poisson_row<SparseLinearAlgebraTraits_d>(A, v, B, lambda);
-      }
+      assemble_laplacian_row(ATriplets, v);
     }
 
+    // Data fitting matrix
+    int point_index = 0;
+    for(InputIterator it = m_points->cbegin(); it != m_points->cend(); it++)
+    {
+      assemble_data_fitting_row(FTriplets, point_index++, it->first);
+    }
+    
     clear_duals();
     clear_normals();
+    m_tr->clear_normal_map();
+
+    A.setFromTriplets(ATriplets.begin(), ATriplets.end());
+    ATriplets.clear();
+    F.setFromTriplets(FTriplets.begin(), FTriplets.end());
+    FTriplets.clear();    
+
+    lambda = std::max(lambda, 1e-8); // prevent lambda to be 0
+    A = A + (lambda / static_cast<double>(nb_inputs)) * F.transpose() * F;
+
     duration_assembly = (clock() - time_init)/CLOCKS_PER_SEC;
     CGAL_TRACE_STREAM << "  Creates matrix: done ( " << duration_assembly << " s)" << std::endl;
     CGAL_TRACE_STREAM << "  Solve sparse linear system..." << std::endl;
 
     // Solve "A*X = B". On success, solution is (1/D) * X.
     time_init = clock();
-    double D;
-    if(!solver.linear_solver(A, B, X, D))
+    ESolver solver;
+    X = solver.compute(A).solve(B);
+    if(solver.info() != Eigen::Success)
+    {
+      CGAL_TRACE_STREAM << "  Solver failed!" << std::endl;
       return false;
-    CGAL_surface_reconstruction_points_assertion(D == 1.0);
+    }
     duration_solve = (clock() - time_init)/CLOCKS_PER_SEC;
 
     CGAL_TRACE_STREAM << "  Solve sparse linear system: done ( " << duration_solve << " s)" << std::endl;
@@ -1504,7 +1531,7 @@ private:
 
   }
   
-  double condition_number(EMatrix m) // for dense matrix
+  double condition_number(EMatrix matrix) // for dense matrix
   {
       return pseudoInverse(matrix).norm()* matrix.norm();
   }
@@ -2486,16 +2513,32 @@ private:
     return std::abs(tet.volume());
   }
 
+  /// Assemble pi's row of the data fitting matrix
+  void assemble_data_fitting_row( ESTripleList& FTriplets, 
+                                  int index, 
+                                  const Point& p)
+  {
+    Cell_handle cell = m_tr->locate(p);
 
-  /// Assemble vi's row of the linear system A*X=B
-  ///
-  /// @commentheading Template parameters:
-  /// @param SparseLinearAlgebraTraits_d Symmetric definite positive sparse linear solver.
-  template <class SparseLinearAlgebraTraits_d>
-  void assemble_poisson_row(typename SparseLinearAlgebraTraits_d::Matrix& A,
-                            Vertex_handle vi,
-                            typename SparseLinearAlgebraTraits_d::Vector& B,
-                            double lambda)
+    double a = 0, b = 0, c = 0, d = 0;
+    barycentric_coordinates(p, cell, a, b, c, d);
+
+    if(!is_valid(a) || !is_valid(b) || !is_valid(c) || !is_valid(d))
+    {
+      std::cerr << "Barycentric coordinate is not valid!" << std::endl;
+      return;
+    }
+
+    FTriplets.emplace_back(index, cell->vertex(0)->index(), a);
+    FTriplets.emplace_back(index, cell->vertex(1)->index(), b);
+    FTriplets.emplace_back(index, cell->vertex(2)->index(), c);
+    FTriplets.emplace_back(index, cell->vertex(3)->index(), d);
+  }
+
+
+  /// Assemble vi's row of the laplacian matrix
+  void assemble_laplacian_row(ESTripleList& ATriplets,
+                              Vertex_handle vi)
   {
     // for each vertex vj neighbor of vi
     std::vector<Edge> edges;
@@ -2506,46 +2549,34 @@ private:
     for(typename std::vector<Edge>::iterator it = edges.begin();
         it != edges.end();
         it++)
+    {
+      Vertex_handle vj = it->first->vertex(it->third);
+      if(vj == vi){
+        vj = it->first->vertex(it->second);
+      }
+      if(m_tr->is_infinite(vj))
+        continue;
+
+      // get corresponding edge
+      Edge edge(it->first, it->first->index(vi), it->first->index(vj));
+      if(vi->index() < vj->index()){
+        std::swap(edge.second, edge.third);
+      }
+
+      double cij = cotan_geometric(edge);
+
+      if(! is_valid(cij))
+        std::cerr << "cij = " << cij << " is not valid" << std::endl;
+      else
       {
-        Vertex_handle vj = it->first->vertex(it->third);
-        if(vj == vi){
-          vj = it->first->vertex(it->second);
-        }
-        if(m_tr->is_infinite(vj))
-          continue;
-
-        // get corresponding edge
-        Edge edge(it->first, it->first->index(vi), it->first->index(vj));
-        if(vi->index() < vj->index()){
-          std::swap(edge.second, edge.third);
-        }
-
-        double cij = cotan_geometric(edge);
-
-        if(m_tr->is_constrained(vj)){
-          if(! is_valid(vj->f())){
-            std::cerr << "vj->f() = " << vj->f() << " is not valid" << std::endl;
-          }
-          B[vi->index()] -= cij * vj->f(); // change rhs
-          if(! is_valid( B[vi->index()])){
-            std::cerr << " B[vi->index()] = " <<  B[vi->index()] << " is not valid" << std::endl;
-          }
-
-        } else {
-          if(! is_valid(cij)){
-            std::cerr << "cij = " << cij << " is not valid" << std::endl;
-          }
-          A.set_coef(vi->index(),vj->index(), -cij, true /*new*/); // off-diagonal coefficient
-        }
-
+        ATriplets.emplace_back(vi->index(),vj->index(), -cij); // off-diagonal coefficient
         diagonal += cij;
       }
-    // diagonal coefficient
-    if (vi->type() == Triangulation::INPUT){
-      A.set_coef(vi->index(),vi->index(), diagonal + lambda, true /*new*/) ;
-    } else{
-      A.set_coef(vi->index(),vi->index(), diagonal, true /*new*/);
+
     }
+
+    // diagonal coefficient
+    ATriplets.emplace_back(vi->index(),vi->index(), diagonal);
   }
 
   /// Assemble vi's row of the GEV system
