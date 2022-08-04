@@ -542,7 +542,7 @@ public:
     //dihedral_angle_per_cell("bad_tet_test.off");
     m_tr->index_all_vertices();
     CGAL_TRACE_STREAM << "removing slivers in triangulation...\n";
-    //remove_sliver<Geom_traits, Triangulation>(m_tr, 10);
+    remove_sliver<Geom_traits, Triangulation>(m_tr, 5);
     //dihedral_angle_per_cell("bad_tet_perturb_test.off");
     
   }
@@ -2705,7 +2705,7 @@ public:
   {
     std::vector<Point> points;
     std::vector< std::vector<std::size_t> > polygons;
-
+    //m_tr->dump_all_points_with_val("f_val");
     return m_tr->marching_tets(value, mesh, points, polygons);
   }
 
@@ -2744,7 +2744,6 @@ public:
         double va = 0.;
         //bool ba = locate_and_evaluate_function(a, hint, va);
         bool ba = locate_and_evaluate_function(a, hint, va, mode);
-
         if(ba)
         {
           if(va < my_fmin) my_fmin = va;

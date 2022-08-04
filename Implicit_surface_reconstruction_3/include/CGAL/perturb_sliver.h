@@ -192,7 +192,7 @@ namespace CGAL{
         {}
         
         // input lower bound in degree
-        bool perturb(FT threshold, bool force_empty)
+        int perturb(FT threshold, bool force_empty)
         {
             // found all slivers, add vertices to a priority queue
             FT tan_ub = tan(threshold / 180.0 * boost::math::constants::pi<double>());
@@ -231,7 +231,7 @@ namespace CGAL{
                 }
                 
             }
-            //std::cout << "slivers number:" << count << std::endl;
+            // std::cout << "slivers number:" << count << std::endl;
             // build queue
             PQueue pqueue(m_tr->number_of_vertices());
             for (const auto& i : PVertex_buffer_map)
@@ -242,7 +242,7 @@ namespace CGAL{
             {
                 // get vector of sliver cells
                 PVertex pv = pqueue.top_and_pop();
-                if ((!force_empty && pv.try_nb() == 3) || (force_empty && pv.try_nb() == 5)) // avoid infinite loop
+                if ((!force_empty && pv.try_nb() == 5) || (force_empty && pv.try_nb() == 10)) // avoid infinite loop
                     break; 
                 int iter = 0;
                 Point old_pos = pv.vertex()->point();
@@ -255,7 +255,7 @@ namespace CGAL{
                     std::vector<Cell_handle> slivers = info.first;
                     if (slivers.size() == 0)
                         break;
-                    Vector pertubation_vec = compute_displacement(pv, slivers, 0.6);
+                    Vector pertubation_vec = compute_displacement(pv, slivers, 0.7);
                     if (pertubation_vec != CGAL::NULL_VECTOR)
                     {
                         m_tr->move(pv.vertex(), old_pos + pertubation_vec);
@@ -269,18 +269,25 @@ namespace CGAL{
                                 pv.next_perturbation();
                                 pv.set_vertex(m_tr->move(pv.vertex(), old_pos));
                             }
-                            else 
+                            else
+                            {
                                 pv.set_min_value(new_info.second);
+                                count -= (slivers.size() - new_slivers.size());
+                            }
                         }
                         else 
                         {
-                            if ((new_slivers.size() > slivers.size()) || (new_info.second < info.second)) // if not better, revert and reinsert
+                            //if ((new_slivers.size() > slivers.size()) || (new_info.second < info.second)) // if not better, revert and reinsert
+                            if (new_info.second < info.second) // if not better, revert and reinsert
                             {   
                                 pv.next_perturbation();
                                 pv.set_vertex(m_tr->move(pv.vertex(), old_pos));
                             }
-                            else 
+                            else
+                            {
                                 pv.set_min_value(new_info.second);
+                                count -= (slivers.size() - new_slivers.size());
+                            }
                         }
                     }
                     else
@@ -297,7 +304,7 @@ namespace CGAL{
                     pqueue.push(pv);
                 }
             }
-            return true; 
+            return count; 
         }
 
     private:
@@ -457,7 +464,7 @@ namespace CGAL{
         Vector compute_random_perturbation()
         {
             typedef boost::lagged_fibonacci607 base_generator_type;
-            static base_generator_type generator_; // TODO: is this static ok?
+            static base_generator_type generator_;
             static boost::uniform_real<FT> uni_dist_;
             static boost::variate_generator<base_generator_type&,
                 boost::uniform_real<FT> > random_(generator_, uni_dist_);
@@ -611,9 +618,10 @@ namespace CGAL{
     bool remove_sliver(boost::shared_ptr<Tr>& tr, double threshold)
     {
         Sliver_perturbation_removal<Gt, Tr> perturber(tr);
-        bool p1 = perturber.perturb(threshold + 1, false);
-        bool p2 = perturber.perturb(threshold, true);
-        return p1 && p2;
+        if (perturber.perturb(threshold, false)!=0)
+            if (perturber.perturb(threshold, true) != 0)
+                perturber.perturb(1, true); // to get rid of exact plain slivers that are very harmful
+        return true;
     }
 
 }

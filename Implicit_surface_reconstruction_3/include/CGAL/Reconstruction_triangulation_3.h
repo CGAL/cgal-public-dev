@@ -671,6 +671,20 @@ public:
       }
   }
 
+  void dump_all_points_with_val(const std::string &filename)
+  {
+      std::cout << " dump all triangulation points with implicit function a " + filename + "\n";
+      std::ofstream out_file(filename+".txt");
+      for (Finite_vertices_iterator v = finite_vertices_begin(),
+          e = finite_vertices_end();
+          v != e;
+          ++v)
+      {
+          Point p = v->point();
+          out_file << p[0] << " " << p[1] << " " << p[2] << " " << v->f() << std::endl;
+      }
+  }
+
   /*
   /// Index unconstrained vertices following the order of Finite_vertices_iterator.
   /// @return the number of unconstrained vertices.
@@ -786,7 +800,7 @@ public:
     m_edge_map.clear();
     m_directions.clear();
 
-    bool flag_manifold = CGAL::Polygon_mesh_processing::is_polygon_soup_a_polygon_mesh(m_contour_polygons);
+    bool flag_manifold = CGAL::Polygon_mesh_processing::is_polygon_soup_a_polygon_mesh(m_contour_polygons, m_contour_points);
 
     if(!flag_manifold) {
       std::cerr << "Marching Tetrahedron failed!" << std::endl;
@@ -822,10 +836,16 @@ public:
         unsigned int i1 = (std::min)(cell->vertex(edge->second)->index(), cell->vertex(edge->third)->index());
         unsigned int i2 = (std::max)(cell->vertex(edge->second)->index(), cell->vertex(edge->third)->index());
 
-        if(std::abs(v1) < 1e-8)
-          m_pts.push_back(p1);
-        else if(std::abs(v2) < 1e-8)
+        if (std::abs(v1) < 1e-8)
+        {
+            std::cout << "issue!\n";
+                m_pts.push_back(p1);
+        }
+        else if (std::abs(v2) < 1e-8)
+        {
+            std::cout << "issue!\n";
           m_pts.push_back(p2);
+        }
         else if(v1 > 0 && v2 < 0) {
           double ratio = (0. - v1) / (v2 - v1);
           Point_3 p = p1 + ratio * (p2 - p1);
@@ -899,7 +919,8 @@ public:
         Vector v = m_pts[cell_points[2]] - m_pts[cell_points[0]];
 
         Vector n = CGAL::cross_product(u, v);
-
+        if (n == CGAL::NULL_VECTOR)
+            std::cout << "issue!\n";
         if(n * direction <= 0){
           Polygon_3 m_idx_1{cell_points[0], cell_points[2], cell_points[3]},
                     m_idx_2{cell_points[0], cell_points[3], cell_points[1]};
@@ -912,6 +933,7 @@ public:
           m_polys.push_back(m_idx_1);
           m_polys.push_back(m_idx_2);
         }
+        //std::cout << cell_points[0] << " " << cell_points[1] << " " << cell_points[2] << " " << cell_points[3] << std::endl;
 
         num_faces += 2;
       }
