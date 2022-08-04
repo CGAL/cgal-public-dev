@@ -69,6 +69,13 @@ public:
         else return child2->find_minimal_edge();
     }
 
+    const Octree_edge* twin_edge() const {
+        if (parent == nullptr) return nullptr;
+        if (parent->value1 * parent->value2 <= 0) return parent->twin_edge();
+        else if (parent->child1 == this) return parent->child2->find_minimal_edge();
+        else return parent->child1->find_minimal_edge();
+    }
+
     Octree_edge* get_child1() const { return child1; }
     Octree_edge* get_child2() const { return child2; }
 

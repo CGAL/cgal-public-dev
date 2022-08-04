@@ -47,16 +47,64 @@ public:
 
     // inserts point to mesh, if not there already
     // and returns its index
-    size_t add_point_to_mesh(const Edge& e) {
-        auto i = edge_points_in_mesh.find(e);
+    size_t add_point_to_mesh(const Edge* e) {
+        auto i = edge_points_in_mesh.find(*e);
         if (i != edge_points_in_mesh.end())
             return i->second;
 
-        Point p = e.extract_isovertex();
+        Point p = e->extract_isovertex();
         size_t ind = vertices.size();
-        edge_points_in_mesh[e] = ind;
+        edge_points_in_mesh[*e] = ind;
         vertices.push_back(p);
         return ind;
+    }
+
+    // this function is to find closed polygons in the inside of
+    // cell faces; currently it gets not called in any tests
+    std::vector<const Edge*> find_closed_polyline(
+        std::vector<std::vector<const Edge*>>& segments
+    ) {
+        std::vector<const Edge*> polyline;
+
+        const Edge* start = segments[0][0];
+        const Edge* next = segments[0][1];
+
+        polyline.push_back(start);
+        std::cerr << *(polyline.back());
+        int v = 0, p = 1;
+        std::set<int> vs;
+        vs.insert(v);
+        while (next != start) {
+            polyline.push_back(next);
+            std::cerr << *(polyline.back());
+            bool found = false;
+            for (int j = 0; j < segments.size(); ++j) if (v != j) {
+                if (segments[j][0] == polyline.back()) { found = true; v = j; p = 1; break; }
+                else if (segments[j][1] == polyline.back()) { found = true; v = j; p = 0; break; }
+            }
+            if (found) {
+                next = segments[v][p];
+                std::cerr << "next (segment found):" << *next;
+            }
+            if (!found) {
+                next = next->twin_edge();
+                std::cerr << "next (twin edge):" << *next;
+                v = -1;
+                for (int j = 0; j < segments.size(); ++j) {
+                    if (segments[j][0] == next || segments[j][1] == next) { v = j; }
+                }
+                if (v == -1) throw("twin edge not in any segment");
+            }
+            vs.insert(v);
+        }
+
+        std::vector<std::vector<const Edge*>> new_segments;
+        for (int i = 0; i < segments.size(); ++i)
+            if (vs.find(i) == vs.end())
+                new_segments.push_back(segments[i]);
+        segments = std::move(new_segments);
+
+        return polyline;
     }
 
     // returns the internal points of the finer polyline
@@ -64,7 +112,8 @@ public:
     std::vector<size_t> process_face(
         const Node& node,
         Adjacency adj,
-        size_t start) {
+        size_t start,
+        std::vector<std::vector<size_t>>& additional_polygons) {
 
         Node neighbour = node.adjacent_node(adj);
 
@@ -87,13 +136,13 @@ public:
             to_divide.pop();
         }
 
-        std::vector<std::vector<size_t>> segments;
+        std::vector<std::vector<const Edge*>> segments;
 
         int ind = 0, startv = -1, startp = -1;
         while (!leaf_neighbours.empty()) {
             Node child = leaf_neighbours.front();
             std::array<Edge*, 12> child_edges = edges.get(child);
-            std::vector<size_t> segment;
+            std::vector<const Edge*> segment;
             for(int i = 0; i < 12; ++i) {
                 auto edge = child_edges[i]->find_minimal_edge();
                 auto endpoints = edge->segment();
@@ -105,8 +154,8 @@ public:
                     auto vals = edge->values();
                     if (vals.first * vals.second <= 0) {
                         auto point = edge->extract_isovertex();
-                        segment.push_back(add_point_to_mesh(*edge));
-                        if (segment.back() == start) {
+                        segment.push_back(edge);
+                        if (add_point_to_mesh(segment.back()) == start) {
                             startv = ind;
                             startp = segment.size() - 1;
                         }
@@ -120,14 +169,54 @@ public:
             leaf_neighbours.pop();
         }
 
-        std::vector<size_t> polyline;
+        std::vector<const Edge*> polyline_edges;
 
-        int v = startv, p = !startp; // what if it is just an internal polyline?
+        int v = startv, p = !startp;
+        std::set<int> vs;
         for (int i = 0; i < segments.size(); ++i) {
-            polyline.push_back(segments[v][p]);
+            polyline_edges.push_back(segments[v][p]);
+            vs.insert(v);
+            bool found = false;
+            // try to find a segment continuing the polyline
             for (int j = 0; j < segments.size(); ++j) if (v != j) {
-                if (segments[j][0] == polyline.back()) { v = j; p = 1; break; }
-                if (segments[j][1] == polyline.back()) { v = j; p = 0; break; }
+                if (segments[j][0] == polyline_edges.back()) { found = true; v = j; p = 1; break; }
+                else if (segments[j][1] == polyline_edges.back()) { found = true; v = j; p = 0; break; }
+            }
+            if (!found) {
+                // if none, try connecting to a twin edge
+                auto next = polyline_edges.back()->twin_edge();
+                if (next == nullptr) break; // no twin edge: polyline to be ended
+                v = -1;
+                for (int j = 0; j < segments.size(); ++j) {
+                    if (segments[j][0] == next || segments[j][1] == next) { v = j; }
+                }
+                if (v == -1) break; // twin edge exists, but not in this cell: polyline is ended
+            }
+        }
+        std::vector<size_t> polyline(polyline_edges.size());
+        std::transform(polyline_edges.cbegin(), polyline_edges.cend(), polyline.begin(),
+            [this] (const Edge* e) { return add_point_to_mesh(e); });
+
+        // unsure, if this part is needed, currently it does not run with any of the tests
+        if(polyline.size() < segments.size()) {
+            std::vector<std::vector<const Edge*>> remaining_segments;
+            for (int i = 0; i < segments.size(); ++i) {
+                if (vs.find(i) == vs.end()) remaining_segments.push_back(segments[i]);
+            }
+            std::cout << "Not all points were used." << std::endl
+            << "Remaining segments: " << remaining_segments.size() << std::endl;
+
+            std::cerr << "Edges already used: " << std::endl;
+            for(auto it : polyline_edges)
+                std::cerr << *it << std::endl;
+
+            std::cerr << "Node: " << node << std::endl;
+            while (remaining_segments.size() > 0) {
+                auto poly = find_closed_polyline(remaining_segments);
+                std::vector<size_t> polygon(poly.size());
+                std::transform(poly.cbegin(), poly.cend(), polygon.begin(),
+                    [this] (const Edge* e) { return add_point_to_mesh(e); });
+                additional_polygons.push_back(polygon);
             }
         }
         if(polyline.size() > 0)
@@ -159,13 +248,14 @@ public:
                 auto corners = edge->corners(node);
                 if (vals.second < 0) { auto tmp = corners.first; corners.first = corners.second; corners.second = tmp;  }
                 unordered_polygon_with_faces.push_back(std::make_pair(
-                    add_point_to_mesh(*minEdge),
+                    add_point_to_mesh(minEdge),
                     corners_to_faces(corners)));
             }
         }
         if(unordered_polygon_with_faces.size() == 0) return std::vector<size_t> {};
 
         std::vector<size_t> polygon;
+        std::vector<std::vector<size_t>> additional_polygons;
 
         int ind = 0;
         std::vector<int> visited {ind};
@@ -180,7 +270,9 @@ public:
                     || j == 0 && i == unordered_polygon_with_faces.size() - 1) // we want to check the face between the last and first vertex
                     && (face1 || face2)) {
                     int face = face1 ? el.second.first : el.second.second;
-                    std::vector<size_t> internal_points = process_face(node, Adjacency(face), polygon.back());
+                    std::vector<size_t> internal_points = process_face(
+                        node, Adjacency(face), polygon.back(),
+                        additional_polygons);
                     for (auto it : internal_points) {
                         polygon.push_back(it);
                     }
