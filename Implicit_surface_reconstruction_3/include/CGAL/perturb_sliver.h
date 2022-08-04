@@ -34,8 +34,9 @@ namespace CGAL{
 
         // class member
         boost::shared_ptr<Triangulation> & m_tr;
+        bool is_octree;
 
-        enum PerturbationMethod { NULL_METHOD, RADIUS, VOLUME, RANDOM };
+        enum PerturbationMethod { NULL_METHOD, OCTREE, RADIUS, VOLUME, RANDOM };
 
         template< typename FT
             , typename Vertex_handle
@@ -82,8 +83,10 @@ namespace CGAL{
             const PerturbationMethod perturbation() const { return p_perturbation_; }
             void set_perturbation(const PerturbationMethod p) { p_perturbation_ = p; }
             void next_perturbation() {
-                if (p_perturbation_ == RADIUS)
-                    p_perturbation_ = VOLUME;
+                if (p_perturbation_ == OCTREE)
+                    p_perturbation_ = RADIUS;
+                else if (p_perturbation_ == VOLUME)
+                    p_perturbation_ = RANDOM;
                 else if (p_perturbation_ == VOLUME)
                     p_perturbation_ = RANDOM;
             }
@@ -187,8 +190,8 @@ namespace CGAL{
 
     // public function
     public:
-        Sliver_perturbation_removal(boost::shared_ptr<Triangulation> & m_tr)
-            : m_tr(m_tr)
+        Sliver_perturbation_removal(boost::shared_ptr<Triangulation> & m_tr, bool is_octree)
+            : m_tr(m_tr), is_octree(is_octree)
         {}
         
         // input lower bound in degree
@@ -208,7 +211,7 @@ namespace CGAL{
                     {
                         unsigned int v_idx = cb->vertex(i)->index();
                         //if (cb->vertex(i)->type() == Triangulation::Point_type::STEINER)
-                        //{
+                        {
                             PVertex& pv = PVertex_buffer_map[v_idx];
                             if (pv.sliver_nb() == 0)
                             {
@@ -216,7 +219,10 @@ namespace CGAL{
                                 pv.set_id(v_idx);
                                 pv.set_sliver_nb(1);
                                 pv.set_min_value(min_angle_tan); // stores tan value corresponding to min dihedral angle
-                                pv.set_perturbation(RADIUS);
+                                if (is_octree && !force_empty)
+                                    pv.set_perturbation(OCTREE);
+                                else
+                                    pv.set_perturbation(RADIUS);
                                 pv.set_is_interior(has_finite_voronoi_cell(cb->vertex(i)));
                             }
                             else
@@ -225,13 +231,13 @@ namespace CGAL{
                                 if (min_angle_tan < pv.min_value())
                                     pv.set_min_value(min_angle_tan);
                             }
-                        //}
+                        }
                     }
                     count++;
                 }
                 
             }
-            // std::cout << "slivers number:" << count << std::endl;
+            std::cout << "slivers number:" << count << std::endl;
             // build queue
             PQueue pqueue(m_tr->number_of_vertices());
             for (const auto& i : PVertex_buffer_map)
@@ -242,12 +248,12 @@ namespace CGAL{
             {
                 // get vector of sliver cells
                 PVertex pv = pqueue.top_and_pop();
-                if ((!force_empty && pv.try_nb() == 5) || (force_empty && pv.try_nb() == 10)) // avoid infinite loop
+                if ((!force_empty && pv.try_nb() == 3) || (force_empty && pv.try_nb() == 5)) // avoid infinite loop
                     break; 
                 int iter = 0;
                 Point old_pos = pv.vertex()->point();
                 unsigned char type = pv.vertex()->type();
-                while (iter<5)
+                while (iter<10)
                 {
                     iter++;
                     // compute perturbation vector
@@ -255,7 +261,7 @@ namespace CGAL{
                     std::vector<Cell_handle> slivers = info.first;
                     if (slivers.size() == 0)
                         break;
-                    Vector pertubation_vec = compute_displacement(pv, slivers, 0.7);
+                    Vector pertubation_vec = compute_displacement(pv, slivers, 0.1);
                     if (pertubation_vec != CGAL::NULL_VECTOR)
                     {
                         m_tr->move(pv.vertex(), old_pos + pertubation_vec);
@@ -446,12 +452,20 @@ namespace CGAL{
                 return CGAL::NULL_VECTOR;
             else if (slivers.size() > 2)
                 grad = compute_random_perturbation();
+            else if (pv.perturbation() == OCTREE)
+            {   
+                grad = compute_octree_perturbation(slivers);
+                alpha = 0.25;
+            }
             else if (pv.perturbation() == RADIUS)
                 grad = compute_gradient_radius(pv.vertex(), slivers);
             else if (pv.perturbation() == VOLUME)
                 grad = compute_gradient_volume(pv.vertex(), slivers);
             else if (pv.perturbation() == RANDOM)
+            { 
+                alpha = 0.25;
                 grad = compute_random_perturbation();
+            }
             FT grad_length = sqrt(grad * grad);
             FT norm_length = sqrt(min_incident_edge_sq_length(pv.vertex()));
             grad = grad / grad_length * norm_length * alpha;
@@ -459,6 +473,43 @@ namespace CGAL{
                 return CGAL::NULL_VECTOR;
             else
                 return grad;
+        }
+
+        Vector compute_octree_perturbation(const std::vector<Cell_handle>& slivers) const
+        {
+            switch (slivers.size())
+            {
+            case 1:
+                return compute_octree_perturbation_(slivers.front());
+                break;
+            case 2:
+                {
+                    Vector v1 = compute_octree_perturbation_(slivers.front());
+                    Vector v2 = compute_octree_perturbation_(slivers.back());
+                    if (v1 * v2 > 0)
+                        return 0.5 * (v1 + v2);
+                    else
+                        return 0.5 * (v1 - v2); 
+                    break;
+                }
+            default:
+                break;
+            }
+
+            // May happen if sq_radius_gradient is not relevant for this vertex
+            return CGAL::NULL_VECTOR;
+        }
+
+        // for octree plain sliver, we know where to go (at least somehow)
+        Vector compute_octree_perturbation_(const Cell_handle& cell) const 
+        {
+            Point v[3];
+            for (int i = 0; i < 3; i++)
+            {
+                v[i] = cell->vertex(i)->point();
+            }
+            Vector pert = CGAL::cross_product(v[2] - v[0], v[1] - v[0]); 
+            return pert;
         }
         
         Vector compute_random_perturbation()
@@ -468,7 +519,7 @@ namespace CGAL{
             static boost::uniform_real<FT> uni_dist_;
             static boost::variate_generator<base_generator_type&,
                 boost::uniform_real<FT> > random_(generator_, uni_dist_);
-            Vector rnd_vector(random_(), random_(), random_());
+            Vector rnd_vector(random_() - 0.5, random_()-0.5, random_()-0.5);
             return rnd_vector;
         }
 
@@ -615,9 +666,9 @@ namespace CGAL{
     // wrapper
     template<class Gt,
         class Tr>
-    bool remove_sliver(boost::shared_ptr<Tr>& tr, double threshold)
+    bool remove_sliver(boost::shared_ptr<Tr>& tr, double threshold, bool is_octree)
     {
-        Sliver_perturbation_removal<Gt, Tr> perturber(tr);
+        Sliver_perturbation_removal<Gt, Tr> perturber(tr, is_octree);
         if (perturber.perturb(threshold, false)!=0)
             if (perturber.perturb(threshold, true) != 0)
                 perturber.perturb(1, true); // to get rid of exact plain slivers that are very harmful

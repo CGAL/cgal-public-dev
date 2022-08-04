@@ -522,15 +522,17 @@ public:
       //octree.generate_points_with_null_normal(std::back_inserter(m_octree_pwn));
       if(octree_debug_visu)
 	  {
-		octree.dump_octree_pwn("octree_pwn", m_octree_pwn);
-		//octree.dump_octree_point("octree_steiner", m_octree_steiner);
+		//octree.dump_octree_pwn("octree_pwn", m_octree_pwn);
+		octree.dump_octree_point("octree_steiner", m_octree_steiner);
 	  }
 
       CGAL_TRACE_STREAM << "creates implicit triangulation...\n";
-      m_tr->insert(m_octree_pwn, point_map, visitor);
+      forward_constructor(points, PointMap(), NormalMap(), visitor); // add original input points
+      //m_tr->label_input();
+      //m_tr->insert(m_octree_pwn, point_map, visitor);
       //m_tr->intialize_normal(normal_map);
-	  for (auto steiner = m_octree_steiner.begin(); steiner != m_octree_steiner.end(); steiner++)
-	      m_tr->insert(*steiner, Triangulation::STEINER, Cell_handle(), visitor);
+      for (auto steiner = m_octree_steiner.begin(); steiner != m_octree_steiner.end(); steiner++)
+          m_tr->insert(*steiner, Triangulation::STEINER, Cell_handle(), visitor);
     }
 	else
 	{
@@ -539,12 +541,11 @@ public:
 	}
 
     // remove slivers
-    //dihedral_angle_per_cell("bad_tet_test.off");
     m_tr->index_all_vertices();
+    dihedral_angle_per_cell("bad_tet_test.off");
     CGAL_TRACE_STREAM << "removing slivers in triangulation...\n";
-    remove_sliver<Geom_traits, Triangulation>(m_tr, 5);
+    remove_sliver<Geom_traits, Triangulation>(m_tr, 5, use_octree);
     //dihedral_angle_per_cell("bad_tet_perturb_test.off");
-    
   }
 
   /// \endcond
@@ -2705,7 +2706,7 @@ public:
   {
     std::vector<Point> points;
     std::vector< std::vector<std::size_t> > polygons;
-    //m_tr->dump_all_points_with_val("f_val");
+    m_tr->dump_all_points_with_val("f_val");
     return m_tr->marching_tets(value, mesh, points, polygons);
   }
 

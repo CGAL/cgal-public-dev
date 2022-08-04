@@ -427,7 +427,7 @@ class Octree
 	template <class OutputPwnIterator, class OutputPointIterator>	
 	void generate_points(OutputPwnIterator output_pwn, OutputPointIterator output_steiner)
     {
-	  std::set<IntPoint> all_corner_locations;
+	  std::set<std::pair<IntPoint, FT>> all_corner_locations;
 	  std::map<IntPoint, Vector> corner_normals;
 	  
 	  // 1. for each leaf, insert barycenter pwn and get corner unique location
@@ -442,63 +442,70 @@ class Octree
 		for(int child_id = 0; child_id < 8; child_id++)
 		{
 		  node_corners_location[child_id] = get_corner_location(node, child_id);
-		  all_corner_locations.insert(node_corners_location[child_id]);
+		  all_corner_locations.insert(std::make_pair(node_corners_location[child_id],node->depth()));
 		}
 		
 		Point bary_position = compute_barycenter_position(node);
-		Vector bary_normal = CGAL::NULL_VECTOR;
-		for(const InputIterator &pwn_it : node->points()) 
-		{
-		  bary_normal += compute_weighted_normal(bary_position, pwn_it);
-		  
-		  for(int child_id = 0; child_id < 8; child_id++)
-		  {
-			IntPoint corner_loc = node_corners_location[child_id];
-			Vector weighted_normal = compute_weighted_normal(compute_corner_position(corner_loc), pwn_it);
-			
-			auto find = corner_normals.find(corner_loc);
-			if(find == corner_normals.end()) 
-			{
-			  corner_normals.insert(std::make_pair(corner_loc, weighted_normal));
-			}
-			else 
-			{
-			  find->second += weighted_normal;
-			}			
-		  }		  
-		}
-		
-		if (bary_normal == CGAL::NULL_VECTOR) 
-		{
-		  *output_steiner = bary_position;
-		  output_steiner++;
-		}
-		else 
-		{
-		  bary_normal /= CGAL::sqrt(bary_normal.squared_length()); // will be optional with weighted normal computation fonctor
-		  *output_pwn =  std::make_pair(bary_position, bary_normal);
-          output_pwn++;
-		}		
+        *output_steiner = bary_position;
+        output_steiner++;
+		//Vector bary_normal = CGAL::NULL_VECTOR;
+		//for(const InputIterator &pwn_it : node->points()) 
+		//{
+		//  bary_normal += compute_weighted_normal(bary_position, pwn_it);
+		//  
+		//  for(int child_id = 0; child_id < 8; child_id++)
+		//  {
+		//	IntPoint corner_loc = node_corners_location[child_id];
+		//	Vector weighted_normal = compute_weighted_normal(compute_corner_position(corner_loc), pwn_it);
+		//	
+		//	auto find = corner_normals.find(corner_loc);
+		//	if(find == corner_normals.end()) 
+		//	{
+		//	  corner_normals.insert(std::make_pair(corner_loc, weighted_normal));
+		//	}
+		//	else 
+		//	{
+		//	  find->second += weighted_normal;
+		//	}			
+		//  }		  
+		//}
+		//
+		//if (bary_normal == CGAL::NULL_VECTOR) 
+		//{
+		//  *output_steiner = bary_position;
+		//  output_steiner++;
+		//}
+		//else 
+		//{
+		//  bary_normal /= CGAL::sqrt(bary_normal.squared_length()); // will be optional with weighted normal computation fonctor
+		//  *output_pwn =  std::make_pair(bary_position, bary_normal);
+  //        output_pwn++;
+		//}		
 	  }
 
 	  // 2. for each corner location, insert corner pwn 
-	  for(const IntPoint &corner_location : all_corner_locations)
+	  for(const auto & p : all_corner_locations)
 	  {
+        IntPoint corner_location = p.first;
 		Point corner_position = compute_corner_position(corner_location);
+
+        *output_steiner = corner_position;
+        output_steiner++;
+		//Point corner_position = compute_corner_position_with_perturbation(corner_location, p.second);
 		
-		auto find = corner_normals.find(corner_location);
-		if (find == corner_normals.end() || find->second == CGAL::NULL_VECTOR) 
-		{
-		  *output_steiner = corner_position;
-		  output_steiner++;
-		}
-		else 
-		{
-		  Vector corner_normal = find->second;
-		  corner_normal /= CGAL::sqrt(corner_normal.squared_length()); // will be optional with weighted normal computation fonctor
-		  *output_pwn =  std::make_pair(corner_position, corner_normal);
-          output_pwn++;
-		}
+		//auto find = corner_normals.find(corner_location);
+		//if (find == corner_normals.end() || find->second == CGAL::NULL_VECTOR) 
+		//{
+		//  *output_steiner = corner_position;
+		//  output_steiner++;
+		//}
+		//else 
+		//{
+		//  Vector corner_normal = find->second;
+		//  corner_normal /= CGAL::sqrt(corner_normal.squared_length()); // will be optional with weighted normal computation fonctor
+		//  *output_pwn =  std::make_pair(corner_position, corner_normal);
+  //        output_pwn++;
+		//}
 	  }
 	}
 
@@ -608,7 +615,7 @@ class Octree
 		corner_pos[i] = (FT) (corner_loc[i]*size) + m_bbox_min[i];
 	  return Point(corner_pos[0], corner_pos[1], corner_pos[2]);	  
 	}
-	
+
 	Vector compute_weighted_normal(const Point &corner_loc, const InputIterator &pwn_it) const
 	{
 	  return pwn_it->second; // simple case for now, will be replaced by a generic functor
