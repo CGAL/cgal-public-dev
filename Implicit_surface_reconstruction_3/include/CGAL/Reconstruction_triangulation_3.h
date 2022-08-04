@@ -800,7 +800,7 @@ public:
     m_edge_map.clear();
     m_directions.clear();
 
-    bool flag_manifold = CGAL::Polygon_mesh_processing::is_polygon_soup_a_polygon_mesh(m_contour_polygons, m_contour_points);
+    bool flag_manifold = CGAL::Polygon_mesh_processing::is_polygon_soup_a_polygon_mesh(m_contour_polygons);
 
     if(!flag_manifold) {
       std::cerr << "Marching Tetrahedron failed!" << std::endl;
