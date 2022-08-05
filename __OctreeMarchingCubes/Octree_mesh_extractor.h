@@ -9,9 +9,14 @@
 //
 // Author(s)     : Ágoston Sipos
 
+#ifndef CGAL_OCTREEMESHEXTRACTOR_H
+#define CGAL_OCTREEMESHEXTRACTOR_H
+
 #include <CGAL/Octree.h>
 
 #include "Edge_store.h"
+
+namespace CGAL {
 
 template <typename GeomTraits>
 class Octree_mesh_extractor {
@@ -60,7 +65,7 @@ public:
     }
 
     // this function is to find closed polygons in the inside of
-    // cell faces; currently it gets not called in any tests
+    // cell faces; currently it is not called in any tests
     std::vector<const Edge*> find_closed_polyline(
         std::vector<std::vector<const Edge*>>& segments
     ) {
@@ -93,7 +98,10 @@ public:
                 for (int j = 0; j < segments.size(); ++j) {
                     if (segments[j][0] == next || segments[j][1] == next) { v = j; }
                 }
-                if (v == -1) throw("twin edge not in any segment");
+                if (v == -1)
+                throw Error_exception("Octree_marching_cubes"
+                    , "twin edge not in any segment"
+                    , "Octree_mesh_extractor.h", 97);
             }
             vs.insert(v);
         }
@@ -318,3 +326,7 @@ private:
     }
 
 };
+
+}
+
+#endif

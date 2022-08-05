@@ -64,7 +64,6 @@ public:
         auto coords1 = node.global_coordinates();
         auto coords = node.local_coordinates();
         size_t corner = coords[0]*4 + coords[1]*2 + coords[2]*1;
-        size_t corner2 = coords[0]*1 + coords[1]*2 + coords[2]*4; // node child indexing uses this sceme for some reason...
 
         std::array<Edge*, 12> parent_edges = edge_lists[parent];
 

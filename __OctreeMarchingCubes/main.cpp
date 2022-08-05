@@ -101,7 +101,7 @@ int main(int argc, char** argv) {
     Octree octree(Octree::Bbox(-1.2,-1.2,-1.2,1.2,1.2,1.2), points);
     octree.refine(Split_by_closeness(func, octree));
 
-    Octree_mesh_extractor<Kernel> extractor (octree, func);
+    CGAL::Octree_mesh_extractor<Kernel> extractor (octree, func);
 
     std::vector<Point> vertices;
     std::vector<std::vector<size_t>> faces;

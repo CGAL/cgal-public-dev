@@ -13,6 +13,7 @@
 #define CGAL_ORTHTREE_EDGE_H
 
 #include <CGAL/Orthtree.h>
+#include <CGAL/exceptions.h>
 
 #include <optional>
 
@@ -126,14 +127,16 @@ public:
             FT iso_value = 0.f;
 
             // don't divide by 0
-            if (abs(d2 - d1) < 0.000001) {
+            if (abs(d2 - d1) < std::numeric_limits<FT>::epsilon()) {
                 mu = 0.5f;  // if both points have the same value, assume isolevel is in the middle
             } else {
                 mu = (iso_value - d1) / (d2 - d1);
             }
 
             if (mu < 0.f || mu > 1.f) {
-                throw("ERROR: isolevel is not between points\n");  // TODO
+                throw Error_exception("Octree_marching_cubes"
+                    , "isolevel is not between points"
+                    , "Octree_edge.h", 137);
             }
 
             const Vector res = r2 * mu + r1 * (1 - mu);
