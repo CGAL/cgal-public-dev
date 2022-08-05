@@ -354,13 +354,14 @@ private:
     void set (Cell_handle ch) { m_cell = ch.operator->(); }
   };
 
-  typedef typename CGAL::Eigen_sparse_matrix<FT>            Matrix;
-  typedef typename Eigen::SparseMatrix<FT>                  ESMatrix;
-  typedef typename std::vector<Eigen::Triplet<FT> >         ESTripleList;
-  typedef typename Eigen::Matrix<FT, Eigen::Dynamic, Eigen::Dynamic>  EMatrix;
-  typedef typename Eigen::Matrix<FT, Eigen::Dynamic, 1>     EVector;
+  typedef typename CGAL::Eigen_sparse_matrix<FT>                                  Matrix;
+  typedef typename Eigen::SparseMatrix<FT>                                        ESMatrix;
+  typedef typename std::vector<Eigen::Triplet<FT> >                               ESTripleList;
+  typedef typename Eigen::Matrix<FT, Eigen::Dynamic, Eigen::Dynamic>              EMatrix;
+  typedef typename Eigen::DiagonalMatrix<FT, Eigen::Dynamic, Eigen::Dynamic>      EDiagMat;
+  typedef typename Eigen::Matrix<FT, Eigen::Dynamic, 1>                           EVector;
   typedef typename Eigen::ConjugateGradient<ESMatrix, Eigen::Lower|Eigen::Upper>  ESolver;
-  typedef typename CGAL::Covariance_matrix_3<Geom_traits>   Covariance;
+  typedef typename CGAL::Covariance_matrix_3<Geom_traits>                         Covariance;
 
   typedef typename Spectra::SparseSymMatProd<FT>    OpType;
   typedef typename Spectra::SparseCholesky<FT>      BOpType;
@@ -495,7 +496,7 @@ public:
 	  }
 
       CGAL_TRACE_STREAM << "refine octree...\n";
-      octree.refine(9, 1);
+      octree.refine(8, 1);
 	  if(octree_debug_visu)
 	  {
 		// drawing all leafs is same as all nodes but cheaper
@@ -1194,6 +1195,13 @@ private:
       assemble_laplacian_row(ATriplets, v);
     }
 
+    A.setFromTriplets(ATriplets.begin(), ATriplets.end());
+    ATriplets.clear();
+
+    clear_duals();
+    clear_normals();
+    m_tr->clear_normal_map();
+
     // Data fitting matrix
     int point_index = 0;
     for(InputIterator it = m_points->cbegin(); it != m_points->cend(); it++)
@@ -1201,12 +1209,6 @@ private:
       assemble_data_fitting_row(FTriplets, point_index++, it->first);
     }
     
-    clear_duals();
-    clear_normals();
-    m_tr->clear_normal_map();
-
-    A.setFromTriplets(ATriplets.begin(), ATriplets.end());
-    ATriplets.clear();
     F.setFromTriplets(FTriplets.begin(), FTriplets.end());
     FTriplets.clear();    
 
@@ -1256,138 +1258,97 @@ private:
 
     double time_init = clock();
 
-    double duration_assembly = 0.0;
-    double duration_solve = 0.0;
-
     initialize_cell_indices();
     initialize_barycenters();
-    initialize_insides();
 
     // get #variables
     m_tr->index_all_vertices();
     const int nb_variables = static_cast<int>(m_tr->number_of_vertices());
-    const int nb_input_vertices = m_tr->nb_input_vertices();
-    //const int nb_insides = static_cast<int>(m_tr->nb_inside_vertices());
-  	CGAL_TRACE_STREAM << "  " << nb_input_vertices << " input vertices out of " << nb_variables << std::endl;
-
-    //dihedral_angle_per_cell("bad_tet_octree_test.off");
-    //remove_sliver<Geom_traits, Triangulation>(*m_tr, 3);
-    //dihedral_angle_per_cell("bad_tet_octree_perturb_test.off");
-    
-    
-    //std::ofstream oFileT("triangulation.off", std::ios::out);
-    //oFileT << *m_tr;
+    const int nb_inputs = static_cast<int>(m_points->size());
+    const int nb_finite_cells = static_cast<int>(m_tr->number_of_finite_cells());
+  	CGAL_TRACE_STREAM << "  " << nb_inputs << " input vertices out of " << nb_variables << std::endl;
 
     // Assemble matrices
-    Matrix AA(nb_variables), L(nb_variables), F(nb_variables); // matrix is symmetric definite positive
-    Matrix V_inv(nb_variables), N(nb_variables), V(nb_variables);
+    ESMatrix  F(nb_inputs, nb_variables),     // Data fitting matrix
+              L(nb_variables, nb_variables),  // Laplacian matrix
+              G(3 * nb_finite_cells, nb_variables), // Gradient matrix
+              AL(nb_variables, nb_variables); // Anisotropic Dirichlet matrix
+    EVector  X(nb_variables); // solution
+    EDiagMat M(nb_variables); // mass matrix
 
-    ESMatrix B(nb_variables, nb_variables);
-    EMatrix X(nb_variables, 1);
-
-    bool flag_boundary = (laplacian < 0) ? true : false;
+    CGAL_TRACE_STREAM << "  Begin calculation: (" << (clock() - time_init) / CLOCKS_PER_SEC << " s)" << std::endl;
+    
+    // Assemble laplacian matrix and mass matrix
+    ESTripleList LTriplets;
+    LTriplets.reserve(16 * nb_variables);
 
     initialize_duals();
 
-    CGAL_TRACE_STREAM << "  Begin calculation: (" << (clock() - time_init) / CLOCKS_PER_SEC << " s)" << std::endl;
     Finite_vertices_iterator v, e;
-    double duration_cal = 0., duration_assign= 0.;
-    for(v = m_tr->finite_vertices_begin(), e = m_tr->finite_vertices_end();
+    for(v = m_tr->finite_vertices_begin(), 
+        e = m_tr->finite_vertices_end();
         v != e;
         ++v)
     {
-        FT fitting = (v->type() == Triangulation::INPUT) ? get(reliability_map, v->input_iterator()) : 0;
-        assemble_spectral_row(v, AA, L, F, V_inv, V, N, fitting, confidence_map, duration_assign, duration_cal, flag_boundary);
+      assemble_laplacian_row(LTriplets, v);
+      assemble_mass_row(M, v);
     }
 
-    CGAL_TRACE_STREAM << "  Calculate elem: total (" << duration_cal / CLOCKS_PER_SEC << " s)" << std::endl;
-    CGAL_TRACE_STREAM << "  Assign: total (" << duration_assign / CLOCKS_PER_SEC << " s)" << std::endl;
+    L.setFromTriplets(LTriplets.begin(), LTriplets.end());
+    LTriplets.clear();
+    clear_duals();
 
-    //double time_b = clock();
+    // Assemble Data fitting matrix
+    ESTripleList FTriplets;
+    FTriplets.reserve(4 * nb_inputs);
 
-    ESMatrix EL = L.eigen_object(), EA = AA.eigen_object();
-    ESMatrix EV_inv = V_inv.eigen_object(), EV = V.eigen_object();
-
-    const FT radius = sqrt(bounding_sphere().squared_radius()); // get triangulation's radius
-
-    EV_inv = EV_inv * ::pow(radius, 3);
-    EV = EV / ::pow(radius, 3);
-    if(flag_boundary){
-      EL = EL + N.eigen_object();
-      EL = EL / radius;
-      B = EL.transpose() * EV_inv * EL * bilaplacian + EV * F.eigen_object();
-    }
-    else{
-      EL = EL / radius;
-      //B = EL * EV_inv * EL * bilaplacian + EL * laplacian + F.eigen_object();
-      //B = EL * EV_inv * EL * bilaplacian + EL * laplacian + EV * F.eigen_object();
-      //B = EL.transpose() * EL * bilaplacian + EL * laplacian + F.eigen_object();
-      //std::ofstream file("EL_mat.txt");
-      //file << EMatrix(EL);
-      //file.close();
-      B = EL * EL * bilaplacian + EL * laplacian + F.eigen_object();
+    int point_index = 0;
+    for(InputIterator it = m_points->cbegin(); it != m_points->cend(); it++)
+    {
+      assemble_data_fitting_row(FTriplets, point_index++, it->first);
     }
     
-    //check_ratio_radius_edge();
-    //dihedral_angle_per_cell();
+    F.setFromTriplets(FTriplets.begin(), FTriplets.end());
+    FTriplets.clear(); 
 
-/*
-    save_steiner_point();
+    // Asssemble gradient matrix
+    ESTripleList GTriplets;
+    GTriplets.reserve(32 * nb_finite_cells);
 
-    std::cerr << "Check A...." << std::endl;
-    check_spd(EA);
+    Finite_cells_iterator cb, ce;
+    for(cb = m_tr->finite_cells_begin(),
+        ce = m_tr->finite_cells_end(); 
+        cb != ce; 
+        ++cb)
+    {
+      assemble_gradient_row(GTriplets, cb, nb_finite_cells);
+    }
+      
+    G.setFromTriplets(GTriplets.begin(), GTriplets.end());
+    GTriplets.clear();
 
-    std::cerr << "Check L...." << std::endl;
-    check_spd(EL);
+    // Assemble anisotropic Dirichlet matrix
+    assemble_spectral_gradient_matrix(AL, G, nb_finite_cells, nb_inputs);
 
-    std::cerr << "write l..." << std::endl;
-    std::string lvec_outfile("lvec.ply");
-    save_smallest_eigvec(EL, lvec_outfile, nb_variables, 1e-7);
+    ESMatrix EB = (0.1 / static_cast<double>(nb_inputs)) * F.transpose() * F + laplacian * L + bilaplacian * L * M * L;
 
-    std::cerr << "write a..." << std::endl;
-    std::string avec_outfile("avec.ply");
-    save_smallest_eigvec(EA, avec_outfile, nb_variables, 1e-8);
-
-    ESMatrix identity(nb_variables, nb_variables);
-    identity.setIdentity();
-    identity = identity * 1e-8;
-
-    std::cerr << "write l*l..." << std::endl;
-    ESMatrix ELL = EL * EL + identity;
-    std::string llvec_outfile("llvec.ply");
-    save_smallest_eigvec(ELL, llvec_outfile, nb_variables, 1e-4);
-
-    std::cerr << "write l*v*l..." << std::endl;
-    ESMatrix ELVL = EL * EV_inv * EL + identity;
-    std::string lvlvec_outfile("lvlvec.ply");
-    save_smallest_eigvec(ELVL, lvlvec_outfile, nb_variables, 1e-4);
-*/
-    clear_duals();
-    duration_assembly = (clock() - time_init) / CLOCKS_PER_SEC;
+    double duration_assembly = (clock() - time_init) / CLOCKS_PER_SEC;
     CGAL_TRACE_STREAM << "  Creates matrix: done (" << duration_assembly << " s)" << std::endl;
     CGAL_TRACE_STREAM << "  Solve generalized eigenvalue problem..." << std::endl;
 
     // Solve generalized eigenvalue problem
     time_init = clock();
     //spectral_solver<ESMatrix, EMatrix, (int)Spectra::SortRule::LargestAlge>(EA, B, EL, X);
-    spectral_solver<ESMatrix, EMatrix, Spectra::LARGEST_ALGE>(EA, B, EL, X);
+    spectral_solver<ESMatrix, EVector, Spectra::LARGEST_ALGE>(AL, EB, X);
     
-    duration_solve = (clock() - time_init) / CLOCKS_PER_SEC;
+    double duration_solve = (clock() - time_init) / CLOCKS_PER_SEC;
 
     CGAL_TRACE_STREAM << "  Solve generalized eigenvalue problem: done (" << duration_solve << " s)" << std::endl;
-
-    /*
-    EMatrix AX = EA * X;
-    EMatrix BX = B * X;
-    EMatrix LX = EL * X;*/
 
     // copy function's values to vertices
     unsigned int index = 0;
     for (v = m_tr->finite_vertices_begin(), e = m_tr->finite_vertices_end(); v!= e; ++v){
       v->f() = X(index, 0);
-      //v->af() = AX(index, 0);
-      //v->bf() = BX(index, 0);
-      //v->lf() = LX(index, 0);
       index += 1;
     }
 
@@ -1402,12 +1363,8 @@ private:
   /// @param RMatType The name of the matrix operation class for X
   /// @param SelectionRule An enumeration value indicating the selection rule of the requested eigenvalues
   template <typename MatType, typename RMatType, int SelectionRule>
-  void spectral_solver(const MatType& A, const MatType& B, const MatType& L, RMatType& X, int k = 1, int m = 37)
+  void spectral_solver(const MatType& A, const MatType& B, RMatType& X, int k = 1, int m = 37)
   {
-      //std::ofstream file("B_mat.txt");
-      //file << EMatrix(B);
-      //file.close();
-
       CGAL_TRACE_STREAM << "Begin solving spectra..." << std::endl;
       OpType op(A);
       BOpType Bop(B);
@@ -1416,7 +1373,7 @@ private:
       Spectra::SymGEigsSolver<FT, SelectionRule, OpType, BOpType, Spectra::GEIGS_CHOLESKY> eigs(&op, &Bop, k, m);
       eigs.init();
       //int nconv = eigs.compute();
-	  eigs.compute();
+	    eigs.compute();
       
       CGAL_TRACE_STREAM << "Problem solved!" << std::endl;
 
@@ -1425,7 +1382,6 @@ private:
 
       X = eigs.eigenvectors();
   }
-
 
   template <typename MatType>
   void save_smallest_eigvec(const MatType& A, const std::string outfile, const int nb_variables, const double tol = 1e-8, int k = 5, int m = 37, int n = 5)
@@ -2582,6 +2538,97 @@ private:
     ATriplets.emplace_back(vi->index(),vi->index(), diagonal);
   }
 
+  /// Assemble ci's row of the gradient matrix
+  void assemble_gradient_row( ESTripleList& GTriplets, 
+                              Cell_handle cell, 
+                              unsigned int num_cells)
+  {
+    unsigned int ind = cell->info();
+    double vol = (m_tr->tetrahedron(cell)).volume();
+    
+    // Gradient
+    for(int i = 0; i < 4; i++)
+    {
+      Point& a = cell->vertex(m_tr->vertex_triple_index(i, 0))->point();
+      Point& b = cell->vertex(m_tr->vertex_triple_index(i, 1))->point();
+      Point& c = cell->vertex(m_tr->vertex_triple_index(i, 2))->point();
+      double area = std::sqrt(CGAL::squared_area(a, b, c));
+      double coeff = area / (3. * vol);
+
+      // calculate grad
+      Vector nn = CGAL::cross_product(b - a, c - a);
+      Vector direction = cell->vertex(i)->point() - a;
+      if(direction * nn <= 0)
+          nn = -nn;
+
+      double nn_length = std::sqrt(nn.squared_length());
+      if(nn_length > 1e-8)
+          nn /= nn_length;
+
+      unsigned int vert_ind = cell->vertex(i)->index();
+      GTriplets.emplace_back(ind, vert_ind, coeff * nn.x());
+      GTriplets.emplace_back(num_cells + ind, vert_ind, coeff * nn.y());
+      GTriplets.emplace_back(2 * num_cells + ind, vert_ind, coeff * nn.z());
+    }
+  }
+
+  void assemble_spectral_gradient_matrix(ESMatrix& AL, const ESMatrix& G, const int nb_finite_cells, const int nb_inputs)
+  {
+    ESMatrix S_ind(3 * nb_inputs, 3 * nb_finite_cells);
+    ESMatrix C(3 * nb_inputs, 3 * nb_inputs);
+    
+    ESTripleList STriplets, CTriplets;
+    STriplets.reserve(nb_inputs * 3);
+    CTriplets.reserve(nb_inputs * 9);
+
+    int i = 0;
+
+    for (InputIterator it = m_points->cbegin(); it != m_points->cend(); it++)
+    {
+      Point p = it->first;
+      Vector n = it->second;
+
+      Cell_handle cell = m_tr->locate(p);
+      unsigned int cell_ind = cell->info();
+
+      for(int j = 0; j < 3; j++)
+      {
+          STriplets.emplace_back(3 * i + j, j * nb_finite_cells + cell_ind, 1.);
+      }
+
+      Covariance cov(p, n, 10.); // 10 -> reliability
+      CTriplets.emplace_back(3 * i    , 3 * i    , cov.tensor(0));
+      CTriplets.emplace_back(3 * i    , 3 * i + 1, cov.tensor(1));
+      CTriplets.emplace_back(3 * i    , 3 * i + 2, cov.tensor(2));
+      CTriplets.emplace_back(3 * i + 1, 3 * i    , cov.tensor(1));
+      CTriplets.emplace_back(3 * i + 1, 3 * i + 1, cov.tensor(3));
+      CTriplets.emplace_back(3 * i + 1, 3 * i + 2, cov.tensor(4));
+      CTriplets.emplace_back(3 * i + 2, 3 * i    , cov.tensor(2));
+      CTriplets.emplace_back(3 * i + 2, 3 * i + 1, cov.tensor(4));
+      CTriplets.emplace_back(3 * i + 2, 3 * i + 2, cov.tensor(5));
+
+      i++;
+    }
+
+    S_ind.setFromTriplets(STriplets.begin(), STriplets.end());
+    STriplets.clear();
+
+    C.setFromTriplets(CTriplets.begin(), CTriplets.end());
+    CTriplets.clear();
+
+    ESMatrix G_input = S_ind * G;
+    AL = G_input.transpose() * C * G_input;
+
+  }
+
+  void assemble_mass_row(EDiagMat& M,
+                         Vertex_handle vi)
+  {
+    // volume of dual voronoi cell
+    double vol_inv = 1. / std::max(1e-8, approx_volume_voronoi_cell(vi));
+    M.diagonal()[vi->index()] = vol_inv;
+  }
+
   /// Assemble vi's row of the GEV system
   ///
   /// @commentheading Template parameters:
@@ -2720,7 +2767,7 @@ public:
     Color_list rgb_xslice;
 
     Point center = bounding_sphere().center();
-    double radius = sqrt(bounding_sphere().squared_radius()) * m_enlarge_ratio;
+    double radius = sqrt(bounding_sphere().squared_radius()) * 1.5;
 
     double ymin = center.y() - radius, ymax = center.y() + radius;
     double zmin = center.z() - radius, zmax = center.z() + radius;
