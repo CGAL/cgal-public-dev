@@ -1841,13 +1841,18 @@ private:
   FT median_value_at_input_vertices() const
   {
     std::deque<FT> values;
-    Finite_vertices_iterator v, e;
-    for(v = m_tr->finite_vertices_begin(),
-        e = m_tr->finite_vertices_end();
-        v != e;
-        v++)
-      if(v->type() == Triangulation::INPUT)
-        values.push_back(v->f());
+    //Finite_vertices_iterator v, e;
+    //for(v = m_tr->finite_vertices_begin(),
+    //    e = m_tr->finite_vertices_end();
+    //    v != e;
+    //    v++)
+    //  if(v->type() == Triangulation::INPUT)
+    //    values.push_back(v->f());
+    
+    
+
+    for (InputIterator it = m_points->cbegin(); it != m_points->cend(); it++)
+        values.push_back(this->operator()(it->first));
 
     std::size_t size = values.size();
     if(size == 0)
@@ -2749,7 +2754,7 @@ private:
                          Vertex_handle vi)
   {
     // volume of dual voronoi cell
-    double vol_inv = 1. / std::max(1e-8, approx_volume_voronoi_cell(vi));
+    double vol_inv = 1. / (std::max)(1e-8, approx_volume_voronoi_cell(vi));
     M.diagonal()[vi->index()] = vol_inv;
   }
 

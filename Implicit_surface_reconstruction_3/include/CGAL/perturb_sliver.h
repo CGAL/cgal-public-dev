@@ -451,7 +451,10 @@ namespace CGAL{
             if (slivers.size() == 0)
                 return CGAL::NULL_VECTOR;
             else if (slivers.size() > 2)
+            {
+                alpha = 0.25;
                 grad = compute_random_perturbation();
+            }
             else if (pv.perturbation() == OCTREE)
             {   
                 grad = compute_octree_perturbation(slivers);
