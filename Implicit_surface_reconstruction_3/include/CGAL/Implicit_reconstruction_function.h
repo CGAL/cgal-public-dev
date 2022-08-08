@@ -528,7 +528,7 @@ public:
 	  }
 
       CGAL_TRACE_STREAM << "creates implicit triangulation...\n";
-      forward_constructor(points, PointMap(), NormalMap(), visitor); // add original input points
+      //forward_constructor(points, PointMap(), NormalMap(), visitor); // add original input points
       //m_tr->label_input();
       //m_tr->insert(m_octree_pwn, point_map, visitor);
       //m_tr->intialize_normal(normal_map);
@@ -1166,8 +1166,8 @@ private:
     CGAL_TRACE_STREAM << "  Number of variables: " << (long)(nb_variables) << std::endl;
 
     // Assemble linear system A*X=B
-    ESMatrix A(nb_variables, nb_variables); // laplacian matrix is symmetric definite positive
-    ESMatrix F(nb_inputs, nb_variables); // data fitting matrix 
+    ESMatrix A(nb_variables, nb_variables), // laplacian matrix is symmetric definite positive
+             F(nb_inputs, nb_variables); // data fitting matrix 
     EVector X(nb_variables); // function value -> to be solved
     EVector B(nb_variables); // divergence
 
@@ -1213,7 +1213,7 @@ private:
     FTriplets.clear();    
 
     lambda = (std::max)(lambda, 1e-8); // prevent lambda to be 0
-    A = A + (lambda / static_cast<double>(nb_inputs)) * F.transpose() * F;
+    A = A + (1. / static_cast<double>(nb_inputs)) * F.transpose() * F;
 
     duration_assembly = (clock() - time_init)/CLOCKS_PER_SEC;
     CGAL_TRACE_STREAM << "  Creates matrix: done ( " << duration_assembly << " s)" << std::endl;
@@ -1234,6 +1234,114 @@ private:
 
     // copy function's values to vertices
     unsigned int index = 0;
+    for (v = m_tr->finite_vertices_begin(), e = m_tr->finite_vertices_end(); v!= e; ++v)
+      if(!m_tr->is_constrained(v))
+        v->f() = X[index++];
+
+    CGAL_TRACE_STREAM << "End of solve_poisson()" << std::endl;
+
+    return true;
+  }
+
+  /// SSD Surface Reconstruction.
+  /// Returns false on error.
+  template <class SparseLinearAlgebraTraits_d>
+  bool solve_ssd( double fitting,
+                  double laplacian,
+                  double hessian)
+  {
+    CGAL_TRACE_STREAM << "Calls solve_poisson()" << std::endl;
+
+    double time_init = clock();
+
+    double duration_assembly = 0.0;
+    double duration_solve = 0.0;
+
+    initialize_cell_indices(); // index all cells
+    m_tr->index_all_vertices(false); // index all vertices
+
+    // get #variables
+    unsigned int nb_variables = static_cast<unsigned int>(m_tr->number_of_vertices());
+    unsigned int nb_inputs = static_cast<unsigned int>(m_points->size());
+    unsigned int nb_finite_cells = static_cast<int>(m_tr->number_of_finite_cells());
+
+    CGAL_TRACE_STREAM << "  Number of variables: " << (long)(nb_variables) << std::endl;
+
+    // Assemble linear system A*X=B
+    ESMatrix G(3 * nb_finite_cells, nb_variables), // gradient matrix
+             D(3 * nb_finite_cells, 9 * nb_variables), // divergence matrix 
+             F(nb_inputs, nb_variables),     // Data fitting matrix
+             LTAL(nb_variables, nb_variables);  // Laplacian
+    EVector X(nb_variables); // function value -> to be solved
+    EVector B(nb_variables); // right-hand term
+    EDiagMat M(9 * nb_variables), // mass diagonal matrix
+             A(3 * nb_finite_cells); // volume diagonal matrix
+
+    // Assemble Data fitting matrix
+    ESTripleList FTriplets;
+    FTriplets.reserve(4 * nb_inputs);
+
+    int point_index = 0;
+    for(InputIterator it = m_points->cbegin(); it != m_points->cend(); it++)
+    {
+      assemble_data_fitting_row(FTriplets, point_index++, it->first);
+    }
+    
+    F.setFromTriplets(FTriplets.begin(), FTriplets.end());
+    FTriplets.clear(); 
+
+    // Gradient & Volume
+    ESTripleList GTriplets;
+    GTriplets.reserve(32 * nb_finite_cells);
+
+    Finite_cells_iterator cb, ce;
+    for(cb = m_tr->finite_cells_begin(), 
+        ce = m_tr->finite_cells_end(); 
+        cb != ce; 
+        cb++)
+    {
+      assemble_gradient_row(GTriplets, cb, nb_finite_cells);
+      assemble_volume_row(A, cb, nb_finite_cells);
+    }
+
+    G.setFromTriplets(GTriplets.begin(), GTriplets.end());
+    GTriplets.clear();
+    
+    // Normal & Laplacian
+    assemble_normal_gradient_matrix(LTAL, B, G);
+
+    // Mass matrix and Divergence matrix
+    assemble_ssd_mass_matrix(M, nb_finite_cells, nb_variables);
+    assemble_ssd_divergence_matrix(G, D, nb_finite_cells, nb_variables);
+
+    // Assemble matrix
+    double vol_sphere = volume_domain();
+    ESMatrix H = D.transpose() * A * G;
+    ESMatrix HTAH = H.transpose() * M * H;
+    ESMatrix FTAF = F.transpose() * F;
+    ESMatrix S = (fitting / m_points->size()) * FTAF + (laplacian / m_points->size()) * LTAL + (hessian / vol_sphere) * HTAH;
+    B = (laplacian / m_points->size()) * B;
+
+    duration_assembly = (clock() - time_init) / CLOCKS_PER_SEC;
+    CGAL_TRACE_STREAM << "  Creates matrix: done ( " << duration_assembly << " s)" << std::endl;
+    CGAL_TRACE_STREAM << "  Solve sparse linear system..." << std::endl;
+
+    // Solve "A*X = B". On success, solution is (1/D) * X.
+    time_init = clock();
+    ESolver solver;
+    X = solver.compute(S).solve(B);
+    if(solver.info() != Eigen::Success)
+    {
+      CGAL_TRACE_STREAM << "  Solver failed!" << std::endl;
+      return false;
+    }
+    duration_solve = (clock() - time_init) / CLOCKS_PER_SEC;
+
+    CGAL_TRACE_STREAM << "  Solve sparse linear system: done ( " << duration_solve << " s)" << std::endl;
+
+    // copy function's values to vertices
+    unsigned int index = 0;
+    Finite_vertices_iterator v, e;
     for (v = m_tr->finite_vertices_begin(), e = m_tr->finite_vertices_end(); v!= e; ++v)
       if(!m_tr->is_constrained(v))
         v->f() = X[index++];
@@ -1493,6 +1601,22 @@ private:
   double condition_number(EMatrix matrix) // for dense matrix
   {
       return pseudoInverse(matrix).norm()* matrix.norm();
+  }
+
+  double volume_domain()
+  {
+    double vol = 0.;
+
+    Finite_cells_iterator cb, ce;
+    for(cb = m_tr->finite_cells_begin(),
+        ce = m_tr->finite_cells_end(); 
+        cb != ce;
+        cb++)
+    {
+      vol += std::abs(m_tr.tetrahedron(cb).volume());
+    }
+    
+    return vol;
   }
 
   // stores bad tet  soup and dihedral statistics into files
@@ -2544,7 +2668,7 @@ private:
                               unsigned int num_cells)
   {
     unsigned int ind = cell->info();
-    double vol = (m_tr->tetrahedron(cell)).volume();
+    double vol = std::abs((m_tr->tetrahedron(cell)).volume());
     
     // Gradient
     for(int i = 0; i < 4; i++)
@@ -2629,121 +2753,117 @@ private:
     M.diagonal()[vi->index()] = vol_inv;
   }
 
-  /// Assemble vi's row of the GEV system
-  ///
-  /// @commentheading Template parameters:
-  template <class ConfidenceMap>
-  void assemble_spectral_row(Vertex_handle vi,
-                             Matrix& AA,
-                             Matrix& L,
-                             Matrix& F,
-                             Matrix& V_inv,
-                             Matrix& V,
-                             Matrix& N,
-                             const FT fitting,
-                             ConfidenceMap confidence_map,
-                             FT& duration_assign,
-                             FT& duration_cal,
-                             bool flag_boundary)
+  void assemble_volume_row(EDiagMat& A,
+                           Cell_handle cell,
+                           unsigned int num_cells)
   {
-    // for each vertex vj neighbor of vi
-    std::vector<Edge> edges;
-    m_tr->incident_edges(vi, std::back_inserter(edges));
+    unsigned int ind = cell->info();
+    double vol = std::abs((m_tr->tetrahedron(cell)).volume());
 
-    double diagonal = 0.0;
-    double mdiagonal = 0.0;
-    double time_init = 0.0;
+    for(int i = 0; i < 3; i++)
+      A.diagonal()[ind + i * num_cells] = vol;
+  }
 
-    for(typename std::vector<Edge>::iterator it = edges.begin();
-        it != edges.end();
-        it++)
-      {
-        Vertex_handle vj = it->first->vertex(it->third);
-        if(vj == vi){
-          vj = it->first->vertex(it->second);
-        }
-        if(m_tr->is_infinite(vj))
-          continue;
+  void assemble_normal_gradient_matrix( ESMatrix& L, 
+                                        EVector& B, 
+                                        const ESMatrix& G,
+                                        unsigned int num_cells,
+                                        unsigned int num_inputs)
+  {
+    ESMatrix S_ind(3 * num_inputs, 3 * num_cells);
+    ESTripleList STriplets(num_inputs * 3);
+    EVector normals(3 * num_inputs);
 
-        // get corresponding edge
-        Edge edge(it->first, it->first->index(vi), it->first->index(vj));
-        if(vi->index() < vj->index()){
-          std::swap(edge.second, edge.third);
-        }
+    int i = 0;
 
-        time_init = clock();
-
-        FT cij = cotan_laplacian(edge);
-        //FT cij = cotan_geometric(edge);
-
-        bool convert = true;
-        FT ri = get(confidence_map, it->first->vertex(edge.second)->input_iterator());
-        FT rj = get(confidence_map, it->first->vertex(edge.third)->input_iterator());
-        FT mcij = mcotan_laplacian(edge, cij, ri, rj, convert);
-        //FT mcij = mcotan_geometric(edge, cij, ri, rj, convert);
-
-        duration_cal += clock() - time_init; time_init = clock();
-
-        AA.set_coef(vi->index(), vj->index(), -mcij, true);
-        L.set_coef(vi->index(), vj->index(), -cij, true);
-
-        duration_assign += clock() - time_init; time_init = clock();
-
-        diagonal += cij;
-        mdiagonal += mcij;
-      }
-    // diagonal coefficient
-
-    FT vol = volume_voronoi_cell(vi);
-    duration_cal += clock() - time_init; time_init = clock();
-
-    time_init = clock();
-    AA.set_coef(vi->index(), vi->index(), mdiagonal, true);
-    L.set_coef(vi->index(), vi->index(), diagonal, true);
-    V_inv.set_coef(vi->index(), vi->index(), (std::min)(1.0 / vol, 1e7), true);
-    V.set_coef(vi->index(), vi->index(), vol, true);
-
-    if(vi->type() == Triangulation::INPUT)
-      F.set_coef(vi->index(), vi->index(), fitting, true);
-
-    duration_assign += clock() - time_init;
-
-    // normal derivative for boundary points
-    if(flag_boundary && (vi->position() == Triangulation::BOUNDARY))
+    for(InputIterator it = m_points->cbegin(); it != m_points->cend(); it++)
     {
-      std::vector<Facet> facets;
-      m_tr->incident_facets(vi, std::back_inserter(facets));
+      Point p = it->first;
+      Vector n = it->second;
 
-      // get mirror facets
-      size_t number_facets = facets.size();
-      for(size_t i = 0; i < number_facets; i++)
-        facets.push_back(m_tr->mirror_facet(facets[i]));
+      Cell_handle cell = m_tr->locate(p);
+      unsigned int cell_ind = cell->info();
 
-      for(typename std::vector<Facet>::iterator facet = facets.begin(); facet != facets.end(); facet++){
-        Cell_handle cell = facet->first;
-        int index_f = facet->second;
+      for(int j = 0; j < 3; j++)
+      {
+          STriplets.emplace_back(3 * i + j, j * num_cells + cell_ind, 1.);
+          normals[3 * i + j] = n[j];
+      }
 
-        if(m_tr->is_infinite(cell))
-          continue;
+      i++;
+    }
 
-        bool flag = true;
-        for(int i = 0; i < 4; i++)
-          if((i != index_f) && (cell->vertex(i)->position() != Triangulation::BOUNDARY)){
-            flag = false;
-            break;
-          }
+    S_ind.setFromTriplets(STriplets.begin(), STriplets.end());
+    STriplets.clear();
 
-        if(!flag) continue;
+    ESMatrix G_input = S_ind * G;
+    L = G_input.transpose() * G_input;
+    B = G_input.transpose() * normals;
+  }
 
-        for(int j = 0; j < 4; j++)
-          if(j != index_f){
-            FT njf = cotan_normal_derivative(cell, j, index_f);
-            N.add_coef(vi->index(), cell->vertex(index_f)->index(), njf);
-            N.add_coef(vi->index(), cell->vertex(j)->index(), -njf);
-          }
+  void assemble_ssd_mass_matrix(EDiagMat& M,
+                                unsigned int num_cells,
+                                unsigned int num_verts)
+  {
+    std::vector<int> nbOfTetsAdjacentToVertex(num_verts, 0);
+    std::vector<double> vertexMass(num_verts, 0.);
 
+    Finite_cells_iterator cb, ce;
+    for(cb = m_tr->finite_cells_begin(),
+        ce = m_tr->finite_cells_end(); 
+        cb != ce; 
+        cb++)
+    {
+      double tetVolPerCorner = std::abs((m_tr->tetrahedron(cb)).volume()) / 4.0;
+      for(int k = 0; k < 4; k++) 
+      { 
+        int ind = cb->vertex(k)->index();
+        nbOfTetsAdjacentToVertex[ind]++;
+        vertexMass[ind] += tetVolPerCorner;
       }
     }
+
+    std::vector<unsigned int> columnIndexStart(num_verts);
+    columnIndexStart[0] = 0;
+    vertexMass[0] = 1.0 / vertexMass[0];
+
+    // columns corresponds to the vertices, it contains the gradients of the vertex basis function inside each adjacent tet
+    for (int k = 1; k < num_verts; k++)
+    { 
+        columnIndexStart[k] = columnIndexStart[k - 1] + 3 * nbOfTetsAdjacentToVertex[k - 1];
+        vertexMass[k] = 1.0 / vertexMass[k];
+    }
+
+    for(int i = 0; i < num_verts; i++) 
+    {
+        for(int j = 0; j < 9; j++)
+            M.diagonal()[j * num_verts + i] = vertexMass[i];
+    }
+  }
+
+  void assemble_ssd_divergence_matrix(const ESMatrix& G, 
+                                      ESMatrix&  D,
+                                      unsigned int num_cells,
+                                      unsigned int num_verts)
+  {
+    ESTripleList DTriplets(G.nonZeros() * 3);
+
+    // Loop outer level, i.e., over columns (each column corresponds to a mesh vertex)
+    for (int k = 0; k < G.outerSize(); ++k) // columns - vertex
+    {
+      for (typename ESMatrix::InnerIterator it(G, k); it; ++it) // iterate over the rows (corresponding to the tets)
+      {
+        int coord = it.row() / num_cells;   // i.e.: x, y, or z
+        int tetIdx = it.row() % num_cells;  // index de tet
+        int vertIdx = it.col();         // index de vertex
+
+        DTriplets.emplace_back(tetIdx, coord * num_verts + vertIdx, it.value());
+        DTriplets.emplace_back(num_cells + tetIdx, (coord + 3) * num_verts + vertIdx, it.value());
+        DTriplets.emplace_back(2 * num_cells + tetIdx, (coord + 6) * num_verts + vertIdx, it.value());
+      }
+    }  
+
+    D.setFromTriplets(DTriplets.begin(), DTriplets.end());
   }
 
 public:
