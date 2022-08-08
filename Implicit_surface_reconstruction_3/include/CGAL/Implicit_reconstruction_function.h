@@ -963,6 +963,34 @@ public:
 
   /// \endcond
 
+  bool compute_ssd_implicit_function(double fitting,
+      double laplacian,
+      double hessian)
+  {
+      CGAL::Timer task_timer; task_timer.start();
+
+      // Computes the smooth signed distance function operator()
+      // at each vertex of the triangulation.
+      if ( ! solve_ssd(fitting, laplacian, hessian) )
+      {
+          std::cerr << "Error: cannot solve SSD equation" << std::endl;
+          return false;
+      }
+
+      // Shift and orient operator() such that:
+      // - operator() = 0 on the input points,
+      // - operator() < 0 inside the surface.
+      set_contouring_value(median_value_at_input_vertices());
+
+      // Prints status
+      CGAL_TRACE_STREAM << "Solve SSD equation: " << task_timer.time() << " seconds, "
+          << std::endl;
+      task_timer.reset();
+
+      return true;
+  }
+
+
   /*!
     `ImplicitFunction` interface: evaluates the implicit function at a
     given 3D query point. The function `compute_implicit_function()` must be
@@ -1245,12 +1273,12 @@ private:
 
   /// SSD Surface Reconstruction.
   /// Returns false on error.
-  template <class SparseLinearAlgebraTraits_d>
+  // template <class SparseLinearAlgebraTraits_d> TODO: is this useful?
   bool solve_ssd( double fitting,
                   double laplacian,
                   double hessian)
   {
-    CGAL_TRACE_STREAM << "Calls solve_poisson()" << std::endl;
+    CGAL_TRACE_STREAM << "Calls solve_SSD()" << std::endl;
 
     double time_init = clock();
 
@@ -1267,7 +1295,7 @@ private:
 
     CGAL_TRACE_STREAM << "  Number of variables: " << (long)(nb_variables) << std::endl;
 
-    // Assemble linear system A*X=B
+    // Assemble linear system S*X=B, S = FT*F + L + HT * M * H
     ESMatrix G(3 * nb_finite_cells, nb_variables), // gradient matrix
              D(3 * nb_finite_cells, 9 * nb_variables), // divergence matrix 
              F(nb_inputs, nb_variables),     // Data fitting matrix
@@ -1281,6 +1309,7 @@ private:
     ESTripleList FTriplets;
     FTriplets.reserve(4 * nb_inputs);
 
+    m_bary->resize(m_tr->number_of_finite_cells());
     int point_index = 0;
     for(InputIterator it = m_points->cbegin(); it != m_points->cend(); it++)
     {
@@ -1293,7 +1322,6 @@ private:
     // Gradient & Volume
     ESTripleList GTriplets;
     GTriplets.reserve(32 * nb_finite_cells);
-
     Finite_cells_iterator cb, ce;
     for(cb = m_tr->finite_cells_begin(), 
         ce = m_tr->finite_cells_end(); 
@@ -1303,17 +1331,14 @@ private:
       assemble_gradient_row(GTriplets, cb, nb_finite_cells);
       assemble_volume_row(A, cb, nb_finite_cells);
     }
-
     G.setFromTriplets(GTriplets.begin(), GTriplets.end());
     GTriplets.clear();
     
     // Normal & Laplacian
-    assemble_normal_gradient_matrix(LTAL, B, G);
-
+    assemble_normal_gradient_matrix(LTAL, B, G, nb_finite_cells, nb_inputs);
     // Mass matrix and Divergence matrix
     assemble_ssd_mass_matrix(M, nb_finite_cells, nb_variables);
     assemble_ssd_divergence_matrix(G, D, nb_finite_cells, nb_variables);
-
     // Assemble matrix
     double vol_sphere = volume_domain();
     ESMatrix H = D.transpose() * A * G;
@@ -1326,7 +1351,7 @@ private:
     CGAL_TRACE_STREAM << "  Creates matrix: done ( " << duration_assembly << " s)" << std::endl;
     CGAL_TRACE_STREAM << "  Solve sparse linear system..." << std::endl;
 
-    // Solve "A*X = B". On success, solution is (1/D) * X.
+    // Solve "S*X = B".
     time_init = clock();
     ESolver solver;
     X = solver.compute(S).solve(B);
@@ -1346,7 +1371,7 @@ private:
       if(!m_tr->is_constrained(v))
         v->f() = X[index++];
 
-    CGAL_TRACE_STREAM << "End of solve_poisson()" << std::endl;
+    CGAL_TRACE_STREAM << "End of solve_ssd()" << std::endl;
 
     return true;
   }
@@ -1613,7 +1638,7 @@ private:
         cb != ce;
         cb++)
     {
-      vol += std::abs(m_tr.tetrahedron(cb).volume());
+      vol += std::abs(m_tr->tetrahedron(cb).volume());
     }
     
     return vol;
@@ -2852,7 +2877,6 @@ private:
                                       unsigned int num_verts)
   {
     ESTripleList DTriplets(G.nonZeros() * 3);
-
     // Loop outer level, i.e., over columns (each column corresponds to a mesh vertex)
     for (int k = 0; k < G.outerSize(); ++k) // columns - vertex
     {
@@ -2861,13 +2885,19 @@ private:
         int coord = it.row() / num_cells;   // i.e.: x, y, or z
         int tetIdx = it.row() % num_cells;  // index de tet
         int vertIdx = it.col();         // index de vertex
-
-        DTriplets.emplace_back(tetIdx, coord * num_verts + vertIdx, it.value());
-        DTriplets.emplace_back(num_cells + tetIdx, (coord + 3) * num_verts + vertIdx, it.value());
-        DTriplets.emplace_back(2 * num_cells + tetIdx, (coord + 6) * num_verts + vertIdx, it.value());
+        try{
+            DTriplets.emplace_back(tetIdx, coord * num_verts + vertIdx, it.value());
+            DTriplets.emplace_back(num_cells + tetIdx, (coord + 3) * num_verts + vertIdx, it.value());
+            DTriplets.emplace_back(2 * num_cells + tetIdx, (coord + 6) * num_verts + vertIdx, it.value());
+        } 
+        catch (std::bad_alloc& ba) {
+            std::cout << "  possible out of memory, result may be incorrect";
+        }
+        //DTriplets.emplace_back(tetIdx, coord * num_verts + vertIdx, it.value());
+        //DTriplets.emplace_back(num_cells + tetIdx, (coord + 3) * num_verts + vertIdx, it.value());
+        //DTriplets.emplace_back(2 * num_cells + tetIdx, (coord + 6) * num_verts + vertIdx, it.value());
       }
     }  
-
     D.setFromTriplets(DTriplets.begin(), DTriplets.end());
   }
 

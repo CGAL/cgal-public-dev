@@ -237,7 +237,6 @@ namespace CGAL{
                 }
                 
             }
-            std::cout << "slivers number:" << count << std::endl;
             // build queue
             PQueue pqueue(m_tr->number_of_vertices());
             for (const auto& i : PVertex_buffer_map)
@@ -310,6 +309,7 @@ namespace CGAL{
                     pqueue.push(pv);
                 }
             }
+            //std::cout << "  slivers number:" << count << " with threshold " << threshold << std::endl;
             return count; 
         }
 
@@ -672,8 +672,8 @@ namespace CGAL{
     bool remove_sliver(boost::shared_ptr<Tr>& tr, double threshold, bool is_octree)
     {
         Sliver_perturbation_removal<Gt, Tr> perturber(tr, is_octree);
-        if (perturber.perturb(threshold, false)!=0)
-            if (perturber.perturb(threshold, true) != 0)
+        if (perturber.perturb(threshold, false) > 0)
+            if (perturber.perturb(threshold, true) > 0)
                 perturber.perturb(1, true); // to get rid of exact plain slivers that are very harmful
         return true;
     }

@@ -102,6 +102,7 @@ int main(int argc, char * argv[])
       ("output,o", po::value<std::string>()->default_value("out.off"), "The suffix of the output files")
       ("bilaplacian,b", po::value<double>()->default_value(1.), "The global bilaplacian coefficient")
       ("laplacian,l", po::value<double>()->default_value(0.1), "The global laplacian coefficient")
+      ("hessian", po::value<double>()->default_value(2e-5), "The global hessian coefficient")
       ("ratio,r", po::value<double>()->default_value(10.), "The largest eigenvalue of the tensor C")
       ("fitting,f", po::value<double>()->default_value(0.1), "The data fitting term")
       ("size,s", po::value<int>()->default_value(500), "The number of slice")
@@ -110,6 +111,7 @@ int main(int argc, char * argv[])
       ("octree,c", po::bool_switch()->default_value(false), "Use Octree Refinement / Delaunay Refinement")
       ("octree_debug,d", po::bool_switch()->default_value(false), "Octree Refinement Debug Mode ")
       ("poisson", po::bool_switch()->default_value(false), "Use spectral (false) / poisson (true)")
+      ("ssd", po::bool_switch()->default_value(false), "Use spectral (false) / ssd (true)")
       ("vals,v", po::bool_switch()->default_value(false), "Save function value for all points in a ply file (true/false)")
       ("marching,m", po::bool_switch()->default_value(false), "Use marching tet to reconstruct surface")
       ("sm_angle", po::value<double>()->default_value(20.), "The min triangle angle (degrees).")
@@ -149,11 +151,13 @@ int main(int argc, char * argv[])
 
   double laplacian = vm["laplacian"].as<double>();
   double bilaplacian = vm["bilaplacian"].as<double>();
+  double hessian = vm["hessian"].as<double>();
   double ratio = vm["ratio"].as<double>();
   double fitting = vm["fitting"].as<double>();
   double isovalue = vm["isovalue"].as<double>();
 
   bool flag_poisson = vm["poisson"].as<bool>();
+  bool flag_ssd = vm["ssd"].as<bool>();
   //bool flag_vals = vm["vals"].as<bool>();
   bool flag_marching = vm["marching"].as<bool>();
   bool flag_octree = vm["octree"].as<bool>();
@@ -254,7 +258,15 @@ int main(int argc, char * argv[])
         continue;
       }
     }
-    else{
+    else if (flag_ssd) {
+        if (! function.compute_ssd_implicit_function(fitting, laplacian, hessian) )
+        {
+            std::cerr << "Error: cannot compute implicit function" << std::endl;
+            accumulated_fatal_err = EXIT_FAILURE;
+            continue;
+        }
+    }
+    else {
       if (! function.compute_spectral_implicit_function(fitting, ratio, bilaplacian, laplacian) )
       {
         std::cerr << "Error: cannot compute implicit function" << std::endl;
