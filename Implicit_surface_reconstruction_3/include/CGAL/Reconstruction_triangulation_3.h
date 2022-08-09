@@ -390,6 +390,8 @@ public:
   using Base::finite_vertices_end;
   using Base::finite_edges_begin;
   using Base::finite_edges_end;
+  using Base::finite_cells_begin;
+  using Base::finite_cells_end;
   using Base::all_vertices_begin;
   using Base::all_vertices_end;
   using Base::locate;
@@ -729,6 +731,18 @@ public:
           v->index() == index++;
     }
     return index;
+  }
+
+  void index_all_cells()
+  {
+    int i = 0;
+
+    for(Finite_cells_iterator cb = finite_cells_begin(),
+        ce = finite_cells_end();
+        cb != ce;
+        ++cb){
+      cb->info() = i++;
+    }
   }
 
   /*

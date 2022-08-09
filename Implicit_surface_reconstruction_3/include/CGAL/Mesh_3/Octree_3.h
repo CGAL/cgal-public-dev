@@ -341,7 +341,7 @@ class Octree
         PointRange& pwn, 
         PointMap &point_map,
         NormalMap &normal_map,
-        const FT enlarge_ratio = 1.2):
+        const FT enlarge_ratio = 1.5):
         m_ranges(pwn),
         m_points_map(point_map),
         m_normals_map(normal_map)

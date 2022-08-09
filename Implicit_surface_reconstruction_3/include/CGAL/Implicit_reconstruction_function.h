@@ -37,8 +37,9 @@
 #include <Eigen/Core>
 #include <Eigen/SparseCore>
 #include <Eigen/IterativeLinearSolvers>
-#include <CGAL/Eigen_solver_traits.h>
 #include <Eigen/Eigenvalues>
+#include <CGAL/Eigen_solver_traits.h>
+#include <CGAL/asap_optimization.h>
 #else
 #endif
 #include <CGAL/centroid.h>
@@ -1035,16 +1036,6 @@ public:
                              m_hint, false);
   }
 
-  void initialize_cell_indices()
-  {
-    int i = 0;
-    for(Finite_cells_iterator fcit = m_tr->finite_cells_begin();
-        fcit != m_tr->finite_cells_end();
-        ++fcit){
-      fcit->info() = i++;
-    }
-  }
-
   void initialize_barycenters() const
   {
     m_bary->clear();
@@ -1183,7 +1174,7 @@ private:
     double duration_assembly = 0.0;
     double duration_solve = 0.0;
 
-    initialize_cell_indices();
+    m_tr->index_all_cells();
     initialize_barycenters();
 
     // get #variables
@@ -1285,7 +1276,7 @@ private:
     double duration_assembly = 0.0;
     double duration_solve = 0.0;
 
-    initialize_cell_indices(); // index all cells
+    m_tr->index_all_cells(); // index all cells
     m_tr->index_all_vertices(false); // index all vertices
 
     // get #variables
@@ -1391,7 +1382,14 @@ private:
 
     double time_init = clock();
 
-    initialize_cell_indices();
+    for(int i = 0; i < 3; i++)
+    {
+      CGAL_TRACE_STREAM << " ASAP optimization..." << std::endl;
+      asap_optimization<Geom_traits, Triangulation>(m_tr, 5);
+      CGAL_TRACE_STREAM << "   finish in: (" << (clock() - time_init) / CLOCKS_PER_SEC << " s)" << std::endl;
+    }
+
+    m_tr->index_all_cells();
     initialize_barycenters();
 
     // get #variables
