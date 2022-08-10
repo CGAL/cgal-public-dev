@@ -831,6 +831,7 @@ public:
                                  Visitor    visitor,
                                  double bilaplacian = 1.0,
                                  double laplacian = 0.0, // this parameter is dangerous
+                                 double data_fitting = 0.1,
                                  double average_spacing_ratio = 5.0) // pass to second_delaunay_refinement
   {
     if(laplacian < 0.0)
@@ -844,7 +845,7 @@ public:
 
     // Computes the Implicit indicator function operator()
     // at each vertex of the triangulation.
-    if ( ! solve_spectral(reliability_map, confidence_map, bilaplacian, laplacian) )
+    if ( ! solve_spectral(reliability_map, confidence_map, bilaplacian, laplacian, data_fitting) )
     {
       std::cerr << "Error: cannot solve Implicit equation" << std::endl;
       return false;
@@ -963,6 +964,41 @@ public:
 
 
   /// \endcond
+  bool compute_spectral_implicit_function_test(FT bilaplacian,FT laplacian,FT fitting)
+  {
+      typedef typename CGAL::Constant_property_map<InputIterator, FT> CoefficientMap;
+      CoefficientMap reliability_map = CGAL::Constant_property_map<InputIterator, FT>(FT(1));
+      CoefficientMap confidence_map = CGAL::Constant_property_map<InputIterator, FT>(FT(1));
+
+      if(laplacian < 0.0)
+      {
+          initialize_insides();
+          unsigned int bad_tets = break_bad_tets_on_boundary();
+          CGAL_TRACE_STREAM << "Break " << bad_tets << " bad tets!" << std::endl;
+      }
+
+      CGAL::Timer task_timer; task_timer.start();
+
+      // Computes the Implicit indicator function operator()
+      // at each vertex of the triangulation.
+      if ( ! solve_spectral(reliability_map, confidence_map, bilaplacian, laplacian, fitting) )
+      {
+          std::cerr << "Error: cannot solve Implicit equation" << std::endl;
+          return false;
+      }
+
+      // Shift and orient operator() such that:
+      // - operator() = 0 on the input points,
+      // - operator() < 0 inside the surface.
+      set_contouring_value(median_value_at_input_vertices());
+
+      // Prints status
+      CGAL_TRACE_STREAM << "Solve Spectral equation: " << task_timer.time() << " seconds, "
+          << std::endl;
+      task_timer.reset();
+
+      return true;
+  }
 
   bool compute_ssd_implicit_function(double fitting,
       double laplacian,
@@ -1376,7 +1412,8 @@ private:
   bool solve_spectral(ReliabilityMap reliability_map,
                       ConfidenceMap confidence_map,
                       double bilaplacian,
-                      double laplacian)
+                      double laplacian,
+                      double data_fitting)
   {
     CGAL_TRACE_STREAM << "Calls solve_spectral()" << std::endl;
 
@@ -1388,6 +1425,7 @@ private:
       asap_optimization<Geom_traits, Triangulation>(m_tr, 5);
       CGAL_TRACE_STREAM << "   finish in: (" << (clock() - time_init) / CLOCKS_PER_SEC << " s)" << std::endl;
     }
+    remove_sliver<Geom_traits, Triangulation>(m_tr, 5, false);
 
     m_tr->index_all_cells();
     initialize_barycenters();
@@ -1461,7 +1499,7 @@ private:
     // Assemble anisotropic Dirichlet matrix
     assemble_spectral_gradient_matrix(AL, G, nb_finite_cells, nb_inputs);
 
-    ESMatrix EB = (0.1 / static_cast<double>(nb_inputs)) * F.transpose() * F + laplacian * L + bilaplacian * L * M * L;
+    ESMatrix EB = (data_fitting / static_cast<double>(nb_inputs)) * F.transpose() * F + laplacian * L + bilaplacian * L * M * L;
 
     double duration_assembly = (clock() - time_init) / CLOCKS_PER_SEC;
     CGAL_TRACE_STREAM << "  Creates matrix: done (" << duration_assembly << " s)" << std::endl;

@@ -446,6 +446,7 @@ class Octree
 		}
 		
 		Point bary_position = compute_barycenter_position(node);
+        //bary_position = add_rand_perturbation(bary_position, m_side_per_depth[node->depth()]);
         *output_steiner = bary_position;
         output_steiner++;
 		//Vector bary_normal = CGAL::NULL_VECTOR;
@@ -488,7 +489,7 @@ class Octree
 	  {
         IntPoint corner_location = p.first;
 		Point corner_position = compute_corner_position(corner_location);
-
+        //corner_position = add_rand_perturbation(corner_position, m_side_per_depth[p.second]);
         *output_steiner = corner_position;
         output_steiner++;
 		//Point corner_position = compute_corner_position_with_perturbation(corner_location, p.second);
@@ -615,6 +616,17 @@ class Octree
 		corner_pos[i] = (FT) (corner_loc[i]*size) + m_bbox_min[i];
 	  return Point(corner_pos[0], corner_pos[1], corner_pos[2]);	  
 	}
+    
+    Point add_rand_perturbation(Point pos, FT length)
+    {
+        typedef boost::lagged_fibonacci607 base_generator_type;
+        static base_generator_type generator_;
+        static boost::uniform_real<FT> uni_dist_;
+        static boost::variate_generator<base_generator_type&,
+            boost::uniform_real<FT> > random_(generator_, uni_dist_);
+        Vector rnd_vector(random_() - 0.5, random_()-0.5, random_()-0.5);
+        return pos + rnd_vector * length; 
+    }
 
 	Vector compute_weighted_normal(const Point &corner_loc, const InputIterator &pwn_it) const
 	{

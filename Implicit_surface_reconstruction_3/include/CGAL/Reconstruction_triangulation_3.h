@@ -850,17 +850,17 @@ public:
         unsigned int i1 = (std::min)(cell->vertex(edge->second)->index(), cell->vertex(edge->third)->index());
         unsigned int i2 = (std::max)(cell->vertex(edge->second)->index(), cell->vertex(edge->third)->index());
 
-        if (std::abs(v1) < 1e-8)
-        {
-            std::cout << "issue!\n";
-                m_pts.push_back(p1);
-        }
-        else if (std::abs(v2) < 1e-8)
-        {
-            std::cout << "issue!\n";
-          m_pts.push_back(p2);
-        }
-        else if(v1 > 0 && v2 < 0) {
+        //if (std::abs(v1) < 1e-8)
+        //{
+        //    //std::cout << "issue!\n";
+        //    m_pts.push_back(p1);
+        //}
+        //else if (std::abs(v2) < 1e-8)
+        //{
+        //    //std::cout << "issue!\n";
+        //    m_pts.push_back(p2);
+        //}
+        if(v1 > 0 && v2 < 0) {
           double ratio = (0. - v1) / (v2 - v1);
           Point_3 p = p1 + ratio * (p2 - p1);
           m_pts.push_back(p);
@@ -889,17 +889,17 @@ public:
   {
     size_t num_faces = 0;
 
-    for(Finite_cells_iterator v = this->finite_cells_begin();
-        v != this->finite_cells_end();
-        ++v)
+    for(Finite_cells_iterator c = this->finite_cells_begin();
+        c != this->finite_cells_end();
+        ++c)
     {
       std::vector<size_t> cell_points;
       Vector direction;
       for(size_t i = 0; i < 3; i++)
         for(size_t j = i + 1; j < 4; j++)
         {
-          size_t i1 = v->vertex(i)->index();
-          size_t i2 = v->vertex(j)->index();
+          size_t i1 = c->vertex(i)->index();
+          size_t i2 = c->vertex(j)->index();
 
           typename Edge_hash_map::const_iterator got = m_edge_map.find(std::make_pair((std::min)(i1, i2), (std::max)(i1, i2)));
 
@@ -934,7 +934,11 @@ public:
 
         Vector n = CGAL::cross_product(u, v);
         if (n == CGAL::NULL_VECTOR)
+        { 
+            std::cout << m_pts[cell_points[0]] << " " << m_pts[cell_points[1]] << " " << m_pts[cell_points[2]] << " " << m_pts[cell_points[3]] << "\n";
+            std::cout << c->vertex(0)->f() << " " << c->vertex(1)->f() << " " << c->vertex(2)->f() << " " << c->vertex(3)->f() << "\n";
             std::cout << "issue!\n";
+        }
         if(n * direction <= 0){
           Polygon_3 m_idx_1{cell_points[0], cell_points[2], cell_points[3]},
                     m_idx_2{cell_points[0], cell_points[3], cell_points[1]};

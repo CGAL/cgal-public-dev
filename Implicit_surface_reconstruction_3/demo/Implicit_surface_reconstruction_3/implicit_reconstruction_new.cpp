@@ -267,7 +267,7 @@ int main(int argc, char * argv[])
         }
     }
     else {
-      if (! function.compute_spectral_implicit_function(fitting, ratio, bilaplacian, laplacian) )
+      if (! function.compute_spectral_implicit_function_test(bilaplacian, laplacian, fitting) )
       {
         std::cerr << "Error: cannot compute implicit function" << std::endl;
         accumulated_fatal_err = EXIT_FAILURE;
