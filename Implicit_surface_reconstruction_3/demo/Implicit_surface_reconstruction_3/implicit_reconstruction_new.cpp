@@ -252,7 +252,7 @@ int main(int argc, char * argv[])
 
     if(flag_poisson)
 	{
-      if (! function.compute_poisson_implicit_function()){
+      if (! function.compute_poisson_implicit_function(fitting)){
         std::cerr << "Error: cannot compute implicit function" << std::endl;
         accumulated_fatal_err = EXIT_FAILURE;
         continue;

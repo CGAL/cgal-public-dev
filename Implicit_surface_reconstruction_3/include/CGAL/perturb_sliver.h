@@ -241,7 +241,7 @@ namespace CGAL{
             PQueue pqueue(m_tr->number_of_vertices());
             for (const auto& i : PVertex_buffer_map)
                 pqueue.push(i.second);
-            
+            //std::cout << "  slivers number:" << count << " with threshold " << threshold << std::endl;
             // compute perturbation vector for each sliver
             while (!pqueue.empty())  
             {

@@ -731,11 +731,11 @@ public:
   // Poisson surface reconstruction
   // This variant requires all parameters.
   template <class SparseLinearAlgebraTraits_d,
-            class Visitor>
-  bool compute_poisson_implicit_function(
-                                 SparseLinearAlgebraTraits_d solver, // = SparseLinearAlgebraTraits_d(),
-                                 Visitor visitor,
-                                 double average_spacing_ratio = 3.0) // this parameter should be passed to second delaunay refinement / normal estimation
+      class Visitor>
+      bool compute_poisson_implicit_function(
+                                  SparseLinearAlgebraTraits_d solver, // = SparseLinearAlgebraTraits_d(),
+                                  Visitor visitor,
+                                  double average_spacing_ratio = 3.0) // this parameter should be passed to second delaunay refinement / normal estimation
   {
     CGAL::Timer task_timer; task_timer.start();
 
@@ -761,7 +761,7 @@ public:
     // Computes the Poisson indicator function operator()
     // at each vertex of the triangulation.
 
-    double lambda = 0.01;
+    //double lambda = 0.01;
     if ( ! solve_poisson(solver, lambda) )
     {
       std::cerr << "Error: cannot solve Poisson equation" << std::endl;
@@ -781,6 +781,54 @@ public:
     return true;
   }
   /// \endcond
+
+    bool compute_poisson_implicit_function(double lambda, 
+                                           double average_spacing_ratio = 3.0) // this parameter should be passed to second delaunay refinement / normal estimation
+    {
+        CGAL::Timer task_timer; task_timer.start();
+
+        // estimate normal for computing divergence
+        CGAL_TRACE_STREAM << "Estimate normal vector...\n";
+        KDTree kdtree;
+        int count = 0;
+        for (InputIterator it = m_points->cbegin(); it != m_points->cend(); it++)
+        {
+            count++;
+            kdtree.insert(Point_with_ni(it->first, it->second, count));
+        }
+        for (Finite_vertices_iterator v = m_tr->finite_vertices_begin(); v != m_tr->finite_vertices_end(); ++v)
+            m_tr->set_normal(v, estimate_normal(v->point(), average_spacing_ratio * m_average_spacing, kdtree));
+        //m_tr->dump_all_points("normal_buddha");
+
+#ifdef CGAL_DIV_NON_NORMALIZED
+        CGAL_TRACE_STREAM << "Solve Poisson equation with non-normalized divergence...\n";
+#else
+        CGAL_TRACE_STREAM << "Solve Poisson equation with normalized divergence...\n";
+#endif
+
+        // Computes the Poisson indicator function operator()
+        // at each vertex of the triangulation.
+
+        //double lambda = 0.01;
+        typedef Eigen_solver_traits<Eigen::ConjugateGradient<Eigen_sparse_symmetric_matrix<double>::EigenType> > Solver;
+        if ( ! solve_poisson(Solver(), lambda) )
+        {
+            std::cerr << "Error: cannot solve Poisson equation" << std::endl;
+            return false;
+        }
+
+        // Shift and orient operator() such that:
+        // - operator() = 0 on the input points,
+        // - operator() < 0 inside the surface.
+        set_contouring_value(median_value_at_input_vertices());
+
+        // Prints status
+        CGAL_TRACE_STREAM << "Solve Poisson equation: " << task_timer.time() << " seconds, "
+            << std::endl;
+        task_timer.reset();
+
+        return true;
+    }
 
   /*!
     This function must be called after the
@@ -1268,7 +1316,7 @@ private:
     FTriplets.clear();    
 
     lambda = (std::max)(lambda, 1e-8); // prevent lambda to be 0
-    A = A + (1. / static_cast<double>(nb_inputs)) * F.transpose() * F;
+    A = A + (lambda / static_cast<double>(nb_inputs)) * F.transpose() * F;
 
     duration_assembly = (clock() - time_init)/CLOCKS_PER_SEC;
     CGAL_TRACE_STREAM << "  Creates matrix: done ( " << duration_assembly << " s)" << std::endl;
@@ -1419,13 +1467,14 @@ private:
 
     double time_init = clock();
 
-    for(int i = 0; i < 3; i++)
+    for(int i = 0; i < 10; i++)
     {
-      CGAL_TRACE_STREAM << " ASAP optimization..." << std::endl;
+      CGAL_TRACE_STREAM << "  ASAP optimization..." << std::endl;
       asap_optimization<Geom_traits, Triangulation>(m_tr, 5);
-      CGAL_TRACE_STREAM << "   finish in: (" << (clock() - time_init) / CLOCKS_PER_SEC << " s)" << std::endl;
+      CGAL_TRACE_STREAM << "  removing slivers in triangulation...\n";
+      remove_sliver<Geom_traits, Triangulation>(m_tr, 5, false);
+      CGAL_TRACE_STREAM << "    finish in: (" << (clock() - time_init) / CLOCKS_PER_SEC << " s)" << std::endl;
     }
-    remove_sliver<Geom_traits, Triangulation>(m_tr, 5, false);
 
     m_tr->index_all_cells();
     initialize_barycenters();
