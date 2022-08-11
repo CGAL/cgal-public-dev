@@ -761,7 +761,7 @@ public:
     // Computes the Poisson indicator function operator()
     // at each vertex of the triangulation.
 
-    //double lambda = 0.01;
+    double lambda = 0.01;
     if ( ! solve_poisson(solver, lambda) )
     {
       std::cerr << "Error: cannot solve Poisson equation" << std::endl;
@@ -1316,7 +1316,8 @@ private:
     FTriplets.clear();    
 
     lambda = (std::max)(lambda, 1e-8); // prevent lambda to be 0
-    A = A + (lambda / static_cast<double>(nb_inputs)) * F.transpose() * F;
+    double area = area_domain();
+    A = A + (lambda * area / static_cast<double>(nb_inputs * nb_inputs)) * F.transpose() * F;
 
     duration_assembly = (clock() - time_init)/CLOCKS_PER_SEC;
     CGAL_TRACE_STREAM << "  Creates matrix: done ( " << duration_assembly << " s)" << std::endl;
@@ -1416,11 +1417,20 @@ private:
     assemble_ssd_divergence_matrix(G, D, nb_finite_cells, nb_variables);
     // Assemble matrix
     double vol_sphere = volume_domain();
+    double area_sphere = area_domain();
     ESMatrix H = D.transpose() * A * G;
     ESMatrix HTAH = H.transpose() * M * H;
     ESMatrix FTAF = F.transpose() * F;
-    ESMatrix S = (fitting / m_points->size()) * FTAF + (laplacian / m_points->size()) * LTAL + (hessian / vol_sphere) * HTAH;
-    B = (laplacian / m_points->size()) * B;
+
+    //double weight_fitting = fitting / (nb_inputs * nb_inputs); 
+    //double weight_laplacian = laplacian / (nb_inputs * nb_inputs * area_sphere * area_sphere);
+    //double weight_hessian = hessian / (vol_sphere * vol_sphere);
+    //double weight_b = laplacian / (nb_inputs * area_sphere);
+    double weight_fitting = fitting / nb_inputs; 
+    double weight_laplacian = laplacian / nb_inputs;
+    double weight_hessian = hessian / vol_sphere;
+    ESMatrix S = weight_fitting * FTAF + weight_laplacian * LTAL + weight_hessian * HTAH;
+    B = weight_laplacian * B;
 
     duration_assembly = (clock() - time_init) / CLOCKS_PER_SEC;
     CGAL_TRACE_STREAM << "  Creates matrix: done ( " << duration_assembly << " s)" << std::endl;
@@ -1548,7 +1558,14 @@ private:
     // Assemble anisotropic Dirichlet matrix
     assemble_spectral_gradient_matrix(AL, G, nb_finite_cells, nb_inputs);
 
-    ESMatrix EB = (data_fitting / static_cast<double>(nb_inputs)) * F.transpose() * F + laplacian * L + bilaplacian * L * M * L;
+    // weighting
+    double area = area_domain();
+    double weight_fitting = data_fitting / nb_inputs;
+    double weight_laplacian = laplacian / area;
+    double weight_bilaplacian = bilaplacian / (area * area);
+
+    ESMatrix EB = weight_fitting * F.transpose() * F + weight_laplacian * L + weight_bilaplacian * L * M * L;
+    AL = weight_laplacian * AL;
 
     double duration_assembly = (clock() - time_init) / CLOCKS_PER_SEC;
     CGAL_TRACE_STREAM << "  Creates matrix: done (" << duration_assembly << " s)" << std::endl;
@@ -1711,6 +1728,22 @@ private:
   double condition_number(EMatrix matrix) // for dense matrix
   {
       return pseudoInverse(matrix).norm()* matrix.norm();
+  }
+
+  double area_domain()
+  {
+    double area = 0.;
+
+    Finite_facets_iterator fb, fe;
+    for(fb = m_tr->finite_facets_begin(),
+        fe = m_tr->finite_facets_end(); 
+        fb != fe;
+        fb++)
+    {
+      area += std::sqrt(m_tr->triangle(*fb).squared_area());
+    }
+    
+    return area;
   }
 
   double volume_domain()

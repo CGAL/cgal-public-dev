@@ -392,8 +392,12 @@ public:
   using Base::finite_edges_end;
   using Base::finite_cells_begin;
   using Base::finite_cells_end;
+  using Base::finite_facets_begin;
+  using Base::finite_facets_end;
   using Base::all_vertices_begin;
   using Base::all_vertices_end;
+  using Base::triangle;
+  using Base::tetrahedron;
   using Base::locate;
 
   using Base::geom_traits;
@@ -449,6 +453,8 @@ public:
                                  boost::make_transform_iterator(points.end(), f));
     Point center = midpoint((ic.min)(), (ic.max)());
     sphere = Sphere(center, squared_distance(center, (ic.max)()));
+
+    CGAL_TRACE_STREAM << "Bounding sphere radius: " << std::sqrt(sphere.squared_radius()) << std::endl;
   }
 
 
