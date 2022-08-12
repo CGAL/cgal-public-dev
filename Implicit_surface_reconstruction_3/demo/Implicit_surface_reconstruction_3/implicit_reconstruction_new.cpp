@@ -100,11 +100,11 @@ int main(int argc, char * argv[])
       ("help,h", "Display this help message")
       ("input,i", po::value<std::vector<std::string> >(), "Input files")
       ("output,o", po::value<std::string>()->default_value("out.off"), "The suffix of the output files")
-      ("bilaplacian,b", po::value<double>()->default_value(1.), "The global bilaplacian coefficient")
-      ("laplacian,l", po::value<double>()->default_value(0.1), "The global laplacian coefficient")
-      ("hessian", po::value<double>()->default_value(2e-5), "The global hessian coefficient")
+      ("bilaplacian,b", po::value<double>()->default_value(100.), "The global bilaplacian coefficient")
+      ("laplacian,l", po::value<double>()->default_value(1), "The global laplacian coefficient")
+      ("hessian", po::value<double>()->default_value(1e-3), "The global hessian coefficient")
       ("ratio,r", po::value<double>()->default_value(10.), "The largest eigenvalue of the tensor C")
-      ("fitting,f", po::value<double>()->default_value(0.1), "The data fitting term")
+      ("fitting,f", po::value<double>()->default_value(10), "The data fitting term")
       ("size,s", po::value<int>()->default_value(500), "The number of slice")
       ("x", po::value<double>()->default_value(0), "The chosen x coordinate")
       ("isovalue,a", po::value<double>()->default_value(0.), "The isovalue to extract")
@@ -116,7 +116,8 @@ int main(int argc, char * argv[])
       ("marching,m", po::bool_switch()->default_value(false), "Use marching tet to reconstruct surface")
       ("sm_angle", po::value<double>()->default_value(20.), "The min triangle angle (degrees).")
       ("sm_radius", po::value<double>()->default_value(100.), "The max triangle size w.r.t. point set average spacing.")
-      ("sm_distance", po::value<double>()->default_value(0.25), "The approximation error w.r.t. point set average spacing.");
+      ("sm_distance", po::value<double>()->default_value(0.25), "The approximation error w.r.t. point set average spacing.")
+      ("scale", po::value<double>()->default_value(1), "scaling for testing.");;
 
   // Parse input files
   po::positional_options_description p;
@@ -155,6 +156,7 @@ int main(int argc, char * argv[])
   double ratio = vm["ratio"].as<double>();
   double fitting = vm["fitting"].as<double>();
   double isovalue = vm["isovalue"].as<double>();
+  double scale = vm["scale"].as<double>();
 
   bool flag_poisson = vm["poisson"].as<bool>();
   bool flag_ssd = vm["ssd"].as<bool>();
@@ -185,18 +187,28 @@ int main(int argc, char * argv[])
     // File name is:
     std::string input_filename  = files[i - 1];
 
-    PointList points;
+    PointList points_buf;
 
     // If OFF file format
     std::cerr << "Open " << input_filename << " for reading..." << std::endl;
 
-    if(!CGAL::IO::read_points(input_filename, std::back_inserter(points),
+    if(!CGAL::IO::read_points(input_filename, std::back_inserter(points_buf),
                               CGAL::parameters::point_map(Point_map())
                                                .normal_map(Normal_map())))
     {
       std::cerr << "Error: cannot read file " << input_filename << std::endl;
       accumulated_fatal_err = EXIT_FAILURE;
       continue;
+    }
+
+    // scaling
+    PointList points;
+    auto it = std::back_inserter(points);
+    
+    for (auto p = points_buf.begin(); p != points_buf.end(); p++)
+    {
+        Point pos = p->first;
+        *it = std::make_pair(Point(pos.x() * scale, pos.y() * scale, pos.z() * scale), p->second);
     }
 
     // Prints status
