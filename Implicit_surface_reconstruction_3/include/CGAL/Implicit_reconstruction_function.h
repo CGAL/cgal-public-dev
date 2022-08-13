@@ -478,8 +478,8 @@ public:
   void initialize_point_map(PointRange& points,
 							PointMap point_map,
 							NormalMap normal_map,
-							bool use_octree,
-							bool octree_debug_visu)
+							bool use_octree = true,
+							bool octree_debug_visu = false)
   {
     m_points = std::addressof(points);
 	m_average_spacing = CGAL::compute_average_spacing<CGAL::Sequential_tag>
@@ -782,7 +782,7 @@ public:
   }
   /// \endcond
 
-    bool compute_poisson_implicit_function(double lambda, 
+    bool compute_poisson_implicit_function_new(double lambda, 
                                            double average_spacing_ratio = 3.0) // this parameter should be passed to second delaunay refinement / normal estimation
     {
         CGAL::Timer task_timer; task_timer.start();
@@ -3026,8 +3026,17 @@ public:
   {
     std::vector<Point> points;
     std::vector< std::vector<std::size_t> > polygons;
-    m_tr->dump_all_points_with_val("f_val");
+    //m_tr->dump_all_points_with_val("f_val");
     return m_tr->marching_tets(value, mesh, points, polygons);
+  }
+
+  template <typename Polyhedron>
+  unsigned int marching_tetrahedra(const FT value, Polyhedron &mesh)
+  {
+      std::vector<Point> points;
+      std::vector< std::vector<std::size_t> > polygons;
+      //m_tr->dump_all_points_with_val("f_val");
+      return m_tr->marching_tets(value, mesh, points, polygons);
   }
 
   Point draw_xslice_function(

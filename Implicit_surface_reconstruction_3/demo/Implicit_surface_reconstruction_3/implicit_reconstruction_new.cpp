@@ -264,7 +264,7 @@ int main(int argc, char * argv[])
 
     if(flag_poisson)
 	{
-      if (! function.compute_poisson_implicit_function(fitting)){
+      if (! function.compute_poisson_implicit_function_new(fitting)){
         std::cerr << "Error: cannot compute implicit function" << std::endl;
         accumulated_fatal_err = EXIT_FAILURE;
         continue;
@@ -338,7 +338,7 @@ int main(int argc, char * argv[])
     function.draw_xslice_function(size, x, 0, f_outfile);
 
   } // for each input file
-
+  
   std::cerr << std::endl;
 
   // Returns accumulated fatal error

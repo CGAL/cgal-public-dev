@@ -18,7 +18,7 @@ typedef CGAL::Polyhedron_3<Kernel> Polyhedron;
 int main(void)
 {
   std::vector<Pwn> points;
-  if (!CGAL::read_points(
+  if (!CGAL::IO::read_points(
            "data/sphere.xyz",
            std::back_inserter(points),
            CGAL::parameters::point_map(CGAL::First_of_pair_property_map<Pwn>()).

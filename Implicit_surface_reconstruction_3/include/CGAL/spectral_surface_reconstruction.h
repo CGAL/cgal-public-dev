@@ -283,7 +283,8 @@ namespace CGAL {
     typedef CGAL::Surface_mesh_complex_2_in_triangulation_3<STr> C2t3;
     typedef CGAL::Implicit_surface_3<Kernel, Implicit_reconstruction_function> Surface_3;
     
-    Implicit_reconstruction_function function(points, point_map, normal_map);
+    Implicit_reconstruction_function function;
+    function.initialize_point_map(points, point_map, normal_map);
     if ( ! function.compute_spectral_implicit_function(reliability_map, confidence_map,
                                                        bilaplacian, laplacian) ) 
       return false;

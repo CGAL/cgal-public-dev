@@ -20,27 +20,29 @@
 #include <CGAL/IO/facets_in_complex_2_to_triangle_mesh.h>
 #include <CGAL/Implicit_reconstruction_function.h>
 #include <CGAL/property_map.h>
+#include <CGAL/compute_average_spacing.h>
+#include <CGAL/Implicit_contouring.h>
 
 namespace CGAL {
 
 
-  /*!
-    \ingroup PkgImplicitSurfaceReconstruction3Ref
+    /*!
+    \ingroup PkgPoissonSurfaceReconstruction3Ref
 
     Performs surface reconstruction as follows:
 
     - compute the Poisson implicit function, through a conjugate
-      gradient solver, represented as a piecewise linear function
-      stored on a 3D Delaunay mesh generated via Delaunay refinement
+    gradient solver, represented as a piecewise linear function
+    stored on a 3D Delaunay mesh generated via Delaunay refinement
     - meshes the function with a user-defined precision using another
-      round of Delaunay refinement: it contours the isosurface
-      corresponding to the isovalue of the median of the function
-      values at the input points
+    round of Delaunay refinement: it contours the isosurface
+    corresponding to the isovalue of the median of the function
+    values at the input points
     - outputs the result in a polygon mesh
 
     This function relies mainly on the size parameter `spacing`. A
     reasonable solution is to use the average spacing of the input
-    point set (using `compute_average_spacing()` for example). Higher
+    point set (using `compute_average_spacing()` for example). Smaller
     values increase the precision of the output mesh at the cost of
     higher computation time.
 
@@ -48,8 +50,7 @@ namespace CGAL {
     similarly to the parameters of `SurfaceMeshFacetsCriteria_3`. The
     latest two are defined with respect to `spacing`.
 
-    \tparam PointRange is a model of `Range`. The value type of
-    its iterator is the key type of the named parameter `point_map`.
+    \tparam PointInputIterator is a model of `InputIterator`.
 
     \tparam PointMap is a model of `ReadablePropertyMap` with value
     type `Point_3<Kernel>`.
@@ -63,7 +64,8 @@ namespace CGAL {
     \tparam Tag is a tag whose type affects the behavior of the
     meshing algorithm (see `make_surface_mesh()`).
 
-    \param points input point range.
+    \param begin iterator on the first point of the sequence.
+    \param end past the end iterator of the point sequence.
     \param point_map property map: value_type of `InputIterator` -> Point_3.
     \param normal_map property map: value_type of `InputIterator` -> Vector_3.
     \param output_mesh where the reconstruction is stored.
@@ -73,67 +75,56 @@ namespace CGAL {
     \param sm_distance bound for the center-center distances (relatively to the `average_spacing`).
     \param tag surface mesher tag.
     \return `true` if reconstruction succeeded, `false` otherwise.
-  */
-  template <typename PointRange,
-            typename PointMap,
-            typename NormalMap,
-            typename PolygonMesh,
-            typename Tag = CGAL::Manifold_with_boundary_tag>
-  bool
-  poisson_surface_reconstruction_delaunay (PointRange& points,
-                                           PointMap point_map,
-                                           NormalMap normal_map,
-                                           PolygonMesh& output_mesh,
-                                           double spacing,
-                                           double sm_angle = 20.0,
-                                           double sm_radius = 30.0,
-                                           double sm_distance = 0.375,
-                                           Tag tag = Tag())
-  {
-    typedef typename boost::property_traits<PointMap>::value_type Point;
-    typedef typename Kernel_traits<Point>::Kernel Kernel;
-    typedef typename Kernel::Sphere_3 Sphere;
+    */
+    template <typename PointList,
+        typename PointMap,
+        typename NormalMap,
+        typename PolygonMesh,
+        typename Tag = CGAL::Manifold_with_boundary_tag>
+        bool
+        poisson_surface_reconstruction_delaunay (PointList points,
+            PointMap point_map,
+            NormalMap normal_map,
+            PolygonMesh& output_mesh,
+            double fitting = 1,
+            bool use_octree = true,
+            bool use_marching_tets = false,
+            double spacing_ratio = 6,
+            double sm_angle = 20.0,
+            double sm_radius = 100.0,
+            double sm_distance = 0.025,
+            Tag tag = Tag())
+    {
+        typedef typename boost::property_traits<PointMap>::value_type Point;
+        typedef typename Kernel_traits<Point>::Kernel Kernel;
+        typedef typename Kernel::Sphere_3 Sphere;
+        typedef typename Kernel::FT FT;
 
-    typedef CGAL::Implicit_reconstruction_function<Kernel, PointRange, NormalMap> Implicit_reconstruction_function;
-    typedef CGAL::Surface_mesh_default_triangulation_3 STr;
-    typedef CGAL::Surface_mesh_complex_2_in_triangulation_3<STr> C2t3;
-    typedef CGAL::Implicit_surface_3<Kernel, Implicit_reconstruction_function> Surface_3;
+        typedef CGAL::Implicit_reconstruction_function<Kernel, PointList, NormalMap> Implicit_reconstruction_function;
+        typedef typename CGAL::Surface_mesher::Surface_mesh_default_triangulation_3_generator<Kernel>::Type STr;
+        typedef CGAL::Surface_mesh_complex_2_in_triangulation_3<STr> C2t3;
+        typedef CGAL::Implicit_surface_3<Kernel, Implicit_reconstruction_function> Surface_3;
 
-    Implicit_reconstruction_function function(points, point_map, normal_map);
-    if ( ! function.compute_poisson_implicit_function() )
-      return false;
+        Implicit_reconstruction_function function;
+        function.initialize_point_map(points, point_map, normal_map, use_octree);
 
-    Point inner_point = function.get_inner_point();
-    Sphere bsphere = function.bounding_sphere();
-    double radius = std::sqrt(bsphere.squared_radius());
+        if ( ! function.compute_poisson_implicit_function_new(fitting) )
+            return false;
 
-    double sm_sphere_radius = 5.0 * radius;
-    double sm_dichotomy_error = sm_distance * spacing / 1000.0;
+        if (! implicit_contouring(points, 
+            point_map, 
+            function, 
+            output_mesh, 
+            use_marching_tets, 
+            spacing_ratio,
+            sm_angle,
+            sm_radius,
+            sm_distance,
+            tag))
+            return false;
 
-    Surface_3 surface(function,
-                      Sphere (inner_point, sm_sphere_radius * sm_sphere_radius),
-                      sm_dichotomy_error / sm_sphere_radius);
-
-    CGAL::Surface_mesh_default_criteria_3<STr> criteria (sm_angle,
-                                                         sm_radius * spacing,
-                                                         sm_distance * spacing);
-
-    STr tr;
-    C2t3 c2t3(tr);
-
-    CGAL::make_surface_mesh(c2t3,
-                            surface,
-                            criteria,
-                            tag);
-
-    if(tr.number_of_vertices() == 0)
-      return false;
-
-    CGAL::facets_in_complex_2_to_triangle_mesh(c2t3, output_mesh);
-
-    return true;
-  }
-
+        return true;
+    }
 
 }
 

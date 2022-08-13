@@ -832,6 +832,32 @@ public:
     }
   }
 
+  template <class Polyhedron, class Point_3, class Polygon_3>
+  unsigned int marching_tets(const FT value,
+      Polyhedron& poly,
+      std::vector< Point_3 >&   m_contour_points,
+      std::vector< Polygon_3 >& m_contour_polygons)
+  {
+      Edge_hash_map m_edge_map;
+      std::vector<Vector> m_directions;
+      size_t num_points = find_level_point_set(value, m_edge_map, m_contour_points, m_directions);
+      size_t num_faces  = find_level_polygon_set(m_edge_map, m_contour_points, m_directions, m_contour_polygons);
+      m_edge_map.clear();
+      m_directions.clear();
+
+      bool flag_manifold = CGAL::Polygon_mesh_processing::is_polygon_soup_a_polygon_mesh(m_contour_polygons);
+
+      if(!flag_manifold) {
+          std::cerr << "Marching Tetrahedron failed!" << std::endl;
+          return 0;
+      }
+      else {
+          CGAL::Polygon_mesh_processing::polygon_soup_to_polygon_mesh(m_contour_points, m_contour_polygons, poly);
+          return num_faces;
+      }
+  }
+
+
   template <class Point_3>
   size_t find_level_point_set(const FT              value,
                               Edge_hash_map&        m_edge_map,

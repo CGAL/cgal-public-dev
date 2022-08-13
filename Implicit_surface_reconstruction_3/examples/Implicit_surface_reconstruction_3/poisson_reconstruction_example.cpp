@@ -9,6 +9,7 @@
 #include <CGAL/IO/read_points.h>
 #include <CGAL/compute_average_spacing.h>
 
+
 #include <CGAL/Polygon_mesh_processing/distance.h>
 
 #include <boost/iterator/transform_iterator.hpp>
@@ -43,7 +44,7 @@ int main(void)
     // Note: read_points() requires an iterator over points
     // + property maps to access each point's position and normal.
     PointList points;
-    if(!CGAL::read_points("data/kitten.xyz", std::back_inserter(points),
+    if(!CGAL::IO::read_points("data/kitten.xyz", std::back_inserter(points),
                           CGAL::parameters::point_map(Point_map())
                                            .normal_map (Normal_map())))
     {
@@ -56,7 +57,9 @@ int main(void)
     // Note: this method requires an iterator over points
     // + property maps to access each point's position and normal.
     // The position property map can be omitted here as we use iterators over Point_3 elements.
-    Implicit_reconstruction_function function(points, Point_map(), Normal_map());
+    Implicit_reconstruction_function function;
+    bool octree = true;
+    function.initialize_point_map(points, Point_map(), Normal_map(), octree, false);
 
     // Computes the Poisson indicator function f()
     // at each vertex of the triangulation.

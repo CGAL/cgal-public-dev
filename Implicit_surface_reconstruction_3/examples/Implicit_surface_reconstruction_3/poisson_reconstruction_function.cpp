@@ -1,6 +1,6 @@
 #include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
 #include <CGAL/Polyhedron_3.h>
-#include <CGAL/poisson_surface_reconstruction.h>
+#include <CGAL/Poisson_surface_reconstruction.h>
 #include <CGAL/IO/read_points.h>
 
 #include <vector>
@@ -17,7 +17,7 @@ int main(void)
 {
   std::vector<Pwn> points;
 
-  if(!CGAL::read_points("data/sphere.xyz", std::back_inserter(points),
+  if(!CGAL::IO::read_points("../data/kitten.xyz", std::back_inserter(points),
                         CGAL::parameters::point_map(CGAL::First_of_pair_property_map<Pwn>())
                                          .normal_map(CGAL::Second_of_pair_property_map<Pwn>())))
   {
@@ -25,22 +25,36 @@ int main(void)
     return EXIT_FAILURE;
   }
 
-  Polyhedron output_mesh;
+  Polyhedron output_mesh_1, output_mesh_2;
 
-  double average_spacing = CGAL::compute_average_spacing<CGAL::Sequential_tag>
-    (points, 6, CGAL::parameters::point_map(CGAL::First_of_pair_property_map<Pwn>()));
-
+  double data_fitting = 1;
+  bool use_octree = true;
+  bool use_marching_tets = true;
+  // Delaunay refinement with C2t3
   if (CGAL::poisson_surface_reconstruction_delaunay
       (points,
        CGAL::First_of_pair_property_map<Pwn>(),
        CGAL::Second_of_pair_property_map<Pwn>(),
-       output_mesh, average_spacing))
+       output_mesh_1, data_fitting, !use_octree, !use_marching_tets))
     {
-        std::ofstream out("kitten_poisson-20-30-0.375.off");
-        out << output_mesh;
+        std::ofstream out("kitten_poisson-Delaunay-C2T3-20-100-0.025.off");
+        out << output_mesh_1;
     }
   else
     return EXIT_FAILURE;
+  
+  // octree with marching tets
+  if (CGAL::poisson_surface_reconstruction_delaunay
+  (points,
+      CGAL::First_of_pair_property_map<Pwn>(),
+      CGAL::Second_of_pair_property_map<Pwn>(),
+      output_mesh_2, data_fitting, use_octree, use_marching_tets))
+  {
+      std::ofstream out("kitten_poisson-octree-mt.off");
+      out << output_mesh_2;
+  }
+  else
+      return EXIT_FAILURE;
 
   return EXIT_SUCCESS;
 }
