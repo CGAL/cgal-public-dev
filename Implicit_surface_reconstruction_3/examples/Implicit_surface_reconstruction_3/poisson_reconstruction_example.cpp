@@ -38,13 +38,16 @@ int main(void)
     // Poisson options
     FT sm_angle = 20.0; // Min triangle angle in degrees.
     FT sm_radius = 30; // Max triangle size w.r.t. point set average spacing.
-    FT sm_distance = 0.375; // Surface Approximation error w.r.t. point set average spacing.
+    FT sm_distance = 0.0375; // Surface Approximation error w.r.t. point set average spacing.
+
+    bool octree = true;
+    double fitting = 10;
 
     // Reads the point set file in points[].
     // Note: read_points() requires an iterator over points
     // + property maps to access each point's position and normal.
     PointList points;
-    if(!CGAL::IO::read_points("data/kitten.xyz", std::back_inserter(points),
+    if(!CGAL::IO::read_points("../data/kitten.xyz", std::back_inserter(points),
                           CGAL::parameters::point_map(Point_map())
                                            .normal_map (Normal_map())))
     {
@@ -57,13 +60,13 @@ int main(void)
     // Note: this method requires an iterator over points
     // + property maps to access each point's position and normal.
     // The position property map can be omitted here as we use iterators over Point_3 elements.
+    
     Implicit_reconstruction_function function;
-    bool octree = true;
-    function.initialize_point_map(points, Point_map(), Normal_map(), octree, false);
+    function.initialize_point_map(points, Point_map(), Normal_map(), octree);
 
     // Computes the Poisson indicator function f()
     // at each vertex of the triangulation.
-    if ( ! function.compute_poisson_implicit_function() )
+    if ( ! function.compute_poisson_implicit_function_new(fitting) )
       return EXIT_FAILURE;
 
     // Computes average spacing
@@ -102,7 +105,7 @@ int main(void)
       return EXIT_FAILURE;
 
     // saves reconstructed surface mesh
-    std::ofstream out("kitten_poisson-20-30-0.375.off");
+    std::ofstream out("kitten_poisson-20-30-0.0375.off");
     Polyhedron output_mesh;
     CGAL::facets_in_complex_2_to_triangle_mesh(c2t3, output_mesh);
     out << output_mesh;

@@ -1,6 +1,6 @@
 #include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
 #include <CGAL/Polyhedron_3.h>
-#include <CGAL/Poisson_surface_reconstruction.h>
+#include <CGAL/ssd_surface_reconstruction.h>
 #include <CGAL/IO/read_points.h>
 
 #include <vector>
@@ -27,35 +27,40 @@ int main(void)
 
   Polyhedron output_mesh_1, output_mesh_2;
 
-  double data_fitting = 1;
+  double data_fitting = 10, laplacian=1, hessian=1e-3;
   bool use_octree = true, use_marching_tets = true;
+
   // Delaunay refinement with C2t3
-  if (CGAL::poisson_surface_reconstruction_delaunay(
+  if (CGAL::ssd_surface_reconstruction_delaunay(
       points,
       CGAL::First_of_pair_property_map<Pwn>(),
       CGAL::Second_of_pair_property_map<Pwn>(),
       output_mesh_1, 
-      data_fitting,
-      !use_octree, 
+      data_fitting, 
+      laplacian, 
+      hessian, 
+      !use_octree,
       !use_marching_tets))
     {
-        std::ofstream out("kitten_poisson-Delaunay-C2T3-20-100-0.025.off");
+        std::ofstream out("kitten_ssd-Delaunay-C2T3-20-100-0.025.off");
         out << output_mesh_1;
     }
   else
     return EXIT_FAILURE;
-
+  
   // octree with marching tets
-  if (CGAL::poisson_surface_reconstruction_delaunay(
+  if (CGAL::ssd_surface_reconstruction_delaunay(
       points,
       CGAL::First_of_pair_property_map<Pwn>(),
       CGAL::Second_of_pair_property_map<Pwn>(),
       output_mesh_2, 
       data_fitting, 
+      laplacian, 
+      hessian, 
       use_octree, 
       use_marching_tets))
   {
-      std::ofstream out("kitten_poisson-octree-mt.off");
+      std::ofstream out("kitten_ssd-octree-mt.off");
       out << output_mesh_2;
   }
   else

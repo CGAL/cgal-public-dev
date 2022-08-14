@@ -29,6 +29,8 @@
 #include <CGAL/IO/facets_in_complex_2_to_triangle_mesh.h>
 #include <CGAL/Implicit_reconstruction_function.h>
 #include <CGAL/property_map.h>
+#include <CGAL/compute_average_spacing.h>
+#include <CGAL/Implicit_contouring.h>
 
 namespace CGAL {
 
@@ -320,6 +322,57 @@ namespace CGAL {
     return true;
   }
 
+template <typename PointList,
+    typename PointMap,
+    typename NormalMap,
+    typename PolygonMesh,
+    typename Tag = CGAL::Manifold_with_boundary_tag>
+    bool
+    spectral_surface_reconstruction_delaunay_new(PointList points,
+        PointMap point_map,
+        NormalMap normal_map,
+        PolygonMesh& output_mesh,
+        double fitting = 10,
+        double laplacian = 1,
+        double bilaplacian = 1e-3,
+        bool use_octree = true,
+        bool use_marching_tets = false,
+        double spacing_ratio = 6,
+        double sm_angle = 20.0,
+        double sm_radius = 100.0,
+        double sm_distance = 0.025,
+        Tag tag = Tag())
+{
+    typedef typename boost::property_traits<PointMap>::value_type Point;
+    typedef typename Kernel_traits<Point>::Kernel Kernel;
+    typedef typename Kernel::Sphere_3 Sphere;
+    typedef typename Kernel::FT FT;
+
+    typedef CGAL::Implicit_reconstruction_function<Kernel, PointList, NormalMap> Implicit_reconstruction_function;
+    typedef typename CGAL::Surface_mesher::Surface_mesh_default_triangulation_3_generator<Kernel>::Type STr;
+    typedef CGAL::Surface_mesh_complex_2_in_triangulation_3<STr> C2t3;
+    typedef CGAL::Implicit_surface_3<Kernel, Implicit_reconstruction_function> Surface_3;
+
+    Implicit_reconstruction_function function;
+    function.initialize_point_map(points, point_map, normal_map, use_octree);
+
+    if ( ! function.compute_spectral_implicit_function_new(fitting, laplacian, bilaplacian) )
+        return false;
+
+    if (! implicit_contouring(points, 
+        point_map, 
+        function, 
+        output_mesh, 
+        use_marching_tets, 
+        spacing_ratio,
+        sm_angle,
+        sm_radius,
+        sm_distance,
+        tag))
+        return false;
+
+    return true;
+}
 
 }
 

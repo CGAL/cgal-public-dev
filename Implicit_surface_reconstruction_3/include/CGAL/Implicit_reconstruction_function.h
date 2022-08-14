@@ -1012,7 +1012,7 @@ public:
 
 
   /// \endcond
-  bool compute_spectral_implicit_function_test(FT bilaplacian,FT laplacian,FT fitting)
+  bool compute_spectral_implicit_function_new(FT fitting, FT laplacian, FT bilaplacian)
   {
       typedef typename CGAL::Constant_property_map<InputIterator, FT> CoefficientMap;
       CoefficientMap reliability_map = CGAL::Constant_property_map<InputIterator, FT>(FT(1));

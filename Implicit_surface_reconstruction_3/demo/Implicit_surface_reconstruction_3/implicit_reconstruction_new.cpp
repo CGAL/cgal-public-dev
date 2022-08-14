@@ -100,7 +100,7 @@ int main(int argc, char * argv[])
       ("help,h", "Display this help message")
       ("input,i", po::value<std::vector<std::string> >(), "Input files")
       ("output,o", po::value<std::string>()->default_value("out.off"), "The suffix of the output files")
-      ("bilaplacian,b", po::value<double>()->default_value(100.), "The global bilaplacian coefficient")
+      ("bilaplacian,b", po::value<double>()->default_value(1.), "The global bilaplacian coefficient")
       ("laplacian,l", po::value<double>()->default_value(1), "The global laplacian coefficient")
       ("hessian", po::value<double>()->default_value(1e-3), "The global hessian coefficient")
       ("ratio,r", po::value<double>()->default_value(10.), "The largest eigenvalue of the tensor C")
@@ -279,7 +279,7 @@ int main(int argc, char * argv[])
         }
     }
     else {
-      if (! function.compute_spectral_implicit_function_test(bilaplacian, laplacian, fitting) )
+      if (! function.compute_spectral_implicit_function_new(fitting, laplacian, bilaplacian) )
       {
         std::cerr << "Error: cannot compute implicit function" << std::endl;
         accumulated_fatal_err = EXIT_FAILURE;

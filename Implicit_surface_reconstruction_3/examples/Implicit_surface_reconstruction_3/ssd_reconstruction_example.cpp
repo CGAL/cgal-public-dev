@@ -1,17 +1,18 @@
 #include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
 #include <CGAL/Polyhedron_3.h>
-#include <CGAL/IO/Polyhedron_iostream.h>
 #include <CGAL/Surface_mesh_default_triangulation_3.h>
 #include <CGAL/make_surface_mesh.h>
 #include <CGAL/Implicit_surface_3.h>
 #include <CGAL/IO/facets_in_complex_2_to_triangle_mesh.h>
 #include <CGAL/Implicit_reconstruction_function.h>
-#include <CGAL/Point_with_normal_3.h>
 #include <CGAL/property_map.h>
-#include <CGAL/IO/read_xyz_points.h>
+#include <CGAL/IO/read_points.h>
 #include <CGAL/compute_average_spacing.h>
 
+
 #include <CGAL/Polygon_mesh_processing/distance.h>
+
+#include <boost/iterator/transform_iterator.hpp>
 
 #include <vector>
 #include <fstream>
@@ -34,30 +35,23 @@ typedef CGAL::Implicit_surface_3<Kernel, Implicit_reconstruction_function> Surfa
 
 int main(void)
 {
-    // Spectral options
-    FT reliability = 500.;
-    FT confidence = 25.;
-    double fitting = 100, laplacian=1, bilaplacian=1;
-
-    // Mesh options
+    // SSD options
     FT sm_angle = 20.0; // Min triangle angle in degrees.
     FT sm_radius = 30; // Max triangle size w.r.t. point set average spacing.
     FT sm_distance = 0.0375; // Surface Approximation error w.r.t. point set average spacing.
+    
+    bool octree = true;
+    double fitting = 10, laplacian=1, hessian=1e-3;
 
     // Reads the point set file in points[].
-    // Note: read_xyz_points_and_normals() requires an iterator over points
+    // Note: read_points() requires an iterator over points
     // + property maps to access each point's position and normal.
-    // The position property map can be omitted here as we use iterators over Point_3 elements.
     PointList points;
-    std::ifstream stream("../data/kitten.xyz");
-    if (!stream ||
-        !CGAL::read_xyz_points(
-                              stream,
-                              std::back_inserter(points),
-                              CGAL::parameters::point_map(Point_map()).
-                              normal_map(Normal_map())))
+    if(!CGAL::IO::read_points("../data/kitten.xyz", std::back_inserter(points),
+                          CGAL::parameters::point_map(Point_map())
+                                           .normal_map (Normal_map())))
     {
-      std::cerr << "Error: cannot read file data/kitten.xyz" << std::endl;
+      std::cerr << "Error: cannot read file input file!" << std::endl;
       return EXIT_FAILURE;
     }
 
@@ -67,17 +61,17 @@ int main(void)
     // + property maps to access each point's position and normal.
     // The position property map can be omitted here as we use iterators over Point_3 elements.
     Implicit_reconstruction_function function;
-    bool octree = true;
     function.initialize_point_map(points, Point_map(), Normal_map(), octree);
 
     // Computes the Poisson indicator function f()
     // at each vertex of the triangulation.
-
-    if ( ! function.compute_spectral_implicit_function_new(fitting, laplacian, bilaplacian) )
-        return false;
+    if ( ! function.compute_ssd_implicit_function(fitting, laplacian, hessian) )
+      return EXIT_FAILURE;
 
     // Computes average spacing
-    FT average_spacing = CGAL::compute_average_spacing<CGAL::Sequential_tag>(points, 6, CGAL::parameters::point_map(Point_map()) /* knn = 1 ring */);
+    FT average_spacing = CGAL::compute_average_spacing<CGAL::Sequential_tag>
+      (points, 6 /* knn = 1 ring */,
+       CGAL::parameters::point_map (Point_map()));
 
     // Gets one point inside the implicit surface
     // and computes implicit function bounding sphere radius.
@@ -110,7 +104,7 @@ int main(void)
       return EXIT_FAILURE;
 
     // saves reconstructed surface mesh
-    std::ofstream out("kitten_spectral-20-30-0.0375.off");
+    std::ofstream out("kitten_ssd-20-30-0.0375.off");
     Polyhedron output_mesh;
     CGAL::facets_in_complex_2_to_triangle_mesh(c2t3, output_mesh);
     out << output_mesh;
@@ -118,17 +112,14 @@ int main(void)
 
     /// [PMP_distance_snippet]
     // computes the approximation error of the reconstruction
-    std::vector<Point> points_coord;
-    points_coord.reserve(points.size());
-    std::transform(points.begin(), 
-                   points.end(), 
-                   std::back_inserter(points_coord), 
-                   [](const Point_with_normal& p){return p.first;});
-
     double max_dist =
-      CGAL::Polygon_mesh_processing::approximate_max_distance_to_point_set(output_mesh,
-                                                               points_coord,
-                                                               4000);
+      CGAL::Polygon_mesh_processing::approximate_max_distance_to_point_set
+      (output_mesh,
+       CGAL::make_range (boost::make_transform_iterator
+                         (points.begin(), CGAL::Property_map_to_unary_function<Point_map>()),
+                         boost::make_transform_iterator
+                         (points.end(), CGAL::Property_map_to_unary_function<Point_map>())),
+       4000);
     std::cout << "Max distance to point_set: " << max_dist << std::endl;
     /// [PMP_distance_snippet]
 

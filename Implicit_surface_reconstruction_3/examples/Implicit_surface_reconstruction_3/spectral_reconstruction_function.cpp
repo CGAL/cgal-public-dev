@@ -19,7 +19,7 @@ int main(void)
 {
   std::vector<Pwn> points;
   if (!CGAL::IO::read_points(
-           "data/sphere.xyz",
+           "../data/kitten.xyz",
            std::back_inserter(points),
            CGAL::parameters::point_map(CGAL::First_of_pair_property_map<Pwn>()).
            normal_map(CGAL::Second_of_pair_property_map<Pwn>())))
@@ -29,21 +29,45 @@ int main(void)
     }
 
   Polyhedron output_mesh;
+  double data_fitting = 100, laplacian=1, bilaplacian=1;
+  bool use_octree = true, use_marching_tets = true;
 
-  double average_spacing = CGAL::compute_average_spacing<CGAL::Sequential_tag>
-    (points, 6, CGAL::parameters::point_map(CGAL::First_of_pair_property_map<Pwn>()));
-
-  if (CGAL::spectral_surface_reconstruction_delaunay
-      (points,
-       CGAL::First_of_pair_property_map<Pwn>(),
-       CGAL::Second_of_pair_property_map<Pwn>(),
-       100., 25., output_mesh, 1, 0., average_spacing))
+  if (CGAL::spectral_surface_reconstruction_delaunay_new(
+      points,
+      CGAL::First_of_pair_property_map<Pwn>(),
+      CGAL::Second_of_pair_property_map<Pwn>(),
+      output_mesh, 
+      data_fitting,
+      laplacian,
+      bilaplacian,
+      !use_octree, 
+      !use_marching_tets
+      ))
     {
-        std::ofstream out("sphere_spectral-20-30-0.375.off");
+        std::ofstream out("kitten_spectral-Delaunay-C2T3-20-100-0.025.off");
         out << output_mesh;
     }
   else
     return EXIT_FAILURE;
+
+  if (CGAL::spectral_surface_reconstruction_delaunay_new(
+      points,
+      CGAL::First_of_pair_property_map<Pwn>(),
+      CGAL::Second_of_pair_property_map<Pwn>(),
+      output_mesh, 
+      data_fitting,
+      laplacian,
+      bilaplacian,
+      use_octree, 
+      use_marching_tets
+  ))
+  {
+      std::ofstream out("kitten_spectral-octree-mt.off");
+      out << output_mesh;
+  }
+  else
+      return EXIT_FAILURE;
+
 
   return EXIT_SUCCESS;
 }

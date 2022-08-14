@@ -40,12 +40,20 @@ if(TARGET CGAL::Eigen3_support)
   create_single_source_cgal_program("poisson_reconstruction_function.cpp")
   target_link_libraries(poisson_reconstruction_function
                         PUBLIC CGAL::Eigen3_support)
+  create_single_source_cgal_program("ssd_reconstruction_example.cpp")
+  target_link_libraries(ssd_reconstruction_example
+                        PUBLIC CGAL::Eigen3_support)
+  create_single_source_cgal_program("ssd_reconstruction_function.cpp")
+  target_link_libraries(ssd_reconstruction_function
+                        PUBLIC CGAL::Eigen3_support)
   create_single_source_cgal_program("tutorial_example.cpp")
   target_link_libraries(tutorial_example PUBLIC CGAL::Eigen3_support)
 
   find_package(Spectra REQUIRED)
   if(SPECTRA_FOUND)
     include_directories("${SPECTRA_INCLUDE_DIR}")
+    create_single_source_cgal_program( "spectral_reconstruction_example.cpp" )
+    target_link_libraries(spectral_reconstruction_example PUBLIC CGAL::Eigen3_support)
     create_single_source_cgal_program( "spectral_reconstruction_function.cpp" )
     target_link_libraries(spectral_reconstruction_function PUBLIC CGAL::Eigen3_support)
   else()
