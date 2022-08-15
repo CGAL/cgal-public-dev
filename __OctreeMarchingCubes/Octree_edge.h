@@ -148,7 +148,7 @@ public:
 private:
     const Tree &tree;
 
-    std::array<std::uint32_t, 6> Global_coordinates;
+    std::array<std::uint32_t, 6> Global_coordinates; // 4 is enough
     int Depth;
     FT value1;
     FT value2;

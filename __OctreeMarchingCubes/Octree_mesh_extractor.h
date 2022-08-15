@@ -235,7 +235,7 @@ public:
     }
 
     // returns the vertices extracted from a given cell, ordered as a polyline
-    std::vector<size_t> process_node(
+    void process_node(
         const Node& node) {
 
         Bbox b = octree.bbox(node);
@@ -260,7 +260,7 @@ public:
                     corners_to_faces(corners)));
             }
         }
-        if(unordered_polygon_with_faces.size() == 0) return std::vector<size_t> {};
+        if(unordered_polygon_with_faces.size() == 0) return;
 
         std::vector<size_t> polygon;
         std::vector<std::vector<size_t>> additional_polygons;
@@ -290,11 +290,12 @@ public:
                 }
             }
         }
-
-        return polygon;
+        if(polygon.size() > 0)
+            faces.push_back(polygon);
     }
 
-    std::vector<Point> getVertices() { return vertices; }
+    std::vector<Point> get_vertices() { return vertices; }
+    std::vector<std::vector<size_t>> get_faces() { return faces; }
 
 private:
 
@@ -305,6 +306,7 @@ private:
     std::map<Edge, size_t> edge_points_in_mesh;
 
     std::vector<Point> vertices;
+    std::vector<std::vector<size_t>> faces;
 
     const int corners_to_faces_table[8][3][2] = {
         {{2,0}, {0,4}, {4,2}},

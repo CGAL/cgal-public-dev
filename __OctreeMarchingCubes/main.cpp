@@ -18,7 +18,7 @@ typedef CGAL::Point_set_3<Point> Point_set;
 typedef Point_set::Point_map Point_map;
 
 typedef CGAL::Octree<Kernel, Point_set, Point_map> Octree;
-typedef CGAL::Orthtrees::Preorder_traversal Preorder_traversal;
+typedef CGAL::Orthtrees::Leaves_traversal Leaves_traversal;
 
 typedef CGAL::Polyhedron_3<Kernel> Polyhedron;
 typedef Polyhedron::HalfedgeDS HalfedgeDS;
@@ -103,23 +103,19 @@ int main(int argc, char** argv) {
 
     CGAL::Octree_mesh_extractor<Kernel> extractor (octree, func);
 
-    std::vector<Point> vertices;
-    std::vector<std::vector<size_t>> faces;
     // Traverse octree and process each cell
     // todo: later prepare for parallelization
-    for (Octree::Node node : octree.traverse<Preorder_traversal>()) {
-        if(node.is_leaf()) {
-            std::vector<size_t> polygon = extractor.process_node(node);
-            if(polygon.size() > 0)
-                faces.push_back(polygon);
-        }
+    for (Octree::Node node : octree.traverse<Leaves_traversal>()) {
+        extractor.process_node(node);
     }
+    auto vertices = extractor.get_vertices();
+    auto faces = extractor.get_faces();
     std::cout << faces.size() << std::endl;
 
     // writing out resulting points to file
     std::ofstream mesh_out("a.obj");
     int i = 1;
-    for(auto p : extractor.getVertices()) {
+    for(auto p : vertices) {
         mesh_out << "v " << p.x() << " " << p.y() << " " << p.z() << std::endl;
     }
     for (auto f : faces) {
