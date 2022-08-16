@@ -26,7 +26,7 @@ More specifically, the core surface reconstruction algorithm consists
 of computing an implicit function which is an approximate indicator
 function of the inferred solid (Poisson Surface Reconstruction -
 referred to as Poisson, Spectral Surface Reconstruction - referred
-to as Spectral). Poisson/Spectral is a two steps process: it requires
+to as Spectral, Smooth Signed Distance - referred to as SSD). Poisson/Spectral/SSD is a two steps process: it requires
 solving for the implicit function before function evaluation.
 
 \note A \ref tuto_reconstruction "detailed tutorial on surface reconstruction"
@@ -96,17 +96,32 @@ The principal axes and eccentricities of the tensor field locally represent
 respectively the most likely direction of the normal to the surface, and the
 confidence in this direction estimation.
 
+\subsection Implicit_surface_reconstruction_3SSD SSD
+
+Given a set of 3D points with oriented normals (denoted oriented
+points in the sequel) sampled on the boundary of a 3D solid, the
+Smooth Signhed Distance Surface Reconstruction method \cgalCite{CalakliT11SSD} 
+solves for a smoothed approximation of the continuous signed distance function. 
+The gradient of the approximated function is encouraged to have unit length and 
+align with the normal direction of input point clouds near the surface. Comparing 
+to Poisson Surface Reconstruction where the indicator function is discrete, 
+introducing the gradient of the signed distance function is more natural as the 
+function is continuous. The energy term of SSD reconstruction also incorporates 
+an additional regularization term that provies more controlness on the smoothness 
+of reconstruction output.
+
 
 \section Implicit_surface_reconstruction_3Function Reconstruction Function
 
-A global function `poisson_surface_reconstruction_delaunay()` is
-provided for Poisson. Another global funtion `spectral_surface_reconstruction_delaunay()`
-is provided for Spectral. They take points with normals as input and handle the whole
-reconstruction pipeline.:
+Three global functions are provided for three reconstruction methods respectively: `poisson_surface_reconstruction_delaunay()` is provided for Poisson, 
+`spectral_surface_reconstruction_delaunay()` is provided for Spectral, 
+and `ssd_surface_reconstruction_delaunay()` for SSD.  They all take points with 
+normals as input and handle the whole reconstruction pipeline:
 
+- Create a spatial discretization using octree based discretization or Delaunay refinement 
 - Compute the implicit function
 - Reconstruct the surface with a given precision using the \cgal
-surface mesh generator based on Delaunay refinement
+surface mesh generator based on the spacial discretization
 \cgalCite{cgal:ry-gsddrm-06} \cgalCite{cgal:bo-pgsms-05}
 - Output the result in a polygon mesh.
 
@@ -126,6 +141,10 @@ The following example reads a point set and reconstructs a surface using Spectra
 
 \cgalExample{Implicit_surface_reconstruction_3/spectral_reconstruction_function.cpp}
 
+The following example reads a point set and reconstructs a surface using SSD reconstruction.
+
+\cgalExample{Implicit_surface_reconstruction_3/ssd_reconstruction_function.cpp}
+
 \section Implicit_surface_reconstruction_3Class Reconstruction Class
 
 The class template declaration is `template<class Gt, class PointRange, class NormalMap> class Implicit_reconstruction_function` where
@@ -142,6 +161,12 @@ The following example reads a point set, creates a Poisson implicit function and
 The following example reads a point set, creates a Spectral implicit function and reconstructs a surface.
 
 \cgalExample{Implicit_surface_reconstruction_3/spectral_reconstruction_example.cpp}
+
+\subsection Implicit_surface_reconstruction_3Discretization Discretization
+
+Two discretization methods are provided. The Delaunay refinement takes input points and iteratively refine the spatial discretization. The octree-based method builds the discretization using an octree with predefined maximum depth, producing a triangulation of the space where the number of vertices is less sensitive to the size of the input point cloud. 
+
+Options are provided in `initialize_point_map()` or in each reconstruction function(?) as a boolean parameter.
 
 \subsection Implicit_surface_reconstruction_3Contouring Contouring
 

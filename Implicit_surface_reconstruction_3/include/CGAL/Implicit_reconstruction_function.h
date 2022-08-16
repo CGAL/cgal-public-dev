@@ -474,6 +474,19 @@ public:
     Normal.clear();
   }
 
+  /*!
+    This function must be called to insert points with normal. It create an implicit
+    delaunay triangulation of the space using an octree or Delaunay refinement and remove 
+    slivers to enhance the discretization quality for numerical performance.
+
+    \param points data points with normal (how to explain the datatype??)
+    \param PointMap property map: value_type of `InputIterator` -> Point.
+    \param NormalMap property map: value_type of `InputIterator` -> Point.
+    \param use_octree use octree based discretization if true, else use Delaunay refinement 
+
+   */
+
+  
   template <typename PointMap>
   void initialize_point_map(PointRange& points,
 							PointMap point_map,
@@ -782,7 +795,22 @@ public:
   }
   /// \endcond
 
-    bool compute_poisson_implicit_function_new(double lambda, 
+
+    /*!
+      This function must be called after the
+      insertion of oriented points. It computes the piecewise linear scalar
+      function operator() by: applying spatial discretization, solving for
+      operator() at each vertex of the triangulation with a Poisson
+      solver, and shifting and orienting operator() such that it is 0 at all
+      input points and negative inside the inferred surface.
+
+      \param data_fitting data fitting term weight. If the result is over-smoothed, increasing this weighting generally produce a more detailed result.
+      \param average_spacing_ratio controls the radius of the kernel for normal estimation.
+
+      \return `false` if the linear solver fails.
+    */
+
+    bool compute_poisson_implicit_function_new(double data_fitting, 
                                            double average_spacing_ratio = 3.0) // this parameter should be passed to second delaunay refinement / normal estimation
     {
         CGAL::Timer task_timer; task_timer.start();
@@ -811,7 +839,7 @@ public:
 
         //double lambda = 0.01;
         typedef Eigen_solver_traits<Eigen::ConjugateGradient<Eigen_sparse_symmetric_matrix<double>::EigenType> > Solver;
-        if ( ! solve_poisson(Solver(), lambda) )
+        if ( ! solve_poisson(Solver(), data_fitting) )
         {
             std::cerr << "Error: cannot solve Poisson equation" << std::endl;
             return false;
@@ -848,6 +876,7 @@ public:
 
     \return `false` if the linear solver fails.
   */
+    
   template <class SparseLinearAlgebraTraits_d>
   bool compute_poisson_implicit_function(SparseLinearAlgebraTraits_d solver, bool smoother_hole_filling = false)
   {
@@ -1012,6 +1041,23 @@ public:
 
 
   /// \endcond
+
+
+  /*!
+  This function must be called after the
+  insertion of unoriented points. It computes the piecewise linear scalar
+  function operator() by: applying spatial discretization, tetrehedralization quality enhancement,
+  solving for operator() at each vertex of the triangulation with a spectral
+  solver, and shifting and orienting operator() such that it is 0 at all
+  input points and negative inside the inferred surface.
+
+  \param fitting data fitting term weight. If the result is over-smoothed, increasing this weighting generally produce a more detailed result.
+  \param bilaplacian bilaplacian term weight
+  \param laplacian laplacian term weight. If the result is over-ragged, increasing this weighting generally produce a smoother result.
+  
+  \return `false` if the solver fails.
+  */
+
   bool compute_spectral_implicit_function_new(FT fitting, FT laplacian, FT bilaplacian)
   {
       typedef typename CGAL::Constant_property_map<InputIterator, FT> CoefficientMap;
@@ -1047,6 +1093,21 @@ public:
 
       return true;
   }
+
+  /*!
+  This function must be called after the
+  insertion of oriented points. It computes the piecewise linear scalar
+  function operator() by: applying spatial discretization, tetrehedralization quality enhancement,
+  solving for operator() at each vertex of the triangulation with a SSD
+  solver, and shifting and orienting operator() such that it is 0 at all
+  input points and negative inside the inferred surface.
+
+  \param fitting data fitting term weight. If the result is over-smoothed, increasing this weighting generally produce a more detailed result.
+  \param laplacian laplacian term weight. 
+  \param hessian hessian term weight. If the result is over-ragged, increasing this weighting generally produce a smootheder result.
+
+  \return `false` if the solver fails.
+  */
 
   bool compute_ssd_implicit_function(double fitting,
       double laplacian,
@@ -3022,14 +3083,21 @@ private:
 public:
 
   /// Marching Tetrahedra
-  unsigned int marching_tetrahedra(const FT value, Mesh &mesh)
-  {
-    std::vector<Point> points;
-    std::vector< std::vector<std::size_t> > polygons;
-    //m_tr->dump_all_points_with_val("f_val");
-    return m_tr->marching_tets(value, mesh, points, polygons);
-  }
 
+  /*!
+  This function must be called after the
+  insertion of oriented points. It computes the piecewise linear scalar
+  function operator() by: applying spatial discretization, solving for
+  operator() at each vertex of the triangulation with a sparse linear
+  solver, and shifting and orienting operator() such that it is 0 at all
+  input points and negative inside the inferred surface.
+
+  \param value the implicit function value of the isosurface to be extracted
+
+  \tparam mesh the Polyhedron output mesh to be written to.
+
+  \return `false` if the marching tetrehedra fails.
+  */
   template <typename Polyhedron>
   unsigned int marching_tetrahedra(const FT value, Polyhedron &mesh)
   {

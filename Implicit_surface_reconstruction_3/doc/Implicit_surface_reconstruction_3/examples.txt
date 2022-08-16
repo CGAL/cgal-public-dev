@@ -2,4 +2,6 @@
 /// \example Implicit_surface_reconstruction_3/poisson_reconstruction_example.cpp
 /// \example Implicit_surface_reconstruction_3/spectral_reconstruction_function.cpp
 /// \example Implicit_surface_reconstruction_3/spectral_reconstruction_example.cpp
+/// \example Implicit_surface_reconstruction_3/ssd_reconstruction_function.cpp
+/// \example Implicit_surface_reconstruction_3/ssd_reconstruction_example.cpp
 
