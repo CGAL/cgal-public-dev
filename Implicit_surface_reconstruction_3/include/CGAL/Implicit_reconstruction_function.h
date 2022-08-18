@@ -78,7 +78,7 @@
 #include <CGAL/Surface_mesh/IO/OFF.h>
 
 /*!
-  \file Poisson_reconstruction_function.h
+  \file Implicit_reconstruction_function.h
 */
 
 typedef CGAL::cpp11::array<unsigned char, 3>   Color;

@@ -162,14 +162,15 @@ The following example reads a point set, creates a Spectral implicit function an
 
 \cgalExample{Implicit_surface_reconstruction_3/spectral_reconstruction_example.cpp}
 
+The following example reads a point set, creates a SSD implicit function and reconstructs a surface.
+
+\cgalExample{Implicit_surface_reconstruction_3/ssd_reconstruction_example.cpp}
+
 \subsection Implicit_surface_reconstruction_3Discretization Discretization
 
-Two discretization methods are provided. The Delaunay refinement takes input points and iteratively refine the spatial discretization. The octree-based method builds the discretization using an octree with predefined maximum depth, producing a triangulation of the space where the number of vertices is less sensitive to the size of the input point cloud. 
-
-Options are provided in `initialize_point_map()` or in each reconstruction function(?) as a boolean parameter.
+Two discretization methods are provided. The Delaunay refinement takes input points and iteratively refine the spatial discretization. The octree-based method builds the discretization using an octree with predefined maximum depth, producing a triangulation of the space where the number of vertices is less sensitive to the size of the input point cloud. Options are provided in `Implicit_reconstruction_function::initialize_point_map()` and in each reconstruction individual function wrapper as a boolean parameter. 
 
 \subsection Implicit_surface_reconstruction_3Contouring Contouring
-
 
 The computed implicit functions can be iso-contoured to reconstruct a
 surface by using the \cgal surface mesh generator

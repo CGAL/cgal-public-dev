@@ -19,7 +19,5 @@
 
 \cgalClassifedRefPages
 \cgalCRPSection{Classes}
-- `CGAL::Poisson_reconstruction_function<GeomTraits>`
 - `CGAL::Implicit_reconstruction_function<GeomTraits>`
-- `CGAL::poisson_surface_reconstruction_delaunay`
 */

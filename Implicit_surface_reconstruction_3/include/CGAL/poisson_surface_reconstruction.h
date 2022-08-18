@@ -31,7 +31,7 @@ namespace CGAL {
 
 
     /*!
-    \ingroup PkgPoissonSurfaceReconstruction3Ref
+    \ingroup PkgImplicitSurfaceReconstruction3Ref
 
     Performs surface reconstruction as follows:
 
@@ -81,7 +81,7 @@ namespace CGAL {
     \param point_map property map: value_type of `InputIterator` -> Point_3.
     \param normal_map property map: value_type of `InputIterator` -> Vector_3.
     \param output_mesh where the reconstruction is stored.
-    \param data_fitting data fitting term weight. If the result is over-smoothed, increasing this weighting generally produce a more detailed result.
+    \param fitting data fitting term weight. If the result is over-smoothed, increasing this weighting generally produce a more detailed result.
     \param use_octree use octree based discretization if true, else use Delaunay refinement 
     \param use_marching_tets use marching tetrehedra on the solver's discretization for fast mesh generation, else use implicit surface generation
     \param average_spacing_ratio size ratio parameter. Ignored if use marching tetrehedra
@@ -101,7 +101,7 @@ namespace CGAL {
             PointMap point_map,
             NormalMap normal_map,
             PolygonMesh& output_mesh,
-            double data_fitting = 1,
+            double fitting = 1,
             bool use_octree = true,
             bool use_marching_tets = false,
             double average_spacing_ratio = 6,
@@ -123,7 +123,7 @@ namespace CGAL {
         Implicit_reconstruction_function function;
         function.initialize_point_map(points, point_map, normal_map, use_octree);
 
-        if ( ! function.compute_poisson_implicit_function_new(data_fitting) )
+        if ( ! function.compute_poisson_implicit_function_new(fitting) )
             return false;
 
         if (! implicit_contouring(points, 

@@ -34,8 +34,8 @@
 
 namespace CGAL {
 
-  
-  /*!
+  /*
+  * //the following part are the old cmts
     \ingroup PkgImplicitSurfaceReconstruction
 
     Performs surface reconstruction as follows:
@@ -322,6 +322,70 @@ namespace CGAL {
     return true;
   }
 
+
+  /*!
+  \ingroup PkgImplicitSurfaceReconstruction3Ref
+
+  Performs surface reconstruction as follows:
+
+  - compute the implicit function, through a generalized
+  eigenvalue problem solver, represented as a piecewise linear function
+  stored on a 3D Delaunay mesh generated via octree based discretization 
+  or Delaunay refinement
+  - meshes the function with a user-defined precision using another
+  round of Delaunay refinement: it contours the isosurface
+  corresponding to the isovalue of the median of the function
+  values at the input points
+  - outputs the result in a polygon mesh
+
+
+  If `use_octree` is true, the function creates an octree based discretization with predefined 
+  depth, where the total size of the discretization vertices is less sensitive to input size.
+  If octree based discretization is not used, Delaunay refinement will be used, where the total size of the 
+  discretization vertices in general grows with input point size.
+
+  If `use_marching_tets` is true, the function will create surface based on the same discretization
+  used for solver. The isocontouring process with marching tetrehedra is faster but result in lower 
+  quality mesh. If marching tetrehedron is not used, this function use implicit surface generation, 
+  which relies mainly on the size parameter `average_spacing_ratio`. The function computes the 
+  spacing using the multiple of `compute_average_spacing()`. Smaller values increase the precision 
+  of the output mesh at the cost of higher computation time.
+
+  Parameters `sm_angle`, `sm_radius` and `sm_distance` work
+  similarly to the parameters of `SurfaceMeshFacetsCriteria_3`. The
+  latest two are defined with respect to spacing computed by `compute_average_spacing()` 
+  and `average_spacing_ratio`.
+
+  \tparam PointInputIterator is a model of `InputIterator`.
+
+  \tparam PointMap is a model of `ReadablePropertyMap` with value
+  type `Point_3<Kernel>`.
+
+  \tparam NormalMap is a model of `ReadablePropertyMap` with value
+  type `Vector_3<Kernel>`.
+
+  \tparam PolygonMesh a model of `MutableFaceGraph` with an internal
+  point property map.
+
+  \tparam Tag is a tag whose type affects the behavior of the
+  meshing algorithm (see `make_surface_mesh()`).
+
+  \param PointList the container of input points
+  \param point_map property map: value_type of `InputIterator` -> Point_3.
+  \param normal_map property map: value_type of `InputIterator` -> Vector_3.
+  \param output_mesh where the reconstruction is stored.
+  \param fitting data fitting term weight. If the result is over-smoothed, increasing this weighting generally produce a more detailed result.
+  \param bilaplacian bilaplacian term weight
+  \param laplacian laplacian term weight. If the result is over-ragged, increasing this weighting generally produce a smoother result.
+  \param use_octree use octree based discretization if true, else use Delaunay refinement 
+  \param use_marching_tets use marching tetrehedra on the solver's discretization for fast mesh generation, else use implicit surface generation
+  \param average_spacing_ratio size ratio parameter. Ignored if use marching tetrehedra
+  \param sm_angle bound for the minimum facet angle in degrees. Ignored if use marching tetrehedra
+  \param sm_radius bound for the radius of the surface Delaunay balls (relatively to the `average_spacing`). Ignored if use marching tetrehedra
+  \param sm_distance bound for the center-center distances (relatively to the `average_spacing`). Ignored if use marching tetrehedra
+  \param tag surface mesher tag.
+  \return `true` if reconstruction succeeded, `false` otherwise.
+  */
 template <typename PointList,
     typename PointMap,
     typename NormalMap,
