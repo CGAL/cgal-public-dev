@@ -27,10 +27,10 @@ public:
     typedef CGAL::Point_set_3<Point> Point_set;
     typedef typename Point_set::Point_map Point_map;
 
-    typedef CGAL::Octree<GeomTraits, Point_set, Point_map> Octree;
+    typedef Octree_wrapper<GeomTraits> Octree;
     typedef CGAL::Orthtrees::Preorder_traversal Preorder_traversal;
-    typedef typename CGAL::Octree<GeomTraits, Point_set, Point_map>::Bbox Bbox;
-    typedef typename CGAL::Octree<GeomTraits, Point_set, Point_map>::Node Node;
+    typedef typename CGAL::Bbox_3 Bbox;
+    typedef typename Octree::Node Node;
     typedef CGAL::Octree_edge<GeomTraits> Edge;
 
     typedef typename CGAL::Orthtree_traits_3<GeomTraits>::Adjacency Adjacency;

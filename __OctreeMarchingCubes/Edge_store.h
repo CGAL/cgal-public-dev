@@ -26,18 +26,19 @@ template<typename Traits_, typename PointRange_,
 class Edge_store {
 public:
 
-    typedef typename Octree<Traits_, PointRange_, PointMap_>::Node Node;
+    typedef Octree_wrapper<Traits_> Octree;
+    typedef typename Octree::Node Node;
     typedef Octree_edge<Traits_> Edge;
-    typedef typename Octree<Traits_, PointRange_, PointMap_>::Bbox Bbox;
-    typedef typename Octree<Traits_, PointRange_, PointMap_>::Point Point;
+    typedef typename CGAL::Bbox_3 Bbox;
 
     typedef CGAL::Orthtree_traits_3<Traits_> Traits3;
 
+    typedef CGAL::Point_3<Traits_> Point;
     typedef CGAL::Vector_3<Traits_> Vector;
 
     typedef typename Traits_::FT FT;
 
-    Edge_store(const Octree<Traits_, PointRange_, PointMap_>& tree, std::function<FT(Vector)> func)
+    Edge_store(const Octree& tree, std::function<FT(Vector)> func)
     : tree(tree), func(func) {}
 
     const std::array<Edge*, 12>& get(const Node& n) const { return edge_lists.at(n); }
@@ -126,7 +127,7 @@ private:
 
     std::map<Node, std::array<Edge*, 12>> edge_lists;
 
-    const Octree<Traits_, PointRange_, PointMap_>& tree;
+    const Octree& tree;
 
     std::function<FT(Vector)> func;
 

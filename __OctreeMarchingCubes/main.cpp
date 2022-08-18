@@ -11,13 +11,13 @@
 #include <algorithm>
 
 typedef CGAL::Simple_cartesian<double> Kernel;
+typedef Kernel::FT FT;
 typedef CGAL::Point_3<Kernel> Point;
 typedef CGAL::Vector_3<Kernel> Vector;
-typedef Kernel::FT FT;
 typedef CGAL::Point_set_3<Point> Point_set;
 typedef Point_set::Point_map Point_map;
 
-typedef CGAL::Octree<Kernel, Point_set, Point_map> Octree;
+typedef Octree_wrapper<Kernel> Octree;
 typedef CGAL::Orthtrees::Leaves_traversal Leaves_traversal;
 
 typedef CGAL::Polyhedron_3<Kernel> Polyhedron;
@@ -33,7 +33,7 @@ struct Split_by_closeness {
     Split_by_closeness(ImplicitFunction func, Octree oct) : func(func), oct(oct) {}
 
     bool operator()(const Octree::Node &n) const {
-        Octree::Bbox b = oct.bbox(oct.root()); // maybe easier to store only this instead of octree
+        CGAL::Bbox_3 b = oct.bbox(oct.root()); // maybe easier to store only this instead of octree
                                                // note: oct.bbox(n) does not give correct result here
         int d = n.depth();
 
@@ -43,7 +43,7 @@ struct Split_by_closeness {
         FT z = computeMiddle(b.zmin(), b.zmax(), n.global_coordinates()[2], n.depth());
         Vector mid{x,y,z}; // note: oct.barycenter(n) does not give correct result here
 
-        return (n.depth() <= 1 || func(Vector(mid.x(), mid.y(), mid.z())) < 0.05) && n.depth() <= 4; // custom predicate, can be different
+        return (n.depth() <= 2 || func(Vector(mid.x(), mid.y(), mid.z())) < 0.05) && n.depth() <= 4; // custom predicate, can be different
     }
 
 private:
@@ -97,8 +97,7 @@ int main(int argc, char** argv) {
     else
         func = sphere;
 
-    Point_set points; // This is only here because Orthtree constructor requires it
-    Octree octree(Octree::Bbox(-1.2,-1.2,-1.2,1.2,1.2,1.2), points);
+    Octree octree(CGAL::Bbox_3(-1.2,-1.2,-1.2,1.2,1.2,1.2));
     octree.refine(Split_by_closeness(func, octree));
 
     CGAL::Octree_mesh_extractor<Kernel> extractor (octree, func);

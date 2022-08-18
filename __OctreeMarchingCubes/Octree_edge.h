@@ -15,6 +15,8 @@
 #include <CGAL/Orthtree.h>
 #include <CGAL/exceptions.h>
 
+#include "../Isosurfacing_3/Octree_wrapper.h"
+
 #include <optional>
 
 namespace CGAL {
@@ -29,7 +31,8 @@ class Octree_edge
     typedef typename Traits_::FT FT;
     typedef CGAL::Vector_3<Traits_> Vector;
     typedef CGAL::Point_3<Traits_> Point;
-    typedef Octree<Traits_, Point_set_3<Point>, typename Point_set_3<Point>::Property_map<Point>> Tree;
+    typedef CGAL::Bbox_3 Bbox;
+    typedef Octree_wrapper<Traits_> Tree;
     typedef typename Tree::Node Node;
 
 public:
@@ -101,7 +104,7 @@ public:
     }
 
     std::pair<Point, Point> segment() const {
-        typename Tree::Bbox box = tree.bbox(tree.root());
+        Bbox box = tree.bbox(tree.root());
         std::array<FT, 3> p1;
         std::array<FT, 3> p2;
         for (int i = 0; i < 3; i++) {
