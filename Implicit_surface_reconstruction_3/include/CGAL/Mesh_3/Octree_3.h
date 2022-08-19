@@ -424,6 +424,25 @@ class Octree
       }
     }
 
+    int size()
+    {
+        std::queue<Node *> leaf_nodes;
+        std::set<IntPoint> all_corner_locations;
+        fill_leaf_queue(&m_root, leaf_nodes);
+        int count = leaf_nodes.size();
+        while (!leaf_nodes.empty())
+        {
+            Node* node = leaf_nodes.front();
+            leaf_nodes.pop();
+            IntPoint node_corners_location[8];
+            for (int child_id = 0; child_id < 8; child_id++)
+            {
+                all_corner_locations.insert(get_corner_location(node, child_id));
+            }
+        }
+        return count + all_corner_locations.size();
+    }
+    
 	template <class OutputPwnIterator, class OutputPointIterator>	
 	void generate_points(OutputPwnIterator output_pwn, OutputPointIterator output_steiner)
     {

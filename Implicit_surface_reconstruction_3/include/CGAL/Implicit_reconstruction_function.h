@@ -503,12 +503,12 @@ public:
     {
       CGAL_TRACE_STREAM << "init octree...\n";
 	  typedef typename OCTREE::Octree<Geom_traits, PointRange, PointMap, NormalMap> Octree;
+      
       Octree octree(points, point_map, normal_map);
 	  if(octree_debug_visu)
 	  {
 		octree.dump_bbox("bbox_scaled_isotrope");
 	  }
-
       CGAL_TRACE_STREAM << "refine octree...\n";
       octree.refine(8, 1);
 	  if(octree_debug_visu)
@@ -557,7 +557,7 @@ public:
 
     // remove slivers
     m_tr->index_all_vertices();
-    dihedral_angle_per_cell("bad_tet_test.off");
+    //dihedral_angle_per_cell("bad_tet_test.off");
     CGAL_TRACE_STREAM << "removing slivers in triangulation...\n";
     remove_sliver<Geom_traits, Triangulation>(m_tr, 5, use_octree);
     //dihedral_angle_per_cell("bad_tet_perturb_test.off");
@@ -1540,7 +1540,7 @@ private:
 
     for(int i = 0; i < 10; i++)
     {
-      CGAL_TRACE_STREAM << "  ASAP optimization..." << std::endl;
+      CGAL_TRACE_STREAM << "  ASAP optimization (" << i << "/10)..." << std::endl;
       asap_optimization<Geom_traits, Triangulation>(m_tr, 5);
       CGAL_TRACE_STREAM << "  removing slivers in triangulation...\n";
       remove_sliver<Geom_traits, Triangulation>(m_tr, 5, false);
