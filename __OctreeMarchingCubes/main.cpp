@@ -7,6 +7,8 @@
 
 #include "Octree_mesh_extractor.h"
 
+#include "../Isosurfacing_3/Octree_domain.h"
+
 #include <functional>
 #include <algorithm>
 
@@ -24,7 +26,28 @@ typedef CGAL::Polyhedron_3<Kernel> Polyhedron;
 typedef Polyhedron::HalfedgeDS HalfedgeDS;
 typedef Polyhedron::Vertex_handle Vertex_handle;
 
-typedef std::function<FT(Vector)> ImplicitFunction;
+typedef std::function<FT(Point)> ImplicitFunction;
+
+template<class Domain_, class PointRange, class PolygonRange>
+void make_polygon_mesh_using_marching_cubes_on_octree(const Domain_& domain, const typename Domain_::FT iso_value,
+                                            PointRange& points, PolygonRange& polygons) {
+
+    if constexpr(std::is_same_v<Domain_, CGAL::Octree_domain<Kernel>>) {
+        const Octree& octree = domain.getOctree();
+
+        CGAL::Octree_mesh_extractor<Kernel> extractor (octree, iso_value);
+
+        domain.iterate_voxels(extractor);
+
+        points = extractor.get_vertices();
+        polygons = extractor.get_faces();
+    }
+    else {
+        throw CGAL::Precondition_exception("Octree_marching_cubes"
+                    , "Octree isosurface extraction is only available on an Octree_domain"
+                    , "TODO", 49);
+    }
+}
 
 // Custom refinement predicate, splits cell if mid point of it is "close" to isosurface
 struct Split_by_closeness {
@@ -41,9 +64,9 @@ struct Split_by_closeness {
         FT x = computeMiddle(b.xmin(), b.xmax(), n.global_coordinates()[0], n.depth());
         FT y = computeMiddle(b.ymin(), b.ymax(), n.global_coordinates()[1], n.depth());
         FT z = computeMiddle(b.zmin(), b.zmax(), n.global_coordinates()[2], n.depth());
-        Vector mid{x,y,z}; // note: oct.barycenter(n) does not give correct result here
+        Point mid{x,y,z}; // note: oct.barycenter(n) does not give correct result here
 
-        return (n.depth() <= 2 || func(Vector(mid.x(), mid.y(), mid.z())) < 0.05) && n.depth() <= 4; // custom predicate, can be different
+        return (n.depth() <= 2 || func(mid) < 0.05) && n.depth() <= 4; // custom predicate, can be different
     }
 
 private:
@@ -53,11 +76,11 @@ private:
 };
 
 int main(int argc, char** argv) {
-    ImplicitFunction sphere = [](Vector p) { return sqrt((p.x()-0.1)*(p.x()-0.1) + (p.y()-0.2)*(p.y()-0.2) + p.z()*p.z()) - 0.5; };
-    ImplicitFunction cube = [](Vector p) {
+    ImplicitFunction sphere = [](Point p) { return sqrt((p.x()-0.1)*(p.x()-0.1) + (p.y()-0.2)*(p.y()-0.2) + p.z()*p.z()) - 0.5; };
+    ImplicitFunction cube = [](Point p) {
         return std::max({std::abs(p.x()), std::abs(p.y()), std::abs(p.z())}) - 0.5;
     };
-    ImplicitFunction rotcube = [](Vector p) {
+    ImplicitFunction rotcube = [](Point p) {
         double cosa = cos(1), sina = sin(1), cosb = cos(0.5), sinb = sin(0.5);
         Kernel::Aff_transformation_3 rot1(
             1.0, 0.0, 0.0,
@@ -67,13 +90,13 @@ int main(int argc, char** argv) {
             cosb, -sinb, 0.0,
             sinb, cosb, 0.0,
             0.0, 0.0, 1.0);
-        Vector q = rot2(rot1(p));
+        Point q = rot2(rot1(p));
         return std::max({std::abs(q.x()), std::abs(q.y()), std::abs(q.z())}) - 0.5;
     };
-    ImplicitFunction torus = [](Vector p) {
+    ImplicitFunction torus = [](Point p) {
         return pow(sqrt(p.x()*p.x() + p.y()*p.y()) - 0.5, 2) + p.z()*p.z() - 0.2*0.2;
     };
-    ImplicitFunction tanglecube = [](Vector p) {
+    ImplicitFunction tanglecube = [](Point p) {
         double x = 2*p.x(), y = 2*p.y(), z = 2*p.z();
         double x2=x*x, y2=y*y, z2=z*z;
         double x4=x2*x2, y4=y2*y2, z4=z2*z2;
@@ -98,17 +121,15 @@ int main(int argc, char** argv) {
         func = sphere;
 
     Octree octree(CGAL::Bbox_3(-1.2,-1.2,-1.2,1.2,1.2,1.2));
-    octree.refine(Split_by_closeness(func, octree), [func](const Point& p) { return func(Vector(p[0], p[1], p[2])); });
+    octree.refine(Split_by_closeness(func, octree), func);
 
-    CGAL::Octree_mesh_extractor<Kernel> extractor (octree);
+    CGAL::Octree_domain domain(octree);
 
-    // Traverse octree and process each cell
-    // todo: later prepare for parallelization
-    for (Octree::Node node : octree.traverse<Leaves_traversal>()) {
-        extractor.process_node(node);
-    }
-    auto vertices = extractor.get_vertices();
-    auto faces = extractor.get_faces();
+    std::vector<Point> vertices;
+    std::vector<std::vector<size_t>> faces;
+
+    make_polygon_mesh_using_marching_cubes_on_octree(domain, 0.0, vertices, faces);
+
     std::cout << faces.size() << std::endl;
 
     // writing out resulting points to file

@@ -39,8 +39,8 @@ public:
 
     typedef CGAL::Edge_store<GeomTraits, Point_set, Point_map> Edge_store;
 
-    Octree_mesh_extractor(const Octree& tree)
-    : octree(tree), edges(tree) {
+    Octree_mesh_extractor(const Octree& tree, FT isovalue)
+    : octree(tree), edges(tree), isovalue(isovalue) {
         // Add edges to container
         for (Node node : octree.template traverse<Preorder_traversal>()) { // ????
             if(node == octree.root())
@@ -57,7 +57,7 @@ public:
         if (i != edge_points_in_mesh.end())
             return i->second;
 
-        Point p = e->extract_isovertex();
+        Point p = e->extract_isovertex(isovalue);
         size_t ind = vertices.size();
         edge_points_in_mesh[*e] = ind;
         vertices.push_back(p);
@@ -92,7 +92,7 @@ public:
                 std::cerr << "next (segment found):" << *next;
             }
             if (!found) {
-                next = next->twin_edge();
+                next = next->twin_edge(isovalue);
                 std::cerr << "next (twin edge):" << *next;
                 v = -1;
                 for (int j = 0; j < segments.size(); ++j) {
@@ -152,7 +152,7 @@ public:
             std::array<Edge*, 12> child_edges = edges.get(child);
             std::vector<const Edge*> segment;
             for(int i = 0; i < 12; ++i) {
-                auto edge = child_edges[i]->find_minimal_edge();
+                auto edge = child_edges[i]->find_minimal_edge(isovalue);
                 auto endpoints = edge->segment();
                 auto corners = child_edges[i]->corners(child);
                 // if both corners are on the shared face with `node`
@@ -160,8 +160,7 @@ public:
                 bool c2in = !(corners.second & (4 / mask)) != !(adj & 1);
                 if (c1in && c2in) {
                     auto vals = edge->values();
-                    if (vals.first * vals.second <= 0) {
-                        auto point = edge->extract_isovertex();
+                    if ((vals.first - isovalue) * (vals.second - isovalue) < 0) {
                         segment.push_back(edge);
                         if (start && add_point_to_mesh(segment.back()) == *start) {
                             startv = ind;
@@ -194,7 +193,7 @@ public:
                 }
                 if (!found) {
                     // if none, try connecting to a twin edge
-                    auto next = polyline_edges.back()->twin_edge();
+                    auto next = polyline_edges.back()->twin_edge(isovalue);
                     if (next == nullptr) break; // no twin edge: polyline to be ended
                     v = -1;
                     for (int j = 0; j < segments.size(); ++j) {
@@ -249,14 +248,14 @@ public:
             Vector p1 (seg.first.x(), seg.first.y(), seg.first.z());
             Vector p2 (seg.second.x(), seg.second.y(), seg.second.z());
 
-            if(edge->values().first * edge->values().second < 0) {
-                auto minEdge = edge->find_minimal_edge();
+            if((edge->values().first - isovalue) * (edge->values().second - isovalue) < 0) {
+                auto minEdge = edge->find_minimal_edge(isovalue);
                 std::pair<Point,Point> minSeg = minEdge->segment();
                 Vector p1 (minSeg.first.x(), minSeg.first.y(), minSeg.first.z());
                 Vector p2 (minSeg.second.x(), minSeg.second.y(), minSeg.second.z());
                 auto vals = minEdge->values();
                 auto corners = edge->corners(node);
-                if (vals.second < 0) { auto tmp = corners.first; corners.first = corners.second; corners.second = tmp;  }
+                if (vals.second - isovalue < 0) { auto tmp = corners.first; corners.first = corners.second; corners.second = tmp; }
                 unordered_polygon_with_faces.push_back(std::make_pair(
                     add_point_to_mesh(minEdge),
                     corners_to_faces(corners)));
@@ -304,6 +303,10 @@ public:
             faces.push_back(polygon);
     }
 
+    void operator()(const typename Octree::Voxel_handle& vox) {
+        process_node(octree.get_node(vox));
+    }
+
     std::vector<Point> get_vertices() { return vertices; }
     std::vector<std::vector<size_t>> get_faces() { return faces; }
 
@@ -311,6 +314,7 @@ private:
 
     const Octree& octree;
     Edge_store edges;
+    FT isovalue;
 
     std::map<Edge, size_t> edge_points_in_mesh;
 

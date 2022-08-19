@@ -67,17 +67,17 @@ public:
             , Depth + 1, this, midValue, value2);
     }
 
-    const Octree_edge* find_minimal_edge() const {
+    const Octree_edge* find_minimal_edge(FT isovalue) const {
         if(child1 == nullptr) return this;
-        else if(child1->value1 * child1->value2 <= 0) return child1->find_minimal_edge();
-        else return child2->find_minimal_edge();
+        else if((child1->value1 - isovalue) * (child1->value2 - isovalue) <= 0) return child1->find_minimal_edge(isovalue);
+        else return child2->find_minimal_edge(isovalue);
     }
 
-    const Octree_edge* twin_edge() const {
+    const Octree_edge* twin_edge(FT isovalue) const {
         if (parent == nullptr) return nullptr;
-        if (parent->value1 * parent->value2 <= 0) return parent->twin_edge();
-        else if (parent->child1 == this) return parent->child2->find_minimal_edge();
-        else return parent->child1->find_minimal_edge();
+        if ((parent->value1 - isovalue) * (parent->value2 - isovalue) <= 0) return parent->twin_edge(isovalue);
+        else if (parent->child1 == this) return parent->child2->find_minimal_edge(isovalue);
+        else return parent->child1->find_minimal_edge(isovalue);
     }
 
     Octree_edge* get_child1() const { return child1; }
@@ -115,7 +115,7 @@ public:
         return std::make_pair(Point(p1[0], p1[1], p1[2]), Point(p2[0], p2[1], p2[2]));
     }
 
-    Point extract_isovertex() const {
+    Point extract_isovertex(FT isovalue) const {
         if (isovertex)
             return *isovertex;
         else {
@@ -127,13 +127,12 @@ public:
             r2 = Vector(p2.x(), p2.y(), p2.z());
             std::tie(d1, d2) = values();
             FT mu = -1.f;
-            FT iso_value = 0.f;
 
             // don't divide by 0
             if (abs(d2 - d1) < std::numeric_limits<FT>::epsilon()) {
                 mu = 0.5f;  // if both points have the same value, assume isolevel is in the middle
             } else {
-                mu = (iso_value - d1) / (d2 - d1);
+                mu = (isovalue - d1) / (d2 - d1);
             }
 
             if (mu < 0.f || mu > 1.f) {
