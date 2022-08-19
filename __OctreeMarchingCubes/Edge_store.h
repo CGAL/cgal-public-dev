@@ -38,8 +38,8 @@ public:
 
     typedef typename Traits_::FT FT;
 
-    Edge_store(const Octree& tree, std::function<FT(Vector)> func)
-    : tree(tree), func(func) {}
+    Edge_store(const Octree& tree)
+    : tree(tree) {}
 
     const std::array<Edge*, 12>& get(const Node& n) const { return edge_lists.at(n); }
 
@@ -51,9 +51,15 @@ public:
             for (unsigned k = 0; k <= 2; ++k) {
                 unsigned j = i | (1 << k);
                 if (i != j){
-                    Vector p1 (i&4 ? b.xmax() : b.xmin(), i&2 ? b.ymax() : b.ymin(), i&1 ? b.zmax() : b.zmin());
-                    Vector p2 (j&4 ? b.xmax() : b.xmin(), j&2 ? b.ymax() : b.ymin(), j&1 ? b.zmax() : b.zmin());
-                    edges[ind++] = new Edge(tree, {(i&4)>>2, (i&2)>>1, i&1, (j&4)>>2, (j&2)>>1, j&1}, 0, func(p1), func(p2));
+                    std::bitset<3> c1(i);
+                    bool tmp = c1[0]; c1[0] = c1[2]; c1[2] = tmp;
+                    std::bitset<3> c2(j);
+                    tmp = c2[0]; c2[0] = c2[2]; c2[2] = tmp;
+                    FT v1 = tree.value(tree.vertex_uniform_coordinates(root, c1));
+                    FT v2 = tree.value(tree.vertex_uniform_coordinates(root, c2));
+                    edges[ind++] = new Edge(tree,
+                        {(i&4)>>2, (i&2)>>1, i&1, (j&4)>>2, (j&2)>>1, j&1}, 0,
+                        v1, v2);
                 }
             }
         }
@@ -77,21 +83,19 @@ public:
                 if (i != j){
                     if (i == corner) { // edge is the left child of another edge
                         if (parent_edges[ind]->get_child1() == nullptr) {
-                            std::pair<Point,Point> seg = parent_edges[ind]->segment();
-                            Vector p1 (seg.first.x(), seg.first.y(), seg.first.z());
-                            Vector p2 (seg.second.x(), seg.second.y(), seg.second.z());
-                            Vector p ((p1 + p2) / 2);
-                            parent_edges[ind]->divide(func(p));
+                            std::bitset<3> c(j);
+                            bool tmp = c[0]; c[0] = c[2]; c[2] = tmp;
+                            FT v = tree.value(tree.vertex_uniform_coordinates(node, c));
+                            parent_edges[ind]->divide(v);
                         }
                         edges[ind++] = parent_edges[ind]->get_child1();
                     }
                     else if (j == corner) { // edge is the right child of another edge
                         if (parent_edges[ind]->get_child2() == nullptr) {
-                            std::pair<Point,Point> seg = parent_edges[ind]->segment();
-                            Vector p1 (seg.first.x(), seg.first.y(), seg.first.z());
-                            Vector p2 (seg.second.x(), seg.second.y(), seg.second.z());
-                            Vector p ((p1 + p2) / 2);
-                            parent_edges[ind]->divide(func(p));
+                            std::bitset<3> c(i);
+                            bool tmp = c[0]; c[0] = c[2]; c[2] = tmp;
+                            FT v = tree.value(tree.vertex_uniform_coordinates(node, c));
+                            parent_edges[ind]->divide(v);
                         }
                         edges[ind++] = parent_edges[ind]->get_child2();
                     }
@@ -111,10 +115,14 @@ public:
                                         sameEdge = edge;
                                 }
                         }
-                        Vector p1 (i&4 ? b.xmax() : b.xmin(), i&2 ? b.ymax() : b.ymin(), i&1 ? b.zmax() : b.zmin());
-                        Vector p2 (j&4 ? b.xmax() : b.xmin(), j&2 ? b.ymax() : b.ymin(), j&1 ? b.zmax() : b.zmin());
+                        std::bitset<3> c1(i);
+                        bool tmp = c1[0]; c1[0] = c1[2]; c1[2] = tmp;
+                        std::bitset<3> c2(j);
+                        tmp = c2[0]; c2[0] = c2[2]; c2[2] = tmp;
+                        FT v1 = tree.value(tree.vertex_uniform_coordinates(node, c1));
+                        FT v2 = tree.value(tree.vertex_uniform_coordinates(node, c2));
                         edges[ind++] = sameEdge == nullptr
-                            ? new Edge(tree, coords, node.depth(), func(p1), func(p2))
+                            ? new Edge(tree, coords, node.depth(), v1, v2)
                             : sameEdge;
                     }
                 }
@@ -128,8 +136,6 @@ private:
     std::map<Node, std::array<Edge*, 12>> edge_lists;
 
     const Octree& tree;
-
-    std::function<FT(Vector)> func;
 
 };
 

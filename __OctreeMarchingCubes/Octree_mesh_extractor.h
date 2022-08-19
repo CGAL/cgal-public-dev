@@ -39,8 +39,8 @@ public:
 
     typedef CGAL::Edge_store<GeomTraits, Point_set, Point_map> Edge_store;
 
-    Octree_mesh_extractor(const Octree& tree, Implicit_function func)
-    : octree(tree), func(func), edges(tree, func) {
+    Octree_mesh_extractor(const Octree& tree)
+    : octree(tree), edges(tree) {
         // Add edges to container
         for (Node node : octree.template traverse<Preorder_traversal>()) { // ????
             if(node == octree.root())
@@ -120,7 +120,7 @@ public:
     std::vector<size_t> process_face(
         const Node& node,
         Adjacency adj,
-        size_t start,
+        std::optional<size_t> start,
         std::vector<std::vector<size_t>>& additional_polygons) {
 
         Node neighbour = node.adjacent_node(adj);
@@ -163,7 +163,7 @@ public:
                     if (vals.first * vals.second <= 0) {
                         auto point = edge->extract_isovertex();
                         segment.push_back(edge);
-                        if (add_point_to_mesh(segment.back()) == start) {
+                        if (start && add_point_to_mesh(segment.back()) == *start) {
                             startv = ind;
                             startp = segment.size() - 1;
                         }
@@ -178,33 +178,35 @@ public:
         }
 
         std::vector<const Edge*> polyline_edges;
-
-        int v = startv, p = !startp;
+        std::vector<size_t> polyline;
         std::set<int> vs;
-        for (int i = 0; i < segments.size(); ++i) {
-            polyline_edges.push_back(segments[v][p]);
-            vs.insert(v);
-            bool found = false;
-            // try to find a segment continuing the polyline
-            for (int j = 0; j < segments.size(); ++j) if (v != j) {
-                if (segments[j][0] == polyline_edges.back()) { found = true; v = j; p = 1; break; }
-                else if (segments[j][1] == polyline_edges.back()) { found = true; v = j; p = 0; break; }
-            }
-            if (!found) {
-                // if none, try connecting to a twin edge
-                auto next = polyline_edges.back()->twin_edge();
-                if (next == nullptr) break; // no twin edge: polyline to be ended
-                v = -1;
-                for (int j = 0; j < segments.size(); ++j) {
-                    if (segments[j][0] == next || segments[j][1] == next) { v = j; }
-                }
-                if (v == -1) break; // twin edge exists, but not in this cell: polyline is ended
-            }
-        }
-        std::vector<size_t> polyline(polyline_edges.size());
-        std::transform(polyline_edges.cbegin(), polyline_edges.cend(), polyline.begin(),
-            [this] (const Edge* e) { return add_point_to_mesh(e); });
 
+        if(start) {
+            int v = startv, p = !startp;
+            for (int i = 0; i < segments.size(); ++i) {
+                polyline_edges.push_back(segments[v][p]);
+                vs.insert(v);
+                bool found = false;
+                // try to find a segment continuing the polyline
+                for (int j = 0; j < segments.size(); ++j) if (v != j) {
+                    if (segments[j][0] == polyline_edges.back()) { found = true; v = j; p = 1; break; }
+                    else if (segments[j][1] == polyline_edges.back()) { found = true; v = j; p = 0; break; }
+                }
+                if (!found) {
+                    // if none, try connecting to a twin edge
+                    auto next = polyline_edges.back()->twin_edge();
+                    if (next == nullptr) break; // no twin edge: polyline to be ended
+                    v = -1;
+                    for (int j = 0; j < segments.size(); ++j) {
+                        if (segments[j][0] == next || segments[j][1] == next) { v = j; }
+                    }
+                    if (v == -1) break; // twin edge exists, but not in this cell: polyline is ended
+                }
+            }
+            polyline.resize(polyline_edges.size());
+            std::transform(polyline_edges.cbegin(), polyline_edges.cend(), polyline.begin(),
+                [this] (const Edge* e) { return add_point_to_mesh(e); });
+        }
         // unsure, if this part is needed, currently it does not run with any of the tests
         if(polyline.size() < segments.size()) {
             std::vector<std::vector<const Edge*>> remaining_segments;
@@ -264,6 +266,7 @@ public:
 
         std::vector<size_t> polygon;
         std::vector<std::vector<size_t>> additional_polygons;
+        std::set<Adjacency> processed_faces;
 
         int ind = 0;
         std::vector<int> visited {ind};
@@ -281,6 +284,7 @@ public:
                     std::vector<size_t> internal_points = process_face(
                         node, Adjacency(face), polygon.back(),
                         additional_polygons);
+                    processed_faces.insert(Adjacency(face));
                     for (auto it : internal_points) {
                         polygon.push_back(it);
                     }
@@ -290,6 +294,12 @@ public:
                 }
             }
         }
+
+        for(int i = 0; i < 6; ++i) {
+            if(processed_faces.find(Adjacency(i)) == processed_faces.end())
+                process_face(node, Adjacency(i), std::nullopt, additional_polygons);
+        }
+
         if(polygon.size() > 0)
             faces.push_back(polygon);
     }
@@ -300,7 +310,6 @@ public:
 private:
 
     const Octree& octree;
-    Implicit_function func;
     Edge_store edges;
 
     std::map<Edge, size_t> edge_points_in_mesh;

@@ -53,7 +53,7 @@ private:
 };
 
 int main(int argc, char** argv) {
-    ImplicitFunction sphere = [](Vector p) { return sqrt(p.x()*p.x() + p.y()*p.y() + p.z()*p.z()) - 0.5; };
+    ImplicitFunction sphere = [](Vector p) { return sqrt((p.x()-0.1)*(p.x()-0.1) + (p.y()-0.2)*(p.y()-0.2) + p.z()*p.z()) - 0.5; };
     ImplicitFunction cube = [](Vector p) {
         return std::max({std::abs(p.x()), std::abs(p.y()), std::abs(p.z())}) - 0.5;
     };
@@ -98,9 +98,9 @@ int main(int argc, char** argv) {
         func = sphere;
 
     Octree octree(CGAL::Bbox_3(-1.2,-1.2,-1.2,1.2,1.2,1.2));
-    octree.refine(Split_by_closeness(func, octree));
+    octree.refine(Split_by_closeness(func, octree), [func](const Point& p) { return func(Vector(p[0], p[1], p[2])); });
 
-    CGAL::Octree_mesh_extractor<Kernel> extractor (octree, func);
+    CGAL::Octree_mesh_extractor<Kernel> extractor (octree);
 
     // Traverse octree and process each cell
     // todo: later prepare for parallelization

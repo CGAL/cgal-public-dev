@@ -47,6 +47,8 @@ class Octree_wrapper {
     typedef CGAL::Surface_mesh<Point_3> Mesh;
     typedef typename boost::graph_traits<Mesh>::vertex_descriptor Vertex_descriptor;
 
+    typedef std::function<FT(Point_3)> ImplicitFunction;
+
   private:
     std::size_t max_depth_ = 0;
 
@@ -73,10 +75,11 @@ class Octree_wrapper {
   public:
     Octree_wrapper( const CGAL::Bbox_3& bbox )
         : bbox_( bbox ), offset_x_( bbox.xmin() ), offset_y_( bbox.ymin() ), offset_z_( bbox.zmin() ),
-          point_range_( { { bbox.xmin(), bbox.ymin(), bbox.zmin() }, { bbox.xmax(), bbox.ymax(), bbox.zmax() } } ), octree_( point_range_ ) {}
+          point_range_( { { bbox.xmin(), bbox.ymin(), bbox.zmin() }, { bbox.xmax(), bbox.ymax(), bbox.zmax() } } ),
+          octree_( point_range_, CGAL::Identity_property_map<Point_3>(), 1.0 ) {}
 
     template<class Split_predicate>
-    void refine( const Split_predicate& split_predicate ) {
+    void refine( const Split_predicate& split_predicate, const ImplicitFunction& func = [](const Point_3& p){ return 0; } ) {
         octree_.refine( split_predicate );
 
         max_depth_ = octree_.depth();
@@ -97,7 +100,7 @@ class Octree_wrapper {
                 Uniform_coords vuc = vertex_uniform_coordinates( node, i );
                 const auto lex     = lex_index( vuc[0], vuc[1], vuc[2], max_depth_ );
                 leaf_vertices_set.insert( lex );
-                vertex_values_[lex] = 0;
+                vertex_values_[lex] = func( point( lex ) );
             }
 
             // write all leaf edges in a set
@@ -153,6 +156,10 @@ class Octree_wrapper {
 
     FT value( const Vertex_handle& v ) const { return vertex_values_.at( v ); }
     FT& value( const Vertex_handle& v ) { return vertex_values_[v]; }
+
+    FT value( const Uniform_coords& coords ) const {
+        return value(lex_index(coords[0], coords[1], coords[2], max_depth()));
+    }
 
     Vector_3 gradient( const Vertex_handle& v ) const { return vertex_gradients_.at( v ); }
     Vector_3& gradient( const Vertex_handle& v ) { return vertex_gradients_[v]; }
