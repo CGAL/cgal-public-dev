@@ -44,8 +44,8 @@ void make_polygon_mesh_using_marching_cubes_on_octree(const Domain_& domain, con
     }
     else {
         throw CGAL::Precondition_exception("Octree_marching_cubes"
-                    , "Octree isosurface extraction is only available on an Octree_domain"
-                    , "TODO", 49);
+                    , "std::is_same_v<Domain_, CGAL::Octree_domain<Kernel>>"
+                    , "TODO", 46, "Octree isosurface extraction is only available on an Octree_domain");
     }
 }
 
