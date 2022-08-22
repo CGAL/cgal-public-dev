@@ -401,7 +401,7 @@ Left: 5K points sampled on a mechanical piece with sharp features (creases, dart
 Most case studies for Poisson reconstruction also apply to the Spectral method. Here we continue the study for the Spectral method to show its special traits.
 
 \subsubsection Implicit_surface_reconstruction_3Cunoriented unoriented normal
-The major difference between Spectral and the other two methods is that Spectral takes unoriented normal as input. This becomes a primary advantage if the normals are wrongly labeled. Poisson and SSD would created holes or broken surface when normals are incorrect while Spectral gives accurate result (see figure \cgalFigureRef{Implicit_surface_reconstruction_3figunoriented,unoriented_normal_comparison.png}). 
+The major difference between Spectral and the other two methods is that Spectral takes unoriented normal as input. This becomes a primary advantage if the normals are wrongly labeled. Poisson and SSD would created holes or broken surface when normals are incorrect while Spectral gives accurate result (see figure \cgalFigureRef{Implicit_surface_reconstruction_3figunoriented}). 
 
 
 \cgalFigureBegin{Implicit_surface_reconstruction_3figunoriented,unoriented_normal_comparison.png}
@@ -420,7 +420,7 @@ Spectral reconstruction with different data fitting \f$\lambda \f$ and bilaplaci
 
 Most case studies for Poisson reconstruction also apply to the SSD method. Here we continue the study for the SSD method to show its special traits.
 
-\subsubsection \subsubsection Implicit_surface_reconstruction_3SSDSolverP SSD Solver's Parameters
+\subsubsection Implicit_surface_reconstruction_3SSDSolverP SSD Solver's Parameters
 
 There are three parameters that requires tuning when computing the implicit function using SSD solver: the data fitting term, the laplacian term and the hessian term as described in \cgalCite{CalakliT11SSD}. This data fitting term has has exact same effect as described \ref Implicit_surface_reconstruction_3PSolverP "Poisson Solver's Parameters". The hessian term enforces the gradient to be constant far from the surface, which in practice also controls the smoothness. A empirical trick for tuning is to fix laplacian weight and adjust data fitting and hessian term accordingly (see \cgalFigureRef{Implicit_surface_reconstruction_3figSSDSolverP}). However, an over-decreased hessian weight may cause the solver to fail on numerical issses.
 
@@ -436,61 +436,405 @@ the point set simplification. The machine used is a PC running Windows 7 64 bits
 processor clocked at 2.81 GHz and with 8 GB of RAM. The software is compiled with Visual \CC 2010 (VC9) compiler
 with the 03 option which maximizes speed.  All measurements were done using the \ref thirdpartyEigen "Eigen" library.
 
-\subsection SurfReconstPerfPIF Poisson Implicit Function
+\subsection Implicit_surface_reconstruction_3PerfDiscretization Discretization
 
-The point set chosen for benchmarking the Poisson implicit function is the Bimba con Nastrino point set
-(1.6 million points) depicted by \cgalFigureRef{Poisson_surface_reconstruction_3-fig-contouring_bench}.
-We measure the Poisson implicit function computation (i.e., the call to
-`Poisson_reconstruction_function::compute_implicit_function()` denoted by Poisson solve hereafter)
-for this point set as well as for simplified versions obtained through random simplification.
-The following table provides Poisson solve computation times in seconds for an increasing number of points.
+The performance of each reconstruction algorithm scales mostly with the variable size of triangulation rather than the size of input. Here we show the discretization result for various point clouds, which correpond to function call `Implicit_reconstruction_function::initialize_point_map()` that includes points generation, Delaunay triangulation and sliver removal. The Deluanay refinement scales almost linearly to the input size. The octree discretization depends on the input size, depth and complexity of the input point clouds, and grows slower than the Deluanay refinement. We do not list the time spend on this function since it comprises very little time comparing to the whole reconstruction procedure. 
+
+<TABLE CELLSPACING=5 >
+<TR><TD ALIGN=LEFT NOWRAP COLSPAN=6><HR>
+<TR>
+    <TD class="math" ALIGN=CENTER NOWRAP>
+    Input set 
+    <TD class="math" ALIGN=CENTER NOWRAP>
+    Input size
+    <TD class="math" ALIGN=CENTER NOWRAP>
+    Octree-7 size
+    <TD class="math" ALIGN=CENTER NOWRAP>
+    Octree-8 size
+    <TD class="math" ALIGN=CENTER NOWRAP>
+    Octree-9 size
+    <TD class="math" ALIGN=CENTER NOWRAP>
+    Delaunay size
+<TR><TD ALIGN=LEFT NOWRAP COLSPAN=6><HR>
+<TR>
+    <TD class="math" ALIGN=CENTER NOWRAP>
+    kitten
+    <TD class="math" ALIGN=CENTER NOWRAP>
+    5k
+    <TD class="math" ALIGN=CENTER NOWRAP>
+    64k
+    <TD class="math" ALIGN=CENTER NOWRAP>
+    64k
+    <TD class="math" ALIGN=CENTER NOWRAP>
+    64k
+    <TD class="math" ALIGN=CENTER NOWRAP>
+    34k
+<TR>
+    <TD class="math" ALIGN=CENTER NOWRAP>
+    buddha
+    <TD class="math" ALIGN=CENTER NOWRAP>
+    72k
+    <TD class="math" ALIGN=CENTER NOWRAP>
+    210k
+    <TD class="math" ALIGN=CENTER NOWRAP>
+    740k
+    <TD class="math" ALIGN=CENTER NOWRAP>
+    877k
+    <TD class="math" ALIGN=CENTER NOWRAP>
+    496k
+<TR>
+    <TD class="math" ALIGN=CENTER NOWRAP>
+    Bimda_50k
+    <TD class="math" ALIGN=CENTER NOWRAP>
+    50k
+    <TD class="math" ALIGN=CENTER NOWRAP>
+    193k
+    <TD class="math" ALIGN=CENTER NOWRAP>
+    571k
+    <TD class="math" ALIGN=CENTER NOWRAP>
+    1029k
+    <TD class="math" ALIGN=CENTER NOWRAP>
+    646k
+<TR>
+    <TD class="math" ALIGN=CENTER NOWRAP>
+    Bimda_500k
+    <TD class="math" ALIGN=CENTER NOWRAP>
+    500k
+    <TD class="math" ALIGN=CENTER NOWRAP>
+    216k
+    <TD class="math" ALIGN=CENTER NOWRAP>
+    834k
+    <TD class="math" ALIGN=CENTER NOWRAP>
+    297k
+    <TD class="math" ALIGN=CENTER NOWRAP>
+    639k
+<TR><TD ALIGN=LEFT NOWRAP COLSPAN=6><HR>
+</TABLE>
+
+We also show the time and reconstruction error measured using `CGAL::approximate_Hausdorff_distance()` for a 50k point set sampled from a Bimba con Nastrino surface mesh using Poisson reconction and the recommended contouring parameter `approximation distance = 0.25 * the input point`. The reconstruction accuracy does not have noticable difference in between different discretization options. We recommand choosing a suitable discretization method that balance time and accuracy based on the input.
+
+<TABLE CELLSPACING=5 >
+<TR><TD ALIGN=LEFT NOWRAP COLSPAN=4><HR>
+<TR>
+    <TD class="math" ALIGN=CENTER NOWRAP>
+    Discretization method
+    <TD class="math" ALIGN=CENTER NOWRAP>
+    Solver's size
+    <TD class="math" ALIGN=CENTER NOWRAP>
+    Total time(s)
+    <TD class="math" ALIGN=CENTER NOWRAP>
+    Hausdorff distance
+<TR><TD ALIGN=LEFT NOWRAP COLSPAN=4><HR>
+<TR>
+    <TD class="math" ALIGN=CENTER NOWRAP>
+    Octree-7
+    <TD class="math" ALIGN=CENTER NOWRAP>
+    190k
+    <TD class="math" ALIGN=CENTER NOWRAP>
+    17
+    <TD class="math" ALIGN=CENTER NOWRAP>
+    0.0078
+<TR>
+    <TD class="math" ALIGN=CENTER NOWRAP>
+    Octree-8
+    <TD class="math" ALIGN=CENTER NOWRAP>
+    570k
+    <TD class="math" ALIGN=CENTER NOWRAP>
+    21
+    <TD class="math" ALIGN=CENTER NOWRAP>
+    0.0072
+<TR>
+    <TD class="math" ALIGN=CENTER NOWRAP>
+    Octree-9
+    <TD class="math" ALIGN=CENTER NOWRAP>
+    1029k
+    <TD class="math" ALIGN=CENTER NOWRAP>
+    41
+    <TD class="math" ALIGN=CENTER NOWRAP>
+    0.0072
+<TR>
+    <TD class="math" ALIGN=CENTER NOWRAP>
+    Delaunay
+    <TD class="math" ALIGN=CENTER NOWRAP>
+    646k
+    <TD class="math" ALIGN=CENTER NOWRAP>
+    39
+    <TD class="math" ALIGN=CENTER NOWRAP>
+    0.0076
+<TR><TD ALIGN=LEFT NOWRAP COLSPAN=4><HR>
+</TABLE>
+
+\subsection Implicit_surface_reconstruction_3PerfImplicit Implicit Function
+
+The performance analysis for implicit function are split to two parts: the scalability of individual method and reconstruction performance between different methods. The following performance are measured based on resampled data points from a Bimba con Nastrino surface mesh during the function call `Implicit_reconstruction_function::compute_poisson_implicit_function()`, `Implicit_reconstruction_function::compute_spectral_implicit_function()` and `Implicit_reconstruction_function::compute_ssd_implicit_function()`. The contouring settings are set the same as the mentioned in previous section.
+
+\subsubsection Implicit_surface_reconstruction_3PerfImplicitPoisson Poisson
+We show the performance of Poisson reconstruction for different size as below. Poisson reconstruction scales well and we show all the reconstruction result with octree depth 8 and Deluanay refinement. The Poisson implicit function computation has a memory peak when solving the Poisson linear system using the sparse linear solver.
+
+<TABLE CELLSPACING=5 >
+<TR><TD ALIGN=LEFT NOWRAP COLSPAN=6><HR>
+<TR>
+    <TD class="math" ALIGN=CENTER NOWRAP>
+    Input size
+    <TD class="math" ALIGN=CENTER NOWRAP>
+    Discretization method
+    <TD class="math" ALIGN=CENTER NOWRAP>
+    Solver's size
+    <TD class="math" ALIGN=CENTER NOWRAP>
+    Total time(s)
+    <TD class="math" ALIGN=CENTER NOWRAP>
+    Memory Peak(MBytes)
+<TR><TD ALIGN=LEFT NOWRAP COLSPAN=5><HR>
+<TR>
+    <TD class="math" ALIGN=CENTER NOWRAP>
+    10k
+    <TD class="math" ALIGN=CENTER NOWRAP>
+    Octree-8
+    <TD class="math" ALIGN=CENTER NOWRAP>
+    217k
+    <TD class="math" ALIGN=CENTER NOWRAP>
+    4.7
+    <TD class="math" ALIGN=CENTER NOWRAP>
+    380
+<TR>
+    <TD class="math" ALIGN=CENTER NOWRAP>
+    10k
+    <TD class="math" ALIGN=CENTER NOWRAP>
+    Deluanay
+    <TD class="math" ALIGN=CENTER NOWRAP>
+    128k
+    <TD class="math" ALIGN=CENTER NOWRAP>
+    3.5
+    <TD class="math" ALIGN=CENTER NOWRAP>
+    220
+<TR>
+    <TD class="math" ALIGN=CENTER NOWRAP>
+    50k
+    <TD class="math" ALIGN=CENTER NOWRAP>
+    Octree-8
+    <TD class="math" ALIGN=CENTER NOWRAP>
+    570k
+    <TD class="math" ALIGN=CENTER NOWRAP>
+    22
+    <TD class="math" ALIGN=CENTER NOWRAP>
+    980
+<TR>
+    <TD class="math" ALIGN=CENTER NOWRAP>
+    50k
+    <TD class="math" ALIGN=CENTER NOWRAP>
+    Deluanay
+    <TD class="math" ALIGN=CENTER NOWRAP>
+    646k
+    <TD class="math" ALIGN=CENTER NOWRAP>
+    23
+    <TD class="math" ALIGN=CENTER NOWRAP>
+    1190
+<TR>
+    <TD class="math" ALIGN=CENTER NOWRAP>
+    100k
+    <TD class="math" ALIGN=CENTER NOWRAP>
+    Octree-8
+    <TD class="math" ALIGN=CENTER NOWRAP>
+    710k
+    <TD class="math" ALIGN=CENTER NOWRAP>
+    31
+    <TD class="math" ALIGN=CENTER NOWRAP>
+    1250
+<TR>
+    <TD class="math" ALIGN=CENTER NOWRAP>
+    100k
+    <TD class="math" ALIGN=CENTER NOWRAP>
+    Deluanay
+    <TD class="math" ALIGN=CENTER NOWRAP>
+    1279k
+    <TD class="math" ALIGN=CENTER NOWRAP>
+    117
+    <TD class="math" ALIGN=CENTER NOWRAP>
+    2200
+<TR>
+    <TD class="math" ALIGN=CENTER NOWRAP>
+    500k
+    <TD class="math" ALIGN=CENTER NOWRAP>
+    Octree-8
+    <TD class="math" ALIGN=CENTER NOWRAP>
+    830k
+    <TD class="math" ALIGN=CENTER NOWRAP>
+    62
+    <TD class="math" ALIGN=CENTER NOWRAP>
+    1600
+<TR>
+    <TD class="math" ALIGN=CENTER NOWRAP>
+    500k
+    <TD class="math" ALIGN=CENTER NOWRAP>
+    Deluanay
+    <TD class="math" ALIGN=CENTER NOWRAP>
+    6394k
+    <TD class="math" ALIGN=CENTER NOWRAP>
+    1541
+    <TD class="math" ALIGN=CENTER NOWRAP>
+    11000
+<TR><TD ALIGN=LEFT NOWRAP COLSPAN=5><HR>
+</TABLE>
+
+
+\subsubsection Implicit_surface_reconstruction_3PerfImplicitSpectral Spectral
+We show the performance of SSD reconstruction for different size as below. For SSD we only show the octree based discretization here for large input since it becomes much slower for variable size reaches several hundred thousand. The time measured also includes the time of a discretization optimization immediately at the beginning of function call `Implicit_reconstruction_function::compute_spectral_implicit_function()`.
+
+<TABLE CELLSPACING=5 >
+<TR><TD ALIGN=LEFT NOWRAP COLSPAN=6><HR>
+<TR>
+<TD class="math" ALIGN=CENTER NOWRAP>
+    Input size
+    <TD class="math" ALIGN=CENTER NOWRAP>
+    Discretization method
+    <TD class="math" ALIGN=CENTER NOWRAP>
+    Solver's size
+    <TD class="math" ALIGN=CENTER NOWRAP>
+    Total time(s)
+    <TD class="math" ALIGN=CENTER NOWRAP>
+    Memory Peak(MBytes)
+    <TR><TD ALIGN=LEFT NOWRAP COLSPAN=5><HR>
+<TR>
+    <TD class="math" ALIGN=CENTER NOWRAP>
+    5k
+    <TD class="math" ALIGN=CENTER NOWRAP>
+    Octree-7
+    <TD class="math" ALIGN=CENTER NOWRAP>
+    86k
+    <TD class="math" ALIGN=CENTER NOWRAP>
+    554
+    <TD class="math" ALIGN=CENTER NOWRAP>
+    2100
+<TR>
+    <TD class="math" ALIGN=CENTER NOWRAP>
+    10k
+    <TD class="math" ALIGN=CENTER NOWRAP>
+    Octree-7
+    <TD class="math" ALIGN=CENTER NOWRAP>
+    127k
+    <TD class="math" ALIGN=CENTER NOWRAP>
+    1159
+    <TD class="math" ALIGN=CENTER NOWRAP>
+    3380
+<TR>
+<TD class="math" ALIGN=CENTER NOWRAP>
+    10k
+    <TD class="math" ALIGN=CENTER NOWRAP>
+    Octree-7
+    <TD class="math" ALIGN=CENTER NOWRAP>
+    190k
+    <TD class="math" ALIGN=CENTER NOWRAP>
+    2149
+    <TD class="math" ALIGN=CENTER NOWRAP>
+    10010
+<TR><TD ALIGN=LEFT NOWRAP COLSPAN=5><HR>
+</TABLE>
+
+
+
+\subsubsection Implicit_surface_reconstruction_3PerfImplicitSSD SSD
+We show the performance of SSD reconstruction for different size as below. For SSD we only show the octree based discretization here for large input since it becomes much slower for variable size reaches a million.
+
+<TABLE CELLSPACING=5 >
+<TR><TD ALIGN=LEFT NOWRAP COLSPAN=6><HR>
+<TR>
+    <TD class="math" ALIGN=CENTER NOWRAP>
+    Input size
+    <TD class="math" ALIGN=CENTER NOWRAP>
+    Discretization method
+    <TD class="math" ALIGN=CENTER NOWRAP>
+    Solver's size(s)
+    <TD class="math" ALIGN=CENTER NOWRAP>
+    Total time(s)
+    <TD class="math" ALIGN=CENTER NOWRAP>
+    Memory Peak(MBytes)
+<TR><TD ALIGN=LEFT NOWRAP COLSPAN=5><HR>
+<TR>
+    <TD class="math" ALIGN=CENTER NOWRAP>
+    5k
+    <TD class="math" ALIGN=CENTER NOWRAP>
+    Octree-7
+    <TD class="math" ALIGN=CENTER NOWRAP>
+    86k
+    <TD class="math" ALIGN=CENTER NOWRAP>
+    14
+    <TD class="math" ALIGN=CENTER NOWRAP>
+    1070
+<TR>
+    <TD class="math" ALIGN=CENTER NOWRAP>
+    10k
+    <TD class="math" ALIGN=CENTER NOWRAP>
+    Octree-7
+    <TD class="math" ALIGN=CENTER NOWRAP>
+    127k
+    <TD class="math" ALIGN=CENTER NOWRAP>
+    22
+    <TD class="math" ALIGN=CENTER NOWRAP>
+    1590
+<TR>
+    <TD class="math" ALIGN=CENTER NOWRAP>
+    10k
+    <TD class="math" ALIGN=CENTER NOWRAP>
+    Octree-8
+    <TD class="math" ALIGN=CENTER NOWRAP>
+    217k
+    <TD class="math" ALIGN=CENTER NOWRAP>
+    55
+    <TD class="math" ALIGN=CENTER NOWRAP>
+    2710
+<TR>
+    <TD class="math" ALIGN=CENTER NOWRAP>
+    50k
+    <TD class="math" ALIGN=CENTER NOWRAP>
+    Octree-7
+    <TD class="math" ALIGN=CENTER NOWRAP>
+    190k
+    <TD class="math" ALIGN=CENTER NOWRAP>
+    33
+    <TD class="math" ALIGN=CENTER NOWRAP>
+    2420
+<TR>
+    <TD class="math" ALIGN=CENTER NOWRAP>
+    50k
+    <TD class="math" ALIGN=CENTER NOWRAP>
+    Octree-8
+    <TD class="math" ALIGN=CENTER NOWRAP>
+    570k
+    <TD class="math" ALIGN=CENTER NOWRAP>
+    127
+    <TD class="math" ALIGN=CENTER NOWRAP>
+    7120
+<TR><TD ALIGN=LEFT NOWRAP COLSPAN=5><HR>
+</TABLE>
+
+\subsubsection Implicit_surface_reconstruction_3PerfImplicitComp Comparison
+We also show the reconstruction error measured using `CGAL::approximate_Hausdorff_distance()` for a 50k point set sampled from a Bimba con Nastrino surface mesh using different reconstruction methods.
 
 <TABLE CELLSPACING=5 >
 <TR><TD ALIGN=LEFT NOWRAP COLSPAN=2><HR>
 <TR>
-<TD class="math" ALIGN=CENTER NOWRAP>
-
-Number of points (x1000)
-<TD class="math" ALIGN=CENTER NOWRAP>
-Poisson solve duration (in s)
+    <TD class="math" ALIGN=CENTER NOWRAP>
+    Reconstruction Method
+    <TD class="math" ALIGN=CENTER NOWRAP>
+    Hausdorff distance
 <TR><TD ALIGN=LEFT NOWRAP COLSPAN=2><HR>
 <TR>
-<TD class="math" ALIGN=CENTER NOWRAP>
-60
-<TD class="math" ALIGN=CENTER NOWRAP>
-15
+    <TD class="math" ALIGN=CENTER NOWRAP>
+    Poisson
+    <TD class="math" ALIGN=CENTER NOWRAP>
+    0.0048
 <TR>
-<TD class="math" ALIGN=CENTER NOWRAP>
-100
-<TD class="math" ALIGN=CENTER NOWRAP>
-25
+    <TD class="math" ALIGN=CENTER NOWRAP>
+    Spectral
+    <TD class="math" ALIGN=CENTER NOWRAP>
+    0.0054
 <TR>
-
-<TD class="math" ALIGN=CENTER NOWRAP>
-250
-<TD class="math" ALIGN=CENTER NOWRAP>
-96
-<TR>
-<TD class="math" ALIGN=CENTER NOWRAP>
-500
-<TD class="math" ALIGN=CENTER NOWRAP>
-150
-<TR>
-<TD class="math" ALIGN=CENTER NOWRAP>
-1,000
-<TD class="math" ALIGN=CENTER NOWRAP>
-249
-<TR>
-
-<TD class="math" ALIGN=CENTER NOWRAP>
-1,800
-<TD class="math" ALIGN=CENTER NOWRAP>
-478
+    <TD class="math" ALIGN=CENTER NOWRAP>
+    SSD
+    <TD class="math" ALIGN=CENTER NOWRAP>
+    0.0066
 <TR><TD ALIGN=LEFT NOWRAP COLSPAN=2><HR>
 </TABLE>
-
-\subsection SurfReconstPerfSIF Spectral Implicit Function
-
 
 \subsection SurfReconstPerfCont Contouring
 
@@ -555,54 +899,6 @@ Contouring duration (in s) and reconstruction error (mm)
 against several approximation distance parameters
 for the Bimba con Nastrino point set simplified to 100k points.
 \cgalFigureEnd
-
-\subsection SurfReconstPerfMem Memory
-
-We measure the memory occupancy for the reconstruction of the full Bimba con Nastrino point
-set (1.8 millions points) as well as for simplified versions.\n
-The Poisson implicit function computation has a memory peak when solving the Poisson linear
-system using the sparse linear solver.
-
-<TABLE CELLSPACING=5 >
-<TR><TD ALIGN=LEFT NOWRAP COLSPAN=2><HR>
-<TR>
-<TD class="math" ALIGN=CENTER NOWRAP>
-Number of points (x1000)
-<TD class="math" ALIGN=CENTER NOWRAP>
-Memory occupancy (MBytes)
-<TR><TD ALIGN=LEFT NOWRAP COLSPAN=2><HR>
-<TR>
-<TD class="math" ALIGN=CENTER NOWRAP>
-60
-<TD class="math" ALIGN=CENTER NOWRAP>
-180
-<TR>
-<TD class="math" ALIGN=CENTER NOWRAP>
-100
-<TD class="math" ALIGN=CENTER NOWRAP>
-270
-<TR>
-<TD class="math" ALIGN=CENTER NOWRAP>
-250
-<TD class="math" ALIGN=CENTER NOWRAP>
-790
-<TR>
-<TD class="math" ALIGN=CENTER NOWRAP>
-500
-<TD class="math" ALIGN=CENTER NOWRAP>
-1300
-<TR>
-<TD class="math" ALIGN=CENTER NOWRAP>
-1,000
-<TD class="math" ALIGN=CENTER NOWRAP>
-2200
-<TR>
-<TD class="math" ALIGN=CENTER NOWRAP>
-1,800
-<TD class="math" ALIGN=CENTER NOWRAP>
-3800
-<TR><TD ALIGN=LEFT NOWRAP COLSPAN=2><HR>
-</TABLE>
 
 
 \subsection SurfReconstPerfPSS Point Set Simplification

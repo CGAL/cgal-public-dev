@@ -27,7 +27,9 @@
 #include <CGAL/Polygon_mesh_processing/compute_normal.h>
 #include <CGAL/IO/Polyhedron_iostream.h>
 #include <CGAL/IO/Polyhedron_VRML_1_ostream.h>
-
+#include <CGAL/Polygon_mesh_processing/distance.h>
+#include <CGAL/boost/graph/IO/OFF.h>
+#define TAG CGAL::Parallel_if_available_tag
 
 #include <list>
 #include <cstdlib>
@@ -117,8 +119,8 @@ int main(int argc, char * argv[])
       ("sm_angle", po::value<double>()->default_value(20.), "The min triangle angle (degrees).")
       ("sm_radius", po::value<double>()->default_value(100.), "The max triangle size w.r.t. point set average spacing.")
       ("sm_distance", po::value<double>()->default_value(0.25), "The approximation error w.r.t. point set average spacing.")
-      ("scale", po::value<double>()->default_value(1), "scaling for testing.");;
-
+      ("scale", po::value<double>()->default_value(1), "scaling for testing.")
+      ("depth", po::value<int>()->default_value(8), "octree maximum depth");
   // Parse input files
   po::positional_options_description p;
   p.add("input", -1);
@@ -165,6 +167,7 @@ int main(int argc, char * argv[])
   bool flag_octree = vm["octree"].as<bool>();
   bool flag_octree_debug = vm["octree_debug"].as<bool>();
 
+  int max_depth = vm["depth"].as<int>();
   int size = vm["size"].as<int>();
   double x = vm["x"].as<double>();
 
@@ -172,6 +175,7 @@ int main(int argc, char * argv[])
 
   // Accumulated errors
   int accumulated_fatal_err = EXIT_SUCCESS;
+  Polyhedron output_mesh;
 
   // Process each input file
   for (int i = 1; i <= (int)files.size(); i++)
@@ -254,7 +258,7 @@ int main(int argc, char * argv[])
 	// Note: this method requires an iterator over points
 	// + property maps to access each point's position and normal.
 	// The position property map can be omitted here as we use iterators over Point_3 elements.
-	function.initialize_point_map(points, Point_map(), Normal_map(), flag_octree, flag_octree_debug);
+	function.initialize_point_map(points, Point_map(), Normal_map(), flag_octree, max_depth, flag_octree_debug);
 
     std::cerr << "Initialization: " << reconstruction_timer.time() << " seconds\n";
     
@@ -290,10 +294,12 @@ int main(int argc, char * argv[])
     // Prints status
     std::cerr << "Total implicit function (triangulation+refinement+solver): " << task_timer.time() << " seconds\n";
     task_timer.reset();
+    
 
+    
     if(flag_marching)
     {
-      Mesh output_mesh;
+      //Mesh output_mesh;
       std::cerr << "Marching tets..." << std::endl;
       std::string curr_outfile(std::to_string(i) + "_" + outfile);
       function.marching_tetrahedra(isovalue, output_mesh);
@@ -329,7 +335,7 @@ int main(int argc, char * argv[])
       // saves reconstructed surface mesh
       std::string curr_outfile(std::to_string(i) + "_" + outfile);
       std::ofstream out(curr_outfile);
-      Polyhedron output_mesh;
+
       CGAL::facets_in_complex_2_to_triangle_mesh(c2t3, output_mesh);
       out << output_mesh;
     }
@@ -338,6 +344,12 @@ int main(int argc, char * argv[])
     function.draw_xslice_function(size, x, 0, f_outfile);
 
   } // for each input file
+  
+  //Polyhedron original_mesh;
+  //CGAL::IO::read_OFF("../data/bimba_origin400000.off", original_mesh);
+
+  //std::cout << "approximate Hausdorff distance:" << CGAL::Polygon_mesh_processing::approximate_Hausdorff_distance
+  //    <TAG>(original_mesh, output_mesh) << "\n";
   
   std::cerr << std::endl;
 

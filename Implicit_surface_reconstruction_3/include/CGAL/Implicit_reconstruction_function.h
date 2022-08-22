@@ -492,6 +492,7 @@ public:
 							PointMap point_map,
 							NormalMap normal_map,
 							bool use_octree = true,
+                            int octree_max_depth = 8,
 							bool octree_debug_visu = false)
   {
     m_points = std::addressof(points);
@@ -510,7 +511,7 @@ public:
 		octree.dump_bbox("bbox_scaled_isotrope");
 	  }
       CGAL_TRACE_STREAM << "refine octree...\n";
-      octree.refine(8, 1);
+      octree.refine(octree_max_depth, 1);
 	  if(octree_debug_visu)
 	  {
 		// drawing all leafs is same as all nodes but cheaper
@@ -1388,6 +1389,10 @@ private:
     time_init = clock();
     ESolver solver;
     X = solver.compute(A).solve(B);
+        
+    size_t memory = CGAL::Memory_sizer().virtual_size();
+    std::cout << "  Peak memory:" << (memory >> 20) << " Mb allocated\n";
+
     if(solver.info() != Eigen::Success)
     {
       CGAL_TRACE_STREAM << "  Solver failed!" << std::endl;
@@ -1501,6 +1506,10 @@ private:
     time_init = clock();
     ESolver solver;
     X = solver.compute(S).solve(B);
+
+    size_t memory = CGAL::Memory_sizer().virtual_size();
+    std::cout << "  Peak memory:" << (memory >> 20) << " Mb allocated\n";
+
     if(solver.info() != Eigen::Success)
     {
       CGAL_TRACE_STREAM << "  Solver failed!" << std::endl;
@@ -1537,6 +1546,13 @@ private:
     CGAL_TRACE_STREAM << "Calls solve_spectral()" << std::endl;
 
     double time_init = clock();
+    
+    // get #variables
+    m_tr->index_all_vertices();
+    const int nb_variables = static_cast<int>(m_tr->number_of_vertices());
+    const int nb_inputs = static_cast<int>(m_points->size());
+    const int nb_finite_cells = static_cast<int>(m_tr->number_of_finite_cells());
+  	CGAL_TRACE_STREAM << "  " << nb_inputs << " input vertices out of " << nb_variables << std::endl;
 
     for(int i = 0; i < 10; i++)
     {
@@ -1550,13 +1566,7 @@ private:
     m_tr->index_all_cells();
     initialize_barycenters();
 
-    // get #variables
-    m_tr->index_all_vertices();
-    const int nb_variables = static_cast<int>(m_tr->number_of_vertices());
-    const int nb_inputs = static_cast<int>(m_points->size());
-    const int nb_finite_cells = static_cast<int>(m_tr->number_of_finite_cells());
-  	CGAL_TRACE_STREAM << "  " << nb_inputs << " input vertices out of " << nb_variables << std::endl;
-
+    
     // Assemble matrices
     ESMatrix  F(nb_inputs, nb_variables),     // Data fitting matrix
               L(nb_variables, nb_variables),  // Laplacian matrix
@@ -1636,6 +1646,9 @@ private:
     time_init = clock();
     //spectral_solver<ESMatrix, EMatrix, (int)Spectra::SortRule::LargestAlge>(EA, B, EL, X);
     spectral_solver<ESMatrix, EVector, Spectra::LARGEST_ALGE>(AL, EB, X);
+
+    size_t memory = CGAL::Memory_sizer().virtual_size();
+    std::cout << "  Peak memory:" << (memory >> 20) << " Mb allocated\n";
     
     double duration_solve = (clock() - time_init) / CLOCKS_PER_SEC;
 
