@@ -75,6 +75,13 @@ private:
     }
 };
 
+// creates an octree by splitting the bounding box and splitting one of the cells again
+struct split_only_twice {
+    bool operator()(const Octree::Node &n) const {
+        return n.depth() <= 1 && n.global_coordinates() == std::array<uint32_t, 3>{0,0,0};
+    }
+};
+
 int main(int argc, char** argv) {
     ImplicitFunction sphere = [](Point p) { return sqrt((p.x()-0.1)*(p.x()-0.1) + (p.y()-0.2)*(p.y()-0.2) + p.z()*p.z()) - 0.5; };
     ImplicitFunction cube = [](Point p) {
@@ -120,8 +127,13 @@ int main(int argc, char** argv) {
     else
         func = sphere;
 
+    ImplicitFunction small_cube = [](Point p) {
+        return std::max({std::abs(p.x() + 0.5), std::abs(p.y()), std::abs(p.z())}) - 0.4;
+    };
+
     Octree octree(CGAL::Bbox_3(-1.2,-1.2,-1.2,1.2,1.2,1.2));
     octree.refine(Split_by_closeness(func, octree), func);
+    //octree.refine(split_only_twice(), small_cube);
 
     CGAL::Octree_domain domain(octree);
 
@@ -131,6 +143,10 @@ int main(int argc, char** argv) {
     make_polygon_mesh_using_marching_cubes_on_octree(domain, 0.0, vertices, faces);
 
     std::cout << faces.size() << std::endl;
+
+    std::ofstream octree_out("octree.obj");
+    auto ff = [domain, &octree_out](const typename CGAL::Octree_domain<Kernel>::Vertex_handle& vh){ auto p = domain.position(vh); octree_out << "v " << p.x() << " " << p.y() << " " << p.z() << std::endl; };
+    domain.iterate_vertices(ff);
 
     // writing out resulting points to file
     std::ofstream mesh_out("a.obj");

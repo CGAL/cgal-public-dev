@@ -145,6 +145,7 @@ class Octree_wrapper {
     FT offset_z() const { return offset_z_; }
     std::size_t max_depth() const { return max_depth_; }
     CGAL::Bbox_3 bbox(Node n) const { return octree_.bbox(n); }
+    Point_3 barycenter(Node n) const { return octree_.barycenter(n); }
     Node root() const { return octree_.root(); }
 
     template<typename Traversal_>
