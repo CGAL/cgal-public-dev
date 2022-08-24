@@ -430,9 +430,9 @@ SSD reconstruction with different data fitting \f$\lambda\f$ and hessian weighti
 
 \section SurfReconstPerformances Performances
 
-We provide some performance numbers for scanning data. We measure the Poisson implicit function computation time,
+We provide some performance numbers for scanning data. We measure the discretization time, implicit function computation time,
 the contouring time for a range of approximation distances, the memory occupancy as well as the influence of
-the point set simplification. The machine used is a PC running Windows 7 64 bits with an Intel CPU Core 2 Duo
+the point set simplification. The first two part (\ref Implicit_surface_reconstruction_3PerfDiscretization "Discretization", \ref Implicit_surface_reconstruction_3PerfImplicit "Implicit Function") are tested on a Laptop with Windows 11 64-bits, i7-8750H with 16GB RAM. The software are compiled using MSCV 19 with /O2 (favor speed). The rest of the section are test using a PC running Windows 7 64 bits with an Intel CPU Core 2 Duo
 processor clocked at 2.81 GHz and with 8 GB of RAM. The software is compiled with Visual \CC 2010 (VC9) compiler
 with the 03 option which maximizes speed.  All measurements were done using the \ref thirdpartyEigen "Eigen" library.
 
@@ -718,7 +718,7 @@ We show the performance of SSD reconstruction for different size as below. For S
     3380
 <TR>
 <TD class="math" ALIGN=CENTER NOWRAP>
-    10k
+    50k
     <TD class="math" ALIGN=CENTER NOWRAP>
     Octree-7
     <TD class="math" ALIGN=CENTER NOWRAP>

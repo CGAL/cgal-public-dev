@@ -40,6 +40,7 @@
 #include <Eigen/Eigenvalues>
 #include <CGAL/Eigen_solver_traits.h>
 #include <CGAL/asap_optimization.h>
+#include <CGAL/Memory_sizer.h>
 #else
 #endif
 #include <CGAL/centroid.h>
@@ -1554,7 +1555,7 @@ private:
     const int nb_finite_cells = static_cast<int>(m_tr->number_of_finite_cells());
   	CGAL_TRACE_STREAM << "  " << nb_inputs << " input vertices out of " << nb_variables << std::endl;
 
-    for(int i = 0; i < 10; i++)
+    for(int i = 0; i < 20; i++)
     {
       CGAL_TRACE_STREAM << "  ASAP optimization (" << i << "/10)..." << std::endl;
       asap_optimization<Geom_traits, Triangulation>(m_tr, 5);

@@ -6,8 +6,8 @@
 #include <fstream>
 #include "isr_test_types.h"
 #include "isr_test_normal_utils.h"
-#include <CGAL/IO/STL_reader.h>
-#include <CGAL/IO/OBJ_reader.h>
+#include <CGAL/IO/STL.h>
+#include <CGAL/IO/OBJ.h>
 #include <CGAL/property_map.h>
 #include <CGAL/IO/read_xyz_points.h>
 #include <boost/property_map/property_map.hpp>
@@ -74,13 +74,14 @@ bool read_mesh_file(const std::string &input_filename, Mesh &input_mesh) /*mieux
     std::vector<Point> points;
     std::vector<std::vector<size_t>> faces;
 
-    if((extension == ".stl" || extension == ".STL")  && !CGAL::read_STL(stream, points, faces, false))
+    //if((extension == ".stl" || extension == ".STL")  && !CGAL::IO::read_STL(stream, points, faces, false))
+    if((extension == ".stl" || extension == ".STL")  && !CGAL::IO::read_STL(stream, points, faces))
     {
         std::cerr << "Error : unable to read the stl file." << std::endl;   
         success = false;
         return success;
     }
-    else if((extension == ".obj" || extension == ".OBJ")  && !CGAL::read_OBJ(stream, points, faces))
+    else if((extension == ".obj" || extension == ".OBJ")  && !CGAL::IO::read_OBJ(stream, points, faces))
     {
        std::cerr << "Error : unable to read the obj file." << input_filename << std::endl;   
        success = false;
