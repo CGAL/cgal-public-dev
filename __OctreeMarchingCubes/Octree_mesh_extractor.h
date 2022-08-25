@@ -207,8 +207,6 @@ public:
             const Edge* next = segments[v][p];
             const Edge* last = segments[endv][endp];
 
-            polyline_edges.push_back(first);
-
             std::set<int> vs;
             vs.insert(v);
             while (next != last) {
