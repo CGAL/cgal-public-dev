@@ -268,7 +268,7 @@ int main(int argc, char * argv[])
 
     if(flag_poisson)
 	{
-      if (! function.compute_poisson_implicit_function_new(fitting)){
+      if (! function.compute_poisson_implicit_function(fitting)){
         std::cerr << "Error: cannot compute implicit function" << std::endl;
         accumulated_fatal_err = EXIT_FAILURE;
         continue;
@@ -283,7 +283,7 @@ int main(int argc, char * argv[])
         }
     }
     else {
-      if (! function.compute_spectral_implicit_function_new(fitting, laplacian, bilaplacian) )
+      if (! function.compute_spectral_implicit_function(fitting, laplacian, bilaplacian) )
       {
         std::cerr << "Error: cannot compute implicit function" << std::endl;
         accumulated_fatal_err = EXIT_FAILURE;

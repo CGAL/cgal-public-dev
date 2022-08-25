@@ -812,7 +812,7 @@ public:
       \return `false` if the linear solver fails.
     */
 
-    bool compute_poisson_implicit_function_new(double data_fitting, 
+    bool compute_poisson_implicit_function(double data_fitting, 
                                            double average_spacing_ratio = 3.0) // this parameter should be passed to second delaunay refinement / normal estimation
     {
         CGAL::Timer task_timer; task_timer.start();
@@ -1024,21 +1024,21 @@ public:
 
     \return `false` if the solver fails.
   */
-  bool compute_spectral_implicit_function(FT reliability = 10.,
-                                          FT confidence = 10.,
-                                          double bilaplacian = 1,
-                                          double laplacian = 0.1,
-                                          bool smoother_hole_filling = false)
-  {
-    typedef typename CGAL::Constant_property_map<InputIterator, FT> CoefficientMap;
-    CoefficientMap reliability_map = CGAL::Constant_property_map<InputIterator, FT>(FT(reliability));
-    CoefficientMap confidence_map = CGAL::Constant_property_map<InputIterator, FT>(FT(confidence));
+  //bool compute_spectral_implicit_function(FT reliability = 10.,
+  //                                        FT confidence = 10.,
+  //                                        double bilaplacian = 1,
+  //                                        double laplacian = 0.1,
+  //                                        bool smoother_hole_filling = false)
+  //{
+  //  typedef typename CGAL::Constant_property_map<InputIterator, FT> CoefficientMap;
+  //  CoefficientMap reliability_map = CGAL::Constant_property_map<InputIterator, FT>(FT(reliability));
+  //  CoefficientMap confidence_map = CGAL::Constant_property_map<InputIterator, FT>(FT(confidence));
 
-    if (smoother_hole_filling)
-      return compute_spectral_implicit_function<Implicit_visitor>(reliability_map, confidence_map, Implicit_visitor(), bilaplacian, laplacian, 5.0);
-    else
-      return compute_spectral_implicit_function<Implicit_visitor>(reliability_map, confidence_map, Implicit_visitor(), bilaplacian, laplacian);
-  }
+  //  if (smoother_hole_filling)
+  //    return compute_spectral_implicit_function<Implicit_visitor>(reliability_map, confidence_map, Implicit_visitor(), bilaplacian, laplacian, 5.0);
+  //  else
+  //    return compute_spectral_implicit_function<Implicit_visitor>(reliability_map, confidence_map, Implicit_visitor(), bilaplacian, laplacian);
+  //}
 
 
 
@@ -1060,7 +1060,7 @@ public:
   \return `false` if the solver fails.
   */
 
-  bool compute_spectral_implicit_function_new(FT fitting, FT laplacian, FT bilaplacian)
+  bool compute_spectral_implicit_function(FT fitting, FT laplacian, FT bilaplacian)
   {
       typedef typename CGAL::Constant_property_map<InputIterator, FT> CoefficientMap;
       CoefficientMap reliability_map = CGAL::Constant_property_map<InputIterator, FT>(FT(1));
@@ -1555,7 +1555,7 @@ private:
     const int nb_finite_cells = static_cast<int>(m_tr->number_of_finite_cells());
   	CGAL_TRACE_STREAM << "  " << nb_inputs << " input vertices out of " << nb_variables << std::endl;
 
-    for(int i = 0; i < 20; i++)
+    for(int i = 0; i < 10; i++)
     {
       CGAL_TRACE_STREAM << "  ASAP optimization (" << i << "/10)..." << std::endl;
       asap_optimization<Geom_traits, Triangulation>(m_tr, 5);
@@ -3117,7 +3117,7 @@ public:
   {
       std::vector<Point> points;
       std::vector< std::vector<std::size_t> > polygons;
-      //m_tr->dump_all_points_with_val("f_val");
+      m_tr->dump_all_points_with_val("f_val");
       return m_tr->marching_tets(value, mesh, points, polygons);
   }
 

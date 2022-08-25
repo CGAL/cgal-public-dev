@@ -61,10 +61,10 @@ class TestMeanDistMTP
 
     //sampling mesh
     std::list<Point> sample_points;
-    CGAL::Polygon_mesh_processing::sample_triangle_mesh(reconstructed_mesh,
-                                                        std::back_inserter(sample_points),
-                                                        4000);
-
+    //CGAL::Polygon_mesh_processing::sample_triangle_mesh(reconstructed_mesh,
+    //                                                    std::back_inserter(sample_points),
+    //                                                    4000);
+    CGAL::Polygon_mesh_processing::sample_triangle_mesh(reconstructed_mesh, std::back_inserter(sample_points));
     //putting input points into dD_Tree
     typedef typename PwnList::value_type PwnList_t;
     boost::function<Point(const PwnList_t&)> pwn_it_to_point_it = boost::bind(&PwnList_t::first, _1);

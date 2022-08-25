@@ -67,26 +67,37 @@ bool surface_mesh_reconstruction(const Param &p, PwnList &pwnl, Mesh &m) // surf
 
   //COMPUTES IMPLICIT FUNCTION
   Implicit_reconstruction_function function;
-  function.initialize_point_map(pwnl, Point_map(), Normal_map(), p.octree, 0);
+  function.initialize_point_map(pwnl, Point_map(), Normal_map(), p.octree, 8);
 
   if(p.poisson)
   {
-    if (! function.compute_poisson_implicit_function()){
+    double fitting = 10;
+    if (! function.compute_poisson_implicit_function(fitting)){
       std::cerr << "Error: cannot compute implicit function" << std::endl;
       return false;
     }
   }
   else if (p.spectral)
   {
-    double fitting = 0.1;
-    double ratio = 10.0;
+    double fitting = 10;
     double bilaplacian = 1.0;
-    double laplacian = 0.1; /*default values*/
-    if (! function.compute_spectral_implicit_function(fitting, ratio, bilaplacian, laplacian) )
+    double laplacian = 1; /*default values*/
+    if (! function.compute_spectral_implicit_function(fitting, bilaplacian, laplacian) )
     {
       std::cerr << "Error: cannot compute implicit function" << std::endl;
       return false;
     }
+  }
+  else if (p.ssd)
+  {
+      double fitting = 10;
+      double laplacian = 1;
+      double hessian = 1e-3;
+      if (! function.compute_ssd_implicit_function(fitting, laplacian, hessian) )
+      {
+          std::cerr << "Error: cannot compute implicit function" << std::endl;
+          return false;
+      }
   }
 
   //BUILDS RECONSTRUCTION
