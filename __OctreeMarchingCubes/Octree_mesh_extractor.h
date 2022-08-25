@@ -132,7 +132,7 @@ public:
         std::optional<size_t> start,
         std::vector<std::vector<size_t>>& additional_polygons) {
 
-        //std::cerr << "processing face #" << adj << " of node " << node << std::endl;
+        //std::cerr << "processing face #" << adj << " of node " << node << " (startpoint given: " << start.has_value() << ")" << std::endl;
 
         Node neighbour = node.adjacent_node(adj);
 
@@ -183,6 +183,7 @@ public:
                 }
             }
             if(segment.size() > 0) {
+                if(segment.size() != 2) std::cerr << segment.size() << "\n"; // this happens when there are 4 intersections on a square, currently no such test
                 segments.push_back(segment);
                 ++ind;
             }
@@ -275,33 +276,88 @@ public:
             }
         }
 
-        std::vector<size_t> polygon;
+        std::vector<std::vector<size_t>> polygons(1);
         std::vector<std::vector<size_t>> additional_polygons;
         std::vector<bool> processed_faces (6, false);
 
-        int ind = 0;
-        std::vector<int> visited {ind};
-        for(int i = 0; i < unordered_polygon_with_faces.size(); ++i) {
-            polygon.push_back(unordered_polygon_with_faces[ind].first);
+        size_t loop = 0, ind = 0;
+        int prevFace = -1, lastFace = -1;
+        std::vector<size_t> visited {ind};
+        for (size_t i = 0; i < unordered_polygon_with_faces.size(); ++i) {
+            polygons[loop].push_back(unordered_polygon_with_faces[ind].first);
+            visited.push_back(ind);
             std::pair<int,int> faces = unordered_polygon_with_faces[ind].second;
-            for(int j = 0; j < unordered_polygon_with_faces.size(); ++j) {
+            if(polygons[loop].size() == 1) lastFace = faces.second;
+            bool foundnext = false;
+            std::vector<int> sameFace;
+            int nextFace = -1;
+            for (size_t j = 0; j < unordered_polygon_with_faces.size(); ++j) {
                 auto& el = unordered_polygon_with_faces[j];
-                bool face1 = el.second.first == faces.first || (ind != 0 && el.second.first == faces.second); // at the first vertex we want to start in the good direction
-                bool face2 = el.second.second == faces.first || (ind != 0 && el.second.second == faces.second);
-                if((std::find(visited.begin(), visited.end(), j) == visited.end()
-                    || j == 0 && i == unordered_polygon_with_faces.size() - 1) // we want to check the face between the last and first vertex
-                    && (face1 || face2)) {
-                    int face = face1 ? el.second.first : el.second.second;
-                    std::vector<size_t> internal_points = process_face(
-                        node, Adjacency(face), polygon.back(),
-                        additional_polygons);
-                    processed_faces[Adjacency(face)] = true;
-                    for (auto it : internal_points) {
-                        polygon.push_back(it);
+                bool face1 = el.second.first == faces.first
+                    || ((polygons[loop].size() != 1) && el.second.first == faces.second); // at the first vertex we want to start in the good direction
+                bool face2 = el.second.second == faces.first
+                    || ((polygons[loop].size() != 1) && el.second.second == faces.second);
+                if (ind != j
+                    && ((face1 && el.second.first != prevFace)
+                        || (face2 && el.second.second != prevFace))) {
+                    sameFace.push_back(j);
+                    nextFace = (face1 ? el.second.first : el.second.second);
+                }
+            }
+            if (nextFace != -1) prevFace = nextFace;
+            if (!sameFace.empty()) {
+                foundnext = true;
+                if(sameFace.size() == 1) {
+                    ind = sameFace[0];
+                }
+                else {
+                    assert(sameFace.size() == 3);
+                    double min = std::numeric_limits<double>::max();
+                    int next;
+                    for(int i = 0; i < 3; ++i) {
+                        Point curr = vertices[polygons[loop].back()];
+                        Point connecting = vertices[unordered_polygon_with_faces[sameFace[i]].first];
+                        Point other1 = vertices[unordered_polygon_with_faces[sameFace[(i+1)%3]].first];
+                        Point other2 = vertices[unordered_polygon_with_faces[sameFace[(i+2)%3]].first];
+                        double d =
+                            sqrt((curr - connecting).squared_length())
+                            + sqrt((other1 - other2).squared_length());
+                        if (d < min) { min = d; next = sameFace[i]; }
                     }
-                    ind = j;
+                    ind = next;
+                }
+                if (std::find(visited.begin(), visited.end(), ind) != visited.end()) {
+                    foundnext = false;
+                }
+                else{
+                    std::vector<size_t> internal_points = process_face(
+                        node, Adjacency(nextFace), polygons[loop].back(),
+                        additional_polygons);
+                    processed_faces[nextFace] = true;
+                    for (auto it : internal_points) {
+                        polygons[loop].push_back(it);
+                    }
                     visited.push_back(ind);
-                    break;
+                }
+            }
+            if (!foundnext) {
+                std::vector<size_t> internal_points = process_face(
+                    node, Adjacency(lastFace), polygons[loop].back(),
+                    additional_polygons);
+                processed_faces[lastFace] = true;
+                for (auto it : internal_points) {
+                    polygons[loop].push_back(it);
+                }
+                if (i < unordered_polygon_with_faces.size() - 1) {
+                    ++loop;
+                    polygons.resize(loop+1);
+                    prevFace = -1;
+                    for(size_t j = 0; j < unordered_polygon_with_faces.size(); ++j)
+                        if (std::find(visited.begin(), visited.end(), j) == visited.end()) {
+                            ind = j;
+                            visited.push_back(ind);
+                            break;
+                        }
                 }
             }
         }
@@ -316,8 +372,10 @@ public:
             faces.push_back(it);
         }
 
-        if(polygon.size() > 0)
-            faces.push_back(polygon);
+        for (auto it : polygons) {
+            if (it.size() > 0)
+                faces.push_back(it);
+        }
     }
 
     void operator()(const typename Octree::Voxel_handle& vox) {

@@ -131,9 +131,14 @@ int main(int argc, char** argv) {
         return std::max({std::abs(p.x() + 0.5), std::abs(p.y()), std::abs(p.z())}) - 0.4;
     };
 
+    ImplicitFunction corners = [](Point p) {
+        return std::abs(p.x()+p.y()+p.z()) - 2.5;
+    };
+
     Octree octree(CGAL::Bbox_3(-1.2,-1.2,-1.2,1.2,1.2,1.2));
     octree.refine(Split_by_closeness(func, octree), func);
     //octree.refine(split_only_twice(), small_cube);
+    //octree.refine([](const Octree::Node &n){return false;}, corners);
 
     CGAL::Octree_domain domain(octree);
 
