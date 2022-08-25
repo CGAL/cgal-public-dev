@@ -150,8 +150,9 @@ int main(int argc, char** argv) {
     std::cout << faces.size() << std::endl;
 
     std::ofstream octree_out("octree.obj");
-    auto ff = [domain, &octree_out](const typename CGAL::Octree_domain<Kernel>::Vertex_handle& vh){ auto p = domain.position(vh); octree_out << "v " << p.x() << " " << p.y() << " " << p.z() << std::endl; };
-    domain.iterate_vertices(ff);
+    int v = 1;
+    auto ff = [&v,domain, &octree_out](const typename CGAL::Octree_domain<Kernel>::Edge_handle& eh){ auto ps = domain.edge_vertices(eh); auto p1 = domain.position(ps[0]), p2 = domain.position(ps[1]); octree_out << "v " << p1.x() << " " << p1.y() << " " << p1.z() << std::endl << "v " << p2.x() << " " << p2.y() << " " << p2.z() << std::endl << "l " << v++ << " " << v++ << std::endl; };
+    domain.iterate_edges(ff);
 
     // writing out resulting points to file
     std::ofstream mesh_out("a.obj");
