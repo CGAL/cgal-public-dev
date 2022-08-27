@@ -564,10 +564,6 @@ public:
     return m_data == rhs.m_data;
   }
 
-  size_t hash_value() const {
-    return reinterpret_cast<size_t>(m_data);
-  }
-
   static bool is_topology_equal (const Self& a, const Self& b)
   {
     CGAL_assertion (!a.is_null() && !b.is_null());

@@ -1,3 +1,14 @@
+// Copyright (c) 2022  INRIA (France).
+// All rights reserved.
+//
+// This file is part of CGAL (www.cgal.org).
+//
+// $URL$
+// $Id$
+// SPDX-License-Identifier: GPL-3.0-or-later OR LicenseRef-Commercial
+//
+// Author(s)     : Ágoston Sipos
+
 #include <CGAL/Octree.h>
 #include <CGAL/Simple_cartesian.h>
 #include <CGAL/Point_set_3.h>
@@ -5,9 +16,7 @@
 #include <CGAL/Polyhedron_3.h>
 #include <CGAL/Aff_transformation_3.h>
 
-#include "Octree_mesh_extractor.h"
-
-#include "../Isosurfacing_3/Octree_domain.h"
+#include <CGAL/Marching_cubes_octree.h>
 
 #include <functional>
 #include <algorithm>
@@ -15,39 +24,10 @@
 typedef CGAL::Simple_cartesian<double> Kernel;
 typedef Kernel::FT FT;
 typedef CGAL::Point_3<Kernel> Point;
-typedef CGAL::Vector_3<Kernel> Vector;
-typedef CGAL::Point_set_3<Point> Point_set;
-typedef Point_set::Point_map Point_map;
 
 typedef Octree_wrapper<Kernel> Octree;
-typedef CGAL::Orthtrees::Leaves_traversal Leaves_traversal;
-
-typedef CGAL::Polyhedron_3<Kernel> Polyhedron;
-typedef Polyhedron::HalfedgeDS HalfedgeDS;
-typedef Polyhedron::Vertex_handle Vertex_handle;
 
 typedef std::function<FT(Point)> ImplicitFunction;
-
-template<class Domain_, class PointRange, class PolygonRange>
-void make_polygon_mesh_using_marching_cubes_on_octree(const Domain_& domain, const typename Domain_::FT iso_value,
-                                            PointRange& points, PolygonRange& polygons) {
-
-    if constexpr(std::is_same_v<Domain_, CGAL::Octree_domain<Kernel>>) {
-        const Octree& octree = domain.getOctree();
-
-        CGAL::Octree_mesh_extractor<Kernel> extractor (octree, iso_value);
-
-        domain.iterate_voxels(extractor);
-
-        points = extractor.get_vertices();
-        polygons = extractor.get_faces();
-    }
-    else {
-        throw CGAL::Precondition_exception("Octree_marching_cubes"
-                    , "std::is_same_v<Domain_, CGAL::Octree_domain<Kernel>>"
-                    , "TODO", 46, "Octree isosurface extraction is only available on an Octree_domain");
-    }
-}
 
 // Custom refinement predicate, splits cell if mid point of it is "close" to isosurface
 struct Split_by_closeness {

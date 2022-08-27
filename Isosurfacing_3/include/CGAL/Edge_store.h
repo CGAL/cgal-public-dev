@@ -19,11 +19,15 @@
 
 #include <map>
 
-template <typename Node>
+template <typename Octree, typename Node>
 struct Node_hash
 {
+    Node_hash(const Octree& tree) : tree(tree) {}
+    const Octree& tree;
     std::size_t operator()(const Node& n) const {
-        return n.hash_value();
+        if(n.is_null()) return 0;
+        auto c = tree.uniform_coordinates(n);
+        return tree.lex_index(c[0], c[1], c[2], n.depth());
     }
 };
 
@@ -48,7 +52,7 @@ public:
     typedef typename Traits_::FT FT;
 
     Edge_store(const Octree& tree)
-    : tree(tree) {}
+    : tree(tree), edge_lists(tree.leaf_voxels().size(), Node_hash<Octree, Node>(tree)) {}
 
     ~Edge_store() {
         for (auto it : roots) {
@@ -153,9 +157,9 @@ public:
 
 private:
 
-    std::unordered_map<Node, std::array<Edge*, 12>, Node_hash<Node>> edge_lists;
-
     const Octree& tree;
+
+    std::unordered_map<Node, std::array<Edge*, 12>, Node_hash<Octree, Node>> edge_lists;
 
     std::vector<Edge*> roots; // for destructing
 

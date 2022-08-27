@@ -12,10 +12,9 @@
 #ifndef CGAL_ORTHTREE_EDGE_H
 #define CGAL_ORTHTREE_EDGE_H
 
-#include <CGAL/Orthtree.h>
 #include <CGAL/exceptions.h>
 
-#include "../Isosurfacing_3/Octree_wrapper.h"
+#include <CGAL/Octree_wrapper.h>
 
 #include <optional>
 
