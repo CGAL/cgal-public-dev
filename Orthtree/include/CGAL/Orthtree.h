@@ -249,27 +249,6 @@ public:
     m_root.points() = {point_range.begin(), point_range.end()};
   }
 
-  /*!
-    \brief creates an orthtree from a given bounding box.
-
-    `point_range` is supposed to be empty
-  */
-  Orthtree (const Bbox& box, PointRange& point_range)
-    : m_range(point_range)
-    , m_root(Node(), 0)
-  {
-    Array bbox_min{box.min(0), box.min(1), box.min(2)};
-    Array bbox_max{box.max(0), box.max(1), box.max(2)};
-
-    Construct_point_d_from_array construct_point_d_from_array
-      = m_traits.construct_point_d_from_array_object();
-
-    // save orthtree attributes
-    m_bbox_min = construct_point_d_from_array(bbox_min);
-    m_side_per_depth.push_back(bbox_max[0] - bbox_min[0]);
-    m_root.points() = {point_range.begin(), point_range.end()};
-  }
-
   /// @}
 
   /// \cond SKIP_IN_MANUAL

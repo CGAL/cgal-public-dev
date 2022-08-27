@@ -19,10 +19,19 @@
 
 #include <map>
 
+template <typename Node>
+struct Node_hash
+{
+    std::size_t operator()(const Node& n) const {
+        return n.hash_value();
+    }
+};
+
+
 namespace CGAL {
 
-template<typename Traits_, typename PointRange_,
-         typename PointMap_ = Identity_property_map<typename Traits_::Point_3> >
+// Stores all the edge-trees for an octree
+template<typename Traits_>
 class Edge_store {
 public:
 
@@ -41,8 +50,15 @@ public:
     Edge_store(const Octree& tree)
     : tree(tree) {}
 
+    ~Edge_store() {
+        for (auto it : roots) {
+            delete it;
+        }
+    }
+
     const std::array<Edge*, 12>& get(const Node& n) const { return edge_lists.at(n); }
 
+    // adds edges of the root node to the edge trees and registers them to the node
     void add_root(const Node& root) {
         int ind = 0;
         Bbox b = tree.bbox(root);
@@ -52,20 +68,23 @@ public:
                 unsigned j = i | (1 << k);
                 if (i != j){
                     std::bitset<3> c1(i);
-                    bool tmp = c1[0]; c1[0] = c1[2]; c1[2] = tmp;
+                    bool tmp = c1[0]; c1[0] = c1[2]; c1[2] = tmp; // coordinate order has to be reversed
                     std::bitset<3> c2(j);
                     tmp = c2[0]; c2[0] = c2[2]; c2[2] = tmp;
                     FT v1 = tree.value(tree.vertex_uniform_coordinates(root, c1));
                     FT v2 = tree.value(tree.vertex_uniform_coordinates(root, c2));
-                    edges[ind++] = new Edge(tree,
+                    Edge* edge = new Edge(tree,
                         {(i&4)>>2, (i&2)>>1, i&1, (j&4)>>2, (j&2)>>1, j&1}, 0,
                         v1, v2);
+                    edges[ind++] = edge;
+                    roots.push_back(edge);
                 }
             }
         }
         edge_lists[root] = edges;
     }
 
+    // adds edges of a non-root node to the edge trees and registers them to the node
     void add_node(const Node& node) {
         Node parent = node.parent();
         auto coords1 = node.global_coordinates();
@@ -106,6 +125,7 @@ public:
                                                 , c[0] + ((j&4)>>2), c[1] + ((j&2)>>1), c[2] + (j&1)};
                         std::array<typename Traits3::Adjacency, 6> adjacencies
                             {Traits3::LEFT,Traits3::RIGHT,Traits3::DOWN,Traits3::UP,Traits3::BACK,Traits3::FRONT};
+                        // check if edge is already registered for a neighbouring cell
                         for(auto a : adjacencies) {
                             Node neighbour = node.adjacent_node(a);
                             auto edges = edge_lists.find(neighbour);
@@ -122,7 +142,7 @@ public:
                         FT v1 = tree.value(tree.vertex_uniform_coordinates(node, c1));
                         FT v2 = tree.value(tree.vertex_uniform_coordinates(node, c2));
                         edges[ind++] = sameEdge == nullptr
-                            ? new Edge(tree, coords, node.depth(), v1, v2)
+                            ? (roots.push_back(new Edge(tree, coords, node.depth(), v1, v2)), roots.back())
                             : sameEdge;
                     }
                 }
@@ -133,9 +153,11 @@ public:
 
 private:
 
-    std::map<Node, std::array<Edge*, 12>> edge_lists;
+    std::unordered_map<Node, std::array<Edge*, 12>, Node_hash<Node>> edge_lists;
 
     const Octree& tree;
+
+    std::vector<Edge*> roots; // for destructing
 
 };
 

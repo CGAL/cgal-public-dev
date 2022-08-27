@@ -18,14 +18,14 @@
 
 namespace CGAL {
 
+// Builds up the edge trees for the octree, then
+// extracts the polygons node-by-node
 template <typename GeomTraits>
 class Octree_mesh_extractor {
 public:
     typedef CGAL::Point_3<GeomTraits> Point;
     typedef CGAL::Vector_3<GeomTraits> Vector;
     typedef typename GeomTraits::FT FT;
-    typedef CGAL::Point_set_3<Point> Point_set;
-    typedef typename Point_set::Point_map Point_map;
 
     typedef Octree_wrapper<GeomTraits> Octree;
     typedef CGAL::Orthtrees::Preorder_traversal Preorder_traversal;
@@ -37,12 +37,12 @@ public:
 
     typedef std::function<FT(Vector)> Implicit_function;
 
-    typedef CGAL::Edge_store<GeomTraits, Point_set, Point_map> Edge_store;
+    typedef CGAL::Edge_store<GeomTraits> Edge_store;
 
     Octree_mesh_extractor(const Octree& tree, FT isovalue)
     : octree(tree), edges(tree), isovalue(isovalue) {
         // Add edges to container
-        for (Node node : octree.template traverse<Preorder_traversal>()) { // ????
+        for (Node node : octree.template traverse<Preorder_traversal>()) {
             if(node == octree.root())
                 edges.add_root(node);
             else
@@ -53,35 +53,31 @@ public:
     // inserts point to mesh, if not there already
     // and returns its index
     size_t add_point_to_mesh(const Edge* e) {
-        auto i = edge_points_in_mesh.find(*e);
+        auto i = edge_points_in_mesh.find(e);
         if (i != edge_points_in_mesh.end())
             return i->second;
 
         Point p = e->extract_isovertex(isovalue);
         size_t ind = vertices.size();
-        edge_points_in_mesh[*e] = ind;
+        edge_points_in_mesh[e] = ind;
         vertices.push_back(p);
         return ind;
     }
 
-    // this function is to find closed polygons in the inside of
-    // cell faces; currently it is not called in any tests
-    std::vector<const Edge*> find_closed_polyline(
-        std::vector<std::vector<const Edge*>>& segments
-    ) {
+    // this function is to find closed polygons in the inside of cell faces
+    // it returns a closed loop of isovertices and removes those segments from the parameter
+    std::vector<const Edge*> find_closed_polyline(std::vector<std::vector<const Edge*>>& segments) {
         std::vector<const Edge*> polyline;
 
         const Edge* start = segments[0][0];
         const Edge* next = segments[0][1];
 
         polyline.push_back(start);
-        //std::cerr << *(polyline.back());
         int v = 0, p = 1;
-        std::set<int> vs;
+        std::set<int> vs; // segments flagged for removal
         vs.insert(v);
         while (next != start) {
             polyline.push_back(next);
-            //std::cerr << *(polyline.back());
             bool found = false;
             for (int j = 0; j < segments.size(); ++j) if (v != j) {
                 if (segments[j][0] == polyline.back()) { found = true; v = j; p = 1; break; }
@@ -90,7 +86,7 @@ public:
             if (found) {
                 next = segments[v][p];
             }
-            if (!found) {
+            if (!found) { // if no stored segment continues the line, we move to twin edge
                 next = next->twin_edge(isovalue);
                 v = -1;
             }
@@ -106,6 +102,8 @@ public:
         return polyline;
     }
 
+    // polygons from find_closed_polyline() are not guaranteed to have a good ordering
+    // however, the outside is always towards the bigger cell so we can reorient based on its center point
     void reorient_polygon(std::vector<size_t>& polygon, const Point& center) {
         size_t n = polygon.size();
         int x = 0, y = 0;
@@ -127,22 +125,21 @@ public:
     // returns the internal points of the finer polyline
     // from the other side of the cell face
     std::vector<size_t> process_face(
-        const Node& node,
-        Adjacency adj,
-        std::optional<size_t> start,
-        std::optional<size_t> end,
-        std::vector<std::vector<size_t>>& additional_polygons) {
-
-        //std::cerr << "processing face #" << adj << " of node " << node << " (startpoint given: " << start.has_value() << ")" << std::endl;
+        const Node& node, // the big cell which might have subdivided neighbours
+        Adjacency adj, // which face of it we are working on
+        std::optional<size_t> start, // if there is an edge on the bigger face, its start...
+        std::optional<size_t> end, // ...and end index
+        std::vector<std::vector<size_t>>& additional_polygons // output parameter to store any additional polygons in the interior
+    ) {
 
         Node neighbour = node.adjacent_node(adj);
 
-        if (neighbour.is_null() || neighbour.is_leaf())
+        if (neighbour.is_null() || neighbour.is_leaf()) // nothing to do here
             return std::vector<size_t>{};
 
-        //std::cerr << "face is subdivided" << std::endl;
         Point center = octree.barycenter(node);
 
+        // collecting all the cells along the face
         unsigned mask = (!(adj & ~1) ? 1 : adj & ~1);
         std::queue<Node> to_divide, leaf_neighbours;
         to_divide.push(neighbour);
@@ -159,8 +156,8 @@ public:
             to_divide.pop();
         }
 
+        // computing all edge intersections on the face
         std::vector<std::vector<const Edge*>> segments;
-
         int ind = 0, startv = -1, startp = -1;
         int endv = -1, endp = -1;
         while (!leaf_neighbours.empty()) {
@@ -169,13 +166,13 @@ public:
             std::vector<const Edge*> segment;
             for(int i = 0; i < 12; ++i) {
                 auto corners = child_edges[i]->corners(child);
-                // if both corners are on the shared face with `node`
+                // if both corners are on the shared face with `node`; 4 among the 12 will be
                 bool c1in = !(corners.first & (4 / mask)) != !(adj & 1);
                 bool c2in = !(corners.second & (4 / mask)) != !(adj & 1);
                 if (c1in && c2in) {
-                    auto edge = child_edges[i]->find_minimal_edge(isovalue);
-                    auto vals = edge->values();
+                    auto vals = child_edges[i]->values();
                     if ((vals.first - isovalue) * (vals.second - isovalue) < 0) {
+                        auto edge = child_edges[i]->find_minimal_edge(isovalue);
                         segment.push_back(edge);
                         if (start && add_point_to_mesh(segment.back()) == *start) {
                             startv = ind;
@@ -189,8 +186,27 @@ public:
                 }
             }
             if(segment.size() > 0) {
-                if(segment.size() != 2) std::cerr << segment.size() << "\n"; // this happens when there are 4 intersections on a square, currently no such test
-                segments.push_back(segment);
+                if(segment.size() != 2) { // this happens when there are 4 intersections on a square, currently no such test
+                    assert(segment.size() == 4);
+                    // we create two edges from the 4 points based on smallest edge length sum
+                    FT min = std::numeric_limits<FT>::max();
+                    int a;
+                    for(int i = 0; i < 3; ++i) {
+                        Point p1 = segment[0]->extract_isovertex(isovalue);
+                        Point p2 = segment[i%3+1]->extract_isovertex(isovalue);
+                        Point q1 = segment[(i+1)%3+1]->extract_isovertex(isovalue);
+                        Point q2 = segment[(i+2)%3+1]->extract_isovertex(isovalue);
+                        FT d =
+                            sqrt((p1 - p2).squared_length())
+                            + sqrt((q1 - q2).squared_length());
+                        if (d < min) { min = d; a = i; }
+                    }
+                    segments.push_back(std::vector<const Edge*>{segment[0], segment[a%3+1]});
+                    segments.push_back(std::vector<const Edge*>{segment[(a+1)%3+1], segment[(a+2)%3+1]});
+                    ++ind;
+                }
+                else
+                    segments.push_back(segment);
                 ++ind;
             }
             leaf_neighbours.pop();
@@ -199,7 +215,7 @@ public:
         std::vector<const Edge*> polyline_edges;
         std::vector<size_t> polyline;
         std::set<int> vs;
-
+        // if there is a coarser line, find its equivalent finer one
         if(start) {
             int v = startv, p = !startp;
 
@@ -237,14 +253,7 @@ public:
             for (int i = 0; i < segments.size(); ++i) {
                 if (vs.find(i) == vs.end()) remaining_segments.push_back(segments[i]);
             }
-            /*std::cout << "Not all points were used." << std::endl
-            << "Remaining segments: " << remaining_segments.size() << std::endl;*/
 
-            //std::cerr << "Edges already used: " << std::endl;
-            /*for(auto it : polyline_edges)
-                std::cerr << *it << std::endl;*/
-
-            //std::cerr << "Node: " << node << std::endl;
             while (remaining_segments.size() > 0) {
                 auto poly = find_closed_polyline(remaining_segments);
                 std::vector<size_t> polygon(poly.size());
@@ -261,22 +270,21 @@ public:
 
     }
 
+    // processes a leaf cell of the octree
+    // finds the polygon(s) in its inside and any additional polygons on its faces
     void process_node(const Node& node) {
 
         Bbox b = octree.bbox(node);
 
         std::vector<std::pair<size_t, std::pair<int,int>>> unordered_polygon_with_faces;
 
+        // go through the edges and collect all intersections
         for(auto edge : edges.get(node)) {
             std::pair<Point,Point> seg = edge->segment();
-            Vector p1 (seg.first.x(), seg.first.y(), seg.first.z());
-            Vector p2 (seg.second.x(), seg.second.y(), seg.second.z());
 
             if((edge->values().first - isovalue) * (edge->values().second - isovalue) < 0) {
                 auto minEdge = edge->find_minimal_edge(isovalue);
                 std::pair<Point,Point> minSeg = minEdge->segment();
-                Vector p1 (minSeg.first.x(), minSeg.first.y(), minSeg.first.z());
-                Vector p2 (minSeg.second.x(), minSeg.second.y(), minSeg.second.z());
                 auto vals = minEdge->values();
                 auto corners = edge->corners(node);
                 if (vals.second - isovalue < 0) { auto tmp = corners.first; corners.first = corners.second; corners.second = tmp; }
@@ -286,6 +294,7 @@ public:
             }
         }
 
+        // the isosurface inside the cell can be composed of multiple disconnected part
         std::vector<std::vector<size_t>> polygons(1);
         std::vector<std::vector<size_t>> additional_polygons;
         std::vector<bool> processed_faces (6, false);
@@ -299,7 +308,7 @@ public:
             std::pair<int,int> faces = unordered_polygon_with_faces[ind].second;
             if(polygons[loop].size() == 1) lastFace = faces.second;
             bool foundnext = false;
-            std::vector<int> sameFace;
+            std::vector<int> sameFace; // collect points also on the next face
             int nextFace = -1;
             for (size_t j = 0; j < unordered_polygon_with_faces.size(); ++j) {
                 auto& el = unordered_polygon_with_faces[j];
@@ -315,21 +324,21 @@ public:
                 }
             }
             if (nextFace != -1) prevFace = nextFace;
-            if (!sameFace.empty()) {
+            if (!sameFace.empty()) { // there is a point on the next face
                 foundnext = true;
-                if(sameFace.size() == 1) {
+                if(sameFace.size() == 1) { // only one point: choose that
                     ind = sameFace[0];
                 }
-                else {
+                else { // 3 other intersection points: choose one based on edge lengths
                     assert(sameFace.size() == 3);
-                    double min = std::numeric_limits<double>::max();
+                    FT min = std::numeric_limits<FT>::max();
                     int next;
                     for(int i = 0; i < 3; ++i) {
                         Point curr = vertices[polygons[loop].back()];
                         Point connecting = vertices[unordered_polygon_with_faces[sameFace[i]].first];
                         Point other1 = vertices[unordered_polygon_with_faces[sameFace[(i+1)%3]].first];
                         Point other2 = vertices[unordered_polygon_with_faces[sameFace[(i+2)%3]].first];
-                        double d =
+                        FT d =
                             sqrt((curr - connecting).squared_length())
                             + sqrt((other1 - other2).squared_length());
                         if (d < min) { min = d; next = sameFace[i]; }
@@ -337,9 +346,10 @@ public:
                     ind = next;
                 }
                 if (std::find(visited.begin(), visited.end(), ind) != visited.end()) {
-                    foundnext = false;
+                    foundnext = false; // next point has already been visited: loop is closed
                 }
                 else{
+                    // check if other side of the face has a finer polyline
                     std::vector<size_t> internal_points = process_face(
                         node, Adjacency(nextFace), polygons[loop].back(), unordered_polygon_with_faces[ind].first,
                         additional_polygons);
@@ -350,7 +360,8 @@ public:
                     visited.push_back(ind);
                 }
             }
-            if (!foundnext) {
+            if (!foundnext) { // loop closed
+                // check last face (between last and first point)
                 std::vector<size_t> internal_points = process_face(
                     node, Adjacency(lastFace), polygons[loop].back(), polygons[loop][0],
                     additional_polygons);
@@ -358,6 +369,7 @@ public:
                 for (auto it : internal_points) {
                     polygons[loop].push_back(it);
                 }
+                // if there are still points find a starting point for a next loop
                 if (i < unordered_polygon_with_faces.size() - 1) {
                     ++loop;
                     polygons.resize(loop+1);
@@ -372,6 +384,7 @@ public:
             }
         }
 
+        // check for additional polygons on the yet unchecked faces
         for(int i = 0; i < 6; ++i) {
             if(!processed_faces[Adjacency(i)]) {
                 process_face(node, Adjacency(i), std::nullopt, std::nullopt, additional_polygons);
@@ -392,8 +405,8 @@ public:
         process_node(octree.get_node(vox));
     }
 
-    std::vector<Point> get_vertices() { return vertices; }
-    std::vector<std::vector<size_t>> get_faces() { return faces; }
+    std::vector<Point> get_vertices() const { return vertices; }
+    std::vector<std::vector<size_t>> get_faces() const { return faces; }
 
 private:
 
@@ -401,12 +414,12 @@ private:
     Edge_store edges;
     FT isovalue;
 
-    std::map<Edge, size_t> edge_points_in_mesh;
+    std::unordered_map<const Edge*, size_t> edge_points_in_mesh;
 
     std::vector<Point> vertices;
     std::vector<std::vector<size_t>> faces;
 
-    const int corners_to_faces_table[8][3][2] = {
+    static constexpr int corners_to_faces_table[8][3][2] = {
         {{2,0}, {0,4}, {4,2}},
         {{0,2}, {5,0}, {2,5}},
         {{0,3}, {4,0}, {3,4}},
@@ -419,7 +432,7 @@ private:
 
     // returns the two faces along the segment between the two corners
     // such that from the direction of the edge, the left face is first
-    std::pair<int,int> corners_to_faces(std::pair<int,int> corners) {
+    static std::pair<int,int> corners_to_faces(std::pair<int,int> corners) {
         int p0 = corners.first, p1 = corners.second;
         int r0 = std::abs(p0 - p1) / 2; // 1,2,4 -> 0,1,2
         return std::make_pair(corners_to_faces_table[p0][r0][0], corners_to_faces_table[p0][r0][1]);

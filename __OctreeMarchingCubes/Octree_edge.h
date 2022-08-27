@@ -29,22 +29,24 @@ template <typename Traits_>
 class Octree_edge
 {
     typedef typename Traits_::FT FT;
-    typedef CGAL::Vector_3<Traits_> Vector;
-    typedef CGAL::Point_3<Traits_> Point;
+    typedef CGAL::Vector_3<Traits_> Vector_3;
+    typedef CGAL::Point_3<Traits_> Point_3;
     typedef CGAL::Bbox_3 Bbox;
     typedef Octree_wrapper<Traits_> Tree;
     typedef typename Tree::Node Node;
 
 public:
+    // constructs an edge without a parent (a.k.a. a root edge)
     Octree_edge(const Tree& tree, const std::array<std::uint32_t, 6>& coords, int depth, FT v1, FT v2)
     : tree(tree)
-    , Global_coordinates(coords), Depth(depth)
+    , Global_coordinates(coords), depth_(depth)
     , value1(v1), value2(v2)
     , parent(nullptr), child1(nullptr), child2(nullptr) {}
 
+    // constructs an edge with a specified parent
     Octree_edge(const Tree& tree, const std::array<std::uint32_t, 6>& coords, int depth, Octree_edge* parent, FT v1, FT v2)
     : tree(tree)
-    , Global_coordinates(coords), Depth(depth)
+    , Global_coordinates(coords), depth_(depth)
     , value1(v1), value2(v2)
     , parent(parent), child1(nullptr), child2(nullptr) {}
 
@@ -53,6 +55,7 @@ public:
         delete child2;
     }
 
+    // creates two children for the edge and inserts the given value to the midpoint
     void divide(FT midValue) {
         std::array<std::uint32_t, 3> midCoords { (Global_coordinates[0] + Global_coordinates[3]),
                     (Global_coordinates[1] + Global_coordinates[4]),
@@ -60,19 +63,21 @@ public:
         child1 = new Octree_edge(
             tree,
             {2*Global_coordinates[0], 2*Global_coordinates[1], 2*Global_coordinates[2], midCoords[0], midCoords[1], midCoords[2]}
-            , Depth + 1, this, value1, midValue);
+            , depth_ + 1, this, value1, midValue);
         child2 = new Octree_edge(
             tree,
             {midCoords[0], midCoords[1], midCoords[2], 2*Global_coordinates[3], 2*Global_coordinates[4], 2*Global_coordinates[5]}
-            , Depth + 1, this, midValue, value2);
+            , depth_ + 1, this, midValue, value2);
     }
 
+    // [Kazhdan et al, 2007] 3.2 "Defining Consistent Isovertices"
     const Octree_edge* find_minimal_edge(FT isovalue) const {
         if(child1 == nullptr) return this;
         else if((child1->value1 - isovalue) * (child1->value2 - isovalue) <= 0) return child1->find_minimal_edge(isovalue);
         else return child2->find_minimal_edge(isovalue);
     }
 
+    // [Kazhdan et al, 2007] 3.2 "Closing the Isopolylines"
     const Octree_edge* twin_edge(FT isovalue) const {
         if (parent == nullptr) return nullptr;
         if ((parent->value1 - isovalue) * (parent->value2 - isovalue) <= 0) return parent->twin_edge(isovalue);
@@ -84,6 +89,7 @@ public:
     Octree_edge* get_child2() const { return child2; }
 
     // the two corner points of the given node that are on this edge
+    // assumes the edge is an edge of that node, otherwise gives nonsense results
     std::pair<int,int> corners(Node n) const {
         int corner1 = (Global_coordinates[0] > n.global_coordinates()[0])*4
             + (Global_coordinates[1] > n.global_coordinates()[1])*2
@@ -95,7 +101,8 @@ public:
     }
     std::pair<FT,FT> values() const { return std::make_pair(value1, value2); }
     std::array<std::uint32_t, 6> global_coordinates() const { return Global_coordinates; }
-    int depth() const { return Depth; }
+    int depth() const { return depth_; }
+    bool is_root() const { return parent == nullptr; }
 
     friend std::ostream& operator<<(std::ostream& out, const Octree_edge& edge) {
         auto c = edge.global_coordinates();
@@ -103,7 +110,7 @@ public:
         return out;
     }
 
-    std::pair<Point, Point> segment() const {
+    std::pair<Point_3, Point_3> segment() const {
         Bbox box = tree.bbox(tree.root());
         std::array<FT, 3> p1;
         std::array<FT, 3> p2;
@@ -112,19 +119,20 @@ public:
             p1[i] = box.min(i) + (global_coordinates()[i] * length);
             p2[i] = box.min(i) + (global_coordinates()[i + 3] * length);
         }
-        return std::make_pair(Point(p1[0], p1[1], p1[2]), Point(p2[0], p2[1], p2[2]));
+        return std::make_pair(Point_3(p1[0], p1[1], p1[2]), Point_3(p2[0], p2[1], p2[2]));
     }
 
-    Point extract_isovertex(FT isovalue) const {
-        if (isovertex)
+    Point_3 extract_isovertex(FT isovalue) const {
+        if (isovertex) { // this apparently never runs
             return *isovertex;
+        }
         else {
-            Point p1, p2;
-            Vector r1, r2;
+            Point_3 p1, p2;
+            Vector_3 r1, r2;
             FT d1, d2;
             std::tie(p1, p2) = segment();
-            r1 = Vector(p1.x(), p1.y(), p1.z());
-            r2 = Vector(p2.x(), p2.y(), p2.z());
+            r1 = Vector_3(p1.x(), p1.y(), p1.z());
+            r2 = Vector_3(p2.x(), p2.y(), p2.z());
             std::tie(d1, d2) = values();
             FT mu = -1.f;
 
@@ -141,8 +149,8 @@ public:
                     , "Octree_edge.h", 137);
             }
 
-            const Vector res = r2 * mu + r1 * (1 - mu);
-            isovertex = std::make_optional(Point(res.x(), res.y(), res.z()));
+            Vector_3 res = r2 * mu + r1 * (1 - mu);
+            isovertex = std::make_optional(Point_3(res.x(), res.y(), res.z()));
             return *isovertex;
         }
     }
@@ -150,12 +158,12 @@ public:
 private:
     const Tree &tree;
 
-    std::array<std::uint32_t, 6> Global_coordinates; // 4 is enough
-    int Depth;
+    std::array<std::uint32_t, 6> Global_coordinates; // 4 would be enough
+    int depth_;
     FT value1;
     FT value2;
 
-    mutable std::optional<Point> isovertex;
+    mutable std::optional<Point_3> isovertex; // maybe cache index instead? would need setting from outside
 
     Octree_edge* parent;
     Octree_edge* child1;
