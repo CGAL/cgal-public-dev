@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.1...3.23)
-project(OctreeMarchingCubes)
+project(Isosurfacing_3_Tests)
 
 find_package(CGAL REQUIRED QUIET OPTIONAL_COMPONENTS Core)
 if (CGAL_FOUND)
