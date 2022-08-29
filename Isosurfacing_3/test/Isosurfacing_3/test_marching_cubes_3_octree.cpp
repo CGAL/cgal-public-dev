@@ -17,6 +17,7 @@
 #include <CGAL/Aff_transformation_3.h>
 
 #include <CGAL/Marching_cubes_octree.h>
+#include <CGAL/Minimal_area_triangulation.h>
 
 #include <functional>
 #include <algorithm>
@@ -193,9 +194,15 @@ int main(int argc, char** argv) {
 
     make_polygon_mesh_using_marching_cubes_on_octree(domain, 0.0, vertices, faces);
 
-    std::cout << faces.size() << std::endl;
+    std::cout << "# of polygons: " << faces.size() << std::endl;
 
     write_mesh(vertices, faces, name + ".obj");
+
+    std::vector<std::vector<size_t>> triangles = minimal_area_triangulate(vertices, faces);
+
+    std::cout << "# of triangles: " << triangles.size() << std::endl;
+
+    write_mesh(vertices, triangles, name + "3.obj");
 
     return 0;
 }
