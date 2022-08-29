@@ -29,6 +29,29 @@ typedef Octree_wrapper<Kernel> Octree;
 
 typedef std::function<FT(Point)> ImplicitFunction;
 
+// writes out polygons as returned by the algorithm to an OBJ file
+void write_mesh(const std::vector<Point>& vertices, const std::vector<std::vector<size_t>>& faces, const std::string& filename) {
+    std::ofstream mesh_out(filename.c_str());
+    for(auto p : vertices) {
+        mesh_out << "v " << p.x() << " " << p.y() << " " << p.z() << std::endl;
+    }
+    for (auto f : faces) {
+        mesh_out << "f ";
+        for(auto p : f)
+            mesh_out << (p+1) << " ";
+        mesh_out << std::endl;
+    }
+    std::cout << "Result exported to " << filename << "\n";
+}
+
+// writes out edges of and octree to an OBJ file
+void write_octree(const CGAL::Octree_domain<Kernel>& domain, const std::string& filename) {
+    std::ofstream octree_out("octree.obj");
+    int v = 1;
+    auto ff = [&v,domain, &octree_out](const typename CGAL::Octree_domain<Kernel>::Edge_handle& eh){ auto ps = domain.edge_vertices(eh); auto p1 = domain.position(ps[0]), p2 = domain.position(ps[1]); octree_out << "v " << p1.x() << " " << p1.y() << " " << p1.z() << std::endl << "v " << p2.x() << " " << p2.y() << " " << p2.z() << std::endl << "l " << v++ << " " << v++ << std::endl; };
+    domain.iterate_edges(ff);
+}
+
 // Custom refinement predicate, splits cell if mid point of it is "close" to isosurface
 struct Split_by_closeness {
     ImplicitFunction func;
@@ -62,7 +85,56 @@ struct split_only_twice {
     }
 };
 
+void test1() {
+
+    std::cout << "Test #1: one cell, two opposite corners are positive...\n";
+
+    ImplicitFunction corners = [](Point p) {
+        return std::abs(p.x()+p.y()+p.z()) - 2.5;
+    };
+
+    Octree octree(CGAL::Bbox_3(-1.2,-1.2,-1.2,1.2,1.2,1.2));
+    octree.refine([](const Octree::Node &n){return false;}, corners);
+    CGAL::Octree_domain domain(octree);
+
+    std::vector<Point> vertices;
+    std::vector<std::vector<size_t>> faces;
+
+    make_polygon_mesh_using_marching_cubes_on_octree(domain, 0.0, vertices, faces);
+
+    bool b = faces.size() == 2 && faces[0].size() == 3 && faces[1].size() == 3;
+    std::cout << "\tExpected result: two triangles [" << (b ? "OK" : "Error!") << "]\n\n";
+}
+
+void test2() {
+
+    std::cout << "Test #2: a cube's distance function on the border of bigger and smaller cells...\n";
+
+    ImplicitFunction small_cube = [](Point p) {
+        return std::max({std::abs(p.x() + 0.5), std::abs(p.y()), std::abs(p.z())}) - 0.4;
+    };
+
+    Octree octree(CGAL::Bbox_3(-1.2,-1.2,-1.2,1.2,1.2,1.2));
+    octree.refine(split_only_twice(), small_cube);
+    CGAL::Octree_domain domain(octree);
+
+    std::vector<Point> vertices;
+    std::vector<std::vector<size_t>> faces;
+
+    make_polygon_mesh_using_marching_cubes_on_octree(domain, 0.0, vertices, faces);
+
+    bool b = faces.size() == 4;
+    for(auto it : faces) b = b && (it.size() == 3);
+    std::cout << "\tExpected result: a tetrahedron [" << (b ? "OK" : "Error!") << "]\n\n";
+
+}
+
 int main(int argc, char** argv) {
+
+    test1();
+
+    test2();
+
     ImplicitFunction sphere = [](Point p) { return sqrt((p.x()-0.1)*(p.x()-0.1) + (p.y()-0.2)*(p.y()-0.2) + p.z()*p.z()) - 0.5; };
     ImplicitFunction cube = [](Point p) {
         return std::max({std::abs(p.x()), std::abs(p.y()), std::abs(p.z())}) - 0.5;
@@ -107,18 +179,12 @@ int main(int argc, char** argv) {
     else
         func = sphere;
 
-    ImplicitFunction small_cube = [](Point p) {
-        return std::max({std::abs(p.x() + 0.5), std::abs(p.y()), std::abs(p.z())}) - 0.4;
-    };
+    std::string name = argc >= 2 ? argv[2] : "sphere";
 
-    ImplicitFunction corners = [](Point p) {
-        return std::abs(p.x()+p.y()+p.z()) - 2.5;
-    };
+    std::cout << "Using function " << name << "...\n";
 
     Octree octree(CGAL::Bbox_3(-1.2,-1.2,-1.2,1.2,1.2,1.2));
     octree.refine(Split_by_closeness(func, octree), func);
-    //octree.refine(split_only_twice(), small_cube);
-    //octree.refine([](const Octree::Node &n){return false;}, corners);
 
     CGAL::Octree_domain domain(octree);
 
@@ -129,23 +195,7 @@ int main(int argc, char** argv) {
 
     std::cout << faces.size() << std::endl;
 
-    std::ofstream octree_out("octree.obj");
-    int v = 1;
-    auto ff = [&v,domain, &octree_out](const typename CGAL::Octree_domain<Kernel>::Edge_handle& eh){ auto ps = domain.edge_vertices(eh); auto p1 = domain.position(ps[0]), p2 = domain.position(ps[1]); octree_out << "v " << p1.x() << " " << p1.y() << " " << p1.z() << std::endl << "v " << p2.x() << " " << p2.y() << " " << p2.z() << std::endl << "l " << v++ << " " << v++ << std::endl; };
-    domain.iterate_edges(ff);
-
-    // writing out resulting points to file
-    std::ofstream mesh_out("a.obj");
-    int i = 1;
-    for(auto p : vertices) {
-        mesh_out << "v " << p.x() << " " << p.y() << " " << p.z() << std::endl;
-    }
-    for (auto f : faces) {
-        mesh_out << "f ";
-        for(auto p : f)
-            mesh_out << (p+1) << " ";
-        mesh_out << std::endl;
-    }
+    write_mesh(vertices, faces, name + ".obj");
 
     return 0;
 }
