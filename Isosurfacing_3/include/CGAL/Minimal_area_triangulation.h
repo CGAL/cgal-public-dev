@@ -9,9 +9,16 @@
 //
 // Author(s)     : Ágoston Sipos
 
+#ifndef CGAL_MINIMALAREATRIANGULATION_H
+#define CGAL_MINIMALAREATRIANGULATION_H
+
 #include <vector>
 
 #include <CGAL/Simple_cartesian.h>
+
+namespace CGAL {
+
+namespace internal{
 
 // area of 3D triangle
 template <class Point_3>
@@ -21,6 +28,8 @@ typename Point_3::FT area (
     const Point_3& c)
 {
     return sqrt(CGAL::cross_product(b - a, c - a).squared_length()) / 2;
+}
+
 }
 
 template <class Point_3>
@@ -43,7 +52,7 @@ std::vector<std::vector<size_t>> minimal_area_triangulate (
                 size_t ind;
                 for (size_t k = j + 1; k < i; ++k) {
                     FT val = M(i,k) + M(k,j) +
-                        area(vertices[polygon[i]], vertices[polygon[j]], vertices[polygon[k]]);
+                        internal::area(vertices[polygon[i]], vertices[polygon[j]], vertices[polygon[k]]);
                     if (val < min){ min = val; ind = k; }
                 }
                 values[i*n+j] = std::make_pair(min, ind); return min;
@@ -63,3 +72,7 @@ std::vector<std::vector<size_t>> minimal_area_triangulate (
     }
     return triangle_indices;
 }
+
+}
+
+#endif
