@@ -203,6 +203,16 @@ public:
                     }
                     segments.push_back(std::vector<const Edge*>{segment[0], segment[a%3+1]});
                     segments.push_back(std::vector<const Edge*>{segment[(a+1)%3+1], segment[(a+2)%3+1]});
+                    for (int i = 0; i <= 1; ++i) for (int j = 0; j <= 1; ++j) {
+                        if (start && add_point_to_mesh(segments[segments.size()-2+i][j]) == *start) {
+                            startv = ind + i;
+                            startp = j;
+                        }
+                        if (end && add_point_to_mesh(segments[segments.size()-2+i][j]) == *end) {
+                            endv = ind + i;
+                            endp = j;
+                        }
+                    }
                     ++ind;
                 }
                 else
@@ -223,7 +233,6 @@ public:
             const Edge* next = segments[v][p];
             const Edge* last = segments[endv][endp];
 
-            std::set<int> vs;
             vs.insert(v);
             while (next != last) {
                 polyline_edges.push_back(next);
