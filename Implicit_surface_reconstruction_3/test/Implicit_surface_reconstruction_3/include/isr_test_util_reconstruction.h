@@ -79,8 +79,8 @@ bool surface_mesh_reconstruction(const Param &p, PwnList &pwnl, Mesh &m) // surf
   }
   else if (p.spectral)
   {
-    double fitting = 10;
-    double bilaplacian = 1.0;
+    double fitting = 1;
+    double bilaplacian = 100000;
     double laplacian = 1; /*default values*/
     if (! function.compute_spectral_implicit_function(fitting, bilaplacian, laplacian) )
     {

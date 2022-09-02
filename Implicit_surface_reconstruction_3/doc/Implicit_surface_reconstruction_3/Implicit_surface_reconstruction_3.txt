@@ -5,7 +5,7 @@ namespace CGAL {
 \anchor Chapter_Implicit_Surface_Reconstruction
 \cgalAutoToc
 
-\authors Pierre Alliez, Laurent Saboret, Ga&euml;l Guennebaud, Tong Zhao
+\authors Pierre Alliez, Laurent Saboret, Ga&euml;l Guennebaud, Tong Zhao, Hongyi Liu
 
 \section Implicit_surface_reconstruction_3Introduction Introduction
 
@@ -413,7 +413,7 @@ Comparison between three reconstruction result for locally inverted normals on a
 There are three parameters that requires tuning when computing the implicit function using Spectral solver: the data fitting term, the laplacian and the bilaplacian term as described in \cgalCite{cgal:a-vvrup-07}. This data fitting term has has exact same effect as described \ref Implicit_surface_reconstruction_3PSolverP "Poisson Solver's Parameters". The bilaplacian term is an additional controllor that increase smoothness as it increases. A empirical trick for tuning is to fix laplacian weight and adjust data fitting and bilaplacian term accordingly (see \cgalFigureRef{Implicit_surface_reconstruction_3figSpectralSolverP}). However, the parameter in Spectral method is more fragile up to scaling comparing to that in Poisson and may need careful tuning.
 
 \cgalFigureBegin{Implicit_surface_reconstruction_3figSpectralSolverP,spectral_solver_parameter.png}
-Spectral reconstruction with different data fitting \f$\lambda \f$ and bilaplacian weighting \f$b\f$. Left column: \f$b=0.1\f$. Right column: \f$b=5e-3\f$. Top row: \f$\lambda=10\f$. Bottom row: \f$ \lambda=1 \f$. The blue dots shows the original point clouds.
+Spectral reconstruction with different data fitting \f$\lambda \f$ and bilaplacian weighting \f$b\f$. Left column: \f$b=0.1\f$. Right column: \f$b=1\f$. Top row: \f$\lambda=10\f$. Bottom row: \f$ \lambda=1 \f$. The blue dots shows the original point clouds.
 \cgalFigureEnd
 
 \subsection Implicit_surface_reconstruction_3CSSD SSD
@@ -505,9 +505,9 @@ The performance of each reconstruction algorithm scales mostly with the variable
     <TD class="math" ALIGN=CENTER NOWRAP>
     834k
     <TD class="math" ALIGN=CENTER NOWRAP>
-    297k
+    2971k
     <TD class="math" ALIGN=CENTER NOWRAP>
-    639k
+    6394k
 <TR><TD ALIGN=LEFT NOWRAP COLSPAN=6><HR>
 </TABLE>
 

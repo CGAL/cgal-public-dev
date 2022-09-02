@@ -63,7 +63,7 @@ void Param::display(std::ostream &stream) const // in struct directly
   {
       if (!first)
           stream << ", " ;
-      stream << "spectral" ;
+      stream << "ssd" ;
       first = false;
   }
 

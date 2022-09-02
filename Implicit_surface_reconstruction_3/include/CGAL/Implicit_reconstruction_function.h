@@ -1548,13 +1548,6 @@ private:
 
     double time_init = clock();
     
-    // get #variables
-    m_tr->index_all_vertices();
-    const int nb_variables = static_cast<int>(m_tr->number_of_vertices());
-    const int nb_inputs = static_cast<int>(m_points->size());
-    const int nb_finite_cells = static_cast<int>(m_tr->number_of_finite_cells());
-  	CGAL_TRACE_STREAM << "  " << nb_inputs << " input vertices out of " << nb_variables << std::endl;
-
     for(int i = 0; i < 10; i++)
     {
       CGAL_TRACE_STREAM << "  ASAP optimization (" << i << "/10)..." << std::endl;
@@ -1564,6 +1557,12 @@ private:
       CGAL_TRACE_STREAM << "    finish in: (" << (clock() - time_init) / CLOCKS_PER_SEC << " s)" << std::endl;
     }
 
+    // get #variables
+    m_tr->index_all_vertices();
+    const int nb_variables = static_cast<int>(m_tr->number_of_vertices());
+    const int nb_inputs = static_cast<int>(m_points->size());
+    const int nb_finite_cells = static_cast<int>(m_tr->number_of_finite_cells());
+  	CGAL_TRACE_STREAM << "  " << nb_inputs << " input vertices out of " << nb_variables << std::endl;
     m_tr->index_all_cells();
     initialize_barycenters();
 
