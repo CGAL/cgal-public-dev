@@ -1,3 +1,16 @@
+// Copyright (c) 2007  INRIA (France).
+// All rights reserved.
+//
+// This file is part of CGAL (www.cgal.org).
+//
+// $URL$
+// $Id$
+// SPDX-License-Identifier: GPL-3.0-or-later OR LicenseRef-Commercial
+//
+//
+// Author(s)     : Pierre Alliez, Tong Zhao, Hongyi Liu
+
+
 #ifndef CGAL_IMPLICIT_RECONSTRUCTION_PERTURB_SLIVER_H
 #define CGAL_IMPLICIT_RECONSTRUCTION_PERTURB_SLIVER_H
 

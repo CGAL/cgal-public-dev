@@ -258,7 +258,7 @@ int main(int argc, char * argv[])
 	// Note: this method requires an iterator over points
 	// + property maps to access each point's position and normal.
 	// The position property map can be omitted here as we use iterators over Point_3 elements.
-	function.initialize_point_map(points, Point_map(), Normal_map(), flag_octree, max_depth, flag_octree_debug);
+	function.initialize_point_map(points, Point_map(), Normal_map(), flag_octree, max_depth);
 
     std::cerr << "Initialization: " << reconstruction_timer.time() << " seconds\n";
     

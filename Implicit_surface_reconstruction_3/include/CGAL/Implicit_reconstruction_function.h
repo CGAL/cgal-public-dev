@@ -7,7 +7,7 @@
 // $Id$
 // SPDX-License-Identifier: GPL-3.0-or-later OR LicenseRef-Commercial
 //
-// Author(s)     : Laurent Saboret, Pierre Alliez, Tong Zhao, Cédric Portaneri
+// Author(s)     : Laurent Saboret, Pierre Alliez, Tong Zhao, Cédric Portaneri, Hongyi Liu
 
 #ifndef CGAL_IMPLICIT_RECONSTRUCTION_FUNCTION_H
 #define CGAL_IMPLICIT_RECONSTRUCTION_FUNCTION_H
@@ -194,9 +194,9 @@ struct Special_wrapper_of_two_functions_keep_pointers {
 
 \brief Implementation of the Implicit Surface Reconstruction methods.
 
-This class offers 2 algorithms:
+This class offers 3 algorithms:
 
-1. Poisson Surface Reconstruction
+1.Poisson Surface Reconstruction
 
 Given a set of 3D points with oriented normals sampled on the boundary
 of a 3D solid, the Poisson Surface Reconstruction method \cgalCite{Kazhdan06}
@@ -208,7 +208,7 @@ iso-contoured using an adaptive marching cubes.
 We implements a variant of this algorithm which solves for a piecewise
 linear function on a 3D Delaunay triangulation instead of an adaptive octree.
 
-2. Spectral Surface Reconstruction
+2.Spectral Surface Reconstruction
 
 Given a set of 3D points with unoriented normals sampled on the boundary
 of a 3D solid, the Spectral Surface Reconstruction Method \cgalCite{cgal:a-vvrup-07}
@@ -220,6 +220,16 @@ confidence in this direction estimation.
 
 The GEP is solved by Spectra library.
 
+3.Smooth Signed Distance Reconstruction
+
+Given a set of 3D points with oriented normals sampled on the boundary
+of a 3D solid, the Smooth Signed Distance Reconstruction method  \cgalCite{CalakliT11SSD} 
+solves for an approximate signed distance function of the inferred
+solid. The output scalar function, represented in an adaptive octree, is then
+iso-contoured using an adaptive marching cubes.
+
+We implements a variant of this algorithm which solves for a piecewise
+linear function on a 3D Delaunay triangulation instead of an adaptive octree.
 
 \tparam Gt Geometric traits class.
 \tparam PointRange Input point range
@@ -493,9 +503,9 @@ public:
 							PointMap point_map,
 							NormalMap normal_map,
 							bool use_octree = true,
-                            int octree_max_depth = 8,
-							bool octree_debug_visu = false)
+                            int octree_max_depth = 8)
   {
+    bool octree_debug_visu = false;
     m_points = std::addressof(points);
 	m_average_spacing = CGAL::compute_average_spacing<CGAL::Sequential_tag>
 						(points, 6, CGAL::parameters::point_map(point_map));
@@ -795,10 +805,10 @@ public:
 
     return true;
   }
-  /// \endcond
+  
 
-
-    /*!
+    // the following are outdated method 
+    /*
       This function must be called after the
       insertion of oriented points. It computes the piecewise linear scalar
       function operator() by: applying spatial discretization, solving for
@@ -859,6 +869,7 @@ public:
 
         return true;
     }
+    /// \endcond
 
   /*!
     This function must be called after the
@@ -976,9 +987,9 @@ public:
     else
       return compute_spectral_implicit_function<Implicit_visitor>(reliability_map, confidence_map, Implicit_visitor(), bilaplacian, laplacian);
   }
-  /// \endcond
-
-  /*!
+  
+  // the following are outdated method 
+  /*
     This function must be called after the
     insertion of unoriented points. It computes the piecewise linear scalar
     function operator() by: applying Delaunay refinement, solving for
@@ -1010,7 +1021,7 @@ public:
     else
       return compute_spectral_implicit_function<Implicit_visitor>(reliability_map, confidence_map, Implicit_visitor(), bilaplacian, laplacian);
   }
-
+  /// \endcond
   /*!
     This function provides an overloaded function so that users can give a global reliability coefficient
     and a global confidence coefficient. Users can also provide a property map for one of them and a global
@@ -3116,7 +3127,7 @@ public:
   {
       std::vector<Point> points;
       std::vector< std::vector<std::size_t> > polygons;
-      m_tr->dump_all_points_with_val("f_val");
+      //m_tr->dump_all_points_with_val("f_val");
       return m_tr->marching_tets(value, mesh, points, polygons);
   }
 

@@ -8,7 +8,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later OR LicenseRef-Commercial
 //
 //
-// Author(s)     : Laurent Saboret, Pierre Alliez, Tong Zhao, Cédric Portaneri
+// Author(s)     : Laurent Saboret, Pierre Alliez, Tong Zhao, Cédric Portaneri, Hongyi Liu
 
 
 #ifndef CGAL_IMPLICIT_FCT_DELAUNAY_TRIANGULATION_H

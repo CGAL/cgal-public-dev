@@ -17,7 +17,7 @@
 // SPDX-License-Identifier: GPL-3.0+
 //
 //
-// Author(s)     : Tong Zhao, Cédric Portaneri
+// Author(s)     : Tong Zhao, Cédric Portaneri, Hongyi Liu, Pierre Alliez
 
 #ifndef CGAL_OCTREE_3_H
 #define CGAL_OCTREE_3_H

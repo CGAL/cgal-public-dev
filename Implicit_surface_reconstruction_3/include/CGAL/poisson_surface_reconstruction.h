@@ -7,7 +7,7 @@
 // $Id$
 // SPDX-License-Identifier: GPL-3.0-or-later OR LicenseRef-Commercial
 //
-// Author(s)     : Simon Giraudot
+// Author(s)     : Simon Giraudot, Pierre Alliez, Tong Zhao, Hongyi Liu
 
 #ifndef CGAL_POISSON_SURFACE_RECONSTRUCTION_H
 #define CGAL_POISSON_SURFACE_RECONSTRUCTION_H
