@@ -28,37 +28,9 @@ int main(int argc, char* argv[])
     return EXIT_FAILURE;
   }
 
-  // creating and tying surface mesh property maps for curvatures (with defaults = 0)
-  bool created = false;
-  Surface_Mesh::Property_map<vertex_descriptor, Epic_Kernel::FT> mean_curvature_map, gaussian_curvature_map;
-  boost::tie(mean_curvature_map, created) = g1.add_property_map<vertex_descriptor, Epic_Kernel::FT>("v:mean_curvature_map", 0);
-  assert(created);
+  PMP::Interpolated_corrected_curvatures_computer<Surface_Mesh> icc(g1, true, true, true);
 
-  boost::tie(gaussian_curvature_map, created) = g1.add_property_map<vertex_descriptor, Epic_Kernel::FT>("v:gaussian_curvature_map", 0);
-  assert(created);
-
-  // we use a tuble of 2 scalar values and 2 vectors for principal curvatures and directions
-  Surface_Mesh::Property_map<vertex_descriptor, std::tuple<
-      Epic_Kernel::FT,
-      Epic_Kernel::FT,
-      Epic_Kernel::Vector_3,
-      Epic_Kernel::Vector_3
-      >> principle_curvature_map;
-
-  boost::tie(principle_curvature_map, created) = g1.add_property_map<vertex_descriptor, std::tuple<
-      Epic_Kernel::FT,
-      Epic_Kernel::FT,
-      Epic_Kernel::Vector_3,
-      Epic_Kernel::Vector_3
-      >>("v:principle_curvature_map", { 0, 0,
-          Epic_Kernel::Vector_3 (0,0,0),
-          Epic_Kernel::Vector_3 (0,0,0)});
-  assert(created);
-
-  PMP::interpolated_corrected_mean_curvature(
-      g1,
-      mean_curvature_map
-  );
+  icc.compute_all_curvatures();
 
   // uncomment this to compute a curvature while specifying named parameters
   // Example: an expansion ball radius of 0.5 and a vertex normals map (does not have to depend on positions)
@@ -76,20 +48,12 @@ int main(int argc, char* argv[])
       CGAL::parameters::ball_radius(0.5).vertex_normal_map(vnm)
   );*/
 
-  PMP::interpolated_corrected_gaussian_curvature(
-      g1,
-      gaussian_curvature_map
-  );
-  PMP::interpolated_corrected_principal_curvatures(
-      g1,
-      principle_curvature_map
-  );
 
   for (vertex_descriptor v : vertices(g1))
   {
-    auto PC = principle_curvature_map[v];
-      std::cout << v.idx() << ": HC = " << mean_curvature_map[v]
-                           << ", GC = " << gaussian_curvature_map[v] << "\n"
-                           << ", PC = [ " << std::get<0>(PC) << " , " << std::get<1>(PC) << " ]\n";
+    const auto& PC = icc.principal_curvature_map[v];
+      std::cout << v.idx() << ": HC = " << icc.mean_curvature_map[v]
+                           << ", GC = " << icc.gaussian_curvature_map[v] << "\n"
+                           << ", PC = [ " << PC.min_curvature << " , " << PC.max_curvature << " ]\n";
   }
 }

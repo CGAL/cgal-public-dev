@@ -35,7 +35,50 @@ namespace CGAL {
 
 namespace Polygon_mesh_processing {
 
+template<typename GT>
+struct Principal_curvature {
+    typename GT::FT min_curvature;
+    typename GT::FT max_curvature;
+    typename GT::Vector_3 min_direction;
+    typename GT::Vector_3 max_direction;
+
+    Principal_curvature() {
+        min_curvature = 0;
+        max_curvature = 0;
+        min_direction = typename GT::Vector_3(0, 0, 0);
+        max_direction = typename GT::Vector_3(0, 0, 0);
+    }
+
+    Principal_curvature(
+        typename GT::FT min_curvature,
+        typename GT::FT max_curvature,
+        typename GT::Vector_3 min_direction,
+        typename GT::Vector_3 max_direction) {
+        this->min_curvature = min_curvature;
+        this->max_curvature = max_curvature;
+        this->min_direction = min_direction;
+        this->max_direction = max_direction;
+    }
+};
+
 namespace internal {
+
+enum Curvature_measure_index {
+    MU0_AREA_MEASURE, ///< corrected area density
+    MU1_MEAN_CURVATURE_MEASURE, ///< corrected mean curvature density
+    MU2_GAUSSIAN_CURVATURE_MEASURE ///< corrected gaussian curvature density
+};
+
+template<typename GT>
+struct Vertex_curvatures {
+    typename GT::FT area_measure = 0;
+    typename GT::FT mean_curvature_measure = 0;
+    typename GT::FT gaussian_curvature_measure = 0;
+    std::array<typename GT::FT, 3 * 3> anisotropic_measure = { 0, 0, 0,
+                                                               0, 0, 0,
+                                                               0, 0, 0 };
+};
+
 
 template<typename PolygonMesh, typename GT>
 typename GT::FT average_edge_length(const PolygonMesh& pmesh)
@@ -44,7 +87,7 @@ typename GT::FT average_edge_length(const PolygonMesh& pmesh)
     if (n == 0)
         return 0;
 
-    typename GT::FT avg_edge_length = 0;
+    GT::FT avg_edge_length = 0;
     for (auto e : edges(pmesh))
         avg_edge_length += edge_length(e, pmesh);
 
@@ -52,11 +95,45 @@ typename GT::FT average_edge_length(const PolygonMesh& pmesh)
     return avg_edge_length;
 }
 
-enum Curvature_measure_index {
-    MU0_AREA_MEASURE, ///< corrected area density
-    MU1_MEAN_CURVATURE_MEASURE, ///< corrected mean curvature density
-    MU2_GAUSSIAN_CURVATURE_MEASURE ///< corrected gaussian curvature density
-};
+template<typename GT>
+Principal_curvature<GT> principal_curvature_from_anisotropic_measures(
+    const std::array<typename GT::FT, 3 * 3> anisotropic_measure,
+    const typename GT::FT v_mu0,
+    const typename GT::Vector_3 u_GT
+)
+{
+    Eigen::Matrix<typename GT::FT, 3, 3> v_muXY = Eigen::Matrix<typename GT::FT, 3, 3>::Zero();
+
+    for (std::size_t ix = 0; ix < 3; ix++)
+        for (std::size_t iy = 0; iy < 3; iy++)
+            v_muXY(ix, iy) = anisotropic_measure[ix * 3 + iy];
+
+    Eigen::Matrix<typename GT::FT, 3, 1> u(u_GT.x(), u_GT.y(), u_GT.z());
+    const typename GT::FT K = 1000 * v_mu0;
+
+    v_muXY = 0.5 * (v_muXY + v_muXY.transpose()) + K * u * u.transpose();
+
+    Eigen::SelfAdjointEigenSolver<Eigen::Matrix <typename GT::FT, 3, 3>> eigensolver;
+
+    eigensolver.computeDirect(v_muXY);
+
+    if (eigensolver.info() != Eigen::Success)
+        return Principal_curvature<GT>();
+
+    const Eigen::Matrix<typename GT::FT, 3, 1> eig_vals = eigensolver.eigenvalues();
+    const Eigen::Matrix<typename GT::FT, 3, 3> eig_vecs = eigensolver.eigenvectors();
+
+    const typename GT::Vector_3 min_eig_vec(eig_vecs(0, 1), eig_vecs(1, 1), eig_vecs(2, 1));
+    const typename GT::Vector_3 max_eig_vec(eig_vecs(0, 0), eig_vecs(1, 0), eig_vecs(2, 0));
+
+    return Principal_curvature<GT>(
+        (v_mu0 != 0.0) ? -eig_vals[1] / v_mu0 : 0.0,
+        (v_mu0 != 0.0) ? -eig_vals[0] / v_mu0 : 0.0,
+        min_eig_vec,
+        max_eig_vec
+        );
+}
+
 
 template<typename GT>
 typename GT::FT interpolated_corrected_area_measure_face(const std::vector<typename GT::Vector_3>& u,
@@ -112,6 +189,7 @@ typename GT::FT interpolated_corrected_area_measure_face(const std::vector<typen
         return mu0;
     }
 }
+
 
 template<typename GT>
 typename GT::FT interpolated_corrected_mean_curvature_measure_face(const std::vector<typename GT::Vector_3>& u,
@@ -179,6 +257,7 @@ typename GT::FT interpolated_corrected_mean_curvature_measure_face(const std::ve
     }
 }
 
+
 template<typename GT>
 typename GT::FT interpolated_corrected_gaussian_curvature_measure_face(const std::vector<typename GT::Vector_3>& u,
                                                                        const std::vector<typename GT::Vector_3>& x = {})
@@ -225,6 +304,7 @@ typename GT::FT interpolated_corrected_gaussian_curvature_measure_face(const std
         return mu2;
     }
 }
+
 
 template<typename GT>
 std::array<typename GT::FT, 3 * 3> interpolated_corrected_anisotropic_measure_face(const std::vector<typename GT::Vector_3>& u,
@@ -337,131 +417,6 @@ std::array<typename GT::FT, 3 * 3> interpolated_corrected_anisotropic_measure_fa
     return muXY;
 }
 
-template<typename PolygonMesh, typename FaceMeasureMap,
-    typename NamedParameters = parameters::Default_named_parameters>
-    void
-    interpolated_corrected_measure_mesh(const PolygonMesh& pmesh,
-                                        FaceMeasureMap fmm,
-                                        const Curvature_measure_index mu_i,
-                                        const NamedParameters& np = parameters::default_values())
-{
-
-    typedef typename GetGeomTraits<PolygonMesh, NamedParameters>::type GT;
-
-    typedef dynamic_vertex_property_t<typename GT::Vector_3> Vector_map_tag;
-    typedef typename boost::property_map<PolygonMesh, Vector_map_tag>::const_type Default_vector_map;
-    typedef typename internal_np::Lookup_named_param_def<internal_np::vertex_normal_map_t,
-        NamedParameters,
-        Default_vector_map>::type       VNM;
-
-    using parameters::choose_parameter;
-    using parameters::get_parameter;
-    using parameters::is_default_parameter;
-
-    typedef typename boost::graph_traits<PolygonMesh>::face_descriptor face_descriptor;
-    typedef typename boost::graph_traits<PolygonMesh>::vertex_descriptor vertex_descriptor;
-    typedef typename boost::graph_traits<PolygonMesh>::halfedge_descriptor halfedge_descriptor;
-
-    typename GetVertexPointMap<PolygonMesh, NamedParameters>::const_type
-        vpm = choose_parameter(get_parameter(np, CGAL::vertex_point),
-            get_const_property_map(CGAL::vertex_point, pmesh));
-
-    VNM vnm = choose_parameter(get_parameter(np, internal_np::vertex_normal_map),
-                               get(Vector_map_tag(), pmesh));
-
-    if (is_default_parameter<NamedParameters, internal_np::vertex_normal_map_t>::value)
-        compute_vertex_normals(pmesh, vnm, np);
-
-    std::function
-        <typename GT::FT(const std::vector<typename GT::Vector_3>&, const std::vector<typename GT::Vector_3>&)>
-        iccm_function;
-    switch (mu_i)
-    {
-    case MU0_AREA_MEASURE:
-        iccm_function = &interpolated_corrected_area_measure_face<GT>;
-        break;
-    case MU1_MEAN_CURVATURE_MEASURE:
-        iccm_function = &interpolated_corrected_mean_curvature_measure_face<GT>;
-        break;
-    case MU2_GAUSSIAN_CURVATURE_MEASURE:
-        iccm_function = &interpolated_corrected_gaussian_curvature_measure_face<GT>;
-        break;
-    }
-
-    std::vector<typename GT::Vector_3> x;
-    std::vector<typename GT::Vector_3> u;
-
-    for (face_descriptor f : faces(pmesh))
-    {
-
-        for (vertex_descriptor v : vertices_around_face(halfedge(f, pmesh), pmesh))
-        {
-            typename GT::Point_3 p = get(vpm, v);
-            x.push_back(typename GT::Vector_3(p.x(), p.y(), p.z()));
-            u.push_back(get(vnm, v));
-        }
-
-        put(fmm, f, iccm_function(u, x));
-        x.clear();
-        u.clear();
-    }
-}
-
-template<typename PolygonMesh, typename FaceMeasureMap,
-    typename NamedParameters = parameters::Default_named_parameters>
-    void
-    interpolated_corrected_anisotropic_measure_mesh(const PolygonMesh& pmesh,
-        FaceMeasureMap fmm,
-        const NamedParameters& np = parameters::default_values())
-{
-
-    typedef typename GetGeomTraits<PolygonMesh, NamedParameters>::type GT;
-
-    typedef dynamic_vertex_property_t<typename GT::Vector_3> Vector_map_tag;
-    typedef typename boost::property_map<PolygonMesh, Vector_map_tag>::const_type Default_vector_map;
-    typedef typename internal_np::Lookup_named_param_def<internal_np::vertex_normal_map_t,
-        NamedParameters,
-        Default_vector_map>::type       VNM;
-
-    using parameters::choose_parameter;
-    using parameters::get_parameter;
-    using parameters::is_default_parameter;
-
-    typedef typename boost::graph_traits<PolygonMesh>::face_descriptor face_descriptor;
-    typedef typename boost::graph_traits<PolygonMesh>::vertex_descriptor vertex_descriptor;
-    typedef typename boost::graph_traits<PolygonMesh>::halfedge_descriptor halfedge_descriptor;
-
-    typename GetVertexPointMap<PolygonMesh, NamedParameters>::const_type
-        vpm = choose_parameter(get_parameter(np, CGAL::vertex_point),
-            get_const_property_map(CGAL::vertex_point, pmesh));
-
-    VNM vnm = choose_parameter(get_parameter(np, internal_np::vertex_normal_map),
-        get(Vector_map_tag(), pmesh));
-
-    if (is_default_parameter<NamedParameters, internal_np::vertex_normal_map_t>::value)
-        compute_vertex_normals(pmesh, vnm, np);
-
-    std::vector<typename GT::Vector_3> x;
-    std::vector<typename GT::Vector_3> u;
-
-    for (face_descriptor f : faces(pmesh))
-    {
-
-        for (vertex_descriptor v : vertices_around_face(halfedge(f, pmesh), pmesh))
-        {
-            typename GT::Point_3 p = get(vpm, v);
-            x.push_back(typename GT::Vector_3(p.x(), p.y(), p.z()));
-            u.push_back(get(vnm, v));
-        }
-
-        put(fmm, f, interpolated_corrected_anisotropic_measure_face<GT>(u, x));
-        x.clear();
-        u.clear();
-
-    }
-}
-
-
 //
 //template<typename GT>
 //typename GT::FT triangle_in_ball_ratio_1(const typename GT::Vector_3 x1,
@@ -485,8 +440,8 @@ template<typename PolygonMesh, typename FaceMeasureMap,
 
 template<typename GT>
 typename GT::FT face_in_ball_ratio(const std::vector<typename GT::Vector_3>& x,
-                                   const typename GT::FT r,
-                                   const typename GT::Vector_3 c)
+    const typename GT::FT r,
+    const typename GT::Vector_3 c)
 {
     const std::size_t n = x.size();
 
@@ -514,443 +469,529 @@ typename GT::FT face_in_ball_ratio(const std::vector<typename GT::Vector_3>& x,
     return (r - d_min) / (d_max - d_min);
 }
 
-template<typename PolygonMesh, typename FaceMeasureMap, typename VertexMeasureMap,
-    typename NamedParameters = parameters::Default_named_parameters>
-    void expand_interpolated_corrected_measure_vertex(const PolygonMesh& pmesh,
-        FaceMeasureMap area_fmm,
-        FaceMeasureMap curvature_fmm,
-        VertexMeasureMap area_vmm,
-        VertexMeasureMap curvature_vmm,
-        const typename boost::graph_traits<PolygonMesh>::vertex_descriptor v,
-        const NamedParameters& np = parameters::default_values())
-{
-    using parameters::choose_parameter;
-    using parameters::get_parameter;
-
-    typedef typename GetGeomTraits<PolygonMesh, NamedParameters>::type GT;
-
-    typedef typename boost::graph_traits<PolygonMesh>::face_descriptor face_descriptor;
-    typedef typename boost::graph_traits<PolygonMesh>::vertex_descriptor vertex_descriptor;
-
-    const typename GT::FT
-        r = choose_parameter(get_parameter(np, internal_np::ball_radius), 0);
-
-    typename GetVertexPointMap<PolygonMesh, NamedParameters>::const_type
-        vpm = choose_parameter(get_parameter(np, CGAL::vertex_point),
-            get_const_property_map(CGAL::vertex_point, pmesh));
-
-
-    std::queue<face_descriptor> bfs_queue;
-    std::unordered_set<face_descriptor> bfs_visited;
-
-    typename GT::Point_3 vp = get(vpm, v);
-    typename GT::Vector_3 c = typename GT::Vector_3(vp.x(), vp.y(), vp.z());
-
-    typename GT::FT corrected_mu0 = 0;
-    typename GT::FT corrected_mui = 0;
-
-    for (face_descriptor f : faces_around_target(halfedge(v, pmesh), pmesh)) {
-        if (f != boost::graph_traits<PolygonMesh>::null_face())
-        {
-            bfs_queue.push(f);
-            bfs_visited.insert(f);
-        }
-    }
-    while (!bfs_queue.empty()) {
-        face_descriptor fi = bfs_queue.front();
-        bfs_queue.pop();
-
-        // looping over vertices in face to get point coordinates
-        std::vector<typename GT::Vector_3> x;
-        for (vertex_descriptor vi : vertices_around_face(halfedge(fi, pmesh), pmesh))
-        {
-            typename GT::Point_3 pi = get(vpm, vi);
-            x.push_back(typename GT::Vector_3(pi.x(), pi.y(), pi.z()));
-        }
-
-        const typename GT::FT f_ratio = face_in_ball_ratio<GT>(x, r, c);
-
-        if (f_ratio != 0.0)
-        {
-            corrected_mu0 += f_ratio * get(area_fmm, fi);
-            corrected_mui += f_ratio * get(curvature_fmm, fi);
-            for (face_descriptor fj : faces_around_face(halfedge(fi, pmesh), pmesh))
-            {
-                if (bfs_visited.find(fj) == bfs_visited.end() && fj != boost::graph_traits<PolygonMesh>::null_face())
-                {
-                    bfs_queue.push(fj);
-                    bfs_visited.insert(fj);
-                }
-            }
-        }
-    }
-    put(area_vmm, v, corrected_mu0);
-    put(curvature_vmm, v, corrected_mui);
-}
-
-template<typename PolygonMesh, typename AreaFaceMeasureMap, typename AnisotropicFaceMeasureMap,
-    typename AreaVertexMeasureMap, typename AnisotropicVertexMeasureMap,
-    typename NamedParameters = parameters::Default_named_parameters>
-    void expand_interpolated_corrected_anisotropic_measure_vertex(const PolygonMesh& pmesh,
-        AreaFaceMeasureMap area_fmm,
-        AnisotropicFaceMeasureMap aniso_fmm,
-        AreaVertexMeasureMap area_vmm,
-        AnisotropicVertexMeasureMap aniso_vmm,
-        const typename boost::graph_traits<PolygonMesh>::vertex_descriptor v,
-        const NamedParameters& np = parameters::default_values())
-{
-    using parameters::choose_parameter;
-    using parameters::get_parameter;
-
-    typedef typename GetGeomTraits<PolygonMesh, NamedParameters>::type GT;
-
-    typedef typename boost::graph_traits<PolygonMesh>::face_descriptor face_descriptor;
-    typedef typename boost::graph_traits<PolygonMesh>::vertex_descriptor vertex_descriptor;
-
-    const typename GT::FT
-        r = choose_parameter(get_parameter(np, internal_np::ball_radius), 0);
-
-    typename GetVertexPointMap<PolygonMesh, NamedParameters>::const_type
-        vpm = choose_parameter(get_parameter(np, CGAL::vertex_point),
-            get_const_property_map(CGAL::vertex_point, pmesh));
-
-
-    std::queue<face_descriptor> bfs_queue;
-    std::unordered_set<face_descriptor> bfs_visited;
-
-    typename GT::Point_3 vp = get(vpm, v);
-    typename GT::Vector_3 c = typename GT::Vector_3(vp.x(), vp.y(), vp.z());
-
-    typename GT::FT corrected_mu0 = 0;
-    Eigen::Matrix<typename GT::FT, 3, 3> corrected_muXY = Eigen::Matrix<typename GT::FT, 3, 3>::Zero();
-
-    for (face_descriptor f : faces_around_target(halfedge(v, pmesh), pmesh)) {
-        if (f != boost::graph_traits<PolygonMesh>::null_face())
-        {
-            bfs_queue.push(f);
-            bfs_visited.insert(f);
-        }
-    }
-    while (!bfs_queue.empty()) {
-        face_descriptor fi = bfs_queue.front();
-        bfs_queue.pop();
-
-        // looping over vertices in face to get point coordinates
-        std::vector<typename GT::Vector_3> x;
-        for (vertex_descriptor vi : vertices_around_face(halfedge(fi, pmesh), pmesh))
-        {
-            typename GT::Point_3 pi = get(vpm, vi);
-            x.push_back(typename GT::Vector_3(pi.x(), pi.y(), pi.z()));
-        }
-
-        const typename GT::FT f_ratio = face_in_ball_ratio<GT>(x, r, c);
-
-        if (f_ratio != 0.0)
-        {
-            corrected_mu0 += f_ratio * get(area_fmm, fi);
-
-            std::array<typename GT::FT, 3 * 3> muXY_face = get(aniso_fmm, fi);
-
-            for (std::size_t ix = 0; ix < 3; ix++)
-                for (std::size_t iy = 0; iy < 3; iy++)
-                    corrected_muXY(ix, iy) += f_ratio * muXY_face[ix * 3 + iy];
-
-            for (face_descriptor fj : faces_around_face(halfedge(fi, pmesh), pmesh))
-            {
-                if (bfs_visited.find(fj) == bfs_visited.end() && fj != boost::graph_traits<PolygonMesh>::null_face())
-                {
-                    bfs_queue.push(fj);
-                    bfs_visited.insert(fj);
-                }
-            }
-        }
-    }
-    put(area_vmm, v, corrected_mu0);
-    put(aniso_vmm, v, corrected_muXY);
-}
-
 } // namespace internal
 
-/**
-* \ingroup PMP_corrected_curvatures_grp
-*
-* Computes the interpolated corrected mean curvature across the mesh
-* and stores it in a veretex property map `vcm`.
-*
-* @tparam PolygonMesh a model of `FaceListGraph`.
-* @tparam VertexCurvatureMap model of `WritablePropertyMap` with
-* `boost::graph_traits<PolygonMesh>::%vertex_descriptor` as key type and `GT::FT` as value type.
-* @tparam NamedParameters a sequence of \ref bgl_namedparameters "Named Parameters".
-*
-* @param pmesh the polygon mesh.
-* @param vcm the vertex property map in which the computed mean curvatures are stored.
-* @param np an optional sequence of \ref bgl_namedparameters "Named Parameters".
-*
-* @see `interpolated_corrected_gaussian_curvature()`
-* @see `interpolated_corrected_principal_curvatures()`
-*/
-
-template<typename PolygonMesh, typename VertexCurvatureMap,
-    typename NamedParameters = parameters::Default_named_parameters>
-    void interpolated_corrected_mean_curvature(const PolygonMesh& pmesh,
-        VertexCurvatureMap vcm,
-        const NamedParameters& np = parameters::default_values())
-{
-    using parameters::choose_parameter;
-    using parameters::get_parameter;
-
-    typedef typename GetGeomTraits<PolygonMesh, NamedParameters>::type GT;
-
-    typedef typename boost::graph_traits<PolygonMesh>::face_descriptor face_descriptor;
-    typedef std::unordered_map<face_descriptor, typename GT::FT> FaceMeasureMap_tag;
-
-    typedef typename boost::graph_traits<PolygonMesh>::vertex_descriptor vertex_descriptor;
-    typedef std::unordered_map<vertex_descriptor, typename GT::FT> VertexMeasureMap_tag;
-
-    typename GT::FT
-        r = choose_parameter(get_parameter(np, internal_np::ball_radius), 0);
-
-    if (r == 0)
-        r = internal::average_edge_length<PolygonMesh, GT>(pmesh) * EXPANDING_RADIUS_EPSILON;
-
-    FaceMeasureMap_tag mu0_init, mu1_init;
-    boost::associative_property_map<FaceMeasureMap_tag>
-        mu0_map(mu0_init), mu1_map(mu1_init);
-
-    VertexMeasureMap_tag mu0_expand_init, mu1_expand_init;
-    boost::associative_property_map<VertexMeasureMap_tag>
-        mu0_expand_map(mu0_expand_init), mu1_expand_map(mu1_expand_init);
-
-    internal::interpolated_corrected_measure_mesh(pmesh, mu0_map, internal::MU0_AREA_MEASURE, np);
-    internal::interpolated_corrected_measure_mesh(pmesh, mu1_map, internal::MU1_MEAN_CURVATURE_MEASURE, np);
-
-    for (vertex_descriptor v : vertices(pmesh))
-    {
-        internal::expand_interpolated_corrected_measure_vertex(pmesh, mu0_map, mu1_map, mu0_expand_map, mu1_expand_map, v, np.ball_radius(r));
-
-        typename GT::FT v_mu0 = get(mu0_expand_map, v);
-        if (v_mu0 != 0.0)
-            put(vcm, v, 0.5 * get(mu1_expand_map, v) / v_mu0);
-        else
-            put(vcm, v, 0);
-    }
-}
-
-/**
-* \ingroup PMP_corrected_curvatures_grp
-*
-* Computes the interpolated corrected gaussian curvature across the mesh
-* and stores it in a veretex property map `vcm`.
-*
-* @tparam PolygonMesh a model of `FaceListGraph`.
-* @tparam VertexCurvatureMap model of `WritablePropertyMap` with
-* `boost::graph_traits<PolygonMesh>::%vertex_descriptor` as key type and `GT::FT` as value type.
-* @tparam NamedParameters a sequence of \ref bgl_namedparameters "Named Parameters".
-*
-* @param pmesh the polygon mesh.
-* @param vcm the vertex property map in which the computed gaussian curvatures are stored.
-* @param np an optional sequence of \ref bgl_namedparameters "Named Parameters".
-*
-* @see `interpolated_corrected_mean_curvature()`
-* @see `interpolated_corrected_principal_curvatures()`
-*/
-template<typename PolygonMesh, typename VertexCurvatureMap,
-    typename NamedParameters = parameters::Default_named_parameters>
-    void interpolated_corrected_gaussian_curvature(const PolygonMesh& pmesh,
-        VertexCurvatureMap vcm,
-        const NamedParameters& np = parameters::default_values())
-{
-    using parameters::choose_parameter;
-    using parameters::get_parameter;
-
-    typedef typename GetGeomTraits<PolygonMesh, NamedParameters>::type GT;
-
-    typedef typename boost::graph_traits<PolygonMesh>::face_descriptor face_descriptor;
-    typedef std::unordered_map<face_descriptor, typename GT::FT> FaceMeasureMap_tag;
-
-    typedef typename boost::graph_traits<PolygonMesh>::vertex_descriptor vertex_descriptor;
-    typedef std::unordered_map<vertex_descriptor, typename GT::FT> VertexMeasureMap_tag;
-
-    typename GT::FT
-        r = choose_parameter(get_parameter(np, internal_np::ball_radius), 0);
-
-    if (r == 0)
-        r = internal::average_edge_length<PolygonMesh, GT>(pmesh) * EXPANDING_RADIUS_EPSILON;
-
-    FaceMeasureMap_tag mu0_init, mu2_init;
-    boost::associative_property_map<FaceMeasureMap_tag>
-        mu0_map(mu0_init), mu2_map(mu2_init);
-
-    VertexMeasureMap_tag mu0_expand_init, mu2_expand_init;
-    boost::associative_property_map<VertexMeasureMap_tag>
-        mu0_expand_map(mu0_expand_init), mu2_expand_map(mu2_expand_init);
-
-    internal::interpolated_corrected_measure_mesh(pmesh, mu0_map, internal::MU0_AREA_MEASURE, np);
-    internal::interpolated_corrected_measure_mesh(pmesh, mu2_map, internal::MU2_GAUSSIAN_CURVATURE_MEASURE, np);
-
-    for (vertex_descriptor v : vertices(pmesh))
-    {
-        internal::expand_interpolated_corrected_measure_vertex(pmesh, mu0_map, mu2_map, mu0_expand_map, mu2_expand_map, v, np.ball_radius(r));
-
-        typename GT::FT v_mu0 = get(mu0_expand_map, v);
-        if(v_mu0 != 0.0)
-            put(vcm, v, get(mu2_expand_map, v) / v_mu0);
-        else
-            put(vcm, v, 0);
-    }
-}
-
-/**
-* \ingroup PMP_corrected_curvatures_grp
-*
-* Computes the interpolated corrected principal curvatures across the mesh
-* and stores it in a veretex property map `vcm`.
-*
-* @tparam PolygonMesh a model of `FaceListGraph`.
-* @tparam VertexCurvatureMap model of `WritablePropertyMap` with
-* `boost::graph_traits<PolygonMesh>::%vertex_descriptor` as key type and
-* `std::tuple<GT::FT, GT::FT, Eigen::Vector<GT::FT, 3>, Eigen::Vector<GT::FT, 3>>` as value type.
-* @tparam NamedParameters a sequence of \ref bgl_namedparameters "Named Parameters".
-*
-* @param pmesh the polygon mesh.
-* @param vcm the vertex property map in which the computed principal curvatures are stored.
-* @param np an optional sequence of \ref bgl_namedparameters "Named Parameters" among the ones listed below
-*
-* \cgalNamedParamsBegin
-*
-*   \cgalParamNBegin{vertex_point_map}
-*     \cgalParamDescription{a property map associating points to the vertices of `pmesh`}
-*     \cgalParamType{a class model of `ReadablePropertyMap` with
-*                    `boost::graph_traits<PolygonMesh>::%vertex_descriptor`
-*                    as key type and `%Point_3` as value type}
-*     \cgalParamDefault{`boost::get(CGAL::vertex_point, pmesh)`}
-*     \cgalParamExtra{If this parameter is omitted, an internal property map for
-*                     `CGAL::vertex_point_t` must be available in `PolygonMesh`.}
-*   \cgalParamNEnd
-*
-*   \cgalParamNBegin{vertex_normal_map}
-*     \cgalParamDescription{a property map associating normal vectors to the vertices of `pmesh`}
-*     \cgalParamType{a class model of `ReadablePropertyMap` with
-*                    `boost::graph_traits<PolygonMesh>::%vertex_descriptor`
-*                    as key type and `%Vector_3` as value type}
-*     \cgalParamDefault{`get(dynamic_vertex_property_t<GT::Vector_3>(), pmesh)`}
-*     \cgalParamExtra{If this parameter is omitted, vertex normals will be
-*                     computed using compute_vertex_normals()}
-*   \cgalParamNEnd
-*
-* \cgalNamedParamsEnd
-*
-* @see `interpolated_corrected_mean_curvature()`
-* @see `interpolated_corrected_gaussian_curvature()`
-*/
-template<typename PolygonMesh, typename VertexCurvatureMap,
-    typename NamedParameters = parameters::Default_named_parameters>
-    void interpolated_corrected_principal_curvatures(const PolygonMesh& pmesh,
-        VertexCurvatureMap vcm,
-        const NamedParameters& np = parameters::default_values())
+template<typename PolygonMesh, typename NamedParameters = parameters::Default_named_parameters>
+class Interpolated_corrected_curvatures_computer
 {
     typedef typename GetGeomTraits<PolygonMesh, NamedParameters>::type GT;
 
-    typedef dynamic_vertex_property_t<typename GT::Vector_3> Vector_map_tag;
+    typedef typename GT::FT FT;
+    typedef typename GT::Point_3 Point_3;
+    typedef typename GT::Vector_3 Vector_3;
+
+    typedef typename GetVertexPointMap<PolygonMesh, NamedParameters>::const_type VPM;
+
+    typedef dynamic_vertex_property_t<Vector_3> Vector_map_tag;
     typedef typename boost::property_map<PolygonMesh, Vector_map_tag>::const_type Default_vector_map;
     typedef typename internal_np::Lookup_named_param_def<internal_np::vertex_normal_map_t,
         NamedParameters,
-        Default_vector_map>::type       VNM;
+        Default_vector_map>::type VNM;
 
-    using parameters::choose_parameter;
-    using parameters::get_parameter;
-    using parameters::is_default_parameter;
+    typedef typename boost::graph_traits<PolygonMesh>::halfedge_descriptor halfedge_descriptor;
+    typedef typename boost::graph_traits<PolygonMesh>::edge_descriptor edge_descriptor;
+    typedef typename boost::graph_traits<PolygonMesh>::face_descriptor face_descriptor;
+    typedef typename boost::graph_traits<PolygonMesh>::vertex_descriptor vertex_descriptor;
 
-    typename GetVertexPointMap<PolygonMesh, NamedParameters>::const_type
+    typedef std::unordered_map<face_descriptor, FT> Face_scalar_measure_map_tag;
+    typedef std::unordered_map<vertex_descriptor, FT> Vertex_scalar_measure_map_tag;
+    typedef std::unordered_map<face_descriptor, std::array<FT, 3 * 3>> Face_anisotropic_measure_map_tag;
+    typedef std::unordered_map<vertex_descriptor, Principal_curvature<GT>> Vertex_principal_curvature_map_tag;
+
+private:
+    const PolygonMesh& pmesh;
+    VPM vpm;
+    VNM vnm;
+    FT ball_radius;
+
+    bool mean_curvature_selected = false;
+    bool gaussian_curvature_selected = false;
+    bool principal_curvature_selected = false;
+
+    bool area_measure_computed = false;
+    bool mean_curvature_measure_computed = false;
+    bool gaussian_curvature_measure_computed = false;
+    bool anisotropic_measure_computed = false;
+
+    bool area_measure_expanded = false;
+    bool mean_curvature_computed = false;          // implicitly also means mean measure is expanded
+    bool gaussian_curvature_computed = false;      // implicitly also means gaussiaan measure is expanded
+    bool principal_curvature_computed = false;     // implicitly also means anisotropic measure is expanded
+
+    Face_scalar_measure_map_tag mu0_map_init, mu1_map_init, mu2_map_init;
+    Face_anisotropic_measure_map_tag muXY_map_init;
+    Vertex_scalar_measure_map_tag mean_curvature_map_init, gaussian_curvature_map_init;
+    Vertex_principal_curvature_map_tag principal_curvature_map_init;
+
+    boost::associative_property_map<Face_scalar_measure_map_tag> mu0_map, mu1_map, mu2_map;
+    boost::associative_property_map<Face_anisotropic_measure_map_tag> muXY_map;
+
+public:
+
+    boost::associative_property_map<Vertex_scalar_measure_map_tag> mean_curvature_map, gaussian_curvature_map;
+    boost::associative_property_map<Vertex_principal_curvature_map_tag> principal_curvature_map;
+
+    void set_named_params(const NamedParameters& np = parameters::default_values())
+    {
+        using parameters::choose_parameter;
+        using parameters::get_parameter;
+        using parameters::is_default_parameter;
+
         vpm = choose_parameter(get_parameter(np, CGAL::vertex_point),
             get_const_property_map(CGAL::vertex_point, pmesh));
 
-    VNM vnm = choose_parameter(get_parameter(np, internal_np::vertex_normal_map),
-        get(Vector_map_tag(), pmesh));
+        vnm = choose_parameter(get_parameter(np, internal_np::vertex_normal_map),
+            get(Vector_map_tag(), pmesh));
 
-    typename GT::FT
-        r = choose_parameter(get_parameter(np, internal_np::ball_radius), 0);
+        if (is_default_parameter<NamedParameters, internal_np::vertex_normal_map_t>::value)
+            compute_vertex_normals(pmesh, vnm, np);
 
-    if (r == 0)
-        r = internal::average_edge_length<PolygonMesh, GT>(pmesh) * EXPANDING_RADIUS_EPSILON;
+        ball_radius = choose_parameter(get_parameter(np, internal_np::ball_radius), 0);
 
-    if (is_default_parameter<NamedParameters, internal_np::vertex_normal_map_t>::value)
-        compute_vertex_normals(pmesh, vnm, np);
+        set_ball_radius(ball_radius);
+    }
 
+    void set_property_maps() {
+        mu0_map = boost::associative_property_map<Face_scalar_measure_map_tag>(mu0_map_init);
+        mu1_map = boost::associative_property_map<Face_scalar_measure_map_tag>(mu1_map_init);
+        mu2_map = boost::associative_property_map<Face_scalar_measure_map_tag>(mu2_map_init);
+        muXY_map = boost::associative_property_map<Face_anisotropic_measure_map_tag>(muXY_map_init);
+        mean_curvature_map = boost::associative_property_map<Vertex_scalar_measure_map_tag>(mean_curvature_map_init);
+        gaussian_curvature_map = boost::associative_property_map<Vertex_scalar_measure_map_tag>(gaussian_curvature_map_init);
+        principal_curvature_map = boost::associative_property_map<Vertex_principal_curvature_map_tag>(principal_curvature_map_init);
+    }
 
-
-    typedef typename boost::graph_traits<PolygonMesh>::face_descriptor face_descriptor;
-    typedef std::unordered_map<face_descriptor, typename GT::FT> FaceScalarMeasureMap_tag;
-    // using std:: array to store FT values on the 9 combinations of the standard 3D basis
-    typedef std::unordered_map<face_descriptor, std::array<typename GT::FT, 3 * 3>> FaceArrayMeasureMap_tag;
-
-    typedef typename boost::graph_traits<PolygonMesh>::vertex_descriptor vertex_descriptor;
-    typedef std::unordered_map<vertex_descriptor, typename GT::FT> VertexScalarMeasureMap_tag;
-    // using Eigen matrix to store & Process FT values on the 9 combinations of the standard 3D basis
-    typedef std::unordered_map<vertex_descriptor, Eigen::Matrix<typename GT::FT, 3, 3>> VertexMatrixMeasureMap_tag;
-
-
-    FaceScalarMeasureMap_tag mu0_init;
-    boost::associative_property_map<FaceScalarMeasureMap_tag>
-        mu0_map(mu0_init);
-
-    FaceArrayMeasureMap_tag muXY_init;
-    boost::associative_property_map<FaceArrayMeasureMap_tag>
-        muXY_map(muXY_init);
-
-    VertexScalarMeasureMap_tag mu0_expand_init;
-    boost::associative_property_map<VertexScalarMeasureMap_tag>
-        mu0_expand_map(mu0_expand_init);
-
-    VertexMatrixMeasureMap_tag muXY_expand_init;
-    boost::associative_property_map<VertexMatrixMeasureMap_tag>
-        muXY_expand_map(muXY_expand_init);
-
-    internal::interpolated_corrected_measure_mesh(pmesh, mu0_map, internal::MU0_AREA_MEASURE, np);
-    internal::interpolated_corrected_anisotropic_measure_mesh(pmesh, muXY_map, np);
-
-    for (vertex_descriptor v : vertices(pmesh))
+    Interpolated_corrected_curvatures_computer(const PolygonMesh& pmesh,
+        const NamedParameters& np = parameters::default_values())
+        :
+        pmesh(pmesh)
     {
-        internal::expand_interpolated_corrected_anisotropic_measure_vertex(pmesh, mu0_map, muXY_map, mu0_expand_map, muXY_expand_map, v, np.ball_radius(r));
+        set_named_params(np);
+        set_property_maps();
+    }
 
-        typename GT::FT v_mu0 = get(mu0_expand_map, v);
-        Eigen::Matrix<typename GT::FT, 3, 3> v_muXY = get(muXY_expand_map, v);
+    Interpolated_corrected_curvatures_computer(const PolygonMesh& pmesh,
+        bool mean_curvature_selected,
+        bool gaussian_curvature_selected,
+        bool principal_curvature_selected,
+        const NamedParameters& np = parameters::default_values()
+    ):
+        pmesh(pmesh)
+    {
+        set_named_params(np);
+        set_property_maps();
+        this->mean_curvature_selected = mean_curvature_selected;
+        this->gaussian_curvature_selected = gaussian_curvature_selected;
+        this->principal_curvature_selected = principal_curvature_selected;
+    }
 
-        typename GT::Vector_3 u_GT = get(vnm, v);
 
-        Eigen::Matrix<typename GT::FT, 3, 1> u(u_GT.x(), u_GT.y(), u_GT.z());
+    void set_ball_radius(const FT radius) {
+        if (radius == 0)
+            ball_radius = internal::average_edge_length<PolygonMesh, GT>(pmesh) * EXPANDING_RADIUS_EPSILON;
 
-        const typename GT::FT K = 1000 * v_mu0;
+        area_measure_expanded = false;
+        mean_curvature_computed = false;
+        gaussian_curvature_computed = false;
+        principal_curvature_computed = false;
+    }
 
-        v_muXY = 0.5 * (v_muXY + v_muXY.transpose()) + K * u * u.transpose();
 
-        Eigen::SelfAdjointEigenSolver<Eigen::Matrix <typename GT::FT, 3, 3>> eigensolver;
-
-        eigensolver.computeDirect(v_muXY);
-
-        if (eigensolver.info() != Eigen::Success)
+    /**
+    * \ingroup PMP_corrected_curvatures_grp
+    *
+    * Computes the interpolated corrected curvature measure on each face of the mesh.
+    *
+    * @tparam PolygonMesh a model of `FaceListGraph`.
+    * @tparam FaceMeasureMap a model of `WritablePropertyMap` with
+    * `boost::graph_traits<PolygonMesh>::%face_descriptor` as key type and `GT::FT` as value type.
+    * @tparam NamedParameters a sequence of \ref bgl_namedparameters "Named Parameters".
+    *
+    * @param pmesh the polygon mesh.
+    * @param fmm (face measure map) the property map used for storing the computed interpolated corrected measure.
+    * @param mu_i an enum for choosing between computing
+    *             the area measure, the mean curvature measure or the gaussian curvature measure.
+    * @param np an optional sequence of \ref bgl_namedparameters "Named Parameters" among the ones listed below
+    *
+    * \cgalNamedParamsBegin
+    *
+    *   \cgalParamNBegin{vertex_point_map}
+    *     \cgalParamDescription{a property map associating points to the vertices of `pmesh`}
+    *     \cgalParamType{a class model of `ReadablePropertyMap` with
+    *                    `boost::graph_traits<PolygonMesh>::%vertex_descriptor`
+    *                    as key type and `%Point_3` as value type}
+    *     \cgalParamDefault{`boost::get(CGAL::vertex_point, pmesh)`}
+    *     \cgalParamExtra{If this parameter is omitted, an internal property map for
+    *                     `CGAL::vertex_point_t` must be available in `PolygonMesh`.}
+    *   \cgalParamNEnd
+    *
+    *   \cgalParamNBegin{vertex_normal_map}
+    *     \cgalParamDescription{a property map associating normal vectors to the vertices of `pmesh`}
+    *     \cgalParamType{a class model of `ReadablePropertyMap` with
+    *                    `boost::graph_traits<PolygonMesh>::%vertex_descriptor`
+    *                    as key type and `%Vector_3` as value type}
+    *     \cgalParamDefault{`get(dynamic_vertex_property_t<GT::Vector_3>(), pmesh)`}
+    *     \cgalParamExtra{If this parameter is omitted, vertex normals will be
+    *                     computed using compute_vertex_normals()}
+    *   \cgalParamNEnd
+    *
+    * \cgalNamedParamsEnd
+    *
+    * @see `interpolated_corrected_area_measure_face()`
+    * @see `interpolated_corrected_mean_curvature_measure_face()`
+    * @see `interpolated_corrected_gaussian_curvature_measure_face()`
+    */
+    void interpolated_corrected_measure_all_faces(Face_scalar_measure_map_tag fmm, const internal::Curvature_measure_index mu_i)
+    {
+        std::function
+            <FT(const std::vector<Vector_3>&, const std::vector<Vector_3>&)>
+            iccm_function;
+        switch (mu_i)
         {
-            put(vcm, v, std::make_tuple(
-                0,
-                0,
-                typename GT::Vector_3(0, 0, 0),
-                typename GT::Vector_3(0, 0, 0)));
-            continue;
+        case internal::MU0_AREA_MEASURE:
+            iccm_function = &internal::interpolated_corrected_area_measure_face<GT>;
+            break;
+        case internal::MU1_MEAN_CURVATURE_MEASURE:
+            iccm_function = &internal::interpolated_corrected_mean_curvature_measure_face<GT>;
+            break;
+        case internal::MU2_GAUSSIAN_CURVATURE_MEASURE:
+            iccm_function = &internal::interpolated_corrected_gaussian_curvature_measure_face<GT>;
+            break;
         }
 
-        const Eigen::Matrix<typename GT::FT, 3, 1> eig_vals = eigensolver.eigenvalues();
-        const Eigen::Matrix<typename GT::FT, 3, 3> eig_vecs = eigensolver.eigenvectors();
+        std::vector<Vector_3> x;
+        std::vector<Vector_3> u;
 
-        const typename GT::Vector_3 min_eig_vec(eig_vecs(0, 1), eig_vecs(1, 1), eig_vecs(2, 1));
-        const typename GT::Vector_3 max_eig_vec(eig_vecs(0, 0), eig_vecs(1, 0), eig_vecs(2, 0));
+        for (face_descriptor f : faces(pmesh))
+        {
 
-        put(vcm, v, std::make_tuple(
-            (v_mu0 != 0.0) ? -eig_vals[1] / v_mu0 : 0.0,
-            (v_mu0 != 0.0) ? -eig_vals[0] / v_mu0 : 0.0,
-            min_eig_vec,
-            max_eig_vec));
+            for (vertex_descriptor v : vertices_around_face(halfedge(f, pmesh), pmesh))
+            {
+                Point_3 p = get(vpm, v);
+                x.push_back(Vector_3(p.x(), p.y(), p.z()));
+                u.push_back(get(vnm, v));
+            }
+
+            put(fmm, f, iccm_function(u, x));
+            x.clear();
+            u.clear();
+        }
+
+        switch (mu_i)
+        {
+        case internal::MU0_AREA_MEASURE:
+            area_measure_computed = true;
+            break;
+        case internal::MU1_MEAN_CURVATURE_MEASURE:
+            mean_curvature_measure_computed = true;
+            break;
+        case internal::MU2_GAUSSIAN_CURVATURE_MEASURE:
+            gaussian_curvature_measure_computed = true;
+            break;
+        }
     }
-}
+
+    void interpolated_corrected_all_measures_all_faces()
+    {
+        bool mean_curvature_measure_needed = mean_curvature_selected && !mean_curvature_measure_computed;
+        bool gaussian_curvature_measure_needed = gaussian_curvature_selected && !gaussian_curvature_measure_computed;
+        bool anisotropic_measure_needed = principal_curvature_selected && !anisotropic_measure_computed;
+
+        // if no computations are needed
+        if (!(
+            !area_measure_computed ||
+            mean_curvature_measure_needed ||
+            gaussian_curvature_measure_needed ||
+            anisotropic_measure_needed
+            )) return;
+
+        std::vector<Vector_3> x;
+        std::vector<Vector_3> u;
+
+        for (face_descriptor f : faces(pmesh))
+        {
+            for (vertex_descriptor v : vertices_around_face(halfedge(f, pmesh), pmesh))
+            {
+                Point_3 p = get(vpm, v);
+                x.push_back(Vector_3(p.x(), p.y(), p.z()));
+                u.push_back(get(vnm, v));
+            }
+            if (!area_measure_computed)
+                put(mu0_map, f, internal::interpolated_corrected_area_measure_face<GT>(u, x));
+
+            if (mean_curvature_measure_needed)
+                put(mu1_map, f, internal::interpolated_corrected_mean_curvature_measure_face<GT>(u, x));
+
+            if (gaussian_curvature_measure_needed)
+                put(mu2_map, f, internal::interpolated_corrected_gaussian_curvature_measure_face<GT>(u, x));
+
+            if (anisotropic_measure_needed)
+                put(muXY_map, f, internal::interpolated_corrected_anisotropic_measure_face<GT>(u, x));
+
+            x.clear();
+            u.clear();
+        }
+        if (!area_measure_computed)
+            area_measure_computed = true;
+
+        if (mean_curvature_measure_needed)
+            mean_curvature_measure_computed = true;
+
+        if (gaussian_curvature_measure_needed)
+            gaussian_curvature_measure_computed = true;
+
+        if (anisotropic_measure_needed)
+            anisotropic_measure_computed = true;
+
+        for (face_descriptor f : faces(pmesh))
+        {
+            std::cout << f << ": " << mu0_map[f] << ", " << mu1_map[f] << ", " << mu2_map[f] << "\n";
+        }
+    }
+
+
+    /**
+    * \ingroup PMP_corrected_curvatures_grp
+    *
+    * Computes the interpolated corrected anisotropic measure on each face of the mesh
+    *
+    * @tparam PolygonMesh a model of `FaceListGraph`.
+    * @tparam FaceMeasureMap a model of `WritablePropertyMap` with
+    * `boost::graph_traits<PolygonMesh>::%face_descriptor` as key type and `std::array<GT::FT, 3 * 3>` as value type.
+    * @tparam NamedParameters a sequence of \ref bgl_namedparameters "Named Parameters".
+    *
+    * @param pmesh the polygon mesh.
+    * @param fmm (face measure map) the property map used for storing the computed interpolated corrected measure.
+    * @param np an optional sequence of \ref bgl_namedparameters "Named Parameters" among the ones listed below
+    *
+    * \cgalNamedParamsBegin
+    *
+    *   \cgalParamNBegin{vertex_point_map}
+    *     \cgalParamDescription{a property map associating points to the vertices of `pmesh`}
+    *     \cgalParamType{a class model of `ReadablePropertyMap` with
+    *                    `boost::graph_traits<PolygonMesh>::%vertex_descriptor`
+    *                    as key type and `%Point_3` as value type}
+    *     \cgalParamDefault{`boost::get(CGAL::vertex_point, pmesh)`}
+    *     \cgalParamExtra{If this parameter is omitted, an internal property map for
+    *                     `CGAL::vertex_point_t` must be available in `PolygonMesh`.}
+    *   \cgalParamNEnd
+    *
+    *   \cgalParamNBegin{vertex_normal_map}
+    *     \cgalParamDescription{a property map associating normal vectors to the vertices of `pmesh`}
+    *     \cgalParamType{a class model of `ReadablePropertyMap` with
+    *                    `boost::graph_traits<PolygonMesh>::%vertex_descriptor`
+    *                    as key type and `%Vector_3` as value type}
+    *     \cgalParamDefault{`get(dynamic_vertex_property_t<GT::Vector_3>(), pmesh)`}
+    *     \cgalParamExtra{If this parameter is omitted, vertex normals will be
+    *                     computed using compute_vertex_normals()}
+    *   \cgalParamNEnd
+    *
+    * \cgalNamedParamsEnd
+    *
+    * @see `interpolated_corrected_anisotropic_measure_face()`
+    * @see `interpolated_corrected_measure_mesh()`
+    */
+        void
+        interpolated_corrected_anisotropic_measure_all_faces()
+    {
+        std::vector<Vector_3> x;
+        std::vector<Vector_3> u;
+
+        for (face_descriptor f : faces(pmesh))
+        {
+
+            for (vertex_descriptor v : vertices_around_face(halfedge(f, pmesh), pmesh))
+            {
+                Point_3 p = get(vpm, v);
+                x.push_back(Vector_3(p.x(), p.y(), p.z()));
+                u.push_back(get(vnm, v));
+            }
+
+            put(muXY_map, f, internal::interpolated_corrected_anisotropic_measure_face<GT>(u, x));
+            x.clear();
+            u.clear();
+        }
+        anisotropic_measure_computed = true;
+    }
+
+    /**
+    * \ingroup PMP_corrected_curvatures_grp
+    *
+    * Expands given face area and curvature (mean or gaussian) measures around a vertex `v`.
+    * Expansion is based on the inclusion ratio of each face in a ball of radius `r` around the vertex `v`.
+    *
+    * @tparam PolygonMesh a model of `FaceListGraph`.
+    * @tparam FaceMeasureMap a model of `WritablePropertyMap` with
+    * `boost::graph_traits<PolygonMesh>::%face_descriptor` as key type and `GT::FT` as value type.
+    * @tparam VertexMeasureMap a model of `WritablePropertyMap` with
+    * `boost::graph_traits<PolygonMesh>::%vertex_descriptor` as key type and `GT::FT` as value type.
+    * @tparam NamedParameters a sequence of \ref bgl_namedparameters "Named Parameters".
+    *
+    * @param pmesh the polygon mesh.
+    * @param area_fmm (area face measure map) the property map storing the already computed area measure on each face.
+    * @param curvature_fmm (curvature face measure map) the property map storing the already computed curvature measure on each face.
+    * This curvature measure can be either the Mean Curvature or the Gaussian Curvature.
+    * @param area_vmm (area vertex measure map) the property map provided to store the expanded area measure on each vertex.
+    * @param curvature_vmm (curvature vertex measure map) the property map provided to store the expanded curvature measure on each vertex.
+    * This curvature measure can be either the Mean Curvature or the Gaussian Curvature.
+    * @param v (vertex) the vertex to expand the area and curvature measure around.
+    * @param np an optional sequence of \ref bgl_namedparameters "Named Parameters" among the ones listed below
+    *
+    * \cgalNamedParamsBegin
+    *
+    *   \cgalParamNBegin{ball_radius}
+    *     \cgalParamDescription{the radius of the ball around the vertex `v` to expand the area and curvature measure}
+    *     \cgalParamType{`GT::FT`}
+    *     \cgalParamDefault{`0.01`}
+    *   \cgalParamNEnd
+    *
+    *   \cgalParamNBegin{vertex_point_map}
+    *     \cgalParamDescription{a property map associating points to the vertices of `pmesh`}
+    *     \cgalParamType{a class model of `ReadablePropertyMap` with
+    *                    `boost::graph_traits<PolygonMesh>::%vertex_descriptor`
+    *                    as key type and `%Point_3` as value type}
+    *     \cgalParamDefault{`boost::get(CGAL::vertex_point, pmesh)`}
+    *     \cgalParamExtra{If this parameter is omitted, an internal property map for
+    *                     `CGAL::vertex_point_t` must be available in `PolygonMesh`.}
+    *   \cgalParamNEnd
+    *
+    * \cgalNamedParamsEnd
+    *
+    * @see `expand_interpolated_corrected_anisotropic_measure_vertex()`
+    * @see `face_in_ball_ratio()`
+    */
+    internal::Vertex_curvatures<GT> expand_interpolated_corrected_measure_vertex(vertex_descriptor v)
+    {
+        bool mean_curvature_measure_expansion_needed = mean_curvature_selected && !mean_curvature_computed;
+        bool gaussian_curvature_measure_expansion_needed = gaussian_curvature_selected && !gaussian_curvature_computed;
+        bool anisotropic_measure_expansion_needed = principal_curvature_selected && !principal_curvature_computed;
+
+        std::queue<face_descriptor> bfs_queue;
+        std::unordered_set<face_descriptor> bfs_visited;
+
+        Point_3 vp = get(vpm, v);
+        Vector_3 c = Vector_3(vp.x(), vp.y(), vp.z());
+
+        internal::Vertex_curvatures<GT> vertex_curvatures;
+
+        for (face_descriptor f : faces_around_target(halfedge(v, pmesh), pmesh)) {
+            if (f != boost::graph_traits<PolygonMesh>::null_face())
+            {
+                bfs_queue.push(f);
+                bfs_visited.insert(f);
+            }
+        }
+        while (!bfs_queue.empty()) {
+            face_descriptor fi = bfs_queue.front();
+            bfs_queue.pop();
+
+            // looping over vertices in face to get point coordinates
+            std::vector<Vector_3> x;
+            for (vertex_descriptor vi : vertices_around_face(halfedge(fi, pmesh), pmesh))
+            {
+                Point_3 pi = get(vpm, vi);
+                x.push_back(Vector_3(pi.x(), pi.y(), pi.z()));
+            }
+
+            const FT f_ratio = internal::face_in_ball_ratio<GT>(x, ball_radius, c);
+
+            if (f_ratio != 0.0)
+            {
+                if (!area_measure_expanded)
+                    vertex_curvatures.area_measure += f_ratio * get(mu0_map, fi);
+
+                if (mean_curvature_measure_expansion_needed)
+                    vertex_curvatures.mean_curvature_measure += f_ratio * get(mu1_map, fi);
+
+                if (gaussian_curvature_measure_expansion_needed)
+                    vertex_curvatures.gaussian_curvature_measure += f_ratio * get(mu2_map, fi);
+
+                if (anisotropic_measure_expansion_needed)
+                {
+                    const std::array<FT, 3 * 3> face_anisotropic_measure = get(muXY_map, fi);
+                    for (std::size_t i = 0; i < 3 * 3; i++)
+                        vertex_curvatures.anisotropic_measure[i] += f_ratio * face_anisotropic_measure[i];
+                }
+
+                for (face_descriptor fj : faces_around_face(halfedge(fi, pmesh), pmesh))
+                {
+                    if (bfs_visited.find(fj) == bfs_visited.end() && fj != boost::graph_traits<PolygonMesh>::null_face())
+                    {
+                        bfs_queue.push(fj);
+                        bfs_visited.insert(fj);
+                    }
+                }
+            }
+        }
+
+        std::cout << vertex_curvatures.area_measure << " " << vertex_curvatures.mean_curvature_measure << " " << vertex_curvatures.gaussian_curvature_measure << "\n";
+        return vertex_curvatures;
+    }
+
+
+    void compute_selected_curvatures() {
+        bool mean_curvature_needed = mean_curvature_selected && !mean_curvature_computed;
+        bool gaussian_curvature_needed = gaussian_curvature_selected && !gaussian_curvature_computed;
+        bool principal_curvature_needed = principal_curvature_selected && !principal_curvature_computed;
+
+        if (!(mean_curvature_needed || gaussian_curvature_needed || principal_curvature_needed)) return;
+
+        interpolated_corrected_all_measures_all_faces();
+
+        for (vertex_descriptor v : vertices(pmesh))
+        {
+            const internal::Vertex_curvatures<GT> vertex_curvatures = expand_interpolated_corrected_measure_vertex(v);
+
+            if (mean_curvature_needed) {
+                vertex_curvatures.area_measure != 0 ?
+                    put(mean_curvature_map, v, 0.5 * vertex_curvatures.mean_curvature_measure / vertex_curvatures.area_measure) :
+                    put(mean_curvature_map, v, 0);
+            }
+
+            if (gaussian_curvature_needed) {
+                vertex_curvatures.area_measure != 0 ?
+                    put(gaussian_curvature_map, v, vertex_curvatures.gaussian_curvature_measure / vertex_curvatures.area_measure) :
+                    put(gaussian_curvature_map, v, 0);
+            }
+
+            if (principal_curvature_needed) {
+                const Vector_3  v_normal = get(vnm, v);
+                const Principal_curvature<GT> principal_curvature = internal::principal_curvature_from_anisotropic_measures<GT>(
+                        vertex_curvatures.anisotropic_measure,
+                        vertex_curvatures.area_measure,
+                        v_normal
+                    );
+                put(principal_curvature_map, v, principal_curvature);
+            }
+        }
+        if (!area_measure_expanded)
+            area_measure_expanded = true;
+
+        if (mean_curvature_needed)
+            mean_curvature_computed = true;
+
+        if (gaussian_curvature_needed)
+            gaussian_curvature_computed = true;
+
+        if (principal_curvature_needed)
+            principal_curvature_computed = true;
+    }
+
+
+    void compute_all_curvatures() {
+        mean_curvature_selected = true;
+        gaussian_curvature_selected = true;
+        principal_curvature_selected = true;
+        compute_selected_curvatures();
+    }
+
+    void compute_mean_curvature()
+    {
+
+    }
+
+
+};
 
 } // namespace Polygon_mesh_processing
 } // namespace CGAL
