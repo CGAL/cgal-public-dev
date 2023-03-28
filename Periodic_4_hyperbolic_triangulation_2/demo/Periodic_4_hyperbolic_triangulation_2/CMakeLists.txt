@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.1...3.20)
+cmake_minimum_required(VERSION 3.1...3.23)
 project(Periodic_4_hyperbolic_triangulation_2_Demo)
 
 # Find includes in corresponding build directories
@@ -41,5 +41,5 @@ if((CGAL_Core_FOUND OR LEDA_FOUND)
   include(${CGAL_MODULES_DIR}/CGAL_add_test.cmake)
   cgal_add_compilation_test(P4HDT2)
 else()
-  message(STATUS "NOTICE: This demo requires Qt5 and will not be compiled.")
+  message("NOTICE: This demo requires Qt5 and will not be compiled.")
 endif()

@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.1...3.20)
+cmake_minimum_required(VERSION 3.1...3.23)
 project(LCC_performance_3)
 
 if(NOT POLICY CMP0070 AND POLICY CMP0053)
@@ -7,13 +7,6 @@ if(NOT POLICY CMP0070 AND POLICY CMP0053)
 endif()
 
 find_package(CGAL REQUIRED)
-
-find_package(Boost 1.43.0)
-if(Boost_FOUND)
-  include_directories(${Boost_INCLUDE_DIRS})
-else()
-  set(USE_IN_SOURCE_TREE_BOOST true)
-endif()
 
 add_subdirectory(openvolumemesh)
 

@@ -1,6 +1,6 @@
 # This is the CMake script for compiling the Optimal_transportation_reconstruction_2 demo.
 
-cmake_minimum_required(VERSION 3.1...3.20)
+cmake_minimum_required(VERSION 3.1...3.23)
 project(Optimal_transportation_reconstruction_2_Demo)
 
 if(NOT POLICY CMP0070 AND POLICY CMP0053)
@@ -33,14 +33,10 @@ find_path(
   DOC "Path to the header of the CImg library")
 
 if(CIMG_INCLUDE_DIR)
-  message(
-    STATUS "CImg library found, the demo can load point set from image files.")
+  message(STATUS "NOTICE: CImg library found, the demo can load point set from image files.")
 else()
-  message(
-    STATUS
-      "CImg library was not found, the demo will not be able to load point set from image files. "
-      "Try setting the environment variable CIMG_INC_DIR to point to the path of the directory containing CImg.h."
-  )
+  message(STATUS "CImg library was not found, the demo will not be able to load point set from image files. "
+                 "Try setting the environment variable CIMG_INC_DIR to point to the path of the directory containing CImg.h.")
 endif()
 
 if(CGAL_Qt5_FOUND AND Qt5_FOUND)
@@ -81,7 +77,7 @@ if(CGAL_Qt5_FOUND AND Qt5_FOUND)
     target_include_directories(Otr2_demo PRIVATE ${CIMG_INCLUDE_DIR})
     # Is pthread around? If yes, we need to link against it
     set(CMAKE_THREAD_PREFER_PTHREAD TRUE)
-    find_package(Threads)
+    find_package(Threads QUIET)
     if(CMAKE_USE_PTHREADS_INIT)
       target_link_libraries(Otr2_demo PRIVATE ${CMAKE_THREAD_LIBS_INIT})
     endif()
@@ -105,10 +101,7 @@ else(
     set(OTR2_MISSING_DEPS "Qt5.4, ${OTR2_MISSING_DEPS}")
   endif()
 
-  message(
-    STATUS
-      "NOTICE: This demo requires ${OTR2_MISSING_DEPS}and will not be compiled."
-  )
+  message("NOTICE: This demo requires ${OTR2_MISSING_DEPS} and will not be compiled.")
 
 endif(
   CGAL_Qt5_FOUND
