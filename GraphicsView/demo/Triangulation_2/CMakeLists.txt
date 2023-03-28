@@ -1,7 +1,7 @@
 # Created by the script cgal_create_cmake_script
 # This is the CMake script for compiling a CGAL application.
 
-cmake_minimum_required(VERSION 3.1...3.20)
+cmake_minimum_required(VERSION 3.1...3.23)
 project(Triangulation_2_Demo)
 
 if(NOT POLICY CMP0070 AND POLICY CMP0053)
@@ -19,10 +19,8 @@ set(CMAKE_INCLUDE_CURRENT_DIR TRUE)
 find_package(CGAL REQUIRED OPTIONAL_COMPONENTS Qt5)
 find_package(Qt5 QUIET COMPONENTS Widgets)
 
-if(NOT CGAL_Qt5_FOUND
-   OR NOT Qt5_FOUND)
-  message(
-    STATUS "NOTICE: This demo requires CGAL and Qt5, and will not be compiled.")
+if(NOT CGAL_Qt5_FOUND OR NOT Qt5_FOUND)
+  message("NOTICE: This demo requires CGAL and Qt5, and will not be compiled.")
   return()
 endif()
 

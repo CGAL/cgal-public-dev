@@ -22,7 +22,7 @@
 #include <CGAL/disable_warnings.h>
 
 #include <CGAL/Named_function_parameters.h>
-#include <CGAL/Polygon_mesh_processing/internal/named_params_helper.h>
+#include <CGAL/boost/graph/named_params_helper.h>
 
 #include <CGAL/algorithm.h>
 #include <CGAL/Bbox_3.h>
@@ -249,7 +249,7 @@ self_intersections_impl(const FaceRange& face_range,
   VPM vpmap = choose_parameter(get_parameter(np, internal_np::vertex_point),
                                get_const_property_map(boost::vertex_point, tmesh));
 
-  const bool do_limit = !(is_default_parameter<NamedParameters, internal_np::maximum_number_t>());
+  const bool do_limit = !(is_default_parameter<NamedParameters, internal_np::maximum_number_t>::value);
   const unsigned int maximum_number = choose_parameter(get_parameter(np, internal_np::maximum_number), 0);
   if(do_limit && maximum_number == 0)
   {

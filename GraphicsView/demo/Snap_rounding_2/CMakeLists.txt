@@ -1,7 +1,7 @@
 # Created by the script cgal_create_cmake_script
 # This is the CMake script for compiling a CGAL application.
 
-cmake_minimum_required(VERSION 3.1...3.20)
+cmake_minimum_required(VERSION 3.1...3.23)
 project(Snap_rounding_2_Demo)
 
 if(NOT POLICY CMP0070 AND POLICY CMP0053)
@@ -22,7 +22,6 @@ if(CGAL_Qt5_FOUND AND Qt5_FOUND)
   add_definitions(-DQT_NO_KEYWORDS)
   set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
-  #--------------------------------
   # UI files (Qt Designer files)
   qt5_wrap_ui(DT_UI_FILES Snap_rounding_2.ui)
 
@@ -44,10 +43,6 @@ if(CGAL_Qt5_FOUND AND Qt5_FOUND)
 
   include(${CGAL_MODULES_DIR}/CGAL_add_test.cmake)
   cgal_add_compilation_test(Snap_rounding_2)
-
 else()
-
-  message(
-    STATUS "NOTICE: This demo requires CGAL and Qt5, and will not be compiled.")
-
+  message("NOTICE: This demo requires CGAL and Qt5, and will not be compiled.")
 endif()

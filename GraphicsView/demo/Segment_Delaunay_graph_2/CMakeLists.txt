@@ -1,7 +1,7 @@
 # Created by the script cgal_create_cmake_script
 # This is the CMake script for compiling a CGAL application.
 
-cmake_minimum_required(VERSION 3.1...3.20)
+cmake_minimum_required(VERSION 3.1...3.23)
 project(Segment_Delaunay_graph_2_Demo)
 
 if(NOT POLICY CMP0070 AND POLICY CMP0053)
@@ -29,9 +29,6 @@ if(CGAL_Qt5_FOUND AND Qt5_FOUND)
   include(${CGAL_USE_FILE})
   add_definitions(-DQT_NO_KEYWORDS)
 
-  #--------------------------------
-  # The "Segment Voronoi" demo: Segment_voronoi_2
-  #--------------------------------
   # UI files (Qt Designer files)
   qt5_wrap_ui(CDT_UI_FILES Segment_voronoi_2.ui)
 
@@ -50,10 +47,6 @@ if(CGAL_Qt5_FOUND AND Qt5_FOUND)
 
   include(${CGAL_MODULES_DIR}/CGAL_add_test.cmake)
   cgal_add_compilation_test(Segment_voronoi_2)
-
 else()
-
-  message(
-    STATUS "NOTICE: This demo requires CGAL and Qt5, and will not be compiled.")
-
+  message("NOTICE: This demo requires CGAL and Qt5, and will not be compiled.")
 endif()
