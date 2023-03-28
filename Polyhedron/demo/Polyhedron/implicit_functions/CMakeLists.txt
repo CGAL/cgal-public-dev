@@ -1,6 +1,6 @@
 # This is the CMake script for compiling the CGAL Mesh_3 demo implicit functions.
 
-cmake_minimum_required(VERSION 3.1...3.20)
+cmake_minimum_required(VERSION 3.1...3.23)
 
 include(polyhedron_demo_macros)
 
@@ -59,9 +59,6 @@ else(CGAL_Qt5_FOUND AND Qt5_FOUND)
     set(MESH_3_MISSING_DEPS "Qt5, ${MESH_3_MISSING_DEPS}")
   endif()
 
-  message(
-    STATUS
-      "NOTICE: This demo requires ${MESH_3_MISSING_DEPS}and will not be compiled."
-  )
+  message("NOTICE: This demo requires ${MESH_3_MISSING_DEPS} and will not be compiled.")
 
 endif(CGAL_Qt5_FOUND AND Qt5_FOUND)

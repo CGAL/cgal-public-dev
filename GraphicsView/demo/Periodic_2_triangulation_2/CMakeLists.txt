@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.1...3.20)
+cmake_minimum_required(VERSION 3.1...3.23)
 project(Periodic_2_triangulation_2_Demo)
 
 if(NOT POLICY CMP0070 AND POLICY CMP0053)
@@ -21,9 +21,6 @@ if(CGAL_Qt5_FOUND AND Qt5_FOUND)
   set(CMAKE_INCLUDE_CURRENT_DIR ON)
   set(CMAKE_AUTOMOC ON)
 
-  #--------------------------------
-  # The "2D Periodic triangulation" demo: Periodic_2_triangulation_2
-  #--------------------------------
   # UI files (Qt Designer files)
   qt5_wrap_ui(DT_UI_FILES Periodic_2_triangulation_2.ui)
 
@@ -58,7 +55,6 @@ if(CGAL_Qt5_FOUND AND Qt5_FOUND)
   cgal_add_compilation_test(Periodic_2_Delaunay_triangulation_2)
 else()
 
-  message(
-    STATUS "NOTICE: This demo requires CGAL and Qt5, and will not be compiled.")
+  message("NOTICE: This demo requires CGAL and Qt5, and will not be compiled.")
 
 endif()
