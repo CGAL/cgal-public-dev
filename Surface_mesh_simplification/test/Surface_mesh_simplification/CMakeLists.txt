@@ -1,7 +1,7 @@
 # Created by the script cgal_create_cmake_script
 # This is the CMake script for compiling a CGAL application.
 
-cmake_minimum_required(VERSION 3.1...3.22)
+cmake_minimum_required(VERSION 3.1...3.23)
 project(Surface_mesh_simplification_Tests)
 
 find_package(CGAL REQUIRED)
@@ -11,6 +11,7 @@ create_single_source_cgal_program("test_edge_collapse_bounded_distance.cpp")
 create_single_source_cgal_program("test_edge_collapse_Envelope.cpp")
 create_single_source_cgal_program("test_edge_collapse_Polyhedron_3.cpp")
 create_single_source_cgal_program("test_edge_profile_link.cpp")
+create_single_source_cgal_program("test_edge_deprecated_stop_predicates.cpp")
 
 find_package(Eigen3 3.1.0 QUIET) #(3.1.0 or greater)
 include(CGAL_Eigen3_support)
