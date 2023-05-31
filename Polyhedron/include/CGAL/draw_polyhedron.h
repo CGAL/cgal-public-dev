@@ -32,7 +32,7 @@ namespace CGAL
   <PolyhedronTraits_3, PolyhedronItems_3, T_HDS, Alloc>
 
 class VulkanRenderer : public QVulkanWindowRenderer {
-public: 
+public:
     VulkanRenderer(QVulkanWindow* w) : m_window(w), m_devFuncs(nullptr), m_green(0.0f) {};
 
     void initResources() override {
