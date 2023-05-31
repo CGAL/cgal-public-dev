@@ -20,6 +20,9 @@
 #include <CGAL/Polyhedron_3.h>
 #include <CGAL/draw_face_graph.h>
 #include <CGAL/Random.h>
+
+#include <QVulkanWindow>
+#include <QVulkanInstance>
 #include <QVulkanFunctions>
 namespace CGAL
 {
