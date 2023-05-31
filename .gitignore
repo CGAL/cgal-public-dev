@@ -192,6 +192,7 @@ Inscribed_areas/test/Inscribed_areas/data/out
 Installation/auxiliary/gdb/python/CGAL/__init__.pyc
 Installation/auxiliary/gdb/python/CGAL/printers.pyc
 Installation/auxiliary/gdb/test
+Installation/auxiliary/gmp/
 Installation/cmake/modules/*.tmp
 Installation/test/Installation/cgal_test
 /Installation/test/Installation/cgal_test_with_cmake
