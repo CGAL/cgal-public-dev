@@ -1,9 +1,35 @@
+// Copyright (c) 2023 Texas A&M University (United States).
+// All rights reserved.
+//
+// This file is part of CGAL (www.cgal.org).
+//
+// $URL$
+// $Id$
+// SPDX-License-Identifier: GPL-3.0-or-later OR LicenseRef-Commercial
+//
+//
+// Author(s)     : Tolga Talha Yildiz  <tolgayildiz@tamu.edu>)
+
 #ifndef POLYHEDRON_RENDERER
 #define POLYHEDRON_RENDERER
 
 #include <QVulkanWindow>
 #include <QVulkanFunctions>
 #include <QFile>
+
+static float vertexData[] = { // Y up, front = CCW
+     0.0f,   0.5f,   1.0f, 0.0f, 0.0f,
+    -0.5f,  -0.5f,   0.0f, 1.0f, 0.0f,
+     0.5f,  -0.5f,   0.0f, 0.0f, 1.0f
+};
+
+static const int UNIFORM_DATA_SIZE = 16 * sizeof(float);
+
+static inline VkDeviceSize aligned(VkDeviceSize v, VkDeviceSize byteAlign)
+{
+    return (v + byteAlign - 1) & ~(byteAlign - 1);
+}
+
 
 class Polyhedron_renderer : public QVulkanWindowRenderer {
 public:
@@ -21,6 +47,8 @@ public:
 
         VkBufferCreateInfo buffInfo{};
         buffInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+
+        const VkDeviceSize vertexAllocSize = aligned(sizeof(vertexData), uniAlign);
 
 	}
 	void initSwapChainResources() override;
