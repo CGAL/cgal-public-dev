@@ -33,11 +33,11 @@ static inline VkDeviceSize aligned(VkDeviceSize v, VkDeviceSize byteAlign)
 
 class Polyhedron_renderer : public QVulkanWindowRenderer {
 public:
-	Polyhedron_renderer(QVulkanWindow* w) : m_window(w){}
-	void initResources() override {
-		qDebug("initResources call");
+    Polyhedron_renderer(QVulkanWindow* w) : m_window(w) {}
+    void initResources() override {
+        qDebug("initResources call");
 
-		VkDevice dev = m_window->device();
+        VkDevice dev = m_window->device();
         m_devFuncs = m_window->vulkanInstance()->deviceFunctions(dev);
 
         const int concFrameCount = m_window->concurrentFrameCount();
@@ -49,13 +49,17 @@ public:
         buffInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
 
         const VkDeviceSize vertexAllocSize = aligned(sizeof(vertexData), uniAlign);
+        const VkDeviceSize uniformAllocSize = aligned(UNIFORM_DATA_SIZE, uniAlign);
+        buffInfo.size = vertexAllocSize + concFrameCount * uniformAllocSize;
+        buffInfo.usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
 
-	}
-	void initSwapChainResources() override;
-	void releaseSwapChainResources() override;
-	void releaseResources() override;
 
-	void startNextFrame() override {
+    }
+    void initSwapChainResources() override;
+    void releaseSwapChainResources() override;
+    void releaseResources() override;
+
+    void startNextFrame() override {
         m_green += 0.005f;
         if (m_green > 1.0f)
             m_green = 0.0f;
@@ -84,8 +88,8 @@ public:
     }
 
 protected:
-	QVulkanWindow* m_window;
-	QVulkanDeviceFunctions* m_devFuncs;
+    QVulkanWindow* m_window;
+    QVulkanDeviceFunctions* m_devFuncs;
     float m_green;
 
 };
