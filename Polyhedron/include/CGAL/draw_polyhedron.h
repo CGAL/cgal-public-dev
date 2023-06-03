@@ -17,7 +17,6 @@
 
 #ifdef CGAL_USE_BASIC_VIEWER
 #include <CGAL/Qt/init_ogl_context.h>
-#include <CGAL/Polyhedron_3.h>
 #include <CGAL/draw_face_graph.h>
 #include <CGAL/Random.h>
 #include <CGAL/polyhedron_renderer.h>
@@ -29,11 +28,6 @@
 
 namespace CGAL
 {
-
-// Specialization of draw function.
-#define CGAL_POLY_TYPE CGAL::Polyhedron_3 \
-  <PolyhedronTraits_3, PolyhedronItems_3, T_HDS, Alloc>
-
 class VulkanWindow : public QVulkanWindow {
 public:
     QVulkanWindowRenderer* createRenderer() override {
@@ -68,14 +62,14 @@ void draw(const CGAL_POLY_TYPE& apoly,
     if (!inst.create()) {
         qFatal("Failed to create a Vulkan instance: %d", inst.errorCode());
     }
-
     VulkanWindow w;
     w.setVulkanInstance(&inst);
     w.showMaximized();
-    w.requestUpdate();
-    //QVulkanWindowRenderer* renderer =  w.createRenderer();
+    QVulkanWindowRenderer* renderer = w.createRenderer();
+    //renderer->geoData(apoly);
+    //renderer->
     //renderer->startNextFrame();
-    //w.requestUpdate();
+    w.requestUpdate();
     //SimpleFaceGraphViewerQt  mainwindow(app.activeWindow(), apoly, title, nofill);
     //mainwindow.show();
     app.exec();
