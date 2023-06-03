@@ -25,6 +25,7 @@
 #include <QVulkanWindow>
 #include <QVulkanInstance>
 #include <QVulkanFunctions>
+#include <QLoggingCategory>
 
 namespace CGAL
 {
@@ -61,22 +62,22 @@ void draw(const CGAL_POLY_TYPE& apoly,
     int argc=1;
     const char* argv[2]={"polyhedron_viewer", nullptr};
     QApplication app(argc,const_cast<char**>(argv));
-
-    /*
+    QLoggingCategory::setFilterRules(QStringLiteral("qt.vulkan=true"));
     QVulkanInstance inst;
-    inst.setLayers(QByteArrayList() << "VK_LAYER_LUNARG_standard_validation");
+    inst.setLayers(QByteArrayList() << "VK_LAYER_KHRONOS_validation");
     if (!inst.create()) {
         qFatal("Failed to create a Vulkan instance: %d", inst.errorCode());
     }
-    */
-    //VulkanWindow w;
-    //w.setVulkanInstance(&inst);
-    //w.showMaximized();
-    //VulkanRenderer* renderer =  w.createRenderer();
+
+    VulkanWindow w;
+    w.setVulkanInstance(&inst);
+    w.showMaximized();
+    w.requestUpdate();
+    //QVulkanWindowRenderer* renderer =  w.createRenderer();
     //renderer->startNextFrame();
     //w.requestUpdate();
-    SimpleFaceGraphViewerQt  mainwindow(app.activeWindow(), apoly, title, nofill);
-    mainwindow.show();
+    //SimpleFaceGraphViewerQt  mainwindow(app.activeWindow(), apoly, title, nofill);
+    //mainwindow.show();
     app.exec();
   }
 }
