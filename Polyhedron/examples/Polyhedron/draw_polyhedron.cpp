@@ -4,12 +4,12 @@
 #include <CGAL/draw_polyhedron.h>
 #include <fstream>
 
-typedef CGAL::Exact_predicates_inexact_constructions_kernel  Kernel;
-typedef CGAL::Polyhedron_3<Kernel>                       Polyhedron;
+typedef CGAL::Exact_predicates_inexact_constructions_kernel  Kernel2;
+typedef CGAL::Polyhedron_3<Kernel2>                       Polyhedron2;
 
 int main(int argc, char* argv[])
 {
-  Polyhedron P;
+  Polyhedron2 P;
   std::ifstream in1((argc>1)?argv[1]:CGAL::data_file_path("meshes/cross_quad.off"));
   in1 >> P;
   CGAL::draw(P);
