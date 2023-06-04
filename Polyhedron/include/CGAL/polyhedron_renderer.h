@@ -399,6 +399,7 @@ namespace CGAL {
         Polyhedron_renderer(QVulkanWindow* w, CGAL_POLY_TYPE& poly) : m_window(w), m_buff(nullptr), m_buffMem(nullptr), m_descPool(nullptr), m_descSetLayout(nullptr), m_pipeline(nullptr), m_devFuncs(nullptr), m_pipelineCache(nullptr), m_pipelineLayout(nullptr), m_proj(QMatrix4x4()), m_rotation(0.0f), m_descSet(), m_uniformBufferInfo(), m_poly(poly) {}
 
         void initResources() override {
+            m_window->availablePhysicalDevices();
             std::vector<float> vData{};
             for (CGAL_POLY_TYPE::Face_iterator i = m_poly.facets_begin(); i != m_poly.facets_end(); i++) {
                 CGAL_POLY_TYPE::Halfedge_around_facet_circulator j = i->facet_begin();
@@ -598,6 +599,10 @@ namespace CGAL {
 
             VkShaderModule vertShader = createShader("../resources/color_vert.spv");
             VkShaderModule fragShader = createShader("../resources/color_frag.spv");
+            VkShaderModule vertShaderWire = createShader("../resources/color_vert_wire.spv");
+            VkShaderModule fragShaderWire = createShader("../resources/color_frag_wire.spv");
+            VkShaderModule vertShaderPoint = createShader("../resources/color_vert_point.spv");
+            VkShaderModule fragShaderPoint = createShader("../resources/color_frag_point.spv");
 
             VkPipelineShaderStageCreateInfo shaderStages[2] = {
                 {
@@ -620,6 +625,48 @@ namespace CGAL {
                 }
             };
 
+            VkPipelineShaderStageCreateInfo wireShaderStages[2] = {
+                {
+                    VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO,
+                    nullptr,
+                    0,
+                    VK_SHADER_STAGE_VERTEX_BIT,
+                    vertShaderWire,
+                    "main",
+                    nullptr
+                },
+                {
+                    VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO,
+                    nullptr,
+                    0,
+                    VK_SHADER_STAGE_FRAGMENT_BIT,
+                    fragShaderWire,
+                    "main",
+                    nullptr
+                }
+            };
+
+            VkPipelineShaderStageCreateInfo pointShaderStages[2] = {
+                {
+                    VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO,
+                    nullptr,
+                    0,
+                    VK_SHADER_STAGE_VERTEX_BIT,
+                    vertShaderPoint,
+                    "main",
+                    nullptr
+                },
+                {
+                    VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO,
+                    nullptr,
+                    0,
+                    VK_SHADER_STAGE_FRAGMENT_BIT,
+                    fragShaderPoint,
+                    "main",
+                    nullptr
+                }
+            };
+
             VkPipelineInputAssemblyStateCreateInfo iaStateInfo{};
             iaStateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
             iaStateInfo.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
@@ -635,6 +682,16 @@ namespace CGAL {
             rastStateInfo.cullMode = VK_CULL_MODE_NONE;
             rastStateInfo.frontFace = VK_FRONT_FACE_CLOCKWISE;
             rastStateInfo.lineWidth = 1.0f;
+
+            VkPipelineRasterizationStateCreateInfo rastStateWireInfo{};
+            rastStateWireInfo = rastStateInfo;
+            rastStateWireInfo.polygonMode = VK_POLYGON_MODE_LINE;
+            rastStateWireInfo.lineWidth = 3.0f;
+
+            VkPipelineRasterizationStateCreateInfo rastStatePointInfo{};
+            rastStatePointInfo = rastStateInfo;
+            rastStatePointInfo.polygonMode = VK_POLYGON_MODE_POINT;
+            rastStatePointInfo.lineWidth = 10.0f;
 
             VkPipelineMultisampleStateCreateInfo msStateInfo{};
             msStateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
@@ -655,7 +712,7 @@ namespace CGAL {
             cbStateInfo.attachmentCount = 1;
             cbStateInfo.pAttachments = &cbAttachState;
 
-            VkDynamicState dyn[] = { VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR };
+            VkDynamicState dyn[] = { VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR, VK_DYNAMIC_STATE_LINE_WIDTH };
             VkPipelineDynamicStateCreateInfo dynStateInfo{};
             dynStateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
             dynStateInfo.dynamicStateCount = 2;
@@ -681,10 +738,32 @@ namespace CGAL {
             if (err != VK_SUCCESS)
                 qFatal("Failed to create graphics pipeline: %d", err);
 
+            pipelineInfo.pRasterizationState = &rastStateWireInfo;
+            pipelineInfo.pStages = wireShaderStages;
+
+            err = m_devFuncs->vkCreateGraphicsPipelines(dev, m_pipelineCache, 1, &pipelineInfo, nullptr, &m_pipeline_wire);
+            if (err != VK_SUCCESS)
+                qFatal("Failed to create graphics pipeline: %d", err);
+
+            pipelineInfo.pRasterizationState = &rastStatePointInfo;
+            pipelineInfo.pStages = pointShaderStages;
+
+            err = m_devFuncs->vkCreateGraphicsPipelines(dev, m_pipelineCache, 1, &pipelineInfo, nullptr, &m_pipeline_point);
+            if (err != VK_SUCCESS)
+                qFatal("Failed to create graphics pipeline: %d", err);
+
             if (vertShader)
                 m_devFuncs->vkDestroyShaderModule(dev, vertShader, nullptr);
             if (fragShader)
                 m_devFuncs->vkDestroyShaderModule(dev, fragShader, nullptr);
+            if (vertShaderWire)
+                m_devFuncs->vkDestroyShaderModule(dev, vertShaderWire, nullptr);
+            if (fragShaderWire)
+                m_devFuncs->vkDestroyShaderModule(dev, fragShaderWire, nullptr);
+            if (vertShaderPoint)
+                m_devFuncs->vkDestroyShaderModule(dev, vertShaderPoint, nullptr);
+            if (fragShaderPoint)
+                m_devFuncs->vkDestroyShaderModule(dev, fragShaderPoint, nullptr);
         }
 
         void initSwapChainResources() override {
@@ -708,6 +787,16 @@ namespace CGAL {
             if (m_pipeline) {
                 m_devFuncs->vkDestroyPipeline(dev, m_pipeline, nullptr);
                 m_pipeline = VK_NULL_HANDLE;
+            }
+
+            if (m_pipeline_wire) {
+                m_devFuncs->vkDestroyPipeline(dev, m_pipeline_wire, nullptr);
+                m_pipeline_wire = VK_NULL_HANDLE;
+            }
+
+            if (m_pipeline_point) {
+                m_devFuncs->vkDestroyPipeline(dev, m_pipeline_point, nullptr);
+                m_pipeline_point = VK_NULL_HANDLE;
             }
 
             if (m_pipelineLayout) {
@@ -819,11 +908,37 @@ namespace CGAL {
             sc.extent.height = vp.height;
             m_devFuncs->vkCmdSetScissor(cb, 0, 1, &sc);
 
-            m_devFuncs->vkCmdDraw(cb, 342, 1, 0, 0);
+            if (renderWire) {
+                m_devFuncs->vkCmdBindPipeline(cb, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline_wire);
+                //m_devFuncs->vkCmdSetLineWidth(cb, 1.0f);
+                m_devFuncs->vkCmdDraw(cb, 342, 1, 0, 0);
+            }
+            if(renderFace){
+                m_devFuncs->vkCmdBindPipeline(cb, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline);
+                //m_devFuncs->vkCmdSetLineWidth(cb, 3.0f);
+                m_devFuncs->vkCmdDraw(cb, 342, 1, 0, 0);
+            }
+            if (renderPoints) {
+                m_devFuncs->vkCmdBindPipeline(cb, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline_point);
+                //m_devFuncs->vkCmdSetLineWidth(cb, 10.0f);
+                m_devFuncs->vkCmdDraw(cb, 342, 1, 0, 0);
+            }
+
+
             m_devFuncs->vkCmdEndRenderPass(cmdBuf);
 
             m_window->frameReady();
             m_window->requestUpdate();
+        }
+
+        void toggleWireframe() {
+            renderWire = !renderWire;
+        }
+        void toggleFaceRender() {
+            renderFace = !renderFace;
+        }
+        void togglePointRender() {
+            renderPoints = !renderPoints;
         }
 
 
@@ -841,6 +956,12 @@ namespace CGAL {
         VkPipelineCache m_pipelineCache;
         VkPipelineLayout m_pipelineLayout;
         VkPipeline m_pipeline;
+        VkPipeline m_pipeline_wire;
+        VkPipeline m_pipeline_point;
+
+        bool renderWire = true;
+        bool renderPoints = true;
+        bool renderFace = true;
         QMatrix4x4 m_proj;
         float m_rotation = 0.1f;
         CGAL_POLY_TYPE m_poly;

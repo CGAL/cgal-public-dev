@@ -38,13 +38,28 @@ namespace CGAL
     class VulkanWindow : public QVulkanWindow {
     public:
         QVulkanWindowRenderer* createRenderer()  {
-            return new Polyhedron_renderer<PolyhedronTraits_3, PolyhedronItems_3, T_HDS, Alloc>(this, m_poly);
+            renderer = new Polyhedron_renderer<PolyhedronTraits_3, PolyhedronItems_3, T_HDS, Alloc>(this, m_poly);
+            return renderer;
         }
         void set_geometry(const CGAL_POLY_TYPE& poly) {
             m_poly = poly;
         }
+        void checkFeatures() {
+        }
+        void keyPressEvent(QKeyEvent* e) {
+            if (e->key() == ::Qt::Key_W) {
+                renderer->toggleWireframe();
+            }
+            if (e->key() == ::Qt::Key_F) {
+                renderer->toggleFaceRender();
+            }
+            if (e->key() == ::Qt::Key_P) {
+                renderer->togglePointRender();
+            }
+        }
     private:
         CGAL_POLY_TYPE m_poly;
+        Polyhedron_renderer<PolyhedronTraits_3, PolyhedronItems_3, T_HDS, Alloc>* renderer;
     };
 
     template<class PolyhedronTraits_3,
@@ -82,6 +97,7 @@ namespace CGAL
                 qFatal("Failed to create a Vulkan instance: %d", inst.errorCode());
             }
             VulkanWindow<PolyhedronTraits_3, PolyhedronItems_3, T_HDS, Alloc> w;
+            w.setDeviceExtensions(QByteArrayList() << "VK_EXT_line_rasterization");
             w.set_geometry(apoly);
             w.setVulkanInstance(&inst);
             w.showMaximized();
