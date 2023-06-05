@@ -14,7 +14,6 @@
 
 //#include <CGAL/license/Surface_mesh_approximate_shortest_path.h>
 
-
 /**
  * \ingroup PkgSurfaceMeshShortestPathRef
  * \file CGAL/Surface_mesh_shortest_path.h
