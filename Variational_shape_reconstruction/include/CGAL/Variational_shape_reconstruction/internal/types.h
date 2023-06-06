@@ -1,0 +1,21 @@
+
+// CGAL
+#include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
+#include <CGAL/Triangulation_data_structure_3.h>
+#include <CGAL/Point_set_3.h>
+
+typedef CGAL::Exact_predicates_inexact_constructions_kernel     Kernel;
+
+
+typedef Kernel::FT                  FT;
+typedef Kernel::Point_3             Point;
+typedef Kernel::Vector_3            Vector;
+typedef Kernel::Triangle_3          Triangle;
+typedef Kernel::Plane_3             Plane;
+
+typedef Kernel::Point_2             Point_2;
+typedef Kernel::Segment_2           Segment_2;
+
+typedef CGAL::First_of_pair_property_map<std::pair<Point, Vector>>                     Point_map;
+typedef CGAL::Second_of_pair_property_map<std::pair<Point, Vector>>                    Normal_map;
+typedef CGAL::Point_set_3< Point, Vector > Pointset;

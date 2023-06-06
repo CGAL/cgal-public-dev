@@ -4,9 +4,41 @@
 #include <CGAL/Variational_shape_reconstruction.h>
 #include <iostream>
 
-int main()
-{
-    std::cout << "Hello world !" << std::endl;
+#include <CGAL/Point_set_3/IO/XYZ.h>
+// CGAL
+#include <CGAL/Triangulation_data_structure_3.h>
+#include <CGAL/Point_set_3.h>
 
-    return 0;
+typedef CGAL::Exact_predicates_inexact_constructions_kernel     Kernel;
+
+
+typedef Kernel::FT                  FT;
+typedef Kernel::Point_3             Point;
+typedef Kernel::Vector_3            Vector;
+typedef Kernel::Triangle_3          Triangle;
+typedef Kernel::Plane_3             Plane;
+
+typedef Kernel::Point_2             Point_2;
+typedef Kernel::Segment_2           Segment_2;
+
+typedef CGAL::First_of_pair_property_map<std::pair<Point, Vector>>                     Point_map;
+typedef CGAL::Second_of_pair_property_map<std::pair<Point, Vector>>                    Normal_map;
+typedef CGAL::Point_set_3< Point, Vector > Pointset;
+
+int main(int argv, char **args)
+{	
+    std::ifstream fstream("../data/piece_meca.xyz");
+    Pointset pointset;
+    if (!fstream || !CGAL::IO::read_XYZ( fstream,pointset))
+    {
+        std::cerr << "Error: cannot read file " << std::endl;
+        return 0;
+    } 
+
+	CGAL::Variational_shape_reconstruction manager;
+	manager.initialize(pointset);
+	manager.init_random_poles(30);
+	manager.region_growing(1);
+	manager.update_poles();
+	return 0;
 }

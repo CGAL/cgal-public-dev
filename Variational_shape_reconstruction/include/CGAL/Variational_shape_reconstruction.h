@@ -26,4 +26,7 @@
 #include <CGAL/Variational_shape_reconstruction/Variational_shape_reconstruction.h>
 #include <CGAL/Variational_shape_reconstruction/Variational_shape_reconstruction_traits.h>
 
+#include <CGAL/Variational_shape_reconstruction/internal/Variational_shape_reconstruction.h>
+
+
 #endif // CGAL_VARIATIONAL_SHAPE_RECONSTRUCTION_H
