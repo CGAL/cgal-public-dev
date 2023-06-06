@@ -1,0 +1,4 @@
+@INCLUDE = ${CGAL_DOC_PACKAGE_DEFAULTS}
+PROJECT_NAME = "CGAL ${CGAL_DOC_VERSION} - Put title of project here"
+INPUT        = ${CMAKE_SOURCE_DIR}/Variational_shape_reconstruction/doc/Variational_shape_reconstruction/ \
+               ${CMAKE_SOURCE_DIR}/Variational_shape_reconstruction/include
