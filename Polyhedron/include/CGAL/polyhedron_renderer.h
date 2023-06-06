@@ -33,354 +33,47 @@ typedef Polyhedron::Vertex_iterator Vertex_iterator;
 typedef Polyhedron::Facet_iterator Facet_iterator;
 typedef Polyhedron::Halfedge_around_facet_circulator Halfedge_facet_circulator;
 
-namespace CGAL {
-
-#define CGAL_POLY_TYPE CGAL::Polyhedron_3<PolyhedronTraits_3, PolyhedronItems_3, T_HDS, Alloc>
-
-    static float vertexData[] = { // Y up, front = CCW
-        0.000000, 3.000000, 0.000000, 1.0f, 1.0f, 1.0f,
-        1.000000, 3.000000, 0.000000, 1.0f, 1.0f, 1.0f,
-        1.000000, 2.000000, 0.000000, 1.0f, 1.0f, 1.0f,
-        0.000000, 3.000000, 0.000000, 1.0f, 1.0f, 1.0f,
-        1.000000, 2.000000, 0.000000, 1.0f, 1.0f, 1.0f,
-        0.000000, 2.000000, 0.000000, 1.0f, 1.0f, 1.0f,
-        0.000000, 3.000000, 0.000000, 1.0f, 1.0f, 1.0f,
-        0.000000, 2.000000, 0.000000, 1.0f, 1.0f, 1.0f,
-        0.000000, 3.000000, 0.000000, 1.0f, 1.0f, 1.0f,
-        1.000000, 3.000000, 0.000000, 1.0f, 1.0f, 1.0f,
-        2.000000, 3.000000, 0.000000, 1.0f, 1.0f, 1.0f,
-        2.000000, 2.000000, 0.000000, 1.0f, 1.0f, 1.0f,
-        1.000000, 3.000000, 0.000000, 1.0f, 1.0f, 1.0f,
-        2.000000, 2.000000, 0.000000, 1.0f, 1.0f, 1.0f,
-        1.000000, 2.000000, 0.000000, 1.0f, 1.0f, 1.0f,
-        1.000000, 3.000000, 0.000000, 1.0f, 1.0f, 1.0f,
-        1.000000, 2.000000, 0.000000, 1.0f, 1.0f, 1.0f,
-        1.000000, 3.000000, 0.000000, 1.0f, 1.0f, 1.0f,
-        2.000000, 3.000000, 0.000000, 1.0f, 1.0f, 1.0f,
-        3.000000, 3.000000, 0.000000, 1.0f, 1.0f, 1.0f,
-        3.000000, 2.000000, 0.000000, 1.0f, 1.0f, 1.0f,
-        2.000000, 3.000000, 0.000000, 1.0f, 1.0f, 1.0f,
-        3.000000, 2.000000, 0.000000, 1.0f, 1.0f, 1.0f,
-        2.000000, 2.000000, 0.000000, 1.0f, 1.0f, 1.0f,
-        2.000000, 3.000000, 0.000000, 1.0f, 1.0f, 1.0f,
-        2.000000, 2.000000, 0.000000, 1.0f, 1.0f, 1.0f,
-        2.000000, 3.000000, 0.000000, 1.0f, 1.0f, 1.0f,
-        2.000000, 3.000000, 0.000000, 1.0f, 1.0f, 1.0f,
-        2.000000, 4.000000, 0.000000, 1.0f, 1.0f, 1.0f,
-        3.000000, 4.000000, 0.000000, 1.0f, 1.0f, 1.0f,
-        2.000000, 3.000000, 0.000000, 1.0f, 1.0f, 1.0f,
-        3.000000, 4.000000, 0.000000, 1.0f, 1.0f, 1.0f,
-        3.000000, 3.000000, 0.000000, 1.0f, 1.0f, 1.0f,
-        2.000000, 3.000000, 0.000000, 1.0f, 1.0f, 1.0f,
-        3.000000, 3.000000, 0.000000, 1.0f, 1.0f, 1.0f,
-        2.000000, 3.000000, 0.000000, 1.0f, 1.0f, 1.0f,
-        2.000000, 4.000000, 0.000000, 1.0f, 1.0f, 1.0f,
-        2.000000, 5.000000, 0.000000, 1.0f, 1.0f, 1.0f,
-        3.000000, 5.000000, 0.000000, 1.0f, 1.0f, 1.0f,
-        2.000000, 4.000000, 0.000000, 1.0f, 1.0f, 1.0f,
-        3.000000, 5.000000, 0.000000, 1.0f, 1.0f, 1.0f,
-        3.000000, 4.000000, 0.000000, 1.0f, 1.0f, 1.0f,
-        2.000000, 4.000000, 0.000000, 1.0f, 1.0f, 1.0f,
-        3.000000, 4.000000, 0.000000, 1.0f, 1.0f, 1.0f,
-        2.000000, 4.000000, 0.000000, 1.0f, 1.0f, 1.0f,
-        3.000000, 3.000000, 0.000000, 1.0f, 1.0f, 1.0f,
-        4.000000, 3.000000, 0.000000, 1.0f, 1.0f, 1.0f,
-        4.000000, 2.000000, 0.000000, 1.0f, 1.0f, 1.0f,
-        3.000000, 3.000000, 0.000000, 1.0f, 1.0f, 1.0f,
-        4.000000, 2.000000, 0.000000, 1.0f, 1.0f, 1.0f,
-        3.000000, 2.000000, 0.000000, 1.0f, 1.0f, 1.0f,
-        3.000000, 3.000000, 0.000000, 1.0f, 1.0f, 1.0f,
-        3.000000, 2.000000, 0.000000, 1.0f, 1.0f, 1.0f,
-        3.000000, 3.000000, 0.000000, 1.0f, 1.0f, 1.0f,
-        4.000000, 3.000000, 0.000000, 1.0f, 1.0f, 1.0f,
-        5.000000, 3.000000, 0.000000, 1.0f, 1.0f, 1.0f,
-        5.000000, 2.000000, 0.000000, 1.0f, 1.0f, 1.0f,
-        4.000000, 3.000000, 0.000000, 1.0f, 1.0f, 1.0f,
-        5.000000, 2.000000, 0.000000, 1.0f, 1.0f, 1.0f,
-        4.000000, 2.000000, 0.000000, 1.0f, 1.0f, 1.0f,
-        4.000000, 3.000000, 0.000000, 1.0f, 1.0f, 1.0f,
-        4.000000, 2.000000, 0.000000, 1.0f, 1.0f, 1.0f,
-        4.000000, 3.000000, 0.000000, 1.0f, 1.0f, 1.0f,
-        3.000000, 2.000000, 0.000000, 1.0f, 1.0f, 1.0f,
-        3.000000, 1.000000, 0.000000, 1.0f, 1.0f, 1.0f,
-        2.000000, 1.000000, 0.000000, 1.0f, 1.0f, 1.0f,
-        3.000000, 2.000000, 0.000000, 1.0f, 1.0f, 1.0f,
-        2.000000, 1.000000, 0.000000, 1.0f, 1.0f, 1.0f,
-        2.000000, 2.000000, 0.000000, 1.0f, 1.0f, 1.0f,
-        3.000000, 2.000000, 0.000000, 1.0f, 1.0f, 1.0f,
-        2.000000, 2.000000, 0.000000, 1.0f, 1.0f, 1.0f,
-        3.000000, 2.000000, 0.000000, 1.0f, 1.0f, 1.0f,
-        3.000000, 1.000000, 0.000000, 1.0f, 1.0f, 1.0f,
-        3.000000, 0.000000, 0.000000, 1.0f, 1.0f, 1.0f,
-        2.000000, 0.000000, 0.000000, 1.0f, 1.0f, 1.0f,
-        3.000000, 1.000000, 0.000000, 1.0f, 1.0f, 1.0f,
-        2.000000, 0.000000, 0.000000, 1.0f, 1.0f, 1.0f,
-        2.000000, 1.000000, 0.000000, 1.0f, 1.0f, 1.0f,
-        3.000000, 1.000000, 0.000000, 1.0f, 1.0f, 1.0f,
-        2.000000, 1.000000, 0.000000, 1.0f, 1.0f, 1.0f,
-        3.000000, 1.000000, 0.000000, 1.0f, 1.0f, 1.0f,
-        1.000000, 3.000000, 0.000000, 1.0f, 1.0f, 1.0f,
-        0.000000, 3.000000, 0.000000, 1.0f, 1.0f, 1.0f,
-        0.000000, 3.000000, 1.000000, 1.0f, 1.0f, 1.0f,
-        1.000000, 3.000000, 0.000000, 1.0f, 1.0f, 1.0f,
-        0.000000, 3.000000, 1.000000, 1.0f, 1.0f, 1.0f,
-        1.000000, 3.000000, 1.000000, 1.0f, 1.0f, 1.0f,
-        1.000000, 3.000000, 0.000000, 1.0f, 1.0f, 1.0f,
-        1.000000, 3.000000, 1.000000, 1.0f, 1.0f, 1.0f,
-        1.000000, 3.000000, 0.000000, 1.0f, 1.0f, 1.0f,
-        2.000000, 3.000000, 0.000000, 1.0f, 1.0f, 1.0f,
-        1.000000, 3.000000, 0.000000, 1.0f, 1.0f, 1.0f,
-        1.000000, 3.000000, 1.000000, 1.0f, 1.0f, 1.0f,
-        2.000000, 3.000000, 0.000000, 1.0f, 1.0f, 1.0f,
-        1.000000, 3.000000, 1.000000, 1.0f, 1.0f, 1.0f,
-        2.000000, 3.000000, 1.000000, 1.0f, 1.0f, 1.0f,
-        2.000000, 3.000000, 0.000000, 1.0f, 1.0f, 1.0f,
-        2.000000, 3.000000, 1.000000, 1.0f, 1.0f, 1.0f,
-        2.000000, 3.000000, 0.000000, 1.0f, 1.0f, 1.0f,
-        2.000000, 4.000000, 0.000000, 1.0f, 1.0f, 1.0f,
-        2.000000, 3.000000, 0.000000, 1.0f, 1.0f, 1.0f,
-        2.000000, 3.000000, 1.000000, 1.0f, 1.0f, 1.0f,
-        2.000000, 4.000000, 0.000000, 1.0f, 1.0f, 1.0f,
-        2.000000, 3.000000, 1.000000, 1.0f, 1.0f, 1.0f,
-        2.000000, 4.000000, 1.000000, 1.0f, 1.0f, 1.0f,
-        2.000000, 4.000000, 0.000000, 1.0f, 1.0f, 1.0f,
-        2.000000, 4.000000, 1.000000, 1.0f, 1.0f, 1.0f,
-        2.000000, 4.000000, 0.000000, 1.0f, 1.0f, 1.0f,
-        2.000000, 5.000000, 0.000000, 1.0f, 1.0f, 1.0f,
-        2.000000, 4.000000, 0.000000, 1.0f, 1.0f, 1.0f,
-        2.000000, 4.000000, 1.000000, 1.0f, 1.0f, 1.0f,
-        2.000000, 5.000000, 0.000000, 1.0f, 1.0f, 1.0f,
-        2.000000, 4.000000, 1.000000, 1.0f, 1.0f, 1.0f,
-        2.000000, 5.000000, 1.000000, 1.0f, 1.0f, 1.0f,
-        2.000000, 5.000000, 0.000000, 1.0f, 1.0f, 1.0f,
-        2.000000, 5.000000, 1.000000, 1.0f, 1.0f, 1.0f,
-        2.000000, 5.000000, 0.000000, 1.0f, 1.0f, 1.0f,
-        3.000000, 5.000000, 0.000000, 1.0f, 1.0f, 1.0f,
-        2.000000, 5.000000, 0.000000, 1.0f, 1.0f, 1.0f,
-        2.000000, 5.000000, 1.000000, 1.0f, 1.0f, 1.0f,
-        3.000000, 5.000000, 0.000000, 1.0f, 1.0f, 1.0f,
-        2.000000, 5.000000, 1.000000, 1.0f, 1.0f, 1.0f,
-        3.000000, 5.000000, 1.000000, 1.0f, 1.0f, 1.0f,
-        3.000000, 5.000000, 0.000000, 1.0f, 1.0f, 1.0f,
-        3.000000, 5.000000, 1.000000, 1.0f, 1.0f, 1.0f,
-        3.000000, 5.000000, 0.000000, 1.0f, 1.0f, 1.0f,
-        3.000000, 4.000000, 0.000000, 1.0f, 1.0f, 1.0f,
-        3.000000, 5.000000, 0.000000, 1.0f, 1.0f, 1.0f,
-        3.000000, 5.000000, 1.000000, 1.0f, 1.0f, 1.0f,
-        3.000000, 4.000000, 0.000000, 1.0f, 1.0f, 1.0f,
-        3.000000, 5.000000, 1.000000, 1.0f, 1.0f, 1.0f,
-        3.000000, 4.000000, 1.000000, 1.0f, 1.0f, 1.0f,
-        3.000000, 4.000000, 0.000000, 1.0f, 1.0f, 1.0f,
-        3.000000, 4.000000, 1.000000, 1.0f, 1.0f, 1.0f,
-        3.000000, 4.000000, 0.000000, 1.0f, 1.0f, 1.0f,
-        3.000000, 3.000000, 0.000000, 1.0f, 1.0f, 1.0f,
-        3.000000, 4.000000, 0.000000, 1.0f, 1.0f, 1.0f,
-        3.000000, 4.000000, 1.000000, 1.0f, 1.0f, 1.0f,
-        3.000000, 3.000000, 0.000000, 1.0f, 1.0f, 1.0f,
-        3.000000, 4.000000, 1.000000, 1.0f, 1.0f, 1.0f,
-        3.000000, 3.000000, 1.000000, 1.0f, 1.0f, 1.0f,
-        3.000000, 3.000000, 0.000000, 1.0f, 1.0f, 1.0f,
-        3.000000, 3.000000, 1.000000, 1.0f, 1.0f, 1.0f,
-        3.000000, 3.000000, 0.000000, 1.0f, 1.0f, 1.0f,
-        4.000000, 3.000000, 0.000000, 1.0f, 1.0f, 1.0f,
-        3.000000, 3.000000, 0.000000, 1.0f, 1.0f, 1.0f,
-        3.000000, 3.000000, 1.000000, 1.0f, 1.0f, 1.0f,
-        4.000000, 3.000000, 0.000000, 1.0f, 1.0f, 1.0f,
-        3.000000, 3.000000, 1.000000, 1.0f, 1.0f, 1.0f,
-        4.000000, 3.000000, 1.000000, 1.0f, 1.0f, 1.0f,
-        4.000000, 3.000000, 0.000000, 1.0f, 1.0f, 1.0f,
-        4.000000, 3.000000, 1.000000, 1.0f, 1.0f, 1.0f,
-        4.000000, 3.000000, 0.000000, 1.0f, 1.0f, 1.0f,
-        5.000000, 3.000000, 0.000000, 1.0f, 1.0f, 1.0f,
-        4.000000, 3.000000, 0.000000, 1.0f, 1.0f, 1.0f,
-        4.000000, 3.000000, 1.000000, 1.0f, 1.0f, 1.0f,
-        5.000000, 3.000000, 0.000000, 1.0f, 1.0f, 1.0f,
-        4.000000, 3.000000, 1.000000, 1.0f, 1.0f, 1.0f,
-        5.000000, 3.000000, 1.000000, 1.0f, 1.0f, 1.0f,
-        5.000000, 3.000000, 0.000000, 1.0f, 1.0f, 1.0f,
-        5.000000, 3.000000, 1.000000, 1.0f, 1.0f, 1.0f,
-        5.000000, 3.000000, 0.000000, 1.0f, 1.0f, 1.0f,
-        5.000000, 2.000000, 0.000000, 1.0f, 1.0f, 1.0f,
-        5.000000, 3.000000, 0.000000, 1.0f, 1.0f, 1.0f,
-        5.000000, 3.000000, 1.000000, 1.0f, 1.0f, 1.0f,
-        5.000000, 2.000000, 0.000000, 1.0f, 1.0f, 1.0f,
-        5.000000, 3.000000, 1.000000, 1.0f, 1.0f, 1.0f,
-        5.000000, 2.000000, 1.000000, 1.0f, 1.0f, 1.0f,
-        5.000000, 2.000000, 0.000000, 1.0f, 1.0f, 1.0f,
-        5.000000, 2.000000, 1.000000, 1.0f, 1.0f, 1.0f,
-        5.000000, 2.000000, 0.000000, 1.0f, 1.0f, 1.0f,
-        4.000000, 2.000000, 0.000000, 1.0f, 1.0f, 1.0f,
-        5.000000, 2.000000, 0.000000, 1.0f, 1.0f, 1.0f,
-        5.000000, 2.000000, 1.000000, 1.0f, 1.0f, 1.0f,
-        4.000000, 2.000000, 0.000000, 1.0f, 1.0f, 1.0f,
-        5.000000, 2.000000, 1.000000, 1.0f, 1.0f, 1.0f,
-        4.000000, 2.000000, 1.000000, 1.0f, 1.0f, 1.0f,
-        4.000000, 2.000000, 0.000000, 1.0f, 1.0f, 1.0f,
-        4.000000, 2.000000, 1.000000, 1.0f, 1.0f, 1.0f,
-        4.000000, 2.000000, 0.000000, 1.0f, 1.0f, 1.0f,
-        3.000000, 2.000000, 0.000000, 1.0f, 1.0f, 1.0f,
-        4.000000, 2.000000, 0.000000, 1.0f, 1.0f, 1.0f,
-        4.000000, 2.000000, 1.000000, 1.0f, 1.0f, 1.0f,
-        3.000000, 2.000000, 0.000000, 1.0f, 1.0f, 1.0f,
-        4.000000, 2.000000, 1.000000, 1.0f, 1.0f, 1.0f,
-        3.000000, 2.000000, 1.000000, 1.0f, 1.0f, 1.0f,
-        3.000000, 2.000000, 0.000000, 1.0f, 1.0f, 1.0f,
-        3.000000, 2.000000, 1.000000, 1.0f, 1.0f, 1.0f,
-        3.000000, 2.000000, 0.000000, 1.0f, 1.0f, 1.0f,
-        3.000000, 1.000000, 0.000000, 1.0f, 1.0f, 1.0f,
-        3.000000, 2.000000, 0.000000, 1.0f, 1.0f, 1.0f,
-        3.000000, 2.000000, 1.000000, 1.0f, 1.0f, 1.0f,
-        3.000000, 1.000000, 0.000000, 1.0f, 1.0f, 1.0f,
-        3.000000, 2.000000, 1.000000, 1.0f, 1.0f, 1.0f,
-        3.000000, 1.000000, 1.000000, 1.0f, 1.0f, 1.0f,
-        3.000000, 1.000000, 0.000000, 1.0f, 1.0f, 1.0f,
-        3.000000, 1.000000, 1.000000, 1.0f, 1.0f, 1.0f,
-        3.000000, 1.000000, 0.000000, 1.0f, 1.0f, 1.0f,
-        3.000000, 0.000000, 0.000000, 1.0f, 1.0f, 1.0f,
-        3.000000, 1.000000, 0.000000, 1.0f, 1.0f, 1.0f,
-        3.000000, 1.000000, 1.000000, 1.0f, 1.0f, 1.0f,
-        3.000000, 0.000000, 0.000000, 1.0f, 1.0f, 1.0f,
-        3.000000, 1.000000, 1.000000, 1.0f, 1.0f, 1.0f,
-        3.000000, 0.000000, 1.000000, 1.0f, 1.0f, 1.0f,
-        3.000000, 0.000000, 0.000000, 1.0f, 1.0f, 1.0f,
-        3.000000, 0.000000, 1.000000, 1.0f, 1.0f, 1.0f,
-        3.000000, 0.000000, 0.000000, 1.0f, 1.0f, 1.0f,
-        2.000000, 0.000000, 0.000000, 1.0f, 1.0f, 1.0f,
-        3.000000, 0.000000, 0.000000, 1.0f, 1.0f, 1.0f,
-        3.000000, 0.000000, 1.000000, 1.0f, 1.0f, 1.0f,
-        2.000000, 0.000000, 0.000000, 1.0f, 1.0f, 1.0f,
-        3.000000, 0.000000, 1.000000, 1.0f, 1.0f, 1.0f,
-        2.000000, 0.000000, 1.000000, 1.0f, 1.0f, 1.0f,
-        2.000000, 0.000000, 0.000000, 1.0f, 1.0f, 1.0f,
-        2.000000, 0.000000, 1.000000, 1.0f, 1.0f, 1.0f,
-        2.000000, 0.000000, 0.000000, 1.0f, 1.0f, 1.0f,
-        2.000000, 1.000000, 0.000000, 1.0f, 1.0f, 1.0f,
-        2.000000, 0.000000, 0.000000, 1.0f, 1.0f, 1.0f,
-        2.000000, 0.000000, 1.000000, 1.0f, 1.0f, 1.0f,
-        2.000000, 1.000000, 0.000000, 1.0f, 1.0f, 1.0f,
-        2.000000, 0.000000, 1.000000, 1.0f, 1.0f, 1.0f,
-        2.000000, 1.000000, 1.000000, 1.0f, 1.0f, 1.0f,
-        2.000000, 1.000000, 0.000000, 1.0f, 1.0f, 1.0f,
-        2.000000, 1.000000, 1.000000, 1.0f, 1.0f, 1.0f,
-        2.000000, 1.000000, 0.000000, 1.0f, 1.0f, 1.0f,
-        2.000000, 2.000000, 0.000000, 1.0f, 1.0f, 1.0f,
-        2.000000, 1.000000, 0.000000, 1.0f, 1.0f, 1.0f,
-        2.000000, 1.000000, 1.000000, 1.0f, 1.0f, 1.0f,
-        2.000000, 2.000000, 0.000000, 1.0f, 1.0f, 1.0f,
-        2.000000, 1.000000, 1.000000, 1.0f, 1.0f, 1.0f,
-        2.000000, 2.000000, 1.000000, 1.0f, 1.0f, 1.0f,
-        2.000000, 2.000000, 0.000000, 1.0f, 1.0f, 1.0f,
-        2.000000, 2.000000, 1.000000, 1.0f, 1.0f, 1.0f,
-        2.000000, 2.000000, 0.000000, 1.0f, 1.0f, 1.0f,
-        1.000000, 2.000000, 0.000000, 1.0f, 1.0f, 1.0f,
-        2.000000, 2.000000, 0.000000, 1.0f, 1.0f, 1.0f,
-        2.000000, 2.000000, 1.000000, 1.0f, 1.0f, 1.0f,
-        1.000000, 2.000000, 0.000000, 1.0f, 1.0f, 1.0f,
-        2.000000, 2.000000, 1.000000, 1.0f, 1.0f, 1.0f,
-        1.000000, 2.000000, 1.000000, 1.0f, 1.0f, 1.0f,
-        1.000000, 2.000000, 0.000000, 1.0f, 1.0f, 1.0f,
-        1.000000, 2.000000, 1.000000, 1.0f, 1.0f, 1.0f,
-        1.000000, 2.000000, 0.000000, 1.0f, 1.0f, 1.0f,
-        0.000000, 2.000000, 0.000000, 1.0f, 1.0f, 1.0f,
-        1.000000, 2.000000, 0.000000, 1.0f, 1.0f, 1.0f,
-        1.000000, 2.000000, 1.000000, 1.0f, 1.0f, 1.0f,
-        0.000000, 2.000000, 0.000000, 1.0f, 1.0f, 1.0f,
-        1.000000, 2.000000, 1.000000, 1.0f, 1.0f, 1.0f,
-        0.000000, 2.000000, 1.000000, 1.0f, 1.0f, 1.0f,
-        0.000000, 2.000000, 0.000000, 1.0f, 1.0f, 1.0f,
-        0.000000, 2.000000, 1.000000, 1.0f, 1.0f, 1.0f,
-        0.000000, 2.000000, 0.000000, 1.0f, 1.0f, 1.0f,
-        0.000000, 3.000000, 0.000000, 1.0f, 1.0f, 1.0f,
-        0.000000, 2.000000, 0.000000, 1.0f, 1.0f, 1.0f,
-        0.000000, 2.000000, 1.000000, 1.0f, 1.0f, 1.0f,
-        0.000000, 3.000000, 0.000000, 1.0f, 1.0f, 1.0f,
-        0.000000, 2.000000, 1.000000, 1.0f, 1.0f, 1.0f,
-        0.000000, 3.000000, 1.000000, 1.0f, 1.0f, 1.0f,
-        0.000000, 3.000000, 0.000000, 1.0f, 1.0f, 1.0f,
-        0.000000, 3.000000, 1.000000, 1.0f, 1.0f, 1.0f,
-        0.000000, 3.000000, 0.000000, 1.0f, 1.0f, 1.0f,
-        0.000000, 2.000000, 1.000000, 1.0f, 1.0f, 1.0f,
-        1.000000, 2.000000, 1.000000, 1.0f, 1.0f, 1.0f,
-        1.000000, 3.000000, 1.000000, 1.0f, 1.0f, 1.0f,
-        0.000000, 2.000000, 1.000000, 1.0f, 1.0f, 1.0f,
-        1.000000, 3.000000, 1.000000, 1.0f, 1.0f, 1.0f,
-        0.000000, 3.000000, 1.000000, 1.0f, 1.0f, 1.0f,
-        0.000000, 2.000000, 1.000000, 1.0f, 1.0f, 1.0f,
-        0.000000, 3.000000, 1.000000, 1.0f, 1.0f, 1.0f,
-        0.000000, 2.000000, 1.000000, 1.0f, 1.0f, 1.0f,
-        1.000000, 2.000000, 1.000000, 1.0f, 1.0f, 1.0f,
-        2.000000, 2.000000, 1.000000, 1.0f, 1.0f, 1.0f,
-        2.000000, 3.000000, 1.000000, 1.0f, 1.0f, 1.0f,
-        1.000000, 2.000000, 1.000000, 1.0f, 1.0f, 1.0f,
-        2.000000, 3.000000, 1.000000, 1.0f, 1.0f, 1.0f,
-        1.000000, 3.000000, 1.000000, 1.0f, 1.0f, 1.0f,
-        1.000000, 2.000000, 1.000000, 1.0f, 1.0f, 1.0f,
-        1.000000, 3.000000, 1.000000, 1.0f, 1.0f, 1.0f,
-        1.000000, 2.000000, 1.000000, 1.0f, 1.0f, 1.0f,
-        2.000000, 2.000000, 1.000000, 1.0f, 1.0f, 1.0f,
-        3.000000, 2.000000, 1.000000, 1.0f, 1.0f, 1.0f,
-        3.000000, 3.000000, 1.000000, 1.0f, 1.0f, 1.0f,
-        2.000000, 2.000000, 1.000000, 1.0f, 1.0f, 1.0f,
-        3.000000, 3.000000, 1.000000, 1.0f, 1.0f, 1.0f,
-        2.000000, 3.000000, 1.000000, 1.0f, 1.0f, 1.0f,
-        2.000000, 2.000000, 1.000000, 1.0f, 1.0f, 1.0f,
-        2.000000, 3.000000, 1.000000, 1.0f, 1.0f, 1.0f,
-        2.000000, 2.000000, 1.000000, 1.0f, 1.0f, 1.0f,
-        3.000000, 3.000000, 1.000000, 1.0f, 1.0f, 1.0f,
-        3.000000, 4.000000, 1.000000, 1.0f, 1.0f, 1.0f,
-        2.000000, 4.000000, 1.000000, 1.0f, 1.0f, 1.0f,
-        3.000000, 3.000000, 1.000000, 1.0f, 1.0f, 1.0f,
-        2.000000, 4.000000, 1.000000, 1.0f, 1.0f, 1.0f,
-        2.000000, 3.000000, 1.000000, 1.0f, 1.0f, 1.0f,
-        3.000000, 3.000000, 1.000000, 1.0f, 1.0f, 1.0f,
-        2.000000, 3.000000, 1.000000, 1.0f, 1.0f, 1.0f,
-        3.000000, 3.000000, 1.000000, 1.0f, 1.0f, 1.0f,
-        3.000000, 4.000000, 1.000000, 1.0f, 1.0f, 1.0f,
-        3.000000, 5.000000, 1.000000, 1.0f, 1.0f, 1.0f,
-        2.000000, 5.000000, 1.000000, 1.0f, 1.0f, 1.0f,
-        3.000000, 4.000000, 1.000000, 1.0f, 1.0f, 1.0f,
-        2.000000, 5.000000, 1.000000, 1.0f, 1.0f, 1.0f,
-        2.000000, 4.000000, 1.000000, 1.0f, 1.0f, 1.0f,
-        3.000000, 4.000000, 1.000000, 1.0f, 1.0f, 1.0f,
-        2.000000, 4.000000, 1.000000, 1.0f, 1.0f, 1.0f,
-        3.000000, 4.000000, 1.000000, 1.0f, 1.0f, 1.0f,
-        3.000000, 2.000000, 1.000000, 1.0f, 1.0f, 1.0f,
-        4.000000, 2.000000, 1.000000, 1.0f, 1.0f, 1.0f,
-        4.000000, 3.000000, 1.000000, 1.0f, 1.0f, 1.0f,
-        3.000000, 2.000000, 1.000000, 1.0f, 1.0f, 1.0f,
-        4.000000, 3.000000, 1.000000, 1.0f, 1.0f, 1.0f,
-        3.000000, 3.000000, 1.000000, 1.0f, 1.0f, 1.0f,
-        3.000000, 2.000000, 1.000000, 1.0f, 1.0f, 1.0f,
-        3.000000, 3.000000, 1.000000, 1.0f, 1.0f, 1.0f,
-        3.000000, 2.000000, 1.000000, 1.0f, 1.0f, 1.0f,
-        4.000000, 2.000000, 1.000000, 1.0f, 1.0f, 1.0f,
-        5.000000, 2.000000, 1.000000, 1.0f, 1.0f, 1.0f,
-        5.000000, 3.000000, 1.000000, 1.0f, 1.0f, 1.0f,
-        4.000000, 2.000000, 1.000000, 1.0f, 1.0f, 1.0f,
-        5.000000, 3.000000, 1.000000, 1.0f, 1.0f, 1.0f,
-        4.000000, 3.000000, 1.000000, 1.0f, 1.0f, 1.0f,
-        4.000000, 2.000000, 1.000000, 1.0f, 1.0f, 1.0f,
-        4.000000, 3.000000, 1.000000, 1.0f, 1.0f, 1.0f,
-        4.000000, 2.000000, 1.000000, 1.0f, 1.0f, 1.0f,
-        2.000000, 2.000000, 1.000000, 1.0f, 1.0f, 1.0f,
-        2.000000, 1.000000, 1.000000, 1.0f, 1.0f, 1.0f,
-        3.000000, 1.000000, 1.000000, 1.0f, 1.0f, 1.0f,
-        2.000000, 2.000000, 1.000000, 1.0f, 1.0f, 1.0f,
-        3.000000, 1.000000, 1.000000, 1.0f, 1.0f, 1.0f,
-        3.000000, 2.000000, 1.000000, 1.0f, 1.0f, 1.0f,
-        2.000000, 2.000000, 1.000000, 1.0f, 1.0f, 1.0f,
-        3.000000, 2.000000, 1.000000, 1.0f, 1.0f, 1.0f,
-        2.000000, 2.000000, 1.000000, 1.0f, 1.0f, 1.0f,
-        2.000000, 1.000000, 1.000000, 1.0f, 1.0f, 1.0f,
-        2.000000, 0.000000, 1.000000, 1.0f, 1.0f, 1.0f,
-        3.000000, 0.000000, 1.000000, 1.0f, 1.0f, 1.0f,
-        2.000000, 1.000000, 1.000000, 1.0f, 1.0f, 1.0f,
-        3.000000, 0.000000, 1.000000, 1.0f, 1.0f, 1.0f,
-        3.000000, 1.000000, 1.000000, 1.0f, 1.0f, 1.0f,
-        2.000000, 1.000000, 1.000000, 1.0f, 1.0f, 1.0f,
-        3.000000, 1.000000, 1.000000, 1.0f, 1.0f, 1.0f,
-2.000000, 1.000000, 1.000000, 1.0f, 1.0f, 1.0f
+namespace glm {
+    struct vec3 {
+        float x;
+        float y;
+        float z;
     };
+    struct vec2 {
+        float x;
+        float y;
+    };
+}
+
+struct Vertex {
+    glm::vec3 pos;
+    glm::vec3 color;
+
+    bool operator==(const Vertex& other) const {
+        return pos.x == other.pos.x && pos.y == other.pos.y && pos.z == other.pos.z;
+    }
+};
+
+inline void hash_combine(size_t& seed, size_t hash)
+{
+    hash += 0x9e3779b9 + (seed << 6) + (seed >> 2);
+    seed ^= hash;
+}
+
+namespace std {
+    template<> struct hash<Vertex> {
+        size_t operator()(Vertex const& vertex) const {
+            size_t seed1 = 0;
+            hash_combine(seed1, vertex.pos.x);
+            hash_combine(seed1, vertex.pos.y);
+            hash_combine(seed1, vertex.pos.z);
+            return seed1;
+        }
+    };
+}
+
+namespace CGAL {
+#define CGAL_POLY_TYPE CGAL::Polyhedron_3<PolyhedronTraits_3, PolyhedronItems_3, T_HDS, Alloc>
 
     static const int UNIFORM_DATA_SIZE = 16 * sizeof(float);
 
@@ -396,16 +89,46 @@ namespace CGAL {
         class Alloc>
     class Polyhedron_renderer : public QVulkanWindowRenderer {
     public:
-        Polyhedron_renderer(QVulkanWindow* w, CGAL_POLY_TYPE& poly) : m_window(w), m_buff(nullptr), m_buffMem(nullptr), m_descPool(nullptr), m_descSetLayout(nullptr), m_pipeline(nullptr), m_devFuncs(nullptr), m_pipelineCache(nullptr), m_pipelineLayout(nullptr), m_proj(QMatrix4x4()), m_rotation(0.0f), m_descSet(), m_uniformBufferInfo(), m_poly(poly) {}
+        Polyhedron_renderer(QVulkanWindow* w, CGAL_POLY_TYPE& poly) : m_window(w), m_buffVertex(nullptr), m_buffVertexMem(nullptr), m_descPool(nullptr), m_descSetLayout(nullptr), m_pipeline(nullptr), m_devFuncs(nullptr), m_pipelineCache(nullptr), m_pipelineLayout(nullptr), m_proj(QMatrix4x4()), m_rotation(0.0f), m_descSet(), m_uniformBufferInfo(), m_poly(poly) {}
 
         void initResources() override {
             m_window->availablePhysicalDevices();
             std::vector<float> vData{};
+            std::unordered_map<Vertex, uint32_t> uniqueVertices{};
             for (CGAL_POLY_TYPE::Face_iterator i = m_poly.facets_begin(); i != m_poly.facets_end(); i++) {
                 CGAL_POLY_TYPE::Halfedge_around_facet_circulator j = i->facet_begin();
                 CGAL_POLY_TYPE::Halfedge_around_facet_circulator k = j;
                 k++;
                 do {
+                    Vertex v1{ {j->vertex()->point().x(),j->vertex()->point().y(),j->vertex()->point().z()},{0.5f,0.5f,1.0f } };
+                    if (uniqueVertices.count(v1) == 0) {
+                        uniqueVertices[v1] = static_cast<uint32_t>(vertices.size());
+                        vertices.push_back(v1);
+                    }
+                    indices.push_back(uniqueVertices[v1]);
+
+                    Vertex v2{ {k->vertex()->point().x(),k->vertex()->point().y(),k->vertex()->point().z()},{0.5f,0.5f,1.0f } };
+                    if (uniqueVertices.count(v2) == 0) {
+                        uniqueVertices[v2] = static_cast<uint32_t>(vertices.size());
+                        vertices.push_back(v2);
+                    }
+                    indices.push_back(uniqueVertices[v2]);
+                    k++;
+                    Vertex v3{ {k->vertex()->point().x(),k->vertex()->point().y(),k->vertex()->point().z()},{0.5f,0.5f,1.0f } };
+                    if (uniqueVertices.count(v3) == 0) {
+                        uniqueVertices[v3] = static_cast<uint32_t>(vertices.size());
+                        vertices.push_back(v3);
+                    }
+                    indices.push_back(uniqueVertices[v3]);
+                } while (k != i->facet_begin());
+            }
+
+            for (CGAL_POLY_TYPE::Face_iterator i = m_poly.facets_begin(); i != m_poly.facets_end(); i++) {
+                CGAL_POLY_TYPE::Halfedge_around_facet_circulator j = i->facet_begin();
+                CGAL_POLY_TYPE::Halfedge_around_facet_circulator k = j;
+                k++;
+                do {
+
                     printf("%f, %f, %f, 1.0f, 1.0f, 1.0f,\n", j->vertex()->point().x(), j->vertex()->point().y(), j->vertex()->point().z());
                     vData.push_back(j->vertex()->point().x());
                     vData.push_back(j->vertex()->point().y());
@@ -463,47 +186,47 @@ namespace CGAL {
             VkBufferCreateInfo buffInfo{};
             buffInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
 
-            const VkDeviceSize vertexAllocSize = aligned(sizeof(vertexData), uniAlign);
+            const VkDeviceSize vertexAllocSize = aligned((size_t)sizeof(vData)*vData.size(), uniAlign);
             const VkDeviceSize uniformAllocSize = aligned(UNIFORM_DATA_SIZE, uniAlign);
             buffInfo.size = vertexAllocSize + concFrameCount * uniformAllocSize;
             buffInfo.usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
 
-            VkResult err = m_devFuncs->vkCreateBuffer(dev, &buffInfo, nullptr, &m_buff);
+            VkResult err = m_devFuncs->vkCreateBuffer(dev, &buffInfo, nullptr, &m_buffVertex);
             if (err != VK_SUCCESS)
                 qFatal("Failed to create buffer: %d", err);
 
             VkMemoryRequirements memReq;
-            m_devFuncs->vkGetBufferMemoryRequirements(dev, m_buff, &memReq);
+            m_devFuncs->vkGetBufferMemoryRequirements(dev, m_buffVertex, &memReq);
 
             VkMemoryAllocateInfo memAllocInfo{};
             memAllocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
             memAllocInfo.allocationSize = memReq.size;
             memAllocInfo.memoryTypeIndex = m_window->hostVisibleMemoryIndex();
 
-            err = m_devFuncs->vkAllocateMemory(dev, &memAllocInfo, nullptr, &m_buffMem);
+            err = m_devFuncs->vkAllocateMemory(dev, &memAllocInfo, nullptr, &m_buffVertexMem);
             if (err != VK_SUCCESS)
                 qFatal("Failed to allocate memory: %d", err);
 
-            err = m_devFuncs->vkBindBufferMemory(dev, m_buff, m_buffMem, 0);
+            err = m_devFuncs->vkBindBufferMemory(dev, m_buffVertex, m_buffVertexMem, 0);
             if (err != VK_SUCCESS)
                 qFatal("Failed to bind buffer memory: %d", err);
 
             quint8* p;
-            err = m_devFuncs->vkMapMemory(dev, m_buffMem, 0, memReq.size, 0, reinterpret_cast<void**>(&p));
+            err = m_devFuncs->vkMapMemory(dev, m_buffVertexMem, 0, memReq.size, 0, reinterpret_cast<void**>(&p));
             if (err != VK_SUCCESS)
                 qFatal("Failed to map memory: %d", err);
 
-            memcpy(p, vertexData, sizeof(vertexData));
+            memcpy(p, vData.data(), (size_t)sizeof(vData[0])*vData.size());
             QMatrix4x4 ident;
             memset(m_uniformBufferInfo, 0, sizeof(m_uniformBufferInfo));
             for (int i = 0; i < concFrameCount; i++) {
                 const VkDeviceSize offset = vertexAllocSize + i * uniformAllocSize;
                 memcpy(p + offset, ident.constData(), 16 * sizeof(float));
-                m_uniformBufferInfo[i].buffer = m_buff;
+                m_uniformBufferInfo[i].buffer = m_buffVertex;
                 m_uniformBufferInfo[i].offset = offset;
                 m_uniformBufferInfo[i].range = uniformAllocSize;
             }
-            m_devFuncs->vkUnmapMemory(dev, m_buffMem);
+            m_devFuncs->vkUnmapMemory(dev, m_buffVertexMem);
 
             VkVertexInputBindingDescription vertexBindingDesc{};
             vertexBindingDesc.binding = 0;
@@ -718,7 +441,6 @@ namespace CGAL {
             dynStateInfo.dynamicStateCount = 2;
             dynStateInfo.pDynamicStates = dyn;
 
-
             VkGraphicsPipelineCreateInfo pipelineInfo{};
             pipelineInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
             pipelineInfo.stageCount = 2;
@@ -819,14 +541,14 @@ namespace CGAL {
                 m_descPool = VK_NULL_HANDLE;
             }
 
-            if (m_buff) {
-                m_devFuncs->vkDestroyBuffer(dev, m_buff, nullptr);
-                m_buff = VK_NULL_HANDLE;
+            if (m_buffVertex) {
+                m_devFuncs->vkDestroyBuffer(dev, m_buffVertex, nullptr);
+                m_buffVertex = VK_NULL_HANDLE;
             }
 
-            if (m_buffMem) {
-                m_devFuncs->vkFreeMemory(dev, m_buffMem, nullptr);
-                m_buffMem = VK_NULL_HANDLE;
+            if (m_buffVertexMem) {
+                m_devFuncs->vkFreeMemory(dev, m_buffVertexMem, nullptr);
+                m_buffVertexMem = VK_NULL_HANDLE;
             }
         }
 
@@ -880,19 +602,19 @@ namespace CGAL {
             m_devFuncs->vkCmdBeginRenderPass(cmdBuf, &renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
 
             quint8* p;
-            VkResult err = m_devFuncs->vkMapMemory(dev, m_buffMem, m_uniformBufferInfo[m_window->currentFrame()].offset, UNIFORM_DATA_SIZE, 0, reinterpret_cast<void**>(&p));
+            VkResult err = m_devFuncs->vkMapMemory(dev, m_buffVertexMem, m_uniformBufferInfo[m_window->currentFrame()].offset, UNIFORM_DATA_SIZE, 0, reinterpret_cast<void**>(&p));
             if (err != VK_SUCCESS)
                 qFatal("Failed to map memory: %d", err);
             QMatrix4x4 m = m_proj;
             m.rotate(m_rotation, 0, 1, 0);
             memcpy(p, m.constData(), 16 * sizeof(float));
-            m_devFuncs->vkUnmapMemory(dev, m_buffMem);
+            m_devFuncs->vkUnmapMemory(dev, m_buffVertexMem);
 
             m_devFuncs->vkCmdBindPipeline(cb, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline);
             m_devFuncs->vkCmdBindDescriptorSets(cb, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipelineLayout, 0, 1, &m_descSet[m_window->currentFrame()], 0, nullptr);
 
             VkDeviceSize vbOffset = 0;
-            m_devFuncs->vkCmdBindVertexBuffers(cb, 0, 1, &m_buff, &vbOffset);
+            m_devFuncs->vkCmdBindVertexBuffers(cb, 0, 1, &m_buffVertex, &vbOffset);
 
             VkViewport vp;
             vp.x = vp.y = 0;
@@ -946,8 +668,10 @@ namespace CGAL {
         QVulkanWindow* m_window;
         QVulkanDeviceFunctions* m_devFuncs;
 
-        VkBuffer m_buff;
-        VkDeviceMemory m_buffMem;
+        VkBuffer m_buffVertex;
+        VkBuffer m_buffIndex;
+        VkDeviceMemory m_buffIndexMem;
+        VkDeviceMemory m_buffVertexMem;
         VkDescriptorBufferInfo m_uniformBufferInfo[QVulkanWindow::MAX_CONCURRENT_FRAME_COUNT];
 
         VkDescriptorPool m_descPool;
@@ -965,6 +689,8 @@ namespace CGAL {
         QMatrix4x4 m_proj;
         float m_rotation = 0.1f;
         CGAL_POLY_TYPE m_poly;
+        std::vector<Vertex> vertices;
+        std::vector<uint32_t> indices;
 
     };
 }
