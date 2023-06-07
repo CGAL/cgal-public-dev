@@ -12,11 +12,12 @@
 #include <CGAL/compute_average_spacing.h>
 
 #include <Eigen/Dense>
-
+#define BOOST_BIND_GLOBAL_PLACEHOLDERS
 #include <boost/iterator/transform_iterator.hpp>
 #include <boost/bind.hpp>
 #include <boost/function.hpp>
 #include <random>
+
 typedef std::pair<Point, std::size_t>                                               Point_with_index;
 typedef std::vector<Point_with_index>                                               PwiList;
 typedef CGAL::First_of_pair_property_map<Point_with_index>                          Point_map_pwi;
@@ -37,51 +38,58 @@ namespace CGAL {
     class Variational_shape_reconstruction
     {
         private:
-        std::vector<QEM_metric>         m_pqems;
-        std::vector<QEM_metric>         m_vqems;
-        std::vector<std::pair<Point, int>> m_points;
-        std::vector<int> m_poles;
-        std::vector<Vector> m_normals;
-        KNNTree         m_tree;
-        int m_num_knn = 7;
-        size_t generator_count;
+            std::vector<QEM_metric>         m_pqems;
+            std::vector<QEM_metric>         m_vqems;
+            std::vector<std::pair<Point, size_t>> m_points;
+            std::vector<int> m_poles;
+            std::vector<Vector> m_normals;
+            KNNTree         m_tree;
+            int m_num_knn = 7;
+            size_t generator_count;
 
-        //RG
-            //std::map<int, std::vector<int>>   m_vlabels;
+            //RG
             std::map<int, int>   m_vlabels;
             std::vector<QEM_metric>         m_poles_qem;
             std::vector<int>         m_poles_count;
-        //init
-        Bbox            m_bbox;
-        double          m_diag;
-        double          m_spacing;
+            //init
+            Bbox            m_bbox;
+            double          m_diag;
+            double          m_spacing;
         public:
         void initialize(Pointset& pointset)
         {		 
-            // initialize_point_qem_map
             load_points(pointset);
-            initialize_vertex_qem();
             compute_bounding_box();   
 
             // init kdtree
             m_tree.clear();
-            m_tree.insert(m_points.begin(), m_points.end());                                                                       
+            m_tree.insert(m_points.begin(), m_points.end());     
+                                                              
             // compute average spacing
-            //m_spacing = CGAL::compute_average_spacing<CGAL::Sequential_tag>(m_points, 6, CGAL::parameters::point_map(Point_map_pwi()));
-            m_spacing=0.01;
+            m_spacing = CGAL::compute_average_spacing<CGAL::Sequential_tag>(m_points, 6, CGAL::parameters::point_map(Point_map_pwi()));            
+            initialize_qem_map();
+            initialize_vertex_qem();    
         }
         void load_points(Pointset& pointset)
         {
-            int num_nb = std::max(6, m_num_knn);
             // note: no const for distance
             for( Pointset::iterator pointset_it = pointset.begin(); pointset_it != pointset.end(); ++ pointset_it )
             {
-                auto point = pointset.point(*pointset_it);
-                auto normal = pointset.normal(*pointset_it);
+                const auto point = pointset.point(*pointset_it);
+                const auto normal = pointset.normal(*pointset_it);
 
                 m_points.push_back(std::make_pair(point, std::distance(pointset.begin(),pointset_it)));
-                
-                K_neighbor_search search(m_tree, point, num_nb);
+                m_normals.push_back(normal);
+        
+            }
+            std::cout << "Number of points: " << m_points.size() << std::endl;
+        }
+        void initialize_qem_map()
+        {
+             int num_nb = std::max(6, m_num_knn);
+            for(int i = 0; i < m_points.size(); i++)
+            {
+                K_neighbor_search search(m_tree, m_points[i].first, num_nb);
                 KNNDistance tr_dist;
 
                 double avg_dist = 0.;
@@ -90,11 +98,9 @@ namespace CGAL {
 
                 avg_dist = avg_dist / (double)num_nb;
                 
-                QEM_metric pqem = compute_qem_for_point(point, normal, avg_dist * avg_dist);
+                QEM_metric pqem = compute_qem_for_point(m_points[i].first, m_normals[i], avg_dist * avg_dist);
                 m_pqems.push_back(pqem);
-        
             }
-            std::cout << "Number of points: " << m_points.size() << std::endl;
         }
         void initialize_vertex_qem()
         {
@@ -113,7 +119,7 @@ namespace CGAL {
         void compute_bounding_box()
         {
             // find bounding box
-            boost::function<Point(std::pair<Point, int>&)> pwi_it_to_point_it = boost::bind(&std::pair<Point, int>::first, _1);
+            boost::function<Point(std::pair<Point, size_t>&)> pwi_it_to_point_it = boost::bind(&std::pair<Point, size_t>::first, _1);
             m_bbox = CGAL::bbox_3(  boost::make_transform_iterator(m_points.begin(), pwi_it_to_point_it), 
                                     boost::make_transform_iterator(m_points.end(), pwi_it_to_point_it));
             m_diag = std::sqrt(CGAL::squared_distance(Point(m_bbox.min(0), m_bbox.min(1), m_bbox.min(2)),
@@ -124,7 +130,6 @@ namespace CGAL {
 
         void init_random_poles(int num_poles)
         {
-            generator_count = num_poles;
             std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
 
             std::vector<int> num_range(m_points.size());
@@ -185,14 +190,14 @@ namespace CGAL {
                 add_candidates(growing_queue,index,label, flag_dist);
             }
 
-            std::cout << "m_vlabels size: " << m_vlabels.size() << std::endl;
-            std::cout << "m_points size: " << m_points.size() << std::endl;
-            std::cout<< "iterationrs "<<k<<"\n";
-            std::cout<< "iterationrs2 "<<p<<"\n";
+            //std::cout << "m_vlabels size: " << m_vlabels.size() << std::endl;
+            //std::cout << "m_points size: " << m_points.size() << std::endl;
+            //std::cout<< "iterations "<<k<<"\n";
+            //std::cout<< "iterations2 "<<p<<"\n";
             assert(m_vlabels.size() == m_points.size());
             std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
             std::cerr << "\nRegion growing in " << std::chrono::duration_cast<std::chrono::microseconds>(end - begin).count()/1000 << "[ms]" << std::endl;
-            savePs(m_points,m_vlabels, generator_count,"output.txt");
+            savePs(m_points,m_vlabels,m_poles.size(),"output.txt");
         }
         void add_candidates(PQueue &growing_queue,const int index,const int label,const bool flag_dist)
         {
@@ -221,7 +226,11 @@ namespace CGAL {
             for(int i = 0; i < m_poles.size(); i++)
             {
                 Point center;
+                // is it for multicover ?
+                /*if(m_poles_count.size() == m_poles.size() && m_poles_count[i] == 1)
                 center = m_points[m_poles[i]].first;
+                else*/
+                center = compute_optimal_point(m_poles_qem[i], m_points[m_poles[i]].first);
                 optimal_points.push_back(center);
                 dists.push_back(1e20);
                 old_poles.push_back(m_poles[i]);
@@ -252,7 +261,119 @@ namespace CGAL {
             std::cout << "Region growing converges!" << std::endl;
             return false;
         }
+        Point compute_optimal_point(QEM_metric& cluster_qem, Point& cluster_pole)
+        {
+            // solve Qx = b
+            Eigen::MatrixXd qem_mat = cluster_qem.get_4x4_svd_matrix();
+            Eigen::VectorXd qem_vec = qem_mat.row(3); // 0., 0., 0., 1.
+            Eigen::VectorXd optim(4);
 
+            // check rank
+            Eigen::FullPivLU<Eigen::MatrixXd> lu_decomp(qem_mat);
+            lu_decomp.setThreshold(1e-5);
+
+            // full rank -> direct inverse
+            if(lu_decomp.isInvertible())
+            {
+                optim = lu_decomp.inverse() * qem_vec;
+            }
+            else
+            {   // low rank -> svd pseudo-inverse
+                Eigen::JacobiSVD<Eigen::MatrixXd> svd_decomp(qem_mat, Eigen::ComputeThinU | Eigen::ComputeThinV);
+                svd_decomp.setThreshold(1e-5);
+
+                optim(0) = cluster_pole.x();
+                optim(1) = cluster_pole.y();
+                optim(2) = cluster_pole.z();
+                optim(3) = 1.;
+
+                optim = optim + svd_decomp.solve(qem_vec - qem_mat * optim);
+            }
+
+            Point optim_point(optim(0), optim(1), optim(2));
+
+            return optim_point;
+        }
+    size_t guided_split_clusters(double split_ratio, size_t iteration) // batch splitting
+    {
+        std::cout << "Begin guided split..." << std::endl;
+
+        std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
+
+        double split_thresh = m_diag * split_ratio;
+        split_thresh = split_thresh * split_thresh; // square distance
+        split_thresh = split_thresh * m_num_knn * m_spacing * m_spacing;
+        std::cout << "  split threshold: " << split_thresh << std::endl;
+
+        // compute error for each center
+        std::vector<double> qem_errors(m_poles.size(), 0.);
+        std::vector<int> vert_indices(m_poles.size(), -1);
+
+        for(int i = 0; i < m_points.size(); i++) 
+        {
+            if(m_vlabels.find(i) == m_vlabels.end())
+                continue;
+
+            int center_ind = m_vlabels[i];
+            double error = compute_minimum_qem_error(m_points[m_poles[center_ind]].first, m_vqems[i]);
+
+            if(error > qem_errors[center_ind])
+            {
+                qem_errors[center_ind] = error;
+                vert_indices[center_ind] = i;
+            }
+        }
+
+        // split centers exceeding max error
+        std::vector<int> new_poles;
+
+        for(int i = 0; i < m_poles.size(); i++)
+        {
+
+            if(qem_errors[i] > split_thresh && vert_indices[i] != m_poles[i])
+                new_poles.push_back(vert_indices[i]);
+        }
+
+    std::cout << "Found " << new_poles.size() << " new poles!" << std::endl;
+
+        // merge close poles
+        std::set<int, std::greater<int> > duplicate_poles;
+        double dist_thresh = m_spacing * 5.;
+        dist_thresh = dist_thresh * dist_thresh;
+
+        for(int i = 0; i < new_poles.size(); i++)
+        {
+            for(int j = i + 1; j < new_poles.size(); j++)
+            {
+                if(duplicate_poles.find(j) == duplicate_poles.end() && 
+                   CGAL::squared_distance(m_points[new_poles[i]].first, m_points[new_poles[j]].first) < dist_thresh)
+                {
+                    duplicate_poles.insert(j);
+                }
+            }
+        }
+
+        for(auto& elem: duplicate_poles)
+        {
+            new_poles.erase(new_poles.begin() + elem);
+        }
+
+        std::cout << "Remove " << duplicate_poles.size() << " duplicated poles!" << std::endl;
+
+        // insert new poles
+        for(int i = 0; i < new_poles.size(); i++)
+        {
+            m_poles.push_back(new_poles[i]);
+
+        }
+
+        std::cout << "Finally found " << new_poles.size() << " new poles!" << std::endl;
+
+        std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
+	    std::cerr << "Guided split in " << std::chrono::duration_cast<std::chrono::microseconds>(end - begin).count() << "[us]" << std::endl;
+        savePs(m_points,m_vlabels,m_poles.size(),"output_guided_"+std::to_string(iteration)+".txt");
+        return new_poles.size();
+    }
         double compute_collapse_loss(const int index,const int label,const bool flag) //eq 6
         {
             const double m_qem_weight=1.;

@@ -2,7 +2,7 @@
 #define CGAL_VARIATIONAL_SHAPE_RECONSTRUCTION_INTERNAL_IO_H
 #include "types.h"
 
-void savePs(std::vector<std::pair<Point, int>> m_points,std::map<int, int>   m_vlabels,size_t generator_count,std::string filename)
+void savePs(std::vector<std::pair<Point, size_t>> m_points,std::map<int, int>   m_vlabels,size_t generator_count,std::string filename)
 {
     Pointset pointset;
     std::vector<Vector> colors;

@@ -34,11 +34,29 @@ int main(int argv, char **args)
         std::cerr << "Error: cannot read file " << std::endl;
         return 0;
     } 
+    const size_t generators = 30;
+    const size_t steps = 10;
+    const double split_threshold =0.01;
+    size_t new_generators = generators; 
+    size_t iteration = 0 ;
 
 	CGAL::Variational_shape_reconstruction manager;
 	manager.initialize(pointset);
-	manager.init_random_poles(30);
-	manager.region_growing(1);
-	manager.update_poles();
+    
+	manager.init_random_poles(generators);
+    while(new_generators > 5 )
+    {
+        bool flag =1;
+        // Clustering
+        for(int i = 0 ; i < steps && flag;i++)
+        {
+            manager.region_growing(true);
+            flag = manager.update_poles();
+        }
+        new_generators = manager.guided_split_clusters(split_threshold, iteration++);
+    }
+
+    
+    // Reconstruction
 	return 0;
 }
