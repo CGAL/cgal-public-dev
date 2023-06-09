@@ -1,5 +1,8 @@
 
 // CGAL
+#include <CGAL/Polyhedron_3.h>
+#include <CGAL/Aff_transformation_3.h>
+
 #include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
 #include <CGAL/Triangulation_data_structure_3.h>
 #include <CGAL/Point_set_3.h>
@@ -19,3 +22,8 @@ typedef Kernel::Segment_2           Segment_2;
 typedef CGAL::First_of_pair_property_map<std::pair<Point, Vector>>                     Point_map;
 typedef CGAL::Second_of_pair_property_map<std::pair<Point, Vector>>                    Normal_map;
 typedef CGAL::Point_set_3< Point, Vector > Pointset;
+
+// triangle fit
+typedef CGAL::Polyhedron_3<Kernel>      Polyhedron;
+typedef std::vector<Point>                  PointList;
+typedef CGAL::Bbox_3                    Bbox;

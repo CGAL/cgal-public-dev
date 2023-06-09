@@ -2,7 +2,6 @@
 #define CANDIDATE_H
 
 #include "types.h"
-
 namespace qem {
 
 template <class Handle>

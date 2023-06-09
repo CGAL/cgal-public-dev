@@ -1,6 +1,7 @@
 #include "types.h"
 
 #include "candidate.h"
+#include "trianglefit.h"
 #include "pqueue.h"
 #include "io.h"
 #include <CGAL/Search_traits_3.h>
@@ -18,6 +19,8 @@
 #include <boost/function.hpp>
 #include <random>
 
+
+
 typedef std::pair<Point, std::size_t>                                               Point_with_index;
 typedef std::vector<Point_with_index>                                               PwiList;
 typedef CGAL::First_of_pair_property_map<Point_with_index>                          Point_map_pwi;
@@ -32,30 +35,46 @@ typedef typename K_neighbor_search::Distance                                    
 typedef qem::Candidate<int>                                          CCandidate;
 typedef qem::Candidate_more<CCandidate>                              More;
 typedef qem::Custom_priority_queue<CCandidate, More>                 PQueue;
+namespace qem {
+typedef typename std::unordered_set<std::pair<int, int>, HashPairIndex, EqualPairIndex>     IntPairSet; 
 
 typedef CGAL::Bbox_3   Bbox;
-namespace CGAL {
+
     class Variational_shape_reconstruction
     {
         private:
-            std::vector<QEM_metric>         m_pqems;
-            std::vector<QEM_metric>         m_vqems;
-            std::vector<std::pair<Point, size_t>> m_points;
-            std::vector<int> m_poles;
-            std::vector<Vector> m_normals;
-            KNNTree         m_tree;
-            int m_num_knn = 7;
-            size_t generator_count;
+            //qem
+            std::vector<QEM_metric> m_pqems;
+            std::vector<QEM_metric> m_vqems;
 
-            //RG
-            std::map<int, int>   m_vlabels;
-            std::vector<QEM_metric>         m_poles_qem;
-            std::vector<int>         m_poles_count;
+            //generators
+            size_t m_generator_count;
+            std::vector<int> m_poles;
+
+            // geometry
+            std::vector<std::pair<Point, size_t>> m_points;
+            std::vector<Vector> m_normals;
+
+            // knntree
+            KNNTree m_tree;
+            int m_num_knn = 7;
+            
+
+            //Region growing
+            std::map<int, int> m_vlabels;
+            std::vector<QEM_metric> m_poles_qem;
+            std::vector<int> m_poles_count;
+
             //init
             Bbox            m_bbox;
             double          m_diag;
             double          m_spacing;
+
+            TriangleFit              m_triangle_fit;
+
+
         public:
+        Variational_shape_reconstruction(int generator_count) : m_generator_count(generator_count) {}
         void initialize(Pointset& pointset)
         {		 
             load_points(pointset);
@@ -69,6 +88,7 @@ namespace CGAL {
             m_spacing = CGAL::compute_average_spacing<CGAL::Sequential_tag>(m_points, 6, CGAL::parameters::point_map(Point_map_pwi()));            
             initialize_qem_map();
             initialize_vertex_qem();    
+            init_random_poles();
         }
         void load_points(Pointset& pointset)
         {
@@ -128,7 +148,7 @@ namespace CGAL {
         }
 
 
-        void init_random_poles(int num_poles)
+        void init_random_poles()
         {
             std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
 
@@ -140,7 +160,7 @@ namespace CGAL {
             std::shuffle(num_range.begin(), num_range.end(), g);
 
             std::set<int> selected_indices;
-            for(int i = 0; i < num_poles; i++)
+            for(int i = 0; i < m_generator_count; i++)
                 selected_indices.insert(num_range[i]);
                 
             for(auto &elem: selected_indices) {
@@ -414,5 +434,96 @@ namespace CGAL {
             qem.init_qem_metrics_face(area, query, normal);
             return qem;
         }
+            // adjacente
+       void create_adjacent_edges()
+        {
+            if(m_poles.size() == 0)
+            {
+                std::cout << "No available pole!" << std::endl;
+                return;
+            }
+
+            std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
+
+            std::vector<Point> dual_points;
+            for(int i = 0; i < m_poles.size(); i++)
+            {
+                Point center;
+
+                if(m_poles_count.size() == m_poles.size() && m_poles_count[i] == 1)
+                    center = m_points[m_poles[i]].first;
+                else
+                    center = compute_optimal_point(m_poles_qem[i], m_points[m_poles[i]].first);
+
+                dual_points.push_back(center);
+            }
+
+            IntPairSet adjacent_pairs;
+            for(int i = 0; i < m_points.size(); i++)
+            {
+                if(m_vlabels.find(i) == m_vlabels.end())
+                    continue;
+
+                int center_label = m_vlabels[i];
+                K_neighbor_search search(m_tree, m_points[i].first, m_num_knn);
+
+                for(typename K_neighbor_search::iterator it = search.begin(); it != search.end(); it++)
+                {
+                    int nb_index = (it->first).second;
+
+                    if(m_vlabels.find(nb_index) != m_vlabels.end())
+                    {
+                        int nb_label = m_vlabels[nb_index];
+                        if(center_label != nb_label) 
+                            adjacent_pairs.insert(std::make_pair(center_label, nb_label));
+                    }              
+                }
+            }
+
+            m_triangle_fit.initialize_adjacent_graph(dual_points, m_poles_qem, adjacent_pairs);
+
+            std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
+            std::cerr << "Candidate edge in " << std::chrono::duration_cast<std::chrono::microseconds>(end - begin).count() << "[us]" << std::endl;
+        }
+        void update_adjacent_edges(std::vector<float>& adjacent_edges)
+        {
+            m_triangle_fit.update_adjacent_edges(adjacent_edges);
+        }
+        void create_candidate_facets()
+        {
+            std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
+            m_triangle_fit.create_candidate_facets(); 
+            std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
+            std::cerr << "Candidate facet in " << std::chrono::duration_cast<std::chrono::microseconds>(end - begin).count() << "[us]" << std::endl;
+        }
+        void update_candidate_facets(std::vector<float>& candidate_facets, std::vector<float>& candidate_normals)
+        {
+            m_triangle_fit.update_candidate_facets(candidate_facets, candidate_normals); 
+        }
+
+        void mlp_reconstruction(double dist_ratio, double fitting, double coverage, double complexity)
+        {
+            std::vector<Point> input_point_set;
+
+            std::transform( m_points.begin(), 
+                            m_points.end(), 
+                            std::back_inserter(input_point_set), 
+                            [](const Point_with_index& p) { return p.first; }); 
+
+            std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
+            m_triangle_fit.reconstruct(input_point_set, m_spacing, dist_ratio, fitting, coverage, complexity); 
+            std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
+            std::cerr << "MIP solver in " << std::chrono::duration_cast<std::chrono::microseconds>(end - begin).count() << "[us]" << std::endl;
+        }
+        void update_fit_surface(std::vector<float>& fit_facets, std::vector<float>& fit_normals)
+        {
+            m_triangle_fit.update_fit_surface(fit_facets, fit_normals);
+        }
+
+        void update_fit_soup(std::vector<float>& fit_soup_facets, std::vector<float>& fit_soup_normals)
+        {
+            m_triangle_fit.update_fit_soup(fit_soup_facets, fit_soup_normals);
+            m_triangle_fit.save_trianglefit_mesh("filename.off");
+        }
     };
-} // namespace CGAL
+}
