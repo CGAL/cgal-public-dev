@@ -25,11 +25,12 @@ typedef CGAL::First_of_pair_property_map<std::pair<Point, Vector>>              
 typedef CGAL::Second_of_pair_property_map<std::pair<Point, Vector>>                    Normal_map;
 typedef CGAL::Point_set_3< Point, Vector > Pointset;
 
-int main(int argv, char **args)
+int main(int argc, char** argv)
 {	
-    std::ifstream fstream("../data/piece_meca.xyz");
+
+    const std::string fname = argc > 1 ? argv[1] :  CGAL::data_file_path("data/hand1.xyz");
     Pointset pointset;
-    if (!fstream || !CGAL::IO::read_XYZ( fstream,pointset))
+    if (!CGAL::IO::read_XYZ( fname,pointset))
     {
         std::cerr << "Error: cannot read file " << std::endl;
         return 0;
@@ -37,47 +38,33 @@ int main(int argv, char **args)
     const size_t generators = 30;
     const size_t steps = 10;
     const double split_threshold =0.01;
-    size_t new_generators = generators; 
-    size_t iteration = 0 ;
+
     // reconstruction
     const double  dist_ratio = 0.001;
 	const double  fitting = 0.43;
 	const double  coverage = 0.27;
 	const double  complexity = 0.3;
 
-	std::vector<float> adjacent_edges;
-	std::vector<float> candidate_facets;
-	std::vector<float> candidate_normals;
+    size_t new_generators = generators; 
+    size_t iteration = 0 ;
 
-    std::vector<float> fit_facets;
-	std::vector<float> fit_normals;
-	std::vector<float> fit_soup_facets;
-	std::vector<float> fit_soup_normals;
     
-	qem::Variational_shape_reconstruction manager(generators);
-	manager.initialize(pointset);
+    std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
+
+	qem::Variational_shape_reconstruction manager(pointset,generators);
+        std::chrono::steady_clock::time_point begin_clustering = std::chrono::steady_clock::now();
     while(new_generators > 5 )
     {
-        bool flag =1;
-        // Clustering
-        for(int i = 0 ; i < steps && flag;i++)
-        {
-            manager.region_growing(true);
-            flag = manager.update_poles();
-        }
+        manager.region_growing(steps);
         new_generators = manager.guided_split_clusters(split_threshold, iteration++);
     }
+     std::chrono::steady_clock::time_point end_clustering = std::chrono::steady_clock::now();
+    std::cerr << "Clustering " << std::chrono::duration_cast<std::chrono::microseconds>(end_clustering - begin_clustering).count()/1000 << "[ms]" << std::endl;
     
     // Reconstruction
-	// A
-	manager.create_adjacent_edges();
-	manager.update_adjacent_edges(adjacent_edges);
-	//B
-	manager.create_candidate_facets();
-	manager.update_candidate_facets( candidate_facets, candidate_normals);
-	//C
-	manager.mlp_reconstruction(dist_ratio, fitting, coverage, complexity);
-	manager.update_fit_surface(fit_facets, fit_normals);
-	manager.update_fit_soup(fit_soup_facets, fit_soup_normals);
+    manager.reconstruction(dist_ratio, fitting, coverage, complexity);
+
+    std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
+    std::cerr << "Algo " << std::chrono::duration_cast<std::chrono::microseconds>(end - begin).count()/1000 << "[ms]" << std::endl;
 	return 0;
 }
