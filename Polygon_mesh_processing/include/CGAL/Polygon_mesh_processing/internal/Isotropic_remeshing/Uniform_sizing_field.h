@@ -56,6 +56,10 @@ private:
   }
 
 public:
+  //todo ip: rewrite to remove this?
+  void calc_sizing_map() const {}
+  void update_sizing_map(const vertex_descriptor& vnew) const {}
+
   boost::optional<FT> is_too_long(const halfedge_descriptor& h) const
   {
     const FT sqlen = sqlength(h);
@@ -91,6 +95,7 @@ public:
     return CGAL::midpoint(get(vpmap, target(h, m_pmesh)),
                           get(vpmap, source(h, m_pmesh)));
   }
+
 
 private:
   FT m_sq_short;

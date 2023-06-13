@@ -19,6 +19,7 @@
 
 #include <CGAL/Polygon_mesh_processing/internal/Isotropic_remeshing/remesh_impl.h>
 #include <CGAL/Polygon_mesh_processing/internal/Isotropic_remeshing/Uniform_sizing_field.h>
+#include <CGAL/Polygon_mesh_processing/internal/Isotropic_remeshing/Adaptive_sizing_field.h>
 
 #include <CGAL/Named_function_parameters.h>
 #include <CGAL/boost/graph/named_params_helper.h>
@@ -37,7 +38,7 @@ template<typename PolygonMesh
        , typename SizingFunction
        , typename NamedParameters>
 void isotropic_remeshing(const FaceRange& faces
-                       , const SizingFunction& sizing
+                       , SizingFunction& sizing
                        , PolygonMesh& pmesh
                        , const NamedParameters& np);
 
@@ -206,24 +207,46 @@ template<typename PolygonMesh
        , typename FaceRange
        , typename NamedParameters = parameters::Default_named_parameters>
 void isotropic_remeshing(const FaceRange& faces
-                       , const double& target_edge_length
+                       , const double target_edge_length
                        , PolygonMesh& pmesh
                        , const NamedParameters& np = parameters::default_values())
 {
   typedef Uniform_sizing_field<PolygonMesh> Default_sizing;
+  Default_sizing sizing(target_edge_length, pmesh);
   isotropic_remeshing<PolygonMesh, FaceRange, Default_sizing, NamedParameters>(
     faces,
-    Default_sizing(target_edge_length, pmesh),
+    sizing,
     pmesh,
     np);
 }
+
+//todo ip: should I have the overload here?
+/*
+template<typename PolygonMesh
+        , typename FaceRange
+        , typename NamedParameters = parameters::Default_named_parameters>
+void isotropic_remeshing(const FaceRange& faces
+                       , const double& tol
+                       , const std::pair<double, double>& edge_len_min_max
+                       , PolygonMesh& pmesh
+                       , const NamedParameters& np = parameters::default_values())
+{
+  typedef Adaptive_sizing_field<PolygonMesh> Adaptive_sizing;
+  Adaptive_sizing sizing(edge_len_min_max, pmesh);
+  isotropic_remeshing<PolygonMesh, FaceRange, Adaptive_sizing, NamedParameters>(
+          faces,
+          sizing,
+          pmesh,
+          np);
+}
+ */
 
 template<typename PolygonMesh
        , typename FaceRange
        , typename SizingFunction
        , typename NamedParameters>
 void isotropic_remeshing(const FaceRange& faces
-                       , const SizingFunction& sizing
+                       , SizingFunction& sizing
                        , PolygonMesh& pmesh
                        , const NamedParameters& np)
 {
@@ -332,19 +355,23 @@ void isotropic_remeshing(const FaceRange& faces
   t.reset(); t.start();
 #endif
 
+      sizing.calc_sizing_map();
   for (unsigned int i = 0; i < nb_iterations; ++i)
   {
 #ifdef CGAL_PMP_REMESHING_VERBOSE
     std::cout << " * Iteration " << (i + 1) << " *" << std::endl;
 #endif
 
+//    if (i < 2)
+//      sizing.calc_sizing_map();
     if(do_split)
      remesher.split_long_edges(sizing);
     if(do_collapse)
      remesher.collapse_short_edges(sizing, collapse_constraints);
     if(do_flip)
       remesher.flip_edges_for_valence_and_shape();
-    remesher.tangential_relaxation_impl(smoothing_1d, nb_laplacian);
+    remesher.tangential_relaxation_impl(smoothing_1d, nb_laplacian, sizing);
+//    remesher.tangential_relaxation_impl(smoothing_1d, nb_laplacian);
     if ( choose_parameter(get_parameter(np, internal_np::do_project), true) )
       remesher.project_to_surface(get_parameter(np, internal_np::projection_functor));
 #ifdef CGAL_PMP_REMESHING_VERBOSE

@@ -55,6 +55,9 @@
 #include <unordered_map>
 #include <unordered_set>
 
+//todo ip: temp
+#define CGAL_PMP_REMESHING_VERBOSE
+
 #ifdef CGAL_PMP_REMESHING_DEBUG
 #include <CGAL/Polygon_mesh_processing/self_intersections.h>
 #define CGAL_DUMP_REMESHING_STEPS
@@ -478,7 +481,7 @@ namespace internal {
     //if an edge is longer than the given threshold `high`, the edge
     //is split at its midpoint and the two adjacent triangles are bisected (2-4 split)"
     template<typename SizingFunction>
-    void split_long_edges(const SizingFunction& sizing)
+    void split_long_edges(SizingFunction& sizing)
     {
 #ifdef CGAL_PMP_REMESHING_VERBOSE
       std::cout << "Split long edges..." << std::endl;
@@ -544,6 +547,9 @@ namespace internal {
         halfedge_descriptor hnew_opp = opposite(hnew, mesh_);
         halfedge_added(hnew, status(he));
         halfedge_added(hnew_opp, status(opposite(he, mesh_)));
+
+        //todo ip-add: already updating sizing here because of is_too_long checks below
+        sizing.update_sizing_map(vnew);
 
         //check sub-edges
         //if it was more than twice the "long" threshold, insert them
@@ -1006,8 +1012,10 @@ namespace internal {
     // "applies an iterative smoothing filter to the mesh.
     // The vertex movement has to be constrained to the vertex tangent plane [...]
     // smoothing algorithm with uniform Laplacian weights"
+    template <typename SizingFunction>
     void tangential_relaxation_impl(const bool relax_constraints/*1d smoothing*/
-                                   , const unsigned int nb_iterations)
+                                  , const unsigned int nb_iterations
+                                  , const SizingFunction& sizing)
     {
 #ifdef CGAL_PMP_REMESHING_VERBOSE
       std::cout << "Tangential relaxation (" << nb_iterations << " iter.)...";
@@ -1038,6 +1046,9 @@ namespace internal {
       auto constrained_vertices_pmap
         = boost::make_function_property_map<vertex_descriptor>(vertex_constraint);
 
+      //todo IP temp: I have to rewrite to include original implementation, hardcoded for now
+      const bool use_sizing = true;
+      if (!use_sizing)
       tangential_relaxation(
         vertices(mesh_),
         mesh_,
@@ -1047,6 +1058,19 @@ namespace internal {
                          .edge_is_constrained_map(constrained_edges_pmap)
                          .vertex_is_constrained_map(constrained_vertices_pmap)
                          .relax_constraints(relax_constraints)
+      );
+
+      else
+      tangential_relaxation_with_sizing(
+        vertices(mesh_),
+        mesh_,
+        sizing,
+        CGAL::parameters::number_of_iterations(nb_iterations)
+          .vertex_point_map(vpmap_)
+          .geom_traits(gt_)
+          .edge_is_constrained_map(constrained_edges_pmap)
+          .vertex_is_constrained_map(constrained_vertices_pmap)
+          .relax_constraints(relax_constraints)
       );
 
       CGAL_assertion(!input_mesh_is_valid_ || is_valid_polygon_mesh(mesh_));
@@ -1080,6 +1104,7 @@ namespace internal {
 
         Point proj = trees[patch_id_to_index_map[get_patch_id(face(halfedge(v, mesh_), mesh_))]]->closest_point(get(vpmap_, v));
         put(vpmap_, v, proj);
+        //todo ip - also update sizing field here?
       }
       CGAL_assertion(!input_mesh_is_valid_ || is_valid_polygon_mesh(mesh_));
 #ifdef CGAL_PMP_REMESHING_DEBUG
@@ -1108,6 +1133,7 @@ namespace internal {
           continue;
         //note if v is constrained, it has not moved
         put(vpmap_, v,  proj(v));
+        //todo ip: also update sizing field here?
       }
       CGAL_assertion(is_valid(mesh_));
 #ifdef CGAL_PMP_REMESHING_DEBUG
