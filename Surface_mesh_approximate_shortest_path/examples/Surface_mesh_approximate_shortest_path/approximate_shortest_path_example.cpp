@@ -6,17 +6,25 @@
 
 typedef CGAL::Exact_predicates_inexact_constructions_kernel Kernel;
 typedef CGAL::Surface_mesh<Kernel::Point_3> Triangle_mesh;
+typedef Kernel::Point_2 Point_2;
 
 typedef CGAL::Surface_mesh_approximate_shortest_path_traits<Kernel, Triangle_mesh> Traits;
 typedef CGAL::Surface_mesh_approximate_shortest_path<Traits> Surface_mesh_approximate_shortest_path;
 
 typedef boost::graph_traits<Triangle_mesh> Graph_traits;
 
+typedef Graph_traits::edge_descriptor edge_descriptor;
 typedef Graph_traits::halfedge_iterator halfedge_iterator;
 typedef Graph_traits::halfedge_descriptor halfedge_descriptor;
 
 typedef Graph_traits::vertex_iterator vertex_iterator;
 typedef Graph_traits::face_iterator face_iterator;
+
+typedef CGAL::Surface_mesh_approximate_shortest_path_3::Compute_squared_edge_length<Kernel, Triangle_mesh> Compute_squared_edge_length;
+typedef CGAL::Surface_mesh_approximate_shortest_path_3::Unfold_triangle_3_along_halfedge<Kernel, Triangle_mesh> unfold_object;
+typedef CGAL::Surface_mesh_approximate_shortest_path_3::Reconstruct_source_point_in_triangle_tangent_space<Kernel, Triangle_mesh> reconstructed_source;
+typedef CGAL::Surface_mesh_approximate_shortest_path_3::Construct_triangle_centroid_2<Kernel> Construct_triangle_centroid;
+typedef CGAL::Surface_mesh_approximate_shortest_path_3::Construct_heuristic_point_2<Kernel, Triangle_mesh> Construct_heuristic_point_2;
 
 int main(int argc, char** argv)
 {
@@ -29,17 +37,31 @@ int main(int argc, char** argv)
         std::cerr << "Invalid input file." << std::endl;
         return EXIT_FAILURE;
     }
+    std::cout << "This is the mesh we consider (the reference triangle)" << std::endl;
+    std::cout << tmesh;
 
-    // unfold a triangle in the tangent plane of the triangle with the opposite halfedge
-    halfedge_iterator h_it = halfedges(tmesh).begin();
-    int h_idx = 10;
-    std::advance(h_it, h_idx);
+    // Let's play around with property maps
+    Triangle_mesh::Property_map<edge_descriptor, Kernel::FT> squared_edge_lengths;
+    bool created;
+    boost::tie(squared_edge_lengths, created) = tmesh.add_property_map<edge_descriptor, Kernel::FT>("edges");
+    assert(created);
 
+    // Shortest Paths
     Surface_mesh_approximate_shortest_path shortest_path(tmesh);
-    //auto unfolded_triangle =
-    //std::cout << "unfolded triangle" << std::endl;
-    //std::cout << "B: " << unfolded_triangle.B[0] << "," << unfolded_triangle.B[1] << std::endl;
-    //std::cout << "P: " << unfolded_triangle.P[0] << "," << unfolded_triangle.P[1] << std::endl;
+    //unfold_object unfolded_triangle = shortest_path.unfold_triangle_3_along_halfedge_object();
+    halfedge_descriptor h(0);
+    std::cout << "for halfedge " << h.idx() << std::endl;
+    //auto tri = unfolded_triangle(tmesh, h, squared_edge_lengths);
+
+    // construct centroid of the triangle
+    //Construct_triangle_centroid C = shortest_path.construct_centroid_object();
+    //Point_2 center = C(tri.B, tri.P);
+
+    // construct heuristic point
+    Point_2 heuristic_point = shortest_path.construct_heuristic_point_object()(tmesh, h, squared_edge_lengths);
+
+    // reconstruct source
+    Point_2 S = shortest_path.reconstruct_source_point_in_triangle_tangent_space_object()(tmesh, h);
 
     return 0;
 }
