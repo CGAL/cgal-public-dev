@@ -2,20 +2,11 @@
 // All rights reserved.
 //
 // This file is part of CGAL (www.cgal.org).
-// You can redistribute it and/or modify it under the terms of the GNU
-// General Public License as published by the Free Software Foundation,
-// either version 3 of the License, or (at your option) any later version.
-//
-// Licensees holding a valid commercial license may use this file in
-// accordance with the commercial license agreement provided with the software.
-//
-// This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
-// WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 //
 // $URL$
 // $Id$
-// SPDX-License-Identifier: GPL-3.0+
-// 
+// SPDX-License-Identifier: GPL-3.0-or-later OR LicenseRef-Commercial
+//
 //
 // Author(s)     : Michael Hoffmann <hoffmann@inf.ethz.ch>
 
@@ -29,12 +20,12 @@
 #include <CGAL/Iso_rectangle_2.h>
 #include <CGAL/basic_constructions_2.h>
 #include <CGAL/pierce_rectangles_2.h>
-#include <CGAL/Optimisation/assertions.h>
+#include <CGAL/assertions.h>
 
 namespace CGAL {
 
 template < class A, class S >
-struct Select : public CGAL::binary_function< A, A, A > {
+struct Select : public CGAL::cpp98::binary_function< A, A, A > {
   Select() {}
   Select(const S& s) : s_(s) {}
   A operator()(const A& a, const A& b) const
@@ -47,7 +38,7 @@ protected:
 
 template < class R >
 struct I_Signed_x_distance_2
-: public CGAL::binary_function<
+: public CGAL::cpp98::binary_function<
   Point_2< R >, Point_2< R >, typename R::FT >
 {
   typename R::FT
@@ -56,7 +47,7 @@ struct I_Signed_x_distance_2
 };
 template < class R >
 struct I_Signed_y_distance_2
-: public CGAL::binary_function<
+: public CGAL::cpp98::binary_function<
   Point_2< R >, Point_2< R >, typename R::FT >
 {
   typename R::FT
@@ -65,9 +56,22 @@ struct I_Signed_y_distance_2
 };
 template < class R >
 struct I_Infinity_distance_2
-: public CGAL::binary_function<
+: public CGAL::cpp98::binary_function<
   Point_2< R >, Point_2< R >, typename R::FT >
 {
+  // Added as workaround for VC2017 with /arch:AVX to fix
+  // https://cgal.geometryfactory.com/CGAL/testsuite/CGAL-4.14-I-95/Rectangular_p_center_2_Examples/TestReport_afabri_x64_Cygwin-Windows10_MSVC2017-Release-64bits.gz
+  I_Infinity_distance_2()
+  {}
+
+  I_Infinity_distance_2(const I_Infinity_distance_2&)
+  {}
+
+  I_Infinity_distance_2& operator=(const I_Infinity_distance_2&)
+  {
+    return *this;
+  }
+
   typename R::FT
   operator()(const Point_2< R >& q1, const Point_2< R >& q2) const {
     return (std::max)(CGAL_NTS abs(q1.x() - q2.x()),
@@ -77,13 +81,13 @@ struct I_Infinity_distance_2
 
 template < class R >
 struct I_Signed_infinity_distance_2
-: public CGAL::binary_function<
+: public CGAL::cpp98::binary_function<
   Point_2< R >, Point_2< R >, typename R::FT >
 {
   typename R::FT
   operator()(const Point_2< R >& q1, const Point_2< R >& q2) const
-  { 
-    return (std::max)(q1.x() - q2.x(), q1.y() - q2.y()); 
+  {
+    return (std::max)(q1.x() - q2.x(), q1.y() - q2.y());
   }
 };
 
@@ -224,21 +228,21 @@ struct Rectangular_p_center_matrix_search_traits_2 {
 
   bool operator()(FT v)
   {
-    CGAL_optimisation_assertion(ld.size() == ld_size);
+    CGAL_assertion(ld.size() == ld_size);
     ld.r = v / FT(2);
     bool ok;
     pf(ld, Wastebasket< Point_2 >(), ok);
-    CGAL_optimisation_assertion(ld.size() == ld_size);
+    CGAL_assertion(ld.size() == ld_size);
     return ok;
   }
 
   template < class OutputIterator >
   OutputIterator operator()(FT v, OutputIterator o, bool& ok)
   {
-    CGAL_optimisation_assertion(ld.size() == ld_size);
+    CGAL_assertion(ld.size() == ld_size);
     ld.r = v / FT(2);
     OutputIterator n = pf(ld, o, ok);
-    CGAL_optimisation_assertion(ld.size() == ld_size);
+    CGAL_assertion(ld.size() == ld_size);
     return n; //pf(ld, o, ok);
   }
 
@@ -246,7 +250,7 @@ protected:
   // data members:
   LD                 ld;
   PiercingFunction   pf;
-  CGAL_optimisation_assertion_code(typename LD::size_type ld_size;)
+  CGAL_assertion_code(typename LD::size_type ld_size;)
 
   // copying this would be too inefficient
   Rectangular_p_center_matrix_search_traits_2(
@@ -286,8 +290,8 @@ bounding_box_2(ForwardIterator f, ForwardIterator l, const Traits& t)
   return rect(v(rect(*xmin, *ymin), 0), v(rect(*xmax, *ymax), 2));
 } // bounding_box_2(f, l, t)
 template < class ForwardIterator >
-inline typename
-std::iterator_traits< ForwardIterator >::value_type::R::Iso_rectangle_2
+inline
+auto
 bounding_box_2(ForwardIterator f, ForwardIterator l)
 // PRE: f != l.
 {

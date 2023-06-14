@@ -2,19 +2,10 @@
 // All rights reserved.
 //
 // This file is part of CGAL (www.cgal.org).
-// You can redistribute it and/or modify it under the terms of the GNU
-// General Public License as published by the Free Software Foundation,
-// either version 3 of the License, or (at your option) any later version.
-//
-// Licensees holding a valid commercial license may use this file in
-// accordance with the commercial license agreement provided with the software.
-//
-// This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
-// WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 //
 // $URL$
 // $Id$
-// SPDX-License-Identifier: GPL-3.0+
+// SPDX-License-Identifier: GPL-3.0-or-later OR LicenseRef-Commercial
 //
 //
 // Author(s)     : Baruch Zukerman <baruchzu@post.tau.ac.il>
@@ -33,8 +24,9 @@
 
 #include <boost/variant.hpp>
 #include <boost/optional.hpp>
-#include <boost/unordered_map.hpp>
 #include <boost/variant/apply_visitor.hpp>
+
+#include <unordered_map>
 
 #include <CGAL/Arr_tags.h>
 #include <CGAL/Surface_sweep_2/Arr_construction_ss_visitor.h>
@@ -123,7 +115,7 @@ protected:
                                                         Halfedge_map;
 
   typedef std::pair<Cell_handle_red, Cell_handle_blue>  Handle_info;
-  typedef boost::unordered_map<Vertex_handle, Handle_info, Handle_hash_function>
+  typedef std::unordered_map<Vertex_handle, Handle_info, Handle_hash_function>
                                                         Vertex_map;
 
   // Side categoties:
@@ -194,11 +186,11 @@ public:
                     Arr_curve_end cv_end,
                     bool is_new);
 
-   void update_event(Event* /* e */,
-                     const X_monotone_curve_2& /* cv */,
-                     Arr_curve_end /* cv_end */,
-                     bool /* is_new */)
-   {}
+  void update_event(Event* /* e */,
+                    const X_monotone_curve_2& /* cv */,
+                    Arr_curve_end /* cv_end */,
+                    bool /* is_new */)
+  {}
 
   /*! Update an event that corresponds to an intersection between curves. */
   void update_event(Event* /* e */,
@@ -297,8 +289,8 @@ protected:
   /*!
    * Update the boundary vertices map.
    * This function is used when the parameter space has an identified (or
-   * contructed) boundary side. We assume that if the parameter space has a
-   * contructed boundary side, it also must have an identified boundary side.
+   * constructed) boundary side. We assume that if the parameter space has a
+   * constructed boundary side, it also must have an identified boundary side.
    * \param event The event.
    * \param v The vertex.
    * \param tag The tag used for dispatching.
@@ -309,7 +301,7 @@ protected:
   /*!
    * Update the boundary vertices map.
    * This function is used when the parameter space does not have an identified
-   * boundary side, and thus, neither it has a contructed boundary side.
+   * boundary side, and thus, neither it has a constructed boundary side.
    * \param event The event.
    * \param v The vertex.
    * \param tag The tag used for dispatching.
@@ -320,8 +312,8 @@ protected:
   /*!
    * Update a newly created vertex using the overlay traits.
    * This function is used when the parameter space has an identified (or
-   * contructed) boundary side. We assume that if the parameter space has a
-   * contructed boundary side, it also must have an identified boundary side.
+   * constructed) boundary side. We assume that if the parameter space has a
+   * constructed boundary side, it also must have an identified boundary side.
    * \param event The event associated with the new vertex.
    * \param res_v The new vertex in the overlaid arrangement.
    * \param sc The subcurve incident to the event.
@@ -333,7 +325,7 @@ protected:
   /*!
    * Update a newly created vertex using the overlay traits.
    * This function is used when the parameter space does not have an identified
-   * boundary side, and thus, neither it has a contructed boundary side.
+   * boundary side, and thus, neither it has a constructed boundary side.
    * \param event The event associated with the new vertex.
    * \param res_v The new vertex in the overlaid arrangement.
    * \param sc The subcurve incident to the event.
@@ -348,6 +340,8 @@ protected:
    * \param res_he One of the new halfedges in the overlaid arrangement.
    */
   void _create_edge(Subcurve* sc, Halfedge_handle res_he);
+
+  //@}
 
   /*! A visitor class to facilitate the call to create_vertex(). */
   class Create_vertex_visitor : public boost::static_visitor<> {
@@ -408,7 +402,7 @@ protected:
 };
 
 //-----------------------------------------------------------------------------
-// Memeber-function definitions:
+// Member-function definitions:
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
@@ -457,19 +451,19 @@ after_handle_event(Event* event, Status_line_iterator iter, bool flag)
   // point, we update the top fictitious halfedges for all subcurves incident
   // to this event.
   Event_subcurve_reverse_iterator rev_iter = event->right_curves_rbegin();
-  Subcurve* sc_above = NULL;
+  Subcurve* sc_above = nullptr;
 
   if (iter != this->status_line_end())
     sc_above = (*iter);
 
-  if (sc_above == NULL) {
+  if (sc_above == nullptr) {
     if (rev_iter != event->right_curves_rend()) {
       if ((*rev_iter)->color() == Gt2::BLUE)
         (*rev_iter)->set_red_top_face(m_overlay_helper.red_top_face());
       else if ((*rev_iter)->color() == Gt2::RED)
         (*rev_iter)->set_blue_top_face(m_overlay_helper.blue_top_face());
 
-      (*rev_iter)->set_subcurve_above(NULL);
+      (*rev_iter)->set_subcurve_above(nullptr);
       sc_above = *rev_iter;
       ++rev_iter;
     }
@@ -484,7 +478,7 @@ after_handle_event(Event* event, Status_line_iterator iter, bool flag)
     if (! curr_sc->has_same_color(sc_above))
       curr_sc->set_subcurve_above(sc_above);
     else {
-      if (sc_above->subcurve_above() != NULL)
+      if (sc_above->subcurve_above() != nullptr)
         curr_sc->set_subcurve_above(sc_above->subcurve_above());
       else
         curr_sc->set_top_face(sc_above);
@@ -559,6 +553,8 @@ Arr_overlay_ss_visitor<OvlHlpr, OvlTr, Vis>::update_event(Event* e,
 template <typename OvlHlpr, typename OvlTr, typename Vis>
 void Arr_overlay_ss_visitor<OvlHlpr, OvlTr, Vis>::after_sweep()
 {
+  Base::after_sweep();
+
   // Notify boundary vertices:
   typename Vertex_map::iterator it;
   for (it = m_vertices_map.begin(); it != m_vertices_map.end(); ++it) {
@@ -771,7 +767,7 @@ insert_at_vertices(const X_monotone_curve_2& cv,
       // face. We have to find the identity of this containing blue face.
       Subcurve* sc_above = sc->subcurve_above();
       red_face = red_he->face();
-      blue_face = (sc_above != NULL) ?
+      blue_face = (sc_above != nullptr) ?
         sc_above->blue_halfedge_handle()->face() : sc->blue_top_face();
     }
     else {
@@ -781,7 +777,7 @@ insert_at_vertices(const X_monotone_curve_2& cv,
       // face. We have to find the identity of this containing red face.
       Subcurve* sc_above = sc->subcurve_above();
       blue_face = blue_he->face();
-      red_face = (sc_above != NULL) ?
+      red_face = (sc_above != nullptr) ?
         sc_above->red_halfedge_handle()->face() : sc->red_top_face();
     }
 
@@ -835,7 +831,7 @@ insert_isolated_vertex(const Point_2& pt,
       // sufficient to go at most two steps up.
       // There is nothing above the vertex - use the current red top face.
       Subcurve* sc_above = *iter;
-      if (sc_above == NULL) {
+      if (sc_above == nullptr) {
         red_face = m_overlay_helper.red_top_face();
       }
       else {
@@ -844,7 +840,7 @@ insert_isolated_vertex(const Point_2& pt,
         }
         else {
           sc_above = sc_above->subcurve_above();
-          red_face = (sc_above != NULL) ?
+          red_face = (sc_above != nullptr) ?
             sc_above->red_halfedge_handle()->face() :
             m_overlay_helper.red_top_face();
         }
@@ -871,7 +867,7 @@ insert_isolated_vertex(const Point_2& pt,
       // sufficient to go at most two steps up.
       // If we do not find a blue halfedge, we use the current red top face.
       Subcurve* sc_above = *iter;
-      if (sc_above == NULL) {
+      if (sc_above == nullptr) {
         blue_face = m_overlay_helper.blue_top_face();
       }
       else {
@@ -880,7 +876,7 @@ insert_isolated_vertex(const Point_2& pt,
         }
         else {
           sc_above = sc_above->subcurve_above();
-          blue_face = (sc_above != NULL) ?
+          blue_face = (sc_above != nullptr) ?
             sc_above->blue_halfedge_handle()->face() :
             m_overlay_helper.blue_top_face();
         }
@@ -991,20 +987,20 @@ _create_vertex(Event* event,
       (event->parameter_space_in_y() != ARR_INTERIOR))
   {
     if (!red_handle) {
-      CGAL_assertion(blue_handle != NULL);
+      CGAL_assertion(blue_handle != nullptr);
       // Obtain the red face by looking for a subcurve above.
       const Subcurve* sc_above = sc->subcurve_above();
-      Face_handle_red red_f = (sc_above != NULL) ?
+      Face_handle_red red_f = (sc_above != nullptr) ?
         sc_above->red_halfedge_handle()->face() : sc->red_top_face();
       Handle_info info = std::make_pair(Cell_handle_red(red_f), *blue_handle);
       m_vertices_map[new_v] = info;
       return;
     }
     if (!blue_handle) {
-      CGAL_assertion(red_handle != NULL);
+      CGAL_assertion(red_handle != nullptr);
       // Obtain the blue face by looking for a subcurve above.
       const Subcurve* sc_above = sc->subcurve_above();
-      Face_handle_blue blue_f = (sc_above != NULL) ?
+      Face_handle_blue blue_f = (sc_above != nullptr) ?
         sc_above->blue_halfedge_handle()->face() : sc->blue_top_face();
       Handle_info info = std::make_pair(*red_handle, Cell_handle_blue(blue_f));
       m_vertices_map[new_v] = info;
@@ -1034,10 +1030,10 @@ _create_vertex(Event* event,
     // A blue vertex is located inside a red face. Obtain the red face
     // by looking for a subcurve above.
     const Subcurve* sc_above = sc->subcurve_above();
-    Face_handle_red red_f = (sc_above != NULL) ?
+    Face_handle_red red_f = (sc_above != nullptr) ?
       sc_above->red_halfedge_handle()->face() : sc->red_top_face();
 
-    CGAL_assertion(blue_handle != NULL);
+    CGAL_assertion(blue_handle != nullptr);
     const Vertex_handle_blue& blue_v =
       boost::get<Vertex_handle_blue>(*blue_handle);
     m_overlay_traits->create_vertex(red_f, blue_v, new_v);
@@ -1048,10 +1044,10 @@ _create_vertex(Event* event,
     // A red vertex is located inside a blue face. Obtain the blue face
     // by looking for a subcurve above.
     const Subcurve* sc_above = sc->subcurve_above();
-    Face_handle_blue blue_f = (sc_above != NULL) ?
+    Face_handle_blue blue_f = (sc_above != nullptr) ?
       sc_above->blue_halfedge_handle()->face() : sc->blue_top_face();
 
-    CGAL_assertion(red_handle != NULL);
+    CGAL_assertion(red_handle != nullptr);
     const Vertex_handle_red& red_v =
       boost::get<Vertex_handle_red>(*red_handle);
     m_overlay_traits->create_vertex(red_v, blue_f, new_v);
@@ -1088,7 +1084,7 @@ _create_edge(Subcurve* sc,
     // We have a red edge on a blue face.
     Halfedge_handle_red   red_he = sc->red_halfedge_handle();
     Subcurve* sc_above = sc->subcurve_above();
-    Face_handle_blue blue_f = (sc_above != NULL) ?
+    Face_handle_blue blue_f = (sc_above != nullptr) ?
       sc_above->blue_halfedge_handle()->face() : sc->blue_top_face();
     m_overlay_traits->create_edge(red_he, blue_f, new_he);
   }
@@ -1098,7 +1094,7 @@ _create_edge(Subcurve* sc,
     // We have a blue edge on a red face.
     Halfedge_handle_blue  blue_he = sc->blue_halfedge_handle();
     Subcurve* sc_above = sc->subcurve_above();
-    Face_handle_red red_f = (sc_above != NULL) ?
+    Face_handle_red red_f = (sc_above != nullptr) ?
       sc_above->red_halfedge_handle()->face() : sc->red_top_face();
     m_overlay_traits->create_edge(red_f, blue_he, new_he);
   }

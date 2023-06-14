@@ -7,9 +7,17 @@
 
 
 Viewer::Viewer(QWidget* parent )
-  : QGLViewer(CGAL::Qt::createOpenGLContext(),parent)
+  : CGAL::QGLViewer(parent)
 {
     extension_is_found = false;
+}
+Viewer::~Viewer()
+{
+  makeCurrent();
+  for(int i=0; i<3; ++i)
+    vao[i].destroy();
+  for(int i=0; i<9; ++i)
+    buffers[i].destroy();
 }
 
 void Viewer::compile_shaders()
@@ -32,16 +40,16 @@ void Viewer::compile_shaders()
     //Vertex source code
     const char vertex_source[] =
     {
-        "#version 120 \n"
-        "attribute highp vec4 vertex;\n"
-        "attribute highp vec3 normal;\n"
-        "attribute highp vec4 center;\n"
+        "#version 150 \n"
+        "in highp vec4 vertex;\n"
+        "in highp vec3 normal;\n"
+        "in highp vec4 center;\n"
 
         "uniform highp mat4 mvp_matrix;\n"
         "uniform highp mat4 mv_matrix; \n"
 
-        "varying highp vec4 fP; \n"
-        "varying highp vec3 fN; \n"
+        "out highp vec4 fP; \n"
+        "out highp vec3 fN; \n"
         "void main(void)\n"
         "{\n"
         "   fP = mv_matrix * vertex; \n"
@@ -52,30 +60,31 @@ void Viewer::compile_shaders()
     //Vertex source code
     const char fragment_source[] =
     {
-        "#version 120 \n"
-        "varying highp vec4 fP; \n"
-        "varying highp vec3 fN; \n"
+        "#version 150 \n"
+        "in highp vec4 fP; \n"
+        "in highp vec3 fN; \n"
         "uniform highp vec4 color; \n"
-        "uniform vec4 light_pos;  \n"
-        "uniform vec4 light_diff; \n"
-        "uniform vec4 light_spec; \n"
-        "uniform vec4 light_amb;  \n"
+        "uniform highp vec4 light_pos;  \n"
+        "uniform highp vec4 light_diff; \n"
+        "uniform highp vec4 light_spec; \n"
+        "uniform highp vec4 light_amb;  \n"
         "uniform float spec_power ; \n"
+        "out highp vec4 out_color; \n"
 
         "void main(void) { \n"
 
-        "   vec3 L = light_pos.xyz - fP.xyz; \n"
-        "   vec3 V = -fP.xyz; \n"
+        "   highp vec3 L = light_pos.xyz - fP.xyz; \n"
+        "   highp vec3 V = -fP.xyz; \n"
 
-        "   vec3 N = normalize(fN); \n"
+        "   highp vec3 N = normalize(fN); \n"
         "   L = normalize(L); \n"
         "   V = normalize(V); \n"
 
-        "   vec3 R = reflect(-L, N); \n"
-        "   vec4 diffuse = max(dot(N,L), 0.0) * light_diff * color; \n"
-        "   vec4 specular = pow(max(dot(R,V), 0.0), spec_power) * light_spec; \n"
+        "   highp vec3 R = reflect(-L, N); \n"
+        "   highp vec4 diffuse = max(dot(N,L), 0.0) * light_diff * color; \n"
+        "   highp vec4 specular = pow(max(dot(R,V), 0.0), spec_power) * light_spec; \n"
 
-        "gl_FragColor = light_amb*color + diffuse  ; \n"
+        "out_color = light_amb*color + diffuse  ; \n"
         "} \n"
         "\n"
     };
@@ -111,21 +120,23 @@ void Viewer::compile_shaders()
              //Vertex source code
              const char vertex_source_no_ext[] =
              {
-                 "#version 120 \n"
-                 "attribute highp vec4 vertex;\n"
+                 "#version 150 \n"
+                 "in highp vec4 vertex;\n"
                  "uniform highp mat4 mvp_matrix;\n"
                  "void main(void)\n"
                  "{\n"
+                 "   gl_PointSize = 4.0;\n"
                  "   gl_Position = mvp_matrix * vertex;\n"
                  "}"
              };
              //Vertex source code
              const char fragment_source_no_ext[] =
              {
-                 "#version 120 \n"
+                 "#version 150 \n"
                  "uniform highp vec4 color; \n"
+                 "out highp vec4 out_color; \n"
                  "void main(void) { \n"
-                 "gl_FragColor = color; \n"
+                 "out_color = color; \n"
                  "} \n"
                  "\n"
              };
@@ -284,9 +295,6 @@ void Viewer::initialize_buffers()
         buffers[6].release();
     }
     vao[2].release();
-
-
-
 }
 
 void Viewer::compute_elements()
@@ -316,8 +324,8 @@ void Viewer::compute_elements()
 
 
 
-            P = rings*M_PI/180.0;
-            T = t*M_PI/180.0;
+            P = rings*CGAL_PI/180.0;
+            T = t*CGAL_PI/180.0;
             x[1] = sin(P) * cos(T) ;
             y[1] = sin(P) * sin(T) ;
             z[1] = cos(P);
@@ -331,8 +339,8 @@ void Viewer::compute_elements()
             normals.push_back(z[1]);
 
             //
-            P = rings*M_PI/180.0;
-            T = (t+sectors)*M_PI/180.0;
+            P = rings*CGAL_PI/180.0;
+            T = (t+sectors)*CGAL_PI/180.0;
             x[2] = sin(P) * cos(T) ;
             y[2] = sin(P) * sin(T) ;
             z[2] = cos(P);
@@ -351,8 +359,8 @@ void Viewer::compute_elements()
             for(int t=0; t<360; t+=sectors)
             {
                 //A
-                P = p*M_PI/180.0;
-                T = t*M_PI/180.0;
+                P = p*CGAL_PI/180.0;
+                T = t*CGAL_PI/180.0;
                 x[0] = sin(P) * cos(T) ;
                 y[0] = sin(P) * sin(T) ;
                 z[0] = cos(P);
@@ -367,8 +375,8 @@ void Viewer::compute_elements()
                 normals.push_back(z[0]);
 
                 //B
-                P = (p+rings)*M_PI/180.0;
-                T = t*M_PI/180.0;
+                P = (p+rings)*CGAL_PI/180.0;
+                T = t*CGAL_PI/180.0;
                 x[1] = sin(P) * cos(T) ;
                 y[1] = sin(P) * sin(T) ;
                 z[1] = cos(P);
@@ -382,8 +390,8 @@ void Viewer::compute_elements()
                 normals.push_back(z[1]);
 
                 //C
-                P = p*M_PI/180.0;
-                T = (t+sectors)*M_PI/180.0;
+                P = p*CGAL_PI/180.0;
+                T = (t+sectors)*CGAL_PI/180.0;
                 x[2] = sin(P) * cos(T) ;
                 y[2] = sin(P) * sin(T) ;
                 z[2] = cos(P);
@@ -396,8 +404,8 @@ void Viewer::compute_elements()
                 normals.push_back(y[2]);
                 normals.push_back(z[2]);
                 //D
-                P = (p+rings)*M_PI/180.0;
-                T = (t+sectors)*M_PI/180.0;
+                P = (p+rings)*CGAL_PI/180.0;
+                T = (t+sectors)*CGAL_PI/180.0;
                 x[3] = sin(P) * cos(T) ;
                 y[3] = sin(P) * sin(T) ;
                 z[3] = cos(P);
@@ -446,8 +454,8 @@ void Viewer::compute_elements()
             normals.push_back(-1);
 
 
-            P = (180-rings)*M_PI/180.0;
-            T = t*M_PI/180.0;
+            P = (180-rings)*CGAL_PI/180.0;
+            T = t*CGAL_PI/180.0;
             x[1] = sin(P) * cos(T) ;
             y[1] = sin(P) * sin(T) ;
             z[1] = cos(P);
@@ -461,8 +469,8 @@ void Viewer::compute_elements()
             normals.push_back(z[1]);
 
 
-            P = (180-rings)*M_PI/180.0;
-            T = (t+sectors)*M_PI/180.0;
+            P = (180-rings)*CGAL_PI/180.0;
+            T = (t+sectors)*CGAL_PI/180.0;
             x[2] = sin(P) * cos(T) ;
             y[2] = sin(P) * sin(T) ;
             z[2] = cos(P);
@@ -501,8 +509,8 @@ void Viewer::compute_elements()
 
 
 
-            P = rings*M_PI/180.0;
-            T = t*M_PI/180.0;
+            P = rings*CGAL_PI/180.0;
+            T = t*CGAL_PI/180.0;
             x[1] = sin(P) * cos(T) ;
             y[1] = sin(P) * sin(T) ;
             z[1] = cos(P);
@@ -516,8 +524,8 @@ void Viewer::compute_elements()
             normals_inter.push_back(z[1]);
 
             //
-            P = rings*M_PI/180.0;
-            T = (t+sectors)*M_PI/180.0;
+            P = rings*CGAL_PI/180.0;
+            T = (t+sectors)*CGAL_PI/180.0;
             x[2] = sin(P) * cos(T) ;
             y[2] = sin(P) * sin(T) ;
             z[2] = cos(P);
@@ -536,8 +544,8 @@ void Viewer::compute_elements()
             for(int t=0; t<360; t+=sectors)
             {
                 //A
-                P = p*M_PI/180.0;
-                T = t*M_PI/180.0;
+                P = p*CGAL_PI/180.0;
+                T = t*CGAL_PI/180.0;
                 x[0] = sin(P) * cos(T) ;
                 y[0] = sin(P) * sin(T) ;
                 z[0] = cos(P);
@@ -552,8 +560,8 @@ void Viewer::compute_elements()
                 normals_inter.push_back(z[0]);
 
                 //B
-                P = (p+rings)*M_PI/180.0;
-                T = t*M_PI/180.0;
+                P = (p+rings)*CGAL_PI/180.0;
+                T = t*CGAL_PI/180.0;
                 x[1] = sin(P) * cos(T) ;
                 y[1] = sin(P) * sin(T) ;
                 z[1] = cos(P);
@@ -567,8 +575,8 @@ void Viewer::compute_elements()
                 normals_inter.push_back(z[1]);
 
                 //C
-                P = p*M_PI/180.0;
-                T = (t+sectors)*M_PI/180.0;
+                P = p*CGAL_PI/180.0;
+                T = (t+sectors)*CGAL_PI/180.0;
                 x[2] = sin(P) * cos(T) ;
                 y[2] = sin(P) * sin(T) ;
                 z[2] = cos(P);
@@ -581,8 +589,8 @@ void Viewer::compute_elements()
                 normals_inter.push_back(y[2]);
                 normals_inter.push_back(z[2]);
                 //D
-                P = (p+rings)*M_PI/180.0;
-                T = (t+sectors)*M_PI/180.0;
+                P = (p+rings)*CGAL_PI/180.0;
+                T = (t+sectors)*CGAL_PI/180.0;
                 x[3] = sin(P) * cos(T) ;
                 y[3] = sin(P) * sin(T) ;
                 z[3] = cos(P);
@@ -631,8 +639,8 @@ void Viewer::compute_elements()
             normals_inter.push_back(-1);
 
 
-            P = (180-rings)*M_PI/180.0;
-            T = t*M_PI/180.0;
+            P = (180-rings)*CGAL_PI/180.0;
+            T = t*CGAL_PI/180.0;
             x[1] = sin(P) * cos(T) ;
             y[1] = sin(P) * sin(T) ;
             z[1] = cos(P);
@@ -646,8 +654,8 @@ void Viewer::compute_elements()
             normals_inter.push_back(z[1]);
 
 
-            P = (180-rings)*M_PI/180.0;
-            T = (t+sectors)*M_PI/180.0;
+            P = (180-rings)*CGAL_PI/180.0;
+            T = (t+sectors)*CGAL_PI/180.0;
             x[2] = sin(P) * cos(T) ;
             y[2] = sin(P) * sin(T) ;
             z[2] = cos(P);
@@ -668,8 +676,6 @@ void Viewer::compute_elements()
     {
         pos_points.resize(0);
         pos_lines.resize(0);
-        // Restore previous viewer state.
-        restoreStateFromFile();
 
         //random generator of points within a sphere
         typedef CGAL::Creator_uniform_3<EPIC::FT,EPIC::Point_3>   Creator;
@@ -722,7 +728,7 @@ void Viewer::compute_elements()
     }
 }
 
-void Viewer::attrib_buffers(QGLViewer* viewer)
+void Viewer::attrib_buffers(CGAL::QGLViewer* viewer)
 {
     QMatrix4x4 mvpMatrix;
     QMatrix4x4 mvMatrix;
@@ -738,18 +744,18 @@ void Viewer::attrib_buffers(QGLViewer* viewer)
         mvMatrix.data()[i] = (float)mat[i];
     }
     // define material
-    QVector4D	ambient(0.1f, 0.1f, 0.1f, 1.0f);
-    QVector4D	diffuse( 0.9f,
+    QVector4D        ambient(0.1f, 0.1f, 0.1f, 1.0f);
+    QVector4D        diffuse( 0.9f,
                          0.9f,
                          0.9f,
                          0.0f );
 
-    QVector4D	specular(  0.0f,
+    QVector4D        specular(  0.0f,
                            0.0f,
                            0.0f,
                            0.0f );
 
-    QVector4D	position( -1.2f, 1.2f, .9797958971f, 1.0f  );
+    QVector4D        position( -1.2f, 1.2f, .9797958971f, 1.0f  );
     GLfloat shininess =  1.0f;
 
 
@@ -813,12 +819,10 @@ void Viewer::draw()
     }
     else
     {
-        glPointSize(4.0f);
         rendering_program_no_ext.bind();
         rendering_program_no_ext.setUniformValue(colorLocation, color);
         glDrawArrays(GL_POINTS, 0, static_cast<GLsizei>(pos_points.size()/3));
         rendering_program_no_ext.release();
-        glPointSize(1.0f);
     }
 
     vao[2].release();
@@ -833,7 +837,6 @@ void Viewer::draw()
     glDrawArrays(GL_LINES, 0, static_cast<GLsizei>(pos_lines.size()/3));
     rendering_program.release();
     vao[1].release();
-
 
 }
 
@@ -899,7 +902,7 @@ void Viewer::naive_compute_intersection_points(const std::vector<EPIC::Point_3>&
                 for (std::vector <CGAL::Object>::const_iterator it_pt=intersections.begin();it_pt!=intersections.end();++it_pt){
                     const std::pair<SK::Circular_arc_point_3,unsigned>* pt=
                             CGAL::object_cast< std::pair<SK::Circular_arc_point_3,unsigned> > (&(*it_pt));
-                    assert(pt!=NULL);
+                    assert(pt!=nullptr);
                     *out++=EPIC::Point_3( CGAL::to_double(pt->first.x()),
                                           CGAL::to_double(pt->first.y()),
                                           CGAL::to_double(pt->first.z())

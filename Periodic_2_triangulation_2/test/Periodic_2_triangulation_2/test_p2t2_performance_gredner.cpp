@@ -19,7 +19,7 @@ int main()
 #include <fstream>
 
 #include <ctime>
-#include <algorithm>
+#include <CGAL/algorithm.h>
 
 const bool pre_run = false;
 const bool do_remove = true;
@@ -44,7 +44,7 @@ bool load_data(const char *filename, Iso_rectangle &domain, std::vector<Point> &
     while (coords[1] < 0) coords[1] += dom[1];
     while (coords[0] >= dom[0]) coords[0] -= dom[0];
     while (coords[1] >= dom[1]) coords[1] -= dom[1];
-    
+
     pts.push_back(Point(coords[0], coords[1]));
   }
   return true;
@@ -63,7 +63,7 @@ void test(const std::vector<Point> &input, T &t)
           vhs.push_back(it);
         }
 
-      std::random_shuffle(vhs.begin(), vhs.end());
+      CGAL::cpp98::random_shuffle(vhs.begin(), vhs.end());
       vhs.resize(vhs.size() / 2);
       for (size_t i = 0; i < vhs.size(); ++i)
         t.remove(vhs[i]);

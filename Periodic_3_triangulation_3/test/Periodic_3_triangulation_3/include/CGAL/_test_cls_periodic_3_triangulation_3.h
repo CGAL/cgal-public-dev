@@ -2,19 +2,10 @@
 // All rights reserved.
 //
 // This file is part of CGAL (www.cgal.org).
-// You can redistribute it and/or modify it under the terms of the GNU
-// General Public License as published by the Free Software Foundation,
-// either version 3 of the License, or (at your option) any later version.
-//
-// Licensees holding a valid commercial license may use this file in
-// accordance with the commercial license agreement provided with the software.
-//
-// This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
-// WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 //
 // $URL$
 // $Id$
-// SPDX-License-Identifier: GPL-3.0+
+// SPDX-License-Identifier: GPL-3.0-or-later OR LicenseRef-Commercial
 //
 //
 // Author(s)     : Francois Rebufat
@@ -31,23 +22,6 @@
 #include <sstream>
 #include <list>
 #include <vector>
-
-template <class PeriodicTriangulation>
-void
-_test_periodic_3_triangulation_3_constructors(const PeriodicTriangulation &)
-{
-  std::cout<<"Creation"<<std::endl;
-  PeriodicTriangulation PT_def;
-  assert(PT_def.is_valid());
-
-  PeriodicTriangulation PT_dom(
-        typename PeriodicTriangulation::Iso_cuboid(-1,-2,-3,3,2,1));
-  assert(PT_def.is_valid());
-
-  PeriodicTriangulation PT_cp(PT_dom);
-  assert(PT_dom.is_valid());
-  assert(PT_cp == PT_dom);
-}
 
 template <class PeriodicTriangulation>
 void
@@ -212,7 +186,10 @@ _test_cls_periodic_3_triangulation_3(const PeriodicTriangulation &,
            << ((domain.ymax()-domain.ymin()) == (domain.zmax()-domain.zmin()))
            << std::endl;
 
-  P3T3 PT_constr(domain);
+  std::cout << "Copy Constructor" << std::endl;
+  P3T3 PT_cp(PT3);
+  assert(PT_cp.is_valid());
+  assert(PT_cp == PT3);
 
   std::cout<<"Assignment"<<std::endl;
 
@@ -329,7 +306,7 @@ _test_cls_periodic_3_triangulation_3(const PeriodicTriangulation &,
 
   std::cout<<"Geometric access functions"<<std::endl;
 
-  Cell_handle ch = PT3.locate(Point(-1,-1,1));
+  Cell_handle ch = PT3.locate(Point(-1,-1,-1));
   assert(PT3.periodic_point(ch->vertex(0)).second != Offset());
   assert(PT3.periodic_point(ch,2).second != Offset());
   PT3.point(PT3.periodic_point(ch,0));
@@ -489,11 +466,10 @@ _test_cls_periodic_3_triangulation_3(const PeriodicTriangulation &,
   assert(lt == P3T3::VERTEX);
   assert(c->vertex(li)->point() == Point(2,2,2));
 
-  c = P3T3().locate(Point(1,2,3),lt,li,lj);
+  c = P3T3().locate(Point(0,0,0),lt,li,lj);
   assert(c == Cell_handle());
   assert(lt == P3T3::EMPTY);
-  assert(P3T3().side_of_cell(Point(1,2,3),c,lt,li,lj)
-         == CGAL::ON_UNBOUNDED_SIDE);
+  assert(P3T3().side_of_cell(Point(0,0,0),c,lt,li,lj) == CGAL::ON_UNBOUNDED_SIDE);
   assert(lt == P3T3::EMPTY);
 
   std::cout << "Testing Iterators   "<< std::endl;
@@ -660,7 +636,7 @@ _test_cls_periodic_3_triangulation_3(const PeriodicTriangulation &,
   if(test_input_ouput)
   {
     std::cout << "I/O" << std::endl;
-    std::cout << "  ascii" << std::endl;
+    std::cout << "  ASCII" << std::endl;
 
     std::stringstream ss1;
     std::stringstream ss3;
@@ -671,8 +647,8 @@ _test_cls_periodic_3_triangulation_3(const PeriodicTriangulation &,
     ss1 >> PT1r;
     ss3 >> PT3r;
 
-    assert(CGAL::is_ascii(ss1));
-    assert(CGAL::is_ascii(ss3));
+    assert(CGAL::IO::is_ascii(ss1));
+    assert(CGAL::IO::is_ascii(ss3));
     if (!ex) assert(PT1 == PT1r);
     if (!ex) assert(PT3 == PT3r);
 
@@ -683,15 +659,15 @@ _test_cls_periodic_3_triangulation_3(const PeriodicTriangulation &,
     if (!ex) {
       std::stringstream ss1b;
       std::stringstream ss3b;
-      CGAL::set_binary_mode(ss1b);
-      CGAL::set_binary_mode(ss3b);
+      CGAL::IO::set_binary_mode(ss1b);
+      CGAL::IO::set_binary_mode(ss3b);
       ss1b << PT1;
       ss3b << PT3;
 
       ss1b >> PT1r;
       ss3b >> PT3r;
-      assert(CGAL::is_binary(ss1b));
-      assert(CGAL::is_binary(ss3b));
+      assert(CGAL::IO::is_binary(ss1b));
+      assert(CGAL::IO::is_binary(ss3b));
 
       assert(PT1 == PT1r);
       assert(PT3 == PT3r);
@@ -703,12 +679,12 @@ _test_cls_periodic_3_triangulation_3(const PeriodicTriangulation &,
     PT3r.clear();
     std::stringstream ss1p;
     std::stringstream ss3p;
-    CGAL::set_pretty_mode(ss1p);
-    CGAL::set_pretty_mode(ss3p);
+    CGAL::IO::set_pretty_mode(ss1p);
+    CGAL::IO::set_pretty_mode(ss3p);
     ss1p << PT1;
     ss3p << PT3;
 
-    assert(CGAL::is_pretty(ss1p));
-    assert(CGAL::is_pretty(ss3p));
+    assert(CGAL::IO::is_pretty(ss1p));
+    assert(CGAL::IO::is_pretty(ss3p));
   }
 }

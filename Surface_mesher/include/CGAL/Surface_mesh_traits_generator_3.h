@@ -2,19 +2,10 @@
 // All rights reserved.
 //
 // This file is part of CGAL (www.cgal.org).
-// You can redistribute it and/or modify it under the terms of the GNU
-// General Public License as published by the Free Software Foundation,
-// either version 3 of the License, or (at your option) any later version.
-//
-// Licensees holding a valid commercial license may use this file in
-// accordance with the commercial license agreement provided with the software.
-//
-// This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
-// WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 //
 // $URL$
 // $Id$
-// SPDX-License-Identifier: GPL-3.0+
+// SPDX-License-Identifier: GPL-3.0-or-later OR LicenseRef-Commercial
 //
 // Author(s)     : Laurent Rineau
 
@@ -31,14 +22,14 @@ namespace CGAL {
 template <class K>
 class Sphere_3;
 
-/** Defaut traits class.
+/** Default traits class.
  *  Partial specialization will be in other headers
 */
 template <typename Surface>
-struct Surface_mesh_traits_generator_3 
+struct Surface_mesh_traits_generator_3
 {
   typedef typename Surface::Surface_mesher_traits_3 Type;
-  typedef Type type; // for Boost compatiblity (meta-programming)
+  typedef Type type; // for Boost compatibility (meta-programming)
 };
 
   // specialization for Kernel::Sphere_3
@@ -46,7 +37,7 @@ template <typename Kernel>
 struct Surface_mesh_traits_generator_3<CGAL::Sphere_3<Kernel> >
 {
   typedef Surface_mesher::Sphere_oracle_3<Kernel> Type;
-  typedef Type type; // for Boost compatiblity (meta-programming)
+  typedef Type type; // for Boost compatibility (meta-programming)
 };
 
 } // end namespace CGAL

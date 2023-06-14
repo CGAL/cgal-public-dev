@@ -10,7 +10,6 @@
 
 #include <CGAL/Polygon_mesh_processing/measure.h>
 
-#include <boost/foreach.hpp>
 
 #include <cstdlib>
 #include <iostream>
@@ -27,16 +26,16 @@ typedef boost::graph_traits<SurfaceMesh>::face_descriptor      face_descriptor;
 
 namespace SMP = CGAL::Surface_mesh_parameterization;
 
-int main(int argc, char * argv[])
+int main(int argc, char** argv)
 {
-  std::ifstream in((argc>1) ? argv[1] : "data/three_peaks.off");
-  if(!in) {
-    std::cerr << "Problem loading the input data" << std::endl;
-    return 1;
-  }
+  const std::string filename = (argc>1) ? argv[1] : CGAL::data_file_path("meshes/three_peaks.off");
 
   SurfaceMesh sm;
-  in >> sm;
+  if(!CGAL::IO::read_polygon_mesh(filename, sm))
+  {
+    std::cerr << "Invalid input file." << std::endl;
+    return EXIT_FAILURE;
+  }
 
   // A halfedge on the border
   halfedge_descriptor bhd = CGAL::Polygon_mesh_processing::longest_border(sm).first;
@@ -52,11 +51,11 @@ int main(int argc, char * argv[])
 
   if(err != SMP::OK) {
     std::cerr << "Error: " << SMP::get_error_message(err) << std::endl;
-    return 1;
+    return EXIT_FAILURE;
   }
 
   std::ofstream out("result.off");
   SMP::IO::output_uvmap_to_off(sm, bhd, uv_map, out);
 
-  return 0;
+  return EXIT_SUCCESS;
 }

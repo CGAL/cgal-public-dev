@@ -7,6 +7,7 @@ The concept `SurfaceMeshShortestPathTraits` describes the types,
 predicates, and constructions required by the traits class parameter of
 `CGAL::Surface_mesh_shortest_path`.
 
+\cgalRefines{CopyConstructible,Assignable}
 \cgalHasModel `CGAL::Surface_mesh_shortest_path_traits<K,P>`
 
 */
@@ -151,7 +152,7 @@ public:
   /*!
   Function object type.
   Must provide
-  `CGAL::cpp11::result_of<Intersect_2(A,B)>::%type operator()(A obj1, B obj2)`
+  `boost::optional< boost::variant< T... > > operator()(A obj1, B obj2)`
   to compute the intersection between `obj1` and `obj2`, where `A` and `B` can be any type amongst
   `Line_2`, `Ray_2`, `Segment_2`.
   */
@@ -330,19 +331,11 @@ public:
 
 /// @}
 
-/// \name Creation
-/// @{
-  /*!
-  */
-  SurfaceMeshShortestPathTraits(SurfaceMeshShortestPathTraits& copy);
-
-/// @}
-
 /// \name Operations
 /// For all of the above predicate and construction types, e.g. `Func_obj_type`, a function must exist with the name `func_obj_type_object()` that creates an instance of the construction or predicate object type.
 /// For example:
 /// @{
-
+  /// returns the point construction functor.
   Construct_point_2 construct_point_2_object();
 
 /// @}

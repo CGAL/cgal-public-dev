@@ -11,9 +11,8 @@
 #include <CGAL/Unique_hash_map.h>
 
 #include <boost/array.hpp>
-#include <boost/foreach.hpp>
-#include <boost/unordered_set.hpp>
 
+#include <unordered_set>
 #include <cstdlib>
 #include <iostream>
 #include <fstream>
@@ -41,7 +40,7 @@ bool read_vertices(const PolyMesh& mesh,
                    Vd_array& fixed_vertices)
 {
   std::string str = filename;
-  if(str.substr(str.length() - 14) != ".selection.txt") {
+  if( (str.length()) < 14 || (str.substr(str.length() - 14) != ".selection.txt") ) {
     std::cerr << "Error: vertices must be given by a *.selection.txt file" << std::endl;
     return false;
   }
@@ -66,7 +65,7 @@ bool read_vertices(const PolyMesh& mesh,
   std::size_t counter = 0;
   std::istringstream point_line(line);
   std::size_t s;
-  boost::unordered_set<std::size_t> indices;
+  std::unordered_set<std::size_t> indices;
   while(point_line >> s) {
     if(s >= vds.size())
     {
@@ -97,9 +96,9 @@ bool read_vertices(const PolyMesh& mesh,
   return true;
 }
 
-int main(int argc, char * argv[])
+int main(int argc, char** argv)
 {
-  std::ifstream in((argc>1) ? argv[1] : "data/nefertiti.off");
+  std::ifstream in((argc>1) ? argv[1] : CGAL::data_file_path("meshes/nefertiti.off"));
   if(!in){
     std::cerr << "Error: problem loading the input data" << std::endl;
     return 1;
@@ -118,7 +117,7 @@ int main(int argc, char * argv[])
   Vd_array vda;
   if(!read_vertices(sm, filename, vda)) {
     std::cerr << "Error: problem loading the square corners" << std::endl;
-    return 1;
+    return EXIT_FAILURE;
   }
 
   typedef SMP::Square_border_uniform_parameterizer_3<PolyMesh> Border_parameterizer;
@@ -138,5 +137,5 @@ int main(int argc, char * argv[])
   std::ofstream out("result.off");
   SMP::IO::output_uvmap_to_off(sm, bhd, uv_map, out);
 
-  return 0;
+  return EXIT_SUCCESS;
 }

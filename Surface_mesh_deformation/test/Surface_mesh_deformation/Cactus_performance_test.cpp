@@ -6,7 +6,6 @@
 
 #include <CGAL/Polyhedron_3.h>
 #include <CGAL/Polyhedron_items_with_id_3.h>
-#include <CGAL/IO/Polyhedron_iostream.h>
 
 #include <CGAL/Simple_cartesian.h>
 #include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
@@ -28,7 +27,7 @@ typedef CGAL::Surface_mesh_deformation<Polyhedron, CGAL::Default, CGAL::Default,
 int main()
 {
   Polyhedron mesh_1;
-  read_to_polyhedron("data/cactus.off", mesh_1);
+  read_to_polyhedron(CGAL::data_file_path("meshes/cactus.off"), mesh_1);
   Polyhedron mesh_2 = mesh_1;
 
   init_indices(mesh_1);

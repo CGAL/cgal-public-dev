@@ -1,33 +1,24 @@
 #include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
 #include <CGAL/Polygon_mesh_processing/intersection.h>
 
-#ifdef USE_SURFACE_MESH
 #include "Kernel_type.h"
 #include "Scene_surface_mesh_item.h"
-#else
-#include "Scene_polyhedron_item.h"
-#include "Polyhedron_type.h"
-#endif
 #include <CGAL/Three/Polyhedron_demo_plugin_interface.h>
+#include <CGAL/Three/Three.h>
 
 #include "Scene_polylines_item.h"
 #include "Scene_points_with_normal_item.h"
 #include "Messages_interface.h"
-#include <boost/foreach.hpp>
 
 #include <QString>
 #include <QAction>
 #include <QMenu>
 #include <QMainWindow>
 #include <QApplication>
-#include <QTime>
+#include <QElapsedTimer>
 #include <QMessageBox>
 
-#ifdef USE_SURFACE_MESH
 typedef Scene_surface_mesh_item Scene_face_graph_item;
-#else
-typedef Scene_polyhedron_item Scene_face_graph_item;
-#endif
 
 typedef Scene_polylines_item::Polyline Polyline_3;
 typedef boost::graph_traits<Scene_face_graph_item::Face_graph>::face_descriptor face_descriptor;
@@ -41,7 +32,7 @@ class Polyhedron_demo_intersection_plugin :
 {
   Q_OBJECT
   Q_INTERFACES(CGAL::Three::Polyhedron_demo_plugin_interface)
-  Q_PLUGIN_METADATA(IID "com.geometryfactory.PolyhedronDemo.PluginInterface/1.0")
+  Q_PLUGIN_METADATA(IID "com.geometryfactory.PolyhedronDemo.PluginInterface/1.0" FILE "surface_intersection_plugin.json")
 
 public:
 
@@ -78,9 +69,7 @@ public:
   QList<QAction*> actions() const {
     return QList<QAction*>() << actionPolyhedronIntersection_3
                              << actionSurfacePolylineIntersection
-#ifdef USE_SURFACE_MESH
                              << actionPolylinesIntersection
-#endif
                                 ;
   }
 
@@ -119,7 +108,7 @@ public Q_SLOTS:
 
 void Polyhedron_demo_intersection_plugin::intersectionSurfaces()
 {
-  Scene_face_graph_item* itemA = NULL;
+  Scene_face_graph_item* itemA = nullptr;
   Q_FOREACH(CGAL::Three::Scene_interface::Item_id index, scene->selectionIndices())
   {
     Scene_face_graph_item* itemB =
@@ -127,7 +116,7 @@ void Polyhedron_demo_intersection_plugin::intersectionSurfaces()
 
     if(itemB)
     {
-      if (itemA==NULL)
+      if (itemA==nullptr)
       {
         itemA = itemB;
         continue;
@@ -135,24 +124,24 @@ void Polyhedron_demo_intersection_plugin::intersectionSurfaces()
       if(!is_triangle_mesh(*itemA->face_graph())
          || !is_triangle_mesh(*itemB->face_graph()))
       {
-        mi->error("The two meshes must be triangle meshes.");
+        CGAL::Three::Three::error("The two meshes must be triangle meshes.");
       }
       QApplication::setOverrideCursor(Qt::WaitCursor);
 
       Scene_polylines_item* new_item = new Scene_polylines_item();
      // perform Boolean operation
-      QTime time;
+      QElapsedTimer time;
       time.start();
 
       try{
         PMP::surface_intersection(*itemA->polyhedron(),
                                   *itemB->polyhedron(),
                                   std::back_inserter(new_item->polylines),
-                                  true);
+                                  CGAL::parameters::throw_on_self_intersection(true));
       }
-      catch(CGAL::Corefinement::Self_intersection_exception)
+      catch(const CGAL::Polygon_mesh_processing::Corefinement::Self_intersection_exception&)
       {
-        QMessageBox::warning((QWidget*)NULL,
+        QMessageBox::warning((QWidget*)nullptr,
           tr("Self-intersections Found"),
           tr("Some self-intersections were found amongst intersecting facets"));
         delete new_item;
@@ -185,7 +174,7 @@ void Polyhedron_demo_intersection_plugin::intersectionPolylines()
       std::pair<std::size_t, std::size_t>,
       std::pair<std::size_t, std::size_t> >  Poly_intersection;
 
-  Scene_polylines_item* itemA = NULL;
+  Scene_polylines_item* itemA = nullptr;
   Q_FOREACH(CGAL::Three::Scene_interface::Item_id index, scene->selectionIndices())
   {
     Scene_polylines_item* itemB =
@@ -193,7 +182,7 @@ void Polyhedron_demo_intersection_plugin::intersectionPolylines()
 
     if(itemB)
     {
-      if (itemA==NULL)
+      if (itemA==nullptr)
       {
         itemA = itemB;
         continue;
@@ -204,7 +193,7 @@ void Polyhedron_demo_intersection_plugin::intersectionPolylines()
       Scene_points_with_normal_item* new_point_item = new Scene_points_with_normal_item();
       Scene_polylines_item* new_pol_item = new Scene_polylines_item();
      // perform Boolean operation
-      QTime time;
+      QElapsedTimer time;
       time.start();
       std::vector<Polyline_3> polyA, polyB;
       Q_FOREACH(const Polyline_3& poly, itemA->polylines)
@@ -293,14 +282,14 @@ void Polyhedron_demo_intersection_plugin::intersectionSurfacePolyline()
 
   if(!is_triangle_mesh(*itemA->face_graph()))
   {
-    mi->error("The mesh must be a triangle mesh.");
+    CGAL::Three::Three::error("The mesh must be a triangle mesh.");
   }
   QApplication::setOverrideCursor(Qt::WaitCursor);
 
   Scene_points_with_normal_item* new_point_item = new Scene_points_with_normal_item();
   Scene_polylines_item* new_pol_item = new Scene_polylines_item();
   // perform Boolean operation
-  QTime time;
+  QElapsedTimer time;
   time.start();
   Scene_face_graph_item::Face_graph tm = *itemA->face_graph();
   std::vector<face_descriptor> Afaces;
@@ -322,7 +311,7 @@ void Polyhedron_demo_intersection_plugin::intersectionSurfacePolyline()
                                                      polylines,
                                                      *itemA->face_graph(),
                                                      std::back_inserter(poly_intersections),
-                                                     CGAL::Polygon_mesh_processing::parameters::all_default());
+                                                     CGAL::parameters::default_values());
 
   Q_FOREACH(const Poly_intersection& inter, poly_intersections)
   {

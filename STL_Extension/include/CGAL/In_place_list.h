@@ -1,25 +1,16 @@
-// Copyright (c) 2003  
+// Copyright (c) 2003
 // Utrecht University (The Netherlands),
 // ETH Zurich (Switzerland),
 // INRIA Sophia-Antipolis (France),
 // Max-Planck-Institute Saarbruecken (Germany),
-// and Tel-Aviv University (Israel).  All rights reserved. 
+// and Tel-Aviv University (Israel).  All rights reserved.
 //
-// This file is part of CGAL (www.cgal.org); you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public License as
-// published by the Free Software Foundation; either version 3 of the License,
-// or (at your option) any later version.
-//
-// Licensees holding a valid commercial license may use this file in
-// accordance with the commercial license agreement provided with the software.
-//
-// This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
-// WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+// This file is part of CGAL (www.cgal.org)
 //
 // $URL$
 // $Id$
-// SPDX-License-Identifier: LGPL-3.0+
-// 
+// SPDX-License-Identifier: LGPL-3.0-or-later OR LicenseRef-Commercial
+//
 //
 // Author(s)     : Michael Hoffmann <hoffmann@inf.ethz.ch>
 //                 Lutz Kettner <kettner@mpi-sb.mpg.de>
@@ -36,7 +27,6 @@
 #include <functional>
 #include <algorithm>
 #include <CGAL/memory.h>
-#include <boost/functional/hash.hpp>
 
 namespace CGAL {
 
@@ -58,6 +48,10 @@ public:
 template < class T >
 class In_place_list_base {
 public:
+  In_place_list_base()
+    : next_link(nullptr), prev_link(nullptr)
+  {}
+
   T* next_link;        // forward pointer
   T* prev_link;        // backwards pointer
   //friend  class internal::In_place_list_iterator<T, Alloc>;
@@ -91,6 +85,8 @@ namespace internal {
 
     bool  operator==( const Self& x) const { return node == x.node; }
     bool  operator!=( const Self& x) const { return node != x.node; }
+    bool  operator==( std::nullptr_t) const { return node == nullptr; }
+    bool  operator!=( std::nullptr_t) const { return node != nullptr; }
     bool  operator< ( const Self& x) const { return node< x.node;   }
     bool  operator<=( const Self& x) const { return node<= x.node;  }
     bool  operator> ( const Self& x) const { return node> x.node;   }
@@ -139,11 +135,13 @@ namespace internal {
     typedef std::bidirectional_iterator_tag   iterator_category;
 
     In_place_list_const_iterator() : node(0) {}
-    In_place_list_const_iterator( Iterator i) : node(&*i) {}
+    In_place_list_const_iterator(Iterator i) : node(i.operator->()) {}
     In_place_list_const_iterator(const T* x) : node(x) {}
 
     bool     operator==( const Self& x) const { return node == x.node; }
     bool     operator!=( const Self& x) const { return node != x.node; }
+    bool     operator==( std::nullptr_t) const { return node == nullptr; }
+    bool     operator!=( std::nullptr_t) const { return node != nullptr; }
     bool     operator< ( const Self& x) const { return node< x.node;   }
     bool     operator<=( const Self& x) const { return node<= x.node;  }
     bool     operator> ( const Self& x) const { return node> x.node;   }
@@ -176,11 +174,10 @@ namespace internal {
   };
 
 
-
 template <class T, class Alloc>
   std::size_t hash_value(const In_place_list_iterator<T,Alloc>&  i)
   {
-    T* ptr = &*i;
+    T* ptr = i.operator->();
     return reinterpret_cast<std::size_t>(ptr)/ sizeof(T);
   }
 
@@ -188,9 +185,9 @@ template <class T, class Alloc>
 template <class T, class Alloc>
   std::size_t hash_value(const In_place_list_const_iterator<T,Alloc>&  i)
   {
-    const T* ptr = &*i;
+    const T* ptr = i.operator->();
     return reinterpret_cast<std::size_t>(ptr)/ sizeof(T);
-   }
+  }
 
 }
 
@@ -238,13 +235,15 @@ public:
   // Note: the standard requires the following types to be equivalent
   // to T, T*, const T*, T&, const T&, size_t, and ptrdiff_t, respectively.
   // So we don't pass these types to the iterators explicitly.
-  typedef typename Allocator::value_type          value_type;
-  typedef typename Allocator::pointer             pointer;
-  typedef typename Allocator::const_pointer       const_pointer;
-  typedef typename Allocator::reference           reference;
-  typedef typename Allocator::const_reference     const_reference;
-  typedef typename Allocator::size_type           size_type;
-  typedef typename Allocator::difference_type     difference_type;
+
+  typedef typename std::allocator_traits<Allocator>::value_type            value_type;
+  typedef typename std::allocator_traits<Allocator>::pointer               pointer;
+  typedef typename std::allocator_traits<Allocator>::const_pointer         const_pointer;
+  typedef typename std::allocator_traits<Allocator>::size_type             size_type;
+  typedef typename std::allocator_traits<Allocator>::difference_type       difference_type;
+
+  typedef value_type&       reference;
+  typedef const value_type& const_reference;
 
   typedef internal::In_place_list_iterator<T, Alloc> iterator;
   typedef internal::In_place_list_const_iterator<T, Alloc> const_iterator;
@@ -273,16 +272,16 @@ protected:
   pointer get_node( const T& t) {
     pointer p = allocator.allocate(1);
 #ifdef CGAL_USE_ALLOCATOR_CONSTRUCT_DESTROY
-    allocator.construct(p, t);
+    std::allocator_traits<Allocator>::construct(allocator, p, t);
 #else
     new (p) value_type(t);
 #endif
     return p;
   }
   void put_node( pointer p) {
-#ifdef CGAL_USE_ALLOCATOR_CONSTRUCT_DESTROY  
-    allocator.destroy( p);
-#else 
+#ifdef CGAL_USE_ALLOCATOR_CONSTRUCT_DESTROY
+    std::allocator_traits<Allocator>::destroy(allocator, p);
+#else // not CGAL_USE_ALLOCATOR_CONSTRUCT_DESTROY
    p->~value_type();
 #endif
     allocator.deallocate( p, 1);
@@ -448,9 +447,11 @@ public:
     (*node).prev_link = node;
     insert(begin(), x.begin(), x.end());
   }
-  ~In_place_list() {
-    erase(begin(), end());
-    put_node(node);
+  ~In_place_list() noexcept {
+    try {
+      erase(begin(), end());
+      put_node(node);
+    } catch(...) {}
   }
 
   Self& operator=(const Self& x);
@@ -572,14 +573,14 @@ public:
 
   void merge(Self& x);
   // merges the list x into the list `l' and x becomes empty. It is
-  // stable. Precondition: Both lists are increasingly sorted. A
-  // suitable `operator<' for the type T.
+  // stable. Precondition: Both lists are sorted in increasing order
+  // by means of a suitable `operator<` for the type `T`.
 
   template < class StrictWeakOrdering >
   void merge(Self& x, StrictWeakOrdering ord)
   // merges the list x into the list `l' and x becomes empty.
   // It is stable.
-  // Precondition: Both lists are increasingly sorted wrt. ord.
+  // Precondition: Both lists are sorted in increasing order wrt. `ord`.
   {
     iterator first1 = begin();
     iterator last1 = end();
@@ -778,30 +779,28 @@ namespace std {
 
 #if defined(BOOST_MSVC)
 #  pragma warning(push)
-#  pragma warning(disable:4099) // For VC10 it is class hash 
+#  pragma warning(disable:4099) // For VC10 it is class hash
 #endif
 
 #ifndef CGAL_CFG_NO_STD_HASH
 
   template < class T, class Alloc >
   struct hash<CGAL::internal::In_place_list_iterator<T, Alloc> >
-    : public CGAL::unary_function<CGAL::internal::In_place_list_iterator<T, Alloc>, std::size_t>  {
+    : public CGAL::cpp98::unary_function<CGAL::internal::In_place_list_iterator<T, Alloc>, std::size_t>  {
 
     std::size_t operator()(const CGAL::internal::In_place_list_iterator<T, Alloc>& i) const
     {
-      const T* ptr = &*i;
-      return reinterpret_cast<std::size_t>(ptr)/ sizeof(T);
+      return CGAL::internal::hash_value(i);
     }
   };
 
   template < class T, class Alloc >
   struct hash<CGAL::internal::In_place_list_const_iterator<T, Alloc> >
-    : public CGAL::unary_function<CGAL::internal::In_place_list_const_iterator<T, Alloc>, std::size_t> {
+    : public CGAL::cpp98::unary_function<CGAL::internal::In_place_list_const_iterator<T, Alloc>, std::size_t> {
 
     std::size_t operator()(const CGAL::internal::In_place_list_const_iterator<T, Alloc>& i) const
     {
-      const T* ptr = &*i;
-      return reinterpret_cast<std::size_t>(ptr)/ sizeof(T);
+      return CGAL::internal::hash_value(i);
     }
   };
 #endif // CGAL_CFG_NO_STD_HASH

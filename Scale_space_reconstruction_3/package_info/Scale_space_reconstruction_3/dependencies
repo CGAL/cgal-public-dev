@@ -8,7 +8,6 @@ Circulator
 Distance_2
 Distance_3
 Filtered_kernel
-Geomview
 HalfedgeDS
 Hash_map
 Homogeneous_kernel
@@ -23,9 +22,7 @@ Modifier
 Modular_arithmetic
 Number_types
 Point_set_processing_3
-Polygon
 Polyhedron
-Polyhedron_IO
 Profiling_tools
 Property_map
 Random_numbers
@@ -37,6 +34,5 @@ Spatial_sorting
 Stream_support
 TDS_2
 TDS_3
-Triangulation_2
 Triangulation_3
 Union_find

@@ -2,19 +2,10 @@
 // All rights reserved.
 //
 // This file is part of CGAL (www.cgal.org).
-// You can redistribute it and/or modify it under the terms of the GNU
-// General Public License as published by the Free Software Foundation,
-// either version 3 of the License, or (at your option) any later version.
-//
-// Licensees holding a valid commercial license may use this file in
-// accordance with the commercial license agreement provided with the software.
-//
-// This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
-// WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 //
 // $URL$
 // $Id$
-// SPDX-License-Identifier: GPL-3.0+
+// SPDX-License-Identifier: GPL-3.0-or-later OR LicenseRef-Commercial
 //
 //
 // Author(s)     : Stéphane Tayeb, Pierre Alliez
@@ -29,13 +20,12 @@
 
 #define CGAL_DEPRECATED_HEADER "<CGAL/AABB_polyhedron_triangle_primitive.h>"
 #define CGAL_REPLACEMENT_HEADER "<CGAL/AABB_face_graph_triangle_primitive.h>"
-#include <CGAL/internal/deprecation_warning.h>
+#include <CGAL/Installation/internal/deprecation_warning.h>
 
-#include <boost/utility/enable_if.hpp>
-#include <boost/type_traits/is_same.hpp>
+#include <type_traits>
 
 namespace CGAL {
-    /// \ingroup PkgAABB_tree
+    /// \ingroup PkgAABBTreeRef
     /// \deprecated This class is deprecated since \cgal 4.3, the class
     /// `AABB_face_graph_triangle_primitive` should be used instead.
     ///
@@ -85,9 +75,9 @@ namespace CGAL {
             : m_facet_handle(*ptr)  { };
         template <class Iterator>
         AABB_polyhedron_triangle_primitive( Iterator it,
-                                            typename boost::enable_if<
-                                                       boost::is_same<Id,typename Iterator::value_type>
-                                            >::type* =0
+                                            std::enable_if_t<
+                                                std::is_same<Id,typename Iterator::value_type>::value
+                                            >* =0
         ) : m_facet_handle(*it)  { }
 
 

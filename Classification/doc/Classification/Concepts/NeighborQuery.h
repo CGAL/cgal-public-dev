@@ -12,6 +12,8 @@ Concept describing a neighbor query used for classification.
 
 \cgalHasModel `CGAL::Classification::Point_set_neighborhood::K_neighbor_query`
 \cgalHasModel `CGAL::Classification::Point_set_neighborhood::Sphere_neighbor_query`
+\cgalHasModel `CGAL::Classification::Mesh_neighborhood::One_ring_neighbor_query`
+\cgalHasModel `CGAL::Classification::Mesh_neighborhood::N_ring_neighbor_query`
 
 */
 class NeighborQuery
@@ -25,7 +27,7 @@ public:
 
   /*!
 
-    \brief Puts in `output` the indices of the neighbors of `query`.
+    \brief puts in `output` the indices of the neighbors of `query`.
 
     \tparam OutputIterator An output iterator accepting `std::size_t`
     values.

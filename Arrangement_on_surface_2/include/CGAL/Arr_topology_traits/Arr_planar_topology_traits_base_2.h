@@ -2,19 +2,10 @@
 // All rights reserved.
 //
 // This file is part of CGAL (www.cgal.org).
-// You can redistribute it and/or modify it under the terms of the GNU
-// General Public License as published by the Free Software Foundation,
-// either version 3 of the License, or (at your option) any later version.
-//
-// Licensees holding a valid commercial license may use this file in
-// accordance with the commercial license agreement provided with the software.
-//
-// This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
-// WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 //
 // $URL$
 // $Id$
-// SPDX-License-Identifier: GPL-3.0+
+// SPDX-License-Identifier: GPL-3.0-or-later OR LicenseRef-Commercial
 //
 //
 // Author(s)     : Ron Wein <wein@post.tau.ac.il>
@@ -80,8 +71,8 @@ protected:
   Dcel m_dcel;                           // The DCEL.
 
   const Traits_adaptor_2* m_geom_traits; // The geometry-traits adaptor.
-  bool m_own_geom_traits;                // Inidicate whether we should
-                                         // evetually free the traits object.
+  bool m_own_geom_traits;                // Indicate whether we should
+                                         // eventually free the traits object.
 
   // Copy constructor and assignment operator - not supported.
   Arr_planar_topology_traits_base_2(const Self&);
@@ -110,11 +101,12 @@ public:
     // Clear the DCEL.
     m_dcel.delete_all();
 
-    if (m_own_geom_traits && (m_geom_traits != NULL)) {
+    if (m_own_geom_traits && (m_geom_traits != nullptr)) {
       delete m_geom_traits;
-      m_geom_traits = NULL;
+      m_geom_traits = nullptr;
     }
   }
+
   //@}
 
   ///! \name Common topology-traits methods.
@@ -125,6 +117,22 @@ public:
 
   /*! Get the DCEL (non-const version). */
   Dcel& dcel() { return (m_dcel); }
+
+  /*! Receive a notification on the creation of a new boundary vertex that
+   * corresponds to a given point.
+   * \param v The new boundary vertex.
+   * \param p The point.
+   * \param ps_x The boundary condition of the curve end in x.
+   * \param ps_y The boundary condition of the curve end in y.
+   */
+  void notify_on_boundary_vertex_creation(Vertex*,
+                                          const Point_2& ,
+                                          Arr_parameter_space /* ps_x */,
+                                          Arr_parameter_space /* ps_y */)
+  {
+    // In the planar-topology traits this function should never be invoked:
+    return;
+  }
 
   /*! Receive a notification on the creation of a new boundary vertex that
    * corresponds to the given curve end.
@@ -163,7 +171,6 @@ public:
     return false;
   }
 
-
   /*! Given signs of two ccbs that show up when splitting upon insertion of
    * curve into two, determine what happens to the face(s).
    * \param signs1 signs in x and y of the first implied ccb
@@ -191,6 +198,7 @@ public:
    * \return Whether p is contained in f's interior.
    */
   bool is_in_face(const Face* f, const Point_2& p, const Vertex* v) const;
+
   //@}
 
   /// \name Additional accessors, specialized for this topology-traits class.
@@ -232,7 +240,7 @@ public:
 };
 
 //-----------------------------------------------------------------------------
-// Memeber-function definitions:
+// Member-function definitions:
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
@@ -247,9 +255,9 @@ Arr_planar_topology_traits_base_2<GeomTraits, Dcel_>::assign(const Self& other)
   m_dcel.assign(other.m_dcel);
 
   // Take care of the traits object.
-  if (m_own_geom_traits && (m_geom_traits != NULL)) {
+  if (m_own_geom_traits && (m_geom_traits != nullptr)) {
     delete m_geom_traits;
-    m_geom_traits = NULL;
+    m_geom_traits = nullptr;
   }
 
   if (other.m_own_geom_traits) m_geom_traits = new Traits_adaptor_2;
@@ -265,8 +273,8 @@ template <typename GeomTraits, typename Dcel_>
 bool Arr_planar_topology_traits_base_2<GeomTraits, Dcel_>::
 is_in_face(const Face* f, const Point_2& p, const Vertex* v) const
 {
-  CGAL_precondition((v == NULL) || ! v->has_null_point());
-  CGAL_precondition((v == NULL) ||
+  CGAL_precondition((v == nullptr) || ! v->has_null_point());
+  CGAL_precondition((v == nullptr) ||
                     m_geom_traits->equal_2_object()(p, v->point()));
 
   // In case the face is unbounded and has no outer ccbs, this is the single
@@ -310,7 +318,7 @@ is_in_face(const Face* f, const Point_2& p, const Vertex* v) const
 
   do {
     // Compare p to the target vertex of the current halfedge.
-    // If the vertex v associated with p (if v is given and is not NULL)
+    // If the vertex v associated with p (if v is given and is not nullptr)
     // on the boundary of the component, p is obviously not in the interior
     // the component.
     if (curr->vertex() == v) return false;

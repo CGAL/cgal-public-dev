@@ -3,19 +3,10 @@
 // All rights reserved.
 //
 // This file is part of CGAL (www.cgal.org).
-// You can redistribute it and/or modify it under the terms of the GNU
-// General Public License as published by the Free Software Foundation,
-// either version 3 of the License, or (at your option) any later version.
-//
-// Licensees holding a valid commercial license may use this file in
-// accordance with the commercial license agreement provided with the software.
-//
-// This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
-// WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 //
 // $URL$
 // $Id$
-// SPDX-License-Identifier: GPL-3.0+
+// SPDX-License-Identifier: GPL-3.0-or-later OR LicenseRef-Commercial
 //
 //
 // Author(s)     : Laurent Rineau, Stéphane Tayeb
@@ -34,160 +25,37 @@
 
 #include <CGAL/Mesh_3/config.h>
 
-#include <CGAL/Random.h>
 #include <CGAL/Polyhedral_mesh_domain_3.h>
 #include <CGAL/Mesh_domain_with_polyline_features_3.h>
 #include <CGAL/Mesh_polyhedron_3.h>
-
-#include <CGAL/Mesh_3/Detect_polylines_in_polyhedra.h>
 #include <CGAL/Mesh_3/Polyline_with_context.h>
-#include <CGAL/Polygon_mesh_processing/detect_features.h>
-#include <CGAL/Mesh_3/properties_Polyhedron_3.h>
 
-#include <CGAL/enum.h>
 #include <CGAL/IO/Polyhedron_iostream.h>
+#include <CGAL/Mesh_3/internal/helpers.h>
+
+#include <CGAL/boost/graph/split_graph_into_polylines.h>
+#include <CGAL/boost/iterator/transform_iterator.hpp>
 #include <CGAL/boost/graph/graph_traits_Polyhedron_3.h>
 #include <CGAL/boost/graph/helpers.h>
+#include <CGAL/enum.h>
+#include <CGAL/Default.h>
+#include <CGAL/Polygon_mesh_processing/detect_features.h>
+#include <CGAL/Random.h>
+
 #include <boost/graph/filtered_graph.hpp>
 #include <boost/graph/adjacency_list.hpp>
-#include <CGAL/boost/graph/split_graph_into_polylines.h>
-#include <CGAL/Default.h>
+#include <boost/property_map/property_map.hpp>
+#include <boost/dynamic_bitset.hpp>
 
-#include <CGAL/boost/iterator/transform_iterator.hpp>
-#include <boost/foreach.hpp>
-
-#include <string>
-#include <vector>
 #include <fstream>
-
+#include <iostream>
+#include <map>
+#include <string>
+#include <set>
+#include <vector>
+#include <utility>
 
 namespace CGAL {
-
-namespace internal {
-namespace Mesh_3 {
-
-template <typename Kernel>
-struct Angle_tester
-{
-  template <typename vertex_descriptor, typename Graph>
-  bool operator()(vertex_descriptor& v, const Graph& g) const
-  {
-    typedef typename boost::graph_traits<Graph>::out_edge_iterator out_edge_iterator;
-    if (out_degree(v, g) != 2)
-      return true;
-    else
-    {
-      out_edge_iterator out_edge_it, out_edges_end;
-      boost::tie(out_edge_it, out_edges_end) = out_edges(v, g);
-
-      vertex_descriptor v1 = target(*out_edge_it++, g);
-      vertex_descriptor v2 = target(*out_edge_it++, g);
-      CGAL_assertion(out_edge_it == out_edges_end);
-
-      const typename Kernel::Point_3& p = g[v];
-      const typename Kernel::Point_3& p1 = g[v1];
-      const typename Kernel::Point_3& p2 = g[v2];
-
-      return (CGAL::angle(p1, p, p2) == CGAL::ACUTE);
-    }
-  }
-};
-
-template <typename Polyhedron>
-struct Is_featured_edge {
-  const Polyhedron* polyhedron;
-  typename boost::property_map<Polyhedron, edge_is_feature_t>::type eifm;
-  Is_featured_edge()
-    : polyhedron(0)
-  {} // required by boost::filtered_graph
-
-  Is_featured_edge(const Polyhedron& polyhedron)
-    : polyhedron(&polyhedron), eifm(get(edge_is_feature,polyhedron))
-  {}
-
-  bool operator()(typename boost::graph_traits<Polyhedron>::edge_descriptor e) const {
-    return get(eifm, e);
-  }
-}; // end Is_featured_edge<Polyhedron>
-
-template <typename Polyhedron>
-struct Is_border_edge {
-  const Polyhedron* polyhedron;
-  Is_border_edge() : polyhedron(0) {} // required by boost::filtered_graph
-  Is_border_edge(const Polyhedron& polyhedron) : polyhedron(&polyhedron) {}
-
-  bool operator()(typename boost::graph_traits<Polyhedron>::edge_descriptor e) const {
-    return is_border(halfedge(e, *polyhedron), *polyhedron) ||
-      is_border(opposite(halfedge(e, *polyhedron), *polyhedron), *polyhedron);
-  }
-}; // end Is_featured_edge<Polyhedron>
-
-template<typename Polyhedral_mesh_domain,
-         typename Polyline_with_context,
-         typename Graph>
-struct Extract_polyline_with_context_visitor
-{
-  typedef typename Polyhedral_mesh_domain::Polyhedron Polyhedron;
-  std::vector<Polyline_with_context>& polylines;
-  const Graph& graph;
-
-  Extract_polyline_with_context_visitor
-  (const Graph& graph,
-   typename std::vector<Polyline_with_context>& polylines)
-    : polylines(polylines), graph(graph)
-  {}
-
-  void start_new_polyline()
-  {
-    polylines.push_back(Polyline_with_context());
-  }
-
-  void add_node(typename boost::graph_traits<Graph>::vertex_descriptor vd)
-  {
-    if(polylines.back().polyline_content.empty()) {
-      polylines.back().polyline_content.push_back(graph[vd]);
-    }
-  }
-
-  void add_edge(typename boost::graph_traits<Graph>::edge_descriptor ed)
-  {
-    typename boost::graph_traits<Graph>::vertex_descriptor
-      s = source(ed, graph),
-      t = target(ed, graph);
-    Polyline_with_context& polyline = polylines.back();
-    CGAL_assertion(!polyline.polyline_content.empty());
-    if(polyline.polyline_content.back() != graph[s]) {
-      polyline.polyline_content.push_back(graph[s]);
-    } else if(polyline.polyline_content.back() != graph[t]) {
-      // if the edge is zero-length, it is ignored
-      polyline.polyline_content.push_back(graph[t]);
-    }
-    const typename boost::edge_bundle_type<Graph>::type &
-      set_of_indices = graph[ed];
-    polyline.context.adjacent_patches_ids.insert(set_of_indices.begin(),
-                                                 set_of_indices.end());
-  }
-
-  void end_polyline()
-  {
-    // ignore degenerated polylines
-    if(polylines.back().polyline_content.size() < 2)
-      polylines.resize(polylines.size() - 1);
-    // else {
-    //   std::cerr << "Polyline with " << polylines.back().polyline_content.size()
-    //             << " vertices, incident to "
-    //             << polylines.back().context.adjacent_patches_ids.size()
-    //             << " patches:\n ";
-    //   for(auto p: polylines.back().polyline_content)
-    //     std::cerr << " " << p;
-    //   std::cerr << "\n";
-    // }
-  }
-};
-
-
-} // end CGAL::internal::Mesh_3
-} // end CGAL::internal
 
 /**
  * @class Polyhedral_mesh_domain_with_features_3
@@ -220,6 +88,7 @@ class Polyhedral_mesh_domain_with_features_3
     std::set<typename Base::Surface_patch_index> > Featured_edges_copy_graph;
 public:
   typedef Polyhedron_ Polyhedron;
+  typedef Polyhedron Polyhedron_type;
 
   // Index types
   typedef typename Base::Index                Index;
@@ -254,18 +123,21 @@ public:
                                         Bare_polyline > Polyline_with_context;
   /// Constructors
   Polyhedral_mesh_domain_with_features_3(const Polyhedron& p,
-                                         CGAL::Random* p_rng = NULL)
+                                         CGAL::Random* p_rng = nullptr)
     : Base(p_rng) , borders_detected_(false)
   {
     stored_polyhedra.resize(1);
     stored_polyhedra[0] = p;
+    get(face_patch_id_t<Patch_id>(), stored_polyhedra[0]);
     this->add_primitives(stored_polyhedra[0]);
     this->build();
   }
 
+#ifndef CGAL_NO_DEPRECATED_CODE
+
   CGAL_DEPRECATED
   Polyhedral_mesh_domain_with_features_3(const std::string& filename,
-                                         CGAL::Random* p_rng = NULL)
+                                         CGAL::Random* p_rng = nullptr)
     : Base(p_rng) , borders_detected_(false)
   {
     load_from_file(filename.c_str());
@@ -276,20 +148,23 @@ public:
   // constructor with `std::string`.
   CGAL_DEPRECATED
   Polyhedral_mesh_domain_with_features_3(const char* filename,
-                                         CGAL::Random* p_rng = NULL)
+                                         CGAL::Random* p_rng = nullptr)
     : Base(p_rng) , borders_detected_(false)
   {
     load_from_file(filename);
   }
+#endif // not CGAL_NO_DEPRECATED_CODE
 
   Polyhedral_mesh_domain_with_features_3(const Polyhedron& p,
                                          const Polyhedron& bounding_p,
-                                         CGAL::Random* p_rng = NULL)
+                                         CGAL::Random* p_rng = nullptr)
     : Base(p_rng) , borders_detected_(false)
   {
     stored_polyhedra.resize(2);
     stored_polyhedra[0] = p;
     stored_polyhedra[1] = bounding_p;
+    get(face_patch_id_t<Patch_id>(), stored_polyhedra[0]);
+    get(face_patch_id_t<Patch_id>(), stored_polyhedra[1]);
     this->add_primitives(stored_polyhedra[0]);
     this->add_primitives(stored_polyhedra[1]);
     if(CGAL::is_empty(bounding_p)) {
@@ -302,12 +177,13 @@ public:
   template <typename InputPolyhedraPtrIterator>
   Polyhedral_mesh_domain_with_features_3(InputPolyhedraPtrIterator begin,
                                          InputPolyhedraPtrIterator end,
-                                         CGAL::Random* p_rng = NULL)
+                                         CGAL::Random* p_rng = nullptr)
     : Base(p_rng) , borders_detected_(false)
   {
     stored_polyhedra.reserve(std::distance(begin, end));
     for (; begin != end; ++begin) {
       stored_polyhedra.push_back(**begin);
+      get(face_patch_id_t<Patch_id>(), stored_polyhedra.back());
       this->add_primitives(stored_polyhedra.back());
     }
     this->set_surface_only();
@@ -318,19 +194,21 @@ public:
   Polyhedral_mesh_domain_with_features_3(InputPolyhedraPtrIterator begin,
                                          InputPolyhedraPtrIterator end,
                                          const Polyhedron& bounding_polyhedron,
-                                         CGAL::Random* p_rng = NULL)
+                                         CGAL::Random* p_rng = nullptr)
     : Base(p_rng) , borders_detected_(false)
   {
     stored_polyhedra.reserve(std::distance(begin, end)+1);
     if(begin != end) {
       for (; begin != end; ++begin) {
         stored_polyhedra.push_back(**begin);
+        get(face_patch_id_t<Patch_id>(), stored_polyhedra.back());
         this->add_primitives(stored_polyhedra.back());
       }
-      stored_polyhedra.push_back(bounding_polyhedron);
-      this->add_primitives(stored_polyhedra.back());
     }
-    if(bounding_polyhedron.empty()) {
+    stored_polyhedra.push_back(bounding_polyhedron);
+    get(face_patch_id_t<Patch_id>(), stored_polyhedra.back());
+    this->add_primitives(stored_polyhedra.back());
+    if(CGAL::is_empty(bounding_polyhedron)) {
       this->set_surface_only();
     } else {
       this->add_primitives_to_bounding_tree(stored_polyhedra.back());
@@ -353,18 +231,60 @@ public:
   void detect_borders(std::vector<Polyhedron>& p);
   void detect_borders() { detect_borders(stored_polyhedra); };
 
+  template <typename InputIterator>
+  void
+  add_features(InputIterator first, InputIterator end)
+  {
+    auto max = 0;
+    auto min = (std::numeric_limits<int>::max)();
+    for(const auto& polyhedron: stored_polyhedra) {
+      auto f_pid = get(face_patch_id_t<Patch_id>(), polyhedron);
+      for(auto fd : faces(polyhedron)) {
+        const auto patch_id = get(f_pid, fd);
+        min = (std::min)(patch_id, min);
+        max = (std::max)(patch_id, max);
+      }
+    }
+    boost::dynamic_bitset<> patch_ids_bitset;
+    patch_ids_bitset.resize(max - min + 1);
+    for(const auto& polyhedron: stored_polyhedra) {
+      auto f_pid = get(face_patch_id_t<Patch_id>(), polyhedron);
+      for(auto fd : faces(polyhedron)) {
+        const auto patch_id = get(f_pid, fd);
+        patch_ids_bitset.set(patch_id - min);
+      }
+    }
+    using Patch_ids_container = std::vector<int>;
+    Patch_ids_container all_patch_ids;
+    all_patch_ids.reserve(patch_ids_bitset.count());
+    for(auto i = patch_ids_bitset.find_first();
+        i != patch_ids_bitset.npos;
+        i = patch_ids_bitset.find_next(i))
+    {
+      all_patch_ids.push_back(static_cast<int>(i + min));
+    }
+    using Polyline = typename std::iterator_traits<InputIterator>::value_type;
+    auto identity_property_map = boost::typed_identity_property_map<Polyline>();
+    auto all_patch_ids_pmap =
+      boost::static_property_map<Patch_ids_container>(all_patch_ids);
+    Base::add_features_and_incidences(first, end,
+                                      identity_property_map,
+                                      all_patch_ids_pmap);
+  }
+
   // non-documented, provided to the FEniCS project
   const std::vector<Polyhedron>& polyhedra()const
   {
     return stored_polyhedra;
   }
-  
+
 private:
   void load_from_file(const char* filename) {
     // Create input polyhedron
     std::ifstream input(filename);
     stored_polyhedra.resize(1);
     input >> stored_polyhedra[0];
+    get(face_patch_id_t<Patch_id>(), stored_polyhedra[0]);
     this->add_primitives(stored_polyhedra[0]);
     this->build();
   }
@@ -403,17 +323,17 @@ initialize_ts(Polyhedron& p)
   Ftmap ftm = get(face_time_stamp,p);
 
   std::size_t ts = 0;
-  BOOST_FOREACH(typename boost::graph_traits<Polyhedron>::vertex_descriptor vd, vertices(p))
+  for(typename boost::graph_traits<Polyhedron>::vertex_descriptor vd : vertices(p))
   {
     put(vtm,vd,ts++);
   }
 
-  BOOST_FOREACH(typename boost::graph_traits<Polyhedron>::face_descriptor fd, faces(p))
+  for(typename boost::graph_traits<Polyhedron>::face_descriptor fd : faces(p))
   {
     put(ftm,fd,ts++);
   }
 
-  BOOST_FOREACH(typename boost::graph_traits<Polyhedron>::halfedge_descriptor hd, halfedges(p))
+  for(typename boost::graph_traits<Polyhedron>::halfedge_descriptor hd : halfedges(p))
   {
     put(htm,hd,ts++);
   }
@@ -429,7 +349,7 @@ void dump_graph_edges(std::ostream& out, const Graph& g)
   typedef typename boost::graph_traits<Graph>::edge_descriptor edge_descriptor;
 
   out.precision(17);
-  BOOST_FOREACH(edge_descriptor e, edges(g))
+  for(edge_descriptor e : make_range(edges(g)))
   {
     vertex_descriptor s = source(e, g);
     vertex_descriptor t = target(e, g);
@@ -464,15 +384,12 @@ detect_features(FT angle_in_degree, std::vector<Polyhedron>& poly)
   P2vmap p2vmap;
   namespace PMP = CGAL::Polygon_mesh_processing;
   std::size_t nb_of_patch_plus_one = 1;
-  BOOST_FOREACH(Polyhedron& p, poly)
+  for(Polyhedron& p : poly)
   {
     initialize_ts(p);
     typedef typename boost::property_map<Polyhedron,CGAL::face_patch_id_t<Tag_> >::type PIDMap;
     typedef typename boost::property_map<Polyhedron,CGAL::vertex_incident_patches_t<P_id> >::type VIPMap;
     typedef typename boost::property_map<Polyhedron, CGAL::edge_is_feature_t>::type EIFMap;
-
-    using internal::Mesh_3::Get_face_index_pmap;
-    Get_face_index_pmap<Polyhedron> get_face_index_pmap(p);
 
     PIDMap pid_map = get(face_patch_id_t<Tag_>(), p);
     VIPMap vip_map = get(vertex_incident_patches_t<P_id>(), p);
@@ -482,11 +399,11 @@ detect_features(FT angle_in_degree, std::vector<Polyhedron>& poly)
     nb_of_patch_plus_one += PMP::sharp_edges_segmentation(p, angle_in_degree
       , eif_map
       , pid_map
-      , PMP::parameters::first_index(nb_of_patch_plus_one)
-      .face_index_map(get_face_index_pmap(p))
-      .vertex_incident_patches_map(vip_map));
+      , CGAL::parameters::first_index(nb_of_patch_plus_one)
+                         .face_index_map(get_initialized_face_index_map(p))
+                         .vertex_incident_patches_map(vip_map));
 
-    internal::Mesh_3::Is_featured_edge<Polyhedron> is_featured_edge(p);
+    Mesh_3::internal::Is_featured_edge<Polyhedron> is_featured_edge(p);
 
     add_featured_edges_to_graph(p, is_featured_edge, g_copy, p2vmap);
   }
@@ -516,31 +433,32 @@ add_features_from_split_graph_into_polylines(Featured_edges_copy_graph& g_copy)
 {
   std::vector<Polyline_with_context> polylines;
 
-  internal::Mesh_3::Extract_polyline_with_context_visitor<
-    Polyhedral_mesh_domain_with_features_3,
+  Mesh_3::internal::Extract_polyline_with_context_visitor<
     Polyline_with_context,
     Featured_edges_copy_graph
     > visitor(g_copy, polylines);
-  internal::Mesh_3::Angle_tester<GT_> angle_tester;
-  split_graph_into_polylines(g_copy, visitor, angle_tester);
+  Mesh_3::internal::Angle_tester<GT_> angle_tester;
+  split_graph_into_polylines(
+      g_copy, visitor, angle_tester,
+      [&](auto v1, auto v2) { return g_copy[v1] < g_copy[v2]; });
 
   this->add_features_with_context(polylines.begin(),
                                   polylines.end());
 
-#if CGAL_MESH_3_PROTECTION_DEBUG > 1
+#if CGAL_MESH_3_PROTECTION_DEBUG & 2
   {//DEBUG
     std::ofstream og("polylines_graph.polylines.txt");
     og.precision(17);
-    BOOST_FOREACH(const Polyline_with_context& poly, polylines)
+    for(const Polyline_with_context& poly : polylines)
     {
       og << poly.polyline_content.size() << " ";
-      BOOST_FOREACH(const Point_3& p, poly.polyline_content)
+      for(const Point_3& p : poly.polyline_content)
         og << p << " ";
       og << std::endl;
     }
     og.close();
   }
-#endif // CGAL_MESH_3_PROTECTION_DEBUG > 1
+#endif // CGAL_MESH_3_PROTECTION_DEBUG & 2
 
 }
 
@@ -559,7 +477,6 @@ add_featured_edges_to_graph(const Polyhedron& p,
   Featured_edges_graph orig_graph(p, pred);
 
   typedef Featured_edges_graph Graph;
-  typedef typename boost::graph_traits<Graph>::vertex_descriptor Graph_vertex_descriptor;
   typedef typename boost::graph_traits<Graph>::edge_descriptor Graph_edge_descriptor;
   typedef Featured_edges_copy_graph G_copy;
   typedef typename boost::graph_traits<G_copy>::vertex_descriptor vertex_descriptor;
@@ -569,22 +486,26 @@ add_featured_edges_to_graph(const Polyhedron& p,
 
   typedef typename boost::property_map<Polyhedron,vertex_point_t>::const_type Vpm;
   Vpm vpm = get(vertex_point, p);
-  BOOST_FOREACH(Graph_vertex_descriptor v, vertices(graph)){
-    vertex_descriptor vc;
-    typename P2vmap::iterator it = p2vmap.find(get(vpm,v));
+
+  auto get_vertex = [&](auto point) {
+    typename P2vmap::iterator it = p2vmap.find(point);
+    vertex_descriptor v;
     if(it == p2vmap.end()) {
-      vc = add_vertex(g_copy);
-      g_copy[vc] = get(vpm, v);
-      p2vmap[get(vpm,v)] = vc;
+      v = add_vertex(g_copy);
+      g_copy[v] = point;
+      p2vmap[point] = v;
+    } else {
+      v = it->second;
     }
-  }
+    return v;
+  };
 
   typedef typename boost::property_map<Polyhedron,face_patch_id_t<Tag_> >::type Face_patch_id_pmap;
   Face_patch_id_pmap fpm = get(face_patch_id_t<Tag_>(),p);
 
-  BOOST_FOREACH(Graph_edge_descriptor e, edges(graph)){
-    vertex_descriptor vs = p2vmap[get(vpm,source(e,graph))];
-    vertex_descriptor vt = p2vmap[get(vpm,target(e,graph))];
+  for(Graph_edge_descriptor e : make_range(edges(graph))){
+    vertex_descriptor vs = get_vertex(get(vpm,source(e,graph)));
+    vertex_descriptor vt = get_vertex(get(vpm,target(e,graph)));
     CGAL_warning_msg(vs != vt, "ignore self loop");
     if(vs != vt) {
       const std::pair<edge_descriptor, bool> pair = add_edge(vs,vt,g_copy);
@@ -599,7 +520,7 @@ add_featured_edges_to_graph(const Polyhedron& p,
     }
   }
 
-#if CGAL_MESH_3_PROTECTION_DEBUG > 1
+#if CGAL_MESH_3_PROTECTION_DEBUG & 2
   {// DEBUG
     dump_graph_edges("edges-graph.polylines.txt", g_copy);
   }

@@ -8,8 +8,6 @@ The class `Linear_cell_complex_min_items` defines `void` as the information asso
 
 \cgalModels `LinearCellComplexItems`
 
-\deprecated Before CGAL 4.9, this class was templated by the dimension of the darts, and users must define the type of darts used (see also deprecated class `Combinatorial_map_min_items`). `CGAL_CMAP_DART_DEPRECATED` can be defined to keep the old behavior (only possible with `Combinatorial_map` and not for `Generalized_map`).
-
 \cgalHeading{Example}
 
 The following example shows one implementation of the `Linear_cell_complex_min_items` class.
@@ -22,7 +20,7 @@ struct Linear_cell_complex_min_items
   struct Dart_wrapper
   {
     typedef CGAL::Cell_attribute_with_point<LCC> Vertex_attrib;
-    typedef CGAL::cpp11::tuple<Vertex_attrib> Attributes;
+    typedef std::tuple<Vertex_attrib> Attributes;
   };
 };
 
@@ -33,8 +31,6 @@ struct Linear_cell_complex_min_items
 
 */
 struct Linear_cell_complex_min_items {
-
-/// @}
 
 }; /* end Linear_cell_complex_min_items */
 

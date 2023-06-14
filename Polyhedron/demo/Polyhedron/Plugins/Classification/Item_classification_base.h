@@ -4,15 +4,30 @@
 #include <CGAL/Three/Scene_item.h>
 
 #include <QComboBox>
+#include <QLineEdit>
+#include <QSpinBox>
+#include <QMultipleInputDialog.h>
 
 #include <CGAL/Classification/Feature_set.h>
 #include <CGAL/Classification/Label_set.h>
+
+
+#include <CGAL/Classification/ETHZ/Random_forest_classifier.h>
 #include <CGAL/Classification/Sum_of_weighted_features_classifier.h>
-#include <CGAL/Classification/ETHZ_random_forest_classifier.h>
 
 #ifdef CGAL_LINKED_WITH_OPENCV
-#include <CGAL/Classification/OpenCV_random_forest_classifier.h>
+#  include <CGAL/Classification/OpenCV/Random_forest_classifier.h>
 #endif
+
+#define CGAL_CLASSIFICATION_ETHZ_ID "Random Forest (ETHZ)"
+#define CGAL_CLASSIFICATION_ETHZ_NUMBER 0
+
+#define CGAL_CLASSIFICATION_OPENCV_ID "Random Forest (OpenCV)"
+#define CGAL_CLASSIFICATION_OPENCV_NUMBER 1
+
+#define CGAL_CLASSIFICATION_SOWF_ID "Sum of Weighted Features"
+#define CGAL_CLASSIFICATION_SOWF_NUMBER 2
+
 
 class Item_classification_base
 {
@@ -22,55 +37,61 @@ public:
   typedef CGAL::Classification::Label_set   Label_set;
   typedef CGAL::Classification::Feature_set Feature_set;
   typedef CGAL::Classification::Sum_of_weighted_features_classifier Sum_of_weighted_features;
-  typedef CGAL::Classification::ETHZ_random_forest_classifier ETHZ_random_forest;
+  typedef CGAL::Classification::ETHZ::Random_forest_classifier ETHZ_random_forest;
 
 #ifdef CGAL_LINKED_WITH_OPENCV
-  typedef CGAL::Classification::OpenCV_random_forest_classifier Random_forest;
+  typedef CGAL::Classification::OpenCV::Random_forest_classifier Random_forest;
 #endif
-  
+
 public:
-  
+
   Item_classification_base() { }
   virtual ~Item_classification_base() { }
 
   virtual CGAL::Three::Scene_item* item() = 0;
   virtual void erase_item() = 0;
 
-  virtual void compute_features (std::size_t nb_scales) = 0;
+  virtual CGAL::Bbox_3 bbox() { return item()->bbox(); }
 
-  virtual void add_selection_to_training_set (const char* name) = 0;
-  virtual void reset_training_set (const char* name) = 0;
+  virtual void compute_features (std::size_t nb_scales, float voxel_size) = 0;
+
+  virtual std::string feature_statistics () const { return std::string(); }
+
+  virtual void add_selection_to_training_set (std::size_t label) = 0;
+  virtual void reset_training_set (std::size_t label) = 0;
+  virtual void reset_training_set_of_selection() = 0;
   virtual void reset_training_sets() = 0;
 
   virtual void select_random_region() = 0;
   virtual void validate_selection () = 0;
-  virtual void train(int classifier, unsigned int nb_trials,
-                     std::size_t num_trees, std::size_t max_depth) = 0;
+  virtual void train(int classifier, const QMultipleInputDialog&) = 0;
   virtual bool run (int method, int classifier, std::size_t subdivisions, double smoothing) = 0;
-  
+
   virtual void update_color () = 0;
-  virtual void change_color (int index) = 0;
+  virtual void change_color (int index, float* vmin = nullptr, float* vmax = nullptr) = 0;
   virtual CGAL::Three::Scene_item* generate_one_item (const char* name,
                                                       int label) const = 0;
   virtual void generate_one_item_per_label(std::vector<CGAL::Three::Scene_item*>& items,
                                            const char* name) const = 0;
 
-  virtual bool write_output(std::ostream& out) = 0;
-
   bool features_computed() const { return (m_features.size() != 0); }
-  std::size_t number_of_features() const { return m_features.size(); }  
+  std::size_t number_of_features() const { return m_features.size(); }
   Feature_handle feature(std::size_t i) { return m_features[i]; }
   float weight (Feature_handle f) const { return m_sowf->weight(f); }
   void set_weight (Feature_handle f, float w) const { m_sowf->set_weight(f,w); }
   Sum_of_weighted_features::Effect effect (Label_handle l, Feature_handle f) const { return m_sowf->effect(l,f); }
   void set_effect (Label_handle l, Feature_handle f, Sum_of_weighted_features::Effect e)
   { m_sowf->set_effect (l, f, e); }
-  
-  virtual void add_new_label (const char* name, const QColor& color)
+
+  QColor label_qcolor (Label_handle l) const
+  {
+    return QColor (l->color().red(), l->color().green(), l->color().blue());
+  }
+
+  virtual QColor add_new_label (const char* name)
   {
     m_labels.add(name);
-    m_label_colors.push_back (color);
-    
+
     delete m_sowf;
     m_sowf = new Sum_of_weighted_features (m_labels, m_features);
 
@@ -81,16 +102,13 @@ public:
     delete m_random_forest;
     m_random_forest = new Random_forest (m_labels, m_features);
 #endif
+
+    return label_qcolor (m_labels[m_labels.size() - 1]);
   }
-  virtual void remove_label (const char* name)
+  virtual void remove_label (std::size_t position)
   {
-    for (std::size_t i = 0; i < m_labels.size(); ++ i)
-      if (m_labels[i]->name() == name)
-        {
-          m_labels.remove(m_labels[i]);
-          m_label_colors.erase (m_label_colors.begin() + i);
-          break;
-        }
+    m_labels.remove(m_labels[position]);
+
     delete m_sowf;
     m_sowf = new Sum_of_weighted_features (m_labels, m_features);
 
@@ -101,12 +119,37 @@ public:
     delete m_random_forest;
     m_random_forest = new Random_forest (m_labels, m_features);
 #endif
+
+  }
+
+  virtual void clear_labels ()
+  {
+    m_labels.clear();
+
+    delete m_sowf;
+    m_sowf = new Sum_of_weighted_features (m_labels, m_features);
+
+    delete m_ethz;
+    m_ethz = new ETHZ_random_forest (m_labels, m_features);
+
+#ifdef CGAL_LINKED_WITH_OPENCV
+    delete m_random_forest;
+    m_random_forest = new Random_forest (m_labels, m_features);
+#endif
+
   }
   std::size_t number_of_labels() const { return m_labels.size(); }
   Label_handle label(std::size_t i) { return m_labels[i]; }
 
-  void fill_display_combo_box (QComboBox* cb, QComboBox* cb1) const
+  virtual void fill_display_combo_box (QComboBox* cb, QComboBox* cb1) const
   {
+    for (std::size_t i = 0; i < m_labels.size(); ++ i)
+      {
+        std::ostringstream oss;
+        oss << "Label " << m_labels[i]->name();
+        cb->addItem (oss.str().c_str());
+        cb1->addItem (oss.str().c_str());
+      }
     for (std::size_t i = 0; i < m_features.size(); ++ i)
       {
         std::ostringstream oss;
@@ -124,17 +167,19 @@ public:
         return;
       }
 
-    if (classifier == 0)
+    if (classifier == CGAL_CLASSIFICATION_SOWF_NUMBER)
     {
       std::ofstream f (filename);
       m_sowf->save_configuration (f);
     }
-    else if (classifier == 1)
+    else if (classifier == CGAL_CLASSIFICATION_ETHZ_NUMBER)
     {
+      std::cerr << "D ";
       std::ofstream f (filename, std::ios_base::out | std::ios_base::binary);
       m_ethz->save_configuration (f);
+      std::cerr << "E ";
     }
-    else
+    else if (classifier == CGAL_CLASSIFICATION_OPENCV_NUMBER)
     {
 #ifdef CGAL_LINKED_WITH_OPENCV
       m_random_forest->save_configuration (filename);
@@ -149,17 +194,26 @@ public:
         return;
       }
 
-    if (classifier == 0)
+    if (classifier == CGAL_CLASSIFICATION_SOWF_NUMBER)
     {
       std::ifstream f (filename);
       m_sowf->load_configuration (f, true);
     }
-    else if (classifier == 1)
+    else if (classifier == CGAL_CLASSIFICATION_ETHZ_NUMBER)
     {
+      if (m_ethz == nullptr)
+        m_ethz = new ETHZ_random_forest (m_labels, m_features);
       std::ifstream f (filename, std::ios_base::in | std::ios_base::binary);
-      m_ethz->load_configuration (f);
+
+#if defined(CGAL_LINKED_WITH_BOOST_IOSTREAMS) && defined(CGAL_LINKED_WITH_BOOST_SERIALIZATION)
+      // Handle deprecated files
+      if (std::string(filename).find(".gz") != std::string::npos)
+        m_ethz->load_deprecated_configuration(f);
+      else
+#endif
+        m_ethz->load_configuration (f);
     }
-    else
+    else if (classifier == CGAL_CLASSIFICATION_OPENCV_NUMBER)
     {
 #ifdef CGAL_LINKED_WITH_OPENCV
       m_random_forest->load_configuration (filename);
@@ -167,30 +221,30 @@ public:
     }
   }
 
-  const QColor& label_color(std::size_t i) const { return m_label_colors[i]; }
-  std::size_t get_label (const char* name)
+  QColor label_color(std::size_t i) const
   {
-    for (std::size_t i = 0; i < m_labels.size(); ++ i)
-      if (m_labels[i]->name() == name)
-        return i;
-    return std::size_t(-1);
+    return label_qcolor (m_labels[i]);
   }
-  void change_label_color (const char* name, const QColor& color)
+  void change_label_color (std::size_t position, const QColor& color)
   {
-    m_label_colors[get_label(name)] = color;
+    m_labels[position]->set_color
+      (CGAL::IO::Color (color.red(), color.green(), color.blue()));
+  }
+  void change_label_name (std::size_t position, const std::string& name)
+  {
+    m_labels[position]->set_name (name);
   }
 
 protected:
 
   Label_set m_labels;
   Feature_set m_features;
-  std::vector<QColor> m_label_colors;
   Sum_of_weighted_features* m_sowf;
   ETHZ_random_forest* m_ethz;
 #ifdef CGAL_LINKED_WITH_OPENCV
   Random_forest* m_random_forest;
 #endif
-  
+
 };
 
 

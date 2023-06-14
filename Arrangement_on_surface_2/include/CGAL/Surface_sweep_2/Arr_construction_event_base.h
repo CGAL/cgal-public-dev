@@ -2,19 +2,10 @@
 // All rights reserved.
 //
 // This file is part of CGAL (www.cgal.org).
-// You can redistribute it and/or modify it under the terms of the GNU
-// General Public License as published by the Free Software Foundation,
-// either version 3 of the License, or (at your option) any later version.
-//
-// Licensees holding a valid commercial license may use this file in
-// accordance with the commercial license agreement provided with the software.
-//
-// This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
-// WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 //
 // $URL$
 // $Id$
-// SPDX-License-Identifier: GPL-3.0+
+// SPDX-License-Identifier: GPL-3.0-or-later OR LicenseRef-Commercial
 //
 // Author(s)     : Tali Zvi <talizvi@post.tau.ac.il>
 //                 Baruch Zukerman <baruchzu@post.tau.ac.il>
@@ -49,10 +40,10 @@ namespace Ss2 = Surface_sweep_2;
  * information is stored, in order to expedite the insertion of curves into the
  * arrangement.
  *
- * The additional infomation contains the following:
+ * The additional information contains the following:
  * - among the left curves of the event, we keep the highest halfedge that
  *   was inserted into the arrangement at any given time and when there are no
- *   left curves, we keep the highest halfedge that was inseted to the right.
+ *   left curves, we keep the highest halfedge that was inserted to the right.
  *
  * \tparam GeometryTraits_2 the geometry traits.
  * \tparam Allocator_ a type of an element that is used to acquire/release
@@ -143,7 +134,7 @@ public:
 
   /*! using the additional data that we store at the event, we compute
    *  how much we have to jump (he = he->next()->twin()) from the halfedge
-   *  that is stored in the event, to the halefge that is previous to 'curve'
+   *  that is stored in the event, to the halfedge that is previous to 'curve'
    *  that is about to be inserted into the arrangement.
    */
   int compute_halfedge_jump_count(Subcurve* curve)
@@ -183,7 +174,7 @@ public:
   }
 
   /*! Return true iff 'curve' is the toppest curve among the halfedges
-   *  to the right fo the event that were already were inserted to the
+   *  to the right of the event that were already were inserted to the
    * arrangement.
    */
   bool is_curve_largest(Subcurve *curve)

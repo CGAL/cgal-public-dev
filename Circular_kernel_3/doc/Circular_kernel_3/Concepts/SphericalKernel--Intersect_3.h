@@ -1,9 +1,9 @@
 
 /*!
-\ingroup PkgSphericalKernel3GeometricConcepts
+\ingroup PkgCircularKernel3GeometricConcepts
 \cgalConcept
 
-\cgalRefines `Kernel::Intersect_3`
+\cgalRefines{Kernel::Intersect_3}
 \sa \link intersection_grp `CGAL::intersection()` \endlink
 
 */

@@ -20,9 +20,9 @@
 #include <vector>
 
 // A basic test to check that P3RT3 and RT3 produces the same regular triangulations
-// In the case of RT3, the fake periodic domain is obtained by addding 26 copies
+// In the case of RT3, a fake periodicity is obtained by adding 26 copies
 // of the same input point set (similarly to how we copy in P3RT3 when it cannot
-// yet be converted to 1 sheet)
+// yet be converted to 1 sheet) around the cube.
 
 typedef CGAL::Exact_predicates_inexact_constructions_kernel       Epick;
 typedef CGAL::Periodic_3_regular_triangulation_traits_3<Epick>    PRTT_Inexact;
@@ -34,7 +34,7 @@ typedef P3RT3::Offset                                             Offset;
 typedef P3RT3::Weighted_point                                     Weighted_point;
 
 // The info() is a unique color per point + a boolean to mark those in the "fake"
-// canonical domain (the cuboid surrounded by 26 copies)
+// instances (the cuboid surrounded by 26 copies)
 typedef CGAL::Regular_triangulation_vertex_base_3<Epick>          Vb0;
 typedef CGAL::Triangulation_vertex_base_with_info_3<
                 std::pair<int, bool>, Epick, Vb0>                 Vb;
@@ -85,7 +85,7 @@ int main (int, char**)
 
           if(v != Vertex_handle())
             v->info() = std::make_pair(id /*unique id*/,
-                                       (i==0 && j==0 && k==0) /*canonical domain?*/);
+                                       (i==0 && j==0 && k==0) /*canonical instance?*/);
         }
       }
     }
@@ -106,13 +106,13 @@ int main (int, char**)
   Finite_vertices_iterator vit = rt3.finite_vertices_begin();
   for(; vit!=rt3.finite_vertices_end(); ++vit)
   {
-    if(vit->info().second) // is in the canonical domain
+    if(vit->info().second) // is in the canonical instance
       unique_vertices_from_rt3.insert(vit->info().first);
   }
 
   std::cout << unique_vertices_from_rt3.size() << " unique vertices (rt3)" << std::endl;
   std::cout << p3rt3.number_of_vertices() << " unique vertices (p3rt3)" << std::endl;
-  CGAL_assertion(unique_vertices_from_rt3.size() == p3rt3.number_of_vertices());
+  assert(unique_vertices_from_rt3.size() == p3rt3.number_of_vertices());
 
   // compare cells
   std::set<std::set<int> > unique_cells_from_rt3;
@@ -138,7 +138,7 @@ int main (int, char**)
 
   std::cout << unique_cells_from_rt3.size() << " unique cells (rt3)" << std::endl;
   std::cout << p3rt3.number_of_cells() << " unique cells (p3rt3)" << std::endl;
-  CGAL_assertion(unique_cells_from_rt3.size() == p3rt3.number_of_cells());
+  assert(unique_cells_from_rt3.size() == p3rt3.number_of_cells());
 
   std::cout << t.time() << " sec." << std::endl;
   std::cout << "EXIT SUCCESS" << std::endl;

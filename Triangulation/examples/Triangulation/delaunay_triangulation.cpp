@@ -1,12 +1,4 @@
-#if defined(__GNUC__) && defined(__GNUC_MINOR__) && (__GNUC__ <= 4) && (__GNUC_MINOR__ < 4)
-
-#include <iostream>
-int main()
-{
-  std::cerr << "NOTICE: This test requires G++ >= 4.4, and will not be compiled." << std::endl;
-}
-
-#else
+#include <CGAL/config.h>
 
 #include <CGAL/Epick_d.h>
 #include <CGAL/Delaunay_triangulation.h>
@@ -24,7 +16,7 @@ int main()
     { 100, 100, 100, 100, 100, 100, 100 }
   };
 
-  typedef CGAL::Triangulation<CGAL::Epick_d< CGAL::Dimension_tag<7> > >      T;
+  typedef CGAL::Delaunay_triangulation<CGAL::Epick_d< CGAL::Dimension_tag<7> > >      T;
   T dt(7);
 
   std::vector<T::Point> points;
@@ -47,5 +39,3 @@ int main()
   }
   return 0;
 }
-
-#endif

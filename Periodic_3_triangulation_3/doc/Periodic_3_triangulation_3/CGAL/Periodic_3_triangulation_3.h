@@ -9,13 +9,17 @@ triangulation of a point set in \f$ \mathbb T_c^3\f$.
 
 \tparam Traits must be a model of the concept `Periodic_3TriangulationTraits_3`.
 
-\tparam TDS must be a model of the concept `TriangulationDataStructure_3`
-with some additional functionality in cells and vertices.
-Its default value is
-`Triangulation_data_structure_3<Triangulation_vertex_base_3<PT,Periodic_3_triangulation_ds_vertex_base_3<>>,Triangulation_cell_base_3<PT,Periodic_3_triangulation_ds_cell_base_3<>>>`.
+\tparam TDS must be a model of the concept `TriangulationDataStructure_3` with
+vertex and cell are models of `Periodic_3TriangulationDSVertexBase_3` and `Periodic_3TriangulationDSCellBase_3`,
+Its default value is:
+\code
+CGAL::Triangulation_data_structure_3<
+  CGAL::Triangulation_vertex_base_3<PT,Periodic_3_triangulation_ds_vertex_base_3<> >,
+  CGAL::Triangulation_cell_base_3<PT,Periodic_3_triangulation_ds_cell_base_3<> > >
+\endcode
 
-\sa `Periodic_3_Delaunay_triangulation_3`
-\sa `Periodic_3_regular_triangulation_3`
+\sa `CGAL::Periodic_3_Delaunay_triangulation_3<Traits, TDS>`
+\sa `CGAL::Periodic_3_regular_triangulation_3<Traits, TDS>`
 */
 template< typename Traits, typename TDS >
 class Periodic_3_triangulation_3 {
@@ -309,8 +313,7 @@ The elements of the enum have the following meaning:
 /// @{
 
 /*!
-Introduces an empty triangulation `t` with `domain` as
-original domain.
+Introduces an empty triangulation `t` with `domain` as original domain.
 \pre `domain` is a cube.
 */
 Periodic_3_triangulation_3(const Iso_cuboid & domain = Iso_cuboid(0,0,0,1,1,1),
@@ -633,8 +636,10 @@ A translation in accordance with `offset` is applied on the point-offet pairs.
 */
 Periodic_tetrahedron periodic_tetrahedron(const Cell_handle c, Offset offset) const;
 
+/// @}
+
 /// \name
-/// \warning The following functions were renamed with %CGAL 4.11 to clarify
+/// \warning The following functions were renamed with \cgal 4.11 to clarify
 /// that they return geometric objects with inner type `Point_3`.
 ///
 /// Note that a traits class providing exact constructions should be
@@ -730,6 +735,8 @@ Tetrahedron construct_tetrahedron(const P& p1, const P& p2, const P& p3, const P
 Tests whether `p` is a vertex of `t` by locating `p` in
 the triangulation. If `p` is found, the associated vertex `v`
 is given.
+
+\pre `p` lies in the original domain `domain`.
 */
 bool is_vertex(const Point & p, Vertex_handle & v) const;
 

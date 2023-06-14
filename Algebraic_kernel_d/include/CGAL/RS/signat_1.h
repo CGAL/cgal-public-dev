@@ -1,21 +1,10 @@
 // Copyright (c) 2006-2013 INRIA Nancy-Grand Est (France). All rights reserved.
 //
-// This file is part of CGAL (www.cgal.org); you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public License as
-// published by the Free Software Foundation; either version 3 of the License,
-// or (at your option) any later version.
-
-// See the file LICENSE.LGPL distributed with CGAL.
-//
-// Licensees holding a valid commercial license may use this file in
-// accordance with the commercial license agreement provided with the software.
-//
-// This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
-// WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+// This file is part of CGAL (www.cgal.org)
 //
 // $URL$
 // $Id$
-// SPDX-License-Identifier: LGPL-3.0+
+// SPDX-License-Identifier: LGPL-3.0-or-later OR LicenseRef-Commercial
 //
 // Author: Luis Peñaranda <luis.penaranda@gmx.com>
 
@@ -25,7 +14,6 @@
 #include <CGAL/Gmpfi.h>
 #include <CGAL/Polynomial_traits_d.h>
 #include "exact_signat_1.h"
-//#include <boost/mpl/assert.hpp>
 #include <gmp.h>
 
 namespace CGAL{
@@ -51,7 +39,7 @@ Signat_1<Polynomial_,Bound_>::operator()(const Bound_ &x)const{
         //typedef Algebraic_structure_traits<Bound>               AStraits;
         // This generic signat works only when Bound_ is an exact type. For
         // non-exact types, an implementation must be provided.
-        //BOOST_MPL_ASSERT((boost::is_same<AStraits::Is_exact,Tag_true>));
+        //static_assert(std::is_same<AStraits::Is_exact,Tag_true>::value);
         int d=Degree()(pol);
         Bound h(pol[d]);
         for(int i=1;i<=d;++i)

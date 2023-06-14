@@ -1,7 +1,7 @@
 namespace CGAL {
 
 /*!
-\ingroup PkgMinkowskiSum2
+\ingroup PkgMinkowskiSum2Ref
 
 Provides a guaranteed approximation of the inset, or inner offset, of
 the given polygon `P` by a given radius `r`. Namely, the
@@ -14,7 +14,7 @@ several disconnected components. The result is therefore represented as a
 sequence of generalized polygons, whose edges are either line segments or
 circular arcs.
 The output sequence is returned via the output iterator `oi`, whose
-value-type must be `Gps_circle_segment_traits_2::Polygon_2`.
+value-type must be `Gps_circle_segment_traits_2<Kernel>::%Polygon_2`.
 \pre `P` is a simple polygon.
 */
 template<class Kernel, class Container, class OutputIterator>
@@ -29,7 +29,7 @@ OutputIterator oi);
 namespace CGAL {
 
 /*!
-\ingroup PkgMinkowskiSum2
+\ingroup PkgMinkowskiSum2Ref
 
 Provides a guaranteed approximation of the offset of the given polygon
 `P` by a given radius `r` - namely, the function computes the
@@ -49,7 +49,7 @@ const typename Kernel::FT& r,
 const double& eps);
 
 /*!
-\ingroup PkgMinkowskiSum2
+\ingroup PkgMinkowskiSum2Ref
 
 Provides a guaranteed approximation of offset the given polygon with holes
 `pwh` by a given radius `r`, such that the approximation error is bounded
@@ -66,7 +66,7 @@ const typename Kernel::FT& r,
 const double& eps);
 
 /*!
-\ingroup PkgMinkowskiSum2
+\ingroup PkgMinkowskiSum2Ref
 
 Provides a guaranteed approximation of the offset of the given polygon
 `P` by a radius `r`, as described above.

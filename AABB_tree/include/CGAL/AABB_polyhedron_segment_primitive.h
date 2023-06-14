@@ -2,19 +2,10 @@
 // All rights reserved.
 //
 // This file is part of CGAL (www.cgal.org).
-// You can redistribute it and/or modify it under the terms of the GNU
-// General Public License as published by the Free Software Foundation,
-// either version 3 of the License, or (at your option) any later version.
-//
-// Licensees holding a valid commercial license may use this file in
-// accordance with the commercial license agreement provided with the software.
-//
-// This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
-// WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 //
 // $URL$
 // $Id$
-// SPDX-License-Identifier: GPL-3.0+
+// SPDX-License-Identifier: GPL-3.0-or-later OR LicenseRef-Commercial
 //
 //
 // Author(s)     : Pierre Alliez, Stephane Tayeb
@@ -33,14 +24,13 @@
 
 #define CGAL_DEPRECATED_HEADER "<CGAL/AABB_polyhedron_segment_primitive.h>"
 #define CGAL_REPLACEMENT_HEADER "<CGAL/AABB_halfedge_graph_segment_primitive.h>"
-#include <CGAL/internal/deprecation_warning.h>
+#include <CGAL/Installation/internal/deprecation_warning.h>
 
-#include <boost/utility/enable_if.hpp>
-#include <boost/type_traits/is_same.hpp>
+#include <type_traits>
 
 namespace CGAL {
 
-/// \addtogroup PkgAABB_tree
+/// \addtogroup PkgAABBTreeRef
 /// @{
     /// \deprecated This class is deprecated since \cgal 4.3, the class
     /// `AABB_halfedge_graph_segment_primitive` should be used instead.
@@ -89,9 +79,9 @@ namespace CGAL {
             : m_halfedge_handle(*ptr)  { };
         template <class Iterator>
         AABB_polyhedron_segment_primitive( Iterator it,
-                                           typename boost::enable_if<
-                                                      boost::is_same<Id,typename Iterator::value_type>
-                                            >::type* =0
+                                           std::enable_if_t<
+                                                      std::is_same<Id,typename Iterator::value_type>::value
+                                            >* =0
         ) : m_halfedge_handle(*it)  { }
 
         AABB_polyhedron_segment_primitive(const Self& primitive)

@@ -1,5 +1,5 @@
 /*!
-\ingroup PkgSurfaceSubdivisionMethods3Concepts
+\ingroup PkgSurfaceSubdivisionMethod3Concepts
 \cgalConcept
 
 Required member functions for the `PTQMask_3` concept. This
@@ -8,7 +8,7 @@ policy concept of geometric computations is used in
 
 \image html LoopBorderMask.svg
 
-\cgalRefines `SubdivisionMask_3`
+\cgalRefines{SubdivisionMask_3}
 
 \cgalHasModel `CGAL::Loop_mask_3<PolygonMesh, VertexPointMap>`
 

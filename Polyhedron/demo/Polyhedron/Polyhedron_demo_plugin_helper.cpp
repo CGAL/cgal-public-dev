@@ -8,8 +8,8 @@
 void CGAL::Three::Polyhedron_demo_plugin_helper::addDockWidget(QDockWidget* dock_widget)
 {
   mw->addDockWidget(::Qt::LeftDockWidgetArea, dock_widget);
-  dock_widget->setSizePolicy(QSizePolicy(QSizePolicy::Preferred, QSizePolicy::Fixed));
-
+  dock_widget->setSizePolicy(QSizePolicy(QSizePolicy::Preferred, QSizePolicy::Preferred));
+  dock_widget->setFeatures(QDockWidget::DockWidgetClosable | QDockWidget::DockWidgetFloatable);
   QList<QDockWidget*> dockWidgets = mw->findChildren<QDockWidget*>();
   int counter = 0;
   Q_FOREACH(QDockWidget* dock, dockWidgets) {

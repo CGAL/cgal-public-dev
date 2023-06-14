@@ -8,41 +8,56 @@
 #include "Scene_surface_mesh_item_config.h"
 #include <CGAL/Three/Scene_zoomable_item_interface.h>
 #include <CGAL/Three/Scene_print_item_interface.h>
-#include "SMesh_type.h"
-#include <CGAL/Three/Scene_item.h>
-#include <CGAL/Three/Viewer_interface.h>
-#include <vector>
+#include <CGAL/Three/Scene_item_with_properties.h>
 
+#ifndef Q_MOC_RUN
+#include "SMesh_type.h"
+#endif
+
+#include <CGAL/Three/Scene_item.h>
+#include <CGAL/Three/Scene_item_rendering_helper.h>
+#include <CGAL/Three/Viewer_interface.h>
+
+#ifndef Q_MOC_RUN
+#include <vector>
 #include <boost/scoped_ptr.hpp>
 #include <boost/array.hpp>
+#endif
+
 #include <QColor>
 
 #include "properties.h"
 
+class QSlider;
 
 struct Scene_surface_mesh_item_priv;
 
 class SCENE_SURFACE_MESH_ITEM_EXPORT Scene_surface_mesh_item
-  : public CGAL::Three::Scene_item,
+  : public CGAL::Three::Scene_item_rendering_helper,
+    public CGAL::Three::Scene_item_with_properties,
     public CGAL::Three::Scene_zoomable_item_interface,
-    public CGAL::Three::Scene_print_item_interface{
+    public CGAL::Three::Scene_print_item_interface
+{
   Q_INTERFACES(CGAL::Three::Scene_print_item_interface)
   Q_PLUGIN_METADATA(IID "com.geometryfactory.PolyhedronDemo.PrintInterface/1.0")
   Q_OBJECT
   Q_INTERFACES(CGAL::Three::Scene_zoomable_item_interface)
   Q_PLUGIN_METADATA(IID "com.geometryfactory.PolyhedronDemo.ZoomInterface/1.0")
+
 public:
   typedef SMesh Face_graph;
   typedef SMesh::Property_map<vertex_descriptor,int> Vertex_selection_map;
   typedef SMesh::Property_map<face_descriptor,int> Face_selection_map;
+
+  void initialize_priv();
   Scene_surface_mesh_item();
   // Takes ownership of the argument.
   Scene_surface_mesh_item(SMesh*);
-  Scene_surface_mesh_item(SMesh);
+  Scene_surface_mesh_item(const SMesh&);
+  Scene_surface_mesh_item(SMesh&&);
   Scene_surface_mesh_item(const Scene_surface_mesh_item& other);
 
   ~Scene_surface_mesh_item();
-
 
   Scene_surface_mesh_item* clone() const Q_DECL_OVERRIDE;
   void draw(CGAL::Three::Viewer_interface *) const Q_DECL_OVERRIDE;
@@ -54,15 +69,20 @@ public:
   bool isEmpty() const Q_DECL_OVERRIDE;
   Bbox bbox() const Q_DECL_OVERRIDE;
   QString toolTip() const Q_DECL_OVERRIDE;
+  void copyProperties(Scene_item *) Q_DECL_OVERRIDE;
 
   QMenu* contextMenu() Q_DECL_OVERRIDE;
 
-  // Only needed for Scene_polyhedron_item
   void setItemIsMulticolor(bool);
-  void update_vertex_indices(){}
-  void update_halfedge_indices(){}
-  void update_facet_indices(){}
+  //to be called before invalidate() to enable or disable the recomputation
+  //of the colors_ vector to scale on min_patch value.
+  // For example, the Mesh_segmentation_plugin computes the colors_
+  // vector itself, so it must set recompute_colors to false to avoid
+  // having it overwritten
+  // in the code of this item.
+  void computeItemColorVectorAutomatically(bool);
   bool isItemMulticolor();
+  bool hasPatchIds();
   Vertex_selection_map vertex_selection_map();
   Face_selection_map face_selection_map();
 
@@ -74,27 +94,41 @@ public:
   Face_graph*       face_graph() { return polyhedron(); }
   const Face_graph* face_graph() const { return polyhedron(); }
 
+  // Gets PLY comments (empty if mesh not originated from PLY input)
+  std::string& comments();
+  const std::string& comments() const;
+
   void invalidate_aabb_tree();
   void invalidateOpenGLBuffers()Q_DECL_OVERRIDE;
+  void invalidate(Gl_data_names name);
 
 
   void compute_bbox()const Q_DECL_OVERRIDE;
-  void standard_constructor(SMesh *sm);
   bool save(std::ostream& out) const;
   bool save_obj(std::ostream& out) const;
   bool load_obj(std::istream& in);
+
   //statistics
-  enum STATS {
-    NB_VERTICES = 0,
-    NB_CONNECTED_COMPOS,
-    NB_BORDER_EDGES,
+  enum STATS
+  {
+    // Properties
+    NB_CONNECTED_COMPOS = 0,
+    NB_HOLES,
+    GENUS,
     IS_PURE_TRIANGLE,
-    NB_DEGENERATED_FACES,
-    HOLES,
+    IS_PURE_QUAD,
     AREA,
     VOLUME,
     SELFINTER,
+    HAS_NM_VERTICES,
+
+    // Vertices
+    NB_VERTICES,
+    NB_ISOLATED_VERTICES,
+
+    // Facets
     NB_FACETS,
+    NB_DEGENERATE_FACES,
     MIN_AREA,
     MAX_AREA,
     MED_AREA,
@@ -103,13 +137,17 @@ public:
     MIN_ASPECT_RATIO,
     MAX_ASPECT_RATIO,
     MEAN_ASPECT_RATIO,
-    GENUS,
+
+    // Edges
     NB_EDGES,
+    NB_BORDER_EDGES,
+    NB_DEGENERATE_EDGES,
     MIN_LENGTH,
     MAX_LENGTH,
-    MID_LENGTH,
+    MED_LENGTH,
     MEAN_LENGTH,
-    NB_NULL_LENGTH,
+
+    // Angles
     MIN_ANGLE,
     MAX_ANGLE,
     MEAN_ANGLE
@@ -122,13 +160,20 @@ public:
   void zoomToPosition(const QPoint &point, CGAL::Three::Viewer_interface *)const Q_DECL_OVERRIDE;
  //print_interface
   void printPrimitiveId(QPoint point, CGAL::Three::Viewer_interface*viewer)Q_DECL_OVERRIDE;
-  bool printVertexIds(CGAL::Three::Viewer_interface*)const Q_DECL_OVERRIDE;
-  bool printEdgeIds(CGAL::Three::Viewer_interface*)const Q_DECL_OVERRIDE;
-  bool printFaceIds(CGAL::Three::Viewer_interface*)const Q_DECL_OVERRIDE;
-  void printAllIds(CGAL::Three::Viewer_interface*) Q_DECL_OVERRIDE;
+  bool printVertexIds()const Q_DECL_OVERRIDE;
+  bool printEdgeIds()const Q_DECL_OVERRIDE;
+  bool printFaceIds()const Q_DECL_OVERRIDE;
+  void printAllIds() Q_DECL_OVERRIDE;
   bool shouldDisplayIds(CGAL::Three::Scene_item *current_item) const Q_DECL_OVERRIDE;
   bool testDisplayId(double x, double y, double z, CGAL::Three::Viewer_interface*)const Q_DECL_OVERRIDE;
-
+  float alpha() const Q_DECL_OVERRIDE;
+  void setAlpha(int alpha) Q_DECL_OVERRIDE;
+  QSlider* alphaSlider();
+  void computeElements() const Q_DECL_OVERRIDE;
+  void initializeBuffers(CGAL::Three::Viewer_interface*)const Q_DECL_OVERRIDE;
+  void updateVertex(vertex_descriptor vh);
+  void fill_flat_vertex_map();
+  void updateIds(vertex_descriptor vh);
 Q_SIGNALS:
   void item_is_about_to_be_changed();
   void selection_done();

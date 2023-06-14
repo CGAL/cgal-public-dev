@@ -2,19 +2,10 @@
 // All rights reserved.
 //
 // This file is part of CGAL (www.cgal.org).
-// You can redistribute it and/or modify it under the terms of the GNU
-// General Public License as published by the Free Software Foundation,
-// either version 3 of the License, or (at your option) any later version.
-//
-// Licensees holding a valid commercial license may use this file in
-// accordance with the commercial license agreement provided with the software.
-//
-// This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
-// WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 //
 // $URL$
 // $Id$
-// SPDX-License-Identifier: GPL-3.0+
+// SPDX-License-Identifier: GPL-3.0-or-later OR LicenseRef-Commercial
 //
 // Author(s)     : Baruch Zukerman <baruchzu@post.tau.ac.il>
 //                 Ron Wein <wein@post.tau.ac.il>
@@ -50,11 +41,9 @@ namespace Ss2 = Surface_sweep_2;
  * \param oi Output: An output iterator for the query results.
  * \pre The value-type of PointsIterator is Arrangement::Point_2,
  *      and the value-type of OutputIterator is is pair<Point_2, Result>,
- *      where Result is either
- *       (i) Object or
- *      (ii) boost::optional<boost::variant<Vertex_const_handle,
- *                                          Halfedge_const_handle,
- *                                          Face_const_handle> >.
+ *      where Result is boost::optional<boost::variant<Vertex_const_handle,
+ *                                      Halfedge_const_handle,
+ *                                      Face_const_handle> >.
  *      It represents the arrangement feature containing the point.
  */
 template <typename GeometryTraits_2, typename TopologyTraits,
@@ -131,7 +120,7 @@ locate(const Arrangement_on_surface_2<GeometryTraits_2, TopologyTraits>& arr,
    * Use the form 'A a(*b);' and not ''A a = b;' to handle the case where A has
    * only an implicit constructor, (which takes *b as a parameter).
    */
-  typename boost::mpl::if_<boost::is_same<Gt2, Bgt2>, const Bgt2&, Bgt2>::type
+  typename boost::mpl::if_<std::is_same<Gt2, Bgt2>, const Bgt2&, Bgt2>::type
     ex_traits(*geom_traits);
 
   // Define the sweep-line visitor and perform the sweep.

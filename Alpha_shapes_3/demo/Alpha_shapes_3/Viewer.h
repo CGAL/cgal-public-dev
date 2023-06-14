@@ -3,14 +3,14 @@
 
 #include "typedefs.h"
 #include <QMap>
-#include <QGLViewer/qglviewer.h>
+#include <CGAL/Qt/qglviewer.h>
 #include <QOpenGLFunctions_2_1>
 #include <QOpenGLVertexArrayObject>
 #include <QOpenGLBuffer>
 #include <QOpenGLShaderProgram>
 
 
-class Viewer : public QGLViewer, protected QOpenGLFunctions_2_1{
+class Viewer : public CGAL::QGLViewer{
   Q_OBJECT
 
   CGAL::Timer timer;
@@ -21,6 +21,7 @@ public:
   Viewer(QWidget* parent);
   ~Viewer()
   {
+    makeCurrent();
     buffers[0].destroy();
     buffers[1].destroy();
     buffers[2].destroy();
@@ -61,7 +62,7 @@ private:
     QOpenGLShaderProgram rendering_program_points;
     void initialize_buffers();
     void compute_elements();
-    void attrib_buffers(QGLViewer*);
+    void attrib_buffers(CGAL::QGLViewer*);
     void compile_shaders();
  public Q_SLOTS:
     void initializeGL();

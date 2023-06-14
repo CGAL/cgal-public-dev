@@ -12,10 +12,6 @@ model `Cartesian<NT>`, the two types are the same. For the
 kernel model `Homogeneous<NT>`, `Kernel::RT` is equal
 to `NT`, and `Kernel::FT` is equal to `Quotient<NT>`.
 
-\cgalHeading{Operators}
-
-The following operations can be applied on points:
-
 \cgalHeading{Example}
 
 The following declaration creates two points with
@@ -35,6 +31,7 @@ std::cout << p.x() << " " << p.y() << std::endl;
 \endcode
 
 \cgalModels `Kernel::Point_2`
+\cgalModels `Hashable` if `Kernel` is a cartesian kernel and if `Kernel::FT` is `Hashable`
 
 */
 template< typename Kernel >
@@ -74,7 +71,7 @@ Point_2(double x, double y);
 
 /*!
 introduces a point `p` initialized to `(hx/hw,hy/hw)`.
-\pre `hw` \f$ \neq\f$ `Kernel::RT(0)`.
+\pre `hw != Kernel::RT(0)`.
 */
 Point_2(const Kernel::RT &hx, const Kernel::RT &hy, const Kernel::RT &hw = RT(1));
 
@@ -162,19 +159,19 @@ Kernel::FT y() const;
 
 /*!
 returns the i'th homogeneous coordinate of `p`.
-\pre \f$ 0\leq i \leq2\f$.
+\pre `0 <= i <= 2`.
 */
 Kernel::RT homogeneous(int i) const;
 
 /*!
 returns the i'th %Cartesian coordinate of `p`.
-\pre \f$ 0\leq i \leq1\f$.
+\pre `0 <= i <= 1`.
 */
 Kernel::FT cartesian(int i) const;
 
 /*!
 returns `cartesian(i)`.
-\pre \f$ 0\leq i \leq1\f$.
+\pre `0 <= i <= 1`.
 */
 Kernel::FT operator[](int i) const;
 
@@ -196,8 +193,7 @@ returns the dimension (the constant 2).
 int dimension() const;
 
 /*!
-returns a bounding box containing `p`. Note that bounding boxes
-are not parameterized with whatsoever.
+returns a bounding box containing `p`.
 */
 Bbox_2 bbox() const;
 

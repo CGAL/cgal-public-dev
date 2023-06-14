@@ -1,15 +1,23 @@
-#include <CGAL/boost/graph/Face_filtered_graph.h>
-#include <CGAL/Polygon_mesh_processing/connected_components.h>
 #include <CGAL/boost/graph/copy_face_graph.h>
-#include "test_Prefix.h"
-#include <boost/numeric/conversion/cast.hpp>
-#include <boost/foreach.hpp>
-#include <boost/unordered_set.hpp>
-#include <boost/unordered_map.hpp>
+#include <CGAL/boost/graph/Face_filtered_graph.h>
+#include <CGAL/boost/graph/named_params_helper.h>
+#include <CGAL/Polygon_mesh_processing/connected_components.h>
 #include <CGAL/use.h>
-#include <fstream>
+#include "test_Prefix.h"
 
-typedef boost::unordered_set<std::size_t> id_map;
+#include <boost/numeric/conversion/cast.hpp>
+
+#include <unordered_map>
+#include <unordered_set>
+#include <fstream>
+#include <map>
+#include <memory>
+#include <utility>
+#include <cassert>
+
+typedef std::unordered_set<std::size_t> id_map;
+
+namespace PMP = CGAL::Polygon_mesh_processing;
 
 template <typename Graph>
 void test_halfedge_around_vertex_iterator(const  Graph& g)
@@ -17,9 +25,8 @@ void test_halfedge_around_vertex_iterator(const  Graph& g)
   typedef typename boost::graph_traits<Graph>::face_descriptor g_face_descriptor;
   typedef CGAL::Face_filtered_graph<Graph> Adapter;
   CGAL_GRAPH_TRAITS_MEMBERS(Adapter);
-  boost::unordered_map<g_face_descriptor, std::size_t> map(num_faces(g));
-  CGAL::Polygon_mesh_processing::connected_components(g, boost::make_assoc_property_map(map), CGAL::Polygon_mesh_processing::parameters::all_default());
-
+  std::unordered_map<g_face_descriptor, std::size_t> map(num_faces(g));
+  PMP::connected_components(g, boost::make_assoc_property_map(map));
 
   Adapter fg(g, 0, boost::make_assoc_property_map(map));
   typename boost::graph_traits<Adapter >::vertex_iterator vit, vend;
@@ -46,8 +53,9 @@ void test_halfedge_around_face_iterator(const Graph& g)
   typedef CGAL::Face_filtered_graph<Graph> Adapter;
   CGAL_GRAPH_TRAITS_MEMBERS(Adapter);
   std::map<g_face_descriptor, std::size_t> map;
-  CGAL::Polygon_mesh_processing::connected_components(g, boost::make_assoc_property_map(map), CGAL::Polygon_mesh_processing::parameters::all_default());
+  PMP::connected_components(g, boost::make_assoc_property_map(map));
   Adapter fg(g, 0, boost::make_assoc_property_map(map));
+
   face_iterator fit, fend;
   for(boost::tie(fit, fend) = faces(fg); fit != fend; ++fit) {
     halfedge_around_face_iterator hafit, hafend;
@@ -66,7 +74,7 @@ void test_edge_iterators(const Graph& g)
   typedef CGAL::Face_filtered_graph<Graph> Adapter;
   CGAL_GRAPH_TRAITS_MEMBERS(Adapter);
   std::map<g_face_descriptor, std::size_t> map;
-  CGAL::Polygon_mesh_processing::connected_components(g, boost::make_assoc_property_map(map), CGAL::Polygon_mesh_processing::parameters::all_default());
+  PMP::connected_components(g, boost::make_assoc_property_map(map));
   Adapter fg(g, 0, boost::make_assoc_property_map(map));
 
   // do we iterate as many as that?
@@ -92,7 +100,7 @@ void test_vertex_iterators(Graph& g)
   typedef CGAL::Face_filtered_graph<Graph> Adapter;
   CGAL_GRAPH_TRAITS_MEMBERS(Adapter);
   std::map<g_face_descriptor, std::size_t> map;
-  CGAL::Polygon_mesh_processing::connected_components(g, boost::make_assoc_property_map(map), CGAL::Polygon_mesh_processing::parameters::all_default());
+  PMP::connected_components(g, boost::make_assoc_property_map(map));
   Adapter fg(g, 0, boost::make_assoc_property_map(map));
   vertex_iterator vb, ve;
   std::size_t count = 0;
@@ -122,7 +130,7 @@ void test_out_edges(const Graph& g)
   typedef CGAL::Face_filtered_graph<Graph> Adapter;
   CGAL_GRAPH_TRAITS_MEMBERS(Adapter);
   std::map<g_face_descriptor, std::size_t> map;
-  CGAL::Polygon_mesh_processing::connected_components(g, boost::make_assoc_property_map(map), CGAL::Polygon_mesh_processing::parameters::all_default());
+  PMP::connected_components(g, boost::make_assoc_property_map(map));
   Adapter fg(g, 0, boost::make_assoc_property_map(map));
 
   vertex_iterator vb, ve;
@@ -151,7 +159,7 @@ void test_in_edges(const Graph& g)
   typedef CGAL::Face_filtered_graph<Graph> Adapter;
   CGAL_GRAPH_TRAITS_MEMBERS(Adapter);
   std::map<g_face_descriptor, std::size_t> map;
-  CGAL::Polygon_mesh_processing::connected_components(g, boost::make_assoc_property_map(map), CGAL::Polygon_mesh_processing::parameters::all_default());
+  PMP::connected_components(g, boost::make_assoc_property_map(map));
   Adapter fg(g, 0, boost::make_assoc_property_map(map));
 
   vertex_iterator vb, ve;
@@ -178,7 +186,7 @@ void test_in_out_edges(const Graph& g)
   typedef CGAL::Face_filtered_graph<Graph> Adapter;
   CGAL_GRAPH_TRAITS_MEMBERS(Adapter);
   std::map<g_face_descriptor, std::size_t> map;
-  CGAL::Polygon_mesh_processing::connected_components(g, boost::make_assoc_property_map(map), CGAL::Polygon_mesh_processing::parameters::all_default());
+  PMP::connected_components(g, boost::make_assoc_property_map(map));
   Adapter fg(g, 0, boost::make_assoc_property_map(map));
 
   // check that the sets of in out edges are the same
@@ -220,7 +228,7 @@ void test_edge_find(const Graph& g)
   typedef CGAL::Face_filtered_graph<Graph> Adapter;
   CGAL_GRAPH_TRAITS_MEMBERS(Adapter);
   std::map<g_face_descriptor, std::size_t> map;
-  CGAL::Polygon_mesh_processing::connected_components(g, boost::make_assoc_property_map(map), CGAL::Polygon_mesh_processing::parameters::all_default());
+  PMP::connected_components(g, boost::make_assoc_property_map(map));
   Adapter fg(g, 0, boost::make_assoc_property_map(map));
   typedef std::pair<edge_descriptor, bool>   ret;
 
@@ -244,7 +252,7 @@ void test_faces(const Graph& g)
   typedef CGAL::Face_filtered_graph<Graph> Adapter;
   CGAL_GRAPH_TRAITS_MEMBERS(Adapter);
   std::map<g_face_descriptor, std::size_t> map;
-  CGAL::Polygon_mesh_processing::connected_components(g, boost::make_assoc_property_map(map), CGAL::Polygon_mesh_processing::parameters::all_default());
+  PMP::connected_components(g, boost::make_assoc_property_map(map));
   Adapter fg(g, 0, boost::make_assoc_property_map(map));
 
   unsigned int count = 0;
@@ -264,22 +272,72 @@ void test_faces(const Graph& g)
 }
 
 template<typename Graph>
+void test_index_property_maps(const Graph& g)
+{
+  typedef CGAL::Face_filtered_graph<Graph> Adapter;
+  CGAL_GRAPH_TRAITS_MEMBERS(Adapter);
+
+  typedef typename boost::graph_traits<Graph>::face_descriptor g_face_descriptor;
+  std::map<g_face_descriptor, std::size_t> map;
+  PMP::connected_components(g, boost::make_assoc_property_map(map), CGAL::parameters::default_values());
+  Adapter fg(g, -1, boost::make_assoc_property_map(map));
+  assert(is_empty(fg));
+
+  // Non const
+  typedef typename CGAL::GetInitializedVertexIndexMap<Adapter>::type VIMap;
+  VIMap vim = CGAL::get_initialized_vertex_index_map(fg);
+  assert(CGAL::BGL::internal::is_index_map_valid(vim, num_vertices(fg), vertices(fg)));
+
+  typedef typename CGAL::GetInitializedHalfedgeIndexMap<Adapter>::type HIMap;
+  HIMap him = CGAL::get_initialized_halfedge_index_map(fg);
+  assert(CGAL::BGL::internal::is_index_map_valid(him, num_halfedges(fg), halfedges(fg)));
+
+  typedef typename CGAL::GetInitializedFaceIndexMap<Adapter>::type FIMap;
+  FIMap fim = CGAL::get_initialized_face_index_map(fg);
+  assert(CGAL::BGL::internal::is_index_map_valid(fim, num_faces(fg), faces(fg)));
+
+  fg.set_selected_faces(0, boost::make_assoc_property_map(map));
+  assert(!is_empty(fg));
+
+  assert(CGAL::BGL::internal::is_index_map_valid(vim, num_vertices(fg), vertices(fg)));
+  assert(CGAL::BGL::internal::is_index_map_valid(him, num_halfedges(fg), halfedges(fg)));
+  assert(CGAL::BGL::internal::is_index_map_valid(fim, num_faces(fg), faces(fg)));
+
+  // Const
+  const Adapter cfg(g, 0, boost::make_assoc_property_map(map));
+  typedef typename CGAL::GetInitializedVertexIndexMap<Adapter>::const_type CVIMap;
+  CVIMap cvim = CGAL::get_initialized_vertex_index_map(cfg);
+  assert(CGAL::BGL::internal::is_index_map_valid(cvim, num_vertices(cfg), vertices(cfg)));
+
+  typedef typename CGAL::GetInitializedHalfedgeIndexMap<Adapter>::const_type CHIMap;
+  CHIMap chim = CGAL::get_initialized_halfedge_index_map(cfg);
+  assert(CGAL::BGL::internal::is_index_map_valid(chim, num_halfedges(cfg), halfedges(cfg)));
+
+  typedef typename CGAL::GetInitializedFaceIndexMap<Adapter>::const_type CFIMap;
+  CFIMap cfim = CGAL::get_initialized_face_index_map(cfg);
+  assert(CGAL::BGL::internal::is_index_map_valid(cfim, num_faces(cfg), faces(cfg)));
+}
+
+template<typename Graph>
 void test_read(const Graph& g)
 {
   typedef typename boost::graph_traits<Graph>::face_descriptor g_face_descriptor;
   typedef CGAL::Face_filtered_graph<Graph> Adapter;
   CGAL_GRAPH_TRAITS_MEMBERS(Adapter);
+
   std::map<g_face_descriptor, std::size_t> map;
-  CGAL::Polygon_mesh_processing::connected_components(g, boost::make_assoc_property_map(map), CGAL::Polygon_mesh_processing::parameters::all_default());
+  PMP::connected_components(g, boost::make_assoc_property_map(map));
   Adapter fg(g, 0, boost::make_assoc_property_map(map));
-  assert(CGAL::is_valid(fg));
+  assert(fg.is_selection_valid());
+  assert(CGAL::is_valid_polygon_mesh(fg));
 }
 
 template <typename Graph>
 void
-test(const std::vector<Graph>& graphs)
+test_graph_range(const std::vector<Graph>& graphs)
 {
-  BOOST_FOREACH(Graph p, graphs){
+  for(Graph p : graphs)
+  {
     test_read(p);
     test_vertex_iterators(p);
     test_out_edges(p);
@@ -290,6 +348,7 @@ test(const std::vector<Graph>& graphs)
     test_edge_iterators(p);
     test_halfedge_around_face_iterator(p);
     test_halfedge_around_vertex_iterator(p);
+    test_index_property_maps(p);
   }
 }
 
@@ -297,14 +356,13 @@ test(const std::vector<Graph>& graphs)
 typedef SM::Point Point_3;
 
 template<class Mesh, typename VertexPointPMap>
-struct Constraint : public boost::put_get_helper<bool,Constraint<Mesh, VertexPointPMap> >
+struct Constraint
 {
   typedef typename boost::graph_traits<Mesh>::edge_descriptor edge_descriptor;
   typedef boost::readable_property_map_tag      category;
   typedef bool                                  value_type;
   typedef bool                                  reference;
   typedef edge_descriptor                       key_type;
-
 
   Constraint()
     :g_(NULL)
@@ -348,119 +406,157 @@ struct Constraint : public boost::put_get_helper<bool,Constraint<Mesh, VertexPoi
       return false;
   }
 
+  friend inline value_type get(const Constraint& m, const key_type k) { return m[k]; }
+
   const Mesh* g_;
   VertexPointPMap vppmap;
 };
+
 template<class Mesh, class FCCMAP, class Adapter>
 void test_mesh(Adapter fga)
 {
-
   CGAL_GRAPH_TRAITS_MEMBERS(Adapter);
   //check that there is the right number of simplices in fga
-  CGAL_assertion(CGAL::is_valid(fga));
-  CGAL_assertion(num_faces(fga) == 2);
-  CGAL_assertion(num_edges(fga) == 5);
-  CGAL_assertion(num_halfedges(fga) == 10);
-  CGAL_assertion(num_vertices(fga) == 4);
+  assert(CGAL::is_valid_polygon_mesh(fga));
+  assert(num_faces(fga) == 2);
+  assert(num_edges(fga) == 5);
+  assert(num_halfedges(fga) == 10);
+  assert(num_vertices(fga) == 4);
   halfedge_descriptor h = halfedge(*faces(fga).first, fga);
-  CGAL_assertion_code( vertex_descriptor v = source(h, fga) );
+  vertex_descriptor v = source(h, fga);
   //check that next() works inside the patch
-  CGAL_assertion(
-        next(next(next(h, fga), fga), fga) == h
-        );
+  assert(next(next(next(h, fga), fga), fga) == h);
   //check that next() works on bordure of the patch
   h = opposite(h, fga);
-  CGAL_assertion(
-        next(next(next(next(h, fga), fga), fga), fga) == h
-        );
+  assert(next(next(next(next(h, fga), fga), fga), fga) == h);
   //check that prev() works inside the patch
   h = halfedge(*faces(fga).first, fga);
-  CGAL_assertion(
-        prev(prev(prev(h, fga), fga), fga) == h
-        );
+  assert(prev(prev(prev(h, fga), fga), fga) == h);
   //check that prev() works on bordure of the patch
   h = opposite(h, fga);
-  CGAL_assertion(
-        prev(prev(prev(prev(h, fga), fga), fga), fga) == h
-        );
+  assert(prev(prev(prev(prev(h, fga), fga), fga), fga) == h);
   //check degree
-  CGAL_assertion(degree(v, fga) == 3);
+  assert(degree(v, fga) == 3);
   //check in_edges and out_edges
-  CGAL_assertion(std::distance(in_edges(v, fga).first ,in_edges(v, fga).second) == 3 );
-  CGAL_assertion(std::distance(out_edges(v, fga).first ,out_edges(v, fga).second) == 3 );
+  assert(std::distance(in_edges(v, fga).first ,in_edges(v, fga).second) == 3);
+  assert(std::distance(out_edges(v, fga).first ,out_edges(v, fga).second) == 3);
 
   Mesh copy;
   CGAL::copy_face_graph(fga, copy);
 }
 
-
-int
-main()
+template <typename PolygonMesh>
+void merge_vertices(typename boost::graph_traits<PolygonMesh>::vertex_descriptor v_keep,
+                    typename boost::graph_traits<PolygonMesh>::vertex_descriptor v_rm,
+                    std::vector<typename boost::graph_traits<PolygonMesh>::face_descriptor>& incident_faces,
+                    PolygonMesh& mesh)
 {
-  test(sm_data());
-#ifdef CGAL_USE_OPENMESH
-  test(omesh_data());
+  typedef typename boost::graph_traits<PolygonMesh>::halfedge_descriptor halfedge_descriptor;
+
+  halfedge_descriptor oh = halfedge(v_keep, mesh), done = oh;
+  do
+  {
+    incident_faces.push_back(face(oh, mesh));
+    oh = opposite(next(oh, mesh), mesh);
+  }
+  while(oh != done);
+
+  halfedge_descriptor h = halfedge(v_rm, mesh);
+  halfedge_descriptor start = h;
+  do
+  {
+    set_target(h, v_keep, mesh);
+    incident_faces.push_back(face(h, mesh));
+    h = opposite(next(h, mesh), mesh);
+  }
+  while(h != start);
+
+  remove_vertex(v_rm, mesh);
+}
+
+void test_invalid_selections()
+{
+  // this creates a non-manifold (pinched) vertex
+  SM mesh;
+  read_a_mesh(mesh, "data/7_faces_triangle.off");
+
+  std::vector<SM::Face_index> face_range;
+  face_range.push_back(SM::Face_index(1));
+  face_range.push_back(SM::Face_index(2));
+  face_range.push_back(SM::Face_index(3));
+
+  CGAL::Face_filtered_graph<SM> pinched_fg(mesh, face_range);
+  assert(pinched_fg.is_selection_valid());
+
+  // this creates a non-manifold vertex (multiple umbrellas)
+  clear(mesh);
+  read_a_mesh(mesh, "data/genus3.off");
+  assert(is_valid_polygon_mesh(mesh));
+
+  face_range.clear();
+  merge_vertices(SM::Vertex_index(1337), SM::Vertex_index(87), face_range, mesh);
+
+  CGAL::Face_filtered_graph<SM> many_umbrellas_fg(mesh, face_range);
+  assert(!many_umbrellas_fg.is_selection_valid());
+}
+
+int main()
+{
+  test_graph_range(poly_data());
+
+#ifdef CGAL_USE_SURFACE_MESH
+  test_graph_range(sm_data());
 #endif
-  //Make a tetrahedron and test the adapter for a patch that only contains 2 faces
+
+#ifdef CGAL_USE_OPENMESH
+  test_graph_range(omesh_data());
+#endif
+
+  test_invalid_selections();
+
+  // Make a tetrahedron and test the adapter for a patch that only contains 2 faces
   typedef CGAL::Face_filtered_graph<SM> SM_Adapter;
   typedef SM::Property_map<boost::graph_traits<SM>::face_descriptor , std::size_t> SM_FCCMap;
-  SM* sm = new SM();
-  CGAL::make_tetrahedron(
-        Point_3(1,1,1),
-        Point_3(0,0,0),
-        Point_3(0,0,1),
-        Point_3(1,0,1),
-        *sm);
-  SM_FCCMap fccmap =
-      sm->add_property_map<boost::graph_traits<SM>::face_descriptor, std::size_t>("f:CC").first;
-  SM::Property_map<boost::graph_traits<SM>::vertex_descriptor, SM::Point> positions =
-      sm->points();
-  CGAL::Polygon_mesh_processing::connected_components(*sm, fccmap, CGAL::Polygon_mesh_processing::parameters::
-                                                      edge_is_constrained_map(Constraint<SM, SM::Property_map<boost::graph_traits<SM>::vertex_descriptor,
-                                                                              SM::Point> >(*sm, positions)));
-  boost::unordered_set<long unsigned int> pids;
+  auto sm = std::make_unique<SM>();
+  CGAL::make_tetrahedron(Point_3(1,1,1), Point_3(0,0,0), Point_3(0,0,1), Point_3(1,0,1), *sm);
+
+  SM_FCCMap fccmap = sm->add_property_map<boost::graph_traits<SM>::face_descriptor, std::size_t>("f:CC").first;
+  SM::Property_map<boost::graph_traits<SM>::vertex_descriptor, SM::Point> positions = sm->points();
+  CGAL::Polygon_mesh_processing::connected_components(
+    *sm, fccmap, CGAL::parameters::edge_is_constrained_map(Constraint<SM, SM::Property_map<boost::graph_traits<SM>::vertex_descriptor,
+                                                           SM::Point> >(*sm, positions)));
+
+  std::unordered_set<long unsigned int> pids;
   pids.insert(0);
   pids.insert(2);
   SM_Adapter sm_adapter(*sm, pids, fccmap);
   test_mesh<SM,SM_FCCMap, SM_Adapter>(sm_adapter);
 
-
-
-
   typedef boost::graph_traits<Polyhedron> PolyTraits;
-  typedef boost::property_map<Polyhedron, boost::vertex_point_t>::type VPMap;
+  typedef boost::property_map<Polyhedron, boost::vertex_point_t>::const_type VPMap;
   typedef PolyTraits::face_descriptor poly_face_descriptor;
-  typedef boost::associative_property_map< std::map<poly_face_descriptor,
-      PolyTraits::faces_size_type> > FCMap;
-  typedef boost::property_map<Polyhedron, CGAL::face_external_index_t>::type FIMap;
-  typedef boost::property_map<Polyhedron, CGAL::vertex_external_index_t>::type VIMap;
-  typedef boost::property_map<Polyhedron, CGAL::halfedge_external_index_t>::type HIMap;
+  typedef boost::associative_property_map<std::map<poly_face_descriptor, PolyTraits::faces_size_type> > FCMap;
+  typedef boost::property_map<Polyhedron, CGAL::face_external_index_t>::const_type FIMap;
+  typedef boost::property_map<Polyhedron, CGAL::vertex_external_index_t>::const_type VIMap;
+  typedef boost::property_map<Polyhedron, CGAL::halfedge_external_index_t>::const_type HIMap;
   typedef CGAL::Face_filtered_graph<Polyhedron, FIMap, VIMap, HIMap> Poly_Adapter;
-  Polyhedron *poly = new Polyhedron();
-  CGAL::make_tetrahedron(
-        Point_3(1,1,1),
-        Point_3(0,0,0),
-        Point_3(0,0,1),
-        Point_3(1,0,1),
-        *poly);
 
+  auto poly = std::make_unique<Polyhedron>();
+  CGAL::make_tetrahedron(Point_3(1,1,1), Point_3(0,0,0), Point_3(0,0,1), Point_3(1,0,1), *poly);
 
   FIMap poly_fimap = get(CGAL::face_external_index, *poly);
   VIMap poly_vimap = get(CGAL::vertex_external_index, *poly);
   HIMap poly_himap = get(CGAL::halfedge_external_index, *poly);
-  std::map<poly_face_descriptor,
-      PolyTraits::faces_size_type> fc_map;
+  std::map<poly_face_descriptor, PolyTraits::faces_size_type> fc_map;
   FCMap poly_fccmap(fc_map);
 
   VPMap vpmap = get(boost::vertex_point, *poly);
-  CGAL::Polygon_mesh_processing::connected_components(*poly, poly_fccmap, CGAL::Polygon_mesh_processing::parameters::
-                                                      edge_is_constrained_map(Constraint<Polyhedron, VPMap >(*poly, vpmap)).
-                                                      face_index_map(poly_fimap));
-  Poly_Adapter poly_adapter(*poly,
-                            pids,
-                            poly_fccmap,
-                            CGAL::parameters::face_index_map(poly_fimap).
-                            vertex_index_map(poly_vimap).
-                            halfedge_index_map(poly_himap));
+  PMP::connected_components(*poly, poly_fccmap,
+                            CGAL::parameters::edge_is_constrained_map(Constraint<Polyhedron, VPMap >(*poly, vpmap))
+                                             .face_index_map(poly_fimap));
+  Poly_Adapter poly_adapter(*poly, pids, poly_fccmap,
+                            CGAL::parameters::face_index_map(poly_fimap)
+                                             .vertex_index_map(poly_vimap)
+                                             .halfedge_index_map(poly_himap));
   test_mesh<Polyhedron, FCMap, Poly_Adapter>(poly_adapter);
 }

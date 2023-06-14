@@ -1,7 +1,10 @@
 Algebraic_foundations
+Arithmetic_kernel
 Arrangement_on_surface_2
+Cartesian_kernel
 Circulator
 Distance_2
+Distance_3
 Filtered_kernel
 HalfedgeDS
 Hash_map
@@ -12,7 +15,6 @@ Interval_support
 Kernel_23
 Modular_arithmetic
 Number_types
-Polygon
 Principal_component_analysis_LGPL
 Profiling_tools
 Property_map

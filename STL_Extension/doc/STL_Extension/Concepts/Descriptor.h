@@ -1,13 +1,10 @@
 /*!
-\ingroup PkgStlExtensionConcepts
+\ingroup PkgSTLExtensionConcepts
 \cgalConcept
 
 The concept `Descriptor` allows to describe a unique object in an abstract model.
 
-\cgalRefines DefaultConstructible
-\cgalRefines CopyConstructible
-\cgalRefines Assignable
-\cgalRefines EqualityComparable
+\cgalRefines{DefaultConstructible,CopyConstructible,Assignable,EqualityComparable}
 
 \cgalHasModel `Index`
 \cgalHasModel `Handle`

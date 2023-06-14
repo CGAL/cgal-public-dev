@@ -2,19 +2,10 @@
 // All rights reserved.
 //
 // This file is part of CGAL (www.cgal.org).
-// You can redistribute it and/or modify it under the terms of the GNU
-// General Public License as published by the Free Software Foundation,
-// either version 3 of the License, or (at your option) any later version.
-//
-// Licensees holding a valid commercial license may use this file in
-// accordance with the commercial license agreement provided with the software.
-//
-// This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
-// WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 //
 // $URL$
 // $Id$
-// SPDX-License-Identifier: GPL-3.0+
+// SPDX-License-Identifier: GPL-3.0-or-later OR LicenseRef-Commercial
 //
 //
 // author(s)     : Eli Packer <elip@post.tau.ac.il>,
@@ -28,12 +19,12 @@
 
 #include <list>
 #include <CGAL/basic.h>
-#include <CGAL/predicates_on_points_2.h>
 #include <iostream>
 #include <CGAL/predicates_on_points_2.h>
 #include <CGAL/utility.h>
 #include <CGAL/assertions.h>
 #include <CGAL/Dimension.h>
+#include <CGAL/number_type_config.h>
 
 #include <boost/type_traits/is_pointer.hpp>
 
@@ -403,7 +394,7 @@ public:
   Multiple_kd_tree(const Point_saved_pair_list & inp_points_list,
                    int inp_number_of_trees,
                    const Segment_list & seg_list) :
-    pi(3.1415), half_pi(1.57075),
+    pi(CGAL_PI), half_pi(0.5 * CGAL_PI),
     number_of_trees(inp_number_of_trees), input_points_list(inp_points_list)
   {
 
@@ -419,7 +410,7 @@ public:
     int * kd_counter = new int[number_of_trees];
     std::size_t number_of_segments = seg_list.size();
 
-    // auxilary directions
+    // auxiliary directions
     Direction_list directions;
     double buffer_angle;
     Line_2 li;
@@ -591,7 +582,7 @@ public:
     iter->first->search(std::back_inserter(result), b);
 
     // create result
-    result_list.empty();
+    CGAL_assertion(result_list.empty());
 
     for( Point_with_hot_pixel_history_saved_iter my_point_iter = result.begin();    my_point_iter != result.end();   ++my_point_iter )
       result_list.push_back(my_point_iter->object);

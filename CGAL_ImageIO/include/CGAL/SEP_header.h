@@ -1,20 +1,11 @@
 // Copyright (c) 2016, 2017 GeometryFactory
 // All rights reserved.
 //
-// This file is part of CGAL (www.cgal.org); you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public License as
-// published by the Free Software Foundation; either version 3 of the License,
-// or (at your option) any later version.
-//
-// Licensees holding a valid commercial license may use this file in
-// accordance with the commercial license agreement provided with the software.
-//
-// This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
-// WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+// This file is part of CGAL (www.cgal.org)
 //
 // $URL$
 // $Id$
-// SPDX-License-Identifier: LGPL-3.0+
+// SPDX-License-Identifier: LGPL-3.0-or-later OR LicenseRef-Commercial
 //
 // Author(s)     : Laurent Rineau
 
@@ -31,11 +22,11 @@
 #include <boost/fusion/adapted/boost_tuple.hpp>
 #include <boost/array.hpp>
 #include <boost/spirit/include/qi.hpp>
-#include <boost/spirit/include/phoenix_core.hpp>
-#include <boost/spirit/include/phoenix_operator.hpp>
-#include <boost/spirit/include/phoenix_object.hpp>
-#include <boost/spirit/include/phoenix_stl.hpp>
-#include <boost/spirit/include/phoenix_fusion.hpp>
+#include <boost/phoenix/core.hpp>
+#include <boost/phoenix/operator.hpp>
+#include <boost/phoenix/object.hpp>
+#include <boost/phoenix/stl.hpp>
+#include <boost/phoenix/fusion.hpp>
 #include <boost/fusion/include/adapt_struct.hpp>
 
 #ifdef CGAL_SEP_READER_DEBUG
@@ -59,7 +50,7 @@ struct SEP_header_aux
   Int_dict int_dict;
   Double_dict double_dict;
   String_dict string_dict;
-  
+
 public:
   template <typename Tuple_string_variant>
   SEP_header_aux& operator<<(const Tuple_string_variant& tuple)
@@ -81,7 +72,7 @@ private:
 
     template <typename T>
     void operator()(const T& t) {
-      // std::cerr << "My assignement ("
+      // std::cerr << "My assignment ("
       //           << typeid(t).name() << "): "
       //           << key << "=" << t << std::endl;
       self->add(key, t);
@@ -114,7 +105,7 @@ BOOST_FUSION_ADAPT_STRUCT(
 namespace CGAL {
 
 class SEP_header {
-  
+
   boost::array<std::size_t, 3> _n;
   boost::array<double, 3> _d;
   boost::array<double, 3> _o;
@@ -128,7 +119,7 @@ public:
   SEP_header(std::string fileName) : _dim(-1) {
     std::ifstream input(fileName.c_str());
     if(!input) {
-      std::cerr << "Error: cannot open the header file \"" 
+      std::cerr << "Error: cannot open the header file \""
                 << fileName << "\"!\n";
       return;
     }
@@ -173,7 +164,7 @@ public:
     else return it->second;
   }
   /// @}
-  
+
   /// non-const getters
   /// @{
   double& get_o(int i) { return _o[i-1]; }

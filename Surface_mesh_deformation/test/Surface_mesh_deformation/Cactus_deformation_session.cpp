@@ -5,7 +5,6 @@
 #include <CGAL/Polyhedron_3.h>
 #include <CGAL/Polyhedron_items_with_id_3.h>
 #include <CGAL/Simple_cartesian.h>
-#include <CGAL/IO/Polyhedron_iostream.h>
 #include <CGAL/Surface_mesh_deformation.h>
 
 #include <CGAL/Timer.h>
@@ -59,7 +58,7 @@ void read_handle_difs_and_deform(DeformMesh& deform_mesh, InputIterator begin, I
   CGAL::Timer timer;
 
   //the original behavior of translate was to overwrite the previous
-  //translation. Now that it is cumulative, we need to substract the
+  //translation. Now that it is cumulative, we need to subtract the
   //previous translation vector to mimic the overwrite
   Vector previous(0,0,0);
   for(std::size_t i = 0; i < dif_vector.size(); ++i)
@@ -89,7 +88,7 @@ void read_handle_difs_and_deform(DeformMesh& deform_mesh, InputIterator begin, I
 int main()
 {
   Polyhedron mesh_1;
-  read_to_polyhedron("data/cactus.off", mesh_1);
+  read_to_polyhedron(CGAL::data_file_path("meshes/cactus.off"), mesh_1);
   Polyhedron mesh_2 = mesh_1;
 
   init_indices(mesh_1);

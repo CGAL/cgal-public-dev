@@ -2,20 +2,11 @@
 // All rights reserved.
 //
 // This file is part of CGAL (www.cgal.org).
-// You can redistribute it and/or modify it under the terms of the GNU
-// General Public License as published by the Free Software Foundation,
-// either version 3 of the License, or (at your option) any later version.
-//
-// Licensees holding a valid commercial license may use this file in
-// accordance with the commercial license agreement provided with the software.
-//
-// This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
-// WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 //
 // $URL$
 // $Id$
-// SPDX-License-Identifier: GPL-3.0+
-// 
+// SPDX-License-Identifier: GPL-3.0-or-later OR LicenseRef-Commercial
+//
 //
 // Author(s)     : Ron Wein <wein@post.tau.ac.il>
 //                 Efi Fogel <efif@post.tau.ac.il>
@@ -33,9 +24,10 @@
  */
 
 // include this to avoid a VC15 warning
-#include <CGAL/boost/graph/named_function_params.h>
+#include <CGAL/Named_function_parameters.h>
 
 #include <boost/graph/graph_concepts.hpp>
+#include <CGAL/boost/graph/iterator.h>
 #include <CGAL/boost/iterator/counting_iterator.hpp>
 #include <CGAL/Arrangement_on_surface_2.h>
 #include <CGAL/Arrangement_2.h>
@@ -45,7 +37,7 @@ namespace boost {
 
 /*! \class
  * Specialization of the BGL graph-traits template, which serves as a (primal)
- * adapter for Arrangment_on_surface_2, where the valid arrangement vertices
+ * adapter for Arrangement_on_surface_2, where the valid arrangement vertices
  * correspond to graph verices and arrangement halfedges correspond to
  * arrangement edges.
  * Note that non-fictitious vertices at infinity are also considered as graph
@@ -58,7 +50,7 @@ template <class GeomTraits, class TopTraits>
 class graph_traits<CGAL::Arrangement_on_surface_2<GeomTraits, TopTraits> >
 {
 public:
-  
+
   typedef GeomTraits                                 Geometry_traits_2;
   typedef TopTraits                                  Topology_traits;
   typedef CGAL::Arrangement_on_surface_2<Geometry_traits_2, Topology_traits>
@@ -80,20 +72,21 @@ private:
    * models the BidirectionalGraph concept as well as the VertexListGraph and
    * EdgeListGraph concepts.
    */
-  struct Arr_traversal_category : 
+  struct Arr_traversal_category :
     public virtual boost::bidirectional_graph_tag,   // This tag refines the
                                                      // incidence_graph_tag.
     public virtual boost::vertex_list_graph_tag,  // Can iterate over vertices.
-    public virtual boost::edge_list_graph_tag     // Can iterate over edges.
+    public virtual boost::edge_list_graph_tag,     // Can iterate over edges.
+    public virtual boost::adjacency_graph_tag
   {};
 
   /*! \class
    * Iteratator over all outgoing halfedges around a given vertex., skipping
    * fictitious halfedges.
-   * This is by adapting the Halfegde_around_vertex_circulator type to an
+   * This is by adapting the Halfedge_around_vertex_circulator type to an
    * iterator. Moreover, as the circulator goes over all ingoing halfedges
    * of the vertex, the iterator adapter may return their twin halfedges, if
-   * we need the outgoing halfedges.  
+   * we need the outgoing halfedges.
    */
   class Halfedge_around_vertex_iterator
   {
@@ -125,8 +118,8 @@ public:
     {}
 
     /*!
-     * Constructor. 
-     * \param circ A ciruclator for the halfedges around a vertex.
+     * Constructor.
+     * \param circ A circulator for the halfedges around a vertex.
      * \param out_edges Do we need the outgoing or the ingoing halfedges.
      * \param counter A counter associated with the iterator.
      * \param cend The past-the-end counter value.
@@ -154,12 +147,12 @@ public:
     {
       return (_circ == it._circ && _out == it._out && _counter == it._counter);
     }
-    
+
     bool operator!= (const Self& it) const
     {
       return (_circ != it._circ || _out != it._out || _counter != it._counter);
     }
-    
+
     /*! Dereference operators. */
     reference operator* () const
     {
@@ -170,7 +163,7 @@ public:
     {
       return &_hh;
     }
-    
+
     /* Increment operators. */
     Self& operator++()
     {
@@ -178,7 +171,7 @@ public:
       {
         ++_circ;
         ++_counter;
-        
+
         if (_out)
           _hh = _circ->twin();
         else
@@ -192,12 +185,12 @@ public:
     Self operator++ (int )
     {
       Self tmp = *this;
-      
+
       do
       {
         ++_circ;
         ++_counter;
-        
+
         if (_out)
           _hh = _circ->twin();
         else
@@ -241,7 +234,7 @@ public:
   typedef typename Arrangement_on_surface_2::Size       edges_size_type;
 
   // Types not required by any of these concepts:
-  typedef void                                          adjacency_iterator;
+  typedef  CGAL::Vertex_around_target_iterator<Arrangement_on_surface_2> adjacency_iterator;
 
   /*! Constructor. */
   graph_traits (const Arrangement_on_surface_2& arr) :
@@ -288,7 +281,7 @@ public:
     Halfedge_around_vertex_circulator   first = v->incident_halfedges();
     Halfedge_around_vertex_circulator   circ = first;
     degree_size_type                    deg = 0;
-    
+
     do
     {
       if (! circ->is_fictitious())
@@ -340,7 +333,7 @@ public:
 
 /*! \class
  * Specialization of the BGL graph-traits template, which serves as a (primal)
- * adapter for Arrangment_2, where the arrangement vertices correspond to graph
+ * adapter for Arrangement_2, where the arrangement vertices correspond to graph
  * verices and arrangement halfedges correspond to arrangement edges.
  */
 template <class Traits_, class Dcel_>
@@ -418,6 +411,20 @@ out_edges (typename
     gt_arr (arr);
 
   return std::make_pair (gt_arr.out_edges_begin (v), gt_arr.out_edges_end (v));
+}
+
+template <class GeomTraits, class TopTraits>
+Iterator_range< typename
+          boost::graph_traits<CGAL::Arrangement_on_surface_2<GeomTraits,
+                                                             TopTraits> >::
+                                                         adjacency_iterator>
+adjacent_vertices(typename
+           boost::graph_traits<CGAL::Arrangement_on_surface_2<GeomTraits,
+                                                              TopTraits> >::
+                                                          vertex_descriptor v,
+           const CGAL::Arrangement_on_surface_2<GeomTraits, TopTraits>& arr)
+{
+  return CGAL::vertices_around_target(v,arr);
 }
 
 /*!
@@ -537,7 +544,7 @@ degree (typename
 // --------------------------------------------------
 
 /*!
- * Get the number of vertices in the given arrangement. 
+ * Get the number of vertices in the given arrangement.
  * \param arr The arrangement.
  * \return Number of vertices.
  */
@@ -550,7 +557,7 @@ num_vertices (const CGAL::Arrangement_on_surface_2<GeomTraits, TopTraits>& arr)
   boost::graph_traits<CGAL::Arrangement_on_surface_2<GeomTraits, TopTraits> >
     gt_arr (arr);
 
-  return gt_arr.number_of_vertices(); 
+  return gt_arr.number_of_vertices();
 }
 
 /*!
@@ -579,7 +586,7 @@ vertices (const CGAL::Arrangement_on_surface_2<GeomTraits, TopTraits>& arr)
 // ------------------------------------------------
 
 /*!
- * Get the number of halfedges in the given arrangement. 
+ * Get the number of halfedges in the given arrangement.
  * \param arr The arrangement.
  * \return Number of halfedges (graph edges).
  */
@@ -589,7 +596,7 @@ boost::graph_traits<CGAL::Arrangement_on_surface_2<GeomTraits, TopTraits> >::
                                                                edges_size_type
 num_edges (const CGAL::Arrangement_on_surface_2<GeomTraits, TopTraits>& arr)
 {
-  return arr.number_of_halfedges(); 
+  return arr.number_of_halfedges();
 }
 
 /*!

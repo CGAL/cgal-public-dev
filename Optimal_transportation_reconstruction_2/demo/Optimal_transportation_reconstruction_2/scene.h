@@ -18,9 +18,11 @@
 #define cimg_display 0 // To avoid X11 or Windows-GDI dependency
 #include <CImg.h>
 #endif
-#include "random.h"
 #include <utility>      // std::pair
 #include <vector>
+
+#include <CGAL/number_type_config.h>
+#include <CGAL/Random.h>
 #include <CGAL/property_map.h>
 #include <CGAL/value_type_traits.h>
 #include <CGAL/compute_average_spacing.h>
@@ -72,8 +74,8 @@ public:
   typedef R_s_2::Edge_vector Edge_vector;
 
   typedef R_s_2::Sample_ Sample_;
-  typedef R_s_2::Sample_vector Sample_vector;
-  typedef R_s_2::Sample_vector_const_iterator Sample_vector_const_iterator;
+  typedef std::vector<Sample_> Sample_vector;
+  typedef Sample_vector::const_iterator Sample_vector_const_iterator;
 
   typedef R_s_2::PSample PSample;
   typedef R_s_2::SQueue SQueue;
@@ -83,14 +85,14 @@ public:
 
 private:
 
-  struct Point_3_from_sample : public CGAL::unary_function<Sample_, K::Point_3>
+  struct Point_3_from_sample : public CGAL::cpp98::unary_function<Sample_, K::Point_3>
   {
     K::Point_3 operator() (const Sample_& sample) const
     {
       return K::Point_3 (sample.point().x(), sample.point().y(), 0.);
     }
   };
-  
+
   // data
   std::vector<Sample_> m_samples;
 
@@ -105,6 +107,16 @@ private:
   double m_bbox_y;
   double m_bbox_size;
 
+  //Random
+  CGAL::Random random;
+
+  template <class Vector>
+  Vector random_vec(const double scale)
+  {
+    double dx = random.get_double(-scale, scale);
+    double dy = random.get_double(-scale, scale);
+    return Vector(dx, dy);
+  }
 
 public:
   Scene() {
@@ -395,10 +407,10 @@ public:
                                                          Point_3_from_sample()),
                          boost::make_transform_iterator (m_samples.end(),
                                                          Point_3_from_sample())),
-       3);
+       3, CGAL::parameters::point_map (CGAL::Identity_property_map_no_lvalue<K::Point_3>()));
     std::cerr << "Average spacing = " << spacing << std::endl;
   }
-  
+
   void print_vertex(Vertex vertex) {
     std::cout << "vertex " << vertex << std::endl;
   }
@@ -420,19 +432,17 @@ public:
 
     m_pwsrec->list_output(std::back_inserter(isolated_points), std::back_inserter(edges));
 
-    int vertex_count = 0;
+    CGAL_assertion_code(int vertex_count = 0);
     for (std::vector<Point>::iterator it = isolated_points.begin();
       it != isolated_points.end(); it++) {
-      vertex_count++;
+      CGAL_assertion_code(vertex_count++);
       std::cout << *it << std::endl;
     }
     CGAL_assertion(vertex_count == 18);
 
-    int edge_count = 0;
     for (std::vector<Segment>::iterator it = edges.begin();
       it != edges.end(); it++) {
       std::cout << *it << std::endl;
-      edge_count++;
     }
   }
 
@@ -442,7 +452,7 @@ public:
     for (std::vector<Sample_>::iterator it = m_samples.begin();
       it != m_samples.end(); ++it) {
       Sample_& s = *it;
-      samples.push_back(&s);
+      samples.push_back(s);
     }
 
     if (filename.contains(".xy", Qt::CaseInsensitive)) {
@@ -459,8 +469,8 @@ public:
     std::ofstream ofs(qPrintable(filename));
     for (Sample_vector_const_iterator it = samples.begin();
       it != samples.end(); ++it) {
-      Sample_* sample = *it;
-      ofs << sample->point() << std::endl;
+      const Sample_& sample = *it;
+      ofs << sample.point() << std::endl;
     }
     ofs.close();
   }
@@ -495,12 +505,12 @@ public:
     Sample_vector_const_iterator it;
     for (it = vertices.begin(); it != vertices.end(); it++) {
       vertices_mass_list.push_back(
-        std::make_pair((*it)->point(), (*it)->mass()));
+        std::make_pair((*it).point(), (*it).mass()));
     }
     PointMassList samples_mass_list;
     for (it = samples.begin(); it != samples.end(); it++) {
       samples_mass_list.push_back(
-        std::make_pair((*it)->point(), (*it)->mass()));
+        std::make_pair((*it).point(), (*it).mass()));
     }
 
     Point_property_map point_pmap;
@@ -523,7 +533,7 @@ public:
 
     std::vector<Sample_>::iterator it;
     for (it = m_samples.begin(); it != m_samples.end(); it++) {
-      const double rd = random_double(0.0, 1.0);
+      const double rd = random.get_double(0.0, 1.0);
       if (rd >= percentage)
         selected.push_back(*it);
     }
@@ -541,10 +551,10 @@ public:
     for (it = m_samples.begin(); it != m_samples.end(); ++it) {
       Sample_& s = *it;
 
-      samples.push_back(&s);
-      FT rv = random_double(0.0, 1.0);
+      samples.push_back(s);
+      FT rv = random.get_double(0.0, 1.0);
       if (rv <= percentage)
-        vertices.push_back(&s);
+        vertices.push_back(s);
     }
   }
 
@@ -616,7 +626,7 @@ public:
     const float point_size, const float vertex_size,
     const float line_thickness, GlViewer* viewer)
   {
-    if (m_pwsrec == NULL) {
+    if (m_pwsrec == nullptr) {
       return;
     }
     if(!is_viewer_set)
@@ -627,7 +637,7 @@ public:
 
     if (view_tolerance)
       draw_tolerance(viewer);
-    
+
     if (view_edges)
       m_pwsrec->draw_edges(0.5f * line_thickness, 0.9f, 0.9f, 0.9f);
 
@@ -943,7 +953,7 @@ public:
 
   void append_star(const int nb_branches, const int density) {
     std::cerr << "append star...";
-    const double deg_in_rad = 3.1415926535897932384626 / 180.0;
+    const double deg_in_rad = CGAL_PI / 180.0;
     const double incr = 180.0 / nb_branches;
     double angle = 0.0;
     const Point center(0.5, 0.5);
@@ -960,7 +970,7 @@ public:
 
   void append_predefined_increasingly_sharp_angles(const int density,
     const double min_angle) {
-    const double deg_in_rad = 3.1415926535897932384626 / 180.0;
+    const double deg_in_rad = CGAL_PI / 180.0;
     double prev_angle = 0.0;
     double curr_angle = min_angle;
     double incr = min_angle;

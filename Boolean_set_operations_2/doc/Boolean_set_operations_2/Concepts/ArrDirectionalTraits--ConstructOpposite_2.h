@@ -4,7 +4,7 @@ namespace ArrDirectionalTraits {
 \ingroup PkgBooleanSetOperations2Concepts
 \cgalConcept
 
-\cgalRefines `AdaptableUnaryFunction`
+\cgalRefines{AdaptableUnaryFunction}
 
 \cgalHasModel `ArrangementDirectionalXMonotoneTraits_2::Construct_opposite_2`
 
@@ -18,11 +18,11 @@ public:
 /// @{
 
 /*!
-accepts an \f$ x\f$-monotone curve `xc` and returns its opposite curve, 
-namely a curve whose graph is the same as `xc`'s, and whose source and 
-target are swapped with respect to `xc`'s source and target. 
-*/ 
-ArrDirectionalTraits::X_monotone_curve_2 operator()(ArrDirectionalTraits::X_monotone_curve_2 xc); 
+accepts an \f$ x\f$-monotone curve `xc` and returns its opposite curve,
+namely a curve whose graph is the same as `xc`'s, and whose source and
+target are swapped with respect to `xc`'s source and target.
+*/
+ArrDirectionalTraits::X_monotone_curve_2 operator()(ArrDirectionalTraits::X_monotone_curve_2 xc);
 
 /// @}
 

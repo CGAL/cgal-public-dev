@@ -2,8 +2,6 @@
 #include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
 #include <CGAL/Side_of_triangle_mesh.h>
 #include <CGAL/Polyhedron_3.h>
-#include <CGAL/boost/graph/graph_traits_Polyhedron_3.h>
-#include <CGAL/IO/Polyhedron_iostream.h>
 
 #include "point_inside_helpers.h"
 
@@ -13,7 +11,7 @@ typedef CGAL::Polyhedron_3<K> Polyhedron;
 
 int main(int argc, char** argv)
 {
-  const char* filename = (argc > 1) ? argv[1] : "data/elephant.off";
+  const std::string filename = (argc > 1) ? argv[1] : CGAL::data_file_path("meshes/elephant.off");
   std::ifstream input(filename);
   Polyhedron poly;
 
@@ -33,7 +31,7 @@ int main(int argc, char** argv)
   random_points<Point>(poly, nb_query, back_inserter(points));
   inside_test(poly, points);
 
-  //test compilation of constructor from AABB_tree  
+  //test compilation of constructor from AABB_tree
   typedef CGAL::AABB_face_graph_triangle_primitive<Polyhedron> FGTP;
   typedef CGAL::AABB_traits<K, FGTP>    AABB_traits;
   typedef CGAL::AABB_tree<AABB_traits>  AABB_tree;

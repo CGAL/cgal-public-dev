@@ -1,3 +1,4 @@
+#include <QAction>
 #include <QApplication>
 #include <QMessageBox>
 #include <QMainWindow>
@@ -18,7 +19,7 @@ class Polyhedron_demo_features_detection_plugin :
 {
   Q_OBJECT
   Q_INTERFACES(CGAL::Three::Polyhedron_demo_plugin_interface)
-    Q_PLUGIN_METADATA(IID "com.geometryfactory.PolyhedronDemo.IOPluginInterface/1.0")
+    Q_PLUGIN_METADATA(IID "com.geometryfactory.PolyhedronDemo.PluginInterface/1.0")
   QAction* actionDetectFeatures;
 public:
   QList<QAction*> actions() const { return QList<QAction*>() << actionDetectFeatures; }
@@ -45,7 +46,7 @@ class Polyhedron_demo_features_detection_dialog : public QDialog, private Ui::VC
 {
   Q_OBJECT
   public:
-    Polyhedron_demo_features_detection_dialog(QWidget* /*parent*/ = 0)
+    Polyhedron_demo_features_detection_dialog(QWidget* /*parent*/ = nullptr)
     {
       setupUi(this);
     }
@@ -66,7 +67,7 @@ void Polyhedron_demo_features_detection_plugin::on_actionDetectFeatures_triggere
   {
     // Gets point set
     Point_set* points = item->point_set();
-    if(points == NULL)
+    if(points == nullptr)
         return;
 
     // Gets options
@@ -75,7 +76,7 @@ void Polyhedron_demo_features_detection_plugin::on_actionDetectFeatures_triggere
       return;
 
     QApplication::setOverrideCursor(Qt::WaitCursor);
-    typedef CGAL::cpp11::array<double,6> Covariance;
+    typedef std::array<double,6> Covariance;
     std::vector<Covariance> cov;
 
     std::cerr << "Compute VCM (offset_radius="

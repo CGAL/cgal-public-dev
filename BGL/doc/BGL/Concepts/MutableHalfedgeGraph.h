@@ -6,7 +6,7 @@ The concept `MutableHalfedgeGraph` refines the concept `HalfedgeGraph`
 and adds the requirements for operations to add vertices and edges, and to
 update the incidence information between vertices and halfedges.
 
-\cgalRefines `HalfedgeGraph`
+\cgalRefines{HalfedgeGraph}
 
 \cgalHasModel See \link PkgBGLTraits Boost Graph Traits Specializations \endlink
 
@@ -52,7 +52,7 @@ void
 set_target(boost::graph_traits<MutableHalfedgeGraph>::halfedge_descriptor h, boost::graph_traits<MutableHalfedgeGraph>::vertex_descriptor v, MutableHalfedgeGraph& g);
 
 /*! \relates MutableHalfedgeGraph
-Sets the halfedge of `v` to `h`. The target vertex of `h` must be `v`. 
+Sets the halfedge of `v` to `h`. The target vertex of `h` must be `v`.
  */
 template <typename MutableHalfedgeGraph>
 void

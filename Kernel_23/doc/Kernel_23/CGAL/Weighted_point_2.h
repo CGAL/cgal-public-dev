@@ -14,6 +14,7 @@ to `NT`, and `Kernel::FT` is equal to `Quotient<NT>`.
 \sa `Point_2<Kernel>`
 
 \cgalModels `Kernel::WeightedPoint_2`
+\cgalModels `Hashable` if `Kernel` is a cartesian kernel and if `Kernel::FT` is `Hashable`
 
 */
 template< typename Kernel >
@@ -101,16 +102,6 @@ public:
   */
   bool operator!=(const Weighted_point_2<Kernel> &q) const;
 
-  /*!
-  translates the point by the vector `v`.
-  */
-  Weighted_point_2<Kernel>& operator+=(const Vector_2<Kernel> &v);
-
-  /*!
-  translates the point by the vector -`v`.
-  */
-  Weighted_point_2<Kernel>& operator-=(const Vector_2<Kernel> &v);
-
   /// @}
 
   /// \name Coordinate Access
@@ -156,19 +147,19 @@ public:
 
   /*!
   returns the i'th homogeneous coordinate of `p`.
-  \pre \f$ 0\leq i \leq2\f$.
+  \pre  `0 <= i <= 2`
   */
   Kernel::RT homogeneous(int i) const;
 
   /*!
   returns the i'th %Cartesian coordinate of `p`.
-  \pre \f$ 0\leq i \leq1\f$.
+  \pre  `0 <= i <= 1`
   */
   Kernel::FT cartesian(int i) const;
 
   /*!
   returns `cartesian(i)`.
-  \pre \f$ 0\leq i \leq1\f$.
+  \pre  `0 <= i <= 1`
   */
   Kernel::FT operator[](int i) const;
 
@@ -190,8 +181,7 @@ public:
   int dimension() const;
 
   /*!
-  returns a bounding box containing `p`. Note that bounding boxes
-  are not parameterized with whatsoever.
+  returns a bounding box containing `p`.
   */
   Bbox_2 bbox() const;
 

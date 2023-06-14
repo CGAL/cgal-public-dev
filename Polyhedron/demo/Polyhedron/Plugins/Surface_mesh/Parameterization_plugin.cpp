@@ -2,28 +2,16 @@
 #include <QAction>
 #include <QMainWindow>
 #include <QStringList>
-#ifdef USE_SURFACE_MESH
+
 #include "Scene_surface_mesh_item.h"
 #include "Scene_textured_surface_mesh_item.h"
 #include "Scene_polyhedron_selection_item.h"
 #include "SMesh_type.h"
-#else
-#include "Scene_polyhedron_item.h"
-#include "Scene_textured_polyhedron_item.h"
-#include "Scene_polyhedron_selection_item.h"
-#include "Textured_polyhedron_type.h"
-#include "Polyhedron_type.h"
-#include <CGAL/Polyhedron_3.h>
-#include <CGAL/boost/graph/graph_traits_Polyhedron_3.h>
-#include <CGAL/Textured_polyhedron_builder.h>
 #include <CGAL/Three/Polyhedron_demo_plugin_helper.h>
 #include <CGAL/Three/Polyhedron_demo_plugin_interface.h>
-#include <CGAL/Polyhedron_items_with_id_3.h>
-#endif
-#include <CGAL/Three/Polyhedron_demo_plugin_helper.h>
-#include <CGAL/Three/Polyhedron_demo_plugin_interface.h>
+#include <CGAL/Three/Three.h>
 #include "Scene.h"
-#include <QTime>
+#include <QElapsedTimer>
 #include <QGraphicsScene>
 #include <QGraphicsItem>
 #include <QPen>
@@ -41,6 +29,7 @@
 #include <CGAL/Surface_mesh_parameterization/Barycentric_mapping_parameterizer_3.h>
 #include <CGAL/Surface_mesh_parameterization/Discrete_authalic_parameterizer_3.h>
 #include <CGAL/Surface_mesh_parameterization/Discrete_conformal_map_parameterizer_3.h>
+#include <CGAL/Surface_mesh_parameterization/Iterative_authalic_parameterizer_3.h>
 #include <CGAL/Surface_mesh_parameterization/Error_code.h>
 #include <CGAL/Surface_mesh_parameterization/LSCM_parameterizer_3.h>
 #include <CGAL/Surface_mesh_parameterization/Two_vertices_parameterizer_3.h>
@@ -48,26 +37,21 @@
 #include <CGAL/Surface_mesh_parameterization/Orbifold_Tutte_parameterizer_3.h>
 #include <CGAL/Surface_mesh_parameterization/parameterize.h>
 
-
-#include <boost/foreach.hpp>
-#include <boost/unordered_map.hpp>
-#include <boost/unordered_set.hpp>
 #include <boost/container/flat_map.hpp>
 
 #include <algorithm>
 #include <iostream>
 #include <iterator>
 #include <vector>
-
+#include <unordered_map>
+#include <unordered_set>
 
 #include <CGAL/boost/graph/properties.h>
 #include <CGAL/Qt/GraphicsViewNavigation.h>
 
 #include "ui_Parameterization_widget.h"
-#include "ui_ARAP_dialog.h"
 #include "ui_OTE_dialog.h"
 
-#ifdef USE_SURFACE_MESH
 typedef Scene_surface_mesh_item Scene_facegraph_item;
 typedef Scene_textured_surface_mesh_item Scene_textured_facegraph_item;
 typedef SMesh Textured_face_graph;
@@ -75,19 +59,9 @@ typedef SMesh Base_face_graph;
 typedef SMesh Face_graph;
 typedef EPICK Traits;
 
-#else
-typedef Scene_polyhedron_item Scene_facegraph_item;
-typedef Scene_textured_polyhedron_item Scene_textured_facegraph_item;
-typedef Textured_polyhedron Textured_face_graph;
-typedef Textured_face_graph::Base Base_face_graph;
-typedef Polyhedron Face_graph;
-typedef Kernel Traits;
-
-#endif
-
 namespace SMP = CGAL::Surface_mesh_parameterization;
 
-typedef boost::unordered_set<boost::graph_traits<Base_face_graph>::face_descriptor> Component;
+typedef std::unordered_set<boost::graph_traits<Base_face_graph>::face_descriptor> Component;
 typedef std::vector<Component> Components;
 
 struct Is_selected_property_map{
@@ -97,7 +71,7 @@ struct Is_selected_property_map{
   Base_face_graph* graph;
   HIndexMap idmap;
   Is_selected_property_map()
-    : is_selected_ptr(NULL), graph(NULL) {}
+    : is_selected_ptr(nullptr), graph(nullptr) {}
   Is_selected_property_map(std::vector<bool>& is_selected,
                            Base_face_graph* graph)
     : is_selected_ptr( &is_selected), graph(graph)
@@ -132,13 +106,13 @@ protected:
   bool eventFilter(QObject *obj, QEvent *ev)
   {
     QGraphicsView* v = qobject_cast<QGraphicsView*>(obj);
-    if(v == NULL) {
+    if(v == nullptr) {
       QWidget* viewport = qobject_cast<QWidget*>(obj);
-      if(viewport == NULL) {
+      if(viewport == nullptr) {
         return false;
       }
       v = qobject_cast<QGraphicsView*>(viewport->parent());
-      if(v == NULL) {
+      if(v == nullptr) {
         return false;
       }
     }
@@ -168,12 +142,17 @@ protected:
     }
     case QEvent::Wheel: {
       QWheelEvent* event = static_cast<QWheelEvent*>(ev);
-      QPointF old_pos = v->mapToScene(event->pos());
-      if(event->delta() <0)
+#if QT_VERSION < QT_VERSION_CHECK(5, 14, 0)
+      QPoint pos = event->pos();
+#else
+      QPointF pos = event->position();
+#endif
+      QPointF old_pos = v->mapToScene(pos.x(), pos.y());
+      if(event->angleDelta().y() <0)
         v->scale(1.2, 1.2);
       else
         v->scale(0.8, 0.8);
-      QPointF new_pos = v->mapToScene(event->pos());
+      QPointF new_pos = v->mapToScene(pos.x(), pos.y());
       QPointF delta = new_pos - old_pos;
       v->translate(delta.x(), delta.y());
       v->update();
@@ -228,11 +207,11 @@ typedef boost::graph_traits<Seam_mesh>::face_descriptor             s_face_descr
 
 typedef boost::graph_traits<Seam_mesh>::edges_size_type             s_edges_size_type;
 
-typedef boost::unordered_set<boost::graph_traits<Base_face_graph>::
+typedef std::unordered_set<boost::graph_traits<Base_face_graph>::
 face_descriptor>                                                    Component;
 typedef std::vector<Component>                                      Components;
 
-typedef boost::unordered_set<s_face_descriptor>                       SComponent;
+typedef std::unordered_set<s_face_descriptor>                       SComponent;
 typedef std::vector<SComponent>                                     SComponents;
 
 class UVItem : public QGraphicsItem
@@ -290,31 +269,25 @@ public :
     pen.setWidth(0);
     painter->setPen(pen);
     painter->setBrush(brush);
-#ifdef USE_SURFACE_MESH
-SMesh::Property_map<halfedge_descriptor,std::pair<float, float> > uv;
-uv = graph->add_property_map<halfedge_descriptor,std::pair<float, float> >("h:uv",std::make_pair(0.0f,0.0f)).first;
-#endif
+    SMesh::Property_map<halfedge_descriptor,float> u,v;
+
+    u = graph->add_property_map<halfedge_descriptor,float>("h:u", 0.0f).first;
+    v = graph->add_property_map<halfedge_descriptor,float>("h:v", 0.0f).first;
+
     for( Component::iterator
          fi = components->at(m_current_component).begin();
          fi != components->at(m_current_component).end();
          ++fi)
     {
       boost::graph_traits<Base_face_graph>::face_descriptor f(*fi);
-#ifdef USE_SURFACE_MESH
+
       QPointF points[3];
       boost::graph_traits<Base_face_graph>::halfedge_descriptor h = halfedge(f, *graph);;
-      points[0] = QPointF(get(uv, h).first, get(uv, h).second);
+      points[0] = QPointF(get(u, h), get(v, h));
       h = next(halfedge(f, *graph), *graph);
-      points[1] = QPointF(get(uv, h).first, get(uv, h).second);
+      points[1] = QPointF(get(u, h), get(v, h));
       h = next(next(halfedge(f, *graph), *graph), *graph);
-      points[2] = QPointF(get(uv, h).first, get(uv, h).second);
-#else
-      QPointF points[3];
-      points[0] = QPointF(halfedge(f, *graph)->u(), f->halfedge()->v());
-      points[1] = QPointF(halfedge(f, *graph)->next()->u(), f->halfedge()->next()->v());
-      points[2] = QPointF(halfedge(f, *graph)->next()->next()->u(), f->halfedge()->next()->next()->v());
-#endif
-
+      points[2] = QPointF(get(u, h), get(v, h));
       painter->drawPolygon(points,3);
     }
   }
@@ -350,6 +323,10 @@ public:
     return _actions;
   }
 
+  ~Polyhedron_demo_parameterization_plugin()
+  {
+    delete navigation;
+  }
   void init(QMainWindow* mainWindow,
             Scene_interface* scene_interface,
             Messages_interface* msg)
@@ -364,6 +341,7 @@ public:
     QAction* actionDCP = new QAction ("Discrete Conformal Map", mw);
     QAction* actionLSC = new QAction("Least Square Conformal Map", mw);
     QAction* actionDAP = new QAction("Discrete Authalic", mw);
+    QAction* actionIAP = new QAction("Iterative Authalic", mw);
     QAction* actionARAP = new QAction("As Rigid As Possible", mw);
     QAction* actionOTE = new QAction("Orbifold Tutte Embedding", mw);
     QAction* actionBTP = new QAction("Tutte Barycentric", mw);
@@ -371,6 +349,7 @@ public:
     actionDCP->setObjectName("actionDCP");
     actionLSC->setObjectName("actionLSC");
     actionDAP->setObjectName("actionDAP");
+    actionIAP->setObjectName("actionIAP");
     actionARAP->setObjectName("actionARAP");
     actionOTE->setObjectName("actionOTE");
     actionBTP->setObjectName("actionBTP");
@@ -378,6 +357,7 @@ public:
     _actions << actionARAP
              << actionBTP
              << actionDAP
+             << actionIAP
              << actionDCP
              << actionLSC
              << actionMVC
@@ -385,26 +365,14 @@ public:
     autoConnectActions();
     Q_FOREACH(QAction *action, _actions)
       action->setProperty("subMenuName",
-                    #ifdef USE_SURFACE_MESH
                           "Triangulated Surface Mesh Parameterization"
-                    #else
-                          "Triangulated Surface Mesh Parameterization for Polyhedron"
-                    #endif
                           );
     dock_widget = new QDockWidget(
-      #ifdef USE_SURFACE_MESH
-          "UVMapping for Surface Mesh"
-      #else
-          "UVMapping for Polyhedron"
-      #endif
+          "UVMapping "
           , mw);
     ui_widget.setupUi(dock_widget);
     dock_widget->setWindowTitle(tr(
-                              #ifdef USE_SURFACE_MESH
-                                  "UVMapping for Surface Mesh"
-                              #else
-                                  "UVMapping for Polyhedron"
-                              #endif
+                                  "UVMapping "
                                   ));
     graphics_scene = new QGraphicsScene(dock_widget);
     ui_widget.graphicsView->setScene(graphics_scene);
@@ -417,7 +385,7 @@ public:
     connect(ui_widget.nextButton, &QPushButton::clicked, this, &Polyhedron_demo_parameterization_plugin::on_nextButton_pressed);
     addDockWidget(dock_widget);
     dock_widget->setVisible(false);
-    current_uv_item = NULL;
+    current_uv_item = nullptr;
   }
 
   bool applicable(QAction*) const
@@ -447,6 +415,7 @@ public Q_SLOTS:
   void on_actionDCP_triggered();
   void on_actionLSC_triggered();
   void on_actionDAP_triggered();
+  void on_actionIAP_triggered();
   void on_actionARAP_triggered();
   void on_actionOTE_triggered();
   void on_actionBTP_triggered();
@@ -455,14 +424,17 @@ public Q_SLOTS:
 
   void replacePolyline()
   {
-    if(current_uv_item)
-      qobject_cast<Scene_textured_facegraph_item*>(projections.key(current_uv_item))->add_border_edges(std::vector<float>(0));
+    if(current_uv_item){
+      Scene_textured_facegraph_item* t_item =
+          qobject_cast<Scene_textured_facegraph_item*>(projections.key(current_uv_item));
+     t_item->add_border_edges(std::vector<float>(0));
+    }
 
     int id = scene->mainSelectionIndex();
 
     Q_FOREACH(UVItem* pl, projections)
     {
-      if(pl==NULL || pl != projections[scene->item(id)])
+      if(pl==nullptr || pl != projections[scene->item(id)])
         continue;
       current_uv_item = pl;
       break;
@@ -479,10 +451,17 @@ public Q_SLOTS:
         graphics_scene->removeItem(graphics_scene->items().first());
 
       graphics_scene->addItem(current_uv_item);
-      ui_widget.graphicsView->fitInView(current_uv_item->boundingRect(), Qt::KeepAspectRatio);
-      ui_widget.component_numberLabel->setText(QString("Component : %1/%2").arg(current_uv_item->current_component()+1).arg(current_uv_item->number_of_components()));
-      dock_widget->setWindowTitle(tr("UVMapping for %1").arg(current_uv_item->item_name()));
-      qobject_cast<Scene_textured_facegraph_item*>(projections.key(current_uv_item))->add_border_edges(current_uv_item->concatenated_borders());
+      ui_widget.graphicsView->fitInView(current_uv_item->boundingRect(),
+                                        Qt::KeepAspectRatio);
+      ui_widget.component_numberLabel->setText(
+            QString("Component : %1/%2").arg(current_uv_item->current_component()+1)
+            .arg(current_uv_item->number_of_components()));
+      dock_widget->setWindowTitle(tr("UVMapping for %1")
+                                  .arg(current_uv_item->item_name()));
+      Scene_textured_facegraph_item* t_item =
+          qobject_cast<Scene_textured_facegraph_item*>(projections.key(current_uv_item));
+     t_item->add_border_edges(
+            current_uv_item->concatenated_borders());
     }
   }
 
@@ -500,7 +479,7 @@ public Q_SLOTS:
 
     if(projections.empty() || projections.first() == NULL)
     {
-      current_uv_item = NULL;
+      current_uv_item = nullptr;
       dock_widget->setWindowTitle(tr("UVMapping"));
       ui_widget.component_numberLabel->setText(QString("Component :"));
     }
@@ -509,19 +488,19 @@ public Q_SLOTS:
   }
 
 protected:
-  enum Parameterization_method { PARAM_MVC, PARAM_DCP, PARAM_LSC,
-                                 PARAM_DAP, PARAM_ARAP, PARAM_OTE, PARAM_BTP};
+  enum Parameterization_method { PARAM_MVC, PARAM_DCP, PARAM_LSC, PARAM_DAP,
+                                 PARAM_IAP, PARAM_ARAP, PARAM_OTE, PARAM_BTP};
   void parameterize(Parameterization_method method);
 
 private:
-  Messages_interface *messages;
+  Messages_interface *messages = nullptr;
   QList<QAction*> _actions;
-  QDockWidget* dock_widget;
+  QDockWidget* dock_widget = nullptr;
   Ui::Parameterization ui_widget;
   QGraphicsScene *graphics_scene;
-  Navigation* navigation;
+  Navigation* navigation = nullptr;
   QMap<Scene_item*, UVItem*> projections;
-  UVItem* current_uv_item;
+  UVItem* current_uv_item = nullptr;
 }; // end Polyhedron_demo_parameterization_plugin
 
 void Polyhedron_demo_parameterization_plugin::on_prevButton_pressed()
@@ -529,14 +508,14 @@ void Polyhedron_demo_parameterization_plugin::on_prevButton_pressed()
   int id = scene->mainSelectionIndex();
   Q_FOREACH(UVItem* pl, projections)
   {
-    if(pl==NULL
+    if(pl==nullptr
        || pl != projections[scene->item(id)])
       continue;
 
     current_uv_item = pl;
     break;
   }
-  if(current_uv_item == NULL)
+  if(current_uv_item == nullptr)
     return;
   current_uv_item->set_current_component((std::max)(0,current_uv_item->current_component()-1));
   replacePolyline();
@@ -547,14 +526,14 @@ void Polyhedron_demo_parameterization_plugin::on_nextButton_pressed()
   int id = scene->mainSelectionIndex();
   Q_FOREACH(UVItem* pl, projections)
   {
-    if(pl==NULL
+    if(pl==nullptr
        || pl != projections[scene->item(id)])
       continue;
 
     current_uv_item = pl;
     break;
   }
-  if(current_uv_item == NULL)
+  if(current_uv_item == nullptr)
     return;
   current_uv_item->set_current_component((std::min)(current_uv_item->number_of_components()-1,current_uv_item->current_component()+1));
   ui_widget.component_numberLabel->setText(QString("Component : %1/%2").arg(current_uv_item->current_component()+1).arg(current_uv_item->number_of_components()));
@@ -564,7 +543,7 @@ void Polyhedron_demo_parameterization_plugin::on_nextButton_pressed()
 void Polyhedron_demo_parameterization_plugin::parameterize(const Parameterization_method method)
 {
   // get active polyhedron
-  Scene_facegraph_item* poly_item = NULL;
+  Scene_facegraph_item* poly_item = nullptr;
   CGAL::Three::Scene_interface::Item_id index = scene->mainSelectionIndex();
   Q_FOREACH(CGAL::Three::Scene_interface::Item_id id, scene->selectionIndices())
   {
@@ -582,20 +561,17 @@ void Polyhedron_demo_parameterization_plugin::parameterize(const Parameterizatio
 
   if(!poly_item)
   {
-    messages->error("Selected item is not of the right type.");
+    CGAL::Three::Three::error("Selected item is not of the right type.");
     return;
   }
 
   Face_graph* pMesh = poly_item->face_graph();
   if(!pMesh)
   {
-    messages->error("Selected item has no valid polyhedron.");
+    CGAL::Three::Three::error("Selected item has no valid polyhedron.");
     return;
   }
-#ifndef USE_SURFACE_MESH
-  pMesh->normalize_border();
-#endif
-  Scene_polyhedron_selection_item* sel_item = NULL;
+  Scene_polyhedron_selection_item* sel_item = nullptr;
   bool is_seamed = false;
   Q_FOREACH(CGAL::Three::Scene_interface::Item_id id, scene->selectionIndices())
   {
@@ -610,8 +586,8 @@ void Polyhedron_demo_parameterization_plugin::parameterize(const Parameterizatio
   }
 
   if(method == PARAM_OTE &&
-     (sel_item == NULL || sel_item->selected_vertices.empty())) {
-    std::cerr << "No selection or no cones selected; Aborting." << std::endl;
+     (sel_item == nullptr || sel_item->selected_vertices.empty())) {
+    std::cerr << "\nError: no cones/seam selected; Aborting parameterization." << std::endl;
     return;
   }
 
@@ -624,7 +600,7 @@ void Polyhedron_demo_parameterization_plugin::parameterize(const Parameterizatio
 
   if(!is_seamed && is_closed(*pMesh))
   {
-    messages->error("The selected mesh has no (real or virtual) border.");
+    CGAL::Three::Three::error("The selected mesh has no (real or virtual) border.");
     return;
   }
 
@@ -634,75 +610,10 @@ void Polyhedron_demo_parameterization_plugin::parameterize(const Parameterizatio
   ////////// PARAMETERIZE ///////////
   ///////////////////////////////////
 
-  QTime time;
+  QElapsedTimer time;
   time.start();
   // add textured polyhedon to the scene
-  #ifndef USE_SURFACE_MESH
-  Textured_polyhedron *tpMesh = new Textured_polyhedron();
-  Textured_polyhedron_builder<Polyhedron,Textured_polyhedron,Kernel> builder;
-  builder.run(*pMesh,*tpMesh);
-  tpMesh->compute_normals();
-  tpMesh->normalize_border();
-  Base_face_graph tMesh = static_cast<Base_face_graph&>(*tpMesh);
 
-  CGAL::set_halfedgeds_items_id(tMesh);
-  std::vector<bool> mark(tpMesh->size_of_halfedges()/2,false);
-  std::vector<T_edge_descriptor> seam_edges;
-  if(is_seamed)
-  {
-    //create a textured_polyhedron edges selection from the ids of the corresponding vertices
-    BOOST_FOREACH(P_edge_descriptor ed, sel_item->selected_edges)
-    {
-      Polyhedron::Vertex_handle a(source(ed, *pMesh)), b(target(ed, *pMesh));
-
-      for(Textured_polyhedron::Edge_iterator it =
-          tMesh.edges_begin(); it != tMesh.edges_end();
-          ++it)
-      {
-        Textured_polyhedron::Vertex_handle ta(source(it, tMesh)), tb(target(it, tMesh));
-        if((ta->id() == a->id() && tb->id() == b->id())
-           ||
-           (ta->id() == b->id() && tb->id() == a->id()))
-        {
-          T_edge_descriptor ted(it);
-          seam_edges.push_back(ted);
-          break;
-        }
-      }
-
-    }
-    qDebug() << sel_item->selected_edges.size() << ", " << seam_edges.size();
-    //fill seam mesh pmaps
-    BOOST_FOREACH(T_edge_descriptor ed, seam_edges)
-    {
-      T_halfedge_descriptor hd = halfedge(ed, tMesh);
-      T_vertex_descriptor svd(source(hd, tMesh)), tvd(target(hd, tMesh));
-      if(!is_border(ed, tMesh))
-      {
-        put(seam_edge_pm, ed, true);
-        put(seam_vertex_pm, svd, true);
-        put(seam_vertex_pm, tvd, true);
-        mark[hd->id()/2] = true;
-      }
-    }
-  }
-
-  // map the cones from the selection plugin to the textured polyhedron
-  boost::unordered_set<T_vertex_descriptor> unordered_cones;
-  if(method == PARAM_OTE) {
-    BOOST_FOREACH(P_vertex_descriptor vd, sel_item->selected_vertices) {
-      Polyhedron::Vertex_handle pvd(vd);
-      Textured_polyhedron::Vertex_iterator it = tMesh.vertices_begin(),
-          end = tMesh.vertices_end();
-      for(; it!=end; ++it) {
-        Textured_polyhedron::Vertex_handle tvd(it);
-        if(it->id() == pvd->id()) {
-          unordered_cones.insert(tvd);
-        }
-      }
-    }
-  }
-#else
   // \todo for surface_mesh
   Base_face_graph tMesh = *pMesh;
   std::vector<bool> mark(num_halfedges(tMesh)/2,false);
@@ -714,7 +625,7 @@ void Polyhedron_demo_parameterization_plugin::parameterize(const Parameterizatio
     //create a textured_polyhedron edges selection from the ids of the corresponding vertices
     typedef boost::property_map<Base_face_graph, boost::halfedge_index_t>::type HIDMap;
     HIDMap hidmap = get(boost::halfedge_index, tMesh);
-    BOOST_FOREACH(P_edge_descriptor ed, sel_item->selected_edges)
+    for(P_edge_descriptor ed : sel_item->selected_edges)
     {
       boost::graph_traits<Face_graph>::vertex_descriptor a(source(ed, *pMesh)), b(target(ed, *pMesh));
 
@@ -737,7 +648,7 @@ void Polyhedron_demo_parameterization_plugin::parameterize(const Parameterizatio
     }
     qDebug() << sel_item->selected_edges.size() << ", " << seam_edges.size();
     //fill seam mesh pmaps
-    BOOST_FOREACH(T_edge_descriptor ed, seam_edges)
+    for(T_edge_descriptor ed : seam_edges)
     {
       T_halfedge_descriptor hd = halfedge(ed, tMesh);
       T_vertex_descriptor svd(source(hd, tMesh)), tvd(target(hd, tMesh));
@@ -752,9 +663,9 @@ void Polyhedron_demo_parameterization_plugin::parameterize(const Parameterizatio
   }
 
   // map the cones from the selection plugin to the textured polyhedron
-  boost::unordered_set<T_vertex_descriptor> unordered_cones;
+  std::unordered_set<T_vertex_descriptor> unordered_cones;
   if(method == PARAM_OTE) {
-    BOOST_FOREACH(P_vertex_descriptor vd, sel_item->selected_vertices) {
+    for(P_vertex_descriptor vd : sel_item->selected_vertices) {
       boost::graph_traits<Face_graph>::vertex_descriptor pvd(vd);
       boost::graph_traits<Textured_face_graph>::vertex_iterator it = vertices(tMesh).begin(),
           end = vertices(tMesh).end();
@@ -766,7 +677,6 @@ void Polyhedron_demo_parameterization_plugin::parameterize(const Parameterizatio
       }
     }
   }
-#endif
   Seam_mesh sMesh(tMesh, seam_edge_pm, seam_vertex_pm);
   sMesh.set_seam_edges_number(static_cast<s_edges_size_type>(seam_edges.size()));
 
@@ -786,7 +696,7 @@ void Polyhedron_demo_parameterization_plugin::parameterize(const Parameterizatio
       CGAL::Polygon_mesh_processing::connected_components(
         tMesh,
         fccmap,
-        CGAL::Polygon_mesh_processing::parameters::edge_is_constrained_map(
+        CGAL::parameters::edge_is_constrained_map(
           edge_pmap));
 
   // Next is the gathering of the border halfedges of the connected component.
@@ -824,16 +734,16 @@ void Polyhedron_demo_parameterization_plugin::parameterize(const Parameterizatio
 
     // find longest border in the connected component
     s_halfedge_descriptor bhd; // a halfedge on the (possibly virtual) border
-    boost::unordered_set<s_halfedge_descriptor> visited;
+    std::unordered_set<s_halfedge_descriptor> visited;
     FT result_len = 0;
-    BOOST_FOREACH(s_halfedge_descriptor hd, border)
+    for(s_halfedge_descriptor hd : border)
     {
       assert(is_border(hd, sMesh));
 
       if(visited.find(hd) == visited.end())
       {
         FT len = 0;
-        BOOST_FOREACH(s_halfedge_descriptor haf, halfedges_around_face(hd, sMesh))
+        for(s_halfedge_descriptor haf : halfedges_around_face(hd, sMesh))
         {
           len += PMP::edge_length(haf, sMesh);
           visited.insert(haf);
@@ -852,7 +762,7 @@ void Polyhedron_demo_parameterization_plugin::parameterize(const Parameterizatio
     VPMap vpmap =get(boost::vertex_point, tMesh);
 
     // collect the border edges for that connected component
-    BOOST_FOREACH(s_halfedge_descriptor haf, halfedges_around_face(bhd, sMesh))
+    for(s_halfedge_descriptor haf : halfedges_around_face(bhd, sMesh))
     {
         uv_borders[current_component].push_back(get(vpmap, source(haf, tMesh)).x());
         uv_borders[current_component].push_back(get(vpmap, source(haf, tMesh)).y());
@@ -897,27 +807,20 @@ void Polyhedron_demo_parameterization_plugin::parameterize(const Parameterizatio
       status = SMP::parameterize(sMesh, Parameterizer(), bhd, uv_pm);
       break;
     }
+    case PARAM_IAP:
+    {
+      new_item_name = tr("%1 (parameterized (IAP))").arg(poly_item->name());
+      std::cout << "Parameterize (IAP)..." << std::endl;
+      typedef SMP::Iterative_authalic_parameterizer_3<Seam_mesh> Parameterizer;
+      Parameterizer parameterizer;
+      status = parameterizer.parameterize(sMesh, bhd, uv_pm, 15 /*iterations*/);
+      break;
+    }
     case PARAM_ARAP:
     {
       new_item_name = tr("%1 (parameterized (ARAP))").arg(poly_item->name());
       std::cout << "Parameterize (ARAP)..." << std::endl;
-
-      QDialog dialog(mw);
-      Ui::ARAP_dialog ui;
-      ui.setupUi(&dialog);
-      connect(ui.buttonBox, SIGNAL(accepted()), &dialog, SLOT(accept()));
-      connect(ui.buttonBox, SIGNAL(rejected()), &dialog, SLOT(reject()));
-
-      // Get values
-      QApplication::restoreOverrideCursor();
-
-      int i = dialog.exec();
-      if (i == QDialog::Rejected)
-        return;
-
-      FT lambda = ui.lambdaSpinBox->value();
-      QApplication::setOverrideCursor(Qt::WaitCursor);
-
+      FT lambda = 10000; // a big value to ensure the parameterization is ARAP (and not ASAP)
       typedef SMP::ARAP_parameterizer_3<Seam_mesh> Parameterizer;
       status = SMP::parameterize(sMesh, Parameterizer(lambda), bhd, uv_pm);
       break;
@@ -931,49 +834,59 @@ void Polyhedron_demo_parameterization_plugin::parameterize(const Parameterizatio
       // @todo (need to remove the assertions such as cones.size() == 4
       //        and check where and when cones are used (passed by ID, for ex.?))
       if(number_of_components != 1) {
-        std::cerr << "Orbifold Tutte Embedding can only handle one connected component at the moment" << std::endl;
-        return;
+        std::cerr << "Orbifold Tutte Embedding can only handle one connected component" << std::endl;
+        status = SMP::ERROR_NO_TOPOLOGICAL_BALL;
+        break;
       }
 
       typedef SMP::Orbifold_Tutte_parameterizer_3<Seam_mesh> Parameterizer;
 
+      // Get orbifold type
       QDialog dialog(mw);
       Ui::OTE_dialog ui;
       ui.setupUi(&dialog);
       connect(ui.buttonBox, SIGNAL(accepted()), &dialog, SLOT(accept()));
       connect(ui.buttonBox, SIGNAL(rejected()), &dialog, SLOT(reject()));
 
-      // Get values
       QApplication::restoreOverrideCursor();
 
       int i = dialog.exec();
       if (i == QDialog::Rejected)
+      {
+        std::cout << "Aborting parameterization" << std::endl;
+        QApplication::restoreOverrideCursor();
         return;
+      }
 
       SMP::Orbifold_type orb = static_cast<SMP::Orbifold_type>(ui.OrbComboBox->currentIndex());
-      std::cout << "selected orbifold type: " << ui.OrbComboBox->currentText().toStdString() << std::endl;
+      std::cout << "Selected orbifold type: " << ui.OrbComboBox->currentText().toStdString() << std::endl;
 
       if((unordered_cones.size() != 3 && unordered_cones.size() != 4) ||
          (unordered_cones.size() == 3 && orb == SMP::Parallelogram ) ||
          (unordered_cones.size() == 4 && orb != SMP::Parallelogram)) {
-        std::cerr << "Incompatible orbifold type and number of cones" << std::endl;
+        std::cerr << "Error: incompatible orbifold type and number of cones" << std::endl;
         std::cerr << "Types I, II & III require 3 selected vertices" << std::endl;
         std::cerr << "Type IV requires 4 selected vertices" << std::endl;
+        QApplication::restoreOverrideCursor();
+        return;
+      }
+
+      // Now, parameterize
+      Parameterizer parameterizer(orb);
+
+      // Mark cones in the seam mesh
+      std::unordered_map<s_vertex_descriptor, SMP::Cone_type> cmap;
+      if(!SMP::locate_unordered_cones(sMesh, unordered_cones.begin(), unordered_cones.end(), cmap))
+      {
+        std::cerr << "Error: invalid cone or seam selection" << std::endl;
+        QApplication::restoreOverrideCursor();
         return;
       }
 
       QApplication::setOverrideCursor(Qt::WaitCursor);
 
-      // Now, parameterize
-      Parameterizer parameterizer(orb);
-
-      // mark cones in the seam mesh
-      boost::unordered_map<s_vertex_descriptor, SMP::Cone_type> cmap;
-      if(!SMP::locate_unordered_cones(sMesh, unordered_cones.begin(), unordered_cones.end(), cmap))
-        return;
-
-      // vimap and uvmap
-      typedef boost::unordered_map<s_vertex_descriptor, int> Indices;
+      // Fill the index property map
+      typedef std::unordered_map<s_vertex_descriptor, int> Indices;
       Indices indices;
       CGAL::Polygon_mesh_processing::connected_component(
              face(opposite(bhd, sMesh), sMesh),
@@ -983,7 +896,7 @@ void Polyhedron_demo_parameterization_plugin::parameterize(const Parameterizatio
       boost::associative_property_map<Indices> vimap(indices);
 
       // Call to parameterizer
-      status =  parameterizer.parameterize(sMesh, bhd, cmap, uv_pm, vimap);
+      status = parameterizer.parameterize(sMesh, bhd, cmap, uv_pm, vimap);
       break;
     }
     case PARAM_BTP:
@@ -1000,7 +913,8 @@ void Polyhedron_demo_parameterization_plugin::parameterize(const Parameterizatio
     if(status == SMP::OK) {
       std::cout << "success (in " << time.elapsed() << " ms)" << std::endl;
     } else {
-      std::cout << "failure: " << SMP::get_error_message(status) << std::endl;
+      std::cerr << "failure: " << SMP::get_error_message(status) << std::endl;
+      QApplication::restoreOverrideCursor();
       return;
     }
 
@@ -1010,33 +924,15 @@ void Polyhedron_demo_parameterization_plugin::parameterize(const Parameterizatio
   } //end for each component
 
   QApplication::restoreOverrideCursor();
-  QPointF min(FLT_MAX, FLT_MAX), max(-FLT_MAX, -FLT_MAX);
-#ifndef USE_SURFACE_MESH
-  Base_face_graph::Halfedge_iterator it1;
-  Textured_polyhedron::Halfedge_iterator it2;
-  for(it1 = tMesh.halfedges_begin(),
-      it2 = tpMesh->halfedges_begin();
-      it1 != tMesh.halfedges_end()&&
-      it2 != tpMesh->halfedges_end();
-      ++it1, ++it2)
-  {
-    Seam_mesh::halfedge_descriptor hd(it1);
-    FT u = uv_pm[target(hd, sMesh)].x();
-    FT v = uv_pm[target(hd, sMesh)].y();
-    it2->u() = u;
-    it2->v() = v;
-    if(u<min.x())
-      min.setX(u);
-    if(u>max.x())
-      max.setX(u);
-    if(v<min.y())
-      min.setY(v);
-    if(v>max.y())
-      max.setY(v);
-  }
-#else
-  SMesh::Property_map<halfedge_descriptor,std::pair<float, float> > uv;
-  uv = tMesh.add_property_map<halfedge_descriptor,std::pair<float, float> >("h:uv",std::make_pair(0.0f,0.0f)).first;
+  QPointF pmin(FLT_MAX, FLT_MAX), pmax(-FLT_MAX, -FLT_MAX);
+
+  SMesh::Property_map<halfedge_descriptor, float> umap;
+  SMesh::Property_map<halfedge_descriptor, float> vmap;
+
+  umap = tMesh.add_property_map<halfedge_descriptor, float>("h:u", 0.0f).first;
+  vmap = tMesh.add_property_map<halfedge_descriptor, float>("h:v", 0.0f).first;
+
+  tMesh.property_stats(std::cerr);
   Base_face_graph::Halfedge_iterator it;
   for(it = tMesh.halfedges_begin();
       it != tMesh.halfedges_end();
@@ -1045,23 +941,22 @@ void Polyhedron_demo_parameterization_plugin::parameterize(const Parameterizatio
     Seam_mesh::halfedge_descriptor hd(*it);
     FT u = uv_pm[target(hd, sMesh)].x();
     FT v = uv_pm[target(hd, sMesh)].y();
-    put(uv, *it, std::make_pair(static_cast<float>(u),static_cast<float>(v)));
-    if(u<min.x())
-      min.setX(u);
-    if(u>max.x())
-      max.setX(u);
-    if(v<min.y())
-      min.setY(v);
-    if(v>max.y())
-      max.setY(v);
+    put(umap, *it, static_cast<float>(u));
+    put(vmap, *it, static_cast<float>(v));
+    if(u<pmin.x())
+      pmin.setX(u);
+    if(u>pmax.x())
+      pmax.setX(u);
+    if(v<pmin.y())
+      pmin.setY(v);
+    if(v>pmax.y())
+      pmax.setY(v);
   }
-
-#endif
 
   Components* components = new Components(0);
   components->resize(number_of_components);
   boost::graph_traits<Base_face_graph>::face_iterator bfit;
-#ifdef USE_SURFACE_MESH
+
   for(bfit = faces(tMesh).begin();
       bfit != faces(tMesh).end();
       ++bfit)
@@ -1070,21 +965,9 @@ void Polyhedron_demo_parameterization_plugin::parameterize(const Parameterizatio
   }
 
   Scene_textured_facegraph_item* new_item = new Scene_textured_facegraph_item(tMesh);
-  UVItem *projection = new UVItem(components,new_item->textured_face_graph(), uv_borders, QRectF(min, max));
+  UVItem *projection = new UVItem(components,new_item->textured_face_graph(), uv_borders, QRectF(pmin, pmax));
   projection->set_item_name(new_item_name);
-#else
-  boost::graph_traits<Base_face_graph>::face_iterator tfit;
-  for(bfit = faces(tMesh).begin(), tfit = faces(*tpMesh).begin();
-      bfit != faces(tMesh).end() && tfit != faces(*tpMesh).end();
-      ++bfit, ++tfit)
-  {
-    components->at(fccmap[*bfit]).insert(*tfit);
-  }
 
-  UVItem *projection = new UVItem(components,tpMesh, uv_borders, QRectF(min, max));
-  projection->set_item_name(new_item_name);
-  Scene_textured_facegraph_item* new_item = new Scene_textured_facegraph_item(tpMesh);
-#endif
   new_item->setName(new_item_name);
   new_item->setColor(Qt::white);
   new_item->setRenderingMode(poly_item->renderingMode());
@@ -1097,12 +980,20 @@ void Polyhedron_demo_parameterization_plugin::parameterize(const Parameterizatio
     graphics_scene->removeItem(graphics_scene->items().first());
   graphics_scene->addItem(projection);
   projections[new_item] = projection;
-  if(current_uv_item)
-    qobject_cast<Scene_textured_facegraph_item*>(projections.key(current_uv_item))->add_border_edges(std::vector<float>(0));
+  if(current_uv_item){
+    Scene_textured_facegraph_item* t_item =
+        qobject_cast<Scene_textured_facegraph_item*>(projections.key(current_uv_item));
+   t_item->add_border_edges(std::vector<float>(0));
+  }
   current_uv_item = projection;
-  qobject_cast<Scene_textured_facegraph_item*>(projections.key(current_uv_item))->add_border_edges(current_uv_item->concatenated_borders());
-  if(dock_widget->isHidden())
+  Scene_textured_facegraph_item* t_item =
+      qobject_cast<Scene_textured_facegraph_item*>(projections.key(current_uv_item));
+  t_item->add_border_edges(
+        current_uv_item->concatenated_borders());
+  if(dock_widget->isHidden()){
     dock_widget->setVisible(true);
+    dock_widget->raise();
+  }
   dock_widget->setWindowTitle(tr("UVMapping for %1").arg(new_item->name()));
   ui_widget.component_numberLabel->setText(QString("Component : %1/%2").arg(current_uv_item->current_component()+1).arg(current_uv_item->number_of_components()));
   ui_widget.graphicsView->fitInView(projection->boundingRect(), Qt::KeepAspectRatio);
@@ -1133,6 +1024,12 @@ void Polyhedron_demo_parameterization_plugin::on_actionDAP_triggered()
 {
   std::cerr << "DAP...";
   parameterize(PARAM_DAP);
+}
+
+void Polyhedron_demo_parameterization_plugin::on_actionIAP_triggered()
+{
+  std::cerr << "IAP...";
+  parameterize(PARAM_IAP);
 }
 
 void Polyhedron_demo_parameterization_plugin::on_actionARAP_triggered()

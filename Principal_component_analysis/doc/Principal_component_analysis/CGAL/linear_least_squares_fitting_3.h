@@ -65,10 +65,9 @@ value type of `InputIterator` is defined. It can be omitted and deduced
 automatically from the value type.
 
 The class `DiagonalizeTraits_` is a model of `DiagonalizeTraits`. It
-can be omitted: if Eigen 3 (or greater) is available and
-`CGAL_EIGEN3_ENABLED` is defined then an overload using
-`Eigen_diagonalize_traits` is provided. Otherwise, the internal
-implementation `Diagonalize_traits` is used.
+can be omitted if Eigen 3 (or greater) is available and
+`CGAL_EIGEN3_ENABLED` is defined: in that case, an overload using
+`Eigen_diagonalize_traits` is provided.
 
 \note This function is significantly faster when using
 `Eigen_diagonalize_traits` and it is strongly advised to use this
@@ -76,23 +75,23 @@ model.
 
 \cgalHeading{Requirements}
 
-<OL> 
-<LI>`InputIterator` must have a value type  equivalent to `K::Point_3`, 
-`K::Segment_3`, `K::Triangle_3`, `K::Iso_cuboid_3`, 
-`K::Sphere_3` or `K::Tetrahedron_3`. 
-<LI>`line` is the best fitting line computed. 
-<LI>`centroid` is the centroid computed. This parameter is optional and can be omitted. 
-<LI>`tag` is the tag identifying the dimension to be considered from the objects. It should range from `Dimension_tag<0>` to `Dimension_tag<3>`. Also, it should not be of a dimension greater nor smaller than the geometry of the object. For example, a `Triangle` can not have a `Dimension_tag<3>` tag. A `Segment` can not have a `Dimension_tag<2>` nor a `Dimension_tag<3>` tag. A `Sphere` can not have a `Dimension_tag<0>` nor a `Dimension_tag<1>` tag. 
-</OL> 
+<OL>
+<LI>`InputIterator` must have a value type  equivalent to `K::Point_3`,
+`K::Segment_3`, `K::Triangle_3`, `K::Iso_cuboid_3`,
+`K::Sphere_3` or `K::Tetrahedron_3`.
+<LI>`line` is the best fitting line computed.
+<LI>`centroid` is the centroid computed. This parameter is optional and can be omitted.
+<LI>`tag` is the tag identifying the dimension to be considered from the objects. It should range from `Dimension_tag<0>` to `Dimension_tag<3>`. Also, it should not be of a dimension greater nor smaller than the geometry of the object. For example, a `Triangle` can not have a `Dimension_tag<3>` tag. A `Segment` can not have a `Dimension_tag<2>` nor a `Dimension_tag<3>` tag. A `Sphere` can not have a `Dimension_tag<0>` nor a `Dimension_tag<1>` tag.
+</OL>
 
 
 */
-template < typename InputIterator, typename K, typename Tag, typename DiagonalizeTraits_ > 
-typename K::FT 
+template < typename InputIterator, typename K, typename Tag, typename DiagonalizeTraits_ >
+typename K::FT
 linear_least_squares_fitting_3(InputIterator first,
 InputIterator beyond,
 typename K::Line_3& line,
-typename K::Point_3& centroid, 
+typename K::Point_3& centroid,
 const Tag& tag,
 const K& k,
 const DiagonalizeTraits_& diagonalize_traits);
@@ -123,22 +122,22 @@ model.
 
 \cgalHeading{Requirements}
 
-<OL> 
-<LI>`InputIterator` has a value type equivalent to `K::Point_3`, 
-`K::Segment_3`, `K::Triangle_3`, `K::Iso_cuboid_3`, 
-`K::Sphere_3` or `K::Tetrahedron_3`. 
-<LI>`plane` is the best fitting plane computed. 
-<LI>`centroid` is the centroid computed. This parameter is optional and can be omitted. 
-<LI>`tag` is the tag identifying the dimension to be considered from the objects. It should range from `Dimension_tag<0>` to `Dimension_tag<3>`. Also, it should not be of a dimension greater nor smaller than the geometry of the object. For example, a `Triangle` can not have a `Dimension_tag<3>` tag. A `Segment` can not have a `Dimension_tag<2>` nor a `Dimension_tag<3>` tag. A `Sphere` can not have a `Dimension_tag<0>` nor a `Dimension_tag<1>` tag. 
-</OL> 
+<OL>
+<LI>`InputIterator` has a value type equivalent to `K::Point_3`,
+`K::Segment_3`, `K::Triangle_3`, `K::Iso_cuboid_3`,
+`K::Sphere_3` or `K::Tetrahedron_3`.
+<LI>`plane` is the best fitting plane computed.
+<LI>`centroid` is the centroid computed. This parameter is optional and can be omitted.
+<LI>`tag` is the tag identifying the dimension to be considered from the objects. It should range from `Dimension_tag<0>` to `Dimension_tag<3>`. Also, it should not be of a dimension greater nor smaller than the geometry of the object. For example, a `Triangle` can not have a `Dimension_tag<3>` tag. A `Segment` can not have a `Dimension_tag<2>` nor a `Dimension_tag<3>` tag. A `Sphere` can not have a `Dimension_tag<0>` nor a `Dimension_tag<1>` tag.
+</OL>
 
 */
-template < typename InputIterator, typename K, typename Tag, typename DiagonalizeTraits_ > 
-typename K::FT 
+template < typename InputIterator, typename K, typename Tag, typename DiagonalizeTraits_ >
+typename K::FT
 linear_least_squares_fitting_3(InputIterator first,
 InputIterator beyond,
 typename K::Plane_3& plane,
-typename K::Point_3& centroid, 
+typename K::Point_3& centroid,
 const Tag& tag,
 const K& k,
 const DiagonalizeTraits_& diagonalize_traits);

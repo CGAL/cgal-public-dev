@@ -2,19 +2,10 @@
 // All rights reserved.
 //
 // This file is part of CGAL (www.cgal.org).
-// You can redistribute it and/or modify it under the terms of the GNU
-// General Public License as published by the Free Software Foundation,
-// either version 3 of the License, or (at your option) any later version.
-//
-// Licensees holding a valid commercial license may use this file in
-// accordance with the commercial license agreement provided with the software.
-//
-// This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
-// WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 //
 // $URL$
 // $Id$
-// SPDX-License-Identifier: GPL-3.0+
+// SPDX-License-Identifier: GPL-3.0-or-later OR LicenseRef-Commercial
 //
 // Author(s)     : Ron Wein  <wein@post.tau.ac.il>
 //                 Efi Fogel <efif@post.tau.ac.il>
@@ -105,7 +96,7 @@ public:
     m_subcurves()
   {
     typedef typename std::iterator_traits<InputIterator>::value_type VT;
-    typedef typename boost::is_same<VT, Point_type_2>::type Is_point;
+    typedef typename std::is_same<VT, Point_type_2>::type Is_point;
     construct_polycurve(begin, end, Is_point());
   }
 
@@ -117,7 +108,7 @@ public:
    */
   template <typename InputIterator>
   void construct_polycurve(InputIterator begin, InputIterator end,
-                          boost::false_type)
+                          std::false_type)
   { m_subcurves.assign(begin, end); }
 
   /*! Construct a polycurve from a range of points.
@@ -128,8 +119,8 @@ public:
    */
   template <typename InputIterator>
   CGAL_DEPRECATED void construct_polycurve(InputIterator begin,
-                                          InputIterator end,
-                                          boost::true_type)
+                                           InputIterator end,
+                                           std::true_type)
   {
     // Check if there are no points in the range:
     InputIterator ps = begin;
@@ -235,7 +226,7 @@ public:
       m_cvP(cvP),
       m_index(index)
     {
-      m_num_pts = (m_cvP == NULL) ? 0 :
+      m_num_pts = (m_cvP == nullptr) ? 0 :
         ((m_cvP->number_of_subcurves() == 0) ?
          0 : (m_cvP->number_of_subcurves() + 1));
     }
@@ -246,7 +237,7 @@ public:
   public:
     /*! Default constructor. */
     Point_const_iterator() :
-      m_cvP(NULL),
+      m_cvP(nullptr),
       m_num_pts(0),
       m_index(std::numeric_limits<size_type>::max BOOST_PREVENT_MACRO_SUBSTITUTION ())
     {}
@@ -256,7 +247,7 @@ public:
      */
     const Point_type_2& operator*() const
     {
-      CGAL_assertion(m_cvP != NULL);
+      CGAL_assertion(m_cvP != nullptr);
       CGAL_assertion((is_index_valid()) && (m_index < m_num_pts));
 
       // First point is the source of the first subcurve.
@@ -273,28 +264,28 @@ public:
     /*! Increment operators. */
     Point_const_iterator& operator++()
     {
-      if ((m_cvP != NULL) && (m_index < m_num_pts)) ++m_index;
+      if ((m_cvP != nullptr) && (m_index < m_num_pts)) ++m_index;
       return (*this);
     }
 
     Point_const_iterator operator++(int)
     {
       Point_const_iterator temp = *this;
-      if ((m_cvP != NULL) && (m_index < m_num_pts)) ++m_index;
+      if ((m_cvP != nullptr) && (m_index < m_num_pts)) ++m_index;
       return temp;
     }
 
     /*! Decrement operators. */
     Point_const_iterator& operator--()
     {
-      if ((m_cvP != NULL) && (is_index_valid())) --m_index;
+      if ((m_cvP != nullptr) && (is_index_valid())) --m_index;
       return (*this);
     }
 
     Point_const_iterator operator--(int)
     {
       Point_const_iterator temp = *this;
-      if ((m_cvP != NULL) && (is_index_valid())) --m_index;
+      if ((m_cvP != nullptr) && (is_index_valid())) --m_index;
       return temp;
     }
 
@@ -442,7 +433,7 @@ public:
     Base(begin, end)
   {
     typedef typename std::iterator_traits<InputIterator>::value_type VT;
-    typedef typename boost::is_same<VT, Point_type_2>::type Is_point;
+    typedef typename std::is_same<VT, Point_type_2>::type Is_point;
     construct_x_monotone_polycurve(begin, end, Is_point());
   }
 
@@ -453,7 +444,7 @@ public:
    */
   template <typename InputIterator>
   void construct_x_monotone_polycurve(InputIterator, InputIterator,
-                                      boost::false_type)
+                                      std::false_type)
   {}
 
   /*! Construct from a range of points, defining the endpoints of the
@@ -462,7 +453,7 @@ public:
   template <typename InputIterator>
   CGAL_DEPRECATED void construct_x_monotone_polycurve(InputIterator,
                                                      InputIterator,
-                                                     boost::true_type)
+                                                     std::true_type)
   {}
 };
 

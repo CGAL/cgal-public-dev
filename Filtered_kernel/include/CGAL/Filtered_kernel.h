@@ -1,21 +1,12 @@
 // Copyright (c) 2001,2004  INRIA Sophia-Antipolis (France).
 // All rights reserved.
 //
-// This file is part of CGAL (www.cgal.org); you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public License as
-// published by the Free Software Foundation; either version 3 of the License,
-// or (at your option) any later version.
-//
-// Licensees holding a valid commercial license may use this file in
-// accordance with the commercial license agreement provided with the software.
-//
-// This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
-// WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+// This file is part of CGAL (www.cgal.org)
 //
 // $URL$
 // $Id$
-// SPDX-License-Identifier: LGPL-3.0+
-// 
+// SPDX-License-Identifier: LGPL-3.0-or-later OR LicenseRef-Commercial
+//
 //
 // Author(s)     : Sylvain Pion
 
@@ -27,15 +18,14 @@
 #include <CGAL/Filtered_predicate.h>
 #include <CGAL/Cartesian_converter.h>
 #include <CGAL/Simple_cartesian.h>
-#include <CGAL/Homogeneous_converter.h>
-#include <CGAL/Simple_homogeneous.h>
 #include <CGAL/Kernel/Type_equality_wrapper.h>
+#include <CGAL/Exact_kernel_selector.h>
 
 #include <CGAL/MP_Float.h>
 #include <CGAL/Quotient.h>
-#include <CGAL/internal/Exact_type_selector.h>
+#include <CGAL/Number_types/internal/Exact_type_selector.h>
 
-#include <CGAL/internal/Static_filters/Static_filters.h>
+#include <CGAL/Filtered_kernel/internal/Static_filters/Static_filters.h>
 #include <boost/type_traits.hpp>
 
 // This file contains the definition of a generic kernel filter.
@@ -50,28 +40,6 @@
 //   traits-like mechanism ?
 
 namespace CGAL {
-namespace Filter {
-template <class CK, class Rep=typename CK::Rep_tag /* Cartesian_tag */>
-struct Select_exact_kernel
-{
-  typedef typename internal::Exact_field_selector<typename CK::RT>::Type  Exact_nt;
-  typedef typename internal::Exact_ring_selector <typename CK::RT>::Type  Exact_rt;
-  typedef Simple_cartesian<Exact_nt>			Exact_kernel;
-  typedef Simple_cartesian<Exact_rt>			Exact_kernel_rt;
-  typedef Cartesian_converter<CK, Exact_kernel>		C2E;
-  typedef Cartesian_converter<CK, Exact_kernel_rt>	C2E_rt;
-};
-
-template <class CK>
-struct Select_exact_kernel <CK, Homogeneous_tag>
-{
-  typedef typename internal::Exact_ring_selector<typename CK::RT>::Type  Exact_nt;
-  typedef Simple_homogeneous<Exact_nt>			Exact_kernel;
-  typedef Homogeneous_converter<CK, Exact_kernel>	C2E;
-  typedef Exact_kernel					Exact_kernel_rt;
-  typedef C2E						C2E_rt;
-};
-}
 
 // CK = eventually rebound construction kernel (gets Point_2 from).
 // Exact_kernel = exact kernel called when needed by the filter.
@@ -80,12 +48,12 @@ template < typename CK >
 struct Filtered_kernel_base
   : public CK
 {
-  // Use Select_exact_kernel as a base class?
-    typedef typename Filter::Select_exact_kernel<CK>::Exact_nt Exact_nt;
-    typedef typename Filter::Select_exact_kernel<CK>::Exact_kernel Exact_kernel;
-    typedef typename Filter::Select_exact_kernel<CK>::Exact_kernel_rt Exact_kernel_rt;
-    typedef typename Filter::Select_exact_kernel<CK>::C2E C2E;
-    typedef typename Filter::Select_exact_kernel<CK>::C2E_rt C2E_rt;
+  // Use Exact_kernel_selector as a base class?
+    typedef typename Exact_kernel_selector<CK>::Exact_nt        Exact_nt;
+    typedef typename Exact_kernel_selector<CK>::Exact_kernel    Exact_kernel;
+    typedef typename Exact_kernel_selector<CK>::Exact_kernel_rt Exact_kernel_rt;
+    typedef typename Exact_kernel_selector<CK>::C2E             C2E;
+    typedef typename Exact_kernel_selector<CK>::C2E_rt          C2E_rt;
 
     typedef Simple_cartesian<Interval_nt_advanced>        Approximate_kernel;
     typedef Cartesian_converter<CK, Approximate_kernel>   C2F;
@@ -109,14 +77,20 @@ struct Filtered_kernel_base
         typedef typename T::Feature_dimension type; // maybe not the right way...
     };
 
+    Exact_kernel exact_kernel() const { return {}; }
+    Approximate_kernel approximate_kernel() const { return {}; }
+
     // We change the predicates.
-#define CGAL_Kernel_pred(P, Pf) \
-    typedef Filtered_predicate<typename Exact_kernel::P, typename Approximate_kernel::P, C2E, C2F> P; \
+#define CGAL_Kernel_pred_RT_or_FT(P, Pf) \
+    typedef Filtered_predicate_RT_FT<typename Exact_kernel_rt::P, \
+                                     typename Exact_kernel::P, \
+                                     typename Approximate_kernel::P, \
+                                    C2E_rt, \
+                                    C2E, \
+                                    C2F> P; \
     P Pf() const { return P(); }
 
-#define CGAL_Kernel_pred_RT(P, Pf) \
-    typedef Filtered_predicate<typename Exact_kernel_rt::P, typename Approximate_kernel::P, C2E_rt, C2F> P; \
-    P Pf() const { return P(); }
+#define CGAL_Kernel_pred(P, Pf) CGAL_Kernel_pred_RT_or_FT(P, Pf)
 
     // We don't touch the constructions.
 #define CGAL_Kernel_cons(Y,Z)
@@ -144,14 +118,14 @@ template < typename CK, bool UseStaticFilters = true >
 struct Filtered_kernel_adaptor
   : public Filtered_kernel_base<CK>
 {
-	enum { Has_static_filters = false };
+        enum { Has_static_filters = false };
 };
 
 template < typename CK >
 struct Filtered_kernel_adaptor<CK, true>
   : public Static_filters_base<CK>
 {
-	enum { Has_static_filters = true };
+        enum { Has_static_filters = true };
 };
 
 // UseStaticFilters has a default value, depending on
@@ -162,7 +136,7 @@ struct Filtered_kernel
                Type_equality_wrapper<
                    typename CK:: template Base< Filtered_kernel<CK, UseStaticFilters> >::Type,
                    Filtered_kernel<CK, UseStaticFilters> >,
-	       UseStaticFilters >
+               UseStaticFilters >
 {};
 
 } //namespace CGAL

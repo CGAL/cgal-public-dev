@@ -1,61 +1,131 @@
-Subject: CGAL 4.12 Beta 1 Released, Computational Geometry Algorithms Library
+Subject: CGAL 5.3.2, 5.4.1, and 5.5 Beta 1 Released, Computational Geometry Algorithms Library
 Content-Type: text/plain; charset="utf-8"
-Body: 
+Body:
 
-The CGAL Open Source Project is pleased to announce the release 4.12 Beta 1
-of CGAL, the Computational Geometry Algorithms Library.
+The CGAL Open Source Project is pleased to announce today three new
+releases:
+
+-   CGAL-5.3.2 is the second and last bug-fix release for CGAL-5.3,
+-   CGAL-5.4.1 is the first bug-fix release for CGAL-5.4, and
+-   CGAL-5.5-beta1 is the first beta release for CGAL-5.5.
+
+CGAL version 5.5 Beta 1 is a public testing release. It should provide a
+solid ground to report bugs that need to be tackled before the release
+of the final version of CGAL 5.5 in July 2022.
+
+Besides fixes and general enhancement to existing packages, the
+following has changed since CGAL 5.4:
+
+3D Alpha Wrapping (new package)
+
+-   This component takes a 3D triangle mesh, soup, or point set as
+    input, and generates a valid (watertight, intersection-free, and
+    combinatorially 2-manifold) surface triangle mesh that contains the
+    input. The algorithm proceeds by shrink-wrapping and refining a 3D
+    Delaunay triangulation, starting from a loose bounding box of the
+    input. Two user-defined parameters, alpha and offset, offer control
+    over the maximum size of cavities where the shrink-wrapping process
+    can enter, and the tightness of the final surface mesh to the input,
+    respectively. Once combined, these parameters provide a means to
+    trade fidelity to the input for complexity of the output.
+
+    See also https://www.cgal.org/2022/05/18/alpha_wrap/.
+
+3D Convex Hulls
+
+-   Added an overload of the function CGAL::convex_hull_3(), which
+    writes the result in an indexed triangle set.
+
+2D Polygons
+
+-   Add vertex, edge, and hole ranges.
+-   The concept GeneralPolygonWithHoles_2 now requires the nested type
+    Polygon_2 instead of General_polygon_2.
+
+2D Regularized Boolean Set-Operations
+
+-   The concept GeneralPolygonSetTraits_2 now requires the nested type
+    Construct_polygon_with_holes_2 instead of
+    Construct_general_polygon_with_holes_2.
+
+Combinatorial Maps
+
+-   Removed old code deprecated in CGAL 4.9 and 4.10 (global functions,
+    and information associated with darts).
+
+2D Arrangements
+
+-   Fixed the intersect_2, compare_y_at_x_right, and compare_y_at_x_left
+    function objects of the traits class template
+    Arr_geodesic_arc_on_sphere_traits_2 that handles geodesic arcs on
+    sphere and applied a small syntactical fix to the tracing traits.
+
+Tetrahedral Mesh Generation
+
+-   Added the function remove_isolated_vertices() as a post-processing
+    step for the tetrahedral mesh generation.
+
+Polygon Mesh Processing
+
+-   Added the function
+    CGAL::Polygon_mesh_processing::orient_triangle_soup_with_reference_triangle_soup(),
+    which enables re-orienting the faces of a triangle soup based on the
+    orientation of the nearest face in a reference triangle soup.
+-   Added the function
+    CGAL::Polygon_mesh_processing::compatible_orientations(), which
+    enables to retrieve the (in)compatibility of orientations of faces
+    from different connected components.
+-   Added the function
+    CGAL::Polygon_mesh_processing::tangential_relaxation(), which
+    applies an area-based tangential mesh smoothing to the vertices of a
+    surface triangle mesh.
+-   Added the named parameter visitor to the function
+    triangulate_hole(), which enables to track progress with callbacks.
+-   Added more functions in the visitor of the corefinement based
+    methods to track progress.
+
+Surface Mesh Simplification
+
+-   Introduced four variations of the Garland-Heckbert simplification
+    algorithm based on the probabilistic approach of Trettner and
+    Kobbelt (Fast and Robust QEF Minimization using Probabilistic
+    Quadrics): GarlandHeckbert_plane_policies,
+    GarlandHeckbert_probabilistic_plane_policies,
+    GarlandHeckbert_triangle_policies, and
+    GarlandHeckbert_probabilistic_triangle_policies.
+-   The class GarlandHeckbert_policies has been deprecated,
+    GarlandHeckbert_plane_policies replaces it.
+
+Point Set Processing
+
+-   A new optional named parameter, min_points_per_cell has been added
+    to grid_simplify_point_set(). By adding a minimal number of points
+    in a cell such that a point is retained, one can also filter out low
+    density areas and outliers: in the case of densely sampled point
+    clouds, this yields better results than using grid simplification
+    and then outlier removal, while being very vast. The default value
+    is 1 to keep the previous behavior as default.
+
+dD Spatial Searching
+
+-   Added the member function write_graphviz() to the class Kd_tree that
+    writes the tree in a stream in the Graphviz format.
+
+CGAL and the Boost Graph Library (BGL)
+
+-   Added the function invert_selection() in the class
+    Face_filtered_graph, which toggles the selected status of a graph:
+    selected faces are deselected, and unselected faces are selected.
 
 
-CGAL version 4.12 Beta 1 is a public testing release. It should provide
-a solid ground to report bugs that need to be tackled before the
-release of the final version of CGAL 4.12 in September.
+See https://www.cgal.org/2022/06/06/cgal55-beta1/ for a
+complete list of changes.
 
 
-*WARNING*: This release features an important change of the CMake scripts
-used to configure the CGAL libraries and examples. Developers using
-makefiles or the Ninja build-system should set the `CMAKE_BUILD_TYPE` to
-`Release` manually, to avoid using CGAL libraries without any compile-time
-optimization. Please read the first paragraph of the release notes
-carefully.
+The development of CGAL will then now on the future CGAL-5.6 (planned
+for December 2022), with bug-fixes regularly backported to the branches
+for CGAL-5.4.x and CGAL-5.5.x.
 
-
-Besides fixes and general enhancement to existing packages, the following
-has changed since CGAL 4.11:
-
-
-2D Movable Separability of Sets (new package)
-
--   A new package called "2D Movable Separability of Sets" has been
-    introduced. It handles a class of problems that deal with moving
-    sets of objects in the plane; the challenge is to avoid collisions
-    between the objects while considering different kinds of motions and
-    various definitions of separation.
-
-    At this point this package consists of the implementations of
-    various predicates and constructions related to castings of
-    polygonal objects. In particular, it can be used to determine
-    whether a feasible mold for a polygonal object does exist. If a mold
-    exists, the package can also be used to compute all possible
-    orientations of the feasible molds and the corresponding motions
-    needed to remove the casted object from the mold.
-
-Classification (new package)
-
--   This package offers an algorithm that classifies a data set into a
-    user-defined set of labels (such as ground, vegetation, buildings,
-    etc.). A flexible API is provided so that users can classify any
-    type of data, compute their own local features on the input data
-    set, and define their own labels.
-
-Kinetic Data Structures (removed package)
-
--   This package has been removed from CGAL-4.12. Users of the package
-    will have to keep using the source code available in CGAL-4.11 or
-    earlier.
-
-
-See http://www.cgal.org/2018/02/27/cgal412-beta1/ for a complete list of
-changes.
 
 
 The CGAL project is a collaborative effort to develop a robust,
@@ -79,8 +149,7 @@ structures and algorithms, like
   streamlines),
 - optimization algorithms (smallest enclosing sphere of points or
   spheres, smallest enclosing ellipsoid of points, principal
-  component analysis),
-- kinetic data structures
+  component analysis).
 
 
 
@@ -91,8 +160,8 @@ Most modules are distributed under the terms of the GPL Open Source
 license (GNU General Public License v3 or later versions).
 If your intended usage does not meet the criteria of the
 aforementioned licenses, a commercial license can be purchased from
-GeometryFactory (http://www.geometryfactory.com/).
+GeometryFactory (https://www.geometryfactory.com/).
 
 
 For further information and for downloading the library and its
-documentation, please visit the CGAL web site: http://www.cgal.org/
+documentation, please visit the CGAL web site: https://www.cgal.org/

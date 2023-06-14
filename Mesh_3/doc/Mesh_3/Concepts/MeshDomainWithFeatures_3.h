@@ -1,5 +1,5 @@
 /*!
-\ingroup PkgMesh_3Concepts
+\ingroup PkgMesh3Concepts
 \cgalConcept
 
 The concept `MeshDomainWithFeatures_3` refines the concept `MeshDomain_3`.
@@ -8,14 +8,14 @@ While the concept
 the domain through different queries, the concept `MeshDomainWithFeatures_3` also exposes 0 and
 1-dimensional features. The exposed features of the domain are respectively called
 subdomains, surface patches, curves
-and corners according to their respective dimensions 3,2,1 and 0.
+and corners according to their respective dimensions 3, 2, 1, and 0.
 
 Each curve is assumed to be bounded, with only one connected component, and
 without auto-intersections. Each curve is also assumed to be
 oriented. Therefore it is possible to define the signed geodesic distance
 between two ordered points on the same curve.
 
-\cgalRefines `MeshDomain_3`
+\cgalRefines{MeshDomain_3}
 
 \cgalHasModel `CGAL::Mesh_domain_with_polyline_features_3<MeshDomain_3>`
 \cgalHasModel `CGAL::Polyhedral_mesh_domain_with_features_3<IGT>`
@@ -89,13 +89,13 @@ const Point_3& p, const Curve_index& ci, FT d) const;
 /// @{
 
 /*!
-Returns the length of the curve segment from \c p to \c q, on the curve
-with index \c curve_index.
+Returns the length of the curve segment from `p` to `q`, on the curve
+with index `curve_index`.
 
-If the curve with index \c curve_index is a loop, the
+If the curve with index `curve_index` is a loop, the
 orientation identifies which portion of the loop corresponds to the curve
-segment, otherwise \c orientation must be compatible with the orientation
-of \c p and \c q on the curve.
+segment, otherwise `orientation` must be compatible with the orientation
+of `p` and `q` on the curve.
 */
 FT curve_segment_length(const Point_3& p, const Point_3& q,
                         const Curve_index& curve_index,
@@ -121,14 +121,14 @@ CGAL::Sign distance_sign(const Point_3& p, const Point_3& q,
 
 /*!
 Returns the length of curve with index
-\c curve_index
+`curve_index`
 */
 FT curve_length(const Curve_index& curve_index) const;
 /*!
-Returns `true` if the portion of the curve of index \c index,
-between the points \c c1 and \c c2, is covered by the spheres of
-centers \c c1 and \c c2 and squared radii \c sq_r1 and \c sq_r2
-respectively. The points \c c1 and \c c2 are assumed to lie on the curve.
+Returns `true` if the portion of the curve of index `index`,
+between the points `c1` and `c2`, is covered by the spheres of
+centers `c1` and `c2` and squared radii `sq_r1` and `sq_r2`
+respectively. The points `c1` and `c2` are assumed to lie on the curve.
 */
 bool is_curve_segment_covered(const Curve_index& index,
                               CGAL::Orientation orientation,
@@ -159,7 +159,7 @@ get_corners(OutputIterator corners) const;
 Fills `curves` with the curves
 of the input domain.
 `curves` value type must be
-`CGAL::cpp11::tuple<Curve_index,std::pair<Point_3,%Index>,std::pair<Point_3,%Index> >`.
+`std::tuple<Curve_index,std::pair<Point_3,%Index>,std::pair<Point_3,%Index> >`.
 If the curve corresponding to an entry
 in `curves` is not a loop, the pair of associated points should
 belong to

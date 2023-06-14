@@ -30,9 +30,6 @@ set(SEGMENT_GEOM_TRAITS 0)
 set(NON_CACHING_SEGMENT_GEOM_TRAITS 1)
 set(POLYLINE_GEOM_TRAITS 2)
 set(NON_CACHING_POLYLINE_GEOM_TRAITS 3)
-set(POLYCURVE_CONIC_GEOM_TRAITS 14)
-set(POLYCURVE_CIRCULAR_ARC_GEOM_TRAITS 15)
-set(POLYCURVE_BEZIER_GEOM_TRAITS 16)
 set(LINEAR_GEOM_TRAITS 4)
 set(CORE_CONIC_GEOM_TRAITS 5)
 set(LINE_ARC_GEOM_TRAITS 6)
@@ -70,7 +67,11 @@ set(CGAL_GMPZ_NT 14)
 set(CORE_INT_NT 15)
 set(CORE_RAT_NT 16)
 
-if($ENV{CGAL_DISABLE_GMP})
+if(CGAL_DISABLE_GMP)
+  set(CGAL_DISABLE_GMP ON)
+endif()
+
+if(CGAL_DISABLE_GMP)
   message(STATUS "GMP is disable. Try to use LEDA instead.")
   set(GMPZ_NT ${LEDA_INT_NT})
   set(QUOTIENT_CGAL_GMPZ_NT ${LEDA_RAT_NT})
@@ -93,8 +94,6 @@ set(ARE_MERGEABLE 10)
 set(MERGE 11)
 set(ASSERTIONS 12)
 set(CONSTRUCTOR 13)
-set(COMPARE_X_AT_LIMIT 14)
-set(COMPARE_X_NEAR_LIMIT 15)
 set(COMPARE_X_ON_BOUNDARY 16)
 set(COMPARE_X_NEAR_BOUNDARY 17)
 set(COMPARE_Y_NEAR_BOUNDARY 18)
@@ -152,6 +151,11 @@ function(cgal_arr_2_add_target exe_name source_file)
     set(name ${exe_name}_${suffix})
   endif()
   add_executable(${name} ${source_file})
+  target_link_libraries(${name} CGAL::CGAL)
+  if (TARGET CGAL::CGAL_Core)
+    target_link_libraries(${name} CGAL::CGAL_Core)
+  endif()
+  add_to_cached_list( CGAL_EXECUTABLE_TARGETS ${name} )
   separate_arguments(flags UNIX_COMMAND "${TESTSUITE_CXXFLAGS}")
   target_compile_options(${name} PRIVATE ${flags})
   cgal_debug_message(STATUS "#      -> target ${name} with TESTSUITE_CXXFLAGS: ${flags}")
@@ -194,24 +198,10 @@ function(run_test_alt name datafile)
   endif()
   cgal_debug_message(STATUS "#     run_test_alt(${ARGN})")
   cgal_debug_message(STATUS "#       -> ./${name} ${datafile} ${ARGN}")
-  set(command ${name} ${datafile} ${ARGN})
   string(MAKE_C_IDENTIFIER "${name}  ${ARGV4}  ${ARGV5}" test_name)
-  add_test(NAME ${test_name} COMMAND ${command}
-    WORKING_DIRECTORY ${CGAL_CURRENT_SOURCE_DIR})
-  set_property(TEST "${test_name}"
-    APPEND PROPERTY DEPENDS "compilation_of__${name}")
-  if(POLICY CMP0066) # CMake 3.7 or later
-    set_tests_properties("${test_name}"
-      PROPERTIES
-      WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/__exec_test_dir
-      FIXTURES_REQUIRED ${PROJECT_NAME})
-  endif()
-  cgal_debug_message(STATUS "#       .. depends on compilation_of__${name}")
-
-#  message("   successful execution of ${name}  ${ARGV4} ${ARGV5}")
-  set_property(TEST "${test_name}"
-    APPEND PROPERTY LABELS "${PROJECT_NAME}")
-  cgal_debug_message(STATUS "add test \"${test_name}\": ${name} ${datafile} ${ARGN}")
+  cgal_add_test(${name}
+    TEST_NAME ${test_name}
+    ARGUMENTS ${datafile} ${ARGN})
 endfunction()
 
 function(run_trapped_test name datafile)
@@ -335,8 +325,6 @@ function(execute_commands_new_structure data_dir traits_type_name)
   set(commands_indicator_COMPARE 0)
   set(commands_indicator_VERTEX 0)
   set(commands_indicator_IS_VERTICAL 0)
-  set(commands_indicator_COMPARE_X_AT_LIMIT 0)
-  set(commands_indicator_COMPARE_X_NEAR_LIMIT 0)
   set(commands_indicator_COMPARE_X_ON_BOUNDARY 0)
   set(commands_indicator_COMPARE_X_NEAR_BOUNDARY 0)
   set(commands_indicator_COMPARE_Y_NEAR_BOUNDARY 0)
@@ -373,14 +361,6 @@ function(execute_commands_new_structure data_dir traits_type_name)
   if(commands_indicator_IS_VERTICAL)
     run_trapped_test(test_traits data/${data_dir}/points
       data/${data_dir}/xcurves data/${data_dir}/curves data/${data_dir}/is_vertical ${traits_type_name})
-  endif()
-  if(commands_indicator_COMPARE_X_AT_LIMIT)
-    run_trapped_test(test_traits data/${data_dir}/points
-      data/${data_dir}/xcurves data/${data_dir}/curves data/${data_dir}/compare_x_at_limit ${traits_type_name})
-  endif()
-  if(commands_indicator_COMPARE_X_NEAR_LIMIT)
-    run_trapped_test(test_traits data/${data_dir}/points
-      data/${data_dir}/xcurves data/${data_dir}/curves data/${data_dir}/compare_x_near_limit ${traits_type_name})
   endif()
   if(commands_indicator_COMPARE_X_ON_BOUNDARY)
     run_trapped_test(test_traits data/${data_dir}/points
@@ -480,8 +460,6 @@ function(execute_commands_traits_adaptor data_dir traits_type_name)
   set(commands_indicator_PARAMETER_SPACE_X 0)
   set(commands_indicator_PARAMETER_SPACE_Y 0)
   set(commands_indicator_COMPARE_XY 0)
-  set(commands_indicator_COMPARE_X_AT_LIMIT 0)
-  set(commands_indicator_COMPARE_X_NEAR_LIMIT 0)
   set(commands_indicator_COMPARE_X_ON_BOUNDARY 0)
   set(commands_indicator_COMPARE_X_NEAR_BOUNDARY 0)
   set(commands_indicator_COMPARE_Y_NEAR_BOUNDARY 0)
@@ -513,16 +491,6 @@ function(execute_commands_traits_adaptor data_dir traits_type_name)
     run_trapped_test(test_traits_adaptor data/test_adaptor/${data_dir}/points
       data/test_adaptor/${data_dir}/xcurves data/test_adaptor/${data_dir}/curves
       data/test_adaptor/${data_dir}/compare_xy ${traits_type_name})
-  endif()
-  if(commands_indicator_COMPARE_X_AT_LIMIT)
-    run_trapped_test(test_traits_adaptor data/test_adaptor/${data_dir}/points
-      data/test_adaptor/${data_dir}/xcurves data/test_adaptor/${data_dir}/curves
-      data/test_adaptor/${data_dir}/compare_x_at_limit ${traits_type_name})
-  endif()
-  if(commands_indicator_COMPARE_X_NEAR_LIMIT)
-    run_trapped_test(test_traits_adaptor data/test_adaptor/${data_dir}/points
-      data/test_adaptor/${data_dir}/xcurves data/test_adaptor/${data_dir}/curves
-      data/test_adaptor/${data_dir}/compare_x_near_limit ${traits_type_name})
   endif()
 
   if(commands_indicator_COMPARE_X_ON_BOUNDARY)
@@ -908,7 +876,7 @@ endfunction()
 #---------------------------------------------------------------------#
 function(test_polycurve_conic_traits)
 #  echo polycurve test starting
-  if($ENV{CGAL_DISABLE_GMP})
+  if(CGAL_DISABLE_GMP)
     MESSAGE(STATUS "test_polycurve_conic_traits requires CORE and will not be executed")
     return()
   endif()
@@ -920,7 +888,7 @@ function(test_polycurve_conic_traits)
   compile_test_with_flags(test_traits conic_polycurve "${flags}")
 
   # The input arguments for the execute_commands_new_structure,
-  # 1. Polycurve_conics is the directory name in "data"
+  # 1. polycurve_conics is the directory name in "data"
   # 2. polycurve_conic_traits is a string
   # Execute_command_new_structure will only run the test on functors provided as the third, fourth and so on arguments.
   # To see how the input data directory should be structured for each functor, check the execute_commands_new_structure function in this file.
@@ -956,7 +924,7 @@ function(test_polycurve_circular_arc_traits)
 
   compile_test_with_flags(test_traits circular_arc_polycurve "${flags}")
 
-  execute_commands_new_structure(Polycurves_circular_arcs polycurve_circular_arc_traits
+  execute_commands_new_structure(polycurves_circular_arcs polycurve_circular_arc_traits
     COMPARE_Y_AT_X
     EQUAL
     IS_VERTICAL
@@ -979,7 +947,7 @@ endfunction()
 # polycurve bezier traits
 #---------------------------------------------------------------------#
 function(test_polycurve_bezier_traits)
-  if($ENV{CGAL_DISABLE_GMP})
+  if(CGAL_DISABLE_GMP)
     MESSAGE(STATUS "test_polycurve_bezier_traits requires CORE and will not be executed")
     return()
   endif()
@@ -990,7 +958,7 @@ function(test_polycurve_bezier_traits)
 
   compile_test_with_flags(test_traits bezier_polycurve "${flags}")
 
-  execute_commands_new_structure(Polycurves_bezier test_polycurve_bezier_traits
+  execute_commands_new_structure(polycurves_bezier test_polycurve_bezier_traits
     MERGE
     EQUAL
     IS_VERTICAL
@@ -1081,14 +1049,14 @@ function(test_linear_traits)
     IS_VERTICAL COMPARE_Y_AT_X COMPARE_Y_AT_X_LEFT INTERSECT
     SPLIT MERGE
     PARAMETER_SPACE_X PARAMETER_SPACE_Y
-    COMPARE_X_AT_LIMIT COMPARE_X_NEAR_LIMIT COMPARE_Y_NEAR_BOUNDARY)
+    COMPARE_X_ON_BOUNDARY COMPARE_X_NEAR_BOUNDARY COMPARE_Y_NEAR_BOUNDARY)
 endfunction()
 
 #---------------------------------------------------------------------#
 # conic traits
 #---------------------------------------------------------------------#
 function(test_conic_traits)
-  if($ENV{CGAL_DISABLE_GMP})
+  if(CGAL_DISABLE_GMP)
     MESSAGE(STATUS "test_conic_traits requires CORE and will not be executed")
     return()
   endif()
@@ -1219,7 +1187,7 @@ endfunction()
 # bezier traits
 #---------------------------------------------------------------------#
 function(test_bezier_traits)
-  if($ENV{CGAL_DISABLE_GMP})
+  if(CGAL_DISABLE_GMP)
     MESSAGE(STATUS "test_bezier_traits requires CORE and will not be executed")
     return()
   endif()
@@ -1266,7 +1234,7 @@ endfunction()
 # rational arc traits
 #---------------------------------------------------------------------#
 function(test_rational_arc_traits)
-  if($ENV{CGAL_DISABLE_GMP})
+  if(CGAL_DISABLE_GMP)
     MESSAGE(STATUS "test_rational_arc_traits requires CORE and will not be executed")
     return()
   endif()
@@ -1283,7 +1251,7 @@ function(test_rational_arc_traits)
 
   execute_commands_new_structure(rational_arcs rational_arc_traits
     VERTEX IS_VERTICAL COMPARE_Y_AT_X COMPARE_Y_AT_X_LEFT SPLIT MERGE
-    COMPARE_X_AT_LIMIT COMPARE_X_NEAR_LIMIT COMPARE_Y_NEAR_BOUNDARY)
+    COMPARE_X_ON_BOUNDARY COMPARE_X_NEAR_BOUNDARY COMPARE_Y_NEAR_BOUNDARY)
 endfunction()
 
 #---------------------------------------------------------------------#
@@ -1291,7 +1259,10 @@ endfunction()
 #---------------------------------------------------------------------#
 function(test_algebraic_traits_gmp)
   #TODO: Adapt
-
+  if(CGAL_DISABLE_GMP)
+    MESSAGE(STATUS "test_traits_algebraic_traits_gmp requires GMP and will not be executed")
+    return()
+  endif()
   set(nt ${CGAL_GMPZ_NT})
   set(kernel ${UNIVARIATE_ALGEBRAIC_KERNEL})
   set(geom_traits ${ALGEBRAIC_GEOM_TRAITS})
@@ -1330,7 +1301,7 @@ endfunction()
 #---------------------------------------------------------------------#
 function(test_algebraic_traits_core)
   #TODO: Adapt
-  if($ENV{CGAL_DISABLE_GMP})
+  if(CGAL_DISABLE_GMP)
     MESSAGE(STATUS "test_algebraic_traits_core requires CORE and will not be executed")
     return()
   endif()
@@ -1428,3 +1399,11 @@ compile_and_run(test_spherical_removal)
 compile_and_run(test_io)
 
 compile_and_run(test_sgm)
+
+compile_and_run(test_polycurve_intersection)
+if(CGAL_DISABLE_GMP)
+  get_directory_property(LIST_OF_TESTS TESTS)
+  foreach(_test ${LIST_OF_TESTS})
+    set_property(TEST ${_test} APPEND PROPERTY ENVIRONMENT CGAL_DISABLE_GMP=1)
+  endforeach()
+endif()

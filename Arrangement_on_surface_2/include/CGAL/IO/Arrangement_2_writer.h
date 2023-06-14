@@ -2,19 +2,10 @@
 // All rights reserved.
 //
 // This file is part of CGAL (www.cgal.org).
-// You can redistribute it and/or modify it under the terms of the GNU
-// General Public License as published by the Free Software Foundation,
-// either version 3 of the License, or (at your option) any later version.
-//
-// Licensees holding a valid commercial license may use this file in
-// accordance with the commercial license agreement provided with the software.
-//
-// This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
-// WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 //
 // $URL$
 // $Id$
-// SPDX-License-Identifier: GPL-3.0+
+// SPDX-License-Identifier: GPL-3.0-or-later OR LicenseRef-Commercial
 //
 // Author(s)     : Ron Wein           <wein@post.tau.ac.il>
 //                 (based on old version by Michal Meyerovitch and Ester Ezra)
@@ -72,7 +63,7 @@ namespace CGAL {
     typedef std::map<const DVertex*, int>                 Vertex_index_map;
     typedef std::map<const DHalfedge*, int>               Halfedge_index_map;
 
-    // Data memebrs:
+    // Data members:
     const Arrangement_2&   m_arr;
     const Dcel*            m_dcel;
     int                    m_curr_v;
@@ -91,7 +82,7 @@ namespace CGAL {
     /*! Constructor. */
     Arrangement_2_writer(const Arrangement_2& arr) :
       m_arr(arr),
-      m_dcel(NULL),
+      m_dcel(nullptr),
       m_curr_v(0),
       m_curr_he(0)
     {
@@ -316,7 +307,7 @@ namespace CGAL {
       return (pos->second);
     }
 
-    /*! Get the mapped index of a given halfegde. */
+    /*! Get the mapped index of a given halfedge. */
     int _index(const DHalfedge* he) const
     {
       typename Halfedge_index_map::const_iterator  pos = m_he_index.find(he);
@@ -328,7 +319,7 @@ namespace CGAL {
     /*! Get the number of edges along a given CCB. */
     std::size_t _circulator_size(const DHalfedge* ccb) const
     {
-      CGAL_assertion(ccb != NULL);
+      CGAL_assertion(ccb != nullptr);
 
       std::size_t       n = 0;
       const DHalfedge*  curr = ccb;
