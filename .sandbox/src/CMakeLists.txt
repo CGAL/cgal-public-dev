@@ -1,15 +1,29 @@
-# Created by the script cgal_create_cmake_script
-# This is the CMake script for compiling a CGAL application.
+# # Created by the script cgal_create_cmake_script
+# # This is the CMake script for compiling a CGAL application.
 
-cmake_minimum_required(VERSION 3.25)
-project( sandbox CXX )
+# cmake_minimum_required(VERSION 3.25)
+# project( sandbox CXX )
 
-find_package(CGAL REQUIRED)
+# find_package(CGAL REQUIRED)
 
-# create a target per cppfile
-file(
-  GLOB cppfiles ${CMAKE_CURRENT_SOURCE_DIR}/*.cpp
-)
-foreach(cppfile ${cppfiles})
-  create_single_source_cgal_program("${cppfile}")
-endforeach()
+# # create a target per cppfile
+# file(
+#   GLOB cppfiles ${CMAKE_CURRENT_SOURCE_DIR}/*.cpp
+# )
+# foreach(cppfile ${cppfiles})
+#   create_single_source_cgal_program("${cppfile}")
+# endforeach()
+cmake_minimum_required(VERSION 3.1...3.23)
+project(Surface_mesh_Examples)
+
+find_package(CGAL REQUIRED OPTIONAL_COMPONENTS Qt5)
+
+
+#create the executable of the application
+create_single_source_cgal_program("draw_surface_mesh.cpp")
+if(CGAL_Qt5_FOUND)
+  #link it with the required CGAL libraries
+  target_link_libraries(draw_surface_mesh PUBLIC CGAL::CGAL_Basic_viewer)
+else()
+  message(FATAL_ERROR Couldn't find qt5)
+endif()

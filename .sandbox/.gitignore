@@ -1,4 +1,5 @@
 *.dll
 *.lib
-build/^(?!.*\.keep$).*
+build/*
+!build/.keep
 .vscode/*
