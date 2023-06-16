@@ -1,0 +1,4 @@
+*.dll
+*.lib
+build/^(?!.*\.keep$).*
+.vscode/*
