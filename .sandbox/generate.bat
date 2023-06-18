@@ -27,4 +27,4 @@ if not exist %folder% (
    exit /b
 )
 
-cmake -B .\build -S .\src --preset=default
+cmake -B .\build -S . --preset=default

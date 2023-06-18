@@ -12,4 +12,4 @@ if( ipo_supported )
   set( CMAKE_INTERPROCEDURAL_OPTIMIZATION True )
 endif()
 
-add_subdirectory(src build)
+add_subdirectory(src)
