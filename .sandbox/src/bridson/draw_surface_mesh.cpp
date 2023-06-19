@@ -55,6 +55,7 @@
 #include <CGAL/Surface_mesh.h>
 #include <CGAL/draw_surface_mesh.h>
 #include <bilinear_patch_3.h>
+#include <Ray_3_Bilinear_patch_3_do_intersect.h>
 #include <fstream>
 typedef CGAL::Simple_cartesian<double>                       Kernel;
 typedef Kernel::Point_3                                      Point;
@@ -74,11 +75,11 @@ int main(int argc, char* argv[])
 
   Point outside_point = Point(1, 1, 1);
   Point inside_point = Point(0.25, 0.25, 0.25);
-  std::cout << "Orientation: " << t.orientation() << std::endl;
+  std::cout << "Orientation is positive: " << t.orientation() << std::endl;
   std::cout << "Inside point is inside: " << t.has_on_bounded_side(inside_point) << std::endl;
   std::cout << "Outside point is outside: " << t.has_on_unbounded_side(outside_point) << std::endl;
-  // const std::string filename = (argc>1) ? argv[1] : CGAL::data_file_path("meshes/elephant.off");
   std::cout << "Should be zero: " << bp.phi(d) << std::endl;
+  std::cout << "Should be false: " << bp.is_planar() << std::endl;
   // Mesh sm;
   // if(!CGAL::IO::read_polygon_mesh(filename, sm))
   // {

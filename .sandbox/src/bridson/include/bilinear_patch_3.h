@@ -38,22 +38,28 @@ class BilinearPatchC3
   Base base;
 
 public:
-  typedef R_                                     R;
+  typedef R_                        R;
+  typedef typename R::Tetrahedron_3 Tetrahedron;
+
+  Tetrahedron bounding_tetrahedron;
 
   BilinearPatchC3() {}
 
   BilinearPatchC3(const Point_3 &p, const Point_3 &q, const Point_3 &r, const Point_3 &s)
-    : base(CGAL::make_array(p, q, r, s)) {}
+    : base(CGAL::make_array(p, q, r, s)) {
+      bounding_tetrahedron = Tetrahedron(p, q, r, s);
+    }
 
   bool  operator==(const BilinearPatchC3 &bp) const;
   bool  operator!=(const BilinearPatchC3 &bp) const;
 
   // bool  has_on(const Point_3 &p) const;
   bool  is_degenerate() const;
+  bool  is_planar() const;
 
   const Point_3 & vertex(int i) const;
   const Point_3 & operator[](int i) const;
-  const Tetrahedron_3 tetrahedron() const;
+  const Tetrahedron_3 & tetrahedron() const;
 
   FT phi(const Point_3 & x);
 
@@ -164,10 +170,17 @@ BilinearPatchC3<R>::is_degenerate() const
 }
 
 template < class R >
-const typename BilinearPatchC3<R>::Tetrahedron_3
+bool
+BilinearPatchC3<R>::is_planar() const
+{
+  return bounding_tetrahedron.is_degenerate();
+}
+
+template < class R >
+const typename BilinearPatchC3<R>::Tetrahedron_3 &
 BilinearPatchC3<R>::tetrahedron() const
 {
-  return Tetrahedron_3( vertex(0), vertex(1), vertex(2), vertex(3) );
+  return bounding_tetrahedron;
 }
 
 } //namespace CGAL
