@@ -15,25 +15,25 @@
 #include <CGAL/boost/graph/helpers.h>
 #include <CGAL/boost/graph/iterator.h>
 
+#include <CGAL/Polygon_mesh_processing/locate.h>>
+
 namespace CGAL {
 
 template <class Kernel>
 struct Face_values {
     typedef typename Kernel::FT FT;
 
-    // how do I correctly encode the vertex data d2vi (distance to source)
-    // such that it works independent of the unfolding halfedge?
     FT sigma;
     FT d;
-    FT d2v0, d2v1, d2v2;
+    std::array<FT,3> d2verts;
 
-    Face_values(FT _sigma=1., FT _d=2., FT _d2v0=3., FT _d2v1=4., FT _d2v2=5.) // we need some default values along the lines of CGAL::infty
-        : sigma(_sigma), d(_d), d2v0(_d2v0), d2v1(_d2v1), d2v2(_d2v2) {}       // so that the comparator with any real number says that it is larger
+    Face_values(FT _sigma=1., FT _d=2., std::array<FT,3> _d2verts = {3., 4., 5.}) // we need some default values along the lines of CGAL::infty
+        : sigma(_sigma), d(_d), d2verts(_d2verts) {}       // so that the comparator with any real number says that it is larger
 
     friend std::ostream & operator <<(std::ostream& stream, const Face_values vals)
     {
         return ( stream << vals.sigma << "\t" << vals.d << "\t"
-                       << vals.d2v0  << "\t" << vals.d2v1 << "\t" << vals.d2v2 << std::endl);
+                       << vals.d2verts[0]  << "\t" << vals.d2verts[1] << "\t" << vals.d2verts[2] << std::endl);
     };
 };
 
@@ -55,22 +55,6 @@ public:
     typedef typename Triangle_mesh::template Property_map<edge_descriptor, FT> Edge_property_map;
 
     typedef Face_values<Kernel> Face_values;
-    /* struct Face_values {
-        // how do I correctly encode the vertex data d2vi (distance to source)
-        // such that it works independent of the unfolding halfedge?
-        FT sigma;
-        FT d;
-        FT d2v0, d2v1, d2v2;
-
-        Face_values(FT _sigma=1., FT _d=2., FT _d2v0=3., FT _d2v1=4., FT _d2v2=5.) // we need some default values along the lines of CGAL::infty
-            : sigma(_sigma), d(_d), d2v0(_d2v0), d2v1(_d2v1), d2v2(_d2v2) {}       // so that the comparator with any real number says that it is larger
-
-        friend std::ostream & operator <<(std::ostream& stream, const Face_values vals)
-        {
-            return ( stream << vals.sigma << "\t" << vals.d << "\t"
-                            << vals.d2v0  << "\t" << vals.d2v1 << "\t" << vals.d2v2 << std::endl);
-        };
-    };*/
 
 public:
     typedef typename Triangle_mesh::template Property_map<face_descriptor, Face_values> Face_values_map;
@@ -80,6 +64,7 @@ public:
     typedef typename Traits::Reconstruct_source_point_in_triangle_tangent_space Reconstruct_source_point_in_triangle_tangent_space;
     typedef typename Traits::Construct_triangle_centroid_2                      Construct_triangle_centroid_2;
     typedef typename Traits::Construct_heuristic_point_2                        Construct_heuristic_point_2;
+    typedef typename Traits::Edge_intersection_test                             Edge_intersection_test;
 
 private:
     const Traits m_traits;
@@ -106,6 +91,8 @@ public:
             //std::cout << "face values for face 0:" << std::endl << m_face_values[face_descriptor(0)] << std::endl;
         };
 
+    Edge_property_map& Get_edge_length_map() { return m_edge_lengths; };
+
     Unfold_triangle_3_along_halfedge unfold_triangle_3_along_halfedge_object()
         { return m_traits.unfold_triangle_3_along_halfedge_object(); }
     Reconstruct_source_point_in_triangle_tangent_space reconstruct_source_point_in_triangle_tangent_space_object()
@@ -114,6 +101,25 @@ public:
         { return m_traits.construct_centroid_2_object(); };
     Construct_heuristic_point_2 construct_heuristic_point_object()
         { return m_traits.construct_heuristic_point_2_object(); };
+    Edge_intersection_test edge_intersection_test_object()
+        { return m_traits.edge_intersection_test_object(); };
+
+        typedef CGAL::Polygon_mesh_processing::Barycentric_coordinates<FT> Barycentric_coordinates;
+
+    class Add_source_point
+    {
+    public:
+        typedef std::pair<face_descriptor, Barycentric_coordinates> face_location;
+
+    public:
+        Add_source_point() {};
+
+        void operator() (face_location source_point)
+        {
+            m_face_values[source_point.first]
+        }
+    };
+
 };
 
 }

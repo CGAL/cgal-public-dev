@@ -1,6 +1,7 @@
 #ifndef CGAL_SURFACE_MESH_APPROXIMATE_SHORTEST_PATH_FUNCTION_OBJECTS_H
 #define CGAL_SURFACE_MESH_APPROXIMATE_SHORTEST_PATH_FUNCTION_OBJECTS_H
 
+#include "CGAL/Surface_mesh_approximate_shortest_path/Surface_mesh_approximate_shortest_path.h" // this is not supposed to be here! structure problem
 #include <CGAL/assertions.h>
 #include <CGAL/boost/graph/helpers.h>
 
@@ -129,7 +130,7 @@ public:
             tmesh, tmesh.target(nexth), tmesh.source(h));
 
         // third point
-        FT Px = (e0 + (e2 - e1)) / (2 * e0);
+        FT Px = (e0 + (e2 - e1)) / (2*sqrt(e0));
         FT Py = sqrt(e2 - square(Px));
         unfolded_triangle.P = Point_2(Px, Py);
 
@@ -143,23 +144,24 @@ public:
     result_type operator() (SM& tmesh, halfedge_descriptor h, Edge_property_map& edge_lengths)
     {
         unfolded_triangle_2 unfolded_triangle;
+        halfedge_descriptor oppo_halfedge = tmesh.opposite(h);
 
         // edge length
-        FT e0 = Find_edge_length_and_update_property_map()(tmesh, h, edge_lengths);
+        FT e0 = Find_edge_length_and_update_property_map()(tmesh, oppo_halfedge, edge_lengths);
 
         // second point
         unfolded_triangle.B = Point_2(sqrt(e0), 0.);
 
         // second edge length
-        halfedge_descriptor nexth = tmesh.next(h);
-        FT e1 = Find_edge_length_and_update_property_map()(tmesh, nexth, edge_lengths);
+        halfedge_descriptor next_halfedge = tmesh.next(oppo_halfedge);
+        FT e1 = Find_edge_length_and_update_property_map()(tmesh, next_halfedge, edge_lengths);
 
         // third edge length
-        halfedge_descriptor prevh = tmesh.next(nexth);
-        FT e2 = Find_edge_length_and_update_property_map()(tmesh, prevh, edge_lengths);
+        halfedge_descriptor prev_halfedge = tmesh.next(next_halfedge);
+        FT e2 = Find_edge_length_and_update_property_map()(tmesh, prev_halfedge, edge_lengths);
 
         // third point
-        FT Px = (e0 + (e2 - e1)) / (2 * e0);
+        FT Px = (e0 + (e2 - e1)) / (2*sqrt(e0));
         FT Py = sqrt(e2 - square(Px));
         unfolded_triangle.P = Point_2(Px, Py);
 
@@ -167,9 +169,9 @@ public:
         std::cout << "B: " << unfolded_triangle.B.x() << "," << unfolded_triangle.B.y() << std::endl;
         std::cout << "P: " << unfolded_triangle.P.x() << "," << unfolded_triangle.P.y() << std::endl;
         std::cout << "with (squared) edge lengths" << std::endl;
-        std::cout << "A -> B: " << edge_lengths[tmesh.edge(h)] << std::endl;
-        std::cout << "B -> P: " << edge_lengths[tmesh.edge(nexth)] << std::endl;
-        std::cout << "P -> A: " << edge_lengths[tmesh.edge(prevh)] << std::endl;
+        std::cout << "A -> B: " << edge_lengths[tmesh.edge(oppo_halfedge)] << std::endl;
+        std::cout << "B -> P: " << edge_lengths[tmesh.edge(next_halfedge)] << std::endl;
+        std::cout << "P -> A: " << edge_lengths[tmesh.edge(prev_halfedge)] << std::endl;
 
         return unfolded_triangle;
     }
@@ -190,6 +192,8 @@ public:
     typedef typename Graph_traits::face_descriptor      face_descriptor;
 
     typedef typename SM::template Property_map<edge_descriptor, FT> Edge_property_map;
+    typedef typename CGAL::Face_values<Kernel> Face_values; // that only works because of the bad inclusion, see top of this file.
+    typedef typename Surface_mesh::template Property_map<face_descriptor, Face_values> Face_values_map;
 
     typedef Compute_squared_edge_length<Kernel, SM> Compute_squared_edge_length;
     typedef Find_edge_length_and_update_property_map<Kernel, Surface_mesh> Find_edge_length_and_update_property_map;
@@ -201,6 +205,9 @@ public:
 
     result_type operator() (SM& tmesh, halfedge_descriptor h)
     {
+        // this does not really work without the
+        // Edge_property_map& edge_lengths and Face_values_map& face_values
+
         // edge length
         FT e0 = Compute_squared_edge_length()(tmesh, h);
 
@@ -221,7 +228,7 @@ public:
         return S;
     }
 
-    /* result_type operator() (SM& tmesh,
+    result_type operator() (SM& tmesh,
                 halfedge_descriptor h,
                 Edge_property_map& edge_lengths,
                 Face_values_map& face_values)
@@ -230,17 +237,27 @@ public:
         FT e0 = Find_edge_length_and_update_property_map()(tmesh, h, edge_lengths);
 
         // find the correct entries in the face_values_map
-        face_descriptor f = tmesh.face(h);
-        FT d2_AU = face_values[f].d2v0; // squared distances
-        FT d2_BU = face_values[f].d2v1; // this is NOT yet correct. One needs to find a global to
-        // local relationship for the vertices in the respective triangle here.
-        // it always needs to be the distances corresponding to the vertices source(h) and target(h)
-        // but how do I respect that in the face_values and then here?
-        // Is there something like a local vertex_property_map for the local vertices?
+        if (is_border(tmesh.opposite(h), tmesh)) {
+            std::cerr << "halfedge opposite to " << h << " is on border and hence there is no way to reconstruct the source" << std::endl;
+        }
+        halfedge_descriptor oppo_halfedge = tmesh.opposite(h);
+        face_descriptor opposite_face = tmesh.face(oppo_halfedge);
+
+        vertex_descriptor A = tmesh.source(oppo_halfedge); // do we need to swap source and target here?
+        vertex_descriptor B = tmesh.target(oppo_halfedge);
+        std::cout << opposite_face << std::endl;
+        std::cout << A << std::endl;
+        std::cout << B << std::endl;
+
+        int A_loc = vertex_index_in_face(A, opposite_face, tmesh);
+        int B_loc = vertex_index_in_face(B, opposite_face, tmesh);
+
+        FT d2A = face_values[opposite_face].d2verts[A_loc];
+        FT d2B = face_values[opposite_face].d2verts[B_loc];
 
         // first coordinate of the virtual geodesic source S
-        FT Sx = (e0 + (d2_AU - d2_BU)) / (2.*e0);
-        FT Sy = -sqrt(d2_AU - square(Sx));
+        FT Sx = (e0 + (d2A - d2B)) / (2.*sqrt(e0));
+        FT Sy = -sqrt(d2A - square(Sx));
 
         // Source point in triangle tangent plane
         Point_2 S = {Sx, Sy};
@@ -249,7 +266,7 @@ public:
         std::cout << "B: " << S.x() << "," << S.y() << std::endl;
 
         return S;
-    } */
+    }
 };
 
 template <class Kernel>
@@ -348,6 +365,8 @@ public:
         // get barycenter
         auto unfolded_triangle = Unfold_triangle_3_along_halfedge()(mesh, h, edge_lengths);
         Point_2 C = Construct_triangle_centroid_2<Kernel>()(unfolded_triangle.B, unfolded_triangle.P);
+        std::cout << std::fixed;
+        std::cout << std::setprecision(14);
         std::cout << "centroid has coordinates" << std::endl;
         std::cout << C.x() << "," << C.y() << std::endl;
 
@@ -356,7 +375,7 @@ public:
         FT e1 = edge_lengths[mesh.edge(mesh.next(h))];
         FT e2 = edge_lengths[mesh.edge(mesh.prev(h))];
 
-        // look up to blending weight lambda
+        // look up the blending weight lambda
         FT lambda = Get_heuristic_parameter<Kernel>()(e0, e1, e2, unfolded_triangle.P);
 
         // compute heuristic point coordinates
@@ -368,6 +387,52 @@ public:
 
         return Point_2(Qx, Qy);
     }
+};
+
+template <class Kernel>
+class Edge_intersection_test
+{
+public:
+    typedef typename Kernel::Point_2        Point_2;
+
+    typedef typename Kernel::Left_turn_2    Left_turn_2;
+
+    typedef std::pair<bool, bool> result_type; // the first bool indicates whether we have an intersection,
+    // the secong bool tells us whether the source is to the left (false) or to the right (true) (only relevant if the first bool is false)
+
+public:
+    Edge_intersection_test() {};
+
+    result_type operator() (Point_2 S, Point_2 Q, Point_2 A, Point_2 B)
+    {
+        bool left_of_edge = Left_turn_2()(S, A, Q);
+        bool not_right_of_edge = Left_turn_2()(S, B, Q);
+
+        result_type intersection_result;
+
+        // check all the possible cases
+        if (left_of_edge && !not_right_of_edge) {
+            std::cerr << "Intersection test with edge failed. The source was identified to be both left and right of the edge (which is not possible)";
+        }
+        else if (left_of_edge && not_right_of_edge) {
+            // source is to the left of the edge
+            intersection_result.first = false;
+            intersection_result.second = false;
+        }
+        else if (!left_of_edge && !not_right_of_edge) {
+            // source is to the right of the edge
+            intersection_result.first = false;
+            intersection_result.second = true;
+        }
+        else if (!left_of_edge && not_right_of_edge) {
+            // source is below the edge such that we get an intersection!
+            intersection_result.first = true;
+            intersection_result.second = false;
+        }
+
+        return intersection_result;
+    }
+
 };
 
 }
