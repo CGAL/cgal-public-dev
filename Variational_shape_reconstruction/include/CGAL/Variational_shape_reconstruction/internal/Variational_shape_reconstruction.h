@@ -15,9 +15,6 @@ typedef CGAL::Bbox_3   Bbox;
 class Variational_shape_reconstruction
 {
     private:
-        //qem
-        std::vector<QEM_metric> m_pqems;
-        std::vector<QEM_metric> m_vqems;
 
         //generators
         size_t m_generator_count;
@@ -42,20 +39,14 @@ class Variational_shape_reconstruction
         double          m_spacing;
 
         TriangleFit              m_triangle_fit;
-
+        std::vector<int> m_generators_count;
         std::shared_ptr<Clustering> m_cluster;
 
 
     public:
     Variational_shape_reconstruction(const Pointset& pointset,int generator_count) : m_generator_count(generator_count) {
         pointset_ = pointset;
-        initialize(pointset_,generator_count);
-        m_cluster = std::make_shared<Clustering>(pointset, m_num_knn);
-    }
-    void initialize(Pointset& pointset, size_t generators_count)
-    {
-        m_generator_count = generators_count;
-        load_points(pointset);
+        load_points(pointset_);
         compute_bounding_box();   
 
         // init kdtree
@@ -65,60 +56,23 @@ class Variational_shape_reconstruction
         // compute average spacing
         m_spacing = CGAL::compute_average_spacing<CGAL::Sequential_tag>(m_points, 6,
          CGAL::parameters::point_map(CGAL::First_of_pair_property_map<std::pair<Point, std::size_t>>()));            
-        initialize_qem_map();
-        initialize_vertex_qem();    
+
+        m_cluster = std::make_shared<Clustering>(pointset, m_num_knn);
+        m_cluster->initialize_qem_map(m_tree);
+        m_cluster->initialize_vertex_qem(m_tree);    
         init_random_generators();
     }
-    void load_points(Pointset& pointset)
+
+    void load_points(const Pointset& pointset)
     {
         for( Pointset::const_iterator pointset_it = pointset.begin(); pointset_it != pointset.end(); ++ pointset_it )
         {
             const auto point = pointset.point(*pointset_it);
-            const auto normal = pointset.normal(*pointset_it);
-
             m_points.push_back(std::make_pair(point, std::distance<Pointset::const_iterator>(pointset.begin(),pointset_it)));    
         }
         std::cout << "Number of points: " << pointset_.size() << std::endl;
     }
-    void initialize_qem_map()
-    {
-        int num_nb = std::max(6, m_num_knn);
-        for(Pointset::const_iterator it = pointset_.begin(); it != pointset_.end(); ++ it)
-        {
-            auto point = pointset_.point(*it);
-            K_neighbor_search search(m_tree, point, num_nb);
-            KNNDistance tr_dist;
 
-            double avg_dist = 0.;
-            for(typename K_neighbor_search::iterator it = search.begin(); it != search.end(); it++)
-                avg_dist += tr_dist.inverse_of_transformed_distance(it->second);
-
-            avg_dist = avg_dist / (double)num_nb;
-            
-            QEM_metric pqem = compute_qem_for_point(point, pointset_.normal(*it), avg_dist * avg_dist);
-            m_pqems.push_back(pqem);
-        }
-    }
-    QEM_metric compute_qem_for_point(const Point& query,const Vector& normal,const double &area)
-    {
-        QEM_metric qem;
-        qem.init_qem_metrics_face(area, query, normal);
-        return qem;
-    }
-    void initialize_vertex_qem()
-    {
-        m_vqems.clear();
-        for(Pointset::const_iterator it = pointset_.begin(); it != pointset_.end(); ++ it)
-        {
-            K_neighbor_search search(m_tree, pointset_.point(*it), m_num_knn);
-            QEM_metric vqem;
-
-            for(typename K_neighbor_search::iterator it = search.begin(); it != search.end(); it++)
-                vqem = vqem + m_pqems[(it->first).second];
-
-            m_vqems.push_back(vqem);
-        }
-    }
     void compute_bounding_box()
     {
         // find bounding box
@@ -166,11 +120,10 @@ class Variational_shape_reconstruction
             std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
             m_vlabels.clear();
             m_generators_qem.clear();
-            m_cluster->region_growing(m_tree,m_vlabels,m_generators_qem, m_generators,m_vqems,flag);
+            m_cluster->region_growing(m_tree,m_vlabels,m_generators_qem, m_generators,flag);
             assert(m_vlabels.size() == pointset_.size());
             std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
             std::cerr << "\nRegion growing in " << std::chrono::duration_cast<std::chrono::microseconds>(end - begin).count()/1000 << "[ms]" << std::endl;
-            savePs(m_points,m_vlabels,m_generators.size(),"output.txt");
             flag = m_cluster->update_poles(m_vlabels,m_generators_qem, m_generators);
         }
     }
@@ -178,11 +131,28 @@ class Variational_shape_reconstruction
     {
         std::cout << "Begin guided split..." << std::endl;
         std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
-        auto clusters_count = m_cluster->guided_split_clusters(m_vlabels,m_vqems,m_generators,m_diag,m_spacing,split_ratio, iteration);
+        auto clusters_count = m_cluster->guided_split_clusters(m_vlabels,m_generators,m_diag,m_spacing,split_ratio, iteration);
         std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
         std::cerr << "Guided split in " << std::chrono::duration_cast<std::chrono::microseconds>(end - begin).count() << "[us]" << std::endl;
-        savePs(m_points,m_vlabels,m_generators.size(),"output_guided_"+std::to_string(iteration)+".txt");
         return clusters_count;
+    }
+    Pointset get_point_cloud_clustered()
+    {
+        Pointset pointset;
+        std::vector<Vector> colors;
+        for(int k = 0 ; k < m_generators.size();k++)
+        {
+            colors.push_back(Vector((double) rand() / (RAND_MAX),(double) rand() / (RAND_MAX),(double) rand() / (RAND_MAX)));
+        }
+        for(int i = 0; i < m_points.size();i++)
+        {
+            pointset.insert(m_points[i].first,colors[m_vlabels[i]]);
+        }
+        return pointset;
+    }
+    const Polyhedron& get_reconstructed()
+    {
+        return m_triangle_fit.get_mesh();
     }
     // reconstruction 
     void reconstruction(double dist_ratio, double fitting, double coverage, double complexity)
@@ -221,9 +191,9 @@ class Variational_shape_reconstruction
         {
             Point center;
             // todoquestion
-            /*if(m_generators_count.size() == m_generators.size() && m_generators_count[i] == 1)
-                center = pointset_.point(m_generators[i]);
-            else*/
+            //if(m_generators_count.size() == m_generators.size())
+            //center = pointset_.point(m_generators[i]);
+            /*else*/
             center = compute_optimal_point(m_generators_qem[i], pointset_.point(m_generators[i]));
 
             dual_points.push_back(center);
@@ -250,8 +220,7 @@ class Variational_shape_reconstruction
                 }              
             }
         }
-
-        m_triangle_fit.initialize_adjacent_graph(dual_points, m_generators_qem, adjacent_pairs);
+        m_triangle_fit.initialize_adjacent_graph(dual_points, adjacent_pairs,m_bbox,m_diag);
 
         std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
         std::cerr << "Candidate edge in " << std::chrono::duration_cast<std::chrono::microseconds>(end - begin).count() << "[us]" << std::endl;
@@ -328,7 +297,6 @@ class Variational_shape_reconstruction
     void update_fit_soup(std::vector<float>& fit_soup_facets, std::vector<float>& fit_soup_normals)
     {
         m_triangle_fit.update_fit_soup(fit_soup_facets, fit_soup_normals);
-        m_triangle_fit.save_trianglefit_mesh("filename.off");
     }
 };
 }

@@ -102,22 +102,20 @@ public: // function
     }
 
     template <class IntPairSet>
-    void initialize_adjacent_graph(PointList& dual_points, QemList& dual_qems, IntPairSet& dual_edges)
+    void initialize_adjacent_graph(PointList& dual_points, IntPairSet& dual_edges, Bbox& bbox, float diag)
     {
         reset();
 
         // copy points
         std::copy(dual_points.begin(), dual_points.end(), std::back_inserter(m_points)); 
-        // copy qems
-        std::copy(dual_qems.begin(), dual_qems.end(), std::back_inserter(m_qems));
+
         // copy edges
         for(auto &elem: dual_edges)
             m_edges.push_back(std::make_pair(std::min(elem.first, elem.second), std::max(elem.first, elem.second)));
 
         // init bbox
         m_bbox = CGAL::bbox_3(m_points.begin(), m_points.end());
-        m_diag = std::sqrt(CGAL::squared_distance(Point(m_bbox.min(0), m_bbox.min(1), m_bbox.min(2)),
-                                                  Point(m_bbox.max(0), m_bbox.max(1), m_bbox.max(2))));
+        m_diag = diag;
     }
     void create_candidate_facets()
     {
@@ -488,7 +486,10 @@ public: // function
             CGAL::Polygon_mesh_processing::polygon_soup_to_polygon_mesh(m_points, selected_facets, m_dual_mesh);
 
             std::cout << "Generated mesh with " << m_dual_mesh.size_of_vertices() << " points and " << m_dual_mesh.size_of_facets() << " facets!" << std::endl;
-		}
+		    save_trianglefit_mesh("test.off");
+            save_trianglefit_soup("test_soup.off");
+            save_candidate_edge_ply("testedge.ply");
+        }
 		else 
         {
 			std::cout << "solving the binary program failed!" << std::endl;
@@ -653,6 +654,10 @@ public: // function
             edge_file << m_edges[i].first << " " << m_edges[i].second << std::endl;
 
         edge_file.close();
+    }
+        const Polyhedron& get_mesh()
+    {
+        return m_dual_mesh;
     }
 
 }; // end of class TriangleFit

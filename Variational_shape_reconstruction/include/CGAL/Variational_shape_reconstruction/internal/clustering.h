@@ -40,8 +40,46 @@ class Clustering
         pointset_ = pointset;
         m_num_knn = num_knn;
     }
-    void region_growing(const KNNTree& tree,std::map<int, int>& m_vlabels,std::vector<QEM_metric>& m_generators_qem,const std::vector<int>& m_generators,
-                        std::vector<QEM_metric>& m_vqems,bool flag_dist)
+    void initialize_qem_map(const KNNTree& m_tree)
+    {
+        int num_nb = std::max(6, m_num_knn);
+        for(Pointset::const_iterator it = pointset_.begin(); it != pointset_.end(); ++ it)
+        {
+            auto point = pointset_.point(*it);
+            K_neighbor_search search(m_tree, point, num_nb);
+            KNNDistance tr_dist;
+
+            double avg_dist = 0.;
+            for(typename K_neighbor_search::iterator it = search.begin(); it != search.end(); it++)
+                avg_dist += tr_dist.inverse_of_transformed_distance(it->second);
+
+            avg_dist = avg_dist / (double)num_nb;
+            
+            QEM_metric pqem = compute_qem_for_point(point, pointset_.normal(*it), avg_dist * avg_dist);
+            m_pqems.push_back(pqem);
+        }
+    }
+    QEM_metric compute_qem_for_point(const Point& query,const Vector& normal,const double &area)
+    {
+        QEM_metric qem;
+        qem.init_qem_metrics_face(area, query, normal);
+        return qem;
+    }
+    void initialize_vertex_qem(const KNNTree& m_tree)
+    {
+        m_vqems.clear();
+        for(Pointset::const_iterator it = pointset_.begin(); it != pointset_.end(); ++ it)
+        {
+            K_neighbor_search search(m_tree, pointset_.point(*it), m_num_knn);
+            QEM_metric vqem;
+
+            for(typename K_neighbor_search::iterator it = search.begin(); it != search.end(); it++)
+                vqem = vqem + m_pqems[(it->first).second];
+
+            m_vqems.push_back(vqem);
+        }
+    }
+    void region_growing(const KNNTree& tree,std::map<int, int>& m_vlabels,std::vector<QEM_metric>& m_generators_qem,const std::vector<int>& m_generators,bool flag_dist)
     {
         PQueue growing_queue;
         
@@ -51,7 +89,7 @@ class Clustering
             int index = m_generators[label];
             m_vlabels[index] =  label;
             m_generators_qem.push_back(m_vqems[index]);
-            add_candidates(tree,growing_queue,index,label, flag_dist,m_vlabels,m_generators,m_vqems);
+            add_candidates(tree,growing_queue,index,label, flag_dist,m_vlabels,m_generators);
         }
         int k =0;
         int p =0;
@@ -70,14 +108,13 @@ class Clustering
             k++;
             m_vlabels[index] = label;
             m_generators_qem[label] = m_generators_qem[label] + m_vqems[index]; 
-            add_candidates(tree,growing_queue,index,label, flag_dist,m_vlabels,m_generators,m_vqems);
+            add_candidates(tree,growing_queue,index,label, flag_dist,m_vlabels,m_generators);
         }
 
 
     }
     void add_candidates(const KNNTree& tree,PQueue &growing_queue,const int index,const int label,const bool flag_dist,
-                        const std::map<int, int>& m_vlabels,const std::vector<int>& m_generators,
-                        std::vector<QEM_metric>& m_vqems)
+                        const std::map<int, int>& m_vlabels,const std::vector<int>& m_generators)
     {
         
         K_neighbor_search search(tree, pointset_.point(index), m_num_knn);
@@ -87,13 +124,12 @@ class Clustering
 
             if(m_vlabels.find(nb_index) == m_vlabels.end() )
             {
-                const double loss = compute_collapse_loss(nb_index, label, flag_dist,m_generators,m_vqems);
+                const double loss = compute_collapse_loss(nb_index, label, flag_dist,m_generators);
                 growing_queue.push(CCandidate(nb_index, label, loss));
             }
         }
     }
-    double compute_collapse_loss(const int index,const int label,const bool flag,
-    const std::vector<int>& m_generators, std::vector<QEM_metric>& m_vqems) //eq 6
+    double compute_collapse_loss(const int index,const int label,const bool flag,const std::vector<int>& m_generators) //eq 6
     {
         const double m_qem_weight=1.;
         const double m_dist_weight=1.;
@@ -131,6 +167,7 @@ class Clustering
             center = m_points[m_generators[i]].first;
             else*/
             center = compute_optimal_point(m_generators_qem[i], pointset_.point(m_generators[i]));
+            //center = pointset_.point(m_generators[i]);
             optimal_points.push_back(center);
             dists.push_back(1e20);
             old_poles.push_back(m_generators[i]);
@@ -195,7 +232,7 @@ class Clustering
         return optim_point;
     }
     size_t guided_split_clusters(/*const Pointset& pointset,const std::vector<int> generators,const std::vector<QEM_metric> vqems,*/
-                            std::map<int, int>& m_vlabels,std::vector<QEM_metric>& m_vqems,std::vector<int>& m_generators,
+                            std::map<int, int>& m_vlabels,std::vector<int>& m_generators,
                              double m_diag,double m_spacing,
                              double split_ratio, size_t iteration) // batch splitting
 {
@@ -277,6 +314,9 @@ std::cout << "Found " << new_poles.size() << " new poles!" << std::endl;
         private:
             Pointset pointset_;
             int m_num_knn = 7;
+                    //qem
+            std::vector<QEM_metric> m_pqems;
+            std::vector<QEM_metric> m_vqems;
 
 
 };
