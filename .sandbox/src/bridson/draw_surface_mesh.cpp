@@ -1,6 +1,6 @@
 // // Author(s) : Camille Wormser, Pierre Alliez
 
-// #include <iostream>
+#include <iostream>
 // #include <list>
 
 // #include <CGAL/Simple_cartesian.h>
@@ -58,16 +58,33 @@
 #include <fstream>
 typedef CGAL::Simple_cartesian<double>                       Kernel;
 typedef Kernel::Point_3                                      Point;
+typedef Kernel::Tetrahedron_3                                Tetrahedron;
 typedef CGAL::Surface_mesh<Point>                            Mesh;
+typedef CGAL::BilinearPatchC3<Kernel>                        BilinearPatch;   
+
 int main(int argc, char* argv[])
 {
-  const std::string filename = (argc>1) ? argv[1] : CGAL::data_file_path("meshes/elephant.off");
-  Mesh sm;
-  if(!CGAL::IO::read_polygon_mesh(filename, sm))
-  {
-    std::cerr << "Invalid input file." << std::endl;
-    return EXIT_FAILURE;
-  }
-  CGAL::draw(sm);
+  Point a = Point(0, 0, 0);
+  Point b = Point(1, 0, 0);
+  Point c = Point(0, 1, 0);
+  Point d = Point(0, 0, 1);
+
+  BilinearPatch bp = BilinearPatch(a, b, c, d);
+  Tetrahedron t = bp.tetrahedron();
+
+  Point outside_point = Point(1, 1, 1);
+  Point inside_point = Point(0.25, 0.25, 0.25);
+  std::cout << "Orientation: " << t.orientation() << std::endl;
+  std::cout << "Inside point is inside: " << t.has_on_bounded_side(inside_point) << std::endl;
+  std::cout << "Outside point is outside: " << t.has_on_unbounded_side(outside_point) << std::endl;
+  // const std::string filename = (argc>1) ? argv[1] : CGAL::data_file_path("meshes/elephant.off");
+  std::cout << "Should be zero: " << bp.phi(d) << std::endl;
+  // Mesh sm;
+  // if(!CGAL::IO::read_polygon_mesh(filename, sm))
+  // {
+  //   std::cerr << "Invalid input file." << std::endl;
+  //   return EXIT_FAILURE;
+  // }
+  // CGAL::draw(sm);
   return EXIT_SUCCESS;
 }
