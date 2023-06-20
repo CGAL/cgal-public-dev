@@ -18,6 +18,7 @@
 #define CGAL_CARTESIAN_BILINEAR_PATCH_3_H
 
 #include <CGAL/Handle_for.h>
+#include <CGAL/Interval_nt.h>
 #include <CGAL/array.h>
 
 namespace CGAL {
@@ -25,6 +26,7 @@ namespace CGAL {
 template <class R_>
 class BilinearPatchC3
 {
+  
   typedef typename R_::FT                   FT;
   typedef typename R_::Point_3              Point_3;
   typedef typename R_::Vector_3             Vector_3;
@@ -32,14 +34,14 @@ class BilinearPatchC3
   typedef typename R_::Triangle_3           Triangle_3;
   typedef typename R_::Tetrahedron_3        Tetrahedron_3;
 
-  typedef std::array<Point_3, 4>          Rep;
-  typedef typename R_::template Handle<Rep>::type  Base;
+  typedef std::array<Point_3, 4>                  Rep;
+  typedef typename R_::template Handle<Rep>::type Base;
 
   Base base;
 
 public:
-  typedef R_                        R;
-  typedef typename R::Tetrahedron_3 Tetrahedron;
+  typedef R_                                R;
+  typedef typename R::Tetrahedron_3         Tetrahedron;
 
   Tetrahedron bounding_tetrahedron;
 
@@ -61,47 +63,58 @@ public:
   const Point_3 & operator[](int i) const;
   const Tetrahedron_3 & tetrahedron() const;
 
-  FT phi(const Point_3 & x);
+  CGAL::Interval_nt<false> phi(const Point_3 & x);
 
 private:
-  FT h12(const Point_3 & x);
-  FT h03(const Point_3 & x);
-  FT g( const Point_3 & x, const Point_3 & p, const Point_3 & q, const Point_3 & r );
+  CGAL::Interval_nt<false> h12(const Point_3 & x);
+  CGAL::Interval_nt<false> h03(const Point_3 & x);
+  CGAL::Interval_nt<false> g( const Point_3 & x, const Point_3 & p, const Point_3 & q, const Point_3 & r );
 };
 
 template < class R >
-typename R::FT
+typename CGAL::Interval_nt<false>
 BilinearPatchC3<R>::g(const Point_3 & x, const Point_3 & p, const Point_3 & q, const Point_3 & r) 
 {
+
   R::Vector_3 rp = R::Vector_3(p, r);
   R::Vector_3 qp = R::Vector_3(p, q);
   R::Vector_3 xp = R::Vector_3(p, x);
 
-  R::Point_3 cross = R::Point_3(
-    qp.y()*rp.z() - qp.z()*rp.y(),
-    qp.z()*rp.x() - qp.x()*rp.z(),
-    qp.x()*rp.y() - qp.y()*rp.x()
-  );
+  CGAL::Interval_nt<false> xp_x = CGAL::Interval_nt<false>(xp.x());
+  CGAL::Interval_nt<false> xp_y = CGAL::Interval_nt<false>(xp.y());
+  CGAL::Interval_nt<false> xp_z = CGAL::Interval_nt<false>(xp.z());
 
-  return xp.x()*cross.x() + xp.y()*cross.y() + xp.z()*cross.z();
+  CGAL::Interval_nt<false> qp_x = CGAL::Interval_nt<false>(qp.x());
+  CGAL::Interval_nt<false> qp_y = CGAL::Interval_nt<false>(qp.y());
+  CGAL::Interval_nt<false> qp_z = CGAL::Interval_nt<false>(qp.z());
+
+  CGAL::Interval_nt<false> rp_x = CGAL::Interval_nt<false>(rp.x());
+  CGAL::Interval_nt<false> rp_y = CGAL::Interval_nt<false>(rp.y());
+  CGAL::Interval_nt<false> rp_z = CGAL::Interval_nt<false>(rp.z());
+
+  CGAL::Interval_nt<false> cross_x = qp_y*rp_z - qp_z*rp_y;
+  CGAL::Interval_nt<false> cross_y = qp_z*rp_x - qp_x*rp_z;
+  CGAL::Interval_nt<false> cross_z = qp_x*rp_y - qp_y*rp_x;
+
+  return xp_x*cross_x + xp_y*cross_y + xp_z*cross_z;
 }
 
 template < class R >
-typename R::FT
+typename CGAL::Interval_nt<false>
 BilinearPatchC3<R>::h12(const Point_3 & x) 
 {
   return g(x, vertex(0), vertex(1), vertex(2))*g(x, vertex(1), vertex(3), vertex(2));
 }
 
 template < class R >
-typename R::FT
+typename CGAL::Interval_nt<false>
 BilinearPatchC3<R>::h03(const Point_3 & x) 
 {
   return g(x, vertex(0), vertex(1), vertex(3))*g(x, vertex(0), vertex(3), vertex(2));
 }
 
 template < class R >
-typename R::FT
+typename CGAL::Interval_nt<false>
 BilinearPatchC3<R>::phi(const Point_3 & x) 
 {
   return h12(x) - h03(x);

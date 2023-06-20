@@ -16,6 +16,7 @@
 #include <CGAL/enum.h>
 #include <CGAL/kernel_assertions.h>
 #include <CGAL/intersection_3.h>
+#include <CGAL/Interval_nt.h>
 
 namespace CGAL {
 namespace Intersections {
@@ -196,13 +197,18 @@ namespace internal {
 
 template <class K>
 bool
-do_intersect(const typename CGAL::BilinearPatchC3<K> &bp,
-             const typename K::Ray_3 &r)
-{
+do_intersect_parity(
+  const typename CGAL::BilinearPatchC3<K> &bp,
+  const typename K::Ray_3 &r
+) {
+  // Unfortunately, Bridson's methodology only works for determining the
+  // parity of intersections. Returns true if parity is odd.
   
   CGAL_kernel_precondition(!bp.is_degenerate());
   CGAL_kernel_precondition(!r.is_degenerate());
 
+  // Case 0
+  // Bilinear patch is planar and can be treated as two triangles
   if (bp.is_planar()) {
     return (
           do_intersect(K::Triangle_3(bp.vertex(0), bp.vertex(1), bp.vertex(2)), r) 
@@ -210,14 +216,38 @@ do_intersect(const typename CGAL::BilinearPatchC3<K> &bp,
     );
   } 
   
-  if  {
-    // Check to see if the ray's origin lies inside the bounding tetrahedron
+  // Case 1
+  // Origin lies inside bounding tetrahedron
+  if (bp.tetrahedron().has_on_bounded_side(r.source()) || bp.tetrahedron().has_on_boundary(r.source())) {
+    // If the ray's origin lies on the bilinear patch,
+    // count that as an intersection. The function phi(x) 
+    // returns zero <==> x is on the patch.
+    CGAL::Interval_nt<false> phi = bp.phi(r.source());
+    if (phi.do_overlap(0)) {
+      return true;
+    }
 
-    // 
-    return false;
+    // Otherwise, check the sign of phi(origin). Two of the bounding
+    // tetrahedron's four triangles lie on the positive side of phi(*)==0,
+    // and two lie on the negative side. If the origin is on one side, 
+    // check the ray for intersection with the two triangles on the other side
+    if ( phi > 0 ) {
+      continue;
+    } else {
+      continue;
+    }
   }
 
-  // Check that 
+  // Case 2
+  // Origin lies outside the bounding tetrahedron
+  if (false) {
+    // The ray intersects exactly one of the bounding tetrahedron's two 
+    // triangles on the positive side of phi(*)==0 __if and only if__ the ray
+    // intersects the bilinear patch an odd number of times.
+  }
+
+  return false;
+
 
   // typedef typename K::Point_3 Point_3;
 
