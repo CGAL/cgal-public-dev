@@ -52,6 +52,7 @@
 // }
 
 #include <CGAL/Simple_cartesian.h>
+#include <CGAL/intersections.h>
 #include <CGAL/Surface_mesh.h>
 #include <CGAL/draw_surface_mesh.h>
 #include <bilinear_patch_3.h>
@@ -60,26 +61,52 @@
 typedef CGAL::Simple_cartesian<double>                       Kernel;
 typedef Kernel::Point_3                                      Point;
 typedef Kernel::Tetrahedron_3                                Tetrahedron;
+typedef Kernel::Ray_3                                        Ray;
 typedef CGAL::Surface_mesh<Point>                            Mesh;
-typedef CGAL::BilinearPatchC3<Kernel>                        BilinearPatch;   
+typedef CGAL::BilinearPatchC3<Kernel>                        BilinearPatch;  
 
 int main(int argc, char* argv[])
 {
+  // Point a = Point(0, 0, 0);
+  // Point b = Point(1, 0, 0);
+  // Point c = Point(0, 1, 0);
+  // Point d = Point(0, 0, 1);
+
+  // BilinearPatch bp = BilinearPatch(a, b, c, d);
+  // Tetrahedron t = bp.tetrahedron();
+
+  // Point outside_point = Point(1, 1, 1);
+  // Point inside_point = Point(0.25, 0.25, 0.25);
+  // std::cout << "Orientation is positive: " << t.orientation() << std::endl;
+  // std::cout << "Inside point is inside: " << t.has_on_bounded_side(inside_point) << std::endl;
+  // std::cout << "Outside point is outside: " << t.has_on_unbounded_side(outside_point) << std::endl;
+  // std::cout << "Should be zero: " << bp.phi(d) << std::endl;
+  // std::cout << "Should be false: " << bp.is_planar() << std::endl;
   Point a = Point(0, 0, 0);
   Point b = Point(1, 0, 0);
   Point c = Point(0, 1, 0);
-  Point d = Point(0, 0, 1);
+  Point d = Point(1, 1, 0);
 
   BilinearPatch bp = BilinearPatch(a, b, c, d);
   Tetrahedron t = bp.tetrahedron();
+  Ray r = Ray(Point(0,0,-1), Point(0,0,1));
 
   Point outside_point = Point(1, 1, 1);
-  Point inside_point = Point(0.25, 0.25, 0.25);
+  Point inside_point = Point(0.25, 0.25, 0);
   std::cout << "Orientation is positive: " << t.orientation() << std::endl;
   std::cout << "Inside point is inside: " << t.has_on_bounded_side(inside_point) << std::endl;
   std::cout << "Outside point is outside: " << t.has_on_unbounded_side(outside_point) << std::endl;
   std::cout << "Should be zero: " << bp.phi(d) << std::endl;
-  std::cout << "Should be false: " << bp.is_planar() << std::endl;
+  std::cout << "Should be true: " << bp.is_planar() << std::endl;
+
+  bool intersects = CGAL::do_intersect(r, t);
+
+  std::cout << "Should be true: " << intersects << std::endl;
+
+  intersects = CGAL::Intersections::internal::do_intersect<Kernel>(bp, r);
+
+  std::cout << "Should be true: " << intersects << std::endl;
+
   // Mesh sm;
   // if(!CGAL::IO::read_polygon_mesh(filename, sm))
   // {

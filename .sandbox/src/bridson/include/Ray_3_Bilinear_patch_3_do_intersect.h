@@ -15,6 +15,7 @@
 
 #include <CGAL/enum.h>
 #include <CGAL/kernel_assertions.h>
+#include <CGAL/intersection_3.h>
 
 namespace CGAL {
 namespace Intersections {
@@ -196,12 +197,25 @@ namespace internal {
 template <class K>
 bool
 do_intersect(const typename CGAL::BilinearPatchC3<K> &bp,
-             const typename K::Ray_3 &r,
-             const K& k)
+             const typename K::Ray_3 &r)
 {
   
   CGAL_kernel_precondition(!bp.is_degenerate());
-  CGAL_kernel_precondition(!k.is_degenerate_3_object()(r));
+  CGAL_kernel_precondition(!r.is_degenerate());
+
+  if (bp.is_planar()) {
+    return (
+          do_intersect(K::Triangle_3(bp.vertex(0), bp.vertex(1), bp.vertex(2)), r) 
+      ||  do_intersect(K::Triangle_3(bp.vertex(1), bp.vertex(2), bp.vertex(3)), r)
+    );
+  } 
+  
+  if  {
+    // Check to see if the ray's origin lies inside the bounding tetrahedron
+
+    // 
+    return false;
+  }
 
   // Check that 
 
