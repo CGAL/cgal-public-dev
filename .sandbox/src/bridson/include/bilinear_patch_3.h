@@ -33,6 +33,7 @@ class BilinearPatchC3
   typedef typename R_::Plane_3              Plane_3;
   typedef typename R_::Triangle_3           Triangle_3;
   typedef typename R_::Tetrahedron_3        Tetrahedron_3;
+  typedef typename Interval_nt_advanced     IA_NT;
 
   typedef std::array<Point_3, 4>                  Rep;
   typedef typename R_::template Handle<Rep>::type Base;
@@ -55,7 +56,7 @@ public:
   bool  operator==(const BilinearPatchC3 &bp) const;
   bool  operator!=(const BilinearPatchC3 &bp) const;
 
-  // bool  has_on(const Point_3 &p) const;
+  bool  has_on(const Point_3 &p) const;
   bool  is_degenerate() const;
   bool  is_planar() const;
 
@@ -63,61 +64,61 @@ public:
   const Point_3 & operator[](int i) const;
   const Tetrahedron_3 & tetrahedron() const;
 
-  CGAL::Interval_nt<false> phi(const Point_3 & x);
+  IA_NT aux_phi(const Point_3 & x) const;
 
 private:
-  CGAL::Interval_nt<false> h12(const Point_3 & x);
-  CGAL::Interval_nt<false> h03(const Point_3 & x);
-  CGAL::Interval_nt<false> g( const Point_3 & x, const Point_3 & p, const Point_3 & q, const Point_3 & r );
+  IA_NT aux_h12(const Point_3 & x) const;
+  IA_NT aux_h03(const Point_3 & x) const;
+  IA_NT aux_g( const Point_3 & x, const Point_3 & p, const Point_3 & q, const Point_3 & r ) const;
 };
 
 template < class R >
-typename CGAL::Interval_nt<false>
-BilinearPatchC3<R>::g(const Point_3 & x, const Point_3 & p, const Point_3 & q, const Point_3 & r) 
+Interval_nt_advanced
+BilinearPatchC3<R>::aux_g(const Point_3 & x, const Point_3 & p, const Point_3 & q, const Point_3 & r) const
 {
 
   R::Vector_3 rp = R::Vector_3(p, r);
   R::Vector_3 qp = R::Vector_3(p, q);
   R::Vector_3 xp = R::Vector_3(p, x);
 
-  CGAL::Interval_nt<false> xp_x = CGAL::Interval_nt<false>(xp.x());
-  CGAL::Interval_nt<false> xp_y = CGAL::Interval_nt<false>(xp.y());
-  CGAL::Interval_nt<false> xp_z = CGAL::Interval_nt<false>(xp.z());
+  Interval_nt_advanced xp_x = Interval_nt_advanced(xp.x());
+  Interval_nt_advanced xp_y = Interval_nt_advanced(xp.y());
+  Interval_nt_advanced xp_z = Interval_nt_advanced(xp.z());
 
-  CGAL::Interval_nt<false> qp_x = CGAL::Interval_nt<false>(qp.x());
-  CGAL::Interval_nt<false> qp_y = CGAL::Interval_nt<false>(qp.y());
-  CGAL::Interval_nt<false> qp_z = CGAL::Interval_nt<false>(qp.z());
+  Interval_nt_advanced qp_x = Interval_nt_advanced(qp.x());
+  Interval_nt_advanced qp_y = Interval_nt_advanced(qp.y());
+  Interval_nt_advanced qp_z = Interval_nt_advanced(qp.z());
 
-  CGAL::Interval_nt<false> rp_x = CGAL::Interval_nt<false>(rp.x());
-  CGAL::Interval_nt<false> rp_y = CGAL::Interval_nt<false>(rp.y());
-  CGAL::Interval_nt<false> rp_z = CGAL::Interval_nt<false>(rp.z());
+  Interval_nt_advanced rp_x = Interval_nt_advanced(rp.x());
+  Interval_nt_advanced rp_y = Interval_nt_advanced(rp.y());
+  Interval_nt_advanced rp_z = Interval_nt_advanced(rp.z());
 
-  CGAL::Interval_nt<false> cross_x = qp_y*rp_z - qp_z*rp_y;
-  CGAL::Interval_nt<false> cross_y = qp_z*rp_x - qp_x*rp_z;
-  CGAL::Interval_nt<false> cross_z = qp_x*rp_y - qp_y*rp_x;
+  Interval_nt_advanced cross_x = qp_y*rp_z - qp_z*rp_y;
+  Interval_nt_advanced cross_y = qp_z*rp_x - qp_x*rp_z;
+  Interval_nt_advanced cross_z = qp_x*rp_y - qp_y*rp_x;
 
   return xp_x*cross_x + xp_y*cross_y + xp_z*cross_z;
 }
 
 template < class R >
-typename CGAL::Interval_nt<false>
-BilinearPatchC3<R>::h12(const Point_3 & x) 
+Interval_nt_advanced
+BilinearPatchC3<R>::aux_h12(const Point_3 & x)  const
 {
-  return g(x, vertex(0), vertex(1), vertex(2))*g(x, vertex(1), vertex(3), vertex(2));
+  return aux_g(x, vertex(0), vertex(1), vertex(2))*aux_g(x, vertex(1), vertex(3), vertex(2));
 }
 
 template < class R >
-typename CGAL::Interval_nt<false>
-BilinearPatchC3<R>::h03(const Point_3 & x) 
+Interval_nt_advanced
+BilinearPatchC3<R>::aux_h03(const Point_3 & x) const
 {
-  return g(x, vertex(0), vertex(1), vertex(3))*g(x, vertex(0), vertex(3), vertex(2));
+  return aux_g(x, vertex(0), vertex(1), vertex(3))*aux_g(x, vertex(0), vertex(3), vertex(2));
 }
 
 template < class R >
-typename CGAL::Interval_nt<false>
-BilinearPatchC3<R>::phi(const Point_3 & x) 
+Interval_nt_advanced
+BilinearPatchC3<R>::aux_phi(const Point_3 & x) const
 {
-  return h12(x) - h03(x);
+  return aux_h12(x) - aux_h03(x);
 }
 
 template < class R >
@@ -165,15 +166,13 @@ BilinearPatchC3<R>::operator[](int i) const
   return vertex(i);
 }
 
-// template < class R >
-// inline
-// bool
-// BilinearPatchC3<R>::
-// has_on(const typename BilinearPatchC3<R>::Point_3 &p) const
-// {
-//   return R().has_on_3_object()
-//                (static_cast<const typename R::BilinearPatchC3&>(*this), p);
-// }
+template < class R >
+inline
+bool
+BilinearPatchC3<R>::has_on(const Point_3 &p) const
+{
+  return aux_phi(p).do_overlap(0);
+}
 
 template < class R >
 bool

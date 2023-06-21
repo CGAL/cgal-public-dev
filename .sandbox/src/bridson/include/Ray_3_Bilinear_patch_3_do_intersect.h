@@ -218,33 +218,34 @@ do_intersect_parity(
   
   // Case 1
   // Origin lies inside bounding tetrahedron
-  if (bp.tetrahedron().has_on_bounded_side(r.source()) || bp.tetrahedron().has_on_boundary(r.source())) {
+  K::Point_3 ray_source = r.source();
+  if (bp.tetrahedron().has_on_bounded_side(ray_source) || bp.tetrahedron().has_on_boundary(ray_source)) {
     // If the ray's origin lies on the bilinear patch,
     // count that as an intersection. The function phi(x) 
     // returns zero <==> x is on the patch.
-    CGAL::Interval_nt<false> phi = bp.phi(r.source());
-    if (phi.do_overlap(0)) {
+    
+    if (bp.has_on(ray_source)) {
       return true;
     }
 
-    // Otherwise, check the sign of phi(origin). Two of the bounding
-    // tetrahedron's four triangles lie on the positive side of phi(*)==0,
-    // and two lie on the negative side. If the origin is on one side, 
-    // check the ray for intersection with the two triangles on the other side
-    if ( phi > 0 ) {
-      continue;
-    } else {
-      continue;
-    }
+    // // Otherwise, check the sign of phi(origin). Two of the bounding
+    // // tetrahedron's four triangles lie on the positive side of phi(*)==0,
+    // // and two lie on the negative side. If the origin is on one side, 
+    // // check the ray for intersection with the two triangles on the other side
+    // if ( phi > 0 ) {
+    //   continue;
+    // } else {
+    //   continue;
+    // }
   }
 
-  // Case 2
-  // Origin lies outside the bounding tetrahedron
-  if (false) {
-    // The ray intersects exactly one of the bounding tetrahedron's two 
-    // triangles on the positive side of phi(*)==0 __if and only if__ the ray
-    // intersects the bilinear patch an odd number of times.
-  }
+  // // Case 2
+  // // Origin lies outside the bounding tetrahedron
+  // if (false) {
+  //   // The ray intersects exactly one of the bounding tetrahedron's two 
+  //   // triangles on the positive side of phi(*)==0 __if and only if__ the ray
+  //   // intersects the bilinear patch an odd number of times.
+  // }
 
   return false;
 

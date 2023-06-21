@@ -96,7 +96,9 @@ int main(int argc, char* argv[])
   std::cout << "Orientation is positive: " << t.orientation() << std::endl;
   std::cout << "Inside point is inside: " << t.has_on_bounded_side(inside_point) << std::endl;
   std::cout << "Outside point is outside: " << t.has_on_unbounded_side(outside_point) << std::endl;
-  std::cout << "Should be true: " << bp.phi(d).do_overlap(0) << std::endl;
+  std::cout << "Should be true: " << bp.aux_phi(d).do_overlap(0) << std::endl;
+  std::cout << "Should be true: " << bp.has_on(d) << std::endl;
+  std::cout << "Should be false: " << bp.has_on(outside_point) << std::endl;
   std::cout << "Should be false: " << bp.is_planar() << std::endl;
 
   bool intersects = CGAL::do_intersect(r, t);
