@@ -27,3 +27,16 @@ typedef CGAL::Point_set_3< Point, Vector > Pointset;
 typedef CGAL::Polyhedron_3<Kernel>      Polyhedron;
 typedef std::vector<Point>                  PointList;
 typedef CGAL::Bbox_3                    Bbox;
+
+
+/// @brief 
+
+typedef std::vector<float>                  DataList;
+typedef std::vector<int>                    IntList;
+typedef std::vector<double>                 DoubleList;
+typedef std::vector<bool>                   BoolList;
+typedef std::vector<Vector>                 VecList;
+
+typedef std::set<int>                       IntSet;
+
+typedef std::pair<int, int>                 IntPair;

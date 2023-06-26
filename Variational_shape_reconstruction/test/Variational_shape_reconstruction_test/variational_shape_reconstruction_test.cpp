@@ -108,22 +108,23 @@ void test_point_set(const std::string fname)
 int main(int argc, char** argv)
 {	
     const std::vector<std::string> files_to_test{
-        //"armjoin", // cluster ok not recons
-        //"guitar", // cluster ok not recons
+        "armjoin", // cluster ok not recons
+        "guitar", // cluster ok not recons
         "piece_meca", //ok
-        //"g", // cluster ok not recons
-        //"capsule", //ok
-        //"hilbert_cube2_pds_100k",// cluster ok not recons
-        //"bunny_150k",// cluster ok not recons
-        //"joint",// ok
-        //"fertility",// cluster ok not recons
-        //"qtr_piston",// cluster ok recons weird
+        "g", // cluster ok not recons
+        "capsule", //ok
+        "hilbert_cube2_pds_100k",// cluster ok not recons
+        "bunny_150k",// cluster ok not recons
+        "joint",// ok
+        "fertility",// cluster ok not recons
+        "qtr_piston",// cluster ok recons weird
         "hand1" // ok
 
     };   
-    int n = 1;
+    int n = 10;
     for(int i = 0 ; i < n ; i ++)
     {
+        std::cout<<"mesh "+files_to_test[i] +" \n";
         test_point_set(files_to_test[i]);
     }
 	return 0;

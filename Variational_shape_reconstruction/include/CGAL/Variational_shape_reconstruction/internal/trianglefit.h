@@ -115,7 +115,8 @@ public: // function
 
         // init bbox
         m_bbox = CGAL::bbox_3(m_points.begin(), m_points.end());
-        m_diag = diag;
+        m_diag = std::sqrt(CGAL::squared_distance(Point(m_bbox.min(0), m_bbox.min(1), m_bbox.min(2)),
+                                                  Point(m_bbox.max(0), m_bbox.max(1), m_bbox.max(2))));
     }
     void create_candidate_facets()
     {

@@ -26,7 +26,7 @@ class Variational_shape_reconstruction
 
         // knntree
         KNNTree m_tree;
-        int m_num_knn = 7;
+        int m_num_knn = 12;
         
 
         //Region growing
@@ -94,7 +94,7 @@ class Variational_shape_reconstruction
         std::iota(num_range.begin(), num_range.end(), 0);
 
         std::random_device rd;
-        std::mt19937 g(rd());
+        std::mt19937 g(27);
         std::shuffle(num_range.begin(), num_range.end(), g);
 
         std::set<int> selected_indices;
@@ -120,7 +120,7 @@ class Variational_shape_reconstruction
             std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
             m_vlabels.clear();
             m_generators_qem.clear();
-            m_cluster->region_growing(m_tree,m_vlabels,m_generators_qem, m_generators,flag);
+            m_cluster->region_growing(m_tree,m_vlabels,m_generators_qem, m_generators,true);
             assert(m_vlabels.size() == pointset_.size());
             std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
             std::cerr << "\nRegion growing in " << std::chrono::duration_cast<std::chrono::microseconds>(end - begin).count()/1000 << "[ms]" << std::endl;

@@ -132,15 +132,18 @@ class Clustering
     double compute_collapse_loss(const int index,const int label,const bool flag,const std::vector<int>& m_generators) //eq 6
     {
         const double m_qem_weight=1.;
-        const double m_dist_weight=1.;
+        const double m_dist_weight=0.00001;
         
         const double qem_cost = compute_minimum_qem_error(pointset_.point(m_generators[label]), m_vqems[index]);
 
-        const double cost = m_qem_weight * qem_cost;
-        // if flag
-        const double dist_cost = m_num_knn * CGAL::squared_distance(pointset_.point(m_generators[label]), pointset_.point(index));       
+         double cost = m_qem_weight * qem_cost; 
 
-        return cost + m_dist_weight * dist_cost;
+        if(flag)
+        {
+            double dist_cost = m_num_knn * CGAL::squared_distance(pointset_.point(m_generators[label]), pointset_.point(index));
+            cost = cost + m_dist_weight * dist_cost;
+        }
+        return cost;
     }
     double compute_minimum_qem_error(Point center_point, QEM_metric& query_qem)
     {
@@ -153,7 +156,7 @@ class Clustering
     }
     bool update_poles(std::map<int, int>& m_vlabels,std::vector<QEM_metric>& m_generators_qem,std::vector<int>& m_generators)
     {
-        std::cout << "Updating poles..." << std::endl;
+        //std::cout << "Updating poles..." << std::endl;
 
         std::vector<Point>    optimal_points;
         std::vector<double> dists;
@@ -195,7 +198,7 @@ class Clustering
                 return true;
         }
 
-        std::cout << "Region growing converges!" << std::endl;
+        //std::cout << "Region growing converges!" << std::endl;
         return false;
     }
     Point compute_optimal_point(QEM_metric& cluster_qem, Point& cluster_pole)
@@ -241,7 +244,7 @@ class Clustering
     double split_thresh = m_diag * split_ratio;
     split_thresh = split_thresh * split_thresh; // square distance
     split_thresh = split_thresh * m_num_knn * m_spacing * m_spacing;
-    std::cout << "  split threshold: " << split_thresh << std::endl;
+    //std::cout << "  split threshold: " << split_thresh << std::endl;
 
     // compute error for each center
     std::vector<double> qem_errors(m_generators.size(), 0.);
@@ -272,7 +275,7 @@ class Clustering
             new_poles.push_back(vert_indices[i]);
     }
 
-std::cout << "Found " << new_poles.size() << " new poles!" << std::endl;
+//std::cout << "Found " << new_poles.size() << " new poles!" << std::endl;
 
     // merge close poles
     std::set<int, std::greater<int> > duplicate_poles;
@@ -313,7 +316,7 @@ std::cout << "Found " << new_poles.size() << " new poles!" << std::endl;
 
         private:
             Pointset pointset_;
-            int m_num_knn = 7;
+            int m_num_knn = 12;
                     //qem
             std::vector<QEM_metric> m_pqems;
             std::vector<QEM_metric> m_vqems;
