@@ -66,18 +66,17 @@ int main(int argc, char** argv)
 	 for( Pointset::const_iterator pointset_it = pointset.begin(); pointset_it != pointset.end(); ++ pointset_it )
         {
             const auto point = pointset.normal(*pointset_it);
-            std::cout<<point[0]<<"\n"; 
         }
     std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
 
 	qem::Variational_shape_reconstruction manager(pointset,generators);
         std::chrono::steady_clock::time_point begin_clustering = std::chrono::steady_clock::now();
-		manager.region_growing(steps);
+		//manager.region_growing(steps);
     while(new_generators > 5 )
     {
         
-        new_generators = manager.guided_split_clusters(split_threshold, iteration++);
 		manager.region_growing(steps);
+        new_generators = manager.guided_split_clusters(split_threshold, iteration++);
 		Pointset point_cloud = manager.get_point_cloud_clustered();
 		std::ofstream edge_file;
 		edge_file.open("clustering_"+std::to_string(iteration)+".ply");
