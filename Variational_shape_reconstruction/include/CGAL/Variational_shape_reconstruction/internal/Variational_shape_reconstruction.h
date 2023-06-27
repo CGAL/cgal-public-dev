@@ -100,12 +100,61 @@ class Variational_shape_reconstruction
         std::shuffle(num_range.begin(), num_range.end(), g);
 
         std::set<int> selected_indices;
+
+        // one generator for k means ++
         for(int i = 0; i < m_generator_count; i++)
             selected_indices.insert(num_range[i]);
             
         for(auto &elem: selected_indices) {
             m_generators.push_back(elem);
         }   
+
+        std::cout << "Number of random poles: " << m_generators.size() << std::endl;
+
+        std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
+        std::cerr << "Random poles in " << std::chrono::duration_cast<std::chrono::microseconds>(end - begin).count() << "[us]" << std::endl;
+        
+    }
+      void init_random_generators_kmeanspp()
+    {
+        std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
+
+        std::vector<int> num_range(pointset_.size());
+        std::iota(num_range.begin(), num_range.end(), 0);
+
+        std::random_device rd;
+        std::mt19937 g(27);
+        std::shuffle(num_range.begin(), num_range.end(), g);
+
+        std::set<int> selected_indices;
+
+        // one generator for k means ++
+        for(int i = 0; i < 1; i++)
+            selected_indices.insert(num_range[i]);
+            
+        for(auto &elem: selected_indices) {
+            m_generators.push_back(elem);
+        }   
+
+        for(int i = 1; i < m_generator_count;i++)
+        {
+            std::vector<float> distance_list;
+            for( Pointset::const_iterator pointset_it = pointset_.begin(); pointset_it != pointset_.end(); ++ pointset_it )
+            {
+                const auto point = pointset_.point(*pointset_it);
+                float distance = std::numeric_limits<float>::max();
+                // we iterate over previously selected generators
+                for(int j = 0 ; j < m_generators.size();j++)
+                {
+                    float distance_to_generator = CGAL::squared_distance(pointset_.point(m_generators[j]),point);
+                    distance = std::min(distance, distance_to_generator);
+                }
+                distance_list.push_back(distance);
+            }
+            auto max_distance_iterator = std::max_element(distance_list.begin(),distance_list.end());
+            size_t index_max_distance = max_distance_iterator-distance_list.begin();
+            m_generators.push_back(index_max_distance);
+        }
 
         std::cout << "Number of random poles: " << m_generators.size() << std::endl;
 
