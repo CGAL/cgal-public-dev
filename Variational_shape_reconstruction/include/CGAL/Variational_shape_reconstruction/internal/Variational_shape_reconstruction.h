@@ -43,6 +43,7 @@ class Variational_shape_reconstruction
         std::shared_ptr<Clustering> m_cluster;
 
 
+
     public:
     Variational_shape_reconstruction(const Pointset& pointset,int generator_count) : m_generator_count(generator_count) {
         pointset_ = pointset;
@@ -58,6 +59,7 @@ class Variational_shape_reconstruction
          CGAL::parameters::point_map(CGAL::First_of_pair_property_map<std::pair<Point, std::size_t>>()));            
 
         m_cluster = std::make_shared<Clustering>(pointset, m_num_knn);
+        
         m_cluster->initialize_qem_map(m_tree);
         m_cluster->initialize_vertex_qem(m_tree);    
         init_random_generators();
@@ -157,6 +159,7 @@ class Variational_shape_reconstruction
     // reconstruction 
     void reconstruction(double dist_ratio, double fitting, double coverage, double complexity)
     {
+        m_cluster->write_csv();
         std::vector<float> adjacent_edges;
         std::vector<float> candidate_facets;
         std::vector<float> candidate_normals;
@@ -167,14 +170,14 @@ class Variational_shape_reconstruction
         std::vector<float> fit_soup_normals;
         // A
         create_adjacent_edges();
-        update_adjacent_edges(adjacent_edges);
+        //update_adjacent_edges(adjacent_edges);
         //B
         create_candidate_facets();
-        update_candidate_facets( candidate_facets, candidate_normals);
+        //update_candidate_facets( candidate_facets, candidate_normals);
         //C
         mlp_reconstruction(dist_ratio, fitting, coverage, complexity);
-        update_fit_surface(fit_facets, fit_normals);
-        update_fit_soup(fit_soup_facets, fit_soup_normals);
+        //update_fit_surface(fit_facets, fit_normals);
+        //update_fit_soup(fit_soup_facets, fit_soup_normals);
     }
     void create_adjacent_edges()
     {

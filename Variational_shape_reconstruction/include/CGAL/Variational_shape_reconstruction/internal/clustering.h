@@ -15,6 +15,8 @@
 #include <boost/function.hpp>
 #include <random>
 
+#include "helper_metrics.h"
+
 typedef std::pair<Point, std::size_t>                                               Point_with_index;
 typedef std::vector<Point_with_index>                                               PwiList;
 typedef CGAL::First_of_pair_property_map<Point_with_index>                          Point_map_pwi;
@@ -39,6 +41,7 @@ class Clustering
     {
         pointset_ = pointset;
         m_num_knn = num_knn;
+        csv_writer =std::make_shared<DataWriter>(pointset.size());
     }
     void initialize_qem_map(const KNNTree& m_tree)
     {
@@ -156,7 +159,7 @@ class Clustering
     }
     bool update_poles(std::map<int, int>& m_vlabels,std::vector<QEM_metric>& m_generators_qem,std::vector<int>& m_generators)
     {
-        //std::cout << "Updating poles..." << std::endl;
+        std::cout << "Updating poles..." << std::endl;
 
         std::vector<Point>    optimal_points;
         std::vector<double> dists;
@@ -256,7 +259,8 @@ class Clustering
             continue;
 
         int center_ind = m_vlabels[i];
-        double error = compute_minimum_qem_error(pointset_.point(m_generators[center_ind]), m_vqems[i]);
+        double error = compute_minimum_qem_error(pointset_.point(m_generators[center_ind]), m_vqems[i]); 
+        csv_writer->add(i,error);
 
         if(error > qem_errors[center_ind])
         {
@@ -264,6 +268,7 @@ class Clustering
             vert_indices[center_ind] = i;
         }
     }
+    std::cout<<"Generators: "<<m_generators.size()<<"\n";
 
     // split centers exceeding max error
     std::vector<int> new_poles;
@@ -275,7 +280,7 @@ class Clustering
             new_poles.push_back(vert_indices[i]);
     }
 
-//std::cout << "Found " << new_poles.size() << " new poles!" << std::endl;
+    std::cout << "Found " << new_poles.size() << " new poles!" << std::endl;
 
     // merge close poles
     std::set<int, std::greater<int> > duplicate_poles;
@@ -313,6 +318,10 @@ class Clustering
 
     return new_poles.size();
 }
+void write_csv()
+{
+    csv_writer->writeDataToCSV("test.csv");
+}
 
         private:
             Pointset pointset_;
@@ -320,6 +329,12 @@ class Clustering
                     //qem
             std::vector<QEM_metric> m_pqems;
             std::vector<QEM_metric> m_vqems;
+
+            // csv
+
+            std::shared_ptr<DataWriter> csv_writer;
+            
+            
 
 
 };
