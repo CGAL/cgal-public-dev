@@ -7,6 +7,8 @@
 typedef CGAL::Exact_predicates_inexact_constructions_kernel Kernel;
 typedef CGAL::Surface_mesh<Kernel::Point_3> Triangle_mesh;
 typedef Kernel::Point_2 Point_2;
+typedef Kernel::Point_3 Point_3;
+
 
 typedef CGAL::Surface_mesh_approximate_shortest_path_traits<Kernel, Triangle_mesh> Traits;
 typedef CGAL::Surface_mesh_approximate_shortest_path<Traits> Surface_mesh_approximate_shortest_path;
@@ -81,6 +83,10 @@ int main(int argc, char** argv)
     auto inter = shortest_path.edge_intersection_test_object()(source, heu, A, B);
     std::cout << "intersection test yields:" << std::endl
               << "intersection: " << inter.first << "\t right: " << inter.second << std::endl;
+
+    // add source point
+    Point_3 source_point(0.0, 0.0, 0.0);
+    shortest_path.add_source_point(source_point);
 
     return 0;
 }

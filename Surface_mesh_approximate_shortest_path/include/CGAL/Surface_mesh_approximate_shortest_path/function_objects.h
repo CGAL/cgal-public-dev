@@ -144,7 +144,7 @@ public:
     result_type operator() (SM& tmesh, halfedge_descriptor h, Edge_property_map& edge_lengths)
     {
         unfolded_triangle_2 unfolded_triangle;
-        halfedge_descriptor oppo_halfedge = tmesh.opposite(h);
+        halfedge_descriptor oppo_halfedge = h;//tmesh.opposite(h);
 
         // edge length
         FT e0 = Find_edge_length_and_update_property_map()(tmesh, oppo_halfedge, edge_lengths);
@@ -165,13 +165,13 @@ public:
         FT Py = sqrt(e2 - square(Px));
         unfolded_triangle.P = Point_2(Px, Py);
 
-        std::cout << "unfolded triangle" << std::endl;
-        std::cout << "B: " << unfolded_triangle.B.x() << "," << unfolded_triangle.B.y() << std::endl;
-        std::cout << "P: " << unfolded_triangle.P.x() << "," << unfolded_triangle.P.y() << std::endl;
-        std::cout << "with (squared) edge lengths" << std::endl;
-        std::cout << "A -> B: " << edge_lengths[tmesh.edge(oppo_halfedge)] << std::endl;
-        std::cout << "B -> P: " << edge_lengths[tmesh.edge(next_halfedge)] << std::endl;
-        std::cout << "P -> A: " << edge_lengths[tmesh.edge(prev_halfedge)] << std::endl;
+        //std::cout << "unfolded triangle" << std::endl;
+        //std::cout << "B: " << unfolded_triangle.B.x() << "," << unfolded_triangle.B.y() << std::endl;
+        //std::cout << "P: " << unfolded_triangle.P.x() << "," << unfolded_triangle.P.y() << std::endl;
+        //std::cout << "with (squared) edge lengths" << std::endl;
+        //std::cout << "A -> B: " << edge_lengths[tmesh.edge(oppo_halfedge)] << std::endl;
+        //std::cout << "B -> P: " << edge_lengths[tmesh.edge(next_halfedge)] << std::endl;
+        //std::cout << "P -> A: " << edge_lengths[tmesh.edge(prev_halfedge)] << std::endl;
 
         return unfolded_triangle;
     }
@@ -203,31 +203,6 @@ public:
 public:
     Reconstruct_source_point_in_triangle_tangent_space() {}
 
-    result_type operator() (SM& tmesh, halfedge_descriptor h)
-    {
-        // this does not really work without the
-        // Edge_property_map& edge_lengths and Face_values_map& face_values
-
-        // edge length
-        FT e0 = Compute_squared_edge_length()(tmesh, h);
-
-        // just for now until the proper data structures are implemented:
-        FT d2_AU = 1.; // squared distances
-        FT d2_BU = 1.;
-
-        // first coordinate of the virtual geodesic source S
-        FT Sx = (e0 + (d2_AU - d2_BU)) / (2.*e0);
-        FT Sy = -sqrt(d2_AU - square(Sx));
-
-        // Source point in triangle tangent plane
-        Point_2 S = {Sx, Sy};
-
-        std::cout << "reconstructed source" << std::endl;
-        std::cout << "S: " << S.x() << "," << S.y() << std::endl;
-
-        return S;
-    }
-
     result_type operator() (SM& tmesh,
                 halfedge_descriptor h,
                 Edge_property_map& edge_lengths,
@@ -236,18 +211,18 @@ public:
         // edge length
         FT e0 = Find_edge_length_and_update_property_map()(tmesh, h, edge_lengths);
 
+        halfedge_descriptor oppo_halfedge = h;//tmesh.opposite(h);
         // find the correct entries in the face_values_map
-        if (is_border(tmesh.opposite(h), tmesh)) {
+        if (is_border(oppo_halfedge, tmesh)) {
             std::cerr << "halfedge opposite to " << h << " is on border and hence there is no way to reconstruct the source" << std::endl;
         }
-        halfedge_descriptor oppo_halfedge = tmesh.opposite(h);
         face_descriptor opposite_face = tmesh.face(oppo_halfedge);
 
-        vertex_descriptor A = tmesh.source(oppo_halfedge); // do we need to swap source and target here?
-        vertex_descriptor B = tmesh.target(oppo_halfedge);
-        std::cout << opposite_face << std::endl;
-        std::cout << A << std::endl;
-        std::cout << B << std::endl;
+        vertex_descriptor A = tmesh.target(oppo_halfedge); // this is swapped because target(h) == source(opposite(h))
+        vertex_descriptor B = tmesh.source(oppo_halfedge);
+        //std::cout << opposite_face << std::endl;
+        //std::cout << A << std::endl;
+        //std::cout << B << std::endl;
 
         int A_loc = vertex_index_in_face(A, opposite_face, tmesh);
         int B_loc = vertex_index_in_face(B, opposite_face, tmesh);
@@ -262,8 +237,8 @@ public:
         // Source point in triangle tangent plane
         Point_2 S = {Sx, Sy};
 
-        std::cout << "reconstructed source:" << std::endl;
-        std::cout << "B: " << S.x() << "," << S.y() << std::endl;
+        //std::cout << "reconstructed source:" << std::endl;
+        //std::cout << "B: " << S.x() << "," << S.y() << std::endl;
 
         return S;
     }
@@ -365,25 +340,30 @@ public:
         // get barycenter
         auto unfolded_triangle = Unfold_triangle_3_along_halfedge()(mesh, h, edge_lengths);
         Point_2 C = Construct_triangle_centroid_2<Kernel>()(unfolded_triangle.B, unfolded_triangle.P);
-        std::cout << std::fixed;
-        std::cout << std::setprecision(14);
-        std::cout << "centroid has coordinates" << std::endl;
-        std::cout << C.x() << "," << C.y() << std::endl;
+        //std::cout << std::fixed;
+        //std::cout << std::setprecision(14);
+        //std::cout << "centroid has coordinates" << std::endl;
+        //std::cout << C.x() << "," << C.y() << std::endl;
 
+        return operator() (mesh, h, unfolded_triangle.P, C, edge_lengths);
+    }
+
+    result_type operator() (SM& mesh, halfedge_descriptor h, Point_2 P, Point_2 C, Edge_property_map& edge_lengths)
+    {
         // get edge lengths
         FT e0 = edge_lengths[mesh.edge(h)];
         FT e1 = edge_lengths[mesh.edge(mesh.next(h))];
         FT e2 = edge_lengths[mesh.edge(mesh.prev(h))];
 
         // look up the blending weight lambda
-        FT lambda = Get_heuristic_parameter<Kernel>()(e0, e1, e2, unfolded_triangle.P);
+        FT lambda = Get_heuristic_parameter<Kernel>()(e0, e1, e2, P);
 
         // compute heuristic point coordinates
-        FT Qx = lambda * C.x() + (1-lambda) * unfolded_triangle.P.x();
-        FT Qy = lambda * C.y() + (1-lambda) * unfolded_triangle.P.y();
+        FT Qx = lambda * C.x() + (1-lambda) * P.x();
+        FT Qy = lambda * C.y() + (1-lambda) * P.y();
 
-        std::cout << "heuristic point has coordinates" << std::endl;
-        std::cout << Qx << "," << Qy << std::endl;
+        //std::cout << "heuristic point has coordinates" << std::endl;
+        //std::cout << Qx << "," << Qy << std::endl;
 
         return Point_2(Qx, Qy);
     }
