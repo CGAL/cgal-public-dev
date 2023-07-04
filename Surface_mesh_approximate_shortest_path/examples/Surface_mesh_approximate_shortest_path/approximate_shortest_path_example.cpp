@@ -15,6 +15,7 @@ typedef CGAL::Surface_mesh_approximate_shortest_path<Traits> Surface_mesh_approx
 
 typedef boost::graph_traits<Triangle_mesh> Graph_traits;
 
+typedef Graph_traits::vertex_descriptor vertex_descriptor;
 typedef Graph_traits::edge_descriptor edge_descriptor;
 typedef Graph_traits::halfedge_iterator halfedge_iterator;
 typedef Graph_traits::halfedge_descriptor halfedge_descriptor;
@@ -31,9 +32,75 @@ typedef CGAL::Surface_mesh_approximate_shortest_path_3::Reconstruct_source_point
 typedef CGAL::Surface_mesh_approximate_shortest_path_3::Construct_triangle_centroid_2<Kernel> Construct_triangle_centroid;
 typedef CGAL::Surface_mesh_approximate_shortest_path_3::Construct_heuristic_point_2<Kernel, Triangle_mesh> Construct_heuristic_point_2;
 
+void
+WriteVTK(const char* filename, Triangle_mesh& mesh, std::vector<double> face_data)
+{
+    std::ofstream out(filename);
+
+    // header for (legacy) vtk file
+    out << "# vtk DataFile Version 2.0\n";
+    out << "description: data on regular grid\n";
+    out << "ASCII\n";
+
+    // write geometry/topology
+    out << "DATASET UNSTRUCTURED_GRID\n";
+    out << "POINTS " << mesh.num_vertices() << " float\n";
+
+    for (vertex_descriptor vd : vertices(mesh))
+    {
+        Point_3 v = mesh.point(vd);
+        out << v.x() << " "
+            << v.y() << " "
+            << v.z() << std::endl;
+    }
+
+    // 4*_num_faces is the "size of the cell list"
+    // see https://vtk.org/wp-content/uploads/2015/04/file-formats.pdf
+    out << "CELLS " << mesh.num_faces() << " " << 4 * mesh.num_faces() << std::endl;
+    for (face_descriptor fd : faces(mesh))
+    {
+        out << "3 ";
+        halfedge_descriptor h0 = mesh.halfedge(fd);
+        for (halfedge_descriptor hd : CGAL::halfedges_around_face(h0, mesh))
+        {
+            out << mesh.source(hd).idx() << " ";
+        }
+        out << std::endl;
+    }
+
+    // write cell types (5 = VTK_TRIANGLE)
+    out << "CELL_TYPES " << mesh.num_faces() << std::endl;
+    for (int face_num = 0; face_num < mesh.num_faces(); ++face_num)
+    {
+        out << "5" << std::endl;
+    }
+
+    out << "CELL_DATA " << mesh.num_faces() << std::endl;
+    out << "SCALARS " << "cell_scalars " << "float " << "1" << std::endl;
+    out << "LOOKUP_TABLE default" << std::endl;
+
+    for (int i = 0; i < mesh.num_faces(); ++i)
+    {
+        out << face_data[i] << std::endl;
+    }
+
+    out.close();
+}
+
+std::vector<double>
+ExtractDistanceData(Triangle_mesh& mesh, Surface_mesh_approximate_shortest_path& shopa)
+{
+    std::vector<double> distances(mesh.num_faces());
+    for (face_descriptor fd : faces(mesh))
+    {
+        distances[fd.idx()] = shopa.get_face_values(fd).d;
+    }
+    return distances;
+}
+
 int main(int argc, char** argv)
 {
-    const std::string filename = (argc>1) ? argv[1] : CGAL::data_file_path("meshes/triangle.off");
+    const std::string filename = (argc>1) ? argv[1] : CGAL::data_file_path("meshes/elephant.off");
 
     Triangle_mesh tmesh;
     if(!CGAL::IO::read_polygon_mesh(filename, tmesh) ||
@@ -42,14 +109,6 @@ int main(int argc, char** argv)
         std::cerr << "Invalid input file." << std::endl;
         return EXIT_FAILURE;
     }
-    std::cout << "This is the mesh we consider (the reference triangle)" << std::endl;
-    std::cout << tmesh;
-
-    // Let's play around with property maps
-    Triangle_mesh::Property_map<edge_descriptor, Kernel::FT> squared_edge_lengths;
-    bool created;
-    boost::tie(squared_edge_lengths, created) = tmesh.add_property_map<edge_descriptor, Kernel::FT>("edges");
-    assert(created);
 
     // get face property map
     Triangle_mesh::Property_map<face_descriptor, Face_values> face_values_map;
@@ -59,34 +118,14 @@ int main(int argc, char** argv)
 
     // Shortest Paths
     Surface_mesh_approximate_shortest_path shortest_path(tmesh);
-    //unfold_object unfolded_triangle = shortest_path.unfold_triangle_3_along_halfedge_object();
-    halfedge_descriptor h(0);
-    std::cout << "for halfedge " << h.idx() << std::endl;
-    //auto tri = unfolded_triangle(tmesh, h, squared_edge_lengths);
-
-    // construct centroid of the triangle
-    //Construct_triangle_centroid C = shortest_path.construct_centroid_object();
-    //Point_2 center = C(tri.B, tri.P);
-
-    // construct heuristic point
-    Point_2 Q = shortest_path.construct_heuristic_point_object()(tmesh, h, squared_edge_lengths);
-
-    // reconstruct source
-    Point_2 S = shortest_path.reconstruct_source_point_in_triangle_tangent_space_object()(tmesh, h, squared_edge_lengths, face_values_map);
-
-    // do some intersection tests
-    Point_2 source(2., -0.5);
-    Point_2 heu(0.5, 0.5);
-    Point_2 A(0., 0.);
-    Point_2 B(1., 0.);
-
-    auto inter = shortest_path.edge_intersection_test_object()(source, heu, A, B);
-    std::cout << "intersection test yields:" << std::endl
-              << "intersection: " << inter.first << "\t right: " << inter.second << std::endl;
 
     // add source point
-    Point_3 source_point(0.0, 0.0, 0.0);
-    shortest_path.add_source_point(source_point);
+    Point_3 source_point(0.1796, 0.4966, 0.0785);
+    shortest_path.propagate_geodesic_source(source_point);
+
+    // write to file
+    std::vector<double> distances = ExtractDistanceData(tmesh, shortest_path);
+    WriteVTK("elephant_geodesics.vtk", tmesh, distances);
 
     return 0;
 }
