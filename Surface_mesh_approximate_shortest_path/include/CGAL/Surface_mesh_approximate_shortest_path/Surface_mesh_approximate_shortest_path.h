@@ -184,7 +184,7 @@ public:
             if (intersection.second)
             {
                 // right turn (source is to the right of B)
-                new_geodesic_dist.first = sqrt( square(S.x()-e0) + S.y() ) + prev_geodesic_dist.first;
+                new_geodesic_dist.first = sqrt( square(S.x()-e0) + square(S.y()) ) + prev_geodesic_dist.first;
                 new_geodesic_dist.second = new_geodesic_dist.first + sqrt( square(C.x()-e0) + square(C.y()) );
             }
             else
@@ -301,6 +301,8 @@ public:
         face_descriptor face = m_mesh.face(m_mesh.opposite(h));
 
         // check whether distance is smaller than current distance stored on face
+        //if (new_geodesic_dist.first + new_geodesic_dist.second
+        //    < m_face_values[face].sigma + m_face_values[face].d)
         if (new_geodesic_dist.second < m_face_values[face].d)
         {
             set_squared_vertex_distances(intersection, h, new_geodesic_dist, P, S);

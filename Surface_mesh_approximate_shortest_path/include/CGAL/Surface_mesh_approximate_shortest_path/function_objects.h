@@ -232,7 +232,7 @@ public:
 
         // first coordinate of the virtual geodesic source S
         FT Sx = (e0 + (d2A - d2B)) / (2.*sqrt(e0));
-        FT Sy = -sqrt(d2A - square(Sx));
+        FT Sy = -sqrt(std::abs(d2A - square(Sx)));
 
         // Source point in triangle tangent plane
         Point_2 S = {Sx, Sy};
