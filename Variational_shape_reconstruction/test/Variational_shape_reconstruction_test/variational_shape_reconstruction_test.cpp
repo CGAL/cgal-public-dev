@@ -3,12 +3,12 @@
 #include <CGAL/Surface_mesh.h>
 #include <CGAL/Variational_shape_reconstruction.h>
 #include <iostream>
-
+#include <CGAL/Polygon_mesh_processing/connected_components.h>
 #include <CGAL/Point_set_3/IO/XYZ.h>
 // CGAL
 #include <CGAL/Triangulation_data_structure_3.h>
 #include <CGAL/Point_set_3.h>
-
+#include <CGAL/Polygon_mesh_processing/distance.h>
 typedef CGAL::Exact_predicates_inexact_constructions_kernel     Kernel;
 
 
@@ -24,6 +24,89 @@ typedef Kernel::Segment_2           Segment_2;
 typedef CGAL::First_of_pair_property_map<std::pair<Point, Vector>>                     Point_map;
 typedef CGAL::Second_of_pair_property_map<std::pair<Point, Vector>>                    Normal_map;
 typedef CGAL::Point_set_3< Point, Vector > Pointset;
+
+#include <CGAL/Simple_cartesian.h>
+#include <CGAL/Polyhedron_3.h>
+#include <iostream>
+#include <fstream>
+
+#include <CGAL/Surface_mesh_default_triangulation_3.h>
+#include <CGAL/Complex_2_in_triangulation_3.h>
+#include <CGAL/make_surface_mesh.h>
+#include <CGAL/Implicit_surface_3.h>
+#include <CGAL/IO/facets_in_complex_2_to_triangle_mesh.h>
+#include <CGAL/Surface_mesh.h>
+#include <fstream>
+// default triangulation for Surface_mesher
+typedef CGAL::Surface_mesh_default_triangulation_3 Tr;
+// c2t3
+typedef CGAL::Complex_2_in_triangulation_3<Tr> C2t3;
+typedef Tr::Geom_traits GT;
+typedef GT::Sphere_3 Sphere_3;
+typedef GT::Point_3 Point_3;
+typedef GT::FT FT;
+typedef FT (*Function)(Point_3);
+typedef CGAL::Implicit_surface_3<GT, Function> Surface_3;
+typedef CGAL::Surface_mesh<Point_3> Surface_mesh;
+FT sphere_function (Point_3 p) {
+  const FT x2=p.x()*p.x(), y2=p.y()*p.y(), z2=p.z()*p.z();
+  return x2+y2+z2-1;
+}
+FT torus_function (Point_3 p) {
+  const FT x2=p.x()*p.x(), y2=p.y()*p.y(), z2=p.z()*p.z();
+  const auto f = (x2+y2+z2-3*3-2*2); 
+  return f*f - 4*3*3*(2*2-z2);
+}
+
+class MeshAnalysis
+{
+    public:
+        MeshAnalysis(Polyhedron mesh)
+        {
+            m_mesh = mesh;
+        }
+        size_t number_connected_component()
+        {
+            return m_mesh.keep_largest_connected_components(1)+1;
+  
+        }
+        int genus()
+        {
+            int F = m_mesh.size_of_facets();
+            int V = m_mesh.size_of_vertices();
+            int E = m_mesh.size_of_halfedges()/2;
+
+
+            return  1 - (V-E+F)/2;
+  
+        }
+        void test()
+        {
+              Tr tr;            // 3D-Delaunay triangulation
+                C2t3 c2t3 (tr);   // 2D-complex in 3D-Delaunay triangulation
+                // defining the surface
+                Surface_3 surface(torus_function,             // pointer to function
+                                    Sphere_3(CGAL::ORIGIN, 3.)); // bounding sphere
+                // Note that "2." above is the *squared* radius of the bounding sphere!
+                // defining meshing criteria
+                CGAL::Surface_mesh_default_criteria_3<Tr> criteria(30.,  // angular bound
+                                                                    0.1,  // radius bound
+                                                                    0.1); // distance bound
+                // meshing surface
+                CGAL::make_surface_mesh(c2t3, surface, criteria, CGAL::Non_manifold_tag());
+                Surface_mesh sm;
+                CGAL::facets_in_complex_2_to_triangle_mesh(c2t3, sm);
+                
+                int E = sm.edges().size();
+                int F = sm.faces().size();
+                int V = sm.vertices().size();
+
+               
+                std::cout<<"gen "<<V-E+F<<" \n";
+            }
+    private:
+     Polyhedron  m_mesh;
+};
 
 void test_point_set(const std::string fname)
 {
@@ -84,10 +167,11 @@ void test_point_set(const std::string fname)
                 << "property uchar green\n"
                 << "property uchar blue\n"
                 << "end_header\n";
-
+    std::vector<Point> points;
     for(Pointset::const_iterator it = point_cloud.begin(); it != point_cloud.end(); ++ it)
     {
         auto point = point_cloud.point(*it);
+        points.push_back(point);
         edge_file << point.x() << " " << point.y() << " " << point.z() << " ";
         auto normal = point_cloud.normal(*it);
         edge_file << static_cast<int>(255*normal.x()) << " " << static_cast<int>(255*normal.y()) << " " << static_cast<int>(255*normal.z()) << std::endl;
@@ -99,6 +183,16 @@ void test_point_set(const std::string fname)
     {
         std::cout<<"ERROR";
     }
+    double dist = CGAL::Polygon_mesh_processing::approximate_max_distance_to_point_set	(mesh,points,0.0001);	
+    MeshAnalysis mesh_analysis(mesh);
+    std::cout<<"genus "<<mesh_analysis.genus()<<"\n";
+    std::cout<<"number_connected_component "<<mesh_analysis.number_connected_component()<<"\n";
+    std::cout<<"is_valid "<<mesh.is_valid()<<"\n";
+    std::cout<<"is_pure_triangle "<<mesh.is_pure_triangle()<<"\n";
+    std::cout<<"is_closed "<<mesh.is_closed()<<"\n";
+    std::cout<<"distance "<<dist<<"\n";
+
+    
     std::ofstream mesh_file;
     mesh_file.open("mesh_"+fname+".off");
     CGAL::write_off(mesh_file, mesh);
@@ -108,8 +202,8 @@ void test_point_set(const std::string fname)
 int main(int argc, char** argv)
 {	
     const std::vector<std::string> files_to_test{
-        "armjoin", // cluster ok not recons
-        "guitar", // cluster ok not recons
+        //"armjoin", // cluster ok not recons
+        //"guitar", // cluster ok not recons
         "piece_meca", //ok
         "g", // cluster ok not recons
         "capsule", //ok
@@ -121,7 +215,7 @@ int main(int argc, char** argv)
         "hand1" // ok
 
     };   
-    int n = 10;
+    int n = 1;
     for(int i = 0 ; i < n ; i ++)
     {
         std::cout<<"mesh "+files_to_test[i] +" \n";

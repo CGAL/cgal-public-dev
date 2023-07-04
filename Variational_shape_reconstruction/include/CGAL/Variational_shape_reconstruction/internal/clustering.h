@@ -253,6 +253,7 @@ class Clustering
     std::vector<double> qem_errors(m_generators.size(), 0.);
     std::vector<int> vert_indices(m_generators.size(), -1);
 
+    std::map<int,double> generator_worst_error;
     for(int i = 0; i < pointset_.size(); i++) 
     {
         if(m_vlabels.find(i) == m_vlabels.end())
@@ -260,7 +261,13 @@ class Clustering
 
         int center_ind = m_vlabels[i];
         double error = compute_minimum_qem_error(pointset_.point(m_generators[center_ind]), m_vqems[i]); 
-        csv_writer->add(i,error);
+        csv_writer->addErrorPoints(i,error);
+        /*if(generator_worst_error.count(center_ind) > 0)
+            generator_worst_error[center_ind]= std::min(generator_worst_error[center_ind],error);
+        else
+            generator_worst_error[center_ind] = error;
+            */
+
 
         if(error > qem_errors[center_ind])
         {
@@ -268,7 +275,13 @@ class Clustering
             vert_indices[center_ind] = i;
         }
     }
+    
+    for(int i = 0 ; i < qem_errors.size();i++)
+    {
+        csv_writer->addWorstErrorGenerator(i,qem_errors[i]);
+    }
     std::cout<<"Generators: "<<m_generators.size()<<"\n";
+    csv_writer->setGenerator(m_generators.size());
 
     // split centers exceeding max error
     std::vector<int> new_poles;
@@ -320,7 +333,8 @@ class Clustering
 }
 void write_csv()
 {
-    csv_writer->writeDataToCSV("test.csv");
+    csv_writer->writeDataErrorGeneratorsToCSV("error_generators.csv");
+    csv_writer->writeDataErrorPointsToCSV("error_points.csv");
 }
 
         private:
