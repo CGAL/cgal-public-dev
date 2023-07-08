@@ -155,7 +155,7 @@ void test_point_set(const std::string fname)
     //CGAL::IO::write_XYZ("clustering_"+fname+".txt", point_cloud);
 
     std::ofstream edge_file;
-    edge_file.open("clustering_"+fname+".ply");
+    edge_file.open("output/clustering_"+fname+".ply");
 
     edge_file << "ply\n"
                 << "format ascii 1.0\n"
@@ -179,22 +179,27 @@ void test_point_set(const std::string fname)
 
     edge_file.close();
 
+    std::ofstream metrics_file;
+    metrics_file.open("output/metrics_"+fname+".txt");
     if(!mesh.is_valid())
     {
-        std::cout<<"ERROR";
+        metrics_file<<"ERROR\n";
+
     }
     double dist = CGAL::Polygon_mesh_processing::approximate_max_distance_to_point_set	(mesh,points,0.0001);	
     MeshAnalysis mesh_analysis(mesh);
-    std::cout<<"genus "<<mesh_analysis.genus()<<"\n";
-    std::cout<<"number_connected_component "<<mesh_analysis.number_connected_component()<<"\n";
-    std::cout<<"is_valid "<<mesh.is_valid()<<"\n";
-    std::cout<<"is_pure_triangle "<<mesh.is_pure_triangle()<<"\n";
-    std::cout<<"is_closed "<<mesh.is_closed()<<"\n";
-    std::cout<<"distance "<<dist<<"\n";
+    metrics_file<<"genus "<<mesh_analysis.genus()<<"\n";
+    metrics_file<<"number_connected_component "<<mesh_analysis.number_connected_component()<<"\n";
+    metrics_file<<"is_valid "<<mesh.is_valid()<<"\n";
+    metrics_file<<"is_pure_triangle "<<mesh.is_pure_triangle()<<"\n";
+    metrics_file<<"is_closed "<<mesh.is_closed()<<"\n";
+    metrics_file<<"distance "<<dist<<"\n";
+    metrics_file.close();
+
 
     
     std::ofstream mesh_file;
-    mesh_file.open("mesh_"+fname+".off");
+    mesh_file.open("output/mesh_"+fname+".off");
     CGAL::write_off(mesh_file, mesh);
     mesh_file.close();
     
@@ -202,8 +207,8 @@ void test_point_set(const std::string fname)
 int main(int argc, char** argv)
 {	
     const std::vector<std::string> files_to_test{
-        //"armjoin", // cluster ok not recons
-        //"guitar", // cluster ok not recons
+        "armjoin", // cluster ok not recons
+        "guitar", // cluster ok not recons
         "piece_meca", //ok
         "g", // cluster ok not recons
         "capsule", //ok
@@ -213,9 +218,8 @@ int main(int argc, char** argv)
         "fertility",// cluster ok not recons
         "qtr_piston",// cluster ok recons weird
         "hand1" // ok
-
     };   
-    int n = 1;
+    int n = 10;
     for(int i = 0 ; i < n ; i ++)
     {
         std::cout<<"mesh "+files_to_test[i] +" \n";
