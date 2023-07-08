@@ -135,17 +135,17 @@ class Clustering
     double compute_collapse_loss(const int index,const int label,const bool flag,const std::vector<int>& m_generators) //eq 6
     {
         const double m_qem_weight=1.;
-        const double m_dist_weight=0.00001;
+        const double m_dist_weight=0.00000;
         
         const double qem_cost = compute_minimum_qem_error(pointset_.point(m_generators[label]), m_vqems[index]);
 
          double cost = m_qem_weight * qem_cost; 
 
-        if(flag)
+        /*if(flag)
         {
             double dist_cost = m_num_knn * CGAL::squared_distance(pointset_.point(m_generators[label]), pointset_.point(index));
             cost = cost + m_dist_weight * dist_cost;
-        }
+        }*/
         return cost;
     }
     double compute_minimum_qem_error(Point center_point, QEM_metric& query_qem)
