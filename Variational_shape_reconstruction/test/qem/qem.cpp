@@ -25,7 +25,8 @@ typedef CGAL::First_of_pair_property_map<std::pair<Point, Vector>>              
 typedef CGAL::Second_of_pair_property_map<std::pair<Point, Vector>>                    Normal_map;
 typedef CGAL::Point_set_3< Point, Vector > Pointset;
 
-
+/// @brief test the distance between one point of one plane
+/// @return tuple function name, resul
 std::tuple<std::string,bool> test_qem_one_point_distance_one_plane()
 {
     auto qem = QEM_metric();
@@ -40,6 +41,8 @@ std::tuple<std::string,bool> test_qem_one_point_distance_one_plane()
       
     return {__func__ ,error_metric == (distance*distance)}; 
 }
+/// @brief test the distance between one point and one plane
+/// @return tuple function name, resul
 std::tuple<std::string,bool>  test_qem_one_point_on_one_plane()
 {
     auto qem = QEM_metric();
@@ -50,9 +53,10 @@ std::tuple<std::string,bool>  test_qem_one_point_on_one_plane()
     double distance = 0.;
     auto p = Eigen::Vector4d(0.,0.,distance,1.);
     double error_metric = p.transpose() * qem.get_4x4_matrix() * p;
-    std::cout<<"metric : "<<error_metric<<"\n";
     return {__func__ ,error_metric == 0}; 
 }
+/// @brief test the distance between one point at the intersection of 2 planes
+/// @return tuple function name, resul
 std::tuple<std::string,bool>  test_qem_one_point_on_two_plane()
 {
     auto qem = QEM_metric();
@@ -69,6 +73,8 @@ std::tuple<std::string,bool>  test_qem_one_point_on_two_plane()
     double error_metric = p.transpose() * qem.get_4x4_matrix() * p;
     return {__func__ ,error_metric == 0}; 
 }
+/// @brief test the distance between one point and 2 planes
+/// @return tuple function name, resul
 std::tuple<std::string,bool>  test_qem_one_point_distance_two_plane()
 {
     auto qem = QEM_metric();
@@ -87,7 +93,8 @@ std::tuple<std::string,bool>  test_qem_one_point_distance_two_plane()
     double error_metric = p.transpose() * qem.get_4x4_matrix() * p;
     return {__func__ ,error_metric == (distance_x*distance_x + distance_z*distance_z)}; 
 }
-
+/// @brief test the distance between one point at the intersection of n planes
+/// @return tuple function name, resul
 std::tuple<std::string,bool>  test_qem_one_point_on_n_plane()
 {
     std::vector<QEM_metric> qem_list;
@@ -111,6 +118,8 @@ std::tuple<std::string,bool>  test_qem_one_point_on_n_plane()
     double error_metric = p.transpose() * qem.get_4x4_matrix() * p;
     return {__func__ ,error_metric == 0}; 
 }
+/// @brief test the distance between one point and n planes
+/// @return tuple function name, resul
 std::tuple<std::string,bool>  test_qem_one_point_distance_n_plane()
 {
     std::vector<QEM_metric> qem_list;
@@ -138,6 +147,8 @@ std::tuple<std::string,bool>  test_qem_one_point_distance_n_plane()
     // distance to p1 + distance to p2 +distance to p3+distance to p4 
     return {__func__ ,error_metric == (distance_x*distance_x+ distance_x*distance_x +distance_y*distance_y +distance_z*distance_z)}; 
 }
+/// @brief function that test if a function returns true, print its name in green otherwise in red
+/// @param myfunction the function to test
 void test(std::function<std::tuple<std::string,bool>(void)> myfunction)
 {
     auto tuple = myfunction();
@@ -161,9 +172,6 @@ int main(int argc, char** argv)
     std::cout<<"\n";
     test(test_qem_one_point_on_n_plane);
     test(test_qem_one_point_distance_n_plane);
-    //assert(==true);
-
-
     
 	return 0;
 }
