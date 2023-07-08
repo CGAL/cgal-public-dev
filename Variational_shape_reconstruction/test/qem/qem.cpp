@@ -18,12 +18,6 @@ typedef Kernel::Vector_3            Vector;
 typedef Kernel::Triangle_3          Triangle;
 typedef Kernel::Plane_3             Plane;
 
-typedef Kernel::Point_2             Point_2;
-typedef Kernel::Segment_2           Segment_2;
-
-typedef CGAL::First_of_pair_property_map<std::pair<Point, Vector>>                     Point_map;
-typedef CGAL::Second_of_pair_property_map<std::pair<Point, Vector>>                    Normal_map;
-typedef CGAL::Point_set_3< Point, Vector > Pointset;
 
 /// @brief test the distance between one point of one plane
 /// @return tuple function name, resul
@@ -37,7 +31,6 @@ std::tuple<std::string,bool> test_qem_one_point_distance_one_plane()
     double distance = 2.;
     auto p = Eigen::Vector4d(0.,0.,distance,1.);
     double error_metric = p.transpose() * qem.get_4x4_matrix() * p;
-    //std::cout<<"metric : "<<error_metric<<"\n";
       
     return {__func__ ,error_metric == (distance*distance)}; 
 }
@@ -147,10 +140,18 @@ std::tuple<std::string,bool>  test_qem_one_point_distance_n_plane()
     // distance to p1 + distance to p2 +distance to p3+distance to p4 
     return {__func__ ,error_metric == (distance_x*distance_x+ distance_x*distance_x +distance_y*distance_y +distance_z*distance_z)}; 
 }
+/// @brief compute sign of double
+/// @param x 
+/// @return sign of x 1 positif, -1 négatif or 0
 double sign(double x) {
     return x < 0 ? -1. : (x > 0 ? 1. : 0.);
 }
-
+/// @brief takes a function f and compute monotony over [a,b] using eps for numerical steps
+/// @param f function
+/// @param a lower bound
+/// @param b upper bound
+/// @param eps epsilon for each step
+/// @return 1 increasing, -1 decreasing, 0 constant and 2 if not monotonic
 int monotonic(const std::function< double(double) >& f,
                       double a, double b, double eps) {
     double x = a, y1 = f(x), y2 = f(x + eps);
@@ -172,6 +173,7 @@ int monotonic(const std::function< double(double) >& f,
           (s < 0 ? -1 :
                    0);
 }
+
 double test_qem_one_point_one_plane_with_distance(double distance)
 {
     auto qem = QEM_metric();
@@ -224,6 +226,8 @@ double test_qem_one_point_n_planes_with_distance(double distance)
     double error_metric = p.transpose() * qem.get_4x4_matrix() * p;
     return error_metric;
 }
+/// @brief test the qem when the intersection of the planes is not one point
+/// @return tuple name, boolean value if the minimun qem is not 0
 std::tuple<std::string,bool>  test_qem_one_point_n_planes_no_point_intersection_with_distance()
 {
     std::vector<QEM_metric> qem_list;
@@ -258,12 +262,65 @@ std::tuple<std::string,bool>  test_qem_one_point_n_planes_no_point_intersection_
     double error_metric = p.transpose() * qem.get_4x4_matrix() * p;
      return {__func__ ,error_metric == (n*(distance*distance))}; 
 }
-double sq(double v)
+/// @brief Computes the qem for 6 triangles as a star
+/// @param distance from the center vertex of the star
+/// @return qem
+double test_qem_one_point_star_triangles_with_distance(double distance)
 {
-    return v*v;
+    std::vector<QEM_metric> qem_list;
+    int n = 6;
+    std::vector<Point> points;
+    std::vector<Vector> normals;
+    std::vector<Triangle> triangles;
+    double two_pi = 2*atan(1)*4;
+    auto query = Point(0.,0.,0.5);
+    for(int i = 0 ; i< n ;i++)
+    {
+        double a =i*(two_pi/n);
+        auto x = cos(a);
+        auto y = sin(a);
+        points.push_back(Point(x,y,0.));
+        if(i>0)
+        {
+            auto t = Triangle(points[i-1],points[i],query);
+            Vector normal = CGAL::normal(points[i-1],
+                                         points[i],
+                                         query);
+            normals.push_back(normal);
+            triangles.push_back(t);
+        }
+    }
+    auto t = Triangle(points.back(),points[0],query);
+    Vector normal = CGAL::normal(points.back(),points[0],query);
+    normals.push_back(normal);
+    triangles.push_back(t);
+    
+    auto qem = QEM_metric();
+    for(int i = 0 ; i< n ;i++)
+    {
+        auto qemv = QEM_metric();
+        qemv.init_qem_metrics_face(sqrt(triangles[i].squared_area()), query,  normals[i]);
+        qem= qem+qemv;
+    }
+    auto p = Eigen::Vector4d(0.,0.,distance+0.5,1.);
+    double error_metric = p.transpose() * qem.get_4x4_matrix() * p;
+    return error_metric;
+}
+/// @brief Test if the center vertex intersecting all triangles has a qem equals to 0
+/// @return tuple function name, result
+std::tuple<std::string,bool>  test_qem_one_point_star_triangles()
+{
+    return {__func__ ,test_qem_one_point_star_triangles_with_distance(0.)==0.}; 
+}
+/// @brief Test if the qem from a point at a distance from the center vertex in the star is monotonic
+/// @return tuple function name, result
+std::tuple<std::string,bool>  test_qem_one_point_star_triangles_monotonic()
+{
+    int type = monotonic(&test_qem_one_point_star_triangles_with_distance,0., 1., 10e-2);
+    return {__func__ ,type==1}; 
 }
 /// @brief test the distance between one point and n planes
-/// @return tuple function name, resul
+/// @return tuple function name, result
 std::tuple<std::string,bool>  test_qem_one_point_on_one_plane_monotonic()
 {
     int type = monotonic(&test_qem_one_point_one_plane_with_distance,0., 1., 10e-2);
@@ -312,11 +369,13 @@ int main(int argc, char** argv)
     test(test_qem_one_point_distance_n_plane);
     std::cout<<"\n";
     test(test_qem_one_point_n_planes_no_point_intersection_with_distance);
+    test(test_qem_one_point_star_triangles);
     std::cout<<"Test monotony of the QEM: \n";
     test(test_qem_one_point_on_one_plane_monotonic);
     test(test_qem_one_point_on_two_planes_monotonic);
     test(test_qem_one_point_on_n_planes_monotonic);
 
+    test(test_qem_one_point_star_triangles_monotonic);
 	return 0;
 }
 
