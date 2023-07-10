@@ -38,6 +38,10 @@ void draw(const SM& asm);
 #include <CGAL/draw_face_graph.h>
 #include <CGAL/use.h>
 
+#include <QVulkanWindow>
+#include <QVulkanInstance>
+#include <QVulkanFunctions>
+#include <QLoggingCategory>
 namespace CGAL {
 
 // Check if there are any color maps that could be used, random otherwise
@@ -87,6 +91,34 @@ private:
   vertex_colors vcolors;
   edge_colors ecolors;
   face_colors fcolors;
+};
+
+template<class K>
+class VulkanWindow : public QVulkanWindow {
+public:
+    QVulkanWindowRenderer* createRenderer() {
+        renderer = new Polyhedron_renderer<PolyhedronTraits_3, PolyhedronItems_3, T_HDS, Alloc>(this, m_poly);
+        return renderer;
+    }
+    void set_geometry(const Surface_mesh<K>& poly) {
+        m_poly = poly;
+    }
+    void checkFeatures() {
+    }
+    void keyPressEvent(QKeyEvent* e) {
+        if (e->key() == ::Qt::Key_W) {
+            renderer->toggleWireframe();
+        }
+        if (e->key() == ::Qt::Key_F) {
+            renderer->toggleFaceRender();
+        }
+        if (e->key() == ::Qt::Key_P) {
+            renderer->togglePointRender();
+        }
+    }
+private:
+    Surface_mesh<K> m_poly;
+    Polyhedron_renderer* renderer;
 };
 
 // Specialization of draw function.
