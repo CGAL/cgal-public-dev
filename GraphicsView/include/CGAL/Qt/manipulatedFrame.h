@@ -97,6 +97,7 @@ class CGAL_QT_EXPORT ManipulatedFrame : public Frame, public MouseGrabber {
 #ifndef DOXYGEN
   friend class Camera;
   friend class ::CGAL::QGLViewer;
+  friend class ::CGAL::QVulkanViewer;
 #endif
 
   Q_OBJECT

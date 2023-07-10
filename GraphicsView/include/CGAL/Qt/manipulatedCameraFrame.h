@@ -45,6 +45,7 @@ class CGAL_QT_EXPORT ManipulatedCameraFrame : public ManipulatedFrame {
 #ifndef DOXYGEN
   friend class Camera;
   friend class ::CGAL::QGLViewer;
+  friend class ::CGAL::QVulkanViewer;
 #endif
 
   Q_OBJECT

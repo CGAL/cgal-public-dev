@@ -1816,8 +1816,8 @@ protected:
 namespace CGAL
 {
 
-  template<class ... T>
-  void draw(T...)
+  template<class T>
+  void draw(const T&, const char* ="", bool=false)
   {
     std::cerr<<"Impossible to draw, CGAL_USE_BASIC_VIEWER is not defined."<<std::endl;
   }

@@ -20,6 +20,7 @@
 
 namespace CGAL{
 class QGLViewer;
+class QVulkanViewer;
 namespace qglviewer {
 class Camera;
 
@@ -125,6 +126,7 @@ class Camera;
 class CGAL_QT_EXPORT MouseGrabber {
 #ifndef DOXYGEN
   friend class ::CGAL::QGLViewer;
+  friend class ::CGAL::QVulkanViewer;
 #endif
 
 public:

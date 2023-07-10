@@ -23,6 +23,7 @@
 
 namespace CGAL{
 class QGLViewer;
+class QVulkanViewer;
 namespace qglviewer {
 
 class KeyFrameInterpolator;
@@ -90,6 +91,7 @@ class ManipulatedCameraFrame;
 class CGAL_QT_EXPORT Camera : public QObject {
 #ifndef DOXYGEN
   friend class ::CGAL::QGLViewer;
+  friend class ::CGAL::QVulkanViewer;
 #endif
 
   Q_OBJECT
