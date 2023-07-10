@@ -82,10 +82,11 @@ public:
     Base(parent, title, false, true, true, true, false),
     m_compute_elements_impl(compute_elements_functor(g, anofaces, fcolor))
   {
+      compute_elements();
+      init();
   }
 
   void init() override {
-    compute_elements();
     Base::init();
   }
 
@@ -156,8 +157,14 @@ protected:
           do
             {
               auto v = source(hd, g);
-              add_point_in_face(get(point_pmap, v), get(vnormals, v));
+              //add_point_in_face(get(point_pmap, v), get(vnormals, v));
+              add_point_in_face(get(point_pmap, v));
               hd=next(hd, g);
+              v = source(hd, g);
+              add_point_in_face(get(point_pmap, v));
+              hd = next(hd, g);
+              v = source(hd, g);
+              add_point_in_face(get(point_pmap, v));
             }
           while(hd!=first_hd);
           face_end();
@@ -175,7 +182,7 @@ protected:
       for (auto v: vertices(g))
       {
         const CGAL::IO::Color& c = fcolor(g, v);
-        this->add_point(get(point_pmap, v), c);
+        //this->add_point(get(point_pmap, v), c);
       }
     };
   }
