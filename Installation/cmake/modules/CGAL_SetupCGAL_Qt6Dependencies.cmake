@@ -25,7 +25,14 @@ set(CGAL_SetupCGAL_Qt6Dependencies_included TRUE)
 # ^^^^^^^^^^^^
 #   - :module:`Qt6Config`
 
+find_package(Vulkan)
 find_package(Qt6 QUIET COMPONENTS Widgets OpenGL OpenGLWidgets OPTIONAL_COMPONENTS Svg)
+
+
+
+if(Vulkan_FOUND)
+  message( STATUS "NOTICE: Vulkan found. Using Vulkan API instead of OpenGL")
+endif()
 
 set(CGAL_Qt6_MISSING_DEPS "")
 if(NOT Qt6OpenGLWidgets_FOUND)
@@ -68,6 +75,7 @@ if(NOT CGAL_Qt6_MISSING_DEPS)
         ${CGAL_GRAPHICSVIEW_PACKAGE_DIR}/include/CGAL/Qt/manipulatedCameraFrame.h
         ${CGAL_GRAPHICSVIEW_PACKAGE_DIR}/include/CGAL/Qt/manipulatedFrame.h
         ${CGAL_GRAPHICSVIEW_PACKAGE_DIR}/include/CGAL/Qt/qglviewer.h
+        ${CGAL_GRAPHICSVIEW_PACKAGE_DIR}/include/CGAL/Qt/qvulkanviewer.h
         ${CGAL_GRAPHICSVIEW_PACKAGE_DIR}/include/CGAL/Qt/image_interface.h
         ${_CGAL_Qt6_UI_FILES}
       ${_CGAL_Qt6_RESOURCE_FILES_private})
@@ -80,6 +88,11 @@ if(NOT CGAL_Qt6_MISSING_DEPS)
     if(Qt6Svg_FOUND)
       target_link_libraries(CGAL_Qt6_moc_and_resources PUBLIC Qt6::Svg)
     endif()
+    if (Vulkan_FOUND)
+      target_link_libraries(CGAL_Qt6_moc_and_resources PUBLIC Vulkan::Vulkan)
+      set_target_properties(CGAL_Qt6_moc_and_resources PROPERTIES INTERFACE_COMPILE_DEFINITIONS "CGAL_USE_VULKAN")
+    endif()
+
     add_library(CGAL::CGAL_Qt6_moc_and_resources ALIAS CGAL_Qt6_moc_and_resources)
     add_library(CGAL::Qt6_moc_and_resources ALIAS CGAL_Qt6_moc_and_resources)
   endif()
