@@ -21,5 +21,8 @@
 #include <CGAL/Qt/camera_impl.h>
 #include <CGAL/Qt/keyFrameInterpolator_impl.h>
 #include <CGAL/Qt/qglviewer_impl.h>
+#ifdef CGAL_USE_VULKAN
+#include <CGAL/Qt/qvulkanviewer_impl.h>
+#endif
 #include <CGAL/Qt/mouseGrabber_impl.h>
 #endif

@@ -1272,7 +1272,8 @@ namespace CGAL {
 
 
 #ifdef CGAL_HEADER_ONLY
-#include <CGAL/Qt/qvulkanviewer_impl_list.h>
+#include <CGAL/Qt/qglviewer_impl_list.h>
+#include <CGAL/Qt/qvulkanviewer_impl.h>
 #endif // CGAL_HEADER_ONLY
 
 #endif // QVULKANVIEWER_QVULKANVIEWER_H

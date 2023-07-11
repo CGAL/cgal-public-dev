@@ -19,6 +19,9 @@
 #define CGAL_INLINE_FUNCTION
 #endif
 
+#ifndef QVULKANVIEWER_IMPL_H
+#define QVULKANVIEWER_IMPL_H
+
 #include <cmath>
 
 #include <CGAL/Qt/qvulkanviewer.h>
@@ -3686,3 +3689,5 @@ bool CGAL::QVulkanViewer::isSharing() const
 {
     return is_sharing;
 }
+
+#endif
