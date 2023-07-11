@@ -82,11 +82,16 @@ public:
     Base(parent, title, false, true, true, true, false),
     m_compute_elements_impl(compute_elements_functor(g, anofaces, fcolor))
   {
+#ifdef CGAL_USE_VULKAN
       compute_elements();
       init();
+#endif
   }
 
   void init() override {
+#ifndef CGAL_USE_VULKAN
+      compute_elements();
+#endif
     Base::init();
   }
 

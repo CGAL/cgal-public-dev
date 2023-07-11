@@ -358,12 +358,12 @@ namespace CGAL {
             if (err != VK_SUCCESS)
                 qFatal("Failed to create pipeline layout: %d", err);
 
-            VkShaderModule vertShader = createShader("../resources/color_vert.spv");
-            VkShaderModule fragShader = createShader("../resources/color_frag.spv");
-            VkShaderModule vertShaderWire = createShader("../resources/color_vert_wire.spv");
-            VkShaderModule fragShaderWire = createShader("../resources/color_frag_wire.spv");
-            VkShaderModule vertShaderPoint = createShader("../resources/color_vert_point.spv");
-            VkShaderModule fragShaderPoint = createShader("../resources/color_frag_point.spv");
+            VkShaderModule vertShader = createShader(CGAL::data_file_path("resources/color_vert.spv").c_str());
+            VkShaderModule fragShader = createShader(CGAL::data_file_path("resources/color_frag.spv").c_str());
+            VkShaderModule vertShaderWire = createShader(CGAL::data_file_path("resources/color_vert_wire.spv").c_str());
+            VkShaderModule fragShaderWire = createShader(CGAL::data_file_path("resources/color_frag_wire.spv").c_str());
+            VkShaderModule vertShaderPoint = createShader(CGAL::data_file_path("resources/color_vert_point.spv").c_str());
+            VkShaderModule fragShaderPoint = createShader(CGAL::data_file_path("resources/color_frag_point.spv").c_str());
 
             VkPipelineShaderStageCreateInfo shaderStages[2] = {
                 {

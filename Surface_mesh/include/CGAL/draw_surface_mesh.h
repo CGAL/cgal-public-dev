@@ -29,7 +29,11 @@ void draw(const SM& asm);
 #else // DOXYGEN_RUNNING
 
 #include <CGAL/license/Surface_mesh.h>
+#ifdef CGAL_USE_VULKAN
+#include <CGAL/Qt/Basic_viewer_qt_vulkan.h>
+#else
 #include <CGAL/Qt/Basic_viewer_qt.h>
+#endif
 
 #ifdef CGAL_USE_BASIC_VIEWER
 
@@ -93,33 +97,6 @@ private:
   face_colors fcolors;
 };
 
-template<class K>
-class VulkanWindow : public QVulkanWindow {
-public:
-    QVulkanWindowRenderer* createRenderer() {
-        renderer = new Polyhedron_renderer<PolyhedronTraits_3, PolyhedronItems_3, T_HDS, Alloc>(this, m_poly);
-        return renderer;
-    }
-    void set_geometry(const Surface_mesh<K>& poly) {
-        m_poly = poly;
-    }
-    void checkFeatures() {
-    }
-    void keyPressEvent(QKeyEvent* e) {
-        if (e->key() == ::Qt::Key_W) {
-            renderer->toggleWireframe();
-        }
-        if (e->key() == ::Qt::Key_F) {
-            renderer->toggleFaceRender();
-        }
-        if (e->key() == ::Qt::Key_P) {
-            renderer->togglePointRender();
-        }
-    }
-private:
-    Surface_mesh<K> m_poly;
-    Polyhedron_renderer* renderer;
-};
 
 // Specialization of draw function.
 template<class K>
