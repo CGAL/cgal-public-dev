@@ -42,5 +42,10 @@ if( NOT CGAL_COMMON_FILE_INCLUDED )
   set( Eigen3_FIND_VERSION "3.1.0")
   # set use-file for Eigen3 (needed to have default solvers)
   set(EIGEN3_USE_FILE "UseEigen3")
+  
+  set(CGAL_USE_VULKAN 1 CACHE BOOL "Set it to use Vulkan as the graphics API for drawing")
+  if(CGAL_USE_VULKAN)
+	add_compile_definitions(CGAL_USE_VULKAN)
+  endif()
 
 endif()
