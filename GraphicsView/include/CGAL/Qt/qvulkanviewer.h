@@ -50,8 +50,9 @@ namespace CGAL {
 
     class VulkanWindow : public QVulkanWindow {
     public:
-        VulkanWindow(qglviewer::Camera* cam) {
-            QVulkanWindow::QVulkanWindow();
+        VulkanWindow(qglviewer::Camera* cam)
+          : QVulkanWindow()
+        {
             m_renderer = new Polyhedron_renderer(this, cam);
         }
         QVulkanWindowRenderer* createRenderer() override {
