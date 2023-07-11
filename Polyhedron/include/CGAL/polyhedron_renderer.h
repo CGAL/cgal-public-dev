@@ -1,4 +1,4 @@
-// Copyright (c) 2023 Texas A&M University (United States).
+// Copyright (c) 2023  ETH Zurich (Switzerland).
 // All rights reserved.
 //
 // This file is part of CGAL (www.cgal.org).
