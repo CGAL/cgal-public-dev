@@ -32,12 +32,11 @@
 #include <QMessageBox>
 #include <QStatusBar>
 #include <QGraphicsView>
-#include <QGLWidget>
+#include <QOpenGLWidget>
 #include <QTextStream>
 #include <QSettings>
 #include <QUrl>
-#include <QDesktopWidget>
-#include <QRegExp>
+#include <QRegularExpression>
 #if QT_SVG_LIB
 #  include <QSvgGenerator>
 #endif
@@ -209,16 +208,16 @@ void
 DemosMainWindow::setUseOpenGL(bool checked)
 {
   if(checked) {
-    QGLWidget* new_viewport = new QGLWidget;
+    // AF QOpenGLWidget* new_viewport = new QOpenGLWidget;
 
     // Setup the format to allow antialiasing with OpenGL:
     // one need to activate the SampleBuffers, if the graphic driver allows
     // this.
-    QGLFormat glformat = new_viewport->format();
-    glformat.setOption(QGL::SampleBuffers);
-    new_viewport->setFormat(glformat);
+    // AF QGLFormat glformat = new_viewport->format();
+    // AF glformat.setOption(QGL::SampleBuffers);
+    // AF new_viewport->setFormat(glformat);
 
-    view->setViewport(new_viewport);
+    // AF view->setViewport(new_viewport);
   }
   else {
     view->setViewport(new QWidget);
@@ -453,13 +452,7 @@ void DemosMainWindow::readState(QString groupname, Options /*what_to_save*/)
   resize(settings.value("size", this->size()).toSize());
 
   QPoint pos = settings.value("pos", this->pos()).toPoint();
-#if QT_VERSION >= QT_VERSION_CHECK(5, 10, 0)
   if(QGuiApplication::screenAt(pos)) {
-#else
-   QDesktopWidget* desktop = qApp->desktop();
-     if(desktop->availableGeometry(pos).contains(pos)) {
-#endif
-
     move(pos);
   }
   settings.endGroup();

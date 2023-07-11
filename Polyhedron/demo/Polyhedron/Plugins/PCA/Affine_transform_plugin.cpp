@@ -428,7 +428,7 @@ normalize()
   QVector3D v_bil = QVector3D(aff_transformed_item->bbox().xmin(),
                               aff_transformed_item->bbox().ymin(),
                               aff_transformed_item->bbox().zmin());
-  QMatrix4x4 frameMat = QMatrix();
+  QMatrix4x4 frameMat = QMatrix4x4();
   QVector3D center(aff_transformed_item->center().x,
                    aff_transformed_item->center().y,
                    aff_transformed_item->center().z);

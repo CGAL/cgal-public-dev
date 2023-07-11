@@ -30,7 +30,6 @@
 #include <QVector>
 #include <QElapsedTimer>
 #include <QTimer>
-#include <QGLContext>
 #include <QOpenGLWidget>
 #include <QMouseEvent>
 
@@ -72,8 +71,7 @@ class CGAL_QT_EXPORT QGLViewer : public QOpenGLWidget, public QOpenGLFunctions {
 
 public:
   //todo check if this is used. If not remove it
-  explicit QGLViewer(QGLContext* context, QWidget *parent = nullptr,
-                     ::Qt::WindowFlags flags = ::Qt::WindowType(0));
+
   explicit QGLViewer(QOpenGLContext* context, QWidget *parent = nullptr,
                      ::Qt::WindowFlags flags = ::Qt::WindowType(0));
   explicit QGLViewer(QWidget *parent = nullptr,
@@ -1158,7 +1156,7 @@ protected:
         return modifiers < cbp.modifiers;
       if (button != cbp.button)
         return button < cbp.button;
-      return doubleClick != cbp.doubleClick;
+      return doubleClick < cbp.doubleClick;
     }
   };
 #endif

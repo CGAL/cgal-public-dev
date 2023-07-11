@@ -31,10 +31,11 @@
 #include <QDateTime>
 #include <QDir>
 #include <QFileInfo>
-#include <QGLContext>
+#include <QOpenGLContext>
 #include <QImage>
 #include <QMessageBox>
 #include <QMouseEvent>
+#include <QPainter>
 #include <QPushButton>
 #include <QTabWidget>
 #include <QTextEdit>
@@ -2456,6 +2457,7 @@ void CGAL::QGLViewer::setMouseBinding(::Qt::Key key, ::Qt::KeyboardModifiers mod
 
   ClickBindingPrivate cbp(modifiers, button, false, ::Qt::NoButton, key);
   clickBinding_.remove(cbp);
+
 }
 
 
