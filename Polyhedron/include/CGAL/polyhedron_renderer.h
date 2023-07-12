@@ -107,6 +107,12 @@ namespace CGAL {
     public:
         Polyhedron_renderer(QVulkanWindow* w, qglviewer::Camera* cam) : m_window(w), m_buffVertex(nullptr), m_buffVertexMem(nullptr), m_descPool(nullptr), m_descSetLayout(nullptr), m_pipeline(nullptr), m_devFuncs(nullptr), m_pipelineCache(nullptr), m_pipelineLayout(nullptr), m_proj(QMatrix4x4()), m_rotation(0.0f), m_descSet(), m_uniformBufferInfo(), camera(cam) {}
 
+        bool eventFilter(QObject* obj, QEvent* e) {
+            qDebug() << "Object: " << obj << ", Event: " << e << '\n';
+
+            return false;
+        }
+
         void initResources() override {
             //m_window->availablePhysicalDevices();
             //std::vector<float> vData{};

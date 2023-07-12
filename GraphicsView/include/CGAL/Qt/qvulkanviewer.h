@@ -54,6 +54,7 @@ namespace CGAL {
           : QVulkanWindow()
         {
             m_renderer = new Polyhedron_renderer(this, cam);
+            this->installEventFilter(this);
         }
         QVulkanWindowRenderer* createRenderer() override {
             return m_renderer;
@@ -61,6 +62,15 @@ namespace CGAL {
         Polyhedron_renderer* getRenderer() {
             return m_renderer;
         }
+        bool eventFilter(QObject* obj, QEvent* e) {
+            //qDebug() << "Object: " << obj << ", Event: " << e << '\n';
+            if (e->type() == QEvent::KeyPress || e->type() == QEvent::MouseButtonPress || e->type() == QEvent::Wheel || e->type() == QEvent::DragMove || e->type() == QEvent::MouseButtonRelease || e->type() == QEvent::MouseTrackingChange || e->type() == QEvent::GrabMouse || e->type() == QEvent::UngrabMouse
+                || e->type() == QEvent::MouseMove ) {
+                return obj->parent()->event(e);
+            }
+            return false;
+        }
+
         Polyhedron_renderer* m_renderer;
     };
 
@@ -255,9 +265,8 @@ namespace CGAL {
         //@{
     public:
         bool eventFilter(QObject* obj, QEvent* e) {
-            if (obj == m_wrapper) {
-                return true;
-            }
+            qDebug() << "Object: " << obj << ", Event: " << e << '\n';
+
             return false;
         }
         /*! Returns the scene radius.
@@ -689,7 +698,6 @@ namespace CGAL {
 
         virtual QString mouseString() const;
         virtual QString keyboardString() const;
-        void showEvent(QShowEvent* e);
 
     public Q_SLOTS:
         virtual void help();

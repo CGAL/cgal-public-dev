@@ -164,13 +164,21 @@ namespace CGAL {
         camera_ = new qglviewer::Camera(this);
         setCamera(camera_);
         m_window = new VulkanWindow(camera_);
-        m_wrapper = QWidget::createWindowContainer(m_window);
+        m_wrapper = QWidget::createWindowContainer(m_window, this);
         QVBoxLayout* layout = new QVBoxLayout;
+        /*layout->setContentsMargins(QMargins(0,0,0,0));
+        layout->setSpacing(0);
+        QSpacerItem* spacer = new QSpacerItem(0, 0, QSizePolicy::Expanding, QSizePolicy::Expanding);
+        layout->addSpacerItem(spacer);*/
+        m_wrapper->setFocusPolicy(::Qt::FocusPolicy::NoFocus);
         layout->addWidget(m_wrapper);
         setLayout(layout);
-        //m_wrapper->installEventFilter(this);
         //m_window->installEventFilter(this);
-        this->installEventFilter(this);
+        //m_window->installEventFilter(this);
+        //m_wrapper->installEventFilter(m_window);
+        //this->installEventFilter(this);
+        //this->installEventFilter(m_window);
+        //this->installEventFilter(m_wrapper);
         m_inst.setLayers(QByteArrayList() << "VK_LAYER_KHRONOS_validation");
         if (!m_inst.create()) {
             qFatal("Failed to create a Vulkan instance: %d", m_inst.errorCode());
@@ -216,14 +224,6 @@ namespace CGAL {
             helpWidget()->close();
             delete helpWidget_;
         }
-    }
-    CGAL_INLINE_FUNCTION
-        void CGAL::QVulkanViewer::showEvent(QShowEvent* e) {
-        if (initsources) {
-            QWidget::showEvent(e);
-            init();
-        }
-        initsources = true;
     }
 
     /*! Initializes the CGAL::QVulkanViewer OpenGL context and then calls user-defined init().
