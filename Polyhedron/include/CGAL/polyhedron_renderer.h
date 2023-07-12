@@ -601,12 +601,32 @@ namespace CGAL {
                 m_buffVertex = VK_NULL_HANDLE;
             }
 
+            if (m_buffVertexFaces) {
+                m_devFuncs->vkDestroyBuffer(dev, m_buffVertexFaces, nullptr);
+                m_buffVertexFaces = VK_NULL_HANDLE;
+            }
+
+            if (m_buffVertexGraph) {
+                m_devFuncs->vkDestroyBuffer(dev, m_buffVertexGraph, nullptr);
+                m_buffVertexGraph = VK_NULL_HANDLE;
+            }
+
             if (m_buffVertexMem) {
                 m_devFuncs->vkFreeMemory(dev, m_buffVertexMem, nullptr);
                 m_buffVertexMem = VK_NULL_HANDLE;
             }
 
-            if (m_buffIndex) {
+            if (m_buffVertexMemFaces) {
+                m_devFuncs->vkFreeMemory(dev, m_buffVertexMemFaces, nullptr);
+                m_buffVertexMem = VK_NULL_HANDLE;
+            }
+
+            if (m_buffVertexMemGraph) {
+                m_devFuncs->vkFreeMemory(dev, m_buffVertexMemGraph, nullptr);
+                m_buffVertexMem = VK_NULL_HANDLE;
+            }
+
+            /*if (m_buffIndex) {
                 m_devFuncs->vkDestroyBuffer(dev, m_buffIndex, nullptr);
                 m_buffIndex = VK_NULL_HANDLE;
             }
@@ -624,7 +644,7 @@ namespace CGAL {
             if (m_buffIndexGraphMem) {
                 m_devFuncs->vkFreeMemory(dev, m_buffIndexGraphMem, nullptr);
                 m_buffIndexGraphMem = VK_NULL_HANDLE;
-            }
+            }*/
         }
 
         void createIndexBuffers(VkBuffer& indexBuffer, VkDeviceMemory& indexBufferMemory, std::vector<uint32_t>& indices) {
