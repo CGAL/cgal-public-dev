@@ -55,16 +55,21 @@
 #include <CGAL/intersections.h>
 #include <CGAL/Surface_mesh.h>
 #include <CGAL/draw_surface_mesh.h>
+#include <Simulation_mesh.h>
 #include <bilinear_patch_3.h>
 #include <Ray_3_Bilinear_patch_3_do_intersect.h>
 #include <fstream>
+#include <collisions.h>
+#include <AABB_triangle_pair_primitive.h>
+
 typedef CGAL::Simple_cartesian<double>                       Kernel;
 typedef Kernel::Point_3                                      Point;
 typedef Kernel::Vector_3                                     Vector;
 typedef Kernel::Tetrahedron_3                                Tetrahedron;
 typedef Kernel::Ray_3                                        Ray;
-typedef Kernel::Aff_transformation_3                         Transform;                      
-typedef CGAL::Surface_mesh<Point>                            Mesh;
+typedef Kernel::Aff_transformation_3                         Transform;                        
+typedef CGAL::Surface_mesh<Point>                            Mesh;                    
+typedef CGAL::Simulation_mesh<Kernel>                        SMesh;
 typedef CGAL::BilinearPatchC3<Kernel>                        BilinearPatch;  
 
 int main(int argc, char* argv[])
@@ -120,36 +125,44 @@ int main(int argc, char* argv[])
     std::cerr << "Invalid input file." << std::endl;
     return EXIT_FAILURE;
   }
+
+  SMesh a(inner_sphere_mesh);
+
   // std::cout << "Should be true: " << intersects << std::endl;
-  auto vcm = inner_sphere_mesh.add_property_map<Mesh::Vertex_index, CGAL::IO::Color>("v:color").first;
-  auto ecm = inner_sphere_mesh.add_property_map<Mesh::Edge_index, CGAL::IO::Color>("e:color").first;
-  auto fcm = inner_sphere_mesh.add_property_map<Mesh::Face_index>("f:color", CGAL::IO::white() /*default*/).first; 
+  auto vcm = a.add_property_map<Mesh::Vertex_index, CGAL::IO::Color>("v:color").first;
+  auto ecm = a.add_property_map<Mesh::Edge_index, CGAL::IO::Color>("e:color").first;
+  auto fcm = a.add_property_map<Mesh::Face_index>("f:color", CGAL::IO::white() /*default*/).first; 
 
-  for(auto v : vertices(inner_sphere_mesh))
+  // for(auto v : vertices(a))
+  // {
+  //   if(v.idx()%2) 
+  //   {
+  //     Point& p = a.point(v);
+  //     Vector& q = a.velocity(v);
+
+  //     Transform transformation(CGAL::TRANSLATION, q);
+
+  //     // swap(q,p.transform(transformation));
+
+  //     std::cout << "P.x current: " << a.point(v).x() << std::endl;
+  //     std::cout << "V.x current: " << a.velocity(v).x() << std::endl;
+  //   }
+  // }
+
+  for(auto f : faces(a))
   {
-    if(v.idx()%2) 
+    // or the same again, but directly with a range based loop
+    for(Mesh::Vertex_index vi : vertices_around_face(a.halfedge(f), a))
     {
-      Point& p = inner_sphere_mesh.point(v);
-      Vector vec = Vector(p.x(), p.y(), p.z());
-      Transform transformation(CGAL::TRANSLATION, vec);
-      std::cout << "X before: " << p.x() << std::endl;g
-      swap(p,p.transform(transformation));
-      std::cout << "X after: " << p.x() << std::endl;
-      put(vcm, v, CGAL::IO::black());
+      std::cout << vi << std::endl;
     }
-    else
-      put(vcm, v, CGAL::IO::blue());
   }
-
-  for(auto e : edges(inner_sphere_mesh))
-    put(ecm, e, CGAL::IO::gray());
 
   CGAL_USE(fcm);
 
 
 
-  CGAL::draw_color(inner_sphere_mesh);
-  CGAL::draw_color(outer_sphere_mesh);
+  CGAL::draw_color(a);
 
   // Case 0: planar patch
   // Point a = Point(0, 0, 0);
