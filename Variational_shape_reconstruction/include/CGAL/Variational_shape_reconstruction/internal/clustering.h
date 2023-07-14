@@ -37,11 +37,12 @@ class Clustering
     Clustering()
     {
     }
-    Clustering(const Pointset& pointset, size_t num_knn)
+    Clustering(const Pointset& pointset, size_t num_knn, double euclidean_distance_weight)
     {
         pointset_ = pointset;
         m_num_knn = num_knn;
-        csv_writer =std::make_shared<DataWriter>(pointset.size());
+        m_dist_weight = euclidean_distance_weight;
+        //csv_writer =std::make_shared<DataWriter>(pointset.size());
     }
     void initialize_qem_map(const KNNTree& m_tree)
     {
@@ -135,17 +136,17 @@ class Clustering
     double compute_collapse_loss(const int index,const int label,const bool flag,const std::vector<int>& m_generators) //eq 6
     {
         const double m_qem_weight=1.;
-        const double m_dist_weight=0.00000;
+        
         
         const double qem_cost = compute_minimum_qem_error(pointset_.point(m_generators[label]), m_vqems[index]);
 
          double cost = m_qem_weight * qem_cost; 
 
-        /*if(flag)
+        if(flag)
         {
             double dist_cost = m_num_knn * CGAL::squared_distance(pointset_.point(m_generators[label]), pointset_.point(index));
             cost = cost + m_dist_weight * dist_cost;
-        }*/
+        }
         return cost;
     }
     double compute_minimum_qem_error(Point center_point, QEM_metric& query_qem)
@@ -173,6 +174,8 @@ class Clustering
             center = m_points[m_generators[i]].first;
             else*/
             center = compute_optimal_point(m_generators_qem[i], pointset_.point(m_generators[i]));
+
+
             //center = pointset_.point(m_generators[i]);
             optimal_points.push_back(center);
             dists.push_back(1e20);
@@ -193,7 +196,38 @@ class Clustering
                 dists[label] = dist;
             }
         }
+        /// analysis
+        /*for(int i = 0; i < pointset_.size(); i++) 
+        {
+            if(m_vlabels.find(i) == m_vlabels.end())
+                continue;
 
+            int center_ind = m_vlabels[i];
+            double error = compute_minimum_qem_error(pointset_.point(m_generators[center_ind]), m_vqems[i]); 
+            //csv_writer->addErrorPoints(i,error);
+
+        }*/
+        std::vector<double> qem_errors(m_generators.size(), 0.);
+        for(int i = 0; i < pointset_.size(); i++) 
+        {
+            if(m_vlabels.find(i) == m_vlabels.end())
+                continue;
+
+            int center_ind = m_vlabels[i];
+            double error = compute_minimum_qem_error(pointset_.point(m_generators[center_ind]), m_vqems[i]); 
+            //csv_writer->addErrorPoints(i,error);
+
+            if(error > qem_errors[center_ind])
+            {
+                qem_errors[center_ind] = error;
+            }
+        }
+        for(int i = 0 ; i < qem_errors.size();i++)
+        {
+            //csv_writer->addWorstErrorGenerator(i,qem_errors[i]);
+        }
+        std::cout<<"Generators: "<<m_generators.size()<<"\n";
+        //csv_writer->setGenerator(m_generators.size());
         // chech change
         for(int i = 0; i < m_generators.size(); i++)
         {
@@ -261,7 +295,7 @@ class Clustering
 
         int center_ind = m_vlabels[i];
         double error = compute_minimum_qem_error(pointset_.point(m_generators[center_ind]), m_vqems[i]); 
-        csv_writer->addErrorPoints(i,error);
+        //csv_writer->addErrorPoints(i,error);
         /*if(generator_worst_error.count(center_ind) > 0)
             generator_worst_error[center_ind]= std::min(generator_worst_error[center_ind],error);
         else
@@ -278,10 +312,10 @@ class Clustering
     
     for(int i = 0 ; i < qem_errors.size();i++)
     {
-        csv_writer->addWorstErrorGenerator(i,qem_errors[i]);
+        //csv_writer->addWorstErrorGenerator(i,qem_errors[i]);
     }
     std::cout<<"Generators: "<<m_generators.size()<<"\n";
-    csv_writer->setGenerator(m_generators.size());
+    //csv_writer->setGenerator(m_generators.size());
 
     // split centers exceeding max error
     std::vector<int> new_poles;
@@ -333,20 +367,21 @@ class Clustering
 }
 void write_csv()
 {
-    csv_writer->writeDataErrorGeneratorsToCSV("error_generators.csv");
-    csv_writer->writeDataErrorPointsToCSV("error_points.csv");
+    //csv_writer->writeDataErrorGeneratorsToCSV("error_generators.csv");
+    //csv_writer->writeDataErrorPointsToCSV("error_points.csv");
 }
 
         private:
             Pointset pointset_;
             int m_num_knn = 12;
+            double m_dist_weight=0.1;
                     //qem
             std::vector<QEM_metric> m_pqems;
             std::vector<QEM_metric> m_vqems;
 
             // csv
 
-            std::shared_ptr<DataWriter> csv_writer;
+            //std::shared_ptr<DataWriter> csv_writer;
             
             
 

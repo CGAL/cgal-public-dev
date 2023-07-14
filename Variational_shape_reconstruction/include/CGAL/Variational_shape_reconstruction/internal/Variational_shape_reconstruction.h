@@ -45,7 +45,7 @@ class Variational_shape_reconstruction
 
 
     public:
-    Variational_shape_reconstruction(const Pointset& pointset,int generator_count) : m_generator_count(generator_count) {
+    Variational_shape_reconstruction(const Pointset& pointset,int generator_count,double euclidean_distance_weight) : m_generator_count(generator_count) {
         pointset_ = pointset;
         load_points(pointset_);
         compute_bounding_box();   
@@ -58,7 +58,7 @@ class Variational_shape_reconstruction
         m_spacing = CGAL::compute_average_spacing<CGAL::Sequential_tag>(m_points, 6,
          CGAL::parameters::point_map(CGAL::First_of_pair_property_map<std::pair<Point, std::size_t>>()));            
 
-        m_cluster = std::make_shared<Clustering>(pointset, m_num_knn);
+        m_cluster = std::make_shared<Clustering>(pointset, m_num_knn,euclidean_distance_weight);
         
         m_cluster->initialize_qem_map(m_tree);
         m_cluster->initialize_vertex_qem(m_tree);    
@@ -205,10 +205,14 @@ class Variational_shape_reconstruction
     {
         return m_triangle_fit.get_mesh();
     }
+    void write_csv()
+    {
+        m_cluster->write_csv();
+    }
     // reconstruction 
     void reconstruction(double dist_ratio, double fitting, double coverage, double complexity)
     {
-        m_cluster->write_csv();
+        
         std::vector<float> adjacent_edges;
         std::vector<float> candidate_facets;
         std::vector<float> candidate_normals;

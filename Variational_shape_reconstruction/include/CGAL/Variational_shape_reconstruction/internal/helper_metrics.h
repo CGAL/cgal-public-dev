@@ -36,6 +36,23 @@ class DataWriter
         m_data_error_points.resize(m_points_count);
 
     }
+
+    std::pair<double,double> computeAverage(int nb_iteration, int nb_generator) 
+    {
+        std::vector<double> values;
+        double mean = 0.;
+        for (size_t row = 0 ; row < m_generator_count;row++) {
+            auto v = m_data_error_generators[row][nb_iteration];
+            values.push_back(v);
+        }
+        mean = std::accumulate(values.begin(),values.end(),0.)/nb_generator;
+        
+        // Now calculate the variance
+        auto variance_func = [&mean, &nb_generator](double accumulator, const double& val) {
+        return accumulator + ((val - mean)*(val - mean) / (nb_generator - 1));
+        };
+        return {mean,std::accumulate(values.begin(), values.end(), 0.0, variance_func)};
+    }
     void writeDataErrorPointsToCSV(const std::string& filename) {
         std::ofstream file(filename);
 
@@ -60,7 +77,23 @@ class DataWriter
                 }
                 file << std::to_string(m_data_error_points[row][nb_iteration])+"\n";
         }
-        file << std::to_string(m_generator_count)+"\n";
+        //write mean
+        file << "nb of generators"+std::to_string(m_generator_count)+"\n mean :,";
+        for (size_t line = 0 ; line < nb_iteration ;line++)
+        {
+            file << std::to_string(computeAverage(line,m_generator_count).first)+",";
+            
+        }
+        file << std::to_string(computeAverage(nb_iteration,m_generator_count).first)+"\n";
+        // write variance
+        file << "variance:,";
+        for (size_t line = 0 ; line < nb_iteration ;line++)
+        {
+            file << std::to_string(computeAverage(line,m_generator_count).second)+",";
+            std::cout<<"variacne : "<<computeAverage(line,m_generator_count).second<<"\n";
+            
+        }
+        file << std::to_string(computeAverage(nb_iteration,m_generator_count).second)+"\n";
         file.close();
     }
     void writeDataErrorGeneratorsToCSV(const std::string& filename) {
@@ -102,7 +135,22 @@ class DataWriter
             file <<"\n";
 
         }
-        file << std::to_string(m_generator_count)+"\n";
+                //write mean
+        file << "nb of generators"+std::to_string(m_generator_count)+"\n mean :,";
+        for (size_t line = 0 ; line < nb_iteration ;line++)
+        {
+            file << std::to_string(computeAverage(line,m_generator_count).first)+",";
+            
+        }
+        file << std::to_string(computeAverage(nb_iteration,m_generator_count).first)+"\n";
+        // write variance
+        file << "variance:,";
+        for (size_t line = 0 ; line < nb_iteration ;line++)
+        {
+            file << std::to_string(computeAverage(line,m_generator_count).second)+",";
+            
+        }
+        file << std::to_string(computeAverage(nb_iteration,m_generator_count).second)+"\n";
         file.close();
         
     }
