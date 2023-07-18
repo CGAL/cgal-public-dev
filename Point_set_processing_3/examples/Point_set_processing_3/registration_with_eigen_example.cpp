@@ -189,6 +189,17 @@ int main(int argc, char* argv[]) {
     Mesh mesh2;
     CGAL::IO::read_PLY(std::ifstream(filename2), mesh2);
     CGAL::draw(merge_meshes(mesh1, mesh2));
+
+    //Eigen::MatrixXd L = Eigen::MatrixXd::Zero(mesh1.number_of_vertices(), mesh1.number_of_vertices());
+    //for (auto he : mesh1.halfedges()) {
+    //    auto v0 = mesh1.vertex(mesh1.edge(he), 0);
+    //    auto v1 = mesh1.vertex(mesh1.edge(he), 1);
+    //    L(size_t(v0), size_t(v1)) = -1;
+    //    L(size_t(v1), size_t(v0)) = -1;
+    //    L(size_t(v0), size_t(v0)) += 1. / 2.;
+    //    L(size_t(v1), size_t(v1)) += 1. / 2.;
+    //}
+
     auto result = rigid_registration(mesh1, mesh2, 0.1, 0.1, 1.0);
     // nonrigid_registration(mesh1, mesh2);
     Transform transform = result.first;
