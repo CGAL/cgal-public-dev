@@ -127,11 +127,19 @@ int main(int argc, char* argv[])
   }
 
   SMesh a(inner_sphere_mesh);
+  SMesh b(outer_sphere_mesh);
 
-  // std::cout << "Should be true: " << intersects << std::endl;
-  auto vcm = a.add_property_map<Mesh::Vertex_index, CGAL::IO::Color>("v:color").first;
-  auto ecm = a.add_property_map<Mesh::Edge_index, CGAL::IO::Color>("e:color").first;
-  auto fcm = a.add_property_map<Mesh::Face_index>("f:color", CGAL::IO::white() /*default*/).first; 
+  std::vector<SMesh> meshes{a, b};
+
+  double timestep{0.1};
+
+  bool check = do_collide<SMesh, Kernel>(meshes, timestep);
+
+  std::cout << "Should be false: " << check << std::endl;
+
+  // auto vcm = a.add_property_map<Mesh::Vertex_index, CGAL::IO::Color>("v:color").first;
+  // auto ecm = a.add_property_map<Mesh::Edge_index, CGAL::IO::Color>("e:color").first;
+  // auto fcm = a.add_property_map<Mesh::Face_index>("f:color", CGAL::IO::white() /*default*/).first; 
 
   // for(auto v : vertices(a))
   // {
@@ -149,20 +157,20 @@ int main(int argc, char* argv[])
   //   }
   // }
 
-  for(auto f : faces(a))
-  {
-    // or the same again, but directly with a range based loop
-    for(Mesh::Vertex_index vi : vertices_around_face(a.halfedge(f), a))
-    {
-      std::cout << vi << std::endl;
-    }
-  }
+  // for(auto f : a.faces())
+  // {
+  //   // or the same again, but directly with a range based loop
+  //   for(SMesh::Vertex_index vi : a.vertices_around_face(a.halfedge(f)))
+  //   {
+  //     std::cout << vi << std::endl;
+  //   }
+  // }
 
-  CGAL_USE(fcm);
+  // CGAL_USE(fcm);
 
 
 
-  CGAL::draw_color(a);
+  // CGAL::draw_color(a);
 
   // Case 0: planar patch
   // Point a = Point(0, 0, 0);

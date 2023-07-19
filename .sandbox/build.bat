@@ -5,4 +5,4 @@ if not exist %folder% (
    exit /b
 ) 
 
-cmake --build build
+cmake --build build 2> error.cmake.txt
