@@ -151,14 +151,15 @@ std::pair<Transform, PointSet> rigid_registration(const PointSet& source, const 
             b.segment<3>(3) -= x_t; // b_t
             b.segment<3>(6 + 3 * i) = (w1 / w3 * Eigen::Matrix3d::Identity() + w2 / w3 * n_matrix) * PI + x_t; // b_zi
         }
+        A.makeCompressed();
+        if (iter == 0) {
+            cg.analyzePattern(A);
+        }
+        cg.factorize(A);
+        Eigen::VectorXd x = cg.solve(b);
+        std::cout << "CG converged within " << cg.iterations() << " iterations. Error: " << cg.error() << "." << std::endl;
         auto stop = std::chrono::high_resolution_clock::now();
         std::cout << "Time: " << std::chrono::duration_cast<std::chrono::milliseconds>(stop - start).count() << std::endl;
-        A.makeCompressed();
-        cg.compute(A);
-        Eigen::VectorXd x = cg.solve(b);
-        if (cg.info() != Eigen::Success) {
-            std::cout << "CG hasn't converged within " << cg.iterations() << " iterations. Error: " << cg.error() << "." << std::endl;
-        }
         /*
         if (cg.info() == Eigen::Success) {
             std::cout << "Convergence achieved!" << std::endl;
@@ -236,7 +237,7 @@ std::pair<Transform, Mesh> nonrigid_registration(const Mesh& source, const Point
         Splitter(),
         Traits(index_map)); // when called, returns the index of the nearest neighbor on target mesh
     // solver
-    Eigen::BiCGSTAB<Eigen::SparseMatrix<double, Eigen::RowMajor>> cg;
+    Eigen::BiCGSTAB< Eigen::SparseMatrix<double, Eigen::RowMajor> > cg;
     cg.setMaxIterations(1000);
     cg.setTolerance(1e-6);
     // sparse coefficient matrix A
@@ -351,14 +352,15 @@ std::pair<Transform, Mesh> nonrigid_registration(const Mesh& source, const Point
                 b.segment<3>(6 + 3 * N + 3 * i) -= 2 * w4 * (x_t_k - x_t);
             }
         }
+        A.makeCompressed();
+        if (iter == 0) {
+            cg.analyzePattern(A);
+        }
+        cg.factorize(A);
+        Eigen::VectorXd solution = cg.solve(b);
+        std::cout << "CG converged within " << cg.iterations() << " iterations. Error: " << cg.error() << "." << std::endl;
         auto stop = std::chrono::high_resolution_clock::now();
         std::cout << "Time: " << std::chrono::duration_cast<std::chrono::milliseconds>(stop - start).count() << std::endl;
-        A.makeCompressed();
-        cg.compute(A);
-        Eigen::VectorXd solution = cg.solve(b);
-        if (cg.info() != Eigen::Success) {
-            std::cout << "CG hasn't converged within " << cg.iterations() << " iterations. Error: " << cg.error() << "." << std::endl;
-        }
         /*
         if (cg.info() == Eigen::Success) {
             std::cout << "Convergence achieved!" << std::endl;
