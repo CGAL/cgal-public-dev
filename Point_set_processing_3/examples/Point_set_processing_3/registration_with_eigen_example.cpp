@@ -1,4 +1,6 @@
 #include <CGAL/Simple_cartesian.h>
+#include <CGAL/Point_set_3.h>
+#include <CGAL/draw_point_set_3.h>
 #include <CGAL/Surface_mesh.h>
 #include <CGAL/draw_surface_mesh.h>
 #include <CGAL/Aff_transformation_3.h>
@@ -12,14 +14,14 @@
 typedef CGAL::Simple_cartesian<double>                       Kernel;
 typedef Kernel::Point_3                                      Point;
 typedef Kernel::Vector_3                                     Vector;
+typedef CGAL::Point_set_3<Point>                             PointSet;
 typedef CGAL::Surface_mesh<Point>                            Mesh;
 typedef CGAL::Aff_transformation_3<Kernel>                   Transform;
 
-typedef boost::graph_traits<Mesh>::vertex_descriptor                                        vertex_descriptor;
-typedef boost::associative_property_map< std::map<size_t, Point> >                     IndexMap;
+typedef boost::associative_property_map< std::map<size_t, Point> >                          IndexMap;
 
 typedef CGAL::Search_traits_3<Kernel>                                                       BaseTraits;
-typedef CGAL::Search_traits_adapter<size_t, IndexMap, BaseTraits>                      Traits;
+typedef CGAL::Search_traits_adapter<size_t, IndexMap, BaseTraits>                           Traits;
 typedef CGAL::Orthogonal_k_neighbor_search<Traits>                                          Neighbor_search;
 typedef Neighbor_search::Tree                                                               Tree;
 typedef Tree::Splitter                                                                      Splitter;
@@ -40,21 +42,40 @@ Mesh merge_meshes(Mesh a, Mesh b) {
 }
 
 
+PointSet Mesh2PointSet(const Mesh& mesh) {
+	PointSet point_set;
+    auto vertexnormals = mesh.property_map<boost::graph_traits<Mesh>::vertex_descriptor, Vector>("v:normal").first;
+    for (auto v : mesh.vertices()) {
+		point_set.insert(mesh.point(v));
+        point_set.add_normal_map(vertexnormals[v]);
+	}
+	return point_set;
+}
+
+
+Mesh ModifyMeshWithPointSet(const PointSet& point_set, Mesh mesh) {
+    for (auto v : mesh.vertices()) {
+        mesh.point(v) = point_set.point(size_t(v));
+	}
+	return mesh;
+}
+
+
 // w1: point-to-point weight
 // w2: point-to-plane weight
 // w3: rigid transformation weight
-std::pair<Transform, Mesh> rigid_registration(const Mesh& source, const Mesh& target,
-                                              double w1 = 0.1, double w2 = 0.1, double w3 = 1.0,
-                                              int max_iterations = 100) {
+std::pair<Transform, PointSet> rigid_registration(const PointSet& source, const PointSet& target,
+                                                  double w1 = 0.1, double w2 = 0.1, double w3 = 1.0,
+                                                  int max_iterations = 100) {
     // resulting transformation is (R, t)
     Eigen::Matrix3d R_all = Eigen::Matrix3d::Identity();
     Eigen::Vector3d t_all = Eigen::Vector3d::Zero();
-    size_t N = source.number_of_vertices();
-    Mesh z = source;
+    size_t N = source.size();
+    PointSet z = source;
     // build k-d tree for nearest neighbor search
     std::map<size_t, Point> index_map_base;
-    for (auto it = target.vertices().begin(); it != target.vertices().end(); ++it) {
-        index_map_base[it->idx()] = target.point(*it);
+    for (auto it = target.begin(); it != target.end(); ++it) {
+        index_map_base[*it] = target.point(*it);
     }
     IndexMap index_map(index_map_base);
     Distance distance(index_map);
@@ -62,7 +83,6 @@ std::pair<Transform, Mesh> rigid_registration(const Mesh& source, const Mesh& ta
               boost::counting_iterator<size_t>(N),
               Splitter(),
               Traits(index_map)); // when called, returns the index of the nearest neighbor on target mesh
-    auto vertexnormals = target.property_map<vertex_descriptor, Vector>("v:normal").first;
     // solver
     Eigen::ConjugateGradient<Eigen::SparseMatrix<double, Eigen::RowMajor>, Eigen::Lower | Eigen::Upper> cg;
     cg.setMaxIterations(1000);
@@ -81,8 +101,8 @@ std::pair<Transform, Mesh> rigid_registration(const Mesh& source, const Mesh& ta
     for (size_t iter = 0; iter < max_iterations; ++iter) {
         b.setZero();
         auto start = std::chrono::high_resolution_clock::now();
-        for (auto it = source.vertices().begin(); it != source.vertices().end(); ++it) {
-            auto i = it->idx();
+        for (auto it = source.begin(); it != source.end(); ++it) {
+            size_t i = *it;
             Point xp = source.point(*it);
             Eigen::Vector3d x(xp.x(), xp.y(), xp.z());
             // apply transformation to original x
@@ -92,7 +112,7 @@ std::pair<Transform, Mesh> rigid_registration(const Mesh& source, const Mesh& ta
             size_t index = Neighbor_search(tree, zp, 1, 0, true, distance).begin()->first;
             Point pnn = index_map[index];
             Eigen::Vector3d PI(pnn.x(), pnn.y(), pnn.z());
-            Vector nnn = vertexnormals[CGAL::SM_Vertex_index(index)];
+            Vector nnn = target.normal(index);
             Eigen::Vector3d n(nnn.x(), nnn.y(), nnn.z());
             // build A and b
             Eigen::Matrix3d n_matrix = n * n.transpose();
@@ -157,14 +177,14 @@ std::pair<Transform, Mesh> rigid_registration(const Mesh& source, const Mesh& ta
         Eigen::Vector3d t(x[3], x[4], x[5]);
         t_all += t;
         // update z
-        for (auto it = z.vertices().begin(); it != z.vertices().end(); ++it) {
-            size_t i = it->idx();
+        for (auto it = z.begin(); it != z.end(); ++it) {
+            size_t i = *it;
             Point p(x[6 + 3*i], x[6+ 3*i + 1], x[6 + 3*i+2]);
             z.point(*it) = p;
         }
         // calculate error
         double new_error = 0;
-        for (auto it = source.vertices().begin(); it != source.vertices().end(); ++it) {
+        for (auto it = source.begin(); it != source.end(); ++it) {
             Point xp = source.point(*it);
             Eigen::Vector3d x(xp.x(), xp.y(), xp.z());
             Point zp = z.point(*it);
@@ -172,7 +192,7 @@ std::pair<Transform, Mesh> rigid_registration(const Mesh& source, const Mesh& ta
             size_t index = Neighbor_search(tree, zp, 1, 0, true, distance).begin()->first;
             Point pnn = index_map[index];
             Eigen::Vector3d PI(pnn.x(), pnn.y(), pnn.z());
-            Vector nnn = vertexnormals[CGAL::SM_Vertex_index(index)];
+            Vector nnn = target.normal(index);
             Eigen::Vector3d n(nnn.x(), nnn.y(), nnn.z());
             // point-to-point error
             new_error += w1 * (PI - ref_z).squaredNorm();
@@ -199,15 +219,15 @@ std::pair<Transform, Mesh> rigid_registration(const Mesh& source, const Mesh& ta
 // w2: point-to-plane
 // w3: rigid transformation
 // w4: as-rigid-as-possible transformation
-std::pair<Transform, Mesh> nonrigid_registration(const Mesh& source, const Mesh& target,
+std::pair<Transform, Mesh> nonrigid_registration(const Mesh& source, const PointSet& target,
                                                  double w1 = 0.1, double w2 = 0.1, double w3 = 1.0, double w4 = 10.0,
                                                  int max_iter = 100) {
     size_t N = source.number_of_vertices();
     Mesh z = source;
     // build k-d tree for nearest neighbor search
     std::map<size_t, Point> index_map_base;
-    for (auto it = target.vertices().begin(); it != target.vertices().end(); ++it) {
-        index_map_base[it->idx()] = target.point(*it);
+    for (auto it = target.begin(); it != target.end(); ++it) {
+        index_map_base[*it] = target.point(*it);
     }
     IndexMap index_map(index_map_base);
     Distance distance(index_map);
@@ -215,7 +235,6 @@ std::pair<Transform, Mesh> nonrigid_registration(const Mesh& source, const Mesh&
         boost::counting_iterator<size_t>(N),
         Splitter(),
         Traits(index_map)); // when called, returns the index of the nearest neighbor on target mesh
-    auto vertexnormals = target.property_map<vertex_descriptor, Vector>("v:normal").first;
     // solver
     Eigen::BiCGSTAB<Eigen::SparseMatrix<double, Eigen::RowMajor>> cg;
     cg.setMaxIterations(1000);
@@ -251,7 +270,7 @@ std::pair<Transform, Mesh> nonrigid_registration(const Mesh& source, const Mesh&
             size_t index = Neighbor_search(tree, zp, 1, 0, true, distance).begin()->first;
             Point pnn = index_map[index];
             Eigen::Vector3d PI(pnn.x(), pnn.y(), pnn.z());
-            Vector nnn = vertexnormals[CGAL::SM_Vertex_index(index)];
+            Vector nnn = target.normal(index);
             Eigen::Vector3d n(nnn.x(), nnn.y(), nnn.z());
             // build A and b
             Eigen::Matrix3d n_matrix = n * n.transpose();
@@ -368,15 +387,13 @@ int main(int argc, char* argv[]) {
     Mesh mesh2;
     CGAL::IO::read_PLY(std::ifstream(filename2), mesh2);
     CGAL::draw(merge_meshes(mesh1, mesh2));
-    auto result = rigid_registration(mesh1, mesh2, 0.0, 0.1, 1.0, 10);
-    Transform transform = result.first;
-    Mesh z = result.second;
+    auto rigid_result = rigid_registration(Mesh2PointSet(mesh1), Mesh2PointSet(mesh2), 0.1, 0.1, 1.0, 20);
+    Transform transform = rigid_result.first;
     CGAL::Polygon_mesh_processing::transform(transform, mesh1);
     //CGAL::Polygon_mesh_processing::transform(Transform(CGAL::Translation(), Vector(-40, 0, 0)), mesh1);
     //CGAL::draw(merge_meshes(mesh1, mesh2));
-    result = nonrigid_registration(mesh1, mesh2, 0.0, 0.1, 1.0, 10.0, 10);
-    transform = result.first;
-    z = result.second;
+    auto nonrigid_result = nonrigid_registration(mesh1, Mesh2PointSet(mesh2), 0.1, 0.1, 1.0, 10.0, 20);
+    Mesh z = nonrigid_result.second;
     CGAL::Polygon_mesh_processing::transform(Transform(CGAL::Translation(), Vector(-40, 0, 0)), z);
     CGAL::draw(merge_meshes(z, mesh2));
     return EXIT_SUCCESS;
