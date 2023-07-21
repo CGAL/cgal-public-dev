@@ -28,32 +28,32 @@ namespace CGAL {
         public:
             typedef typename K::Point_3                                                 Point;
             typedef typename K::Vector_3                                                Vector;
-            typedef typename Collision_mesh<K>                                          CMesh;
+            typedef          Collision_mesh<K>                                          CMesh;
             typedef typename CMesh::Vertex_index                                        Vertex_index;
             typedef typename CMesh::Edge_index                                          Edge_index;
             typedef typename CMesh::Halfedge_index                                      Halfedge_index;
             typedef typename CMesh::Face_index                                          Face_index;
             typedef typename CMesh::Face_range                                          Face_range;
-            typedef typename std::pair<int, Face_index>                                 Trajectory_index;    
+            typedef          std::pair<int, Face_index>                                 Trajectory_index;
             typedef typename CMesh::Vertex_around_face_range                            Vertex_around_face_range;
-            typedef typename Triangle_trajectory<K, Trajectory_index>                   Trajectory;            
-            typedef typename AABB_Triangle_trajectory_primitive<K, Trajectory_index>    Trajectory_primitive;
-            typedef typename AABB_traits<K, Trajectory_primitive>                       AABB_traits;
-            typedef typename AABB_tree<AABB_traits>                                     Tree;
+            typedef          Triangle_trajectory<K, Trajectory_index>                   Trajectory;
+            typedef          AABB_Triangle_trajectory_primitive<K, Trajectory_index>    Trajectory_primitive;
+            typedef          ::CGAL::AABB_traits<K, Trajectory_primitive>               AABB_traits;
+            typedef          AABB_tree<AABB_traits>                                     Tree;
             typedef typename Tree::Primitive_id                                         Primitive_id;
-            
+
             std::vector<CMesh>&     meshes_;
             std::vector<Trajectory> trajectories_;
             Tree                    trajectory_tree;
 
-        private:  
+        private:
 
             void append_trajectories(const CMesh& mesh, const int i);
 
         public:
-        
-            Collision_scene(std::vector<CMesh> & meshes) : meshes_{meshes} 
-            { 
+
+            Collision_scene(std::vector<CMesh> & meshes) : meshes_{meshes}
+            {
                 int i{0};
                 for( const auto & m : meshes_ )
                 {
@@ -67,15 +67,15 @@ namespace CGAL {
     };
 
     template <class K>
-    void Collision_scene<K>::append_trajectories(const Collision_mesh<K>& mesh, const int mesh_index) 
-    { 
-        
+    void Collision_scene<K>::append_trajectories(const Collision_mesh<K>& mesh, const int mesh_index)
+    {
+
         std::vector<Trajectory> tmp = get_trajectories( mesh, mesh_index );
-        
+
         trajectories_.reserve(trajectories_.size() + tmp.size());
         trajectories_.insert(trajectories_.end(), tmp.begin(), tmp.end());
-        
-        return; 
+
+        return;
     }
 
 }

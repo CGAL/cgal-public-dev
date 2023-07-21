@@ -31,7 +31,7 @@ do_intersect_odd_parity(
 ) {
   // Unfortunately, Bridson's methodology only works for determining the
   // parity of intersections. Returns true if parity is odd.
-  
+
   CGAL_kernel_precondition(!bp.is_degenerate());
   CGAL_kernel_precondition(!r.is_degenerate());
 
@@ -40,21 +40,21 @@ do_intersect_odd_parity(
   if (bp.is_planar()) {
     std::cout << "Entering Case 0..."<< std::endl;
     return (
-          do_intersect(K::Triangle_3(bp.vertex(0), bp.vertex(1), bp.vertex(2)), r) 
+          do_intersect(K::Triangle_3(bp.vertex(0), bp.vertex(1), bp.vertex(2)), r)
       ||  do_intersect(K::Triangle_3(bp.vertex(1), bp.vertex(2), bp.vertex(3)), r)
     );
-  } 
-  
+  }
+
   // Case 1
   // Origin lies inside bounding tetrahedron
-  K::Point_3 ray_source = r.source();
-  if (bp.tetrahedron().has_on_bounded_side(ray_source) || bp.tetrahedron().has_on_boundary(ray_source)) 
+  typename K::Point_3 ray_source = r.source();
+  if (bp.tetrahedron().has_on_bounded_side(ray_source) || bp.tetrahedron().has_on_boundary(ray_source))
   {
     CGAL::Interval_nt_advanced phi_source = bp.aux_phi(ray_source);
-    if (bp.aux_phi(ray_source).do_overlap(0)) 
-    {    
+    if (bp.aux_phi(ray_source).do_overlap(0))
+    {
       // If the ray's origin lies on the bilinear patch,
-      // count that as an intersection. The function phi(x) 
+      // count that as an intersection. The function phi(x)
       // returns zero <==> x is on the patch.
       std::cout << "Entering Case 1a..."<< std::endl;
       return true;
@@ -62,15 +62,15 @@ do_intersect_odd_parity(
     {
       // Otherwise, check the sign of phi(origin). Two of the bounding
       // tetrahedron's four triangles lie on the positive side of phi(*)==0,
-      // and two lie on the negative side. If the origin is on one side, 
+      // and two lie on the negative side. If the origin is on one side,
       // check the ray for intersection with the two triangles on the other side
       std::cout << "Entering Case 1b..."<< std::endl;
-      const K::Point_3 & a = bp.vertex(0);
-      const K::Point_3 & c = bp.vertex(2);
-      const K::Point_3 mid_point = K::Point_3( 
-        (a.x() + c.x())/2., 
-        (a.y() + c.y())/2., 
-        (a.z() + c.z())/2. 
+      const typename K::Point_3 & a = bp.vertex(0);
+      const typename K::Point_3 & c = bp.vertex(2);
+      const typename K::Point_3 mid_point = K::Point_3(
+        (a.x() + c.x())/2.,
+        (a.y() + c.y())/2.,
+        (a.z() + c.z())/2.
       ); //  This will determine which triangles are on the opposite side
       CGAL::Interval_nt_advanced phi_midpoint = bp.aux_phi(mid_point);
       if ( !(phi_midpoint > 0) == !(phi_source > 0) ) {
@@ -82,13 +82,13 @@ do_intersect_odd_parity(
         // std::cout << "...intersects 012: " << do_intersect(K::Triangle_3(bp.vertex(0), bp.vertex(1), bp.vertex(2)), r) << std::endl;
         // std::cout << "...intersects 023: " << do_intersect(K::Triangle_3(bp.vertex(0), bp.vertex(2), bp.vertex(3)), r) << std::endl;
         return (
-          do_intersect(K::Triangle_3(bp.vertex(1), bp.vertex(2), bp.vertex(3)), r) || do_intersect(K::Triangle_3(bp.vertex(0), bp.vertex(1), bp.vertex(3)), r) 
+          do_intersect(typename K::Triangle_3(bp.vertex(1), bp.vertex(2), bp.vertex(3)), r) || do_intersect(typename K::Triangle_3(bp.vertex(0), bp.vertex(1), bp.vertex(3)), r)
         );
       } else {
         // std::cout << "...opposite side..."<< std::endl;
         // The edge connecting 0--2 is on the opposite side as the ray's source
         return (
-          do_intersect(K::Triangle_3(bp.vertex(0), bp.vertex(1), bp.vertex(2)), r) || do_intersect(K::Triangle_3(bp.vertex(0), bp.vertex(2), bp.vertex(3)), r) 
+          do_intersect(typename K::Triangle_3(bp.vertex(0), bp.vertex(1), bp.vertex(2)), r) || do_intersect(typename K::Triangle_3(bp.vertex(0), bp.vertex(2), bp.vertex(3)), r)
         );
       }
     }
@@ -96,8 +96,8 @@ do_intersect_odd_parity(
 
   // Case 2
   // Origin lies outside the bounding tetrahedron
-  if (!(do_intersect(K::Triangle_3(bp.vertex(0), bp.vertex(1), bp.vertex(2)), r)) != !(do_intersect(K::Triangle_3(bp.vertex(0), bp.vertex(2), bp.vertex(3)), r))) {
-    // The ray intersects exactly one of the bounding tetrahedron's two 
+  if (!(do_intersect(typename K::Triangle_3(bp.vertex(0), bp.vertex(1), bp.vertex(2)), r)) != !(do_intersect(typename K::Triangle_3(bp.vertex(0), bp.vertex(2), bp.vertex(3)), r))) {
+    // The ray intersects exactly one of the bounding tetrahedron's two
     // triangles on the positive/negative side of phi(*)==0 _if_and_only_if_ the ray
     // intersects the bilinear patch an odd number of times.
     return true;

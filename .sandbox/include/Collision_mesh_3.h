@@ -22,10 +22,10 @@ template <class K_>
 class Collision_mesh {
 
     public:
-        typedef typename K_                                 K;
+        typedef          K_                                 K;
         typedef typename K::Point_3                         Point;
         typedef typename K::Vector_3                        Vector;
-        typedef typename Surface_mesh<Point>                Base;
+        typedef          Surface_mesh<Point>                Base;
         typedef typename Base::Vertex_index                 Vertex_index;
         typedef typename Base::Edge_index                   Edge_index;
         typedef typename Base::Halfedge_index               Halfedge_index;
@@ -33,16 +33,16 @@ class Collision_mesh {
         typedef typename Base::Face_range                   Face_range;
         typedef typename Base::Vertex_around_face_range     Vertex_around_face_range;
         typedef typename Base::size_type                    size_type;
-        typedef typename Triangle_trajectory<K, Face_index> Trajectory;
+        typedef          Triangle_trajectory<K, Face_index> Trajectory;
 
     public:
         Base & mesh_;
-        decltype(mesh_.add_property_map<Vertex_index, Vector>("v:velocity").first) vvelocity_;
-        decltype(mesh_.add_property_map<Vertex_index, Point>("v:next_point").first) vnext_point_;
+        decltype(mesh_.template add_property_map<Vertex_index, Vector>("v:velocity").first) vvelocity_;
+        decltype(mesh_.template add_property_map<Vertex_index, Point>("v:next_point").first) vnext_point_;
         Collision_mesh(Base & mesh) : mesh_{mesh}
         {
-            vvelocity_ = mesh_.add_property_map<Vertex_index, Vector>("v:velocity").first;
-            vnext_point_ = mesh_.add_property_map<Vertex_index, Point>("v:next_point").first;
+            vvelocity_ = mesh_.template add_property_map<Vertex_index, Vector>("v:velocity").first;
+            vnext_point_ = mesh_.template add_property_map<Vertex_index, Point>("v:next_point").first;
             for(Vertex_index vd : mesh_.vertices()){
                 put(vvelocity_, vd, Vector(0, 0, 0));
                 put(vnext_point_, vd, point(vd));
@@ -51,10 +51,10 @@ class Collision_mesh {
 
         const Vector& velocity(Vertex_index v) const;
         Vector& velocity(Vertex_index v);
-        
+
         const Point& point(Vertex_index v) const;
         Point& point(Vertex_index v);
-                
+
         const Point& next_point(Vertex_index v) const;
         Point& next_point(Vertex_index v);
 
@@ -75,18 +75,18 @@ class Collision_mesh {
 
     template <class K>
     const typename K::Point_3& Collision_mesh<K>::point(Vertex_index v) const { return mesh_.point(v); }
-    
+
     template <class K>
     typename K::Point_3& Collision_mesh<K>::point(Vertex_index v) { return mesh_.point(v); }
 
     template <class K>
     const typename K::Point_3& Collision_mesh<K>::next_point(Vertex_index v) const { return vnext_point_[v]; }
-    
+
     template <class K>
     typename K::Point_3& Collision_mesh<K>::next_point(Vertex_index v) { return vnext_point_[v]; }
 
     template <class K>
-    typename Collision_mesh<K>::Face_range Collision_mesh<K>::faces() const { return mesh_.faces(); } 
+    typename Collision_mesh<K>::Face_range Collision_mesh<K>::faces() const { return mesh_.faces(); }
 
     template <class K>
     typename Collision_mesh<K>::Vertex_around_face_range Collision_mesh<K>::vertices_around_face(Halfedge_index h) const
@@ -102,8 +102,8 @@ class Collision_mesh {
 
     template <class K>
     typename Collision_mesh<K>::size_type Collision_mesh<K>::num_faces() const
-    { 
-        return mesh_.num_faces(); 
+    {
+        return mesh_.num_faces();
     }
 
 } // end CGAL

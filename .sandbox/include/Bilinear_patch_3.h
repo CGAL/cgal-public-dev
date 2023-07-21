@@ -22,14 +22,14 @@ namespace CGAL {
 template <class R_>
 class BilinearPatchC3
 {
-  
+
   typedef typename R_::FT                   FT;
   typedef typename R_::Point_3              Point_3;
   typedef typename R_::Vector_3             Vector_3;
   typedef typename R_::Plane_3              Plane_3;
   typedef typename R_::Triangle_3           Triangle_3;
   typedef typename R_::Tetrahedron_3        Tetrahedron_3;
-  typedef typename Interval_nt_advanced     IA_NT;
+  typedef          Interval_nt_advanced     IA_NT;
 
   typedef std::array<Point_3, 4>                  Rep;
   typedef typename R_::template Handle<Rep>::type Base;
@@ -73,9 +73,9 @@ Interval_nt_advanced
 BilinearPatchC3<R>::aux_g(const Point_3 & x, const Point_3 & p, const Point_3 & q, const Point_3 & r) const
 {
 
-  R::Vector_3 rp = R::Vector_3(p, r);
-  R::Vector_3 qp = R::Vector_3(p, q);
-  R::Vector_3 xp = R::Vector_3(p, x);
+  typename R::Vector_3 rp = R::Vector_3(p, r);
+  typename R::Vector_3 qp = R::Vector_3(p, q);
+  typename R::Vector_3 xp = R::Vector_3(p, x);
 
   Interval_nt_advanced xp_x = Interval_nt_advanced(xp.x());
   Interval_nt_advanced xp_y = Interval_nt_advanced(xp.y());
@@ -129,7 +129,7 @@ BilinearPatchC3<R>::operator==(const BilinearPatchC3<R> &bp) const
     if ( vertex(0) == bp.vertex(i) )
        break;
 
-  // I assumed this test was to ensure that the set of vertices is not only the same, 
+  // I assumed this test was to ensure that the set of vertices is not only the same,
   // but that the orientation is the same as well
   return (i<4) && vertex(1) == bp.vertex(i+1) && vertex(2) == bp.vertex(i+2) && vertex(3) == bp.vertex(i+3);
 }

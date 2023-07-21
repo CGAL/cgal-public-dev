@@ -44,16 +44,16 @@ struct Triangle_trajectory {
 
         void update( const Point & p) {
             FT x_min = p.x() < min_point.x() ? p.x() : min_point.x();
-            FT x_max = p.x() > max_point.x() ? p.x() : max_point.x(); 
-            
+            FT x_max = p.x() > max_point.x() ? p.x() : max_point.x();
+
             FT y_min = p.y() < min_point.y() ? p.y() : min_point.y();
-            FT y_max = p.y() > max_point.y() ? p.y() : max_point.y(); 
-            
+            FT y_max = p.y() > max_point.y() ? p.y() : max_point.y();
+
             FT z_min = p.x() < min_point.z() ? p.z() : min_point.z();
-            FT z_max = p.x() > max_point.z() ? p.z() : max_point.z(); 
-            
-            swap(min_point, Point(x_min, y_min, z_min));
-            swap(max_point, Point(x_max, y_max, z_max));
+            FT z_max = p.x() > max_point.z() ? p.z() : max_point.z();
+
+            min_point = Point(x_min, y_min, z_min);
+            max_point = Point(x_max, y_max, z_max);
         }
     };
 
@@ -102,7 +102,7 @@ public:
     typedef typename K::Point_3                                 Point; // CGAL 3D point type
     typedef typename K::Iso_cuboid_3                            Datum; // CGAL 3D triangle type
     typedef typename K::Aff_transformation_3                    Transform;
-    typedef typename Triangle_trajectory<K, Index>              Trajectory;
+    typedef Triangle_trajectory<K, Index>                       Trajectory;
     typedef typename std::vector<Trajectory>::const_iterator    Iterator;
 
     // this is the type of data that the queries returns. For this example
@@ -140,9 +140,9 @@ public:
 template<class CollisionMesh>
 std::vector<
     Triangle_trajectory<
-        typename CollisionMesh::K, 
+        typename CollisionMesh::K,
         typename std::pair<
-            int, 
+            int,
             typename CollisionMesh::Face_index
         >
     >
@@ -150,9 +150,9 @@ std::vector<
 {
 
     typedef Triangle_trajectory<
-        typename CollisionMesh::K, 
+        typename CollisionMesh::K,
         typename std::pair<
-            int, 
+            int,
             typename CollisionMesh::Face_index
         >
     > Trajectory;
@@ -163,7 +163,7 @@ std::vector<
     // Iterate over trajectories
     int j;
     std::vector<const typename CollisionMesh::Point*> trajectory_points(6);
-    for( const auto& fi : mesh.mesh_.faces()) 
+    for( const auto& fi : mesh.mesh_.faces())
     {
         j = 0;
 
