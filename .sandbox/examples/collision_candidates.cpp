@@ -11,6 +11,9 @@
 // Author(s)     : Jeffrey Cochran
 
 #include <iostream>
+#include <fstream>
+#include <list>
+#include <vector>
 #include <CGAL/Simple_cartesian.h>
 #include <CGAL/intersections.h>
 #include <CGAL/Surface_mesh.h>
@@ -21,7 +24,6 @@
 #include <Ray_3_Bilinear_patch_3_do_intersect.h>
 #include <Collisions_3.h>
 #include <AABB_triangle_trajectory_primitive.h>
-#include <fstream>
 
 typedef CGAL::Simple_cartesian<double>  Kernel;
 typedef Kernel::Point_3                 Point;
@@ -32,7 +34,9 @@ typedef Kernel::Aff_transformation_3    Transform;
 typedef CGAL::Surface_mesh<Point>       Mesh;                    
 typedef CGAL::Collision_mesh<Kernel>    SMesh;
 typedef CGAL::Collision_scene<Kernel>   Scene;
-typedef CGAL::BilinearPatchC3<Kernel>   BilinearPatch;  
+typedef CGAL::BilinearPatchC3<Kernel>   BilinearPatch;
+typedef Scene::Primitive_id             Primitive_id;
+typedef std::list<Primitive_id>         OutputIterator;
 
 int main(int argc, char* argv[])
 {
@@ -60,9 +64,18 @@ int main(int argc, char* argv[])
   meshes.push_back(SMesh(inner_sphere_mesh));
   meshes.push_back(SMesh(outer_sphere_mesh));
 
-  bool check = CGAL::do_collide<Kernel>(meshes);
+  OutputIterator collision_candidates = CGAL::get_collision_candidates<Kernel, OutputIterator>(meshes);
 
-  std::cout << "Should be true: " << check << std::endl;
+  int k{0};
+  for( const auto& cc : collision_candidates )
+  {
+
+    std::cout << cc << std::endl;
+    ++k;
+
+    if( k > 5 ) { break; }
+    
+  }
 
   return EXIT_SUCCESS;
 }
