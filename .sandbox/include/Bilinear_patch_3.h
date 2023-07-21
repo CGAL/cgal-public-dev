@@ -1,9 +1,5 @@
-// Copyright (c) 2000
-// Utrecht University (The Netherlands),
-// ETH Zurich (Switzerland),
-// INRIA Sophia-Antipolis (France),
-// Max-Planck-Institute Saarbruecken (Germany),
-// and Tel-Aviv University (Israel).  All rights reserved.
+// Copyright (c) 2023
+// INRIA Sophia-Antipolis (France)
 //
 // This file is part of CGAL (www.cgal.org)
 //
@@ -14,8 +10,8 @@
 //
 // Author(s)     : Jeffrey Cochran
 
-#ifndef CGAL_CARTESIAN_BILINEAR_PATCH_3_H
-#define CGAL_CARTESIAN_BILINEAR_PATCH_3_H
+#ifndef BILINEAR_PATCH_3_H
+#define BILINEAR_PATCH_3_H
 
 #include <CGAL/Handle_for.h>
 #include <CGAL/Interval_nt.h>

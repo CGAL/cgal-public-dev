@@ -1,7 +1,0 @@
-#ifndef CGAL_CARTESIAN_BILINEAR_PATCH_3_H
-#define CGAL_CARTESIAN_BILINEAR_PATCH_3_H
-
-#include <CGAL/Surface_mesh.h>
-
-
-

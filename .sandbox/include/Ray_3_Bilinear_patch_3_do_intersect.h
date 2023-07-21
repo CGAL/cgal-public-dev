@@ -1,4 +1,4 @@
-// Copyright (c) 2003  INRIA Sophia-Antipolis (France).
+// Copyright (c) 2023  INRIA Sophia-Antipolis (France).
 // All rights reserved.
 //
 // This file is part of CGAL (www.cgal.org)
@@ -8,10 +8,11 @@
 // SPDX-License-Identifier: LGPL-3.0-or-later OR LicenseRef-Commercial
 //
 //
-// Author(s)     : Philippe Guigue
+// Author(s)     : Jeffrey Cochran
 
 #ifndef CGAL_INTERNAL_INTERSECTIONS_RAY_3_BILINEAR_PATCH_3_DO_INTERSECT_H
 #define CGAL_INTERNAL_INTERSECTIONS_RAY_3_BILINEAR_PATCH_3_DO_INTERSECT_H
+
 #include <iostream>
 #include <CGAL/enum.h>
 #include <CGAL/kernel_assertions.h>
@@ -74,17 +75,17 @@ do_intersect_odd_parity(
       CGAL::Interval_nt_advanced phi_midpoint = bp.aux_phi(mid_point);
       if ( !(phi_midpoint > 0) == !(phi_source > 0) ) {
         // The edge connecting 0--2 is on the same side as the ray's source
-        std::cout << "...same side..."<< std::endl;
-        std::cout << "...same side..."<< std::endl;
-        std::cout << "...intersects 123: " << do_intersect(K::Triangle_3(bp.vertex(1), bp.vertex(2), bp.vertex(3)), r) << std::endl;
-        std::cout << "...intersects 013: " << do_intersect(K::Triangle_3(bp.vertex(0), bp.vertex(1), bp.vertex(3)), r) << std::endl;
-        std::cout << "...intersects 012: " << do_intersect(K::Triangle_3(bp.vertex(0), bp.vertex(1), bp.vertex(2)), r) << std::endl;
-        std::cout << "...intersects 023: " << do_intersect(K::Triangle_3(bp.vertex(0), bp.vertex(2), bp.vertex(3)), r) << std::endl;
+        // std::cout << "...same side..."<< std::endl;
+        // std::cout << "...same side..."<< std::endl;
+        // std::cout << "...intersects 123: " << do_intersect(K::Triangle_3(bp.vertex(1), bp.vertex(2), bp.vertex(3)), r) << std::endl;
+        // std::cout << "...intersects 013: " << do_intersect(K::Triangle_3(bp.vertex(0), bp.vertex(1), bp.vertex(3)), r) << std::endl;
+        // std::cout << "...intersects 012: " << do_intersect(K::Triangle_3(bp.vertex(0), bp.vertex(1), bp.vertex(2)), r) << std::endl;
+        // std::cout << "...intersects 023: " << do_intersect(K::Triangle_3(bp.vertex(0), bp.vertex(2), bp.vertex(3)), r) << std::endl;
         return (
           do_intersect(K::Triangle_3(bp.vertex(1), bp.vertex(2), bp.vertex(3)), r) || do_intersect(K::Triangle_3(bp.vertex(0), bp.vertex(1), bp.vertex(3)), r) 
         );
       } else {
-        std::cout << "...opposite side..."<< std::endl;
+        // std::cout << "...opposite side..."<< std::endl;
         // The edge connecting 0--2 is on the opposite side as the ray's source
         return (
           do_intersect(K::Triangle_3(bp.vertex(0), bp.vertex(1), bp.vertex(2)), r) || do_intersect(K::Triangle_3(bp.vertex(0), bp.vertex(2), bp.vertex(3)), r) 

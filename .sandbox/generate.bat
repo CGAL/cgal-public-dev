@@ -21,9 +21,9 @@ if not exist %folder% (
    mkdir build
 )
 
-set folder="src\"
+set folder="examples\"
 if not exist %folder% (
-   echo "no src folder. terminating..."
+   echo "no examples folder. terminating..."
    exit /b
 )
 

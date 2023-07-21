@@ -14,17 +14,16 @@
 #   create_single_source_cgal_program("${cppfile}")
 # endforeach()
 cmake_minimum_required(VERSION 3.1...3.23)
-project(Surface_mesh_Examples)
+project(Collisions_Examples)
 
 find_package(CGAL REQUIRED OPTIONAL_COMPONENTS Qt5)
 
-
 #create the executable of the application
-create_single_source_cgal_program("draw_surface_mesh.cpp")
-target_include_directories(draw_surface_mesh PRIVATE include)
+create_single_source_cgal_program("collision_candidates.cpp")
+target_include_directories(collision_candidates PRIVATE ../include)
 if(CGAL_Qt5_FOUND)
   #link it with the required CGAL libraries
-  target_link_libraries(draw_surface_mesh PUBLIC CGAL::CGAL_Basic_viewer)
+  target_link_libraries(collision_candidates PUBLIC CGAL::CGAL_Basic_viewer)
 else()
   message(FATAL_ERROR Couldn't find qt5)
 endif()
