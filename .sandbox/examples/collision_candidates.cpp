@@ -41,8 +41,8 @@ typedef std::list<Primitive_id>         OutputIterator;
 int main(int argc, char* argv[])
 {
 
-  const std::string inner_sphere_filename = CGAL::data_file_path("meshes/sphere_internal.off");
-  const std::string outer_sphere_filename = CGAL::data_file_path("meshes/sphere_external.off");
+  const std::string inner_sphere_filename = CGAL::data_file_path("meshes/Sphere_Internal.off");
+  const std::string outer_sphere_filename = CGAL::data_file_path("meshes/Sphere_External.off");
 
   Mesh inner_sphere_mesh;
   Mesh outer_sphere_mesh;
@@ -74,7 +74,7 @@ int main(int argc, char* argv[])
     ++k;
 
     if( k > 5 ) { break; }
-    
+
   }
 
   return EXIT_SUCCESS;

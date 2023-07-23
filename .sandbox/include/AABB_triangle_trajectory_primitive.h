@@ -163,7 +163,7 @@ std::vector<
     // Iterate over trajectories
     int j;
     std::vector<const typename CollisionMesh::Point*> trajectory_points(6);
-    for( const auto& fi : mesh.mesh_.faces())
+    for( const auto& fi : mesh.faces())
     {
         j = 0;
 
