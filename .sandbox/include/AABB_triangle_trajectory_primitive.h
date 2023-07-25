@@ -102,7 +102,7 @@ public:
     typedef typename K::Point_3                                 Point; // CGAL 3D point type
     typedef typename K::Iso_cuboid_3                            Datum; // CGAL 3D triangle type
     typedef typename K::Aff_transformation_3                    Transform;
-    typedef Triangle_trajectory<K, Index>                       Trajectory;
+    typedef          Triangle_trajectory<K, Index>              Trajectory;
     typedef typename std::vector<Trajectory>::const_iterator    Iterator;
 
     // this is the type of data that the queries returns. For this example

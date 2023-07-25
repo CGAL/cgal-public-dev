@@ -46,16 +46,16 @@ namespace CGAL {
         Point_map vnext_point_;
     
     public:
+        Collision_mesh();
 
-        Collision_mesh(Base & mesh) : Base{mesh}
-        {
-            vvelocity_ = add_property_map<Vertex_index, Vector>("v:velocity").first;
-            vnext_point_ = add_property_map<Vertex_index, Point>("v:next_point").first;
-            for(vertex_descriptor vd : vertices()){
-                put(vvelocity_, vd, Vector(0, 0, 0));
-                put(vnext_point_, vd, point(vd));
-            }
-        }
+        Collision_mesh(const Base& surface_mesh);
+        Collision_mesh(Base&& surface_mesh);        
+
+        Collision_mesh(const Collision_mesh& collision_mesh);
+        Collision_mesh(Collision_mesh&& collision_mesh);
+
+        Collision_mesh<K>& operator=(const Collision_mesh<K>& rhs); // assigns `rhs` to `*this`. Performs a deep copy of all properties.
+        Collision_mesh<K>& operator=(Collision_mesh<K>&& collision_mesh); // move assignment
 
         const Vector& velocity(Vertex_index v) const;
         Vector& velocity(Vertex_index v);
@@ -64,8 +64,69 @@ namespace CGAL {
         Point& next_point(Vertex_index v);
   };
 
+    // CONSTRUCTORS
+    // ============
+    template <class K>
+    Collision_mesh<K>::Collision_mesh() : Base() {}
 
-    /// returns the velocity associated to vertex `v`.
+    template <class K>
+    Collision_mesh<K>::Collision_mesh(const Base& surface_mesh) : Base{surface_mesh} { 
+        vvelocity_ = add_property_map<Vertex_index, Vector>("v:velocity").first;
+        vnext_point_ = add_property_map<Vertex_index, Point>("v:next_point").first;
+        for(const vertex_descriptor& vd : vertices()){
+            put(vvelocity_, vd, Vector(0, 0, 0));
+            put(vnext_point_, vd, point(vd));
+        }
+    }
+
+    template <class K>
+    Collision_mesh<K>::Collision_mesh(Base&& surface_mesh) : Base{std::move(surface_mesh)} { 
+        vvelocity_ = add_property_map<Vertex_index, Vector>("v:velocity").first;
+        vnext_point_ = add_property_map<Vertex_index, Point>("v:next_point").first;
+        for(const vertex_descriptor& vd : vertices()){
+            put(vvelocity_, vd, Vector(0, 0, 0));
+            put(vnext_point_, vd, point(vd));
+        }
+    }
+
+    template <class K>
+    Collision_mesh<K>::Collision_mesh(const Collision_mesh<K>& collision_mesh){ *this = collision_mesh; }
+
+    template <class K>
+    Collision_mesh<K>::Collision_mesh(Collision_mesh<K>&& collision_mesh) 
+        : Base{std::move(collision_mesh)}
+        , vnext_point_(std::move(collision_mesh.vnext_point_))
+        , vvelocity_(std::move(collision_mesh.vvelocity_))
+    {}
+
+
+    // OPERATORS
+    // =========
+    template <class K>
+    Collision_mesh<K>& Collision_mesh<K>::operator=(const Collision_mesh<K>& rhs)
+    {
+        std::cout << "Copy called" << std::endl;
+        Base::operator=(rhs);
+        if (this != &rhs)
+        {
+            vnext_point_ = property_map<Vertex_index, Point>("v:next_point").first;
+            vvelocity_   = property_map<Vertex_index, Vector>("v:velocity").first;
+        }
+        return *this;
+    }
+
+    template <class K>
+    Collision_mesh<K>& Collision_mesh<K>::operator=(Collision_mesh<K>&& collision_mesh)
+    {
+        Base::operator=(std::move(collision_mesh));
+        vnext_point_ = std::move(collision_mesh.vnext_point_);
+        vvelocity_ = std::move(collision_mesh.vvelocity_);
+        return *this;
+    }
+
+    
+    // MEMBER ROUTINES
+    // ===============
     template <class K>
     const typename K::Vector_3& Collision_mesh<K>::velocity(Vertex_index v) const { return vvelocity_[v]; }
 
