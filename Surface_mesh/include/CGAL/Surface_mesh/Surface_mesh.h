@@ -2355,6 +2355,7 @@ Surface_mesh<P>&
 Surface_mesh<P>::
 assign(const Surface_mesh<P>& rhs)
 {
+  
     if (this != &rhs)
     {
         // clear properties

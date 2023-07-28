@@ -18,6 +18,7 @@
 
 #include <CGAL/AABB_tree/internal/AABB_node.h>
 #include <boost/optional.hpp>
+#include <functional>
 
 namespace CGAL {
 
@@ -180,6 +181,57 @@ public:
 
 private:
   Output_iterator m_out_it;
+  const AABBTraits& m_traits;
+};
+
+
+/**
+ * @class Listing_self_intersection_traits
+ */
+template<typename AABBTraits>
+class Listing_self_intersection_traits
+{
+  typedef typename AABBTraits::FT FT;
+  typedef typename AABBTraits::Point_3 Point;
+  typedef typename AABBTraits::Primitive Primitive;
+  typedef typename AABBTraits::Bounding_box Bounding_box;
+  typedef typename AABBTraits::Primitive::Id Primitive_id;
+  typedef typename AABBTraits::Point_and_primitive_id Point_and_primitive_id;
+  typedef typename AABBTraits::Object_and_primitive_id Object_and_primitive_id;
+  typedef typename std::pair<Primitive_id, Primitive_id> Primitive_pair;
+  typedef typename std::set<Primitive_pair> Primitive_pair_set;
+  typedef ::CGAL::AABB_node<AABBTraits> Node;
+
+public:
+  Listing_self_intersection_traits(Primitive_pair_set& out_set, const AABBTraits& traits)
+    : m_traits(traits), out_set{out_set} {}
+
+  constexpr bool go_further() const { return true; }
+
+  void intersection(const Primitive& primitive_query, const Primitive& primitive)
+  {
+    if( m_traits.do_intersect_object()(primitive_query.datum(), primitive) && primitive_query.id() != primitive.id() )
+    {
+      // To guarantee that pairs aren't repeated,
+      // make sure that the lesser primitive_id is
+      // stored in pair<0>. 
+      current_pair = std::less<Primitive_id>{}(
+        primitive_query.id(),
+        primitive.id()
+      ) ? std::pair<Primitive_id, Primitive_id>(primitive_query.id(), primitive.id())
+        : std::pair<Primitive_id, Primitive_id>(primitive.id(), primitive_query.id());
+      out_set.insert(current_pair);
+    }
+  }
+
+  bool do_intersect(const Primitive& primitive_query, const Node& node) const
+  {
+    return m_traits.do_intersect_object()(primitive_query.datum(), node.bbox());
+  }
+
+private:
+  Primitive_pair current_pair;
+  Primitive_pair_set& out_set;
   const AABBTraits& m_traits;
 };
 

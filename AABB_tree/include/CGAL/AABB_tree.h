@@ -21,6 +21,7 @@
 
 #include <vector>
 #include <iterator>
+#include <utility>
 #include <CGAL/AABB_tree/internal/AABB_traversal_traits.h>
 #include <CGAL/AABB_tree/internal/AABB_node.h>
 #include <CGAL/AABB_tree/internal/AABB_search_tree.h>
@@ -260,6 +261,18 @@ public:
     template<typename Query, typename OutputIterator>
     OutputIterator all_intersected_primitives(const Query& query, OutputIterator out) const;
 
+    /// puts in `out` the ids of all other intersected primitives, i.e.,
+    /// it does not consider a primitive as intersecting itself.
+    /// This function is restricted to primitives as queries. This 
+    /// function does not compute the intersection points
+    /// and is hence faster than the function `all_intersections()`
+    /// function below.
+    std::set<
+      std::pair<
+        typename Primitive_id, 
+        typename Primitive_id
+      >
+    > all_self_intersections() const;
 
     /// returns the id of the intersected primitive that is encountered first
     /// in the tree traversal, iff
@@ -674,6 +687,17 @@ public:
     mutable bool m_search_tree_constructed = false;
 #endif
 
+  public:
+    typedef typename std::vector<Primitive>::const_iterator Primitives_iterator;
+
+    Primitives_iterator primitives_begin() const {
+      return m_primitives.cbegin();
+    }
+
+    Primitives_iterator primitives_end() const {
+      
+      return m_primitives.cend();
+    }
 
   };  // end class AABB_tree
 
@@ -943,6 +967,30 @@ public:
     Listing_primitive_traits<AABBTraits,
       Query, OutputIterator> traversal_traits(out,m_traits);
     this->traversal(query, traversal_traits);
+    return out;
+  }
+
+  template<typename Tr>
+  std::set<
+    std::pair<
+      typename AABB_tree<Tr>::Primitive_id, 
+      typename AABB_tree<Tr>::Primitive_id
+    >
+  > AABB_tree<Tr>::all_self_intersections() const
+  {
+    using namespace CGAL::internal::AABB_tree;
+    typedef typename AABB_tree<Tr>::AABB_traits   AABBTraits;
+    typedef typename AABB_tree<Tr>::Primitive_id  PID;
+    typedef          std::set<std::pair<PID,PID>> OutputSet;
+    OutputSet out;
+    Listing_self_intersection_traits<AABBTraits> traversal_traits(out, m_traits);
+    std::for_each( 
+      this->primitives_begin(), 
+      this->primitives_end(), 
+      [&traversal_traits, this](const auto& primitive_query){ 
+        this->traversal(primitive_query, traversal_traits); 
+      }
+    );
     return out;
   }
 

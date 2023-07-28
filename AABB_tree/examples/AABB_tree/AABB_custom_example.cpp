@@ -7,10 +7,7 @@
 #include <CGAL/AABB_tree.h>
 #include <CGAL/AABB_traits.h>
 
-
-
 typedef CGAL::Simple_cartesian<double> K;
-
 
 // custom point type
 struct My_point {
