@@ -33,8 +33,8 @@ namespace CGAL {
         typedef typename Base::Vertex_around_face_range     Vertex_around_face_range;
         typedef typename Base::size_type                    size_type;
 
-        typedef decltype(Base().template add_property_map<Vertex_index, Vector>("v:velocity").first)     Vector_map;
-        typedef decltype(Base().template add_property_map<Vertex_index, Point>("v:next_point").first)    Point_map;
+        typedef decltype(Base().template add_property_map<Vertex_index, Vector>("v:velocity").first)    Vector_map;
+        typedef decltype(Base().template add_property_map<Vertex_index, Point>("v:next_point").first)   Point_map;
 
         typedef typename boost::graph_traits<Collision_mesh<K>>::vertex_descriptor      vertex_descriptor;
         typedef typename boost::graph_traits<Collision_mesh<K>>::edge_descriptor        edge_descriptor;
@@ -105,7 +105,6 @@ namespace CGAL {
     template <class K>
     Collision_mesh<K>& Collision_mesh<K>::operator=(const Collision_mesh<K>& rhs)
     {
-        std::cout << "Copy called" << std::endl;
         Base::operator=(rhs);
         if (this != &rhs)
         {
@@ -138,8 +137,6 @@ namespace CGAL {
 
     template <class K>
     typename K::Point_3& Collision_mesh<K>::next_point(Vertex_index v) { return vnext_point_[v]; }
-
-
 
 } // namespace CGAL
 

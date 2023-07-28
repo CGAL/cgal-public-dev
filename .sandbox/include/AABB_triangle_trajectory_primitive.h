@@ -136,62 +136,6 @@ public:
     { return *(m_pt->pa); }
 };
 
-
-template<class CollisionMesh>
-std::vector<
-    Triangle_trajectory<
-        typename CollisionMesh::K,
-        typename std::pair<
-            int,
-            typename CollisionMesh::Face_index
-        >
-    >
-> get_trajectories( const CollisionMesh & mesh, const int mesh_id=0 )
-{
-
-    typedef Triangle_trajectory<
-        typename CollisionMesh::K,
-        typename std::pair<
-            int,
-            typename CollisionMesh::Face_index
-        >
-    > Trajectory;
-
-    std::vector<Trajectory> trajectories;
-    trajectories.reserve(mesh.num_faces());
-
-    // Iterate over trajectories
-    int j;
-    std::vector<const typename CollisionMesh::Point*> trajectory_points(6);
-    for( const auto& fi : mesh.faces())
-    {
-        j = 0;
-
-        for( const auto & vi : mesh.vertices_around_face(mesh.halfedge(fi)) )
-        {
-            trajectory_points.at(j) = & mesh.point(vi);
-            trajectory_points.at(j+1) = & mesh.next_point(vi);
-
-            j += 2;
-        }
-
-        trajectories.push_back(
-            Trajectory(
-                trajectory_points[0],
-                trajectory_points[2],
-                trajectory_points[4],
-                trajectory_points[1],
-                trajectory_points[3],
-                trajectory_points[5],
-                std::make_pair(mesh_id, fi)
-            )
-        );
-
-    }
-
-    return trajectories;
-};
-
 } // end CGAL
 
 #endif

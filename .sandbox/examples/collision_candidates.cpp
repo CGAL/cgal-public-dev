@@ -12,7 +12,8 @@
 
 #include <iostream>
 #include <fstream>
-#include <list>
+#include <utility>
+#include <iterator>
 #include <vector>
 #include <CGAL/Simple_cartesian.h>
 #include <CGAL/intersections.h>
@@ -36,7 +37,10 @@ typedef CGAL::Collision_mesh<Kernel>    SMesh;
 typedef CGAL::Collision_scene<Kernel>   Scene;
 typedef CGAL::BilinearPatchC3<Kernel>   BilinearPatch;
 typedef Scene::Primitive_id             Primitive_id;
-typedef std::list<Primitive_id>         OutputIterator;
+typedef Scene::Trajectory_index         Trajectory_index;
+
+typedef CGAL::Collision_candidate<Trajectory_index> Collision_candidate;
+typedef std::vector<Collision_candidate>            OutputIterator;
 
 int main(int argc, char* argv[])
 {
@@ -64,16 +68,15 @@ int main(int argc, char* argv[])
   meshes.push_back(SMesh(inner_sphere_mesh));
   meshes.push_back(SMesh(outer_sphere_mesh));
 
-  OutputIterator collision_candidates = CGAL::get_collision_candidates<Kernel, OutputIterator>(meshes);
+  OutputIterator collision_candidates = CGAL::get_collision_candidates<Kernel>(meshes);
 
   int k{0};
   for( const auto& cc : collision_candidates )
   {
-
     std::cout << cc << std::endl;
     ++k;
 
-    if( k > 5 ) { break; }
+    if( k > 10 ) { break; }
 
   }
 
