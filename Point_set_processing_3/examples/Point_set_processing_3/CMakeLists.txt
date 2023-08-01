@@ -105,6 +105,9 @@ if(TARGET CGAL::Eigen3_support)
   find_package(OpenGR QUIET)
   include(CGAL_OpenGR_support)
   if(TARGET CGAL::OpenGR_support)
+    create_single_source_cgal_program("registration_with_eigen_example.cpp")
+    target_link_libraries(registration_with_eigen_example PRIVATE ${CGAL_libs}
+                          CGAL::OpenGR_support)
     create_single_source_cgal_program("registration_with_OpenGR.cpp")
     target_link_libraries(registration_with_OpenGR PRIVATE ${CGAL_libs}
                           CGAL::OpenGR_support)

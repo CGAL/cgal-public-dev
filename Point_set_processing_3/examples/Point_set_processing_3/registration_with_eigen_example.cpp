@@ -397,6 +397,12 @@ int main(int argc, char* argv[]) {
     Mesh mesh2 = readToscaMesh("../meshes/toscahires-asci/wolf1");
     Correspondence correspondence = readCorrespondence("../meshes/correspondence.txt");
     CGAL::draw(merge_meshes(mesh1, mesh2));
+	
+	auto opengr_result = CGAL::OpenGR::compute_registration_transformation(Mesh2PointSet(mesh2), Mesh2PointSet(mesh1));
+    Transform opengr_transform = opengr_result.first;
+    CGAL::Polygon_mesh_processing::transform(opengr_transform, mesh1);
+    CGAL::draw(merge_meshes(mesh1, mesh2));
+	
     auto rigid_result = rigid_registration(Mesh2PointSet(mesh1), Mesh2PointSet(mesh2), 0.1, 0.1, 1.0, 10, 8, correspondence);
     Transform transform = rigid_result.first;
     CGAL::Polygon_mesh_processing::transform(transform, mesh1);
