@@ -42,6 +42,8 @@ class Variational_shape_reconstruction
         std::vector<int> m_generators_count;
         std::shared_ptr<Clustering> m_cluster;
 
+        
+
 
 
     public:
@@ -60,9 +62,9 @@ class Variational_shape_reconstruction
 
         m_cluster = std::make_shared<Clustering>(pointset, m_num_knn,euclidean_distance_weight);
         
-        m_cluster->initialize_qem_map(m_tree);
-        m_cluster->initialize_vertex_qem(m_tree);    
         init_random_generators();
+        m_cluster->initialize_qem_map(m_tree);
+        m_cluster->initialize_vertex_qem(m_tree,m_generators);    
     }
 
     void load_points(const Pointset& pointset)
@@ -171,7 +173,7 @@ class Variational_shape_reconstruction
             std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
             m_vlabels.clear();
             m_generators_qem.clear();
-            m_cluster->region_growing(m_tree,m_vlabels,m_generators_qem, m_generators,true);
+            m_cluster->region_growing(m_vlabels,m_generators_qem, m_generators,true);
             assert(m_vlabels.size() == pointset_.size());
             std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
             std::cerr << "\nRegion growing in " << std::chrono::duration_cast<std::chrono::microseconds>(end - begin).count()/1000 << "[ms]" << std::endl;

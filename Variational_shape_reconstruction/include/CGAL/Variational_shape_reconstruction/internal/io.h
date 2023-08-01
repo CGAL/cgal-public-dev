@@ -71,5 +71,38 @@ void savePs(std::vector<std::pair<Point, size_t>> m_points,std::map<int, int>   
 
         edge_file.close();
     }
+    void save_riemanian(std::string filename,std::vector<std::vector<int>>graph ,PointList m_points)
+    {
+        std::ofstream edge_file;
+        edge_file.open(filename);
+
+        std::size_t sum = 0;
+        for (auto &&i : graph) {
+            sum += i.size();
+        }
+
+        edge_file << "ply\n"
+                  << "format ascii 1.0\n"
+                  << "element vertex " << m_points.size() << "\n"
+                  << "property float x\n"
+                  << "property float y\n"
+                  << "property float z\n"
+                  << "element face " << sum << "\n"
+                  << "property list uchar int vertex_indices\n"
+                  << "end_header\n";
+
+        for(int i = 0; i < m_points.size(); i++)
+            edge_file << m_points[i].x() << " " << m_points[i].y() << " " << m_points[i].z() << std::endl;
+        
+        for(int i = 0; i < graph.size(); i++)
+        {
+            for(int j = 0; j < graph[i].size(); j++)
+            {
+                edge_file << "2 "<<i<<" "<<j<<"\n";
+            }
+        }
+
+        edge_file.close();
+    }
 
 #endif // CGAL_VARIATIONAL_SHAPE_RECONSTRUCTION_INTERNAL_IO_H

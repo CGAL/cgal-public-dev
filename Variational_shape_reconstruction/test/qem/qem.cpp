@@ -260,7 +260,9 @@ std::tuple<std::string,bool>  test_qem_one_point_n_planes_no_point_intersection_
     }
     auto p = Eigen::Vector4d(0.,0.,0.,1.);
     double error_metric = p.transpose() * qem.get_4x4_matrix() * p;
-     return {__func__ ,error_metric == (n*(distance*distance))}; 
+
+
+    return {__func__ ,error_metric == (n*(distance*distance))}; 
 }
 /// @brief Computes the qem for 6 triangles as a star
 /// @param distance from the center vertex of the star
@@ -303,14 +305,67 @@ double test_qem_one_point_star_triangles_with_distance(double distance)
         qem= qem+qemv;
     }
     auto p = Eigen::Vector4d(0.,0.,distance+0.5,1.);
+
     double error_metric = p.transpose() * qem.get_4x4_matrix() * p;
+    return error_metric;
+}
+/// @brief Computes the optimal qem point for 6 triangles as a star
+/// @return distance from the true optimal point
+double test_optimal_point_one_point_star_triangles()
+{
+    std::vector<QEM_metric> qem_list;
+    int n = 6;
+    std::vector<Point> points;
+    std::vector<Vector> normals;
+    std::vector<Triangle> triangles;
+    double two_pi = 2*atan(1)*4;
+    auto query = Point(0.,0.,0.5);
+    for(int i = 0 ; i< n ;i++)
+    {
+        double a =i*(two_pi/n);
+        auto x = cos(a);
+        auto y = sin(a);
+        points.push_back(Point(x,y,0.));
+        if(i>0)
+        {
+            auto t = Triangle(points[i-1],points[i],query);
+            Vector normal = CGAL::normal(points[i-1],
+                                         points[i],
+                                         query);
+            normals.push_back(normal);
+            triangles.push_back(t);
+        }
+    }
+    auto t = Triangle(points.back(),points[0],query);
+    Vector normal = CGAL::normal(points.back(),points[0],query);
+    normals.push_back(normal);
+    triangles.push_back(t);
+    
+    auto qem = QEM_metric();
+    for(int i = 0 ; i< n ;i++)
+    {
+        auto qemv = QEM_metric();
+        qemv.init_qem_metrics_face(sqrt(triangles[i].squared_area()), query,  normals[i]);
+        qem= qem+qemv;
+    }
+    auto p = Eigen::Vector4d(0.,0.,0.5,1.);
+    auto point = Point(p.x(),p.y(),p.z());
+    auto p2 = qem.compute_optimal_point(qem, point);
+
+    double error_metric = CGAL::squared_distance(p2,point);
     return error_metric;
 }
 /// @brief Test if the center vertex intersecting all triangles has a qem equals to 0
 /// @return tuple function name, result
 std::tuple<std::string,bool>  test_qem_one_point_star_triangles()
 {
-    return {__func__ ,test_qem_one_point_star_triangles_with_distance(0.)==0.}; 
+    return {__func__ ,fabs(test_qem_one_point_star_triangles_with_distance(0.))<std::numeric_limits<double>::epsilon()}; 
+}
+/// @brief Test if the center vertex intersecting all triangles is the optimal point 
+/// @return tuple function name, result
+std::tuple<std::string,bool>  test_qem_optimal_point_one_point_star_triangles()
+{
+    return {__func__ ,fabs(test_optimal_point_one_point_star_triangles())<std::numeric_limits<double>::epsilon()}; 
 }
 /// @brief Test if the qem from a point at a distance from the center vertex in the star is monotonic
 /// @return tuple function name, result
@@ -376,6 +431,9 @@ int main(int argc, char** argv)
     test(test_qem_one_point_on_n_planes_monotonic);
 
     test(test_qem_one_point_star_triangles_monotonic);
+
+    std::cout<<"Test optimal point of the QEM: \n";
+    test(test_qem_optimal_point_one_point_star_triangles);
 	return 0;
 }
 

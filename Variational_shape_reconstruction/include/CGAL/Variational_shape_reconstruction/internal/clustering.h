@@ -40,7 +40,7 @@ class Clustering
     Clustering(const Pointset& pointset, size_t num_knn, double euclidean_distance_weight)
     {
         pointset_ = pointset;
-        m_num_knn = num_knn;
+        //m_num_knn = num_knn;
         m_dist_weight = euclidean_distance_weight;
         //csv_writer =std::make_shared<DataWriter>(pointset.size());
     }
@@ -63,27 +63,123 @@ class Clustering
             m_pqems.push_back(pqem);
         }
     }
+    void compute_connected()
+    {
+        size_t point_count = m_graph.size(); 
+        m_visited.resize(point_count);
+        m_component.resize(point_count);
+        std::fill(m_visited.begin(),m_visited.end(),false);
+        
+        for(int i = 0 ; i < point_count;i++)
+        {
+            if(!m_visited[i])
+            {
+                visit(i,component_count);
+                component_count++;
+            }
+        }
+    }
+    void visit(int current_idx, int component_idx)
+    {
+        std::vector<int> queue;
+        queue.push_back(current_idx);
+        
+        while(!queue.empty())
+        {
+            int idx = queue.back();
+            queue.pop_back();
+            m_component[idx]=component_idx;
+            m_visited[idx]=true;
+            for(auto neighbors_idx : m_graph[idx])
+            {
+                if(!m_visited[neighbors_idx])
+                {
+                    queue.push_back(neighbors_idx);
+                }
+            }
+        }
+    }
     QEM_metric compute_qem_for_point(const Point& query,const Vector& normal,const double &area)
     {
         QEM_metric qem;
         qem.init_qem_metrics_face(area, query, normal);
         return qem;
     }
-    void initialize_vertex_qem(const KNNTree& m_tree)
+    void initialize_vertex_qem(const KNNTree& m_tree,std::vector<int>& m_generators)
     {
         m_vqems.clear();
         for(Pointset::const_iterator it = pointset_.begin(); it != pointset_.end(); ++ it)
         {
             K_neighbor_search search(m_tree, pointset_.point(*it), m_num_knn);
             QEM_metric vqem;
-
+            std::vector<int> neighbors;
             for(typename K_neighbor_search::iterator it = search.begin(); it != search.end(); it++)
-                vqem = vqem + m_pqems[(it->first).second];
+            {
+                auto neighbor_idx = (it->first).second;
+                vqem = vqem + m_pqems[neighbor_idx];
+                neighbors.push_back(neighbor_idx);
+            }
+            m_graph.push_back(neighbors);
 
             m_vqems.push_back(vqem);
         }
+        compute_connected();
+        std::ofstream edge_file;
+        edge_file.open("filename.ply");
+
+        std::size_t sum = 0;
+        for (auto &&i : m_graph) {
+            sum += i.size();
+        }
+
+        edge_file << "ply\n"
+                  << "format ascii 1.0\n"
+                  << "element vertex " << pointset_.size() << "\n"
+                  << "property float x\n"
+                  << "property float y\n"
+                  << "property float z\n"
+                  << "element face " << sum << "\n"
+                  << "property list uchar int vertex_indices\n"
+                  << "end_header\n";
+
+        for(Pointset::const_iterator it = pointset_.begin(); it != pointset_.end(); ++ it)
+        {
+            auto point = pointset_.point(*it);
+            edge_file << point.x() << " " << point.y() << " " << point.z() << std::endl;
+        }
+        
+        for(int i = 0; i < m_graph.size(); i++)
+        {
+            for(int j = 0; j < m_graph[i].size(); j++)
+            {
+                edge_file << "2 "<<i<<" "<<m_graph[i][j]<<"\n";
+            }
+        }
+
+        edge_file.close();
+        
+        std::cout<<"connected component count "<< component_count<<std::endl;
+        for(int i = 0 ; i < component_count;i++)
+        {
+            bool found = false;
+            for(int j = 0 ; j < m_generators.size();j++)
+            {
+                if(i == m_component[m_generators[j]])
+                {
+                    found = true;
+                }
+            }
+            if(!found)
+            {
+                // Add a new generator in the connected component without generator
+                auto it = std::find(m_component.begin(), m_component.end(), i);
+                int index = it - m_component.begin();
+                m_generators.push_back(index);
+                std::cout<<"added generator > "<<index<<" connected component "<< i<<std::endl;
+            }
+        }
     }
-    void region_growing(const KNNTree& tree,std::map<int, int>& m_vlabels,std::vector<QEM_metric>& m_generators_qem,const std::vector<int>& m_generators,bool flag_dist)
+    void region_growing(std::map<int, int>& m_vlabels,std::vector<QEM_metric>& m_generators_qem,const std::vector<int>& m_generators,bool flag_dist)
     {
         PQueue growing_queue;
         
@@ -93,7 +189,7 @@ class Clustering
             int index = m_generators[label];
             m_vlabels[index] =  label;
             m_generators_qem.push_back(m_vqems[index]);
-            add_candidates(tree,growing_queue,index,label, flag_dist,m_vlabels,m_generators);
+            add_candidates(growing_queue,index,label, flag_dist,m_vlabels,m_generators);
         }
         int k =0;
         int p =0;
@@ -112,20 +208,17 @@ class Clustering
             k++;
             m_vlabels[index] = label;
             m_generators_qem[label] = m_generators_qem[label] + m_vqems[index]; 
-            add_candidates(tree,growing_queue,index,label, flag_dist,m_vlabels,m_generators);
+            add_candidates(growing_queue,index,label, flag_dist,m_vlabels,m_generators);
         }
 
 
     }
-    void add_candidates(const KNNTree& tree,PQueue &growing_queue,const int index,const int label,const bool flag_dist,
+    void add_candidates(PQueue &growing_queue,const int index,const int label,const bool flag_dist,
                         const std::map<int, int>& m_vlabels,const std::vector<int>& m_generators)
     {
         
-        K_neighbor_search search(tree, pointset_.point(index), m_num_knn);
-        for(typename K_neighbor_search::iterator it = search.begin(); it != search.end(); it++)
+        for(const auto nb_index : m_graph[index])
         {
-            const int nb_index = (it->first).second;
-
             if(m_vlabels.find(nb_index) == m_vlabels.end() )
             {
                 const double loss = compute_collapse_loss(nb_index, label, flag_dist,m_generators);
@@ -378,8 +471,11 @@ void write_csv()
                     //qem
             std::vector<QEM_metric> m_pqems;
             std::vector<QEM_metric> m_vqems;
-
-            // csv
+            std::vector<std::vector<int>> m_graph;
+            std::vector<bool> m_visited;
+            std::vector<int> m_component;
+            int component_count=0;
+          // csv
 
             //std::shared_ptr<DataWriter> csv_writer;
             

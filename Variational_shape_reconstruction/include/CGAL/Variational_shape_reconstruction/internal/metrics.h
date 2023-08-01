@@ -213,6 +213,39 @@ public: // functions
         this->tensors() = this->tensors() * scale;
         return *this;
     }
+    Point compute_optimal_point(QEM_metric& cluster_qem, Point& cluster_pole)
+    {
+        // solve Qx = b
+        Eigen::MatrixXd qem_mat = cluster_qem.get_4x4_svd_matrix();
+        Eigen::VectorXd qem_vec = qem_mat.row(3); // 0., 0., 0., 1.
+        Eigen::VectorXd optim(4);
+
+        // check rank
+        Eigen::FullPivLU<Eigen::MatrixXd> lu_decomp(qem_mat);
+        lu_decomp.setThreshold(1e-5);
+
+        // full rank -> direct inverse
+        if(lu_decomp.isInvertible())
+        {
+            optim = lu_decomp.inverse() * qem_vec;
+        }
+        else
+        {   // low rank -> svd pseudo-inverse
+            Eigen::JacobiSVD<Eigen::MatrixXd> svd_decomp(qem_mat, Eigen::ComputeThinU | Eigen::ComputeThinV);
+            svd_decomp.setThreshold(1e-5);
+
+            optim(0) = cluster_pole.x();
+            optim(1) = cluster_pole.y();
+            optim(2) = cluster_pole.z();
+            optim(3) = 1.;
+
+            optim = optim + svd_decomp.solve(qem_vec - qem_mat * optim);
+        }
+
+        Point optim_point(optim(0), optim(1), optim(2));
+
+        return optim_point;
+    }
 
 };
 
