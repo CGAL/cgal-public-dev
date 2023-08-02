@@ -46,25 +46,36 @@ std::pair<FT, FT> correct_geodesic_dists(face_descriptor face)
         FT d (sqrt(401.)/6.);
         return std::make_pair(sigma, d);
     }
-    else if (face.idx() == 10) {
+    else if (face.idx() == 8) {
         Face_values vals;
         FT sigma(sqrt(265.)/6);
-        FT d (sigma + sqrt(104.)/6.);
+        FT d (sigma + FT(0.3));
         return std::make_pair(sigma, d);
     }
-    else if (face.idx() == 12) {
-        FT sigma(sqrt(265.)/6 + 1.);
-        FT d (sigma + sqrt(8)/3.);
+    else if (face.idx() == 11) {
+        Face_values vals;
+        FT sigma(0.);
+        FT d (sqrt(485)/6.);
         return std::make_pair(sigma, d);
     }
-    else if (face.idx() == 24) {
-        FT sigma(sqrt(265.)/6 + 1. + sqrt(2.));
-        FT d (sigma + sqrt(29.)/3);
+    else if (face.idx() == 22) {
+        FT sigma(0.);
+        FT d (2.5);
+        return std::make_pair(sigma, d);
+    }
+    else if (face.idx() == 26) {
+        FT sigma(0.);
+        FT d (sqrt(365.)/6);
+        return std::make_pair(sigma, d);
+    }
+    else if (face.idx() == 28) {
+        FT sigma(2.5);
+        FT d (sigma + sqrt(20.)/3);
         return std::make_pair(sigma, d);
     }
     else if (face.idx() == 29) {
-        FT sigma(sqrt(265.)/6 + 1. + sqrt(2.) + 1.);
-        FT d (sigma + sqrt(26.)/3);
+        FT sigma(2.5);
+        FT d (sigma + FT(2.));
         return std::make_pair(sigma, d);
     }
     else {
@@ -74,7 +85,7 @@ std::pair<FT, FT> correct_geodesic_dists(face_descriptor face)
 
 void test_propagated_face_values(face_descriptor face, Surface_mesh_approximate_shortest_path& shopa)
 {
-    std::set<int> face_idx_set = {7, 10, 12, 24, 29};
+    std::set<int> face_idx_set = {7, 8, 11, 22, 26, 28, 29};
     if (face_idx_set.find(face.idx()) != face_idx_set.end())
     {
         Face_values face_values = shopa.get_face_values(face);
@@ -99,7 +110,11 @@ int main()
 
     std::cout << "running progatation test with bending geodesics" << std::endl;
     Surface_mesh_approximate_shortest_path shopa(mesh);
-    Point_3 source(FT(1./2.), FT(1./3.), FT(0.));  
+    Point_3 source(FT(1./2.), FT(1./3.), FT(0.));
+    shopa.add_target(Point_3(FT(5.0), FT(0.0), FT(0.0)));
+    shopa.add_target(Point_3(FT(4.0), FT(4.0), FT(0.0)));
+    shopa.add_target(Point_3(FT(1.3), FT(3.0), FT(0.0)));
+    shopa.add_source_point(Point_3(FT(2.5), FT(0.0), FT(0.0)));
     shopa.propagate_geodesic_source(source);
 
     // run tests

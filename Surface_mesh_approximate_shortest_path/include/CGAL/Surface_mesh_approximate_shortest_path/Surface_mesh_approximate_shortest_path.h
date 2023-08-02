@@ -69,12 +69,16 @@ public:
     typedef typename Traits::Construct_heuristic_point_2                        Construct_heuristic_point_2;
     typedef typename Traits::Edge_intersection_test                             Edge_intersection_test;
 
+    typedef Polygon_mesh_processing::Barycentric_coordinates<FT> Barycentric_coordinates;
+    typedef Polygon_mesh_processing::Face_location<Triangle_mesh, FT> Face_location;
+
 private:
     const Traits m_traits;
     Triangle_mesh& m_mesh;
 
     Edge_property_map m_edge_lengths;
     Face_values_map m_face_values;
+    std::vector<Face_location> m_target_face_locations;
 
     typedef std::queue<halfedge_descriptor> Halfedge_queue;
     Halfedge_queue m_A, m_B;
@@ -109,9 +113,6 @@ public:
         { return m_traits.construct_heuristic_point_2_object(); };
     Edge_intersection_test edge_intersection_test_object()
         { return m_traits.edge_intersection_test_object(); };
-
-    typedef Polygon_mesh_processing::Barycentric_coordinates<FT> Barycentric_coordinates;
-    typedef Polygon_mesh_processing::Face_location<Triangle_mesh, FT> Face_location;
 
     void add_source_point(Point_3 source_point)
     {
@@ -155,6 +156,36 @@ public:
 
         //std::cout << face << " with values " << m_face_values[face] << std::endl;
     };
+
+    void add_target(Point_3 target_point)
+    {
+        // locate source_point on mesh
+        // NOTE: if the point is not on the mesh, it will be projected onto the mesh
+        Face_location target_face_location = Polygon_mesh_processing::locate(target_point, m_mesh);
+
+        add_target(target_face_location);
+    };
+
+    void add_target(Face_location target_point)
+    {
+        m_target_face_locations.push_back(target_point);
+    }
+
+    std::pair<bool, int> belongs_to_target_face(halfedge_descriptor h)
+    {
+        std::pair<bool, int> is_in_target_face = { false, -1 };
+        face_descriptor face = m_mesh.face(h);
+        for (int i = 0; i < m_target_face_locations.size(); i++)
+        {
+            if (m_target_face_locations[i].first == face)
+            {
+                is_in_target_face.first = true;
+                is_in_target_face.second = i;
+            }
+        }
+
+        return is_in_target_face;
+    }
 
     //=== PROPAGATION ===//
 
@@ -300,14 +331,22 @@ public:
         std::pair<FT, FT> new_geodesic_dist = get_new_dist(intersection, h, C, S);
         face_descriptor face = m_mesh.face(m_mesh.opposite(h));
 
-        // check whether distance is smaller than current distance stored on face
-        //if (new_geodesic_dist.first + new_geodesic_dist.second
-        //    < m_face_values[face].sigma + m_face_values[face].d)
+        if (face.idx() == 19)
+        {
+            std::cout << "BEFORE UPDATE: " << m_face_values[face] << std::endl;
+            std::cout << "new geodesic distances: " << new_geodesic_dist.first << ", " << new_geodesic_dist.second << std::endl;
+        }
+
         if (new_geodesic_dist.second < m_face_values[face].d)
         {
             set_squared_vertex_distances(intersection, h, new_geodesic_dist, P, S);
 
             return true;
+        }
+
+        if (face.idx() == 19)
+        {
+            std::cout << "AFTER UPDATE: " << m_face_values[face] << std::endl;
         }
 
         return false;
@@ -330,8 +369,24 @@ public:
         Point_2 A(FT(0.), FT(0.));
         Point_2 B = unfolded_triangle.B;
         Point_2 P = unfolded_triangle.P;
-        Point_2 C = construct_centroid_object()(unfolded_triangle.B, P);
-        Point_2 Q = construct_heuristic_point_object()(m_mesh, opposite_halfedge, P, C, m_edge_lengths);
+
+        Point_2 C, Q;
+        std::pair<bool, int> is_target_face = belongs_to_target_face(opposite_halfedge);
+        if (is_target_face.first)
+        {
+            Barycentric_coordinates coords = m_target_face_locations[is_target_face.second].second;
+            std::array<int, 3> local_vert_idx = get_local_vertex_indices(opposite_halfedge);
+            // C becomes the target point and we also test visibility with respect to the target point (C = Q)
+            FT C1 = coords[local_vert_idx[1]] * B.x() + coords[local_vert_idx[2]] * P.x();
+            FT C2 = coords[local_vert_idx[2]] * P.y();
+            C = { C1, C2 };
+            Q = C;
+        }
+        else
+        {
+            C = construct_centroid_object()(B, P);
+            Q = construct_heuristic_point_object()(m_mesh, opposite_halfedge, P, C, m_edge_lengths);
+        }
         Point_2 S = reconstruct_source_point_in_triangle_tangent_space_object()(m_mesh, halfedge, m_edge_lengths, m_face_values);
 
         // intersection test
@@ -353,11 +408,11 @@ public:
             propagate_over_halfedge(h);
         }
 
-        //std::cout << "algorithm has concluded and the following face values were obtained:" << std::endl;
-        //for (face_descriptor f : faces(m_mesh))
-        //{
-        //    std::cout << m_face_values[f] << std::endl;
-        //}
+        std::cout << "algorithm has concluded and the following face values were obtained:" << std::endl;
+        for (face_descriptor f : faces(m_mesh))
+        {
+            std::cout << f.idx() << ":\t" <<  m_face_values[f] << std::endl;
+        }
     }
 
     void propagate_geodesic_source(Point_3 source)
