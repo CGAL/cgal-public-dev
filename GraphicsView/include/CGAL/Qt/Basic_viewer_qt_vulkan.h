@@ -1462,8 +1462,9 @@ namespace CGAL
             camera()->setType(CGAL::qglviewer::Camera::PERSPECTIVE);
             camera()->frame()->setConstraint(nullptr);
             camera_->setSceneBoundingBox({ -5.0f,-5.0f, -5.0f }, { 5.0f, 5.0f, 5.0f, });
-            camera_->setPosition({5.0f,5.0f,5.0f});
+            camera_->setPosition({5.0f,0.0f,0.0f});
             camera_->lookAt({ 0.0f,0.0f,0.0f });
+            camera_->setUpVector({0.0f,0.0f,1.0f});
             m_renderer->setSources(m_buffer_for_mono_points, m_buffer_for_faces, m_buffer_for_edges);
             //initialize_buffers();
             //set_camera_mode();

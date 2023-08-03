@@ -104,7 +104,12 @@ namespace CGAL {
 
     class CGAL_QT_EXPORT QVulkanViewer : public QWidget{
         Q_OBJECT
-
+    public:
+        QWidget* m_drawwidget;
+        QPaintEngine* paintEngine() const
+        {
+            return m_drawwidget->paintEngine();
+        }
     private:
         VulkanWindow* m_window;
         QWidget* m_wrapper;
@@ -767,6 +772,7 @@ namespace CGAL {
         /*! @name Mouse, keyboard and event handlers */
         //@{
     protected:
+        virtual void paintEvent(QPaintEvent* e);
         virtual void mousePressEvent(QMouseEvent*);
         virtual void mouseMoveEvent(QMouseEvent*);
         virtual void mouseReleaseEvent(QMouseEvent*);

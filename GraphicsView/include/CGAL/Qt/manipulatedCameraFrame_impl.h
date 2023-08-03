@@ -172,7 +172,7 @@ void ManipulatedCameraFrame::mouseMoveEvent(QMouseEvent *const event,
   switch (action_) {
   case TRANSLATE: {
     const QPoint delta = prevPos_ - event->pos();
-    Vec trans(delta.x(), -delta.y(), 0.0);
+    Vec trans(delta.x(), delta.y(), 0.0);
     // Scale to fit the screen mouse displacement
     switch (camera->type()) {
     case Camera::PERSPECTIVE:
@@ -286,7 +286,7 @@ void ManipulatedCameraFrame::mouseMoveEvent(QMouseEvent *const event,
     if (dir == 1)
       trans.setValue(prevPos_.x() - event->position().x(), 0.0, 0.0);
     else if (dir == -1)
-      trans.setValue(0.0, event->position().y() - prevPos_.y(), 0.0);
+      trans.setValue(0.0, prevPos_.y() - event->position().y(), 0.0);
 
     switch (camera->type()) {
     case Camera::PERSPECTIVE:

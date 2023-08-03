@@ -107,110 +107,7 @@ namespace CGAL {
     public:
         Polyhedron_renderer(QVulkanWindow* w, qglviewer::Camera* cam) : m_window(w), m_buffVertex(nullptr), m_buffVertexMem(nullptr), m_descPool(nullptr), m_descSetLayout(nullptr), m_pipeline(nullptr), m_devFuncs(nullptr), m_pipelineCache(nullptr), m_pipelineLayout(nullptr), m_proj(QMatrix4x4()), m_rotation(0.0f), m_descSet(), m_uniformBufferInfo(), camera(cam) {}
 
-        bool eventFilter(QObject* obj, QEvent* e) {
-            qDebug() << "Object: " << obj << ", Event: " << e << '\n';
-
-            return false;
-        }
-
         void initResources() override {
-            //m_window->availablePhysicalDevices();
-            //std::vector<float> vData{};
-            //std::unordered_map<Vertex, uint32_t> uniqueVertices{};
-            //for (typename CGAL_POLY_TYPE::Face_iterator i = m_poly.facets_begin(); i != m_poly.facets_end(); i++) {
-            //    typename CGAL_POLY_TYPE::Halfedge_around_facet_circulator j = i->facet_begin();
-            //    typename CGAL_POLY_TYPE::Halfedge_around_facet_circulator k = j;
-            //    k++;
-            //    do {
-            //        Vertex v1{ {j->vertex()->point().x(),j->vertex()->point().y(),j->vertex()->point().z()},{0.5f,0.5f,1.0f } };
-            //        if (uniqueVertices.count(v1) == 0) {
-            //            uniqueVertices[v1] = static_cast<uint32_t>(vertices.size());
-            //            vertices.push_back(v1);
-            //        }
-            //        indices.push_back(uniqueVertices[v1]);
-
-            //        Vertex v2{ {k->vertex()->point().x(),k->vertex()->point().y(),k->vertex()->point().z()},{0.5f,0.5f,1.0f } };
-            //        if (uniqueVertices.count(v2) == 0) {
-            //            uniqueVertices[v2] = static_cast<uint32_t>(vertices.size());
-            //            vertices.push_back(v2);
-            //        }
-            //        indices.push_back(uniqueVertices[v2]);
-            //        k++;
-            //        Vertex v3{ {k->vertex()->point().x(),k->vertex()->point().y(),k->vertex()->point().z()},{0.5f,0.5f,1.0f } };
-            //        if (uniqueVertices.count(v3) == 0) {
-            //            uniqueVertices[v3] = static_cast<uint32_t>(vertices.size());
-            //            vertices.push_back(v3);
-            //        }
-            //        indices.push_back(uniqueVertices[v3]);
-            //    } while (k != i->facet_begin());
-            //}
-            //for (typename CGAL_POLY_TYPE::Face_iterator i = m_poly.facets_begin(); i != m_poly.facets_end(); i++) {
-            //    typename CGAL_POLY_TYPE::Halfedge_around_facet_circulator j = i->facet_begin();
-            //    do {
-            //        Vertex v1{ {j->vertex()->point().x(),j->vertex()->point().y(),j->vertex()->point().z()},{0.0f,0.0f,0.0f} };
-            //        indicesGraph.push_back(uniqueVertices[v1]);
-            //        j++;
-            //        Vertex v2{ {j->vertex()->point().x(),j->vertex()->point().y(),j->vertex()->point().z()},{0.0f,0.0f,0.0f} };
-            //        indicesGraph.push_back(uniqueVertices[v2]);
-            //    } while (j != i->facet_begin());
-            //}
-            //for (int i = 0; i < indices.size(); i+=3) {
-            //    glm::vec3 v1 = vertices[indices[i]].pos;
-            //    glm::vec3 v2 = vertices[indices[i+1]].pos;
-            //    glm::vec3 v3 = vertices[indices[i+2]].pos;
-            //    //printf("Triangle %i: \n\t v1: %f, %f, %f\n\t v2: %f, %f, %f\n\t v3: %f, %f, %f\n",i/3, v1.x, v1.y, v1.z, v2.x, v2.y, v2.z, v3.x, v3.y, v3.z);
-            //}
-            /*
-            for (typename CGAL_POLY_TYPE::Face_iterator i = m_poly.facets_begin(); i != m_poly.facets_end(); i++) {
-                typename CGAL_POLY_TYPE::Halfedge_around_facet_circulator j = i->facet_begin();
-                typename CGAL_POLY_TYPE::Halfedge_around_facet_circulator k = j;
-                k++;
-                do {
-
-                    //printf("%f, %f, %f, 1.0f, 1.0f, 1.0f,\n", j->vertex()->point().x(), j->vertex()->point().y(), j->vertex()->point().z());
-                    vData.push_back(j->vertex()->point().x());
-                    vData.push_back(j->vertex()->point().y());
-                    vData.push_back(j->vertex()->point().z());
-                    vData.push_back(1.0f);
-                    vData.push_back(1.0f);
-                    vData.push_back(1.0f);
-                    printf("%f, %f, %f, 1.0f, 1.0f, 1.0f,\n", k->vertex()->point().x(), k->vertex()->point().y(), k->vertex()->point().z());
-                    vData.push_back(k->vertex()->point().x());
-                    vData.push_back(k->vertex()->point().y());
-                    vData.push_back(k->vertex()->point().z());
-                    vData.push_back(1.0f);
-                    vData.push_back(1.0f);
-                    vData.push_back(1.0f);
-                    ++k;
-                    printf("%f, %f, %f, 1.0f, 1.0f, 1.0f,\n", k->vertex()->point().x(), k->vertex()->point().y(), k->vertex()->point().z());
-                    vData.push_back(k->vertex()->point().x());
-                    vData.push_back(k->vertex()->point().y());
-                    vData.push_back(k->vertex()->point().z());
-                    vData.push_back(1.0f);
-                    vData.push_back(1.0f);
-                    vData.push_back(1.0f);
-                } while (k != i->facet_begin());
-            }
-            */
-            //for (auto f : faces(m_poly)) {
-            //    I_HalfedgeDS_facet_circ<Iterator_from_circulator,  v_start = f->facet_begin();
-            //    //Halfedge_around_face_circulator<PolyhedronTraits_3> v_start = f->facet_begin();
-            //    I_HalfedgeDS_facet_circ v = v_start;
-            //    do
-            //    {
-            //        printf("a possible vertex in a face : %f, %f, %f \n", v->point().x(), v->point().y(), v->point().z());
-            //    } while (++v != v_start);
-            //}
-            //for (auto v : vertices(m_poly))
-            //{
-            //    printf("a possible vertex position: %f, %f, %f \n", v->point().x(), v->point().y(), v->point().z());
-            //    vData.push_back(v->point().x() / 5.0f);
-            //    vData.push_back(v->point().y() / 5.0f);
-            //    vData.push_back(v->point().z() / 5.0f);
-            //    vData.push_back(1.0f);
-            //    vData.push_back(1.0f);
-            //    vData.push_back(1.0f);
-            //}
 
             qDebug("initResources call");
 
@@ -546,10 +443,11 @@ namespace CGAL {
                 mat2[i] = static_cast<float>(mat[i]);
             }
             //m_proj = QMatrix4x4(mat2);
-            m_proj = m_window->clipCorrectionMatrix();
+            //m_proj = m_window->clipCorrectionMatrix();
             const QSize sz = m_window->swapChainImageSize();
-            m_proj.perspective(45.0f, sz.width() / (float)sz.height(), 0.01f, 100.0f);
-            m_proj.translate(0, 0, -20);
+            //m_proj.perspective(45.0f, sz.width() / (float)sz.height(), 0.01f, 100.0f);
+            //m_proj.translate(0, 0, -20);
+            camera->setAspectRatio(sz.width() / (float)sz.height());
         }
 
         void releaseSwapChainResources() override {
@@ -830,17 +728,6 @@ namespace CGAL {
                 //mat2[i] = static_cast<float>(mat[i]);
                 m.data()[i] = (float)mat[i];
             }
-            //m_proj = QMatrix4x4(mat2);
-            //m = m.transposed();
-            //m.translate(0, 0, -20);
-            //m.rotate(m_rotation, 0, 1, 0);
-            /*for (int i = 0; i < 4; i++) {
-                for (int j = 0; j < 4; j++) {
-                    printf("%f\t",m(i,j));
-                }
-                printf("\n");
-            }
-            printf("\n");*/
             memcpy(p, m.constData(), 16 * sizeof(float));
             m_devFuncs->vkUnmapMemory(dev, m_buffVertexMem);
 
@@ -865,15 +752,7 @@ namespace CGAL {
             sc.extent.height = vp.height;
             m_devFuncs->vkCmdSetScissor(cmdBuf, 0, 1, &sc);
 
-            if (renderWire) {
-                //m_devFuncs->vkCmdBindIndexBuffer(cmdBuf, m_buffIndexGraph, 0, VK_INDEX_TYPE_UINT32);
-                m_devFuncs->vkCmdBindPipeline(cmdBuf, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline_wire);
-                m_devFuncs->vkCmdSetLineWidth(cmdBuf, 1.0f);
-                m_devFuncs->vkCmdBindVertexBuffers(cmdBuf, 0, 1, &m_buffVertexGraph, &vbOffset);
-                m_devFuncs->vkCmdDraw(cmdBuf, static_cast<uint32_t>(verticesGraph.size()), 1, 0, 0);
-                //m_devFuncs->vkCmdDrawIndexed(cmdBuf, static_cast<uint32_t>(indicesGraph.size()), 1, 0, 0, 0);
-            }
-            if(renderFace){
+            if (renderFace) {
                 //m_devFuncs->vkCmdBindIndexBuffer(cmdBuf, m_buffIndex, 0, VK_INDEX_TYPE_UINT32);
                 m_devFuncs->vkCmdBindPipeline(cmdBuf, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline);
                 m_devFuncs->vkCmdSetLineWidth(cmdBuf, 3.0f);
@@ -881,6 +760,14 @@ namespace CGAL {
                 //m_devFuncs->vkCmdDrawIndexed(cmdBuf, static_cast<uint32_t>(indices.size()), 1, 0, 0, 0);
                 m_devFuncs->vkCmdBindVertexBuffers(cmdBuf, 0, 1, &m_buffVertexFaces, &vbOffset);
                 m_devFuncs->vkCmdDraw(cmdBuf, static_cast<uint32_t>(verticesFaces.size()), 1, 0, 0);
+            }
+            if (renderWire) {
+                //m_devFuncs->vkCmdBindIndexBuffer(cmdBuf, m_buffIndexGraph, 0, VK_INDEX_TYPE_UINT32);
+                m_devFuncs->vkCmdBindPipeline(cmdBuf, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline_wire);
+                m_devFuncs->vkCmdSetLineWidth(cmdBuf, 1.0f);
+                m_devFuncs->vkCmdBindVertexBuffers(cmdBuf, 0, 1, &m_buffVertexGraph, &vbOffset);
+                m_devFuncs->vkCmdDraw(cmdBuf, static_cast<uint32_t>(verticesGraph.size()), 1, 0, 0);
+                //m_devFuncs->vkCmdDrawIndexed(cmdBuf, static_cast<uint32_t>(indicesGraph.size()), 1, 0, 0, 0);
             }
             if (renderPoints) {
                 //m_devFuncs->vkCmdBindIndexBuffer(cmdBuf, m_buffIndex, 0, VK_INDEX_TYPE_UINT32);

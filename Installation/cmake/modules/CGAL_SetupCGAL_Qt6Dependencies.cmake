@@ -31,6 +31,7 @@ find_package(Qt6 QUIET COMPONENTS Widgets OpenGL OpenGLWidgets OPTIONAL_COMPONEN
 
 
 if(Vulkan_FOUND)
+  option(CGAL_USE_VULKAN "Option to use Vulkan or OpenGL" OFF)
   message( STATUS "NOTICE: Vulkan found. Using Vulkan API instead of OpenGL")
 endif()
 
@@ -90,7 +91,10 @@ if(NOT CGAL_Qt6_MISSING_DEPS)
     endif()
     if (Vulkan_FOUND)
       target_link_libraries(CGAL_Qt6_moc_and_resources PUBLIC Vulkan::Vulkan)
-      set_target_properties(CGAL_Qt6_moc_and_resources PROPERTIES INTERFACE_COMPILE_DEFINITIONS "CGAL_USE_VULKAN")
+      #set_target_properties(CGAL_Qt6_moc_and_resources PROPERTIES INTERFACE_COMPILE_DEFINITIONS "CGAL_USE_VULKAN")
+      if(CGAL_USE_VULKAN)
+        add_compile_definitions(CGAL_USE_VULKAN)
+      endif()
     endif()
 
     add_library(CGAL::CGAL_Qt6_moc_and_resources ALIAS CGAL_Qt6_moc_and_resources)

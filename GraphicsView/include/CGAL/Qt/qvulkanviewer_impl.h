@@ -166,19 +166,13 @@ namespace CGAL {
         m_window = new VulkanWindow(camera_);
         m_wrapper = QWidget::createWindowContainer(m_window, this);
         QVBoxLayout* layout = new QVBoxLayout;
-        /*layout->setContentsMargins(QMargins(0,0,0,0));
-        layout->setSpacing(0);
-        QSpacerItem* spacer = new QSpacerItem(0, 0, QSizePolicy::Expanding, QSizePolicy::Expanding);
-        layout->addSpacerItem(spacer);*/
         m_wrapper->setFocusPolicy(::Qt::FocusPolicy::NoFocus);
+        //QPushButton* btn = new QPushButton("max");
+        //layout->addWidget(new QPushButton("max"));
+        m_drawwidget = new QWidget();
+        layout->addWidget(m_drawwidget);
         layout->addWidget(m_wrapper);
         setLayout(layout);
-        //m_window->installEventFilter(this);
-        //m_window->installEventFilter(this);
-        //m_wrapper->installEventFilter(m_window);
-        //this->installEventFilter(this);
-        //this->installEventFilter(m_window);
-        //this->installEventFilter(m_wrapper);
         m_inst.setLayers(QByteArrayList() << "VK_LAYER_KHRONOS_validation");
         if (!m_inst.create()) {
             qFatal("Failed to create a Vulkan instance: %d", m_inst.errorCode());
@@ -498,6 +492,33 @@ namespace CGAL {
         //glEnable(GL_DEPTH_TEST);
     }
 
+    CGAL_INLINE_FUNCTION
+        void CGAL::QVulkanViewer::paintEvent(QPaintEvent* e) {
+        // FPS computation
+        const unsigned int maxCounter = 20;
+        if (++fpsCounter_ == maxCounter) {
+            f_p_s_ = 1000.0 * maxCounter / fpsTime_.restart();
+            fpsString_ = tr("%1Hz", "Frames per seconds, in Hertz")
+                .arg(f_p_s_, 0, 'f', ((f_p_s_ < 10.0) ? 1 : 0));
+            fpsCounter_ = 0;
+        }
+        //displayFPS();
+        message_ = "hello worlds";
+        //QPainter q(m_drawwidget->pa);
+        QPainter painterq(m_drawwidget);
+        painterq.setPen(::Qt::blue);
+        painterq.setFont(QFont("Arial", 30));
+        painterq.drawText(rect(), ::Qt::AlignCenter, message_);
+        painterq.end();
+        //glDisable(GL_DEPTH_TEST);
+
+        //message_ = "hello worlds";
+        //drawText(10, height() - 10, message_);
+        /*if (FPSIsDisplayed())
+            displayFPS();
+        if (displayMessage_)
+            drawText(10, height() - 10, message_);*/
+    }
 
     /*! Draws a simplified version of the scene to guarantee interactive camera
     displacements.
@@ -2252,12 +2273,12 @@ namespace CGAL {
             break;
         case qglviewer::MOVE_CAMERA_UP:
             camera()->frame()->translate(camera()->frame()->inverseTransformOf(
-                qglviewer::Vec(0.0, 10.0 * camera()->flySpeed(), 0.0)));
+                qglviewer::Vec(0.0, -10.0 * camera()->flySpeed(), 0.0)));
             update();
             break;
         case qglviewer::MOVE_CAMERA_DOWN:
             camera()->frame()->translate(camera()->frame()->inverseTransformOf(
-                qglviewer::Vec(0.0, -10.0 * camera()->flySpeed(), 0.0)));
+                qglviewer::Vec(0.0, 10.0 * camera()->flySpeed(), 0.0)));
             update();
             break;
 

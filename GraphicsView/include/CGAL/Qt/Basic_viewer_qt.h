@@ -220,6 +220,8 @@ public:
 
     for (unsigned int i=0; i<NB_VAO_BUFFERS; ++i)
       vao[i].destroy();
+
+    doneCurrent();
   }
 
   void set_draw_vertices(bool b) {
