@@ -15,7 +15,7 @@
 
 #include <iostream>
 #include <math.h>
-
+#include <QtGlobal>
 // Included by all files as vec.h is at the end of the include hierarchy
 #include <CGAL/export/Qt.h>
 

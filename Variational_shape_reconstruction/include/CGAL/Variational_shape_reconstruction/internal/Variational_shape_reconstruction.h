@@ -62,7 +62,9 @@ class Variational_shape_reconstruction
 
         m_cluster = std::make_shared<Clustering>(pointset, m_num_knn,euclidean_distance_weight);
         
-        init_random_generators();
+        //init_random_generators();
+        //init_random_generators_kmeanspp();
+        init_random_generators_kmeans_farthest();
         m_cluster->initialize_qem_map(m_tree);
         m_cluster->initialize_vertex_qem(m_tree,m_generators);    
     }
@@ -117,7 +119,43 @@ class Variational_shape_reconstruction
         std::cerr << "Random poles in " << std::chrono::duration_cast<std::chrono::microseconds>(end - begin).count() << "[us]" << std::endl;
         
     }
-      void init_random_generators_kmeanspp()
+    void init_random_generators_kmeanspp()
+    {
+        std::vector<int> num_range(pointset_.size());
+        std::iota(num_range.begin(), num_range.end(), 0);
+        std::set<int> selected_indices;
+        // one generator for k means ++
+        for(int i = 0; i < 1; i++)
+            selected_indices.insert(num_range[i]);
+            
+        for(auto &elem: selected_indices) {
+            m_generators.push_back(elem);
+        }   
+        std::mt19937 gen;
+        for(int i = 1; i < m_generator_count;i++)
+        {
+            std::vector<float> distance_list;
+            for( Pointset::const_iterator pointset_it = pointset_.begin(); pointset_it != pointset_.end(); ++ pointset_it )
+            {
+                const auto point = pointset_.point(*pointset_it);
+                float distance = std::numeric_limits<float>::max();
+                // we iterate over previously selected generators
+                for(int j = 0 ; j < m_generators.size();j++)
+                {
+                    float distance_to_generator = CGAL::squared_distance(pointset_.point(m_generators[j]),point);
+                    distance = std::min(distance, distance_to_generator);
+                }
+                distance_list.push_back(distance);
+            }
+            std::discrete_distribution<int> dist(std::begin(distance_list), std::end(distance_list));
+            gen.seed(time(0));
+            size_t index_max_distance = dist(gen);
+
+            m_generators.push_back(index_max_distance);
+        }
+
+    }
+      void init_random_generators_kmeans_farthest()
     {
         std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
 

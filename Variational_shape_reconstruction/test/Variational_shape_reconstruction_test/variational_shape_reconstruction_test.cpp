@@ -326,7 +326,7 @@ void test_generators_qem()
 int main(int argc, char** argv)
 {	
     const std::vector<std::string> files_to_test{
-        "double_sphere",
+        //"double_sphere",
         "piece_meca", //ok
         "armjoin", // cluster ok not recons
         "guitar", // cluster ok not recons
@@ -339,9 +339,9 @@ int main(int argc, char** argv)
         "qtr_piston",// cluster ok recons weird
         "hand1" // ok
     };   
-    int n = 0;
+    int n = 1;
     //test_sphere();
-    test_generators_qem();
+    //test_generators_qem();
     //test_point_set("qtr_piston");
     
     for(int i = 0 ; i < n ; i ++)
