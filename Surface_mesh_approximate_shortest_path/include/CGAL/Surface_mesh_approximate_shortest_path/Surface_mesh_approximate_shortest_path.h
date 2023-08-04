@@ -322,7 +322,7 @@ public:
         }
     }
 
-    bool update_face_values(intersection_result intersection,
+    std::pair<bool, FT> update_face_values(intersection_result intersection,
                             halfedge_descriptor h,
                             Point_2 C,
                             Point_2 P,
@@ -341,7 +341,7 @@ public:
         {
             set_squared_vertex_distances(intersection, h, new_geodesic_dist, P, S);
 
-            return true;
+            return { true, new_geodesic_dist.second };
         }
 
         if (face.idx() == 19)
@@ -349,16 +349,26 @@ public:
             std::cout << "AFTER UPDATE: " << m_face_values[face] << std::endl;
         }
 
-        return false;
+        return { false, FT(-1.) };
     }
 
-    void enqueue_new_halfedges(halfedge_descriptor h)
+    void enqueue_new_halfedges(halfedge_descriptor h, FT new_geodesic_dist, int iter)
     {
-        m_A.push(m_mesh.next(h));
-        m_A.push(m_mesh.prev(h));
+        FT dist_i(iter);
+
+        if (new_geodesic_dist < dist_i)
+        {
+            m_A.push(m_mesh.next(h));
+            m_A.push(m_mesh.prev(h));
+        }
+        else
+        {
+            m_B.push(m_mesh.next(h));
+            m_B.push(m_mesh.prev(h));
+        }
     }
 
-    void propagate_over_halfedge(halfedge_descriptor halfedge)
+    void propagate_over_halfedge(halfedge_descriptor halfedge, int iter)
     {
         halfedge_descriptor opposite_halfedge = m_mesh.opposite(halfedge);
         if (m_mesh.is_border(opposite_halfedge)) { return; }
@@ -391,8 +401,8 @@ public:
 
         // intersection test
         auto intersection = edge_intersection_test_object()(S, Q, A, B);
-        auto update_result = update_face_values(intersection, halfedge, C, P, S);
-        if (update_result) { enqueue_new_halfedges(opposite_halfedge); }
+        std::pair<bool, FT> update_result = update_face_values(intersection, halfedge, C, P, S);
+        if (update_result.first) { enqueue_new_halfedges(opposite_halfedge, update_result.second, iter); }
     }
 
     void propagate_geodesic_source(Face_location source)
@@ -400,12 +410,24 @@ public:
         // initialise the algorithm
         add_source_point(source);
 
-        // iterate over halfedges in queue and update face values
-        while (!m_A.empty()) {
-            halfedge_descriptor h = m_A.front();
-            m_A.pop();
+        int iter = 1;
+        while (!m_A.empty())
+        {
+            std::cout << "iteration " << iter << std::endl;
+            std::cout << "updating faces: ";
+            // iterate over halfedges in queue and update face values
+            while (!m_A.empty()) {
+                halfedge_descriptor h = m_A.front();
+                m_A.pop();
 
-            propagate_over_halfedge(h);
+                propagate_over_halfedge(h, iter);
+                std::cout << m_mesh.face(h) << "\t" << std::endl;
+            }
+
+            m_A = m_B;
+            std::queue<halfedge_descriptor> empty;
+            std::swap( m_B, empty );
+            iter++;
         }
 
         std::cout << "algorithm has concluded and the following face values were obtained:" << std::endl;
