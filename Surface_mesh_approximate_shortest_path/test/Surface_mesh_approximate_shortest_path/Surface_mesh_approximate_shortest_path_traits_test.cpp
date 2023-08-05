@@ -20,6 +20,9 @@ typedef Graph_traits::face_descriptor face_descriptor;
 typedef CGAL::Surface_mesh_approximate_shortest_path_traits<Kernel, Surface_mesh>   Traits;
 typedef CGAL::Surface_mesh_approximate_shortest_path<Traits>                        Surface_mesh_approximate_shortest_path;
 
+typedef Surface_mesh_approximate_shortest_path::unfold_triangle_3           unfold_triangle_3;
+typedef Surface_mesh_approximate_shortest_path::Construct_heuristic_point_2    Construct_heuristic_point_2;
+
 template <typename FT, typename FT2>
 void CHECK_EQUAL(const FT& a, const FT2& b)
 {
@@ -62,7 +65,7 @@ void test_unfolding()
 
     // halfedge h1
     halfedge_descriptor h1(1);
-    auto untri_h1 = appr_shortest_path.unfold_triangle_3_along_halfedge_object()(mesh, h1, edge_lengths);
+    auto untri_h1 = unfold_triangle_3()(mesh, h1, edge_lengths);
     CHECK_CLOSE(untri_h1.B.x(), FT(1.5), FT(1e-10));
     CHECK_CLOSE(untri_h1.B.y(), FT(0.), FT(1e-10));
     CHECK_CLOSE(untri_h1.P.x(), FT(1.), FT(1e-10));
@@ -70,7 +73,7 @@ void test_unfolding()
 
     // halfedge h3
     halfedge_descriptor h3(3);
-    auto untri_h3 = appr_shortest_path.unfold_triangle_3_along_halfedge_object()(mesh, h3, edge_lengths);
+    auto untri_h3 = unfold_triangle_3()(mesh, h3, edge_lengths);
     CHECK_CLOSE(untri_h3.B.x(), CGAL::sqrt(FT(6.5)), FT(1e-10));
     CHECK_CLOSE(untri_h3.B.y(), FT(0.), FT(1e-10));
     FT Px_h3(1.5/(2.*CGAL::sqrt(6.5)));
@@ -79,7 +82,7 @@ void test_unfolding()
 
     // halfedge h1
     halfedge_descriptor h5(5);
-    auto untri_h5 = appr_shortest_path.unfold_triangle_3_along_halfedge_object()(mesh, h5, edge_lengths);
+    auto untri_h5 = unfold_triangle_3()(mesh, h5, edge_lengths);
     CHECK_CLOSE(untri_h5.B.x(), CGAL::sqrt(FT(7.25)), FT(1e-10));
     CHECK_CLOSE(untri_h5.B.y(), FT(0.), FT(1e-10));
     FT Px_h5(11.5/(2.*CGAL::sqrt(7.25)));
@@ -98,19 +101,20 @@ void test_heuristic_point_construction()
 
     // halfedge h1
     halfedge_descriptor h1(1);
-    auto Q_h1 = appr_shortest_path.construct_heuristic_point_object()(mesh, h1, edge_lengths);
+    //auto Q_h1 = appr_shortest_path.construct_heuristic_point_object()(mesh, h1, edge_lengths);
+    auto Q_h1 = Construct_heuristic_point_2()(mesh, h1, edge_lengths);
     CHECK_CLOSE(Q_h1.x(), FT(0.83333333333333), FT(1e-10));
     CHECK_CLOSE(Q_h1.y(), FT(0.83333333333333), FT(1e-10));
 
     // halfedge h3
     halfedge_descriptor h3(3);
-    auto Q_h3 = appr_shortest_path.construct_heuristic_point_object()(mesh, h3, edge_lengths);
+    auto Q_h3 = Construct_heuristic_point_2()(mesh, h3, edge_lengths);
     CHECK_CLOSE(Q_h3.x(), FT(0.66616074204193), FT(1e-10));
     CHECK_CLOSE(Q_h3.y(), FT(0.91289120453441), FT(1e-10));
 
     // halfedge h1
     halfedge_descriptor h5(5);
-    auto Q_h5 = appr_shortest_path.construct_heuristic_point_object()(mesh, h5, edge_lengths);
+    auto Q_h5 = Construct_heuristic_point_2()(mesh, h5, edge_lengths);
     CHECK_CLOSE(Q_h5.x(), FT(1.83610877748221), FT(1e-10));
     CHECK_CLOSE(Q_h5.y(), FT(0.86438395711515), FT(1e-10));
 }
@@ -138,43 +142,9 @@ int main()
     }
 
     std::cout << "running traits tests" << std::endl;
-    //test_unfolding();
-    //test_heuristic_point_construction();
+    test_unfolding();
+    test_heuristic_point_construction();
     std::cout << "tests successful" << std::endl << std::endl;
-
-    // check vertices
-    for (vertex_descriptor v : vertices(mesh))
-    {
-        std::cout << "vertex " << v << " at position " << mesh.point(v) << std::endl;
-    }
-
-    // check halfedges
-    for (halfedge_descriptor h : halfedges(mesh))
-    {
-        std::cout << "halfedge " << h << " with source vertex " << mesh.source(h)
-                  << " and target vertex " << mesh.target(h) << " is in face " << mesh.face(h)
-                  << "." << std::endl;
-
-    }
-
-    // check faces
-    for (face_descriptor f : faces(mesh))
-    {
-        halfedge_descriptor h0 = mesh.halfedge(f);
-        std::cout << "face " << f << " with vertices";
-        for (vertex_descriptor fv : mesh.vertices_around_face(h0))
-        {
-            std::cout << " " << fv;
-        }
-        std::cout << "." << std::endl;
-    }
-
-    // iterate over the halfedge and check the unfolding of the respective opposite triangles
-    Surface_mesh_approximate_shortest_path shopa(mesh);
-    for (halfedge_descriptor h : halfedges(mesh))
-    {
-        std::cout << "unfolded along halfedge " << h << std::endl;
-        auto Q = shopa.construct_heuristic_point_object()(mesh, h, shopa.Get_edge_length_map());
-        std::cout << std::endl;
-    }
 }
+
+
