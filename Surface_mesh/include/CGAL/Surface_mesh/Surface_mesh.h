@@ -518,6 +518,8 @@ private: //------------------------------------------------------ iterator types
                                         Index_,
                                         std::random_access_iterator_tag,
                                         Index_> Facade;
+
+        typedef Index_ Index_value_type;
     public:
         Index_iterator() : hnd_(), mesh_(nullptr) {}
         Index_iterator(const Index_& h, const Surface_mesh* m)

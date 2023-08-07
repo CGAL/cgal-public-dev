@@ -31,9 +31,9 @@ namespace CGAL {
 template<class K, class Index>
 struct Triangle_trajectory {
 
-    typedef typename K::FT                              FT;
-    typedef typename K::Point_3                         Point;
-    typedef typename K::Iso_cuboid_3                    Iso_cuboid_3;
+    typedef typename K::FT              FT;
+    typedef typename K::Point_3         Point;
+    typedef typename K::Iso_cuboid_3    Iso_cuboid_3;
 
     struct Extrema {
         Point min_point;

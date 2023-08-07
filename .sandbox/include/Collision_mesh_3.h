@@ -33,8 +33,11 @@ namespace CGAL {
         typedef typename Base::Vertex_around_face_range     Vertex_around_face_range;
         typedef typename Base::size_type                    size_type;
 
-        typedef decltype(Base().template add_property_map<Vertex_index, Vector>("v:velocity").first)    Vector_map;
-        typedef decltype(Base().template add_property_map<Vertex_index, Point>("v:next_point").first)   Point_map;
+        typedef decltype(Base().template add_property_map<Vertex_index, Vector>("v:velocity").first)        Vector_map;
+        typedef decltype(Base().template add_property_map<Vertex_index, Point>("v:next_point").first)       Point_map;
+        typedef decltype(Base().template add_property_map<Vertex_index, CGAL::IO::Color>("v:color").first)  Vertex_color_map;
+        // typedef decltype(Base().template add_property_map<Edge_index, CGAL::IO::Color>("e:color").first)    Edge_color_map;
+        typedef decltype(Base().template add_property_map<Face_index, CGAL::IO::Color>("f:color").first)    Face_color_map;
 
         typedef typename boost::graph_traits<Collision_mesh<K>>::vertex_descriptor      vertex_descriptor;
         typedef typename boost::graph_traits<Collision_mesh<K>>::edge_descriptor        edge_descriptor;
@@ -44,6 +47,9 @@ namespace CGAL {
     private:
         Vector_map vvelocity_;
         Point_map vnext_point_;
+        Vertex_color_map vcolor_;
+        // Edge_color_map ecolor_;
+        Face_color_map fcolor_;
     
     public:
         Collision_mesh();
@@ -62,6 +68,8 @@ namespace CGAL {
 
         const Point& next_point(Vertex_index v) const;
         Point& next_point(Vertex_index v);
+
+        void color(const Face_index& fi, CGAL::IO::Color c);
   };
 
     // CONSTRUCTORS
@@ -73,9 +81,16 @@ namespace CGAL {
     Collision_mesh<K>::Collision_mesh(const Base& surface_mesh) : Base{surface_mesh} { 
         vvelocity_ = add_property_map<Vertex_index, Vector>("v:velocity").first;
         vnext_point_ = add_property_map<Vertex_index, Point>("v:next_point").first;
+        vcolor_ = add_property_map<Vertex_index, CGAL::IO::Color>("v:color").first;
         for(const vertex_descriptor& vd : vertices()){
             put(vvelocity_, vd, Vector(0, 0, 0));
             put(vnext_point_, vd, point(vd));
+            put(vcolor_, vd, CGAL::IO::black());
+        }
+
+        fcolor_ = add_property_map<Face_index, CGAL::IO::Color>("f:color").first;
+        for( const face_descriptor& fd : faces()){
+            put(fcolor_, fd, CGAL::IO::white());
         }
     }
 
@@ -83,9 +98,16 @@ namespace CGAL {
     Collision_mesh<K>::Collision_mesh(Base&& surface_mesh) : Base{std::move(surface_mesh)} { 
         vvelocity_ = add_property_map<Vertex_index, Vector>("v:velocity").first;
         vnext_point_ = add_property_map<Vertex_index, Point>("v:next_point").first;
+        vcolor_ = add_property_map<Vertex_index, CGAL::IO::Color>("v:color").first;
         for(const vertex_descriptor& vd : vertices()){
             put(vvelocity_, vd, Vector(0, 0, 0));
             put(vnext_point_, vd, point(vd));
+            put(vcolor_, vd, CGAL::IO::black());
+        }
+
+        fcolor_ = add_property_map<Face_index, CGAL::IO::Color>("f:color").first;
+        for( const face_descriptor& fd : faces()){
+            put(fcolor_, fd, CGAL::IO::white());
         }
     }
 
@@ -97,6 +119,8 @@ namespace CGAL {
         : Base{std::move(collision_mesh)}
         , vnext_point_(std::move(collision_mesh.vnext_point_))
         , vvelocity_(std::move(collision_mesh.vvelocity_))
+        , vcolor_(std::move(collision_mesh.vcolor_))
+        , fcolor_(std::move(collision_mesh.fcolor_))
     {}
 
 
@@ -110,6 +134,8 @@ namespace CGAL {
         {
             vnext_point_ = property_map<Vertex_index, Point>("v:next_point").first;
             vvelocity_   = property_map<Vertex_index, Vector>("v:velocity").first;
+            vcolor_      = property_map<Vertex_index, CGAL::IO::Color>("v:color").first;
+            fcolor_      = property_map<Face_index, CGAL::IO::Color>("f:color").first;
         }
         return *this;
     }
@@ -118,8 +144,12 @@ namespace CGAL {
     Collision_mesh<K>& Collision_mesh<K>::operator=(Collision_mesh<K>&& collision_mesh)
     {
         Base::operator=(std::move(collision_mesh));
-        vnext_point_ = std::move(collision_mesh.vnext_point_);
-        vvelocity_ = std::move(collision_mesh.vvelocity_);
+
+        vnext_point_    = std::move(collision_mesh.vnext_point_);
+        vvelocity_      = std::move(collision_mesh.vvelocity_);
+        vcolor_         = std::move(collision_mesh.vcolor_);
+        fcolor_         = std::move(collision_mesh.fcolor_);
+
         return *this;
     }
 
@@ -137,6 +167,12 @@ namespace CGAL {
 
     template <class K>
     typename K::Point_3& Collision_mesh<K>::next_point(Vertex_index v) { return vnext_point_[v]; }
+
+    template <class K>
+    void Collision_mesh<K>::color(const Face_index& fi, CGAL::IO::Color c) {
+        put(fcolor_, fi, c);
+        return;
+    }
 
 } // namespace CGAL
 
