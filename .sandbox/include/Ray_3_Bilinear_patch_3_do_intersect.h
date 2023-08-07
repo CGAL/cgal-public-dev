@@ -14,6 +14,11 @@
 #define CGAL_INTERNAL_INTERSECTIONS_RAY_3_BILINEAR_PATCH_3_DO_INTERSECT_H
 
 #include <iostream>
+
+#include <Bilinear_patch_3.h>
+#include <Collision_type.h>
+#include <Collision_function.h>
+
 #include <CGAL/enum.h>
 #include <CGAL/kernel_assertions.h>
 #include <CGAL/intersection_3.h>
@@ -22,6 +27,75 @@
 namespace CGAL {
 namespace Intersections {
 namespace internal {
+
+template <class K>
+Bilinear_patch_3<K>
+compute_test_bilinear_patch(
+  const K::Point_3& x0, 
+  const K::Point_3& x1,
+  const K::Point_3& x2,
+  const K::Point_3& x3,
+  const K::Point_3& x0_next, 
+  const K::Point_3& x1_next,
+  const K::Point_3& x2_next,
+  const K::Point_3& x3_next,
+  const Collision_type collision_type
+) {
+  //
+  // F[x0,x1,x2,x3](t,u,v) is a function that returns vector-zero 
+  // when a collision occurs. We apply this function as a transformation
+  // to the boundaries of the domain of t x u x v. The boundary is composed
+  // of bilinear patches and triangles.
+  switch( collision_type ) {
+    case Collision_type::edge_edge:
+      edge_edge_collision_function(
+        x0,      x1,      x2,      x3,
+        x0_next, x1_next, x2_next, x3_next,
+        t,       u,       v
+      ); 
+      break;
+    case Collision_type::point_triangle:
+      point_triangle_collision_function(
+        x0,      x1,      x2,      x3,
+        x0_next, x1_next, x2_next, x3_next,
+        t,       u,       v
+      ); 
+      break;
+  }
+}
+
+template <class K>
+typename K::Triangle_3
+compute_test_triangle(
+  const K::Point_3& x0, 
+  const K::Point_3& x1,
+  const K::Point_3& x2,
+  const K::Point_3& x3,
+  const K::Point_3& x0_next, 
+  const K::Point_3& x1_next,
+  const K::Point_3& x2_next,
+  const K::Point_3& x3_next
+) {
+  // F[x0,x1,x2,x3](t,u,v) is a function that returns zero when a collision
+  // occurs. The function is defined differently for the two types of 
+  // collisions that we consider: edge-edge and point-triangle.
+  switch( collision_type ) {
+
+    case Collision_type::edge_edge:
+      compute_edge_edge_bilinear_patch(
+        x0,      x1,      x2,      x3,
+        x0_next, x1_next, x2_next, x3_next,
+        t,       u,       v
+      ); 
+      break;
+    case Collision_type::point_triangle:
+      compute_point_triangle_bilinear_patch(
+        x0,      x1,      x2,      x3,
+        x0_next, x1_next, x2_next, x3_next,
+        t,       u,       v
+      ); 
+  }
+}
 
 template <class K>
 bool
@@ -75,12 +149,6 @@ do_intersect_odd_parity(
       CGAL::Interval_nt_advanced phi_midpoint = bp.aux_phi(mid_point);
       if ( !(phi_midpoint > 0) == !(phi_source > 0) ) {
         // The edge connecting 0--2 is on the same side as the ray's source
-        // std::cout << "...same side..."<< std::endl;
-        // std::cout << "...same side..."<< std::endl;
-        // std::cout << "...intersects 123: " << do_intersect(K::Triangle_3(bp.vertex(1), bp.vertex(2), bp.vertex(3)), r) << std::endl;
-        // std::cout << "...intersects 013: " << do_intersect(K::Triangle_3(bp.vertex(0), bp.vertex(1), bp.vertex(3)), r) << std::endl;
-        // std::cout << "...intersects 012: " << do_intersect(K::Triangle_3(bp.vertex(0), bp.vertex(1), bp.vertex(2)), r) << std::endl;
-        // std::cout << "...intersects 023: " << do_intersect(K::Triangle_3(bp.vertex(0), bp.vertex(2), bp.vertex(3)), r) << std::endl;
         return (
           do_intersect(typename K::Triangle_3(bp.vertex(1), bp.vertex(2), bp.vertex(3)), r) || do_intersect(typename K::Triangle_3(bp.vertex(0), bp.vertex(1), bp.vertex(3)), r)
         );
