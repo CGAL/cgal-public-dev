@@ -9,8 +9,13 @@
 #include <CGAL/Search_traits_adapter.h>
 #include <CGAL/Orthogonal_k_neighbor_search.h>
 #include <CGAL/Polygon_mesh_processing/compute_normal.h>
+#include <CGAL/OpenGR/compute_registration_transformation.h>
+#include <CGAL/OpenGR/register_point_sets.h>
 #include <Eigen/Dense>
 #include <Eigen/Sparse>
+#include <Eigen/UmfPackSupport>
+#include <Eigen/KLUSupport>
+
 
 typedef CGAL::Simple_cartesian<double>                       Kernel;
 typedef Kernel::Point_3                                      Point;
@@ -248,6 +253,7 @@ std::pair<Transform, PointSet> rigid_registration(const PointSet& source, const 
 std::pair<Transform, Mesh> nonrigid_registration(const Mesh& source, const PointSet& target,
     double w1 = 0.1, double w2 = 0.1, double w3 = 1.0, double w4 = 10.0,
     int max_iter = 100, int num_threads = 1, const Correspondence& correspondence = {}) {
+    double avg_filling = 0.0, avg_factorizing = 0.0, avg_solving = 0.0;
     Eigen::setNbThreads(num_threads);
     size_t N = source.number_of_vertices();
     size_t E = source.number_of_edges();
@@ -266,7 +272,7 @@ std::pair<Transform, Mesh> nonrigid_registration(const Mesh& source, const Point
     // solver
     Eigen::BiCGSTAB< Eigen::SparseMatrix<double, Eigen::RowMajor> > cg;
     cg.setMaxIterations(1000);
-    cg.setTolerance(1e-6);
+    cg.setTolerance(1e-5);
     // sparse coefficient matrix A
     Eigen::SparseMatrix<double, Eigen::RowMajor> A(6 + 2 * 3 * N, 6 + 2 * 3 * N);
     std::vector<T> a(72 * N + 30 * E);
@@ -286,17 +292,20 @@ std::pair<Transform, Mesh> nonrigid_registration(const Mesh& source, const Point
         auto start = std::chrono::high_resolution_clock::now();
         for (auto it = z.vertices().begin(); it != z.vertices().end(); ++it) {
             auto i = it->idx();
+            bool is_corr = correspondence.find(i) != correspondence.end();
+            double w1_corr = is_corr ? w1 * 1000 : w1;
+            double w2_corr = is_corr ? w2 * 1000 : w2;
             Point zp = z.point(*it);
             Eigen::Vector3d x_t(zp.x(), zp.y(), zp.z());
             // search the nearest neighbor PI on the target mesh, n is the normal at PI
-            size_t index = correspondence.find(i) != correspondence.end() ? correspondence.at(i) : Neighbor_search(tree, zp, 1, 0, true, distance).begin()->first;
+            size_t index = is_corr ? correspondence.at(i) : Neighbor_search(tree, zp, 1, 0, true, distance).begin()->first;
             Point pnn = index_map[index];
             Eigen::Vector3d PI(pnn.x(), pnn.y(), pnn.z());
             Vector nnn = target.normal(index);
             Eigen::Vector3d n(nnn.x(), nnn.y(), nnn.z());
             // build A and b
             Eigen::Matrix3d n_matrix = n * n.transpose();
-            Eigen::Matrix3d z_diag_block = (w1 + w3) * Eigen::Matrix3d::Identity() + w2 * n_matrix;
+            Eigen::Matrix3d z_diag_block = (w1_corr + w3) * Eigen::Matrix3d::Identity() + w2_corr * n_matrix;
             Eigen::Matrix3d X_t;
             X_t << 0, -x_t(2), x_t(1),
                 x_t(2), 0, -x_t(0),
@@ -350,7 +359,7 @@ std::pair<Transform, Mesh> nonrigid_registration(const Mesh& source, const Point
             // b_r is zero
             b.segment<3>(3) -= x_t; // b_t
             // b_ri is zero
-            b.segment<3>(6 + 3 * N + 3 * i) = (w1 * Eigen::Matrix3d::Identity() + w2 * n_matrix) * PI + w3 * x_t; // b_zi
+            b.segment<3>(6 + 3 * N + 3 * i) = (w1_corr * Eigen::Matrix3d::Identity() + w2_corr * n_matrix) * PI + w3 * x_t; // b_zi
             for (auto he : CGAL::halfedges_around_target(*it, z)) {
                 auto v0 = CGAL::source(he, z);
                 Point xpk = z.point(v0);
@@ -360,19 +369,27 @@ std::pair<Transform, Mesh> nonrigid_registration(const Mesh& source, const Point
         }
         A.setFromTriplets(a.begin(), a.end());
         auto stop = std::chrono::high_resolution_clock::now();
-        std::cout << "Time for filling A: " << std::chrono::duration_cast<std::chrono::milliseconds>(stop - start).count() << std::endl;
+        double filling = std::chrono::duration_cast<std::chrono::milliseconds>(stop - start).count();
         if (iter == 0) {
             cg.analyzePattern(A);
         }
         start = std::chrono::high_resolution_clock::now();
         cg.factorize(A);
         stop = std::chrono::high_resolution_clock::now();
-        std::cout << "Time for factorizing A: " << std::chrono::duration_cast<std::chrono::milliseconds>(stop - start).count() << std::endl;
+        double factorizing = std::chrono::duration_cast<std::chrono::milliseconds>(stop - start).count();
         start = std::chrono::high_resolution_clock::now();
         Eigen::VectorXd solution = cg.solve(b);
         stop = std::chrono::high_resolution_clock::now();
-        std::cout << "Time for solving Ax=b: " << std::chrono::duration_cast<std::chrono::milliseconds>(stop - start).count() << std::endl;
-        std::cout << "CG converged within " << cg.iterations() << " iterations. Error: " << cg.error() << "." << std::endl;
+        double solving = std::chrono::duration_cast<std::chrono::milliseconds>(stop - start).count();
+        std::cout << "Time for filling A: " << filling << std::endl;
+        std::cout << "Time for factorizing A: " << factorizing << std::endl;
+        std::cout << "Time for solving Ax=b: " << solving << std::endl;
+        if (iter != 0) {
+            avg_filling += filling;
+            avg_factorizing += factorizing;
+            avg_solving += solving;
+        }
+        // std::cout << "CG converged within " << cg.iterations() << " iterations. Error: " << cg.error() << "." << std::endl;
         // update z
         for (auto it = z.vertices().begin(); it != z.vertices().end(); ++it) {
             auto i = it->idx();
@@ -381,6 +398,10 @@ std::pair<Transform, Mesh> nonrigid_registration(const Mesh& source, const Point
         }
         std::cout << "Iteration: " << iter << std::endl;
     }
+    std::cout << "Average time for filling A: " << avg_filling / (max_iter - 1) << std::endl;
+    std::cout << "Average time for factorizing A: " << avg_factorizing / (max_iter - 1) << std::endl;
+    std::cout << "Average time for solving Ax=b: " << avg_solving / (max_iter - 1) << std::endl;
+    std::cout << "Number of threads: " << Eigen::nbThreads( ) << std::endl;
     Transform transform(1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 1);
     return std::make_pair(transform, z);
 }
@@ -397,18 +418,18 @@ int main(int argc, char* argv[]) {
     Mesh mesh2 = readToscaMesh("../meshes/toscahires-asci/wolf1");
     Correspondence correspondence = readCorrespondence("../meshes/correspondence.txt");
     CGAL::draw(merge_meshes(mesh1, mesh2));
-	
-	auto opengr_result = CGAL::OpenGR::compute_registration_transformation(Mesh2PointSet(mesh2), Mesh2PointSet(mesh1));
-    Transform opengr_transform = opengr_result.first;
-    CGAL::Polygon_mesh_processing::transform(opengr_transform, mesh1);
-    CGAL::draw(merge_meshes(mesh1, mesh2));
-	
-    auto rigid_result = rigid_registration(Mesh2PointSet(mesh1), Mesh2PointSet(mesh2), 0.1, 0.1, 1.0, 10, 8, correspondence);
+    
+    //auto opengr_result = CGAL::OpenGR::compute_registration_transformation(Mesh2PointSet(mesh2), Mesh2PointSet(mesh1));
+    //Transform opengr_transform = opengr_result.first;
+    //CGAL::Polygon_mesh_processing::transform(opengr_transform, mesh1);
+    //CGAL::draw(merge_meshes(mesh1, mesh2));
+    
+    auto rigid_result = rigid_registration(Mesh2PointSet(mesh1), Mesh2PointSet(mesh2), 0.1, 0.1, 1.0, 10, 4, correspondence);
     Transform transform = rigid_result.first;
     CGAL::Polygon_mesh_processing::transform(transform, mesh1);
     //CGAL::Polygon_mesh_processing::transform(Transform(CGAL::Translation(), Vector(-40, 0, 0)), mesh1);
     //CGAL::draw(merge_meshes(mesh1, mesh2));
-    auto nonrigid_result = nonrigid_registration(mesh1, Mesh2PointSet(mesh2), 0.1, 0.1, 1.0, 10.0, 10, 8, correspondence);
+    auto nonrigid_result = nonrigid_registration(mesh1, Mesh2PointSet(mesh2), 0.1, 0.1, 1.0, 10.0, 10, 4, correspondence);
     Mesh z = nonrigid_result.second;
     CGAL::Polygon_mesh_processing::transform(Transform(CGAL::Translation(), Vector(-40, 0, 0)), z);
     CGAL::draw(merge_meshes(z, mesh2));
