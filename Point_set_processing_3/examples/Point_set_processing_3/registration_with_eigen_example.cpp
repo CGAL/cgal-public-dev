@@ -37,13 +37,17 @@ typedef Eigen::Triplet<double>                                                  
 
 typedef std::unordered_map<size_t, size_t>                                                  Correspondence;
 
-
-Mesh merge_meshes(Mesh a, Mesh b) {
+Mesh merge_meshes(Mesh a, Mesh b, const Correspondence& correspondence = {}) {
+    // lots of redundant information bc of add_face
+    // resizing the mesh before adding vertices and faces might be faster
     for (auto f : a.faces()) {
         std::array<Mesh::Vertex_index, 3> triangle;
         int i = 0;
         for (Mesh::Vertex_index v : a.vertices_around_face(a.halfedge(f))) {
             triangle[i] = b.add_vertex(a.point(v));
+            if (correspondence.find(v) != correspondence.end()) {
+                b.add_edge(v, triangle[i]);
+			}
             ++i;
         }
         b.add_face(triangle[0], triangle[1], triangle[2]);
@@ -432,7 +436,7 @@ int main(int argc, char* argv[]) {
     auto nonrigid_result = nonrigid_registration(mesh1, Mesh2PointSet(mesh2), 0.1, 0.1, 1.0, 10.0, 10, 4, correspondence);
     Mesh z = nonrigid_result.second;
     CGAL::Polygon_mesh_processing::transform(Transform(CGAL::Translation(), Vector(-40, 0, 0)), z);
-    CGAL::draw(merge_meshes(z, mesh2));
+    CGAL::draw(merge_meshes(z, mesh2, correspondence));
     return EXIT_SUCCESS;
 }
 
