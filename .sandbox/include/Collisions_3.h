@@ -16,6 +16,7 @@
 #include <Collision_candidate_3.h>
 #include <Collision_mesh_3.h>
 #include <Collision_scene_3.h>
+#include <Collision_type.h>
 #include <vector>
 #include <algorithm>
 #include <iostream>
@@ -27,15 +28,35 @@ namespace CGAL{
       std::vector< Collision_mesh<K> >& meshes
   ){
     Collision_scene<K> scene = Collision_scene<K>(meshes);
-    return do_collide(scene); //
+    return has_collision(scene); //
   }
 
   template <class K>
-  bool do_collide(
+  bool has_collision(
       const Collision_scene<K>& scene
   ){
+    using Scene_face_index = Collision_scene<K>::Scene_face_index;
+    using Candidate = Collision_candidate<Scene_face_index>;
 
-    bool do_collide_{false};
+    std::vector<Candidate> candidates = get_collision_candidates(scene);
+
+    for( const auto& candidate : candidates )
+    {
+      if( candidate_has_collision(scene, candidate) ){
+        return true;
+      }
+    }
+    return false; //
+  }
+
+  template <class K>
+  bool candidate_has_collision(
+      const Collision_scene<K>&                                                 scene
+      const Collision_candidate<typename Collision_scene<K>::Scene_face_index>& candidate 
+  ){
+    
+
+    size_t collision_parity{0};
     for( const auto& t : scene.trajectories_ )
     {
       do_collide_ = do_collide_ || scene.tree().do_intersect(t.bounding_iso_cuboid);
@@ -84,6 +105,7 @@ namespace CGAL{
       Collision_scene<K> scene = Collision_scene<K>(meshes);
       return get_collision_candidates(scene);
   }
+
 
 } // end CGAL
 #endif

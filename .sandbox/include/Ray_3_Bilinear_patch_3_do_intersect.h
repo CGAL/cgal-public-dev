@@ -18,6 +18,7 @@
 #include <Bilinear_patch_3.h>
 #include <Collision_type.h>
 #include <Collision_function.h>
+#include <Collision_candidate_3.h>
 
 #include <CGAL/enum.h>
 #include <CGAL/kernel_assertions.h>
@@ -28,74 +29,6 @@ namespace CGAL {
 namespace Intersections {
 namespace internal {
 
-template <class K>
-Bilinear_patch_3<K>
-compute_test_bilinear_patch(
-  const K::Point_3& x0, 
-  const K::Point_3& x1,
-  const K::Point_3& x2,
-  const K::Point_3& x3,
-  const K::Point_3& x0_next, 
-  const K::Point_3& x1_next,
-  const K::Point_3& x2_next,
-  const K::Point_3& x3_next,
-  const Collision_type collision_type
-) {
-  //
-  // F[x0,x1,x2,x3](t,u,v) is a function that returns vector-zero 
-  // when a collision occurs. We apply this function as a transformation
-  // to the boundaries of the domain of t x u x v. The boundary is composed
-  // of bilinear patches and triangles.
-  switch( collision_type ) {
-    case Collision_type::edge_edge:
-      edge_edge_collision_function(
-        x0,      x1,      x2,      x3,
-        x0_next, x1_next, x2_next, x3_next,
-        t,       u,       v
-      ); 
-      break;
-    case Collision_type::point_triangle:
-      point_triangle_collision_function(
-        x0,      x1,      x2,      x3,
-        x0_next, x1_next, x2_next, x3_next,
-        t,       u,       v
-      ); 
-      break;
-  }
-}
-
-template <class K>
-typename K::Triangle_3
-compute_test_triangle(
-  const K::Point_3& x0, 
-  const K::Point_3& x1,
-  const K::Point_3& x2,
-  const K::Point_3& x3,
-  const K::Point_3& x0_next, 
-  const K::Point_3& x1_next,
-  const K::Point_3& x2_next,
-  const K::Point_3& x3_next
-) {
-  // F[x0,x1,x2,x3](t,u,v) is a function that returns zero when a collision
-  // occurs. The function is defined differently for the two types of 
-  // collisions that we consider: edge-edge and point-triangle.
-  switch( collision_type ) {
-
-    case Collision_type::edge_edge:
-      compute_edge_edge_bilinear_patch(
-        x0,      x1,      x2,      x3,
-        x0_next, x1_next, x2_next, x3_next,
-        t,       u,       v
-      ); 
-      break;
-    case Collision_type::point_triangle:
-      compute_point_triangle_bilinear_patch(
-        x0,      x1,      x2,      x3,
-        x0_next, x1_next, x2_next, x3_next,
-        t,       u,       v
-      ); 
-  }
-}
 
 template <class K>
 bool

@@ -115,7 +115,7 @@ int main(int argc, char* argv[])
   scene.update_state(t);
 
   // Draw before
-  std::cout << "Visualize current state..." std::endl;
+  std::cout << "Visualize current state..." << std::endl;
   CGAL::draw_color(scene.joined_meshes());
 
   // Swap current and next points for visual
@@ -123,7 +123,7 @@ int main(int argc, char* argv[])
   scene.update_state(scn);
 
   // Draw after
-  std::cout << "Visualize next state..." std::endl;
+  std::cout << "Visualize next state..." << std::endl;
   CGAL::draw_color(scene.joined_meshes());
 
   // Return to current state.

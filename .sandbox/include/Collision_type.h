@@ -14,10 +14,13 @@
 #define COLLISION_TYPE_H
 
 namespace CGAL {
-namespace Intersections {
+namespace Collisions {
 namespace internal {
 
-enum class COLLISION_TYPE {EDGE_EDGE, POINT_TRIANGLE};
+enum class COLLISION_TYPE {
+    EDGE_EDGE, 
+    POINT_TRIANGLE
+};
 
 }
 }
