@@ -42,7 +42,7 @@ class Clustering
         pointset_ = pointset;
         //m_num_knn = num_knn;
         m_dist_weight = euclidean_distance_weight;
-        //csv_writer =std::make_shared<DataWriter>(pointset.size());
+        csv_writer =std::make_shared<DataWriter>(pointset.size());
     }
     void initialize_qem_map(const KNNTree& m_tree)
     {
@@ -69,6 +69,7 @@ class Clustering
         m_visited.resize(point_count);
         m_component.resize(point_count);
         std::fill(m_visited.begin(),m_visited.end(),false);
+        std::fill(m_component.begin(),m_component.end(),0);
         
         for(int i = 0 ; i < point_count;i++)
         {
@@ -78,6 +79,40 @@ class Clustering
                 component_count++;
             }
         }
+        /*
+        std::ofstream edge_file;
+		edge_file.open("clustering_connected.ply");
+
+		edge_file << "ply\n"
+					<< "format ascii 1.0\n"
+					<< "element vertex " << pointset_.size() << "\n"
+					<< "property float x\n"
+					<< "property float y\n"
+					<< "property float z\n"
+					<< "property uchar red\n"
+					<< "property uchar green\n"
+					<< "property uchar blue\n"
+					<< "end_header\n";
+        std::vector<Vector> colors;
+        for(int k = 0 ; k < component_count;k++)
+        {
+            colors.push_back(Vector((double) rand() / (RAND_MAX),(double) rand() / (RAND_MAX),(double) rand() / (RAND_MAX)));
+        }
+        int k =0;
+        int p=0;
+		for(Pointset::const_iterator it = pointset_.begin(); it != pointset_.end(); ++ it)
+		{
+
+			auto point = pointset_.point(*it);
+			edge_file << point.x() << " " << point.y() << " " << point.z() << " ";
+			auto normal = colors[0];m_component[k]];
+			edge_file << static_cast<int>(255*normal.x()) << " " << static_cast<int>(255*normal.y()) << " " << static_cast<int>(255*normal.z()) << std::endl;
+
+            k++;
+		}
+		edge_file.close();*/
+        std::cout<< "m_component.size() "<<m_component.size()<<std::endl;
+        std::cout<< "point_count "<<point_count<<std::endl;
     }
     void visit(int current_idx, int component_idx)
     {
@@ -124,6 +159,40 @@ class Clustering
             m_vqems.push_back(vqem);
         }
         compute_connected();
+        
+        std::cout<<"connected component count "<< component_count-1<<std::endl;
+        std::cout<<"m_generators"<< m_generators.size()<<std::endl;
+        for(int i = 0 ; i < component_count;i++)
+        {
+            //std::cout<<"i "+std::to_string(i)<<std::endl;
+            bool found = false;
+            for(int j = 0 ; j < m_generators.size();j++)
+            {
+                if(i == m_component[m_generators[j]])
+                {
+                    found = true;
+                }
+                /*else
+                {
+                     // Add a new generator in the connected component without generator
+                auto it = std::find(m_component.begin(), m_component.end(), i);
+                int index = it - m_component.begin();
+                m_generators.push_back(index);
+                m_component[m_generators[index]]=i;
+                std::cout<<"added generator > "<<index<<" connected component "<< i<<std::endl;
+                }*/
+            }
+            if(!found)
+            {
+                // Add a new generator in the connected component without generator
+                auto it = std::find(m_component.begin(), m_component.end(), i);
+                int index = it - m_component.begin();
+                m_generators.push_back(index);
+                m_component[index]=i;
+                std::cout<<"added generator > "<<index<<" connected component "<< i<<std::endl;
+                
+            }
+        }
         std::ofstream edge_file;
         edge_file.open("filename.ply");
 
@@ -157,27 +226,6 @@ class Clustering
         }
 
         edge_file.close();
-        
-        std::cout<<"connected component count "<< component_count<<std::endl;
-        for(int i = 0 ; i < component_count;i++)
-        {
-            bool found = false;
-            for(int j = 0 ; j < m_generators.size();j++)
-            {
-                if(i == m_component[m_generators[j]])
-                {
-                    found = true;
-                }
-            }
-            if(!found)
-            {
-                // Add a new generator in the connected component without generator
-                auto it = std::find(m_component.begin(), m_component.end(), i);
-                int index = it - m_component.begin();
-                m_generators.push_back(index);
-                std::cout<<"added generator > "<<index<<" connected component "<< i<<std::endl;
-            }
-        }
     }
     void region_growing(std::map<int, int>& m_vlabels,std::vector<QEM_metric>& m_generators_qem,const std::vector<int>& m_generators,bool flag_dist)
     {
@@ -308,19 +356,26 @@ class Clustering
 
             int center_ind = m_vlabels[i];
             double error = compute_minimum_qem_error(pointset_.point(m_generators[center_ind]), m_vqems[i]); 
-            //csv_writer->addErrorPoints(i,error);
+            csv_writer->addErrorPoints(i,error);
 
             if(error > qem_errors[center_ind])
             {
                 qem_errors[center_ind] = error;
             }
         }
+        double error = std::numeric_limits<double>::min();
         for(int i = 0 ; i < qem_errors.size();i++)
         {
-            //csv_writer->addWorstErrorGenerator(i,qem_errors[i]);
+            csv_writer->addWorstErrorGenerator(i,qem_errors[i]);
+            error = std::max(error,qem_errors[i]);
         }
-        std::cout<<"Generators: "<<m_generators.size()<<"\n";
-        //csv_writer->setGenerator(m_generators.size());
+        //std::cout<<"Error : -> "<<error<<"\n";
+        auto mean = std::accumulate(qem_errors.begin(),qem_errors.end(),0.);
+        mean/=qem_errors.size();
+        csv_writer->addWorstErrorGenerator(error);
+        csv_writer->addMeanErrorGenerator(mean);
+        //std::cout<<"Generators: "<<m_generators.size()<<"\n";
+        csv_writer->setGenerator(m_generators.size());
         // chech change
         for(int i = 0; i < m_generators.size(); i++)
         {
@@ -460,8 +515,9 @@ class Clustering
 }
 void write_csv()
 {
-    //csv_writer->writeDataErrorGeneratorsToCSV("error_generators.csv");
-    //csv_writer->writeDataErrorPointsToCSV("error_points.csv");
+    csv_writer->writeDataErrorGeneratorsToCSV("error_generators.csv");
+    csv_writer->writeDataErrorPointsToCSV("error_points.csv");
+    csv_writer->printWorst();
 }
 
         private:
@@ -477,7 +533,7 @@ void write_csv()
             int component_count=0;
           // csv
 
-            //std::shared_ptr<DataWriter> csv_writer;
+            std::shared_ptr<DataWriter> csv_writer;
             
             
 

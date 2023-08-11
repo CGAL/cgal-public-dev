@@ -26,6 +26,9 @@ class DataWriter
     // nb generator
     private:
     std::vector<std::vector<float>> m_data_error_points;
+    std::vector<float> m_data_worst_generators;
+    std::vector<float> m_data_mean_generators;
+    
     std::map<int,std::vector<float>> m_data_error_generators;
     size_t m_points_count;
     size_t m_generator_count;
@@ -34,6 +37,7 @@ class DataWriter
     {
         m_points_count = points_count;
         m_data_error_points.resize(m_points_count);
+        //m_data_error_generators.resize(m_points_count);
 
     }
 
@@ -42,11 +46,14 @@ class DataWriter
         std::vector<double> values;
         double mean = 0.;
         for (size_t row = 0 ; row < m_generator_count;row++) {
-            auto v = m_data_error_generators[row][nb_iteration];
-            values.push_back(v);
+            double v=0.;
+            if(m_data_error_generators[row][nb_iteration])
+                v = m_data_error_generators[row][nb_iteration];
+            if(v<10000000 && v>0)
+                values.push_back(v);
         }
-        mean = std::accumulate(values.begin(),values.end(),0.)/nb_generator;
-        
+        mean = std::accumulate(values.begin(),values.end(),0.);
+        mean/=nb_generator;
         // Now calculate the variance
         auto variance_func = [&mean, &nb_generator](double accumulator, const double& val) {
         return accumulator + ((val - mean)*(val - mean) / (nb_generator - 1));
@@ -90,7 +97,7 @@ class DataWriter
         for (size_t line = 0 ; line < nb_iteration ;line++)
         {
             file << std::to_string(computeAverage(line,m_generator_count).second)+",";
-            std::cout<<"variacne : "<<computeAverage(line,m_generator_count).second<<"\n";
+            //std::cout<<"variacne : "<<computeAverage(line,m_generator_count).second<<"\n";
             
         }
         file << std::to_string(computeAverage(nb_iteration,m_generator_count).second)+"\n";
@@ -112,6 +119,7 @@ class DataWriter
         {
             nb_iteration = std::max(nb_iteration,e.second.size()-1);
         }
+        std::cout<<"nb_iteration "<<nb_iteration<<"\n";
         for(int i = 0 ; i< nb_iteration;i++)
         {
             file << "Iteration "+std::to_string(i)+",";
@@ -121,12 +129,13 @@ class DataWriter
         // Write data
         /*for (size_t row = 0 ; row < m_points_count;row++) {
             for (size_t line = 0 ; line < nb_iteration ;line++) {
-                    if(m_data_error_generators[row][line])
-                        file << std::to_string(m_data_error_generators[row][line])+",";
+                    //if(m_data_error_generators[row][line]) 
+                    file << std::to_string((m_data_error_generators[row][line]10.)+",";
                 }
-                file << std::to_string(m_data_error_generators[row][nb_iteration])+"\n";
-        }*/
-
+                //if(m_data_error_generators[row][nb_iteration]) 
+                file << std::to_string((m_data_error_generators[row][nb_iteration]10.)+"\n";
+        }
+        */
         for(auto e : m_data_error_generators)
         {
             for (auto value : e.second) {
@@ -154,6 +163,14 @@ class DataWriter
         file.close();
         
     }
+    void printWorst()
+    {
+        int id=0;
+        for(auto v: m_data_worst_generators)
+        {
+            std::cout<<"id "<<id<<" error: "<<v<<" mean "<<m_data_mean_generators[id++]<<"\n";
+        }
+    }
     void addErrorPoints (int idx, float error_metric)
     {
         m_data_error_points[idx].push_back(error_metric);
@@ -161,6 +178,14 @@ class DataWriter
     void addWorstErrorGenerator (int idx, float error_metric)
     {
         m_data_error_generators[idx].push_back(error_metric);
+    }
+    void addWorstErrorGenerator (float error_metric)
+    {
+        m_data_worst_generators.push_back(error_metric);
+    }
+    void addMeanErrorGenerator (float error_metric)
+    {
+        m_data_mean_generators.push_back(error_metric);
     }
     void setGenerator(int generator_count)
     {

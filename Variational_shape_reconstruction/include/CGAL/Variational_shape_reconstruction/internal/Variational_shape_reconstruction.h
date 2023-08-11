@@ -63,10 +63,44 @@ class Variational_shape_reconstruction
         m_cluster = std::make_shared<Clustering>(pointset, m_num_knn,euclidean_distance_weight);
         
         //init_random_generators();
-        //init_random_generators_kmeanspp();
-        init_random_generators_kmeans_farthest();
+        init_random_generators_kmeanspp();
+        //init_random_generators_kmeans_farthest();
         m_cluster->initialize_qem_map(m_tree);
         m_cluster->initialize_vertex_qem(m_tree,m_generators);    
+        auto point_cloud = get_point_cloud_clustered();
+        		std::ofstream edge_file;
+		edge_file.open("clustering_init.ply");
+
+		edge_file << "ply\n"
+					<< "format ascii 1.0\n"
+					<< "element vertex " << m_generators.size() << "\n"
+					<< "property float x\n"
+					<< "property float y\n"
+					<< "property float z\n"
+					<< "property uchar red\n"
+					<< "property uchar green\n"
+					<< "property uchar blue\n"
+					<< "end_header\n";
+        std::vector<Vector> colors;
+        for(int k = 0 ; k < m_generators.size();k++)
+        {
+            colors.push_back(Vector((double) rand() / (RAND_MAX),(double) rand() / (RAND_MAX),(double) rand() / (RAND_MAX)));
+        }
+        int k =0;
+        int p=0;
+		for(Pointset::const_iterator it = point_cloud.begin(); it != point_cloud.end(); ++ it)
+		{
+            if(std::find(m_generators.begin(),m_generators.end(),k)!=m_generators.end())
+            {
+
+			auto point = point_cloud.point(*it);
+			edge_file << point.x() << " " << point.y() << " " << point.z() << " ";
+			auto normal = colors[p++];
+			edge_file << static_cast<int>(255*normal.x()) << " " << static_cast<int>(255*normal.y()) << " " << static_cast<int>(255*normal.z()) << std::endl;
+            }
+            k++;
+		}
+		edge_file.close();
     }
 
     void load_points(const Pointset& pointset)
@@ -213,6 +247,7 @@ class Variational_shape_reconstruction
             m_generators_qem.clear();
             m_cluster->region_growing(m_vlabels,m_generators_qem, m_generators,true);
             assert(m_vlabels.size() == pointset_.size());
+
             std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
             std::cerr << "\nRegion growing in " << std::chrono::duration_cast<std::chrono::microseconds>(end - begin).count()/1000 << "[ms]" << std::endl;
             flag = m_cluster->update_poles(m_vlabels,m_generators_qem, m_generators);
@@ -272,7 +307,129 @@ class Variational_shape_reconstruction
         //update_fit_surface(fit_facets, fit_normals);
         //update_fit_soup(fit_soup_facets, fit_soup_normals);
     }
-    void create_adjacent_edges()
+    /*void nonmanifold_reconstruct(PointList& data_points, double data_spacing, double dist_ratio, double fitting, double coverage, double complexity)
+    {
+        if(m_points.size() == 0 || m_edges.size() == 0 || m_facets.size() < 4)
+        { 
+            std::cout << "Candidate not available! Reconstruction stops!" << std::endl;
+            return;
+        }
+
+        int num_edges = m_edges.size();
+        int num_facets = m_facets.size();
+        std::cout << "Number of edges: " << num_edges << ", number of facets: " << num_facets << std::endl;
+
+        // initialize adjacent map
+        IntListList edges_adj_facets_list;
+        assemble_edge_face_adjacency(edges_adj_facets_list);
+
+        // initialize support points and assemble confidence map
+        IntListList face_point_map;
+        DoubleList face_confidence_map;
+        double dist_thresh = m_diag * dist_ratio;
+        dist_thresh = dist_thresh * dist_thresh;
+        int num_support_points = assemble_support_points_for_faces(data_points, face_point_map, face_confidence_map, dist_thresh);
+        std::cout << "Number of supported points: " << num_support_points << std::endl;
+        std::cout << "Face point map size: " << face_point_map.size() << std::endl;
+        std::cout << "Face confidence map size: " << face_confidence_map.size() << std::endl;
+        
+        // assemble coverage map
+        DoubleList face_coverage_map;
+        assemble_coverage_map(data_points, face_point_map, face_coverage_map, data_spacing);
+        std::cout << "Face coverage map size: " << face_coverage_map.size() << std::endl;
+      
+        // Binary variables:
+		// x[0] ... x[num_facets - 1] : binary labels of all the input faces
+		// x[num_facets] ... x[num_facets + num_edges - 1] : binary labels of all the intersecting edges (remain or not)
+        MIP_Solver solver;
+
+        int total_variables = num_facets + num_edges;
+		const std::vector<Variable*>& variables = solver.create_variables(total_variables);
+
+        // init variables and objective
+		for (std::size_t i = 0; i < total_variables; ++i) {
+			Variable* v = variables[i];
+			v->set_variable_type(Variable::BINARY);
+		}
+
+        Linear_objective* objective = solver.create_objective(Linear_objective::MINIMIZE);
+        
+        // init weights
+        double dx = m_bbox.xmax() - m_bbox.xmin();
+		double dy = m_bbox.ymax() - m_bbox.ymin();
+		double dz = m_bbox.zmax() - m_bbox.zmin();
+		double box_area = 2. * (dx * dy + dy * dz + dz * dx);
+        double coeff_data_fitting = fitting;
+		double coeff_coverage = num_support_points * coverage / num_facets;
+
+        // add coverage and fitting terms
+        for(int i = 0; i < m_facets.size(); i++) {
+			double confidence = -coeff_data_fitting * std::abs(face_confidence_map[i]);
+            double area_ratio = -coeff_coverage * std::abs(face_coverage_map[i]);
+
+            //std::cout << "Confidence: " << confidence << ", area ratio: " << area_ratio << ", number of supported points: " << face_point_map[i].size() << std::endl;
+
+			objective->add_coefficient(variables[i], confidence);
+			objective->add_coefficient(variables[i], area_ratio);
+		}
+
+
+
+        // Add soft constraints: the number of faces associated with an edge must be either 2 or 0
+		for (int i = 0; i < edges_adj_facets_list.size(); i++) 
+        {
+            IntList neighbors = edges_adj_facets_list[i];
+            //Linear_constraint* c = solver.create_constraint(-Linear_constraint::infinity(), 0);
+
+			for (int j = 0; j < neighbors.size(); j++) 
+            {
+                objective->add_coefficient(variables[neighbors[j]], complexity);
+                //c->add_coefficient(variables[neighbors[j]], -1.0);
+            }
+                
+			if (neighbors.size() > 1) 
+            {
+                objective->add_coefficient(variables[num_facets + i], -2.0 * complexity);  
+                //c->add_coefficient(variables[num_facets + i], 1.0);  
+            }
+		}
+
+
+        if(solver.solve()) 
+        {
+			m_dual_mesh.clear();
+            m_select_indices.clear();
+
+			const DoubleList& X = solver.solution();
+            IntListList selected_facets;
+            int count = 0;
+
+            for(int i = 0; i < m_facets.size(); i++)
+            {
+                if(static_cast<int>(std::round(X[i])) == 1)
+                {
+                    m_select_indices.insert(i);
+                    selected_facets.push_back(m_facets[i]);
+                    count++;
+                }
+            }
+
+            std::cout << "Point size: " << m_points.size() << ", selected facet size: " << count << std::endl;
+
+            CGAL::Polygon_mesh_processing::orient_polygon_soup(m_points, selected_facets);
+            CGAL::Polygon_mesh_processing::polygon_soup_to_polygon_mesh(m_points, selected_facets, m_dual_mesh);
+
+            std::cout << "Generated mesh with " << m_dual_mesh.size_of_vertices() << " points and " << m_dual_mesh.size_of_facets() << " facets!" << std::endl;
+		}
+		else 
+        {
+			std::cout << "solving the binary program failed!" << std::endl;
+			return;
+		}
+    }
+
+    
+    */void create_adjacent_edges()
     {
         if(m_generators.size() == 0)
         {

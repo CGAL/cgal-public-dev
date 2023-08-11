@@ -144,7 +144,7 @@ void test_point_set(const std::string fname)
     const size_t generators = 30;
     const size_t steps = 10;
     const double split_threshold =0.01;
-    const double distance_weight =0.00001;
+    const double distance_weight =0.0001;
     // reconstruction
     const double  dist_ratio = 0.001;
 	const double  fitting = 0.43;
@@ -327,6 +327,8 @@ int main(int argc, char** argv)
 {	
     const std::vector<std::string> files_to_test{
         //"double_sphere",
+        //"bones", //ok
+        //"spheres", //ok
         "piece_meca", //ok
         "armjoin", // cluster ok not recons
         "guitar", // cluster ok not recons
