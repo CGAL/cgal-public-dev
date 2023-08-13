@@ -10,146 +10,50 @@
 //
 // Author(s)     : Jeffrey Cochran
 
-#include <iostream>
-#include <fstream>
-#include <utility>
-#include <iterator>
-#include <vector>
-#include <conio.h>
-
 #include <CGAL/Simple_cartesian.h>
-#include <CGAL/intersections.h>
-#include <CGAL/Surface_mesh.h>
-#include <CGAL/draw_surface_mesh.h>
-
-#include <Ray_3_Bilinear_patch_3_do_intersect.h>
-#include <AABB_triangle_trajectory_primitive.h>
-#include <Collision_mesh_3.h>
-#include <Collision_scene_3.h>
 #include <Bilinear_patch_3.h>
-#include <Collision_candidate_3.h>
-#include <Collisions_3.h>
+#include <Trajectories.h>
+#include <Segment_3_Segment_3_do_collide.h>
+#include <Ray_3_Bilinear_patch_3_do_intersect.h>
+#include <CGAL/Interval_nt.h>
+#include <CGAL/Origin.h>
+#include <cstdlib>
+#include <ctime>
+#include <iostream>
 
-typedef CGAL::Simple_cartesian<double>  Kernel;
-typedef Kernel::Point_3                 Point;
-typedef Kernel::Vector_3                Vector;
-typedef Kernel::Tetrahedron_3           Tetrahedron;
-typedef Kernel::Ray_3                   Ray;
-typedef Kernel::Aff_transformation_3    Transform;                        
-typedef CGAL::Surface_mesh<Point>       Mesh;                    
-typedef CGAL::Collision_mesh<Kernel>    SMesh;
-typedef CGAL::Collision_scene<Kernel>   Scene;
-typedef Scene::Mesh_index               Mesh_index;
-typedef Scene::Face_index               Face_index;
-typedef CGAL::BilinearPatchC3<Kernel>   BilinearPatch;
-typedef Scene::Primitive_id             Primitive_id;
-typedef Scene::Scene_face_index         Scene_face_index;
-typedef Scene::Trajectory               Trajectory;
-
-typedef CGAL::Collision_candidate<Trajectory> Collision_candidate;
-typedef std::vector<Collision_candidate>      OutputIterator;
+typedef ::CGAL::Simple_cartesian<double>  Kernel;
+typedef Kernel::Point_3                   Point;
+typedef Kernel::Vector_3                  Vector;
+typedef Kernel::Ray_3                     Ray;
+typedef ::CGAL::BilinearPatchC3<Kernel>   BilinearPatch;
+typedef ::CGAL::Point_3_trajectory<Kernel> P_trajectory;
+typedef ::CGAL::Segment_3_trajectory<Kernel> S_trajectory;
+typedef Kernel::FT                        FT;
 
 int main(int argc, char* argv[])
 {
 
-  // const std::string inner_sphere_filename = CGAL::data_file_path("meshes/cactus.off");
-  // const std::string outer_sphere_filename = CGAL::data_file_path("meshes/camel.off");
+Point s00_past(1, 0, -1);
+Point s00_next(1, 0,  1);
 
-  // Mesh inner_sphere_mesh;
-  // Mesh outer_sphere_mesh;
+Point s01_past(-1, 0, -1);
+Point s01_next(-1, 0,  1);
 
-  // if(!CGAL::IO::read_polygon_mesh(inner_sphere_filename, inner_sphere_mesh))
-  // {
-  //   std::cerr << "Invalid input file for internal sphere." << std::endl;
-  //   return EXIT_FAILURE;
-  // }
+Point s10_past(0, 1,  1);
+Point s10_next(0, 1, -1);
 
-  // if(!CGAL::IO::read_polygon_mesh(outer_sphere_filename, outer_sphere_mesh))
-  // {
-  //   std::cerr << "Invalid input file." << std::endl;
-  //   return EXIT_FAILURE;
-  // }
+Point s11_past(0, -1,  1);
+Point s11_next(0, -1, -1);
 
-  
-    Point p1(1.0, 0.0, 0.0);
-    Point q1(0.0, 1.0, 0.0);
-    Point r1(0.0, 0.0, 1.0);
-    Point s1(0.0, 0.0, 0.0);
+P_trajectory s00(s00_past, s00_next);
+P_trajectory s01(s01_past, s01_next);
+P_trajectory s10(s10_past, s10_next);
+P_trajectory s11(s11_past, s11_next);
 
+S_trajectory s0(s00, s01);
+S_trajectory s1(s10, s11);
 
-    double t{.3};
-    Point p2(1.0 + t, t,       t      );
-    Point q2(t,       1.0 + t, t      );
-    Point r2(t,       t,       1.0 + t);
-    Point s2(t,       t,       t      );
-
-    Mesh m1, m2;
-    CGAL::make_tetrahedron(p1, q1, r1, s1, m1);
-    CGAL::make_tetrahedron(p2, q2, r2, s2, m2);
-
-  std::vector<SMesh> meshes;
-  meshes.reserve(2);
-  meshes.push_back(m1);
-  meshes.push_back(m2);
-
-  Scene scene(meshes);
-
-  OutputIterator collision_candidates = CGAL::get_collision_candidates<Kernel>(scene);
-  std::set<Scene_face_index> filtered_indices;
-
-  Scene_face_index ti(Mesh_index(1), Face_index(0));
-
-
-  std::cout << "\nCollision candidates containing Face 0 of Mesh 0:\n===================" << std::endl;
-  std::for_each(
-    collision_candidates.begin(), 
-    collision_candidates.end(), 
-    [&ti, &filtered_indices](const auto& candidate){
-      std::cout << candidate << "\n";
-      if(candidate.first->index == ti || candidate.second->index == ti)
-      {
-        std::cout << candidate << std::endl;
-        filtered_indices.insert(candidate.first->index);
-        filtered_indices.insert(candidate.second->index);
-      };
-    }
-  );
-  std::cout << "===================" << std::endl;
-  
-  std::cout << "\nPress <m> to color the faces:" << std::endl;
-  std::cout << "  (blue)  : Face 0 of Mesh 0" << std::endl;
-  std::cout << "  (red)   : Candidate for collision with Face 0 of Mesh 0" << std::endl;
-  std::cout << "  (white) : Does not collide with Face 0 of Mesh 0\n" << std::endl;
-
-
-  int k{0};
-  for( const auto& fi : filtered_indices )
-  {
-    scene.color(fi, CGAL::IO::red());
-  }
-
-  scene.color(ti, CGAL::IO::blue());
-
-  CGAL::draw_color(scene.joined_meshes());
-
-  return EXIT_SUCCESS;
-}
-  
-
-
-
-
-
-// =============================
-// Stuff for me to revisit later
-// =============================
-
-// Point a = Point(0, 0, 0);
-// Point b = Point(1, 0, 0);
-// Point c = Point(0, 1, 0);
-// Point d = Point(0, 0, 1);
-
-// BilinearPatch bp = BilinearPatch(a, b, c, d);
+std::cout << "Confirm these edges collide: " << CGAL::do_collide(s0, s1) << std::endl;
 // Tetrahedron t = bp.tetrahedron();
 
 // Point outside_point = Point(1, 1, 1);
@@ -258,4 +162,12 @@ int main(int argc, char* argv[])
 
 // intersects = CGAL::Intersections::internal::do_intersect_odd_parity(bp, ray_false);
 // std::cout << "Case 1b, False: " << intersects << std::endl;
+
+  return EXIT_SUCCESS;
+}
+  
+
+
+
+
 

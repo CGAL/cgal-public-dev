@@ -20,6 +20,7 @@
 #include <utility>
 
 #include <Mesh_index.h>
+#include <Trajectories.h>
 #include <AABB_triangle_trajectory_primitive.h>
 #include <Collision_mesh_3.h>
 

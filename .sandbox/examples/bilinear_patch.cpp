@@ -12,26 +12,64 @@
 
 #include <CGAL/Simple_cartesian.h>
 #include <Bilinear_patch_3.h>
+#include <Ray_3_Bilinear_patch_3_do_intersect.h>
+#include <CGAL/Interval_nt.h>
+#include <CGAL/Origin.h>
+#include <cstdlib>
+#include <ctime>
+#include <iostream>
 
 typedef ::CGAL::Simple_cartesian<double>  Kernel;
-typedef Kernel::Point_3                 Point;
+typedef Kernel::Point_3                   Point;
+typedef Kernel::Vector_3                  Vector;
+typedef Kernel::Ray_3                     Ray;
 typedef ::CGAL::BilinearPatchC3<Kernel>   BilinearPatch;
+typedef Kernel::FT                        FT;
 
 int main(int argc, char* argv[])
 {
-
-
 
 // =============================
 // Stuff for me to revisit later
 // =============================
 
-Point a = Point(0, 0, 0);
-Point b = Point(1, 0, 0);
-Point c = Point(0, 1, 0);
-Point d = Point(0, 0, 1);
+Point a(0, 0, 0);
+Point b(1, 0, 1);
+Point c(1, 1, 0);
+Point d(0, 1, 1);
 
 BilinearPatch bp = BilinearPatch(a, b, c, d);
+
+Vector bump(0.,0.,.01);
+Vector huge_bump(0.,0.1,1000.);
+
+Point surface_point   = bp(0.5, 0.5);
+Point point_below     = ::CGAL::ORIGIN + ((surface_point-::CGAL::ORIGIN) + bump); // meaning phi > 0, not above the surface
+Point point_above     = ::CGAL::ORIGIN + ((surface_point-::CGAL::ORIGIN) - bump);
+Point point_way_above = ::CGAL::ORIGIN + ((surface_point-::CGAL::ORIGIN) - huge_bump);
+
+std::cout << "Confirm phi(surface_point) is near zero: " << CGAL::to_double(bp.aux_phi(surface_point)) << "\n";
+
+// Case 1a:
+Ray r(surface_point, point_above);
+bool does_intersect = ::CGAL::Intersections::internal::do_intersect_odd_parity(bp, r);
+std::cout << "Ray originating on the surface does intersect: " << does_intersect << "\n\n";
+
+// Case 1b:
+r = Ray(point_above, point_below);
+does_intersect = ::CGAL::Intersections::internal::do_intersect_odd_parity(bp, r);
+std::cout << "Ray originating in the bounding tetrahedron (above surface) and passing through does intersect: " << does_intersect << "\n\n";
+
+// Case 1c:
+r = Ray(point_below, point_above);
+does_intersect = ::CGAL::Intersections::internal::do_intersect_odd_parity(bp, r);
+std::cout << "Ray originating in the bounding tetrahedron (below surface) and passing through does intersect: " << does_intersect << "\n\n";
+
+// Case 2:
+r = Ray(point_way_above, point_below);
+does_intersect = ::CGAL::Intersections::internal::do_intersect_odd_parity(bp, r);
+std::cout << "Ray originating outside the bounding tetrahedron and passing through does intersect: " << does_intersect << "\n\n";
+
 // Tetrahedron t = bp.tetrahedron();
 
 // Point outside_point = Point(1, 1, 1);

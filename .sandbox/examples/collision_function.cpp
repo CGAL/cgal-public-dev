@@ -12,17 +12,17 @@
 
 #include <CGAL/Simple_cartesian.h>
 
-#include <Collision_function.h>
-#include <Collision_type.h>
+#include <Point_3_Triangle_3_collision_function.h>
+#include <Segment_3_Segment_3_collision_function.h>
 
 typedef CGAL::Simple_cartesian<double>  Kernel;
 typedef Kernel::Point_3                 Point;
 typedef Kernel::Vector_3                Vector;
+typedef Kernel::Triangle_3              Triangle;
+typedef Kernel::Segment_3               Segment;
 
-typedef CGAL::Collisions::internal::COLLISION_TYPE COLLISION_TYPE;
-
-template<COLLISION_TYPE C>
-using Collision_function = CGAL::Collisions::internal::Collision_function<Kernel, C>;
+using Collision_function_PT = typename CGAL::Collisions::internal::Point_3_Triangle_3_collision_function<Kernel>;
+using Collision_function_SS = typename CGAL::Collisions::internal::Segment_3_Segment_3_collision_function<Kernel>;
 
 int main(int argc, char* argv[])
 {
@@ -37,14 +37,18 @@ int main(int argc, char* argv[])
   Point r2(0.0, 0.0, 1.0);
   Point s2(0.0, 0.0, 0.0);
 
-  Collision_function<COLLISION_TYPE::EDGE_EDGE> CF_EE(
-    p1, q1, r1, s1, 
-    p2, q2, r2, s2
+  Collision_function_SS CF_EE(
+    Segment(p1, q1), 
+    Segment(p2, q2),
+    Segment(r1, s1), 
+    Segment(r2, s2)
   );
 
-  Collision_function<COLLISION_TYPE::POINT_TRIANGLE> CF_PT(
-    p1, q1, r1, s1, 
-    p2, q2, r2, s2
+  Collision_function_PT CF_PT(
+    p1, 
+    p2, 
+    Triangle(q1, r1, s1), 
+    Triangle(q2, r2, s2)
   );
 
   double t{0.};

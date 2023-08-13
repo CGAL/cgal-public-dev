@@ -29,6 +29,7 @@
 #include <Bilinear_patch_3.h>
 #include <Collision_candidate_3.h>
 #include <Collisions_3.h>
+#include <Trajectories.h>
 
 typedef CGAL::Simple_cartesian<double>  Kernel;
 typedef Kernel::Point_3                 Point;
@@ -39,6 +40,9 @@ typedef Kernel::Aff_transformation_3    Transform;
 typedef CGAL::Surface_mesh<Point>       Mesh;                    
 typedef CGAL::Collision_mesh<Kernel>    SMesh;
 typedef CGAL::Collision_scene<Kernel>   Scene;
+typedef CGAL::Point_3_trajectory<Kernel>Point_trajectory;
+typedef Scene::Vertex_index             Vertex_index;
+typedef Scene::Halfedge_index           Halfedge_index;
 typedef Scene::Mesh_index               Mesh_index;
 typedef Scene::Face_index               Face_index;
 typedef CGAL::BilinearPatchC3<Kernel>   BilinearPatch;
@@ -104,8 +108,8 @@ int main(int argc, char* argv[])
 
   std::vector<SMesh> meshes;
   meshes.reserve(2);
-  meshes.push_back(m1);
-  meshes.push_back(m2);
+  meshes.push_back(SMesh(m1));
+  meshes.push_back(SMesh(m2));
 
   Scene scene(meshes);
 
@@ -128,6 +132,18 @@ int main(int argc, char* argv[])
 
   // Return to current state.
   scene.update_state(scn);
+
+  // Check that the point trajectories work correctly
+  std::cout << "\nYou can access current and next positions of a vertex through its trajectory...\n";
+  std::cout << meshes[0].point_trajectory(Vertex_index(0)) << "\n\n";
+
+  // Check that the edge trajectories work correctly
+  std::cout << "Similarly, you can access current and next positions of an edge through its trajectory...\n";
+  std::cout << meshes[0].edge_trajectory(Halfedge_index(0)) << "\n\n";
+
+  // Check that the edge trajectories work correctly
+  std::cout << "...as well as faces...\n";
+  std::cout << meshes[0].face_trajectory(Face_index(0)) << "\n";
 
   return EXIT_SUCCESS;
 }

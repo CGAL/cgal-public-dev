@@ -15,19 +15,19 @@
 
 namespace CGAL{
 
-  template <class Scene_face_index>
-  class Collision_candidate : public std::pair<Scene_face_index, Scene_face_index> {
+  template <class Primitive>
+  class Collision_candidate : public std::pair<const Primitive*, const Primitive*> {
 
-    using Base = std::pair<Scene_face_index, Scene_face_index>;
+    using Base = std::pair<const Primitive*, const Primitive*>;
 
     public:
 
-      Collision_candidate(const Scene_face_index& first, const Scene_face_index& second) : Base(first, second) {}
+      Collision_candidate(const Primitive* first, const Primitive* second) : Base(first, second) {}
       Collision_candidate(const Base& index_pair) : Base(index_pair) {}
 
       friend std::ostream& operator<<(std::ostream& os, Collision_candidate const& collision_candidate)
       {
-          return (os << collision_candidate.first << " : " << collision_candidate.second );
+          return (os << collision_candidate.first->index << " : " << collision_candidate.second->index );
       } 
     
   };
