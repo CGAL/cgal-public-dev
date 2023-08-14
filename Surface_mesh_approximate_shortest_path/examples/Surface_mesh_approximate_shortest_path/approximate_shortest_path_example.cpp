@@ -5,13 +5,17 @@
 #include <iostream>
 
 typedef CGAL::Exact_predicates_inexact_constructions_kernel Kernel;
-typedef CGAL::Surface_mesh<Kernel::Point_3> Triangle_mesh;
+typedef CGAL::Surface_mesh<Kernel::Point_3> Surface_mesh;
 typedef Kernel::Point_3 Point_3;
 
-typedef CGAL::Surface_mesh_approximate_shortest_path_traits<Kernel, Triangle_mesh> Traits;
-typedef CGAL::Surface_mesh_approximate_shortest_path<Traits> Surface_mesh_approximate_shortest_path;
+typedef CGAL::Surface_mesh_approximate_shortest_path_traits<Kernel, Surface_mesh>   Traits;
+typedef CGAL::Surface_mesh_approximate_shortest_path_3::Never_skip_condition        Skip_condition;
+//typedef CGAL::Surface_mesh_approximate_shortest_path_3::Always_enqueue_in_A         Enqueue_policy;
+typedef CGAL::Surface_mesh_approximate_shortest_path_3::Static_speed_limiter         Enqueue_policy;
 
-typedef boost::graph_traits<Triangle_mesh> Graph_traits;
+typedef CGAL::Surface_mesh_approximate_shortest_path<Traits, Skip_condition, Enqueue_policy>  Surface_mesh_approximate_shortest_path;
+
+typedef boost::graph_traits<Surface_mesh> Graph_traits;
 
 typedef Graph_traits::vertex_descriptor vertex_descriptor;
 typedef Graph_traits::edge_descriptor edge_descriptor;
@@ -21,7 +25,7 @@ typedef Graph_traits::face_descriptor face_descriptor;
 typedef Surface_mesh_approximate_shortest_path::Face_values Face_values;
 
 void
-WriteVTK(const char* filename, Triangle_mesh& mesh, std::vector<double> face_data)
+WriteVTK(const char* filename, Surface_mesh& mesh, std::vector<double> face_data)
 {
     std::ofstream out(filename);
 
@@ -76,7 +80,7 @@ WriteVTK(const char* filename, Triangle_mesh& mesh, std::vector<double> face_dat
 }
 
 std::vector<double>
-ExtractDistanceData(Triangle_mesh& mesh, Surface_mesh_approximate_shortest_path& shopa)
+ExtractDistanceData(Surface_mesh& mesh, Surface_mesh_approximate_shortest_path& shopa)
 {
     std::vector<double> distances(mesh.num_faces());
     for (face_descriptor fd : faces(mesh))
@@ -90,19 +94,13 @@ int main(int argc, char** argv)
 {
     const std::string filename = (argc>1) ? argv[1] : CGAL::data_file_path("meshes/elephant.off");
 
-    Triangle_mesh tmesh;
+    Surface_mesh tmesh;
     if(!CGAL::IO::read_polygon_mesh(filename, tmesh) ||
         !CGAL::is_triangle_mesh(tmesh))
     {
         std::cerr << "Invalid input file." << std::endl;
         return EXIT_FAILURE;
     }
-
-    // get face property map
-    Triangle_mesh::Property_map<face_descriptor, Face_values> face_values_map;
-    bool face_created;
-    boost::tie(face_values_map, face_created) = tmesh.add_property_map<face_descriptor, Face_values>("faces");
-    assert(face_created);
 
     // Shortest Paths
     Surface_mesh_approximate_shortest_path shortest_path(tmesh);

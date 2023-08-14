@@ -46,7 +46,7 @@ struct Unfolded_triangle_2 {
     Point_2 P;
 };
 
-template<class Traits>
+template<class Traits, class Skip_condition, class Enqueue_policy>
 class Surface_mesh_approximate_shortest_path
 {
 public:
@@ -69,16 +69,22 @@ public:
     typedef Unfolded_triangle_2<Kernel>     Unfolded_triangle;
     typedef Face_values<Kernel>             Face_values;
 
-public:
     typedef typename Surface_mesh::template Property_map<face_descriptor, Face_values> Face_values_map;
 
-    typedef typename Traits::SingleQueue    SingleQueue;
+    //typedef typename Traits::Skip_condition     Skip_condition;
+
+    //typedef typename Traits::Always_enqueue_in_A    Always_A_strategy;
+    //typedef typename Traits::Always_enqueue_in_B    Always_B_strategy;
+    //typedef typename Traits::Static_speed_limiter   Speed_limiter_strategry;
+
+    //typedef typename Traits::template Enqueue_strategy<Always_A_strategy>   Always_A;
+    //typedef typename Traits::template Enqueue_strategy<Always_B_strategy>   Always_B;
+    //typedef typename Traits::template Enqueue_strategy<Speed_limiter_strategry> Speed_limiter;
 
     typedef Polygon_mesh_processing::Barycentric_coordinates<FT> Barycentric_coordinates;
     typedef Polygon_mesh_processing::Face_location<Surface_mesh, FT> Face_location;
 
 private:
-    const Traits m_traits;
     Surface_mesh& m_mesh;
 
     Edge_property_map m_edge_lengths;
@@ -87,11 +93,12 @@ private:
 
     typedef std::queue<halfedge_descriptor> Halfedge_queue;
     Halfedge_queue m_A, m_B;
+    Skip_condition m_Skip_condition;
+    Enqueue_policy m_Enqueue_policy;
 
 public:
-    Surface_mesh_approximate_shortest_path(Surface_mesh& mesh,
-                                const Traits& traits = Traits())
-        : m_mesh(mesh), m_A(), m_B()
+    Surface_mesh_approximate_shortest_path(Surface_mesh& mesh)
+        : m_mesh(mesh), m_A(), m_B(), m_Skip_condition(), m_Enqueue_policy()
         {
             bool created_edge_property_map, created_face_property_map;
             boost::tie(m_edge_lengths, created_edge_property_map) = m_mesh.template add_property_map<edge_descriptor, FT>("edge_lengths");
@@ -102,6 +109,8 @@ public:
         };
 
     Edge_property_map& Get_edge_length_map() { return m_edge_lengths; };
+
+    //=== Constructions ===//
 
     class Compute_squared_edge_length {
     public:
@@ -283,6 +292,39 @@ public:
             return Point_2(cx, cy);
         }
     };
+
+    /*
+    class Construct_target_point
+    {
+    public:
+        typedef Point_2 result_type;
+
+    public:
+        Construct_target_point() {}
+
+        result_type operator() (halfedge_descriptor opposite_halfedge, Face_location target_face_location, Point_2 B, Point_2 P)
+        {
+            Barycentric_coordinates coords = target_face_location.second; //m_target_face_locations[target_face_index].second;
+            std::array<int, 3> local_vert_idx = get_local_vertex_indices(opposite_halfedge);
+            // C becomes the target point and we also test visibility with respect to the target point (C = Q)
+            FT Tx = coords[local_vert_idx[1]] * B.x() + coords[local_vert_idx[2]] * P.x();
+            FT Ty = coords[local_vert_idx[2]] * P.y();
+
+            return Point_2(Tx, Ty);
+        }
+    };
+    */
+
+    Point_2 construct_target_point(halfedge_descriptor opposite_halfedge, Face_location target_face_location, Point_2 B, Point_2 P)
+    {
+        Barycentric_coordinates coords = target_face_location.second; //m_target_face_locations[target_face_index].second;
+        std::array<int, 3> local_vert_idx = get_local_vertex_indices(opposite_halfedge);
+        // C becomes the target point and we also test visibility with respect to the target point (C = Q)
+        FT Tx = coords[local_vert_idx[1]] * B.x() + coords[local_vert_idx[2]] * P.x();
+        FT Ty = coords[local_vert_idx[2]] * P.y();
+
+        return Point_2(Tx, Ty);
+    }
 
     class Get_heuristic_parameter
     {
@@ -619,32 +661,21 @@ public:
         std::pair<FT, FT> new_geodesic_dist = get_new_dist(intersection, h, C, S);
         face_descriptor face = m_mesh.face(m_mesh.opposite(h));
 
-        if (face.idx() == 19)
-        {
-            std::cout << "BEFORE UPDATE: " << m_face_values[face] << std::endl;
-            std::cout << "new geodesic distances: " << new_geodesic_dist.first << ", " << new_geodesic_dist.second << std::endl;
-        }
-
         if (new_geodesic_dist.second < m_face_values[face].d)
         {
             set_squared_vertex_distances(intersection, h, new_geodesic_dist, P, S);
-
             return { true, new_geodesic_dist.second };
-        }
-
-        if (face.idx() == 19)
-        {
-            std::cout << "AFTER UPDATE: " << m_face_values[face] << std::endl;
         }
 
         return { false, FT(-1.) };
     }
 
-    template<class SkipCondition>
     void enqueue_new_halfedges(halfedge_descriptor h, FT new_geodesic_dist, int iter)
     {
-        FT dist_i(iter);
-        bool enqueue_in_A = SkipCondition()();
+        FT geodesic_radius(iter);
+
+        //bool enqueue_in_A = m_Enqueue_policy();
+        bool enqueue_in_A = m_Enqueue_policy(new_geodesic_dist, geodesic_radius);
 
         if (enqueue_in_A)
         {
@@ -674,12 +705,8 @@ public:
         std::pair<bool, int> is_target_face = belongs_to_target_face(opposite_halfedge);
         if (is_target_face.first)
         {
-            Barycentric_coordinates coords = m_target_face_locations[is_target_face.second].second;
-            std::array<int, 3> local_vert_idx = get_local_vertex_indices(opposite_halfedge);
-            // C becomes the target point and we also test visibility with respect to the target point (C = Q)
-            FT C1 = coords[local_vert_idx[1]] * B.x() + coords[local_vert_idx[2]] * P.x();
-            FT C2 = coords[local_vert_idx[2]] * P.y();
-            C = { C1, C2 };
+            Face_location target_face_location = m_target_face_locations[is_target_face.second];
+            C = construct_target_point(opposite_halfedge, target_face_location, B, P);
             Q = C;
         }
         else
@@ -692,7 +719,7 @@ public:
         // intersection test
         auto intersection = Edge_intersection_test()(S, Q, A, B);
         std::pair<bool, FT> update_result = update_face_values(intersection, halfedge, C, P, S);
-        if (update_result.first) { enqueue_new_halfedges<SingleQueue>(opposite_halfedge, update_result.second, iter); }
+        if (update_result.first) { enqueue_new_halfedges(opposite_halfedge, update_result.second, iter); }
     }
 
     void propagate_geodesic_source(Face_location source)
@@ -703,15 +730,23 @@ public:
         int iter = 1;
         while (!m_A.empty())
         {
-            std::cout << "iteration " << iter << std::endl;
-            std::cout << "updating faces: ";
+            //std::cout << "iteration " << iter << std::endl;
+            //std::cout << "updating faces: ";
+
             // iterate over halfedges in queue and update face values
             while (!m_A.empty()) {
                 halfedge_descriptor h = m_A.front();
                 m_A.pop();
 
-                propagate_over_halfedge(h, iter);
-                std::cout << m_mesh.face(h) << "\t" << std::endl;
+                if (m_Skip_condition())
+                {
+                    m_B.push(h);
+                }
+                else
+                {
+                    propagate_over_halfedge(h, iter);
+                    //std::cout << m_mesh.face(h) << "\t" << std::endl;
+                }
             }
 
             m_A = m_B;
@@ -720,11 +755,11 @@ public:
             iter++;
         }
 
-        std::cout << "algorithm has concluded and the following face values were obtained:" << std::endl;
-        for (face_descriptor f : faces(m_mesh))
-        {
-            std::cout << f.idx() << ":\t" <<  m_face_values[f] << std::endl;
-        }
+        //std::cout << "algorithm has concluded and the following face values were obtained:" << std::endl;
+        //for (face_descriptor f : faces(m_mesh))
+        //{
+        //    std::cout << f.idx() << ":\t" <<  m_face_values[f] << std::endl;
+        //}
     }
 
     void propagate_geodesic_source(Point_3 source)

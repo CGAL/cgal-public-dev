@@ -18,7 +18,11 @@ typedef Graph_traits::halfedge_descriptor halfedge_descriptor;
 typedef Graph_traits::face_descriptor face_descriptor;
 
 typedef CGAL::Surface_mesh_approximate_shortest_path_traits<Kernel, Surface_mesh>   Traits;
-typedef CGAL::Surface_mesh_approximate_shortest_path<Traits>                        Surface_mesh_approximate_shortest_path;
+typedef CGAL::Surface_mesh_approximate_shortest_path_3::Never_skip_condition        Skip_condition;
+//typedef CGAL::Surface_mesh_approximate_shortest_path_3::Always_enqueue_in_A         Enqueue_policy;
+typedef CGAL::Surface_mesh_approximate_shortest_path_3::Static_speed_limiter         Enqueue_policy;
+
+typedef CGAL::Surface_mesh_approximate_shortest_path<Traits, Skip_condition, Enqueue_policy>  Surface_mesh_approximate_shortest_path;
 
 typedef CGAL::Face_values<Kernel>   Face_values;
 

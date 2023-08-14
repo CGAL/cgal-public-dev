@@ -1,6 +1,8 @@
 cmake_minimum_required(VERSION 3.1...3.23)
 project(Surface_mesh_approximate_shortest_path_Tests)
 
+#set(CMAKE_BUILD_TYPE Release)
+
 #include_directories(BEFORE "include")
 
 find_package(CGAL REQUIRED OPTIONAL_COMPONENTS Core)
