@@ -14,6 +14,7 @@
 #define COLLISION_MESH_3_H
 
 #include <CGAL/Surface_mesh.h>
+#include <Trajectories.h>
 
 namespace CGAL {
 
@@ -21,6 +22,10 @@ namespace CGAL {
   class Collision_mesh: public Surface_mesh<typename K_::Point_3> {
 
     public:
+        struct Point_3_trajectory;
+        struct Segment_3_trajectory;
+        struct Triangle_3_trajectory;
+        
         typedef typename K_                                 K;
         typedef typename K::Point_3                         Point;
         typedef typename K::Vector_3                        Vector;
@@ -33,10 +38,15 @@ namespace CGAL {
         typedef typename Base::Vertex_around_face_range     Vertex_around_face_range;
         typedef typename Base::size_type                    size_type;
 
+        typedef typename ::CGAL::Point_3_trajectory<K>    Point_trajectory;
+        typedef typename ::CGAL::Segment_3_trajectory<K>  Segment_trajectory;
+        typedef typename ::CGAL::Triangle_3_trajectory<K> Triangle_trajectory;
+
         typedef decltype(Base().template add_property_map<Vertex_index, Vector>("v:velocity").first)        Vector_map;
         typedef decltype(Base().template add_property_map<Vertex_index, Point>("v:next_point").first)       Point_map;
+
         typedef decltype(Base().template add_property_map<Vertex_index, CGAL::IO::Color>("v:color").first)  Vertex_color_map;
-        // typedef decltype(Base().template add_property_map<Edge_index, CGAL::IO::Color>("e:color").first)    Edge_color_map;
+        typedef decltype(Base().template add_property_map<Edge_index, CGAL::IO::Color>("e:color").first)    Edge_color_map;
         typedef decltype(Base().template add_property_map<Face_index, CGAL::IO::Color>("f:color").first)    Face_color_map;
 
         typedef typename boost::graph_traits<Collision_mesh<K>>::vertex_descriptor      vertex_descriptor;
@@ -47,8 +57,9 @@ namespace CGAL {
     private:
         Vector_map vvelocity_;
         Point_map vnext_point_;
+
         Vertex_color_map vcolor_;
-        // Edge_color_map ecolor_;
+        Edge_color_map ecolor_;
         Face_color_map fcolor_;
     
     public:
@@ -69,6 +80,10 @@ namespace CGAL {
         const Point& next_point(Vertex_index v) const;
         Point& next_point(Vertex_index v);
 
+        Point_trajectory point_trajectory(Vertex_index v) const;
+        Segment_trajectory edge_trajectory(Halfedge_index h) const;
+        Triangle_trajectory face_trajectory(Face_index f) const;
+
         void color(const Face_index& fi, CGAL::IO::Color c);
   };
 
@@ -82,10 +97,13 @@ namespace CGAL {
         vvelocity_ = add_property_map<Vertex_index, Vector>("v:velocity").first;
         vnext_point_ = add_property_map<Vertex_index, Point>("v:next_point").first;
         vcolor_ = add_property_map<Vertex_index, CGAL::IO::Color>("v:color").first;
+
+        //
+        // Initialize vertex maps
         for(const vertex_descriptor& vd : vertices()){
+            put(vcolor_, vd, CGAL::IO::black());
             put(vvelocity_, vd, Vector(0, 0, 0));
             put(vnext_point_, vd, point(vd));
-            put(vcolor_, vd, CGAL::IO::black());
         }
 
         fcolor_ = add_property_map<Face_index, CGAL::IO::Color>("f:color").first;
@@ -99,6 +117,7 @@ namespace CGAL {
         vvelocity_ = add_property_map<Vertex_index, Vector>("v:velocity").first;
         vnext_point_ = add_property_map<Vertex_index, Point>("v:next_point").first;
         vcolor_ = add_property_map<Vertex_index, CGAL::IO::Color>("v:color").first;
+
         for(const vertex_descriptor& vd : vertices()){
             put(vvelocity_, vd, Vector(0, 0, 0));
             put(vnext_point_, vd, point(vd));
@@ -167,6 +186,32 @@ namespace CGAL {
 
     template <class K>
     typename K::Point_3& Collision_mesh<K>::next_point(Vertex_index v) { return vnext_point_[v]; }
+
+    template <class K>
+    auto Collision_mesh<K>::point_trajectory(Vertex_index v) const -> Point_trajectory
+    { 
+        return Point_trajectory(point(v), next_point(v)); 
+    }
+
+    template <class K>
+    auto Collision_mesh<K>::edge_trajectory(Halfedge_index h) const -> Segment_trajectory
+    { 
+        return Segment_trajectory(
+            point_trajectory(source(h)), 
+            point_trajectory(target(h))
+        ); 
+    }
+
+    template <class K>
+    auto Collision_mesh<K>::face_trajectory(Face_index f) const -> Triangle_trajectory
+    { 
+        Halfedge_index h = halfedge(f);
+        return Triangle_trajectory(
+            point_trajectory(source(h)), 
+            point_trajectory(target(h)),
+            point_trajectory(target(next(h)))
+        ); 
+    }
 
     template <class K>
     void Collision_mesh<K>::color(const Face_index& fi, CGAL::IO::Color c) {

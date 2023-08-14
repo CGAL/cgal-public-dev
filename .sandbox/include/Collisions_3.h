@@ -27,63 +27,91 @@ namespace CGAL{
       std::vector< Collision_mesh<K> >& meshes
   ){
     Collision_scene<K> scene = Collision_scene<K>(meshes);
-    return do_collide(scene); //
+    return has_collision(scene); //
   }
 
   template <class K>
-  bool do_collide(
+  bool has_collision(
       const Collision_scene<K>& scene
   ){
+    using Scene_face_index = Collision_scene<K>::Scene_face_index;
+    using Candidate = Collision_candidate<Scene_face_index>;
 
-    bool do_collide_{false};
-    for( const auto& t : scene.trajectories_ )
+    std::vector<Candidate> candidates = get_collision_candidates(scene);
+
+    for( const auto& candidate : candidates )
     {
-      do_collide_ = do_collide_ || scene.tree().do_intersect(t.bounding_iso_cuboid);
+      if( candidate_has_collision(scene, candidate) ){
+        return true;
+      }
     }
-    return do_collide_; //
+    return false; //
   }
 
   template <class K>
-  std::vector<
-    Collision_candidate<
-      typename Collision_scene<K>::Scene_face_index
-    > 
-  > get_collision_candidates(
+  bool candidate_has_collision(
+      const Collision_candidate<typename Collision_scene<K>::Trajectory>& candidate 
+  ){
+
+    using Trajectory = Collision_scene<K>::Trajectory;
+
+    Trajectory* trajectory_0{candidate.first};
+    Trajectory* trajectory_1{candidate.second};
+
+    size_t collision_parity{0};
+    for( const auto& t : scene.trajectories_ )
+    {
+      collision_parity += scene.tree().do_intersect(t.bounding_iso_cuboid);
+    }
+
+    // If the number of ray-intersections is odd, 
+    // then a collision has occurred.
+    return static_cast<bool>(collision_parity%2);                                      
+  }
+
+  
+
+  template <class K>
+  bool candidate_has_edge_edge_collision(
+      const Collision_candidate<typename Collision_scene<K>::Trajectory>& candidate 
+  ){
+
+    using Trajectory = Collision_scene<K>::Trajectory;
+
+    size_t collision_parity{0};
+    for( const auto& t : scene.trajectories_ )
+    {
+      collision_parity += scene.tree().do_intersect(t.bounding_iso_cuboid);
+    }
+
+    // If the number of ray-intersections is odd, 
+    // then a collision has occurred.
+    return static_cast<bool>(collision_parity%2);                                      
+  }
+
+  template <class K>
+  auto get_collision_candidates(
     const Collision_scene<K>& scene
-  ){      
+  ) -> std::vector< Collision_candidate<typename Collision_scene<K>::Trajectory> >
+  {      
       typedef Collision_candidate< 
-        typename Collision_scene<K>::Scene_face_index 
+        typename Collision_scene<K>::Trajectory 
       > Candidate;
 
-      std::vector<Candidate> candidates;
       const auto candidate_primitive_pairs = scene.tree().all_self_intersections();
+
+      std::vector<Candidate> candidates;
       candidates.reserve(candidate_primitive_pairs.size());
 
-      std::transform(
-        candidate_primitive_pairs.begin(), 
-        candidate_primitive_pairs.end(), 
-        std::back_inserter(candidates),
-        [](const auto & primitive_pair){
-          return Candidate(
-            primitive_pair.first->index,
-            primitive_pair.second->index
-          );
-        }
-      );
+      for( const auto& primitive_pair : candidate_primitive_pairs ) {
+        candidates.push_back(
+          Candidate(primitive_pair)
+        );
+      }
+      
       return candidates;
   }
 
-  template <class K>
-  std::vector<
-    Collision_candidate<
-      typename Collision_scene<K>::Scene_face_index
-    > 
-  > get_collision_candidates(
-    std::vector<Collision_mesh<K>>& meshes
-  ){      
-      Collision_scene<K> scene = Collision_scene<K>(meshes);
-      return get_collision_candidates(scene);
-  }
 
 } // end CGAL
 #endif
