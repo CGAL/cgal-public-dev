@@ -29,6 +29,11 @@ typedef Kernel::FT                        FT;
 int main(int argc, char* argv[])
 {
 
+std::srand(std::time(nullptr));
+FT rand_max{RAND_MAX};
+FT u = FT(std::rand())/rand_max;
+FT v = FT(std::rand())/rand_max;
+
 // =============================
 // Stuff for me to revisit later
 // =============================
@@ -44,31 +49,37 @@ Vector bump(0.,0.,.01);
 Vector huge_bump(0.,0.1,1000.);
 
 Point surface_point   = bp(0.5, 0.5);
+Point surface_point2  = bp(u, v);
 Point point_below     = ::CGAL::ORIGIN + ((surface_point-::CGAL::ORIGIN) + bump); // meaning phi > 0, not above the surface
 Point point_above     = ::CGAL::ORIGIN + ((surface_point-::CGAL::ORIGIN) - bump);
 Point point_way_above = ::CGAL::ORIGIN + ((surface_point-::CGAL::ORIGIN) - huge_bump);
 
-std::cout << "Confirm phi(surface_point) is near zero: " << CGAL::to_double(bp.aux_phi(surface_point)) << "\n";
+std::cout << "Value of phi(surface_point) [should be ~zero]: "    << CGAL::to_double(bp.aux_phi(surface_point)) << "\n";
+std::cout << "Value of phi(surface_point2) [should be ~zero]: "   << CGAL::to_double(bp.aux_phi(surface_point2)) << "\n";
+std::cout << "Value of phi(point_below) [should be < zero]: "     << CGAL::to_double(bp.aux_phi(point_below)) << "\n";
+std::cout << "Value of phi(point_above) [should be > zero]: "     << CGAL::to_double(bp.aux_phi(point_above)) << "\n";
+std::cout << "Value of phi(point_way_above) [should be >> zero]: "<< CGAL::to_double(bp.aux_phi(point_way_above)) << "\n\n";
+
 
 // Case 1a:
-Ray r(surface_point, point_above);
-bool does_intersect = ::CGAL::Intersections::internal::do_intersect_odd_parity(bp, r);
-std::cout << "Ray originating on the surface does intersect: " << does_intersect << "\n\n";
+// Ray r(surface_point, point_above);
+// bool does_intersect = ::CGAL::Intersections::internal::do_intersect_odd_parity(bp, r);
+// std::cout << "Ray originating on the surface does intersect: " << does_intersect << "\n";
 
 // Case 1b:
-r = Ray(point_above, point_below);
-does_intersect = ::CGAL::Intersections::internal::do_intersect_odd_parity(bp, r);
-std::cout << "Ray originating in the bounding tetrahedron (above surface) and passing through does intersect: " << does_intersect << "\n\n";
+Ray r = Ray(point_above, point_below);
+bool does_intersect = ::CGAL::Intersections::internal::do_intersect_odd_parity(bp, r);
+std::cout << "Ray originating in the bounding tetrahedron (above surface) and passing through does intersect: " << does_intersect << "\n";
 
 // Case 1c:
 r = Ray(point_below, point_above);
 does_intersect = ::CGAL::Intersections::internal::do_intersect_odd_parity(bp, r);
-std::cout << "Ray originating in the bounding tetrahedron (below surface) and passing through does intersect: " << does_intersect << "\n\n";
+std::cout << "Ray originating in the bounding tetrahedron (below surface) and passing through does intersect: " << does_intersect << "\n";
 
 // Case 2:
 r = Ray(point_way_above, point_below);
 does_intersect = ::CGAL::Intersections::internal::do_intersect_odd_parity(bp, r);
-std::cout << "Ray originating outside the bounding tetrahedron and passing through does intersect: " << does_intersect << "\n\n";
+std::cout << "Ray originating outside the bounding tetrahedron and passing through does intersect: " << does_intersect << "\n";
 
 // Tetrahedron t = bp.tetrahedron();
 

@@ -29,6 +29,7 @@ class BilinearPatchC3
   typedef typename R_::Vector_3             Vector_3;
   typedef typename R_::Plane_3              Plane_3;
   typedef typename R_::Triangle_3           Triangle_3;
+  typedef typename R_::Segment_3            Segment_3;
   typedef typename R_::Tetrahedron_3        Tetrahedron_3;
   typedef          Interval_nt_advanced     IA_NT;
 
@@ -38,8 +39,15 @@ class BilinearPatchC3
   Base base;
   
   Origin origin = ::CGAL::ORIGIN;
+  bool PQR_COLLINEAR_{false};
+  bool QRS_COLLINEAR_{false};
+  bool IS_PLANAR_{false};
+  bool IS_SEGMENTS_{false};
+  bool IS_DEGENERATE_{false};
 
 public:
+  std::vector<Segment_3> segments_;
+  std::vector<Triangle_3> triangles_;
   typedef R_                                R;
   typedef typename R::Tetrahedron_3         Tetrahedron;
 
@@ -49,8 +57,27 @@ public:
   // NOTE:  specify the points as a cycle around the perimeter!
   //                           q00,              q01,              q11,              q10
   BilinearPatchC3(const Point_3 &p, const Point_3 &q, const Point_3 &r, const Point_3 &s)
-    : base(CGAL::make_array(p, q, r, s)) {
+    : base(CGAL::make_array(p, q, r, s)) 
+    {
       bounding_tetrahedron = Tetrahedron(p, q, r, s);
+
+      IS_SEGMENTS_ = collinear(p,q,r) && collinear(q,r,s);
+      IS_PLANAR_ = bounding_tetrahedron.is_degenerate() && !IS_SEGMENTS_;
+      IS_DEGENERATE_ = IS_PLANAR_ || IS_SEGMENTS_;
+
+      if( IS_PLANAR_ ) {
+        triangles_.reserve(2);
+        triangles_.push_back(R::Triangle_3(vertex(0), vertex(1), vertex(2)));
+        triangles_.push_back(R::Triangle_3(vertex(2), vertex(3), vertex(0)));
+      }
+
+      if( IS_SEGMENTS_ ) {
+        segments_.reserve(4);
+        segments_.push_back(R::Segment_3(vertex(0), vertex(1)));
+        segments_.push_back(R::Segment_3(vertex(1), vertex(2)));
+        segments_.push_back(R::Segment_3(vertex(2), vertex(3)));
+        segments_.push_back(R::Segment_3(vertex(3), vertex(0)));
+      }
     }
 
   bool  operator==(const BilinearPatchC3 &bp) const;
@@ -125,7 +152,9 @@ BilinearPatchC3<R>::aux_g(const Point_3 & x, const Point_3 & p, const Point_3 & 
   Interval_nt_advanced cross_y = qp_z*rp_x - qp_x*rp_z;
   Interval_nt_advanced cross_z = qp_x*rp_y - qp_y*rp_x;
 
-  return xp_x*cross_x + xp_y*cross_y + xp_z*cross_z;
+  Interval_nt_advanced result = xp_x*cross_x + xp_y*cross_y + xp_z*cross_z;
+
+  return result;
 }
 
 template < class R >
@@ -199,28 +228,44 @@ inline
 bool
 BilinearPatchC3<R>::has_on(const Point_3 &p) const
 {
-  return aux_phi(p).do_overlap(0);
+  // The patch is a collection of segments...
+  if( IS_SEGMENTS_ ) { 
+    return (
+          segments_[0].has_on(p)
+      ||  segments_[1].has_on(p)
+      ||  segments_[2].has_on(p)
+      ||  segments_[3].has_on(p)
+    );
+  }
+  
+  // If three of the points are collinear, then the
+  // function phi == 0 everywhere, and we have to partition
+  // the surface into two triangles (it's necessarily planar)
+  if( IS_PLANAR_ ) {
+  // std::cout << "Planar degeneracy\n";
+    return (
+          triangles_[0].has_on(p)
+      ||  triangles_[1].has_on(p)
+    );
+  }
+
+  // The only remaining possibility is that it's a proper bilinear patch, then the function
+  // phi == 0, if and only if p is on the patch.
+  return abs(to_double(aux_phi(p))) < 1e-14; 
 }
 
 template < class R >
 bool
 BilinearPatchC3<R>::is_degenerate() const
 {
-    if (
-        collinear(
-            vertex(0), 
-            vertex(1), 
-            vertex(2)
-        )
-    ) { std::cout << "HELLO"; }
-    return (collinear(vertex(0),vertex(1),vertex(2)) && collinear(vertex(1),vertex(2),vertex(3)));
+    return IS_DEGENERATE_;
 }
 
 template < class R >
 bool
 BilinearPatchC3<R>::is_planar() const
 {
-  return bounding_tetrahedron.is_degenerate();
+  return IS_PLANAR_;
 }
 
 template < class R >

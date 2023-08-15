@@ -39,10 +39,11 @@ namespace CGAL{
       t.next()
     );
 
-    FT random_number = FT(std::rand());
+    FT random_x = FT(std::rand());
+    FT random_y = FT(std::rand());
     Ray r(
         Point(::CGAL::ORIGIN), 
-        Point(random_number, random_number, FT(0.))
+        Point(random_x, random_y, FT(0.))
     );
     size_t num_intersections = test_boundary.num_ray_intersections(r);
 

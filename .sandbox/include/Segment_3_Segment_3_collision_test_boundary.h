@@ -110,7 +110,21 @@ size_t Segment_3_Segment_3_collision_test_boundary<K>::num_ray_intersections(Ray
   size_t num_intersections{0};
 
   for(const auto& bp : bilinear_patches_) {
+    // If the ray's origin lies on any bilinear patch,
+    // count that as a collision.
+    // TODO: transition to exact arithmetic if 0 is in
+    //       the interval.
+    if (bp.has_on(r.source()))
+    {
+      std::cout << "Origin on patch...\n";
+      std::cout << bp << "\n";
+      return 1;
+    } 
+
+    // Otherwise, proceed with ray-intersection testing to
+    // compute the parity of intersections with the boundary
     if( ::CGAL::Intersections::internal::do_intersect_odd_parity(bp, r) ) { ++num_intersections; }
+
   }
 
   return num_intersections;

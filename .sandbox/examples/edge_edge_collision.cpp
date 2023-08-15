@@ -33,17 +33,17 @@ typedef Kernel::FT                        FT;
 int main(int argc, char* argv[])
 {
 
-Point s00_past(1, 0, -1);
-Point s00_next(1, 0,  1);
+Point s10_past(-1,  1, 0);
+Point s10_next(-1, -1, 0);
 
-Point s01_past(-1, 0, -1);
-Point s01_next(-1, 0,  1);
+Point s11_past( 1,  1, 0);
+Point s11_next( 1, -1, 0);
 
-Point s10_past(0, 1,  1);
-Point s10_next(0, 1, -1);
+Point s00_past(0, -1, -1);
+Point s00_next(0,  1, -1);
 
-Point s11_past(0, -1,  1);
-Point s11_next(0, -1, -1);
+Point s01_past(0, -1,  1);
+Point s01_next(0,  1,  1);
 
 P_trajectory s00(s00_past, s00_next);
 P_trajectory s01(s01_past, s01_next);
@@ -54,6 +54,30 @@ S_trajectory s0(s00, s01);
 S_trajectory s1(s10, s11);
 
 std::cout << "Confirm these edges collide: " << CGAL::do_collide(s0, s1) << std::endl;
+
+
+
+s10_past = Point(1,  1, -1);
+s10_next = Point(1, -1, -1);
+
+s11_past = Point(1,  1, 1);
+s11_next = Point(1, -1, 1);
+
+s00_past = Point(0, -1, -1);
+s00_next = Point(0,  1, -1);
+
+s01_past = Point(0, -1,  1);
+s01_next = Point(0,  1,  1);
+ 
+s00 = P_trajectory(s00_past, s00_next);
+s01 = P_trajectory(s01_past, s01_next);
+s10 = P_trajectory(s10_past, s10_next);
+s11 = P_trajectory(s11_past, s11_next);
+
+s0 = S_trajectory(s00, s01);
+s1 = S_trajectory(s10, s11);
+
+std::cout << "Confirm these edges do not collide: " << CGAL::do_collide(s0, s1) << std::endl;
 // Tetrahedron t = bp.tetrahedron();
 
 // Point outside_point = Point(1, 1, 1);

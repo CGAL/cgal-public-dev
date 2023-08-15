@@ -59,14 +59,10 @@ class Segment_3_Segment_3_collision_function {
       {}
 
     Point operator() (const FT& t, const FT& u, const FT& v) const {
-      FT complement_u{ONE - u};
-      FT complement_v{ONE - v};
-      
       Vector interpolant = (
-          (ONE - t)*(complement_u*x0      + u*x1      - complement_v*x2      - v*x3     )
-        -       (t)*(complement_u*x0_next + u*x1_next - complement_v*x2_next - v*x3_next)
+          (ONE - t)*((x0      + u*(x1      - x0     )) - (x2      + v*(x3      - x2     )))
+        +       (t)*((x0_next + u*(x1_next - x0_next)) - (x2_next + v*(x3_next - x2_next)))
       );
-      
       return origin + interpolant;
 
     };
