@@ -42,9 +42,7 @@ do_intersect_odd_parity(
   // Unfortunately, Bridson's methodology only works for determining the
   // parity of intersections. Returns true if parity is odd.
 
-  std::cout << "Bilinear patch...\n" << bp;
-  if(!bp.is_degenerate()) {
-    std::cout << "Degenerate bilinear patch...\n" << bp;
+  if(bp.is_degenerate()) {
     return false;
   };
 

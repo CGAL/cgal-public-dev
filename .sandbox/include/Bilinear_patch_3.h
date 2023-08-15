@@ -16,6 +16,7 @@
 #include <CGAL/Handle_for.h>
 #include <CGAL/Interval_nt.h>
 #include <CGAL/array.h>
+#include <iostream>
 
 namespace CGAL {
 
@@ -205,7 +206,14 @@ template < class R >
 bool
 BilinearPatchC3<R>::is_degenerate() const
 {
-  return (collinear(vertex(0),vertex(1),vertex(2)) && collinear(vertex(1),vertex(2),vertex(3)));
+    if (
+        collinear(
+            vertex(0), 
+            vertex(1), 
+            vertex(2)
+        )
+    ) { std::cout << "HELLO"; }
+    return (collinear(vertex(0),vertex(1),vertex(2)) && collinear(vertex(1),vertex(2),vertex(3)));
 }
 
 template < class R >

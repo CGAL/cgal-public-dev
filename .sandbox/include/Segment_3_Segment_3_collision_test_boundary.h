@@ -48,19 +48,20 @@ class Segment_3_Segment_3_collision_test_boundary{
     Collision_function          collision_function_;
     std::vector<Bilinear_patch> bilinear_patches_;
 
-    Bilinear_patch make_bilinear_patch_facet(const Point& A, const Point& B, const Point& C, const Point& D) const;
-
     FT ONE{1.};
     FT ZERO{0.};
 
-    Point A0{ZERO, ZERO, ZERO}; // (t, u, v)
-    Point B0{ZERO, ZERO, ONE };
-    Point C0{ZERO, ONE , ONE };
-    Point D0{ZERO, ONE , ZERO};
-    Point A1{ONE,  ZERO, ZERO};
-    Point B1{ONE,  ZERO, ONE };
-    Point C1{ONE,  ONE , ONE };
-    Point D1{ONE,  ONE , ZERO};
+    Point A0 = Point(ZERO, ZERO, ZERO); // (t, u, v)
+    Point B0 = Point(ZERO, ZERO, ONE );
+    Point C0 = Point(ZERO, ONE , ONE );
+    Point D0 = Point(ZERO, ONE , ZERO);
+    Point A1 = Point(ONE,  ZERO, ZERO);
+    Point B1 = Point(ONE,  ZERO, ONE );
+    Point C1 = Point(ONE,  ONE , ONE );
+    Point D1 = Point(ONE,  ONE , ZERO);
+
+    Bilinear_patch make_bilinear_patch_facet(const Point& A, const Point& B, const Point& C, const Point& D) const;
+
 
   public:
     Segment_3_Segment_3_collision_test_boundary( 
@@ -70,15 +71,15 @@ class Segment_3_Segment_3_collision_test_boundary{
       const Segment& s1_next
     ) 
       : collision_function_(s0_cur, s0_next, s1_cur, s1_next)
-      , bilinear_patches_{
-          make_bilinear_patch_facet(A0, B0, C0, D0),  // t = 0
-          make_bilinear_patch_facet(A1, B1, C1, D1),  // t = 1
-          make_bilinear_patch_facet(A0, B0, B1, A1),  // u = 0
-          make_bilinear_patch_facet(C0, D0, D1, C1),  // u = 1
-          make_bilinear_patch_facet(A0, D0, D1, A1),  // v = 0
-          make_bilinear_patch_facet(B0, C0, C1, B1)   // v = 1
-        }
-    {}
+    {
+        bilinear_patches_.reserve(6);
+        bilinear_patches_.push_back(make_bilinear_patch_facet(A0, B0, C0, D0));  // t = 0
+        bilinear_patches_.push_back(make_bilinear_patch_facet(A1, B1, C1, D1));  // t = 1
+        bilinear_patches_.push_back(make_bilinear_patch_facet(A0, B0, B1, A1));  // u = 0
+        bilinear_patches_.push_back(make_bilinear_patch_facet(C0, D0, D1, C1));  // u = 1
+        bilinear_patches_.push_back(make_bilinear_patch_facet(A0, D0, D1, A1));  // v = 0
+        bilinear_patches_.push_back(make_bilinear_patch_facet(B0, C0, C1, B1));  // v = 1
+    }
 
     size_t num_ray_intersections(Ray r) const;
     std::vector<Bilinear_patch> facets() const;
