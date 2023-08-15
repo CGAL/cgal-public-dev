@@ -11,6 +11,7 @@
 #include <CGAL/Polygon_mesh_processing/compute_normal.h>
 #include <CGAL/OpenGR/compute_registration_transformation.h>
 #include <CGAL/OpenGR/register_point_sets.h>
+#include <Eigen/SVD>
 #include <Eigen/Dense>
 #include <Eigen/Sparse>
 #include <Eigen/UmfPackSupport>
@@ -274,28 +275,38 @@ std::pair<Transform, Mesh> nonrigid_registration(const Mesh& source, const Point
         Splitter(),
         Traits(index_map)); // when called, returns the index of the nearest neighbor on target mesh
     // solver
-    Eigen::BiCGSTAB< Eigen::SparseMatrix<double, Eigen::RowMajor> > cg;
+    Eigen::LeastSquaresConjugateGradient< Eigen::SparseMatrix<double, Eigen::RowMajor> > cg;
     cg.setMaxIterations(1000);
     cg.setTolerance(1e-5);
     // sparse coefficient matrix A
-    Eigen::SparseMatrix<double, Eigen::RowMajor> A(6 + 2 * 3 * N, 6 + 2 * 3 * N);
-    std::vector<T> a(72 * N + 30 * E);
+    Eigen::SparseMatrix<double, Eigen::RowMajor> A(6 + 2 * 3 * N + 3 * N, 6 + 2 * 3 * N);
+    std::vector<T> a(72 * N + 30 * E + 3 * N + 2 * 3 * E);
     size_t rolling = 0;
+    // graph Laplacian for arap rotation
+    for (auto it = z.vertices().begin(); it != z.vertices().end(); ++it) {
+        auto i = it->idx();
+        for (auto he : CGAL::halfedges_around_target(*it, z)) {
+            auto v0 = CGAL::source(he, z);
+            auto j = v0.idx();
+            a[rolling++] = T(6 + 2 * 3 * N + 3 * i + 0, 6 + 3 * N + 3 * j + 0, -1);
+            a[rolling++] = T(6 + 2 * 3 * N + 3 * i + 1, 6 + 3 * N + 3 * j + 1, -1);
+            a[rolling++] = T(6 + 2 * 3 * N + 3 * i + 2, 6 + 3 * N + 3 * j + 2, -1);
+        }
+        a[rolling++] = T(6 + 2 * 3 * N + 3 * i + 0, 6 + 3 * N + 3 * i + 0, CGAL::halfedges_around_target(*it, z).size());
+        a[rolling++] = T(6 + 2 * 3 * N + 3 * i + 1, 6 + 3 * N + 3 * i + 1, CGAL::halfedges_around_target(*it, z).size());
+        a[rolling++] = T(6 + 2 * 3 * N + 3 * i + 2, 6 + 3 * N + 3 * i + 2, CGAL::halfedges_around_target(*it, z).size());
+    }
     // result vector b
-    Eigen::VectorXd b(6 + 2 * 3 * N);
+    Eigen::VectorXd b(6 + 2 * 3 * N + 3 * N);
     double error = std::numeric_limits<double>::max();
-    //std::vector<double> weights;
-    //   for (size_t i = 0; i < N; ++i) {
-    //       if (rand() % 1 == 0) {
-    //           weights.push_back(1.0);
-    //       }
-    //}
     for (size_t iter = 0; iter < max_iter; ++iter) {
         b.setZero();
-        rolling = 0;
+        rolling = 3 * N + 2 * 3 * E;
+        std::vector<Eigen::Matrix3d> Rotations(N);
         auto start = std::chrono::high_resolution_clock::now();
         for (auto it = z.vertices().begin(); it != z.vertices().end(); ++it) {
             auto i = it->idx();
+            // if point is a landmark, increase its weight
             bool is_corr = correspondence.find(i) != correspondence.end();
             double w1_corr = is_corr ? w1 * 1000 : w1;
             double w2_corr = is_corr ? w2 * 1000 : w2;
@@ -315,6 +326,7 @@ std::pair<Transform, Mesh> nonrigid_registration(const Mesh& source, const Point
                 x_t(2), 0, -x_t(0),
                 -x_t(1), x_t(0), 0;
             Eigen::Matrix3d XX_t(X_t * X_t);
+            Eigen::Matrix3d covariance = Eigen::Matrix3d::Zero();
             Eigen::Matrix3d rirj_diag_block = Eigen::Matrix3d::Zero();
             Eigen::Matrix3d zirj_diag_block = Eigen::Matrix3d::Zero();
             Eigen::Matrix3d rizj_diag_block = Eigen::Matrix3d::Zero();
@@ -340,7 +352,23 @@ std::pair<Transform, Mesh> nonrigid_registration(const Mesh& source, const Point
                         }
                     }
                 }
+                // for arap: (p_i - p_j) * (p_i' - p_j')^T
+                Point yp = target.point(i);
+                Eigen::Vector3d y_t(yp.x(), yp.y(), yp.z());
+                Point ypk = target.point(v0.idx());
+                Eigen::Vector3d y_t_k(ypk.x(), ypk.y(), ypk.z());
+                covariance += (x_t - x_t_k) * (y_t - y_t_k).transpose();
             }
+            // for arap: full rotation matrices
+            Eigen::JacobiSVD<Eigen::Matrix3d> svd;
+            svd.compute(covariance, Eigen::ComputeFullU | Eigen::ComputeFullV);
+            Rotations[i] = svd.matrixV() * svd.matrixU().transpose();
+            /*double det = Rotation.determinant();
+            if (det < 0) {
+				Eigen::Matrix3d B = Eigen::Matrix3d::Identity();
+				B(2, 2) = -1;
+				Rotation = svd.matrixV() * B * svd.matrixU().transpose();
+			}*/
             for (int j = 0; j < 3; ++j) {
                 for (int k = 0; k < 3; ++k) {
                     a[rolling++] = T(j, k, -XX_t(j, k)); // A_rr
@@ -369,6 +397,18 @@ std::pair<Transform, Mesh> nonrigid_registration(const Mesh& source, const Point
                 Point xpk = z.point(v0);
                 Eigen::Vector3d x_t_k(xpk.x(), xpk.y(), xpk.z());
                 b.segment<3>(6 + 3 * N + 3 * i) -= 2 * w4 * (x_t_k - x_t);
+            }
+        }
+        for (auto it = z.vertices().begin(); it != z.vertices().end(); ++it) {
+            auto i = it->idx();
+            for (auto he : CGAL::halfedges_around_target(*it, z)) {
+                auto v0 = CGAL::source(he, z);
+                auto j = v0.idx();
+                Point zp = z.point(*it);
+                Eigen::Vector3d x_t(zp.x(), zp.y(), zp.z());
+                Point xpk = z.point(v0);
+                Eigen::Vector3d x_t_k(xpk.x(), xpk.y(), xpk.z());
+                b.segment<3>(6 + 2 * 3 * N + 3 * i) = (Rotations[i] - Rotations[j]) * (x_t - x_t_k);
             }
         }
         A.setFromTriplets(a.begin(), a.end());
@@ -421,19 +461,19 @@ int main(int argc, char* argv[]) {
     Mesh mesh1 = readToscaMesh("../meshes/toscahires-asci/wolf0");
     Mesh mesh2 = readToscaMesh("../meshes/toscahires-asci/wolf1");
     Correspondence correspondence = readCorrespondence("../meshes/correspondence.txt");
-    CGAL::draw(merge_meshes(mesh1, mesh2));
+    CGAL::draw(merge_meshes(mesh1, mesh2, correspondence));
     
     //auto opengr_result = CGAL::OpenGR::compute_registration_transformation(Mesh2PointSet(mesh2), Mesh2PointSet(mesh1));
     //Transform opengr_transform = opengr_result.first;
     //CGAL::Polygon_mesh_processing::transform(opengr_transform, mesh1);
     //CGAL::draw(merge_meshes(mesh1, mesh2));
     
-    auto rigid_result = rigid_registration(Mesh2PointSet(mesh1), Mesh2PointSet(mesh2), 0.1, 0.1, 1.0, 10, 4, correspondence);
+    auto rigid_result = rigid_registration(Mesh2PointSet(mesh1), Mesh2PointSet(mesh2), 0.1, 0.1, 1.0, 10, 4);
     Transform transform = rigid_result.first;
     CGAL::Polygon_mesh_processing::transform(transform, mesh1);
     //CGAL::Polygon_mesh_processing::transform(Transform(CGAL::Translation(), Vector(-40, 0, 0)), mesh1);
     //CGAL::draw(merge_meshes(mesh1, mesh2));
-    auto nonrigid_result = nonrigid_registration(mesh1, Mesh2PointSet(mesh2), 0.1, 0.1, 1.0, 10.0, 10, 4, correspondence);
+    auto nonrigid_result = nonrigid_registration(mesh1, Mesh2PointSet(mesh2), 0.1, 0.1, 1.0, 10.0, 10, 4);
     Mesh z = nonrigid_result.second;
     CGAL::Polygon_mesh_processing::transform(Transform(CGAL::Translation(), Vector(-40, 0, 0)), z);
     CGAL::draw(merge_meshes(z, mesh2, correspondence));
