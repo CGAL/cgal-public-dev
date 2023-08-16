@@ -43,31 +43,23 @@ do_intersect_odd_parity(
   using Point = K::Point_3;
   using Interval = ::CGAL::Interval_nt_advanced;
 
+  CGAL_kernel_precondition(!bp.is_degenerate());
   CGAL_kernel_precondition(!r.is_degenerate());
 
   Point ray_source = r.source();
 
-  if(bp.is_degenerate()) {
-    // Case 1
-    // The bilinear patch is planar and can be treated as two triangles
-    if (bp.is_planar()) {
-      return (
-            do_intersect(bp.triangles_[0], r)
-        ||  do_intersect(bp.triangles_[1], r)
-      );
+  // Case 1
+  // The bilinear patch degenerates to coplanar triangles
+  if(bp.is_planar()) {
+    bool does_intersect_odd_parity_{false};
+    for(const auto& t : bp.triangles_)
+    { 
+      does_intersect_odd_parity_ = does_intersect_odd_parity_ || do_intersect(t, r);
     }
-
-    // Case 2
-    // The bilinear patch degenerates to connected segments (area == 0)
-    return (
-          do_intersect(bp.segments_[0], r)
-      ||  do_intersect(bp.segments_[1], r)
-      ||  do_intersect(bp.segments_[2], r)
-      ||  do_intersect(bp.segments_[3], r)
-    );
+    return does_intersect_odd_parity_;
   };
 
-  // Case 3
+  // Case 2
   // Origin lies inside bounding tetrahedron
   if (bp.tetrahedron().has_on_bounded_side(ray_source) || bp.tetrahedron().has_on_boundary(ray_source))
   {
@@ -84,8 +76,8 @@ do_intersect_odd_parity(
     ); 
 
     //  This will determine which triangles are on the opposite side
-    double phi_source = to_double(bp.aux_phi(ray_source));
-    double phi_midpoint = to_double(bp.aux_phi(mid_point));
+    double phi_source   = bp.signed_scaled_patch_distance(ray_source);
+    double phi_midpoint = bp.signed_scaled_patch_distance(mid_point);
     if ( (phi_midpoint > 0) == (phi_source > 0) ) {
       // The edge connecting 0--2 is on the same side as the ray's source
       return (
@@ -99,9 +91,9 @@ do_intersect_odd_parity(
         ||  do_intersect(Triangle(bp.vertex(0), bp.vertex(2), bp.vertex(3)), r)
       );
     }
-  } // End Case 3
+  } // End Case 2
 
-  // Case 4
+  // Case 3
   // Origin lies outside the bounding tetrahedron
   if (
        !(do_intersect(Triangle(bp.vertex(0), bp.vertex(1), bp.vertex(2)), r)) 

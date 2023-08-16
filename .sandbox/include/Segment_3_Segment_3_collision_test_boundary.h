@@ -116,10 +116,15 @@ size_t Segment_3_Segment_3_collision_test_boundary<K>::num_ray_intersections(Ray
     //       the interval.
     if (bp.has_on(r.source()))
     {
-      std::cout << "Origin on patch...\n";
-      std::cout << bp << "\n";
       return 1;
     } 
+
+    // If the patch is degenerate and does not contain 
+    // the origin, ignore it.
+    if (bp.is_degenerate())
+    {
+      continue;
+    }
 
     // Otherwise, proceed with ray-intersection testing to
     // compute the parity of intersections with the boundary
