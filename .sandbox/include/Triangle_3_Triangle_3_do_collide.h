@@ -41,16 +41,25 @@ namespace CGAL{
     // Check edge-edge collision
     for( const auto& s0 : t0_segments ) {
       for ( const auto& s1 : t1_segments ) {
-        if( do_collide(s0, s1) ) {return true;}
+        if( do_collide(s0, s1) ) {
+          std::cout << "edge-edge collision\n";
+          return true;
+        }
       }
     }
 
     // Check point-triangle collision
     for( const auto& p0 : t0 ) {
-      if( do_collide(p0, t1)) {return true;}
+      if( do_collide(p0, t1)) {
+        std::cout << "point-triangle collision\n";
+        return true;
+      }
     }
     for( const auto& p1 : t1 ) {
-      if( do_coolide(p1, t0)) {return true;}
+      if( do_coolide(p1, t0)) {
+        std::cout << "point-triangle collision\n";
+        return true;
+      }
     }
 
     return false; //

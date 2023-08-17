@@ -50,6 +50,7 @@ namespace CGAL{
       Segment_3_trajectory<K> s0,
       Segment_3_trajectory<K> s1
   ){
+    using FT = K::FT;
 
     FT random_max = FT(RAND_MAX);
     FT x = FT(std::rand()) / random_max;

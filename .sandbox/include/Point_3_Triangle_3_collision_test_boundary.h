@@ -72,16 +72,17 @@ class Point_3_Triangle_3_collision_test_boundary{
       const Triangle& t_next
     ) 
       : collision_function_(p_cur, p_next, t_cur, t_next)
-      , triangles_{
-          make_triangle_facet(A0, B0, D0),            // t = 0
-          make_triangle_facet(A1, B1, D1)             // t = 1
-        }
-      , bilinear_patches_{
-          make_bilinear_patch_facet(A0, B0, B1, A1),  // u = 0
-          make_bilinear_patch_facet(A0, D0, D1, A1),  // v = 0
-          make_bilinear_patch_facet(B0, D0, D1, B1)   // extruded hypotenuse
-        }
-    {}
+    {
+      triangles_.reserve(2);
+      triangles_.push_back(make_triangle_facet(A0, B0, D0));// t = 0
+      triangles_.push_back(make_triangle_facet(A1, B1, D1));// t = 1
+      
+      bilinear_patches_.reserve(3);
+      bilinear_patches_.push_back(make_bilinear_patch_facet(A0, B0, B1, A1));  // u = 0
+      bilinear_patches_.push_back(make_bilinear_patch_facet(A0, D0, D1, A1));  // v = 0
+      bilinear_patches_.push_back(make_bilinear_patch_facet(B0, D0, D1, B1));   // extruded hypotenuse
+
+    }
 
     size_t num_ray_intersections(Ray r) const;
     std::vector<Facet> facets() const;
@@ -118,11 +119,48 @@ size_t Point_3_Triangle_3_collision_test_boundary<K>::num_ray_intersections(Ray 
   size_t num_intersections{0};
 
   for(const auto& t : triangles_) { 
-    if( do_intersect(r, t) ) { ++num_intersections; }
+    // If the ray's origin lies on any triangle,
+    // count that as a collision.
+    // TODO: transition to exact arithmetic if 0 is in
+    //       the interval.
+    if (t.has_on(r.source()))
+    {
+      return 1;
+    } 
+
+    if( t.is_degenerate() ) 
+    {
+      continue;
+    }
+
+    if( do_intersect(r, t) ) { 
+      ++num_intersections; 
+    }
   }
 
   for(const auto& bp : bilinear_patches_) {
-    if( ::CGAL::Intersections::internal::do_intersect_odd_parity(bp, r) ) { ++num_intersections; }
+    // If the ray's origin lies on any bilinear patch,
+    // count that as a collision.
+    // TODO: transition to exact arithmetic if 0 is in
+    //       the interval.
+    if (bp.has_on(r.source()))
+    {
+      return 1;
+    } 
+
+    // If the patch is degenerate and does not contain 
+    // the origin, ignore it.
+    if (bp.is_degenerate())
+    {
+      continue;
+    }
+
+    // Otherwise, proceed with ray-intersection testing to
+    // compute the parity of intersections with the boundary
+    if( ::CGAL::Intersections::internal::do_intersect_odd_parity(bp, r) ) { 
+      ++num_intersections; 
+    }
+
   }
 
   return num_intersections;

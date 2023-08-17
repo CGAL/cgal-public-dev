@@ -62,7 +62,7 @@ class Point_3_Triangle_3_collision_function {
 
     Point operator() (const FT& t, const FT& u, const FT& v) const{
       FT complement{ONE - t};
-      
+
       Vector interpolant = (
                     complement*x0 + t*x0_next
         -(ONE-u-v)*(complement*x1 + t*x1_next)
