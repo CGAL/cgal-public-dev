@@ -40,18 +40,18 @@ Point t01_next( 0,  1, -1);
 Point t02_past( 1, -1,  1);
 Point t02_next( 1, -1, -1);
 
-Point t10_past(0,  0,  1);
+Point t10_past(0,  0,  0.01);
 Point t10_next(0,  0,  0);
-Point t11_past(0,  1,  2);
-Point t11_next(0,  1,  1);
-Point t12_past(0, -1,  2);
-Point t12_next(0, -1,  1);
+Point t11_past(0,  0.01,  1.01);
+Point t11_next(0,  0.01,  1);
+Point t12_past(0, -0.01,  1.01);
+Point t12_next(0, -0.01,  1);
 
 P_trajectory t00(t00_past, t00_next);
 P_trajectory t01(t01_past, t01_next);
 P_trajectory t02(t02_past, t02_next);
 
-P_trajectory t10(t00_past, t10_next);
+P_trajectory t10(t10_past, t10_next);
 P_trajectory t11(t11_past, t11_next);
 P_trajectory t12(t12_past, t12_next);
 

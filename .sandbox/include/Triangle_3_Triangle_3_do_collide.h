@@ -10,11 +10,12 @@
 //
 // Author(s)     : Jeffrey Cochran
 
-#ifndef SEGMENT_3_SEGMENT_3_DO_COLLIDE_H
-#define SEGMENT_3_SEGMENT_3_DO_COLLIDE_H
+#ifndef TRIANGLE_3_TRIANGLE_3_DO_COLLIDE_H
+#define TRIANGLE_3_TRIANGLE_3_DO_COLLIDE_H
 
-#include <Segment_3_Segment_3_collision_test_boundary.h>
+#include <Segment_3_Segment_3_do_collide.h>
 #include <Trajectories.h>
+#include <vector>
 
 namespace CGAL{
 
@@ -26,41 +27,41 @@ namespace CGAL{
     using Point_trajectory = Point_3_trajectory<K>;
     using Segment_trajectory = Segment_3_trajectory<K>;
 
-    std::tuple<Segment_trajectory> t0_segments{
+    std::vector<Segment_trajectory> t0_segments{
       Segment_3_trajectory(std::get<0>(t0), std::get<1>(t0)),
       Segment_3_trajectory(std::get<1>(t0), std::get<2>(t0)),
       Segment_3_trajectory(std::get<2>(t0), std::get<0>(t0)),
     };
 
-    std::tuple<Segment_trajectory> t1_segments{
+    std::vector<Segment_trajectory> t1_segments{
       Segment_3_trajectory(std::get<0>(t1), std::get<1>(t1)),
       Segment_3_trajectory(std::get<1>(t1), std::get<2>(t1)),
       Segment_3_trajectory(std::get<2>(t1), std::get<0>(t1)),
     };
 
     // Check edge-edge collision
-    for( const auto& s0 : t0_segments ) {
-      for ( const auto& s1 : t1_segments ) {
+    for( const Segment_trajectory& s0 : t0_segments ) {
+      for ( const Segment_trajectory& s1 : t1_segments ) {
         if( do_collide(s0, s1) ) {
-          std::cout << "edge-edge collision\n";
+          std::cout << "edge-edge collision\n: " << s0 << "\n" << s1 << "\n";
           return true;
         }
       }
     }
 
     // Check point-triangle collision
-    for( const auto& p0 : t0 ) {
-      if( do_collide(p0, t1)) {
-        std::cout << "point-triangle collision\n";
-        return true;
-      }
-    }
-    for( const auto& p1 : t1 ) {
-      if( do_coolide(p1, t0)) {
-        std::cout << "point-triangle collision\n";
-        return true;
-      }
-    }
+    // for( const auto& p0 : t0 ) {
+    //   if( do_collide(p0, t1)) {
+    //     std::cout << "point-triangle collision\n";
+    //     return true;
+    //   }
+    // }
+    // for( const auto& p1 : t1 ) {
+    //   if( do_coolide(p1, t0)) {
+    //     std::cout << "point-triangle collision\n";
+    //     return true;
+    //   }
+    // }
 
     return false; //
   }

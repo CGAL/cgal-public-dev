@@ -65,7 +65,7 @@ public:
     {
       bounding_tetrahedron = Tetrahedron(p, q, r, s);
 
-      IS_PLANAR_ = bounding_tetrahedron.is_degenerate();
+      IS_PLANAR_ = coplanar(p,q,r,s);
 
       if(IS_PLANAR_) {
         COLLINEAR_012_ = collinear(vertex(0), vertex(1), vertex(2));
@@ -132,7 +132,9 @@ auto BilinearPatchC3<R>::signed_scaled_planar_distance(
   const Point_3 & r
 ) const -> FT
 {
-  return ::CGAL::scalar_product(x-p, ::CGAL::cross_product(q-p, r-p));
+  Vector_3 cross = ::CGAL::cross_product(q-p, r-p);
+  FT dot = ::CGAL::scalar_product(x-p, cross);
+  return dot;
 }
 
 template <class R>
@@ -228,7 +230,13 @@ BilinearPatchC3<R>::has_on(const Point_3 &p) const
   {
     // Otherwise, scaled_patch_distance == 0, if and 
     // only if p is on the patch.
-    has_on_ = signed_scaled_patch_distance(p) < R::FT(1e-14); 
+    
+    std::cout << "Phi value: " << signed_scaled_patch_distance(p) << "\n" << *this << std::endl;
+    std::cout << "Distance to plane: " << ::CGAL::squared_distance(Point(::CGAL::ORIGIN), R::Plane_3(vertex(0), vertex(1), vertex(3))) << std::endl;
+    std::cout << "Distance to plane: " << ::CGAL::squared_distance(Point(::CGAL::ORIGIN), R::Plane_3(vertex(1), vertex(2), vertex(3))) << std::endl;
+    std::cout << "Distance to plane: " << ::CGAL::squared_distance(Point(::CGAL::ORIGIN), R::Plane_3(vertex(0), vertex(1), vertex(2))) << std::endl;
+    std::cout << "Distance to plane: " << ::CGAL::squared_distance(Point(::CGAL::ORIGIN), R::Plane_3(vertex(0), vertex(2), vertex(3))) << std::endl;
+    has_on_ = abs(signed_scaled_patch_distance(p)) < R::FT(1e-16); 
   }
   return has_on_;
 }
