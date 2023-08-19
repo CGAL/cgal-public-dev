@@ -105,7 +105,6 @@ int main(int argc, char* argv[])
     collision_candidates.begin(), 
     collision_candidates.end(), 
     [&ti, &filtered_indices](const auto& candidate){
-      std::cout << candidate << "\n";
       if(candidate.first->index == ti || candidate.second->index == ti)
       {
         std::cout << candidate << std::endl;

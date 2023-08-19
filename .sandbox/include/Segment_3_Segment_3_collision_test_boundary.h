@@ -116,7 +116,7 @@ size_t Segment_3_Segment_3_collision_test_boundary<K>::num_ray_intersections(Ray
     //       the interval.
     if (bp.has_on(r.source()))
     {
-      std::cout << "Point on bilinear patch: \n" << bp << std::endl;
+      // std::cout << "Point on bilinear patch: \n" << bp << std::endl;
       return 1;
     } 
 
@@ -124,7 +124,7 @@ size_t Segment_3_Segment_3_collision_test_boundary<K>::num_ray_intersections(Ray
     // the origin, ignore it.
     if (bp.is_degenerate())
     {
-      std::cout << "Bilinear patch is degenerate: \n" << bp << std::endl;
+      // std::cout << "Bilinear patch is degenerate: \n" << bp << std::endl;
       continue;
     }
 
@@ -132,7 +132,7 @@ size_t Segment_3_Segment_3_collision_test_boundary<K>::num_ray_intersections(Ray
     // compute the parity of intersections with the boundary
     if( ::CGAL::Intersections::internal::do_intersect_odd_parity(bp, r) ) 
     { 
-      std::cout << "Ray intersects bp: \n" << bp << std::endl;
+      // std::cout << "Ray intersects bp: \n" << bp << std::endl;
       ++num_intersections; 
     }
 

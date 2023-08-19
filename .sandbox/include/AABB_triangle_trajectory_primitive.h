@@ -17,6 +17,7 @@
 #include <list>
 #include <vector>
 #include <utility>
+#include <Trajectories.h>
 #include <CGAL/Simple_cartesian.h>
 #include <CGAL/AABB_tree.h>
 #include <CGAL/AABB_traits.h>
@@ -28,12 +29,16 @@
 
 namespace CGAL {
 
-template<class K, class Index>
-struct Triangle_trajectory {
+template<class K_, class Index_>
+struct Triangle_trajectory_observer {
 
-    typedef typename K::FT              FT;
-    typedef typename K::Point_3         Point;
-    typedef typename K::Iso_cuboid_3    Iso_cuboid_3;
+    typedef          K_                          K;
+    typedef          Index_                      Index;
+    typedef typename K_::FT                      FT;
+    typedef typename K_::Point_3                 Point;
+    typedef typename K_::Iso_cuboid_3            Iso_cuboid_3;
+    typedef typename Point_3_trajectory<K_>      Point_trajectory;
+    typedef typename Triangle_3_trajectory<K_>   Triangle_trajectory;
 
     struct Extrema {
         Point min_point;
@@ -65,31 +70,43 @@ struct Triangle_trajectory {
     const Point * next_pa;
     const Point * next_pb;
     const Point * next_pc;
-    Index index;
+    Index_ index;
 
-    Triangle_trajectory(
+    Triangle_trajectory_observer(
         const Point * current_position_a,
         const Point * current_position_b,
         const Point * current_position_c,
         const Point * next_position_a,
         const Point * next_position_b,
         const Point * next_position_c,
-        Index index
+        Index_ index
     ) : pa{current_position_a}, pb{current_position_b}, pc{current_position_c}, next_pa{next_position_a}, next_pb{next_position_b}, next_pc{next_position_c}, index{index} {
+        bounding_iso_cuboid = compute_bounding_iso_cuboid();
+    }
 
+    Iso_cuboid_3 compute_bounding_iso_cuboid() {
         Extrema extrema(*pa);
-
         extrema.update(*pb);
         extrema.update(*pc);
         extrema.update(*next_pa);
         extrema.update(*next_pb);
         extrema.update(*next_pc);
-
-        bounding_iso_cuboid = Iso_cuboid_3(
+        return Iso_cuboid_3(
             extrema.min_point, extrema.max_point
         );
     }
+
+    void update(){ bounding_iso_cuboid = compute_bounding_iso_cuboid(); }
 };
+
+template <class K, class Index>
+Triangle_3_trajectory<K> to_Triangle_3_trajectory(Triangle_trajectory_observer<K, Index> observer) {
+    return Triangle_3_trajectory<K>(
+        Point_3_trajectory<K>(*observer.pa, *observer.next_pa),
+        Point_3_trajectory<K>(*observer.pb, *observer.next_pb),
+        Point_3_trajectory<K>(*observer.pc, *observer.next_pc)
+    );
+}
 
 // The following primitive provides the conversion facilities between
 // the custom triangle and point types and the CGAL ones
@@ -102,7 +119,7 @@ public:
     typedef typename K::Point_3                                 Point; // CGAL 3D point type
     typedef typename K::Iso_cuboid_3                            Datum; // CGAL 3D triangle type
     typedef typename K::Aff_transformation_3                    Transform;
-    typedef          Triangle_trajectory<K, Index>              Trajectory;
+    typedef          Triangle_trajectory_observer<K, Index>     Trajectory;
     typedef typename std::vector<Trajectory>::const_iterator    Iterator;
 
     // this is the type of data that the queries returns. For this example

@@ -58,27 +58,27 @@ std::cout << "Confirm these edges collide: " << CGAL::do_collide(s0, s1) << std:
 
 
 
-// s10_past = Point(1,  1, -1);
-// s10_next = Point(1, -1, -1);
+s10_past = Point(1,  1, -1);
+s10_next = Point(1, -1, -1);
 
-// s11_past = Point(1,  1, 1);
-// s11_next = Point(1, -1, 1);
+s11_past = Point(1,  1, 1);
+s11_next = Point(1, -1, 1);
 
-// s00_past = Point(0, -1, -1);
-// s00_next = Point(0,  1, -1);
+s00_past = Point(0, -1, -1);
+s00_next = Point(0,  1, -1);
 
-// s01_past = Point(0, -1,  1);
-// s01_next = Point(0,  1,  1);
+s01_past = Point(0, -1,  1);
+s01_next = Point(0,  1,  1);
  
-// s00 = P_trajectory(s00_past, s00_next);
-// s01 = P_trajectory(s01_past, s01_next);
-// s10 = P_trajectory(s10_past, s10_next);
-// s11 = P_trajectory(s11_past, s11_next);
+s00 = P_trajectory(s00_past, s00_next);
+s01 = P_trajectory(s01_past, s01_next);
+s10 = P_trajectory(s10_past, s10_next);
+s11 = P_trajectory(s11_past, s11_next);
 
-// s0 = S_trajectory(s00, s01);
-// s1 = S_trajectory(s10, s11);
+s0 = S_trajectory(s00, s01);
+s1 = S_trajectory(s10, s11);
 
-// std::cout << "Confirm these edges do not collide: " << CGAL::do_collide(s0, s1) << std::endl;
+std::cout << "Confirm these edges do not collide: " << CGAL::do_collide(s0, s1) << std::endl;
 
 
 

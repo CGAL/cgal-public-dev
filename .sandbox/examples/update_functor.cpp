@@ -114,7 +114,7 @@ int main(int argc, char* argv[])
   Scene scene(meshes);
 
   // Translate next_point
-  Vector v(-1.9, -1.9, -1.9);
+  Vector v(-1.7, -1.7, -1.7);
   Translate_functor t(v);
   scene.update_state(t);
 
@@ -147,4 +147,3 @@ int main(int argc, char* argv[])
 
   return EXIT_SUCCESS;
 }
-  

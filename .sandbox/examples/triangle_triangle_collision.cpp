@@ -10,7 +10,7 @@
 //
 // Author(s)     : Jeffrey Cochran
 
-#include <CGAL/Simple_cartesian.h>
+#include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
 #include <Bilinear_patch_3.h>
 #include <Trajectories.h>
 #include <Triangle_3_Triangle_3_do_collide.h>
@@ -21,7 +21,7 @@
 #include <ctime>
 #include <iostream>
 
-typedef ::CGAL::Simple_cartesian<double>  Kernel;
+typedef CGAL::Exact_predicates_inexact_constructions_kernel  Kernel;
 typedef Kernel::Point_3                   Point;
 typedef Kernel::Vector_3                  Vector;
 typedef Kernel::Ray_3                     Ray;
@@ -58,7 +58,37 @@ P_trajectory t12(t12_past, t12_next);
 T_trajectory t0(t00, t01, t02);
 T_trajectory t1(t10, t11, t12);
 
-std::cout << "Confirm triangle and triangle do collide: " << CGAL::do_collide(t0, t1) << std::endl;
+std::cout << "Confirm these triangles do collide (point-triangle collision): " << CGAL::do_collide(t0, t1) << std::endl;
+
+t10_past = Point(0, -2.0, -3);
+t10_next = Point(0, -0.9, -3);
+t11_past = Point(0, -2.0,  3);
+t11_next = Point(0, -0.9,  3);
+t12_past = Point(0, -3.0,  0);
+t12_next = Point(0, -1.9,  0);
+
+t10 = P_trajectory(t10_past, t10_next);
+t11 = P_trajectory(t11_past, t11_next);
+t12 = P_trajectory(t12_past, t12_next);
+
+t1  = T_trajectory(t10, t11, t12);
+
+std::cout << "Confirm these triangles do collide (edge-edge collision): " << CGAL::do_collide(t0, t1) << std::endl;
+
+t10_past = Point(0.01,  0,    -1    );
+t10_next = Point(0.01,  0,    -1.01 );
+t11_past = Point(0,     0.01, -1    );
+t11_next = Point(0,     0.01, -1.01 );
+t12_past = Point(0,    -0.01, -1    );
+t12_next = Point(0,    -0.01, -1.01 );
+
+t10 = P_trajectory(t10_past, t10_next);
+t11 = P_trajectory(t11_past, t11_next);
+t12 = P_trajectory(t12_past, t12_next);
+
+t1  = T_trajectory(t10, t11, t12);
+
+std::cout << "Confirm these triangles do not collide: " << CGAL::do_collide(t0, t1) << std::endl;
 
 
 return EXIT_SUCCESS;

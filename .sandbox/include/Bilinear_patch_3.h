@@ -228,15 +228,21 @@ BilinearPatchC3<R>::has_on(const Point_3 &p) const
   }
   else
   {
-    // Otherwise, scaled_patch_distance == 0, if and 
-    // only if p is on the patch.
-    
-    std::cout << "Phi value: " << signed_scaled_patch_distance(p) << "\n" << *this << std::endl;
-    std::cout << "Distance to plane: " << ::CGAL::squared_distance(Point(::CGAL::ORIGIN), R::Plane_3(vertex(0), vertex(1), vertex(3))) << std::endl;
-    std::cout << "Distance to plane: " << ::CGAL::squared_distance(Point(::CGAL::ORIGIN), R::Plane_3(vertex(1), vertex(2), vertex(3))) << std::endl;
-    std::cout << "Distance to plane: " << ::CGAL::squared_distance(Point(::CGAL::ORIGIN), R::Plane_3(vertex(0), vertex(1), vertex(2))) << std::endl;
-    std::cout << "Distance to plane: " << ::CGAL::squared_distance(Point(::CGAL::ORIGIN), R::Plane_3(vertex(0), vertex(2), vertex(3))) << std::endl;
-    has_on_ = abs(signed_scaled_patch_distance(p)) < R::FT(1e-16); 
+    if(
+          bounding_tetrahedron.has_on_bounded_side(p) 
+      ||  bounding_tetrahedron.has_on_boundary(p)
+    ) 
+    {    
+      // std::cout << "Phi value: "         << signed_scaled_patch_distance(p) << "\n" << *this << std::endl;
+      // std::cout << "Distance to plane: " << ::CGAL::squared_distance(Point(::CGAL::ORIGIN), R::Plane_3(vertex(0), vertex(1), vertex(3))) << std::endl;
+      // std::cout << "Distance to plane: " << ::CGAL::squared_distance(Point(::CGAL::ORIGIN), R::Plane_3(vertex(1), vertex(2), vertex(3))) << std::endl;
+      // std::cout << "Distance to plane: " << ::CGAL::squared_distance(Point(::CGAL::ORIGIN), R::Plane_3(vertex(0), vertex(1), vertex(2))) << std::endl;
+      // std::cout << "Distance to plane: " << ::CGAL::squared_distance(Point(::CGAL::ORIGIN), R::Plane_3(vertex(0), vertex(2), vertex(3))) << std::endl;
+      // std::cout << "Confrim nonplanar: " << !(::CGAL::coplanar(vertex(0),vertex(1),vertex(2),vertex(3)));
+   
+      has_on_ = abs(signed_scaled_patch_distance(p)) < R::FT(1e-16);
+    }
+  
   }
   return has_on_;
 }

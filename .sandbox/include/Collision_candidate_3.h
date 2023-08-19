@@ -22,6 +22,9 @@ namespace CGAL{
 
     public:
 
+      using K     = typename Primitive::K;
+      using Index = typename Primitive::Index;
+
       Collision_candidate(const Primitive* first, const Primitive* second) : Base(first, second) {}
       Collision_candidate(const Base& index_pair) : Base(index_pair) {}
 

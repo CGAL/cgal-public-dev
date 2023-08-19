@@ -33,6 +33,7 @@ namespace CGAL {
         
             template<class Local_index> struct Scene_index;
 
+            typedef          K                              Kernel;
             typedef typename ::CGAL::Mesh_index             Mesh_index;
             typedef typename K::Point_3                     Point;
             typedef typename K::Vector_3                    Vector;
@@ -48,7 +49,7 @@ namespace CGAL {
             typedef          Scene_index<Face_index>                                    Scene_face_index;
             typedef          std::vector<Scene_vertex_index>                            Scene_vertex_range;
             typedef          std::vector<Scene_face_index>                              Scene_face_range;
-            typedef          Triangle_trajectory<K, Scene_face_index>                   Trajectory;
+            typedef          Triangle_trajectory_observer<K, Scene_face_index>          Trajectory;
             typedef          std::vector<Trajectory>                                    Trajectory_range;
             typedef          AABB_Triangle_trajectory_primitive<K, Scene_face_index>    Trajectory_primitive;
             typedef          ::CGAL::AABB_traits<K, Trajectory_primitive>               AABB_traits;
@@ -78,7 +79,9 @@ namespace CGAL {
             void color(const Scene_face_index& ti, CGAL::IO::Color c);
 
             template <class UpdateFunctor>
-            void update_state(UpdateFunctor& update_functor);
+            void update_state(UpdateFunctor& update_functor, bool update_tree=false);
+
+            void update_tree();
     };
 
 
@@ -246,7 +249,7 @@ namespace CGAL {
     
     template <class K>
     template <class UpdateFunctor>
-    void Collision_scene<K>::update_state(UpdateFunctor& update_functor)
+    void Collision_scene<K>::update_state(UpdateFunctor& update_functor, bool update_tree_)
     {
         Mesh* mesh_ptr = nullptr;
         for( auto& scene_vertex_index : vertices_) 
@@ -254,6 +257,21 @@ namespace CGAL {
             mesh_ptr = &(meshes_[scene_vertex_index.mesh_index()]);
             update_functor(mesh_ptr, scene_vertex_index);
         }
+        
+        if( update_tree_ ) {
+            update_tree();
+        }
+    }
+    
+    template <class K>
+    void Collision_scene<K>::update_tree()
+    {
+        for( auto& t : trajectories_ ) 
+        { 
+            t.update(); 
+        }
+        // TODO: use the update functor that sloriot provided
+        trajectory_tree_ = Tree(trajectories_.begin(),trajectories_.end());
     }
 }
 
