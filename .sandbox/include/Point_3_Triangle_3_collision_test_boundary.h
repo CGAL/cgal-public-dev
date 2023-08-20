@@ -46,20 +46,21 @@ class Point_3_Triangle_3_collision_test_boundary{
     // namespace Intersections  = ;
 
     Collision_function          collision_function_;
+    std::vector<Point*>         points_;
     std::vector<Triangle>       triangles_;
     std::vector<Bilinear_patch> bilinear_patches_;
 
     FT ONE{1.};
     FT ZERO{0.};
 
-    Point A0{ZERO, ZERO, ZERO}; // (t, u, v)
-    Point B0{ZERO, ZERO, ONE };
-    Point C0{ZERO, ONE , ONE };
-    Point D0{ZERO, ONE , ZERO};
-    Point A1{ONE,  ZERO, ZERO};
-    Point B1{ONE,  ZERO, ONE };
-    Point C1{ONE,  ONE , ONE };
-    Point D1{ONE,  ONE , ZERO};
+    bool IS_CULLED_{false};
+
+    Point A0; // (t, u, v)
+    Point B0;
+    Point D0;
+    Point A1;
+    Point B1;
+    Point D1;
 
     Triangle make_triangle_facet(const Point& A, const Point& B, const Point& D);
     Bilinear_patch make_bilinear_patch_facet(const Point& A, const Point& B, const Point& C, const Point& D);
@@ -73,15 +74,27 @@ class Point_3_Triangle_3_collision_test_boundary{
     ) 
       : collision_function_(p_cur, p_next, t_cur, t_next)
     {
-      triangles_.reserve(2);
-      triangles_.push_back(make_triangle_facet(A0, B0, D0));// t = 0
-      triangles_.push_back(make_triangle_facet(A1, B1, D1));// t = 1
-      
-      bilinear_patches_.reserve(3);
-      bilinear_patches_.push_back(make_bilinear_patch_facet(A0, B0, B1, A1));  // u = 0
-      bilinear_patches_.push_back(make_bilinear_patch_facet(A0, D0, D1, A1));  // v = 0
-      bilinear_patches_.push_back(make_bilinear_patch_facet(B0, D0, D1, B1));   // extruded hypotenuse
 
+      A0 = collision_function_(ZERO, ZERO, ZERO); // (t, u, v)
+      B0 = collision_function_(ZERO, ZERO, ONE );
+      D0 = collision_function_(ZERO, ONE , ZERO);
+      A1 = collision_function_(ONE,  ZERO, ZERO);
+      B1 = collision_function_(ONE,  ZERO, ONE );
+      D1 = collision_function_(ONE,  ONE , ZERO);
+      points_ = {&A0, &B0, &D0, &A1, &B1, &D1};
+
+      IS_CULLED_ = false;//are_cullable(points_);
+
+      if( !IS_CULLED_ ) {
+        triangles_.reserve(2);
+        triangles_.push_back(Triangle(A0, B0, D0));// t = 0
+        triangles_.push_back(Triangle(A1, B1, D1));// t = 1
+        
+        bilinear_patches_.reserve(3);
+        bilinear_patches_.push_back(Bilinear_patch(A0, B0, B1, A1));  // u = 0
+        bilinear_patches_.push_back(Bilinear_patch(A0, D0, D1, A1));  // v = 0
+        bilinear_patches_.push_back(Bilinear_patch(B0, D0, D1, B1));  // extruded hypotenuse
+      }
     }
 
     size_t num_ray_intersections(Ray r) const;
@@ -93,28 +106,13 @@ class Point_3_Triangle_3_collision_test_boundary{
 // Member functions
 // ================
 template <class K>
-auto Point_3_Triangle_3_collision_test_boundary<K>::make_triangle_facet(const Point& A, const Point& B, const Point& D) -> Triangle
-{              
-    return Triangle( 
-        collision_function_(A.x(), A.y(), A.z()), // collision_function(t, u, v)
-        collision_function_(B.x(), B.y(), B.z()),
-        collision_function_(D.x(), D.y(), D.z())  
-    );
-}
-
-template <class K>
-auto Point_3_Triangle_3_collision_test_boundary<K>::make_bilinear_patch_facet(const Point& A, const Point& B, const Point& C, const Point& D) -> Bilinear_patch
-{
-    return Bilinear_patch(
-        collision_function_(A.x(), A.y(), A.z()), // t, u, v
-        collision_function_(B.x(), B.y(), B.z()), // t, u, v
-        collision_function_(C.x(), C.y(), C.z()), // t, u, v
-        collision_function_(D.x(), D.y(), D.z())  // t, u, v
-    );
-}
-
-template <class K>
 size_t Point_3_Triangle_3_collision_test_boundary<K>::num_ray_intersections(Ray r) const {
+
+  // If all the points lie one side of a plane
+  // that passes through the origin, then 
+  // it's impossible for the origin to be inside
+  // of the boundary
+  if( IS_CULLED_ ) { return 0; }
 
   size_t num_intersections{0};
 
