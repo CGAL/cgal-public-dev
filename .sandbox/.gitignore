@@ -3,4 +3,4 @@
 build/*
 !build/.keep
 .vscode/*
-../Installation/*
+Installation/*
