@@ -16,8 +16,7 @@
 #include <type_traits>
 #include <variant>
 #include <vector>
-#include <Point_3_Triangle_3_collision_function.h>
-#include <Segment_3_Segment_3_collision_function.h>
+#include <Collision_functions.h>
 #include <Bilinear_patch_3.h>
 #include <Ray_3_Bilinear_patch_3_do_intersect.h>
 

@@ -12,8 +12,8 @@
 
 #include <CGAL/Simple_cartesian.h>
 
-#include <Point_3_Triangle_3_collision_function.h>
-#include <Segment_3_Segment_3_collision_function.h>
+#include <Collision_functions.h>
+#include <iostream>
 
 typedef CGAL::Simple_cartesian<double>  Kernel;
 typedef Kernel::Point_3                 Point;
