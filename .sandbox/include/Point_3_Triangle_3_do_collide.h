@@ -13,7 +13,7 @@
 #ifndef POINT_3_TRIANGLE_3_DO_COLLIDE_H
 #define POINT_3_TRIANGLE_3_DO_COLLIDE_H
 
-#include <Point_3_Triangle_3_collision_test_boundary.h>
+#include <Collision_test_boundaries.h>
 #include <CGAL\Origin.h>
 #include <Trajectories.h>
 #include <cstdlib>
@@ -22,6 +22,7 @@
 
 namespace CGAL{
 
+  // TODO: speed this up.
   template <class K>
   bool do_collide(
       Point_3_trajectory<K> p,
@@ -41,7 +42,7 @@ namespace CGAL{
     );
     
     size_t num_intersections = test_boundary.num_ray_intersections( test_ray );
-
+    
     return (num_intersections % 2) == 1; //
   }
 

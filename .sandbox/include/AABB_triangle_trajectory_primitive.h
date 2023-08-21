@@ -54,8 +54,8 @@ struct Triangle_trajectory_observer {
             FT y_min = p.y() < min_point.y() ? p.y() : min_point.y();
             FT y_max = p.y() > max_point.y() ? p.y() : max_point.y();
 
-            FT z_min = p.x() < min_point.z() ? p.z() : min_point.z();
-            FT z_max = p.x() > max_point.z() ? p.z() : max_point.z();
+            FT z_min = p.z() < min_point.z() ? p.z() : min_point.z();
+            FT z_max = p.z() > max_point.z() ? p.z() : max_point.z();
 
             min_point = Point(x_min, y_min, z_min);
             max_point = Point(x_max, y_max, z_max);

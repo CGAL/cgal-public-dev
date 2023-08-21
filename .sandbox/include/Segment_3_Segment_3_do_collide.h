@@ -13,7 +13,7 @@
 #ifndef SEGMENT_3_SEGMENT_3_DO_COLLIDE_H
 #define SEGMENT_3_SEGMENT_3_DO_COLLIDE_H
 
-#include <Segment_3_Segment_3_collision_test_boundary.h>
+#include <Collision_test_boundaries.h>
 #include <CGAL\Origin.h>
 #include <Trajectories.h>
 #include <cstdlib>
@@ -22,6 +22,7 @@
 
 namespace CGAL{
 
+  // TODO: speed this up.
   template <class K>
   bool do_collide(
       Segment_3_trajectory<K> s0,

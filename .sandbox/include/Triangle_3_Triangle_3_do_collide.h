@@ -20,6 +20,7 @@
 
 namespace CGAL{
 
+  // TODO: minimize the number of copies occuring
   template <class K>
   bool do_collide(
       Triangle_3_trajectory<K> t0,

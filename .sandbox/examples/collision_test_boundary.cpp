@@ -13,8 +13,7 @@
 #include <variant>
 #include <iostream>
 #include <Bilinear_patch_3.h>
-#include <Segment_3_Segment_3_collision_test_boundary.h>
-#include <Point_3_Triangle_3_collision_test_boundary.h>
+#include <Collision_test_boundaries.h>
 #include <CGAL/Simple_cartesian.h>
 
 typedef CGAL::Simple_cartesian<double>  Kernel;
@@ -49,17 +48,10 @@ int main(int argc, char* argv[])
     Segment(r2, s2)
   );
 
+  size_t num_bp{std::size(CTB_SS.bilinear_patches())};
+
   std::cout << "Check that edge-edge collision boundary is a cuboid..." << std::endl;
-  std::cout << "...Number of Facets = " << std::size(CTB_SS.facets()) << std::endl;
-
-  size_t num_bp{0};
-  size_t num_tr{0};
-  for(const auto& facet_ : CTB_SS.facets()) {
-    if( std::is_same<Bilinear_patch, decltype(facet_)>::value ) { ++num_bp; }
-    else{ ++num_tr; }
-  }
-
-  std::cout << "...Number of Triangles = " << num_tr << std::endl;
+  std::cout << "...Number of Facets = " << num_bp << std::endl;
   std::cout << "...Number of Bilinear Patches = " << num_bp << std::endl;
 
 
@@ -71,16 +63,11 @@ int main(int argc, char* argv[])
     Triangle(q2, r2, s2)
   );
 
+  size_t num_tr{std::size(CTB_PT.triangles())};
+  num_bp = std::size(CTB_SS.bilinear_patches());
+
   std::cout << "\nCheck that point-triangle collision boundary is a triangular prism..." << std::endl;
-  std::cout << "...Number of Facets = " << std::size(CTB_PT.facets()) << std::endl;
-
-  num_bp = 0;
-  num_tr = 0;
-  for(const auto& facet_ : CTB_PT.facets()) {
-    if( std::holds_alternative<Triangle>(facet_)) { ++num_tr; }
-    if( std::holds_alternative<Bilinear_patch>(facet_)) { ++num_bp; }
-  }
-
+  std::cout << "...Number of Facets = " << num_tr + num_bp<< std::endl;
   std::cout << "...Number of Triangles = " << num_tr << std::endl;
   std::cout << "...Number of Bilinear Patches = " << num_bp << std::endl;
 

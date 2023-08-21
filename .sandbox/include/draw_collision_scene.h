@@ -45,9 +45,13 @@ void draw_collision_scene( CollisionScene& scene, bool draw_next=false )
 
         Swap_functor scf = Swap_functor();
         scene.update_state(scf);
+        ::CGAL::draw_color(scene.joined_meshes());
+        scene.update_state(scf);
+    }
+    else {
+        ::CGAL::draw_color(scene.joined_meshes());
     }
 
-    ::CGAL::draw_color(scene.joined_meshes());
 }
 
 template <class CollisionCandidate, class Index=typename CollisionCandidate::Index>

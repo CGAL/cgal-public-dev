@@ -36,10 +36,12 @@ namespace CGAL{
         candidates.begin(), 
         candidates.end(), 
         std::back_inserter(collisions), 
-        [](const auto& candidate){ return candidate_has_collision(candidate);} 
+        [](const auto& candidate){ 
+          return candidate_has_collision(candidate);
+        }
     );
 
-    return collisions; //
+    return collisions;
   }
 
   template <class K>
@@ -90,11 +92,12 @@ namespace CGAL{
       // TODO: modify collision candidates to limit the testing
       //       of adjacent faces so that they ignore common vertices/edges.
       //       Once this is done, can consider self-intersections again.
+      // TODO: consider self-intersections. 
       for( const auto& primitive_pair : candidate_primitive_pairs ) {
-        if( primitive_pair.first->index.mesh_index() !=  primitive_pair.second->index.mesh_index()) {
-            candidates.push_back(
-                Candidate(primitive_pair)
-            );
+        if( primitive_pair.first->index.mesh_index() !=  primitive_pair.second->index.mesh_index()) {        
+          candidates.push_back(
+              Candidate(primitive_pair)
+          );
         }
       }
 

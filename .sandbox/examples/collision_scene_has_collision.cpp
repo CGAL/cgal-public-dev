@@ -66,11 +66,10 @@ int main(int argc, char* argv[])
   // const std::string inner_sphere_filename = CGAL::data_file_path("meshes/Sphere_Internal.off");
   const std::string outer_sphere_filename = CGAL::data_file_path("meshes/Sphere_External.off");
 
-
-  Point p2(1, 0.0, 0.0);
-  Point q2(0.0, 1, 0.0);
-  Point r2(0.0, 0.0, 1);
-  Point s2(0.0, 0.0, 0.0);
+  Point p2(1, 0, 0);
+  Point q2(0, 1, 0);
+  Point r2(0, 0, 1);
+  Point s2(0, 0, 0);
 
   Mesh m1;
   CGAL::make_tetrahedron(p2, q2, r2, s2, m1);
@@ -93,23 +92,15 @@ int main(int argc, char* argv[])
   Swap_functor swap_functor = Swap_functor();
 
   // Translate next_point, mesh
-  Vector v(-3,  -3,  -3  );
-  Point  p( 1.5, 1.5, 1.5);
-  Translate_functor set_mesh = Translate_functor(Mesh_index(0), v);
+  Vector v(  -3,      0, 0);
+  Point  p(   3.333,  0, 0);
+
+  Translate_functor set_mesh  = Translate_functor(Mesh_index(0), v);
   Contraction_functor collide_meshes = Contraction_functor(Mesh_index(0), p, 0.9);
+
   scene.update_state(set_mesh, true);
   scene.update_state(swap_functor);
   scene.update_state(collide_meshes, true);
-
-  // Check that the point trajectories work correctly
-  std::cout << "Confirm that these meshes do collide: " << CGAL::has_collision(scene) << std::endl;
-  std::cout << "The following are the faces that collide: " << std::endl;
-  // OutputIterator collisions = CGAL::get_collisions(scene);
-
-  // for( const auto& collision_ : collisions ) 
-  // {
-  //   std::cout << "Collision: " << collision_ << "\n";
-  // }
 
   std::cout << "Scene before collision..." << std::endl;
   ::CGAL::draw_collision_scene(scene);
@@ -117,12 +108,47 @@ int main(int argc, char* argv[])
   std::cout << "Scene after collision\n(press 'm' to color the colliding faces white)..." << std::endl;
   ::CGAL::draw_collision_scene(scene, true);
 
-  // Translate next_point, mesh
-  Translate_functor undo_collide_meshes = Translate_functor(Mesh_index(0), Vector(0,0,0));
-  scene.update_state(undo_collide_meshes, true);
+  collide_meshes = Contraction_functor(Mesh_index(0), p, 0.2);
+  scene.update_state(collide_meshes, true);
+  
+  std::cout << "Scene during collision, t=0.2\n(press 'm' to color the colliding faces white)..." << std::endl;
+  ::CGAL::draw_collision_scene(scene, true);
 
-  // Check that the point trajectories work correctly
-  std::cout << "Confirm that these meshes do not collide: " << CGAL::has_collision(scene) << std::endl;
+  collide_meshes = Contraction_functor(Mesh_index(0), p, 0.25);
+  scene.update_state(collide_meshes, true);
+  
+  std::cout << "Scene during collision, t=0.25\n(press 'm' to color the colliding faces white)..." << std::endl;
+  ::CGAL::draw_collision_scene(scene, true);
+
+  collide_meshes = Contraction_functor(Mesh_index(0), p, 0.3);
+  scene.update_state(collide_meshes, true);
+  
+  std::cout << "Scene during collision, t=0.3\n(press 'm' to color the colliding faces white)..." << std::endl;
+  ::CGAL::draw_collision_scene(scene, true);
+
+  collide_meshes = Contraction_functor(Mesh_index(0), p, 0.33);
+  scene.update_state(collide_meshes, true);
+  
+  std::cout << "Scene during collision, t=0.33\n(press 'm' to color the colliding faces white)..." << std::endl;
+  ::CGAL::draw_collision_scene(scene, true);
+
+  collide_meshes = Contraction_functor(Mesh_index(0), p, 0.6);
+  scene.update_state(collide_meshes, true);
+  
+  std::cout << "Scene during collision, t=0.6\n(press 'm' to color the colliding faces white)..." << std::endl;
+  ::CGAL::draw_collision_scene(scene, true);
+
+  collide_meshes = Contraction_functor(Mesh_index(0), p, 0.64);
+  scene.update_state(collide_meshes, true);
+  
+  std::cout << "Scene during collision, t=0.64\n(press 'm' to color the colliding faces white)..." << std::endl;
+  ::CGAL::draw_collision_scene(scene, true);
+
+  collide_meshes = Contraction_functor(Mesh_index(0), p, 0.66);
+  scene.update_state(collide_meshes, true);
+  
+  std::cout << "Scene during collision, t=0.66\n(press 'm' to color the colliding faces white)..." << std::endl;
+  ::CGAL::draw_collision_scene(scene, true);
 
   return EXIT_SUCCESS;
 }
