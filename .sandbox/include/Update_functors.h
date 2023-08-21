@@ -14,7 +14,7 @@
 #define UPDATE_FUNCTORS_H
 
 namespace CGAL {
-    
+
 template <class CollisionScene>
 struct Swap_current_next_functor {
 
@@ -45,16 +45,17 @@ struct Translate_functor {
     Transform translation;
     Mesh_index mi{0};
 
-    Translate_functor(Mesh_index mi, Vector translation_vector) 
+    Translate_functor(Mesh_index mi, Vector translation_vector)
         : translation(CGAL::TRANSLATION, translation_vector)
         , mi{mi}
         {}
 
     void operator() (Mesh* mesh, Vertex_index svi) {
-        if( mi == svi.mesh_index()) 
+        if( mi == svi.mesh_index())
             {
+            mesh->point( svi.local_index() ) = mesh->point( svi.local_index() ).transform(this->translation),
             swap(
-                mesh->point( svi.local_index() ).transform(this->translation),
+                mesh->point( svi.local_index() ),
                 mesh->next_point( svi.local_index() )
             );
         }
@@ -76,21 +77,18 @@ struct Contraction_functor {
     Mesh_index mi{0};
     double t{1};
 
-    Contraction_functor(Mesh_index mi, Point contraction_point, double t) 
+    Contraction_functor(Mesh_index mi, Point contraction_point, double t)
         : contraction_point{contraction_point}
         , mi{mi}
         , t{t}
         {}
 
     void operator() (Mesh* mesh, Vertex_index svi) {
-        if( mi == svi.mesh_index()) 
+        if( mi == svi.mesh_index())
         {
             Point  p = mesh->point( svi.local_index() );
             Vector v = t*(contraction_point - p);
-            swap(
-                p + v,
-                mesh->next_point( svi.local_index() )
-            );
+            mesh->next_point( svi.local_index() ) = p+v;
         }
     }
 };

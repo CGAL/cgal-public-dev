@@ -37,10 +37,10 @@ do_intersect_odd_parity(
 ) {
   // NOTE: This assumes that the origin of the ray is not on the patch.
 
-  using Triangle = K::Triangle_3;
-  using Segment = K::Segment_3;
-  using Ray = K::Ray_3;
-  using Point = K::Point_3;
+  using Triangle = typename K::Triangle_3;
+  using Segment = typename K::Segment_3;
+  using Ray = typename K::Ray_3;
+  using Point = typename K::Point_3;
   using Interval = ::CGAL::Interval_nt_advanced;
 
   CGAL_kernel_precondition(!bp.is_degenerate());
@@ -53,7 +53,7 @@ do_intersect_odd_parity(
   if(bp.is_planar()) {
     bool does_intersect_odd_parity_{false};
     for(const auto& t : bp.triangles_)
-    { 
+    {
       does_intersect_odd_parity_ = does_intersect_odd_parity_ || do_intersect(t, r);
     }
     return does_intersect_odd_parity_;
@@ -73,7 +73,7 @@ do_intersect_odd_parity(
       (a.x() + c.x())/2.,
       (a.y() + c.y())/2.,
       (a.z() + c.z())/2.
-    ); 
+    );
 
     //  This will determine which triangles are on the opposite side
     double phi_source   = bp.signed_scaled_patch_distance(ray_source);
@@ -87,7 +87,7 @@ do_intersect_odd_parity(
     } else {
       // The edge connecting 0--2 is on the opposite side as the ray's source
       return (
-            do_intersect(Triangle(bp.vertex(0), bp.vertex(1), bp.vertex(2)), r) 
+            do_intersect(Triangle(bp.vertex(0), bp.vertex(1), bp.vertex(2)), r)
         ||  do_intersect(Triangle(bp.vertex(0), bp.vertex(2), bp.vertex(3)), r)
       );
     }
@@ -96,7 +96,7 @@ do_intersect_odd_parity(
   // Case 3
   // Origin lies outside the bounding tetrahedron
   if (
-       !(do_intersect(Triangle(bp.vertex(0), bp.vertex(1), bp.vertex(2)), r)) 
+       !(do_intersect(Triangle(bp.vertex(0), bp.vertex(1), bp.vertex(2)), r))
     != !(do_intersect(Triangle(bp.vertex(0), bp.vertex(2), bp.vertex(3)), r))
   ) {
     // The ray intersects exactly one of the bounding tetrahedron's two

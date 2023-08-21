@@ -37,8 +37,8 @@ struct Triangle_trajectory_observer {
     typedef typename K_::FT                      FT;
     typedef typename K_::Point_3                 Point;
     typedef typename K_::Iso_cuboid_3            Iso_cuboid_3;
-    typedef typename Point_3_trajectory<K_>      Point_trajectory;
-    typedef typename Triangle_3_trajectory<K_>   Triangle_trajectory;
+    typedef          Point_3_trajectory<K_>      Point_trajectory;
+    typedef          Triangle_3_trajectory<K_>   Triangle_trajectory;
 
     struct Extrema {
         Point min_point;

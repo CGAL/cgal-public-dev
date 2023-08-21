@@ -15,7 +15,7 @@
 #include <utility>
 #include <iterator>
 #include <vector>
-#include <conio.h>
+//#include <conio.h>
 
 #include <CGAL/intersections.h>
 #include <CGAL/Surface_mesh.h>
@@ -39,8 +39,8 @@ typedef Kernel::Point_3                 Point;
 typedef Kernel::Vector_3                Vector;
 typedef Kernel::Tetrahedron_3           Tetrahedron;
 typedef Kernel::Ray_3                   Ray;
-typedef Kernel::Aff_transformation_3    Transform;                        
-typedef CGAL::Surface_mesh<Point>       Mesh;                    
+typedef Kernel::Aff_transformation_3    Transform;
+typedef CGAL::Surface_mesh<Point>       Mesh;
 typedef CGAL::Collision_mesh<Kernel>    SMesh;
 typedef CGAL::Collision_scene<Kernel>   Scene;
 typedef CGAL::Point_3_trajectory<Kernel>Point_trajectory;
@@ -62,7 +62,7 @@ typedef std::vector<Collision_candidate>            OutputIterator;
 
 int main(int argc, char* argv[])
 {
-  
+
   // const std::string inner_sphere_filename = CGAL::data_file_path("meshes/Sphere_Internal.off");
   const std::string outer_sphere_filename = CGAL::data_file_path("meshes/Sphere_External.off");
 
@@ -104,52 +104,51 @@ int main(int argc, char* argv[])
 
   std::cout << "Scene before collision..." << std::endl;
   ::CGAL::draw_collision_scene(scene);
-  
+
   std::cout << "Scene after collision\n(press 'm' to color the colliding faces white)..." << std::endl;
   ::CGAL::draw_collision_scene(scene, true);
 
   collide_meshes = Contraction_functor(Mesh_index(0), p, 0.2);
   scene.update_state(collide_meshes, true);
-  
+
   std::cout << "Scene during collision, t=0.2\n(press 'm' to color the colliding faces white)..." << std::endl;
   ::CGAL::draw_collision_scene(scene, true);
 
   collide_meshes = Contraction_functor(Mesh_index(0), p, 0.25);
   scene.update_state(collide_meshes, true);
-  
+
   std::cout << "Scene during collision, t=0.25\n(press 'm' to color the colliding faces white)..." << std::endl;
   ::CGAL::draw_collision_scene(scene, true);
 
   collide_meshes = Contraction_functor(Mesh_index(0), p, 0.3);
   scene.update_state(collide_meshes, true);
-  
+
   std::cout << "Scene during collision, t=0.3\n(press 'm' to color the colliding faces white)..." << std::endl;
   ::CGAL::draw_collision_scene(scene, true);
 
   collide_meshes = Contraction_functor(Mesh_index(0), p, 0.33);
   scene.update_state(collide_meshes, true);
-  
+
   std::cout << "Scene during collision, t=0.33\n(press 'm' to color the colliding faces white)..." << std::endl;
   ::CGAL::draw_collision_scene(scene, true);
 
   collide_meshes = Contraction_functor(Mesh_index(0), p, 0.6);
   scene.update_state(collide_meshes, true);
-  
+
   std::cout << "Scene during collision, t=0.6\n(press 'm' to color the colliding faces white)..." << std::endl;
   ::CGAL::draw_collision_scene(scene, true);
 
   collide_meshes = Contraction_functor(Mesh_index(0), p, 0.64);
   scene.update_state(collide_meshes, true);
-  
+
   std::cout << "Scene during collision, t=0.64\n(press 'm' to color the colliding faces white)..." << std::endl;
   ::CGAL::draw_collision_scene(scene, true);
 
   collide_meshes = Contraction_functor(Mesh_index(0), p, 0.66);
   scene.update_state(collide_meshes, true);
-  
+
   std::cout << "Scene during collision, t=0.66\n(press 'm' to color the colliding faces white)..." << std::endl;
   ::CGAL::draw_collision_scene(scene, true);
 
   return EXIT_SUCCESS;
 }
-  
