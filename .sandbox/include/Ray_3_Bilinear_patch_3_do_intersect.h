@@ -50,6 +50,8 @@ do_intersect_odd_parity(
 
   // Case 1
   // The bilinear patch degenerates to coplanar triangles
+  // TODO: make sure this works for the case where the 
+  //       ray is coplanar with the bilinear patch
   if(bp.is_planar()) {
     bool does_intersect_odd_parity_{false};
     for(const auto& t : bp.triangles_)
@@ -67,18 +69,12 @@ do_intersect_odd_parity(
     // tetrahedron's four triangles lie on the positive side of phi()==0,
     // and two lie on the negative side. If the origin is on one side,
     // check the ray for intersection with the two triangles on the other side
-    const Point & a = bp.vertex(0);
-    const Point & c = bp.vertex(2);
-    const Point mid_point = Point(
-      (a.x() + c.x())/2.,
-      (a.y() + c.y())/2.,
-      (a.z() + c.z())/2.
-    );
+    Point mid_point = ::CGAL::midpoint(bp.vertex(0), bp.vertex(2));
 
     //  This will determine which triangles are on the opposite side
-    double phi_source   = bp.signed_scaled_patch_distance(ray_source);
-    double phi_midpoint = bp.signed_scaled_patch_distance(mid_point);
-    if ( (phi_midpoint > 0) == (phi_source > 0) ) {
+    auto phi_source   = bp.signed_scaled_patch_distance(ray_source);
+    auto phi_midpoint = bp.signed_scaled_patch_distance(mid_point);
+    if ( ::CGAL::sign(phi_midpoint) == ::CGAL::sign(phi_source) ) {
       // The edge connecting 0--2 is on the same side as the ray's source
       return (
             do_intersect(Triangle(bp.vertex(1), bp.vertex(2), bp.vertex(3)), r)

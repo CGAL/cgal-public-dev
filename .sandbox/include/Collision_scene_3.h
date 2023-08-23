@@ -211,12 +211,12 @@ namespace CGAL {
         }
 
         return Trajectory(
-            trajectory_points[0],
-            trajectory_points[2],
-            trajectory_points[4],
-            trajectory_points[1],
-            trajectory_points[3],
-            trajectory_points[5],
+            trajectory_points[0], // v0_current
+            trajectory_points[2], // v0_next
+            trajectory_points[4], // v1_current
+            trajectory_points[1], // v1_next
+            trajectory_points[3], // v2_current
+            trajectory_points[5], // v2_next
             scene_face_index
         );
     };

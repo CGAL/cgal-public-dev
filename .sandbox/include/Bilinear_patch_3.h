@@ -65,13 +65,13 @@ public:
     {
       bounding_tetrahedron = Tetrahedron(p, q, r, s);
 
-      IS_PLANAR_ = coplanar(p,q,r,s);
+      IS_PLANAR_ = ::CGAL::coplanar(p,q,r,s);
 
       if(IS_PLANAR_) {
-        COLLINEAR_012_ = collinear(vertex(0), vertex(1), vertex(2));
-        COLLINEAR_230_ = collinear(vertex(2), vertex(3), vertex(0));
-        COLLINEAR_013_ = collinear(vertex(0), vertex(1), vertex(3));
-        COLLINEAR_123_ = collinear(vertex(1), vertex(2), vertex(3));
+        COLLINEAR_012_ = ::CGAL::collinear(vertex(0), vertex(1), vertex(2));
+        COLLINEAR_230_ = ::CGAL::collinear(vertex(2), vertex(3), vertex(0));
+        COLLINEAR_013_ = ::CGAL::collinear(vertex(0), vertex(1), vertex(3));
+        COLLINEAR_123_ = ::CGAL::collinear(vertex(1), vertex(2), vertex(3));
         HAS_TRIANGULAR_DECOMPOSITION_ = (!COLLINEAR_012_) || (!COLLINEAR_230_) || (!COLLINEAR_013_);
         IS_DEGENERATE_ = IS_PLANAR_ && (!HAS_TRIANGULAR_DECOMPOSITION_);
       }
@@ -99,7 +99,6 @@ public:
   const Point_3 & vertex(int i) const;
   const Point_3 & operator[](int i) const;
   const Tetrahedron_3 & tetrahedron() const;
-
 
   FT signed_scaled_patch_distance(const Point_3 & x) const;
 
@@ -132,9 +131,7 @@ auto BilinearPatchC3<R>::signed_scaled_planar_distance(
   const Point_3 & r
 ) const -> FT
 {
-  Vector_3 cross = cross_product(q-p, r-p);
-  FT dot = scalar_product(x-p, cross);
-  return dot;
+  return ::CGAL::scalar_product(x-p, ::CGAL::cross_product(q-p, r-p));
 }
 
 template <class R>
@@ -158,7 +155,7 @@ template < class R >
 bool
 BilinearPatchC3<R>::operator==(const BilinearPatchC3<R> &bp) const
 {
-  if (CGAL::identical(base, bp.base))
+  if (::CGAL::identical(base, bp.base))
       return true;
 
   int i;
