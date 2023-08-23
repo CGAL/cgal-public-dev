@@ -136,7 +136,7 @@ class Point_3_Triangle_3_collision_test_boundary{
         D1 = collision_function_(ONE,  ONE , ZERO);
         points_ = {&A0, &B0, &D0, &A1, &B1, &D1};
 
-        // IS_CULLED_ = ::CGAL::Collisions::internal::cull_test_boundary<K>(points_);
+        IS_CULLED_ = ::CGAL::Collisions::internal::cull_test_boundary<K>(points_);
 
         if( !IS_CULLED_ ) {
             triangles_.reserve(2);
@@ -295,7 +295,7 @@ class Segment_3_Segment_3_collision_test_boundary{
 
         points_ = {&A0, &B0, &C0, &D0, &A1, &B1, &C1, &D1};
 
-        // IS_CULLED_ = ::CGAL::Collisions::internal::cull_test_boundary<K>(points_);
+        IS_CULLED_ = ::CGAL::Collisions::internal::cull_test_boundary<K>(points_);
 
         if( !IS_CULLED_ )
         {
