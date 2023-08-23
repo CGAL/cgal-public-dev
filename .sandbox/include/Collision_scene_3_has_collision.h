@@ -23,20 +23,20 @@
 namespace CGAL{
 
   template <class K>
-  std::vector<Collision_candidate<typename Collision_scene<K>::Trajectory>> 
+  std::vector<Collision_candidate<typename Collision_scene<K>::Trajectory>>
   get_collisions(
       const Collision_scene<K>& scene
   ){
-    using Candidate = Collision_candidate<Collision_scene<K>::Trajectory>;
+    using Candidate = Collision_candidate<typename Collision_scene<K>::Trajectory>;
 
     std::vector<Candidate> candidates = get_collision_candidates(scene);
     std::vector<Candidate> collisions;
 
     std::copy_if(
-        candidates.begin(), 
-        candidates.end(), 
-        std::back_inserter(collisions), 
-        [](const auto& candidate){ 
+        candidates.begin(),
+        candidates.end(),
+        std::back_inserter(collisions),
+        [](const auto& candidate){
           return candidate_has_collision(candidate);
         }
     );
@@ -48,7 +48,7 @@ namespace CGAL{
   bool has_collision(
       const Collision_scene<K>& scene
   ){
-    using Candidate = Collision_candidate<Collision_scene<K>::Trajectory>;
+    using Candidate = Collision_candidate<typename Collision_scene<K>::Trajectory>;
 
     std::vector<Candidate> candidates = get_collision_candidates(scene);
 
@@ -63,7 +63,7 @@ namespace CGAL{
 
   template <class CollisionCandidate>
   bool candidate_has_collision(
-      const CollisionCandidate& candidate 
+      const CollisionCandidate& candidate
   ){
 
     using K     = typename CollisionCandidate::K;
@@ -72,16 +72,16 @@ namespace CGAL{
     Triangle_3_trajectory<K> trajectory_0 = to_Triangle_3_trajectory<K, Index>(*candidate.first);
     Triangle_3_trajectory<K> trajectory_1 = to_Triangle_3_trajectory<K, Index>(*candidate.second);
 
-    return do_collide(trajectory_0, trajectory_1);                                      
+    return do_collide(trajectory_0, trajectory_1);
   }
 
   template <class K>
   auto get_collision_candidates(
     const Collision_scene<K>& scene
   ) -> std::vector< Collision_candidate<typename Collision_scene<K>::Trajectory> >
-  {      
-      typedef Collision_candidate< 
-        typename Collision_scene<K>::Trajectory 
+  {
+      typedef Collision_candidate<
+        typename Collision_scene<K>::Trajectory
       > Candidate;
 
       const auto candidate_primitive_pairs = scene.tree().all_self_intersections();
@@ -92,9 +92,9 @@ namespace CGAL{
       // TODO: modify collision candidates to limit the testing
       //       of adjacent faces so that they ignore common vertices/edges.
       //       Once this is done, can consider self-intersections again.
-      // TODO: consider self-intersections. 
+      // TODO: consider self-intersections.
       for( const auto& primitive_pair : candidate_primitive_pairs ) {
-        if( primitive_pair.first->index.mesh_index() !=  primitive_pair.second->index.mesh_index()) {        
+        if( primitive_pair.first->index.mesh_index() !=  primitive_pair.second->index.mesh_index()) {
           candidates.push_back(
               Candidate(primitive_pair)
           );

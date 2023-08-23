@@ -15,7 +15,7 @@
 #include <utility>
 #include <iterator>
 #include <vector>
-#include <conio.h>
+// #include <conio.h>
 
 #include <CGAL/Simple_cartesian.h>
 #include <CGAL/intersections.h>
@@ -35,8 +35,8 @@ typedef Kernel::Point_3                 Point;
 typedef Kernel::Vector_3                Vector;
 typedef Kernel::Tetrahedron_3           Tetrahedron;
 typedef Kernel::Ray_3                   Ray;
-typedef Kernel::Aff_transformation_3    Transform;                        
-typedef CGAL::Surface_mesh<Point>       Mesh;                    
+typedef Kernel::Aff_transformation_3    Transform;
+typedef CGAL::Surface_mesh<Point>       Mesh;
 typedef CGAL::Collision_mesh<Kernel>    SMesh;
 typedef CGAL::Collision_scene<Kernel>   Scene;
 typedef Scene::Mesh_index               Mesh_index;
@@ -70,7 +70,7 @@ int main(int argc, char* argv[])
   //   return EXIT_FAILURE;
   // }
 
-  
+
     Point p1(1.0, 0.0, 0.0);
     Point q1(0.0, 1.0, 0.0);
     Point r1(0.0, 0.0, 1.0);
@@ -102,8 +102,8 @@ int main(int argc, char* argv[])
 
   std::cout << "\nCollision candidates containing Face 0 of Mesh 0:\n===================" << std::endl;
   std::for_each(
-    collision_candidates.begin(), 
-    collision_candidates.end(), 
+    collision_candidates.begin(),
+    collision_candidates.end(),
     [&ti, &filtered_indices](const auto& candidate){
       if(candidate.first->index == ti || candidate.second->index == ti)
       {
@@ -114,7 +114,7 @@ int main(int argc, char* argv[])
     }
   );
   std::cout << "===================" << std::endl;
-  
+
   std::cout << "\nPress <m> to color the faces:" << std::endl;
   std::cout << "  (blue)  : Face 0 of Mesh 0" << std::endl;
   std::cout << "  (red)   : Candidate for collision with Face 0 of Mesh 0" << std::endl;
@@ -133,7 +133,7 @@ int main(int argc, char* argv[])
 
   return EXIT_SUCCESS;
 }
-  
+
 
 
 
@@ -179,11 +179,11 @@ int main(int argc, char* argv[])
 
 // auto vcm = a.add_property_map<Mesh::Vertex_index, CGAL::IO::Color>("v:color").first;
 // auto ecm = a.add_property_map<Mesh::Edge_index, CGAL::IO::Color>("e:color").first;
-// auto fcm = a.add_property_map<Mesh::Face_index>("f:color", CGAL::IO::white() /*default*/).first; 
+// auto fcm = a.add_property_map<Mesh::Face_index>("f:color", CGAL::IO::white() /*default*/).first;
 
 // for(auto v : vertices(a))
 // {
-//   if(v.idx()%2) 
+//   if(v.idx()%2)
 //   {
 //     Point& p = a.point(v);
 //     Vector& q = a.velocity(v);
@@ -221,7 +221,7 @@ int main(int argc, char* argv[])
 // Point outside_point_2 = Point(-0.25, -0.25, 1);
 // Point inside_point = Point(0.25, 0.25, 0);
 
-// BilinearPatch bp = BilinearPatch(a, b, c, d); 
+// BilinearPatch bp = BilinearPatch(a, b, c, d);
 
 // Ray ray_true = Ray(outside_point, inside_point);
 // Ray ray_false = Ray(outside_point, outside_point_2);
@@ -241,7 +241,7 @@ int main(int argc, char* argv[])
 // outside_point_2 = Point(1, 1, 1);
 // inside_point = Point(0.333, 0.333, 0.333);
 
-// bp = BilinearPatch(a, b, c, d); 
+// bp = BilinearPatch(a, b, c, d);
 
 // ray_true = Ray(a, outside_point);
 

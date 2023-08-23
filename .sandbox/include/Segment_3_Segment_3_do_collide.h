@@ -14,7 +14,7 @@
 #define SEGMENT_3_SEGMENT_3_DO_COLLIDE_H
 
 #include <Collision_test_boundaries.h>
-#include <CGAL\Origin.h>
+#include <CGAL/Origin.h>
 #include <Trajectories.h>
 #include <cstdlib>
 #include <ctime>
@@ -30,9 +30,9 @@ namespace CGAL{
       typename K::Ray_3       test_ray
   ){
     using Test_boundary = ::CGAL::Collisions::internal::Segment_3_Segment_3_collision_test_boundary<K>;
-    using Ray = K::Ray_3;
-    using Point = K::Point_3;
-    using FT = K::FT;
+    using Ray = typename K::Ray_3;
+    using Point = typename K::Point_3;
+    using FT = typename K::FT;
 
     Test_boundary test_boundary(
       s0.current(),
@@ -40,7 +40,7 @@ namespace CGAL{
       s1.current(),
       s1.next()
     );
-    
+
     size_t num_intersections = test_boundary.num_ray_intersections( test_ray );
 
     return (num_intersections % 2) == 1; //
@@ -51,15 +51,16 @@ namespace CGAL{
       Segment_3_trajectory<K> s0,
       Segment_3_trajectory<K> s1
   ){
-    using FT = K::FT;
+    using FT = typename K::FT;
+    using Point = typename K::Point_3;
 
     FT random_max = FT(RAND_MAX);
     FT x = FT(std::rand()) / random_max;
     FT y = FT(std::rand()) / random_max;
     FT z = FT(std::rand()) / random_max;
 
-    typename K::Ray_3 test_ray = K::Ray_3(
-        Point(::CGAL::ORIGIN), 
+    typename K::Ray_3 test_ray(
+        Point(::CGAL::ORIGIN),
         Point(x, y, z)
     );
 

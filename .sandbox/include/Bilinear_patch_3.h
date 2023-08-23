@@ -38,7 +38,7 @@ class BilinearPatchC3
   typedef typename R_::template Handle<Rep>::type Base;
 
   Base base;
-  
+
   Origin origin = ::CGAL::ORIGIN;
 
 public:
@@ -61,7 +61,7 @@ public:
   // NOTE:  specify the points as a cycle around the perimeter!
   //                           q00,              q01,              q11,              q10
   BilinearPatchC3(const Point_3 &p, const Point_3 &q, const Point_3 &r, const Point_3 &s)
-    : base(CGAL::make_array(p, q, r, s)) 
+    : base(CGAL::make_array(p, q, r, s))
     {
       bounding_tetrahedron = Tetrahedron(p, q, r, s);
 
@@ -76,10 +76,10 @@ public:
         IS_DEGENERATE_ = IS_PLANAR_ && (!HAS_TRIANGULAR_DECOMPOSITION_);
       }
 
-      if(HAS_TRIANGULAR_DECOMPOSITION_) 
+      if(HAS_TRIANGULAR_DECOMPOSITION_)
       {
         populate_triangles_();
-      } 
+      }
 
       populate_boundary_();
     }
@@ -90,7 +90,7 @@ public:
   friend std::ostream& operator<<(std::ostream& os, BilinearPatchC3 const& bp)
   {
       return (os << bp.vertex(0) << "\n" << bp.vertex(1) << "\n"<< bp.vertex(2) << "\n"<< bp.vertex(3) << "\n" );
-  } 
+  }
 
   bool  has_on(const Point_3 &p) const;
   bool  is_degenerate() const;
@@ -126,14 +126,14 @@ auto BilinearPatchC3<R>::operator()(const FT& u, const FT& v) const -> Point_3
 
 template <class R>
 auto BilinearPatchC3<R>::signed_scaled_planar_distance(
-  const Point_3 & x, 
-  const Point_3 & p, 
-  const Point_3 & q, 
+  const Point_3 & x,
+  const Point_3 & p,
+  const Point_3 & q,
   const Point_3 & r
 ) const -> FT
 {
-  Vector_3 cross = ::CGAL::cross_product(q-p, r-p);
-  FT dot = ::CGAL::scalar_product(x-p, cross);
+  Vector_3 cross = cross_product(q-p, r-p);
+  FT dot = scalar_product(x-p, cross);
   return dot;
 }
 
@@ -146,7 +146,7 @@ auto BilinearPatchC3<R>::signed_scaled_patch_distance(
       (
           signed_scaled_planar_distance(x, vertex(0), vertex(1), vertex(3))
         * signed_scaled_planar_distance(x, vertex(1), vertex(2), vertex(3))
-      ) 
+      )
     - (
           signed_scaled_planar_distance(x, vertex(0), vertex(1), vertex(2))
         * signed_scaled_planar_distance(x, vertex(0), vertex(2), vertex(3))
@@ -167,9 +167,9 @@ BilinearPatchC3<R>::operator==(const BilinearPatchC3<R> &bp) const
        break;
 
   return (
-        (i<4) 
-    &&  vertex(1) == bp.vertex(i+1) 
-    &&  vertex(2) == bp.vertex(i+2) 
+        (i<4)
+    &&  vertex(1) == bp.vertex(i+1)
+    &&  vertex(2) == bp.vertex(i+2)
     &&  vertex(3) == bp.vertex(i+3)
   );
 }
@@ -208,20 +208,20 @@ bool
 BilinearPatchC3<R>::has_on(const Point_3 &p) const
 {
   bool has_on_{false};
-  if( HAS_TRIANGULAR_DECOMPOSITION_ ) 
+  if( HAS_TRIANGULAR_DECOMPOSITION_ )
   {
     // If the patch can be decomposed into triangles,
     // check those instead
-    for( const auto& t : triangles_) 
-    { 
+    for( const auto& t : triangles_)
+    {
       has_on_ = (has_on_ || t.has_on(p));
     }
   }
-  else if( IS_DEGENERATE_ ) 
+  else if( IS_DEGENERATE_ )
   {
-    // If the patch is truly degenerate, then it 
+    // If the patch is truly degenerate, then it
     // consists only of its boundary edges
-    for( const auto& s : boundary_ ) 
+    for( const auto& s : boundary_ )
     {
       has_on_ = (has_on_ || s.has_on(p));
     }
@@ -229,20 +229,20 @@ BilinearPatchC3<R>::has_on(const Point_3 &p) const
   else
   {
     if(
-          bounding_tetrahedron.has_on_bounded_side(p) 
+          bounding_tetrahedron.has_on_bounded_side(p)
       ||  bounding_tetrahedron.has_on_boundary(p)
-    ) 
-    {    
+    )
+    {
       // std::cout << "Phi value: "         << signed_scaled_patch_distance(p) << "\n" << *this << std::endl;
       // std::cout << "Distance to plane: " << ::CGAL::squared_distance(Point(::CGAL::ORIGIN), R::Plane_3(vertex(0), vertex(1), vertex(3))) << std::endl;
       // std::cout << "Distance to plane: " << ::CGAL::squared_distance(Point(::CGAL::ORIGIN), R::Plane_3(vertex(1), vertex(2), vertex(3))) << std::endl;
       // std::cout << "Distance to plane: " << ::CGAL::squared_distance(Point(::CGAL::ORIGIN), R::Plane_3(vertex(0), vertex(1), vertex(2))) << std::endl;
       // std::cout << "Distance to plane: " << ::CGAL::squared_distance(Point(::CGAL::ORIGIN), R::Plane_3(vertex(0), vertex(2), vertex(3))) << std::endl;
       // std::cout << "Confrim nonplanar: " << !(::CGAL::coplanar(vertex(0),vertex(1),vertex(2),vertex(3)));
-   
-      has_on_ = abs(signed_scaled_patch_distance(p)) < R::FT(1e-16);
+
+      has_on_ = abs(signed_scaled_patch_distance(p)) < typename R::FT(1e-16);
     }
-  
+
   }
   return has_on_;
 }
@@ -278,7 +278,7 @@ void BilinearPatchC3<R>::populate_triangles_()
     // No collinear triplets and orientations agree
     Vector_3 normal_012 = normal(vertex(0), vertex(1), vertex(2));
     Vector_3 normal_230 = normal(vertex(2), vertex(3), vertex(0));
-    if( ::CGAL::scalar_product(normal_012, normal_230) > R::FT(0) )
+    if( scalar_product(normal_012, normal_230) > typename R::FT(0) )
     {
       triangles_.reserve(2);
       triangles_.push_back(Triangle_3(vertex(0), vertex(1), vertex(2)));
@@ -311,7 +311,7 @@ void BilinearPatchC3<R>::populate_triangles_()
       triangles_.push_back(Triangle_3(vertex(2), vertex(3), *intersection_point));
       return;
     }
-  } 
+  }
 
   // Case 3
   // Exactly three of the four vertices are collinear. A single triangle covers. Take the largest.
@@ -319,32 +319,32 @@ void BilinearPatchC3<R>::populate_triangles_()
   if( COLLINEAR_012_ )
   {
     size_t i{0}, j{1};
-    if ( ::CGAL::are_ordered_along_line(vertex(0), vertex(1), vertex(2)) ) { j = 2; }
-    else if( ::CGAL::are_ordered_along_line(vertex(2), vertex(0), vertex(1)) ) { i = 2; }
+    if ( are_ordered_along_line(vertex(0), vertex(1), vertex(2)) ) { j = 2; }
+    else if( are_ordered_along_line(vertex(2), vertex(0), vertex(1)) ) { i = 2; }
     triangles_.push_back(Triangle_3(vertex(i), vertex(j), vertex(3)));
     return;
   }
   else if( COLLINEAR_230_ )
   {
     size_t i{0}, j{3};
-    if ( ::CGAL::are_ordered_along_line(vertex(0), vertex(3), vertex(2)) ) { j = 2; }
-    else if( ::CGAL::are_ordered_along_line(vertex(2), vertex(0), vertex(3)) ) { i = 2; }
+    if ( are_ordered_along_line(vertex(0), vertex(3), vertex(2)) ) { j = 2; }
+    else if( are_ordered_along_line(vertex(2), vertex(0), vertex(3)) ) { i = 2; }
     triangles_.push_back(Triangle_3(vertex(i), vertex(j), vertex(1)));
     return;
   }
   else if( COLLINEAR_013_ )
   {
     size_t i{0}, j{3};
-    if ( ::CGAL::are_ordered_along_line(vertex(1), vertex(0), vertex(3)) ) { i = 1; }
-    else if( ::CGAL::are_ordered_along_line(vertex(0), vertex(3), vertex(1)) ) { j = 1; }
+    if ( are_ordered_along_line(vertex(1), vertex(0), vertex(3)) ) { i = 1; }
+    else if( are_ordered_along_line(vertex(0), vertex(3), vertex(1)) ) { j = 1; }
     triangles_.push_back(Triangle_3(vertex(i), vertex(j), vertex(2)));
     return;
   }
   else
   {
     size_t i{1}, j{3};
-    if ( ::CGAL::are_ordered_along_line(vertex(1), vertex(3), vertex(2)) ) { j = 2; }
-    else if( ::CGAL::are_ordered_along_line(vertex(2), vertex(1), vertex(3)) ) { i = 2; }
+    if ( are_ordered_along_line(vertex(1), vertex(3), vertex(2)) ) { j = 2; }
+    else if( are_ordered_along_line(vertex(2), vertex(1), vertex(3)) ) { i = 2; }
     triangles_.push_back(Triangle_3(vertex(i), vertex(j), vertex(0)));
     return;
   }

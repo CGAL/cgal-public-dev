@@ -263,14 +263,14 @@ public:
 
     /// puts in `out` the ids of all other intersected primitives, i.e.,
     /// it does not consider a primitive as intersecting itself.
-    /// This function is restricted to primitives as queries. This 
+    /// This function is restricted to primitives as queries. This
     /// function does not compute the intersection points
     /// and is hence faster than the function `all_intersections()`
     /// function below.
     std::set<
       std::pair<
-        typename Primitive_id, 
-        typename Primitive_id
+        Primitive_id,
+        Primitive_id
       >
     > all_self_intersections() const;
 
@@ -695,7 +695,7 @@ public:
     }
 
     Primitives_iterator primitives_end() const {
-      
+
       return m_primitives.cend();
     }
 
@@ -973,7 +973,7 @@ public:
   template<typename Tr>
   std::set<
     std::pair<
-      typename AABB_tree<Tr>::Primitive_id, 
+      typename AABB_tree<Tr>::Primitive_id,
       typename AABB_tree<Tr>::Primitive_id
     >
   > AABB_tree<Tr>::all_self_intersections() const
@@ -984,11 +984,11 @@ public:
     typedef          std::set<std::pair<PID,PID>> OutputSet;
     OutputSet out;
     Listing_self_intersection_traits<AABBTraits> traversal_traits(out, m_traits);
-    std::for_each( 
-      this->primitives_begin(), 
-      this->primitives_end(), 
-      [&traversal_traits, this](const auto& primitive_query){ 
-        this->traversal(primitive_query, traversal_traits); 
+    std::for_each(
+      this->primitives_begin(),
+      this->primitives_end(),
+      [&traversal_traits, this](const auto& primitive_query){
+        this->traversal(primitive_query, traversal_traits);
       }
     );
     return out;

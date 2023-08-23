@@ -15,7 +15,7 @@
 #include <utility>
 #include <iterator>
 #include <vector>
-#include <conio.h>
+//#include <conio.h>
 
 #include <CGAL/Simple_cartesian.h>
 #include <CGAL/intersections.h>
@@ -36,8 +36,8 @@ typedef Kernel::Point_3                 Point;
 typedef Kernel::Vector_3                Vector;
 typedef Kernel::Tetrahedron_3           Tetrahedron;
 typedef Kernel::Ray_3                   Ray;
-typedef Kernel::Aff_transformation_3    Transform;                        
-typedef CGAL::Surface_mesh<Point>       Mesh;                    
+typedef Kernel::Aff_transformation_3    Transform;
+typedef CGAL::Surface_mesh<Point>       Mesh;
 typedef CGAL::Collision_mesh<Kernel>    SMesh;
 typedef CGAL::Collision_scene<Kernel>   Scene;
 typedef CGAL::Point_3_trajectory<Kernel>Point_trajectory;
@@ -60,10 +60,11 @@ struct Translate_functor {
   Translate_functor(Vector translation_vector) : translation(CGAL::TRANSLATION, translation_vector) {}
 
   void operator() (SMesh* mesh, typename Scene::Scene_vertex_index svi) {
-    if( mi == svi.mesh_index()) 
+    if( mi == svi.mesh_index())
     {
+      mesh->point(svi.local_index()) = mesh->point(svi.local_index()).transform(this->translation);
       swap(
-        mesh->point(svi.local_index()).transform(this->translation),
+        mesh->point(svi.local_index()),
         mesh->next_point(svi.local_index())
       );
     }
@@ -78,7 +79,7 @@ struct Swap_current_next_functor {
     Swap_current_next_functor(Mesh_index mi) : mi{mi} {}
 
     void operator() (SMesh* mesh, typename Scene::Scene_vertex_index svi) {
-      if( mi == svi.mesh_index()) 
+      if( mi == svi.mesh_index())
       {
         swap(
           mesh->point(svi.local_index()),
@@ -94,7 +95,7 @@ int main(int argc, char* argv[])
   Point p1(3.0, 2.0, 2.0);
   Point q1(2.0, 3.0, 2.0);
   Point r1(2.0, 2.0, 3.0);
-  Point s1(2.0, 2.0, 2.0);  
+  Point s1(2.0, 2.0, 2.0);
 
   Point p2(1.0, 0.0, 0.0);
   Point q2(0.0, 1.0, 0.0);
