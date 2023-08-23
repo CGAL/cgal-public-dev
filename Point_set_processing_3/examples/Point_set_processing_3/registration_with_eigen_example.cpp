@@ -14,9 +14,7 @@
 #include <Eigen/SVD>
 #include <Eigen/Dense>
 #include <Eigen/Sparse>
-//#include <Eigen/UmfPackSupport>
-//#include <Eigen/KLUSupport>
-//#include <Eigen/SPQRSupport>
+#include <Eigen/SPQRSupport>
 
 
 typedef CGAL::Simple_cartesian<double>                       Kernel;
@@ -468,6 +466,7 @@ std::pair<Transform, Mesh> nonrigid_registration_least_squares(const Mesh& sourc
     size_t N = source.number_of_vertices();
     size_t E = source.number_of_edges();
     Mesh z = source;
+    Mesh solution_mesh = source;
     // build k-d tree for nearest neighbor search
     std::map<size_t, Point> index_map_base;
     for (auto it = target.begin(); it != target.end(); ++it) {
@@ -480,7 +479,7 @@ std::pair<Transform, Mesh> nonrigid_registration_least_squares(const Mesh& sourc
         Splitter(),
         Traits(index_map)); // when called, returns the index of the nearest neighbor on target mesh
     // solver
-    Eigen::LeastSquaresConjugateGradient< Eigen::SparseMatrix<double> > cg;
+    Eigen::SPQR< Eigen::SparseMatrix<double> > cg; // other option: LeastSquaresConjugateGradient
     //cg.setMaxIterations(1000);
     //cg.setTolerance(1e-5);
     // sparse coefficient matrix A
@@ -562,9 +561,10 @@ std::pair<Transform, Mesh> nonrigid_registration_least_squares(const Mesh& sourc
             //double w1_corr = is_corr ? w1 * 1000 : w1;
             //double w2_corr = is_corr ? w2 * 1000 : w2;
             Point zp = z.point(*it);
+            Point solution_p = solution_mesh.point(*it);
             Eigen::Vector3d x_t(zp.x(), zp.y(), zp.z());
             // search the nearest neighbor PI on the target mesh, n is the normal at PI
-            size_t index = is_corr ? correspondence.at(i) : Neighbor_search(tree, zp, 1, 0, true, distance).begin()->first;
+            size_t index = is_corr ? correspondence.at(i) : Neighbor_search(tree, solution_p, 1, 0, true, distance).begin()->first;
             Point pnn = index_map[index];
             Eigen::Vector3d PI(pnn.x(), pnn.y(), pnn.z());
             const Vector nnn = target.normal(index);
@@ -591,7 +591,7 @@ std::pair<Transform, Mesh> nonrigid_registration_least_squares(const Mesh& sourc
             // point-to-plane rigid energy - rotations
             a[rolling++] = T(3 * N + 3 * N + i, 3 * N + 0, (x_t[1] * n[2] - x_t[2] * n[1]) * w2);
             a[rolling++] = T(3 * N + 3 * N + i, 3 * N + 1, (x_t[2] * n[0] - x_t[0] * n[2]) * w2);
-            a[rolling++] = T(3 * N + 3 * N + i, 3 * N + 2, (x_t[0] * n[1] - x_t[1] * n[0] * w2));
+            a[rolling++] = T(3 * N + 3 * N + i, 3 * N + 2, (x_t[0] * n[1] - x_t[1] * n[0]) * w2);
             // point-to-plane rigid energy - translations
             a[rolling++] = T(3 * N + 3 * N + i, 3 * N + 3, n[0] * w2);
             a[rolling++] = T(3 * N + 3 * N + i, 3 * N + 4, n[1] * w2);
@@ -689,7 +689,7 @@ std::pair<Transform, Mesh> nonrigid_registration_least_squares(const Mesh& sourc
         // solve Ax = b
         cg.compute(A);
         Eigen::VectorXd solution = cg.solve(b);
-        std::cout << "CG converged within " << cg.iterations() << " iterations. Error: " << cg.error() << "." << std::endl;
+        //std::cout << "CG converged within " << cg.iterations() << " iterations. Error: " << cg.error() << "." << std::endl;
         Eigen::Vector3d r(solution[3 * N + 0], solution[3 * N + 1], solution[3 * N + 2]);
         auto roll = Eigen::AngleAxisd(r[0], Eigen::Vector3d::UnitX());
         auto pitch = Eigen::AngleAxisd(r[1], Eigen::Vector3d::UnitY());
@@ -702,15 +702,13 @@ std::pair<Transform, Mesh> nonrigid_registration_least_squares(const Mesh& sourc
         double distance = 0.0;
         for (auto it = z.vertices().begin(); it != z.vertices().end(); ++it) {
             auto i = it->idx();
-            if (iter == max_iter - 1) {
-                Point p(solution[i], solution[N + i], solution[2 * N + i]);
-                z.point(*it) = p;
-            } else {
-                Point p = z.point(*it);
-                Eigen::Vector3d x(p.x(), p.y(), p.z());
-                Eigen::Vector3d x_transformed = R * x + t;
-                z.point(*it) = Point(x_transformed[0], x_transformed[1], x_transformed[2]);
-            }
+            solution_mesh.point(*it) = Point(solution[i], solution[N + i], solution[2 * N + i]);
+
+            Point zp = z.point(*it);
+            Eigen::Vector3d x(zp.x(), zp.y(), zp.z());
+            Eigen::Vector3d x_transformed = R * x + t;
+            z.point(*it) = Point(x_transformed[0], x_transformed[1], x_transformed[2]);
+
             distance += CGAL::sqrt(CGAL::squared_distance(Point(solution[i], solution[N + i], solution[2 * N + i]), target.point(i)));
         }
         auto stop = std::chrono::high_resolution_clock::now();
@@ -733,7 +731,7 @@ std::pair<Transform, Mesh> nonrigid_registration_least_squares(const Mesh& sourc
 
     }
 
-    return std::make_pair(Transform(), z);
+    return std::make_pair(Transform(), solution_mesh);
 
 }
 
@@ -763,9 +761,9 @@ int main(int argc, char* argv[]) {
     //CGAL::Polygon_mesh_processing::transform(opengr_transform, mesh1);
     //CGAL::draw(merge_meshes(mesh1, mesh2));
 
-    auto rigid_result = rigid_registration(Mesh2PointSet(mesh1), Mesh2PointSet(mesh2), 0.1, 0.1, 1.0, 10, 4);
-    Transform transform = rigid_result.first;
-    CGAL::Polygon_mesh_processing::transform(transform, mesh1);
+    //auto rigid_result = rigid_registration(Mesh2PointSet(mesh1), Mesh2PointSet(mesh2), 0.1, 0.1, 1.0, 10, 4);
+    //Transform transform = rigid_result.first;
+    //CGAL::Polygon_mesh_processing::transform(transform, mesh1);
     //CGAL::Polygon_mesh_processing::transform(Transform(CGAL::Translation(), Vector(-40, 0, 0)), mesh1);
     //CGAL::draw(merge_meshes(mesh1, mesh2));
     auto nonrigid_result = nonrigid_registration_least_squares(mesh1, Mesh2PointSet(mesh2), 1.0, 0.1, 0.0, 10.0, 10, 4);
