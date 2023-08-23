@@ -459,7 +459,7 @@ std::pair<Transform, Mesh> nonrigid_registration(const Mesh& source, const Point
 
 
 std::pair<Transform, Mesh> nonrigid_registration_least_squares(const Mesh& source, const PointSet& target,
-    double w1 = 0.1, double w2 = 0.1, double w3 = 1.0, double w4 = 10.0,
+    double w1 = 1.0, double w2 = 1.0, double w3 = 0.1, double w4 = 10.0, double w5 = 10.0,
     size_t max_iter = 100, int num_threads = 1, const Correspondence& correspondence = {}) {
     double avg_filling = 0.0, avg_factorizing = 0.0, avg_solving = 0.0;
     Eigen::setNbThreads(num_threads);
@@ -482,26 +482,30 @@ std::pair<Transform, Mesh> nonrigid_registration_least_squares(const Mesh& sourc
     Eigen::SPQR< Eigen::SparseMatrix<double> > cg; // other option: LeastSquaresConjugateGradient
     //cg.setMaxIterations(1000);
     //cg.setTolerance(1e-5);
+    Eigen::JacobiSVD<Eigen::Matrix3d> svd;
     // sparse coefficient matrix A
-    Eigen::SparseMatrix<double> A(3 * N + 3 * N + N + 3 * 2 * E, 3 * N + 6 + 3 * N);
-    std::vector<T> a(9 * N + 6 * 2 * E + 15 * N + 6 * 2 * E);
+    Eigen::SparseMatrix<double> A(3 * N + N + 3 * N + 3 * 2 * E + 3 * N, 3 * N + 6 + 3 * N);
+    std::vector<T> a(12 * N + 9 * 2 * E + 9 * N + 6 * 2 * E);
     size_t rolling = 0;
+
     // preallocate
 
-    for (size_t i = 0; i < 3 * N; ++i) {
+    for (size_t i = 0; i < N; ++i) {
         // point-to-point matching energy - updated positions
-        a[rolling++] = T(i, i, -1 * w1);
+        a[rolling++] = T(3 * i + 0, 3 * i + 0, -1 * w1);
+        a[rolling++] = T(3 * i + 1, 3 * i + 1, -1 * w1);
+        a[rolling++] = T(3 * i + 2, 3 * i + 2, -1 * w1);
     }
 
     for (size_t i = 0; i < N; ++i) {
         // point-to-point rigid energy - translations
-		a[rolling++] = T(3 * N + 3 * i + 0, 3 * N + 3, 1 * w3);
-        a[rolling++] = T(3 * N + 3 * i + 1, 3 * N + 4, 1 * w3);
-        a[rolling++] = T(3 * N + 3 * i + 2, 3 * N + 5, 1 * w3);
+		a[rolling++] = T(3 * N + N + 3 * i + 0, 3 * N + 3, 1 * w3);
+        a[rolling++] = T(3 * N + N + 3 * i + 1, 3 * N + 4, 1 * w3);
+        a[rolling++] = T(3 * N + N + 3 * i + 2, 3 * N + 5, 1 * w3);
         // point-to-point rigid energy - updated positions
-        a[rolling++] = T(3 * N + 3 * i + 0, i, -1 * w3);
-        a[rolling++] = T(3 * N + 3 * i + 1, N + i, -1 * w3);
-        a[rolling++] = T(3 * N + 3 * i + 2, 2 * N + i, -1 * w3);
+        a[rolling++] = T(3 * N + N + 3 * i + 0, 3 * i + 0, -1 * w3);
+        a[rolling++] = T(3 * N + N + 3 * i + 1, 3 * i + 1, -1 * w3);
+        a[rolling++] = T(3 * N + N + 3 * i + 2, 3 * i + 2, -1 * w3);
 	}
 
     //for (auto it = z.edges().begin(); it != z.edges().end(); ++it) {
@@ -509,51 +513,61 @@ std::pair<Transform, Mesh> nonrigid_registration_least_squares(const Mesh& sourc
     //    size_t i = CGAL::source(it->halfedge(), z).idx();
     //    size_t j = CGAL::target(it->halfedge(), z).idx();
     //    // as-rigid-as-possible energy - updated positions
-    //    a[rolling++] = T(3 * N + 3 * N + N + 3 * e + 0, i, -1);
-    //    a[rolling++] = T(3 * N + 3 * N + N + 3 * e + 1, N + i, -1);
-    //    a[rolling++] = T(3 * N + 3 * N + N + 3 * e + 2, 2 * N + i, -1);
-    //    a[rolling++] = T(3 * N + 3 * N + N + 3 * e + 0, j, 1);
-    //    a[rolling++] = T(3 * N + 3 * N + N + 3 * e + 1, N + j, 1);
-    //    a[rolling++] = T(3 * N + 3 * N + N + 3 * e + 2, 2 * N + j, 1);
+    //    a[rolling++] = T(3 * N + 3 * N + N + 3 * e + 0, 3 * i + 0, -1);
+    //    a[rolling++] = T(3 * N + 3 * N + N + 3 * e + 1, 3 * i + 1, -1);
+    //    a[rolling++] = T(3 * N + 3 * N + N + 3 * e + 2, 3 * i + 2, -1);
+    //    a[rolling++] = T(3 * N + 3 * N + N + 3 * e + 0, 3 * j + 0, 1);
+    //    a[rolling++] = T(3 * N + 3 * N + N + 3 * e + 1, 3 * j + 1, 1);
+    //    a[rolling++] = T(3 * N + 3 * N + N + 3 * e + 2, 3 * j + 2, 1);
     //    // source & target swapped
-    //    a[rolling++] = T(3 * N + 3 * N + N + 3 * E + 3 * e + 0, j, -1);
-    //    a[rolling++] = T(3 * N + 3 * N + N + 3 * E + 3 * e + 1, N + j, -1);
-    //    a[rolling++] = T(3 * N + 3 * N + N + 3 * E + 3 * e + 2, 2 * N + j, -1);
-    //    a[rolling++] = T(3 * N + 3 * N + N + 3 * E + 3 * e + 0, i, 1);
-    //    a[rolling++] = T(3 * N + 3 * N + N + 3 * E + 3 * e + 1, N + i, 1);
-    //    a[rolling++] = T(3 * N + 3 * N + N + 3 * E + 3 * e + 2, 2 * N + i, 1);
+    //    a[rolling++] = T(3 * N + 3 * N + N + 3 * E + 3 * e + 0, 3 * j + 0, -1);
+    //    a[rolling++] = T(3 * N + 3 * N + N + 3 * E + 3 * e + 1, 3 * j + 1, -1);
+    //    a[rolling++] = T(3 * N + 3 * N + N + 3 * E + 3 * e + 2, 3 * j + 2, -1);
+    //    a[rolling++] = T(3 * N + 3 * N + N + 3 * E + 3 * e + 0, 3 * i + 0, 1);
+    //    a[rolling++] = T(3 * N + 3 * N + N + 3 * E + 3 * e + 1, 3 * i + 1, 1);
+    //    a[rolling++] = T(3 * N + 3 * N + N + 3 * E + 3 * e + 2, 3 * i + 2, 1);
     //}
 
     size_t e = 0;
     for (auto it = z.vertices().begin(); it != z.vertices().end(); ++it) {
         auto i = it->idx();
-        std::vector<CGAL::SM_Halfedge_index> neighbors;
         for (auto he : CGAL::halfedges_around_source(*it, z)) {
-            neighbors.push_back(he);
-        }
-        std::sort(neighbors.begin(), neighbors.end(), [&z](const CGAL::SM_Halfedge_index& a, const CGAL::SM_Halfedge_index& b) {
-            return CGAL::target(a, z).idx() < CGAL::target(b, z).idx();
-            });
-        for (auto he : neighbors) {
             auto v0 = CGAL::target(he, z);
             auto j = v0.idx();
-            a[rolling++] = T(3 * N + 3 * N + N + 3 * e + 0, i, -1 * w4);
-            a[rolling++] = T(3 * N + 3 * N + N + 3 * e + 1, N + i, -1 * w4);
-            a[rolling++] = T(3 * N + 3 * N + N + 3 * e + 2, 2 * N + i, -1 * w4);
-            a[rolling++] = T(3 * N + 3 * N + N + 3 * e + 0, j, 1 * w4);
-            a[rolling++] = T(3 * N + 3 * N + N + 3 * e + 1, N + j, 1 * w4);
-            a[rolling++] = T(3 * N + 3 * N + N + 3 * e + 2, 2 * N + j, 1 * w4);
+            a[rolling++] = T(3 * N + N + 3 * N + 3 * e + 0, 3 * i + 0, -1 * w4);
+            a[rolling++] = T(3 * N + N + 3 * N + 3 * e + 1, 3 * i + 1, -1 * w4);
+            a[rolling++] = T(3 * N + N + 3 * N + 3 * e + 2, 3 * i + 2, -1 * w4);
+            a[rolling++] = T(3 * N + N + 3 * N + 3 * e + 0, 3 * j + 0, 1 * w4);
+            a[rolling++] = T(3 * N + N + 3 * N + 3 * e + 1, 3 * j + 1, 1 * w4);
+            a[rolling++] = T(3 * N + N + 3 * N + 3 * e + 2, 3 * j + 2, 1 * w4);
             ++e;
         }
     }
 
+    // graph laplacian for arap
+    for (auto it = z.vertices().begin(); it != z.vertices().end(); ++it) {
+        auto i = it->idx();
+        size_t diag = CGAL::halfedges_around_source(*it, z).size();
+        a[rolling++] = T(3 * N + N + 3 * N + 3 * 2 * E + 3 * i + 0, 3 * i + 0, diag * w5);
+        a[rolling++] = T(3 * N + N + 3 * N + 3 * 2 * E + 3 * i + 1, 3 * i + 1, diag * w5);
+        a[rolling++] = T(3 * N + N + 3 * N + 3 * 2 * E + 3 * i + 2, 3 * i + 2, diag * w5);
+        for (auto he : CGAL::halfedges_around_source(*it, z)) {
+            auto v0 = CGAL::target(he, z);
+            auto j = v0.idx();
+            a[rolling++] = T(3 * N + N + 3 * N + 3 * 2 * E + 3 * i + 0, 3 * j + 0, -1 * w5);
+            a[rolling++] = T(3 * N + N + 3 * N + 3 * 2 * E + 3 * i + 1, 3 * j + 1, -1 * w5);
+            a[rolling++] = T(3 * N + N + 3 * N + 3 * 2 * E + 3 * i + 2, 3 * j + 2, -1 * w5);
+        }
+    }
+
     // result vector b
-    Eigen::VectorXd b(3 * N + 3 * N + N + 3 * 2 * E);
+    Eigen::VectorXd b(3 * N + N + 3 * N + 3 * 2 * E + 3 * N);
     double error = std::numeric_limits<double>::max();
     for (size_t iter = 0; iter < max_iter; ++iter) {
         b.setZero();
+        std::vector<Eigen::Matrix3d> Rotations(N);
         auto start = std::chrono::high_resolution_clock::now();
-        rolling = 9 * N + 6 * 2 * E;
+        rolling = 12 * N + 9 * 2 * E;
         for (auto it = z.vertices().begin(); it != z.vertices().end(); ++it) {
             auto i = it->idx();
             // if point is a landmark, increase its weight
@@ -570,39 +584,47 @@ std::pair<Transform, Mesh> nonrigid_registration_least_squares(const Mesh& sourc
             const Vector nnn = target.normal(index);
             const Eigen::Vector3d n(nnn.x(), nnn.y(), nnn.z());
 
-            // point-to-point matching energy - constants - can be changed to healthier indexing???
-            b[i] = -PI[0] * w1;
-            b[i + N] = -PI[1] * w1;
-            b[i + 2 * N] = -PI[2] * w1;
+            // point-to-point matching energy - constants
+            b[3 * i + 0] = -PI[0] * w1;
+            b[3 * i + 1] = -PI[1] * w1;
+            b[3 * i + 2] = -PI[2] * w1;
+
+            // point-to-plane matching energy - updated positions
+            a[rolling++] = T(3 * N + i, 3 * i + 0, -n[0] * w2);
+            a[rolling++] = T(3 * N + i, 3 * i + 1, -n[1] * w2);
+            a[rolling++] = T(3 * N + i, 3 * i + 2, -n[2] * w2);
+
+            // point-to-plane matching energy - constants
+            b[3 * N + i] = -n.dot(PI) * w2;
 
             // point-to-point rigid energy - rotations
-            a[rolling++] = T(3 * N + 3 * i + 0, 3 * N + 1, x_t[2] * w3);
-            a[rolling++] = T(3 * N + 3 * i + 0, 3 * N + 2, -x_t[1] * w3);
-            a[rolling++] = T(3 * N + 3 * i + 1, 3 * N + 0, -x_t[2] * w3);
-            a[rolling++] = T(3 * N + 3 * i + 1, 3 * N + 2, x_t[0] * w3);
-            a[rolling++] = T(3 * N + 3 * i + 2, 3 * N + 0, x_t[1] * w3);
-            a[rolling++] = T(3 * N + 3 * i + 2, 3 * N + 1, -x_t[0] * w3);
+            a[rolling++] = T(3 * N + N + 3 * i + 0, 3 * N + 1, x_t[2] * w3);
+            a[rolling++] = T(3 * N + N + 3 * i + 0, 3 * N + 2, -x_t[1] * w3);
+            a[rolling++] = T(3 * N + N + 3 * i + 1, 3 * N + 0, -x_t[2] * w3);
+            a[rolling++] = T(3 * N + N + 3 * i + 1, 3 * N + 2, x_t[0] * w3);
+            a[rolling++] = T(3 * N + N + 3 * i + 2, 3 * N + 0, x_t[1] * w3);
+            a[rolling++] = T(3 * N + N + 3 * i + 2, 3 * N + 1, -x_t[0] * w3);
 
             // point-to-point rigid energy - constants
-            b[3 * N + 3 * i] = -x_t[0] * w3;
-            b[3 * N + 3 * i + 1] = -x_t[1] * w3;
-            b[3 * N + 3 * i + 2] = -x_t[2] * w3;
+            b[3 * N + N + 3 * i + 0] = -x_t[0] * w3;
+            b[3 * N + N + 3 * i + 1] = -x_t[1] * w3;
+            b[3 * N + N + 3 * i + 2] = -x_t[2] * w3;
 
-            // point-to-plane rigid energy - rotations
-            a[rolling++] = T(3 * N + 3 * N + i, 3 * N + 0, (x_t[1] * n[2] - x_t[2] * n[1]) * w2);
-            a[rolling++] = T(3 * N + 3 * N + i, 3 * N + 1, (x_t[2] * n[0] - x_t[0] * n[2]) * w2);
-            a[rolling++] = T(3 * N + 3 * N + i, 3 * N + 2, (x_t[0] * n[1] - x_t[1] * n[0]) * w2);
-            // point-to-plane rigid energy - translations
-            a[rolling++] = T(3 * N + 3 * N + i, 3 * N + 3, n[0] * w2);
-            a[rolling++] = T(3 * N + 3 * N + i, 3 * N + 4, n[1] * w2);
-            a[rolling++] = T(3 * N + 3 * N + i, 3 * N + 5, n[2] * w2);
-            // point-to-plane rigid energy - updated positions
-            a[rolling++] = T(3 * N + 3 * N + i, i, -n[0] * w2);
-            a[rolling++] = T(3 * N + 3 * N + i, N + i, -n[1] * w2);
-            a[rolling++] = T(3 * N + 3 * N + i, 2 * N + i, -n[2] * w2);
+            //// point-to-plane rigid energy - rotations
+            //a[rolling++] = T(3 * N + 3 * N + i, 3 * N + 0, (x_t[1] * n[2] - x_t[2] * n[1]) * w2);
+            //a[rolling++] = T(3 * N + 3 * N + i, 3 * N + 1, (x_t[2] * n[0] - x_t[0] * n[2]) * w2);
+            //a[rolling++] = T(3 * N + 3 * N + i, 3 * N + 2, (x_t[0] * n[1] - x_t[1] * n[0]) * w2);
+            //// point-to-plane rigid energy - translations
+            //a[rolling++] = T(3 * N + 3 * N + i, 3 * N + 3, n[0] * w2);
+            //a[rolling++] = T(3 * N + 3 * N + i, 3 * N + 4, n[1] * w2);
+            //a[rolling++] = T(3 * N + 3 * N + i, 3 * N + 5, n[2] * w2);
+            //// point-to-plane rigid energy - updated positions
+            //a[rolling++] = T(3 * N + 3 * N + i, 3 * i + 0, -n[0] * w2);
+            //a[rolling++] = T(3 * N + 3 * N + i, 3 * i + 1, -n[1] * w2);
+            //a[rolling++] = T(3 * N + 3 * N + i, 3 * i + 2, -n[2] * w2);
 
-            // point-to-plane rigid energy - constants
-            b[3 * N + 3 * N + i] = (- x_t[0] * n[0] - x_t[1] * n[1] - x_t[2] * n[2]) * w2;
+            //// point-to-plane rigid energy - constants
+            //b[3 * N + 3 * N + i] = (- x_t[0] * n[0] - x_t[1] * n[1] - x_t[2] * n[2]) * w2;
         }
 
         //for (auto it = z.edges().begin(); it != z.edges().end(); ++it) {
@@ -645,14 +667,8 @@ std::pair<Transform, Mesh> nonrigid_registration_least_squares(const Mesh& sourc
         size_t e = 0;
         for (auto it = z.vertices().begin(); it != z.vertices().end(); ++it) {
             auto i = it->idx();
-            std::vector<CGAL::SM_Halfedge_index> neighbors;
+            Eigen::Matrix3d covariance = Eigen::Matrix3d::Zero();
             for (auto he : CGAL::halfedges_around_source(*it, z)) {
-                neighbors.push_back(he);
-            }
-            std::sort(neighbors.begin(), neighbors.end(), [&z](const CGAL::SM_Halfedge_index& a, const CGAL::SM_Halfedge_index& b) {
-                return CGAL::target(a, z).idx() < CGAL::target(b, z).idx();
-            });
-            for (auto he : neighbors) {
                 auto v0 = CGAL::target(he, z);
                 auto j = v0.idx();
 
@@ -663,24 +679,53 @@ std::pair<Transform, Mesh> nonrigid_registration_least_squares(const Mesh& sourc
 
                 // as-rigid-as-possible energy - rotations
                 //if (x_t[2] != x_t_k[2])
-                a[rolling++] = T(3 * N + 3 * N + N + 3 * e + 0, 3 * N + 6 + 3 * i + 1, (x_t[2] - x_t_k[2]) * w4);
+                a[rolling++] = T(3 * N + N +  3 * N + 3 * e + 0, 3 * N + 6 + 3 * i + 1, (x_t[2] - x_t_k[2]) * w4);
                 //if (x_t[1] != x_t_k[1])
-                a[rolling++] = T(3 * N + 3 * N + N + 3 * e + 0, 3 * N + 6 + 3 * i + 2, (x_t_k[1] - x_t[1]) * w4);
+                a[rolling++] = T(3 * N + N + 3 * N + 3 * e + 0, 3 * N + 6 + 3 * i + 2, (x_t_k[1] - x_t[1]) * w4);
                 //if (x_t[2] != x_t_k[2])
-                a[rolling++] = T(3 * N + 3 * N + N + 3 * e + 1, 3 * N + 6 + 3 * i + 0, (x_t_k[2] - x_t[2]) * w4);
+                a[rolling++] = T(3 * N + N + 3 * N + 3 * e + 1, 3 * N + 6 + 3 * i + 0, (x_t_k[2] - x_t[2]) * w4);
                 //if (x_t[0] != x_t_k[0])
-                a[rolling++] = T(3 * N + 3 * N + N + 3 * e + 1, 3 * N + 6 + 3 * i + 2, (x_t[0] - x_t_k[0]) * w4);
+                a[rolling++] = T(3 * N + N + 3 * N + 3 * e + 1, 3 * N + 6 + 3 * i + 2, (x_t[0] - x_t_k[0]) * w4);
                 //if (x_t[1] != x_t_k[1])
-                a[rolling++] = T(3 * N + 3 * N + N + 3 * e + 2, 3 * N + 6 + 3 * i + 0, (x_t[1] - x_t_k[1]) * w4);
+                a[rolling++] = T(3 * N + N + 3 * N + 3 * e + 2, 3 * N + 6 + 3 * i + 0, (x_t[1] - x_t_k[1]) * w4);
                 //if (x_t[0] != x_t_k[0])
-                a[rolling++] = T(3 * N + 3 * N + N + 3 * e + 2, 3 * N + 6 + 3 * i + 1, (x_t_k[0] - x_t[0]) * w4);
+                a[rolling++] = T(3 * N + N + 3 * N + 3 * e + 2, 3 * N + 6 + 3 * i + 1, (x_t_k[0] - x_t[0]) * w4);
 
                 // as-rigid-as-possible energy - constants
-                b[3 * N + 3 * N + N + 3 * e + 0] = (x_t_k[0] - x_t[0]) * w4;
-                b[3 * N + 3 * N + N + 3 * e + 1] = (x_t_k[1] - x_t[1]) * w4;
-                b[3 * N + 3 * N + N + 3 * e + 2] = (x_t_k[2] - x_t[2]) * w4;
+                b[3 * N + N + 3 * N + 3 * e + 1] = (x_t_k[1] - x_t[1]) * w4;
+                b[3 * N + N + 3 * N + 3 * e + 2] = (x_t_k[2] - x_t[2]) * w4;
+                b[3 * N + N + 3 * N + 3 * e + 0] = (x_t_k[0] - x_t[0]) * w4;
                 
                 ++e;
+
+                // for arap: (p_i - p_j) * (p_i' - p_j')^T
+                Point sp = source.point(*it);
+                Eigen::Vector3d s_t(sp.x(), sp.y(), sp.z());
+                Point spk = source.point(v0);
+                Eigen::Vector3d s_t_k(spk.x(), spk.y(), spk.z());
+                covariance += (s_t - s_t_k) * (x_t - x_t_k).transpose();
+            }
+            // for arap: full rotation matrices
+            svd.compute(covariance, Eigen::ComputeFullU | Eigen::ComputeFullV);
+            Rotations[i] = svd.matrixV() * svd.matrixU().transpose();
+            // is this correct???
+            // double det = Rotations[i].determinant();
+            //         if (det < 0) {
+            //	Eigen::Matrix3d B = Eigen::Matrix3d::Identity();
+            //	B(2, 2) = -1;
+            //             Rotations[i] = svd.matrixV() * B * svd.matrixU().transpose();
+            //}
+        }
+        for (auto it = source.vertices().begin(); it != source.vertices().end(); ++it) {
+            auto i = it->idx();
+            Point sp = source.point(*it);
+            Eigen::Vector3d s_t(sp.x(), sp.y(), sp.z());
+            for (auto he : CGAL::halfedges_around_source(*it, source)) {
+                auto v0 = CGAL::target(he, source);
+                auto j = v0.idx();
+                Point spk = source.point(v0);
+                Eigen::Vector3d s_t_k(spk.x(), spk.y(), spk.z());
+                b.segment<3>(3 * N + N + 3 * N + 3 * 2 * E + 3 * i) = 0.5 * (Rotations[i] + Rotations[j]) * (s_t - s_t_k) * w5;
             }
         }
 
@@ -702,14 +747,14 @@ std::pair<Transform, Mesh> nonrigid_registration_least_squares(const Mesh& sourc
         double distance = 0.0;
         for (auto it = z.vertices().begin(); it != z.vertices().end(); ++it) {
             auto i = it->idx();
-            solution_mesh.point(*it) = Point(solution[i], solution[N + i], solution[2 * N + i]);
+            solution_mesh.point(*it) = Point(solution[3 * i + 0], solution[3 * i + 1], solution[3 * i + 2]);
 
             Point zp = z.point(*it);
             Eigen::Vector3d x(zp.x(), zp.y(), zp.z());
             Eigen::Vector3d x_transformed = R * x + t;
             z.point(*it) = Point(x_transformed[0], x_transformed[1], x_transformed[2]);
 
-            distance += CGAL::sqrt(CGAL::squared_distance(Point(solution[i], solution[N + i], solution[2 * N + i]), target.point(i)));
+            distance += CGAL::sqrt(CGAL::squared_distance(Point(solution[3 * i + 0], solution[3 * i + 1], solution[3 * i + 2]), target.point(i)));
         }
         auto stop = std::chrono::high_resolution_clock::now();
         std::cout << "Distance: " << distance << std::endl;
@@ -761,12 +806,12 @@ int main(int argc, char* argv[]) {
     //CGAL::Polygon_mesh_processing::transform(opengr_transform, mesh1);
     //CGAL::draw(merge_meshes(mesh1, mesh2));
 
-    //auto rigid_result = rigid_registration(Mesh2PointSet(mesh1), Mesh2PointSet(mesh2), 0.1, 0.1, 1.0, 10, 4);
-    //Transform transform = rigid_result.first;
-    //CGAL::Polygon_mesh_processing::transform(transform, mesh1);
+    auto rigid_result = rigid_registration(Mesh2PointSet(mesh1), Mesh2PointSet(mesh2), 0.1, 0.1, 1.0, 10, 4);
+    Transform transform = rigid_result.first;
+    CGAL::Polygon_mesh_processing::transform(transform, mesh1);
     //CGAL::Polygon_mesh_processing::transform(Transform(CGAL::Translation(), Vector(-40, 0, 0)), mesh1);
     //CGAL::draw(merge_meshes(mesh1, mesh2));
-    auto nonrigid_result = nonrigid_registration_least_squares(mesh1, Mesh2PointSet(mesh2), 1.0, 0.1, 0.0, 10.0, 10, 4);
+    auto nonrigid_result = nonrigid_registration_least_squares(mesh1, Mesh2PointSet(mesh2), 1.0, 1.0, 0.1, 10.0, 0.0, 10, 4);
     Mesh z = nonrigid_result.second;
     CGAL::Polygon_mesh_processing::transform(Transform(CGAL::Translation(), Vector(-40, 0, 0)), z);
     CGAL::draw(merge_meshes(z, mesh2, correspondence));
