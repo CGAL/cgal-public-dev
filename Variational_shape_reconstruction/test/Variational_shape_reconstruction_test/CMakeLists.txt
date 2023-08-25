@@ -26,10 +26,20 @@ if(NOT TARGET CGAL::SCIP_support)
   endif()
 endif()
 
-create_single_source_cgal_program("variational_shape_reconstruction_test.cpp")
-target_link_libraries(variational_shape_reconstruction_test PUBLIC CGAL::Eigen3_support)
-if(TARGET CGAL::SCIP_support)
-  target_link_libraries(variational_shape_reconstruction_test PUBLIC CGAL::SCIP_support)
-else()
-  target_link_libraries(variational_shape_reconstruction_test PUBLIC CGAL::GLPK_support)
-endif()
+
+
+# create a target per cppfile
+file(
+  GLOB cppfiles
+  RELATIVE ${CMAKE_CURRENT_SOURCE_DIR}
+  ${CMAKE_CURRENT_SOURCE_DIR}/*.cpp)
+foreach(cppfile ${cppfiles})
+    create_single_source_cgal_program("${cppfile}")
+    get_filename_component(target ${cppfile} NAME_WE)
+    target_link_libraries(${target} PUBLIC CGAL::Eigen3_support)
+    if(TARGET CGAL::SCIP_support)
+      target_link_libraries(${target} PUBLIC CGAL::SCIP_support)
+    else()
+      target_link_libraries(${target} PUBLIC CGAL::GLPK_support)
+    endif()
+endforeach()

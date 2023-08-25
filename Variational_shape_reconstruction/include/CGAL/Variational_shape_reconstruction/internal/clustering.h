@@ -328,7 +328,7 @@ class Clustering
     /// @param center_point 
     /// @param query_qem 
     /// @return the minimum qem error
-    double compute_minimum_qem_error(const Point& center_point, const QEM_metric& query_qem)
+    double compute_minimum_qem_error(const Point& center_point, QEM_metric& query_qem)
     {
         Eigen::VectorXd center_vec(4);
         center_vec << center_point.x(), center_point.y(), center_point.z(), 1.;

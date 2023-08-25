@@ -102,7 +102,7 @@
     /// @param graph 
     /// @param m_points 
     void save_riemanian(const std::string filename,
-    copnst std::vector<std::vector<int>>& graph,
+    const std::vector<std::vector<int>>& graph,
     const PointList& m_points)
     {
         std::ofstream edge_file;

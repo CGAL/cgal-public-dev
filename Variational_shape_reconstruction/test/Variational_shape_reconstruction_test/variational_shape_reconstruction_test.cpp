@@ -231,98 +231,6 @@ void test_point_set(const std::string fname)
     
 }
 
-void test_sphere()
-{
-    std::string fname = "sphere";
-    Pointset pointset;
-    if (!CGAL::IO::read_XYZ( "../data/"+fname+".xyz",pointset))
-    {
-        std::cerr << "Error: cannot read file " << std::endl;
-        return;
-    } 
-    const size_t generators = 4;
-    const size_t steps = 10;
-    const double split_threshold =0.01;
-
-    // reconstruction
-    const double  dist_ratio = 0.001;
-	const double  fitting = 0.43;
-	const double  coverage = 0.27;
-	const double  complexity = 0.3;
-
-    size_t new_generators = generators; 
-    size_t iteration = 0 ;
- const double distance_weight =0.00001;
-    
-	qem::Variational_shape_reconstruction manager(pointset,generators, distance_weight);
-    manager.region_growing(steps);
-    manager.reconstruction(dist_ratio, fitting, coverage, complexity);
-
-
-    Pointset point_cloud = manager.get_point_cloud_clustered();
-    Polyhedron mesh = manager.get_reconstructed();
-    
-    std::ofstream mesh_file;
-    mesh_file.open("output/mesh_"+fname+".off");
-    CGAL::write_off(mesh_file, mesh);
-    mesh_file.close();
-
-    std::ifstream test_file;
-    test_file.open("output/mesh_"+fname+".off");
-    // generated with seed 27
-    std::vector<std::string> ground_truth
-    {
-        "OFF",
-        "4 4 0",
-        "",
-        "-0.484022 0.638033 1.01132",
-        "1.29048 0.0272195 0.0375765",
-        "-0.42351 -1.21661 0.0284324",
-        "-0.391264 0.558783 -1.08751",
-        "3  0 1 2",
-        "3  3 1 0",
-        "3  3 2 1",
-        "3  0 2 3"
-    };
-    std::string line;
-    int id=0;
-    bool pass = true;
-    while(getline(test_file, line)) {
-     if(id <11&& line!=ground_truth[id])
-     {
-        std::cout<< "didn't pass : " <<line<<"\n";
-        pass = false;
-     }
-     id++;
-     
-    }
-    if(pass)
-    {
-        std::cout<<" It's a tetrahedron"<<"\n";
-    }
-    else
-        std::cout<<" It's not a tetrahedron"<<"\n";
-    test_file.close();
-
-
-}
-void test_generators_qem()
-{
-    std::string fname = "piece_meca";
-    Pointset pointset;
-    if (!CGAL::IO::read_XYZ( "../data/"+fname+".xyz",pointset))
-    {
-        std::cerr << "Error: cannot read file " << std::endl;
-        return;
-    } 
-    const size_t generators = 100;
-    const size_t steps = 10;
-     const double distance_weight =0.00001;
-	qem::Variational_shape_reconstruction manager(pointset,generators, distance_weight );
-    manager.region_growing(steps);
-    manager.write_csv();
-    // todo check evolution generators
-}
 int main(int argc, char** argv)
 {	
     const std::vector<std::string> files_to_test{
@@ -342,9 +250,6 @@ int main(int argc, char** argv)
         "hand1" // ok
     };   
     int n = 1;
-    //test_sphere();
-    //test_generators_qem();
-    //test_point_set("qtr_piston");
     
     for(int i = 0 ; i < n ; i ++)
     {
