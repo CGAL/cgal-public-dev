@@ -34,10 +34,9 @@ public:
                 count++;
             }
         }
-
         //std::cout << "Queue remove count: " << count << std::endl;
-
-        std::make_heap(this->c.begin(), this->c.end(), this->comp);
+        if(count>0)
+            std::make_heap(this->c.begin(), this->c.end(), this->comp);
 
         return;
     }

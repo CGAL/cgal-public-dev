@@ -93,8 +93,10 @@ public: // functions
 
         return qem;
     }
-
-    // PA: why not using const for all input param?
+    /// @brief Compute the tensor using a point and its normal and weighted by the area
+    /// @param area 
+    /// @param query 
+    /// @param normal 
     void init_qem_metrics_face(const double& area, const Point& query, const Vector& normal)
     {
         double a = normal.x();
@@ -115,9 +117,17 @@ public: // functions
 
         m_tensor = m_tensor * area;
     }
-
-    // PA: add const where relevant
-    void init_proba_qem_metrics_face(double& area, Point& mean_query, double std_query, Vector& mean_normal, double std_normal)
+    /// @brief Compute the tensor (probabilistic qem) using a point and its normal and weighted by the area
+    /// @param area 
+    /// @param mean_query 
+    /// @param std_query 
+    /// @param mean_normal 
+    /// @param std_normal 
+    void init_proba_qem_metrics_face(const double area,
+    const Point& mean_query,
+    const double std_query,
+    const Vector& mean_normal,
+    const double std_normal)
     {
         double sn2 = std_normal * std_normal;
         double sq2 = std_query * std_query;
@@ -140,8 +150,10 @@ public: // functions
 
         m_tensor = m_tensor * area;
     }
-
-    // PA: add const where relevant
+    /// @brief Compute the qem tensor for a query point and a list of areas and normals
+    /// @param query 
+    /// @param areas 
+    /// @param normals 
     void init_qem_metrics_vertex(Point& query,
         const std::vector<double>& areas, 
         const std::vector<Vector>& normals)
@@ -170,7 +182,8 @@ public: // functions
             m_tensor[9] += area * d * d;
         }
     }
-
+    /// @brief Compute the affine transformation on a sphere to display the qem error as en ellipsoid
+    /// @return the affine transformation
     Aff_transformation aff_transform_sphere()
     {
         
@@ -213,6 +226,10 @@ public: // functions
         this->tensors() = this->tensors() * scale;
         return *this;
     }
+    /// @brief Compute optimal point using either SVD or the direct inverse
+    /// @param cluster_qem 
+    /// @param cluster_pole 
+    /// @return the optimal point
     Point compute_optimal_point(QEM_metric& cluster_qem, Point& cluster_pole)
     {
         // solve Qx = b

@@ -40,7 +40,10 @@ class DataWriter
         //m_data_error_generators.resize(m_points_count);
 
     }
-
+    /// @brief Compute the mean of the qem error
+    /// @param nb_iteration 
+    /// @param nb_generator 
+    /// @return 
     std::pair<double,double> computeAverage(int nb_iteration, int nb_generator) 
     {
         std::vector<double> values;
@@ -60,6 +63,8 @@ class DataWriter
         };
         return {mean,std::accumulate(values.begin(), values.end(), 0.0, variance_func)};
     }
+    /// @brief Write the data (qem error for each point) as a csv file
+    /// @param filename 
     void writeDataErrorPointsToCSV(const std::string& filename) {
         std::ofstream file(filename);
 
@@ -103,6 +108,8 @@ class DataWriter
         file << std::to_string(computeAverage(nb_iteration,m_generator_count).second)+"\n";
         file.close();
     }
+    /// @brief Write the data (qem error for each generator) as a csv file
+    /// @param filename 
     void writeDataErrorGeneratorsToCSV(const std::string& filename) {
         std::ofstream file(filename);
 
@@ -163,6 +170,7 @@ class DataWriter
         file.close();
         
     }
+    /// @brief print the worst error at each iteration
     void printWorst()
     {
         int id=0;

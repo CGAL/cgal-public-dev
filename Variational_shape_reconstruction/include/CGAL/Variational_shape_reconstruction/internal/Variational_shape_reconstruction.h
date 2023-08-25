@@ -102,7 +102,8 @@ class Variational_shape_reconstruction
 		}
 		edge_file.close();
     }
-
+    /// @brief load the points from a pointset to the m_points list
+    /// @param pointset 
     void load_points(const Pointset& pointset)
     {
         for( Pointset::const_iterator pointset_it = pointset.begin(); pointset_it != pointset.end(); ++ pointset_it )
@@ -112,7 +113,7 @@ class Variational_shape_reconstruction
         }
         std::cout << "Number of points: " << pointset_.size() << std::endl;
     }
-
+    /// @brief Compute the bounding box of the pointset
     void compute_bounding_box()
     {
         // find bounding box
@@ -124,8 +125,7 @@ class Variational_shape_reconstruction
                                                 Point(m_bbox.max(0), m_bbox.max(1), m_bbox.max(2))));
         std::cout << "Diagonal of bounding box: " << m_diag << std::endl;
     }
-
-
+    /// @brief Initialize with random generators
     void init_random_generators()
     {
         std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
@@ -138,8 +138,6 @@ class Variational_shape_reconstruction
         std::shuffle(num_range.begin(), num_range.end(), g);
 
         std::set<int> selected_indices;
-
-        // one generator for k means ++
         for(int i = 0; i < m_generator_count; i++)
             selected_indices.insert(num_range[i]);
             
@@ -153,6 +151,7 @@ class Variational_shape_reconstruction
         std::cerr << "Random poles in " << std::chrono::duration_cast<std::chrono::microseconds>(end - begin).count() << "[us]" << std::endl;
         
     }
+    /// @brief Initiatlize starting with one random generator and kmeans++
     void init_random_generators_kmeanspp()
     {
         std::vector<int> num_range(pointset_.size());
@@ -189,7 +188,8 @@ class Variational_shape_reconstruction
         }
 
     }
-      void init_random_generators_kmeans_farthest()
+    /// @brief Initiatlize starting with one random generator and kmeans farthest
+    void init_random_generators_kmeans_farthest()
     {
         std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
 
@@ -202,7 +202,7 @@ class Variational_shape_reconstruction
 
         std::set<int> selected_indices;
 
-        // one generator for k means ++
+        // one generator for k means farthest
         for(int i = 0; i < 1; i++)
             selected_indices.insert(num_range[i]);
             
@@ -236,7 +236,8 @@ class Variational_shape_reconstruction
         std::cerr << "Random poles in " << std::chrono::duration_cast<std::chrono::microseconds>(end - begin).count() << "[us]" << std::endl;
         
     }
-
+    /// @brief region growing for n steps user defined
+    /// @param steps 
     void region_growing(size_t steps)
     {
         bool flag = true;
@@ -253,6 +254,10 @@ class Variational_shape_reconstruction
             flag = m_cluster->update_poles(m_vlabels,m_generators_qem, m_generators);
         }
     }
+    /// @brief Split the cluster with the split_ratio
+    /// @param split_ratio 
+    /// @param iteration 
+    /// @return total of added generators
     size_t guided_split_clusters(double split_ratio, size_t iteration) // batch splitting
     {
         std::cout << "Begin guided split..." << std::endl;

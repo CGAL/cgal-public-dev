@@ -2,21 +2,36 @@
 #define CGAL_VARIATIONAL_SHAPE_RECONSTRUCTION_INTERNAL_IO_H
 #include "types.h"
 
-void savePs(std::vector<std::pair<Point, size_t>> m_points,std::map<int, int>   m_vlabels,size_t generator_count,std::string filename)
-{
-    Pointset pointset;
-    std::vector<Vector> colors;
-    for(int k = 0 ; k < generator_count;k++)
+    /// @brief Save the pointset colored by cluster 
+    /// @param m_points 
+    /// @param m_vlabels 
+    /// @param generator_count 
+    /// @param filename 
+    void savePs(
+    const std::vector<std::pair<Point, size_t>>& m_points,
+    std::map<int, int>&  m_vlabels,
+    const size_t generator_count,
+    const std::string filename)
     {
-        colors.push_back(Vector((double) rand() / (RAND_MAX),(double) rand() / (RAND_MAX),(double) rand() / (RAND_MAX)));
+        Pointset pointset;
+        std::vector<Vector> colors;
+        for(int k = 0 ; k < generator_count;k++)
+        {
+            double r = (double) rand() / (RAND_MAX);
+            double g = (double) rand() / (RAND_MAX);
+            double b = (double) rand() / (RAND_MAX);
+            colors.push_back(Vector(r,g,b));
+        }
+        for(int i = 0; i < m_points.size();i++)
+        {
+            pointset.insert(m_points[i].first,colors[m_vlabels[i]]);
+        }
+        CGAL::IO::write_XYZ(filename, pointset );
     }
-    for(int i = 0; i < m_points.size();i++)
-    {
-        pointset.insert(m_points[i].first,colors[m_vlabels[i]]);
-    }
-    CGAL::IO::write_XYZ(filename, pointset );
-}
-    void save_trianglefit_mesh(std::string filename, Polyhedron m_dual_mesh)
+    /// @brief Save the dual mesh 
+    /// @param filename 
+    /// @param m_dual_mesh 
+    void save_trianglefit_mesh(const std::string filename, const Polyhedron& m_dual_mesh)
     {
         if(m_dual_mesh.empty())
             return;
@@ -26,8 +41,13 @@ void savePs(std::vector<std::pair<Point, size_t>> m_points,std::map<int, int>   
         CGAL::write_off(mesh_file, m_dual_mesh);
         mesh_file.close();
     }
-
-    void save_trianglefit_soup(std::string filename,std::vector<std::vector<int>> m_facets,PointList m_points)
+    /// @brief Save the soup of triangle of m_facets
+    /// @param filename 
+    /// @param m_facets list of the indices of each facet
+    /// @param m_points 
+    void save_trianglefit_soup(const std::string filename,
+    const std::vector<std::vector<int>>& m_facets,
+    const PointList& m_points)
     {
         if(m_facets.size() == 0)
             return;
@@ -46,8 +66,13 @@ void savePs(std::vector<std::pair<Point, size_t>> m_points,std::map<int, int>   
 
         soup_file.close();
     }
-
-    void save_candidate_edge_ply(std::string filename,std::vector<std::pair<int, int>>m_edges ,PointList m_points)
+    /// @brief save the candidate edge as ply
+    /// @param filename 
+    /// @param m_edges 
+    /// @param m_points 
+    void save_candidate_edge_ply(const std::string filename,
+    const std::vector<std::pair<int, int>>& m_edges,
+    const PointList& m_points)
     {
         std::ofstream edge_file;
         edge_file.open(filename);
@@ -71,7 +96,14 @@ void savePs(std::vector<std::pair<Point, size_t>> m_points,std::map<int, int>   
 
         edge_file.close();
     }
-    void save_riemanian(std::string filename,std::vector<std::vector<int>>graph ,PointList m_points)
+    /// @brief Save the rimemanian graph 
+    /// IE the graph of the neighbors as edge between the point and its neighbors
+    /// @param filename 
+    /// @param graph 
+    /// @param m_points 
+    void save_riemanian(const std::string filename,
+    copnst std::vector<std::vector<int>>& graph,
+    const PointList& m_points)
     {
         std::ofstream edge_file;
         edge_file.open(filename);

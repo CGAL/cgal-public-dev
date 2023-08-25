@@ -40,10 +40,11 @@ class Clustering
     Clustering(const Pointset& pointset, size_t num_knn, double euclidean_distance_weight)
     {
         pointset_ = pointset;
-        //m_num_knn = num_knn;
+        m_num_knn = num_knn;
         m_dist_weight = euclidean_distance_weight;
         csv_writer =std::make_shared<DataWriter>(pointset.size());
     }
+    /// @brief Compute the qem for each point based on the k closest neighbors
     void initialize_qem_map(const KNNTree& m_tree)
     {
         int num_nb = std::max(6, m_num_knn);
@@ -63,6 +64,7 @@ class Clustering
             m_pqems.push_back(pqem);
         }
     }
+    /// @brief Compute the connected components
     void compute_connected()
     {
         size_t point_count = m_graph.size(); 
@@ -114,7 +116,11 @@ class Clustering
         std::cout<< "m_component.size() "<<m_component.size()<<std::endl;
         std::cout<< "point_count "<<point_count<<std::endl;
     }
-    void visit(int current_idx, int component_idx)
+    /// @brief visit function that explore the graph of neighbors using a 
+    /// queue to assign a component index to each point
+    /// @param current_idx index of the current point
+    /// @param component_idx index of the current connected component
+    void visit(const int current_idx, const int component_idx)
     {
         std::vector<int> queue;
         queue.push_back(current_idx);
@@ -134,13 +140,22 @@ class Clustering
             }
         }
     }
-    QEM_metric compute_qem_for_point(const Point& query,const Vector& normal,const double &area)
+    /// @brief Compute the qem for a point weighted by the area of the face
+    /// @param query the point to compute the qem for
+    /// @param normal of the face
+    /// @param area of the face
+    /// @return the qem computed
+    QEM_metric compute_qem_for_point(const Point& query, const Vector& normal, const double &area)
     {
         QEM_metric qem;
         qem.init_qem_metrics_face(area, query, normal);
         return qem;
     }
-    void initialize_vertex_qem(const KNNTree& m_tree,std::vector<int>& m_generators)
+    /// @brief Compute the sum of the qem neighbor points  for each point in m_vqems
+    ///  Also build the graph of neighbors 
+    /// @param m_tree the knn tree
+    /// @param m_generators the list of indices of generators
+    void initialize_vertex_qem(const KNNTree& m_tree, std::vector<int>& m_generators)
     {
         m_vqems.clear();
         for(Pointset::const_iterator it = pointset_.begin(); it != pointset_.end(); ++ it)
@@ -227,7 +242,16 @@ class Clustering
 
         edge_file.close();
     }
-    void region_growing(std::map<int, int>& m_vlabels,std::vector<QEM_metric>& m_generators_qem,const std::vector<int>& m_generators,bool flag_dist)
+    /// @brief The region growing algorithm that will find the best generator for each cluster
+    /// using a priority queue and the cost function compute_collapse_loss
+    /// @param m_vlabels 
+    /// @param m_generators_qem 
+    /// @param m_generators 
+    /// @param flag_dist 
+    void region_growing(std::map<int, int>& m_vlabels,
+    std::vector<QEM_metric>& m_generators_qem,
+    const std::vector<int>& m_generators,
+    const bool flag_dist)
     {
         PQueue growing_queue;
         
@@ -239,8 +263,6 @@ class Clustering
             m_generators_qem.push_back(m_vqems[index]);
             add_candidates(growing_queue,index,label, flag_dist,m_vlabels,m_generators);
         }
-        int k =0;
-        int p =0;
         while(!growing_queue.empty())
         {
             
@@ -250,10 +272,8 @@ class Clustering
             const int label = candidate.index();
             if(m_vlabels.find(index) != m_vlabels.end())
             {
-                p++;
                 continue;
             }
-            k++;
             m_vlabels[index] = label;
             m_generators_qem[label] = m_generators_qem[label] + m_vqems[index]; 
             add_candidates(growing_queue,index,label, flag_dist,m_vlabels,m_generators);
@@ -261,8 +281,19 @@ class Clustering
 
 
     }
-    void add_candidates(PQueue &growing_queue,const int index,const int label,const bool flag_dist,
-                        const std::map<int, int>& m_vlabels,const std::vector<int>& m_generators)
+    /// @brief Add the generators candidates to the priority queue
+    /// @param growing_queue 
+    /// @param index index of the current point
+    /// @param label index of the generator associated to the point
+    /// @param flag_dist 
+    /// @param m_vlabels 
+    /// @param m_generators 
+    void add_candidates(PQueue &growing_queue,
+    const int index,
+    const int label,
+    const bool flag_dist,
+    const std::map<int, int>& m_vlabels,
+    const std::vector<int>& m_generators)
     {
         
         for(const auto nb_index : m_graph[index])
@@ -274,14 +305,17 @@ class Clustering
             }
         }
     }
-    double compute_collapse_loss(const int index,const int label,const bool flag,const std::vector<int>& m_generators) //eq 6
+    /// @brief Compute the collapse loss using the qem cost and weighted by the euclidean distance
+    /// @param index index of the current point
+    /// @param label index of the generator associated to the point
+    /// @param flag flag to use the euclidean distance
+    /// @param m_generators 
+    /// @return the cost
+    double compute_collapse_loss(const int index, const int label, const bool flag, const std::vector<int>& m_generators) //eq 6
     {
         const double m_qem_weight=1.;
-        
-        
         const double qem_cost = compute_minimum_qem_error(pointset_.point(m_generators[label]), m_vqems[index]);
-
-         double cost = m_qem_weight * qem_cost; 
+        double cost = m_qem_weight * qem_cost; 
 
         if(flag)
         {
@@ -290,7 +324,11 @@ class Clustering
         }
         return cost;
     }
-    double compute_minimum_qem_error(Point center_point, QEM_metric& query_qem)
+    /// @brief Compute the minimun qem error from a center point with a query_qem
+    /// @param center_point 
+    /// @param query_qem 
+    /// @return the minimum qem error
+    double compute_minimum_qem_error(const Point& center_point, const QEM_metric& query_qem)
     {
         Eigen::VectorXd center_vec(4);
         center_vec << center_point.x(), center_point.y(), center_point.z(), 1.;
@@ -299,7 +337,14 @@ class Clustering
 
         return std::abs(cost);
     }
-    bool update_poles(std::map<int, int>& m_vlabels,std::vector<QEM_metric>& m_generators_qem,std::vector<int>& m_generators)
+    /// @brief Update the generators 
+    /// @param m_vlabels 
+    /// @param m_generators_qem 
+    /// @param m_generators 
+    /// @return a boolean : true if there is a change in the generators false otherwise 
+    bool update_poles(std::map<int, int>& m_vlabels,
+    std::vector<QEM_metric>& m_generators_qem,
+    std::vector<int>& m_generators)
     {
         std::cout << "Updating poles..." << std::endl;
 
@@ -386,6 +431,10 @@ class Clustering
         //std::cout << "Region growing converges!" << std::endl;
         return false;
     }
+    /// @brief Compute optimal point using either SVD or the direct inverse
+    /// @param cluster_qem 
+    /// @param cluster_pole 
+    /// @return the optimal point
     Point compute_optimal_point(QEM_metric& cluster_qem, Point& cluster_pole)
     {
         // solve Qx = b
@@ -419,106 +468,117 @@ class Clustering
 
         return optim_point;
     }
-    size_t guided_split_clusters(/*const Pointset& pointset,const std::vector<int> generators,const std::vector<QEM_metric> vqems,*/
-                            std::map<int, int>& m_vlabels,std::vector<int>& m_generators,
-                             double m_diag,double m_spacing,
-                             double split_ratio, size_t iteration) // batch splitting
-{
-
-
-    double split_thresh = m_diag * split_ratio;
-    split_thresh = split_thresh * split_thresh; // square distance
-    split_thresh = split_thresh * m_num_knn * m_spacing * m_spacing;
-    //std::cout << "  split threshold: " << split_thresh << std::endl;
-
-    // compute error for each center
-    std::vector<double> qem_errors(m_generators.size(), 0.);
-    std::vector<int> vert_indices(m_generators.size(), -1);
-
-    std::map<int,double> generator_worst_error;
-    for(int i = 0; i < pointset_.size(); i++) 
+    /// @brief Splits the cluster if the qem error is more than a threshold split_thresh
+    /// @param m_vlabels 
+    /// @param m_generators 
+    /// @param m_diag diagonal of the aabb box
+    /// @param m_spacing average spacing between the points 
+    /// @param split_ratio user defined parameter for the split
+    /// @param iteration 
+    /// @return total of generators added
+    size_t guided_split_clusters(
+    std::map<int, int>& m_vlabels,
+    std::vector<int>& m_generators,
+    const double m_diag,
+    const double m_spacing,
+    const double split_ratio,
+    size_t iteration) // batch splitting
     {
-        if(m_vlabels.find(i) == m_vlabels.end())
-            continue;
 
-        int center_ind = m_vlabels[i];
-        double error = compute_minimum_qem_error(pointset_.point(m_generators[center_ind]), m_vqems[i]); 
-        //csv_writer->addErrorPoints(i,error);
-        /*if(generator_worst_error.count(center_ind) > 0)
-            generator_worst_error[center_ind]= std::min(generator_worst_error[center_ind],error);
-        else
-            generator_worst_error[center_ind] = error;
-            */
+        double split_thresh = m_diag * split_ratio;
+        split_thresh = split_thresh * split_thresh; // square distance
+        split_thresh = split_thresh * m_num_knn * m_spacing * m_spacing;
+        //std::cout << "  split threshold: " << split_thresh << std::endl;
 
+        // compute error for each center
+        std::vector<double> qem_errors(m_generators.size(), 0.);
+        std::vector<int> vert_indices(m_generators.size(), -1);
 
-        if(error > qem_errors[center_ind])
+        std::map<int,double> generator_worst_error;
+        for(int i = 0; i < pointset_.size(); i++) 
         {
-            qem_errors[center_ind] = error;
-            vert_indices[center_ind] = i;
-        }
-    }
-    
-    for(int i = 0 ; i < qem_errors.size();i++)
-    {
-        //csv_writer->addWorstErrorGenerator(i,qem_errors[i]);
-    }
-    std::cout<<"Generators: "<<m_generators.size()<<"\n";
-    //csv_writer->setGenerator(m_generators.size());
+            if(m_vlabels.find(i) == m_vlabels.end())
+                continue;
 
-    // split centers exceeding max error
-    std::vector<int> new_poles;
+            int center_ind = m_vlabels[i];
+            double error = compute_minimum_qem_error(pointset_.point(m_generators[center_ind]), m_vqems[i]); 
+            //csv_writer->addErrorPoints(i,error);
+            /*if(generator_worst_error.count(center_ind) > 0)
+                generator_worst_error[center_ind]= std::min(generator_worst_error[center_ind],error);
+            else
+                generator_worst_error[center_ind] = error;
+                */
 
-    for(int i = 0; i < m_generators.size(); i++)
-    {
 
-        if(qem_errors[i] > split_thresh && vert_indices[i] != m_generators[i])
-            new_poles.push_back(vert_indices[i]);
-    }
-
-    std::cout << "Found " << new_poles.size() << " new poles!" << std::endl;
-
-    // merge close poles
-    std::set<int, std::greater<int> > duplicate_poles;
-    double dist_thresh = m_spacing * 5.;
-    dist_thresh = dist_thresh * dist_thresh;
-
-    for(int i = 0; i < new_poles.size(); i++)
-    {
-        for(int j = i + 1; j < new_poles.size(); j++)
-        {
-            if(duplicate_poles.find(j) == duplicate_poles.end() && 
-                CGAL::squared_distance(pointset_.point(new_poles[i]), pointset_.point(new_poles[j])) < dist_thresh)
+            if(error > qem_errors[center_ind])
             {
-                duplicate_poles.insert(j);
+                qem_errors[center_ind] = error;
+                vert_indices[center_ind] = i;
             }
         }
-    }
+        
+        for(int i = 0 ; i < qem_errors.size();i++)
+        {
+            //csv_writer->addWorstErrorGenerator(i,qem_errors[i]);
+        }
+        std::cout<<"Generators: "<<m_generators.size()<<"\n";
+        //csv_writer->setGenerator(m_generators.size());
 
-    for(auto& elem: duplicate_poles)
+        // split centers exceeding max error
+        std::vector<int> new_poles;
+
+        for(int i = 0; i < m_generators.size(); i++)
+        {
+
+            if(qem_errors[i] > split_thresh && vert_indices[i] != m_generators[i])
+                new_poles.push_back(vert_indices[i]);
+        }
+
+        std::cout << "Found " << new_poles.size() << " new poles!" << std::endl;
+
+        // merge close poles
+        std::set<int, std::greater<int> > duplicate_poles;
+        double dist_thresh = m_spacing * 5.;
+        dist_thresh = dist_thresh * dist_thresh;
+
+        for(int i = 0; i < new_poles.size(); i++)
+        {
+            for(int j = i + 1; j < new_poles.size(); j++)
+            {
+                if(duplicate_poles.find(j) == duplicate_poles.end() && 
+                    CGAL::squared_distance(pointset_.point(new_poles[i]), pointset_.point(new_poles[j])) < dist_thresh)
+                {
+                    duplicate_poles.insert(j);
+                }
+            }
+        }
+
+        for(auto& elem: duplicate_poles)
+        {
+            new_poles.erase(new_poles.begin() + elem);
+        }
+
+        std::cout << "Remove " << duplicate_poles.size() << " duplicated poles!" << std::endl;
+
+        // insert new poles
+        for(int i = 0; i < new_poles.size(); i++)
+        {
+            m_generators.push_back(new_poles[i]);
+
+        }
+
+        std::cout << "Finally found " << new_poles.size() << " new poles!" << std::endl;
+
+
+        return new_poles.size();
+    }
+    /// @brief write some data to csv files and print worst error at each iteration 
+    void write_csv()
     {
-        new_poles.erase(new_poles.begin() + elem);
+        csv_writer->writeDataErrorGeneratorsToCSV("error_generators.csv");
+        csv_writer->writeDataErrorPointsToCSV("error_points.csv");
+        csv_writer->printWorst();
     }
-
-    std::cout << "Remove " << duplicate_poles.size() << " duplicated poles!" << std::endl;
-
-    // insert new poles
-    for(int i = 0; i < new_poles.size(); i++)
-    {
-        m_generators.push_back(new_poles[i]);
-
-    }
-
-    std::cout << "Finally found " << new_poles.size() << " new poles!" << std::endl;
-
-
-    return new_poles.size();
-}
-void write_csv()
-{
-    csv_writer->writeDataErrorGeneratorsToCSV("error_generators.csv");
-    csv_writer->writeDataErrorPointsToCSV("error_points.csv");
-    csv_writer->printWorst();
-}
 
         private:
             Pointset pointset_;
