@@ -72,9 +72,9 @@ do_intersect_odd_parity(
     Point mid_point = ::CGAL::midpoint(bp.vertex(0), bp.vertex(2));
 
     //  This will determine which triangles are on the opposite side
-    auto phi_source   = bp.signed_scaled_patch_distance(ray_source);
-    auto phi_midpoint = bp.signed_scaled_patch_distance(mid_point);
-    if ( ::CGAL::sign(phi_midpoint) == ::CGAL::sign(phi_source) ) {
+    auto orientation_ray_source = bp.orientation(ray_source);
+    auto orientation_midpoint   = bp.orientation(mid_point);
+    if ( orientation_ray_source == orientation_midpoint ) {
       // The edge connecting 0--2 is on the same side as the ray's source
       return (
             do_intersect(Triangle(bp.vertex(1), bp.vertex(2), bp.vertex(3)), r)

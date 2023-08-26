@@ -13,17 +13,154 @@
 #ifndef BILINEAR_PATCH_3_H
 #define BILINEAR_PATCH_3_H
 
+#include <CGAL/Named_function_parameters.h>
 #include <CGAL/Handle_for.h>
 #include <CGAL/Interval_nt.h>
+#include <CGAL/Simple_cartesian.h>
+#include <CGAL/Cartesian_converter.h>
+#include <CGAL/Exact_kernel_selector.h>
+#include <CGAL/Filtered_predicate.h>
 #include <CGAL/array.h>
 #include <CGAL/intersections.h>
+
 #include <iostream>
 
 namespace CGAL {
 
+namespace Bilinear_patch {
+namespace internal {
+
+  template <typename K>
+  auto signed_scaled_planar_distance(
+    const typename K::Point_3& x,
+    const typename K::Point_3& p,
+    const typename K::Point_3& q,
+    const typename K::Point_3& r
+  ) -> typename K::FT
+  {
+    return ::CGAL::scalar_product(x-p, ::CGAL::cross_product(q-p, r-p));
+  }
+
+  template <typename K>
+  auto signed_scaled_patch_distance(
+    const typename K::Point_3& x,
+    const typename K::Point_3& v0,
+    const typename K::Point_3& v1,
+    const typename K::Point_3& v2,
+    const typename K::Point_3& v3
+  ) -> typename K::FT
+  {
+    return (
+        (
+            signed_scaled_planar_distance<K>(x, v0, v1, v3)
+          * signed_scaled_planar_distance<K>(x, v1, v2, v3)
+        )
+      - (
+            signed_scaled_planar_distance<K>(x, v0, v1, v2)
+          * signed_scaled_planar_distance<K>(x, v0, v2, v3)
+        )
+    );
+  }
+
+  template <typename K, template <class Kernel> class Pred>
+  struct Get_filtered_predicate_FT
+  {
+    typedef typename ::CGAL::Exact_kernel_selector<K>::Exact_kernel     Exact_kernel_ft;
+    typedef typename ::CGAL::Exact_kernel_selector<K>::C2E              C2E_ft;
+    typedef ::CGAL::Simple_cartesian<Interval_nt_advanced>              Approximate_kernel;
+    typedef ::CGAL::Cartesian_converter<K, Approximate_kernel>          C2F;
+
+    typedef ::CGAL::Filtered_predicate<
+      Pred<Exact_kernel_ft>,
+      Pred<Approximate_kernel>,
+      C2E_ft, C2F
+    > type;
+  };
+
+  template <typename K>
+  struct has_on_pred_impl
+  {
+    typedef bool result_type;
+
+    bool operator()(
+      const typename K::Point_3& x,
+      const typename K::Point_3& v0,
+      const typename K::Point_3& v1,
+      const typename K::Point_3& v2,
+      const typename K::Point_3& v3
+    ) const
+    {
+      using FT = typename K::FT; 
+      return (
+            ::CGAL::compare<FT, FT>(
+              ::CGAL::Bilinear_patch::internal::signed_scaled_patch_distance<K>(
+                x, v0, v1, v2, v3
+              ), 
+              FT{0}
+            )
+        ==  ::CGAL::EQUAL
+      );
+    }
+  };
+
+  template <typename K, bool has_filtered_predicate = K::Has_filtered_predicates>
+  struct has_on_pred : public has_on_pred_impl<K> 
+  { 
+    using has_on_pred_impl<K>::operator(); 
+  };
+
+  template <typename K>
+  struct has_on_pred<K, true> : public Get_filtered_predicate_FT<K, has_on_pred_impl>::type
+  {
+    using Get_filtered_predicate_FT<K, has_on_pred_impl>::type::operator();
+  };
+
+  // ORIENTATION PREDICATE
+  template <typename K>
+  struct orientation_pred_impl
+  {
+    typedef ::CGAL::Orientation result_type;
+
+    result_type operator()(
+      const typename K::Point_3& x,
+      const typename K::Point_3& v0,
+      const typename K::Point_3& v1,
+      const typename K::Point_3& v2,
+      const typename K::Point_3& v3
+    ) const
+    {
+      using FT = typename K::FT; 
+      FT dist = ::CGAL::Bilinear_patch::internal::signed_scaled_patch_distance<K>(
+        x, v0, v1, v2, v3
+      );
+
+      return ::CGAL::enum_cast<result_type> (
+        ::CGAL::compare<FT, FT>(dist, FT{0})
+      );
+    }
+  };
+
+  template <typename K, bool has_filtered_predicate = K::Has_filtered_predicates>
+  struct orientation_pred : public orientation_pred_impl<K> 
+  { 
+    using orientation_pred_impl<K>::operator(); 
+  };
+
+  template <typename K>
+  struct orientation_pred<K, true> : public Get_filtered_predicate_FT<K, orientation_pred_impl>::type
+  {
+    using Get_filtered_predicate_FT<K, orientation_pred_impl>::type::operator();
+  };
+
+}
+}
+
+
 template <class R_>
 class BilinearPatchC3
 {
+  typedef Bilinear_patch::internal::has_on_pred<R_, R_::Has_filtered_predicates> Has_on_predicate;
+  typedef Bilinear_patch::internal::orientation_pred<R_, R_::Has_filtered_predicates> Orientation_predicate;
 
   typedef typename R_::FT                   FT;
   typedef typename R_::Point_3              Point_3;
@@ -34,12 +171,13 @@ class BilinearPatchC3
   typedef typename R_::Tetrahedron_3        Tetrahedron_3;
   typedef          Interval_nt_advanced     IA_NT;
 
-  typedef std::array<Point_3, 4>                  Rep;
+  typedef          std::array<Point_3, 4>         Rep;
   typedef typename R_::template Handle<Rep>::type Base;
 
   Base base;
-
   Origin origin = ::CGAL::ORIGIN;
+  Has_on_predicate has_on_pred = Has_on_predicate();
+  Orientation_predicate orientation_pred = Orientation_predicate();
 
 public:
   std::vector<Triangle_3> triangles_;
@@ -85,27 +223,29 @@ public:
     }
 
   Point_3 operator()(const FT& u, const FT& v) const; // Returns a point given its corresponding parametric values
-  bool  operator==(const BilinearPatchC3 &bp) const;
-  bool  operator!=(const BilinearPatchC3 &bp) const;
+  bool  operator==(const BilinearPatchC3& bp) const;
+  bool  operator!=(const BilinearPatchC3& bp) const;
   friend std::ostream& operator<<(std::ostream& os, BilinearPatchC3 const& bp)
   {
       return (os << bp.vertex(0) << "\n" << bp.vertex(1) << "\n"<< bp.vertex(2) << "\n"<< bp.vertex(3) << "\n" );
   }
 
-  bool  has_on(const Point_3 &p) const;
+
+  ::CGAL::Orientation orientation(const Point_3& p) const;
+  bool  has_on(const Point_3& p) const;
   bool  is_degenerate() const;
   bool  is_planar() const;
 
   const Point_3 & vertex(int i) const;
   const Point_3 & operator[](int i) const;
   const Tetrahedron_3 & tetrahedron() const;
-
-  FT signed_scaled_patch_distance(const Point_3 & x) const;
+  FT signed_scaled_patch_distance( const Point_3& x) const;
+  
 
 private:
   void populate_triangles_();
   void populate_boundary_();
-  FT signed_scaled_planar_distance( const Point_3 & x, const Point_3 & p, const Point_3 & q, const Point_3 & r ) const;
+  
 };
 
 template <class R>
@@ -122,33 +262,17 @@ auto BilinearPatchC3<R>::operator()(const FT& u, const FT& v) const -> Point_3
   return origin + interpolant;
 }
 
-
-template <class R>
-auto BilinearPatchC3<R>::signed_scaled_planar_distance(
-  const Point_3 & x,
-  const Point_3 & p,
-  const Point_3 & q,
-  const Point_3 & r
-) const -> FT
-{
-  return ::CGAL::scalar_product(x-p, ::CGAL::cross_product(q-p, r-p));
-}
-
 template <class R>
 auto BilinearPatchC3<R>::signed_scaled_patch_distance(
   const Point_3 & x
 ) const -> FT
 {
-  return (
-      (
-          signed_scaled_planar_distance(x, vertex(0), vertex(1), vertex(3))
-        * signed_scaled_planar_distance(x, vertex(1), vertex(2), vertex(3))
-      )
-    - (
-          signed_scaled_planar_distance(x, vertex(0), vertex(1), vertex(2))
-        * signed_scaled_planar_distance(x, vertex(0), vertex(2), vertex(3))
-      )
-  );
+  return Bilinear_patch::internal::signed_scaled_patch_distance<R>(
+    x,
+    vertex(0),
+    vertex(1),
+    vertex(2),
+    vertex(3));
 }
 
 template < class R >
@@ -199,8 +323,21 @@ BilinearPatchC3<R>::operator[](int i) const
   return vertex(i);
 }
 
-template < class R >
-inline
+template <class R>
+::CGAL::Orientation
+BilinearPatchC3<R>::orientation(const Point_3 &p) const
+{
+  CGAL_precondition(!is_planar());
+  return orientation_pred(
+    p,
+    vertex(0),
+    vertex(1),
+    vertex(2),
+    vertex(3)
+  );
+}
+
+template <class R>
 bool
 BilinearPatchC3<R>::has_on(const Point_3 &p) const
 {
@@ -223,23 +360,21 @@ BilinearPatchC3<R>::has_on(const Point_3 &p) const
       has_on_ = (has_on_ || s.has_on(p));
     }
   }
-  else
+  else if(
+        bounding_tetrahedron.has_on_bounded_side(p)
+    ||  bounding_tetrahedron.has_on_boundary(p)
+  )
   {
-    if(
-          bounding_tetrahedron.has_on_bounded_side(p)
-      ||  bounding_tetrahedron.has_on_boundary(p)
-    )
-    {
-      // std::cout << "Phi value: "         << signed_scaled_patch_distance(p) << "\n" << *this << std::endl;
-      // std::cout << "Distance to plane: " << ::CGAL::squared_distance(Point(::CGAL::ORIGIN), R::Plane_3(vertex(0), vertex(1), vertex(3))) << std::endl;
-      // std::cout << "Distance to plane: " << ::CGAL::squared_distance(Point(::CGAL::ORIGIN), R::Plane_3(vertex(1), vertex(2), vertex(3))) << std::endl;
-      // std::cout << "Distance to plane: " << ::CGAL::squared_distance(Point(::CGAL::ORIGIN), R::Plane_3(vertex(0), vertex(1), vertex(2))) << std::endl;
-      // std::cout << "Distance to plane: " << ::CGAL::squared_distance(Point(::CGAL::ORIGIN), R::Plane_3(vertex(0), vertex(2), vertex(3))) << std::endl;
-      // std::cout << "Confrim nonplanar: " << !(::CGAL::coplanar(vertex(0),vertex(1),vertex(2),vertex(3)));
-
-      has_on_ = abs(signed_scaled_patch_distance(p)) < typename R::FT(1e-16);
-    }
-
+    // If the patch is not degenerate, then we can evaluate
+    // the signed distance function, which should return zero
+    // for any points on the patch
+    has_on_ = has_on_pred(
+      p,
+      vertex(0),
+      vertex(1),
+      vertex(2),
+      vertex(3)
+    );
   }
   return has_on_;
 }
@@ -311,7 +446,8 @@ void BilinearPatchC3<R>::populate_triangles_()
   }
 
   // Case 3
-  // Exactly three of the four vertices are collinear. A single triangle covers. Take the largest.
+  // Exactly three of the four vertices are collinear. A single triangle covers the patch. 
+  // Use the largest triangle.
   triangles_.reserve(1);
   if( COLLINEAR_012_ )
   {
@@ -357,7 +493,6 @@ void BilinearPatchC3<R>::populate_boundary_()
   boundary_.push_back(Segment_3(vertex(2), vertex(3)));
   boundary_.push_back(Segment_3(vertex(3), vertex(0)));
 }
-
 
 
 } //namespace CGAL
