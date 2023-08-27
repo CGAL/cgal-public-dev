@@ -24,6 +24,7 @@
 #include <CGAL/Surface_mesh_approximate_shortest_path/Surface_mesh_approximate_shortest_path.h>
 #include <CGAL/Surface_mesh_approximate_shortest_path/Surface_mesh_approximate_shortest_path_traits.h>
 
+//#include <CGAL/Surface_mesh_approximate_shortest_path/Visibility_heuristics.h>
 #include <CGAL/Surface_mesh_approximate_shortest_path/Skip_conditions.h>
 #include <CGAL/Surface_mesh_approximate_shortest_path/Enqueue_policies.h>
 

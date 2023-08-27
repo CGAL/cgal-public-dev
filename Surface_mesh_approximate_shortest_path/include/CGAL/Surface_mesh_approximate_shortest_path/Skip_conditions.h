@@ -1,10 +1,17 @@
 #ifndef SKIP_CONDITIONS_H
 #define SKIP_CONDITIONS_H
 
+
+
 namespace CGAL {
 
-namespace Surface_mesh_approximate_shortest_path_3 {
+enum SkipResult
+{
+    DO_NOT_SKIP = 0,
+    SKIP = 1
+};
 
+namespace Surface_mesh_approximate_shortest_path_3 {
 
 // skip conditions for dual queue system
 /*
@@ -27,9 +34,9 @@ class Never_skip_condition
 public:
     Never_skip_condition() {};
 
-    bool operator() ()
+    SkipResult operator() ()
     {
-        return false;
+        return CGAL::DO_NOT_SKIP;
     }
 };
 
