@@ -14,7 +14,7 @@ if(NOT TARGET CGAL::Eigen3_support)
   message("NOTICE: This project requires Eigen 3.1 (or greater), and will not be compiled.")
   return()
 endif()
-
+#set(CMAKE_BUILD_TYPE Debug)
 find_package(SCIP QUIET)
 include(CGAL_SCIP_support)
 if(NOT TARGET CGAL::SCIP_support)

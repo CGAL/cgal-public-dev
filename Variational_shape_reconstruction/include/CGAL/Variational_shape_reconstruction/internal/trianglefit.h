@@ -286,7 +286,126 @@ public: // function
 
         return count;
     }
+    void nonmanifold_reconstruct(PointList& data_points, double data_spacing, double dist_ratio, double fitting, double coverage, double complexity)
+    {
+        if(m_points.size() == 0 || m_edges.size() == 0 || m_facets.size() < 4)
+        { 
+            std::cout << "Candidate not available! Reconstruction stops!" << std::endl;
+            return;
+        }
 
+        int num_edges = m_edges.size();
+        int num_facets = m_facets.size();
+        std::cout << "Number of edges: " << num_edges << ", number of facets: " << num_facets << std::endl;
+
+        // initialize adjacent map
+        IntListList edges_adj_facets_list;
+        assemble_edge_face_adjacency(edges_adj_facets_list);
+
+        // initialize support points and assemble confidence map
+        IntListList face_point_map;
+        DoubleList face_confidence_map;
+        double dist_thresh = m_diag * dist_ratio;
+        dist_thresh = dist_thresh * dist_thresh;
+        int num_support_points = assemble_support_points_for_faces(data_points, face_point_map, face_confidence_map, dist_thresh);
+        std::cout << "Number of supported points: " << num_support_points << std::endl;
+        std::cout << "Face point map size: " << face_point_map.size() << std::endl;
+        std::cout << "Face confidence map size: " << face_confidence_map.size() << std::endl;
+        
+        // assemble coverage map
+        DoubleList face_coverage_map;
+        assemble_coverage_map(data_points, face_point_map, face_coverage_map, data_spacing);
+        std::cout << "Face coverage map size: " << face_coverage_map.size() << std::endl;
+      
+        // Binary variables:
+		// x[0] ... x[num_facets - 1] : binary labels of all the input faces
+		// x[num_facets] ... x[num_facets + num_edges - 1] : binary labels of all the intersecting edges (remain or not)
+        MIP_Solver solver;
+
+        int total_variables = num_facets + num_edges;
+		const std::vector<Variable*>& variables = solver.create_variables(total_variables);
+
+        // init variables and objective
+		for (std::size_t i = 0; i < total_variables; ++i) {
+			Variable* v = variables[i];
+			v->set_variable_type(Variable::BINARY);
+		}
+
+        Linear_objective* objective = solver.create_objective(Linear_objective::MINIMIZE);
+        
+        // init weights
+        double dx = m_bbox.xmax() - m_bbox.xmin();
+		double dy = m_bbox.ymax() - m_bbox.ymin();
+		double dz = m_bbox.zmax() - m_bbox.zmin();
+		double box_area = 2. * (dx * dy + dy * dz + dz * dx);
+        double coeff_data_fitting = fitting;
+		double coeff_coverage = num_support_points * coverage / num_facets;
+
+        // add coverage and fitting terms
+        for(int i = 0; i < m_facets.size(); i++) {
+			double confidence = -coeff_data_fitting * std::abs(face_confidence_map[i]);
+            double area_ratio = -coeff_coverage * std::abs(face_coverage_map[i]);
+
+            //std::cout << "Confidence: " << confidence << ", area ratio: " << area_ratio << ", number of supported points: " << face_point_map[i].size() << std::endl;
+
+			objective->add_coefficient(variables[i], confidence);
+			objective->add_coefficient(variables[i], area_ratio);
+		}
+
+
+
+        // Add soft constraints: the number of faces associated with an edge must be either 2 or 0
+		for (int i = 0; i < edges_adj_facets_list.size(); i++) 
+        {
+            IntList neighbors = edges_adj_facets_list[i];
+            //Linear_constraint* c = solver.create_constraint(-Linear_constraint::infinity(), 0);
+
+			for (int j = 0; j < neighbors.size(); j++) 
+            {
+                objective->add_coefficient(variables[neighbors[j]], complexity);
+                //c->add_coefficient(variables[neighbors[j]], -1.0);
+            }
+                
+			if (neighbors.size() > 1) 
+            {
+                objective->add_coefficient(variables[num_facets + i], -2.0 * complexity);  
+                //c->add_coefficient(variables[num_facets + i], 1.0);  
+            }
+		}
+
+
+        if(solver.solve()) 
+        {
+			m_dual_mesh.clear();
+            m_select_indices.clear();
+
+			const DoubleList& X = solver.solution();
+            IntListList selected_facets;
+            int count = 0;
+
+            for(int i = 0; i < m_facets.size(); i++)
+            {
+                if(static_cast<int>(std::round(X[i])) == 1)
+                {
+                    m_select_indices.insert(i);
+                    selected_facets.push_back(m_facets[i]);
+                    count++;
+                }
+            }
+
+            std::cout << "Point size: " << m_points.size() << ", selected facet size: " << count << std::endl;
+
+            CGAL::Polygon_mesh_processing::orient_polygon_soup(m_points, selected_facets);
+            CGAL::Polygon_mesh_processing::polygon_soup_to_polygon_mesh(m_points, selected_facets, m_dual_mesh);
+
+            std::cout << "Generated mesh with " << m_dual_mesh.size_of_vertices() << " points and " << m_dual_mesh.size_of_facets() << " facets!" << std::endl;
+		}
+		else 
+        {
+			std::cout << "solving the binary program failed!" << std::endl;
+			return;
+		}
+    }
     void assemble_coverage_map(PointList& data_points, IntListList& face_point_map, std::vector<double>& face_coverage_map, double spacing)
     {
         for(int i = 0; i < m_facets.size(); i++)

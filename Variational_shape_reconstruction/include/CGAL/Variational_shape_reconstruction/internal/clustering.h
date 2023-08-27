@@ -81,7 +81,7 @@ class Clustering
                 component_count++;
             }
         }
-        /*
+        
         std::ofstream edge_file;
 		edge_file.open("clustering_connected.ply");
 
@@ -107,12 +107,12 @@ class Clustering
 
 			auto point = pointset_.point(*it);
 			edge_file << point.x() << " " << point.y() << " " << point.z() << " ";
-			auto normal = colors[0];m_component[k]];
+			auto normal = colors[/*0];*/m_component[k]];
 			edge_file << static_cast<int>(255*normal.x()) << " " << static_cast<int>(255*normal.y()) << " " << static_cast<int>(255*normal.z()) << std::endl;
 
             k++;
 		}
-		edge_file.close();*/
+		edge_file.close();
         std::cout<< "m_component.size() "<<m_component.size()<<std::endl;
         std::cout<< "point_count "<<point_count<<std::endl;
     }
@@ -179,7 +179,6 @@ class Clustering
         std::cout<<"m_generators"<< m_generators.size()<<std::endl;
         for(int i = 0 ; i < component_count;i++)
         {
-            //std::cout<<"i "+std::to_string(i)<<std::endl;
             bool found = false;
             for(int j = 0 ; j < m_generators.size();j++)
             {
@@ -187,15 +186,6 @@ class Clustering
                 {
                     found = true;
                 }
-                /*else
-                {
-                     // Add a new generator in the connected component without generator
-                auto it = std::find(m_component.begin(), m_component.end(), i);
-                int index = it - m_component.begin();
-                m_generators.push_back(index);
-                m_component[m_generators[index]]=i;
-                std::cout<<"added generator > "<<index<<" connected component "<< i<<std::endl;
-                }*/
             }
             if(!found)
             {
@@ -421,6 +411,30 @@ class Clustering
         csv_writer->addMeanErrorGenerator(mean);
         //std::cout<<"Generators: "<<m_generators.size()<<"\n";
         csv_writer->setGenerator(m_generators.size());
+        std::ofstream edge_file;
+        edge_file.open("output/clustering_"+std::to_string(m_id++)+".ply");
+
+        edge_file << "ply\n"
+                    << "format ascii 1.0\n"
+                    << "element vertex " << pointset_.size() << "\n"
+                    << "property float x\n"
+                    << "property float y\n"
+                    << "property float z\n"
+                    << "property uchar red\n"
+                    << "property uchar green\n"
+                    << "property uchar blue\n"
+                    << "end_header\n";
+        std::vector<Point> points;
+        for(Pointset::const_iterator it = pointset_.begin(); it != pointset_.end(); ++ it)
+        {
+            auto point = pointset_.point(*it);
+            points.push_back(point);
+            edge_file << point.x() << " " << point.y() << " " << point.z() << " ";
+            auto normal = pointset_.normal(*it);
+            edge_file << static_cast<int>(255*normal.x()) << " " << static_cast<int>(255*normal.y()) << " " << static_cast<int>(255*normal.z()) << std::endl;
+        }
+
+        edge_file.close();
         // chech change
         for(int i = 0; i < m_generators.size(); i++)
         {
@@ -429,6 +443,10 @@ class Clustering
         }
 
         //std::cout << "Region growing converges!" << std::endl;
+
+        //CGAL::IO::write_XYZ("clustering_"+fname+".txt", point_cloud);
+
+        
         return false;
     }
     /// @brief Compute optimal point using either SVD or the direct inverse
@@ -592,7 +610,7 @@ class Clustering
             std::vector<int> m_component;
             int component_count=0;
           // csv
-
+            int m_id =0;
             std::shared_ptr<DataWriter> csv_writer;
             
             
