@@ -1,0 +1,8 @@
+The continuous collision detection package enables the exact detection of collisions for moving triangular meshes and their primitives. The :
+
+  # A data structure, Collision_mesh, derived from Surface_mesh and responsible for tracking the trajectory of surface mesh primitives
+  # An aggregate data structure, Collision_scene, that encapsulates an arbitrary number of Collision_mesh objects
+  # Convenience classes, Point_3_trajectory, Triangle_3_trajectory, and Segment_3_trajectory
+  # A do_collide predicate for pairs of Point_3_trajectory/Triangle_3_trajectory, Segment_3_trajectory/Segment_3_trajectory, and Collision_mesh/Collision_mesh
+  # An analogous predicate, has_collisions, for Collision_scene objects
+
