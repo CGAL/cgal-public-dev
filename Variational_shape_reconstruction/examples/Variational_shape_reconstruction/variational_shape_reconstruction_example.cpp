@@ -58,7 +58,7 @@ int main(int argc, char** argv)
 	const double  fitting = 0.43;
 	const double  coverage = 0.27;
 	const double  complexity = 0.3;
-
+	const double distance_weight =0.00001;
     size_t new_generators = generators; 
     size_t iteration = 0 ;
 
@@ -69,7 +69,7 @@ int main(int argc, char** argv)
         }
     std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
 
-	qem::Variational_shape_reconstruction manager(pointset,generators);
+	qem::Variational_shape_reconstruction manager(pointset,generators,distance_weight,3,3);
         std::chrono::steady_clock::time_point begin_clustering = std::chrono::steady_clock::now();
 		//manager.region_growing(steps);
     while(new_generators > 5 )

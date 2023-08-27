@@ -42,7 +42,7 @@ typedef CGAL::Point_set_3< Point, Vector > Pointset;
 typedef CGAL::Surface_mesh_default_triangulation_3 Tr;
 void test_sphere()
 {
-    std::string fname = "piece_meca";
+    std::string fname = "sphere";
     Pointset pointset;
     if (!CGAL::IO::read_XYZ( "../data/"+fname+".xyz",pointset))
     {
@@ -63,7 +63,7 @@ void test_sphere()
     size_t iteration = 0 ;
  const double distance_weight =0.00001;
     
-	qem::Variational_shape_reconstruction manager(pointset,generators, distance_weight);
+	qem::Variational_shape_reconstruction manager(pointset,generators,distance_weight,3,3);
     manager.region_growing(steps);
     manager.reconstruction(dist_ratio, fitting, coverage, complexity);
 

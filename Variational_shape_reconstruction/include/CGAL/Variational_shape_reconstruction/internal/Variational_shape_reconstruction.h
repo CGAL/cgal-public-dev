@@ -12,6 +12,7 @@ typedef typename std::unordered_set<std::pair<int, int>, HashPairIndex, EqualPai
 typedef std::vector<IntList>                                    IntListList;
 typedef CGAL::Bbox_3   Bbox;
 
+
 class Variational_shape_reconstruction
 {
     private:
@@ -41,13 +42,19 @@ class Variational_shape_reconstruction
         TriangleFit              m_triangle_fit;
         std::vector<int> m_generators_count;
         std::shared_ptr<Clustering> m_cluster;
-
-        
-
+        int m_verbose_level;
 
 
     public:
-    Variational_shape_reconstruction(const Pointset& pointset,int generator_count,double euclidean_distance_weight) : m_generator_count(generator_count) {
+    Variational_shape_reconstruction(const Pointset& pointset,
+    int generator_count,
+    double euclidean_distance_weight,
+    int verbose_level,
+    int initialization_algorithm
+    ) :
+    m_verbose_level(verbose_level),
+    m_generator_count(generator_count)
+    {
         pointset_ = pointset;
         load_points(pointset_);
         compute_bounding_box();   
@@ -60,47 +67,61 @@ class Variational_shape_reconstruction
         m_spacing = CGAL::compute_average_spacing<CGAL::Sequential_tag>(m_points, 6,
          CGAL::parameters::point_map(CGAL::First_of_pair_property_map<std::pair<Point, std::size_t>>()));            
 
-        m_cluster = std::make_shared<Clustering>(pointset, m_num_knn,euclidean_distance_weight);
-        
-        init_random_generators();
-        //init_random_generators_kmeanspp();
-        //init_random_generators_kmeans_farthest();
+        m_cluster = std::make_shared<Clustering>(pointset, m_num_knn,euclidean_distance_weight,verbose_level);
+
+        std::cout<<"Initialization.\n";
+        switch(initialization_algorithm)
+        {
+            case 1:
+                init_random_generators_kmeanspp();
+            break;
+            case 2:
+                init_random_generators_kmeans_farthest();
+            break;
+            default:
+                init_random_generators();
+            break;
+
+        }
         m_cluster->initialize_qem_map(m_tree);
         m_cluster->initialize_vertex_qem(m_tree,m_generators);    
-        auto point_cloud = get_point_cloud_clustered();
-        		std::ofstream edge_file;
-		edge_file.open("clustering_init.ply");
-
-		edge_file << "ply\n"
-					<< "format ascii 1.0\n"
-					<< "element vertex " << m_generators.size() << "\n"
-					<< "property float x\n"
-					<< "property float y\n"
-					<< "property float z\n"
-					<< "property uchar red\n"
-					<< "property uchar green\n"
-					<< "property uchar blue\n"
-					<< "end_header\n";
-        std::vector<Vector> colors;
-        for(int k = 0 ; k < m_generators.size();k++)
+        if(m_verbose_level==3)
         {
-            colors.push_back(Vector((double) rand() / (RAND_MAX),(double) rand() / (RAND_MAX),(double) rand() / (RAND_MAX)));
-        }
-        int k =0;
-        int p=0;
-		for(Pointset::const_iterator it = point_cloud.begin(); it != point_cloud.end(); ++ it)
-		{
-            if(std::find(m_generators.begin(),m_generators.end(),k)!=m_generators.end())
+            auto point_cloud = get_point_cloud_clustered();
+            std::ofstream clustering_file;
+            clustering_file.open("clustering_init.ply");
+            clustering_file << "ply\n"
+                        << "format ascii 1.0\n"
+                        << "element vertex " << m_generators.size() << "\n"
+                        << "property float x\n"
+                        << "property float y\n"
+                        << "property float z\n"
+                        << "property uchar red\n"
+                        << "property uchar green\n"
+                        << "property uchar blue\n"
+                        << "end_header\n";
+            std::vector<Vector> colors;
+            for(int i = 0 ; i < m_generators.size();i++)
             {
-
-			auto point = point_cloud.point(*it);
-			edge_file << point.x() << " " << point.y() << " " << point.z() << " ";
-			auto normal = colors[p++];
-			edge_file << static_cast<int>(255*normal.x()) << " " << static_cast<int>(255*normal.y()) << " " << static_cast<int>(255*normal.z()) << std::endl;
+                colors.push_back(Vector((double) rand() / (RAND_MAX),(double) rand() / (RAND_MAX),(double) rand() / (RAND_MAX)));
             }
-            k++;
-		}
-		edge_file.close();
+            int point_index =0;
+            int generator_index=0;
+            for(Pointset::const_iterator it = point_cloud.begin(); it != point_cloud.end(); ++ it)
+            {
+                if(std::find(m_generators.begin(),m_generators.end(),point_index)!=m_generators.end())
+                {
+                    auto point = point_cloud.point(*it);
+                    clustering_file << point.x() << " " << point.y() << " " << point.z() << " ";
+                    auto normal = colors[generator_index++];
+                    clustering_file << static_cast<int>(255*normal.x()) << " " << static_cast<int>(255*normal.y()) << " " << static_cast<int>(255*normal.z()) << std::endl;
+                }
+                point_index++;
+            }
+            clustering_file.close();
+            std::cout<<"clustering at initialization written to disk.\n";
+        }
+
     }
     /// @brief load the points from a pointset to the m_points list
     /// @param pointset 
@@ -111,7 +132,8 @@ class Variational_shape_reconstruction
             const auto point = pointset.point(*pointset_it);
             m_points.push_back(std::make_pair(point, std::distance<Pointset::const_iterator>(pointset.begin(),pointset_it)));    
         }
-        std::cout << "Number of points: " << pointset_.size() << std::endl;
+        if(m_verbose_level>1)
+            std::cout << "Number of points: " << pointset_.size() << std::endl;
     }
     /// @brief Compute the bounding box of the pointset
     void compute_bounding_box()
@@ -123,7 +145,8 @@ class Variational_shape_reconstruction
                                 boost::make_transform_iterator(m_points.end(), pwi_it_to_point_it));
         m_diag = std::sqrt(CGAL::squared_distance(Point(m_bbox.min(0), m_bbox.min(1), m_bbox.min(2)),
                                                 Point(m_bbox.max(0), m_bbox.max(1), m_bbox.max(2))));
-        std::cout << "Diagonal of bounding box: " << m_diag << std::endl;
+        if(m_verbose_level>1)
+            std::cout << "Diagonal of bounding box: " << m_diag << std::endl;
     }
     /// @brief Initialize with random generators
     void init_random_generators()
@@ -144,11 +167,12 @@ class Variational_shape_reconstruction
         for(auto &elem: selected_indices) {
             m_generators.push_back(elem);
         }   
-
-        std::cout << "Number of random poles: " << m_generators.size() << std::endl;
+        if(m_verbose_level>1)
+            std::cout << "Number of random poles: " << m_generators.size() << std::endl;
 
         std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
-        std::cerr << "Random poles in " << std::chrono::duration_cast<std::chrono::microseconds>(end - begin).count() << "[us]" << std::endl;
+        if(m_verbose_level>1)
+            std::cerr << "Random poles in " << std::chrono::duration_cast<std::chrono::microseconds>(end - begin).count() << "[us]" << std::endl;
         
     }
     /// @brief Initiatlize starting with one random generator and kmeans++
@@ -230,10 +254,12 @@ class Variational_shape_reconstruction
             m_generators.push_back(index_max_distance);
         }
 
-        std::cout << "Number of random poles: " << m_generators.size() << std::endl;
+        if(m_verbose_level>1)
+            std::cout << "Number of random poles: " << m_generators.size() << std::endl;
 
         std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
-        std::cerr << "Random poles in " << std::chrono::duration_cast<std::chrono::microseconds>(end - begin).count() << "[us]" << std::endl;
+        if(m_verbose_level>1)
+            std::cerr << "Random poles in " << std::chrono::duration_cast<std::chrono::microseconds>(end - begin).count() << "[us]" << std::endl;
         
     }
     /// @brief region growing for n steps user defined
@@ -250,7 +276,8 @@ class Variational_shape_reconstruction
             assert(m_vlabels.size() == pointset_.size());
 
             std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
-            std::cerr << "\nRegion growing in " << std::chrono::duration_cast<std::chrono::microseconds>(end - begin).count()/1000 << "[ms]" << std::endl;
+            if(m_verbose_level>1)
+                std::cerr << "\nRegion growing in " << std::chrono::duration_cast<std::chrono::microseconds>(end - begin).count()/1000 << "[ms]" << std::endl;
             flag = m_cluster->update_poles(m_vlabels,m_generators_qem, m_generators);
         }
     }
@@ -316,7 +343,8 @@ class Variational_shape_reconstruction
     {
         if(m_generators.size() == 0)
         {
-            std::cout << "No available pole!" << std::endl;
+            if(m_verbose_level>1)
+                std::cout << "No available pole!" << std::endl;
             return;
         }
 
@@ -359,7 +387,8 @@ class Variational_shape_reconstruction
         m_triangle_fit.initialize_adjacent_graph(dual_points, adjacent_pairs,m_bbox,m_diag);
 
         std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
-        std::cerr << "Candidate edge in " << std::chrono::duration_cast<std::chrono::microseconds>(end - begin).count() << "[us]" << std::endl;
+        if(m_verbose_level>1)
+            std::cerr << "Candidate edge in " << std::chrono::duration_cast<std::chrono::microseconds>(end - begin).count() << "[us]" << std::endl;
     }
     // helper ?
         Point compute_optimal_point(QEM_metric& cluster_qem, Point& cluster_pole)
@@ -404,7 +433,8 @@ class Variational_shape_reconstruction
         std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
         m_triangle_fit.create_candidate_facets(); 
         std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
-        std::cerr << "Candidate facet in " << std::chrono::duration_cast<std::chrono::microseconds>(end - begin).count() << "[us]" << std::endl;
+        if(m_verbose_level>1)
+            std::cerr << "Candidate facet in " << std::chrono::duration_cast<std::chrono::microseconds>(end - begin).count() << "[us]" << std::endl;
     }
     void update_candidate_facets(std::vector<float>& candidate_facets, std::vector<float>& candidate_normals)
     {

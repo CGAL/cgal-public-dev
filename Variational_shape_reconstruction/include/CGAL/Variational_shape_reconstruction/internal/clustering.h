@@ -37,11 +37,15 @@ class Clustering
     Clustering()
     {
     }
-    Clustering(const Pointset& pointset, size_t num_knn, double euclidean_distance_weight)
+    Clustering(const Pointset& pointset,
+    size_t num_knn,
+    double euclidean_distance_weight,
+    int verbose_level)
     {
         pointset_ = pointset;
         m_num_knn = num_knn;
         m_dist_weight = euclidean_distance_weight;
+        m_verbose_level = verbose_level;
         csv_writer =std::make_shared<DataWriter>(pointset.size());
     }
     /// @brief Compute the qem for each point based on the k closest neighbors
@@ -82,39 +86,45 @@ class Clustering
             }
         }
         
-        std::ofstream edge_file;
-		edge_file.open("clustering_connected.ply");
-
-		edge_file << "ply\n"
-					<< "format ascii 1.0\n"
-					<< "element vertex " << pointset_.size() << "\n"
-					<< "property float x\n"
-					<< "property float y\n"
-					<< "property float z\n"
-					<< "property uchar red\n"
-					<< "property uchar green\n"
-					<< "property uchar blue\n"
-					<< "end_header\n";
-        std::vector<Vector> colors;
-        for(int k = 0 ; k < component_count;k++)
+        if(m_verbose_level==3)
         {
-            colors.push_back(Vector((double) rand() / (RAND_MAX),(double) rand() / (RAND_MAX),(double) rand() / (RAND_MAX)));
+            std::ofstream clustering_connected;
+            clustering_connected.open("clustering_connected.ply");
+
+            clustering_connected << "ply\n"
+                        << "format ascii 1.0\n"
+                        << "element vertex " << pointset_.size() << "\n"
+                        << "property float x\n"
+                        << "property float y\n"
+                        << "property float z\n"
+                        << "property uchar red\n"
+                        << "property uchar green\n"
+                        << "property uchar blue\n"
+                        << "end_header\n";
+            std::vector<Vector> colors;
+            for(int i = 0 ; i < component_count; i++)
+            {
+                colors.push_back(Vector((double) rand() / (RAND_MAX),(double) rand() / (RAND_MAX),(double) rand() / (RAND_MAX)));
+            }
+            int point_index =0;
+            for(Pointset::const_iterator it = pointset_.begin(); it != pointset_.end(); ++ it)
+            {
+
+                auto point = pointset_.point(*it);
+                clustering_connected << point.x() << " " << point.y() << " " << point.z() << " ";
+                auto normal = colors[m_component[point_index]];
+                clustering_connected << static_cast<int>(255*normal.x()) << " " << static_cast<int>(255*normal.y()) << " " << static_cast<int>(255*normal.z()) << std::endl;
+
+                point_index++;
+            }
+            clustering_connected.close();
         }
-        int k =0;
-        int p=0;
-		for(Pointset::const_iterator it = pointset_.begin(); it != pointset_.end(); ++ it)
-		{
+        if(m_verbose_level > 1)
+        {
+            std::cout<< "m_component.size() "<<m_component.size()<<std::endl;
+            std::cout<< "point_count "<<point_count<<std::endl;
+        }
 
-			auto point = pointset_.point(*it);
-			edge_file << point.x() << " " << point.y() << " " << point.z() << " ";
-			auto normal = colors[/*0];*/m_component[k]];
-			edge_file << static_cast<int>(255*normal.x()) << " " << static_cast<int>(255*normal.y()) << " " << static_cast<int>(255*normal.z()) << std::endl;
-
-            k++;
-		}
-		edge_file.close();
-        std::cout<< "m_component.size() "<<m_component.size()<<std::endl;
-        std::cout<< "point_count "<<point_count<<std::endl;
     }
     /// @brief visit function that explore the graph of neighbors using a 
     /// queue to assign a component index to each point
@@ -174,9 +184,11 @@ class Clustering
             m_vqems.push_back(vqem);
         }
         compute_connected();
-        
-        std::cout<<"connected component count "<< component_count-1<<std::endl;
-        std::cout<<"m_generators"<< m_generators.size()<<std::endl;
+        if(m_verbose_level > 1)
+        {
+            std::cout<<"connected component count "<< component_count-1<<std::endl;
+            std::cout<<"m_generators"<< m_generators.size()<<std::endl;
+        }
         for(int i = 0 ; i < component_count;i++)
         {
             bool found = false;
@@ -194,43 +206,46 @@ class Clustering
                 int index = it - m_component.begin();
                 m_generators.push_back(index);
                 m_component[index]=i;
-                std::cout<<"added generator > "<<index<<" connected component "<< i<<std::endl;
+                if(m_verbose_level > 1)
+                    std::cout<<"added generator > "<<index<<" connected component "<< i<<std::endl;
                 
             }
         }
-        std::ofstream edge_file;
-        edge_file.open("filename.ply");
-
-        std::size_t sum = 0;
-        for (auto &&i : m_graph) {
-            sum += i.size();
-        }
-
-        edge_file << "ply\n"
-                  << "format ascii 1.0\n"
-                  << "element vertex " << pointset_.size() << "\n"
-                  << "property float x\n"
-                  << "property float y\n"
-                  << "property float z\n"
-                  << "element face " << sum << "\n"
-                  << "property list uchar int vertex_indices\n"
-                  << "end_header\n";
-
-        for(Pointset::const_iterator it = pointset_.begin(); it != pointset_.end(); ++ it)
+        if(m_verbose_level == 3)
         {
-            auto point = pointset_.point(*it);
-            edge_file << point.x() << " " << point.y() << " " << point.z() << std::endl;
-        }
-        
-        for(int i = 0; i < m_graph.size(); i++)
-        {
-            for(int j = 0; j < m_graph[i].size(); j++)
-            {
-                edge_file << "2 "<<i<<" "<<m_graph[i][j]<<"\n";
+            std::ofstream neighbors_graph;
+            neighbors_graph.open("neighbors_graph.ply");
+
+            std::size_t sum = 0;
+            for (auto &&i : m_graph) {
+                sum += i.size();
             }
-        }
 
-        edge_file.close();
+            neighbors_graph << "ply\n"
+                    << "format ascii 1.0\n"
+                    << "element vertex " << pointset_.size() << "\n"
+                    << "property float x\n"
+                    << "property float y\n"
+                    << "property float z\n"
+                    << "element face " << sum << "\n"
+                    << "property list uchar int vertex_indices\n"
+                    << "end_header\n";
+
+            for(Pointset::const_iterator it = pointset_.begin(); it != pointset_.end(); ++ it)
+            {
+                auto point = pointset_.point(*it);
+                neighbors_graph << point.x() << " " << point.y() << " " << point.z() << std::endl;
+            }
+            
+            for(int i = 0; i < m_graph.size(); i++)
+            {
+                for(int j = 0; j < m_graph[i].size(); j++)
+                {
+                    neighbors_graph << "2 "<<i<<" "<<m_graph[i][j]<<"\n";
+                }
+            }
+            neighbors_graph.close();
+        }
     }
     /// @brief The region growing algorithm that will find the best generator for each cluster
     /// using a priority queue and the cost function compute_collapse_loss
@@ -336,7 +351,8 @@ class Clustering
     std::vector<QEM_metric>& m_generators_qem,
     std::vector<int>& m_generators)
     {
-        std::cout << "Updating poles..." << std::endl;
+        if(m_verbose_level > 1)
+            std::cout << "Updating poles..." << std::endl;
 
         std::vector<Point>    optimal_points;
         std::vector<double> dists;
@@ -411,30 +427,35 @@ class Clustering
         csv_writer->addMeanErrorGenerator(mean);
         //std::cout<<"Generators: "<<m_generators.size()<<"\n";
         csv_writer->setGenerator(m_generators.size());
-        std::ofstream edge_file;
-        edge_file.open("output/clustering_"+std::to_string(m_id++)+".ply");
 
-        edge_file << "ply\n"
-                    << "format ascii 1.0\n"
-                    << "element vertex " << pointset_.size() << "\n"
-                    << "property float x\n"
-                    << "property float y\n"
-                    << "property float z\n"
-                    << "property uchar red\n"
-                    << "property uchar green\n"
-                    << "property uchar blue\n"
-                    << "end_header\n";
-        std::vector<Point> points;
-        for(Pointset::const_iterator it = pointset_.begin(); it != pointset_.end(); ++ it)
+        if(m_verbose_level == 3)
         {
-            auto point = pointset_.point(*it);
-            points.push_back(point);
-            edge_file << point.x() << " " << point.y() << " " << point.z() << " ";
-            auto normal = pointset_.normal(*it);
-            edge_file << static_cast<int>(255*normal.x()) << " " << static_cast<int>(255*normal.y()) << " " << static_cast<int>(255*normal.z()) << std::endl;
+            std::ofstream clustering_by_iteration;
+            clustering_by_iteration.open("output/clustering_"+std::to_string(m_id++)+".ply");
+
+            clustering_by_iteration << "ply\n"
+                        << "format ascii 1.0\n"
+                        << "element vertex " << pointset_.size() << "\n"
+                        << "property float x\n"
+                        << "property float y\n"
+                        << "property float z\n"
+                        << "property uchar red\n"
+                        << "property uchar green\n"
+                        << "property uchar blue\n"
+                        << "end_header\n";
+            std::vector<Point> points;
+            for(Pointset::const_iterator it = pointset_.begin(); it != pointset_.end(); ++ it)
+            {
+                auto point = pointset_.point(*it);
+                points.push_back(point);
+                clustering_by_iteration << point.x() << " " << point.y() << " " << point.z() << " ";
+                auto normal = pointset_.normal(*it);
+                clustering_by_iteration << static_cast<int>(255*normal.x()) << " " << static_cast<int>(255*normal.y()) << " " << static_cast<int>(255*normal.z()) << std::endl;
+            }
+
+            clustering_by_iteration.close();
         }
 
-        edge_file.close();
         // chech change
         for(int i = 0; i < m_generators.size(); i++)
         {
@@ -506,7 +527,6 @@ class Clustering
         double split_thresh = m_diag * split_ratio;
         split_thresh = split_thresh * split_thresh; // square distance
         split_thresh = split_thresh * m_num_knn * m_spacing * m_spacing;
-        //std::cout << "  split threshold: " << split_thresh << std::endl;
 
         // compute error for each center
         std::vector<double> qem_errors(m_generators.size(), 0.);
@@ -526,7 +546,6 @@ class Clustering
             else
                 generator_worst_error[center_ind] = error;
                 */
-
 
             if(error > qem_errors[center_ind])
             {
@@ -602,18 +621,16 @@ class Clustering
             Pointset pointset_;
             int m_num_knn = 12;
             double m_dist_weight=0.1;
-                    //qem
+            //qem
             std::vector<QEM_metric> m_pqems;
             std::vector<QEM_metric> m_vqems;
             std::vector<std::vector<int>> m_graph;
             std::vector<bool> m_visited;
             std::vector<int> m_component;
             int component_count=0;
-          // csv
+            int m_verbose_level;
+            // csv
             int m_id =0;
             std::shared_ptr<DataWriter> csv_writer;
-            
-            
-
-
+        
 };

@@ -52,8 +52,8 @@ void test_generators_qem()
     } 
     const size_t generators = 100;
     const size_t steps = 10;
-     const double distance_weight =0.00001;
-	qem::Variational_shape_reconstruction manager(pointset,generators, distance_weight );
+    const double distance_weight =0.00001;
+	qem::Variational_shape_reconstruction manager(pointset,generators,distance_weight,3,3);
     manager.region_growing(steps);
     manager.write_csv();
     // todo check evolution generators

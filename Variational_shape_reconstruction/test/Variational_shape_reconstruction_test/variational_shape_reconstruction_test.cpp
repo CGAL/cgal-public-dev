@@ -157,14 +157,14 @@ void test_point_set(const std::string fname)
     pointset = resize(pointset);
     std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
 
-	qem::Variational_shape_reconstruction manager(pointset,generators,distance_weight);
+	qem::Variational_shape_reconstruction manager(pointset,generators,distance_weight,3,3);
         std::chrono::steady_clock::time_point begin_clustering = std::chrono::steady_clock::now();
     while(new_generators > 5 )
     {
         manager.region_growing(steps);
         new_generators = manager.guided_split_clusters(split_threshold, iteration++);
     }
-     std::chrono::steady_clock::time_point end_clustering = std::chrono::steady_clock::now();
+    std::chrono::steady_clock::time_point end_clustering = std::chrono::steady_clock::now();
     std::cerr << "Clustering " << std::chrono::duration_cast<std::chrono::microseconds>(end_clustering - begin_clustering).count()/1000 << "[ms]" << std::endl;
     
     // Reconstruction
