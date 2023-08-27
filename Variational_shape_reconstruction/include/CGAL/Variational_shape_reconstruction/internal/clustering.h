@@ -16,6 +16,7 @@
 #include <random>
 
 #include "helper_metrics.h"
+#include "io.h"
 
 typedef std::pair<Point, std::size_t>                                               Point_with_index;
 typedef std::vector<Point_with_index>                                               PwiList;
@@ -104,7 +105,10 @@ class Clustering
             std::vector<Vector> colors;
             for(int i = 0 ; i < component_count; i++)
             {
-                colors.push_back(Vector((double) rand() / (RAND_MAX),(double) rand() / (RAND_MAX),(double) rand() / (RAND_MAX)));
+                double r = (double) rand() / (RAND_MAX);
+                double g = (double) rand() / (RAND_MAX);
+                double b = (double) rand() / (RAND_MAX);
+                colors.push_back(Vector(r,g,b));
             }
             int point_index =0;
             for(Pointset::const_iterator it = pointset_.begin(); it != pointset_.end(); ++ it)

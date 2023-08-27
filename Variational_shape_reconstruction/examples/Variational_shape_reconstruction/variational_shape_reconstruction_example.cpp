@@ -42,7 +42,7 @@ Pointset load(std::string m_filename)
 int main(int argc, char** argv)
 {	
 
-    const std::string fname = argc > 1 ? argv[1] :  CGAL::data_file_path("../data/piece_meca.xyz");
+    const std::string fname = argc > 1 ? argv[1] :  CGAL::data_file_path("../data/guitar.xyz");
     Pointset pointset;
     if (!CGAL::IO::read_XYZ( fname,pointset))
     {
@@ -71,7 +71,6 @@ int main(int argc, char** argv)
 
 	qem::Variational_shape_reconstruction manager(pointset,generators,distance_weight,3,3);
         std::chrono::steady_clock::time_point begin_clustering = std::chrono::steady_clock::now();
-		//manager.region_growing(steps);
     while(new_generators > 5 )
     {
         
@@ -103,13 +102,6 @@ int main(int argc, char** argv)
     }
 
     
-    
-
-    //CGAL::IO::write_XYZ("clustering_"+fname+".txt", point_cloud);
-
-
-
-    
      std::chrono::steady_clock::time_point end_clustering = std::chrono::steady_clock::now();
     std::cerr << "Clustering " << std::chrono::duration_cast<std::chrono::microseconds>(end_clustering - begin_clustering).count()/1000 << "[ms]" << std::endl;
     
@@ -124,48 +116,7 @@ int main(int argc, char** argv)
         mesh_file.open("mesh.off");
         CGAL::write_off(mesh_file, mesh);
         mesh_file.close();
-    /*
-   
-    auto points = load(fname);
-	//save(points);
-	qem::Variational_shape_reconstruction manager2;
-	manager2.read_xyz(fname.c_str());
-	manager2.initialize_poles(generators);
-	//manager2.read_xyz(""../data/piece_meca.xyz");
-	//manager2.init_random_poles(30);
-	for(int p = 0 ; p < 6;p++)
-	{
-		for(int i = 0 ; i < 10;i++)
-		{
-			manager2.region_growing(true);
-			auto flag = manager2.update_poles();
 
-			if(!flag)
-				break;
-		}
-		//Clustering();
-		manager2.guided_split_clusters(0.01);
-	}
-	// adjacent
-	std::vector<float> adjacent_edges;
-	std::vector<float> candidate_facets;
-	std::vector<float> candidate_normals;
-	// A
-	manager2.create_adjacent_edges();
-	manager2.update_adjacent_edges(adjacent_edges);
-	//B
-	manager2.create_candidate_facets();
-	manager2.update_candidate_facets( candidate_facets, candidate_normals);
-	//C
-
-	manager2.mlp_reconstruction(dist_ratio, fitting, coverage, complexity);
-	std::vector<float> fit_facets;
-	std::vector<float> fit_normals;
-	std::vector<float> fit_soup_facets;
-	std::vector<float> fit_soup_normals;
-	manager2.update_fit_surface(fit_facets, fit_normals);
-	manager2.update_fit_soup(fit_soup_facets, fit_soup_normals);
-	*/
 	
     
 	return 0;
