@@ -7,7 +7,7 @@
     /// @param m_vlabels 
     /// @param generator_count 
     /// @param filename 
-    void savePs(
+    void save_point_cloud(
     const std::vector<std::pair<Point, size_t>>& m_points,
     std::map<int, int>&  m_vlabels,
     const size_t generator_count,

@@ -87,6 +87,8 @@ class Variational_shape_reconstruction
         m_cluster->initialize_vertex_qem(m_tree, m_generators);    
         if(m_verbose_level==3)
         {
+            // Write a point cloud of the generators with random colors
+
             auto point_cloud = get_point_cloud_clustered();
             std::ofstream clustering_file;
             clustering_file.open("clustering_init.ply");
@@ -210,6 +212,7 @@ class Variational_shape_reconstruction
                 }
                 distance_list.push_back(distance);
             }
+            // We draw in a random distribution the next generator
             std::discrete_distribution<int> dist(std::begin(distance_list), std::end(distance_list));
             gen.seed(time(0));
             size_t index_max_distance = dist(gen);
@@ -255,6 +258,7 @@ class Variational_shape_reconstruction
                 }
                 distance_list.push_back(distance);
             }
+            // We take the point the farthest as new generator
             auto max_distance_iterator = std::max_element(distance_list.begin(),distance_list.end());
             size_t index_max_distance = max_distance_iterator-distance_list.begin();
             m_generators.push_back(index_max_distance);
@@ -294,12 +298,14 @@ class Variational_shape_reconstruction
     /// @return total of added generators
     size_t guided_split_clusters(double split_ratio, size_t iteration) // batch splitting
     {
-        std::cout << "Begin guided split..." << std::endl;
+        if(m_verbose_level > 1)
+            std::cout << "Begin guided split..." << std::endl;
         std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
         auto clusters_count = m_cluster->guided_split_clusters(m_vlabels,m_generators,m_diag,m_spacing,split_ratio, iteration);
         std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
         auto elapsed = std::chrono::duration_cast<std::chrono::microseconds>(end - begin).count();
-        std::cerr << "Guided split in " << elapsed << "[us]" << std::endl;
+        if(m_verbose_level > 1)
+            std::cerr << "Guided split in " << elapsed << "[us]" << std::endl;
         return clusters_count;
     }
     Pointset get_point_cloud_clustered()
@@ -349,10 +355,6 @@ class Variational_shape_reconstruction
         for(int i = 0; i < m_generators.size(); i++)
         {
             Point center;
-            // todoquestion
-            //if(m_generators_count.size() == m_generators.size())
-            //center = pointset_.point(m_generators[i]);
-            /*else*/
             center = compute_optimal_point(m_generators_qem[i], pointset_.point(m_generators[i]));
 
             dual_points.push_back(center);

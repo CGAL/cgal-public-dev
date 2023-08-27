@@ -153,7 +153,7 @@ void test_point_set(const std::string fname)
 
     size_t new_generators = generators; 
     size_t iteration = 0 ;
-    //116.34
+
     pointset = resize(pointset);
     std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
 
@@ -176,8 +176,6 @@ void test_point_set(const std::string fname)
 
     Pointset point_cloud = manager.get_point_cloud_clustered();
     Polyhedron mesh = manager.get_reconstructed();
-
-    //CGAL::IO::write_XYZ("clustering_"+fname+".txt", point_cloud);
 
     std::ofstream edge_file;
     edge_file.open("output/clustering_"+fname+".ply");
@@ -234,21 +232,19 @@ void test_point_set(const std::string fname)
 int main(int argc, char** argv)
 {	
     const std::vector<std::string> files_to_test{
-        //"double_sphere",
-        "cubes",
-        //"bones", //ok
-        //"spheres", //ok
-        //"piece_meca", //ok
-        //"armjoin", // cluster ok not recons
-        "guitar", // cluster ok not recons
-        "g", // cluster ok not recons
-        "capsule", //ok
-        "hilbert_cube2_pds_100k",// cluster ok not recons
-        "bunny_150k",// cluster ok not recons
-        "joint",// ok
-        "fertility",// cluster ok not recons
-        "qtr_piston",// cluster ok recons weird
-        "hand1" // ok
+        "piece_meca", 
+        "bones", 
+        "spheres", 
+        "armjoin", 
+        "guitar", 
+        "g", 
+        "capsule", 
+        "hilbert_cube2_pds_100k",
+        "bunny_150k",
+        "joint",
+        "fertility",
+        "qtr_piston",
+        "hand1" 
     };   
     int n = 1;
     

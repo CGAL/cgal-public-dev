@@ -217,6 +217,8 @@ class Clustering
         }
         if(m_verbose_level == 3)
         {
+            // Create a pointcloud of the graph of neighbors so that
+            // each point is connected to each of his neighbors
             std::ofstream neighbors_graph;
             neighbors_graph.open("neighbors_graph.ply");
 
@@ -364,15 +366,7 @@ class Clustering
 
         for(int i = 0; i < m_generators.size(); i++)
         {
-            Point center;
-            // is it for multicover ?
-            /*if(m_generators_count.size() == m_generators.size() && m_generators_count[i] == 1)
-            center = m_points[m_generators[i]].first;
-            else*/
-            center = compute_optimal_point(m_generators_qem[i], pointset_.point(m_generators[i]));
-
-
-            //center = pointset_.point(m_generators[i]);
+            Point center = compute_optimal_point(m_generators_qem[i], pointset_.point(m_generators[i]));
             optimal_points.push_back(center);
             dists.push_back(1e20);
             old_poles.push_back(m_generators[i]);
@@ -392,17 +386,6 @@ class Clustering
                 dists[label] = dist;
             }
         }
-        /// analysis
-        /*for(int i = 0; i < pointset_.size(); i++) 
-        {
-            if(m_vlabels.find(i) == m_vlabels.end())
-                continue;
-
-            int center_ind = m_vlabels[i];
-            double error = compute_minimum_qem_error(pointset_.point(m_generators[center_ind]), m_vqems[i]); 
-            //csv_writer->addErrorPoints(i,error);
-
-        }*/
         std::vector<double> qem_errors(m_generators.size(), 0.);
         for(int i = 0; i < pointset_.size(); i++) 
         {
@@ -424,12 +407,10 @@ class Clustering
             csv_writer->addWorstErrorGenerator(i,qem_errors[i]);
             error = std::max(error,qem_errors[i]);
         }
-        //std::cout<<"Error : -> "<<error<<"\n";
         auto mean = std::accumulate(qem_errors.begin(),qem_errors.end(),0.);
         mean/=qem_errors.size();
         csv_writer->addWorstErrorGenerator(error);
         csv_writer->addMeanErrorGenerator(mean);
-        //std::cout<<"Generators: "<<m_generators.size()<<"\n";
         csv_writer->setGenerator(m_generators.size());
 
         if(m_verbose_level == 3)
@@ -460,17 +441,14 @@ class Clustering
             clustering_by_iteration.close();
         }
 
-        // chech change
+        // check change
         for(int i = 0; i < m_generators.size(); i++)
         {
             if(m_generators[i] != old_poles[i])
                 return true;
         }
-
-        //std::cout << "Region growing converges!" << std::endl;
-
-        //CGAL::IO::write_XYZ("clustering_"+fname+".txt", point_cloud);
-
+        if(m_verbose_level > 1)
+            std::cout << "Region growing converges!" << std::endl;
         
         return false;
     }
@@ -544,12 +522,6 @@ class Clustering
 
             int center_ind = m_vlabels[i];
             double error = compute_minimum_qem_error(pointset_.point(m_generators[center_ind]), m_vqems[i]); 
-            //csv_writer->addErrorPoints(i,error);
-            /*if(generator_worst_error.count(center_ind) > 0)
-                generator_worst_error[center_ind]= std::min(generator_worst_error[center_ind],error);
-            else
-                generator_worst_error[center_ind] = error;
-                */
 
             if(error > qem_errors[center_ind])
             {
@@ -557,13 +529,6 @@ class Clustering
                 vert_indices[center_ind] = i;
             }
         }
-        
-        for(int i = 0 ; i < qem_errors.size();i++)
-        {
-            //csv_writer->addWorstErrorGenerator(i,qem_errors[i]);
-        }
-        std::cout<<"Generators: "<<m_generators.size()<<"\n";
-        //csv_writer->setGenerator(m_generators.size());
 
         // split centers exceeding max error
         std::vector<int> new_poles;
