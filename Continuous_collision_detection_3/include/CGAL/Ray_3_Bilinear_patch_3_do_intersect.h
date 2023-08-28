@@ -40,7 +40,8 @@ do_intersect_odd_parity(
   using Point = typename K::Point_3;
   using Interval = ::CGAL::Interval_nt_advanced;
 
-  // TODO: 
+  // TODO: decide whether the to treat point-not-on-boundary
+  //       as a precondition 
   CGAL_kernel_precondition(!bp.is_degenerate());
   CGAL_kernel_precondition(!r.is_degenerate());
 

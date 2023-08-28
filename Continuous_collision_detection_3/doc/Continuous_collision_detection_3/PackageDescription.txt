@@ -1,41 +1,52 @@
-// PRETTY PACKAGE NAME should equal the project title in Doxyfile.in
+/// \defgroup PkgCollisions3Ref 3D Continuous Collision Detection Reference
 
-/// \defgroup PkgPACKAGE PRETTY PACKAGE NAME Reference
-/// \defgroup PkgPACKAGEConcepts Concepts
-/// \ingroup PkgPACKAGE
+/// \defgroup Collisions3Concepts Concepts
+/// \ingroup PkgCollisions3Ref
 
-/// \defgroup PkgPACKAGEAlgorithmClasses Algorithm Classes
-/// \ingroup PkgPACKAGE
+/// \defgroup Collisions3Algorithms Algorithm Classes
+/// \ingroup PkgCollisions3Ref
 
-/// \defgroup PkgPACKAGETraitsClasses Traits Classes
-/// \ingroup PkgPACKAGE
+/// \defgroup Collisions3Traits Traits Classes
+/// \ingroup PkgCollisions3Ref
 
-/// \defgroup PkgPACKAGEMiscellaneous Miscellaneous
-/// \ingroup PkgPACKAGE
+/// \defgroup Collisions3Miscellaneous Miscellaneous
+/// \ingroup PkgCollisions3Ref
 
 /*!
-\addtogroup PkgPACKAGE
-\todo check generated documentation
+\addtogroup PkgCollisions3Ref
 
-\cgalPkgDescriptionBegin{PACKAGE NAME,PkgPACKAGE}
-\cgalPkgPicture{pkg-small.png}
+\cgalPkgDescriptionBegin{3D Continuous Collision Detection,PkgCollisions3}
+\cgalPkgPicture{collision.gif}
 
 \cgalPkgSummaryBegin
-\cgalPkgAuthors{PACKAGE AUTHOR}
-\cgalPkgDesc{PACKAGE DESCRIPTION.
-The package provides ... }
-\cgalPkgManuals{Chapter_PACKAGE_NAME,PkgPACKAGE}
+\cgalPkgAuthors{Jeffrey Cochran}
+\cgalPkgDesc{The package provides exact continuous collision detection predicates for segment-segment, point-triangle and triangle-triangle pairs, as well as for scenes comprised of an arbitrary number of triangular surface meshes.}
+\cgalPkgManuals{Chapter_3D_Continuous_Collision_Detection,PkgCollisions3Ref}
 \cgalPkgSummaryEnd
 
 \cgalPkgShortInfoBegin
-\cgalPkgSince{X.X}
+\cgalPkgSince{6.0}
 \cgalPkgDependsOn{\ref PkgDEPENDENCY}
-\cgalPkgBib{cgal:x-x}
+\cgalPkgBib{cgal:jc-ccd3}
 \cgalPkgLicense{\ref licensesGPL "GPL"}
-\cgalPkgDemo{DEMO 1,demo1.zip}
-\cgalPkgDemo{DEMO 2,demo2.zip}
+\cgalPkgDemo{Visualize collisions,viz_collisions.zip}
 \cgalPkgShortInfoEnd
 
 \cgalPkgDescriptionEnd
+
+A subset \f$S \subseteq \mathbb{R}^2 \f$ is convex if for any two points `p` and `q`
+in the set the line segment with endpoints `p` and `q` is contained in \f$ S \f$.
+The convex hull of a set \f$ S \f$ is the smallest convex set containing \f$ S \f$.
+The convex hull of a set of points `P` is a convex polygon with vertices in `P`.
+A point in `P` is an extreme point (with respect to `P`) if it is a vertex
+of the convex hull of `P`.
+
+\cgalClassifedRefPages
+
+\cgalCRPSection{Assertions}
+
+The Ray_3-Bilinear_patch_3 intersection parity test presumes that neither object is degenerate
+and that the origin of the ray does not lie on the patch. Degeneracy is given as a precondition
+in the function itself, but testing for the origin on the patch is not.
 
 */
