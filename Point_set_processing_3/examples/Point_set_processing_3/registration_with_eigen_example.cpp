@@ -453,9 +453,9 @@ std::pair<Transform, Mesh> nonrigid_registration(const Mesh& source, const Point
             b[3 * N + N + 3 * i + 1] = -x[1] * w3;
             b[3 * N + N + 3 * i + 2] = -x[2] * w3;
 
-            // original position of point (for arap)
-            Point p0 = source.point(*it);
-            Eigen::Vector3d x0(p0.x(), p0.y(), p0.z());
+            // position of deformed point (for arap)
+            Point yp = solution_mesh.point(*it);
+            Eigen::Vector3d y(yp.x(), yp.y(), yp.z());
 
             // covariance matrix for arap (see paper 2 equation 5)
             Eigen::Matrix3d covariance = Eigen::Matrix3d::Zero();
@@ -483,12 +483,12 @@ std::pair<Transform, Mesh> nonrigid_registration(const Mesh& source, const Point
 
                 ++e;
 
-                // original position of neighbor (for arap)
-                Point p0k = source.point(v0);
-                Eigen::Vector3d x0_k(p0k.x(), p0k.y(), p0k.z());
+                // position of deformed neighbor (for arap)
+                Point ypk = solution_mesh.point(v0);
+                Eigen::Vector3d y_k(ypk.x(), ypk.y(), ypk.z());
 
                 // for arap: (p_i - p_j) * (p_i' - p_j')^T (see paper 2 equation 5)
-                covariance += (x0 - x0_k) * (x - x_k).transpose();
+                covariance += (x - x_k) * (y - y_k).transpose();
             }
 
             // rotation matrices for arap (see paper 2 equation 6)
@@ -507,14 +507,14 @@ std::pair<Transform, Mesh> nonrigid_registration(const Mesh& source, const Point
         // complementary as-rigid-as-possible energy - constants (see paper 2 equation 8)
         for (auto it = source_mesh.vertices().begin(); it != source_mesh.vertices().end(); ++it) {
             size_t i = it->idx();
-            Point p0 = source.point(*it);
-            Eigen::Vector3d x0(p0.x(), p0.y(), p0.z());
+            Point p = source_mesh.point(*it);
+            Eigen::Vector3d x(p.x(), p.y(), p.z());
             for (auto he : CGAL::halfedges_around_source(*it, source_mesh)) {
                 auto v0 = CGAL::target(he, source_mesh);
                 size_t j = v0.idx();
-                Point p0k = source.point(v0);
-                Eigen::Vector3d x0_k(p0k.x(), p0k.y(), p0k.z());
-                b.segment<3>(3 * N + N + 3 * N + 3 * 2 * E + 3 * i) = 0.5 * (Rotations[i] + Rotations[j]) * (x0 - x0_k) * w5;
+                Point pk = source_mesh.point(v0);
+                Eigen::Vector3d x_k(pk.x(), pk.y(), pk.z());
+                b.segment<3>(3 * N + N + 3 * N + 3 * 2 * E + 3 * i) = 0.5 * (Rotations[i] + Rotations[j]) * (x - x_k) * w5;
             }
         }
 
@@ -534,7 +534,6 @@ std::pair<Transform, Mesh> nonrigid_registration(const Mesh& source, const Point
         //std::cout << "R: " << std::endl << R << std::endl;
         //std::cout << "t: " << std::endl << t << std::endl;
         // updated positions
-        
         for (auto it = source_mesh.vertices().begin(); it != source_mesh.vertices().end(); ++it) {
             size_t i = it->idx();
             solution_mesh.point(*it) = Point(solution[3 * i + 0], solution[3 * i + 1], solution[3 * i + 2]);
@@ -547,13 +546,14 @@ std::pair<Transform, Mesh> nonrigid_registration(const Mesh& source, const Point
 
         auto stop = std::chrono::high_resolution_clock::now();
         
-        std::cout << "Iteration " << iter << " took " << std::chrono::duration_cast<std::chrono::milliseconds>(stop - start).count() << "ms.";
+        std::cout << "Iteration " << iter + 1 << " took " << std::chrono::duration_cast<std::chrono::milliseconds>(stop - start).count() << "ms.";
 		std::cout << " Chamfer distance from target: " << error << '.' << std::endl;
     }
 
     return std::make_pair(Transform(), solution_mesh);
 
 }
+
 
 
 int main(int argc, char* argv[]) {
@@ -578,9 +578,9 @@ int main(int argc, char* argv[]) {
     CGAL::Polygon_mesh_processing::transform(transform, mesh1);
     //CGAL::Polygon_mesh_processing::transform(Transform(CGAL::Translation(), Vector(-40, 0, 0)), mesh1);
     //CGAL::draw(merge_meshes(mesh1, mesh2));
-    auto nonrigid_result = nonrigid_registration(mesh1, Mesh2PointSet(mesh2), 1.0, 1.0, 0.1, 10.0, 0.0, 10, 4);
+    auto nonrigid_result = nonrigid_registration(mesh1, Mesh2PointSet(mesh2), 1.0, 1.0, 0.1, 10.0, 1.0, 10, 4);
     Mesh z = nonrigid_result.second;
     CGAL::Polygon_mesh_processing::transform(Transform(CGAL::Translation(), Vector(-40, 0, 0)), z);
-    CGAL::draw(merge_meshes(z, mesh2, correspondence));
+    CGAL::draw(merge_meshes(z, mesh2));
     return EXIT_SUCCESS;
 }
