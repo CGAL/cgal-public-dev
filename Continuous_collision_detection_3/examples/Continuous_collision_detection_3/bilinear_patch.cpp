@@ -11,10 +11,11 @@
 // Author(s)     : Jeffrey Cochran
 
 #include <CGAL/Simple_cartesian.h>
-#include <Bilinear_patch_3.h>
-#include <Ray_3_Bilinear_patch_3_do_intersect.h>
+#include <CGAL/Bilinear_patch_3.h>
+#include <CGAL/Ray_3_Bilinear_patch_3_do_intersect.h>
 #include <CGAL/Interval_nt.h>
 #include <CGAL/Origin.h>
+
 #include <cstdlib>
 #include <ctime>
 #include <iostream>
@@ -69,17 +70,17 @@ std::cout << "Value of phi(point_way_above) [should be >> zero]: "<< bp.signed_s
 
 // Case 1b:
 Ray r = Ray(point_above, point_below);
-bool does_intersect = ::CGAL::Intersections::internal::do_intersect_odd_parity(bp, r);
+bool does_intersect = ::CGAL::do_intersect_odd_parity(bp, r);
 std::cout << "Ray originating in the bounding tetrahedron (above surface) and passing through does intersect: " << does_intersect << "\n";
 
 // Case 1c:
 r = Ray(point_below, point_above);
-does_intersect = ::CGAL::Intersections::internal::do_intersect_odd_parity(bp, r);
+does_intersect = ::CGAL::do_intersect_odd_parity(bp, r);
 std::cout << "Ray originating in the bounding tetrahedron (below surface) and passing through does intersect: " << does_intersect << "\n";
 
 // Case 2:
 r = Ray(point_way_above, point_below);
-does_intersect = ::CGAL::Intersections::internal::do_intersect_odd_parity(bp, r);
+does_intersect = ::CGAL::do_intersect_odd_parity(bp, r);
 std::cout << "Ray originating outside the bounding tetrahedron and passing through does intersect: " << does_intersect << "\n";
 
 //

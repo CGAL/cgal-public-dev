@@ -29,7 +29,7 @@ template <class CollisionScene>
 void draw_collision_scene( CollisionScene& scene, bool draw_next=false )
 {
     using K             = typename CollisionScene::Kernel;
-    using Swap_functor  = Swap_current_next_functor<CollisionScene>;
+    using Swap_functor  = ::CGAL::Collisions::internal::Swap_current_next_functor<CollisionScene>;
     
     for( const auto& fi : scene.faces())
     {

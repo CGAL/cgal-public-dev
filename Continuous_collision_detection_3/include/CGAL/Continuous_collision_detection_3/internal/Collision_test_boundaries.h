@@ -211,7 +211,7 @@ size_t Point_3_Triangle_3_collision_test_boundary<K>::num_ray_intersections(Ray 
 
     // Otherwise, proceed with ray-intersection testing to
     // compute the parity of intersections with the boundary
-    if( ::CGAL::Intersections::internal::do_intersect_odd_parity(bp, r) ) {
+    if( ::CGAL::do_intersect_odd_parity(bp, r) ) {
       ++num_intersections;
     }
 
@@ -346,7 +346,7 @@ size_t Segment_3_Segment_3_collision_test_boundary<K>::num_ray_intersections(Ray
 
     // Otherwise, proceed with ray-intersection testing to
     // compute the parity of intersections with the boundary
-    if( ::CGAL::Intersections::internal::do_intersect_odd_parity(bp, r) )
+    if( ::CGAL::do_intersect_odd_parity(bp, r) )
     {
       // std::cout << "Ray intersects bp: \n" << bp << std::endl;
       ++num_intersections;

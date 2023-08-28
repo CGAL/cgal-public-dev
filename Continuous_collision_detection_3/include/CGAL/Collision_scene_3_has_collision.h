@@ -72,8 +72,8 @@ namespace CGAL{
     using K     = typename CollisionCandidate::K;
     using Index = typename CollisionCandidate::Index;
 
-    Triangle_3_trajectory<K> trajectory_0 = to_Triangle_3_trajectory<K, Index>(*candidate.first);
-    Triangle_3_trajectory<K> trajectory_1 = to_Triangle_3_trajectory<K, Index>(*candidate.second);
+    Triangle_3_trajectory<K> trajectory_0 = ::CGAL::Collisions::internal::to_Triangle_3_trajectory<K, Index>(*candidate.first);
+    Triangle_3_trajectory<K> trajectory_1 = ::CGAL::Collisions::internal::to_Triangle_3_trajectory<K, Index>(*candidate.second);
 
     return do_collide(trajectory_0, trajectory_1);
   }

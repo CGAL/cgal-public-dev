@@ -52,9 +52,11 @@ namespace CGAL {
             typedef          Scene_index<Face_index>                                    Scene_face_index;
             typedef          std::vector<Scene_vertex_index>                            Scene_vertex_range;
             typedef          std::vector<Scene_face_index>                              Scene_face_range;
-            typedef          Triangle_trajectory_observer<K, Scene_face_index>          Trajectory;
+
+            typedef          ::CGAL::Collisions::internal::Triangle_trajectory_observer<K, Scene_face_index>        Trajectory;
+            typedef          ::CGAL::Collisions::internal::AABB_Triangle_trajectory_primitive<K, Scene_face_index>  Trajectory_primitive;
+
             typedef          std::vector<Trajectory>                                    Trajectory_range;
-            typedef          AABB_Triangle_trajectory_primitive<K, Scene_face_index>    Trajectory_primitive;
             typedef          ::CGAL::AABB_traits<K, Trajectory_primitive>               AABB_traits;
             typedef          AABB_tree<AABB_traits>                                     Tree;
             typedef typename Tree::Primitive_id                                         Primitive_id;

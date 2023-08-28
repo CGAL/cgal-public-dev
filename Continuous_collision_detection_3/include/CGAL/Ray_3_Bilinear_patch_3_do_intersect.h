@@ -33,7 +33,6 @@ do_intersect_odd_parity(
   const typename CGAL::BilinearPatchC3<K> &bp,
   const typename K::Ray_3 &r
 ) {
-  // NOTE: This assumes that the origin of the ray is not on the patch.
 
   using Triangle = typename K::Triangle_3;
   using Segment = typename K::Segment_3;
@@ -41,6 +40,7 @@ do_intersect_odd_parity(
   using Point = typename K::Point_3;
   using Interval = ::CGAL::Interval_nt_advanced;
 
+  // TODO: 
   CGAL_kernel_precondition(!bp.is_degenerate());
   CGAL_kernel_precondition(!r.is_degenerate());
 

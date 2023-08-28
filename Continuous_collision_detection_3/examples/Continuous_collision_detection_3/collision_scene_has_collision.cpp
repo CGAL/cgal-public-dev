@@ -52,9 +52,9 @@ typedef CGAL::BilinearPatchC3<Kernel>   BilinearPatch;
 typedef Scene::Primitive_id             Primitive_id;
 typedef Scene::Scene_face_index         Scene_face_index;
 
-typedef CGAL::Swap_current_next_functor<Scene>  Swap_functor;
-typedef CGAL::Translate_functor<Scene>          Translate_functor;
-typedef CGAL::Contraction_functor<Scene>        Contraction_functor;
+typedef CGAL::Collisions::internal::Swap_current_next_functor<Scene>  Swap_functor;
+typedef CGAL::Collisions::internal::Translate_functor<Scene>          Translate_functor;
+typedef CGAL::Collisions::internal::Contraction_functor<Scene>        Contraction_functor;
 
 
 typedef CGAL::Collision_candidate<Scene::Trajectory> Collision_candidate;
