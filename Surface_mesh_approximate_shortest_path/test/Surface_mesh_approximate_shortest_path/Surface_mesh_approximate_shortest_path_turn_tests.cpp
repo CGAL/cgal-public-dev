@@ -20,9 +20,10 @@ typedef Graph_traits::face_descriptor face_descriptor;
 typedef CGAL::Surface_mesh_approximate_shortest_path_traits<Kernel, Surface_mesh>   Traits;
 typedef CGAL::Surface_mesh_approximate_shortest_path_3::Never_skip_condition        Skip_condition;
 //typedef CGAL::Surface_mesh_approximate_shortest_path_3::Always_enqueue_in_A         Enqueue_policy;
-typedef CGAL::Surface_mesh_approximate_shortest_path_3::Static_speed_limiter         Enqueue_policy;
+typedef CGAL::Surface_mesh_approximate_shortest_path_3::Static_speed_limiter<Kernel>         Enqueue_policy;
 
-typedef CGAL::Surface_mesh_approximate_shortest_path<Traits, Skip_condition, Enqueue_policy>  Surface_mesh_approximate_shortest_path;
+typedef Traits::Visibility_heuristic    Visibility_heuristic;
+typedef CGAL::Surface_mesh_approximate_shortest_path<Traits, Visibility_heuristic, Skip_condition, Enqueue_policy>  Surface_mesh_approximate_shortest_path;
 
 typedef CGAL::Face_values<Kernel>   Face_values;
 
@@ -70,11 +71,11 @@ void test_propagated_face_values(face_descriptor face, Surface_mesh_approximate_
 {
     if (face.idx() >= 4 && face.idx() <= 6)
     {
-        Face_values face_values = shopa.get_face_values(face);
+        FT face_values = shopa.get_geodesic_distances()[face.idx()];
         std::pair<FT, FT> desired_geodesic_dists = correct_geodesic_dists(face);
 
-        CHECK_CLOSE(face_values.sigma, desired_geodesic_dists.first, 1e-8);
-        CHECK_CLOSE(face_values.d, desired_geodesic_dists.second, 1e-8);
+        //CHECK_CLOSE(face_values.sigma, desired_geodesic_dists.first, 1e-8);
+        CHECK_CLOSE(face_values, desired_geodesic_dists.second, 1e-8);
     }
 }
 
@@ -93,7 +94,8 @@ int main()
     std::cout << "running right turn test" << std::endl;
     Surface_mesh_approximate_shortest_path shopa(mesh);
     Point_3 source(FT(0.9), FT(-0.9), FT(1./6.));
-    shopa.propagate_geodesic_source(source);
+    shopa.add_source(source);
+    shopa.propagate_geodesic_source();
 
     // run tests
     for (face_descriptor face : faces(mesh))

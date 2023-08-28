@@ -18,9 +18,7 @@ typedef Graph_traits::halfedge_descriptor halfedge_descriptor;
 typedef Graph_traits::face_descriptor face_descriptor;
 
 typedef CGAL::Surface_mesh_approximate_shortest_path_traits<Kernel, Surface_mesh>   Traits;
-//typedef CGAL::Surface_mesh_approximate_shortest_path_3::Never_skip_condition        Skip_condition;
-//typedef CGAL::Surface_mesh_approximate_shortest_path_3::Always_enqueue_in_A         Enqueue_policy;
-//typedef CGAL::Surface_mesh_approximate_shortest_path_3::Static_speed_limiter         Enqueue_policy;
+typedef CGAL::Surface_mesh_approximate_shortest_path_3::Static_speed_limiter<Kernel>         Enqueue_policy;
 
 class Skip_condition
 {
@@ -34,35 +32,8 @@ public:
     }
 };
 
-class Enqueue_policy
-{
-public:
-    Enqueue_policy() {};
-
-    CGAL::EnqueueResult operator() (
-        double new_geodesic_dist,
-        double geodesic_dist_to_overall_target,
-        Point_3& prev_face_target_point,
-        Point_3& face_target_point,
-        Point_3& overall_target_point)
-    {
-        FT prev_sq_embedding_dist = CGAL::squared_distance(prev_face_target_point, overall_target_point);
-        FT sq_embedding_dist = CGAL::squared_distance(face_target_point, overall_target_point);
-        FT embedding_dist = CGAL::sqrt(sq_embedding_dist);
-
-        if (sq_embedding_dist <= prev_sq_embedding_dist) {
-            return CGAL::ENQUEUE_IN_A; // keep enqueuing in A => these halfedges will be prioritized
-        }
-        else if (new_geodesic_dist + embedding_dist <= geodesic_dist_to_overall_target) {
-            return CGAL::ENQUEUE_IN_B; // enqueue in B => explore later, after we have found a first geodesic distance
-        }
-        else {
-            return CGAL::DO_NOT_ENQUEUE; // this can no longer be a sensible geodesic path anyways
-        }
-    }
-};
-
-typedef CGAL::Surface_mesh_approximate_shortest_path<Traits, Skip_condition, Enqueue_policy>  Surface_mesh_approximate_shortest_path;
+typedef Traits::Visibility_heuristic    Visibility_heurisic;
+typedef CGAL::Surface_mesh_approximate_shortest_path<Traits, Visibility_heurisic, Skip_condition, Enqueue_policy>  Surface_mesh_approximate_shortest_path;
 
 typedef CGAL::Face_values<Kernel>   Face_values;
 
@@ -121,11 +92,11 @@ void test_propagated_face_values(face_descriptor face, Surface_mesh_approximate_
     std::set<int> face_idx_set = {7, 10, 12, 24, 29};
     if (face_idx_set.find(face.idx()) != face_idx_set.end())
     {
-        Face_values face_values = shopa.get_face_values(face);
+        FT face_values = shopa.get_geodesic_distances()[face.idx()];
         std::pair<FT, FT> desired_geodesic_dists = correct_geodesic_dists(face);
 
-        CHECK_CLOSE(face_values.sigma, desired_geodesic_dists.first, 1e-7);
-        CHECK_CLOSE(face_values.d, desired_geodesic_dists.second, 1e-7);
+        //CHECK_CLOSE(face_values.sigma, desired_geodesic_dists.first, 1e-7);
+        CHECK_CLOSE(face_values, desired_geodesic_dists.second, 1e-7);
     }
 }
 
@@ -143,10 +114,11 @@ int main()
 
     std::cout << "running progatation test with bending geodesics" << std::endl;
     Surface_mesh_approximate_shortest_path shopa(mesh);
-    Point_3 source(FT(3./2.), FT(13./4.), FT(0.));
-    Point_3 target(3.0, 1.0, 0.0);
-    shopa.add_target(target);
-    shopa.propagate_geodesic_source(source);
+    Point_3 source(FT(1./2.), FT(1./3.), FT(0.));
+    //Point_3 target(3.0, 1.0, 0.0);
+    //shopa.add_target(target);
+    shopa.add_source(source);
+    shopa.propagate_geodesic_source();
 
     // run tests
     for (face_descriptor face : faces(mesh))

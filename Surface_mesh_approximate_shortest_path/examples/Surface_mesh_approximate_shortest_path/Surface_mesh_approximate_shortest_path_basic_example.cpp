@@ -21,7 +21,7 @@ typedef VTKWriter<Kernel, Surface_mesh> Writer;
 
 int main(int argc, char** argv)
 {
-    const std::string filename = (argc>1) ? argv[1] : CGAL::data_file_path("meshes/cheese.off");
+    const std::string filename = (argc>1) ? argv[1] : CGAL::data_file_path("meshes/elephant.off");
 
     Surface_mesh tmesh;
     if(!CGAL::IO::read_polygon_mesh(filename, tmesh) ||
@@ -43,7 +43,7 @@ int main(int argc, char** argv)
     // write to file
     std::vector<double> distances = shortest_path.get_geodesic_distances();
     Writer writer{};
-    writer(tmesh, distances, "cheese_full_geodesics.vtk");
+    writer(tmesh, distances, "elephant_full_geodesics.vtk");
 
     return 0;
 }

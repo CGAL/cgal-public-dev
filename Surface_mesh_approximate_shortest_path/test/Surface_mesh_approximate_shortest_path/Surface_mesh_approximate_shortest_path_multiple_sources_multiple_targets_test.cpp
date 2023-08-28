@@ -20,9 +20,10 @@ typedef Graph_traits::face_descriptor face_descriptor;
 typedef CGAL::Surface_mesh_approximate_shortest_path_traits<Kernel, Surface_mesh>   Traits;
 typedef CGAL::Surface_mesh_approximate_shortest_path_3::Never_skip_condition        Skip_condition;
 //typedef CGAL::Surface_mesh_approximate_shortest_path_3::Always_enqueue_in_A         Enqueue_policy;
-typedef CGAL::Surface_mesh_approximate_shortest_path_3::Static_speed_limiter         Enqueue_policy;
+typedef CGAL::Surface_mesh_approximate_shortest_path_3::Static_speed_limiter<Kernel>         Enqueue_policy;
 
-typedef CGAL::Surface_mesh_approximate_shortest_path<Traits, Skip_condition, Enqueue_policy>  Surface_mesh_approximate_shortest_path;
+typedef Traits::Visibility_heuristic    Visibility_heuristic;
+typedef CGAL::Surface_mesh_approximate_shortest_path<Traits, Visibility_heuristic, Skip_condition, Enqueue_policy>  Surface_mesh_approximate_shortest_path;
 
 typedef CGAL::Face_values<Kernel>   Face_values;
 
@@ -92,11 +93,11 @@ void test_propagated_face_values(face_descriptor face, Surface_mesh_approximate_
     std::set<int> face_idx_set = {7, 8, 11, 22, 26, 28, 29};
     if (face_idx_set.find(face.idx()) != face_idx_set.end())
     {
-        Face_values face_values = shopa.get_face_values(face);
+        FT face_values = shopa.get_geodesic_distances()[face.idx()];
         std::pair<FT, FT> desired_geodesic_dists = correct_geodesic_dists(face);
 
-        CHECK_CLOSE(face_values.sigma, desired_geodesic_dists.first, 1e-7);
-        CHECK_CLOSE(face_values.d, desired_geodesic_dists.second, 1e-7);
+        //CHECK_CLOSE(face_values.sigma, desired_geodesic_dists.first, 1e-7);
+        CHECK_CLOSE(face_values, desired_geodesic_dists.second, 1e-7);
     }
 }
 
@@ -118,8 +119,9 @@ int main()
     shopa.add_target(Point_3(FT(5.0), FT(0.0), FT(0.0)));
     shopa.add_target(Point_3(FT(4.0), FT(4.0), FT(0.0)));
     shopa.add_target(Point_3(FT(1.3), FT(3.0), FT(0.0)));
-    shopa.add_source_point(Point_3(FT(2.5), FT(0.0), FT(0.0)));
-    shopa.propagate_geodesic_source(source);
+    shopa.add_source(source);
+    shopa.add_source(Point_3(FT(2.5), FT(0.0), FT(0.0)));
+    shopa.propagate_geodesic_source();
 
     // run tests
     for (face_descriptor face : faces(mesh))

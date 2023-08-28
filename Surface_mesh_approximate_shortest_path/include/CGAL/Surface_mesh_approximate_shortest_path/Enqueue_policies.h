@@ -95,10 +95,10 @@ public:
         FT sq_embedding_dist = squared_distance(curr_face_target, overall_target);
         FT embedding_dist = sqrt(sq_embedding_dist);
 
-        if (sq_embedding_dist <= prev_sq_embedding_dist + 10.) {
+        if (sq_embedding_dist <= prev_sq_embedding_dist) {
             return CGAL::ENQUEUE_IN_A; // keep enqueuing in A => these halfedges will be prioritized
         }
-        else if (geodesic_dist + embedding_dist <= geodesic_radius + 10.) {
+        else if (geodesic_dist + embedding_dist <= geodesic_radius) {
             return CGAL::ENQUEUE_IN_B; // enqueue in B => explore later, after we have found a first geodesic distance
         }
         else {

@@ -87,12 +87,17 @@ public:
         m_update_counter[m_iter_counter-1][index]++;
     }
 
-    std::vector<int>& get_update_counts_per_iteration(int iteration)
+    int get_iteration_counter()
+    {
+        return m_iter_counter;
+    }
+
+    std::vector<int> get_update_counts_per_iteration(int iteration)
     {
         return m_update_counter[iteration];
     }
 
-    std::vector<int>& get_cumulative_update_counts_after_iterations(int iterations)
+    std::vector<int> get_cumulative_update_counts_after_iterations(int iterations)
     {
         std::vector<int> cumulative_update_counts = m_update_counter[0];
         for (int i = 1; i < iterations; i++)
@@ -299,10 +304,10 @@ public:
     void init_propagation_property_maps()
     {
         bool created_edge_property_map, created_face_property_map;
-        boost::tie(m_edge_lengths, created_edge_property_map) = m_mesh.template add_property_map<edge_descriptor, FT>("edge_lengths");
+        boost::tie(m_edge_lengths, created_edge_property_map) = m_mesh.template add_property_map<edge_descriptor, FT>();
         assert(created_edge_property_map);
 
-        boost::tie(m_face_values, created_face_property_map) = m_mesh.template add_property_map<face_descriptor, Face_values>("face_values");
+        boost::tie(m_face_values, created_face_property_map) = m_mesh.template add_property_map<face_descriptor, Face_values>();
         assert(created_face_property_map);
     }
 
@@ -1304,16 +1309,43 @@ public:
         for (face_descriptor fd : face_sequence)
         {
             face_indicator_map[fd] = true;
-            std::cout << fd << std::endl;
         }
 
         return face_indicator_map;
     }
 
     /// @}
+
+    /// \name Observer functionality
+    /// @{
+
+    int get_iter_count()
+    {
+        return m_observer.get_iteration_counter();
+    }
+
+    std::vector<int> get_update_counts_per_iteration(int iteration)
+    {
+        assert(m_with_observer);
+        return m_observer.get_update_counts_per_iteration(iteration);
+    }
+
+    std::vector<int> get_cumulative_update_counts_after_iterations(int iterations)
+    {
+        assert(m_with_observer);
+        return m_observer.get_cumulative_update_counts_after_iterations(iterations);
+    }
+
+    int number_of_total_face_updates()
+    {
+        assert(m_with_observer);
+        return m_observer.number_of_total_face_updates();
+    }
+
+    /// @}
 };
 
-}
+};
 
 template<class K, class SurfaceMesh>
 class VTKWriter
@@ -1333,6 +1365,12 @@ public:
     VTKWriter() {};
 
     void operator() (Surface_mesh& mesh, std::vector<double> face_data, std::string filename)
+    {
+        WriteMeshData(mesh, filename);
+        WriteFaceData(mesh, face_data, filename);
+    }
+
+    void operator() (Surface_mesh& mesh, std::vector<int> face_data, std::string filename)
     {
         WriteMeshData(mesh, filename);
         WriteFaceData(mesh, face_data, filename);
@@ -1389,6 +1427,22 @@ public:
     }
 
     void WriteFaceData(Surface_mesh& mesh, std::vector<double> face_data, std::string filename)
+    {
+        std::ofstream out(filename, std::ios_base::app);
+
+        out << "CELL_DATA " << mesh.num_faces() << std::endl;
+        out << "SCALARS " << "cell_scalars " << "float " << "1" << std::endl;
+        out << "LOOKUP_TABLE default" << std::endl;
+
+        for (int i = 0; i < mesh.num_faces(); ++i)
+        {
+            out << face_data[i] << std::endl;
+        }
+
+        out.close();
+    }
+
+    void WriteFaceData(Surface_mesh& mesh, std::vector<int> face_data, std::string filename)
     {
         std::ofstream out(filename, std::ios_base::app);
 
