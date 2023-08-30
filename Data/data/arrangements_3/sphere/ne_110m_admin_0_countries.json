@@ -356578,7 +356578,8 @@
       ]
     },
     {
-      "name": "Palestine",
+      "_name": "Palestine",
+      "name": "Judea and Samaria Area",
       "is_unbounded": false,
       "is_valid": true,
       "outer_ccbs": [
@@ -360357,7 +360358,8 @@
       ]
     },
     {
-      "name": "Caspian Sea",
+      "name": "",
+      "_name": "Caspian Sea",
       "is_unbounded": false,
       "is_valid": true,
       "outer_ccbs": [
