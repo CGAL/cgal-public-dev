@@ -43,6 +43,9 @@ of the convex hull of `P`.
 
 \cgalClassifedRefPages
 
+- `Translate_functor`
+
+
 \cgalCRPSection{Assertions}
 
 The Ray_3-Bilinear_patch_3 intersection parity test presumes that neither object is degenerate

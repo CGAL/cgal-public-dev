@@ -44,7 +44,7 @@ namespace CGAL {
         typedef            ::CGAL::Segment_3_trajectory<K>  Segment_trajectory;
         typedef            ::CGAL::Triangle_3_trajectory<K> Triangle_trajectory;
 
-        typedef decltype(Base().template add_property_map<Vertex_index, Vector>("v:velocity").first)        Vector_map;
+        // typedef decltype(Base().template add_property_map<Vertex_index, Vector>("v:velocity").first)        Vector_map;
         typedef decltype(Base().template add_property_map<Vertex_index, Point>("v:next_point").first)       Point_map;
 
         typedef decltype(Base().template add_property_map<Vertex_index, CGAL::IO::Color>("v:color").first)  Vertex_color_map;

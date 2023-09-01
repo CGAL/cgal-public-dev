@@ -29,8 +29,8 @@ namespace CGAL{
   // TODO: speed this up.
   template <class K>
   bool do_collide(
-      Point_3_trajectory<K> p,
-      Triangle_3_trajectory<K> t,
+      const Point_3_trajectory<K>& p,
+      const Triangle_3_trajectory<K>& t,
       typename K::Ray_3       test_ray
   ){
     using Test_boundary = ::CGAL::Collisions::internal::Point_3_Triangle_3_collision_test_boundary<K>;
@@ -52,8 +52,8 @@ namespace CGAL{
 
   template <class K>
   bool do_collide(
-      Point_3_trajectory<K> p,
-      Triangle_3_trajectory<K> t
+      const Point_3_trajectory<K>& p,
+      const Triangle_3_trajectory<K>& t
   ){
     using FT = typename K::FT;
     using Point = typename K::Point_3;

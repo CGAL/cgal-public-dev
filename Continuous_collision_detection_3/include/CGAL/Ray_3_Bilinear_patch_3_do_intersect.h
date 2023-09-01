@@ -21,12 +21,14 @@
 #include <CGAL/enum.h>
 #include <CGAL/kernel_assertions.h>
 #include <CGAL/intersection_3.h>
-#include <CGAL/Interval_nt.h>
 
 namespace CGAL {
 
 
 
+// TODO: filter this predicate. 
+// TODO: make sure that bp is constructed exactly in 
+//       the collision test boundary.
 template <class K>
 bool
 do_intersect_odd_parity(
@@ -38,8 +40,7 @@ do_intersect_odd_parity(
   using Segment = typename K::Segment_3;
   using Ray = typename K::Ray_3;
   using Point = typename K::Point_3;
-  using Interval = ::CGAL::Interval_nt_advanced;
-
+  
   // TODO: decide whether the to treat point-not-on-boundary
   //       as a precondition 
   CGAL_kernel_precondition(!bp.is_degenerate());
@@ -62,7 +63,9 @@ do_intersect_odd_parity(
 
   // Case 2
   // Origin lies inside bounding tetrahedron
-  if (bp.tetrahedron().has_on_bounded_side(ray_source) || bp.tetrahedron().has_on_boundary(ray_source))
+  // THIS IMPLEMENTS BROCHU & BRIDSON 2012
+  //if (bp.tetrahedron().has_on_bounded_side(ray_source) || bp.tetrahedron().has_on_boundary(ray_source))
+  if ( !bp.tetrahedron().has_on_unbounded_side(ray_source) )
   {
     // Otherwise, check the sign of phi(origin). Two of the bounding
     // tetrahedron's four triangles lie on the positive side of phi()==0,
@@ -90,6 +93,7 @@ do_intersect_odd_parity(
 
   // Case 3
   // Origin lies outside the bounding tetrahedron
+  // TODO: check to see if ray intersects vertex/edge
   if (
        !(do_intersect(Triangle(bp.vertex(0), bp.vertex(1), bp.vertex(2)), r))
     != !(do_intersect(Triangle(bp.vertex(0), bp.vertex(2), bp.vertex(3)), r))

@@ -34,6 +34,9 @@ struct Swap_current_next_functor {
     }
 };
 
+/// \ingroup PkgCollisions3Ref
+/// \cgalModels MyGreatConcept
+/// blablabla
 template <class CollisionScene>
 struct Translate_functor {
 

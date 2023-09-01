@@ -46,9 +46,10 @@ bool all_on_one_side_of_plane(
   if( desired_orientation == ::CGAL::ZERO ) { return false; }
 
   return std::all_of(
-    (++points_.begin()), // Don't need to check the first one
+    std::next(points_.begin()), // Don't need to check the first one
     points_.end(),
     [&plane_normal, &desired_orientation](const auto& m_p) {
+      // TODO: there is a construction here, we need to use a predicate instead ==> add a new predicate in the Kernel
       return (
             ::CGAL::sign(::CGAL::scalar_product( plane_normal, *m_p - ::CGAL::ORIGIN ))
         ==  desired_orientation // check same side of plane

@@ -29,8 +29,8 @@ namespace CGAL{
   // TODO: speed this up.
   template <class K>
   bool do_collide(
-      Segment_3_trajectory<K> s0,
-      Segment_3_trajectory<K> s1,
+      const Segment_3_trajectory<K>& s0,
+      const Segment_3_trajectory<K>& s1,
       typename K::Ray_3       test_ray
   ){
     using Test_boundary = ::CGAL::Collisions::internal::Segment_3_Segment_3_collision_test_boundary<K>;
@@ -45,19 +45,20 @@ namespace CGAL{
       s1.next()
     );
 
-    size_t num_intersections = test_boundary.num_ray_intersections( test_ray );
+    std::size_t num_intersections = test_boundary.num_ray_intersections( test_ray );
 
     return (num_intersections % 2) == 1; //
   }
 
   template <class K>
   bool do_collide(
-      Segment_3_trajectory<K> s0,
-      Segment_3_trajectory<K> s1
+      const Segment_3_trajectory<K>& s0,
+      const Segment_3_trajectory<K>& s1
   ){
     using FT = typename K::FT;
     using Point = typename K::Point_3;
 
+    //TODO: use CGAL::get_default_random() or ask CGAL::Random as a parameter
     FT random_max = FT(RAND_MAX);
     FT x = FT(std::rand()) / random_max;
     FT y = FT(std::rand()) / random_max;

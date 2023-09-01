@@ -5,7 +5,7 @@
 //
 // $URL$
 // $Id$
-// SPDX-License-Identifier: LGPL-3.0-or-later OR LicenseRef-Commercial
+// SPDX-License-Identifier: GPL-3.0-or-later OR LicenseRef-Commercial
 //
 //
 // Author(s)     : Jeffrey Cochran
@@ -21,13 +21,13 @@ namespace CGAL{
 
 
 
-  template <class K>
-  bool do_collide(
-      std::vector< Collision_mesh<K> >& meshes
-  ){
-    Collision_scene<K> scene = Collision_scene<K>(meshes);
-    return has_collision(scene); //
-  }
+template <class K>
+bool do_collide(
+    std::vector< Collision_mesh<K> >& meshes
+){
+  Collision_scene<K> scene = Collision_scene<K>(meshes);
+  return has_collision(scene); //
+}
 
 
 
