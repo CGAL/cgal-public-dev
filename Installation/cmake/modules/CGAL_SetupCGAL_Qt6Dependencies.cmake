@@ -31,8 +31,11 @@ find_package(Qt6 QUIET COMPONENTS Widgets OpenGL OpenGLWidgets OPTIONAL_COMPONEN
 
 
 if(Vulkan_FOUND)
-  option(CGAL_USE_VULKAN "Option to use Vulkan or OpenGL" OFF)
-  message( STATUS "NOTICE: Vulkan found. Using Vulkan API instead of OpenGL")
+  message( STATUS "NOTICE: Vulkan found.")
+  option(CGAL_USE_VULKAN "Option to use Vulkan or OpenGL" ON)
+  if (CGAL_USE_VULKAN)
+    message( STATUS "NOTICE: Using Vulkan API instead of OpenGL")
+  endif()
 endif()
 
 set(CGAL_Qt6_MISSING_DEPS "")
