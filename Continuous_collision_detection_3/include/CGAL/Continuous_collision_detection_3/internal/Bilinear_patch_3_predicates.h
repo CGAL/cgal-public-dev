@@ -1,11 +1,10 @@
-// Copyright (c) 2023
-// INRIA Sophia-Antipolis (France)
+// Copyright (c) 2023 GeometryFactory (France).
 //
 // This file is part of CGAL (www.cgal.org)
 //
 // $URL$
 // $Id$
-// SPDX-License-Identifier: LGPL-3.0-or-later OR LicenseRef-Commercial
+// SPDX-License-Identifier: GPL-3.0-or-later OR LicenseRef-Commercial
 //
 //
 // Author(s)     : Jeffrey Cochran
@@ -90,12 +89,12 @@ namespace internal {
       const typename K::Point_3& v3
     ) const
     {
-      using FT = typename K::FT; 
+      using FT = typename K::FT;
       return (
             ::CGAL::compare<FT, FT>(
               ::CGAL::Bilinear_patch::internal::signed_scaled_patch_distance<K>(
                 x, v0, v1, v2, v3
-              ), 
+              ),
               FT{0}
             )
         ==  ::CGAL::EQUAL
@@ -104,9 +103,9 @@ namespace internal {
   };
 
   template <typename K, bool has_filtered_predicate = K::Has_filtered_predicates>
-  struct has_on_pred : public has_on_pred_impl<K> 
-  { 
-    using has_on_pred_impl<K>::operator(); 
+  struct has_on_pred : public has_on_pred_impl<K>
+  {
+    using has_on_pred_impl<K>::operator();
   };
 
   template <typename K>
@@ -129,7 +128,7 @@ namespace internal {
       const typename K::Point_3& v3
     ) const
     {
-      using FT = typename K::FT; 
+      using FT = typename K::FT;
       FT dist = ::CGAL::Bilinear_patch::internal::signed_scaled_patch_distance<K>(
         x, v0, v1, v2, v3
       );
@@ -141,9 +140,9 @@ namespace internal {
   };
 
   template <typename K, bool has_filtered_predicate = K::Has_filtered_predicates>
-  struct orientation_pred : public orientation_pred_impl<K> 
-  { 
-    using orientation_pred_impl<K>::operator(); 
+  struct orientation_pred : public orientation_pred_impl<K>
+  {
+    using orientation_pred_impl<K>::operator();
   };
 
   template <typename K>

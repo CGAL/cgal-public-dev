@@ -1,11 +1,10 @@
-// Copyright (c) 2023
-// INRIA Sophia-Antipolis (France)
+// Copyright (c) 2023 GeometryFactory (France).
 //
 // This file is part of CGAL (www.cgal.org)
 //
 // $URL$
 // $Id$
-// SPDX-License-Identifier: LGPL-3.0-or-later OR LicenseRef-Commercial
+// SPDX-License-Identifier: GPL-3.0-or-later OR LicenseRef-Commercial
 //
 //
 // Author(s)     : Jeffrey Cochran
@@ -33,8 +32,8 @@ namespace CGAL{
       friend std::ostream& operator<<(std::ostream& os, Collision_candidate const& collision_candidate)
       {
           return (os << collision_candidate.first->index << " : " << collision_candidate.second->index );
-      } 
-    
+      }
+
   };
 
 

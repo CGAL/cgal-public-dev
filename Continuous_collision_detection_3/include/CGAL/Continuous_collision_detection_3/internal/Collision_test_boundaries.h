@@ -1,11 +1,10 @@
-// Copyright (c) 2023
-// INRIA Sophia-Antipolis (France)
+// Copyright (c) 2023 GeometryFactory (France).
 //
 // This file is part of CGAL (www.cgal.org)
 //
 // $URL$
 // $Id$
-// SPDX-License-Identifier: LGPL-3.0-or-later OR LicenseRef-Commercial
+// SPDX-License-Identifier: GPL-3.0-or-later OR LicenseRef-Commercial
 //
 //
 // Author(s)     : Jeffrey Cochran
@@ -69,7 +68,7 @@ bool cull_test_boundary(const std::vector<typename K::Point_3*>& points_)
     if(
       all_on_one_side_of_plane<K>(
         points_,
-        K::Vector_3(K::FT(i), K::FT(j), K::FT(k))
+        typename K::Vector_3(typename K::FT(i), typename K::FT(j), typename K::FT(k))
       )
     ) {
       return true;

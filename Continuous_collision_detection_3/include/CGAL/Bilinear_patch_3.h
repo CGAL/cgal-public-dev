@@ -1,11 +1,10 @@
-// Copyright (c) 2023
-// INRIA Sophia-Antipolis (France)
+// Copyright (c) 2023 GeometryFactory (France).
 //
 // This file is part of CGAL (www.cgal.org)
 //
 // $URL$
 // $Id$
-// SPDX-License-Identifier: LGPL-3.0-or-later OR LicenseRef-Commercial
+// SPDX-License-Identifier: GPL-3.0-or-later OR LicenseRef-Commercial
 //
 //
 // Author(s)     : Jeffrey Cochran
@@ -115,12 +114,12 @@ public:
   const Point_3 & operator[](int i) const;
   const Tetrahedron_3 & tetrahedron() const;
   FT signed_scaled_patch_distance( const Point_3& x) const;
-  
+
 
 private:
   void populate_triangles_();
   void populate_boundary_();
-  
+
 };
 
 template <class R>
@@ -321,7 +320,7 @@ void BilinearPatchC3<R>::populate_triangles_()
   }
 
   // Case 3
-  // Exactly three of the four vertices are collinear. A single triangle covers the patch. 
+  // Exactly three of the four vertices are collinear. A single triangle covers the patch.
   // Use the largest triangle.
   triangles_.reserve(1);
   if( COLLINEAR_012_ )

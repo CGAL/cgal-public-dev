@@ -1,11 +1,10 @@
-// Copyright (c) 2023
-// INRIA Sophia-Antipolis (France)
+// Copyright (c) 2023 GeometryFactory (France).
 //
 // This file is part of CGAL (www.cgal.org)
 //
 // $URL$
 // $Id$
-// SPDX-License-Identifier: LGPL-3.0-or-later OR LicenseRef-Commercial
+// SPDX-License-Identifier: GPL-3.0-or-later OR LicenseRef-Commercial
 //
 //
 // Author(s)     : Jeffrey Cochran
@@ -30,7 +29,7 @@ void draw_collision_scene( CollisionScene& scene, bool draw_next=false )
 {
     using K             = typename CollisionScene::Kernel;
     using Swap_functor  = ::CGAL::Collisions::internal::Swap_current_next_functor<CollisionScene>;
-    
+
     for( const auto& fi : scene.faces())
     {
         scene.color(fi, CGAL::IO::blue());
@@ -62,7 +61,7 @@ void write_collision_scene( CollisionScene& scene, size_t frame=0, bool draw_nex
 {
     using K             = typename CollisionScene::Kernel;
     using Swap_functor  = ::CGAL::Collisions::internal::Swap_current_next_functor<CollisionScene>;
-    
+
     for( const auto& fi : scene.faces())
     {
         scene.color(fi, CGAL::IO::blue());
@@ -95,9 +94,9 @@ void write_collision_frame( CollisionScene& scene, size_t frame=0, bool draw_nex
     std::ofstream out("frame_" + std::to_string(frame) + "_" + perspective + ".off");
     std::streambuf *coutbuf = std::cout.rdbuf(); //save old buf
     std::cout.rdbuf(out.rdbuf()); //redirect std::cout to out.txt!
-    
+
     std::cout << scene.joined_meshes();
-    
+
     std::cout.rdbuf(coutbuf); //reset to standard output again
 }
 
@@ -109,9 +108,9 @@ convert_candidates_to_indices(
 {
     std::set<typename CollisionCandidate::Index> collision_indices;
     std::for_each(
-        candidates.begin(), 
-        candidates.end(), 
-        [&collision_indices](const auto& candidate){ 
+        candidates.begin(),
+        candidates.end(),
+        [&collision_indices](const auto& candidate){
             collision_indices.insert(candidate.first->index);
             collision_indices.insert(candidate.second->index);
         }
