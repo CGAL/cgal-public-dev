@@ -68,7 +68,7 @@ bool cull_test_boundary(const std::vector<typename K::Point_3*>& points_)
     if(
       all_on_one_side_of_plane<K>(
         points_,
-        K::Vector_3(K::FT(i), K::FT(j), K::FT(k))
+        typename K::Vector_3(typename K::FT(i), typename K::FT(j), typename K::FT(k))
       )
     ) {
       return true;
