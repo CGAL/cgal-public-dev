@@ -1,11 +1,10 @@
-// Copyright (c) 2023
-// INRIA Sophia-Antipolis (France)
+// Copyright (c) 2023 GeometryFactory (France).
 //
 // This file is part of CGAL (www.cgal.org)
 //
 // $URL$
 // $Id$
-// SPDX-License-Identifier: LGPL-3.0-or-later OR LicenseRef-Commercial
+// SPDX-License-Identifier: GPL-3.0-or-later OR LicenseRef-Commercial
 //
 //
 // Author(s)     : Jeffrey Cochran
@@ -18,7 +17,7 @@
 namespace CGAL {
 namespace Collisions {
 namespace internal {
-    
+
 template <class K>
 class Point_3_Triangle_3_collision_function {
 
@@ -32,22 +31,22 @@ class Point_3_Triangle_3_collision_function {
   private:
     Origin origin = ::CGAL::ORIGIN;
     FT     ONE{1.};
-    Vector x0; 
+    Vector x0;
     Vector x1;
     Vector x2;
     Vector x3;
-    Vector x0_next; 
+    Vector x0_next;
     Vector x1_next;
     Vector x2_next;
     Vector x3_next;
 
   public:
-    Point_3_Triangle_3_collision_function( 
-      const Point& p_cur, 
+    Point_3_Triangle_3_collision_function(
+      const Point& p_cur,
       const Point& p_next,
       const Triangle& t_cur,
       const Triangle& t_next
-    ) 
+    )
       : x0{p_cur - origin}
       , x1{t_cur[0] - origin}
       , x2{t_cur[1] - origin}
@@ -85,22 +84,22 @@ class Segment_3_Segment_3_collision_function {
   private:
     Origin origin = ::CGAL::ORIGIN;
     FT     ONE{1.};
-    Vector x0; 
+    Vector x0;
     Vector x1;
     Vector x2;
     Vector x3;
-    Vector x0_next; 
+    Vector x0_next;
     Vector x1_next;
     Vector x2_next;
     Vector x3_next;
 
   public:
-    Segment_3_Segment_3_collision_function( 
-      const Segment& s0_cur, 
-      const Segment& s0_next, 
-      const Segment& s1_cur, 
+    Segment_3_Segment_3_collision_function(
+      const Segment& s0_cur,
+      const Segment& s0_next,
+      const Segment& s1_cur,
       const Segment& s1_next
-    ) 
+    )
       : x0{s0_cur.source() - origin}
       , x1{s0_cur.target() - origin}
       , x2{s1_cur.source() - origin}

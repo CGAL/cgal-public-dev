@@ -1,11 +1,10 @@
-// Copyright (c) 2023
-// INRIA Sophia-Antipolis (France)
+// Copyright (c) 2023 GeometryFactory (France).
 //
 // This file is part of CGAL (www.cgal.org)
 //
 // $URL$
 // $Id$
-// SPDX-License-Identifier: LGPL-3.0-or-later OR LicenseRef-Commercial
+// SPDX-License-Identifier: GPL-3.0-or-later OR LicenseRef-Commercial
 //
 //
 // Author(s)     : Jeffrey Cochran
@@ -33,7 +32,7 @@ namespace CGAL {
     class Collision_scene {
 
         public:
-        
+
             template<class Local_index> struct Scene_index;
 
             typedef          K                              Kernel;
@@ -102,20 +101,20 @@ namespace CGAL {
             Mesh_index current_mesh_index{i};
 
             vertices_.reserve(vertices_.size() + mesh_.num_vertices());
-            for( const auto & current_vertex_index : mesh_.vertices()) { 
-                vertices_.push_back( 
+            for( const auto & current_vertex_index : mesh_.vertices()) {
+                vertices_.push_back(
                     Scene_vertex_index{
                         current_mesh_index,
                         current_vertex_index
-                    } 
+                    }
                 );
             }
 
             size_t k{faces_.size()};
             faces_.reserve(faces_.size() + mesh_.num_faces());
             trajectories_.reserve(trajectories_.size() + mesh_.num_faces());
-            for( const auto & current_face_index : mesh_.faces()) { 
-                faces_.push_back( 
+            for( const auto & current_face_index : mesh_.faces()) {
+                faces_.push_back(
                     Scene_face_index{
                         current_mesh_index,
                         current_face_index
@@ -132,12 +131,12 @@ namespace CGAL {
 
         trajectory_tree_ = Tree(trajectories_.begin(),trajectories_.end());
     };
-    
+
 
     // ========================
     // Member Class definitions
     // ========================
-    template <class K> 
+    template <class K>
     template <class Local_index>
     struct Collision_scene<K>::Scene_index : std::pair<Mesh_index, Local_index> {
 
@@ -157,10 +156,10 @@ namespace CGAL {
         friend std::ostream& operator<<(std::ostream& os, Scene_index const& Scene_index)
         {
             return (os << "(" << Scene_index.first << ", " << Scene_index.second << ")" );
-        } 
+        }
 
         bool operator<(Scene_index const& other_Scene_index) const {
-            bool less_than = this->first == other_Scene_index.first 
+            bool less_than = this->first == other_Scene_index.first
                 ? this->second < other_Scene_index.second
                 : this->first < other_Scene_index.first;
             return less_than;
@@ -169,7 +168,7 @@ namespace CGAL {
         Mesh_index mesh_index() const {
           return this->first;
         }
-        
+
         Local_index local_index() const {
           return this->second;
         }
@@ -178,7 +177,7 @@ namespace CGAL {
 
     // ===============
     // Member routines
-    // ===============    
+    // ===============
     template <class K>
     const typename Collision_scene<K>::Tree& Collision_scene<K>::tree() const
     {
@@ -198,10 +197,10 @@ namespace CGAL {
     }
 
     template <class K>
-    auto Collision_scene<K>::make_trajectory( 
-        const Mesh& mesh, 
-        const Scene_face_index& scene_face_index 
-    ) -> Trajectory 
+    auto Collision_scene<K>::make_trajectory(
+        const Mesh& mesh,
+        const Scene_face_index& scene_face_index
+    ) -> Trajectory
     {
 
         size_t j{0};
@@ -251,29 +250,29 @@ namespace CGAL {
         meshes_[ti.mesh_index().idx()].color(ti.local_index(), c);
         return;
     };
-    
+
     template <class K>
     template <class UpdateFunctor>
     void Collision_scene<K>::update_state(UpdateFunctor& update_functor, bool update_tree_)
     {
         Mesh* mesh_ptr = nullptr;
-        for( auto& scene_vertex_index : vertices_) 
+        for( auto& scene_vertex_index : vertices_)
         {
             mesh_ptr = &(meshes_[scene_vertex_index.mesh_index()]);
             update_functor(mesh_ptr, scene_vertex_index);
         }
-        
+
         if( update_tree_ ) {
             update_tree();
         }
     }
-    
+
     template <class K>
     void Collision_scene<K>::update_tree()
     {
-        for( auto& t : trajectories_ ) 
-        { 
-            t.update(); 
+        for( auto& t : trajectories_ )
+        {
+            t.update();
         }
         // TODO: use the update functor that sloriot provided
         trajectory_tree_ = Tree(trajectories_.begin(),trajectories_.end());

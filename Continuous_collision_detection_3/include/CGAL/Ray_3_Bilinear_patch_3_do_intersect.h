@@ -1,11 +1,11 @@
-// Copyright (c) 2023  INRIA Sophia-Antipolis (France).
+// Copyright (c) 2023 GeometryFactory (France).
 // All rights reserved.
 //
 // This file is part of CGAL (www.cgal.org)
 //
 // $URL$
 // $Id$
-// SPDX-License-Identifier: LGPL-3.0-or-later OR LicenseRef-Commercial
+// SPDX-License-Identifier: GPL-3.0-or-later OR LicenseRef-Commercial
 //
 //
 // Author(s)     : Jeffrey Cochran
@@ -41,7 +41,7 @@ do_intersect_odd_parity(
   using Interval = ::CGAL::Interval_nt_advanced;
 
   // TODO: decide whether the to treat point-not-on-boundary
-  //       as a precondition 
+  //       as a precondition
   CGAL_kernel_precondition(!bp.is_degenerate());
   CGAL_kernel_precondition(!r.is_degenerate());
 
@@ -49,7 +49,7 @@ do_intersect_odd_parity(
 
   // Case 1
   // The bilinear patch degenerates to coplanar triangles
-  // TODO: make sure this works for the case where the 
+  // TODO: make sure this works for the case where the
   //       ray is coplanar with the bilinear patch
   if(bp.is_planar()) {
     bool does_intersect_odd_parity_{false};
