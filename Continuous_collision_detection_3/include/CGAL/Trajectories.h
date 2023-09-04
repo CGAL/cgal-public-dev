@@ -40,11 +40,11 @@ class Point_3_trajectory : public std::tuple<typename K::Point_3, typename K::Po
             return (os << std::get<0>(point_trajectory) << " -> " << std::get<1>(point_trajectory));
         }
 
-        Point current() {
+        Point current() const {
             return std::get<0>(*this);
         }
 
-        Point next() {
+        Point next() const {
             return std::get<1>(*this);
         }
 };
@@ -53,7 +53,7 @@ template <class K>
 class Segment_3_trajectory : public std::tuple<Point_3_trajectory<K>, Point_3_trajectory<K>> {
 
     using Segment            = typename K::Segment_3;
-    using Point_trajectory = Point_3_trajectory<K>;
+    using Point_trajectory   = Point_3_trajectory<K>;
     using Base               = std::tuple<Point_trajectory, Point_trajectory>;
 
     public:
@@ -76,14 +76,14 @@ class Segment_3_trajectory : public std::tuple<Point_3_trajectory<K>, Point_3_tr
             return (os << std::get<0>(segment_trajectory) << "\n" << std::get<1>(segment_trajectory));
         }
 
-        Segment current() {
+        Segment current() const {
             return Segment(
                 std::get<0>(*this).current(),
                 std::get<1>(*this).current()
             );
         }
 
-        Segment next() {
+        Segment next() const {
             return Segment(
                 std::get<0>(*this).next(),
                 std::get<1>(*this).next()
@@ -118,7 +118,7 @@ class Triangle_3_trajectory : public std::tuple<Point_3_trajectory<K>, Point_3_t
             return (os << std::get<0>(triangle_trajectory) << "\n" << std::get<1>(triangle_trajectory) << "\n" << std::get<2>(triangle_trajectory));
         }
 
-        Triangle current() {
+        Triangle current() const {
             return Triangle(
                 std::get<0>(*this).current(),
                 std::get<1>(*this).current(),
@@ -126,7 +126,7 @@ class Triangle_3_trajectory : public std::tuple<Point_3_trajectory<K>, Point_3_t
             );
         }
 
-        Triangle next() {
+        Triangle next() const {
             return Triangle(
                 std::get<0>(*this).next(),
                 std::get<1>(*this).next(),

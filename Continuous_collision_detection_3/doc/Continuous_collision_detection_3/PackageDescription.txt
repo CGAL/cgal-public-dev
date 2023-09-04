@@ -43,7 +43,29 @@ of the convex hull of `P`.
 
 \cgalClassifedRefPages
 
-- `Translate_functor`
+\cgalCRPSection{Concepts}
+
+- `CollisionSceneUpdateFunctor`
+- `CollisionTestBoundary`
+- `CollisionTestFunction`
+- `Trajectory`
+
+\cgalCRPSection{Classes}
+
+- `CGAL::Collision_mesh_3<Kernel>`
+- `CGAL::Collision_scene_3<Kernel>`
+- `CGAL::Collision_candidate_3<Primitive>`
+- `CGAL::Bilinear_patch_3<Kernel>`
+
+\cgalCRPSection{Functions}
+
+- `CGAL::mark_domain_in_triangulation()`
+
+\cgalCRPSection{Enum}
+- \link CGAL::Triangulation_2::Locate_type `CGAL::Triangulation_2<Traits,Tds>::Locate_type` \endlink
+
+\cgalCRPSection{Draw a Triangulation 2}
+- \link PkgDrawTriangulation2 CGAL::draw<T2>() \endlink
 
 
 \cgalCRPSection{Assertions}

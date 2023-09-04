@@ -43,7 +43,6 @@ namespace CGAL {
         typedef            ::CGAL::Segment_3_trajectory<K>  Segment_trajectory;
         typedef            ::CGAL::Triangle_3_trajectory<K> Triangle_trajectory;
 
-        // typedef decltype(Base().template add_property_map<Vertex_index, Vector>("v:velocity").first)        Vector_map;
         typedef decltype(Base().template add_property_map<Vertex_index, Point>("v:next_point").first)       Point_map;
 
         typedef decltype(Base().template add_property_map<Vertex_index, CGAL::IO::Color>("v:color").first)  Vertex_color_map;
@@ -62,7 +61,6 @@ namespace CGAL {
         using Base::next;
 
     private:
-        Vector_map vvelocity_;
         Point_map vnext_point_;
 
         Vertex_color_map vcolor_;
@@ -101,7 +99,6 @@ namespace CGAL {
 
     template <class K>
     Collision_mesh<K>::Collision_mesh(const Base& surface_mesh) : Base{surface_mesh} {
-        vvelocity_ = this->template add_property_map<Vertex_index, Vector>("v:velocity").first;
         vnext_point_ = this->template add_property_map<Vertex_index, Point>("v:next_point").first;
         vcolor_ = this->template add_property_map<Vertex_index, CGAL::IO::Color>("v:color").first;
 
@@ -109,7 +106,6 @@ namespace CGAL {
         // Initialize vertex maps
         for(const vertex_descriptor& vd : this->vertices()){
             put(vcolor_, vd, CGAL::IO::black());
-            put(vvelocity_, vd, Vector(0, 0, 0));
             put(vnext_point_, vd, this->point(vd));
         }
 
@@ -126,7 +122,6 @@ namespace CGAL {
         vcolor_ = this-> template add_property_map<Vertex_index, CGAL::IO::Color>("v:color").first;
 
         for(const vertex_descriptor& vd : this->vertices()){
-            put(vvelocity_, vd, Vector(0, 0, 0));
             put(vnext_point_, vd, point(vd));
             put(vcolor_, vd, CGAL::IO::black());
         }
@@ -144,7 +139,6 @@ namespace CGAL {
     Collision_mesh<K>::Collision_mesh(Collision_mesh<K>&& collision_mesh)
         : Base{std::move(collision_mesh)}
         , vnext_point_(std::move(collision_mesh.vnext_point_))
-        , vvelocity_(std::move(collision_mesh.vvelocity_))
         , vcolor_(std::move(collision_mesh.vcolor_))
         , fcolor_(std::move(collision_mesh.fcolor_))
     {}
@@ -159,7 +153,6 @@ namespace CGAL {
         if (this != &rhs)
         {
             vnext_point_ = this-> template property_map<Vertex_index, Point>("v:next_point").first;
-            vvelocity_   = this-> template property_map<Vertex_index, Vector>("v:velocity").first;
             vcolor_      = this-> template property_map<Vertex_index, CGAL::IO::Color>("v:color").first;
             fcolor_      = this-> template property_map<Face_index, CGAL::IO::Color>("f:color").first;
         }
@@ -172,7 +165,6 @@ namespace CGAL {
         Base::operator=(std::move(collision_mesh));
 
         vnext_point_    = std::move(collision_mesh.vnext_point_);
-        vvelocity_      = std::move(collision_mesh.vvelocity_);
         vcolor_         = std::move(collision_mesh.vcolor_);
         fcolor_         = std::move(collision_mesh.fcolor_);
 
@@ -183,10 +175,14 @@ namespace CGAL {
     // MEMBER ROUTINES
     // ===============
     template <class K>
-    const typename K::Vector_3& Collision_mesh<K>::velocity(Vertex_index v) const { return vvelocity_[v]; }
+    const typename K::Vector_3& Collision_mesh<K>::velocity(Vertex_index v) const { 
+        return vnext_point_[v] - vpoint_[v]; 
+    }
 
     template <class K>
-    typename K::Vector_3& Collision_mesh<K>::velocity(Vertex_index v) { return vvelocity_[v]; }
+    typename K::Vector_3& Collision_mesh<K>::velocity(Vertex_index v)  { 
+        return vnext_point_[v] - vpoint_[v]; 
+    }
 
     template <class K>
     const typename K::Point_3& Collision_mesh<K>::next_point(Vertex_index v) const { return vnext_point_[v]; }
