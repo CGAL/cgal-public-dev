@@ -40,7 +40,12 @@ int main()
     const double distance_weight = 10e-5;
     size_t iteration = 0 ;
 	
-    qem::Variational_shape_reconstruction manager(pointset,generators,distance_weight,3,3);
+    qem::Variational_shape_reconstruction manager(
+        pointset,
+        generators,
+        distance_weight,
+        qem::VERBOSE_LEVEL::LOW,
+        qem::INIT_QEM_GENERATOR::RANDOM);
     while(generators > 5 )
     {
         

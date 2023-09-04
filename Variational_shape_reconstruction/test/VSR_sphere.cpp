@@ -51,19 +51,24 @@ void test_sphere()
     } 
     const size_t generators = 4;
     const size_t steps = 10;
-    const double split_threshold =0.01;
+    const double split_threshold = 10e-2;
 
     // reconstruction
-    const double  dist_ratio = 0.001;
-	const double  fitting = 0.43;
-	const double  coverage = 0.27;
+    const double  dist_ratio = 10e-3;
+	const double  fitting = 0.4;
+	const double  coverage = 0.3;
 	const double  complexity = 0.3;
 
     size_t new_generators = generators; 
     size_t iteration = 0 ;
- const double distance_weight =0.00001;
+    const double distance_weight = 10e-5;
     
-	qem::Variational_shape_reconstruction manager(pointset,generators,distance_weight,3,3);
+    qem::Variational_shape_reconstruction manager(
+        pointset,
+        generators,
+        distance_weight,
+        qem::VERBOSE_LEVEL::HIGH,
+        qem::INIT_QEM_GENERATOR::RANDOM);
     manager.region_growing(steps);
     manager.reconstruction(dist_ratio, fitting, coverage, complexity);
 

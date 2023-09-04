@@ -40,3 +40,15 @@ typedef std::vector<Vector>                 VecList;
 typedef std::set<int>                       IntSet;
 
 typedef std::pair<int, int>                 IntPair;
+
+
+#ifndef TYPE_H
+#define TYPE_H
+
+namespace qem
+{
+    enum class INIT_QEM_GENERATOR {RANDOM,KMEANS_FARTHEST,KMEANS_PLUSPLUS};
+    enum class VERBOSE_LEVEL {LOW,MEDIUM,HIGH};
+}
+
+#endif /* TYPE_H */

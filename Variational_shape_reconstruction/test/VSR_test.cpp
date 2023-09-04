@@ -143,12 +143,12 @@ void test_point_set(const std::string fname)
     } 
     const size_t generators = 30;
     const size_t steps = 10;
-    const double split_threshold =0.01;
-    const double distance_weight =0.000001;
+    const double split_threshold = 10e-2;
+    const double distance_weight = 10e-5;
     // reconstruction
-    const double  dist_ratio = 0.001;
-	const double  fitting = 0.43;
-	const double  coverage = 0.27;
+    const double  dist_ratio = 10e-3;
+	const double  fitting = 0.4;
+	const double  coverage = 0.3;
 	const double  complexity = 0.3;
 
     size_t new_generators = generators; 
@@ -157,7 +157,12 @@ void test_point_set(const std::string fname)
     pointset = resize(pointset);
     std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
 
-	qem::Variational_shape_reconstruction manager(pointset,generators,distance_weight,3,3);
+    qem::Variational_shape_reconstruction manager(
+        pointset,
+        generators,
+        distance_weight,
+        qem::VERBOSE_LEVEL::HIGH,
+        qem::INIT_QEM_GENERATOR::RANDOM);
         std::chrono::steady_clock::time_point begin_clustering = std::chrono::steady_clock::now();
     while(new_generators > 5 )
     {
