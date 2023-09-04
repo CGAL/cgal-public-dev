@@ -166,7 +166,7 @@ void test_point_set(const std::string fname)
         std::chrono::steady_clock::time_point begin_clustering = std::chrono::steady_clock::now();
     while(new_generators > 5 )
     {
-        manager.region_growing(steps);
+        manager.region_growing_and_update_poles(steps);
         new_generators = manager.guided_split_clusters(split_threshold, iteration++);
     }
     std::chrono::steady_clock::time_point end_clustering = std::chrono::steady_clock::now();
@@ -180,7 +180,7 @@ void test_point_set(const std::string fname)
 
 
     Pointset point_cloud = manager.get_point_cloud_clustered();
-    Polyhedron mesh = manager.get_reconstructed();
+    Polyhedron mesh = manager.get_reconstructed_mesh();
 
     std::ofstream edge_file;
     edge_file.open("output/clustering_"+fname+".ply");

@@ -291,22 +291,36 @@ class Variational_shape_reconstruction
     /// @param steps 
     void region_growing(size_t steps)
     {
+        std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
+        m_vlabels.clear();
+        m_generators_qem.clear();
+        m_cluster->region_growing(m_vlabels, m_generators_qem, m_generators, true);
+        assert(m_vlabels.size() == pointset_.size());
+        std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
+        auto elapsed = std::chrono::duration_cast<std::chrono::microseconds>(end - begin).count()/1000;
+        if(m_verbose_level != VERBOSE_LEVEL::LOW)
+            std::cerr << "\nRegion growing in " << elapsed << "[ms]" << std::endl;
+    }
+    
+    /// @brief update poles
+    /// @param flag 
+    void update_poles(bool &flag)
+    {
+        flag = m_cluster->update_poles(m_vlabels,m_generators_qem, m_generators);
+    }
+    /// @brief region growing for n steps user defined
+    /// @param steps 
+    void region_growing_and_update_poles(size_t steps)
+    {
         bool flag = true;
         for(int i = 0 ; i < steps && flag; i++)
         {
-            std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
-            m_vlabels.clear();
-            m_generators_qem.clear();
-            m_cluster->region_growing(m_vlabels, m_generators_qem, m_generators, true);
-            assert(m_vlabels.size() == pointset_.size());
-
-            std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
-            auto elapsed = std::chrono::duration_cast<std::chrono::microseconds>(end - begin).count()/1000;
-            if(m_verbose_level != VERBOSE_LEVEL::LOW)
-                std::cerr << "\nRegion growing in " << elapsed << "[ms]" << std::endl;
-            flag = m_cluster->update_poles(m_vlabels,m_generators_qem, m_generators);
+            region_growing(steps);
+            update_poles(flag);
         }
     }
+
+
     /// @brief Split the cluster with the split_ratio
     /// @param split_ratio 
     /// @param iteration 
@@ -323,6 +337,29 @@ class Variational_shape_reconstruction
             std::cerr << "Guided split in " << elapsed << "[us]" << std::endl;
         return clusters_count;
     }
+    /// @brief automatic clustering
+    void clustering(const size_t steps,const double split_threshold)
+    {
+        int generators = 6;
+        int iteration = 0;
+        while(generators > 5 )
+        {
+            
+            region_growing_and_update_poles(steps);
+            generators = guided_split_clusters(split_threshold, iteration++);
+        }
+    }
+    /// @brief automatic reconstruction
+    void reconstruction()
+    {
+        const double dist_ratio = 10e-3;
+        const double fitting = 0.4;
+        const double coverage = 0.3;
+        const double complexity = 0.3;
+        
+        reconstruction(dist_ratio, fitting, coverage, complexity,true);
+    }
+
     Pointset get_point_cloud_clustered()
     {
         Pointset pointset;
@@ -340,7 +377,7 @@ class Variational_shape_reconstruction
         }
         return pointset;
     }
-    const Polyhedron& get_reconstructed()
+    const Polyhedron& get_reconstructed_mesh()
     {
         return m_triangle_fit.get_mesh();
     }
@@ -349,11 +386,19 @@ class Variational_shape_reconstruction
         m_cluster->write_csv();
     }
     // reconstruction 
-    void reconstruction(double dist_ratio, double fitting, double coverage, double complexity)
+    void reconstruction(double dist_ratio, double fitting, double coverage, double complexity, bool use_soft_reconstruction=false)
     {
         create_adjacent_edges();
         create_candidate_facets();
+
         mlp_reconstruction(dist_ratio, fitting, coverage, complexity);
+        
+        auto valid = m_triangle_fit.get_mesh().is_valid();
+        if(!valid && use_soft_reconstruction)
+        {
+            std::cout<<"Manifold Reconstruction failed, trying with Nonmanifold Reconstruction\n";
+             non_manifold_reconstruction(dist_ratio, fitting, coverage, complexity);
+        }
     }
     void create_adjacent_edges()
     {
@@ -452,7 +497,7 @@ class Variational_shape_reconstruction
     {
         m_triangle_fit.update_candidate_facets(candidate_facets, candidate_normals); 
     }
-
+    
     void mlp_reconstruction(double dist_ratio, double fitting, double coverage, double complexity)
     {
         std::vector<Point> input_point_set;
@@ -466,12 +511,22 @@ class Variational_shape_reconstruction
         m_triangle_fit.reconstruct(input_point_set, m_spacing, dist_ratio, fitting, coverage, complexity); 
         std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
         std::cerr << "MIP solver in " << std::chrono::duration_cast<std::chrono::microseconds>(end - begin).count() << "[us]" << std::endl;
-        auto valid = m_triangle_fit.get_mesh().is_valid();
-        if(!valid)
-        {
-            std::cout<<"Manifold Reconstruction failed, trying with Nonmanifold Reconstruction\n";
-            m_triangle_fit.nonmanifold_reconstruct(input_point_set, m_spacing, dist_ratio, fitting, coverage, complexity); 
-        }
+
+    }
+    void non_manifold_reconstruction(double dist_ratio, double fitting, double coverage, double complexity)
+    {
+        std::vector<Point> input_point_set;
+
+        std::transform( m_points.begin(), 
+                        m_points.end(), 
+                        std::back_inserter(input_point_set), 
+                        [](const Point_with_index& p) { return p.first; }); 
+
+        std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
+        m_triangle_fit.nonmanifold_reconstruct(input_point_set, m_spacing, dist_ratio, fitting, coverage, complexity); 
+        std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
+        std::cerr << "Non manifold solver in " << std::chrono::duration_cast<std::chrono::microseconds>(end - begin).count() << "[us]" << std::endl;    
+        
     }
     void update_fit_surface(std::vector<float>& fit_facets, std::vector<float>& fit_normals)
     {

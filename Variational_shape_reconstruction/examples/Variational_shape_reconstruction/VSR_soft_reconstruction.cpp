@@ -38,18 +38,26 @@ int main()
     const size_t steps = 10;
     const double split_threshold = 10e-2;
     const double distance_weight = 10e-5;
+    size_t iteration = 0 ;
 	
     qem::Variational_shape_reconstruction manager(
         pointset,
         generators,
         distance_weight,
         qem::VERBOSE_LEVEL::LOW,
-        qem::INIT_QEM_GENERATOR::RANDOM);
+        qem::INIT_QEM_GENERATOR::KMEANS_FARTHEST);
 
     manager.clustering(steps, split_threshold);
-    manager.reconstruction();
-	auto mesh = manager.get_reconstructed_mesh();
+    
+    // Reconstruction parameters
+    const double dist_ratio = 10e-3;
+	const double fitting = 0.4;
+	const double coverage = 0.3;
+	const double complexity = 0.3;
+	
+    manager.reconstruction(dist_ratio, fitting, coverage, complexity,true);
 
+	auto mesh = manager.get_reconstructed_mesh();
     std::ofstream mesh_file;
     mesh_file.open("mesh.off");
     CGAL::write_off(mesh_file, mesh);

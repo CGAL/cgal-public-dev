@@ -59,7 +59,7 @@ void test_generators_qem()
         distance_weight,
         qem::VERBOSE_LEVEL::HIGH,
         qem::INIT_QEM_GENERATOR::RANDOM);
-    manager.region_growing(steps);
+    manager.region_growing_and_update_poles(steps);
     manager.write_csv();
     // todo check evolution generators
 }

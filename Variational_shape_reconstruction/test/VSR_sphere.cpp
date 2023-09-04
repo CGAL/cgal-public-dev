@@ -69,12 +69,12 @@ void test_sphere()
         distance_weight,
         qem::VERBOSE_LEVEL::HIGH,
         qem::INIT_QEM_GENERATOR::RANDOM);
-    manager.region_growing(steps);
+    manager.region_growing_and_update_poles(steps);
     manager.reconstruction(dist_ratio, fitting, coverage, complexity);
 
 
     Pointset point_cloud = manager.get_point_cloud_clustered();
-    Polyhedron mesh = manager.get_reconstructed();
+    Polyhedron mesh = manager.get_reconstructed_mesh();
     
     std::ofstream mesh_file;
     mesh_file.open("output/mesh_"+fname+".off");
