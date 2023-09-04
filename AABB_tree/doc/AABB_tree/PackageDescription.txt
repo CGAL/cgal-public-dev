@@ -35,7 +35,7 @@
 - `CGAL::AABB_tree<AT>`
 
 \cgalCRPSection{Primitives}
-- `CGAL::AABB_triangle_primitive<GeomTraits, Iterator, CacheDatum>`
+- `CGAL::AABB_Triangle_trajectory_primitive<GeomTraits, Iterator, CacheDatum>`
 - `CGAL::AABB_segment_primitive<GeomTraits, Iterator, CacheDatum>`
 - `CGAL::AABB_primitive<Id,ObjectPropertyMap,PointPropertyMap,ExternalPropertyMaps,CacheDatum>`
 - `CGAL::AABB_halfedge_graph_segment_primitive<HalfedgeGraph,Vpm,OneHalfedgeGraphPerTree,CacheDatum>`

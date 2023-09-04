@@ -52,14 +52,18 @@ of the convex hull of `P`.
 
 \cgalCRPSection{Classes}
 
+- `CGAL::Bilinear_patch_3<Kernel>`
 - `CGAL::Collision_mesh_3<Kernel>`
 - `CGAL::Collision_scene_3<Kernel>`
 - `CGAL::Collision_candidate_3<Primitive>`
-- `CGAL::Bilinear_patch_3<Kernel>`
 
 \cgalCRPSection{Functions}
 
 - `CGAL::mark_domain_in_triangulation()`
+
+\cgalCRPSection{Primitives}
+
+- CGAL::Collisions::internal::AABB_Triangle_trajectory_primitive<Kernel, Index>
 
 \cgalCRPSection{Enum}
 - \link CGAL::Triangulation_2::Locate_type `CGAL::Triangulation_2<Traits,Tds>::Locate_type` \endlink

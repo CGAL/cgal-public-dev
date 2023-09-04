@@ -1213,3 +1213,13 @@ Polygonal_surface_reconstruction/examples/build*
 Polygonal_surface_reconstruction/test/build*
 Solver_interface/examples/build*
 /Mesh_3/examples/Mesh_3/indicator_0.inr.gz
+Installation/auxiliary/gmp/gmp.COPYING
+Installation/auxiliary/gmp/gmp.README
+Installation/auxiliary/gmp/mpfr.COPYING
+Installation/auxiliary/gmp/mpfr.COPYING.LESSER
+Installation/auxiliary/gmp/mpfr.README
+Installation/auxiliary/gmp/README
+Installation/auxiliary/gmp/include/gmp.h
+Installation/auxiliary/gmp/include/mpf2mpfr.h
+Installation/auxiliary/gmp/include/mpfr.h
+Installation/auxiliary/gmp/README
