@@ -91,11 +91,10 @@ private:
 
 // Specialization of draw function.
 template<class K>
-void draw_color(const Surface_mesh<K>& amesh,
+void draw(const Surface_mesh<K>& amesh,
           const char* title="Surface_mesh Basic Viewer",
           bool nofill=false)
 {
-
 #if defined(CGAL_TEST_SUITE)
   bool cgal_test_suite=true;
 #else
