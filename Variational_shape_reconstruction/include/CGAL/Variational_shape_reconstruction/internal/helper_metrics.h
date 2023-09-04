@@ -133,16 +133,6 @@ class DataWriter
         }
         file << "Iteration "+std::to_string(nb_iteration)+"\n";
 
-        // Write data
-        /*for (size_t row = 0 ; row < m_points_count;row++) {
-            for (size_t line = 0 ; line < nb_iteration ;line++) {
-                    //if(m_data_error_generators[row][line]) 
-                    file << std::to_string((m_data_error_generators[row][line]10.)+",";
-                }
-                //if(m_data_error_generators[row][nb_iteration]) 
-                file << std::to_string((m_data_error_generators[row][nb_iteration]10.)+"\n";
-        }
-        */
         for(auto e : m_data_error_generators)
         {
             for (auto value : e.second) {
