@@ -187,6 +187,7 @@ protected:
       for (auto v: vertices(g))
       {
         const CGAL::IO::Color& c = fcolor(g, v);
+        add_point(get(point_pmap, v));
         //this->add_point(get(point_pmap, v), c);
       }
     };

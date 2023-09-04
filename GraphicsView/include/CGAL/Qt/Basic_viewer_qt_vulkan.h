@@ -1880,7 +1880,7 @@ namespace CGAL
         };
         std::vector<float> arrays[LAST_INDEX];
 
-        std::vector<float> m_buffer_for_mono_points;
+        std::vector<float> m_buffer_for_mono_points = {};
         std::vector<float> m_buffer_for_faces = {};
         std::vector<float> m_buffer_for_edges = {};
         Buffer_for_vao<float> m_buffer_for_colored_points;

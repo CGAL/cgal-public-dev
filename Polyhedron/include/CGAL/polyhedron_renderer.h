@@ -163,7 +163,7 @@ namespace CGAL {
                 m_uniformBufferInfo[i].range = uniformAllocSize;
             }
             m_devFuncs->vkUnmapMemory(dev, m_buffVertexMem);
-
+            //createVertexBuffers(m_buffVertex, m_buffVertexMem, vertices);
             createVertexBuffers(m_buffVertexFaces, m_buffVertexMemFaces, verticesFaces);
             createVertexBuffers(m_buffVertexGraph, m_buffVertexMemGraph, verticesGraph);
             //createIndexBuffers(m_buffIndex, m_buffIndexMem, indices);
@@ -339,6 +339,10 @@ namespace CGAL {
             iaStateInfoEdges.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
             iaStateInfoEdges.topology = VK_PRIMITIVE_TOPOLOGY_LINE_LIST;
 
+            VkPipelineInputAssemblyStateCreateInfo iaStateInfoPoints{};
+            iaStateInfoPoints.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
+            iaStateInfoPoints.topology = VK_PRIMITIVE_TOPOLOGY_POINT_LIST;
+
             VkPipelineViewportStateCreateInfo vpStateInfo{};
             vpStateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
             vpStateInfo.viewportCount = 1;
@@ -412,7 +416,7 @@ namespace CGAL {
             if (err != VK_SUCCESS)
                 qFatal("Failed to create graphics pipeline: %d", err);
 
-            pipelineInfo.pInputAssemblyState = &iaStateInfo;
+            pipelineInfo.pInputAssemblyState = &iaStateInfoPoints;
             pipelineInfo.pRasterizationState = &rastStatePointInfo;
             pipelineInfo.pStages = pointShaderStages;
 
@@ -755,7 +759,7 @@ namespace CGAL {
             if (renderFace) {
                 //m_devFuncs->vkCmdBindIndexBuffer(cmdBuf, m_buffIndex, 0, VK_INDEX_TYPE_UINT32);
                 m_devFuncs->vkCmdBindPipeline(cmdBuf, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline);
-                m_devFuncs->vkCmdSetLineWidth(cmdBuf, 3.0f);
+                m_devFuncs->vkCmdSetLineWidth(cmdBuf, 0.1f);
                 //m_devFuncs->vkCmdDraw(cb, 342, 1, 0, 0);
                 //m_devFuncs->vkCmdDrawIndexed(cmdBuf, static_cast<uint32_t>(indices.size()), 1, 0, 0, 0);
                 m_devFuncs->vkCmdBindVertexBuffers(cmdBuf, 0, 1, &m_buffVertexFaces, &vbOffset);
@@ -764,7 +768,7 @@ namespace CGAL {
             if (renderWire) {
                 //m_devFuncs->vkCmdBindIndexBuffer(cmdBuf, m_buffIndexGraph, 0, VK_INDEX_TYPE_UINT32);
                 m_devFuncs->vkCmdBindPipeline(cmdBuf, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline_wire);
-                m_devFuncs->vkCmdSetLineWidth(cmdBuf, 1.0f);
+                m_devFuncs->vkCmdSetLineWidth(cmdBuf, 5.0f);
                 m_devFuncs->vkCmdBindVertexBuffers(cmdBuf, 0, 1, &m_buffVertexGraph, &vbOffset);
                 m_devFuncs->vkCmdDraw(cmdBuf, static_cast<uint32_t>(verticesGraph.size()), 1, 0, 0);
                 //m_devFuncs->vkCmdDrawIndexed(cmdBuf, static_cast<uint32_t>(indicesGraph.size()), 1, 0, 0, 0);
@@ -772,7 +776,7 @@ namespace CGAL {
             if (renderPoints) {
                 //m_devFuncs->vkCmdBindIndexBuffer(cmdBuf, m_buffIndex, 0, VK_INDEX_TYPE_UINT32);
                 m_devFuncs->vkCmdBindPipeline(cmdBuf, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline_point);
-                m_devFuncs->vkCmdSetLineWidth(cmdBuf, 10.0f);
+                m_devFuncs->vkCmdSetLineWidth(cmdBuf, 5.0f);
                 m_devFuncs->vkCmdBindVertexBuffers(cmdBuf, 0, 1, &m_buffVertex, &vbOffset);
                 m_devFuncs->vkCmdDraw(cmdBuf, static_cast<uint32_t>(vertices.size()), 1, 0, 0);
                 //m_devFuncs->vkCmdDrawIndexed(cmdBuf, static_cast<uint32_t>(indices.size()), 1, 0, 0, 0);
@@ -846,6 +850,7 @@ namespace CGAL {
         QVulkanDeviceFunctions* m_devFuncs;
 
         VkBuffer m_buffVertex;
+        VkBuffer m_buffVertexPoints;
         VkBuffer m_buffVertexFaces;
         VkBuffer m_buffVertexGraph;
         VkBuffer m_buffIndex;
@@ -853,6 +858,7 @@ namespace CGAL {
         VkDeviceMemory m_buffIndexMem;
         VkDeviceMemory m_buffIndexGraphMem;
         VkDeviceMemory m_buffVertexMem;
+        VkDeviceMemory m_buffVertexMemPoints;
         VkDeviceMemory m_buffVertexMemFaces;
         VkDeviceMemory m_buffVertexMemGraph;
         VkDescriptorBufferInfo m_uniformBufferInfo[QVulkanWindow::MAX_CONCURRENT_FRAME_COUNT];
