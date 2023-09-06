@@ -28,4 +28,3 @@ bool do_collide(
 /// @}
 
 } // end CGAL
-#endif
