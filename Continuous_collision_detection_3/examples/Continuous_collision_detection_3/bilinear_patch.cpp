@@ -36,10 +36,6 @@ FT rand_max{RAND_MAX};
 FT u = FT(std::rand())/rand_max;
 FT v = FT(std::rand())/rand_max;
 
-// =============================
-// Stuff for me to revisit later
-// =============================
-
 Point a(0, 0, 0);
 Point b(1, 0, 1);
 Point c(1, 1, 0);
@@ -50,9 +46,18 @@ BilinearPatch bp = BilinearPatch(a, b, c, d);
 Vector bump(0.,0.,.01);
 Vector huge_bump(0.,0.1,1000.);
 
+// The bilinear patch object can return a point on its surface
+// by passing parametric coordinates to its operator()
 Point surface_point   = bp(0.5, 0.5);
 Point surface_point2  = bp(u, v);
-Point point_below     = ::CGAL::ORIGIN + ((surface_point-::CGAL::ORIGIN) + bump); // meaning phi > 0, not above the surface
+
+// The bilinear patch object has a signed, scaled patch distance function
+// that can be used to affix orientations to any point in space and
+// to determine if a point lies on the surface
+// NOTE: the function is not well-defined when the bilinear patch is planar. 
+//       in this case, the has_on() function uses alternate logic to determine
+//       the truth-value of the predicate.
+Point point_below     = ::CGAL::ORIGIN + ((surface_point-::CGAL::ORIGIN) + bump);
 Point point_above     = ::CGAL::ORIGIN + ((surface_point-::CGAL::ORIGIN) - bump);
 Point point_way_above = ::CGAL::ORIGIN + ((surface_point-::CGAL::ORIGIN) - huge_bump);
 
@@ -62,12 +67,9 @@ std::cout << "Value of phi(point_below) [should be < zero]: "     << bp.signed_s
 std::cout << "Value of phi(point_above) [should be > zero]: "     << bp.signed_scaled_patch_distance(point_above) << "\n";
 std::cout << "Value of phi(point_way_above) [should be >> zero]: "<< bp.signed_scaled_patch_distance(point_way_above) << "\n\n";
 
-
-// Case 1a:
-// Ray r(surface_point, point_above);
-// bool does_intersect = ::CGAL::Intersections::internal::do_intersect_odd_parity(bp, r);
-// std::cout << "Ray originating on the surface does intersect: " << does_intersect << "\n";
-
+// A predicate is provided for determing the parity of intersection between a 
+// ray and the bilinear patch. This is useful for the collision detection 
+// algorithms in this library.
 // Case 1b:
 Ray r = Ray(point_above, point_below);
 bool does_intersect = ::CGAL::do_intersect_odd_parity(bp, r);
@@ -83,10 +85,9 @@ r = Ray(point_way_above, point_below);
 does_intersect = ::CGAL::do_intersect_odd_parity(bp, r);
 std::cout << "Ray originating outside the bounding tetrahedron and passing through does intersect: " << does_intersect << "\n";
 
-//
-// Now we look at some edge cases...
-//
-// Planar patch, but not a parallelogram
+// The ordering of the vertex arguments is important.
+// The constructor assumes that the vertices are provided
+// in an order that produces a cycle around the edges of the patch.
 a = Point(-1, -1, 0);
 b = Point(-1,  1, 0);
 c = Point( 1, -1, 0);
@@ -100,12 +101,10 @@ std::cout << "...confirm planar: " << bp.is_planar() << "\n";
 std::cout << "...confirm non-degenerate: " << !bp.is_degenerate() << "\n";
 std::cout << "...point_above is not on the patch: " << bp.has_on(point_above) << "\n";
 std::cout << "...surface_point is on the patch: " << bp.has_on(surface_point) << "\n";
-//
-// Planar patch, but parallelogram
-a = Point(-1, -1, 0);
-b = Point(-1,  1, 0);
-c = Point( 1, -1, 0);
-d = Point( 1,  1, 0);
+
+
+// Notice how simply rearranging the order of the vertices
+// changes the truth-value of bp.has_on(point_above)
 bp = BilinearPatch(a, b, d, c);
 point_above = Point(0, 1, 0);
 surface_point = Point(-.5, 0, 0);
@@ -115,8 +114,11 @@ std::cout << "...confirm planar: " << bp.is_planar() << "\n";
 std::cout << "...confirm non-degenerate: " << !bp.is_degenerate() << "\n";
 std::cout << "...point_above is now on the patch: " << bp.has_on(point_above) << "\n";
 std::cout << "...surface_point is still on the patch: " << bp.has_on(surface_point) << "\n";
-//
-// Planar patch, but degenerate
+
+
+// It's possible that a bilinear patch is not only planar, which must
+// be accomodated, but actually degenerate. In such a case, the 
+// patch degenerates to either a point or a collection of edges
 a = Point(-2, 0, 0);
 b = Point(-1, 0, 0);
 c = Point( 1, 0, 0);

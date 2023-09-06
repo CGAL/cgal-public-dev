@@ -258,8 +258,8 @@ auto BilinearPatchC3<R>::operator()(const FT& u, const FT& v) const -> Point_3
   Vector_3 interpolant = (
       (ONE-u) * (ONE-v) * (vertex(0) - origin)
     + (ONE-u) * (v)     * (vertex(1) - origin)
-    + (u)     * (ONE-v) * (vertex(2) - origin)
-    + (u)     * (v)     * (vertex(3) - origin)
+    + (u)     * (v)     * (vertex(2) - origin)
+    + (u)     * (ONE-v) * (vertex(3) - origin)
   );
   return origin + interpolant;
 }

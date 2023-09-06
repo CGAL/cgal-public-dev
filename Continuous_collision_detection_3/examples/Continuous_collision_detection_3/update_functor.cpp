@@ -45,12 +45,12 @@ typedef Scene::Scene_face_index         Scene_face_index;
 typedef CGAL::Collision_candidate<Scene_face_index> Collision_candidate;
 typedef std::vector<Collision_candidate>            OutputIterator;
 
-struct Translate_functor {
+struct MyTranslateFunctor {
 
   Transform translation;
   Mesh_index mi{0};
 
-  Translate_functor(Vector translation_vector) : translation(CGAL::TRANSLATION, translation_vector) {}
+  MyTranslateFunctor(Vector translation_vector) : translation(CGAL::TRANSLATION, translation_vector) {}
 
   void operator() (SMesh* mesh, typename Scene::Scene_vertex_index svi) {
     if( mi == svi.mesh_index())
@@ -64,12 +64,12 @@ struct Translate_functor {
   }
 };
 
-struct Swap_current_next_functor {
+struct MySwapFunctor {
 
     Transform translation;
     Mesh_index mi{0};
 
-    Swap_current_next_functor(Mesh_index mi) : mi{mi} {}
+    MySwapFunctor(Mesh_index mi) : mi{mi} {}
 
     void operator() (SMesh* mesh, typename Scene::Scene_vertex_index svi) {
       if( mi == svi.mesh_index())
@@ -109,7 +109,7 @@ int main(int argc, char* argv[])
 
   // Translate next_point
   Vector v(-1.7, -1.7, -1.7);
-  Translate_functor t(v);
+  MyTranslateFunctor t(v);
   scene.update_state(t);
 
   // Draw before
@@ -117,7 +117,7 @@ int main(int argc, char* argv[])
   CGAL::draw(scene.joined_meshes());
 
   // Swap current and next points for visual
-  Swap_current_next_functor scn(Mesh_index(0));
+  MySwapFunctor scn(Mesh_index(0));
   scene.update_state(scn);
 
   // Draw after

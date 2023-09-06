@@ -46,40 +46,21 @@ typedef std::vector<Collision_candidate>      OutputIterator;
 int main(int argc, char* argv[])
 {
 
-  // const std::string inner_sphere_filename = CGAL::data_file_path("meshes/cactus.off");
-  // const std::string outer_sphere_filename = CGAL::data_file_path("meshes/camel.off");
-
-  // Mesh inner_sphere_mesh;
-  // Mesh outer_sphere_mesh;
-
-  // if(!CGAL::IO::read_polygon_mesh(inner_sphere_filename, inner_sphere_mesh))
-  // {
-  //   std::cerr << "Invalid input file for internal sphere." << std::endl;
-  //   return EXIT_FAILURE;
-  // }
-
-  // if(!CGAL::IO::read_polygon_mesh(outer_sphere_filename, outer_sphere_mesh))
-  // {
-  //   std::cerr << "Invalid input file." << std::endl;
-  //   return EXIT_FAILURE;
-  // }
+  Point p1(1.0, 0.0, 0.0);
+  Point q1(0.0, 1.0, 0.0);
+  Point r1(0.0, 0.0, 1.0);
+  Point s1(0.0, 0.0, 0.0);
 
 
-    Point p1(1.0, 0.0, 0.0);
-    Point q1(0.0, 1.0, 0.0);
-    Point r1(0.0, 0.0, 1.0);
-    Point s1(0.0, 0.0, 0.0);
+  double t{.3};
+  Point p2(1.0 + t, t,       t      );
+  Point q2(t,       1.0 + t, t      );
+  Point r2(t,       t,       1.0 + t);
+  Point s2(t,       t,       t      );
 
-
-    double t{.3};
-    Point p2(1.0 + t, t,       t      );
-    Point q2(t,       1.0 + t, t      );
-    Point r2(t,       t,       1.0 + t);
-    Point s2(t,       t,       t      );
-
-    Mesh m1, m2;
-    CGAL::make_tetrahedron(p1, q1, r1, s1, m1);
-    CGAL::make_tetrahedron(p2, q2, r2, s2, m2);
+  Mesh m1, m2;
+  CGAL::make_tetrahedron(p1, q1, r1, s1, m1);
+  CGAL::make_tetrahedron(p2, q2, r2, s2, m2);
 
   std::vector<SMesh> meshes;
   meshes.reserve(2);

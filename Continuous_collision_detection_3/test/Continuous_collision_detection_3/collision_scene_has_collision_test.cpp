@@ -15,6 +15,7 @@
 #include <utility>
 #include <iterator>
 #include <vector>
+#include <cassert>
 
 #include <CGAL/Surface_mesh.h>
 #include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
@@ -88,53 +89,7 @@ int main(int argc, char* argv[])
   scene.update_state(swap_functor);
   scene.update_state(collide_meshes, true);
 
-  std::cout << "Scene before collision..." << std::endl;
-  ::CGAL::draw_collision_scene(scene);
-
-  std::cout << "Scene after collision\n(press 'm' to color the colliding faces white)..." << std::endl;
-  ::CGAL::draw_collision_scene(scene, true);
-
-  collide_meshes = Contraction_functor(Mesh_index(0), p, 0.2);
-  scene.update_state(collide_meshes, true);
-
-  std::cout << "Scene during collision, t=0.2\n(press 'm' to color the colliding faces white)..." << std::endl;
-  ::CGAL::draw_collision_scene(scene, true);
-
-  collide_meshes = Contraction_functor(Mesh_index(0), p, 0.25);
-  scene.update_state(collide_meshes, true);
-
-  std::cout << "Scene during collision, t=0.25\n(press 'm' to color the colliding faces white)..." << std::endl;
-  ::CGAL::draw_collision_scene(scene, true);
-
-  collide_meshes = Contraction_functor(Mesh_index(0), p, 0.3);
-  scene.update_state(collide_meshes, true);
-
-  std::cout << "Scene during collision, t=0.3\n(press 'm' to color the colliding faces white)..." << std::endl;
-  ::CGAL::draw_collision_scene(scene, true);
-
-  collide_meshes = Contraction_functor(Mesh_index(0), p, 0.33);
-  scene.update_state(collide_meshes, true);
-
-  std::cout << "Scene during collision, t=0.33\n(press 'm' to color the colliding faces white)..." << std::endl;
-  ::CGAL::draw_collision_scene(scene, true);
-
-  collide_meshes = Contraction_functor(Mesh_index(0), p, 0.6);
-  scene.update_state(collide_meshes, true);
-
-  std::cout << "Scene during collision, t=0.6\n(press 'm' to color the colliding faces white)..." << std::endl;
-  ::CGAL::draw_collision_scene(scene, true);
-
-  collide_meshes = Contraction_functor(Mesh_index(0), p, 0.64);
-  scene.update_state(collide_meshes, true);
-
-  std::cout << "Scene during collision, t=0.64\n(press 'm' to color the colliding faces white)..." << std::endl;
-  ::CGAL::draw_collision_scene(scene, true);
-
-  collide_meshes = Contraction_functor(Mesh_index(0), p, 0.66);
-  scene.update_state(collide_meshes, true);
-
-  std::cout << "Scene during collision, t=0.66\n(press 'm' to color the colliding faces white)..." << std::endl;
-  ::CGAL::draw_collision_scene(scene, true);
+  assert(CGAL::has_collision(scene));
 
   return EXIT_SUCCESS;
 }

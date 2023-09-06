@@ -12,15 +12,13 @@
 
 #include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
 #include <CGAL/Simple_cartesian.h>
-#include <Bilinear_patch_3.h>
-#include <Trajectories.h>
-#include <Segment_3_Segment_3_do_collide.h>
-#include <Ray_3_Bilinear_patch_3_do_intersect.h>
 #include <CGAL/Interval_nt.h>
 #include <CGAL/Origin.h>
 #include <cstdlib>
 #include <ctime>
 #include <iostream>
+#include <cassert>
+#include <CGAL/CCD_3.h>
 
 typedef CGAL::Exact_predicates_inexact_constructions_kernel  Kernel;
 typedef Kernel::Point_3                   Point;
@@ -54,7 +52,9 @@ P_trajectory s11(s11_past, s11_next);
 S_trajectory s0(s00, s01);
 S_trajectory s1(s10, s11);
 
-std::cout << "Confirm these edges collide: " << CGAL::do_collide(s0, s1) << std::endl;
+assert(CGAL::do_collide(s0, s1));
+
+
 
 s10_past = Point(1,  1, -1);
 s10_next = Point(1, -1, -1);
@@ -76,7 +76,9 @@ s11 = P_trajectory(s11_past, s11_next);
 s0 = S_trajectory(s00, s01);
 s1 = S_trajectory(s10, s11);
 
-std::cout << "Confirm these edges do not collide: " << CGAL::do_collide(s0, s1) << std::endl;
+assert(!CGAL::do_collide(s0, s1));
+
+
 
 s10_past = Point(1,  0,  1);
 s10_next = Point(1,  0, -1);
@@ -98,7 +100,7 @@ s11 = P_trajectory(s11_past, s11_next);
 s0 = S_trajectory(s00, s01);
 s1 = S_trajectory(s10, s11);
 
-std::cout << "Confirm these edges do not collide: " << CGAL::do_collide(s0, s1) << std::endl;
+assert(!CGAL::do_collide(s0, s1));
 
 return EXIT_SUCCESS;
 }
