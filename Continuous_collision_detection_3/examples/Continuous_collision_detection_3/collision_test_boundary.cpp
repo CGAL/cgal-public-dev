@@ -13,8 +13,9 @@
 #include <variant>
 #include <iostream>
 #include <Bilinear_patch_3.h>
-#include <Collision_test_boundaries.h>
 #include <CGAL/Simple_cartesian.h>
+#include <CGAL/Continuous_collision_detection_3/internal/Segment_3_Segment_3_collision_test_boundary.h>
+#include <CGAL/Continuous_collision_detection_3/internal/Point_3_Triangle_3_collision_test_boundary.h>
 
 typedef CGAL::Simple_cartesian<double>  Kernel;
 typedef Kernel::Point_3                 Point;

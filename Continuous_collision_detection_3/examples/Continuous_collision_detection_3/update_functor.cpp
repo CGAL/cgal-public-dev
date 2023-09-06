@@ -22,14 +22,7 @@
 #include <CGAL/Surface_mesh.h>
 #include <CGAL/draw_surface_mesh.h>
 
-#include <Ray_3_Bilinear_patch_3_do_intersect.h>
-#include <AABB_triangle_trajectory_primitive.h>
-#include <Collision_mesh_3.h>
-#include <Collision_scene_3.h>
-#include <Bilinear_patch_3.h>
-#include <Collision_candidate_3.h>
-#include <Collisions_3.h>
-#include <Trajectories.h>
+#include <CGAL/CCD_3.h>
 
 typedef CGAL::Simple_cartesian<double>  Kernel;
 typedef Kernel::Point_3                 Point;
@@ -121,7 +114,7 @@ int main(int argc, char* argv[])
 
   // Draw before
   std::cout << "Visualize current state..." << std::endl;
-  CGAL::draw_color(scene.joined_meshes());
+  CGAL::draw(scene.joined_meshes());
 
   // Swap current and next points for visual
   Swap_current_next_functor scn(Mesh_index(0));
@@ -129,7 +122,7 @@ int main(int argc, char* argv[])
 
   // Draw after
   std::cout << "Visualize next state..." << std::endl;
-  CGAL::draw_color(scene.joined_meshes());
+  CGAL::draw(scene.joined_meshes());
 
   // Return to current state.
   scene.update_state(scn);

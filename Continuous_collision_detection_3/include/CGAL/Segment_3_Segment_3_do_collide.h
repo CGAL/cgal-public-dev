@@ -12,7 +12,7 @@
 #ifndef SEGMENT_3_SEGMENT_3_DO_COLLIDE_H
 #define SEGMENT_3_SEGMENT_3_DO_COLLIDE_H
 
-#include <CGAL/Continuous_collision_detection_3/internal/Collision_test_boundaries.h>
+#include <CGAL/Continuous_collision_detection_3/internal/Segment_3_Segment_3_collision_test_boundary.h>
 
 #include <CGAL/Origin.h>
 #include <CGAL/Trajectories.h>

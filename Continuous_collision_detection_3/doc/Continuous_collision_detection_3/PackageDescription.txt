@@ -1,15 +1,15 @@
 /// \defgroup PkgCollisions3Ref 3D Continuous Collision Detection Reference
 
-/// \defgroup Collisions3Concepts Concepts
+/// \defgroup PkgCollisions3Concepts Concepts
 /// \ingroup PkgCollisions3Ref
 
-/// \defgroup Collisions3Algorithms Algorithm Classes
+/// \defgroup PkgCollisions3Classes Classes
 /// \ingroup PkgCollisions3Ref
 
-/// \defgroup Collisions3Traits Traits Classes
+/// \defgroup PkgCollisions3Predicates Predicates
 /// \ingroup PkgCollisions3Ref
 
-/// \defgroup Collisions3Miscellaneous Miscellaneous
+/// \defgroup PkgCollisions3Functions Functions
 /// \ingroup PkgCollisions3Ref
 
 /*!
@@ -26,56 +26,42 @@
 
 \cgalPkgShortInfoBegin
 \cgalPkgSince{6.0}
-\cgalPkgDependsOn{\ref PkgDEPENDENCY}
 \cgalPkgBib{cgal:jc-ccd3}
 \cgalPkgLicense{\ref licensesGPL "GPL"}
-\cgalPkgDemo{Visualize collisions,viz_collisions.zip}
 \cgalPkgShortInfoEnd
-
 \cgalPkgDescriptionEnd
-
-A subset \f$S \subseteq \mathbb{R}^2 \f$ is convex if for any two points `p` and `q`
-in the set the line segment with endpoints `p` and `q` is contained in \f$ S \f$.
-The convex hull of a set \f$ S \f$ is the smallest convex set containing \f$ S \f$.
-The convex hull of a set of points `P` is a convex polygon with vertices in `P`.
-A point in `P` is an extreme point (with respect to `P`) if it is a vertex
-of the convex hull of `P`.
 
 \cgalClassifedRefPages
 
 \cgalCRPSection{Concepts}
-
 - `CollisionSceneUpdateFunctor`
 - `CollisionTestBoundary`
-- `CollisionTestFunction`
 - `Trajectory`
 
 \cgalCRPSection{Classes}
+- `CGAL::BilinearPatchC3<Kernel>`
+- `CGAL::Collision_mesh<Kernel>`
+- `CGAL::Collision_scene<Kernel>`
+- `CGAL::Point_3_trajectory<Kernel>`
+- `CGAL::Segment_3_trajectory<Kernel>`
+- `CGAL::Triangle_3_trajectory<Kernel>`
 
-- `CGAL::Bilinear_patch_3<Kernel>`
-- `CGAL::Collision_mesh_3<Kernel>`
-- `CGAL::Collision_scene_3<Kernel>`
-- `CGAL::Collision_candidate_3<Primitive>`
+\cgalCRPSection{Predicates}
+- `CGAL::candidate_has_collision()`
+- `CGAL::do_collide()`
+- `CGAL::do_intersect_odd_parity()`
+- `CGAL::has_collision()`
 
 \cgalCRPSection{Functions}
+- `CGAL::get_collisions()`
+- `CGAL::get_collision_candidates()`
+- `CGAL::draw_collision_scene()`
 
-- `CGAL::mark_domain_in_triangulation()`
-
-\cgalCRPSection{Primitives}
-
-- CGAL::Collisions::internal::AABB_Triangle_trajectory_primitive<Kernel, Index>
-
-\cgalCRPSection{Enum}
-- \link CGAL::Triangulation_2::Locate_type `CGAL::Triangulation_2<Traits,Tds>::Locate_type` \endlink
-
-\cgalCRPSection{Draw a Triangulation 2}
-- \link PkgDrawTriangulation2 CGAL::draw<T2>() \endlink
-
-
-\cgalCRPSection{Assertions}
-
-The Ray_3-Bilinear_patch_3 intersection parity test presumes that neither object is degenerate
-and that the origin of the ray does not lie on the patch. Degeneracy is given as a precondition
-in the function itself, but testing for the origin on the patch is not.
+\cgalCRPSection{Undocumented Models}
+- `CGAL::Collisions::internal::Contraction_functor<CollisionScene>
+- `CGAL::Collisions::internal::Point_3_Triangle_3_collision_test_boundary<Kernel>
+- `CGAL::Collisions::internal::Segment_3_Segment_3_collision_test_boundary<Kernel>
+- `CGAL::Collisions::internal::Swap_current_next_functor<CollisionScene>
+- `CGAL::Collisions::internal::Translate_functor<CollisionScene>
 
 */

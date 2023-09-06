@@ -2,10 +2,10 @@ namespace CGAL {
 /*!
 
 \mainpage User Manual
-\anchor Chapter_PACKAGE_NAME
-\anchor chaptermine
+\anchor Chapter_3D_Continuous_Collision_Detection
 \cgalAutoToc
-\author AUTHOR1, AUTHOR2, and AUTHOR3
+
+\author Jeffrey Cochran
 
 This chapter describes the ...
 
@@ -21,7 +21,7 @@ The following example shows ...
 
 \cgalExample{ }
 
-\cgalFigureBegin{figPck,bench.png}
+\cgalFigureBegin{figCCD,collision.gif}
 Left: ...
 \cgalFigureEnd
 

@@ -28,7 +28,15 @@ bool do_collide(
   return has_collision(scene); //
 }
 
-
+template <class K>
+bool do_collide(
+    Collision_mesh<K>& mesh_1,
+    Collision_mesh<K>& mesh_2
+){
+  std::vector< Collision_mesh<K> > meshes{mesh_1, mesh_2};
+  Collision_scene<K> scene = Collision_scene<K>(meshes);
+  return has_collision(scene); //
+}
 
 } // end CGAL
 #endif

@@ -15,24 +15,11 @@
 #include <utility>
 #include <iterator>
 #include <vector>
-//#include <conio.h>
 
-#include <CGAL/intersections.h>
 #include <CGAL/Surface_mesh.h>
-#include <CGAL/draw_surface_mesh.h>
-
 #include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
-#include <Ray_3_Bilinear_patch_3_do_intersect.h>
-#include <AABB_triangle_trajectory_primitive.h>
-#include <Collision_scene_3_has_collision.h>
-#include <Collision_mesh_3.h>
-#include <Collision_scene_3.h>
-#include <Bilinear_patch_3.h>
-#include <Collision_candidate_3.h>
-#include <Collisions_3.h>
-#include <Trajectories.h>
-#include <Update_functors.h>
-#include <draw_collision_scene.h>
+
+#include <CGAL/CCD_3.h>
 
 typedef CGAL::Exact_predicates_inexact_constructions_kernel  Kernel;
 typedef Kernel::Point_3                 Point;

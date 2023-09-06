@@ -12,7 +12,7 @@
 #ifndef POINT_3_TRIANGLE_3_DO_COLLIDE_H
 #define POINT_3_TRIANGLE_3_DO_COLLIDE_H
 
-#include <CGAL/Continuous_collision_detection_3/internal/Collision_test_boundaries.h>
+#include <CGAL/Continuous_collision_detection_3/internal/Point_3_Triangle_3_collision_test_boundary.h>
 
 #include <CGAL/Origin.h>
 #include <CGAL/Trajectories.h>
