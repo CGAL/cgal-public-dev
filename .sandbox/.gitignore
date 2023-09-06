@@ -1,6 +1,0 @@
-*.dll
-*.lib
-build/*
-!build/.keep
-.vscode/*
-../Installation/*
