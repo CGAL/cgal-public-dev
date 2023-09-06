@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
-<svg xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns="http://www.w3.org/2000/svg" version="1.1" xmlns:xl="http://www.w3.org/1999/xlink" viewBox="-1176 1449 2477 1890" width="1238.5" height="945">
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xl="http://www.w3.org/1999/xlink" version="1.1" xmlns:dc="http://purl.org/dc/elements/1.1/" viewBox="-1176 1449 2477 1902" width="866.95" height="665.7">
   <defs/>
-  <g id="Lienzo_5" fill-opacity="1" stroke-opacity="1" stroke="none" fill="none" stroke-dasharray="none">
+  <g id="Lienzo_5" stroke-dasharray="none" fill="none" stroke="none" stroke-opacity="1" fill-opacity="1">
     <title>Lienzo 5</title>
-    <rect fill="white" x="-1176" y="1449" width="2477" height="1890"/>
+    <rect fill="white" x="-1176" y="1449" width="2477" height="1902"/>
     <g id="Lienzo_5_Capa_1">
       <title>Capa 1</title>
       <g id="Graphic_8">
@@ -155,43 +155,43 @@
         <path d="M 1e3 2950 L 875 3075 L 1025 3175 L 1125 3075 Z" stroke="black" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"/>
       </g>
       <g id="Graphic_46">
-        <text transform="translate(-595 1805)" fill="black">
-          <tspan font-family="Helvetica" font-size="24" fill="black" x="0" y="23">(a)</tspan>
+        <text transform="translate(-601.11084 1805)" fill="black">
+          <tspan font-family="Helvetica" font-size="34" fill="black" x="0" y="33">(a)</tspan>
         </text>
       </g>
       <g id="Graphic_47">
-        <text transform="translate(705 1805)" fill="black">
-          <tspan font-family="Helvetica" font-size="24" fill="black" x="0" y="23">(b)</tspan>
+        <text transform="translate(698.8892 1805)" fill="black">
+          <tspan font-family="Helvetica" font-size="34" fill="black" x="0" y="33">(b)</tspan>
         </text>
       </g>
       <g id="Graphic_48">
-        <text transform="translate(-594.3262 2305)" fill="black">
-          <tspan font-family="Helvetica" font-size="24" fill="black" x="0" y="23">(c)</tspan>
+        <text transform="translate(-600.15625 2305)" fill="black">
+          <tspan font-family="Helvetica" font-size="34" fill="black" x="0" y="33">(c)</tspan>
         </text>
       </g>
       <g id="Graphic_49">
-        <text transform="translate(705 2305)" fill="black">
-          <tspan font-family="Helvetica" font-size="24" fill="black" x="0" y="23">(d)</tspan>
+        <text transform="translate(698.8892 2305)" fill="black">
+          <tspan font-family="Helvetica" font-size="34" fill="black" x="0" y="33">(d)</tspan>
         </text>
       </g>
       <g id="Graphic_50">
-        <text transform="translate(-595.6738 2805)" fill="black">
-          <tspan font-family="Helvetica" font-size="24" fill="black" x="0" y="23">(e)</tspan>
+        <text transform="translate(-601.7847 2805)" fill="black">
+          <tspan font-family="Helvetica" font-size="34" fill="black" x="0" y="33">(e)</tspan>
         </text>
       </g>
       <g id="Graphic_51">
-        <text transform="translate(708.33984 2805)" fill="black">
-          <tspan font-family="Helvetica" font-size="24" fill="black" x="0" y="23">(f)</tspan>
+        <text transform="translate(703.6206 2805)" fill="black">
+          <tspan font-family="Helvetica" font-size="34" fill="black" x="0" y="33">(f)</tspan>
         </text>
       </g>
       <g id="Graphic_52">
-        <text transform="translate(-598.33984 3305)" fill="black">
-          <tspan font-family="Helvetica" font-size="24" fill="black" x="0" y="23">(g)</tspan>
+        <text transform="translate(-604.4507 3305)" fill="black">
+          <tspan font-family="Helvetica" font-size="34" fill="black" x="0" y="33">(g)</tspan>
         </text>
       </g>
       <g id="Graphic_53">
-        <text transform="translate(705 3305)" fill="black">
-          <tspan font-family="Helvetica" font-size="24" fill="black" x="0" y="23">(h)</tspan>
+        <text transform="translate(698.8892 3305)" fill="black">
+          <tspan font-family="Helvetica" font-size="34" fill="black" x="0" y="33">(h)</tspan>
         </text>
       </g>
     </g>
