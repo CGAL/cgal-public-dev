@@ -58,10 +58,10 @@
 - `CGAL::draw_collision_scene()`
 
 \cgalCRPSection{Undocumented Models}
-- `CGAL::Collisions::internal::Contraction_functor<CollisionScene>
-- `CGAL::Collisions::internal::Point_3_Triangle_3_collision_test_boundary<Kernel>
-- `CGAL::Collisions::internal::Segment_3_Segment_3_collision_test_boundary<Kernel>
-- `CGAL::Collisions::internal::Swap_current_next_functor<CollisionScene>
-- `CGAL::Collisions::internal::Translate_functor<CollisionScene>
+- `CGAL::Collisions::internal::Contraction_functor<CollisionScene>`
+- `CGAL::Collisions::internal::Point_3_Triangle_3_collision_test_boundary<Kernel>`
+- `CGAL::Collisions::internal::Segment_3_Segment_3_collision_test_boundary<Kernel>`
+- `CGAL::Collisions::internal::Swap_current_next_functor<CollisionScene>`
+- `CGAL::Collisions::internal::Translate_functor<CollisionScene>`
 
 */

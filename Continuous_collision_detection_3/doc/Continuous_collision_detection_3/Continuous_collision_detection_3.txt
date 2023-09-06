@@ -3,27 +3,52 @@ namespace CGAL {
 
 \mainpage User Manual
 \anchor Chapter_3D_Continuous_Collision_Detection
-\cgalAutoToc
 
+\cgalAutoToc
 \author Jeffrey Cochran
 
-This chapter describes the ...
+\image html collision.png
+\image latex collision.png
 
-\section secmydefinitions Definitions
+This chapter describes the 3D collision detection
+functionality provided by \cgal.
+Section \ref Chapter_3D_Continuous_Collision_Detection_Overview outlines the
+motivation for and capabilities of the 3D collision detection in \cgal.
+Section \ref Chapter_3D_Continuous_Collision_Detection_Software_Design presents
+the overall software design of the 3D collision detection in \cgal.
 
-Section on definitions here ...
+\section Chapter_3D_Continuous_Collision_Detection_Overview Overview
 
-\section secmyexamples Examples
+Detecting collisions between moving objects in three-dimensions is an expensive and
+error-prone endeavor. \cgal provides predicates for the exact detection of collisions 
+between moving triangle meshes, as well as for their constituent primitives, assuming
+that each point traverses a linear path. \cgal accelerates these predicates by narrowing 
+the collision queries using an AABB Tree, and further culling collision candidates that 
+fail an inexpensive test.
 
-\subsection myFirstExample First Example
+All collisions between triangles, and therefore triangle meshes, can be reduced to either:
 
-The following example shows ...
+- a collision between an edge and an edge, or
 
-\cgalExample{ }
+- a collision between a point and a triangle
 
-\cgalFigureBegin{figCCD,collision.gif}
-Left: ...
-\cgalFigureEnd
+Thus, \cgal provides a `do_collide()` predicate for both cases, as well as overloads
+for pairs of triangles and any arbitrary number of triangle meshes.
+
+\section Chapter_3D_Continuous_Collision_Detection_Software_Design Software Design
+
+The state of moving objects over a specified time can be characterized by their
+initial positions and either a linearized velocity or the projected position at the
+end of the time period. \cgal assumes the latter representation, and provides the 
+`Trajectory` concept for storing the current and next positions of geometric objects, as well
+as the `Collision_mesh` class for storing the current and next positions of a `Surface_mesh`. 
+
+\cgal provides its most general collision queries in the context of a `Collision_scene`, 
+which serves as a container for any number of `Collision_mesh` objects, provided as vector.
+Centralizing the data in this way greatly simplifies the culling of unnecessary
+collision queries. Collisions between any of the contained collision meshes can then be
+detected by the `has_collision()` predicate, which takes the collision scene as its 
+argument. Currently, self-collisions within a mesh are ignored.
 
 */
 } /* namespace CGAL */
