@@ -86,6 +86,15 @@ class Collision_mesh : public Surface_mesh<typename Kernel::Point_3> {
         typedef typename boost::graph_traits<Collision_mesh<K>>::halfedge_descriptor    halfedge_descriptor;
         typedef typename boost::graph_traits<Collision_mesh<K>>::face_descriptor        face_descriptor;
 
+<<<<<<< HEAD
+=======
+        using Base::point;
+        using Base::source;
+        using Base::target;
+        using Base::halfedge;
+        using Base::next;
+
+>>>>>>> 179e4fecdcf60c91874b798f25a083d958edb4b1
         Point_map vnext_point_;
         Vertex_color_map vcolor_;
         Edge_color_map ecolor_;
@@ -157,12 +166,15 @@ class Collision_mesh : public Surface_mesh<typename Kernel::Point_3> {
         void color(const Face_index& fi, CGAL::IO::Color c);
 
         /// @}
+<<<<<<< HEAD
 
         using Base::point;
         using Base::source;
         using Base::target;
         using Base::halfedge;
         using Base::next;
+=======
+>>>>>>> 179e4fecdcf60c91874b798f25a083d958edb4b1
 };
 
 /// @}
