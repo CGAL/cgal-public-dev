@@ -18,8 +18,13 @@
 
 namespace CGAL{
 
+/// \ingroup do_collide_grp
+/// @{
 
-
+/*!
+    \brief Returns true if a collision occurs between any of the collision meshes provided
+    \details This function efficiently computes the occurence of a collision by only considering those triangle trajectories whose bounding isocuboids intersect.
+*/
 template <class K>
 bool do_collide(
     std::vector< Collision_mesh<K> >& meshes
@@ -28,6 +33,10 @@ bool do_collide(
   return has_collision(scene); //
 }
 
+/*!
+    \brief Returns true if a collision occurs between any of the collision meshes provided
+    \details This function efficiently computes the occurence of a collision by only considering those triangle trajectories whose bounding isocuboids intersect.
+*/
 template <class K>
 bool do_collide(
     Collision_mesh<K>& mesh_1,
@@ -38,5 +47,8 @@ bool do_collide(
   return has_collision(scene); //
 }
 
+/// @}
+
 } // end CGAL
+
 #endif

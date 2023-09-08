@@ -21,7 +21,7 @@ typedef Kernel::Point_3                 Point;
 typedef Kernel::Vector_3                Vector;
 typedef Kernel::Triangle_3              Triangle;
 typedef Kernel::Segment_3               Segment;
-typedef CGAL::BilinearPatchC3<Kernel>   Bilinear_patch;
+typedef CGAL::Bilinear_patch_3<Kernel>   Bilinear_patch;
 
 using Collision_test_boundary_PT = CGAL::Collisions::internal::Point_3_Triangle_3_collision_test_boundary<Kernel>;
 using Collision_test_boundary_SS = CGAL::Collisions::internal::Segment_3_Segment_3_collision_test_boundary<Kernel>;

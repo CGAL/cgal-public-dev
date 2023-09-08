@@ -22,7 +22,7 @@ typedef ::CGAL::Simple_cartesian<double>  Kernel;
 typedef Kernel::Point_3                   Point;
 typedef Kernel::Vector_3                  Vector;
 typedef Kernel::Ray_3                     Ray;
-typedef ::CGAL::BilinearPatchC3<Kernel>   BilinearPatch;
+typedef ::CGAL::Bilinear_patch_3<Kernel>   BilinearPatch;
 typedef ::CGAL::Point_3_trajectory<Kernel> P_trajectory;
 typedef ::CGAL::Triangle_3_trajectory<Kernel> T_trajectory;
 typedef Kernel::FT                        FT;

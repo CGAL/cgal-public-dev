@@ -24,7 +24,7 @@ typedef ::CGAL::Simple_cartesian<double>  Kernel;
 typedef Kernel::Point_3                   Point;
 typedef Kernel::Vector_3                  Vector;
 typedef Kernel::Ray_3                     Ray;
-typedef ::CGAL::BilinearPatchC3<Kernel>   BilinearPatch;
+typedef ::CGAL::Bilinear_patch_3<Kernel>   BilinearPatch;
 typedef Kernel::FT                        FT;
 typedef Kernel::Triangle_3                Triangle;
 
@@ -48,8 +48,8 @@ Vector huge_bump(0.,0.1,1000.);
 
 // The bilinear patch object can return a point on its surface
 // by passing parametric coordinates to its operator()
-Point surface_point   = bp(0.5, 0.5);
-Point surface_point2  = bp(u, v);
+Point surface_point   = bp.get_point_from_parametric_coordinates(0.5, 0.5);
+Point surface_point2  = bp.get_point_from_parametric_coordinates(u, v);
 
 // The bilinear patch object has a signed, scaled patch distance function
 // that can be used to affix orientations to any point in space and

@@ -25,7 +25,7 @@ typedef ::CGAL::Simple_cartesian<double>  Kernel;
 typedef Kernel::Point_3                   Point;
 typedef Kernel::Vector_3                  Vector;
 typedef Kernel::Ray_3                     Ray;
-typedef ::CGAL::BilinearPatchC3<Kernel>   BilinearPatch;
+typedef ::CGAL::Bilinear_patch_3<Kernel>   BilinearPatch;
 typedef Kernel::FT                        FT;
 typedef Kernel::Triangle_3                Triangle;
 

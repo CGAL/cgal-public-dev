@@ -25,52 +25,59 @@ namespace CGAL{
 
 
 
-  // TODO: speed this up.
-  template <class K>
-  bool do_collide(
-      const Point_3_trajectory<K>& p,
-      const Triangle_3_trajectory<K>& t,
-      typename K::Ray_3       test_ray
-  ){
-    using Test_boundary = ::CGAL::Collisions::internal::Point_3_Triangle_3_collision_test_boundary<K>;
-    using Ray = typename K::Ray_3;
-    using Point = typename K::Point_3;
-    using FT = typename K::FT;
+/// \ingroup do_collide_grp
+/// @{
 
-    Test_boundary test_boundary(
-      p.current(),
-      p.next(),
-      t.current(),
-      t.next()
-    );
+/// \brief Returns true if a collision occurs between the point trajectory and triangle trajectory provided
+/// \details This function returns true if the provided ray intersects the constructed collision boundary an odd number of times.
+/// \note The source of the provided ray must be the origin, even though this is not checked as as precondition.
+template <class K>
+bool do_collide(
+    const Point_3_trajectory<K>& p,
+    const Triangle_3_trajectory<K>& t,
+    typename K::Ray_3       test_ray
+){
+  using Test_boundary = ::CGAL::Collisions::internal::Point_3_Triangle_3_collision_test_boundary<K>;
+  using Ray = typename K::Ray_3;
+  using Point = typename K::Point_3;
+  using FT = typename K::FT;
 
-    size_t num_intersections = test_boundary.num_ray_intersections( test_ray );
+  Test_boundary test_boundary(
+    p.current(),
+    p.next(),
+    t.current(),
+    t.next()
+  );
 
-    return (num_intersections % 2) == 1; //
-  }
+  size_t num_intersections = test_boundary.num_ray_intersections( test_ray );
 
-  template <class K>
-  bool do_collide(
-      const Point_3_trajectory<K>& p,
-      const Triangle_3_trajectory<K>& t
-  ){
-    using FT = typename K::FT;
-    using Point = typename K::Point_3;
+  return (num_intersections % 2) == 1; //
+}
 
-    FT random_max = FT(RAND_MAX);
-    FT x = FT(std::rand()) / random_max;
-    FT y = FT(std::rand()) / random_max;
-    FT z = FT(std::rand()) / random_max;
+/// \brief Returns true if a collision occurs between the point trajectory and triangle trajectory provided
+/// \details This function returns true if a random ray emanating from the origin intersects the constructed collision boundary an odd number of times.
+template <class K>
+bool do_collide(
+    const Point_3_trajectory<K>& p,
+    const Triangle_3_trajectory<K>& t
+){
+  using FT = typename K::FT;
+  using Point = typename K::Point_3;
 
-    typename K::Ray_3 test_ray(
-        Point(::CGAL::ORIGIN),
-        Point(x, y, z)
-    );
+  FT random_max = FT(RAND_MAX);
+  FT x = FT(std::rand()) / random_max;
+  FT y = FT(std::rand()) / random_max;
+  FT z = FT(std::rand()) / random_max;
 
-    return do_collide(p, t, test_ray); //
-  }
+  typename K::Ray_3 test_ray(
+      Point(::CGAL::ORIGIN),
+      Point(x, y, z)
+  );
 
+  return do_collide(p, t, test_ray); //
+}
 
+/// @}
 
 } // end CGAL
 

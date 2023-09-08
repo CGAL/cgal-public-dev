@@ -26,43 +26,106 @@
 namespace CGAL {
 
 
+/// \ingroup PkgCollisions3Classes
+/// @{
 
-template <class K>
+/// @brief The class `Collision_scene` serves as an aggregator of `Collision_mesh` objects
+/// to be evaluated for mutual collisions. 
+/// @details The class provides standardized indexing across the primitives of all contained
+/// collision meshes, as well as an AABB Tree that tracks the trajectories of these primitives. 
+/// `Collision_scene` serves as the standard data structure for querying and 
+/// visualizing collisions between an arbitrary number of collision meshes.
+template <class Kernel>
 class Collision_scene {
 
     public:
 
-        template<class Local_index> struct Scene_index;
-        struct Mesh_index;
 
-        typedef          K                              Kernel;
-        typedef typename K::Point_3                     Point;
-        typedef typename K::Vector_3                    Vector;
+        /// \name Member Classes
+        /// @{
+
+        /// @brief a simple index wrapper provided to enable pretty-printing of mesh indices.
+        struct Mesh_index;
+        
+        /// @brief A template that combines `Mesh_index` and `Local_index`
+        /// to create a unique index for primitives within the scene.
+        /// \tparam Local_index is any of the indices provided through `Surface_mesh`, e.g., `Surface_mesh::Vertex_index`
+        template<class Local_index> struct Scene_index;
+
+        /// @}
+
+        /// \name Types
+        /// @{
+
+        /// @brief The underlying Kernel used by the contained `Collision_mesh` objects.
+        typedef          Kernel                         K;
+
+        /// @brief The type of collision mesh contained in the scene.
         typedef          Collision_mesh<K>              Mesh;
+
+        /// @brief An alias for `Collision_mesh::Point`.
+        typedef typename K::Point_3                     Point;
+
+        /// @brief An alias for `Collision_mesh::Vector`.
+        typedef typename K::Vector_3                    Vector;
+
+        /// @brief An alias for `Collision_mesh::Vertex_index`.
         typedef typename Mesh::Vertex_index             Vertex_index;
+
+        /// @brief An alias for `Collision_mesh::Edge_index`.
         typedef typename Mesh::Edge_index               Edge_index;
+
+        /// @brief An alias for `Collision_mesh::Halfedge_index`.
         typedef typename Mesh::Halfedge_index           Halfedge_index;
+
+        /// @brief An alias for `Collision_mesh::Face_index`.
         typedef typename Mesh::Face_index               Face_index;
+
+        /// @brief An alias for `Collision_mesh::Face_range`.
         typedef typename Mesh::Face_range               Face_range;
+
+        /// @brief An alias for `Collision_mesh::Vertex_range`.
         typedef typename Mesh::Vertex_range             Vertex_range;
 
-        typedef          Scene_index<Vertex_index>                                  Scene_vertex_index;
-        typedef          Scene_index<Face_index>                                    Scene_face_index;
-        typedef          std::vector<Scene_vertex_index>                            Scene_vertex_range;
-        typedef          std::vector<Scene_face_index>                              Scene_face_range;
+        /// @brief An index type that uniquely identifies a vertex by the combination of 
+        /// its local `Surfaced_mesh::Vertex_index` and the corresponding `Mesh_index`.
+        typedef          Scene_index<Vertex_index>          Scene_vertex_index;
 
+        /// @brief An index type that uniquely identifies a vertex by the combination of 
+        /// its local `Surfaced_mesh::Face_index` and the corresponding `Mesh_index`.
+        typedef          Scene_index<Face_index>            Scene_face_index;
+
+        /// @brief A vector type containing `Scene_vertex_index` objects associated
+        /// with vertices in the scene.
+        typedef          std::vector<Scene_vertex_index>    Scene_vertex_range;
+
+        /// @brief A vector type containing `Scene_face_index` objects associated
+        /// with faces in the scene.
+        typedef          std::vector<Scene_face_index>      Scene_face_range;
+
+        /// @brief A type that contains six pointers to the `Point_3` objects that comprise a triangle trajectory
         typedef          ::CGAL::Collisions::internal::Triangle_trajectory_observer<K, Scene_face_index>        Trajectory;
+
+        /// @brief A type that wraps `Collision_scene::Trajectory` for use in an `AABB_tree`.
         typedef          ::CGAL::Collisions::internal::AABB_Triangle_trajectory_primitive<K, Scene_face_index>  Trajectory_primitive;
 
+        /// @brief A vector type containing `Collision_scene::Trajectory` objects associated
+        /// with the scene.
         typedef          std::vector<Trajectory>                                    Trajectory_range;
+
+        /// @brief The traits type used in `Collision_scene::Tree`
         typedef          ::CGAL::AABB_traits<K, Trajectory_primitive>               AABB_traits;
+
+        /// @brief The type of `AABB_tree`.
         typedef          AABB_tree<AABB_traits>                                     Tree;
+
+        /// @brief An alias for `AABB_tree::Primitive_id`.
         typedef typename Tree::Primitive_id                                         Primitive_id;
 
+        /// @}
 
     private:
         Trajectory make_trajectory(const Mesh & mesh, const Scene_face_index& scene_face_index);
-
         Scene_vertex_range  vertices_;
         Scene_face_range    faces_;
         Trajectory_range    trajectories_;
@@ -71,20 +134,49 @@ class Collision_scene {
 
     public:
 
+
+        /// \name Creation
+        /// @{
+
+        /// @brief Instantiates a scene defined by the vector of collision meshes it contains, each
+        /// of which are assigned a `Mesh_index` corresponding to their index in the vector.
         explicit Collision_scene(std::vector<Mesh> & meshes);
 
+        /// @}
+
+        /// \name Methods
+        /// @{
+
+        /// @brief Returns a vector of all the vertex indices contained in the scene.
         const Scene_vertex_range& vertices() const;
+
+        /// @brief Returns a vector of all the face indices contained in the scene.
         const Scene_face_range& faces() const;
+
+        /// @brief Returns a reference to the `AABB_tree` that covers all the triangle 
+        /// trajectories in the scene.
         const Tree& tree() const;
 
+        /// @brief returns a single collision mesh, the result of joining all collision 
+        /// meshes contained in the scene.
+        /// @details The join operation boostraps `Surface_mesh::join()`
         Collision_mesh<K> joined_meshes();
 
+        /// @brief Applies the specified `CGAL::Color` to the face corresponding to 
+        /// the given `Scene_face_index`.
         void color(const Scene_face_index& ti, CGAL::IO::Color c);
 
+        /// @brief An interface by which a user can update any data associated with the vertex indices of the 
+        /// scene using a functor that models the `CollisionSceneUpdateFunctor` concept.
+        /// \tparam UpdateFunctor is a model of the concept `CollisionSceneUpdateFunctor`.
         template <class UpdateFunctor>
         void update_state(UpdateFunctor& update_functor, bool update_tree=false);
 
+        /// @brief Recomputes the `AABB_tree` that covers all the triangle trajectories 
+        /// contained in the scene.
         void update_tree();
+
+        /// @}
 };
 
 
@@ -130,6 +222,8 @@ Collision_scene<K>::Collision_scene(std::vector<Mesh> & meshes) : meshes_{meshes
 
     trajectory_tree_ = Tree(trajectories_.begin(),trajectories_.end());
 };
+
+/// @}
 
 
 // ========================

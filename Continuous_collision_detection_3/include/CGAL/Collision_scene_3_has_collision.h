@@ -22,8 +22,50 @@
 
 namespace CGAL{
 
+/// \ingroup PkgCollisions3Predicates
+/// @{
 
+/// @brief  Returns true if any pair of triangle trajectories in the scene collides.
+/// @details The possible pairs of triangles are culled to a small number of viable candidates with an inexpensive test, and these are evaluated with `do_collide()`.
+template <class K>
+bool has_collision(
+    const Collision_scene<K>& scene
+){
+  using Candidate = Collision_candidate<typename Collision_scene<K>::Trajectory>;
 
+  std::vector<Candidate> candidates = get_collision_candidates(scene);
+
+  for( const auto& candidate : candidates )
+  {
+    if( candidate_has_collision(candidate) ){
+      return true;
+    }
+  }
+  return false; //
+}
+
+/// @brief  Returns true if the two triangle trajectories contained in the candidate collide.
+/// @details The collision is detected using `do_collide()`.
+template <class CollisionCandidate>
+bool candidate_has_collision(
+    const CollisionCandidate& candidate
+){
+
+  using K     = typename CollisionCandidate::K;
+  using Index = typename CollisionCandidate::Index;
+
+  Triangle_3_trajectory<K> trajectory_0 = ::CGAL::Collisions::internal::to_Triangle_3_trajectory<K, Index>(*candidate.first);
+  Triangle_3_trajectory<K> trajectory_1 = ::CGAL::Collisions::internal::to_Triangle_3_trajectory<K, Index>(*candidate.second);
+
+  return do_collide(trajectory_0, trajectory_1);
+}
+
+/// @}
+
+/// \ingroup PkgCollisions3Functions
+/// @{
+
+/// @brief Returns a vector of all collision candidates that were determined to have a collision.
 template <class K>
 std::vector<Collision_candidate<typename Collision_scene<K>::Trajectory>>
 get_collisions(
@@ -46,37 +88,7 @@ get_collisions(
   return collisions;
 }
 
-template <class K>
-bool has_collision(
-    const Collision_scene<K>& scene
-){
-  using Candidate = Collision_candidate<typename Collision_scene<K>::Trajectory>;
-
-  std::vector<Candidate> candidates = get_collision_candidates(scene);
-
-  for( const auto& candidate : candidates )
-  {
-    if( candidate_has_collision(candidate) ){
-      return true;
-    }
-  }
-  return false; //
-}
-
-template <class CollisionCandidate>
-bool candidate_has_collision(
-    const CollisionCandidate& candidate
-){
-
-  using K     = typename CollisionCandidate::K;
-  using Index = typename CollisionCandidate::Index;
-
-  Triangle_3_trajectory<K> trajectory_0 = ::CGAL::Collisions::internal::to_Triangle_3_trajectory<K, Index>(*candidate.first);
-  Triangle_3_trajectory<K> trajectory_1 = ::CGAL::Collisions::internal::to_Triangle_3_trajectory<K, Index>(*candidate.second);
-
-  return do_collide(trajectory_0, trajectory_1);
-}
-
+/// @brief Returns a vector of all collision candidates that were flagged as possibly colliding.
 template <class K>
 auto get_collision_candidates(
   const Collision_scene<K>& scene
@@ -106,6 +118,7 @@ auto get_collision_candidates(
     return candidates;
 }
 
+/// @}
 
 
 } // end CGAL
