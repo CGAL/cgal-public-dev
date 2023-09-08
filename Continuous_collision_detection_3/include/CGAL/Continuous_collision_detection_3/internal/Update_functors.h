@@ -39,7 +39,7 @@ struct Swap_current_next_functor {
 template <class CollisionScene>
 struct Translate_functor {
 
-    using K             = typename CollisionScene::Kernel;
+    using K             = typename CollisionScene::K;
     using Mesh_index    = typename CollisionScene::Mesh_index;
     using Vertex_index  = typename CollisionScene::Scene_vertex_index;
     using Vector        = typename CollisionScene::Vector;
@@ -69,7 +69,7 @@ struct Translate_functor {
 template <class CollisionScene>
 struct Contraction_functor {
 
-    using K             = typename CollisionScene::Kernel;
+    using K             = typename CollisionScene::K;
     using Mesh_index    = typename CollisionScene::Mesh_index;
     using Vertex_index  = typename CollisionScene::Scene_vertex_index;
     using Point         = typename CollisionScene::Point;

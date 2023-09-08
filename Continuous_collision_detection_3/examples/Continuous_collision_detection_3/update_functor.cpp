@@ -38,7 +38,7 @@ typedef Scene::Vertex_index             Vertex_index;
 typedef Scene::Halfedge_index           Halfedge_index;
 typedef Scene::Mesh_index               Mesh_index;
 typedef Scene::Face_index               Face_index;
-typedef CGAL::BilinearPatchC3<Kernel>   BilinearPatch;
+typedef CGAL::Bilinear_patch_3<Kernel>   BilinearPatch;
 typedef Scene::Primitive_id             Primitive_id;
 typedef Scene::Scene_face_index         Scene_face_index;
 

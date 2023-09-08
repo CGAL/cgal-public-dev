@@ -37,7 +37,7 @@ class Point_3_Triangle_3_collision_test_boundary {
     typedef typename K::Vector_3                            Vector;
     typedef typename K::Ray_3                               Ray;
     typedef typename K::FT                                  FT;
-    typedef typename ::CGAL::BilinearPatchC3<K>             Bilinear_patch;
+    typedef typename ::CGAL::Bilinear_patch_3<K>             Bilinear_patch;
     typedef          std::variant<Triangle, Bilinear_patch> Facet;
 
   private:

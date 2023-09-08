@@ -1,3 +1,15 @@
 @INCLUDE = ${CGAL_DOC_PACKAGE_DEFAULTS}
 
 PROJECT_NAME = "CGAL ${CGAL_DOC_VERSION} - 3D Continuous Collision Detection"
+
+INPUT += ${CGAL_PACKAGE_INCLUDE_DIR}/CGAL/Bilinear_patch_3.h
+INPUT += ${CGAL_PACKAGE_INCLUDE_DIR}/CGAL/Collision_candidate_3.h
+INPUT += ${CGAL_PACKAGE_INCLUDE_DIR}/CGAL/Collision_mesh_3_Collision_mesh_3_do_collide.h
+INPUT += ${CGAL_PACKAGE_INCLUDE_DIR}/CGAL/Point_3_Triangle_3_do_collide.h
+INPUT += ${CGAL_PACKAGE_INCLUDE_DIR}/CGAL/Segment_3_Segment_3_do_collide.h
+INPUT += ${CGAL_PACKAGE_INCLUDE_DIR}/CGAL/Triangle_3_Triangle_3_do_collide.h
+INPUT += ${CGAL_PACKAGE_INCLUDE_DIR}/CGAL/Trajectories.h
+INPUT += ${CGAL_PACKAGE_INCLUDE_DIR}/CGAL/Collision_scene_3_has_collision.h
+INPUT += ${CGAL_PACKAGE_INCLUDE_DIR}/CGAL/draw_collision_scene.h
+INPUT += ${CGAL_PACKAGE_INCLUDE_DIR}/CGAL/Collision_scene_3.h
+INPUT += ${CGAL_PACKAGE_INCLUDE_DIR}/CGAL/Collision_mesh_3.h

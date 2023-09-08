@@ -35,7 +35,7 @@ typedef CGAL::Collision_mesh<Kernel>    SMesh;
 typedef CGAL::Collision_scene<Kernel>   Scene;
 typedef Scene::Mesh_index               Mesh_index;
 typedef Scene::Face_index               Face_index;
-typedef CGAL::BilinearPatchC3<Kernel>   BilinearPatch;
+typedef CGAL::Bilinear_patch_3<Kernel>   BilinearPatch;
 typedef Scene::Primitive_id             Primitive_id;
 typedef Scene::Scene_face_index         Scene_face_index;
 typedef Scene::Trajectory               Trajectory;

@@ -157,36 +157,42 @@ namespace internal {
 }
 
 
-template <class R_>
-class BilinearPatchC3
+
+/*!
+\ingroup PkgCollisions3Classes
+
+The class `CGAL::Bilinear_patch_3` provides a bilinear-patch implementation for cartesian
+and related kernels. The patch is defined by the bilinear interpolation between four points
+in space, \f$ { x_0, x_1, x_2, x_3 \in \mathbb{K}^3 }\f$. Any point on the surface can be 
+expressed as \f$ { p(u,v) = (1-u)(1-v)x_0 + u(1-v)x_1 + (1-u)vx_2 + uvx_3  }\f$. 
+
+*/
+template <class Kernel>
+class Bilinear_patch_3
 {
-  typedef Bilinear_patch::internal::has_on_pred<R_, R_::Has_filtered_predicates> Has_on_predicate;
-  typedef Bilinear_patch::internal::orientation_pred<R_, R_::Has_filtered_predicates> Orientation_predicate;
+  typedef Bilinear_patch::internal::has_on_pred<Kernel, Kernel::Has_filtered_predicates> Has_on_predicate;
+  typedef Bilinear_patch::internal::orientation_pred<Kernel, Kernel::Has_filtered_predicates> Orientation_predicate;
 
-  typedef typename R_::FT                   FT;
-  typedef typename R_::Point_3              Point_3;
-  typedef typename R_::Vector_3             Vector_3;
-  typedef typename R_::Plane_3              Plane_3;
-  typedef typename R_::Triangle_3           Triangle_3;
-  typedef typename R_::Segment_3            Segment_3;
-  typedef typename R_::Tetrahedron_3        Tetrahedron_3;
-  typedef          Interval_nt_advanced     IA_NT;
+  typedef typename Kernel::FT           FT;
+  typedef typename Kernel::Point_3      Point_3;
+  typedef typename Kernel::Vector_3     Vector_3;
+  typedef typename Kernel::Triangle_3   Triangle_3;
+  typedef typename Kernel::Segment_3    Segment_3;
 
-  typedef          std::array<Point_3, 4>         Rep;
-  typedef typename R_::template Handle<Rep>::type Base;
+  typedef          std::array<Point_3, 4>             Rep;
+  typedef typename Kernel::template Handle<Rep>::type Base;
 
   Base base;
+
   Origin origin = ::CGAL::ORIGIN;
-  Has_on_predicate has_on_pred = Has_on_predicate();
+
+  Has_on_predicate      has_on_pred      = Has_on_predicate();
   Orientation_predicate orientation_pred = Orientation_predicate();
 
-public:
   std::vector<Triangle_3> triangles_;
   std::vector<Segment_3>  boundary_;
-  typedef R_                                R;
-  typedef typename R::Tetrahedron_3         Tetrahedron;
 
-  Tetrahedron bounding_tetrahedron;
+  typename Kernel::Tetrahedron_3 bounding_tetrahedron;
 
   bool IS_PLANAR_{false};
   bool HAS_TRIANGULAR_DECOMPOSITION_{false};
@@ -196,13 +202,31 @@ public:
   bool COLLINEAR_013_{false};
   bool COLLINEAR_123_{false};
 
-  BilinearPatchC3() {}
-  // NOTE:  specify the points as a cycle around the perimeter!
-  //                           q00,              q01,              q11,              q10
-  BilinearPatchC3(const Point_3 &p, const Point_3 &q, const Point_3 &r, const Point_3 &s)
+public:
+  /// \name Types
+  /// @{
+
+  /// @brief The kernel type
+  using K = Kernel;
+
+  /// @brief The type of tetrahedron returned by `Bilinear_patch_3::tetrahedron()`
+  typedef typename K::Tetrahedron_3 Tetrahedron_3;
+
+  /// @}
+
+  /// \name Creation
+  /// @{
+
+  /// @brief Creates an empty bilinear patch
+  Bilinear_patch_3() {}
+
+  /// @brief Creates a bilinear patch with corners p, q, r, and s.
+  /// @details The constructor assumes that the vertices are provided in an order
+  /// such that pqrsp is a valid cycle around the edges of the bilinear patch.
+  Bilinear_patch_3(const Point_3 &p, const Point_3 &q, const Point_3 &r, const Point_3 &s)
     : base(CGAL::make_array(p, q, r, s))
     {
-      bounding_tetrahedron = Tetrahedron(p, q, r, s);
+      bounding_tetrahedron = Tetrahedron_3(p, q, r, s);
 
       IS_PLANAR_ = ::CGAL::coplanar(p,q,r,s);
 
@@ -223,25 +247,77 @@ public:
       populate_boundary_();
     }
 
-  Point_3 operator()(const FT& u, const FT& v) const; // Returns a point given its corresponding parametric values
-  bool  operator==(const BilinearPatchC3& bp) const;
-  bool  operator!=(const BilinearPatchC3& bp) const;
-  friend std::ostream& operator<<(std::ostream& os, BilinearPatchC3 const& bp)
+  /// @}
+
+  /// \name Operators
+  /// @{
+
+  /// @brief Returns true if the bilinear patches are equivalent.
+  /// @details The bilinear patches are deemed equivalent if each patch
+  /// is defined by the same set of vertices and the order of the vertices 
+  /// in each patch produces equivalent cycles.
+  bool  operator==(const Bilinear_patch_3& bp) const;
+
+  /// @brief Returns true if `operator==()` returns false.
+  bool  operator!=(const Bilinear_patch_3& bp) const;
+
+  friend std::ostream& operator<<(std::ostream& os, Bilinear_patch_3 const& bp)
   {
       return (os << bp.vertex(0) << "\n" << bp.vertex(1) << "\n"<< bp.vertex(2) << "\n"<< bp.vertex(3) << "\n" );
   }
 
+  /// @}
 
+  /// \name Predicates
+  /// @{
+
+  /// @brief Returns the orientation of the point with respect to the bilinear patch.
+  /// @details The orientation is determined by evaluation of the function
+  /// `signed_scaled_patch_distance()`.
   ::CGAL::Orientation orientation(const Point_3& p) const;
+
+  /// @brief Returns true if the point lies on the bilinear patch
+  /// @details If the bilinear patch is non-planar, then the point is determined
+  /// to lie on the patch by evaluation of the function `signed_scaled_patch_distance()`.
+  /// If the bilinear patch is planar but nondegenerate, the bilinear patch is decomposed into  
+  /// triangles, and the `Triangle_3::has_on()` method is used. If the bilinear patch is
+  /// degenerate, then it is decomposed into segments, and the `Segment_3::has_on()` method is
+  /// used.
   bool  has_on(const Point_3& p) const;
+
+  /// @brief Returns true if the bilinear patch is equivalent to a collection of segments. 
   bool  is_degenerate() const;
+
+  /// @brief Returns true if the corners of the bilinear patch are coplanar. 
   bool  is_planar() const;
 
+  /// @}
+
+  /// \name Methods
+  /// @{
+
+  /// @brief Returns a point on the bilinear patch given its corresponding parametric values.
+  Point_3 get_point_from_parametric_coordinates(const FT& u, const FT& v) const;
+
+  /// @brief Returns the point corresponding to the ith vertex. 
   const Point_3 & vertex(int i) const;
+
+  /// @brief Returns the point corresponding to the ith vertex.
   const Point_3 & operator[](int i) const;
+
+  /// @brief Returns the tetrahedron characterized by the four vertices of the bilinear patch.
   const Tetrahedron_3 & tetrahedron() const;
+
+  /// @brief Returns a signed, scaled patch distance between the bilinear patch and the provided point.
+  /// @details The signed scaled patch distance is computed as \f$ { d_{013}(x)d_{123}(x) - d_{012}(x)d_{023}(x) } \f$,
+  /// where \f$ { d_{pqr}(x) } \f$ is six-times the signed distance between the x and the plane defined by p, q, and r.
   FT signed_scaled_patch_distance( const Point_3& x) const;
 
+  /// @brief Returns a reference to the triangles that compromise a planar bilinear patch.
+  /// \pre The bilinear patch must be planar and non-degenerate for this method to be well-defined.
+  const std::vector<Triangle_3>& triangles() const;
+
+  /// @}
 
 private:
   void populate_triangles_();
@@ -250,8 +326,8 @@ private:
 };
 
 
-template <class R>
-auto BilinearPatchC3<R>::operator()(const FT& u, const FT& v) const -> Point_3
+template <class K>
+auto Bilinear_patch_3<K>::get_point_from_parametric_coordinates(const FT& u, const FT& v) const -> Point_3
 {
   FT ONE{1.};
   // Interpolates between the points of the bilnear patch
@@ -264,12 +340,12 @@ auto BilinearPatchC3<R>::operator()(const FT& u, const FT& v) const -> Point_3
   return origin + interpolant;
 }
 
-template <class R>
-auto BilinearPatchC3<R>::signed_scaled_patch_distance(
+template <class K>
+auto Bilinear_patch_3<K>::signed_scaled_patch_distance(
   const Point_3 & x
 ) const -> FT
 {
-  return Bilinear_patch::internal::signed_scaled_patch_distance<R>(
+  return Bilinear_patch::internal::signed_scaled_patch_distance<K>(
     x,
     vertex(0),
     vertex(1),
@@ -277,9 +353,9 @@ auto BilinearPatchC3<R>::signed_scaled_patch_distance(
     vertex(3));
 }
 
-template < class R >
+template < class K >
 bool
-BilinearPatchC3<R>::operator==(const BilinearPatchC3<R> &bp) const
+Bilinear_patch_3<K>::operator==(const Bilinear_patch_3<K> &bp) const
 {
   if (::CGAL::identical(base, bp.base))
       return true;
@@ -287,7 +363,7 @@ BilinearPatchC3<R>::operator==(const BilinearPatchC3<R> &bp) const
   int i;
   for(i=0; i<4; i++)
     if ( vertex(0) == bp.vertex(i) )
-       break;
+      break;
 
   return (
         (i<4)
@@ -297,37 +373,39 @@ BilinearPatchC3<R>::operator==(const BilinearPatchC3<R> &bp) const
   );
 }
 
-template < class R >
+template < class K >
 inline
 bool
-BilinearPatchC3<R>::operator!=(const BilinearPatchC3<R> &bp) const
+Bilinear_patch_3<K>::operator!=(const Bilinear_patch_3<K> &bp) const
 {
   return !(*this == bp);
 }
 
-template < class R >
-const typename BilinearPatchC3<R>::Point_3 &
-BilinearPatchC3<R>::vertex(int i) const
+template < class K >
+const typename Bilinear_patch_3<K>::Point_3 &
+Bilinear_patch_3<K>::vertex(int i) const
 {
   if (i<0) i=(i%4)+4;
   else if (i>3) i=i%4;
-  return (i==0) ? get_pointee_or_identity(base)[0] :
-         (i==1) ? get_pointee_or_identity(base)[1] :
-         (i==2) ? get_pointee_or_identity(base)[2] :
-                  get_pointee_or_identity(base)[3];
+  return (
+    (i==0) ?  get_pointee_or_identity(base)[0] :
+    (i==1) ?  get_pointee_or_identity(base)[1] :
+    (i==2) ?  get_pointee_or_identity(base)[2] :
+              get_pointee_or_identity(base)[3]
+  );
 }
 
-template < class R >
+template < class K >
 inline
-const typename BilinearPatchC3<R>::Point_3 &
-BilinearPatchC3<R>::operator[](int i) const
+const typename Bilinear_patch_3<K>::Point_3 &
+Bilinear_patch_3<K>::operator[](int i) const
 {
   return vertex(i);
 }
 
-template <class R>
+template <class K>
 ::CGAL::Orientation
-BilinearPatchC3<R>::orientation(const Point_3 &p) const
+Bilinear_patch_3<K>::orientation(const Point_3 &p) const
 {
   CGAL_precondition(!is_planar());
   return orientation_pred(
@@ -339,9 +417,9 @@ BilinearPatchC3<R>::orientation(const Point_3 &p) const
   );
 }
 
-template <class R>
+template <class K>
 bool
-BilinearPatchC3<R>::has_on(const Point_3 &p) const
+Bilinear_patch_3<K>::has_on(const Point_3 &p) const
 {
   bool has_on_{false};
   if( HAS_TRIANGULAR_DECOMPOSITION_ )
@@ -381,29 +459,29 @@ BilinearPatchC3<R>::has_on(const Point_3 &p) const
   return has_on_;
 }
 
-template < class R >
+template < class K >
 bool
-BilinearPatchC3<R>::is_degenerate() const
+Bilinear_patch_3<K>::is_degenerate() const
 {
     return IS_DEGENERATE_;
 }
 
-template < class R >
+template < class K >
 bool
-BilinearPatchC3<R>::is_planar() const
+Bilinear_patch_3<K>::is_planar() const
 {
   return IS_PLANAR_;
 }
 
-template < class R >
-const typename BilinearPatchC3<R>::Tetrahedron_3 &
-BilinearPatchC3<R>::tetrahedron() const
+template < class K >
+const typename Bilinear_patch_3<K>::Tetrahedron_3 &
+Bilinear_patch_3<K>::tetrahedron() const
 {
   return bounding_tetrahedron;
 }
 
-template <class R>
-void BilinearPatchC3<R>::populate_triangles_()
+template <class K>
+void Bilinear_patch_3<K>::populate_triangles_()
 {
 
   if( !COLLINEAR_012_ && !COLLINEAR_230_ && !COLLINEAR_013_ && !COLLINEAR_123_ )
@@ -412,7 +490,7 @@ void BilinearPatchC3<R>::populate_triangles_()
     // No collinear triplets and orientations agree
     Vector_3 normal_012 = normal(vertex(0), vertex(1), vertex(2));
     Vector_3 normal_230 = normal(vertex(2), vertex(3), vertex(0));
-    if( scalar_product(normal_012, normal_230) > typename R::FT(0) )
+    if( scalar_product(normal_012, normal_230) > typename K::FT(0) )
     {
       triangles_.reserve(2);
       triangles_.push_back(Triangle_3(vertex(0), vertex(1), vertex(2)));
@@ -486,14 +564,21 @@ void BilinearPatchC3<R>::populate_triangles_()
   // Unreachable
 }
 
-template <class R>
-void BilinearPatchC3<R>::populate_boundary_()
+template <class K>
+void Bilinear_patch_3<K>::populate_boundary_()
 {
   boundary_.reserve(4);
   boundary_.push_back(Segment_3(vertex(0), vertex(1)));
   boundary_.push_back(Segment_3(vertex(1), vertex(2)));
   boundary_.push_back(Segment_3(vertex(2), vertex(3)));
   boundary_.push_back(Segment_3(vertex(3), vertex(0)));
+}
+
+template <class K>
+auto Bilinear_patch_3<K>::triangles() const -> const std::vector<Triangle_3>& 
+{
+  CGAL_precondition(IS_PLANAR_ && !IS_DEGENERATE_); 
+  return triangles_;
 }
 
 

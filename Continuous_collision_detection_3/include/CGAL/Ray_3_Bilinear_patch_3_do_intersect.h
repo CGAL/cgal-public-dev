@@ -24,17 +24,19 @@
 
 namespace CGAL {
 
+/// \ingroup PkgCollisions3Predicates
+/// @{
 
-
-// TODO: filter this predicate. 
-// TODO: make sure that bp is constructed exactly in 
-//       the collision test boundary.
+/// @brief Returns true if the number of ray-bilinear-patch intersections is odd
 template <class K>
 bool
 do_intersect_odd_parity(
-  const typename CGAL::BilinearPatchC3<K> &bp,
+  const typename CGAL::Bilinear_patch_3<K> &bp,
   const typename K::Ray_3 &r
 ) {
+  // TODO: filter this predicate. 
+  // TODO: make sure that bp is constructed exactly in 
+  //       the collision test boundary.
 
   using Triangle = typename K::Triangle_3;
   using Segment = typename K::Segment_3;
@@ -54,7 +56,7 @@ do_intersect_odd_parity(
   //       ray is coplanar with the bilinear patch
   if(bp.is_planar()) {
     bool does_intersect_odd_parity_{false};
-    for(const auto& t : bp.triangles_)
+    for(const auto& t : bp.triangles())
     {
       does_intersect_odd_parity_ = does_intersect_odd_parity_ || do_intersect(t, r);
     }
@@ -107,6 +109,7 @@ do_intersect_odd_parity(
   return false;
 }
 
+/// @}
 
 
 } // namespace CGAL

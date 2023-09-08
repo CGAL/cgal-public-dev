@@ -39,7 +39,7 @@
 - `Trajectory`
 
 \cgalCRPSection{Classes}
-- `CGAL::BilinearPatchC3<Kernel>`
+- `CGAL::Bilinear_patch_3<Kernel>`
 - `CGAL::Collision_mesh<Kernel>`
 - `CGAL::Collision_scene<Kernel>`
 - `CGAL::Point_3_trajectory<Kernel>`
