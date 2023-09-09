@@ -23,6 +23,7 @@
 #include <CGAL/intersections.h>
 
 #include <iostream>
+#include <variant>
 
 namespace CGAL {
 
@@ -501,10 +502,9 @@ void Bilinear_patch_3<K>::populate_triangles_()
     // Case 2a
     // No collinear triplets, but e01 and e23 intersect
     const auto intersection_01_23 = intersection(Segment_3(vertex(0), vertex(1)), Segment_3(vertex(2), vertex(3)));
-    if( intersection_01_23 ) {
+    if( const Point_3* intersection_point = std::get_if<Point_3>(&*intersection_01_23) ) {
       // This cannot be false or return a segment, since nothing is collinear
       // but an intersection has occurred.
-      const Point_3* intersection_point = boost::get<Point_3>(&*intersection_01_23);
       triangles_.reserve(2);
       triangles_.push_back(Triangle_3(vertex(0), *intersection_point, vertex(3)));
       triangles_.push_back(Triangle_3(vertex(1), vertex(2), *intersection_point));
@@ -514,10 +514,9 @@ void Bilinear_patch_3<K>::populate_triangles_()
     // Case 2b
     // No collinear triplets, but e12 and e30 intersect
     const auto intersection_12_30 = intersection(Segment_3(vertex(1), vertex(2)), Segment_3(vertex(3), vertex(0)));
-    if( intersection_12_30 ) {
+    if( const Point_3* intersection_point = std::get_if<Point_3>(&*intersection_12_30) ) {
       // This cannot be false or return a segment, since nothing is collinear
       // but an intersection has occurred.
-      const Point_3* intersection_point = boost::get<Point_3>(&*intersection_12_30);
       triangles_.reserve(2);
       triangles_.push_back(Triangle_3(vertex(1), *intersection_point, vertex(0)));
       triangles_.push_back(Triangle_3(vertex(2), vertex(3), *intersection_point));
