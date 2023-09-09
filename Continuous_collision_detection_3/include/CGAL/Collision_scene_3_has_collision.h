@@ -29,11 +29,12 @@ namespace CGAL{
 /// @details The possible pairs of triangles are culled to a small number of viable candidates with an inexpensive test, and these are evaluated with `do_collide()`.
 template <class K>
 bool has_collision(
-    const Collision_scene<K>& scene
+    const Collision_scene<K>& scene,
+    bool  include_self_collisions=false
 ){
   using Candidate = Collision_candidate<typename Collision_scene<K>::Trajectory>;
 
-  std::vector<Candidate> candidates = get_collision_candidates(scene);
+  std::vector<Candidate> candidates = get_collision_candidates(scene, include_self_collisions);
 
   for( const auto& candidate : candidates )
   {
@@ -69,11 +70,12 @@ bool candidate_has_collision(
 template <class K>
 std::vector<Collision_candidate<typename Collision_scene<K>::Trajectory>>
 get_collisions(
-    const Collision_scene<K>& scene
+    const Collision_scene<K>& scene,
+    bool  include_self_collisions=false
 ){
   using Candidate = Collision_candidate<typename Collision_scene<K>::Trajectory>;
 
-  std::vector<Candidate> candidates = get_collision_candidates(scene);
+  std::vector<Candidate> candidates = get_collision_candidates(scene, include_self_collisions);
   std::vector<Candidate> collisions;
 
   std::copy_if(
@@ -91,7 +93,8 @@ get_collisions(
 /// @brief Returns a vector of all collision candidates that were flagged as possibly colliding.
 template <class K>
 auto get_collision_candidates(
-  const Collision_scene<K>& scene
+  const Collision_scene<K>& scene,
+  bool  include_self_collisions=false
 ) -> std::vector< Collision_candidate<typename Collision_scene<K>::Trajectory> >
 {
     typedef Collision_candidate<
@@ -103,15 +106,24 @@ auto get_collision_candidates(
     std::vector<Candidate> candidates;
     candidates.reserve(candidate_primitive_pairs.size());
 
-    // TODO: modify collision candidates to limit the testing
-    //       of adjacent faces so that they ignore common vertices/edges.
-    //       Once this is done, can consider self-intersections again.
-    // TODO: for now the code ignore self-intersections within a mesh. Steal code from PMP::self_intersections for optimized version of the predicate
-    for( const auto& primitive_pair : candidate_primitive_pairs ) {
-      if( primitive_pair.first->index.mesh_index() !=  primitive_pair.second->index.mesh_index()) {
+    if( include_self_collisions ) {
+      for( const auto& primitive_pair : candidate_primitive_pairs ) {
         candidates.push_back(
-            Candidate(primitive_pair)
+          Candidate(primitive_pair)
         );
+      }
+    } else {
+      // TODO: modify collision candidates to limit the testing
+      //       of adjacent faces so that they ignore common vertices/edges.
+      //       Once this is done, can consider self-collisions cheaply.
+      // TODO: for now the code can ignore self-intersections within a mesh. 
+      //       Steal code from PMP::self_intersections for optimized version of the predicate
+      for( const auto& primitive_pair : candidate_primitive_pairs ) {
+        if( primitive_pair.first->index.mesh_index() !=  primitive_pair.second->index.mesh_index()) {
+          candidates.push_back(
+              Candidate(primitive_pair)
+          );
+        }
       }
     }
 

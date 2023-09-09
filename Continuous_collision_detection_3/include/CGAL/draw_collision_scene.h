@@ -27,9 +27,14 @@ namespace CGAL {
 /// \ingroup PkgCollisions3Functions
 /// @{
 
-/// @brief Draws all the meshes in the scene. If `draw_next` is true, the meshes will be drawn with their points at their "next" location, i.e., at the end of the time period under consideration, and any triangles that collide will be colored white.
+/// @brief Draws all the meshes in the scene with collisions highlighted. 
+/// @details If `draw_next` is true, the meshes will be drawn with their 
+/// points at their "next" location, i.e., at the end of the time period 
+/// under consideration, and any triangles that collide will be colored white.
+/// If `include_self_collisions` is true, then collisions of a mesh with itself
+/// will also be detected and highlighted.
 template <class CollisionScene>
-void draw_collision_scene( CollisionScene& scene, bool draw_next=false )
+void draw_collision_scene( CollisionScene& scene, bool draw_next=false, bool include_self_collisions=false )
 {
     using K             = typename CollisionScene::K;
     using Swap_functor  = ::CGAL::Collisions::internal::Swap_current_next_functor<CollisionScene>;
@@ -42,7 +47,7 @@ void draw_collision_scene( CollisionScene& scene, bool draw_next=false )
     if( draw_next ) {
 
         // Color collisions white
-        auto collisions = CGAL::get_collisions(scene);
+        auto collisions = CGAL::get_collisions(scene, include_self_collisions);
         auto collision_indices = convert_candidates_to_indices(collisions);
         for( const auto& fi : collision_indices )
         {
