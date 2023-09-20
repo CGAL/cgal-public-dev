@@ -254,6 +254,21 @@ namespace qem
                 }
                 neighbors_graph.close();
             }
+
+        }
+        int get_component_count()
+        {
+            return component_count;
+        }
+        std::vector<int> get_generators_per_component(std::vector<int>& m_generators)
+        {
+            std::vector<int> generators_per_component(component_count,0);
+            for(int j = 0 ; j < m_generators.size();j++)
+            {
+                generators_per_component[m_component[m_generators[j]]]++;
+            }
+
+            return generators_per_component;
         }
         /// @brief The region growing algorithm that will find the best generator for each cluster
         /// using a priority queue and the cost function compute_collapse_loss
@@ -586,6 +601,10 @@ namespace qem
             csv_writer->writeDataErrorGeneratorsToCSV("error_generators.csv");
             csv_writer->writeDataErrorPointsToCSV("error_points.csv");
             csv_writer->printWorst();
+        }
+        void set_distance_weight(double dist_weight)
+        {
+            m_dist_weight = dist_weight;
         }
 
             private:

@@ -29,7 +29,7 @@ class Variational_shape_reconstruction
         KNNTree m_tree;
         int m_num_knn = 12;
         
-
+        double m_euclidean_distance_weight;
         //Region growing
         std::map<int, int> m_vlabels;
         std::vector<QEM_metric> m_generators_qem;
@@ -56,7 +56,8 @@ class Variational_shape_reconstruction
     ) :
     m_verbose_level(verbose_level),
     m_init_qem_generator(init_qem_generator),
-    m_generator_count(generator_count)
+    m_generator_count(generator_count),
+    m_euclidean_distance_weight(euclidean_distance_weight)
     {
         pointset_ = pointset;
         load_points(pointset_);
@@ -70,7 +71,7 @@ class Variational_shape_reconstruction
         m_spacing = CGAL::compute_average_spacing<CGAL::Sequential_tag>(m_points, 6,
          CGAL::parameters::point_map(CGAL::First_of_pair_property_map<std::pair<Point, std::size_t>>()));            
 
-        m_cluster = std::make_shared<Clustering>(pointset, m_num_knn,euclidean_distance_weight, m_verbose_level);
+        m_cluster = std::make_shared<Clustering>(pointset, m_num_knn,m_euclidean_distance_weight, m_verbose_level);
 
         std::cout<<"Initialization.\n";
         switch(m_init_qem_generator)
@@ -79,32 +80,32 @@ class Variational_shape_reconstruction
                 init_random_generators_kmeanspp();
                 if(m_verbose_level!=VERBOSE_LEVEL::LOW)
                 {
-                    std::cout<<"Initialization method : KMEANS_PLUSPLUS";
+                    std::cout<<"Initialization method : KMEANS_PLUSPLUS\n";
                 }
             break;
             case INIT_QEM_GENERATOR::KMEANS_FARTHEST:
                 init_random_generators_kmeans_farthest();
                 if(m_verbose_level!=VERBOSE_LEVEL::LOW)
                 {
-                    std::cout<<"Initialization method : KMEANS_FARTHEST";
+                    std::cout<<"Initialization method : KMEANS_FARTHEST\n";
                 }
             break;
             default:
                 init_random_generators();
                 if(m_verbose_level!=VERBOSE_LEVEL::LOW)
                 {
-                    std::cout<<"Initialization method : RANDOM";
+                    std::cout<<"Initialization method : RANDOM\n";
                 }
             break;
 
         }
         m_cluster->initialize_qem_map(m_tree);
-        m_cluster->initialize_vertex_qem(m_tree, m_generators);    
+        m_cluster->initialize_vertex_qem(m_tree, m_generators);
+
+        auto point_cloud = get_point_cloud_clustered();
         if(m_verbose_level==VERBOSE_LEVEL::HIGH)
         {
             // Write a point cloud of the generators with random colors
-
-            auto point_cloud = get_point_cloud_clustered();
             std::ofstream clustering_file;
             clustering_file.open("clustering_init.ply");
             clustering_file << "ply\n"
@@ -170,6 +171,32 @@ class Variational_shape_reconstruction
                                                 Point(m_bbox.max(0), m_bbox.max(1), m_bbox.max(2))));
         if(m_verbose_level != VERBOSE_LEVEL::LOW)
             std::cout << "Diagonal of bounding box: " << m_diag << std::endl;
+    }
+    std::vector<int> get_generators_per_component()
+    {
+
+        auto g = m_cluster->get_generators_per_component(m_generators);
+        for(int i = 0; i < g.size(); i++)
+        {
+            std::cout<< "\ncomponent "<<i<<" gen count : "<<g[i]<<"\n";
+        }
+        return g;
+    }
+    int get_component_count()
+    {
+        return m_cluster->get_component_count();
+    }
+    bool is_partionning_valid()
+    {
+        return m_vlabels.size() == pointset_.size();
+    }
+    void set_knn(int num_knn)
+    {
+        m_num_knn = num_knn;
+    }
+    void set_distance_weight(int euclidean_distance_weight)
+    {
+        m_cluster->set_distance_weight(euclidean_distance_weight);
     }
     /// @brief Initialize with random generators
     void init_random_generators()
@@ -350,14 +377,14 @@ class Variational_shape_reconstruction
         }
     }
     /// @brief automatic reconstruction
-    void reconstruction()
+    bool reconstruction()
     {
         const double dist_ratio = 10e-3;
         const double fitting = 0.4;
         const double coverage = 0.3;
         const double complexity = 0.3;
         
-        reconstruction(dist_ratio, fitting, coverage, complexity,true);
+        return reconstruction(dist_ratio, fitting, coverage, complexity,true);
     }
 
     Pointset get_point_cloud_clustered()
@@ -386,7 +413,7 @@ class Variational_shape_reconstruction
         m_cluster->write_csv();
     }
     // reconstruction 
-    void reconstruction(double dist_ratio, double fitting, double coverage, double complexity, bool use_soft_reconstruction=false)
+    bool reconstruction(double dist_ratio, double fitting, double coverage, double complexity, bool use_soft_reconstruction=false)
     {
         create_adjacent_edges();
         create_candidate_facets();
@@ -397,8 +424,10 @@ class Variational_shape_reconstruction
         if(!valid && use_soft_reconstruction)
         {
             std::cout<<"Manifold Reconstruction failed, trying with Nonmanifold Reconstruction\n";
-             non_manifold_reconstruction(dist_ratio, fitting, coverage, complexity);
+            non_manifold_reconstruction(dist_ratio, fitting, coverage, complexity);
+            valid = m_triangle_fit.get_mesh().is_valid();
         }
+        return valid;
     }
     void create_adjacent_edges()
     {
