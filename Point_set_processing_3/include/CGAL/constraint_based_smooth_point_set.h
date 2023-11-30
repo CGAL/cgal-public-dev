@@ -7,7 +7,7 @@
 // $Id$
 // SPDX-License-Identifier: GPL-3.0-or-later OR LicenseRef-Commercial
 //
-// Author(s) : 
+// Author(s) : William Wen
 
 #ifndef CGAL_CONSTRAINT_BASED_SMOOTH_POINT_SET_H
 #define CGAL_CONSTRAINT_BASED_SMOOTH_POINT_SET_H
@@ -255,7 +255,7 @@ point_type_t feature_detection(
 
   if (dominant_eigenvalue_count == 0)
   {
-    dominant_eigenvalue_count = 3; //corner  
+    dominant_eigenvalue_count = 3; //corner
   }
 
   return static_cast<point_type_t>(dominant_eigenvalue_count);
@@ -273,7 +273,7 @@ typename Kernel::Point_3 calculate_new_point(
   std::pair<Eigen::Vector3d, Eigen::Matrix3d>& eigens,
   typename Kernel::FT update_threshold,
   typename Kernel::FT delta)
-{ 
+{
   // basic geometric types
   typedef typename Kernel::FT FT;
   typedef typename Kernel::Vector_3 Vector;
@@ -435,7 +435,7 @@ constraint_based_smooth_point_set(
 
   // initiate a KD-tree search for points
   Neighbor_query neighbor_query (points, point_map);
-  
+
   // automatic parameter calculation
   if (neighbor_radius == 0)
   {
@@ -505,7 +505,7 @@ constraint_based_smooth_point_set(
     <boost::tuple<iterator,
                   typename std::vector<std::pair<Eigen::Vector3d, Eigen::Matrix3d>>::iterator,
                   typename std::vector<typename Kernel::Vector_3>::iterator> > Zip_iterator_3;
-  
+
   CGAL::for_each<ConcurrencyTag>
     (CGAL::make_range (boost::make_zip_iterator (boost::make_tuple
                                                 (points.begin(), nvt_optimized_eigens.begin(), new_normals.begin())),
