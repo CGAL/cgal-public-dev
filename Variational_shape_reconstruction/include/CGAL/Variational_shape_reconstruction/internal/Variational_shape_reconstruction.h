@@ -73,28 +73,28 @@ class Variational_shape_reconstruction
 
         m_cluster = std::make_shared<Clustering>(pointset, m_num_knn,m_euclidean_distance_weight, m_verbose_level);
 
-        std::cout<<"Initialization.\n";
+        std::cout << "Initialization" << std::endl;
         switch(m_init_qem_generator)
         {
             case INIT_QEM_GENERATOR::KMEANS_PLUSPLUS:
                 init_random_generators_kmeanspp();
-                if(m_verbose_level!=VERBOSE_LEVEL::LOW)
+                if(m_verbose_level != VERBOSE_LEVEL::LOW)
                 {
                     std::cout<<"Initialization method : KMEANS_PLUSPLUS\n";
                 }
             break;
             case INIT_QEM_GENERATOR::KMEANS_FARTHEST:
                 init_random_generators_kmeans_farthest();
-                if(m_verbose_level!=VERBOSE_LEVEL::LOW)
+                if(m_verbose_level != VERBOSE_LEVEL::LOW)
                 {
-                    std::cout<<"Initialization method : KMEANS_FARTHEST\n";
+                    std::cout << "Initialization method : KMEANS_FARTHEST" << std::endl;
                 }
             break;
             default:
                 init_random_generators();
-                if(m_verbose_level!=VERBOSE_LEVEL::LOW)
+                if(m_verbose_level != VERBOSE_LEVEL::LOW)
                 {
-                    std::cout<<"Initialization method : RANDOM\n";
+                    std::cout << "Initialization method : RANDOM" << std::endl;
                 }
             break;
 
@@ -103,7 +103,7 @@ class Variational_shape_reconstruction
         m_cluster->initialize_vertex_qem(m_tree, m_generators);
 
         auto point_cloud = get_point_cloud_clustered();
-        if(m_verbose_level==VERBOSE_LEVEL::HIGH)
+        if(m_verbose_level == VERBOSE_LEVEL::HIGH)
         {
             // Write a point cloud of the generators with random colors
             std::ofstream clustering_file;
@@ -143,7 +143,7 @@ class Variational_shape_reconstruction
                 point_index++;
             }
             clustering_file.close();
-            std::cout<<"clustering at initialization written to disk.\n";
+            std::cout << "clustering at initialization written to disk" << std::endl;
         }
 
     }
@@ -364,18 +364,20 @@ class Variational_shape_reconstruction
             std::cerr << "Guided split in " << elapsed << "[us]" << std::endl;
         return clusters_count;
     }
+
     /// @brief automatic clustering
     void clustering(const size_t steps,const double split_threshold)
     {
-        int generators = 6;
+        // int generators = 6; // ???
         int iteration = 0;
-        while(generators > 5 )
+
+        while(iteration++ < steps)
         {
-            
             region_growing_and_update_poles(steps);
-            generators = guided_split_clusters(split_threshold, iteration++);
+            // generators = guided_split_clusters(split_threshold, iteration++);
         }
     }
+
     /// @brief automatic reconstruction
     bool reconstruction()
     {
@@ -384,7 +386,7 @@ class Variational_shape_reconstruction
         const double coverage = 0.3;
         const double complexity = 0.3;
         
-        return reconstruction(dist_ratio, fitting, coverage, complexity,true);
+        return reconstruction(dist_ratio, fitting, coverage, complexity, true);
     }
 
     Pointset get_point_cloud_clustered()
