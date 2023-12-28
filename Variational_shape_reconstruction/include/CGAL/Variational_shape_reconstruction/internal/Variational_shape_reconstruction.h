@@ -27,7 +27,6 @@ class Variational_shape_reconstruction
     private:
 
         // generators
-        size_t m_nb_generators;
         std::vector<int> m_generators;
 
         // geometry
@@ -66,7 +65,6 @@ class Variational_shape_reconstruction
     ) :
     m_verbose_level(verbose_level),
     m_init_qem_generators(init_qem_generator),
-    m_nb_generators(nb_generators),
     m_euclidean_distance_weight(euclidean_distance_weight)
     {
         pointset_ = pointset;
@@ -87,21 +85,21 @@ class Variational_shape_reconstruction
         switch(m_init_qem_generators)
         {
             case INIT_QEM_GENERATORS::KMEANS_PLUSPLUS:
-                init_generators_kmeanspp();
+                init_generators_kmeanspp(nb_generators);
                 if(m_verbose_level != VERBOSE_LEVEL::LOW)
                 {
                     std::cout << "Initialization method : KMEANS_PLUSPLUS" << std::endl;
                 }
             break;
             case INIT_QEM_GENERATORS::FARTHEST:
-                init_generators_farthest();
+                init_generators_farthest(nb_generators);
                 if(m_verbose_level != VERBOSE_LEVEL::LOW)
                 {
                     std::cout << "Initialization method : FARTHEST" << std::endl;
                 }
             break;
             default:
-                init_random_generators();
+                init_random_generators(nb_generators);
                 if(m_verbose_level != VERBOSE_LEVEL::LOW)
                 {
                     std::cout << "Initialization method : RANDOM" << std::endl;
@@ -110,7 +108,7 @@ class Variational_shape_reconstruction
 
         }
         m_cluster->initialize_qem_per_point(m_tree);
-        m_cluster->initialize_vertex_qem(m_tree, m_generators);
+        m_cluster->initialize_qem_per_vertex(m_tree, m_generators);
 
         auto point_cloud = get_point_cloud_clustered();
         if(m_verbose_level == VERBOSE_LEVEL::HIGH)
@@ -212,7 +210,7 @@ class Variational_shape_reconstruction
     }
 
     /// @brief Initialize with random generators
-    void init_random_generators()
+    void init_random_generators(const std::size_t nb_generators)
     {
         std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
 
@@ -225,7 +223,7 @@ class Variational_shape_reconstruction
         std::shuffle(num_range.begin(), num_range.end(), random_generator);
 
         std::set<int> selected_indices;
-        for(int i = 0; i < m_nb_generators; i++)
+        for(int i = 0; i < nb_generators; i++)
             selected_indices.insert(num_range[i]);
             
         for(auto &elem: selected_indices)
@@ -241,7 +239,7 @@ class Variational_shape_reconstruction
     }
 
     /// @brief Initiatlize starting with one random generator and kmeans++
-    void init_generators_kmeanspp()
+    void init_generators_kmeanspp(const std::size_t nb_generators)
     {
         std::vector<int> num_range(pointset_.size());
         std::iota(num_range.begin(), num_range.end(), 0);
@@ -254,7 +252,7 @@ class Variational_shape_reconstruction
             m_generators.push_back(elem);
         }   
         std::mt19937 gen;
-        for(int i = 1; i < m_nb_generators; i++)
+        for(int i = 1; i < nb_generators; i++)
         {
             std::vector<float> distance_list;
             for( Pointset::const_iterator pointset_it = pointset_.begin(); pointset_it != pointset_.end(); ++ pointset_it )
@@ -279,7 +277,7 @@ class Variational_shape_reconstruction
 
     }
     /// @brief Initiatlize starting with one random generator and kmeans farthest
-    void init_generators_farthest()
+    void init_generators_farthest(const std::size_t nb_generators)
     {
         std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
 
@@ -300,7 +298,7 @@ class Variational_shape_reconstruction
             m_generators.push_back(elem);
         }   
 
-        for(int i = 1; i < m_nb_generators; i++)
+        for(int i = 1; i < nb_generators; i++)
         {
             // fixme: use FT
             std::vector<double> distance_list;
@@ -333,14 +331,15 @@ class Variational_shape_reconstruction
         
     }
 
-    /// @brief region growing 
-    void region_growing()
+    /// @brief partition
+    void partition()
     {
         std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
 
         m_vlabels.clear();
         m_generators_qem.clear();
-        m_cluster->region_growing(m_vlabels, m_generators_qem, m_generators, true);
+
+        m_cluster->partition(m_vlabels, m_generators_qem, m_generators, true);
         assert(m_vlabels.size() == pointset_.size());
 
         if(m_verbose_level > VERBOSE_LEVEL::LOW)
@@ -358,14 +357,14 @@ class Variational_shape_reconstruction
         flag = m_cluster->update_generators(m_vlabels, m_generators_qem, m_generators);
     }
 
-    /// @brief region growing for n user-defined steps 
+    /// @brief partitioning and update generators for n user-defined steps 
     /// @param steps 
-    void region_growing_and_update_generators(size_t steps)
+    void partition_and_update_generators(size_t steps)
     {
         bool flag = true;
         for(int i = 0; i < steps && flag; i++)
         {
-            region_growing();
+            partition();
             update_generators(flag);
         }
     }
@@ -398,8 +397,7 @@ class Variational_shape_reconstruction
         int iteration = 0;
         while(generators > 5 )
         {
-            
-            region_growing_and_update_generators(steps);
+            partition_and_update_generators(steps);
             generators = guided_split_clusters(split_threshold, iteration++);
         }
     }
@@ -414,22 +412,21 @@ class Variational_shape_reconstruction
         return reconstruction(dist_ratio, fitting, coverage, complexity,true);
     }
 
-    // fixme: is this only for debugging?
+    // fixme: if this is only for debugging, then comment and prefix
     Pointset get_point_cloud_clustered()
     {
         Pointset pointset;
         std::vector<Vector> colors;
         for(int k = 0 ; k < m_generators.size();k++)
         {
-            double r = (double) rand() / (RAND_MAX);
-            double g = (double) rand() / (RAND_MAX);
-            double b = (double) rand() / (RAND_MAX);
-            colors.push_back(Vector(r,g,b));
+            const double r = (double) rand() / RAND_MAX;
+            const double g = (double) rand() / RAND_MAX;
+            const double b = (double) rand() / RAND_MAX;
+            colors.push_back(Vector(r, g, b));
         }
         for(int i = 0; i < m_points.size();i++)
-        {
             pointset.insert(m_points[i].first, colors[m_vlabels[i]]);
-        }
+
         return pointset;
     }
 

@@ -49,7 +49,7 @@ int main()
     for(int i = 0; i < iterations; i++)
     {
         std::cout << "Iteration " << i << std::endl;
-        vsr.region_growing();
+        vsr.partition();
         vsr.update_generators(changed);
     }
     

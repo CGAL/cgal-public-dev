@@ -49,7 +49,7 @@ int main()
 
     while(generators > 5 )
     {
-        vsr.region_growing_and_update_generators(steps);
+        vsr.partition_and_update_generators(steps);
         generators = vsr.guided_split_clusters(split_threshold, iteration++);
     }
     
