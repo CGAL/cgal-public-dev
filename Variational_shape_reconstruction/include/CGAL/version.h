@@ -9,7 +9,7 @@
 //
 // SPDX-License-Identifier: LGPL-3.0-or-later OR LicenseRef-Commercial
 //
-// Author(s)     : -
+// Author(s)     : Tong Zhao, Mathieu Ladeuil, Pierre Alliez
 
 // This file is automatically created by cmake
 // Do not edit manually.

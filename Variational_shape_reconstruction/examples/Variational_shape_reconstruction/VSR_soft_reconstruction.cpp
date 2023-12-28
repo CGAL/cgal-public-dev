@@ -45,7 +45,7 @@ int main()
         generators,
         distance_weight,
         qem::VERBOSE_LEVEL::LOW,
-        qem::INIT_QEM_GENERATOR::KMEANS_FARTHEST);
+        qem::INIT_QEM_GENERATORS::FARTHEST);
 
     manager.clustering(steps, split_threshold);
     

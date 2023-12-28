@@ -27,44 +27,43 @@ typedef CGAL::Point_set_3< Point, Vector > Pointset;
 
 int main()
 {	
-
     Pointset pointset;
-    if (!CGAL::IO::read_XYZ( "../data/guitar.xyz",pointset))
+    if (!CGAL::IO::read_XYZ( "sphere.xyz",pointset))
     {
         std::cerr << "Error: cannot read file " << std::endl;
         return EXIT_FAILURE;
     } 
-    size_t generators = 30; 
-    const size_t steps = 10;
-    const double split_threshold = 10e-2;
-    const double distance_weight = 10e-5;
-    size_t iteration = 0 ;
+
+    size_t nb_generators = 4; 
+    const double distance_weight = 1e-10;
 	
     qem::Variational_shape_reconstruction vsr(
         pointset,
-        generators,
+        nb_generators,
         distance_weight,
         qem::VERBOSE_LEVEL::HIGH,
-        qem::INIT_QEM_GENERATORS::KMEANS_PLUSPLUS);
+        qem::INIT_QEM_GENERATORS::RANDOM);
 
-    while(generators > 5 )
+    const size_t iterations = 30;
+    bool changed = true;
+    for(int i = 0; i < iterations; i++)
     {
-        vsr.region_growing_and_update_generators(steps);
-        generators = vsr.guided_split_clusters(split_threshold, iteration++);
+        std::cout << "Iteration " << i << std::endl;
+        vsr.region_growing();
+        vsr.update_generators(changed);
     }
     
-    // Reconstruction parameters
+    // reconstruction
     const double dist_ratio = 10e-3;
 	const double fitting = 0.4;
 	const double coverage = 0.3;
 	const double complexity = 0.3;
-	
-    
     vsr.reconstruction(dist_ratio, fitting, coverage, complexity, false);
 
+    // save output mesh
 	auto mesh = vsr.get_reconstructed_mesh();
     std::ofstream mesh_file;
-    mesh_file.open("mesh.off");
+    mesh_file.open("output.off");
     CGAL::write_off(mesh_file, mesh);
     mesh_file.close();
 

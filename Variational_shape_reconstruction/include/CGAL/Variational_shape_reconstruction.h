@@ -7,7 +7,7 @@
 // $Id$
 // SPDX-License-Identifier: GPL-3.0-or-later OR LicenseRef-Commercial
 //
-// Author(s)     : 
+// Author(s) : Pierre Alliez, Mathieu Ladeuil, Tong Zhao 
 
 #ifndef CGAL_VARIATIONAL_SHAPE_RECONSTRUCTION_H
 #define CGAL_VARIATIONAL_SHAPE_RECONSTRUCTION_H

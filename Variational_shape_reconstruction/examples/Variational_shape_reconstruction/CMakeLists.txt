@@ -3,7 +3,7 @@
 
 cmake_minimum_required(VERSION 3.1...3.23)
 
-project(Variational_shape_reconstruction_Tests)
+project(Variational_shape_reconstruction_examples)
 
 # CGAL and its components
 find_package(CGAL REQUIRED)
