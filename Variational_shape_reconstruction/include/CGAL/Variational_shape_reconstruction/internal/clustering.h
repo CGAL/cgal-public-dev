@@ -1,6 +1,7 @@
 #include "types.h"
-//qem
-#include "metrics.h"
+
+// qem
+#include "qem.h"
 #include "candidate.h"
 #include "pqueue.h"
 
@@ -57,6 +58,7 @@ namespace qem
 
         /// @brief Compute the qem for each point based on the k nearest neighbor neighbors
         // fixme: rather based on the normal and average distance to neighbors!
+        // TODO: add function to estimate normals
         void initialize_qem_per_point(const KNNTree& m_tree)
         {
             // init vector of qems
@@ -182,7 +184,7 @@ namespace qem
         /// @param m_tree the knn tree
         /// @param generators the list of indices of generators
         /// // fixme: the connected components and generator addition should be performed in a separate function
-        void initialize_qem_per_vertex(const KNNTree& m_tree, std::vector<int>& generators)
+        void initialize_qem_per_vertex(const KNNTree& m_tree) // std::vector<int>& generators
         {
             m_vqems.clear();
             int point_index = 0;
@@ -205,6 +207,8 @@ namespace qem
 
                 m_vqems.push_back(vqem);
             }
+
+            /*
 
             // compute connected components
             compute_connected();
@@ -274,12 +278,17 @@ namespace qem
                 }
                 neighbors_graph.close();
             }
+            */
 
         }
+        /*
         int get_component_count()
         {
             return component_count;
         }
+        */
+
+        /*
         std::vector<int> get_generators_per_component(std::vector<int>& generators)
         {
             std::vector<int> generators_per_component(component_count,0);
@@ -290,6 +299,7 @@ namespace qem
 
             return generators_per_component;
         }
+        */
 
         /// @brief Partition: find the best generator for each point, and update cluster QEM
         /// via region growing and the cost function compute_collapse_loss
@@ -298,9 +308,13 @@ namespace qem
         /// @param generators 
         /// @param flag_dist 
         void partition(std::map<int, int>& m_vlabels,
+            std::vector<Generator>& generators,
+        const bool flag_dist)
+
+            /*
         std::vector<QEM_metric>& generators_qem,
         const std::vector<int>& generators,
-        const bool flag_dist)
+            */
         {
             PQueue growing_queue;
             
@@ -358,7 +372,7 @@ namespace qem
         /// @param flag flag to use the euclidean distance
         /// @param generators 
         /// @return the cost
-        double compute_collapse_loss(const int index, const int label, const bool flag, const std::vector<int>& generators) //eq 6
+        double compute_collapse_loss(const int index, const int label, const bool flag, const std::vector<int>& generators) 
         {
             const double qem_cost = compute_minimum_qem_error(m_point_set.point(generators[label]), m_vqems[index]);
             double cost = qem_cost; 
@@ -635,6 +649,11 @@ namespace qem
         void set_distance_weight(double dist_weight)
         {
             m_dist_weight = dist_weight;
+        }
+
+        QEM_metric& vqem(const int index)
+        {
+            return m_vqems(index);
         }
 
             private:

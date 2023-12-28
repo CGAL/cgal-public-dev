@@ -7,7 +7,8 @@
 #include "types.h"
 
 typedef CGAL::Aff_transformation_3<Kernel>  Aff_transformation;
-//template <class Kernel>
+
+
 class QEM_metric
 {
 public:
