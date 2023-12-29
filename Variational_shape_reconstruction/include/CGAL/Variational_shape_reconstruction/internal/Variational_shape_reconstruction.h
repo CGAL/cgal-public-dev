@@ -100,8 +100,8 @@ class Variational_shape_reconstruction
         for (it = m_generators.begin(); it != m_generators.end(); it++)
         {
             Generator& generator = *it;
-            const int index = generator.index();
-            generator.location() = compute_optimal_point(vqem(index), m_pointset.point(index));
+            const int point_index = generator.point_index(); // index of input point
+            generator.location() = compute_optimal_point(vqem(point_index), m_pointset.point(point_index));
         }
     }
 
@@ -255,19 +255,25 @@ class Variational_shape_reconstruction
         std::mt19937 random_generator(27);
         std::shuffle(num_range.begin(), num_range.end(), random_generator);
 
-        std::set<int> selected_indices;
+        std::set<int> selected_indices; // why a set here?
         for(int i = 0; i < nb_generators; i++)
+        {
             selected_indices.insert(num_range[i]);
+            std::cout << "index: " << num_range[i] << std::endl;
+        }
             
-        for(auto &index: selected_indices)
-            m_generators.push_back(Generator(index, m_pointset.point(index)));
-           
+        for(auto &point_index : selected_indices) // merge with above
+        {
+            m_generators.push_back(Generator(point_index, m_pointset.point(point_index)));
+            std::cout << "point index: " << point_index << std::endl;
+        }
+
         if(m_verbose_level != VERBOSE_LEVEL::LOW)
             std::cout << "#random generators: " << m_generators.size() << std::endl;
 
         std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
         if(m_verbose_level != VERBOSE_LEVEL::LOW)
-            std::cerr << "Random generators in " << std::chrono::duration_cast<std::chrono::microseconds>(end - begin).count() << "[us]" << std::endl;
+            std::cerr << "Random generators in " << std::chrono::duration_cast<std::chrono::microseconds>(end - begin).count() << "ms" << std::endl;
     }
     
     /*
@@ -373,9 +379,8 @@ class Variational_shape_reconstruction
         std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
 
         m_vlabels.clear();
-        // m_generators_qem.clear();
-
         m_pClustering->partition(m_vlabels, m_generators, true);
+
         assert(m_vlabels.size() == m_pointset.size());
 
         if(m_verbose_level > VERBOSE_LEVEL::LOW)
@@ -387,13 +392,13 @@ class Variational_shape_reconstruction
     }
     
     /// @brief update generators
-    /// @param flag 
-    void update_generators(bool &flag)
+    /// return true if generators have changed
+    bool update_generators()
     {
-        flag = m_pClustering->update_generators(m_vlabels, m_generators_qem, m_generators);
+        return m_pClustering->update_generators(m_vlabels, m_generators);
     }
 
-    /// @brief partitioning and update generators for n user-defined steps 
+    /// @brief partition and update generators for n user-defined steps 
     /// @param steps 
     void partition_and_update_generators(size_t steps)
     {
@@ -401,7 +406,7 @@ class Variational_shape_reconstruction
         for(int i = 0; i < steps && flag; i++)
         {
             partition();
-            update_generators(flag);
+            flag = update_generators();
         }
     }
 
@@ -502,13 +507,12 @@ class Variational_shape_reconstruction
 
         std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
 
-        std::vector<Point> dual_points;
-        for(int i = 0; i < m_generators.size(); i++)
+        std::vector<Point> dual_points; // fixme (rename)
+        for (int i = 0; i < m_generators.size(); i++)
         {
-            Point center;
-            center = compute_optimal_point(m_generators_qem[i], m_pointset.point(m_generators[i]));
-
-            dual_points.push_back(center);
+            // Point center;
+            // center = compute_optimal_point(m_generators_qem[i], m_pointset.point(m_generators[i]));
+            dual_points.push_back(m_generators[i].location());
         }
 
         IntPairSet adjacent_pairs;
@@ -532,7 +536,7 @@ class Variational_shape_reconstruction
                 }              
             }
         }
-        m_triangle_fit.initialize_adjacent_graph(dual_points, adjacent_pairs,m_bbox,m_diag);
+        m_triangle_fit.initialize_adjacent_graph(dual_points, adjacent_pairs, m_bbox, m_diag);
 
         std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
         if(m_verbose_level != VERBOSE_LEVEL::LOW)
