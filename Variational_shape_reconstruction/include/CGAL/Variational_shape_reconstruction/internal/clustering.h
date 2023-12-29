@@ -4,6 +4,7 @@
 #include "qem.h"
 #include "candidate.h"
 #include "pqueue.h"
+#include "generator.h"
 
 #include <CGAL/bounding_box.h>
 #include <CGAL/compute_average_spacing.h>
@@ -18,6 +19,7 @@
 
 #include "helper_metrics.h"
 #include "io.h"
+// #include "color.hpp"
 
 
 // knntree
@@ -30,10 +32,12 @@ typedef CGAL::Orthogonal_k_neighbor_search<Traits>                              
 typedef typename K_neighbor_search::Tree                                            KNNTree;
 typedef typename K_neighbor_search::Distance                                        KNNDistance;
 
-//Pqueue
+// Priority queue
 typedef qem::Candidate<int> CCandidate;
 typedef qem::Candidate_more<CCandidate> More;
 typedef qem::Custom_priority_queue<CCandidate, More> PQueue;
+
+typedef typename qem::CGenerator<Kernel> Generator;
 
 namespace qem
 {   
@@ -312,6 +316,10 @@ namespace qem
             std::vector<Generator>& generators,
             const bool flag_dist)
         {
+
+            if (m_verbose_level != VERBOSE_LEVEL::LOW)
+                std::cout << "Partition...";
+
             PQueue pqueue;
             
             // init seed points
@@ -340,8 +348,11 @@ namespace qem
                 m_vlabels[point_index] = label_generator;
                 Generator& generator = generators[label_generator];
                 generator.add_qem(m_vqems[point_index]);
-                add_candidates(pqueue, point_index, label_generator, flag_dist, m_vlabels, Generator);
+                add_candidates(pqueue, point_index, label_generator, flag_dist, m_vlabels, generator);
             }
+
+            if (m_verbose_level != VERBOSE_LEVEL::LOW)
+                std::cout << "done" << std::endl;
         }
 
         /// @brief Add the generators candidates to the priority queue
@@ -408,7 +419,7 @@ namespace qem
         /// @param m_vlabels 
         /// @param generators 
         /// @return a Boolean : true if generators changed and false otherwise 
-        bool update_generators(std::map<int, int>& m_vlabels,
+        bool update_generators(std::map<int, int>& vlabels,
             std::vector<Generator>& generators)
         {
             if (m_verbose_level != VERBOSE_LEVEL::LOW)
@@ -421,31 +432,31 @@ namespace qem
             {
                 Generator& generator = generators[label];
                 old_generators.push_back(generator.point_index());
-                min_qem_errors.push_back(std::numeric_limits<FT>::max());
+                min_qem_errors.push_back(1e308); // fixme
             }
 
             // update generators : optimal qem points for the sum of qem matrices in each cluster
             for (int point_index = 0; point_index < m_point_set.size(); point_index++)
             {
                 // skip points not labelled
-                if (m_vlabels.find(point_index) == m_vlabels.end())
+                if (vlabels.find(point_index) == vlabels.end())
                     continue;
 
                 // get qem of point's cluster 
-                int label = m_vlabels[point_index];
+                int label = vlabels[point_index];
                 Generator& generator = generators[label];
 
                 // compute QEM optimal point of generator's cluster, with current point as seed
                 Point& seed = m_point_set.point(point_index);
-                Point optimal_qem_point = compute_optimal_point(generator.qem(), seed);
+                Point optimal_location= compute_optimal_point(generator.qem(), seed);
 
                 // compute QEM error
-                const double qem_error = compute_qem_error(generator.qem(), optimal_qem_point);
+                const double qem_error = compute_qem_error(generator.qem(), optimal_location);
 
                 if (qem_error < min_qem_errors[label])
                 {
                     generator.point_index() = point_index;
-                    generator.location() = optimal_qem_point;
+                    generator.location() = optimal_location;
                     min_qem_errors[label] = qem_error;
                 }
             }
@@ -456,48 +467,55 @@ namespace qem
                 if (generators[i].point_index() != old_generators[i])
                     return true;
 
-            if(m_verbose_level > VERBOSE_LEVEL::LOW)
+            if(m_verbose_level != VERBOSE_LEVEL::LOW)
                 std::cout << "done" << std::endl;
 
             // generators have not changed
             return false; 
         }
 
-        // compute errors (total, per cluster, etc)
-        void compute_errors()
+        // compute clustering errors (total, max, average, variance, etc)
+        double compute_errors(std::map<int, int>& vlabels,
+            std::vector<Generator>& generators)
         {
+            double max_error = 0.0;
+            double sum_errors = 0.0;
+            std::vector<double> sum_cluster_errors(generators.size(), 0.0);
 
             // compute errors
-            std::vector<double> qem_errors(generators.size(), 0.0);
-            for (int i = 0; i < m_point_set.size(); i++)
+
+            for (int point_index = 0; point_index < m_point_set.size(); point_index++)
             {
-                if (m_vlabels.find(i) == m_vlabels.end())
+                // skip unlabelled point
+                if (vlabels.find(point_index) == vlabels.end())
                     continue;
 
-                int center_ind = m_vlabels[i];
+                // get generator
+                int label = vlabels[point_index];
+                Generator& generator = generators[label];
 
-                double error = compute_minimum_qem_error(m_point_set.point(generators[center_ind]), m_vqems[i]);
+                // compute QEM error
+                const double error = compute_qem_error(m_vqems[point_index], generator.location());
 
-                csv_writer->addErrorPoints(i, error);
-
-                if (error > qem_errors[center_ind])
-                {
-                    qem_errors[center_ind] = error;
-                }
+                sum_errors += error;
+                sum_cluster_errors[label] += error;
+                max_error = error > max_error ? error : max_error;
             }
 
-            double error = std::numeric_limits<double>::min();
-            for(int i = 0 ; i < qem_errors.size();i++)
+            double average = sum_errors / (double)generators.size();
+            double variance = 0.0;
+            for(int label = 0; label < sum_cluster_errors.size(); label++)
             {
-                csv_writer->addWorstErrorGenerator(i,qem_errors[i]);
-                error = std::max(error, qem_errors[i]);
+                const double diff = sum_cluster_errors[label] - average;
+                variance += average * average;
             }
 
-            auto mean = std::accumulate(qem_errors.begin(), qem_errors.end(), 0.);
-            mean /= qem_errors.size();
-            csv_writer->addWorstErrorGenerator(error);
-            csv_writer->addMeanErrorGenerator(mean);
+            std::cout << "Clustering error" << std::endl;
+            std::cout << "  Total: " << sum_errors << std::endl;
+            std::cout << "  Average: " << average << std::endl;
+            std::cout << "  Variance: " << variance << std::endl;
 
+            return sum_errors;
         }
 
 
@@ -570,7 +588,10 @@ namespace qem
                     continue;
 
                 int center_ind = m_vlabels[i];
-                double error = compute_minimum_qem_error(m_point_set.point(generators[center_ind]), m_vqems[i]); 
+
+                // FIXME
+                double error = 0.0;
+                // double error = compute_minimum_qem_error(m_point_set.point(generators[center_ind]), m_vqems[i]); 
 
                 if(error > qem_errors[center_ind])
                 {
@@ -643,7 +664,7 @@ namespace qem
         {
             assert(index > 0);
             assert(index < m_vqems.size());
-            return m_vqems(index);
+            return m_vqems[index];
         }
 
             private:

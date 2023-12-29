@@ -35,8 +35,6 @@ class Variational_shape_reconstruction
 
         // generators
         std::vector<Generator> m_generators;
-        //std::vector<int> m_generators;
-        //std::vector<QEM_metric> m_generators_qem;
 
         // geometry
         std::vector<std::pair<Point, size_t> > m_points;
@@ -383,12 +381,14 @@ class Variational_shape_reconstruction
 
         assert(m_vlabels.size() == m_pointset.size());
 
-        if(m_verbose_level > VERBOSE_LEVEL::LOW)
+        /*
+        if(m_verbose_level != VERBOSE_LEVEL::LOW)
         {
             std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
             auto elapsed = std::chrono::duration_cast<std::chrono::microseconds>(end - begin).count()/1000;
             std::cerr << "Region growing done (" << elapsed << "ms)" << std::endl;
         }
+        */
     }
     
     /// @brief update generators
@@ -406,8 +406,13 @@ class Variational_shape_reconstruction
         for(int i = 0; i < steps && flag; i++)
         {
             partition();
-            flag = update_generators();
+            flag = this->update_generators();
         }
+    }
+
+    double compute_clustering_errors()
+    {
+        return m_pClustering->compute_errors(m_vlabels, m_generators);
     }
 
 
@@ -421,14 +426,14 @@ class Variational_shape_reconstruction
             std::cout << "Begin guided split..." << std::endl;
 
         std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
-        auto nb_clusters = m_pClustering->guided_split_clusters(m_vlabels,m_generators,m_diag,m_spacing,split_ratio, iteration);
+        // auto nb_clusters = m_pClustering->guided_split_clusters(m_vlabels,m_generators,m_diag,m_spacing,split_ratio, iteration);
         std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
         auto elapsed = std::chrono::duration_cast<std::chrono::microseconds>(end - begin).count();
 
         if(m_verbose_level != VERBOSE_LEVEL::LOW)
             std::cerr << "Guided split in " << elapsed << "[us]" << std::endl;
 
-        return nb_clusters;
+        return 0; // FIXME
     }
 
     /// @brief automatic clustering

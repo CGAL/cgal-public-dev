@@ -27,6 +27,7 @@ typedef CGAL::Point_set_3< Point, Vector > Pointset;
 
 int main()
 {	
+    // fixme: this assumes that the normals are read from the file
     Pointset pointset;
     if (!CGAL::IO::read_XYZ( "sphere.xyz",pointset))
     {
@@ -35,7 +36,7 @@ int main()
     } 
 
     size_t nb_generators = 4; 
-    const double distance_weight = 1e-10;
+    const FT distance_weight = FT(1e-10);
 	
     qem::Variational_shape_reconstruction vsr(
         pointset,
@@ -44,13 +45,16 @@ int main()
         qem::VERBOSE_LEVEL::HIGH,
         qem::INIT_QEM_GENERATORS::RANDOM);
 
+    std::ofstream file("errors.csv");
     const size_t iterations = 30;
     bool changed = true;
     for(int i = 0; i < iterations; i++)
     {
         std::cout << "Iteration " << i << std::endl;
         vsr.partition();
-        vsr.update_generators(changed);
+        changed = vsr.update_generators();
+        const double total_error = vsr.compute_clustering_errors();
+        file << total_error << std::endl;
     }
     
     // reconstruction
