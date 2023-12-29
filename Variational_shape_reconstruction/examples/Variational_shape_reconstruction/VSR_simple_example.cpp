@@ -30,8 +30,8 @@ int main()
         return EXIT_FAILURE;
     } 
 
-    size_t generators = 5; 
-    const size_t steps = 50;
+    size_t generators = 20; 
+    const size_t steps = 120;
     const double split_threshold = 10e-2;
     const double distance_weight = 10e-5;
 	
@@ -43,7 +43,7 @@ int main()
         qem::INIT_QEM_GENERATORS::RANDOM);
 
     vsr.clustering(steps, split_threshold);
-    vsr.reconstruction();
+    // vsr.reconstruction();
 	auto mesh = vsr.get_reconstructed_mesh();
 
     std::ofstream mesh_file;

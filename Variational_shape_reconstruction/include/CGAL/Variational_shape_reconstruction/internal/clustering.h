@@ -510,10 +510,10 @@ namespace qem
                 variance += average * average;
             }
 
-            std::cout << "Clustering error" << std::endl;
-            std::cout << "  Total: " << sum_errors << std::endl;
-            std::cout << "  Average: " << average << std::endl;
-            std::cout << "  Variance: " << variance << std::endl;
+            std::cout << "Clustering errors: ";
+            std::cout << "Total: " << sum_errors << '\t';
+            std::cout << "Average: " << average << '\t';
+            std::cout << "Variance: " << variance << std::endl;
 
             return sum_errors;
         }
@@ -556,6 +556,7 @@ namespace qem
 
             return optim_point;
         }
+
         /// @brief Splits the cluster if the qem error is more than a threshold split_thresh
         /// @param m_vlabels 
         /// @param generators 

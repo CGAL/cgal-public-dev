@@ -35,7 +35,7 @@ int main()
         return EXIT_FAILURE;
     } 
 
-    size_t nb_generators = 6; 
+    size_t nb_generators = 20; 
     const FT distance_weight = FT(1e-20);
 	
     qem::Variational_shape_reconstruction vsr(
@@ -46,7 +46,7 @@ int main()
         qem::INIT_QEM_GENERATORS::RANDOM);
 
     std::ofstream file("errors.csv");
-    const size_t iterations = 30;
+    const size_t iterations = 200;
     bool changed = true;
     for(int i = 0; i < iterations; i++)
     {
@@ -56,11 +56,14 @@ int main()
         const double total_error = vsr.compute_clustering_errors();
         file << total_error << std::endl;
 
-        // save clustering to file
-        std::string filename("clustering-");
-        filename.append(std::to_string(i));
-        filename.append(std::string(".ply"));
-        vsr.save_clustering_to_ply(filename);
+        // save clustering to file every 10 iterations
+        if(i % 10 == 0)
+        {
+            std::string filename("clustering-");
+            filename.append(std::to_string(i));
+            filename.append(std::string(".ply"));
+            vsr.save_clustering_to_ply(filename);
+        }
     }
     
     // reconstruction

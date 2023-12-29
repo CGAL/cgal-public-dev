@@ -118,10 +118,11 @@ public: // function
         m_diag = std::sqrt(CGAL::squared_distance(Point(m_bbox.min(0), m_bbox.min(1), m_bbox.min(2)),
                                                   Point(m_bbox.max(0), m_bbox.max(1), m_bbox.max(2))));
     }
-    void create_candidate_facets()
+
+    bool create_candidate_facets()
     {
         if(m_points.size() == 0 || m_edges.size() == 0)
-            return;
+            return false;
 
         m_facets.clear();
         IntIntSetMap adjacent_verts;
@@ -129,6 +130,7 @@ public: // function
         // init map
         for(int i = 0; i < m_points.size(); i++)
             adjacent_verts.insert({i, IntSet()});
+
         // fill map
         for(int i = 0; i < m_edges.size(); i++)
         {
@@ -138,7 +140,7 @@ public: // function
 
         // find unique triple sets and useless edges
         IntSetSet unique_facets;
-        IntList   remove_indices;
+        IntList remove_indices;
         for(int i = 0; i < m_edges.size(); i++)
         {
             IntSet edge_union;
@@ -162,7 +164,11 @@ public: // function
 
             m_facets.push_back(facet_list);
         }
+
+        const bool valid = !m_facets.empty();
+        return valid;
     }
+
     void update_adjacent_edges(std::vector<float>& adjacent_edges)
     {
         if(m_points.size() == 0 || m_edges.size() == 0)
