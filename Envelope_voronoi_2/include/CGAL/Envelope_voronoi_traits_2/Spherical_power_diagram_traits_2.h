@@ -113,7 +113,7 @@ protected:
     // const Line_3* pl = object_cast<Line_3>(&obj);
     // if (pl != NULL)
     if (result) {
-      const Line_3* pl =  boost::get<Line_3>(&*result);
+      const Line_3* pl =  std::get_if<Line_3>(&*result);
 
       // intersection should be empty - don't support s1 and s2 that are same.
       CGAL_envelope_voronoi_assertion(pl);
@@ -188,15 +188,15 @@ public:
         boost::result_of<typename Kernel::Intersect_3(Line_3, Plane_3)>::type
         result2 = intersect_3(line, pl2);
 
-      const Point_3* p1 = NULL;
+      const Point_3* p1 = nullptr;
       if (result1) {
-        p1 = boost::get<Point_3>(&*result1);
+        p1 = std::get_if<Point_3>(&*result1);
         CGAL_envelope_voronoi_assertion(p1);
       }
 
-      const Point_3* p2 = NULL;
+      const Point_3* p2 = nullptr;
       if (result2) {
-        p2 =  boost::get<Point_3>(&*result2);
+        p2 =  std::get_if<Point_3>(&*result2);
         CGAL_envelope_voronoi_assertion(p2);
       }
 

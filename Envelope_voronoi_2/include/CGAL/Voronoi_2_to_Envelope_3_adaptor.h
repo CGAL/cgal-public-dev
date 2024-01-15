@@ -13,7 +13,7 @@
 //
 // $URL: $
 // $Id: $
-// 
+//
 //
 // Author(s)     : Ophir Setter       <ophirset@post.tau.ac.il>
 
@@ -30,21 +30,21 @@ class Voronoi_2_to_Envelope_3_adaptor : public EnvelopeVoronoiTraits_
   typedef Envelope_voronoi_traits                     Base;
 
   typedef typename Envelope_voronoi_traits::Point_2   Point_2;
-  typedef typename 
+  typedef typename
     Envelope_voronoi_traits::X_monotone_curve_2   X_monotone_curve_2;
-  typedef typename 
+  typedef typename
     Envelope_voronoi_traits::Multiplicity             Multiplicity;
 
   typedef typename Envelope_voronoi_traits::Site_2    Xy_monotone_surface_3;
   typedef Xy_monotone_surface_3                       Surface_3;
 
 public:
-  Voronoi_2_to_Envelope_3_adaptor<Envelope_voronoi_traits> 
+  Voronoi_2_to_Envelope_3_adaptor<Envelope_voronoi_traits>
     (const Envelope_voronoi_traits & traits) : Base (traits)
   {}
 
   Voronoi_2_to_Envelope_3_adaptor<Envelope_voronoi_traits> () {}
-  
+
 
   class Make_xy_monotone_3
   {
@@ -72,7 +72,7 @@ public:
 
   public:
     Compare_z_at_xy_3(const Envelope_voronoi_traits * p_traits)
-      : _p_traits (p_traits) 
+      : _p_traits (p_traits)
     { }
 
     Comparison_result operator()(const Point_2& p,
@@ -86,11 +86,11 @@ public:
                                  const Xy_monotone_surface_3& h1,
                                  const Xy_monotone_surface_3& h2) const
     {
-      Arr_parameter_space sbx = 
+      Arr_parameter_space sbx =
         _p_traits->parameter_space_in_x_2_object() (cv, ARR_MIN_END);
-      Arr_parameter_space sby = 
+      Arr_parameter_space sby =
         _p_traits->parameter_space_in_y_2_object() (cv, ARR_MIN_END);
-      
+
       if (sbx == ARR_INTERIOR && sby == ARR_INTERIOR)
       {
         Point_2 p = _p_traits->construct_min_vertex_2_object() (cv);
@@ -100,9 +100,9 @@ public:
           return res;
       }
 
-      Arr_parameter_space tbx = 
+      Arr_parameter_space tbx =
         _p_traits->parameter_space_in_x_2_object() (cv, ARR_MAX_END);
-      Arr_parameter_space tby = 
+      Arr_parameter_space tby =
         _p_traits->parameter_space_in_y_2_object() (cv, ARR_MAX_END);
       if (tbx == ARR_INTERIOR && tby == ARR_INTERIOR)
       {
@@ -135,11 +135,11 @@ public:
     const Envelope_voronoi_traits * _p_traits;
 
   public:
-    
+
     Compare_z_at_xy_above_3 (const Envelope_voronoi_traits * p_traits)
-      : _p_traits (p_traits) 
+      : _p_traits (p_traits)
     { }
-    
+
     Comparison_result operator()(const X_monotone_curve_2& cv,
                                  const Xy_monotone_surface_3& h1,
                                  const Xy_monotone_surface_3& h2) const
@@ -190,7 +190,7 @@ public:
     }
   };
 
-  Construct_projected_boundary_2 
+  Construct_projected_boundary_2
     construct_projected_boundary_2_object() const
   {
     return Construct_projected_boundary_2();
@@ -202,9 +202,9 @@ public:
   protected:
     const Envelope_voronoi_traits * _p_traits;
 
-  public:  
+  public:
     Construct_projected_intersections_2(const Envelope_voronoi_traits * p_traits)
-      : _p_traits (p_traits) 
+      : _p_traits (p_traits)
     { }
 
     template <class OutputIterator>
@@ -212,19 +212,16 @@ public:
                               const Xy_monotone_surface_3& s2,
                               OutputIterator o) const
     {
-      typedef std::list<X_monotone_curve_2>       X_curve_list;
-      typedef std::pair<X_monotone_curve_2, 
-        Multiplicity>                             Intersection_curve;
+      using X_curve_list = std::list<X_monotone_curve_2>;
+      using Intersection_curve = std::pair<X_monotone_curve_2, Multiplicity>;
 
-      X_curve_list                                x_curves;
-      _p_traits->construct_bisector_2_object() (s1, s2, 
+      X_curve_list x_curves;
+      _p_traits->construct_bisector_2_object() (s1, s2,
                                                 std::back_inserter(x_curves));
 
-      for (typename X_curve_list::iterator it = x_curves.begin();
-           it != x_curves.end();
-           ++it)
+      for (auto it = x_curves.begin(); it != x_curves.end(); ++it)
       {
-        *o++ = make_object(Intersection_curve(*it, 1));
+        *o++ = Intersection_curve(*it, 1);
       }
       return o;
     }
