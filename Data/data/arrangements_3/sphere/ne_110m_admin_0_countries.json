@@ -1,4 +1,5 @@
 {
+  "description": "Based on Natural Earth data set (Free vector and raster map data @ naturalearthdata.com). 1:110m scale.",
   "points": [
     {
       "location": 0,
