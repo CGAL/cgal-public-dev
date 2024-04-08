@@ -229,7 +229,7 @@ public:
        case HandleOngoing:
         //cout<<"hello in Graphics_view_circular_polygon"<<endl;
         if(m_last_circular)
-        { 
+        {
           HideHandle();
           CommitOngoingPiece(lP);
         }
@@ -272,7 +272,7 @@ public:
 
   void ReStart()
   {
-    mH = boost::optional<Point>();
+    mH = std::optional<Point>();
     mState = Start;
   }
 
@@ -311,7 +311,7 @@ public:
       mP0 = cvt(mCircularPolygonPieces.back().target());
       UpdateOngoingPiece();
     }
-    mH = boost::optional<Point>();
+    mH = std::optional<Point>();
   }
 
   void UpdateOngoingPiece()
@@ -331,7 +331,7 @@ public:
       mOngoingPieceGI->modelChanged();
       mP0 = mP1;
       mP1 = aP;
-      mH = boost::optional<Point>();
+      mH = std::optional<Point>();
     }
   }
 
@@ -347,7 +347,7 @@ public:
     else
     {
       HideHandle();
-      mH = boost::optional<Point>();
+      mH = std::optional<Point>();
     }
   }
 
@@ -365,7 +365,7 @@ public:
     //cout<<"mCircularPolygonPieces"<<endl;
     mCircularGI->modelChanged();
 
-    mH = boost::optional<Point>();
+    mH = std::optional<Point>();
 
     HideHandle();
     //cout<<"polygon is comitted"<<endl;
@@ -376,8 +376,8 @@ public:
       {
         Gps_traits traits;
         auto make_x_monotone = traits.make_x_monotone_2_object();
-        typedef boost::variant <Circular_X_monotone_curve, Arc_point>
-                Make_x_monotone_result;
+        typedef std::variant <Circular_X_monotone_curve, Arc_point>
+          Make_x_monotone_result;
 
 
         std::vector <Circular_X_monotone_curve> xcvs;
@@ -386,10 +386,10 @@ public:
             std::vector <Make_x_monotone_result> x_objs;
             make_x_monotone(*it, std::back_inserter(x_objs));
 
-            auto* xcv = boost::get<Circular_X_monotone_curve>(&x_objs[0]);
+            auto* xcv = std::get_if<Circular_X_monotone_curve>(&x_objs[0]);
             if ((*xcv).is_linear() && mCircularPolygonPieces.size() == 1) return;
             for (auto i = 0; i < x_objs.size(); ++i) {
-                auto *xcv = boost::get<Circular_X_monotone_curve>(&x_objs[i]);
+                auto *xcv = std::get_if<Circular_X_monotone_curve>(&x_objs[i]);
                 CGAL_assertion(xcv != nullptr);
                 xcvs.push_back(*xcv);
             }
@@ -420,7 +420,7 @@ public:
         //cout<<"add curves if circular"<<endl;
         Circular_polygon cp(xcvs.begin(), xcvs.end());
         //cout<<"point 5"<<endl;
-        emit(generate(boost::variant<Circular_polygon>(cp)));
+        emit(generate(std::variant<Circular_polygon>(cp)));
         //cout<<"point 6"<<endl;
       }
     }
@@ -499,7 +499,7 @@ public:
   Point mP0;
   Point mP1;
 
-  boost::optional<Point> mH;
+  std::optional<Point> mH;
 };
 
 } // namespace Qt

@@ -28,24 +28,22 @@ if (has_cpp11 LESS 0)
 endif()
 
 # Require c++11
-set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-find_package(CGAL COMPONENTS Core Qt5 )
+find_package(CGAL COMPONENTS Core Qt6 )
 
-include(${CGAL_USE_FILE})
-
-if (CGAL_FOUND AND CGAL_Qt5_FOUND AND Qt5_FOUND )
+if (CGAL_FOUND AND CGAL_Qt6_FOUND AND Qt6_FOUND )
 
   set(QT_USE_QTMAIN TRUE)
 
-  find_package(Qt5 QUIET COMPONENTS Widgets Script Svg OpenGL)
+  find_package(Qt6 QUIET COMPONENTS OpenGLWidgets Widgets Script Svg OpenGL)
 
   include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include )
 
-  qt5_add_resources(CGAL_Qt5_RESOURCE_FILES Boolean_operations_2.qrc)
+  qt6_add_resources(CGAL_Qt6_RESOURCE_FILES Boolean_operations_2.qrc)
 
-  qt5_wrap_ui(UI_HEADERS
+  qt6_wrap_ui(UI_HEADERS
     UiFiles/Boolean_set_operations_2.ui
     UiFiles/ChoiseDialogPolygon.ui)
 
@@ -74,14 +72,13 @@ if (CGAL_FOUND AND CGAL_Qt5_FOUND AND Qt5_FOUND )
     include/QT5/connect_holes.h
     include/QT5/Polygon_set_2.h
     ${UI_HEADERS}
-    ${CGAL_Qt5_RESOURCE_FILES})
+    ${CGAL_Qt6_RESOURCE_FILES})
 
   # Link with CGAL and Qt libraries
-  target_link_libraries(Boolean_set_operations_2
-    PRIVATE CGAL::CGAL CGAL::CGAL_Qt5 Qt5::Widgets Qt5::Script Qt5::Svg Qt5::OpenGL)
-
+  target_link_libraries(Boolean_set_operations_2 PRIVATE
+    CGAL::CGAL CGAL::CGAL_Qt6 Qt6::Widgets Qt6::Svg Qt6::OpenGL)
 else()
 
-  message(STATUS "NOTICE: This demo requires CGAL and Qt5 (Widges, Script, Svg, OpenGL), and will not be compiled.")
+  message(STATUS "NOTICE: This demo requires CGAL and Qt6 (Widges, Script, Svg, OpenGL), and will not be compiled.")
 
 endif()

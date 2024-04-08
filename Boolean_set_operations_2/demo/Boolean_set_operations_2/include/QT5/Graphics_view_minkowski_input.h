@@ -119,7 +119,7 @@ public:
 
 
 	void ReStart(){
-	    mH = boost::optional<Point>();
+	    mH = std::optional<Point>();
 	    mState = Start;
 	}
 
@@ -130,7 +130,7 @@ public:
 	    mOngoingPieceGI->modelChanged();
 	    ReStart();
 	}
-	
+
 	protected: enum State {
 	    Start, PieceStarted, PieceOngoing, HandleOngoing, PieceEnded, CurveEnded
 	};
@@ -281,7 +281,7 @@ public:
 	      mP0 = cvt(mLinearPolygonPieces.back().target());
 	      UpdateOngoingPiece();
 	    }
-	    mH = boost::optional<Point>();
+	    mH = std::optional<Point>();
 	  }
 
 	  void UpdateOngoingPiece()
@@ -300,7 +300,7 @@ public:
 	      mOngoingPieceGI->modelChanged();
 	      mP0 = mP1;
 	      mP1 = aP;
-	      mH = boost::optional<Point>();
+	      mH = std::optional<Point>();
 	    }
 	  }
 
@@ -314,7 +314,7 @@ public:
 	    }
 	    else {
 	      HideHandle();
-	      mH = boost::optional<Point>();
+	      mH = std::optional<Point>();
 	    }
 	  }
 
@@ -333,7 +333,7 @@ public:
 	    mLinearPolygonPieces.clear();
 	    mLinearGI->modelChanged();
 
-	    mH = boost::optional<Point>();
+	    mH = std::optional<Point>();
 
 	    HideHandle();
 	  }
@@ -344,7 +344,7 @@ public:
 	      Gps_traits traits;
 	      typename Gps_traits::Make_x_monotone_2 make_x_monotone =
 	        traits.make_x_monotone_2_object();
-	      typedef boost::variant<Linear_X_monotone_curve,Linear_point>
+	      typedef std::variant<Linear_X_monotone_curve,Linear_point>
             Make_x_monotone_result;
 
 	      std::vector<Linear_X_monotone_curve> xcvs;
@@ -356,7 +356,7 @@ public:
 
 	        for(auto i=0;i<x_objs.size();++i)
             {
-                auto* xcv = boost::get<Linear_X_monotone_curve>(&x_objs[i]);
+                auto* xcv = std::get_if<Linear_X_monotone_curve>(&x_objs[i]);
                 CGAL_assertion(xcv != nullptr);
                 xcvs.push_back(*xcv);
             }
@@ -371,7 +371,7 @@ public:
 	        FT lys = last_point .y();
 	        xcvs.push_back(Linear_X_monotone_curve( Point(lxs,lys), Point(fxs,fys)));
 	        Linear_polygon lp(xcvs.begin(), xcvs.end());
-	        emit(generate(boost::variant<Linear_polygon>(lp)));
+	        emit(generate(std::variant<Linear_polygon>(lp)));
 	      }
 	    }
 	  }
@@ -396,9 +396,9 @@ public:
 
 	  Point mP0;
 	  Point mP1;
-	  //boost::optional returns optional return type
+	  //std::optional returns optional return type
 	  //link to documentation https://theboostcpplibraries.com/boost.optional
-	  boost::optional<Point> mH;
+	  std::optional<Point> mH;
 };
 
 }

@@ -253,7 +253,7 @@ public:
 
   void ReStart()
   {
-    mH = boost::optional<Point>();
+    mH = std::optional<Point>();
     mState = Start;
   }
 
@@ -280,7 +280,7 @@ public:
       mP0 = cvt(mLinearPolygonPieces.back().target());
       UpdateOngoingPiece();
     }
-    mH = boost::optional<Point>();
+    mH = std::optional<Point>();
   }
 
   void UpdateOngoingPiece()
@@ -299,7 +299,7 @@ public:
       mOngoingPieceGI->modelChanged();
       mP0 = mP1;
       mP1 = aP;
-      mH = boost::optional<Point>();
+      mH = std::optional<Point>();
     }
   }
 
@@ -313,7 +313,7 @@ public:
     }
     else {
       HideHandle();
-      mH = boost::optional<Point>();
+      mH = std::optional<Point>();
     }
   }
 
@@ -332,18 +332,17 @@ public:
     mLinearPolygonPieces.clear();
     mLinearGI->modelChanged();
 
-    mH = boost::optional<Point>();
+    mH = std::optional<Point>();
     HideHandle();
   }
 
-  void GenerateLinearPolygon()
-  {
+  void GenerateLinearPolygon() {
     if (mLinearPolygonPieces.size() >  1) {
       Gps_traits traits;
-      typename Gps_traits::Make_x_monotone_2 make_x_monotone =
-        traits.make_x_monotone_2_object();
-      typedef boost::variant<Linear_X_monotone_curve,Linear_point>
-              Make_x_monotone_result;
+      auto make_x_monotone = traits.make_x_monotone_2_object();
+      using Pnt = typename Gps_traits::Point_2;
+      using Xcv = typename Gps_traits::X_monotone_curve_2;
+      using Make_x_monotone_result = std::variant<Pnt, Xcv>;
 
       std::vector<Linear_X_monotone_curve> xcvs;
       for (auto it = mLinearPolygonPieces.begin();
@@ -358,9 +357,8 @@ public:
           Linear_X_monotone_curve xcv;
           if (CGAL::assign(xcv, *xoit)) xcvs.push_back (xcv);
         }*/
-        for(auto i=0;i<x_objs.size();++i)
-        {
-            auto* xcv = boost::get<Linear_X_monotone_curve>(&x_objs[i]);
+        for (auto i = 0; i < x_objs.size(); ++i) {
+            auto* xcv = std::get_if<Linear_X_monotone_curve>(&x_objs[i]);
             CGAL_assertion(xcv != nullptr);
             xcvs.push_back(*xcv);
         }
@@ -373,92 +371,86 @@ public:
         FT fys = first_point.y();
         FT lxs = last_point .x();
         FT lys = last_point .y();
-        xcvs.push_back(Linear_X_monotone_curve( Point(lxs,lys), Point(fxs,fys)));
+        xcvs.push_back(Linear_X_monotone_curve(Point(lxs, lys), Point(fxs, fys)));
         Linear_polygon lp(xcvs.begin(), xcvs.end());
        /* for (auto &i:xcvs)
             cout<<i<<endl;
         cout<<endl;*/
-        emit(generate(boost::variant<Linear_polygon>(lp)));
+        emit(generate(std::variant<Linear_polygon>(lp)));
       }
     }
   }
 
+  void get_BoundingRect() {
+    m_bound_rect = true;
 
-  void get_BoundingRect()
-  {
-      m_bound_rect = true;
+    mP0 = Point(-15500000,-10000000);
+    mState = PieceStarted;
+    mState = PieceOngoing;
 
-      mP0 = Point(-15500000,-10000000);
-      mState = PieceStarted;
-      mState = PieceOngoing;
+    mP1 = Point(-15500000,10000000);
+    UpdateOngoingPiece();
 
-      mP1 = Point(-15500000,10000000);
-      UpdateOngoingPiece();
+    mP1 = Point(-15500000,10000000);
+    mState = HandleOngoing;
+    HideHandle();
+    CommitOngoingPiece(Point(-15500000,10000000));
+    mState   = PieceEnded;
 
-      mP1 = Point(-15500000,10000000);
-      mState = HandleOngoing;
-      HideHandle();
-      CommitOngoingPiece(Point(-15500000,10000000));
-      mState   = PieceEnded;
+    mState   = PieceOngoing;
 
-      mState   = PieceOngoing;
+    mP1 = Point(15500000,10000000);
+    UpdateOngoingPiece();
 
-      mP1 = Point(15500000,10000000);
-      UpdateOngoingPiece();
+    mP1 = Point(15500000,10000000);
+    mState = HandleOngoing;
+    HideHandle();
+    CommitOngoingPiece(Point(15500000,10000000));
+    mState   = PieceEnded;
 
-      mP1 = Point(15500000,10000000);
-      mState = HandleOngoing;
-      HideHandle();
-      CommitOngoingPiece(Point(15500000,10000000));
-      mState   = PieceEnded;
+    mState   = PieceOngoing;
 
-      mState   = PieceOngoing;
+    mP1 = Point(15500000,-10000000);
+    UpdateOngoingPiece();
 
-      mP1 = Point(15500000,-10000000);
-      UpdateOngoingPiece();
+    mP1 = Point(15500000,-10000000);
+    mState = HandleOngoing;
+    HideHandle();
+    CommitOngoingPiece(Point(15500000,-10000000));
+    mState   = PieceEnded;
 
-      mP1 = Point(15500000,-10000000);
-      mState = HandleOngoing;
-      HideHandle();
-      CommitOngoingPiece(Point(15500000,-10000000));
-      mState   = PieceEnded;
+    mState   = PieceOngoing;
 
-      mState   = PieceOngoing;
+    mP1 = Point(-9000000,-9000000);
+    UpdateOngoingPiece();
 
-      mP1 = Point(-9000000,-9000000);
-      UpdateOngoingPiece();
-
-      CommitCurrLinearPolygon();
-      ReStart();
+    CommitCurrLinearPolygon();
+    ReStart();
 
   }
 
-  void get_Minkowski_holes(Polygon_with_holes_2 polygon, Polygon_with_holes_2 p0)
-  {
+  void get_Minkowski_holes(Polygon_with_holes_2 polygon,
+                           Polygon_with_holes_2 p0) {
     typename Polygon_2::Vertex_const_iterator vit;
     m_bound_rect = false;
     Point_2 pt;
     Polygon_2 hole;
 
     int i;
-    
-    for(Polygon_with_holes_2::Hole_const_iterator hi = polygon.holes_begin(); hi != polygon.holes_end(); ++ hi )
-    {
+
+    for (auto hi = polygon.holes_begin(); hi != polygon.holes_end(); ++ hi) {
       hole =*hi;
 
       i=0;
 
-      for (vit = hole.begin(); vit != hole.end(); ++vit)
-      {
-        if(i==0)
-        {
+      for (vit = hole.begin(); vit != hole.end(); ++vit) {
+        if (i==0) {
           pt =  *vit;
 
           mP0 = Point(CGAL::to_double(pt.x()),CGAL::to_double(pt.y()));
           mState = PieceStarted;
         }
-        else
-        {
+        else {
           pt =  *vit;
 
           mState = PieceOngoing;
@@ -485,14 +477,14 @@ public:
     }
   }
 
-  void get_Minkowski_result(Polygon_with_holes_2 polygon, Polygon_with_holes_2 p0)
-  {
+  void get_Minkowski_result(Polygon_with_holes_2 polygon,
+                            Polygon_with_holes_2 p0) {
     typename Polygon_2::Vertex_const_iterator vit;
     m_bound_rect = false;
     Point_2 pt;
 
-    int i=0;
-    
+    int i = 0;
+
     for (vit = polygon.outer_boundary().vertices_begin(); vit != polygon.outer_boundary().vertices_end(); ++vit)
     {
       if(i==0)
@@ -569,9 +561,9 @@ public:
 
   Point mP0;
   Point mP1;
-  //boost::optional returns optional return type
+  //std::optional returns optional return type
   //link to documentation https://theboostcpplibraries.com/boost.optional
-  boost::optional<Point> mH;
+  std::optional<Point> mH;
 };
 
 } // namespace Qt
