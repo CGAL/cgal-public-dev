@@ -30,9 +30,6 @@ set(SEGMENT_GEOM_TRAITS 0)
 set(NON_CACHING_SEGMENT_GEOM_TRAITS 1)
 set(POLYLINE_GEOM_TRAITS 2)
 set(NON_CACHING_POLYLINE_GEOM_TRAITS 3)
-set(POLYCURVE_CONIC_GEOM_TRAITS 14)
-set(POLYCURVE_CIRCULAR_ARC_GEOM_TRAITS 15)
-set(POLYCURVE_BEZIER_GEOM_TRAITS 16)
 set(LINEAR_GEOM_TRAITS 4)
 set(CORE_CONIC_GEOM_TRAITS 5)
 set(LINE_ARC_GEOM_TRAITS 6)
@@ -75,13 +72,23 @@ if(CGAL_DISABLE_GMP)
 endif()
 
 if(CGAL_DISABLE_GMP)
-  message(STATUS "GMP is disable. Try to use LEDA instead.")
-  set(GMPZ_NT ${LEDA_INT_NT})
-  set(QUOTIENT_CGAL_GMPZ_NT ${LEDA_RAT_NT})
-  set(CGAL_GMPQ_NT ${LEDA_RAT_NT})
-  set(LAZY_CGAL_GMPQ_NT ${LAZY_LEDA_RAT_NT})
-  set(LAZY_GMPZ_NT ${LAZY_LEDA_RAT_NT})
-  set(CGAL_GMPZ_NT ${LEDA_INT_NT})
+  if (CGAL_USE_LEDA)
+    message(STATUS "GMP is disabled, try to use LEDA instead.")
+    set(GMPZ_NT ${LEDA_INT_NT})
+    set(QUOTIENT_CGAL_GMPZ_NT ${LEDA_RAT_NT})
+    set(CGAL_GMPQ_NT ${LEDA_RAT_NT})
+    set(LAZY_CGAL_GMPQ_NT ${LAZY_LEDA_RAT_NT})
+    set(LAZY_GMPZ_NT ${LAZY_LEDA_RAT_NT})
+    set(CGAL_GMPZ_NT ${LEDA_INT_NT})
+  else()
+    message(STATUS "GMP is disabled, try to use MP float instead.")
+    set(GMPZ_NT ${MP_FLOAT_NT})
+    set(QUOTIENT_CGAL_GMPZ_NT ${QUOTIENT_MP_FLOAT_NT})
+    set(CGAL_GMPQ_NT ${QUOTIENT_MP_FLOAT_NT})
+    set(LAZY_CGAL_GMPQ_NT ${LAZY_QUOTIENT_MP_FLOAT_NT})
+    set(LAZY_GMPZ_NT ${LAZY_QUOTIENT_MP_FLOAT_NT})
+    set(CGAL_GMPZ_NT ${MP_FLOAT_NT})
+  endif()
 endif()
 
 set(COMPARE 1)
@@ -97,8 +104,6 @@ set(ARE_MERGEABLE 10)
 set(MERGE 11)
 set(ASSERTIONS 12)
 set(CONSTRUCTOR 13)
-set(COMPARE_X_AT_LIMIT 14)
-set(COMPARE_X_NEAR_LIMIT 15)
 set(COMPARE_X_ON_BOUNDARY 16)
 set(COMPARE_X_NEAR_BOUNDARY 17)
 set(COMPARE_Y_NEAR_BOUNDARY 18)
@@ -156,21 +161,25 @@ function(cgal_arr_2_add_target exe_name source_file)
     set(name ${exe_name}_${suffix})
   endif()
   add_executable(${name} ${source_file})
+  target_link_libraries(${name} CGAL::CGAL)
+  if (TARGET CGAL::CGAL_Core)
+    target_link_libraries(${name} CGAL::CGAL_Core)
+  endif()
   add_to_cached_list( CGAL_EXECUTABLE_TARGETS ${name} )
   separate_arguments(flags UNIX_COMMAND "${TESTSUITE_CXXFLAGS}")
   target_compile_options(${name} PRIVATE ${flags})
   cgal_debug_message(STATUS "#      -> target ${name} with TESTSUITE_CXXFLAGS: ${flags}")
 
-  if(BUILD_TESTING)
+  if(CGAL_ENABLE_TESTING)
     cgal_add_compilation_test(${name})
-  endif(BUILD_TESTING)
+  endif(CGAL_ENABLE_TESTING)
 
   # Add a compatibility-mode with the shell script `cgal_test_base`
   if(NOT TARGET ${exe_name})
     create_single_source_cgal_program( "${source_file}" NO_TESTING)
-    if(BUILD_TESTING)
+    if(CGAL_ENABLE_TESTING)
       cgal_add_compilation_test(${exe_name})
-    endif(BUILD_TESTING)
+    endif(CGAL_ENABLE_TESTING)
   endif()
 endfunction()
 
@@ -183,7 +192,7 @@ endfunction()
 function(run_test_with_flags)
   # ${ARGV0} - executable name
   # ${ARGV1} - test substring name
-  if(NOT BUILD_TESTING)
+  if(NOT CGAL_ENABLE_TESTING)
     return()
   endif()
   cgal_debug_message(STATUS "# run_test_with_flags(${ARGN})")
@@ -191,7 +200,7 @@ function(run_test_with_flags)
 endfunction()
 
 function(run_test_alt name datafile)
-  if(NOT BUILD_TESTING)
+  if(NOT CGAL_ENABLE_TESTING)
     return()
   endif()
   if(suffix)
@@ -215,7 +224,7 @@ function(compile_and_run)
   cgal_debug_message(STATUS "# compile_and_run(${ARGN})")
 #  message("   successful compilation of ${name}")
   cgal_arr_2_add_target(${name} ${name}.cpp)
-  if(BUILD_TESTING)
+  if(CGAL_ENABLE_TESTING)
     cgal_add_test(${name})
   endif()
 endfunction()
@@ -326,8 +335,6 @@ function(execute_commands_new_structure data_dir traits_type_name)
   set(commands_indicator_COMPARE 0)
   set(commands_indicator_VERTEX 0)
   set(commands_indicator_IS_VERTICAL 0)
-  set(commands_indicator_COMPARE_X_AT_LIMIT 0)
-  set(commands_indicator_COMPARE_X_NEAR_LIMIT 0)
   set(commands_indicator_COMPARE_X_ON_BOUNDARY 0)
   set(commands_indicator_COMPARE_X_NEAR_BOUNDARY 0)
   set(commands_indicator_COMPARE_Y_NEAR_BOUNDARY 0)
@@ -364,14 +371,6 @@ function(execute_commands_new_structure data_dir traits_type_name)
   if(commands_indicator_IS_VERTICAL)
     run_trapped_test(test_traits data/${data_dir}/points
       data/${data_dir}/xcurves data/${data_dir}/curves data/${data_dir}/is_vertical ${traits_type_name})
-  endif()
-  if(commands_indicator_COMPARE_X_AT_LIMIT)
-    run_trapped_test(test_traits data/${data_dir}/points
-      data/${data_dir}/xcurves data/${data_dir}/curves data/${data_dir}/compare_x_at_limit ${traits_type_name})
-  endif()
-  if(commands_indicator_COMPARE_X_NEAR_LIMIT)
-    run_trapped_test(test_traits data/${data_dir}/points
-      data/${data_dir}/xcurves data/${data_dir}/curves data/${data_dir}/compare_x_near_limit ${traits_type_name})
   endif()
   if(commands_indicator_COMPARE_X_ON_BOUNDARY)
     run_trapped_test(test_traits data/${data_dir}/points
@@ -471,8 +470,6 @@ function(execute_commands_traits_adaptor data_dir traits_type_name)
   set(commands_indicator_PARAMETER_SPACE_X 0)
   set(commands_indicator_PARAMETER_SPACE_Y 0)
   set(commands_indicator_COMPARE_XY 0)
-  set(commands_indicator_COMPARE_X_AT_LIMIT 0)
-  set(commands_indicator_COMPARE_X_NEAR_LIMIT 0)
   set(commands_indicator_COMPARE_X_ON_BOUNDARY 0)
   set(commands_indicator_COMPARE_X_NEAR_BOUNDARY 0)
   set(commands_indicator_COMPARE_Y_NEAR_BOUNDARY 0)
@@ -504,16 +501,6 @@ function(execute_commands_traits_adaptor data_dir traits_type_name)
     run_trapped_test(test_traits_adaptor data/test_adaptor/${data_dir}/points
       data/test_adaptor/${data_dir}/xcurves data/test_adaptor/${data_dir}/curves
       data/test_adaptor/${data_dir}/compare_xy ${traits_type_name})
-  endif()
-  if(commands_indicator_COMPARE_X_AT_LIMIT)
-    run_trapped_test(test_traits_adaptor data/test_adaptor/${data_dir}/points
-      data/test_adaptor/${data_dir}/xcurves data/test_adaptor/${data_dir}/curves
-      data/test_adaptor/${data_dir}/compare_x_at_limit ${traits_type_name})
-  endif()
-  if(commands_indicator_COMPARE_X_NEAR_LIMIT)
-    run_trapped_test(test_traits_adaptor data/test_adaptor/${data_dir}/points
-      data/test_adaptor/${data_dir}/xcurves data/test_adaptor/${data_dir}/curves
-      data/test_adaptor/${data_dir}/compare_x_near_limit ${traits_type_name})
   endif()
 
   if(commands_indicator_COMPARE_X_ON_BOUNDARY)
@@ -730,15 +717,6 @@ function(test_point_location_segments)
 endfunction()
 
 # For backward compatibility
-function(test_point_location_segments_version)
-  set(nt ${CGAL_GMPQ_NT})
-  set(kernel ${CARTESIAN_KERNEL})
-  set(geom_traits ${SEGMENT_GEOM_TRAITS})
-  set(flags "-DTEST_NT=${nt} -DTEST_KERNEL=${kernel} -DTEST_GEOM_TRAITS=${geom_traits} -DCGAL_ARR_POINT_LOCATION_VERSION=1")
-  compile_and_run_with_flags(test_point_location segments "${flags}" segments_version)
-endfunction()
-
-# For backward compatibility
 function(test_point_location_segments_conversion)
   set(nt ${CGAL_GMPQ_NT})
   set(kernel ${CARTESIAN_KERNEL})
@@ -899,7 +877,7 @@ endfunction()
 #---------------------------------------------------------------------#
 function(test_polycurve_conic_traits)
 #  echo polycurve test starting
-  if(CGAL_DISABLE_GMP)
+  if(NOT CGAL_Core_FOUND)
     MESSAGE(STATUS "test_polycurve_conic_traits requires CORE and will not be executed")
     return()
   endif()
@@ -911,7 +889,7 @@ function(test_polycurve_conic_traits)
   compile_test_with_flags(test_traits conic_polycurve "${flags}")
 
   # The input arguments for the execute_commands_new_structure,
-  # 1. Polycurve_conics is the directory name in "data"
+  # 1. polycurve_conics is the directory name in "data"
   # 2. polycurve_conic_traits is a string
   # Execute_command_new_structure will only run the test on functors provided as the third, fourth and so on arguments.
   # To see how the input data directory should be structured for each functor, check the execute_commands_new_structure function in this file.
@@ -947,7 +925,7 @@ function(test_polycurve_circular_arc_traits)
 
   compile_test_with_flags(test_traits circular_arc_polycurve "${flags}")
 
-  execute_commands_new_structure(Polycurves_circular_arcs polycurve_circular_arc_traits
+  execute_commands_new_structure(polycurves_circular_arcs polycurve_circular_arc_traits
     COMPARE_Y_AT_X
     EQUAL
     IS_VERTICAL
@@ -970,7 +948,7 @@ endfunction()
 # polycurve bezier traits
 #---------------------------------------------------------------------#
 function(test_polycurve_bezier_traits)
-  if(CGAL_DISABLE_GMP)
+  if(NOT CGAL_Core_FOUND)
     MESSAGE(STATUS "test_polycurve_bezier_traits requires CORE and will not be executed")
     return()
   endif()
@@ -981,7 +959,7 @@ function(test_polycurve_bezier_traits)
 
   compile_test_with_flags(test_traits bezier_polycurve "${flags}")
 
-  execute_commands_new_structure(Polycurves_bezier test_polycurve_bezier_traits
+  execute_commands_new_structure(polycurves_bezier test_polycurve_bezier_traits
     MERGE
     EQUAL
     IS_VERTICAL
@@ -1072,14 +1050,14 @@ function(test_linear_traits)
     IS_VERTICAL COMPARE_Y_AT_X COMPARE_Y_AT_X_LEFT INTERSECT
     SPLIT MERGE
     PARAMETER_SPACE_X PARAMETER_SPACE_Y
-    COMPARE_X_AT_LIMIT COMPARE_X_NEAR_LIMIT COMPARE_Y_NEAR_BOUNDARY)
+    COMPARE_X_ON_BOUNDARY COMPARE_X_NEAR_BOUNDARY COMPARE_Y_NEAR_BOUNDARY)
 endfunction()
 
 #---------------------------------------------------------------------#
 # conic traits
 #---------------------------------------------------------------------#
 function(test_conic_traits)
-  if(CGAL_DISABLE_GMP)
+  if(NOT CGAL_Core_FOUND)
     MESSAGE(STATUS "test_conic_traits requires CORE and will not be executed")
     return()
   endif()
@@ -1210,7 +1188,7 @@ endfunction()
 # bezier traits
 #---------------------------------------------------------------------#
 function(test_bezier_traits)
-  if(CGAL_DISABLE_GMP)
+  if(NOT CGAL_Core_FOUND)
     MESSAGE(STATUS "test_bezier_traits requires CORE and will not be executed")
     return()
   endif()
@@ -1257,7 +1235,7 @@ endfunction()
 # rational arc traits
 #---------------------------------------------------------------------#
 function(test_rational_arc_traits)
-  if(CGAL_DISABLE_GMP)
+  if(NOT CGAL_Core_FOUND)
     MESSAGE(STATUS "test_rational_arc_traits requires CORE and will not be executed")
     return()
   endif()
@@ -1274,7 +1252,7 @@ function(test_rational_arc_traits)
 
   execute_commands_new_structure(rational_arcs rational_arc_traits
     VERTEX IS_VERTICAL COMPARE_Y_AT_X COMPARE_Y_AT_X_LEFT SPLIT MERGE
-    COMPARE_X_AT_LIMIT COMPARE_X_NEAR_LIMIT COMPARE_Y_NEAR_BOUNDARY)
+    COMPARE_X_ON_BOUNDARY COMPARE_X_NEAR_BOUNDARY COMPARE_Y_NEAR_BOUNDARY)
 endfunction()
 
 #---------------------------------------------------------------------#
@@ -1324,7 +1302,7 @@ endfunction()
 #---------------------------------------------------------------------#
 function(test_algebraic_traits_core)
   #TODO: Adapt
-  if(CGAL_DISABLE_GMP)
+  if(NOT CGAL_Core_FOUND)
     MESSAGE(STATUS "test_algebraic_traits_core requires CORE and will not be executed")
     return()
   endif()
@@ -1389,7 +1367,6 @@ test_overlay_segments()
 test_overlay_spherical_arcs()
 
 test_point_location_segments()
-test_point_location_segments_version()
 test_point_location_segments_conversion()
 test_point_location_circle_segments()
 test_point_location_linear()
@@ -1422,3 +1399,11 @@ compile_and_run(test_spherical_removal)
 compile_and_run(test_io)
 
 compile_and_run(test_sgm)
+
+compile_and_run(test_polycurve_intersection)
+if(CGAL_DISABLE_GMP)
+  get_directory_property(LIST_OF_TESTS TESTS)
+  foreach(_test ${LIST_OF_TESTS})
+    set_property(TEST ${_test} APPEND PROPERTY ENVIRONMENT CGAL_DISABLE_GMP=1)
+  endforeach()
+endif()

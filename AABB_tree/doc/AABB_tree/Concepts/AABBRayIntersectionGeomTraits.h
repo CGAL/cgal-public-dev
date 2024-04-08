@@ -7,8 +7,11 @@ concept `AABBGeomTraits`. In addition to the types required by
 `AABBGeomTraits` it also requires types and functors necessary to
 define the Intersection_distance functor.
 
-\cgalRefines `AABBGeomTraits`
-\cgalHasModel Any 3D Kernel is a model of this concept.
+\cgalRefines{AABBGeomTraits}
+
+\cgalHasModelsBegin
+\cgalHasModelsBare{All models of the concept `Kernel`}
+\cgalHasModelsEnd
 
 \sa `CGAL::AABB_traits<AABBGeomTraits,AABBPrimitive>`
 \sa `CGAL::AABB_tree<AABBTraits>`
@@ -17,11 +20,6 @@ define the Intersection_distance functor.
 */
 class AABBRayIntersectionGeomTraits {
 public:
-  /*!
-    Type of a 3D point.
-  */
-  typedef unspecified_type Point_3;
-
   /*!
     Type of a 3D ray.
   */

@@ -36,10 +36,6 @@
 
 namespace CGAL {
   namespace Shape_detection {
-  namespace internal {
-    template<class PointAccessor>
-    class Octree;
-  }
 
     /*!
      \ingroup PkgShapeDetectionRANSACShapes
@@ -56,8 +52,6 @@ namespace CGAL {
     friend class Efficient_RANSAC;
     template <class T>
     friend class Region_growing_depr;
-    template<class PointAccessor>
-    friend class internal::Octree;
     /// \endcond
 
   public:
@@ -380,7 +374,7 @@ namespace CGAL {
      */
     typename boost::property_traits< typename Traits::Point_map >::reference
     point(std::size_t i) const {
-      return get(this->m_point_pmap, *(this->m_first + i));
+      return get(this->m_point_pmap.value(), *(this->m_first + i));
     }
 
     /*!
@@ -388,7 +382,7 @@ namespace CGAL {
      */
     typename boost::property_traits< typename Traits::Normal_map >::reference
     normal(std::size_t i) const {
-      return get(this->m_normal_pmap, *(this->m_first + i));
+      return get(this->m_normal_pmap.value(), *(this->m_first + i));
     }
 
     /*!
@@ -623,10 +617,11 @@ namespace CGAL {
                                const std::ptrdiff_t n,
                                FT &low,
                                FT &high) {
-      const FT q = FT(x * n * double(UN - x) * (UN - n) / (UN - 1));
+      const FT xn = FT(double(x) * double(n));
+      const FT q = FT(xn * double(UN - x) * (UN - n) / (UN - 1));
       const FT sq = CGAL::sqrt(q);
-      low  = (x * n - sq) / UN;
-      high = (x * n + sq)/UN;
+      low  = (xn - sq) / UN;
+      high = (xn + sq)/UN;
 
       if (!is_finite<FT>(low) || !is_finite<FT>(high)) {
         low = high = 0;
@@ -699,8 +694,8 @@ namespace CGAL {
     Input_iterator m_first;
 
     Traits m_traits;
-    Point_map m_point_pmap;
-    Normal_map m_normal_pmap;
+    std::optional<Point_map> m_point_pmap;
+    std::optional<Normal_map> m_normal_pmap;
     /// \endcond
   };
 }

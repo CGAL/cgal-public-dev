@@ -76,7 +76,7 @@ public:
     std::generate(group4.begin(), group4.end(), [&]{ return m_rng.get_int(0, im); });
 
     // crossover I, pick A or B
-    constexpr FT lweight = 0.4, uweight = 0.6;
+    const FT lweight = 0.4, uweight = 0.6;
 
     std::vector<Simplex> new_simplices(m);
 
@@ -85,7 +85,7 @@ public:
       Simplex offspring;
       for(int j=0; j<4; ++j)
       {
-        const FT r{m_rng.get_double()};
+        const FT r{m_rng.uniform_01<FT>()};
         const FT fitnessA = m_population[group1[i]][j].fitness();
         const FT fitnessB = m_population[group2[i]][j].fitness();
         const FT threshold = (fitnessA < fitnessB) ? uweight : lweight;
@@ -129,7 +129,7 @@ public:
               const std::size_t nelder_mead_iterations,
               const std::size_t max_random_mutations = 0)
   {
-    // stopping criteria prameters
+    // stopping criteria parameters
     FT prev_fit_value = 0;
     const FT tolerance = 1e-10;
     int stale = 0;
@@ -160,8 +160,6 @@ public:
       std::cout << std::endl;
 #endif
 
-      // optimize the current best rotation by using the exact OBB 2D algorithm
-      // along the axes of the current best OBB
       m_best_v = &(m_population.get_best_vertex());
       Matrix& best_m = m_best_v->matrix();
 
@@ -170,7 +168,10 @@ public:
       std::cout << "fitness: " << m_best_v->fitness() << std::endl;
 #endif
 
-      optimize_along_OBB_axes(best_m, m_points, m_traits);
+      // optimize the current best rotation by using the exact OBB 2D algorithm
+      // along the axes of the current best OBB
+      Optimizer_along_axes<Traits> optimizer_2D;
+      optimizer_2D(best_m, m_points, m_traits);
       m_best_v->fitness() = compute_fitness(best_m, m_points, m_traits);
 
       // stopping criteria

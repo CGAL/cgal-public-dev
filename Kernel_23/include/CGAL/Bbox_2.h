@@ -61,6 +61,8 @@ public:
   inline double     ymin() const;
   inline double     xmax() const;
   inline double     ymax() const;
+  inline double x_span() const;
+  inline double y_span() const;
 
   inline double     max BOOST_PREVENT_MACRO_SUBSTITUTION (int i) const;
   inline double     min BOOST_PREVENT_MACRO_SUBSTITUTION (int i) const;
@@ -69,6 +71,7 @@ public:
   inline Bbox_2&     operator+=(const Bbox_2 &b);
 
   inline void dilate(int dist);
+  inline void scale(double factor);
 };
 
 inline
@@ -90,6 +93,14 @@ inline
 double
 Bbox_2::ymax() const
 { return rep[3]; }
+
+inline double Bbox_2::x_span() const {
+  return xmax() - xmin();
+}
+
+inline double Bbox_2::y_span() const {
+  return ymax() - ymin();
+}
 
 inline
 bool
@@ -161,6 +172,25 @@ Bbox_2::dilate(int dist)
 }
 
 inline
+void
+Bbox_2::scale(double factor)
+{
+  CGAL_precondition(factor > 0);
+
+  if(factor == 1.)
+    return;
+
+  std::array<double, 2> half_width = { (xmax() - xmin()) * 0.5,
+                                       (ymax() - ymin()) * 0.5 };
+  std::array<double, 2> center = { xmin() + half_width[0],
+                                   ymin() + half_width[1] };
+  rep[0] = center[0] - factor * half_width[0];
+  rep[1] = center[1] - factor * half_width[1];
+  rep[2] = center[0] + factor * half_width[0];
+  rep[3] = center[1] + factor * half_width[1];
+}
+
+inline
 bool
 do_overlap(const Bbox_2 &bb1, const Bbox_2 &bb2)
 {
@@ -176,7 +206,7 @@ inline
 std::ostream&
 operator<<(std::ostream &os, const Bbox_2 &b)
 {
-    switch(get_mode(os)) {
+    switch(IO::get_mode(os)) {
     case IO::ASCII :
         os << b.xmin() << ' ' << b.ymin() << ' '
            << b.xmax() << ' ' << b.ymax();
@@ -205,9 +235,9 @@ operator>>(std::istream &is, Bbox_2 &b)
     double xmax = 0;
     double ymax = 0;
 
-    switch(get_mode(is)) {
+    switch(IO::get_mode(is)) {
     case IO::ASCII :
-        is >> iformat(xmin) >> iformat(ymin) >> iformat(xmax) >> iformat(ymax);
+        is >> IO::iformat(xmin) >> IO::iformat(ymin) >> IO::iformat(xmax) >> IO::iformat(ymax);
         break;
     case IO::BINARY :
         read(is, xmin);

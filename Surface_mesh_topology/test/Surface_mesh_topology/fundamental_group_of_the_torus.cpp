@@ -106,7 +106,7 @@ void create_loop_kl(Path_on_surface<SM>& pkl, int k, int l)
 int main()
 {
   SM sm;
-  std::ifstream in("data/torus_quad.off");
+  std::ifstream in(CGAL::data_file_path("meshes/torus_quad.off"));
   if (!in.is_open())
   {
     std::cout<<"ERROR reading file data/torus_quad.off"<<std::endl;
@@ -121,7 +121,7 @@ int main()
 /*
 #ifdef CGAL_USE_BASIC_VIEWER
   std::vector<Path_on_surface<SM> > paths={pij, pkl};
-  CGAL::draw(sm, paths); // Enable only if CGAL was compiled with Qt5
+  CGAL::draw(sm, paths); // Enable only if CGAL was compiled with Qt6
 #endif // CGAL_USE_BASIC_VIEWER
 */
   for (int i=-4; i<=4; ++i)
@@ -155,7 +155,7 @@ int main()
       if (!hkl_kl)
       { std::cout<<"FAILURE : a path associated with ints "<<k<<", "<<l<<" is not homotopic to himself"<<std::endl; test_valid=false; }
       if (hij_kl!=hkl_ij)
-      { std::cout<<"FAILURE : the homotopy relation is not symetric on paths associated with ints "<<i<<", "<<j<<" and "<<k<<", "<<l<<std::endl; test_valid=false; }
+      { std::cout<<"FAILURE : the homotopy relation is not symmetric on paths associated with ints "<<i<<", "<<j<<" and "<<k<<", "<<l<<std::endl; test_valid=false; }
 
       if (i==k && j==l && (!hij_kl || !hkl_ij))
       { std::cout<<"FAILURE : paths both associated with ints "<<i<<", "<<j<<" are not homotopic"<<std::endl; test_valid=false; }

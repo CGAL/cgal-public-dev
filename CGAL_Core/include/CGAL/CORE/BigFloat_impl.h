@@ -23,7 +23,7 @@
  *       Chen Li <chenli@cs.nyu.edu>
  *       Zilin Du <zilin@cs.nyu.edu>
  *
- * WWW URL: http://cs.nyu.edu/exact/
+ * WWW URL: https://cs.nyu.edu/exact/
  * Email: exact@cs.nyu.edu
  *
  * $URL$
@@ -39,6 +39,7 @@
 
 #include <CGAL/disable_warnings.h>
 
+#include <string>
 #include <ctype.h>
 #include <CGAL/CORE/BigFloat.h>
 #include <CGAL/CORE/Expr.h>
@@ -78,12 +79,14 @@ BigInt FiveTo(unsigned long exp) {
 // ZERO
 CGAL_INLINE_FUNCTION
 const BigFloat& BigFloat::getZero() {
+  init_CORE();
   CGAL_STATIC_THREAD_LOCAL_VARIABLE(BigFloat, Zero,0);
   return Zero;
 }
 // ONE
 CGAL_INLINE_FUNCTION
 const BigFloat& BigFloat::getOne() {
+  init_CORE();
   CGAL_STATIC_THREAD_LOCAL_VARIABLE(BigFloat, One,1);
   return One;
 }
@@ -94,7 +97,7 @@ const BigFloat& BigFloat::getOne() {
 CGAL_INLINE_FUNCTION
 BigFloat::BigFloat(const Expr& E, const extLong& r, const extLong& a)
   : RCBigFloat(new BigFloatRep()) {
-  *this = E.approx(r, a).BigFloatValue(); // lazy implementaion, any other way?
+  *this = E.approx(r, a).BigFloatValue(); // lazy implementation, any other way?
 }
 
 ////////////////////////////////////////////////////////////
@@ -191,8 +194,7 @@ void BigFloatRep :: truncM(const BigFloatRep& B, const extLong& r, const extLong
       err = 2;
       exp = B.exp + t;
     } else //  t < chunkCeil(clLg(B.err))
-      core_error(std::string("BigFloat error: truncM called with stricter")
-          + "precision than current error.", __FILE__, __LINE__, true);
+      CGAL_error_msg("BigFloat error: truncM called with stricter precision than current error.");
   } else {//  B.m == 0
     long t = chunkFloor(- a.asLong()) - B.exp;
 
@@ -201,8 +203,7 @@ void BigFloatRep :: truncM(const BigFloatRep& B, const extLong& r, const extLong
       err = 1;
       exp = B.exp + t;
     } else //  t < chunkCeil(clLg(B.err))
-      core_error(std::string("BigFloat error: truncM called with stricter")
-          + "precision than current error.", __FILE__, __LINE__, true);
+      CGAL_error_msg("BigFloat error: truncM called with stricter precision than current error.");
   }
 }
 
@@ -213,7 +214,7 @@ CGAL_INLINE_FUNCTION
 void BigFloatRep::approx(const BigFloatRep& B,
               const extLong& r, const extLong& a) {
   if (B.err) {
-    if (1 + clLg(B.err) <= bitLength(B.m))
+    if (static_cast<std::size_t>(1 + clLg(B.err)) <= bitLength(B.m))
       truncM(B, r + 1, a);
     else //  1 + clLg(B.err) > lg(B.m)
       truncM(B, CORE_posInfty, a);
@@ -255,7 +256,7 @@ void BigFloatRep::div(const BigInt& N, const BigInt& D,
       exp = 0;
     }
   } else //  D == 0
-    core_error( "BigFloat error: zero divisor.", __FILE__, __LINE__, true);
+    CGAL_error_msg( "BigFloat error: zero divisor.");
 
   // Call normalization globally     -- IP 10/9/98
   normal();
@@ -452,6 +453,7 @@ void BigFloatRep::centerize(const BigFloatRep& a, const BigFloatRep& b) {
   // Zilin & Vikram, 08/24/04
   // err = 1 + longValue(chunkShift(r.m, r.exp - exp));
   BigInt E = chunkShift(r.m, r.exp - exp);
+  E = abs(E);
   bigNormal(E);
 }
 
@@ -535,8 +537,7 @@ void BigFloatRep :: div(const BigFloatRep& x, const BigFloatRep& y,
       bigNormal(bigErr);
     }
   } else {//  y.m <= y.err
-    core_error("BigFloat error: possible zero divisor.",
-                    __FILE__, __LINE__, true);
+    CGAL_error_msg("BigFloat error: possible zero divisor.");
   }
 
   // Call normalization globally     -- IP 10/9/98
@@ -731,8 +732,7 @@ void BigFloatRep::sqrt(const BigFloatRep& x, const extLong& a, const BigFloat& A
       }  // end of case with error in mantissa
     }//else
   } else
-    core_error("BigFloat error: squareroot called with negative operand.",
-                    __FILE__, __LINE__, true);
+    CGAL_error_msg("BigFloat error: squareroot called with negative operand.");
 } //sqrt with initial approximation
 
 //  compareMExp(x)
@@ -819,8 +819,7 @@ BigFloatRep::toDecimal(unsigned int width, bool Scientific) const {
   if (err > 0 && err >= abs(m)) {
     // if err is larger than mantissa, sign and significant values
     // can not be determined.
-    core_error("BigFloat error: Error is too big!",
-                    __FILE__, __LINE__, false);
+    CGAL_CORE_warning_msg(true, "BigFloat error: Error is too big!");
     decOut.rep = "0.0e0";          // error is too big
     decOut.isScientific = false;
     decOut.noSignificant = 0;
@@ -859,14 +858,14 @@ BigFloatRep::toDecimal(unsigned int width, bool Scientific) const {
   // the output is an integer (in which case it does not physically appear
   // but conceptually terminates the sequence of digits).
 
-  // First, get the decimal representaion of (m * B^(exp)).
+  // First, get the decimal representation of (m * B^(exp)).
   if (e2 < 0) {
     M *= FiveTo(-e2); // M = x * 10^(-e2)
   } else if (e2 > 0) {
     M <<= e2;         // M = x * 2^(e2)
   }
 
-  std::string decRep = M.get_str();
+  std::string decRep = M.convert_to<std::string>();
   // Determine the "significant part" of this string, i.e. the part which
   // is guaranteed to be correct in the presence of error,
   // except that the last digit which might be subject to +/- 1.
@@ -1000,8 +999,7 @@ void BigFloatRep :: fromString(const char *str, extLong prec ) {
   // NOTE: prec defaults to get_static_defBigFloatInputDigits() (see BigFloat.h)
   // check that prec is not INFTY
   if (prec.isInfty())
-    core_error("BigFloat error: infinite precision not allowed",
-                        __FILE__, __LINE__, true);
+    CGAL_error_msg("BigFloat error: infinite precision not allowed");
 
   const char *e = strchr(str, 'e');
   int dot = 0;
@@ -1055,8 +1053,8 @@ void BigFloatRep :: fromString(const char *str, extLong prec ) {
 CGAL_INLINE_FUNCTION
 std::istream& BigFloatRep :: operator >>(std::istream& i) {
   int size = 20;
-  char *str = new char[size];
-  char *p = str;
+  std::string str;
+  str.reserve(size);
   char c;
   int d = 0, e = 0, s = 0;
   // d=1 means dot is found
@@ -1074,7 +1072,7 @@ std::istream& BigFloatRep :: operator >>(std::istream& i) {
   } while (isspace(c)); /* loop if met end-of-file, or
                                char read in is white-space. */
   // Chen Li, "if (c == EOF)" is unsafe since c is of char type and
-  // EOF is of int tyep with a negative value -1
+  // EOF is of int type with a negative value -1
   if (i.eof()) {
     i.clear(std::ios::eofbit | std::ios::failbit);
     return i;
@@ -1082,7 +1080,7 @@ std::istream& BigFloatRep :: operator >>(std::istream& i) {
 
   // the current content in "c" should be the first non-whitespace char
   if (c == '-' || c == '+') {
-    *p++ = c;
+    str += c;
     i.get(c);
   }
 
@@ -1094,23 +1092,12 @@ std::istream& BigFloatRep :: operator >>(std::istream& i) {
     //  xxxx.xxxe+xxx.xxx:
     if (e && (c == '.'))
       break;
-    if (p - str == size) {
-      char *t = str;
-      str = new char[size*2];
-      memcpy(str, t, size);
-      delete [] t;
-      p = str + size;
-      size *= 2;
-    }
-#ifdef CGAL_CORE_DEBUG
-    CGAL_assertion((p-str) < size);
-#endif
 
-    *p++ = c;
+    str += c;
     if (c == '.')
       d = 1;
     // Chen Li: fix a bug -- the sign of exponent can not happen before
-    // the character "e" appears! It must follow the "e' actually.
+    // the character "e" appears! It must follow the "e" actually.
     //    if (e || c == '-' || c == '+') s = 1;
     if (e)
       s = 1;
@@ -1118,24 +1105,8 @@ std::istream& BigFloatRep :: operator >>(std::istream& i) {
       e = 1;
   }
 
-  // chenli: make sure that the p is still in the range
-  if (p - str >= size) {
-    std::size_t len = p - str;
-    char *t = str;
-    str = new char[len + 1];
-    memcpy(str, t, len);
-    delete [] t;
-    p = str + len;
-  }
-
-#ifdef CGAL_CORE_DEBUG
-  CGAL_assertion(p - str < size);
-#endif
-
-  *p = '\0';
   i.putback(c);
-  fromString(str);
-  delete [] str;
+  fromString(str.c_str());
   return i;
 }//operator >>
 

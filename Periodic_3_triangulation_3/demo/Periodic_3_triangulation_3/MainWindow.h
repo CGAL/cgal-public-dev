@@ -16,7 +16,7 @@ class MainWindow : public QMainWindow
   Q_OBJECT
 
 public:
-  MainWindow(QWidget* = 0) {
+  MainWindow(QWidget* = nullptr) {
     ui = new Ui::MainWindow;
     ui->setupUi(this);
     s = new Scene(ui);
@@ -102,16 +102,11 @@ public:
             this, SLOT(about()));
   }
 
-  ~MainWindow() {
-    delete(ui);
-    delete(s);
-    process->close();
-    delete(process);
-  }
+  ~MainWindow();
 
 public Q_SLOTS:
   void help() {
-    QString app = QLibraryInfo::location(QLibraryInfo::BinariesPath)
+    QString app = QLibraryInfo::path(QLibraryInfo::BinariesPath)
       + QDir::separator();
 #if !defined(Q_OS_MAC)
     app += QString("assistant");

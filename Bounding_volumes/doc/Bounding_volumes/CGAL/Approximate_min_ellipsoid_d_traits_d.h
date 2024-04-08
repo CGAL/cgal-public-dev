@@ -12,13 +12,13 @@ an exact number-type `ET` has to be provided which
 exact computations.
 
 \tparam K must be a model for concept `Kernel`.
-\tparam `ET` must be a model for concept
+\tparam ET must be a model for concept
 `EuclideanRing` with exact arithmetic operations, i.e., the type
 \link AlgebraicStructureTraits::Is_exact `Algebraic_structure_traits<ET>::Is_exact` \endlink must be
 `CGAL::Tag_true` (Examples of such a
 number-type are `MP_Float`, `CORE::Expr`, and `Gmpq`.)
 
-\cgalModels `ApproximateMinEllipsoid_d_Traits_d`
+\cgalModels{ApproximateMinEllipsoid_d_Traits_d}
 
 \sa `CGAL::Approximate_min_ellipsoid_d_traits_2<K,ET>`
 \sa `CGAL::Approximate_min_ellipsoid_d_traits_3<K,ET>`

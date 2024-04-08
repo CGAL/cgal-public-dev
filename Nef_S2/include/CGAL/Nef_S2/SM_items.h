@@ -27,7 +27,7 @@
 #include <string>
 #include <sstream>
 #ifndef CGAL_I_DO_WANT_TO_USE_GENINFO
-#include <boost/any.hpp>
+#include <any>
 #endif
 
 namespace CGAL {
@@ -45,7 +45,7 @@ public:
     #ifdef CGAL_I_DO_WANT_TO_USE_GENINFO
     typedef void*  GenPtr;
     #else
-    typedef boost::any GenPtr;
+    typedef std::any GenPtr;
     #endif
     typedef typename Refs::Mark                    Mark;
     typedef typename Refs::Sphere_point            Sphere_point;
@@ -109,7 +109,7 @@ public:
 
     public:
     std::string debug() const
-    { std::ostringstream os; set_pretty_mode(os);
+    { std::ostringstream os; CGAL::IO::set_pretty_mode(os);
       os<<"V"<<point_
       #ifdef CGAL_I_DO_WANT_TO_USE_GENINFO
         <<' '<<info_
@@ -127,7 +127,7 @@ public:
     #ifdef CGAL_I_DO_WANT_TO_USE_GENINFO
     typedef void*  GenPtr;
     #else
-    typedef boost::any GenPtr;
+    typedef std::any GenPtr;
     #endif
     typedef typename Refs::Mark             Mark;
     typedef typename Refs::Sphere_circle    Sphere_circle;
@@ -210,7 +210,7 @@ public:
     const GenPtr& info() const { return info_; }
 
     std::string debug() const
-    { std::ostringstream os; set_pretty_mode(os);
+    { std::ostringstream os; CGAL::IO::set_pretty_mode(os);
       os <<"e["<<source_->debug()<<", "
          <<twin_->source_->debug()<<
       #ifdef CGAL_I_DO_WANT_TO_USE_GENINFO
@@ -228,7 +228,7 @@ public:
     #ifdef CGAL_I_DO_WANT_TO_USE_GENINFO
     typedef void*  GenPtr;
     #else
-    typedef boost::any GenPtr;
+    typedef std::any GenPtr;
     #endif
     typedef typename Refs::Mark             Mark;
     typedef typename Refs::Sphere_circle    Sphere_circle;
@@ -289,7 +289,7 @@ public:
     const GenPtr& info() const { return info_; }
 
     std::string debug() const
-    { std::ostringstream os; set_pretty_mode(os);
+    { std::ostringstream os; CGAL::IO::set_pretty_mode(os);
       os<<"l"<<circle_
       #ifdef CGAL_I_DO_WANT_TO_USE_GENINFO
         <<' '<<info_
@@ -306,7 +306,7 @@ public:
     #ifdef CGAL_I_DO_WANT_TO_USE_GENINFO
     typedef void*  GenPtr;
     #else
-    typedef boost::any GenPtr;
+    typedef std::any GenPtr;
     #endif
     typedef typename Refs::Mark                  Mark;
     typedef typename Refs::Object_handle         Object_handle;

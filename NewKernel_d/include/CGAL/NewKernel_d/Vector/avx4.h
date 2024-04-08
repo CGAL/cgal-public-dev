@@ -12,7 +12,7 @@
 #ifndef CGAL_VECTOR_AVX4_H
 #define CGAL_VECTOR_AVX4_H
 
-#if !defined __AVX__ || (__GNUC__ * 100 + __GNUC_MINOR__ < 408)
+#if !defined __AVX__
 #error Requires AVX and gcc 4.8+
 #endif
 #include <x86intrin.h>
@@ -31,19 +31,19 @@ namespace CGAL {
     typedef Dimension_tag<4> Dimension;
     typedef Dimension_tag<4> Max_dimension;
     // No Rebind_dimension, this is a building block
-    template<class,bool=true> struct Property : boost::false_type {};
+    template<class,bool=true> struct Property : std::false_type {};
     template<bool b> struct Property<Has_vector_plus_minus_tag,b>
-      : boost::true_type {};
+      : std::true_type {};
     /* MAYBE?
        template<bool b> struct Property<Has_vector_scalar_ops_tag,b>
-       : boost::true_type {};
+       : std::true_type {};
        */
     template<bool b> struct Property<Has_determinant_of_vectors_tag,b>
-      : boost::true_type {};
+      : std::true_type {};
     template<bool b> struct Property<Has_dot_product_tag,b>
-      : boost::true_type {};
+      : std::true_type {};
     template<bool b> struct Property<Has_determinant_of_vectors_omit_last_tag,b>
-      : boost::true_type {};
+      : std::true_type {};
 
     typedef __m256d Vector;
     struct Construct_vector {

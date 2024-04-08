@@ -1,16 +1,22 @@
 #ifndef POINT_SET_ITEM_H
 #define POINT_SET_ITEM_H
+
 #include <CGAL/Three/Scene_item_rendering_helper.h>
 #include <CGAL/Three/Scene_item_with_properties.h>
 #include <CGAL/Three/Scene_zoomable_item_interface.h>
+
 #include "Scene_points_with_normal_item_config.h"
-#include <CGAL/Surface_mesh/Surface_mesh_fwd.h>
+
+#include <CGAL/config.h>
+#include <CGAL/Surface_mesh/Surface_mesh.h>
+
 #include "Kernel_type.h"
 #include "Point_set_3.h"
+
 #include <iostream>
-#include <CGAL/config.h>
 
 struct Scene_points_with_normal_item_priv;
+
 // point set
 typedef Point_set_3<Kernel> Point_set;
 typedef CGAL::Surface_mesh<Kernel::Point_3> SMesh;
@@ -30,24 +36,20 @@ class SCENE_POINTS_WITH_NORMAL_ITEM_EXPORT Scene_points_with_normal_item
 
 public:
   Scene_points_with_normal_item();
+  Scene_points_with_normal_item(const SMesh& input_mesh);
   Scene_points_with_normal_item(const Scene_points_with_normal_item& toCopy);
 
-  Scene_points_with_normal_item(const SMesh& input_mesh);
-
   ~Scene_points_with_normal_item();
-  Scene_points_with_normal_item* clone() const Q_DECL_OVERRIDE;
+
+  Scene_points_with_normal_item* clone() const override;
 
   // Is selection empty?
   virtual bool isSelectionEmpty() const;
 
   // Function to override the context menu
-  QMenu* contextMenu() Q_DECL_OVERRIDE;
+  QMenu* contextMenu() override;
 
   // IO
-#ifdef CGAL_LINKED_WITH_LASLIB
-  bool read_las_point_set(std::istream& in);
-  bool write_las_point_set(std::ostream& out) const;
-#endif // LAS
   bool read_ply_point_set(std::istream& in);
   bool write_ply_point_set(std::ostream& out, bool binary) const;
   bool read_off_point_set(std::istream& in);
@@ -56,15 +58,15 @@ public:
   bool write_xyz_point_set(std::ostream& out) const;
 
   // Function for displaying meta-data of the item
-  virtual QString toolTip() const Q_DECL_OVERRIDE;
+  virtual QString toolTip() const override;
 
-  virtual void invalidateOpenGLBuffers() Q_DECL_OVERRIDE;
+  virtual void invalidateOpenGLBuffers() override;
 
   // Indicate if rendering mode is supported
-  virtual bool supportsRenderingMode(RenderingMode m) const Q_DECL_OVERRIDE;
+  virtual bool supportsRenderingMode(RenderingMode m) const override;
 
-  virtual void drawEdges(CGAL::Three::Viewer_interface* viewer) const Q_DECL_OVERRIDE;
-  virtual void drawPoints(CGAL::Three::Viewer_interface*) const Q_DECL_OVERRIDE;
+  virtual void drawEdges(CGAL::Three::Viewer_interface* viewer) const override;
+  virtual void drawPoints(CGAL::Three::Viewer_interface*) const override;
 
   // Gets wrapped point set
   Point_set*       point_set();
@@ -75,19 +77,19 @@ public:
   const std::string& comments() const;
 
   // Gets dimensions
-  virtual bool isFinite() const Q_DECL_OVERRIDE { return true; }
-  virtual bool isEmpty() const Q_DECL_OVERRIDE;
-  virtual void compute_bbox() const Q_DECL_OVERRIDE;
+  virtual bool isFinite() const override { return true; }
+  virtual bool isEmpty() const override;
+  virtual void compute_bbox() const override;
 
   // computes the local point spacing (aka radius) of each point
   void computes_local_spacing(int k);
 
   bool has_normals() const;
-  void copyProperties(Scene_item *) Q_DECL_OVERRIDE;
+  void copyProperties(Scene_item *) override;
   int getNormalSliderValue();
   int getPointSliderValue();
-  void computeElements() const Q_DECL_OVERRIDE;
-  void initializeBuffers(CGAL::Three::Viewer_interface *) const Q_DECL_OVERRIDE;
+  void computeElements() const override;
+  void initializeBuffers(CGAL::Three::Viewer_interface *) const override;
 
 public Q_SLOTS:
   // Delete selection
@@ -104,7 +106,7 @@ public Q_SLOTS:
   void pointSliderPressed();
   //Set the status of the slider as `released`
   void pointSliderReleased();
-  void itemAboutToBeDestroyed(Scene_item *) Q_DECL_OVERRIDE;
+  void itemAboutToBeDestroyed(Scene_item *) override;
   void setPointSize(int size);
   void setNormalSize(int size);
   void resetColors();
@@ -114,7 +116,7 @@ protected:
   Scene_points_with_normal_item_priv* d;
 
 public:
- void zoomToPosition(const QPoint &, CGAL::Three::Viewer_interface *)const Q_DECL_OVERRIDE;
+ void zoomToPosition(const QPoint &, CGAL::Three::Viewer_interface *)const override;
 }; // end class Scene_points_with_normal_item
 
 

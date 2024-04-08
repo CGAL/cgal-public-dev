@@ -22,7 +22,8 @@
 
 #include <boost/math/special_functions/fpclassify.hpp>
 #include <boost/graph/graph_traits.hpp>
-#include <boost/unordered_map.hpp>
+
+#include <unordered_map>
 
 namespace CGAL {
 namespace Surface_mesh_approximation {
@@ -30,7 +31,7 @@ namespace Surface_mesh_approximation {
 /// \ingroup PkgTSMARef
 /// @brief Approximation L21 metric of vector proxy.
 ///
-/// \cgalModels `ErrorMetricProxy`
+/// \cgalModels{ErrorMetricProxy}
 ///
 /// @tparam TriangleMesh a triangle `FaceGraph`
 /// @tparam VertexPointMap a class model of `ReadablePropertyMap` with `boost::graph_traits<TriangleMesh>::%vertex_descriptor`
@@ -127,7 +128,7 @@ public:
 
     // fitting normal
     Vector_3 norm = CGAL::NULL_VECTOR;
-    for(const face_descriptor f : faces) {
+    for(const face_descriptor& f : faces) {
       norm = m_sum_functor(norm,
         m_scale_functor(get(m_fnmap, f), get(m_famap, f)));
     }

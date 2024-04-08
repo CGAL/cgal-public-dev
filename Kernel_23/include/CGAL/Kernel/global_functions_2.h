@@ -347,6 +347,15 @@ compare_slope(const Segment_2<K> &s1, const Segment_2<K> &s2)
   return internal::compare_slope(s1, s2, K());
 }
 
+template < class K >
+inline
+typename K::Comparison_result
+compare_slope(const Point_2<K> &s1s, const Point_2<K> &s1t,
+              const Point_2<K> &s2s, const Point_2<K> &s2t)
+{
+  return internal::compare_slope(s1s, s1t, s2s, s2t, K());
+}
+
 
 #ifndef CGAL_NO_DEPRECATED_CODE
 // kept for backward compatibility
@@ -755,6 +764,12 @@ midpoint(const Point_2<K> &p, const Point_2<K> &q)
 }
 
 template < class K >
+inline typename K::Point_2 midpoint(const Segment_2<K> &s)
+{
+  return internal::midpoint(s, K());
+}
+
+template < class K >
 inline
 typename K::Point_2
 max_vertex(const Iso_rectangle_2<K> &ir)
@@ -1097,6 +1112,22 @@ side_of_oriented_circle(const Point_2<K> &p,
                         const Point_2<K> &t)
 {
   return internal::side_of_oriented_circle(p, q, r, t, K());
+}
+
+template < class K >
+inline
+typename K::FT
+squared_length(const Vector_2<K> &v)
+{
+  return internal::squared_length(v, K());
+}
+
+template < class K >
+inline
+typename K::FT
+squared_length(const Segment_2<K> &s)
+{
+  return internal::squared_length(s, K());
 }
 
 template < class K >

@@ -7,14 +7,12 @@ The concept `WeightedAlphaShapeTraits_3` describes the requirements
 for the geometric traits class
 of the underlying regular triangulation of a weighted alpha shape.
 
-\cgalRefines `RegularTriangulationTraits_3`
+\cgalRefines{RegularTriangulationTraits_3 if the underlying triangulation of the alpha shape is a regular triangulation,
+  Periodic_3RegularTriangulationTraits_3 if the underlying triangulation of the alpha shape is a periodic regular triangulation}
 
-In addition to the requirements described in the concept
-`RegularTriangulationTraits_3`, the geometric traits class of a
-regular triangulation plugged in a basic alpha shapes provides the
-following.
-
-\cgalHasModel All models of `Kernel`.
+\cgalHasModelsBegin
+\cgalHasModelsBare{All models of `Kernel`}
+\cgalHasModelsEnd
 
 \sa `CGAL::Exact_predicates_inexact_constructions_kernel` (recommended kernel)
 */

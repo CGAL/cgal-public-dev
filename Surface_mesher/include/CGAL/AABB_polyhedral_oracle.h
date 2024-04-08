@@ -25,7 +25,7 @@
 #include <CGAL/AABB_traits.h>
 #include <CGAL/AABB_face_graph_triangle_primitive.h>
 
-#include <boost/shared_ptr.hpp>
+#include <memory>
 
 namespace CGAL {
 
@@ -50,7 +50,7 @@ namespace CGAL {
     typedef AABB_tree<AABB_traits> Tree;
     typedef typename AABB_traits::Bounding_box Bounding_box;
 
-    typedef boost::shared_ptr<Tree> Tree_shared_ptr;
+    typedef std::shared_ptr<Tree> Tree_shared_ptr;
     Tree_shared_ptr m_pTree;
 
   public:
@@ -84,7 +84,7 @@ namespace CGAL {
 
       Object operator()(const Surface_3& surface, const Segment_3& segment) const
       {
-        boost::optional< typename AABB_traits::template Intersection_and_primitive_id<Segment_3>::Type >
+        std::optional< typename AABB_traits::template Intersection_and_primitive_id<Segment_3>::Type >
           intersection = surface.tree()->any_intersection(segment);
 
         if ( intersection )
@@ -95,7 +95,7 @@ namespace CGAL {
 
       Object operator()(const Surface_3& surface, const Line_3& line) const
       {
-        boost::optional< typename AABB_traits::template Intersection_and_primitive_id<Line_3>::Type >
+        std::optional< typename AABB_traits::template Intersection_and_primitive_id<Line_3>::Type >
           intersection = surface.tree()->any_intersection(line);
 
         if ( intersection )
@@ -105,7 +105,7 @@ namespace CGAL {
       }
       Object operator()(const Surface_3& surface, const Ray_3& ray) const
       {
-        boost::optional< typename AABB_traits::template Intersection_and_primitive_id<Ray_3>::Type >
+        std::optional< typename AABB_traits::template Intersection_and_primitive_id<Ray_3>::Type >
           intersection = surface.tree()->any_intersection(ray);
 
         if ( intersection )

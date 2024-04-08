@@ -2,6 +2,7 @@ Algebraic_foundations
 Arithmetic_kernel
 BGL
 Box_intersection_d
+CGAL_Core
 Cartesian_kernel
 Circulator
 Distance_2
@@ -26,10 +27,8 @@ Number_types
 Polygon
 Polygon_mesh_processing
 Polyhedron
-Polyhedron_IO
 Profiling_tools
 Property_map
-Random_numbers
 STL_Extension
 Spatial_sorting
 Stream_support

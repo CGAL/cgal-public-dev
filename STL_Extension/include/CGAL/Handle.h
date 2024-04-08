@@ -18,6 +18,8 @@
 #define CGAL_HANDLE_H
 
 #include <cstddef>
+#include <cstdint>
+#include <atomic>
 #include <CGAL/Handle_for.h>
 #include <CGAL/assertions.h>
 
@@ -27,11 +29,14 @@ class Rep
 {
     friend class Handle;
   protected:
-             Rep() { count = 1; }
+    Rep(int count = 1)
+      : count(count)
+    {}
     virtual ~Rep() {}
 
-    int      count;
+    std::atomic_int count;
 };
+
 
 class Handle
 {
@@ -40,61 +45,92 @@ class Handle
     typedef std::ptrdiff_t Id_type ;
 
     Handle() noexcept
-        : PTR{static_cast<Rep*>(0)} {}
+        : PTR(static_cast<Rep*>(0)) {}
 
-    // FIXME: if the precondition throws in a noexcept function, the program terminates
-    Handle(const Handle& x) noexcept
+    Handle(const Handle& x) noexcept(!(CGAL_PRECONDITIONS_ENABLED || CGAL_ASSERTIONS_ENABLED))
     {
-      CGAL_precondition( x.PTR.p != static_cast<Rep*>(0) );
-      PTR.p = x.PTR.p;
-      CGAL_assume (PTR.p->count > 0);
-      PTR.p->count++;
+      CGAL_precondition( x.PTR != static_cast<Rep*>(0) );
+      PTR = x.PTR;
+      //CGAL_assume (PTR->count > 0);
+      incref();
     }
 
-    ~Handle()
+    Handle(Handle&& x) noexcept : PTR(x.PTR) { x.PTR = 0; }
+
+    ~Handle() { reset(); }
+
+    Handle&
+    operator=(const Handle& x) noexcept(!CGAL_PRECONDITIONS_ENABLED)
     {
-        if ( PTR.p && (--PTR.p->count == 0))
-            delete PTR.p;
+      CGAL_precondition( x.PTR != static_cast<Rep*>(0) );
+      x.incref();
+      if(PTR) decref(); // not reset() in case this==&x
+      PTR = x.PTR;
+      return *this;
     }
 
     Handle&
-    operator=(const Handle& x) noexcept
+    operator=(Handle&& x) noexcept
     {
-      CGAL_precondition( x.PTR.p != static_cast<Rep*>(0) );
-      x.PTR.p->count++;
-      if ( PTR.p && (--PTR.p->count == 0))
-          delete PTR.p;
-      PTR.p = x.PTR.p;
+      swap(*this, x);
       return *this;
     }
 
     friend void swap(Handle& a, Handle& b) noexcept { std::swap(a.PTR, b.PTR); }
 
-    void reset()
+  private:
+    void incref() const noexcept
     {
-      if (PTR.p)
-      {
-        if (--PTR.p->count==0)
-          delete PTR.p;
-        PTR.p=0;
+      if (is_currently_single_threaded()) {
+        PTR->count.store(PTR->count.load(std::memory_order_relaxed) + 1, std::memory_order_relaxed);
+      } else {
+        PTR->count.fetch_add(1, std::memory_order_relaxed);
       }
     }
 
-    int refs()  const noexcept { return PTR.p->count; }
+    void decref()
+    {
+      if (is_currently_single_threaded()) {
+        auto c = PTR->count.load(std::memory_order_relaxed);
+        if (c == 1)
+          delete PTR;
+        else
+          PTR->count.store(c - 1, std::memory_order_relaxed);
+      } else {
+      // TSAN does not support fences :-(
+#if !defined __SANITIZE_THREAD__ && !__has_feature(thread_sanitizer)
+        if (PTR->count.load(std::memory_order_relaxed) == 1
+            || PTR->count.fetch_sub(1, std::memory_order_release) == 1) {
+          std::atomic_thread_fence(std::memory_order_acquire);
+#else
+        if (PTR->count.fetch_sub(1, std::memory_order_acq_rel) == 1) {
+#endif
+          delete PTR;
+        }
+      }
+    }
 
-    Id_type id() const noexcept { return PTR.p - static_cast<Rep*>(0); }
+  public:
+    void reset()
+    {
+      if (PTR)
+      {
+        decref();
+        PTR=0;
+      }
+    }
 
-    bool identical(const Handle& h) const noexcept { return PTR.p == h.PTR.p; }
+    int
+    refs()  const noexcept { return PTR->count.load(std::memory_order_relaxed); }
 
-    void*  for_compact_container() const { return PTR.vp; }
-    void*& for_compact_container() { return PTR.vp; }
+    Id_type id() const noexcept { return static_cast<Id_type>(reinterpret_cast<std::intptr_t>(static_cast<void*>(PTR)) / sizeof(Rep)); }
 
+    bool identical(const Handle& h) const noexcept { return PTR == h.PTR; }
+
+    void * for_compact_container() const { return PTR; }
+    void for_compact_container(void* p) { PTR = static_cast<Rep*>(p); }
   protected:
-
-  union {
-    Rep* p;
-    void* vp;
-  } PTR;
+    Rep* PTR;
 };
 
 //inline Handle::Id_type id(const Handle& x) { return x.id() ; }

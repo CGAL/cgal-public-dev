@@ -5,7 +5,7 @@
 //
 // $URL$
 // $Id$
-// SPDX-License-Identifier: LGPL-3.0-or-later OR LicenseRef-Commercial
+// SPDX-License-Identifier: GPL-3.0-or-later OR LicenseRef-Commercial
 //
 // Author(s)     : Pavel Emeliyanenko <asm@mpi-sb.mpg.de>
 //
@@ -14,9 +14,11 @@
 #ifndef CGAL_CKVA_CURVE_RENDERER_TRAITS_H
 #define CGAL_CKVA_CURVE_RENDERER_TRAITS_H
 
+#include <CGAL/license/Arrangement_on_surface_2.h>
+
+
 #include <CGAL/basic.h>
 #include <CGAL/function_objects.h>
-#include <boost/functional.hpp>
 
 /*! \file CGAL/Curved_kernel_via_analysis_2/gfx/Curve_renderer_traits.h
  * \brief
@@ -55,20 +57,20 @@ struct Max_coeff
     {
         typename CGAL::Polynomial<X>::const_iterator it = p.begin();
         Max_coeff<NT> max_coeff;
-        NT max(max_coeff(*it));
+        NT cur_max(max_coeff(*it));
         while(++it != p.end()) {
             NT tmp(max_coeff(*it));
-            if(max < CGAL_ABS(tmp))
-                max = CGAL_ABS(tmp);
+            if(cur_max < CGAL_ABS(tmp))
+                cur_max = CGAL_ABS(tmp);
         }
-        return max;
+        return cur_max;
     }
     NT operator()(const NT& x) const
     { return CGAL_ABS(x); }
 };
 
 /*!\brief
- * divides an input value by a contant
+ * divides an input value by a constant
  *
  * provided that there is a coercion between \c Input and \c Result types
  */
@@ -107,11 +109,13 @@ struct Transform {
 
     template <class X>
     OutputPoly_2 operator()(const CGAL::Polynomial<X>& p, Op op = Op()) const {
-
-        Transform<typename OutputPoly_2::NT, typename InputPoly_2::NT, Op> tr;
+        typedef typename InputPoly_2::NT NT_in;
+        typedef typename OutputPoly_2::NT NT_out;
+        Transform<NT_out, NT_in, Op> tr;
+        auto fn = [&op, &tr](const NT_in& v){ return tr(v, op); };
         return OutputPoly_2(
-            ::boost::make_transform_iterator(p.begin(), boost::bind2nd(tr, op)),
-            ::boost::make_transform_iterator(p.end(), boost::bind2nd(tr, op)));
+            ::boost::make_transform_iterator(p.begin(), fn),
+            ::boost::make_transform_iterator(p.end(), fn));
     }
 
     OutputPoly_2 operator()(
@@ -241,7 +245,7 @@ struct Curve_renderer_traits_base
         typedef void result_type;
 
         template <class Float>
-        void operator()(const Float& x) const
+        void operator()(const Float& /*x*/) const
         { }
     };
 
@@ -251,7 +255,7 @@ struct Curve_renderer_traits_base
         typedef bool result_type;
 
         template <class Float>
-        bool operator()(const Float& x) const
+        bool operator()(const Float& /*x*/) const
         { return false;/*(CGAL_ABS(x) <= 1e-16)*/; }
     };
 
@@ -332,7 +336,7 @@ struct Curve_renderer_traits<CGAL::Interval_nt<true>, CORE::BigRat > :
 
 //! Specialization for \c CORE::BigFloat
 template <>
-struct Curve_renderer_traits<CORE::BigFloat, class CORE::BigRat>
+struct Curve_renderer_traits<CORE::BigFloat, CORE::BigRat>
          : public Curve_renderer_traits_base<CORE::BigFloat, CORE::BigInt,
                 CORE::BigRat> {
 
@@ -343,7 +347,7 @@ struct Curve_renderer_traits<CORE::BigFloat, class CORE::BigRat>
         typedef Integer result_type;
 
         Integer operator()(const Rational& x) const {
-            return x.BigIntValue();
+            return numerator(x)/denominator(x);
         }
     };
 
@@ -396,7 +400,7 @@ struct Curve_renderer_traits<CORE::BigRat, CORE::BigRat> :
         typedef Integer result_type;
 
         Integer operator()(const Rational& x) const {
-            return x.BigIntValue();
+            return numerator(x)/denominator(x);
         }
     };
 
@@ -405,9 +409,7 @@ struct Curve_renderer_traits<CORE::BigRat, CORE::BigRat> :
         typedef std::size_t result_type;
 
         inline result_type operator()(const Float& key) const {
-            const CORE::BigRatRep& rep = key.getRep();
-            std::size_t ret = reinterpret_cast<std::size_t>(&rep);
-            return ret;
+            return std::hash<Float>()(key);
         }
     };
 };

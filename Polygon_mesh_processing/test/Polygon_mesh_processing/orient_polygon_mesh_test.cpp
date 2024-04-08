@@ -1,8 +1,10 @@
-#include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
-#include <CGAL/Exact_predicates_exact_constructions_kernel.h>
+#include <CGAL/Polygon_mesh_processing/orientation.h>
+
 #include <CGAL/Polyhedron_3.h>
 #include <CGAL/Surface_mesh.h>
-#include <CGAL/Polygon_mesh_processing/orientation.h>
+
+#include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
+#include <CGAL/Exact_predicates_exact_constructions_kernel.h>
 
 #include <CGAL/Timer.h>
 
@@ -13,7 +15,7 @@ typedef CGAL::Exact_predicates_inexact_constructions_kernel Epic;
 typedef CGAL::Exact_predicates_exact_constructions_kernel Epec;
 
 template <typename K>
-void test_orient(const char* file_name)
+void test_orient(const std::string file_name)
 {
   typedef CGAL::Polyhedron_3<K> Polyhedron;
 
@@ -60,14 +62,14 @@ void test_orient(const char* file_name)
 int main()
 {
 
-  test_orient<Epic>("data/elephant.off");
+  test_orient<Epic>(CGAL::data_file_path("meshes/elephant.off"));
   test_orient<Epic>("data-coref/cube.off");
   test_orient<Epic>("data/tetra1.off");
   test_orient<Epic>("data/tetra2.off");
-  test_orient<Epic>("data/tetra3.off");
+  test_orient<Epic>(CGAL::data_file_path("meshes/reference_tetrahedron.off"));
   test_orient<Epic>("data/tetra4.off");
   test_orient<Epic>("data-coref/cube.off");
-  test_orient<Epec>("data/elephant.off");
+  test_orient<Epec>(CGAL::data_file_path("meshes/elephant.off"));
 
   std::cerr << "All done." << std::endl;
   return EXIT_SUCCESS;

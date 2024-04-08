@@ -81,10 +81,10 @@ public:
     mutable int _m_arcno;
 
     // y-coordinate
-    mutable boost::optional< Algebraic_real_1 > _m_y;
+    mutable std::optional< Algebraic_real_1 > _m_y;
 
     //! A bounding box for the given point
-    mutable boost::optional< std::pair<double,Bbox_2> > _m_bbox_2_pair;
+    mutable std::optional< std::pair<double,Bbox_2> > _m_bbox_2_pair;
 
 };
 
@@ -233,7 +233,7 @@ public:
     }
 
     /*!\brief
-     * constructs a point from a given represenation
+     * constructs a point from a given representation
      */
     Xy_coordinate_2(Rep rep) :
         Base(rep) {
@@ -254,7 +254,7 @@ public:
     /*!
      * \brief y-coordinate of this point
      *
-     * Note: In general, this method results in a extremly large polynomial
+     * Note: In general, this method results in an extremely large polynomial
      * for the y-coordinate. It is recommended to use it carefully,
      * and using get_approximation_y() instead whenever approximations suffice.
      */
@@ -675,7 +675,7 @@ template < class AlgebraicCurveKernel_2, class Rep>
 std::ostream& operator<< (std::ostream& os,
     const Xy_coordinate_2<AlgebraicCurveKernel_2, Rep>& pt)
 {
-  switch (::CGAL::get_mode(os)) {
+  switch (::CGAL::IO::get_mode(os)) {
   case ::CGAL::IO::PRETTY: {
     os << "[x-coord: " << CGAL::to_double(pt.x()) << "; curve: " <<
       pt.curve().polynomial_2() <<
@@ -703,7 +703,7 @@ std::istream& operator >> (
     std::istream& is,
     Xy_coordinate_2< AlgebraicCurveKernel_2, Rep_>& pt) {
 
-  CGAL_precondition(CGAL::is_ascii(is));
+  CGAL_precondition(CGAL::IO::is_ascii(is));
 
   // this instance's first template argument
   typedef AlgebraicCurveKernel_2 Algebraic_curve_kernel_2;
@@ -762,7 +762,7 @@ std::istream& operator >> (
 
   is >> arcno;
 
-  // read the ")
+  // read the ")"
   swallow(is, ')');
 
   pt = Xy_coordinate_2(x, curve, arcno);

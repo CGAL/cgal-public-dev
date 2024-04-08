@@ -9,7 +9,7 @@ concept.
 
 It is equivalent to `HalfedgeDS_face_base< Refs, Tag_true>`
 with an added integer field which can be used to index faces
-in \sc{Bgl} algorithms.
+in \bgl algorithms.
 The class contains support for the incident halfedge pointer
 and the required type definitions.
 It can be used for deriving own faces.
@@ -19,7 +19,7 @@ running a graph algorithm.
 
 \tparam Refs must be an instantiation of a `HalfedgeDS`.
 
-\cgalModels `HalfedgeDSFace`
+\cgalModels{HalfedgeDSFace}
 
 \sa `HalfedgeDS<Traits,Items,Alloc>`
 \sa `HalfedgeDSItems`

@@ -5,7 +5,7 @@
 //
 // $URL$
 // $Id$
-// SPDX-License-Identifier: LGPL-3.0-or-later OR LicenseRef-Commercial
+// SPDX-License-Identifier: GPL-3.0-or-later OR LicenseRef-Commercial
 //
 //
 // Author(s)     : Eric Berberich <eric@mpi-inf.mpg.de>
@@ -14,22 +14,26 @@
 #ifndef CGAL_CURVED_KERNEL_VIA_ANALYSIS_2_POINT_2_H
 #define CGAL_CURVED_KERNEL_VIA_ANALYSIS_2_POINT_2_H
 
+#include <CGAL/license/Arrangement_on_surface_2.h>
+
+
 /*!\file include/CGAL/Curved_kernel_via_analysis_2/Point_2.h
- * \brief Defines class \c Point_2 that represents a point on a curve that can
+ * \brief defines class \c Point_2 that represents a point on a curve that can
  * be analyzed.
  */
 
 #include <CGAL/config.h>
 
-#include <boost/optional.hpp>
+#include <optional>
 #include <boost/optional/optional_io.hpp>
-#include <boost/type_traits/is_same.hpp>
 
 #include <CGAL/Handle_with_policy.h>
 
 #include <CGAL/Arr_enums.h>
 
 #include <CGAL/Curved_kernel_via_analysis_2/Curved_kernel_via_analysis_2_functors.h>
+
+#include <type_traits>
 
 namespace CGAL {
 
@@ -75,8 +79,7 @@ public:
     typedef typename Curve_kernel_2::Curve_analysis_2 Curve_analysis_2;
 
     //! default constructor
-    Point_2_rep() {
-    }
+    Point_2_rep() : _m_location(CGAL::ARR_INTERIOR) {}
 
     //! constructs a "finite" point on curve,
     //! implies CGAL::NO_BOUNDARY in x/y
@@ -106,22 +109,22 @@ public:
     //! curve point finite coordinates. They are valid only if boundary in y
     //! is not set (CGAL::NO_BOUNDARY), otherwise only x-coordinate is
     //! accessible, i.e., point is in interior
-    boost::optional< Coordinate_2 > _m_xy;
+    std::optional< Coordinate_2 > _m_xy;
 
     //! x-coordinate of a curve point
-    boost::optional< Coordinate_1 > _m_x;
+    std::optional< Coordinate_1 > _m_x;
 
     //! curve of point at boundary
-    boost::optional< Curve_analysis_2 > _m_curve;
+    std::optional< Curve_analysis_2 > _m_curve;
 
     //! arc of point at boundary
-    boost::optional< int > _m_arcno;
+    std::optional< int > _m_arcno;
 
     //! location of a point in parameter space
     mutable CGAL::Arr_parameter_space _m_location;
 
     //! store a double approximation of point
-    mutable boost::optional< std::pair< double, double > > _m_doubles;
+    mutable std::optional< std::pair< double, double > > _m_doubles;
 };
 
 /*!\brief
@@ -170,7 +173,7 @@ public:
     //!@}
 
     #if !defined(CGAL_NO_ASSERTIONS)
-    static const bool Kernel_point_2_equals_Point_2 = boost::is_same<Point_2, Kernel_point_2>::value;
+    static const bool Kernel_point_2_equals_Point_2 = std::is_same<Point_2, Kernel_point_2>::value;
     #endif
 
 public:
@@ -325,7 +328,7 @@ protected:
     //!@{
 
     /*!\brief
-     * constructs from a given represenation
+     * constructs from a given representation
      */
     /*!\brief
      * Constructor for for rebind
@@ -384,7 +387,7 @@ public:
         return *(this->ptr()->_m_xy);
     }
 
-    inline const Coordinate_1& y() const {
+    inline const Coordinate_1 y() const {
       return this->xy().y();
     }
 
@@ -615,7 +618,7 @@ public:
      */
     void write(std::ostream& os) const {
 
-        switch(::CGAL::get_mode(os)) {
+        switch(::CGAL::IO::get_mode(os)) {
         case ::CGAL::IO::PRETTY:
             os << "point@" << this->id() << "(";
             os << "sup@" << this->curve().id() << "; ";
@@ -700,14 +703,13 @@ public:
         default:
           // ASCII
           os << "Point_2(";
-
-          os << this->ptr()->_m_xy;
+          os << ::CGAL::IO::oformat(this->ptr()->_m_xy);
           os << ",";
-          os << this->ptr()->_m_x;
+          os << ::CGAL::IO::oformat(this->ptr()->_m_x);
           os << ",";
-          os << this->ptr()->_m_curve;
+          os << ::CGAL::IO::oformat(this->ptr()->_m_curve);
           os << ",";
-          os << this->ptr()->_m_arcno;
+          os << ::CGAL::IO::oformat(this->ptr()->_m_arcno);
           os << ",";
           os << this->ptr()->_m_location;
 
@@ -722,7 +724,7 @@ public:
    */
   void read(std::istream& is) {
 
-    CGAL_precondition(CGAL::is_ascii(is));
+    CGAL_precondition(CGAL::IO::is_ascii(is));
 
     Rep rep;
 
@@ -737,36 +739,13 @@ public:
     swallow(is, '(');
 
     // read values
-    is >> rep._m_xy;
-#if BOOST_VERSION < 104300
-    // EBEB: This fixes a bug in optional_io.hpp, reported to Fernando on
-    //       April 27, 2010, don't know whether the fix makes it into
-    //       boost 1_43.
-    if (!rep._m_xy) {
-      swallow(is, '-');
-    }
-#endif
+    is >> IO::iformat(rep._m_xy);
     swallow(is, ',');
-    is >> rep._m_x;
-#if BOOST_VERSION < 104300
-    if (!rep._m_x) {
-      swallow(is, '-');
-    }
-#endif
+    is >> IO::iformat(rep._m_x);
     swallow(is, ',');
-    is >> rep._m_curve;
-#if BOOST_VERSION < 104300
-    if (!rep._m_curve) {
-      swallow(is, '-');
-    }
-#endif
+    is >> IO::iformat(rep._m_curve);
     swallow(is, ',');
-    is >> rep._m_arcno;
-#if BOOST_VERSION < 104300
-    if (!rep._m_arcno) {
-      swallow(is, '-');
-    }
-#endif
+    is >> IO::iformat(rep._m_arcno);
     swallow(is, ',');
     is >> rep._m_location;
 
@@ -817,13 +796,13 @@ std::ostream& operator <<(std::ostream& os,
 }
 
 
-//! \brief Reads the objects from stream.
+//! \brief reads the objects from stream.
 template < class CurvedKernelViaAnalysis_2, class Rep_ >
 std::istream& operator>> (
     std::istream& is,
     Point_2< CurvedKernelViaAnalysis_2, Rep_ >& pt) {
 
-  CGAL_precondition(CGAL::is_ascii(is));
+  CGAL_precondition(CGAL::IO::is_ascii(is));
 
   //typedef CurvedKernelViaAnalysis_2 Curved_kernel_via_analysis_2;
   //typedef Rep_ Rep;

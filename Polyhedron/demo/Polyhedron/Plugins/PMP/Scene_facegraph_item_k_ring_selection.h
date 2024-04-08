@@ -36,7 +36,7 @@ struct FG_is_selected_edge_property_map{
   std::vector<bool>* is_selected_ptr;
   EImap* edge_index_map;
   FG_is_selected_edge_property_map()
-    : is_selected_ptr(NULL), edge_index_map(NULL) {}
+    : is_selected_ptr(nullptr), edge_index_map(nullptr) {}
   FG_is_selected_edge_property_map(std::vector<bool>& is_selected, EImap* map)
     : is_selected_ptr( &is_selected), edge_index_map(map)
   {}
@@ -47,13 +47,13 @@ struct FG_is_selected_edge_property_map{
 
   friend bool get(FG_is_selected_edge_property_map map, fg_edge_descriptor ed)
   {
-    CGAL_assertion(map.is_selected_ptr!=NULL);
+    CGAL_assertion(map.is_selected_ptr!=nullptr);
     return (*map.is_selected_ptr)[map.id(ed)];
   }
 
   friend void put(FG_is_selected_edge_property_map map, fg_edge_descriptor ed, bool b)
   {
-    CGAL_assertion(map.is_selected_ptr!=NULL);
+    CGAL_assertion(map.is_selected_ptr!=nullptr);
     (*map.is_selected_ptr)[map.id(ed)]=b;
   }
 };
@@ -112,7 +112,7 @@ public:
   void setEditMode(bool b)
   {
     is_edit_mode = b;
-    Q_FOREACH(CGAL::QGLViewer* viewer,CGAL::QGLViewer::QGLViewerPool()){
+    for(CGAL::QGLViewer* viewer :CGAL::QGLViewer::QGLViewerPool()){
       //for highlighting
       viewer->setMouseTracking(true);
     }
@@ -132,7 +132,7 @@ public:
     is_ready_to_paint_select = true;
     is_lasso_active = false;
 
-    Q_FOREACH(CGAL::QGLViewer* viewer,CGAL::QGLViewer::QGLViewerPool()){
+    for(CGAL::QGLViewer* viewer :CGAL::QGLViewer::QGLViewerPool()){
       viewer->installEventFilter(this);
       viewer->setMouseBindingDescription(Qt::Key_D, Qt::ShiftModifier, Qt::LeftButton, "(When in selection plugin) Removes the clicked primitive from the selection. ");
     }
@@ -273,14 +273,14 @@ public Q_SLOTS:
 
     boost::vector_property_map<int,
       boost::property_map<FaceGraph, boost::face_index_t>::type>
-      fccmap;
+      fccmap(static_cast<unsigned>(num_faces(poly)));
 
-    //get connected componant from the picked face
+    //get connected component from the picked face
     std::set<fg_face_descriptor> final_sel;
     //std::vector<Polyhedron::Face_handle> cc;
     std::size_t nb_cc = CGAL::Polygon_mesh_processing::connected_components(poly
           , fccmap
-          , CGAL::Polygon_mesh_processing::parameters::edge_is_constrained_map(spmap));
+          , CGAL::parameters::edge_is_constrained_map(spmap));
     std::vector<bool> is_cc_done(nb_cc, false);
 
     for(fg_face_descriptor f : face_sel)
@@ -302,7 +302,7 @@ public Q_SLOTS:
       }
       if(total == 0)
         continue;
-      CGAL::qglviewer::Vec center(x/(double)total, y/(double)total, z/(double)total);
+      CGAL::qglviewer::Vec center(x/static_cast<double>(total), y/static_cast<double>(total), z/static_cast<double>(total));
       CGAL::qglviewer::Vec orig;
       CGAL::qglviewer::Vec dir;
       if(camera->type() == CGAL::qglviewer::Camera::PERSPECTIVE)
@@ -623,7 +623,7 @@ protected:
       CGAL::QGLViewer* viewer = getViewerUnderCursor();
 
       is_ready_to_highlight = !cut_highlighting;
-      hl_pos = viewer->mapFromGlobal(mouse_event->globalPos());
+      hl_pos = viewer->mapFromGlobal(mouse_event->globalPosition()).toPoint();
       QTimer::singleShot(0, this, SLOT(highlight()));
     }//end MouseMove
     return false;

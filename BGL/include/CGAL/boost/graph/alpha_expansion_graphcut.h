@@ -1,4 +1,3 @@
-#ifndef CGAL_BOOST_GRAPH_ALPHA_EXPANSION_GRAPHCUT_H
 // Copyright (c) 2014  GeometryFactory (France).  All rights reserved.
 //
 // This file is part of CGAL (www.cgal.org)
@@ -10,6 +9,7 @@
 //
 // Author(s)     : Ilker O. Yaz, Simon Giraudot
 
+#ifndef CGAL_BOOST_GRAPH_ALPHA_EXPANSION_GRAPHCUT_H
 #define CGAL_BOOST_GRAPH_ALPHA_EXPANSION_GRAPHCUT_H
 
 #include <CGAL/Iterator_range.h>
@@ -20,7 +20,7 @@
 #endif
 #include <CGAL/IO/trace.h>
 
-#include <CGAL/boost/graph/Named_function_parameters.h>
+#include <CGAL/Named_function_parameters.h>
 #include <CGAL/boost/graph/named_params_helper.h>
 
 #include <boost/version.hpp>
@@ -28,14 +28,18 @@
 #include <boost/graph/adjacency_list.hpp>
 #include <boost/graph/compressed_sparse_row_graph.hpp>
 
-#if BOOST_VERSION >= 104400 // at this version kolmogorov_max_flow become depricated.
-#  include <boost/graph/boykov_kolmogorov_max_flow.hpp>
-#else
-#  include <boost/graph/kolmogorov_max_flow.hpp>
+#if defined(BOOST_MSVC)
+#  pragma warning(push)
+#  pragma warning(disable:4172) // Address boost_1_67_0\boost\graph\named_function_params.hpp(240): warning C4172: returning address of local variable or temporary
+#endif
+
+#include <boost/graph/boykov_kolmogorov_max_flow.hpp>
+
+#if defined(BOOST_MSVC)
+#  pragma warning(pop)
 #endif
 
 #include <vector>
-
 
 
 
@@ -73,7 +77,7 @@ struct Alpha_expansion_old_API_wrapper_graph
       : cost_matrix (cost_matrix)
     { }
 
-    friend reference get (const Vertex_label_cost_map& pmap, key_type idx)
+    friend value_type get (const Vertex_label_cost_map& pmap, key_type idx)
     {
       std::vector<double> out;
       out.reserve (pmap.cost_matrix->size());
@@ -81,7 +85,6 @@ struct Alpha_expansion_old_API_wrapper_graph
         out.push_back ((*pmap.cost_matrix)[i][idx]);
       return out;
     }
-
   };
 
   typedef CGAL::Pointer_property_map<double>::const_type Edge_cost_map;
@@ -242,12 +245,8 @@ public:
 
   double max_flow()
   {
-#if BOOST_VERSION >= 104400
     return boost::boykov_kolmogorov_max_flow(graph, cluster_source,
                                                       cluster_sink);
-#else
-    return boost::kolmogorov_max_flow(graph, cluster_source, cluster_sink);
-#endif
   }
 
   template <typename VertexLabelMap, typename InputVertexDescriptor>
@@ -352,13 +351,8 @@ public:
 
   void init_vertices()
   {
-#if BOOST_VERSION >= 104000
     graph = Graph(boost::edges_are_unsorted, edge_map.begin(), edge_map.end(),
                   edge_map_weights.begin(), nb_vertices);
-#else
-    graph= Graph(edge_map.begin(), edge_map.end(),
-                 edge_map_weights.begin(), nb_vertices);
-#endif
 
     // PERFORMANCE PROBLEM
     // need to set reverse edge map, I guess there is no way to do that before creating the graph
@@ -379,7 +373,6 @@ public:
 
   double max_flow()
   {
-#if BOOST_VERSION >= 104400
     // since properties are bundled, defaults does not work need to specify them
     return boost::boykov_kolmogorov_max_flow
       (graph,
@@ -392,19 +385,6 @@ public:
        boost::get(boost::vertex_index,
                   graph), // this is not bundled, get it from graph (CRS provides one)
        0, 1);
-#else
-    return boost::kolmogorov_max_flow
-       (graph,
-        boost::get(&EdgeP::edge_capacity, graph),
-        boost::get(&EdgeP::edge_residual_capacity, graph),
-        boost::get(&EdgeP::edge_reverse, graph),
-        boost::get(&VertexP::vertex_predecessor, graph),
-        boost::get(&VertexP::vertex_color, graph),
-        boost::get(&VertexP::vertex_distance_t, graph),
-        boost::get(boost::vertex_index,
-                   graph), // this is not bundled, get it from graph
-        0, 1);
-#endif
   }
 
   template <typename VertexLabelMap, typename InputVertexDescriptor>
@@ -505,38 +485,44 @@ class Alpha_expansion_MaxFlow_impl;
    vd)[label_idx]` returns the cost of vertex `vd` to belong to the
    label `label_idx`.
 
-   \param np optional sequence of named parameters among the ones listed below
+   \param np an optional sequence of \ref bgl_namedparameters "Named Parameters" among the ones listed below
 
    \cgalNamedParamsBegin
-     \cgalParamBegin{vertex_index_map}
-       a property map providing the index of each vertex
-     \cgalParamEnd
-     \cgalParamBegin{implementation_tag}
-       tag used to select
-       which implementation of the alpha expansion should be
-       used. Available implementation tags are:
-       - `CGAL::Alpha_expansion_boost_adjacency_list` (default)
-       - `CGAL::Alpha_expansion_boost_compressed_sparse_row_tag`
-       - `CGAL::Alpha_expansion_MaxFlow_tag`
-     \cgalParamEnd
+     \cgalParamNBegin{vertex_index_map}
+       \cgalParamDescription{a property map associating to each vertex of `input_graph` a unique index between `0` and `num_vertices(input_graph) - 1`}
+       \cgalParamType{a class model of `ReadablePropertyMap` with `boost::graph_traits<InputGraph>::%vertex_descriptor`
+                      as key type and `std::size_t` as value type}
+       \cgalParamDefault{an automatically indexed internal map}
+       \cgalParamExtra{If this parameter is not passed, internal machinery will create and initialize
+                       a face index property map, either using the internal property map if it exists
+                       or using an external map. The latter might result in  - slightly - worsened performance
+                       in case of non-constant complexity for index access.}
+     \cgalParamNEnd
+
+     \cgalParamNBegin{implementation_tag}
+       \cgalParamDescription{a tag used to select which implementation of the alpha expansion should be used.
+                             Available implementation tags are:
+                             - `CGAL::Alpha_expansion_boost_adjacency_list`
+                             - `CGAL::Alpha_expansion_boost_compressed_sparse_row_tag`
+                             - `CGAL::Alpha_expansion_MaxFlow_tag`}
+       \cgalParamDefault{`CGAL::Alpha_expansion_boost_adjacency_list`}
+     \cgalParamNEnd
    \cgalNamedParamsEnd
 
    \note The `MaxFlow` implementation is provided by the \ref PkgSurfaceMeshSegmentationRef
-   under GPL license. The header
-   `<CGAL/boost/graph/Alpha_expansion_MaxFlow_tag.h>`
+   under GPL license. The header `<CGAL/boost/graph/Alpha_expansion_MaxFlow_tag.h>`
    must be included if users want to use this implementation.
-
 */
 template <typename InputGraph,
           typename EdgeCostMap,
           typename VertexLabelCostMap,
           typename VertexLabelMap,
-          typename NamedParameters>
+          typename NamedParameters = parameters::Default_named_parameters>
 double alpha_expansion_graphcut (const InputGraph& input_graph,
                                  EdgeCostMap edge_cost_map,
                                  VertexLabelCostMap vertex_label_cost_map,
                                  VertexLabelMap vertex_label_map,
-                                 const NamedParameters& np)
+                                 const NamedParameters& np = parameters::default_values())
 {
   using parameters::choose_parameter;
   using parameters::get_parameter;
@@ -683,22 +669,7 @@ double alpha_expansion_graphcut (const InputGraph& input_graph,
   return min_cut;
 }
 
-
 /// \cond SKIP_IN_MANUAL
-// variant with default NP
-template <typename InputGraph,
-          typename EdgeCostMap,
-          typename VertexLabelCostMap,
-          typename VertexLabelMap>
-double alpha_expansion_graphcut (const InputGraph& input_graph,
-                                 EdgeCostMap edge_cost_map,
-                                 VertexLabelCostMap vertex_label_cost_map,
-                                 VertexLabelMap vertex_label_map)
-{
-  return alpha_expansion_graphcut (input_graph, edge_cost_map,
-                                   vertex_label_cost_map, vertex_label_map,
-                                   CGAL::parameters::all_default());
-}
 
 // Old API
 inline double alpha_expansion_graphcut (const std::vector<std::pair<std::size_t, std::size_t> >& edges,

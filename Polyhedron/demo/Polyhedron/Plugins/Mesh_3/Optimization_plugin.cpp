@@ -242,7 +242,7 @@ Mesh_3_optimization_plugin::odt()
 
   ui.objectName->setText(item->name());
 
-  namespace cgpd = CGAL::parameters::default_values;
+  namespace cgpd = CGAL::parameters::default_values_for_mesh_3;
   ui.convergenceRatio->setValue(cgpd::odt_convergence_ratio);
   ui.freezeRatio->setValue(cgpd::odt_freeze_ratio);
 
@@ -310,7 +310,7 @@ Mesh_3_optimization_plugin::lloyd()
 
   ui.objectName->setText(item->name());
 
-  namespace cgpd = CGAL::parameters::default_values;
+  namespace cgpd = CGAL::parameters::default_values_for_mesh_3;
   ui.convergenceRatio->setValue(cgpd::lloyd_convergence_ratio);
   ui.freezeRatio->setValue(cgpd::lloyd_freeze_ratio);
 
@@ -524,10 +524,9 @@ treat_result(Scene_c3t3_item& source_item,
                             static_cast<float>(bbox.ymin() + bbox.ymax())/2.f,
                             static_cast<float>(bbox.zmin() + bbox.zmax())/2.f);
 
-    result_item.setColor(QColor(59,74,226));
+    result_item.setColor(source_item.color());
     result_item.setRenderingMode(source_item.renderingMode());
     result_item.set_data_item(source_item.data_item());
-
     source_item.setVisible(false);
 
     const Scene_interface::Item_id index = scene->mainSelectionIndex();
@@ -539,6 +538,7 @@ treat_result(Scene_c3t3_item& source_item,
   else
   {
     result_item.update_histogram();
+    result_item.invalidateOpenGLBuffers();
 
     const Scene_interface::Item_id index = scene->mainSelectionIndex();
     scene->itemChanged(index);
@@ -561,7 +561,7 @@ optimization_done(Optimizer_thread* thread)
                   .arg(thread->time())
                   .arg(translate(return_code));
 
-  Q_FOREACH( QString param, thread->parameters_log() )
+  for( QString param : thread->parameters_log() )
   {
     str.append(QString("( %1 )<br>").arg(param));
   }

@@ -17,11 +17,11 @@
 
 
 /*! \file
- * Defintion of the Td_inactive_fictitious_vertex<Td_traits> class.
+ * Definition of the Td_inactive_fictitious_vertex<Td_traits> class.
  */
 
 #include <CGAL/Arr_point_location/Trapezoidal_decomposition_2.h>
-#include <boost/variant.hpp>
+#include <variant>
 
 
 #ifdef CGAL_TD_DEBUG
@@ -43,7 +43,7 @@ namespace CGAL {
  * when one of the four sides is on the parameter space boundary.
  * Trapezoids are created as active and become inactive when Remove() member
  * function called.
- * Each trapezoid has at most four neighbouring trapezoids.
+ * Each trapezoid has at most four neighboring trapezoids.
  * X_trapezoid structure can represent a real trapezoid, a Td-edge or an
  * edge-end (end point).
  */
@@ -96,14 +96,8 @@ public:
 #ifdef CGAL_PM_FRIEND_CLASS
 #if defined(__SUNPRO_CC) || defined(__PGI) || defined(__INTEL_COMPILER)
   friend class Trapezoidal_decomposition_2<Traits>::In_face_iterator;
-#elif defined(__GNUC__)
-
-#if ((__GNUC__ < 3) || ((__GNUC__ == 3) && (__GNUC_MINOR__ <= 2)))
-  friend typename Trapezoidal_decomposition_2<Traits>::In_face_iterator;
-#else
+#elif (__GNUC__ > 0)
   friend class Trapezoidal_decomposition_2<Traits>::In_face_iterator;
-#endif
-
 #else
   friend class In_face_iterator;
 #endif
@@ -133,7 +127,7 @@ public:
 
  private:
 
-  Data* ptr() const { return (Data*)(PTR.p);  }
+  Data* ptr() const { return (Data*)(PTR);  }
 
         Curve_end vtx_to_ce(Vertex_const_handle v) const
   {
@@ -185,7 +179,7 @@ public:
   {
     Curve_end v_ce(vtx_to_ce(v_before_rem));
 
-    PTR.p = new Data( v_ce.cv(), v_ce.ce(), node);
+    PTR = new Data( v_ce.cv(), v_ce.ce(), node);
 
   }
 
@@ -241,7 +235,7 @@ public:
   /*! Access the trapezoid id (PTR). */
   inline unsigned long id() const
   {
-    return (unsigned long) PTR.p;
+    return (unsigned long) PTR;
   }
 
 

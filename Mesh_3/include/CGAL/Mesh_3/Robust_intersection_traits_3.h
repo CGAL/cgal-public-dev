@@ -25,7 +25,7 @@
 #include <CGAL/Cartesian_converter.h>
 #include <CGAL/Exact_predicates_exact_constructions_kernel.h>
 #include <CGAL/Mesh_3/Profile_counter.h>
-#include <CGAL/internal/Static_filters/tools.h>
+#include <CGAL/Filtered_kernel/internal/Static_filters/tools.h>
 
 
 namespace CGAL {
@@ -94,7 +94,7 @@ struct Vector_plane_orientation_3_static_filter :
         fit_in_double(get_approx(b).z(), bz) &&
         fit_in_double(get_approx(c).x(), cx) && fit_in_double(get_approx(c).y(), cy) &&
         fit_in_double(get_approx(c).z(), cz))
-    { // This bloc is not indented because it was added in a second step,
+    { // This block is not indented because it was added in a second step,
       // and one wants to avoid the reindentation of the whole code
 
     double abx = bx - ax;
@@ -261,15 +261,16 @@ lp_intersection(const typename K::Point_3& p, const typename K::Point_3& q,
 // returns a point or the empty Object. In case of degeneracy, the empty
 // Object is returned as well.
 template <class K>
-typename cpp11::result_of<
-  typename K::Intersect_3(typename K::Segment_3, typename K::Triangle_3)>::type
+decltype(auto)
 ts_intersection(const typename K::Triangle_3 &t,
                 const typename K::Segment_3  &s,
                 const K & k)
 {
-  typedef typename cpp11::result_of<
-    typename K::Intersect_3(typename K::Segment_3, typename K::Triangle_3)
-  >::type result_type;
+  // typedef decltype(
+  // std::declval<typename K::Intersect_3>()(
+  //   std::declval<typename K::Segment_3>(),
+  //   std::declval<typename K::Triangle_3>())) result_type;
+  typedef decltype(typename K::Intersect_3()(s, t)) result_type;
 
   CGAL_MESH_3_BRANCH_PROFILER(std::string("coplanar/calls in   : ") +
                               std::string(CGAL_PRETTY_FUNCTION), tmp);
@@ -399,8 +400,7 @@ ts_intersection(const typename K::Triangle_3 &t,
 
 
 template <class K>
-typename cpp11::result_of<
-  typename K::Intersect_3(typename K::Ray_3, typename K::Triangle_3)>::type
+decltype(auto)
 tr_intersection(const typename K::Triangle_3  &t,
                 const typename K::Ray_3 &r,
                 const K& k)
@@ -410,20 +410,22 @@ tr_intersection(const typename K::Triangle_3  &t,
   CGAL_kernel_precondition( ! k.is_degenerate_3_object()(t) ) ;
   CGAL_kernel_precondition( ! k.is_degenerate_3_object()(r) ) ;
 
-  typedef typename cpp11::result_of<
-    typename K::Intersect_3(typename K::Ray_3, typename K::Triangle_3)
-  >::type result_type;
+  // typedef decltype(
+  //   std::declval<typename K::Intersect_3>()(
+  //     std::declval<typename K::Ray_3>(),
+  //     std::declval<typename K::Triangle_3>())) result_type;
+  typedef decltype(typename K::Intersect_3()(r, t)) result_type;
 
   typedef typename K::Point_3 Point_3;
 
-  typename K::Construct_vertex_3 vertex_on =
-    k.construct_vertex_3_object();
-
+  typename K::Do_intersect_3 do_intersect =
+    k.do_intersect_3_object();
   typename K::Orientation_3 orientation =
     k.orientation_3_object();
-
   typename K::Construct_point_on_3 point_on =
     k.construct_point_on_3_object();
+  typename K::Construct_vertex_3 vertex_on =
+    k.construct_vertex_3_object();
 
   typename Mesh_3::Vector_plane_orientation_3_static_filter<K> vector_plane_orient;
 
@@ -437,17 +439,24 @@ tr_intersection(const typename K::Triangle_3  &t,
   const Point_3& q = point_on(r,1);
 
   const Orientation ray_direction = vector_plane_orient(p, q, a, b, c);
-
-  if(ray_direction == COPLANAR) return result_type();
+  if(ray_direction == COPLANAR)
+    return result_type();
 
   const Orientation abcp = orientation(a,b,c,p);
+  if(abcp == COPLANAR) // p belongs to the triangle's supporting plane
+  {
+    if(do_intersect(t, p))
+      return result_type(p);
+    else
+      return result_type();
+  }
 
-  if(abcp == COPLANAR) return result_type(); // p belongs to the triangle's
-                                        // supporting plane
-
-  if(ray_direction == abcp) return result_type();
-  // The ray lies entirely in one of the two open halfspaces defined by the
-  // triangle's supporting plane.
+  if(ray_direction == abcp)
+  {
+    // The ray lies entirely in one of the two open halfspaces defined by the
+    // triangle's supporting plane.
+    return result_type();
+  }
 
   // Here we know that the ray crosses the plane (abc)
 
@@ -471,20 +480,12 @@ public:
   typedef typename K_::Segment_3                      Segment_3;
   typedef typename K_::Ray_3                          Ray_3;
 
-  template <typename>
-  struct result;
-
-  template <typename F, typename A, typename B>
-  struct result<F(A, B)> {
-    typedef typename cpp11::result_of<typename K_::Intersect_3(A, B)>::type type;
-  };
-
   typedef Exact_predicates_exact_constructions_kernel     EK;
   typedef Cartesian_converter<typename K_::Kernel, EK>    To_exact;
   typedef Cartesian_converter<EK, typename K_::Kernel>    Back_from_exact;
 
   template<class T1, class T2>
-  typename cpp11::result_of<typename K_::Intersect_3(T1, T2)>::type
+  decltype(auto)
   operator() (const T1& t, const T2& s) const
   {
     // Switch to exact
@@ -493,28 +494,32 @@ public:
     EK::Intersect_3 exact_intersection = EK().intersect_3_object();
 
     // Cartesian converters have an undocumented, optional< variant > operator
-    return typename cpp11::result_of<typename K_::Intersect_3(T1, T2)>::type
-      (back_from_exact(exact_intersection(to_exact(t), to_exact(s))));
+    // typedef decltype(
+    //   std::declval<typename K_::Intersect_3>()(
+    //     std::declval<T1>(), std::declval<T2>())) result_type;
+    typedef decltype(typename K_::Intersect_3()(t, s)) result_type;
+
+    return result_type(back_from_exact(exact_intersection(to_exact(t), to_exact(s))));
   }
 
-  typename cpp11::result_of<typename K_::Intersect_3(Segment_3, Triangle_3)>::type
+  decltype(auto)
   operator()(const Segment_3& s, const Triangle_3& t) const
   {
     return ts_intersection(t, s, K_());
   }
 
-  typename cpp11::result_of<typename K_::Intersect_3(Segment_3, Triangle_3)>::type
+  decltype(auto)
   operator()(const Triangle_3& t, const Segment_3& s) const
   {
     return ts_intersection(t, s, K_());
   }
 
-  typename cpp11::result_of<typename K_::Intersect_3(Ray_3, Triangle_3)>::type
+  decltype(auto)
   operator()(const Ray_3& r, const Triangle_3& t) const  {
     return tr_intersection(t, r, K_());
   }
 
-  typename cpp11::result_of<typename K_::Intersect_3(Ray_3, Triangle_3)>::type
+  decltype(auto)
   operator()(const Triangle_3& t, const Ray_3& r) const
   {
     return tr_intersection(t, r, K_());
@@ -531,20 +536,12 @@ public:
   typedef typename K_::Triangle_3                     Triangle_3;
   typedef typename K_::Segment_3                      Segment_3;
 
-  template <typename>
-  struct result;
-
-  template <typename F, typename A, typename B>
-  struct result<F(A, B)> {
-    typedef typename cpp11::result_of<typename K_::Intersect_3(A, B)>::type type;
-  };
-
   typedef Exact_predicates_exact_constructions_kernel   EK;
   typedef Cartesian_converter<typename K_::Kernel, EK>    To_exact;
   typedef Cartesian_converter<EK, typename K_::Kernel>    Back_from_exact;
 
   template<class T1, class T2>
-  typename cpp11::result_of<typename K_::Intersect_3(T1, T2)>::type
+  decltype(auto)
   operator() (const T1& t, const T2& s) const
   {
     // Switch to exact
@@ -553,8 +550,12 @@ public:
     EK::Intersect_3 exact_intersection = EK().intersect_3_object();
 
     // Cartesian converters have an undocumented, optional< variant > operator
-    return typename cpp11::result_of<typename K_::Intersect_3(T1, T2)>::type
-      (back_from_exact(exact_intersection(to_exact(t), to_exact(s))));
+    // typedef decltype(
+    //   std::declval<typename K_::Intersect_3>()(
+    //     std::declval<T1>(), std::declval<T2>())) result_type;
+    typedef decltype(typename K_::Intersect_3()(t, s)) result_type;
+
+    return result_type(back_from_exact(exact_intersection(to_exact(t), to_exact(s))));
   }
 };
 

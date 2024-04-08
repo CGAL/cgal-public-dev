@@ -6,11 +6,11 @@
 The concept `SegmentDelaunayGraphSite_2` provides the
 requirements for the sites of a segment Delaunay graph.
 
-\cgalRefines `DefaultConstructible`
-\cgalRefines `CopyConstructible`
-\cgalRefines `Assignable`
+\cgalRefines{CopyConstructible,Assignable,DefaultConstructible}
 
-\cgalHasModel `CGAL::Segment_Delaunay_graph_site_2<K>`
+\cgalHasModelsBegin
+\cgalHasModels{CGAL::Segment_Delaunay_graph_site_2<K>}
+\cgalHasModelsEnd
 
 \sa `SegmentDelaunayGraphTraits_2`
 \sa `CGAL::Segment_Delaunay_graph_site_2<K>`
@@ -51,7 +51,7 @@ typedef unspecified_type RT;
 
 /// \name Creation
 /// In addition to the default and copy constructors the following
-/// static methods are available for constructing sites:
+/// static methods must be available for constructing sites:
 /// @{
 
 /*!

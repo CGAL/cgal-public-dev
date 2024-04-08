@@ -7,6 +7,7 @@
 #include <CGAL/Three/Viewer_interface.h>
 #include <CGAL/Three/Three.h>
 #include <CGAL/boost/graph/helpers.h>
+#include <CGAL/boost/graph/generators.h>
 #include <QAction>
 #include <QMainWindow>
 #include <QApplication>
@@ -98,7 +99,7 @@ void Edit_box_plugin::bbox()
           this, SLOT(enableAction()));
   item->setName("Edit box");
   item->setRenderingMode(FlatPlusEdges);
-  Q_FOREACH(CGAL::QGLViewer* viewer, CGAL::QGLViewer::QGLViewerPool())
+  for(CGAL::QGLViewer* viewer : CGAL::QGLViewer::QGLViewerPool())
     viewer->installEventFilter(item);
 
   scene->addItem(item);
@@ -116,7 +117,7 @@ void Edit_box_plugin::exportToPoly()
   int id =0;
   const CGAL::qglviewer::Vec v_offset = Three::mainViewer()->offset();
   EPICK::Vector_3 offset(v_offset.x, v_offset.y, v_offset.z);
-  Scene_edit_box_item* item = NULL;
+  Scene_edit_box_item* item = nullptr;
   for(int i = 0, end = scene->numberOfEntries();
       i < end; ++i)
   {
@@ -145,8 +146,9 @@ void Edit_box_plugin::exportToPoly()
                           points[6],
                           *poly_item->polyhedron());
     CGAL::Polygon_mesh_processing::triangulate_faces(*poly_item->polyhedron());
-    item->setName("Edit box");
-    item->setRenderingMode(FlatPlusEdges);
+    poly_item->setName("Edit box");
+    poly_item->setRenderingMode(FlatPlusEdges);
+    poly_item->invalidateOpenGLBuffers();
     scene->replaceItem(id, poly_item, true);
     item->deleteLater();
     actionBbox->setEnabled(true);

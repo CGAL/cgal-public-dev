@@ -14,29 +14,37 @@
 
 #include <CGAL/license/Straight_skeleton_2.h>
 
-#include <CGAL/disable_warnings.h>
-
 #include <CGAL/create_straight_skeleton_2.h>
 #include <CGAL/Polygon_with_holes_2.h>
+#include <CGAL/Straight_skeleton_2/Polygon_iterators.h>
+
+#include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
+
+#include <memory>
+
+#include <type_traits>
 
 namespace CGAL {
 
-template<class K, class C>
-boost::shared_ptr< Straight_skeleton_2<K> >
+template<class K, class Polygon>
+std::shared_ptr< Straight_skeleton_2<K> >
 inline
-create_interior_straight_skeleton_2 ( Polygon_with_holes_2<K,C> const& aPolyWithHoles )
+create_interior_straight_skeleton_2 ( Polygon const& aPolyWithHoles,
+                                      K const& k,
+                                      std::enable_if_t<
+                                        CGAL_SS_i::has_Hole_const_iterator<Polygon>::value>* = nullptr)
 {
   return create_interior_straight_skeleton_2(aPolyWithHoles.outer_boundary().vertices_begin()
                                             ,aPolyWithHoles.outer_boundary().vertices_end  ()
                                             ,aPolyWithHoles.holes_begin   ()
                                             ,aPolyWithHoles.holes_end     ()
-                                            ,K()
+                                            ,k
                                             );
 }
 
-} // end namespace CGAL
+// create_exterior_straight_skeleton_2() for polygon with holes is simply in create_straight_skeleton_2.h
+// as the holes do not matter.
 
-#include <CGAL/enable_warnings.h>
+} // namespace CGAL
 
-#endif // CGAL_STRAIGHT_SKELETON_BUILDER_2_H //
-// EOF //
+#endif // CGAL_CREATE_STRAIGHT_SKELETON_FROM_POLYGON_WITH_HOLES_2_H

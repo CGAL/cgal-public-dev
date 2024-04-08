@@ -3,9 +3,7 @@
 #include <iterator>
 
 #include <boost/functional/value_factory.hpp>
-#include <boost/array.hpp>
 
-#include <CGAL/assertions.h>
 #include <CGAL/algorithm.h>
 #include <CGAL/point_generators_3.h>
 #include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
@@ -49,7 +47,7 @@ int main()
     return 1;
   }
   in.close();
-  in.open("data/tetrahedron.off");
+  in.open(CGAL::data_file_path("meshes/tetrahedron.off"));
   if(in)
     in >> m2;
   else{

@@ -1,12 +1,9 @@
 #include "Viewer.h"
 #include "Scene.h"
 #include <QMouseEvent>
-#include <QGLFunctions>
-#include <CGAL/Qt/CreateOpenGLContext.h>
-
 Viewer::Viewer(QWidget* parent)
   : CGAL::QGLViewer(parent),
-    m_pScene(NULL),
+    m_pScene(nullptr),
     m_custom_mouse(false)
 {
 }
@@ -19,7 +16,7 @@ void Viewer::setScene(Scene* pScene)
 void Viewer::draw()
 {
   CGAL::QGLViewer::draw();
-  if(m_pScene != NULL)
+  if(m_pScene != nullptr)
   {
       m_pScene->draw(this);
   }

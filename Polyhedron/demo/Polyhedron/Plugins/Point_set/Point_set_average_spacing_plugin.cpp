@@ -27,7 +27,7 @@ struct Compute_average_spacing_functor
 {
   Point_set* points;
   const int nb_neighbors;
-  boost::shared_ptr<double> result;
+  std::shared_ptr<double> result;
 
   Compute_average_spacing_functor (Point_set* points, const int nb_neighbors)
     : points (points), nb_neighbors (nb_neighbors), result (new double(0)) { }
@@ -89,7 +89,7 @@ void Polyhedron_demo_point_set_average_spacing_plugin::on_actionAverageSpacing_t
   {
     // Gets point set
     Point_set* points = item->point_set();
-    if(points == NULL)
+    if(points == nullptr)
         return;
 
     // Gets options
@@ -129,7 +129,7 @@ void Polyhedron_demo_point_set_average_spacing_plugin::on_actionAverageSpacing_t
               << std::endl;
     QApplication::restoreOverrideCursor();
 
-    QMessageBox::information(NULL,
+    QMessageBox::information(nullptr,
                              tr("Average Spacing"),
                              tr("Average Spacing = %1 = %2 * point set radius")
                              .arg(average_spacing)

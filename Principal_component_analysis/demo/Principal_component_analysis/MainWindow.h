@@ -1,7 +1,6 @@
 #ifndef MAINWINDOW_H
 #define MAINWINDOW_H
 
-#include <QtOpenGL/qgl.h>
 #include <CGAL/Qt/DemosMainWindow.h>
 
 class QDragEnterEvent;
@@ -18,7 +17,7 @@ class MainWindow :
 {
         Q_OBJECT
 public:
-        MainWindow(QWidget* parent = 0);
+        MainWindow(QWidget* parent = nullptr);
         ~MainWindow();
 
         public slots:

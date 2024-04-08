@@ -271,7 +271,7 @@ void
 MainWindow::on_actionGeneratePolytopeInDisc_triggered()
 {
     boost::mt19937 gen;
-    gen.seed(time(0));
+    gen.seed(time(nullptr));
     std::vector<Point_2> points;
     QRectF rect = CGAL::Qt::viewportsBbox(&scene);
     CGAL::Qt::Converter<K> convert;
@@ -338,7 +338,7 @@ int main(int argc, char **argv)
   app.setOrganizationName("GeometryFactory");
   app.setApplicationName("Generator_2 demo");
 
-  // Import resources from libCGAL (Qt5).
+  // Import resources from libCGAL (Qt6).
   // See https://doc.qt.io/qt-5/qdir.html#Q_INIT_RESOURCE
   CGAL_QT_INIT_RESOURCES;
   Q_INIT_RESOURCE(Generator_2);

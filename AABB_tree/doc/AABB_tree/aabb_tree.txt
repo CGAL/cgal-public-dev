@@ -189,7 +189,7 @@ example illustrates this for two polyhedral surfaces.
 \subsection aabb_tree_examples_7 Trees of Custom Primitives
 
 The AABB tree example folder contains three examples of trees
-constructed with customize primitives. In \ref AABB_tree/AABB_custom_example.cpp "AABB_custom_example.cpp"
+constructed with custom primitives. In \ref AABB_tree/AABB_custom_example.cpp "AABB_custom_example.cpp"
 the primitive contains triangles which are defined by three pointers
 to custom points. In \ref AABB_tree/AABB_custom_triangle_soup_example.cpp "AABB_custom_triangle_soup_example.cpp" all input
 triangles are stored into a single array so as to form a triangle
@@ -390,7 +390,7 @@ query and location of query in space.
   number of primitive data (greater than 2M faces in our experiments)
   however we noticed that it is not necessary (and sometimes even
   slower) to use all reference points when constructing the
-  KD-tree. In these cases we recommend to specify trough the function
+  KD-tree. In these cases we recommend to specify through the function
   ` AABB_tree::accelerate_distance_queries()` fewer reference
   points (typically not more than 100K) evenly distributed over the
   input primitives.

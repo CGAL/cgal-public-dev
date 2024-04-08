@@ -48,7 +48,7 @@ struct Scene_polyhedron_shortest_path_item_priv
   typedef Surface_mesh_shortest_path_traits::Point_3 Point_3;
   typedef Surface_mesh_shortest_path_traits::FT FT;
   Scene_polyhedron_shortest_path_item_priv(Scene_polyhedron_shortest_path_item *parent)
-    : m_shortestPaths(NULL)
+    : m_shortestPaths(nullptr)
     , m_isTreeCached(false)
     , m_shiftHeld(false)
   {
@@ -70,7 +70,7 @@ struct Scene_polyhedron_shortest_path_item_priv
     if (m_shortestPaths)
     {
       delete m_shortestPaths;
-      m_sceneInterface = NULL;
+      m_sceneInterface = nullptr;
     }
   }
 
@@ -96,7 +96,7 @@ void Scene_polyhedron_shortest_path_item::common_constructor()
 }
 
 Scene_polyhedron_shortest_path_item::Scene_polyhedron_shortest_path_item()
-   :Scene_polyhedron_item_decorator(NULL, false)
+   :Scene_polyhedron_item_decorator(nullptr, false)
 {
   d = new Scene_polyhedron_shortest_path_item_priv(this);
   common_constructor();
@@ -194,7 +194,7 @@ void Scene_polyhedron_shortest_path_item::drawPoints(CGAL::Three::Viewer_interfa
 
 Scene_polyhedron_shortest_path_item* Scene_polyhedron_shortest_path_item::clone() const
 {
-  return 0;
+  return nullptr;
 }
 
 void Scene_polyhedron_shortest_path_item::set_selection_mode(Selection_mode mode)
@@ -269,10 +269,10 @@ void Scene_polyhedron_shortest_path_item::invalidateOpenGLBuffers()
   compute_bbox();
   setBuffersFilled(false);
   getPointContainer(0)->reset_vbos(ALL);
-  Q_FOREACH(CGAL::QGLViewer* v, CGAL::QGLViewer::QGLViewerPool())
+  for(CGAL::QGLViewer* v : CGAL::QGLViewer::QGLViewerPool())
   {
     CGAL::Three::Viewer_interface* viewer = static_cast<CGAL::Three::Viewer_interface*>(v);
-    if(viewer == NULL)
+    if(viewer == nullptr)
       continue;
     setBuffersInit(viewer, false);
   }
@@ -621,7 +621,7 @@ void Scene_polyhedron_shortest_path_item::initialize(
   d->m_sceneInterface = sceneInterface;
   connect(polyhedronItem, SIGNAL(item_is_about_to_be_changed()), this,
           SLOT(poly_item_changed()));
-  Q_FOREACH(CGAL::QGLViewer* viewer, CGAL::QGLViewer::QGLViewerPool())
+  for(CGAL::QGLViewer* viewer : CGAL::QGLViewer::QGLViewerPool())
     viewer->installEventFilter(this);
   connect(d->m_mainWindow, SIGNAL(newViewerCreated(QObject*)),
           this, SLOT(connectNewViewer(QObject*)));
@@ -632,7 +632,7 @@ void Scene_polyhedron_shortest_path_item::initialize(
 void Scene_polyhedron_shortest_path_item::deinitialize()
 {
   d->deinitialize();
-  this->poly_item = NULL;
+  this->poly_item = nullptr;
 }
 
 bool Scene_polyhedron_shortest_path_item::isFinite() const

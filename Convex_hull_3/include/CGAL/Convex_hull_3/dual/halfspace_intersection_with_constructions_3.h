@@ -23,10 +23,12 @@
 #include <CGAL/assertions.h>
 
 // For interior_polyhedron_3
-#include <CGAL/Convex_hull_3/dual/interior_polyhedron_3.h>
-#include <CGAL/internal/Exact_type_selector.h>
+#ifndef CGAL_CH3_DUAL_WITHOUT_QP_SOLVER
+#include <CGAL/Convex_hull_3/dual/halfspace_intersection_interior_point_3.h>
+#endif
+#include <CGAL/Number_types/internal/Exact_type_selector.h>
 
-#include <boost/unordered_map.hpp>
+#include <unordered_map>
 #include <list>
 #include <vector>
 
@@ -51,7 +53,7 @@ namespace CGAL
         typename boost::property_map<Polyhedron, vertex_point_t>::type vpm_dual = get(CGAL::vertex_point, dual);
         // compute coordinates of extreme vertices in the dual polyhedron
         // from primal faces
-        boost::unordered_map<face_descriptor, vertex_descriptor> extreme_points;
+        std::unordered_map<face_descriptor, vertex_descriptor> extreme_points;
 
         for(face_descriptor fd : faces( primal)){
           halfedge_descriptor h = halfedge(fd,primal);
@@ -90,28 +92,25 @@ namespace CGAL
           void halfspace_intersection_with_constructions_3(PlaneIterator pbegin,
                                                            PlaneIterator pend,
                                                            Polyhedron &P,
-                                                           boost::optional<typename Kernel_traits<typename std::iterator_traits<PlaneIterator>::value_type>::Kernel::Point_3> const& origin,
+                                                           std::optional<typename Kernel_traits<typename std::iterator_traits<PlaneIterator>::value_type>::Kernel::Point_3> origin,
                                                            const Traits & ch_traits) {
           typedef typename Kernel_traits<typename std::iterator_traits<PlaneIterator>::value_type>::Kernel K;
           typedef typename K::Point_3 Point;
           typedef typename K::Plane_3 Plane;
 
-          Point p_origin;
-
-          if (origin) {
-            p_origin = boost::get(origin);
-          } else {
-            // choose exact integral type
-            typedef typename internal::Exact_field_selector<void*>::Type ET;
-
+          // if a point inside is not provided find one using linear programming
+          if (!origin) {
             // find a point inside the intersection
-            typedef Interior_polyhedron_3<K, ET> Interior_polyhedron;
-            Interior_polyhedron interior;
-            CGAL_assertion_code(bool res = )
-              interior.find(pbegin, pend);
-            CGAL_assertion_msg(res, "halfspace_intersection_with_constructions_3: problem when determing a point inside");
-            p_origin = interior.inside_point();
+#ifndef CGAL_CH3_DUAL_WITHOUT_QP_SOLVER
+            origin = halfspace_intersection_interior_point_3(pbegin, pend);
+#endif
+
+            CGAL_assertion_msg(origin!=std::nullopt, "halfspace_intersection_with_constructions_3: problem when determining a point inside the intersection");
+            if (origin==std::nullopt)
+              return;
           }
+
+          const Point p_origin = *origin;
 
           // construct dual points to apply the convex hull
           std::vector<Point> dual_points;
@@ -139,7 +138,11 @@ namespace CGAL
           void halfspace_intersection_with_constructions_3 (PlaneIterator pbegin,
                                                             PlaneIterator pend,
                                                             Polyhedron &P,
-                                                            boost::optional<typename Kernel_traits<typename std::iterator_traits<PlaneIterator>::value_type>::Kernel::Point_3> const& origin = boost::none) {
+                                                            std::optional<typename Kernel_traits<typename std::iterator_traits<PlaneIterator>::value_type>::Kernel::Point_3> const& origin
+#ifndef CGAL_CH3_DUAL_WITHOUT_QP_SOLVER
+                                                            = std::nullopt
+#endif
+        ) {
           typedef typename Kernel_traits<typename std::iterator_traits<PlaneIterator>::value_type>::Kernel K;
           typedef typename K::Point_3 Point_3;
           typedef typename Convex_hull_3::internal::Default_traits_for_Chull_3<Point_3>::type Traits;

@@ -18,7 +18,7 @@
 #include <CGAL/Interval_nt.h>
 #include <CGAL/Uncertain.h>
 #include <CGAL/Profile_counter.h>
-#include <boost/optional.hpp>
+#include <optional>
 
 namespace CGAL {
 
@@ -31,7 +31,7 @@ class Filtered_predicate_with_state
   C2E c2e;
   C2A c2a;
   O1  o1;
-  mutable boost::optional<EP>  oep;
+  mutable std::optional<EP>  oep;
   AP  ap;
   typedef typename AP::result_type  Ares;
 
@@ -74,12 +74,9 @@ Filtered_predicate_with_state<EP,AP,C2E,C2A,O1,Protection>::
     }
     CGAL_BRANCH_PROFILER_BRANCH(tmp);
     Protect_FPU_rounding<!Protection> p(CGAL_FE_TONEAREST);
+    CGAL_expensive_assertion(FPU_get_cw() == CGAL_FE_TONEAREST);
     if(! oep){
-      #if BOOST_VERSION < 105600
-      oep = EP(c2e(o1));
-      #else
       oep.emplace(c2e(o1));
-      #endif
     }
     return (*oep)(c2e(args)...);
 }

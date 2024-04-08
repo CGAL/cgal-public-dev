@@ -17,7 +17,7 @@
 //         they may be wrong now.
 
 /*! \file CGAL/Polynomial.h
- *  \brief Defines class CGAL::Polynomial.
+ *  \brief defines class CGAL::Polynomial.
  *
  *  Polynomials in one variable (or more, by recursion)
  */
@@ -34,7 +34,6 @@
 #include <CGAL/basic.h>
 #include <CGAL/Handle_with_policy.h>
 #include <CGAL/boost/iterator/transform_iterator.hpp>
-#include <boost/mpl/if.hpp>
 #include <CGAL/Flattening_iterator.h>
 
 #include <CGAL/Exponent_vector.h>

@@ -137,20 +137,20 @@ for faces of maximal dimension instead of faces.
 Locate is implemented by a line walk from a vertex of the face given
 as optional parameter (or from a finite vertex of
 `infinite_face()` if no optional parameter is given). It takes
-time \f$ O(n)\f$ in the worst case, but only \f$ O(\sqrt{n})\f$
+time \cgalBigO{n} in the worst case, but only \cgalBigO{\sqrt{n}}
 on average if the vertices are distributed uniformly at random.
 
 Insertion of a point is done by locating a face that contains the
 point, and then splitting this face.
 If the point falls outside the convex hull, the triangulation
 is restored by flips. Apart from the location, insertion takes a time
-time \f$ O(1)\f$. This bound is only an amortized bound
+time \cgalBigO{1}. This bound is only an amortized bound
 for points located outside the convex hull.
 
 Removal of a vertex is done by removing all adjacent triangles, and
-re-triangulating the hole. Removal takes time \f$ O(d^2)\f$ in the worst
+re-triangulating the hole. Removal takes time \cgalBigO{d^2} in the worst
 case, if \f$ d\f$ is the degree of the removed vertex,
-which is \f$ O(1)\f$ for a random vertex.
+which is \cgalBigO{1} for a random vertex.
 
 The face, edge, and vertex iterators on finite features
 are derived from their counterparts visiting all (finite and infinite)
@@ -297,7 +297,7 @@ iterator over finite vertices.
 typedef unspecified_type Finite_vertices_iterator;
 
 /*!
-iterator over the points corresponding the
+iterator over the points corresponding to the
 finite vertices of the triangulation.
 */
 typedef unspecified_type Point_iterator;
@@ -305,7 +305,7 @@ typedef unspecified_type Point_iterator;
 
 /*!
 range type for iterating over all faces (including infinite faces),  with a nested
-type `iterator` that has as value type `Face_handle`
+type `iterator` that has as value type `Face_handle`.
 */
 typedef Iterator_range<unspecified_type> All_face_handles;
 
@@ -317,14 +317,14 @@ typedef Iterator_range<All_edges_iterator> All_edges;
 
 /*!
 range type for iterating over all vertices (including the infinite vertex), with a nested
-type `iterator` that has as value type `Vertex_handle`
+type `iterator` that has as value type `Vertex_handle`.
 */
 typedef Iterator_range<unspecified_type> All_vertex_handles;
 
 
 /*!
 range type for iterating over finite faces, with a nested
-type `iterator` that has as value type `Face_handle`
+type `iterator` that has as value type `Face_handle`.
 */
 typedef Iterator_range<unspecified_type> Finite_face_handles;
 
@@ -336,7 +336,7 @@ typedef Iterator_range<Finite_edges_iterator> Finite_edges;
 
 /*!
 range type for iterating over finite vertices, with a nested
-type `iterator` that has as value type `Vertex_handle`
+type `iterator` that has as value type `Vertex_handle`.
 */
 typedef Iterator_range<unspecified_type> Finite_vertex_handles;
 
@@ -413,7 +413,7 @@ Triangulation_2 operator=(const Triangulation_2<Traits,Tds>& tr);
 
 /*!
 The triangulations `tr` and `*this` are swapped.
-This method should be used instead of assignment of copy construtor.
+This method should be used instead of assignment of copy constructor.
 if `tr` is deleted after that.
 */
 void swap(Triangulation_2& tr);
@@ -545,12 +545,12 @@ int & i);
 
 /*!
 `true` if the line segment from `va` to `vb` includes
-an edge `e` incident to `va`. If `true`, `vbr` becomes
+an edge `e` incident to `va`. If `true`, `vbb` becomes
 the other vertex of `e`, `e` is the edge `(fr,i)` where
 `fr` is a handle to the face incident to `e` and
 on the right side `e` oriented from `va` to `vb`.
 */
-bool includes_edge(Vertex_handle va, Vertex_handle vb, Vertex_handle & vbr,
+bool includes_edge(Vertex_handle va, Vertex_handle vb, Vertex_handle & vbb,
 Face_handle& fr, int & i);
 
 /*!
@@ -929,7 +929,7 @@ Point_iterator points_end() const;
 /*!
 returns a range of iterators over finite vertices.
 \note While the value type of `Finite_vertices_iterator` is `Vertex`, the value type of
-      `Finite_vertex_handles::iterator` is `Vertex_handle`
+      `Finite_vertex_handles::iterator` is `Vertex_handle`.
 */
 Finite_vertex_handles finite_vertex_handles() const;
 
@@ -941,7 +941,7 @@ Finite_edges finite_edges() const;
 /*!
 returns a range of iterators over finite faces.
 \note While the value type of `Finite_faces_iterator` is `Face`, the value type of
-      `Finite_face_handles::iterator` is `Face_handle`
+      `Finite_face_handles::iterator` is `Face_handle`.
 */
 Finite_face_handles finite_face_handles() const;
 
@@ -995,7 +995,7 @@ All_faces_iterator all_faces_end() const;
 /*!
 returns a range of iterators over all vertices.
 \note While the value type of `All_vertices_iterator` is `Vertex`, the value type of
-      `All_vertex_handles::iterator` is `Vertex_handle`
+      `All_vertex_handles::iterator` is `Vertex_handle`.
 */
 All_vertex_handles all_vertex_handles() const;
 
@@ -1007,7 +1007,7 @@ All_edges all_edges() const;
 /*!
 returns a range of iterators over all faces.
 \note While the value type of `All_faces_iterator` is `Face`, the value type of
-      `All_face_handles::iterator` is `Face_handle`
+      `All_face_handles::iterator` is `Face_handle`.
 */
 All_face_handles all_face_handles() const;
 

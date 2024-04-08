@@ -17,7 +17,7 @@
 #include "basics.h"
 #include "test_self_intersection.h"
 
-#include <boost/shared_ptr.hpp>
+#include <memory>
 
 //#define TEST_TEST_TRACE_ENABLED
 
@@ -38,7 +38,7 @@ void error_handler (char const* what, char const* expr, char const* file, int li
        << "Expr: " << expr << endl
        << "File: " << file << endl
        << "Line: " << line << endl;
-  if(msg != 0)
+  if(msg != nullptr)
     cerr << "Explanation:" << msg << endl;
 
   throw std::runtime_error(expr);
@@ -48,7 +48,7 @@ namespace SMS = CGAL::Surface_mesh_simplification;
 
 typedef SMS::Edge_profile<Surface> Profile;
 
-typedef boost::shared_ptr<Surface> SurfaceSP;
+typedef std::shared_ptr<Surface> SurfaceSP;
 
 // Constructs a flat polyhedron containing just the link of an edge or vertex.
 class Link_builder : public CGAL::Modifier_base<Surface::HalfedgeDS>
@@ -198,7 +198,7 @@ void write (SurfaceSP aSurface, string aName)
 }
 
 template<class T>
-string opt2str (const boost::optional<T>& o)
+string opt2str (const std::optional<T>& o)
 {
   ostringstream ss;
   if(o)
@@ -222,7 +222,7 @@ string point2str (const P& p)
 }
 
 template<class P>
-string optpoint2str (const boost::optional<P>& p)
+string optpoint2str (const std::optional<P>& p)
 {
   ostringstream ss;
   if(p)
@@ -232,7 +232,7 @@ string optpoint2str (const boost::optional<P>& p)
   return ss.str();
 }
 template<class N>
-string optfloat2str (const boost::optional<N>& n)
+string optfloat2str (const std::optional<N>& n)
 {
   ostringstream ss;
   if(n)
@@ -258,7 +258,7 @@ string edge2str (const E& e)
   return ss.str();
 }
 
-template<class T> ostream&  operator << (ostream& os, const boost::optional<T>& o) { return os << opt2str(o); }
+template<class T> ostream&  operator << (ostream& os, const std::optional<T>& o) { return os << opt2str(o); }
 
 string normalize_EOL (string line)
 {
@@ -304,14 +304,14 @@ public :
     CHECK(aSurface.is_valid());
   }
 
-  virtual void OnCollected(const Profile& aProfile, const boost::optional<FT>& aCost) const
+  virtual void OnCollected(const Profile& aProfile, const std::optional<FT>& aCost) const
   {
-    TEST_TRACE(str (format("Collecting %1% : cost=%2%") % edge2str(aProfile.v0_v1()) % optfloat2str(aCost)));
+    TEST_TRACE(str (boost::format("Collecting %1% : cost=%2%") % edge2str(aProfile.v0_v1()) % optfloat2str(aCost)));
   }
 
-  virtual void OnCollapsing(const Profile& aProfile, const boost::optional<Point>& aP) const
+  virtual void OnCollapsing(const Profile& aProfile, const std::optional<Point>& aP) const
   {
-    TEST_TRACE(str (format("S %1% - Collapsing %2% : placement=%3%") % mStep % edge2str(aProfile.v0_v1()) % optpoint2str(aP)));
+    TEST_TRACE(str (boost::format("S %1% - Collapsing %2% : placement=%3%") % mStep % edge2str(aProfile.v0_v1()) % optpoint2str(aP)));
 
     //mBefore = create_edge_link(aProfile);
   }
@@ -323,10 +323,10 @@ public :
     {
       SurfaceSP lAfter = create_vertex_link(aProfile, aV);
 
-      write(mBefore, str(format("%1%.step-%2%-before.off") % mTestCase % mStep));
-      write(lAfter , str(format("%1%.step-%2%-after.off")  % mTestCase % mStep));
+      write(mBefore, str(boost::format("%1%.step-%2%-before.off") % mTestCase % mStep));
+      write(lAfter , str(boost::format("%1%.step-%2%-after.off")  % mTestCase % mStep));
 
-      REPORT_ERROR(str(format("Resulting surface self-intersects after step %1% (%2% edges left)") % mStep % (aProfile.surface().size_of_halfedges() / 2)));
+      REPORT_ERROR(str(boost::format("Resulting surface self-intersects after step %1% (%2% edges left)") % mStep % (aProfile.surface().size_of_halfedges() / 2)));
     }
 
     ++mStep;
@@ -378,7 +378,7 @@ bool Test (string aName)
 
           set_halfedgeds_items_id(lSurface);
 
-          SMS::Count_stop_predicate<Surface> stop(sStop);
+          SMS::Edge_count_stop_predicate<Surface> stop(sStop);
 
           Real_timer t; t.start();
 
@@ -487,7 +487,7 @@ int main(int argc, char** argv)
     }
 
     cout << endl
-         << lOK                    << " cases succedded." << endl
+         << lOK                    << " cases succeeded." << endl
          << (lCases.size() - lOK) << " cases failed." << endl;
 
     return lOK == lCases.size() ? 0 : 1;

@@ -37,7 +37,7 @@
 #include <CGAL/Triangulation_data_structure_2.h>
 
 #include <CGAL/Segment_Delaunay_graph_2/in_place_edge_list.h>
-#include <CGAL/internal/TDS_2/edge_list.h>
+#include <CGAL/TDS_2/internal/edge_list.h>
 #include <CGAL/Segment_Delaunay_graph_2/Traits_wrapper_2.h>
 #include <CGAL/Segment_Delaunay_graph_2/Constructions_C2.h>
 
@@ -632,11 +632,11 @@ public:
   }
 
   template <class Segment_2>
-  static const Point_2& get_source(const Segment_2& segment){
+  static Point_2 get_source(const Segment_2& segment){
     return segment.source();
   }
   template <class Segment_2>
-  static const Point_2& get_target(const Segment_2& segment){
+  static Point_2 get_target(const Segment_2& segment){
     return segment.target();
   }
 

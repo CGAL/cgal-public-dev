@@ -37,7 +37,7 @@ does not make sense if the traits class already provides exact constructions.
 <ul>
 <li>When the tag `ExactAlphaComparisonTag` is set to \link Tag_true `Tag_true`\endlink,
 the class `Cartesian_converter` is used internally to switch between the traits class
-and the %CGAL kernel `CGAL::Simple_cartesian<NT>`, where `NT` can be either `CGAL::Interval_nt` or
+and the \cgal kernel `CGAL::Simple_cartesian<NT>`, where `NT` can be either `CGAL::Interval_nt` or
 `CGAL::Exact_rational`. `Cartesian_converter` must thus offer the necessary functors
 to convert a two-dimensional point of the traits class to a two-dimensional point
 of `CGAL::Simple_cartesian<NT>`. However, these functors are not necessarily provided by
@@ -47,7 +47,7 @@ how to convert from the camouflaged `CGAL::Point_3` to the two-dimensional point
 of `CGAL::Simple_cartesian<NT>`. In this case, a partial specialization of `Cartesian_converter`
 must be provided by the user. An example of such specialization is given in the example
 \ref Alpha_shapes_2/ex_alpha_projection_traits.cpp "ex_alpha_projection_traits.cpp".
-<li>The tag `ExactAlphaComparisonTag` cannot be used in conjonction with periodic triangulations.
+<li>The tag `ExactAlphaComparisonTag` cannot be used in conjunction with periodic triangulations.
 When the tag `ExactAlphaComparisonTag` is set to \link Tag_true `Tag_true`\endlink,
 the evaluations of predicates such as `Side_of_oriented_circle_2` are done lazily.
 Consequently, the predicates store pointers to the geometrical positions of the
@@ -80,7 +80,7 @@ use binary search.
 `Alpha_shape_2::number_of_solid_components()` performs a graph traversal and takes time
 linear in the number of faces of the underlying triangulation.
 `Alpha_shape_2::find_optimal_alpha()` uses binary search and takes time
-\f$ O(n \log n)\f$, where \f$ n\f$ is the number of points.
+\cgalBigO{n \log n}, where \f$ n\f$ is the number of points.
 
 */
 template< typename Dt, typename ExactAlphaComparisonTag >
@@ -106,7 +106,7 @@ allowing filtered exact comparisons (that is, interval arithmetic is first used 
 resorting to exact arithmetic). Access to the interval containing the exact value is provided through the function
 `FT::Approximate_nt approx() const` where `FT::Approximate_nt` is `CGAL::Interval_nt<Protected>`
 with `Protected=true`. Access to the exact value is provided through the function
-`FT::Exact_nt exact() const` where `FT::Exact_nt` depends on the configuration of %CGAL
+`FT::Exact_nt exact() const` where `FT::Exact_nt` depends on the configuration of \cgal
 (it is `Gmpq` if `gmp` is available and `Quotient<CGAL::MP_Float>` otherwise).
 An overload for the function `double to_double(FT)` is also available. Its
 precision is controlled through `FT::set_relative_precision_of_to_double()` in

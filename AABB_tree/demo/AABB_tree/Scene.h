@@ -1,7 +1,6 @@
 #ifndef SCENE_H
 #define SCENE_H
 
-#include <QtOpenGL/qgl.h>
 #include <iostream>
 #include <cmath>
 
@@ -77,7 +76,6 @@ private:
     };
 
 public:
-    QGLContext* context;
     void draw(CGAL::QGLViewer*);
     void update_bbox();
     Bbox bbox() { return m_bbox; }
@@ -86,7 +84,7 @@ public:
 
 private:
     // member data
-    QOpenGLFunctions_2_1 *gl;
+    QOpenGLFunctions *gl;
     Bbox m_bbox;
     Polyhedron *m_pPolyhedron;
     std::list<Point> m_points;
@@ -173,6 +171,8 @@ private:
     void attrib_buffers(CGAL::QGLViewer*);
     void compile_shaders();
     void compute_texture(int, int, Color_ramp, Color_ramp);
+private Q_SLOTS:
+    void updateCutPlane();
 
 public:
     // file menu
@@ -251,11 +251,9 @@ public:
     void activate_cutting_plane();
     void deactivate_cutting_plane();
 
-    //timer sends a top when all the events are finished
-    void timerEvent(QTimerEvent *);
 
 
-public slots:
+public Q_SLOTS:
     // cutting plane
     void cutting_plane(bool override = false);
     void changed();

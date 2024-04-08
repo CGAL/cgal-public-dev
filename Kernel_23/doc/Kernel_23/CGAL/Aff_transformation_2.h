@@ -1,7 +1,6 @@
 namespace CGAL {
 
 /*!
-\ingroup kernel_affine
 \ingroup kernel_classes2
 
 The class `Aff_transformation_2` represents two-dimensional affine transformations.
@@ -34,7 +33,7 @@ translation vector \f$ (v_0,\,v_1,\,1)\f$ appears in the last column of the
 matrix. The entries \f$ m_{20}\f$ and \f$ m_{21}\f$ are always zero and
 therefore do not appear in the constructors.
 
-\cgalModels `Hashable` if `Kernel` is a cartesian kernel and if `Kernel::FT` is `Hashable`
+\cgalModels{Hashable if `Kernel` is a cartesian kernel and if `Kernel::FT` is `Hashable`}
 
 \sa `Identity_transformation`
 \sa `Rotation`
@@ -107,7 +106,7 @@ approximates the rotation over the angle indicated by direction
 `d`, such that the differences between the sines and cosines
 of the rotation given by d and the approximating rotation
 are at most \f$ num/den\f$ each.
-\pre \f$ num/den>0\f$ and \f$ d != 0\f$.
+\pre `num/den > 0` and  `d != 0`.
 */
 Aff_transformation_2(const Rotation,
 const Direction_2<Kernel> &d,
@@ -116,7 +115,7 @@ const Kernel::RT &den = RT(1));
 
 /*!
 introduces a rotation by the angle `rho`.
-\pre \f$ sine\_rho^2 + cosine\_rho^2 == hw^2\f$.
+\pre <tt>sine\_rho<sup>2</sup> + cosine\_rho<sup>2</sup> == hw<sup>2</sup></tt>.
 */
 Aff_transformation_2(const Rotation,
 const Kernel::RT &sine_rho,
@@ -272,6 +271,26 @@ bool is_even() const;
 returns `true`, if the transformation is reflecting.
 */
 bool is_odd() const;
+
+/*!
+returns `true`, if the object was constructed using the tag `CGAL::Scaling`, or is the result of the composition of only such scaling transformation objects.
+*/
+bool is_scaling() const;
+
+/*!
+returns `true`, if the object was constructed using the tag `CGAL::Translation`, or is the result of the composition of only such translation transformation objects.
+*/
+bool is_translation() const;
+
+/*!
+returns `true`, if the object was constructed using the tag `CGAL::Rotation`, or is the result of the composition of only such rotation transformation objects.
+*/
+bool is_rotation() const;
+
+/*!
+returns `true`, if the object was constructed using the tag `CGAL::Reflection`, or is the result of the composition of only such reflection transformation objects.
+*/
+bool is_reflection() const;
 
 /// @}
 

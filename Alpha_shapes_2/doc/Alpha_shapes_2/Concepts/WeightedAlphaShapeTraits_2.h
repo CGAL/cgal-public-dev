@@ -7,15 +7,12 @@ The concept `WeightedAlphaShapeTraits_2` describes the requirements
 for the geometric traits class
 of the underlying regular triangulation of a weighted alpha shape.
 
-\cgalRefines `RegularTriangulationTraits_2`
+\cgalRefines{RegularTriangulationTraits_2 if the underlying triangulation of the alpha shape is a regular triangulation.}
 
-In addition to the requirements described in the concept
-`RegularTriangulationTraits_2`, the geometric traits class of a
-regular triangulation plugged in a basic alpha shapes provides the
-following.
-
-\cgalHasModel All models of `Kernel`.
-\cgalHasModel Projection traits such as `CGAL::Projection_traits_xy_3<K>`.
+\cgalHasModelsBegin
+\cgalHasModelsBare{All models of `Kernel`,}
+\cgalHasModelsBare{Projection traits such as `CGAL::Projection_traits_xy_3<K>`}
+\cgalHasModelsEnd
 
 \sa `CGAL::Exact_predicates_inexact_constructions_kernel` (recommended kernel)
 */
@@ -45,7 +42,7 @@ typedef unspecified_type FT;
 /*!
 A default constructor.
 */
-  AlphaShapeTraits_2();
+  WeightedAlphaShapeTraits_2();
 
 /// @}
 

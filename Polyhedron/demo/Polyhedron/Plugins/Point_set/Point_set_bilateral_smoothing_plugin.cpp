@@ -29,7 +29,7 @@ struct Bilateral_smoothing_functor
   Point_set* points;
   unsigned int neighborhood_size;
   unsigned int sharpness_angle;
-  boost::shared_ptr<double> result;
+  std::shared_ptr<double> result;
 
   Bilateral_smoothing_functor  (Point_set* points,
                                 unsigned int neighborhood_size,
@@ -86,7 +86,7 @@ class Point_set_demo_point_set_bilateral_smoothing_dialog : public QDialog, priv
 {
   Q_OBJECT
   public:
-    Point_set_demo_point_set_bilateral_smoothing_dialog(QWidget * /*parent*/ = 0)
+    Point_set_demo_point_set_bilateral_smoothing_dialog(QWidget * /*parent*/ = nullptr)
     {
       setupUi(this);
     }
@@ -115,7 +115,7 @@ void Polyhedron_demo_point_set_bilateral_smoothing_plugin::on_actionBilateralSmo
     }
     // Gets point set
     Point_set* points = item->point_set();
-    if(points == NULL)
+    if(points == nullptr)
         return;
 
     // Gets options

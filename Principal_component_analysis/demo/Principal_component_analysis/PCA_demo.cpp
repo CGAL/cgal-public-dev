@@ -18,9 +18,12 @@
 #include "MainWindow.h"
 #include <QApplication>
 #include <CGAL/Qt/resources.h>
+#include <CGAL/Qt/init_ogl_context.h>
 
 int main(int argc, char **argv)
 {
+  CGAL::Qt::init_ogl_context(2, 1);
+
   QApplication app(argc, argv);
   app.setOrganizationDomain("inria.fr");
   app.setOrganizationName("INRIA");
@@ -47,10 +50,4 @@ int main(int argc, char **argv)
 
   return app.exec();
 }
-
-#  include "Scene.cpp"
-#  include "Viewer.cpp"
-#  include "Viewer_moc.cpp"
-#  include "MainWindow.cpp"
-#  include "MainWindow_moc.cpp"
 

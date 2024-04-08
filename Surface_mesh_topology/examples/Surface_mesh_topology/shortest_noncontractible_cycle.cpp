@@ -15,7 +15,8 @@ double cycle_length(const LCC_3& lcc, const Path_on_surface& cycle)
   double res=0;
   for (std::size_t i=0; i<cycle.length(); ++i)
   { res+=std::sqrt
-        (CGAL::squared_distance(lcc.point(cycle.get_next_dart(i)), lcc.point(cycle[i]))); }
+        (CGAL::squared_distance(lcc.point(cycle[i]),
+                                lcc.point(lcc.other_extremity(cycle[i])))); }
   return res;
 }
 
@@ -29,7 +30,7 @@ void display_cycle_info(const LCC_3& lcc, const Path_on_surface& cycle)
 
 int main(int argc, char* argv[])
 {
-  std::string filename(argc==1?"data/3torus.off":argv[1]);
+  std::string filename(argc==1?CGAL::data_file_path("meshes/3torus.off"):argv[1]);
   bool draw=(argc<3?false:std::string(argv[2])=="-draw");
 
   LCC_3 lcc;
@@ -41,7 +42,7 @@ int main(int argc, char* argv[])
   std::cout<<"File '"<<filename<<"' loaded. Finding shortest non contractible cycle..."<<std::endl;
 
   CGAL::Surface_mesh_topology::Curves_on_surface_topology<LCC_3> cst(lcc);
-  LCC_3::Dart_const_handle root=lcc.dart_handle
+  LCC_3::Dart_const_descriptor root=lcc.dart_descriptor
     (CGAL::get_default_random().get_int(0, static_cast<int>(lcc.number_of_darts()))); // One dart of the mesh
 
   Path_on_surface cycle1=

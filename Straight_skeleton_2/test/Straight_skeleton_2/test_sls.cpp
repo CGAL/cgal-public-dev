@@ -8,18 +8,18 @@
 //
 // Author(s)     : Fernando Cacciola <fernando_cacciola@ciudad.com.ar>
 //
-#include<cstdio>
-#include<cstdlib>
-#include<string>
-#include<vector>
-#include<set>
-#include<map>
-#include<iostream>
-#include<fstream>
-#include<sstream>
-#include<iomanip>
+#include <cstdio>
+#include <cstdlib>
+#include <string>
+#include <vector>
+#include <set>
+#include <map>
+#include <iostream>
+#include <fstream>
+#include <sstream>
+#include <iomanip>
 
-#include<boost/tokenizer.hpp>
+#include <boost/tokenizer.hpp>
 
 #include <CGAL/assertions_behaviour.h>
 
@@ -55,11 +55,9 @@ double sScale = 1.0 ;
 
 double sTimeout = 0.0 ;
 
-//#define CGAL_STRAIGHT_SKELETON_ENABLE_INTRINSIC_TESTING
-
 //#define CGAL_STRAIGHT_SKELETON_ENABLE_TRACE 4
 //#define CGAL_STRAIGHT_SKELETON_TRAITS_ENABLE_TRACE
-//#define CGAL_STRAIGHT_SKELETON_ENABLE_VALIDITY_TRACE
+//#define CGAL_STRAIGHT_SKELETON_VALIDITY_ENABLE_TRACE
 //#define CGAL_POLYGON_OFFSET_ENABLE_TRACE 3
 
 //#define CGAL_STRAIGHT_SKELETON_PROFILING_ENABLED
@@ -68,13 +66,13 @@ bool lAppToLog = false ;
 void Straight_skeleton_external_trace ( std::string m )
 {
   std::ofstream out("sls_log.txt", ( lAppToLog ? std::ios::app | std::ios::ate : std::ios::trunc | std::ios::ate ) );
-  out << std::setprecision(19) << m << std::endl << std::flush ;
+  out << std::setprecision(17) << m << std::endl << std::flush ;
   lAppToLog = true ;
 }
 void Straight_skeleton_traits_external_trace ( std::string m )
 {
   std::ofstream out("sls_log.txt", ( lAppToLog ? std::ios::app | std::ios::ate : std::ios::trunc | std::ios::ate ) ) ;
-  out << std::setprecision(19) << m << std::endl << std::flush ;
+  out << std::setprecision(17) << m << std::endl << std::flush ;
   lAppToLog = true ;
 }
 
@@ -84,7 +82,7 @@ void error_handler ( char const* what, char const* expr, char const* file, int l
        << "Expr: " << expr << std::endl
        << "File: " << file << std::endl
        << "Line: " << line << std::endl;
-  if ( msg != 0)
+  if ( msg != nullptr)
       std::cerr << "Explanation:" << msg << std::endl;
 
   if ( sAbortOnError )
@@ -114,13 +112,13 @@ void register_construction_success ( std::string cons) { ++ sConsSuccessMap[cons
 
 #include <CGAL/test_sls_types.h>
 
-
-#include <CGAL/IO/Dxf_stream.h>
+#include <CGAL/Straight_skeleton_2/IO/Dxf_stream.h>
 
 typedef CGAL::Dxf_stream<IK> DxfStream ;
 
 using namespace std ;
 using namespace CGAL ;
+using namespace CGAL::IO ;
 
 inline string to_string( double n ) { ostringstream ss ; ss << n ; return ss.str(); }
 inline bool   is_even ( int n ) { return n % 2 == 0 ; }
@@ -222,7 +220,7 @@ IRegionPtr load_region( string file, int aShift, int& rStatus )
     ifstream in(file.c_str());
     if ( in )
     {
-      CGAL::set_ascii_mode(in);
+      CGAL::IO::set_ascii_mode(in);
 
       rRegion = IRegionPtr( new IRegion() ) ;
 
@@ -314,7 +312,7 @@ IRegionPtr load_region( string file, int aShift, int& rStatus )
   return rRegion ;
 }
 
-void update_bbox ( IRegionPtr const& aRegion, boost::optional<Bbox_2>& rBBox )
+void update_bbox ( IRegionPtr const& aRegion, std::optional<Bbox_2>& rBBox )
 {
   if ( aRegion )
   {
@@ -395,7 +393,7 @@ string change_extension ( string aFilename, string aNewExt )
 
 void dump_to_eps ( TestCase const& aCase )
 {
-  boost::optional<Bbox_2> lBBox ;
+  std::optional<Bbox_2> lBBox ;
 
   update_bbox(aCase.Inner.Input, lBBox ) ;
   update_bbox(aCase.Outer.Input, lBBox ) ;
@@ -458,7 +456,7 @@ void dump_to_eps ( TestCase const& aCase )
 
 }
 template<class Polygon>
-void dump_polygon_to_dxf( Polygon const& aPolygon, Color aColor, string aLayer, DxfStream& rDXF )
+void dump_polygon_to_dxf( Polygon const& aPolygon, IO::Color aColor, string aLayer, DxfStream& rDXF )
 {
   rDXF << aColor << Dxf_layer(aLayer) ;
 
@@ -467,7 +465,7 @@ void dump_polygon_to_dxf( Polygon const& aPolygon, Color aColor, string aLayer, 
 
 
 template<class Region>
-void dump_region_to_dxf( Region const& aRegion, Color aColor, string aBaseLayer, DxfStream& rDXF )
+void dump_region_to_dxf( Region const& aRegion, IO::Color aColor, string aBaseLayer, DxfStream& rDXF )
 {
   int lN = 0 ;
   for ( typename Region::const_iterator bit = aRegion.begin() ; bit != aRegion.end() ; ++ bit )
@@ -480,10 +478,10 @@ void dump_region_to_dxf( Region const& aRegion, Color aColor, string aBaseLayer,
 }
 
 void dump_skeleton_to_dxf( ISls const& aSkeleton
-                         , Color      aContourBisectorColor
-                         , Color      aSkeletonBisectorColor
-                         , Color      aPeakBisectorColor
-                         , Color      /*aInfiniteBisectorColor*/
+                         , IO::Color      aContourBisectorColor
+                         , IO::Color      aSkeletonBisectorColor
+                         , IO::Color      aPeakBisectorColor
+                         , IO::Color      /*aInfiniteBisectorColor*/
                          , string     aLayer
                          , DxfStream& rDXF
                          )
@@ -576,7 +574,7 @@ IPolygonPtr create_outer_frame ( IPolygon const& aOuter )
 
     IFT lOffset = s * 0.3 ;
 
-    boost::optional<IFT> lOptMargin = compute_outer_frame_margin(aOuter.begin(),aOuter.end(),lOffset) ;
+    std::optional<IFT> lOptMargin = compute_outer_frame_margin(aOuter.begin(),aOuter.end(),lOffset) ;
 
     if ( lOptMargin )
     {
@@ -633,9 +631,9 @@ bool is_point_inside_region( Region const& aRegion, Point const& aP )
   return rR ;
 }
 
-bool is_skeleton_valid( IRegion const& aRegion, ISls const& aSkeleton )
+bool is_skeleton_valid( IRegion const& aRegion, ISls const& aSkeleton, bool is_partial )
 {
-  bool rValid = aSkeleton.is_valid() ;
+  bool rValid = aSkeleton.is_valid(is_partial) ;
 
   if ( !rValid )
   {
@@ -666,7 +664,7 @@ bool is_skeleton_valid( IRegion const& aRegion, ISls const& aSkeleton )
 }
 
 
-int create_skeleton ( Zone& rZone, boost::optional<IFT> const& aMaxTime = boost::optional<IFT>() )
+int create_skeleton ( Zone& rZone, std::optional<IFT> const& aMaxTime = std::optional<IFT>() )
 {
   int rStatus = cUnknown ;
 
@@ -713,7 +711,7 @@ int create_skeleton ( Zone& rZone, boost::optional<IFT> const& aMaxTime = boost:
     rStatus = cTimedOut ;
 
   if ( rStatus == cUnknown )
-    rStatus = lSls && is_skeleton_valid(*rZone.Input,*lSls) ? cOK : cFailed ;
+    rStatus = lSls && is_skeleton_valid(*rZone.Input,*lSls, (bool) aMaxTime) ? cOK : cFailed ;
 
   double lEllapsedTime = t.time();
 
@@ -741,7 +739,7 @@ int test_zone ( Zone& rZone )
 
   if ( sMaxTime > 0 )
   {
-    boost::optional<IFT> lMaxTime = static_cast<IFT>(sMaxTime) ;
+    std::optional<IFT> lMaxTime = static_cast<IFT>(sMaxTime) ;
     rStatus = create_skeleton(rZone,lMaxTime) ;
   }
   else
@@ -821,7 +819,7 @@ int test_zone ( Zone& rZone )
 
         OSlsPtr lOSkeleton = CvtSls(*rZone.PartialSkeleton) ;
 
-        assert( lOSkeleton->is_valid() ) ;
+        assert( lOSkeleton->is_valid(true) ) ;
 
         IOffsetBuilderVisitor lWatchdog(check_timeout);
 
@@ -1064,8 +1062,8 @@ int test( TestCase& rCase )
 int main( int argc, char const* argv[] )
 {
   cout << "Straight skeleton test program" << endl ;
-  cout << setprecision(19);
-  cerr << setprecision(19);
+  cout << setprecision(17);
+  cerr << setprecision(17);
 
   CGAL::set_error_handler  (error_handler);
   CGAL::set_warning_handler(error_handler);
@@ -1207,7 +1205,7 @@ int main( int argc, char const* argv[] )
 
                     if ( soptr != "*" )
                     {
-                      sOffsetCount = strtoul(soptr.c_str(),NULL,10) ;
+                      sOffsetCount = strtoul(soptr.c_str(),nullptr,10) ;
                       cout << "Repeared Offset set at " << sOffset << " " << sOffsetCount << " times." << endl ;
                     }
                     else

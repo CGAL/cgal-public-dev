@@ -1,7 +1,6 @@
 #ifndef MAINWINDOW_H
 #define MAINWINDOW_H
 
-#include <QtOpenGL/qgl.h>
 #include <CGAL/Qt/DemosMainWindow.h>
 
 class QDragEnterEvent;
@@ -12,21 +11,20 @@ namespace Ui {
   class MainWindow;
 }
 
-
 class MainWindow :
   public CGAL::Qt::DemosMainWindow
 {
   Q_OBJECT
 public:
-  MainWindow(QWidget* parent = 0);
+  MainWindow(QWidget* parent = nullptr);
   ~MainWindow();
 
-  public slots:
+  public Q_SLOTS:
     void updateViewerBBox();
     void open(QString filename);
     void setAddKeyFrameKeyboardModifiers(Qt::KeyboardModifiers);
 
-    protected slots:
+    protected Q_SLOTS:
 
       // settings
       void quit();

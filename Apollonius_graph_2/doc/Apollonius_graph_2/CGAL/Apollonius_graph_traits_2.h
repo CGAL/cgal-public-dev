@@ -20,15 +20,10 @@ default value for `Method_tag` is `CGAL::Integral_domain_without_division_tag`.
 The way the predicates are evaluated is discussed in
 \cgalCite{cgal:ke-ppawv-02}, \cgalCite{cgal:ke-rctac-03}.
 
-\cgalModels `ApolloniusGraphTraits_2`
+\cgalModels{ApolloniusGraphTraits_2}
 
-\sa `Kernel`
-\sa `ApolloniusGraphTraits_2`
-\sa `CGAL::Integral_domain_without_division_tag`
-\sa `CGAL::Field_with_sqrt_tag`
 \sa `CGAL::Apollonius_graph_2<Gt,Agds>`
 \sa `CGAL::Apollonius_graph_filtered_traits_2<CK,CM,EK,EM,FK,FM>`
-
 */
 template< typename K, typename Method_tag >
 class Apollonius_graph_traits_2 {
@@ -45,14 +40,13 @@ Apollonius_graph_traits_2<K,Method_tag>();
 /*!
 Copy constructor.
 */
-Apollonius_graph_traits_2<K,Method_tag>(Apollonius_graph_traits_2<K,Method_tag> other);
+Apollonius_graph_traits_2<K,Method_tag>(const Apollonius_graph_traits_2<K,Method_tag>& other);
 
 /*!
 Assignment operator.
 */
 Apollonius_graph_traits_2<K,Method_tag>
-operator=(Apollonius_graph_traits_2<K,Method_tag>
-other);
+operator=(const Apollonius_graph_traits_2<K,Method_tag>& other);
 
 /// @}
 

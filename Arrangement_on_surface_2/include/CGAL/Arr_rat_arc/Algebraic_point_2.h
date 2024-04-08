@@ -225,10 +225,11 @@ public:
         if (CGAL::compare(
                 CGAL::width(y_bfi),
                 CGAL::lower(CGAL::abs(y_bfi)) * eps)
-            == SMALLER)
+            == SMALLER){
           return std::make_pair(
               Bound(CGAL::lower(y_bfi)),
               Bound(CGAL::upper(y_bfi)));
+        }
       }
       else precision*=2;
     }
@@ -237,7 +238,7 @@ public:
   std::ostream& print (std::ostream& os) const
   {
     std::pair<double,double> double_p;
-    switch(::CGAL::get_mode(os))
+    switch(::CGAL::IO::get_mode(os))
     {
      case ::CGAL::IO::PRETTY:
       double_p = this->to_double();
@@ -287,10 +288,11 @@ private:
       if (CGAL::zero_in(y_denom_bfi) == false)
       {
         BFI y_bfi(y_numer_bfi/y_denom_bfi);
-        if (CGAL::width(y_bfi) < eps )
+        if (CGAL::width(y_bfi) < eps ){
           return std::make_pair(
               Bound(CGAL::lower(y_bfi)),
               Bound(CGAL::upper(y_bfi)));
+        }
 
       }
       else precision*=2;

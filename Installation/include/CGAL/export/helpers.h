@@ -12,7 +12,7 @@
 #ifndef CGAL_EXPORT_HELPERS_H
 #define CGAL_EXPORT_HELPERS_H
 
-#if defined(CGAL_HEADER_ONLY) && ! defined(CGAL_USE_Qt5_RESOURCES)
+#if defined(CGAL_HEADER_ONLY) && ! defined(CGAL_USE_Qt6_RESOURCES)
 #  define CGAL_DLL_IMPORT
 #  define CGAL_DLL_EXPORT
 #  define CGAL_DLL_LOCAL
@@ -23,7 +23,7 @@
 #    define CGAL_DLL_EXPORT __declspec(dllexport)
 #    define CGAL_DLL_LOCAL
 #  else
-    #if __GNUC__ >= 4
+    #ifdef __GNUC__
       #define CGAL_DLL_IMPORT __attribute__ ((visibility ("default")))
       #define CGAL_DLL_EXPORT __attribute__ ((visibility ("default")))
       #define CGAL_DLL_LOCAL  __attribute__ ((visibility ("hidden")))

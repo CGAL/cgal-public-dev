@@ -7,7 +7,6 @@
 // $Id$
 // SPDX-License-Identifier: GPL-3.0-or-later OR LicenseRef-Commercial
 //
-//
 // Author(s): Ron Wein          <wein@post.tau.ac.il>
 //            Efi Fogel         <efif@post.tau.ac.il>
 //            (based on old version by Eyal Flato)
@@ -21,13 +20,14 @@
 
 
 /*! \file
- * Defintion of the Arrangement_zone_2 class.
+ * Definition of the Arrangement_zone_2 class.
  */
 
 #include <boost/mpl/assert.hpp>
 #include <CGAL/Arr_tags.h>
 #include <CGAL/Arr_accessor.h>
 #include <CGAL/Arrangement_2/Arr_traits_adaptor_2.h>
+#include <CGAL/Arr_point_location_result.h>
 
 #include <list>
 #include <map>
@@ -40,7 +40,7 @@ namespace CGAL {
  * arrangement.
  * The arrangement parameter corresponds to the underlying arrangement, and
  * the zone-visitor parameter corresponds to a visitor class which is capable
- * of receiving notifications on the arrangment features the query curve
+ * of receiving notifications on the arrangement features the query curve
  * traverses. The visitor has to support the following functions:
  * - init(), for initializing the visitor with a given arrangement.
  * - found_subcurve(), called when a non-intersecting x-monotone curve is
@@ -55,60 +55,68 @@ namespace CGAL {
 template <typename Arrangement_, typename ZoneVisitor_>
 class Arrangement_zone_2 {
 public:
-  typedef Arrangement_                                   Arrangement_2;
-  typedef typename Arrangement_2::Geometry_traits_2      Geometry_traits_2;
-  typedef typename Arrangement_2::Topology_traits        Topology_traits;
+  using Arrangement_2 = Arrangement_;
+  using Geometry_traits_2 = typename Arrangement_2::Geometry_traits_2;
+  using Topology_traits = typename Arrangement_2::Topology_traits;
 
 protected:
-  typedef Arr_traits_adaptor_2<Geometry_traits_2>        Traits_adaptor_2;
+  using Traits_adaptor_2 = Arr_traits_adaptor_2<Geometry_traits_2>;
 
-  typedef typename Traits_adaptor_2::Left_side_category   Left_side_category;
-  typedef typename Traits_adaptor_2::Bottom_side_category Bottom_side_category;
-  typedef typename Traits_adaptor_2::Top_side_category    Top_side_category;
-  typedef typename Traits_adaptor_2::Right_side_category  Right_side_category;
+  using Left_side_category = typename Traits_adaptor_2::Left_side_category;
+  using Bottom_side_category = typename Traits_adaptor_2::Bottom_side_category;
+  using Top_side_category = typename Traits_adaptor_2::Top_side_category;
+  using Right_side_category = typename Traits_adaptor_2::Right_side_category;
 
-  BOOST_MPL_ASSERT
-  ((typename Arr_sane_identified_tagging<Left_side_category,
-                                         Bottom_side_category,
-                                         Top_side_category,
-                                         Right_side_category>::result));
+  static_assert(Arr_sane_identified_tagging<Left_side_category,
+                                            Bottom_side_category,
+                                                    Top_side_category,
+                                                    Right_side_category>::value);
+  // Categories for dispatching
+  using Are_all_sides_oblivious_category =
+    typename Arr_all_sides_oblivious_category<Left_side_category,
+                                              Bottom_side_category,
+                                              Top_side_category,
+                                              Right_side_category>::result;
+
+  using Left_or_right_sides_category =
+    typename Arr_two_sides_category<Left_side_category,
+                                    Right_side_category>::result;
 
 public:
-  typedef ZoneVisitor_                                   Visitor;
+  using Visitor = ZoneVisitor_;
 
-  typedef typename Arrangement_2::Vertex_handle          Vertex_handle;
-  typedef typename Arrangement_2::Halfedge_handle        Halfedge_handle;
-  typedef typename Arrangement_2::Face_handle            Face_handle;
+  using Vertex_handle = typename Arrangement_2::Vertex_handle;
+  using Halfedge_handle = typename Arrangement_2::Halfedge_handle;
+  using Face_handle = typename Arrangement_2::Face_handle;
 
-  typedef std::pair<Halfedge_handle, bool>               Visitor_result;
+  using Visitor_result = std::pair<Halfedge_handle, bool>;
 
-  typedef typename Geometry_traits_2::Point_2            Point_2;
-  typedef typename Geometry_traits_2::X_monotone_curve_2 X_monotone_curve_2;
-  typedef typename Geometry_traits_2::Multiplicity       Multiplicity;
+  using Point_2 = typename Geometry_traits_2::Point_2;
+  using X_monotone_curve_2 = typename Geometry_traits_2::X_monotone_curve_2;
+  using Multiplicity = typename Geometry_traits_2::Multiplicity;
 
 protected:
-  typedef typename Arr_are_all_sides_oblivious_tag<Left_side_category,
-                                                   Bottom_side_category,
-                                                   Top_side_category,
-                                                   Right_side_category>::result
-    Are_all_sides_oblivious_category;
+  // General types
+  using Vertex_const_handle = typename Arrangement_2::Vertex_const_handle;
+  using Halfedge_const_handle = typename Arrangement_2::Halfedge_const_handle;
+  using Face_const_handle = typename Arrangement_2::Face_const_handle;
 
-  typedef typename Arrangement_2::Vertex_const_handle    Vertex_const_handle;
-  typedef typename Arrangement_2::Halfedge_const_handle  Halfedge_const_handle;
-  typedef typename Arrangement_2::Face_const_handle      Face_const_handle;
-
-  typedef typename Arrangement_2::Ccb_halfedge_circulator
-    Ccb_halfedge_circulator;
+  using Ccb_halfedge_circulator =
+    typename Arrangement_2::Ccb_halfedge_circulator;
 
   // Types used for caching intersection points:
-  typedef std::pair<Point_2, Multiplicity>               Intersect_point_2;
-  typedef std::list<CGAL::Object>                        Intersect_list;
-  typedef std::map<const X_monotone_curve_2*, Intersect_list>
-                                                         Intersect_map;
-  typedef typename Intersect_map::iterator               Intersect_map_iterator;
+  using Intersection_point = std::pair<Point_2, Multiplicity>;
+  using Intersection_result =
+    std::variant<Intersection_point, X_monotone_curve_2>;
+  using Optional_intersection = std::optional<Intersection_result>;
+  using Intersect_list = std::list<Intersection_result>;
+  using Intersect_map = std::map<const X_monotone_curve_2*, Intersect_list>;
 
-  typedef std::set<const X_monotone_curve_2*>            Curves_set;
-  typedef typename Curves_set::iterator                  Curves_set_iterator;
+  using Curves_set = std::set<const X_monotone_curve_2*>;
+  using Curves_set_iterator = typename Curves_set::iterator;
+
+  using Pl_result = Arr_point_location_result<Arrangement_2>;
+  using Pl_result_type = typename Pl_result::Type;
 
   // Data members:
   Arrangement_2& m_arr;                 // The associated arrangement.
@@ -124,7 +132,7 @@ protected:
 
   X_monotone_curve_2 m_cv;              // The current portion of the
                                         // inserted curve.
-  CGAL::Object m_obj;                   // The location of the left endpoint.
+  Pl_result_type m_obj;                 // The location of the left endpoint.
   bool m_has_left_pt;                   // Is the left end of the curve bounded.
   bool m_left_on_boundary;              // Is the left point on the boundary.
   Point_2 m_left_pt;                    // Its current left endpoint.
@@ -149,7 +157,7 @@ protected:
                                         // the right endpoint it its interior.
 
   Point_2 m_intersect_p;                // The next intersection point.
-  unsigned int m_ip_multiplicity;       // Its multiplicity
+  Multiplicity m_ip_multiplicity;       // Its multiplicity
                                         // (0 in case of an overlap).
   bool m_found_intersect;               // An intersection has been found.
                                         // (or an overlap).
@@ -188,29 +196,27 @@ public:
    * \param pl A point-location object associated with the arrangement.
    */
   template <typename PointLocation>
-  void init(const X_monotone_curve_2& cv, const PointLocation& pl)
-  {
+  void init(const X_monotone_curve_2& cv, const PointLocation& pl) {
     // Set the curve and check whether its left end has boundary conditions.
     m_cv = cv;
 
-    const Arr_parameter_space bx1 =
-      m_geom_traits->parameter_space_in_x_2_object()(m_cv, ARR_MIN_END);
-    const Arr_parameter_space by1 =
-      m_geom_traits->parameter_space_in_y_2_object()(m_cv, ARR_MIN_END);
+    auto ps_in_x = m_geom_traits->parameter_space_in_x_2_object();
+    auto ps_in_y = m_geom_traits->parameter_space_in_y_2_object();
 
-    if (bx1 == ARR_INTERIOR && by1 == ARR_INTERIOR) {
+    auto bx1 = ps_in_x(m_cv, ARR_MIN_END);
+    auto by1 = ps_in_y(m_cv, ARR_MIN_END);
+
+    if ((bx1 == ARR_INTERIOR) && (by1 == ARR_INTERIOR)) {
       // The curve has a finite left endpoint with no boundary conditions:
       // locate it in the arrangement.
       m_has_left_pt = true;
       m_left_on_boundary = (bx1 != ARR_INTERIOR || by1 != ARR_INTERIOR);
       m_left_pt = m_geom_traits->construct_min_vertex_2_object()(m_cv);
-
       m_obj = pl.locate(m_left_pt);
     }
     else {
       // The left end of the curve has boundary conditions: use the topology
       // traits use the arrangement accessor to locate it.
-      // Note that if the curve-end is unbounded, m_left_pt does not exist.
       // Note that if the curve-end is unbounded, m_left_pt does not exist.
       m_has_left_pt = m_geom_traits->is_closed_2_object()(m_cv, ARR_MIN_END);
       m_left_on_boundary = true;
@@ -221,10 +227,8 @@ public:
 
     // Check the boundary conditions of th right curve end.
     if (m_geom_traits->is_closed_2_object()(m_cv, ARR_MAX_END)) {
-      const Arr_parameter_space bx2 =
-        m_geom_traits->parameter_space_in_x_2_object()(m_cv, ARR_MAX_END);
-      const Arr_parameter_space by2 =
-        m_geom_traits->parameter_space_in_y_2_object()(m_cv, ARR_MAX_END);
+      auto bx2 = ps_in_x(m_cv, ARR_MAX_END);
+      auto by2 = ps_in_y(m_cv, ARR_MAX_END);
 
       // The right endpoint is valid.
       m_has_right_pt = true;
@@ -244,9 +248,9 @@ public:
    * \param obj An object that represents the location of the left end of the
    *            curve.
    */
-  void init_with_hint(const X_monotone_curve_2& cv, const Object& obj);
+  void init_with_hint(const X_monotone_curve_2& cv, Pl_result_type obj);
 
-  /*! Compute the zone of the given curve and issue the apporpriate
+  /*! Compute the zone of the given curve and issue the appropriate
    * notifications for the visitor.
    */
   void compute_zone();
@@ -265,8 +269,7 @@ private:
    */
   bool do_overlap_impl(const X_monotone_curve_2& cv1,
                        const X_monotone_curve_2& cv2,
-                       const Point_2& p, Arr_all_sides_oblivious_tag) const
-  {
+                       const Point_2& p, Arr_all_sides_oblivious_tag) const {
     return m_geom_traits->compare_y_at_x_right_2_object()(cv1, cv2, p) == EQUAL;
   }
 
@@ -275,58 +278,6 @@ private:
   bool do_overlap_impl(const X_monotone_curve_2& cv1,
                        const X_monotone_curve_2& cv2,
                        const Point_2& p, Arr_not_all_sides_oblivious_tag) const;
-
-  /* Check whether the given query curve is encountered when rotating the
-   * first curve in a clockwise direction around a given point until reaching
-   * the second curve.
-   * \pre p == min_point(xcv)
-   * \pre p == min_point(xcv1)
-   * \pre p == min_point(cxv2)
-   * \pre xcv_to_right == TRUE
-   * \todo move this function to a more accessible place so that it can be reused
-   */
-  bool is_between_cw(const X_monotone_curve_2& xcv, bool xcv_to_right,
-                     const X_monotone_curve_2& xcv1, bool xcv1_to_right,
-                     const X_monotone_curve_2& xcv2, bool xcv2_to_right,
-                     const Point_2& p,
-                     bool& xcv_equal_xcv1, bool& xcv_equal_xcv2) const
-  {
-    return is_between_cw_impl(xcv, xcv_to_right,
-                              xcv1, xcv1_to_right,
-                              xcv2, xcv2_to_right,
-                              p, xcv_equal_xcv1, xcv_equal_xcv2,
-                              Are_all_sides_oblivious_category());
-  }
-
-  /* Check whether the given query curve is encountered when rotating the
-   * first curve in a clockwise direction around a given point until reaching
-   * the second curve.
-   */
-  bool is_between_cw_impl(const X_monotone_curve_2& xcv, bool xcv_to_right,
-                          const X_monotone_curve_2& xcv1, bool xcv1_to_right,
-                          const X_monotone_curve_2& xcv2, bool xcv2_to_right,
-                          const Point_2& p,
-                          bool& xcv_equal_xcv1, bool& xcv_equal_xcv2,
-                          Arr_all_sides_oblivious_tag) const
-  {
-    return m_geom_traits->is_between_cw_2_object()(xcv, xcv_to_right,
-                                                   xcv1, xcv1_to_right,
-                                                   xcv2, xcv2_to_right,
-                                                   p,
-                                                   xcv_equal_xcv1,
-                                                   xcv_equal_xcv2);
-  }
-
-  /* Check whether the given query curve is encountered when rotating the
-   * first curve in a clockwise direction around a given point until reaching
-   * the second curve.
-   */
-  bool is_between_cw_impl(const X_monotone_curve_2& xcv, bool xcv_to_right,
-                          const X_monotone_curve_2& xcv1, bool xcv1_to_right,
-                          const X_monotone_curve_2& xcv2, bool xcv2_to_right,
-                          const Point_2& p,
-                          bool& xcv_equal_xcv1, bool& xcv_equal_xcv2,
-                          Arr_not_all_sides_oblivious_tag) const;
 
   /*! Find a face containing the query curve m_cv around the given vertex.
    * In case an overlap occurs, sets m_intersect_he to be the overlapping edge.
@@ -378,33 +329,32 @@ private:
    *                                            point coincides with the right
    *                                            curve-end, which lies on the
    *                                            surface boundary.
-   * \return An object representing the next intersection: Intersect_point_2
+   * \return An object representing the next intersection: Intersection_point
    *         in case of a simple intersection point, X_monotone_curve_2 in
    *         case of an overlap, and an empty object if there is no
    *         intersection.
    */
-  CGAL::Object _compute_next_intersection(Halfedge_handle he,
-                                          bool skip_first_point,
-                                          bool& intersect_on_right_boundary);
+  Optional_intersection
+  _compute_next_intersection(Halfedge_handle he,
+                             bool skip_first_point,
+                             Arr_parameter_space& intersection_location);
 
   /*! Remove the next intersection of m_cv with the given halfedge from the map.
    * \param he A handle to the halfedge.
    * \pre The list of intersections with the curve of he has already been
    *      computed, and it is not empty.
    */
-  void _remove_next_intersection (Halfedge_handle he);
+  void _remove_next_intersection(Halfedge_handle he);
 
   /*! Check whether the given point lies completely to the left of the given
-   * egde.
+   * edge.
    * \param p The point.
    * \param he The halfedge.
    * \pre he is not a fictitious edge.
    * \return Whether p lies entirely to the left of the edge.
    */
   bool _is_to_left(const Point_2& p, Halfedge_handle he) const
-  {
-    return (_is_to_left_impl(p, he, Are_all_sides_oblivious_category()));
-  }
+  { return (_is_to_left_impl(p, he, Are_all_sides_oblivious_category())); }
 
   bool _is_to_left_impl(const Point_2& p, Halfedge_handle he,
                         Arr_all_sides_oblivious_tag) const
@@ -421,20 +371,18 @@ private:
                         Arr_not_all_sides_oblivious_tag) const;
 
   /*! Check whether the given point lies completely to the right of the given
-   * egde.
+   * edge.
    * \param p The point.
    * \param he The halfedge.
    * \pre he is not a fictitious edge.
-   * \return Whether p lies entirely to the right of the edge.
+   * \pre p is not on the left or right boundary.
+   * \return if p entirely lies to the right of the edge true; otherwise false.
    */
   bool _is_to_right(const Point_2& p, Halfedge_handle he) const
-  {
-    return (_is_to_right_impl(p, he, Are_all_sides_oblivious_category()));
-  }
+  { return (_is_to_right_impl(p, he, Are_all_sides_oblivious_category())); }
 
   bool _is_to_right_impl(const Point_2& p, Halfedge_handle he,
-                         Arr_all_sides_oblivious_tag) const
-  {
+                         Arr_all_sides_oblivious_tag) const {
     return (((he->direction() == ARR_LEFT_TO_RIGHT) &&
              m_geom_traits->compare_xy_2_object()(p, he->target()->point()) ==
              LARGER) ||
@@ -446,12 +394,33 @@ private:
   bool _is_to_right_impl(const Point_2& p, Halfedge_handle he,
                          Arr_not_all_sides_oblivious_tag) const;
 
+  /*! Check whether an intersection point is valid. A valid intersection point
+   * must be to the left of the left end of the curve involved.
+   */
+  bool is_intersection_valid(const Point_2& ip,
+                             Arr_parameter_space& intersection_location) const {
+    return is_intersection_valid_impl(ip, intersection_location,
+                                      Left_or_right_sides_category());
+  }
+
+  bool is_intersection_valid_impl(const Point_2& ip,
+                                  Arr_parameter_space& intersection_location,
+                                  Arr_all_sides_oblivious_tag) const;
+
+  bool is_intersection_valid_impl(const Point_2& ip,
+                                  Arr_parameter_space& intersection_location,
+                                  Arr_has_identified_side_tag) const;
+
+  bool is_intersection_valid_impl(const Point_2& ip,
+                                  Arr_parameter_space& intersection_location,
+                                  Arr_boundary_cond_tag) const;
+
   /*! Compute the (lexicographically) leftmost intersection of the query
    * curve with a given halfedge on the boundary of a face in the arrangement.
    */
   void
   _leftmost_intersection(Ccb_halfedge_circulator he_curr, bool on_boundary,
-                         bool& leftmost_on_right_boundary);
+                         Arr_parameter_space& leftmost_location);
 
   /*! Compute the (lexicographically) leftmost intersection of the query
    * curve with the boundary of a given face in the arrangement.

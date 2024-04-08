@@ -170,7 +170,7 @@ MainWindow::newPoints(int n)
   scene.periodic_triangulation.clear();
   scene.points.clear();
 
-  CGAL::Random rnd(std::time(NULL));
+  CGAL::Random rnd(std::time(nullptr));
   CGAL::Random_points_in_cube_3<Point_3, Creator> in_cube(1,rnd);
 
   for (int i=0 ; i<n ; i++)
@@ -204,7 +204,7 @@ MainWindow::newPoints(int n)
 }
 
 void MainWindow::help() {
-  QString app = QLibraryInfo::location(QLibraryInfo::BinariesPath)
+  QString app = QLibraryInfo::path(QLibraryInfo::BinariesPath)
     + QDir::separator();
 #if !defined(Q_OS_MAC)
   app += QString("assistant");

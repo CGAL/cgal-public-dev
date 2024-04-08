@@ -22,10 +22,11 @@ public Q_SLOTS:
     }
 
 public:
-    Dialog_options(QWidget * = 0)
+    Dialog_options(QWidget * = nullptr)
     {
         setupUi(this);
     }
+    virtual ~Dialog_options();
 
     void set_all_ranges()
     {

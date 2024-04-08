@@ -41,7 +41,7 @@ public:
   }
 
   bool applicable(QAction*) const {
-    Q_FOREACH(int index, scene->selectionIndices())
+    for(int index : scene->selectionIndices())
     {
       Scene_facegraph_item* item =
         qobject_cast<Scene_facegraph_item*>(scene->item(index));
@@ -82,7 +82,7 @@ void Polyhedron_demo_detect_sharp_edges_plugin::detectSharpEdges(bool input_dial
 
   // Get selected items
   QList<Poly_tuple> polyhedrons;
-  Q_FOREACH(int index, scene->selectionIndices())
+  for(int index : scene->selectionIndices())
   {
     Scene_facegraph_item* item =
       qobject_cast<Scene_facegraph_item*>(scene->item(index));
@@ -99,7 +99,7 @@ void Polyhedron_demo_detect_sharp_edges_plugin::detectSharpEdges(bool input_dial
   QApplication::restoreOverrideCursor();
   if(input_dialog) {
     bool ok = true;
-    angle = QInputDialog::getDouble(NULL,
+    angle = QInputDialog::getDouble(nullptr,
                                     tr("Sharp edges max angle"),
                                     tr("Angle in degrees between 0 and 180:"),
                                     angle, // value
@@ -113,7 +113,7 @@ void Polyhedron_demo_detect_sharp_edges_plugin::detectSharpEdges(bool input_dial
   QApplication::setOverrideCursor(Qt::WaitCursor);
   QApplication::processEvents();
   std::size_t first_patch = 1;
-  Q_FOREACH(Poly_tuple tuple, polyhedrons)
+  for(Poly_tuple tuple : polyhedrons)
   {
     Scene_facegraph_item* item =
       qobject_cast<Scene_facegraph_item*>(scene->item(tuple.first));
@@ -129,7 +129,7 @@ void Polyhedron_demo_detect_sharp_edges_plugin::detectSharpEdges(bool input_dial
     VIP vip = get(CGAL::vertex_incident_patches_t<int>(), *pMesh);
 
     first_patch+=PMP::sharp_edges_segmentation(*pMesh, angle, eif, pid,
-                                               PMP::parameters::first_index(first_patch)
+                                               CGAL::parameters::first_index(first_patch)
                                                .vertex_incident_patches_map(vip));
     //update item
     item->setItemIsMulticolor(true);

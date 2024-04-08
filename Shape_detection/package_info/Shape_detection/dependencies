@@ -1,12 +1,12 @@
 Algebraic_foundations
 Arithmetic_kernel
 BGL
+CGAL_Core
 Cartesian_kernel
 Circulator
 Distance_2
 Distance_3
 Filtered_kernel
-HalfedgeDS
 Hash_map
 Homogeneous_kernel
 Installation
@@ -15,11 +15,10 @@ Intersections_3
 Interval_support
 Kernel_23
 Kernel_d
-Modifier
 Modular_arithmetic
 Number_types
-Polyhedron
-Polyhedron_IO
+Orthtree
+Point_set_2
 Principal_component_analysis
 Principal_component_analysis_LGPL
 Profiling_tools
@@ -29,5 +28,7 @@ STL_Extension
 Shape_detection
 Solver_interface
 Spatial_searching
+Spatial_sorting
 Stream_support
-Surface_mesh
+TDS_2
+Triangulation_2

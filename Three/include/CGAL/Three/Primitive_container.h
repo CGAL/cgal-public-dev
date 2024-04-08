@@ -19,6 +19,8 @@
 #include <CGAL/Three/Viewer_interface.h>
 #include <CGAL/Three/Scene_item_rendering_helper.h>
 
+#include <memory> // for std::unique_ptr
+
 using namespace CGAL::Three;
 
 #ifdef demo_framework_EXPORTS
@@ -193,7 +195,7 @@ public:
   //! setter for the texture data at UV coordinates (`i`,`j`).
   void setTextureData  (int i, int j, int r, int g, int b);
   //!
-  //! \brief Returns the `Vao` bound to `viewer`.
+  //! \brief returns the `Vao` bound to `viewer`.
   //!
   Vao* getVao(Viewer_interface* viewer)const;
   //!
@@ -248,7 +250,7 @@ public:
   //!
 private:
   friend struct D;
-  mutable D* d;
+  std::unique_ptr<D> d;
 }; //end of class Triangle_container
 
 }

@@ -387,7 +387,7 @@ save(const Scene_c3t3_item& c3t3_item, const QFileInfo& fileInfo)
   rib_file.precision(8);
 
   // Header
-  QString basename = fileInfo.baseName();
+  QString basename = fileInfo.completeBaseName();
   write_header(qPrintable(basename), rib_file);
 
   // Lights
@@ -732,8 +732,8 @@ void
 C3t3_rib_exporter_plugin::
 write_surface_cells(const C3t3& c3t3, const Plane& /* plane */, std::ofstream& out)
 {
-  Geom_traits::Construct_point_3 wp2p
-    = c3t3.triangulation().geom_traits().construct_point_3_object();
+  const Geom_traits& gt = c3t3.triangulation().geom_traits();
+  Geom_traits::Construct_point_3 wp2p = gt.construct_point_3_object();
 
   for ( C3t3::Cells_in_complex_iterator it_cell = c3t3.cells_in_complex_begin(),
        end = c3t3.cells_in_complex_end() ; it_cell != end ; ++it_cell )
@@ -755,7 +755,7 @@ write_surface_cells(const C3t3& c3t3, const Plane& /* plane */, std::ofstream& o
 
     //const int TRANSPARENCY_ALPHA_VALUE = 100;
     CGAL::Bbox_3 bbox = c3t3.bbox();
-    float relPos = static_cast<float>((c->weighted_circumcenter().x() - bbox.xmin())
+    float relPos = static_cast<float>((c->weighted_circumcenter(gt).x() - bbox.xmin())
                                       / (bbox.xmax() - bbox.xmin()));
     float TRANSPARENCY_ALPHA_VALUE =
       1.f -

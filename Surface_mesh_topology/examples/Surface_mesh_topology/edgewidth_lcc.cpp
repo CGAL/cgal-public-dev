@@ -14,7 +14,8 @@ double cycle_length(const LCC_3& lcc, const Path_on_surface& cycle)
   double res=0;
   for (std::size_t i=0; i<cycle.length(); ++i)
   { res+=std::sqrt
-        (CGAL::squared_distance(lcc.point(cycle.get_next_dart(i)), lcc.point(cycle[i]))); }
+      (CGAL::squared_distance(lcc.point(cycle[i]),
+                              lcc.point(lcc.other_extremity(cycle[i])))); }
   return res;
 }
 
@@ -28,7 +29,7 @@ void display_cycle_info(const LCC_3& lcc, const Path_on_surface& cycle)
 
 int main(int argc, char* argv[])
 {
-  std::string filename(argc==1?"data/3torus.off":argv[1]);
+  std::string filename(argc==1?CGAL::data_file_path("meshes/3torus.off"):argv[1]);
   bool draw=(argc<3?false:(std::string(argv[2])=="-draw"));
   LCC_3 lcc;
   if (!CGAL::load_off(lcc, filename.c_str())) // Load the off file.

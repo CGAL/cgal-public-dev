@@ -14,10 +14,10 @@
 
 #include <CGAL/license/Optimal_bounding_box.h>
 
+#include <CGAL/assertions.h>
 #include <CGAL/ch_akl_toussaint.h>
 #include <CGAL/min_quadrilateral_2.h>
 #include <CGAL/Polygon_2.h>
-#include <CGAL/number_type_config.h>
 
 #include <iostream>
 #include <iterator>
@@ -104,7 +104,9 @@ compute_2D_deviation(const PointRange& points,
   if(theta > 0.25 * CGAL_PI) // @todo is there a point to this
     theta = 0.5 * CGAL_PI - theta;
 
-  return std::make_pair(pol.area(), FT{theta});
+  //cast from double to float looses data, so cast with {} is not allowed
+  //cast from double to exact types also works
+  return std::make_pair(pol.area(), FT(theta));
 }
 
 template <typename PointRange, typename Traits>
@@ -117,14 +119,16 @@ void optimize_along_OBB_axes(typename Traits::Matrix& rot,
   typedef typename Traits::Matrix                                    Matrix;
   typedef typename Traits::Vector                                    Vector;
 
-  CGAL_static_assertion((std::is_same<typename boost::range_value<PointRange>::type, Point>::value));
+  static_assert(std::is_same<typename boost::range_value<PointRange>::type, Point>::value);
 
   std::vector<Point> rotated_points;
   rotated_points.reserve(points.size());
 
   FT xmin, ymin, zmin, xmax, ymax, zmax;
-  xmin = ymin = zmin = FT{(std::numeric_limits<double>::max)()};
-  xmax = ymax = zmax = FT{std::numeric_limits<double>::lowest()};
+  //cast from double to float looses data, so cast with {} is not allowed
+  //cast from double to exact types also works
+  xmin = ymin = zmin = FT((std::numeric_limits<double>::max)());
+  xmax = ymax = zmax = FT(std::numeric_limits<double>::lowest());
 
   for(const Point& pt : points)
   {
@@ -213,6 +217,25 @@ void optimize_along_OBB_axes(typename Traits::Matrix& rot,
     CGAL_assertion(false);
   }
 }
+
+// This operation makes no sense if an exact number type is used, so skip it, if so
+template <typename Traits,
+          typename IsFTExact = typename Algebraic_structure_traits<typename Traits::FT>::Is_exact>
+struct Optimizer_along_axes
+{
+  template <typename PointRange>
+  void operator()(typename Traits::Matrix& rot, const PointRange& points, const Traits& traits)
+  {
+    return optimize_along_OBB_axes(rot, points, traits);
+  }
+};
+
+template <typename Traits>
+struct Optimizer_along_axes<Traits, CGAL::Tag_true>
+{
+  template <typename PointRange>
+  void operator()(typename Traits::Matrix&, const PointRange&, const Traits&) { }
+};
 
 } // namespace internal
 } // namespace Optimal_bounding_box

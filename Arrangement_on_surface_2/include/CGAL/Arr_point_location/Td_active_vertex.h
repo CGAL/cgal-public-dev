@@ -17,12 +17,12 @@
 #include <CGAL/license/Arrangement_on_surface_2.h>
 
 /*! \file
- * Defintion of the Td_active_vertex<Td_traits> class.
+ * Definition of the Td_active_vertex<Td_traits> class.
  */
 
 #include <CGAL/Arr_point_location/Trapezoidal_decomposition_2.h>
-#include <boost/variant.hpp>
-#include <boost/shared_ptr.hpp>
+#include <variant>
+#include <memory>
 
 
 #ifdef CGAL_TD_DEBUG
@@ -44,7 +44,7 @@ namespace CGAL {
  * when one of the four sides is on the parameter space boundary.
  * Trapezoids are created as active and become inactive when Remove() member
  * function called.
- * Each trapezoid has at most four neighbouring trapezoids.
+ * Each trapezoid has at most four neighboring trapezoids.
  * X_trapezoid structure can represent a real trapezoid, a Td-edge or an
  * edge-end (end point).
  */
@@ -96,14 +96,8 @@ public:
 #ifdef CGAL_PM_FRIEND_CLASS
 #if defined(__SUNPRO_CC) || defined(__PGI) || defined(__INTEL_COMPILER)
   friend class Trapezoidal_decomposition_2<Traits>::In_face_iterator;
-#elif defined(__GNUC__)
-
-#if ((__GNUC__ < 3) || ((__GNUC__ == 3) && (__GNUC_MINOR__ <= 2)))
-  friend typename Trapezoidal_decomposition_2<Traits>::In_face_iterator;
-#else
+#elif (__GNUC__ > 0)
   friend class Trapezoidal_decomposition_2<Traits>::In_face_iterator;
-#endif
-
 #else
   friend class In_face_iterator;
 #endif
@@ -134,7 +128,7 @@ public:
   };
 
 private:
-  Data* ptr() const { return (Data*)(PTR.p); }
+  Data* ptr() const { return (Data*)(PTR); }
 
   Curve_end vtx_to_ce(Vertex_const_handle v) const
   {
@@ -184,14 +178,14 @@ public:
 
   Td_active_vertex()
   {
-    PTR.p = new Data(Traits::empty_vtx_handle(), Traits::empty_he_handle(), nullptr);
+    PTR = new Data(Traits::empty_vtx_handle(), Traits::empty_he_handle(), nullptr);
   }
 
   /*! Constructor given Vertex & Halfedge handles. */
   Td_active_vertex(Vertex_const_handle v, Halfedge_const_handle cw_he,
                    Dag_node* node = 0)
 
-  { PTR.p = new Data(v, cw_he, node); }
+  { PTR = new Data(v, cw_he, node); }
 
 
   /*! Copy constructor. */
@@ -228,7 +222,7 @@ public:
   inline const Self& self() const { return *this; }
 
   /*! Access the trapezoid id (PTR). */
-  inline unsigned long id() const { return (unsigned long) PTR.p; }
+  inline unsigned long id() const { return (unsigned long) PTR; }
 
   inline Vertex_const_handle vertex() const { return ptr()->v; }
 

@@ -1,7 +1,6 @@
-
-#include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
 #include <CGAL/Side_of_triangle_mesh.h>
 #include <CGAL/Polyhedron_3.h>
+#include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
 
 #include "point_inside_helpers.h"
 
@@ -11,7 +10,7 @@ typedef CGAL::Polyhedron_3<K> Polyhedron;
 
 int main(int argc, char** argv)
 {
-  const char* filename = (argc > 1) ? argv[1] : "data/elephant.off";
+  const std::string filename = (argc > 1) ? argv[1] : CGAL::data_file_path("meshes/elephant.off");
   std::ifstream input(filename);
   Polyhedron poly;
 

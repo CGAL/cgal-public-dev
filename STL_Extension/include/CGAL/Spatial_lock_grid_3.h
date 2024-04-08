@@ -16,14 +16,8 @@
 
 #include <CGAL/Bbox_3.h>
 
-#include <boost/bind.hpp>
-
 #include <atomic>
-#if TBB_IMPLEMENT_CPP0X
-# include <tbb/compat/thread>
-#else
-# include <thread>
-#endif
+#include <thread>
 #include <tbb/enumerable_thread_specific.h>
 
 #include <algorithm>
@@ -215,7 +209,7 @@ public:
     int index_x = static_cast<int>( (CGAL::to_double(point.x()) - m_bbox.xmin()) * m_resolution_x);
     //index_x = std::max( 0, std::min(index_x, m_num_grid_cells_per_axis - 1) );
     index_x =
-      (index_x < 0 ?
+      (index_x < 0 ? /// @TODO: use std::clamp
         0
         : (index_x >= m_num_grid_cells_per_axis ?
             m_num_grid_cells_per_axis - 1
@@ -334,7 +328,7 @@ protected:
   Spatial_lock_grid_base_3(const Bbox_3 &bbox,
                                           int num_grid_cells_per_axis)
     : m_num_grid_cells_per_axis(num_grid_cells_per_axis),
-      m_tls_grids(boost::bind(init_TLS_grid, num_grid_cells_per_axis))
+      m_tls_grids([num_grid_cells_per_axis](){ return init_TLS_grid(num_grid_cells_per_axis); })
   {
     set_bbox(bbox);
   }
@@ -562,7 +556,7 @@ public:
         }
         else if (old_value > this_thread_priority)
         {
-          // Another "more prioritary" thread owns the lock, we back off
+          // Another "more priority" thread owns the lock, we back off
           return false;
         }
         else

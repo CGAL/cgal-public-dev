@@ -30,10 +30,9 @@ Returns the pointer necessary for `Compact_container_traits<T>`.
 void * for_compact_container() const;
 
 /*!
-Returns a reference to the pointer necessary for
-`Compact_container_traits<T>`.
+Sets the pointer necessary for `Compact_container_traits<T>` to `p`.
 */
-void * & for_compact_container();
+void for_compact_container(void* p);
 
 /// @}
 
@@ -83,7 +82,7 @@ container. The iterator does not have constant amortized time complexity for
 the increment and decrement operations in all cases, only when not too many
 elements have not been freed (i.e.\ when the `size()` is close to the
 `capacity()`). Iterating from `begin()` to `end()` takes
-`O(capacity())` time, not `size()`. In the case where the container
+\cgalBigO{capacity()} time, not `size()`. In the case where the container
 has a small `size()` compared to its `capacity()`, we advise to
 "defragment the memory" by copying the container if the iterator performance
 is needed.
@@ -662,7 +661,7 @@ void clear();
 
 /// \name Ownership testing
 /// The following functions are mostly helpful for efficient debugging, since
-/// their complexity is \f$ O(\sqrt{\mathrm{c.capacity()}})\f$.
+/// their complexity is \cgalBigO{\sqrt{\mathrm{c.capacity()}}}.
 /// @{
 
 /*!
@@ -671,9 +670,9 @@ void clear();
 bool owns(const_iterator pos);
 
 /*!
- * returns whether `pos` is in the range `[cc.begin(), cc`.end())` (`cc.end()` excluded).
+ * returns whether `pos` is in the range `[cc.begin(), cc.end())` (`cc.end()` excluded).
  */
-bool owns_dereferencable(const_iterator pos);
+bool owns_dereferenceable(const_iterator pos);
 
 /// @}
 
@@ -682,7 +681,7 @@ bool owns_dereferencable(const_iterator pos);
 /// @{
 /*!
 adds the items of `cc2` to the end of `cc` and `cc2` becomes empty.
-The time complexity is O(`cc`.`capacity()`-`cc`.`size()`).
+The time complexity is \cgalBigO{cc.capacity()-cc.size()}.
 \pre `cc2` must not be the same as `cc`, and the allocators of `cc` and `cc2` must be compatible: `cc.get_allocator() == cc2.get_allocator()`.
 */
 void merge(Compact_container<T, Allocator> &cc);
@@ -796,7 +795,7 @@ types `T` to make them usable with the default `Compact_container_traits`.
 
 `void * t.for_compact_container() const;`
 
-`void *& t.for_compact_container();`.
+`void t.for_compact_container(void *);`.
 
 
 */
@@ -820,11 +819,11 @@ static void * pointer(const T &t);
 /// \name Operations
 /// @{
 /*!
-Returns a reference to the pointer held by `t`.
-The template version defines this function as: `return t.for_compact_container();`
+Sets the pointer held by `t` to `p`.
+The template version defines this function as: `t.for_compact_container(p);`
 
 */
-static void * & pointer(T &t);
+  static void set_pointer(T &t, void* p);
 
 
 

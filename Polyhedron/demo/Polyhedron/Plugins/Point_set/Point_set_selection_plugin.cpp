@@ -54,7 +54,7 @@ using namespace CGAL::Three;
 
 Viewer_interface* getActiveViewer()
 {
-  Q_FOREACH(CGAL::QGLViewer* v, CGAL::QGLViewer::QGLViewerPool())
+  for(CGAL::QGLViewer* v : CGAL::QGLViewer::QGLViewerPool())
   {
     if(v->hasFocus())
     {
@@ -332,11 +332,11 @@ class Neighborhood
   typedef CGAL::Fuzzy_sphere<Search_traits> Sphere;
 
   Scene_points_with_normal_item* points_item;
-  boost::shared_ptr<Tree> tree;
+  std::shared_ptr<Tree> tree;
 
 public:
 
-  Neighborhood () : points_item (NULL)
+  Neighborhood () : points_item (nullptr)
   {
   }
 
@@ -351,7 +351,7 @@ public:
     {
       this->points_item = points_item;
 
-      tree = boost::make_shared<Tree> (points_item->point_set()->begin(),
+      tree = std::make_shared<Tree> (points_item->point_set()->begin(),
                                        points_item->point_set()->end(),
                                        Tree::Splitter(),
                                        Search_traits (points_item->point_set()->point_map()));
@@ -601,12 +601,12 @@ public:
     }
   );
 
-    visualizer = NULL;
-    edit_box = NULL;
+    visualizer = nullptr;
+    edit_box = nullptr;
     shift_pressing = false;
     ctrl_pressing = false;
 
-    Q_FOREACH(CGAL::QGLViewer* viewer, CGAL::QGLViewer::QGLViewerPool())
+    for(CGAL::QGLViewer* viewer : CGAL::QGLViewer::QGLViewerPool())
     {
       viewer->installEventFilter(this);
     }
@@ -698,7 +698,7 @@ protected:
         // Cancel selection
         else if (mouseEvent->button() == Qt::RightButton && visualizer)
           {
-            visualizer = NULL;
+            visualizer = nullptr;
             QApplication::restoreOverrideCursor();
             return true;
           }
@@ -708,7 +708,7 @@ protected:
       {
         QApplication::setOverrideCursor(Qt::WaitCursor);
         QWheelEvent *mouseEvent = static_cast<QWheelEvent*>(event);
-        int steps = mouseEvent->delta() / 120;
+        int steps = mouseEvent->angleDelta().y() / 120;
         if (steps > 0)
           neighborhood.point_set (point_set_item).expand();
         else
@@ -720,7 +720,7 @@ protected:
       {
         visualizer->apply_path();
         select_points();
-        visualizer = NULL;
+        visualizer = nullptr;
         QApplication::restoreOverrideCursor();
         getActiveViewer()->set2DSelectionMode(false);
         return true;
@@ -952,7 +952,7 @@ public Q_SLOTS:
       connect(edit_box, &Scene_edit_box_item::aboutToBeDestroyed,
               this, &Polyhedron_demo_point_set_selection_plugin::reset_editbox);
       scene->addItem(edit_box);
-      Q_FOREACH(CGAL::QGLViewer* v, CGAL::QGLViewer::QGLViewerPool()){
+      for(CGAL::QGLViewer* v : CGAL::QGLViewer::QGLViewerPool()){
         v->installEventFilter(edit_box);
       }
       connect(mw, SIGNAL(newViewerCreated(QObject*)),
@@ -963,7 +963,7 @@ public Q_SLOTS:
     {
       if(edit_box)
         scene->erase(scene->item_id(edit_box));
-      edit_box = NULL;
+      edit_box = nullptr;
       add_box->setEnabled(false);
     }
 
@@ -973,7 +973,7 @@ public Q_SLOTS:
 
   void reset_editbox()
   {
-    edit_box = NULL;
+    edit_box = nullptr;
   }
 
 private:

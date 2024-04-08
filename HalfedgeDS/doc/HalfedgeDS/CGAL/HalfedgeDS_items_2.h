@@ -9,7 +9,7 @@ declare all incidences supported by a `HalfedgeDS`. The vertex
 also contains a point of type `Traits::Point_2`, where `Traits`
 is the template argument of the corresponding `HalfedgeDS`.
 
-\cgalModels `HalfedgeDSItems`
+\cgalModels{HalfedgeDSItems}
 
 \sa `CGAL::HalfedgeDS_min_items`
 \sa `CGAL::Polyhedron_items_3`
@@ -56,9 +56,9 @@ library.
 // A face type with a color member variable.
 template <class Refs>
 struct My_face : public CGAL::HalfedgeDS_face_base<Refs> {
-CGAL::Color color;
+CGAL::IO::Color color;
 My_face() {}
-My_face( CGAL::Color c) : color(c) {}
+My_face( CGAL::IO::Color c) : color(c) {}
 };
 
 // An items type using my face.

@@ -25,9 +25,11 @@ merged. </b></center>
 We only describe the additional requirements with respect to the
 `TriangulationDataStructure_2` concept.
 
-\cgalRefines `TriangulationDataStructure_2`
+\cgalRefines{TriangulationDataStructure_2}
 
-\cgalHasModel `CGAL::Triangulation_data_structure_2<Vb,Fb>`
+\cgalHasModelsBegin
+\cgalHasModels{CGAL::Triangulation_data_structure_2<Vb,Fb>}
+\cgalHasModelsEnd
 
 \sa `TriangulationDataStructure_2`
 \sa `ApolloniusGraphVertexBase_2`
@@ -42,10 +44,10 @@ public:
 /// @{
 
 /*!
-Inserts
-a degree two vertex and two faces adjacent to it that have two common
-edges. The edge defined by the face handle `f` and the integer
-`i` is duplicated. It returns a handle to the vertex created.
+inserts a degree two vertex and two faces adjacent to it that have two common edges.
+
+The edge defined by the face handle `f` and the integer `i` is duplicated. It returns a handle
+to the vertex created.
 */
 Vertex_handle insert_degree_2(Face_handle f, int i);
 

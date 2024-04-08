@@ -40,7 +40,7 @@ class Point_set_demo_register_dialog : public QDialog, private Ui::RegisterPoint
   Q_OBJECT
 public:
   Point_set_demo_register_dialog(const std::vector<Scene_points_with_normal_item*>& items,
-                                 QWidget* /*parent*/ = 0)
+                                 QWidget* /*parent*/ = nullptr)
   {
     setupUi(this);
 
@@ -125,7 +125,7 @@ public:
   {
     std::vector<Scene_points_with_normal_item*> items;
 
-    Q_FOREACH(int index, scene->selectionIndices())
+    for(int index : scene->selectionIndices())
     {
       Scene_points_with_normal_item* item =
         qobject_cast<Scene_points_with_normal_item*>(scene->item(index));

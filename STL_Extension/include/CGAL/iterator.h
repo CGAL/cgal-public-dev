@@ -24,12 +24,11 @@
 #include <CGAL/assertions.h>
 #include <CGAL/circulator.h>
 #include <CGAL/Iterator_range.h>
-#include <CGAL/result_of.h>
 #include <CGAL/tuple.h>
 #include <CGAL/use.h>
 
-#include <boost/variant.hpp>
-#include <boost/optional.hpp>
+#include <variant>
+#include <optional>
 #include <boost/config.hpp>
 
 #include <vector>
@@ -59,7 +58,7 @@ public:
   Prevent_deref(const I& i) : Base(i) {}
 private:
   friend class boost::iterator_core_access;
-  reference dereference() const { return const_cast<typename boost::remove_reference<reference>::type&>(this->base_reference()); }
+  reference dereference() const { return const_cast<std::remove_reference_t<reference>&>(this->base_reference()); }
 };
 
 template<typename I>
@@ -660,7 +659,8 @@ class Join_input_iterator_1
 
 public:
   typedef typename std::iterator_traits<I1>::iterator_category  iterator_category;
-  typedef std::decay_t<typename cpp11::result_of<Op(arg_type)>::type> value_type;
+  typedef std::decay_t<decltype(std::declval<Op>()(std::declval<arg_type>()))>
+                                                                value_type;
   typedef typename std::iterator_traits<I1>::difference_type    difference_type;
   typedef value_type const*                                     pointer;
   typedef value_type const&                                     reference;
@@ -746,7 +746,8 @@ class Join_input_iterator_2
 
 public:
   typedef typename std::iterator_traits<I1>::iterator_category        iterator_category;
-  typedef typename cpp11::result_of<Op(arg_type_1, arg_type_2)>::type value_type;
+  typedef decltype(std::declval<Op>()(std::declval<arg_type_1>(), std::declval<arg_type_2>()))
+                                                                      value_type;
   typedef typename std::iterator_traits<I1>::difference_type          difference_type;
   typedef value_type*                                                 pointer;
   typedef value_type&                                                 reference;
@@ -840,7 +841,7 @@ class Join_input_iterator_3
 
 public:
   typedef typename std::iterator_traits<I1>::iterator_category  iterator_category;
-  typedef typename cpp11::result_of<Op(arg_type_1, arg_type_2, arg_type_3)>::type
+  typedef decltype(std::declval<Op>()(std::declval<arg_type_1>(), std::declval<arg_type_2>(), std::declval<arg_type_3>()))
                                                                 value_type;
   typedef typename std::iterator_traits<I1>::difference_type    difference_type;
   typedef value_type*                                           pointer;
@@ -1261,7 +1262,7 @@ filter_output_iterator(I e, const P& p)
 namespace internal {
 
 template<typename OutputIterator>
-struct Output_visitor : boost::static_visitor<OutputIterator&> {
+struct Output_visitor {
   Output_visitor(OutputIterator* it) : out(it) {}
   OutputIterator* out;
 
@@ -1282,6 +1283,8 @@ template < typename D, typename V = std::tuple<>, typename O = std::tuple<> >
 struct Derivator
 {
   typedef Derivator<D, V, O> Self;
+  Derivator() = default;
+  Derivator(const Self&) = default;
   Self& operator=(const Self&) = delete;
   template <class Tuple>
   void tuple_dispatch(const Tuple&)
@@ -1295,6 +1298,8 @@ struct Derivator<D, std::tuple<V1, V...>, std::tuple<O1, O...> >
   typedef Derivator<D, std::tuple<V1, V...>, std::tuple<O1, O...> > Self;
   typedef Derivator<D, std::tuple<V...>, std::tuple<O...> > Base;
 
+  Derivator() = default;
+  Derivator(const Self&) = default;
   Self& operator=(const Self&) = delete;
 
   using Base::operator=;
@@ -1335,7 +1340,7 @@ class Dispatch_output_iterator < std::tuple<V...>, std::tuple<O...> >
  : private internal::Derivator<Dispatch_output_iterator< std::tuple<V...>, std::tuple<O...> >, std::tuple<V...>, std::tuple<O...> >
  , public std::tuple<O...>
 {
-  CGAL_static_assertion_msg(sizeof...(V) == sizeof...(O),
+  static_assert(sizeof...(V) == sizeof...(O),
                 "The number of explicit template parameters has to match the number of arguments");
 
   static const int size = sizeof...(V);
@@ -1375,25 +1380,17 @@ public:
     return *this;
   }
 
-  template<BOOST_VARIANT_ENUM_PARAMS(typename T)>
-  Self& operator=(const boost::variant<BOOST_VARIANT_ENUM_PARAMS(T) >& t) {
+  template<typename ... T>
+  Self& operator=(const std::variant< T ... >& t) {
     internal::Output_visitor<Self> visitor(this);
-    #if BOOST_VERSION==105800
-    t.apply_visitor(visitor);
-    #else
-    boost::apply_visitor(visitor, t);
-    #endif
+    std::visit(visitor, t);
     return *this;
   }
 
-  template<BOOST_VARIANT_ENUM_PARAMS(typename T)>
-  Self& operator=(const boost::optional< boost::variant<BOOST_VARIANT_ENUM_PARAMS(T) > >& t) {
+  template<typename ... T>
+  Self& operator=(const std::optional< std::variant< T ... > >& t) {
     internal::Output_visitor<Self> visitor(this);
-    #if BOOST_VERSION==105800
-    if(t) t->apply_visitor(visitor);
-    #else
-    if(t)  boost::apply_visitor(visitor, *t);
-    #endif
+    if(t)  std::visit(visitor, *t);
     return *this;
   }
 
@@ -1460,6 +1457,19 @@ public:
   template <class T>
   Self& operator=(const T&) { return *this; }
 
+  template<typename ... T>
+  Self& operator=(const std::variant< T ... >& t) {
+    internal::Output_visitor<Self> visitor(this);
+    std::visit(visitor, t);
+    return *this;
+  }
+
+  template<typename ... T>
+  Self& operator=(const std::optional< std::variant< T ... > >& t) {
+    internal::Output_visitor<Self> visitor(this);
+    if(t)  std::visit(visitor, *t);
+    return *this;
+  }
 };
 
 
@@ -1479,8 +1489,6 @@ template <typename RangeRef>
 struct Range_iterator_type<RangeRef&>       { typedef typename RangeRef::iterator       type; };
 template <typename RangeRef>
 struct Range_iterator_type<const RangeRef&> { typedef typename RangeRef::const_iterator type; };
-
-
 
 } //namespace CGAL
 

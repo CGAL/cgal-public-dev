@@ -197,12 +197,16 @@ public:
     Output_rep( const ::leda::real& tt) : t(tt) {}
     //! perform the output, calls \c operator\<\< by default.
     std::ostream& operator()( std::ostream& out) const {
-        if (t<0) out << "(" << ::CGAL::oformat(t)<<")";
-        else out << ::CGAL::oformat(t);
+        if (t<0) out << "(" << ::CGAL::IO::oformat(t)<<")";
+        else out << ::CGAL::IO::oformat(t);
         return out;
     }
 };
 
+
+inline const leda_real& approx(const leda_real& d) { return d; }
+inline const leda_real& exact(const leda_real& d) { return d; }
+inline int depth(const leda_real&){ return -1; }
 
 
 } //namespace CGAL

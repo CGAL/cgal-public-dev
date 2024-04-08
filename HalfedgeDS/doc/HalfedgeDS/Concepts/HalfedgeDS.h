@@ -67,9 +67,11 @@ allocators internally. A default argument is mandatory for
 from the `<CGAL/memory.h>` header file can be used as default
 allocator.
 
-\cgalHasModel CGAL::HalfedgeDS_default
-\cgalHasModel CGAL::HalfedgeDS_list
-\cgalHasModel CGAL::HalfedgeDS_vector
+\cgalHasModelsBegin
+\cgalHasModels{CGAL::HalfedgeDS_default}
+\cgalHasModels{CGAL::HalfedgeDS_list}
+\cgalHasModels{CGAL::HalfedgeDS_vector}
+\cgalHasModelsEnd
 
 \sa `HalfedgeDSItems`
 \sa `CGAL::Polyhedron_3<Traits>`
@@ -176,6 +178,24 @@ typedef unspecified_type Halfedge_iterator;
 iterator over all faces.
 */
 typedef unspecified_type Face_iterator;
+
+/*!
+  range type for iterating over the vertices, with a nested
+  type `iterator` that has as value type `Vertex_handle`
+*/
+typedef Iterator_range<unspecified_type> Vertex_handles;
+
+/*!
+  range type for iterating over the halfedges, with a nested
+  type `iterator` that has as value type `Halfedge_handle`
+*/
+typedef Iterator_range<unspecified_type> Halfedge_handles;
+
+/*!
+  range type for iterating over the faces, with a nested
+  type `iterator` that has as value type `Face_handle`
+*/
+typedef Iterator_range<unspecified_type> Face_handles;
 
 /// @}
 
@@ -345,32 +365,32 @@ void reserve( size_type v, size_type h, size_type f);
 /*!
 number of vertices.
 */
-Size size_of_vertices() const;
+size_type size_of_vertices() const;
 
 /*!
 number of halfedges.
 */
-Size size_of_halfedges() const;
+size_type size_of_halfedges() const;
 
 /*!
 number of faces.
 */
-Size size_of_faces() const;
+size_type size_of_faces() const;
 
 /*!
 space reserved for vertices.
 */
-Size capacity_of_vertices() const;
+size_type capacity_of_vertices() const;
 
 /*!
 space reserved for halfedges.
 */
-Size capacity_of_halfedges() const;
+size_type capacity_of_halfedges() const;
 
 /*!
 space reserved for faces.
 */
-Size capacity_of_faces() const;
+size_type capacity_of_faces() const;
 
 /*!
 bytes used for the halfedge data structure.
@@ -398,6 +418,12 @@ Vertex_iterator vertices_begin();
 Vertex_iterator vertices_end();
 
 /*!
+returns a range of handles over the vertices.
+\note The value type of `Vertex_handles::iterator` is `Vertex_handle`.
+*/
+Vertex_handles vertex_handles();
+
+/*!
 iterator over all halfedges
 */
 Halfedge_iterator halfedges_begin();
@@ -408,6 +434,12 @@ Halfedge_iterator halfedges_begin();
 Halfedge_iterator halfedges_end();
 
 /*!
+returns a range of handles over the halfedges.
+\note The value type of `Halfedge_handles::iterator` is `Halfedge_handle`.
+*/
+Halfedge_handles halfedge_handles();
+
+/*!
 iterator over all faces.
 */
 Face_iterator faces_begin();
@@ -416,6 +448,12 @@ Face_iterator faces_begin();
 
 */
 Face_iterator faces_end();
+
+/*!
+returns a range of handles over the faces.
+\note The value type of `Face_handles::iterator` is `Face_handle`.
+*/
+Face_handles face_handles();
 
 /// @}
 
@@ -597,7 +635,7 @@ number of border halfedges. An edge with no incident face
 counts as two border halfedges.
 \pre `normalize_border()` has been called and no halfedge insertion or removal and no change in border status of the halfedges have occurred since then.
 */
-Size size_of_border_halfedges() const;
+size_type size_of_border_halfedges() const;
 
 /*!
 number of border edges. If `size_of_border_edges()` is equal
@@ -605,7 +643,7 @@ to `size_of_border_halfedges()` all border edges are incident to
 a face on one side and to an open region on the other side.
 \pre `normalize_border()` has been called and no halfedge insertion or removal and no change in border status of the halfedges have occurred since then.
 */
-Size size_of_border_edges() const;
+size_type size_of_border_edges() const;
 
 /*!
 halfedge iterator starting with the border edges. The range

@@ -14,7 +14,6 @@
 
 #include <boost/graph/graph_traits.hpp>
 #include <CGAL/boost/graph/iterator.h>
-#include <boost/unordered_set.hpp>
 
 #include <CGAL/boost/graph/Dual.h>
 #include <boost/graph/filtered_graph.hpp>
@@ -22,6 +21,9 @@
 
 #include <CGAL/boost/graph/alpha_expansion_graphcut.h>
 #include <CGAL/squared_distance_3.h>
+#include <CGAL/assertions.h>
+
+#include <unordered_set>
 
 namespace CGAL {
 
@@ -102,7 +104,7 @@ struct Regularization_graph
     typedef vertex_descriptor key_type;
     typedef std::size_t value_type;
     typedef std::size_t& reference;
-    typedef boost::lvalue_property_map_tag category;
+    typedef boost::read_write_property_map_tag category;
 
     Regularization_graph* rg;
 
@@ -132,7 +134,7 @@ struct Regularization_graph
       : rg (rg)
     { }
 
-    friend reference get (const Vertex_label_probability_map& pmap, key_type fd)
+    friend value_type get (const Vertex_label_probability_map& pmap, key_type fd)
     {
       double value = (1. - pmap.rg->weight) * pmap.rg->area (fd) / pmap.rg->total_area;
 
@@ -167,7 +169,7 @@ struct Regularization_graph
     Edge_cost_map (const Regularization_graph* rg)
       : rg (rg) { }
 
-    friend reference get (const Edge_cost_map& pmap, key_type ed)
+    friend value_type get (const Edge_cost_map& pmap, key_type ed)
     {
       fg_vertex_descriptor esource = source(ed, pmap.rg->fg);
       fg_vertex_descriptor etarget = target(ed, pmap.rg->fg);
@@ -205,13 +207,11 @@ struct Regularization_graph
       prevent_unselection (prevent_unselection)
   {
     labels.reserve(num_faces(fg));
-    std::size_t nb_selected = 0;
     for (fg_face_descriptor fd : faces(fg))
     {
       if (get(is_selected_map,fd))
       {
         labels.push_back(1);
-        ++ nb_selected;
       }
       else
         labels.push_back(0);
@@ -286,7 +286,7 @@ struct Regularization_graph
 
 /*!
 \ingroup PkgBGLSelectionFct
-Augments a selection with faces of `fg` that are adjacent
+augments a selection with faces of `fg` that are adjacent
 to a face in `selection`. This process is applied `k` times considering
 all faces added in the previous steps.
 Two faces are said to be adjacent if they share a vertex or an edge.
@@ -356,7 +356,7 @@ expand_face_selection(
 
 /*!
 \ingroup PkgBGLSelectionFct
-Diminishes a selection of faces from faces adjacent to a non-selected face.
+diminishes a selection of faces from faces adjacent to a non-selected face.
 This process is applied `k` times considering all faces removed in the previous steps.
 Two faces are said to be adjacent if they share a vertex or an edge.
 Each face removed from the selection is added exactly once in `out`.
@@ -464,29 +464,47 @@ reduce_face_selection(
   unselects everything so that the length of the border of the
   selection is 0)
 
-  \param np optional sequence of named parameters among the ones listed below
+  \param np an optional sequence of \ref bgl_namedparameters "Named Parameters" among the ones listed below
 
   \cgalNamedParamsBegin
-    \cgalParamBegin{face_index_map}
-      the property map with the indices associated to the faces of `mesh`
-    \cgalParamEnd
-    \cgalParamBegin{vertex_point_map}
-      the property map with the points associated to the vertices of `mesh`
-    \cgalParamEnd
-    \cgalParamBegin{prevent_unselection}
-      if `true` only new faces can be selected, if `false` (default) some
-      faces can be unselected
-    \cgalParamEnd
-    \cgalParamBegin{geom_traits} an instance of a geometric traits class, model of `Kernel`\cgalParamEnd
+    \cgalParamNBegin{vertex_point_map}
+      \cgalParamDescription{a property map associating points to the vertices of `tm`}
+      \cgalParamType{a class model of `ReadWritePropertyMap` with `boost::graph_traits<TriangleMesh>::%vertex_descriptor`
+                     as key type and `%Point_3` as value type}
+      \cgalParamDefault{`boost::get(CGAL::vertex_point, tm)`}
+      \cgalParamExtra{If this parameter is omitted, an internal property map for `CGAL::vertex_point_t`
+                      must be available in `TriangleMesh`.}
+    \cgalParamNEnd
+
+    \cgalParamNBegin{face_index_map}
+      \cgalParamDescription{a property map associating to each face of `tm` a unique index between `0` and `num_faces(tm) - 1`}
+      \cgalParamType{a class model of `ReadablePropertyMap` with `boost::graph_traits<TriangleMesh>::%face_descriptor`
+                     as key type and `std::size_t` as value type}
+      \cgalParamDefault{an automatically indexed internal map}
+    \cgalParamNEnd
+
+    \cgalParamNBegin{prevent_unselection}
+      \cgalParamDescription{Boolean used to indicate if selection can be only expanded or if it can also be shrunk.}
+      \cgalParamType{`bool`}
+      \cgalParamDefault{`false`}
+      \cgalParamExtra{The geometric traits class must be compatible with the vertex point type.}
+    \cgalParamNEnd
+
+    \cgalParamNBegin{geom_traits}
+      \cgalParamDescription{an instance of a geometric traits class}
+      \cgalParamType{a class model of `Kernel`}
+      \cgalParamDefault{a \cgal Kernel deduced from the point type, using `CGAL::Kernel_traits`}
+      \cgalParamExtra{The geometric traits class must be compatible with the vertex point type.}
+    \cgalParamNEnd
   \cgalNamedParamsEnd
 */
-template <typename TriangleMesh, typename IsSelectedMap, typename NamedParameters>
+template <typename TriangleMesh, typename IsSelectedMap, typename NamedParameters = parameters::Default_named_parameters>
 void
 regularize_face_selection_borders(
   TriangleMesh& mesh,
   IsSelectedMap is_selected,
   double weight,
-  const NamedParameters& np)
+  const NamedParameters& np = parameters::default_values())
 {
   using parameters::choose_parameter;
   using parameters::get_parameter;
@@ -525,24 +543,13 @@ regularize_face_selection_borders(
                             (face_index_map));
 
   for (mesh_face_descriptor fd : faces(mesh))
-    put(is_selected, fd, graph.labels[get(face_index_map,fd)]);
+    put(is_selected, fd, (graph.labels[get(face_index_map,fd)] != 0));
 }
 
 /// \cond SKIP_IN_MANUAL
-// variant with default np
-template <typename TriangleMesh, typename IsSelectedMap>
-void
-regularize_face_selection_borders(
-  TriangleMesh& fg,
-  IsSelectedMap is_selected,
-  double weight)
-{
-  regularize_face_selection_borders (fg, is_selected, weight,
-                                     CGAL::parameters::all_default());
-}
-/// \endcond
 
-/// \cond SKIP_IN_MANUAL
+namespace experimental {
+
 // TODO: improve and document if useful
 //
 // Variant of regularization without graphcut but with brut-force
@@ -685,6 +692,8 @@ regularize_face_selection_borders(
       put(is_selected, fd, true);
   }
 }
+
+}
 /// \endcond
 
 
@@ -731,7 +740,7 @@ select_incident_faces(
 
 /*!
 \ingroup PkgBGLSelectionFct
-Augments a selection with edges of `fg` that are adjacent
+augments a selection with edges of `fg` that are adjacent
 to an edge in `selection`. This process is applied `k` times considering
 all edges added in the previous steps.
 Two edges are said to be adjacent if they are incident to the same face or vertex.
@@ -798,7 +807,7 @@ expand_edge_selection(
 
 /*!
 \ingroup PkgBGLSelectionFct
-Diminishes a selection of edges from edges adjacent to a non-selected edge.
+diminishes a selection of edges from edges adjacent to a non-selected edge.
 This process is applied `k` times considering all edges removed in the previous steps.
 Two edges are said to be adjacent if they are incident to the same face or vertex.
 Each edge removed from the selection is added exactly once in `out`.
@@ -884,7 +893,7 @@ reduce_edge_selection(
 
 /*!
 \ingroup PkgBGLSelectionFct
-Augments a selection with vertices of `fg` that are adjacent
+augments a selection with vertices of `fg` that are adjacent
 to a vertex in `selection`. This process is applied `k` times considering
 all vertices added in the previous steps.
 Two vertices are said to be adjacent if they are part of the same face.
@@ -939,7 +948,7 @@ expand_vertex_selection(
 
 /*!
 \ingroup PkgBGLSelectionFct
-Diminishes a selection of vertices from vertices adjacent to a non-selected vertex.
+diminishes a selection of vertices from vertices adjacent to a non-selected vertex.
 This process is applied `k` times considering all vertices removed in the previous steps.
 Two vertices are said to be adjacent if they are part of the same face.
 Each vertex removed from the selection is added exactly once in `out`.
@@ -1028,7 +1037,7 @@ void expand_face_selection_for_removal(const FaceRange& faces_to_be_deleted,
   typedef typename boost::graph_traits<TriangleMesh>::face_descriptor face_descriptor;
   typedef typename boost::graph_traits<TriangleMesh>::halfedge_descriptor halfedge_descriptor;
 
-  boost::unordered_set<vertex_descriptor> vertices_queue;
+  std::unordered_set<vertex_descriptor> vertices_queue;
 
   // collect vertices belonging to at least a triangle that will be removed
   for(face_descriptor fd : faces_to_be_deleted)
@@ -1103,7 +1112,7 @@ void expand_face_selection_for_removal(const FaceRange& faces_to_be_deleted,
 
       for(halfedge_descriptor f_hd : faces_traversed)
       {
-        assert(target(f_hd, tm) == vd);
+        CGAL_assertion(target(f_hd, tm) == vd);
         put(is_selected, face(f_hd, tm), true);
         vertices_queue.insert( target( next(f_hd, tm), tm) );
         vertices_queue.insert( source(f_hd, tm) );
@@ -1114,15 +1123,15 @@ void expand_face_selection_for_removal(const FaceRange& faces_to_be_deleted,
 
 //todo: take non-manifold vertices into account.
 template<class PolygonMesh, class FaceRange>
-bool is_selection_a_topological_disk(const FaceRange& face_selection,
-                                           PolygonMesh& pm)
+int euler_characteristic_of_selection(const FaceRange& face_selection,
+                                            PolygonMesh& pm)
 {
   typedef typename boost::graph_traits<PolygonMesh>::vertex_descriptor vertex_descriptor;
   typedef typename boost::graph_traits<PolygonMesh>::face_descriptor face_descriptor;
   typedef typename boost::graph_traits<PolygonMesh>::halfedge_descriptor halfedge_descriptor;
   typedef typename boost::graph_traits<PolygonMesh>::edge_descriptor edge_descriptor;
-  boost::unordered_set<vertex_descriptor> sel_vertices;
-  boost::unordered_set<edge_descriptor> sel_edges;
+  std::unordered_set<vertex_descriptor> sel_vertices;
+  std::unordered_set<edge_descriptor> sel_edges;
   for(face_descriptor f : face_selection)
   {
     for(halfedge_descriptor h : halfedges_around_face(halfedge(f, pm), pm))
@@ -1131,8 +1140,18 @@ bool is_selection_a_topological_disk(const FaceRange& face_selection,
       sel_edges.insert(edge(h,pm));
     }
   }
-  return (sel_vertices.size() - sel_edges.size() + face_selection.size() == 1);
+  return  static_cast<int>(sel_vertices.size())
+        - static_cast<int>(sel_edges.size())
+        + static_cast<int>(face_selection.size());
 }
+
+template<class PolygonMesh, class FaceRange>
+bool is_selection_a_topological_disk(const FaceRange& face_selection,
+                                           PolygonMesh& pm)
+{
+  return euler_characteristic_of_selection(face_selection, pm) == 1;
+}
+
 } //end of namespace CGAL
 
 #endif //CGAL_BOOST_GRAPH_SELECTION_H

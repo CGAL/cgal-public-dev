@@ -248,12 +248,12 @@ Scene_polylines_item_private::computeSpheres()
               colors[2] = 0;
               break;
           default:
-              colors[0] = 200; //fuschia
+              colors[0] = 200; //fuchsia
               colors[1] = 0;
               colors[2] = 200;
           }
 
-          CGAL::Color c(colors[0], colors[1], colors[2]);
+          CGAL::IO::Color c(colors[0], colors[1], colors[2]);
           spheres->add_sphere(K::Sphere_3(center+offset, spheres_drawn_square_radius),s_id++, c);
       }
       spheres->setToolTip(
@@ -264,7 +264,7 @@ Scene_polylines_item_private::computeSpheres()
                     "<li>red: four incident polylines</li>"
                     "<li>fuchsia: five or more incident polylines</li>"
                     "</ul></p>"
-                    "<p>Tip: To erase this item, set its radius to 0 or less. </p>")
+                    "<p>Tip: To remove this item, set the corner radius of its corresponding polyline to 0, or simply delete it. </p>")
                             );
       spheres->computeElements();
       QApplication::restoreOverrideCursor();
@@ -276,7 +276,7 @@ Scene_polylines_item::Scene_polylines_item()
 {
     setRenderingMode(FlatPlusEdges);
     d->nb_lines = 0;
-    d->spheres = NULL;
+    d->spheres = nullptr;
     setEdgeContainer(0,
                      new Ec(Three::mainViewer()->isOpenGL_4_3() ? Vi::PROGRAM_SOLID_WIREFRAME
                                                                 : Vi::PROGRAM_NO_SELECTION
@@ -339,7 +339,7 @@ Scene_polylines_item::clone() const {
     Scene_polylines_item* item = new Scene_polylines_item;
     item->polylines = polylines;
     QVariant metadata_variant = property("polylines metadata");
-    if(metadata_variant.type() == QVariant::StringList)
+    if(metadata_variant.typeId() == QMetaType::QStringList)
     {
         item->setProperty("polylines metadata", metadata_variant);
     }
@@ -499,7 +499,7 @@ QMenu* Scene_polylines_item::contextMenu()
         connect(actionSmoothPolylines, SIGNAL(triggered()),this, SLOT(smooth()));
 
         QMenu *container = new QMenu(tr("Line Width"));
-        QWidgetAction *sliderAction = new QWidgetAction(0);
+        QWidgetAction *sliderAction = new QWidgetAction(nullptr);
         connect(d->line_Slider, &QSlider::valueChanged, this, &Scene_polylines_item::itemChanged);
 
         sliderAction->setDefaultWidget(d->line_Slider);
@@ -542,7 +542,7 @@ void Scene_polylines_item::change_corner_radii() {
                                      proposed_radius);
         proposed_radius /= 100;
     }
-    double r = QInputDialog::getDouble(NULL,
+    double r = QInputDialog::getDouble(nullptr,
                                        tr("Display corners with new radius..."),
                                        tr("Radius:"),
                                        proposed_radius, // value
@@ -568,24 +568,26 @@ void Scene_polylines_item::change_corner_radii(double r) {
           scene->addItem(d->spheres);
           scene->changeGroup(d->spheres, this);
           lockChild(d->spheres);
-          Q_FOREACH(CGAL::QGLViewer* v, CGAL::QGLViewer::QGLViewerPool())
+          for(CGAL::QGLViewer* v : CGAL::QGLViewer::QGLViewerPool())
           {
             d->spheres->gl_initialization(qobject_cast<Viewer_interface*>(v));
           }
           d->spheres->invalidateOpenGLBuffers();
           d->computeSpheres();
-
+          CGAL::Three::Three::mainWindow()->installEventFilter(d->spheres);
+          connect(d->spheres, &Scene_spheres_item::destroyMe, this,
+                  [this](){
+            removeEventFilter(d->spheres);
+            unlockChild(d->spheres);
+            scene->erase(scene->item_id(d->spheres));
+          });
         }
         else if(r>0 && d->spheres)
         {
-//          Q_FOREACH(CGAL::QGLViewer* v, CGAL::QGLViewer::QGLViewerPool())
-//          {
-//            d->spheres->gl_initialization(qobject_cast<Viewer_interface*>(v));
-//          }
           d->spheres->invalidateOpenGLBuffers();
           d->computeSpheres();
         }
-        else if (r<=0 && d->spheres!=NULL)
+        else if (r<=0 && d->spheres!=nullptr)
         {
           unlockChild(d->spheres);
           scene->erase(scene->item_id(d->spheres));
@@ -600,19 +602,18 @@ void Scene_polylines_item::split_at_sharp_angles()
     typedef Polyline Bare_polyline;
     Polylines_container& bare_polylines = polylines;
 
-    int counter = 0;
     for(Bare_polyline_container::iterator
         bare_polyline_it = bare_polylines.begin();
         bare_polyline_it != bare_polylines.end(); // the end changes
-        // during the loop
-        ++counter /* bare_polyline_it is incremented in the loop */)
+                                                  // during the loop
+        /* bare_polyline_it is incremented in the loop */)
     {
         Bare_polyline_container::iterator current_polyline_it =
                 bare_polyline_it;
         Bare_polyline& bare_polyline = *bare_polyline_it;
-        Bare_polyline::iterator it = boost::next(bare_polyline.begin());
+        Bare_polyline::iterator it = std::next(bare_polyline.begin());
 
-        if(boost::next(bare_polyline.begin()) == bare_polyline.end())
+        if(std::next(bare_polyline.begin()) == bare_polyline.end())
         {
             std::cerr << "WARNING: Isolated point in polylines\n";
             bare_polyline_it = bare_polylines.erase(bare_polyline_it);
@@ -621,10 +622,10 @@ void Scene_polylines_item::split_at_sharp_angles()
         else
             ++bare_polyline_it;
         if(it != bare_polyline.end()) {
-            for(; it != boost::prior(bare_polyline.end()); ++it) {
+            for(; it != std::prev(bare_polyline.end()); ++it) {
                 const Point_3 pv = *it;
-                const Point_3 pa = *boost::prior(it);
-                const Point_3 pb = *boost::next(it);
+                const Point_3 pa = *std::prev(it);
+                const Point_3 pb = *std::next(it);
                 const K::Vector_3 av = pv - pa;
                 const K::Vector_3 bv = pv - pb;
                 const K::FT sc_prod = av * bv;
@@ -636,7 +637,7 @@ void Scene_polylines_item::split_at_sharp_angles()
                     std::cerr << "Split polyline (small angle) "
                               <<  std::acos(sqrt(CGAL::square(sc_prod) /
                                                  ((av*av) * (bv*bv)))) * 180 /CGAL_PI
-                               << " degres\n";
+                               << " degrees\n";
 #endif
                     Bare_polyline new_polyline;
                     std::copy(it, bare_polyline.end(),
@@ -646,8 +647,8 @@ void Scene_polylines_item::split_at_sharp_angles()
                         // if the polyline is a cycle, test if its beginning is a sharp
                         // angle...
                         const Point_3 pv = *bare_polyline.begin();
-                        const Point_3 pa = *boost::prior(boost::prior(bare_polyline.end()));
-                        const Point_3 pb = *boost::next(bare_polyline.begin());
+                        const Point_3 pa = *std::prev(std::prev(bare_polyline.end()));
+                        const Point_3 pb = *std::next(bare_polyline.begin());
                         const K::Vector_3 av = pv - pa;
                         const K::Vector_3 bv = pv - pb;
                         const K::FT sc_prod = av * bv;
@@ -656,18 +657,18 @@ void Scene_polylines_item::split_at_sharp_angles()
                                  CGAL::square(sc_prod) < (av * av) * (bv * bv) / 4 ) )
                         {
                             // if its beginning is a sharp angle, then split
-                            bare_polyline.erase(boost::next(it), bare_polyline.end());
+                            bare_polyline.erase(std::next(it), bare_polyline.end());
                         }
                         else {
                             // ...if not, modifies its beginning
-                            std::copy(boost::next(bare_polyline.begin()),
-                                      boost::next(it),
+                            std::copy(std::next(bare_polyline.begin()),
+                                      std::next(it),
                                       std::back_inserter(new_polyline));
                             bare_polylines.erase(current_polyline_it);
                         }
                     }
                     else {
-                        bare_polyline.erase(boost::next(it), bare_polyline.end());
+                        bare_polyline.erase(std::next(it), bare_polyline.end());
                     }
                     bare_polylines.push_back(new_polyline);
                     break;
@@ -680,12 +681,12 @@ void Scene_polylines_item::split_at_sharp_angles()
 
 void
 Scene_polylines_item::merge(Scene_polylines_item* other_item) {
-    if(other_item == 0) return;
+    if(other_item == nullptr) return;
     std::copy(other_item->polylines.begin(),
               other_item->polylines.end(),
               std::back_inserter(polylines));
     QVariant other_metadata_variant = other_item->property("polylines metadata");
-    if(other_metadata_variant.type() == QVariant::StringList)
+    if(other_metadata_variant.typeId() == QMetaType::QStringList)
     {
         QStringList metadata = property("polylines metadata").toStringList();
         metadata.append(other_metadata_variant.toStringList());
@@ -696,7 +697,7 @@ Scene_polylines_item::merge(Scene_polylines_item* other_item) {
 
 void Scene_polylines_item::reset_spheres()
 {
-  d->spheres = NULL;
+  d->spheres = nullptr;
 }
 
 void Scene_polylines_item::smooth(){

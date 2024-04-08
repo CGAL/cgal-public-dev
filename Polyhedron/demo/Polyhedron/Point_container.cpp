@@ -22,9 +22,14 @@ Point_container::Point_container(int program, bool indexed)
   :Primitive_container(program, indexed),
     d(new Point_d())
 {
-  std::vector<Vbo*> vbos(NbOfVbos, NULL);
+  std::vector<Vbo*> vbos(NbOfVbos, nullptr);
   setVbos(vbos);
 
+}
+
+Point_container::~Point_container()
+{
+  delete d;
 }
 
 void Point_container::initGL(Viewer_interface *viewer)
@@ -64,7 +69,6 @@ void Point_container::initGL(Viewer_interface *viewer)
         setVbo(Colors,
                new Vbo("colors",
                        Vbo::COLORS));
-      setVao(viewer, new Vao(viewer->getShaderProgram(getProgram())));
       if(viewer->getShaderProgram(getProgram())->property("hasNormals").toBool())
       {
         if(!getVbo(Normals))
@@ -95,7 +99,7 @@ void Point_container::draw(Viewer_interface *viewer,
       getVao(viewer)->program->setUniformValue("f_matrix", getFrameMatrix());
     getVbo(Indices)->bind();
     viewer->glDrawElements(GL_POINTS, static_cast<GLuint>(getIdxSize()),
-                           GL_UNSIGNED_INT, 0);
+                           GL_UNSIGNED_INT, nullptr);
     getVbo(Indices)->release();
     getVao(viewer)->release();
   }

@@ -50,6 +50,7 @@ struct DEMO_FRAMEWORK_EXPORT Triangle_container :public Primitive_container
     FColors,            //!< Designates the buffer that contains the colors of the flat vertices.
     Texture_map,        //!< Designates the buffer that contains the UV map for the texture.
     Distances,
+    Subdomain_indices,  //!< Designates the buffer that contains the subdomains of both cells defining a c3t3 facet.
     NbOfVbos            //!< Designates the size of the VBOs vector for `Triangle_container`s
   };
 
@@ -67,7 +68,7 @@ struct DEMO_FRAMEWORK_EXPORT Triangle_container :public Primitive_container
   //!
   //! \param viewer the active `Viewer_interface`.
   //!
-  void initGL(CGAL::Three::Viewer_interface* viewer) Q_DECL_OVERRIDE;
+  void initGL(CGAL::Three::Viewer_interface* viewer) override;
 
   //!
   //! \brief draw is the function that actually renders the data.
@@ -75,9 +76,9 @@ struct DEMO_FRAMEWORK_EXPORT Triangle_container :public Primitive_container
   //! \param is_color_uniform must be `false` if the color buffers are not empty, `true` otherwise.
   //!
   void draw(CGAL::Three::Viewer_interface* viewer,
-            bool is_color_uniform)  Q_DECL_OVERRIDE;
+            bool is_color_uniform)  override;
 
-  void initializeBuffers(Viewer_interface *viewer) Q_DECL_OVERRIDE;
+  void initializeBuffers(Viewer_interface *viewer) override;
   /// \name Getters and Setters for the shaders parameters.
   ///
   /// Each of those depends of the `OpenGL_program_IDs` this container is using.

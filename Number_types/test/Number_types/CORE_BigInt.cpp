@@ -14,35 +14,35 @@ void test_io(){
     // MODE ASCII
     {
         std::stringstream ss;
-        CGAL::set_ascii_mode(ss);
-        ss << CGAL::oformat(NT(1));
+        CGAL::IO::set_ascii_mode(ss);
+        ss << CGAL::IO::oformat(NT(1));
         assert( ss.str() == "1");
     }{
         std::stringstream ss;
-        CGAL::set_ascii_mode(ss);
-        ss << CGAL::oformat(NT(0));
+        CGAL::IO::set_ascii_mode(ss);
+        ss << CGAL::IO::oformat(NT(0));
         assert( ss.str() == "0");
     }{
         std::stringstream ss;
-        CGAL::set_ascii_mode(ss);
-        ss << CGAL::oformat(NT(-1));
+        CGAL::IO::set_ascii_mode(ss);
+        ss << CGAL::IO::oformat(NT(-1));
         assert( ss.str() == "-1");
     }
     //MODE PRETTY
     {
         std::stringstream ss;
-        CGAL::set_pretty_mode(ss);
-        ss << CGAL::oformat(NT(1), CGAL::Parens_as_product_tag());
+        CGAL::IO::set_pretty_mode(ss);
+        ss << CGAL::IO::oformat(NT(1), CGAL::Parens_as_product_tag());
         assert( ss.str() == "1");
     }{
         std::stringstream ss;
-        CGAL::set_pretty_mode(ss);
-        ss << CGAL::oformat(NT(0),CGAL::Parens_as_product_tag());
+        CGAL::IO::set_pretty_mode(ss);
+        ss << CGAL::IO::oformat(NT(0),CGAL::Parens_as_product_tag());
         assert( ss.str() == "0");
     }{
         std::stringstream ss;
-        CGAL::set_pretty_mode(ss);
-        ss << CGAL::oformat(NT(-1), CGAL::Parens_as_product_tag());
+        CGAL::IO::set_pretty_mode(ss);
+        ss << CGAL::IO::oformat(NT(-1), CGAL::Parens_as_product_tag());
         assert( ss.str() == "(-1)");
     }
 }
@@ -72,4 +72,3 @@ int main() { return 0; }
 #endif // CGAL_USE_CORE
 
 //EOF
-

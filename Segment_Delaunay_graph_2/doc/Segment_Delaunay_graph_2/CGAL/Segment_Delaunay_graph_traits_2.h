@@ -22,14 +22,14 @@ The way the predicates are evaluated is discussed in
 \cgalCite{b-ecvdl-96} and \cgalCite{cgal:k-reisv-04} (the geometric filtering
 part).
 
-\cgalModels `SegmentDelaunayGraphTraits_2`
+\cgalModels{SegmentDelaunayGraphTraits_2}
 
 \sa `Kernel`
 \sa `SegmentDelaunayGraphTraits_2`
 \sa `CGAL::Field_tag`
 \sa `CGAL::Field_with_sqrt_tag`
-\sa `CGAL::Segment_Delaunay_graph_2<Gt,DS>`
-\sa `CGAL::Segment_Delaunay_graph_hierarchy_2<Gt,STag,DS>`
+\sa `CGAL::Segment_Delaunay_graph_2<Gt,St,DS>`
+\sa `CGAL::Segment_Delaunay_graph_hierarchy_2<Gt,St,STag,DS>`
 \sa `CGAL::Segment_Delaunay_graph_traits_without_intersections_2<K,MTag>`
 \sa `CGAL::Segment_Delaunay_graph_filtered_traits_2<CK,CM,EK,EM,FK,FM>`
 \sa `CGAL::Segment_Delaunay_graph_filtered_traits_without_intersections_2<CK,CM,EK,EM,FK,FM>`
@@ -95,14 +95,14 @@ The way the predicates are evaluated is discussed in
 \cgalCite{b-ecvdl-96} and \cgalCite{cgal:k-reisv-04} (the geometric filtering
 part).
 
-\cgalModels `SegmentDelaunayGraphTraits_2`
+\cgalModels{SegmentDelaunayGraphTraits_2}
 
 \sa `Kernel`
 \sa `SegmentDelaunayGraphTraits_2`
 \sa `CGAL::Euclidean_ring_tag`
 \sa `CGAL::Field_with_sqrt_tag`
-\sa `CGAL::Segment_Delaunay_graph_2<Gt,DS>`
-\sa `CGAL::Segment_Delaunay_graph_hierarchy_2<Gt,STag,DS>`
+\sa `CGAL::Segment_Delaunay_graph_2<Gt,St,DS>`
+\sa `CGAL::Segment_Delaunay_graph_hierarchy_2<Gt,St,STag,DS>`
 \sa `CGAL::Segment_Delaunay_graph_traits_2<K,MTag>`
 \sa `CGAL::Segment_Delaunay_graph_filtered_traits_2<CK,CM,EK,EM,FK,FM>`
 \sa `CGAL::Segment_Delaunay_graph_filtered_traits_without_intersections_2<CK,CM,EK,EM,FK,FM>`

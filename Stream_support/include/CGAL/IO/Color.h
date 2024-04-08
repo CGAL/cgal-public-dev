@@ -19,14 +19,16 @@
 
 #include <CGAL/config.h>
 #include <CGAL/array.h>
+
+#include <boost/functional/hash.hpp>
+
 #include <algorithm>
 #include <cstdlib>
 #include <cmath>
 
-
-
 namespace CGAL {
 
+namespace IO {
 
 /*!
   \ingroup PkgStreamSupportRef
@@ -39,8 +41,6 @@ namespace CGAL {
   The alpha parameter (representing transparency) is often ignored and
   left to its default value (255 = no transparency), which is why we
   often refer to the <I>rgb-value</I> of the color.
-
-  \sa `CGAL::Geomview_stream`
 
 */
 
@@ -133,6 +133,11 @@ public:
     return !( (*this) == c);
   }
 
+  bool operator<(const Color& c) const
+  {
+      return m_data < c.to_rgba();
+  }
+
   unsigned char r() const { return red(); }
   unsigned char g() const { return green(); }
   unsigned char b() const { return blue(); }
@@ -207,7 +212,7 @@ public:
   /*!
     replaces the rgb values of the colors by the one given as parameters.
   */
-  void set_rgb (unsigned char red,
+  Color& set_rgb (unsigned char red,
                 unsigned char green,
                 unsigned char blue,
                 unsigned char alpha = 255)
@@ -216,15 +221,15 @@ public:
     m_data[1] = green;
     m_data[2] = blue;
     m_data[3] = alpha;
+
+    return *this;
   }
 
   /*!
     replaces the rgb values of the colors by the conversion to rgb of
     the hsv values given as parameters.
-
-    Double values given as parameters should take range between 0 and 1.
   */
-  void set_hsv (double hue,
+  Color& set_hsv (double hue,
                 double saturation,
                 double value,
                 unsigned char alpha = 255)
@@ -232,8 +237,8 @@ public:
     saturation /= 100.;
     value /= 100.;
     double C = value*saturation;
-    int hh = (int)(hue/60.);
-    double X = C * (1-std::abs (hh % 2 - 1));
+    double hh = (hue/60.);
+    double X = C * (1-std::abs(std::fmod(hh, 2) - 1));
     double r = 0, g = 0, b = 0;
 
     if( hh>=0 && hh<1 )
@@ -278,10 +283,11 @@ public:
     m_data[1] = (unsigned char)g;
     m_data[2] = (unsigned char)b;
     m_data[3] = alpha;
+
+    return *this;
   }
 
   /// @}
-
 };
 
 
@@ -352,7 +358,39 @@ inline Color white() { return Color(255,255,255); }
 */
 inline Color yellow() { return Color(255,255,0); }
 
+} //namespace IO
 
-} //namespace CGAL
+#ifndef CGAL_NO_DEPRECATED_CODE
+using IO::Color;
+using IO::black;
+using IO::blue;
+using IO::deep_blue;
+using IO::gray;
+using IO::green;
+using IO::orange;
+using IO::purple;
+using IO::red;
+using IO::violet;
+using IO::white;
+using IO::yellow;
+#endif
+
+} // namespace CGAL
+
+namespace std {
+
+template <>
+struct hash<CGAL::IO::Color>
+{
+  std::size_t operator()(const CGAL::IO::Color& c) const
+  {
+    std::size_t result = boost::hash_value(c[0]);
+    for(std::size_t i=1; i<4; ++i)
+      boost::hash_combine(result, c[i]);
+    return result;
+  }
+};
+
+} // namespace std
 
 #endif  // CGAL_COLOR_H

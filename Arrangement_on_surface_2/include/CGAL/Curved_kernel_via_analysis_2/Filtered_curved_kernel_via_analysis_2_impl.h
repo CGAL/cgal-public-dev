@@ -5,7 +5,7 @@
 //
 // $URL$
 // $Id$
-// SPDX-License-Identifier: LGPL-3.0-or-later OR LicenseRef-Commercial
+// SPDX-License-Identifier: GPL-3.0-or-later OR LicenseRef-Commercial
 //
 //
 // Author(s)     : Eric Berberich <eric@mpi-inf.mpg.de>
@@ -14,6 +14,9 @@
 
 #ifndef CGAL_FILTERED_CURVED_KERNEL_VIA_ANALYSIS_2_IMPL_H
 #define CGAL_FILTERED_CURVED_KERNEL_VIA_ANALYSIS_2_IMPL_H
+
+#include <CGAL/license/Arrangement_on_surface_2.h>
+
 
 /*!\file include/CGAL/Filtered_curved_kernel_via_analysis_2.h
  * \brief defines class \c Filtered_curved_kernel_via_analysis_2
@@ -99,10 +102,6 @@ public:
     }
 };
 
-
-// TODO implement Compare_y_limit_on_boundary_2
-
-
 template < class CurvedKernelViaAnalysis_2, class FunctorBase >
 class Compare_y_near_boundary_2 :
         public FunctorBase::Compare_y_near_boundary_2 {
@@ -169,12 +168,10 @@ public:
         Coordinate_1 asym_info1, asym_info2;
         CGAL::Arr_parameter_space ps1, ps2;
 
-        obj1 = cv1.curve().asymptotic_value_of_arc(
-                cv1.location(ce), cv1.arcno()
-        );
-        obj2 = cv2.curve().asymptotic_value_of_arc(
-                cv2.location(ce), cv2.arcno()
-        );
+        obj1 =
+          cv1.curve().asymptotic_value_of_arc(cv1.location(ce), cv1.arcno());
+        obj2 =
+          cv2.curve().asymptotic_value_of_arc(cv2.location(ce), cv2.arcno());
 
         CGAL::Comparison_result filter_res = CGAL::EQUAL;
 
@@ -552,7 +549,7 @@ public:
 
         if (!Base::_ckva()->may_have_intersection_2_object()(cv1, cv2)) {
             // return no one
-            CKvA_CERR("\nfilter: sucessfull\n");
+            CKvA_CERR("\nfilter: successful\n");
 
             CGAL_assertion_code(
             {

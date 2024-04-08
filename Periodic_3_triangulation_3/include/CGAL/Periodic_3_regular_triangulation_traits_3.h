@@ -17,13 +17,13 @@
 
 #include <CGAL/license/Periodic_3_triangulation_3.h>
 
-#include <CGAL/internal/Functor_with_offset_weighted_points_adaptor_3.h>
-#include <CGAL/internal/Periodic_3_construct_weighted_point_3.h>
+#include <CGAL/Periodic_3_triangulation_3/internal/Functor_with_offset_weighted_points_adaptor_3.h>
+#include <CGAL/Periodic_3_triangulation_3/internal/Periodic_3_construct_weighted_point_3.h>
 #include <CGAL/Periodic_3_offset_3.h>
 #include <CGAL/Periodic_3_triangulation_traits_3.h>
 
 #include <CGAL/basic.h>
-#include <CGAL/internal/Has_boolean_tags.h>
+#include <CGAL/Kernel_23/internal/Has_boolean_tags.h>
 
 namespace CGAL {
 
@@ -85,6 +85,8 @@ public:
       Compute_power_distance_to_power_sphere_3;
   typedef Functor_with_offset_weighted_points_adaptor_3<Self, typename Kernel::Compute_squared_distance_3>
       Compute_squared_distance_3;
+  typedef Functor_with_offset_weighted_points_adaptor_3<Self, typename Kernel::Compare_squared_distance_3>
+      Compare_squared_distance_3;
 
   // Operations
   Construct_weighted_point_3 construct_weighted_point_3_object() const {
@@ -108,6 +110,12 @@ public:
   Compute_squared_distance_3 compute_squared_distance_3_object() const {
     return Compute_squared_distance_3(
       this->Base::compute_squared_distance_3_object(),
+      this->construct_point_3_object(), construct_weighted_point_3_object());
+  }
+
+  Compare_squared_distance_3 compare_squared_distance_3_object() const {
+    return Compare_squared_distance_3(
+      this->Base::compare_squared_distance_3_object(),
       this->construct_point_3_object(), construct_weighted_point_3_object());
   }
 
@@ -146,7 +154,7 @@ class Periodic_3_regular_triangulation_traits_3;
 
 } // namespace CGAL
 
-#include <CGAL/internal/Periodic_3_regular_triangulation_filtered_traits_3.h>
+#include <CGAL/Periodic_3_triangulation_3/internal/Periodic_3_regular_triangulation_filtered_traits_3.h>
 
 namespace CGAL
 {

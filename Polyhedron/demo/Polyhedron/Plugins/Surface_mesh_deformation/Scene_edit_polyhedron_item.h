@@ -11,8 +11,6 @@
 #include "Plugins/PMP/Scene_facegraph_item_k_ring_selection.h"
 #include "Travel_isolated_components.h"
 
-#include <CGAL/boost/graph/graph_traits_Polyhedron_3.h>
-#include <CGAL/boost/graph/properties_Polyhedron_3.h>
 #include <CGAL/boost/graph/iterator.h>
 
 #include <iostream>
@@ -27,10 +25,10 @@
 #include <CGAL/Polygon_mesh_processing/compute_normal.h>
 #include <CGAL/Surface_mesh_deformation.h>
 
-#include <boost/function_output_iterator.hpp>
-#include <QGLBuffer>
-#include <QGLShader>
-#include <QGLShaderProgram>
+#include <boost/iterator/function_output_iterator.hpp>
+#include <QOpenGLBuffer>
+#include <QOpenGLShader>
+#include <QOpenGLShaderProgram>
 
 
 typedef boost::graph_traits<SMesh>::vertex_descriptor sm_vertex_descriptor;
@@ -73,21 +71,24 @@ struct Array_based_vertex_point_map
 {
 public:
   typedef typename boost::graph_traits<Mesh>::vertex_descriptor     key_type;
-  typedef EPICK::Point_3                                           value_type;
+  typedef EPICK::Point_3                                            value_type;
   typedef const value_type&                                         reference;
   typedef boost::read_write_property_map_tag                        category;
+
   std::vector<float>* positions;
   Mesh* mesh;
   Id_setter* id_setter;
-  Array_based_vertex_point_map(std::vector<float>* positions, Mesh* mesh, Id_setter* id_setter) : positions(positions), mesh(mesh), id_setter(id_setter) {}
 
+  Array_based_vertex_point_map(std::vector<float>* positions, Mesh* mesh, Id_setter* id_setter)
+    : positions(positions), mesh(mesh), id_setter(id_setter)
+  {}
 };
-
 
 template<typename Mesh> inline
 typename Array_based_vertex_point_map<Mesh>::reference
-get(Array_based_vertex_point_map<Mesh> map,
-  typename Array_based_vertex_point_map<Mesh>::key_type key) {
+get(const Array_based_vertex_point_map<Mesh>& map,
+    typename Array_based_vertex_point_map<Mesh>::key_type key)
+{
   typedef typename boost::property_map<Mesh, boost::vertex_point_t>::type VertexPointMap;
   VertexPointMap pmap = get(boost::vertex_point, *map.mesh);
   return get(pmap, key);
@@ -96,9 +97,9 @@ get(Array_based_vertex_point_map<Mesh> map,
 
 template<typename Mesh> inline
 void
-put(Array_based_vertex_point_map<Mesh> map,
-  typename Array_based_vertex_point_map<Mesh>::key_type key,
-  typename Array_based_vertex_point_map<Mesh>::value_type val)
+put(const Array_based_vertex_point_map<Mesh>& map,
+    typename Array_based_vertex_point_map<Mesh>::key_type key,
+    const typename Array_based_vertex_point_map<Mesh>::value_type& val)
 {
   typedef typename boost::property_map<Mesh, boost::vertex_point_t>::type VertexPointMap;
   VertexPointMap vpmap = get(boost::vertex_point, *map.mesh);
@@ -147,7 +148,7 @@ private:
   M_Deform_mesh* deform_mesh;
 
 public:
-  Control_vertices_data(M_Deform_mesh* deform_mesh, CGAL::qglviewer::ManipulatedFrame* frame = 0)
+  Control_vertices_data(M_Deform_mesh* deform_mesh, CGAL::qglviewer::ManipulatedFrame* frame = nullptr)
     : frame(frame), bbox(0,0,0,0,0,0), rot_direction(0.,0.,1.), deform_mesh(deform_mesh)
   { }
 
@@ -378,7 +379,7 @@ public:
     }
   };
 
-  boost::optional<std::size_t> get_minimum_isolated_component();
+  std::optional<std::size_t> get_minimum_isolated_component();
   template<typename Mesh>
   struct Select_roi_output{
     typedef typename CGAL::Surface_mesh_deformation<Mesh, CGAL::Default, CGAL::Default, CGAL::ORIGINAL_ARAP
@@ -392,7 +393,7 @@ public:
     M_Deform_mesh* dm;
   };
 
-  boost::optional<std::size_t> select_isolated_components(std::size_t threshold) ;
+  std::optional<std::size_t> select_isolated_components(std::size_t threshold) ;
 
 protected:
   // Deformation related functions //

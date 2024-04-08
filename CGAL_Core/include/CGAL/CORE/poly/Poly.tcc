@@ -30,7 +30,7 @@
  * Author: Chee Yap, Sylvain Pion and Vikram Sharma
  * Date:   May 28, 2002
  *
- * WWW URL: http://cs.nyu.edu/exact/
+ * WWW URL: https://cs.nyu.edu/exact/
  * Email: exact@cs.nyu.edu
  *
  * $URL$
@@ -670,19 +670,20 @@ Polynomial<NT> Polynomial<NT>::pseudoRemainder (
   contract();         // Let A = (*this).  Contract A.
   Polynomial<NT> tmpB(B);
   tmpB.contract();    // local copy of B
+  int bTrueDegree = tmpB.degree;
   C = NT(1);  // Initialized to C=1.
-  if (B.degree == -1)  {
-    core_error("ERROR in Polynomial<NT>::pseudoRemainder :\n    -- divide by zero polynomial", __FILE__, __LINE__, false);
+  if (bTrueDegree == -1)  {
+    CGAL_CORE_warning_msg(false, "ERROR in Polynomial<NT>::pseudoRemainder :\n    -- divide by zero polynomial");
     return Polynomial(0);  // Unit Polynomial (arbitrary!)
   }
-  if (B.degree > degree) {
+  if (bTrueDegree > degree) {
     return Polynomial(); // Zero Polynomial
     // CHECK: 1*THIS = 0*B + THAT,  deg(THAT) < deg(B)
   }
 
   Polynomial<NT> Quo;  // accumulate the return polynomial, Quo
   Polynomial<NT> tmpQuo;
-  while (degree >= B.degree) {  // INVARIANT: C*A = B*Quo + (*this)
+  while (degree >= bTrueDegree) {  // INVARIANT: C*A = B*Quo + (*this)
     tmpQuo = reduceStep(tmpB);  // Let (*this) be (*oldthis), which
                                 // is transformed into (*newthis). Then,
                                 //     c*(*oldthis) = B*m + (*newthis)
@@ -770,8 +771,8 @@ BigFloat Polynomial<NT>::eval(const BigFloat& f) const {        // evaluation
 
 template <class NT>
 template <class T>
-MAX_TYPE(NT, T) Polynomial<NT>::eval(const T& f) const {        // evaluation
-  typedef MAX_TYPE(NT, T) ResultT;
+CORE_MAX_TYPE(NT, T) Polynomial<NT>::eval(const T& f) const {        // evaluation
+  typedef CORE_MAX_TYPE(NT, T) ResultT;
   if (degree == -1)
     return ResultT(0);
   if (degree == 0)
@@ -891,10 +892,10 @@ BigFloat Polynomial<NT>::CauchyUpperBound() const {
   NT mx = 0;
   int deg = getTrueDegree();
   for (int i = 0; i < deg; ++i) {
-    mx = core_max(mx, abs(coeff[i]));
+    mx = core_max(mx, NT(abs(coeff[i])));
   }
   Expr e = mx;
-  e /= Expr(abs(coeff[deg]));
+  e /= Expr(NT(abs(coeff[deg])));
   e.approx(CORE_INFTY, 2);
   // get an absolute approximate value with error < 1/4
   return (e.BigFloatValue().makeExact() + 2);
@@ -921,7 +922,7 @@ BigInt Polynomial<NT>::CauchyBound() const {
     /* compute B^{deg} */
     if (rhs <= lhs) {
       B <<= 1;
-      rhs *= (BigInt(1)<<deg);
+      rhs *= BigFloat(BigInt(BigInt(1)<<deg));
     } else
       break;
   }
@@ -958,7 +959,7 @@ BigInt Polynomial<NT>::UpperBound() const {
     /* compute B^{deg} */
     if (rhs <= (std::max)(lhsPos,lhsNeg)) {
       B <<= 1;
-      rhs *= (BigInt(1)<<deg);
+      rhs *= BigFloat(BigInt(BigInt(1)<<deg));
     } else
       break;
   }
@@ -974,9 +975,9 @@ BigFloat Polynomial<NT>::CauchyLowerBound() const {
   NT mx = 0;
   int deg = getTrueDegree();
   for (int i = 1; i <= deg; ++i) {
-    mx = core_max(mx, abs(coeff[i]));
+    mx = core_max(mx, NT(abs(coeff[i])));
   }
-  Expr e = Expr(abs(coeff[0]))/ Expr(abs(coeff[0]) + mx);
+  Expr e = Expr(NT(abs(coeff[0])))/ Expr(NT(NT(abs(coeff[0])) + mx));
   e.approx(2, CORE_INFTY);
   // get an relative approximate value with error < 1/4
   return (e.BigFloatValue().makeExact().div2());
@@ -1017,8 +1018,8 @@ BigFloat Polynomial<NT>::height() const {
   int deg = getTrueDegree();
   NT ht = 0;
   for (int i = 0; i< deg; i++)
-    if (ht < abs(coeff[i]))
-      ht = abs(coeff[i]);
+    if (ht < NT(abs(coeff[i])))
+      ht = NT(abs(coeff[i]));
   return BigFloat(ht);
 }
 

@@ -64,7 +64,9 @@ the rank of this item in the output order.
 When dimension \f$ <\f$ 2, the same information is output
 for faces of maximal dimension instead of faces.
 
-\cgalHasModel `CGAL::Triangulation_data_structure_2<Vb,Fb>`
+\cgalHasModelsBegin
+\cgalHasModels{CGAL::Triangulation_data_structure_2<Vb,Fb>}
+\cgalHasModelsEnd
 
 \sa `TriangulationDataStructure_2::Face`
 \sa `TriangulationDataStructure_2::Vertex`
@@ -99,14 +101,19 @@ The face type, requirements for this type are described in concept `Triangulatio
 typedef unspecified_type Face;
 
 /*!
+%Face data type, requirements are described in `TriangulationDataStructure_2::Face_data`.
+*/
+typedef unspecified_type Face_data;
+
+/*!
 Handle to a vertex.
-\cgalModels `Handle`
+\cgalModels{Handle}
 */
 typedef unspecified_type Vertex_handle;
 
 /*!
 Handle to a face.
-\cgalModels `Handle`
+\cgalModels{Handle}
 */
 typedef unspecified_type Face_handle;
 
@@ -229,7 +236,7 @@ otherwise `Vertex_handle()` is returned.
 \pre The optional argument `v` is a vertex of `tds_src` or is `Vertex_handle()`.
 */
 template <class TDS_src, class ConvertVertex, class ConvertFace>
-Vertex_handle tds.copy_tds(const TDS_src& tds_src, typename TDS_src::Vertex_handle v, const ConvertVertex& convert_vertex, const ConvertFace& convert_face);
+Vertex_handle copy_tds(const TDS_src& tds_src, typename TDS_src::Vertex_handle v, const ConvertVertex& convert_vertex, const ConvertFace& convert_face);
 
 /*!
 Swaps the triangulation data structure and `tds1`.
@@ -687,14 +694,14 @@ vertex has been omitted when output.
 Vertex_handle file_input( istream& is, bool skip_first=false);
 
 /*!
-reads a combinatorial triangulation data structure from `is` and assigns it to tthe triangulation data structure.
+reads a combinatorial triangulation data structure from `is` and assigns it to the triangulation data structure.
 */
-istream& operator>> (istream& is, TriangulationDataStructure_3 & tds);
+istream& operator>> (istream& is, TriangulationDataStructure_2 & tds);
 
 /*!
 writes `tds` into the stream `os`.
 */
-ostream& operator<< (ostream& os, const TriangulationDataStructure_3 & tds);
+ostream& operator<< (ostream& os, const TriangulationDataStructure_2 & tds);
 
 /// @}
 
@@ -721,7 +728,9 @@ In order to obtain new vertices or destruct unused vertices, the user must
 call the `create_vertex()` and `delete_vertex()` methods of the
 triangulation data structure.
 
-\cgalHasModel `CGAL::Triangulation_ds_vertex_base_2<Tds>`
+\cgalHasModelsBegin
+\cgalHasModels{CGAL::Triangulation_ds_vertex_base_2<Tds>}
+\cgalHasModelsEnd
 
 \sa `TriangulationDSVertexBase_2`
 \sa `TriangulationDataStructure_2::Face`
@@ -842,7 +851,9 @@ The methods `create_face()` and
 have to be used to
 define new faces and to delete no longer used faces.
 
-\cgalHasModel `CGAL::Triangulation_ds_face_base_2<Tds>`
+\cgalHasModelsBegin
+\cgalHasModels{CGAL::Triangulation_ds_face_base_2<Tds>}
+\cgalHasModelsEnd
 
 \sa `TriangulationDSFaceBase_2`
 \sa `TriangulationDataStructure_2`
@@ -992,3 +1003,66 @@ std::ostream& operator<< (std::ostream& os, const TriangulationDataStructure_2::
 /// @}
 
 }; /* end TriangulationDataStructure_2::Face */
+
+/*!
+\ingroup PkgTDS2Concepts
+\cgalConcept
+
+Various algorithms using a triangulation data structure, such as Delaunay triangulations
+or Alpha Shapes, must be able to associate a state to a face elemental.
+For efficiency, this information must be stored directly within the face.
+
+This class is only meant to store a state (Boolean). Consequently, the state must be the default
+value (i.e. `false`) unless a setting function (`mark_in_conflict()`, etc.) has been called.
+
+The three states are "in conflict", "on boundary", and "processed".
+By default, a face is not in conflict, not on boundary, and not processed.
+
+\sa `TriangulationDataStructure_2::Face`
+
+*/
+
+class TriangulationDataStructure_2::Face_data
+{
+public:
+  /// \name Setting
+  /// @{
+
+  /// Clears all flags: the face is neither in conflict, nor on the boundary, nor processed.
+  void clear();
+
+  /// Sets the "in conflict" state to `true`.
+  ///
+  /// \post `is_in_conflict()` returns `true`
+  void mark_in_conflict();
+
+  /// Sets the "on boundary" state to `true`.
+  ///
+  /// \post `is_on_boundary()` returns `true`
+  void mark_on_boundary();
+
+  /// Sets the "processed" state to `true`.
+  ///
+  /// \post `processed()` returns `true`
+  void mark_processed();
+
+  /// @}
+
+  /// \name Access Functions
+  /// @{
+
+  /// Checks whether the face has default state (not in conflict, not on boundary, not processed).
+  bool is_clear();
+
+  /// Returns whether the face has been marked as "in conflict".
+  bool is_in_conflict();
+
+  /// Returns whether the face has been marked as "on boundary".
+  bool is_on_boundary();
+
+  /// Returns whether the face has been marked as "processed".
+  bool processed();
+
+  /// @}
+
+}; /* end Face_data */

@@ -64,7 +64,7 @@ void Camera_positions_list::on_downButton_pressed()
 
 void Camera_positions_list::on_minusButton_pressed()
 {
-  Q_FOREACH(QModelIndex index,
+  for(QModelIndex index :
             m_listView->selectionModel()->selectedIndexes()) {
     m_model->removeRows(index.row(), 1);
   }
@@ -89,13 +89,9 @@ void Camera_positions_list::activatedRow(QModelIndex index)
   Three::activeViewer()->moveCameraToCoordinates(s);
 }
 
-void Camera_positions_list::on_saveButton_pressed()
-{
-  QString filename =
-    QFileDialog::getSaveFileName(this,
-                                 tr("Save camera coordinates to file"),
-                                 QString(),
-                                 tr("(*.camera.txt)"));
+bool Camera_positions_list::save(QString filename) {
+  if(m_model->rowCount() <1)
+    return false;
   QFile file(filename);
   file.open(QIODevice::WriteOnly);
   QTextStream out(&file);
@@ -108,6 +104,17 @@ void Camera_positions_list::on_saveButton_pressed()
         << "\n";
   }
   file.close();
+  return true;
+}
+
+void Camera_positions_list::on_saveButton_pressed()
+{
+  QString filename =
+    QFileDialog::getSaveFileName(this,
+                                 tr("Save camera coordinates to file"),
+                                 QString(),
+                                 tr("(*.camera.txt)"));
+  save(filename);
 }
 
 void Camera_positions_list::on_openButton_pressed()

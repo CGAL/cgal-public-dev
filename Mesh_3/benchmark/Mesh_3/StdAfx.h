@@ -13,6 +13,7 @@
 #include <deque>
 #include <fstream>
 #include <typeindex>
+#include <iterator>
 
 // Windows
 #include <windows.h>
@@ -24,7 +25,6 @@
 #include <boost/concept_check.hpp>
 #include <boost/config.hpp>
 #include <boost/format.hpp>
-#include <boost/iterator.hpp>
 #include <boost/iterator/iterator_adaptor.hpp>
 #include <boost/iterator/iterator_categories.hpp>
 #include <boost/iterator/iterator_facade.hpp>
@@ -42,11 +42,9 @@
 #include <boost/mpl/clear.hpp>
 #include <boost/mpl/contains.hpp>
 #include <boost/mpl/end.hpp>
-#include <boost/mpl/eval_if.hpp>
 #include <boost/mpl/has_key.hpp>
 #include <boost/mpl/has_xxx.hpp>
 #include <boost/mpl/identity.hpp>
-#include <boost/mpl/if.hpp>
 #include <boost/mpl/insert.hpp>
 #include <boost/mpl/insert_fwd.hpp>
 #include <boost/mpl/iterator_range.hpp>
@@ -63,7 +61,7 @@
 #include <boost/mpl/set/set0.hpp>
 #include <boost/mpl/vector.hpp>
 #include <boost/none.hpp>
-#include <boost/optional.hpp>
+#include <optional>
 //#include <boost/parameter.hpp>
 //#include <boost/parameter/binding.hpp>
 //#include <boost/parameter/config.hpp>
@@ -131,22 +129,15 @@
 #include <boost/random/linear_congruential.hpp>
 #include <boost/random/uniform_smallint.hpp>
 #include <boost/random/variate_generator.hpp>
-#include <boost/shared_ptr.hpp>
+#include <memory>
 #include <boost/thread/tss.hpp>
 #include <boost/tuple/tuple.hpp>
 #include <boost/type_traits.hpp>
 #include <boost/type_traits/add_reference.hpp>
 #include <boost/type_traits/is_base_and_derived.hpp>
-#include <boost/type_traits/is_const.hpp>
-#include <boost/type_traits/is_convertible.hpp>
 #include <boost/type_traits/is_reference.hpp>
-#include <boost/type_traits/is_same.hpp>
-#include <boost/type_traits/remove_const.hpp>
-#include <boost/type_traits/remove_reference.hpp>
 #include <boost/utility.hpp>
-#include <boost/utility/enable_if.hpp>
-#include <boost/utility/result_of.hpp>
-#include <boost/variant.hpp>
+#include <variant>
 #include <boost/version.hpp>
 
 // CGAL
@@ -186,17 +177,17 @@
 #include <CGAL/Hilbert_sort_middle_base.h>
 #include <CGAL/Hilbert_sort_middle_d.h>
 #include <CGAL/Image_3.h>
-#include <CGAL/internal/Dummy_tds_3.h>
-#include <CGAL/internal/Exact_type_selector.h>
-#include <CGAL/internal/info_check.h>
+#include <CGAL/TDS_3/internal/Dummy_tds_3.h>
+#include <CGAL/Number_types/internal/Exact_type_selector.h>
+#include <CGAL/STL_Extension/internal/info_check.h>
 //#include <CGAL/internal/Regular_triangulation_filtered_traits_3.h>
-#include <CGAL/internal/Static_filters/Compare_weighted_squared_radius_3.h>
-#include <CGAL/internal/Static_filters/Power_side_of_oriented_power_sphere_3.h>
+#include <CGAL/Filtered_kernel/internal/Static_filters/Compare_weighted_squared_radius_3.h>
+#include <CGAL/Filtered_kernel/internal/Static_filters/Power_side_of_oriented_power_sphere_3.h>
 //#include <CGAL/internal/Static_filters/Regular_triangulation_static_filters_traits_3.h>
-#include <CGAL/internal/Static_filters/Static_filter_error.h>
-#include <CGAL/internal/Static_filters/tools.h>
-//#include <CGAL/internal/Triangulation_ds_circulators_3.h>
-//#include <CGAL/internal/Triangulation_ds_iterators_3.h>
+#include <CGAL/Filtered_kernel/internal/Static_filters/Static_filter_error.h>
+#include <CGAL/Filtered_kernel/internal/Static_filters/tools.h>
+//#include <CGAL/TDS_3/internal/Triangulation_ds_circulators_3.h>
+//#include <CGAL/TDS_3/internal/Triangulation_ds_iterators_3.h>
 #include <CGAL/Interval_nt.h>
 #include <CGAL/IO/File_medit.h>
 #include <CGAL/iterator.h>
@@ -204,7 +195,7 @@
 #include <CGAL/Kernel/interface_macros.h>
 #include <CGAL/Kernel/Type_equality_wrapper.h>
 #include <CGAL/Kernel_traits.h>
-#include <CGAL/Labeled_image_mesh_domain_3.h>
+#include <CGAL/Labeled_mesh_domain_3.h>
 #include <CGAL/Lazy.h>
 #include <CGAL/Lazy_exact_nt.h>
 #include <CGAL/Lazy_kernel.h>
@@ -256,7 +247,6 @@
 #include <CGAL/Timer.h>
 #include <CGAL/Triangle_accessor_3.h>
 //#include <CGAL/Triangulation_3.h>
-//#include <CGAL/triangulation_assertions.h>
 //#include <CGAL/Triangulation_cell_base_3.h>
 //#include <CGAL/Triangulation_data_structure_3.h>
 //#include <CGAL/Triangulation_ds_cell_base_3.h>

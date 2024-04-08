@@ -1,11 +1,19 @@
+#define CGAL_CDT_2_DEBUG_INTERSECTIONS 1
 #include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
 #include <CGAL/Constrained_Delaunay_triangulation_2.h>
 #include <CGAL/Constrained_triangulation_plus_2.h>
+#include <CGAL/Base_with_time_stamp.h>
 #include <iostream>
 
 typedef CGAL::Exact_predicates_inexact_constructions_kernel EPIC;
 typedef EPIC::Point_2 Point_2;
-typedef CGAL::Triangulation_vertex_base_2<EPIC> Vb;
+
+#ifdef CGAL_CDT_2_DEBUG_INTERSECTIONS
+typedef CGAL::Base_with_time_stamp<CGAL::Triangulation_vertex_base_2<EPIC> > Vb;
+#else
+typedef CGAL::Triangulation_vertex_base_2<K> Vb;
+#endif
+
 typedef CGAL::Constrained_triangulation_face_base_2<EPIC> Fb;
 typedef CGAL::Triangulation_data_structure_2<Vb, Fb> TDS;
 typedef CGAL::Exact_predicates_tag Itag;
@@ -14,6 +22,7 @@ typedef CGAL::Constrained_triangulation_plus_2<CDT> CDTp2;
 
 template <class CDT>
 void test() {
+  std::cerr.precision(17);
   CDT cdt;
   cdt.insert_constraint(Point_2(  48.0923419883269,   299.7232779774145  ),
                         Point_2(  66.05373710316852,  434.231770798343   ));

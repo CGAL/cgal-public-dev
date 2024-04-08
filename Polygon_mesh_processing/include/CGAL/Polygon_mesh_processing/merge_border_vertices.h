@@ -9,17 +9,18 @@
 //
 //
 // Author(s)     : Sebastien Loriot
+//                 Mael Rouxel-Labbé
 
 #ifndef CGAL_POLYGON_MESH_PROCESSING_MERGE_BORDER_VERTICES_H
 #define CGAL_POLYGON_MESH_PROCESSING_MERGE_BORDER_VERTICES_H
 
-#include <CGAL/license/Polygon_mesh_processing/repair.h>
+#include <CGAL/license/Polygon_mesh_processing/combinatorial_repair.h>
 
 #include <CGAL/boost/graph/helpers.h>
 #include <CGAL/boost/graph/properties.h>
 #include <CGAL/Polygon_mesh_processing/border.h>
-#include <CGAL/Polygon_mesh_processing/internal/named_function_params.h>
-#include <CGAL/Polygon_mesh_processing/internal/named_params_helper.h>
+#include <CGAL/Named_function_parameters.h>
+#include <CGAL/boost/graph/named_params_helper.h>
 #include <CGAL/Polygon_mesh_processing/stitch_borders.h>
 
 #include <algorithm>
@@ -61,10 +62,10 @@ struct Less_on_point_of_target
   const VertexPointMap& vpm;
 };
 
-// Given a container of vectors of halfedges whose target are geometrically indentical,
+// Given a container of vectors of halfedges whose target are geometrically identical,
 // check that the intervals described by these pairs are either disjoint or nested.
 // This is done to ensure valid combinatorics when we merge the vertices.
-// If incompatible (overlapping) intervals are found, the pair representating the longest
+// If incompatible (overlapping) intervals are found, the pair representing the longest
 // interval (arbitrary choice) is removed from the candidate list.
 template <typename VPM, typename PolygonMesh>
 void sanitize_candidates(const std::vector<std::pair<typename boost::graph_traits<PolygonMesh>::halfedge_descriptor, std::size_t> >& cycle_hedges,
@@ -203,7 +204,8 @@ void detect_identical_mergeable_vertices(
   }
 }
 
-// \ingroup PMP_repairing_grp
+// \ingroup PMP_combinatorial_repair_grp
+//
 // merges target vertices of a list of halfedges.
 // Halfedges must be sorted in the list.
 //
@@ -220,7 +222,7 @@ void merge_vertices_in_range(const HalfedgeRange& sorted_hedges,
   typedef typename boost::graph_traits<PolygonMesh>::halfedge_descriptor halfedge_descriptor;
   typedef typename boost::graph_traits<PolygonMesh>::vertex_descriptor vertex_descriptor;
 
-  halfedge_descriptor in_h_kept = *boost::begin(sorted_hedges);
+  halfedge_descriptor in_h_kept = *std::begin(sorted_hedges);
   halfedge_descriptor out_h_kept = next(in_h_kept, pm);
   vertex_descriptor v_kept = target(in_h_kept, pm);
 
@@ -257,34 +259,40 @@ void merge_vertices_in_range(const HalfedgeRange& sorted_hedges,
 
 } // end of internal
 
-/// \ingroup PMP_repairing_grp
+/// \ingroup PMP_combinatorial_repair_grp
+///
 /// merges identical vertices around a cycle of boundary edges.
 ///
 /// @tparam PolygonMesh a model of `FaceListGraph` and `MutableFaceGraph`.
-/// @tparam NamedParameter a sequence of \ref pmp_namedparameters "Named Parameters".
+/// @tparam NamedParameters a sequence of \ref bgl_namedparameters "Named Parameters".
 ///
 /// @param h a halfedge that belongs to a boundary cycle.
 /// @param pm the polygon mesh which contains the boundary cycle.
-/// @param np optional parameter of \ref pmp_namedparameters "Named Parameters" listed below.
+/// @param np an optional sequence of \ref bgl_namedparameters "Named Parameters" among the ones listed below
 ///
 /// \cgalNamedParamsBegin
-/// \cgalParamBegin{vertex_point_map}
-///   the property map with the points associated to the vertices of `pm`.
-///    If this parameter is omitted, an internal property map for
-///  `CGAL::vertex_point_t` should be available in `PolygonMesh`
-/// \cgalParamEnd
+///   \cgalParamNBegin{vertex_point_map}
+///     \cgalParamDescription{a property map associating points to the vertices of `pm`}
+///     \cgalParamType{a class model of `ReadWritePropertyMap` with `boost::graph_traits<PolygonMesh>::%vertex_descriptor`
+///                    as key type and `%Point_3` as value type}
+///     \cgalParamDefault{`boost::get(CGAL::vertex_point, pm)`}
+///   \cgalParamNEnd
 /// \cgalNamedParamsEnd
-template <class PolygonMesh, class NamedParameter>
-void merge_duplicated_vertices_in_boundary_cycle(
-        typename boost::graph_traits<PolygonMesh>::halfedge_descriptor h,
-        PolygonMesh& pm,
-        const NamedParameter& np)
+///
+/// \see `merge_duplicated_vertices_in_boundary_cycles()`
+template <class PolygonMesh,
+          class NamedParameters = parameters::Default_named_parameters>
+void merge_duplicated_vertices_in_boundary_cycle(typename boost::graph_traits<PolygonMesh>::halfedge_descriptor h,
+                                                 PolygonMesh& pm,
+                                                 const NamedParameters& np = parameters::default_values())
 {
   typedef typename boost::graph_traits<PolygonMesh>::halfedge_descriptor halfedge_descriptor;
-  typedef typename GetVertexPointMap<PolygonMesh, NamedParameter>::const_type Vpm;
+  typedef typename GetVertexPointMap<PolygonMesh, NamedParameters>::const_type Vpm;
 
   using parameters::get_parameter;
   using parameters::choose_parameter;
+
+  CGAL_precondition(is_valid_halfedge_descriptor(h, pm));
 
   Vpm vpm = choose_parameter(get_parameter(np, internal_np::vertex_point),
                              get_const_property_map(vertex_point, pm));
@@ -311,27 +319,30 @@ void merge_duplicated_vertices_in_boundary_cycle(
   }
 }
 
-/// \ingroup PMP_repairing_grp
+/// \ingroup PMP_combinatorial_repair_grp
+///
 /// extracts boundary cycles and merges the duplicated vertices of each cycle.
 ///
 /// @tparam PolygonMesh a model of `FaceListGraph` and `MutableFaceGraph`.
-/// @tparam NamedParameter a sequence of \ref pmp_namedparameters "Named Parameters".
+/// @tparam NamedParameters a sequence of \ref bgl_namedparameters "Named Parameters".
 ///
 /// @param pm the polygon mesh which contains the cycles.
-/// @param np optional parameter of \ref pmp_namedparameters "Named Parameters" listed below.
+/// @param np an optional sequence of \ref bgl_namedparameters "Named Parameters" among the ones listed below
 ///
 /// \cgalNamedParamsBegin
-/// \cgalParamBegin{vertex_point_map}
-///   the property map with the points associated to the vertices of `pm`.
-///    If this parameter is omitted, an internal property map for
-///  `CGAL::vertex_point_t` should be available in `PolygonMesh`
-/// \cgalParamEnd
+///   \cgalParamNBegin{vertex_point_map}
+///     \cgalParamDescription{a property map associating points to the vertices of `pm`}
+///     \cgalParamType{a class model of `ReadWritePropertyMap` with `boost::graph_traits<PolygonMesh>::%vertex_descriptor`
+///                    as key type and `%Point_3` as value type}
+///     \cgalParamDefault{`boost::get(CGAL::vertex_point, pm)`}
+///   \cgalParamNEnd
 /// \cgalNamedParamsEnd
 ///
 /// \sa `merge_duplicated_vertices_in_boundary_cycle()`
-template <class PolygonMesh, class NamedParameter>
+template <class PolygonMesh,
+          class NamedParameters = parameters::Default_named_parameters>
 void merge_duplicated_vertices_in_boundary_cycles(      PolygonMesh& pm,
-                                                  const NamedParameter& np)
+                                                  const NamedParameters& np = parameters::default_values())
 {
   typedef typename boost::graph_traits<PolygonMesh>::halfedge_descriptor halfedge_descriptor;
 
@@ -340,20 +351,6 @@ void merge_duplicated_vertices_in_boundary_cycles(      PolygonMesh& pm,
 
   for(halfedge_descriptor h : cycles)
     merge_duplicated_vertices_in_boundary_cycle(h, pm, np);
-}
-
-template <class PolygonMesh>
-void merge_duplicated_vertices_in_boundary_cycles(PolygonMesh& pm)
-{
-  merge_duplicated_vertices_in_boundary_cycles(pm, parameters::all_default());
-}
-
-template <class PolygonMesh>
-void merge_duplicated_vertices_in_boundary_cycle(
-  typename boost::graph_traits<PolygonMesh>::halfedge_descriptor h,
-  PolygonMesh& pm)
-{
-  merge_duplicated_vertices_in_boundary_cycle(h, pm, parameters::all_default());
 }
 
 } } // end of CGAL::Polygon_mesh_processing

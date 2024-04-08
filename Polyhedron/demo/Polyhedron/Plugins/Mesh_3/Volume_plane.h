@@ -104,7 +104,7 @@ public:
 
   virtual ~Volume_plane();
 
-  Volume_plane* clone() const { return NULL; }
+  Volume_plane* clone() const { return nullptr; }
 
   virtual RenderingMode renderingMode() const { return Flat; }
   bool supportsRenderingMode(RenderingMode m) const { return m == Flat; }
@@ -515,7 +515,7 @@ void Volume_plane<T>::draw(Viewer_interface *viewer) const {
   updateCurrentCube();
   if(cur_cube != currentCube)
   {
-    Q_FOREACH(CGAL::QGLViewer*v, CGAL::QGLViewer::QGLViewerPool()){
+    for(CGAL::QGLViewer*v : CGAL::QGLViewer::QGLViewerPool()){
       v->setProperty("need_update", true);
     }
   }

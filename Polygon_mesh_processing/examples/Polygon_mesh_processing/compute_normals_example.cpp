@@ -2,29 +2,30 @@
 #include <CGAL/Surface_mesh.h>
 
 #include <CGAL/Polygon_mesh_processing/compute_normal.h>
+#include <CGAL/Polygon_mesh_processing/IO/polygon_mesh_io.h>
 
 #include <iostream>
-#include <fstream>
+#include <string>
+
+typedef CGAL::Exact_predicates_inexact_constructions_kernel K;
+
+typedef K::Point_3                                          Point;
+typedef K::Vector_3                                         Vector;
+
+typedef CGAL::Surface_mesh<Point>                           Mesh;
+typedef boost::graph_traits<Mesh>::vertex_descriptor        vertex_descriptor;
+typedef boost::graph_traits<Mesh>::face_descriptor          face_descriptor;
 
 namespace PMP = CGAL::Polygon_mesh_processing;
 
-typedef CGAL::Exact_predicates_inexact_constructions_kernel       K;
-
-typedef K::Point_3                                                Point;
-typedef K::Vector_3                                               Vector;
-
-typedef CGAL::Surface_mesh<Point>                                 Surface_mesh;
-typedef boost::graph_traits<Surface_mesh>::vertex_descriptor      vertex_descriptor;
-typedef boost::graph_traits<Surface_mesh>::face_descriptor        face_descriptor;
-
 int main(int argc, char* argv[])
 {
-  const char* filename = (argc > 1) ? argv[1] : "data/eight.off";
-  std::ifstream input(filename);
+  const std::string filename = (argc > 1) ? argv[1] : CGAL::data_file_path("meshes/eight.off");
 
-  Surface_mesh mesh;
-  if (!input || !(input >> mesh) || mesh.is_empty()) {
-    std::cerr << "Not a valid off file." << std::endl;
+  Mesh mesh;
+  if(!PMP::IO::read_polygon_mesh(filename, mesh))
+  {
+    std::cerr << "Invalid input." << std::endl;
     return 1;
   }
 

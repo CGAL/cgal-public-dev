@@ -96,11 +96,11 @@ namespace CGAL {
         };
         /// \endcond
 
-        /// \ingroup PkgSolverInterfaceRef
+        /// \ingroup PkgSolverInterfaceMIP
         ///
         /// The variable of a mixed integer program.
         ///
-        /// \cgalModels `MixedIntegerProgramVariable`
+        /// \cgalModels{MixedIntegerProgramVariable}
         template <typename FT>
         class Variable : public Solver_entry<FT>, public Bound<FT>
         {
@@ -195,11 +195,11 @@ namespace CGAL {
         };
         /// \endcond
 
-        /// \ingroup PkgSolverInterfaceRef
+        /// \ingroup PkgSolverInterfaceMIP
         ///
         /// The linear constraint of a mixed integer program.
         ///
-        /// \cgalModels `MixedIntegerProgramLinearConstraint`
+        /// \cgalModels{MixedIntegerProgramLinearConstraint}
         template <typename FT>
         class Linear_constraint : public Linear_expression<FT>, public Bound<FT>
         {
@@ -227,11 +227,11 @@ namespace CGAL {
         };
 
 
-        /// \ingroup PkgSolverInterfaceRef
+        /// \ingroup PkgSolverInterfaceMIP
         ///
         /// The linear objective of a mixed integer program.
         ///
-        /// \cgalModels `MixedIntegerProgramLinearObjective`
+        /// \cgalModels{MixedIntegerProgramLinearObjective}
         ///
         template <typename FT>
         class Linear_objective : public Linear_expression<FT>
@@ -263,7 +263,7 @@ namespace CGAL {
                 /// \endcond
         };
 
-        /// \ingroup PkgSolverInterfaceRef
+        /// \ingroup PkgSolverInterfaceMIP
         ///
         /// The class `CGAL::Mixed_integer_program_traits` provides an interface for
         /// formulating and solving (constrained or unconstrained) mixed integer
@@ -273,15 +273,15 @@ namespace CGAL {
         ///       classes, i.e., `CGAL::GLPK_mixed_integer_program_traits` or
         ///                  `CGAL::SCIP_mixed_integer_program_traits`. Alternatively, use
         ///       `CGAL::Mixed_integer_program_traits` as a base to derive a new model
-        ///       (using e.g., <a href = "https://projects.coin-or.org/Cbc"> CBC </a>,
-        ///       <a href = "http://www.gurobi.com/"> Gurobi </a> for better
+        ///       (using e.g., <a href = "https://github.com/coin-or/Cbc"> CBC </a>,
+        ///       <a href = "https://www.gurobi.com/"> Gurobi </a> for better
         ///       performance).
         ///
         /// \cond SKIP_IN_MANUAL
         /// \tparam FT Number type
         /// \endcond
         ///
-        /// \cgalModels `MixedIntegerProgramTraits`
+        /// \cgalModels{MixedIntegerProgramTraits}
         template <typename FT>
         class Mixed_integer_program_traits
         {

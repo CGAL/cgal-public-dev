@@ -35,14 +35,14 @@ int main()
     obj = CGAL::intersection(s1,s2);
 
     // check the variant return type
-    CGAL::cpp11::result_of<K::Intersect_2(Triangle_2, Triangle_2) >::type o_variant = CGAL::intersection(t1,t2);
+    const auto o_variant = CGAL::intersection(t1,t2);
     if(!o_variant) {
       std::cerr << "ERROR, empty" << std::endl;
       return EXIT_FAILURE;
     }
 
-    V = NULL;
-    if( !(V = boost::get<std::vector<Point_2> >(&(*o_variant)))  ){
+    V = nullptr;
+    if( !(V = std::get_if<std::vector<Point_2> >(&(*o_variant)))  ){
       std::cerr << "ERROR, something other than vector< point_2 >" << std::endl;
       return EXIT_FAILURE;
     }
@@ -75,14 +75,14 @@ int main()
     }
 
     // check the variant return type
-    CGAL::cpp11::result_of<K::Intersect_3(Triangle_3, Triangle_3)>::type o_variant = CGAL::intersection(t1,t2);
+    const auto o_variant = CGAL::intersection(t1,t2);
     if(!o_variant) {
       std::cerr << "ERROR, empty" << std::endl;
       return EXIT_FAILURE;
     }
 
-    V = NULL;
-    if( !(V = boost::get<std::vector<Point_3> > (&(*o_variant)))  ){
+    V = nullptr;
+    if( !(V = std::get_if<std::vector<Point_3> > (&(*o_variant)))  ){
       std::cerr << "ERROR" << std::endl;
       return EXIT_FAILURE;
     }

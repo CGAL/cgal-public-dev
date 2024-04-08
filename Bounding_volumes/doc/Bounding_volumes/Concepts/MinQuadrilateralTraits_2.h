@@ -5,10 +5,12 @@
 
 The concept `MinQuadrilateralTraits_2` defines types and operations
 needed to compute minimum enclosing quadrilaterals of a planar point
-set using the functions `min_rectangle_2`,
-`min_parallelogram_2` and `min_strip_2`.
+set using the functions `min_rectangle_2()`,
+`min_parallelogram_2()` and `min_strip_2()`.
 
-\cgalHasModel `CGAL::Min_quadrilateral_default_traits_2<K>`
+\cgalHasModelsBegin
+\cgalHasModels{CGAL::Min_quadrilateral_default_traits_2<K>}
+\cgalHasModelsEnd
 
 \sa `CGAL::min_rectangle_2()`
 \sa `CGAL::min_parallelogram_2()`
@@ -262,4 +264,3 @@ const ;
 /// @}
 
 }; /* end MinQuadrilateralTraits_2 */
-

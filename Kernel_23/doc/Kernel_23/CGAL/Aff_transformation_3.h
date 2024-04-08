@@ -2,7 +2,6 @@ namespace CGAL {
 
 /*!
 \ingroup kernel_classes3
-\ingroup kernel_affine
 
 The class `Aff_transformation_3` represents three-dimensional affine transformations.
 The general form of an affine transformation is based on a homogeneous
@@ -29,7 +28,7 @@ In three-dimensional space we have a \f$ 4\times 4\f$ matrix
 \f$ m_{32}\f$ are always zero and therefore do not appear in the
 constructors.
 
-\cgalModels `Hashable` if `Kernel` is a cartesian kernel and if `Kernel::FT` is `Hashable`
+\cgalModels{Hashable if `Kernel` is a cartesian kernel and if `Kernel::FT` is `Hashable`}
 
 \sa `CGAL::Aff_transformation_2<Kernel>`
 \sa `CGAL::Identity_transformation`
@@ -198,6 +197,17 @@ bool is_even() const;
 returns `true`, if the transformation is reflecting.
 */
 bool is_odd() const;
+
+/*!
+returns `true`, if the object was constructed using the tag `CGAL::Scaling`, or is the result of the composition of only such scaling transformation objects.
+*/
+bool is_scaling() const;
+
+/*!
+returns `true`, if the object was constructed using the tag `CGAL::Translation`, or is the result of the composition of only such translation transformation objects.
+*/
+bool is_translation() const;
+
 
 /// @}
 

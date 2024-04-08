@@ -5,31 +5,14 @@
 #include <CGAL/test_macros.h>
 #include <CGAL/use.h>
 
-#ifdef CGAL_USE_LEDA
+#include <CGAL/Exact_integer.h>
+#include <CGAL/Exact_rational.h>
 
-#include <CGAL/leda_integer.h>
-#include <CGAL/leda_real.h>
-typedef leda_integer RT;
-typedef leda_real    FT;
-
-#elif defined CGAL_USE_GMP
-
-#include <CGAL/Gmpz.h>
-#include <CGAL/Gmpq.h>
-typedef CGAL::Gmpz RT;
-typedef CGAL::Gmpq FT;
-
-#else
-
-#include <CGAL/MP_Float.h>
-#include <CGAL/Quotient.h>
-typedef CGAL::MP_Float     RT;
-typedef CGAL::Quotient<RT> FT;
-
-#endif
+typedef CGAL::Exact_integer RT;
+typedef CGAL::Exact_rational FT;
 
 int main()
-{ CGAL::set_pretty_mode ( std::cerr );
+{ CGAL::IO::set_pretty_mode ( std::cerr );
   CGAL_TEST_START;
 {
   typedef CGAL::Homogeneous_d<RT> Kernel;
@@ -383,4 +366,3 @@ int main()
 }
   CGAL_TEST_END;
 }
-

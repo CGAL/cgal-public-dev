@@ -19,7 +19,7 @@
 
 #include <boost/config.hpp>
 #include <boost/iterator_adaptors.hpp>
-#include <boost/optional/optional.hpp>
+#include <optional>
 #include <boost/tuple/tuple.hpp>
 #include <boost/format.hpp>
 #include <boost/graph/graph_traits.hpp>
@@ -34,6 +34,21 @@
 
 namespace CGAL {
 namespace Surface_mesh_simplification {
+
+namespace internal {
+
+  struct Dummy_filter {
+  template <typename Profile>
+  inline
+  const std::optional<typename Profile::Point>
+  operator()(const Profile&, const std::optional<typename Profile::Point>& op) const
+  {
+    return op;
+  }
+
+};
+
+} // namespace internal
 
 template<class Handle>
 inline bool handle_assigned(Handle h) { Handle null; return h != null; }
@@ -58,7 +73,7 @@ struct No_constrained_edge_map
   typedef bool                                                      value_type;
   typedef value_type                                                reference;
   typedef boost::readable_property_map_tag                          category;
-  friend bool get(No_constrained_edge_map, key_type) { return false; }
+  friend value_type get(No_constrained_edge_map, key_type) { return false; }
 };
 
 } // namespace Surface_mesh_simplification
@@ -79,7 +94,7 @@ inline std::string matrix_to_string(const Matrix& m) {
 }
 
 template<class T>
-inline std::string optional_to_string(const boost::optional<T>& o) {
+inline std::string optional_to_string(const std::optional<T>& o) {
   if(o)
     return boost::str(boost::format("%1%") % *o);
   else return std::string("NONE");

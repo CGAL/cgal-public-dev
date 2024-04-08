@@ -10,6 +10,11 @@
 //
 // Author(s)     : Sven Schoenherr <sven@inf.ethz.ch>, Bernd Gaertner
 
+#ifndef CGAL_MIN_CIRCLE_2_MIN_CIRCLE_2_IMPL_H
+#define CGAL_MIN_CIRCLE_2_MIN_CIRCLE_2_IMPL_H
+
+#include <CGAL/license/Bounding_volumes.h>
+
 #include <iterator>
 
 namespace CGAL {
@@ -28,7 +33,7 @@ operator << ( std::ostream& os,
     typedef  typename Min_circle_2<Traits_>::Point  Point;
     typedef  ostream_iterator<Point>       Os_it;
 
-    switch ( CGAL::get_mode( os)) {
+    switch ( CGAL::IO::get_mode( os)) {
 
       case CGAL::IO::PRETTY:
         os << endl;
@@ -60,8 +65,8 @@ operator << ( std::ostream& os,
         break;
 
       default:
-        CGAL_optimisation_assertion_msg( false,
-                                         "CGAL::get_mode( os) invalid!");
+        CGAL_assertion_msg( false,
+                                         "CGAL::IO::get_mode( os) invalid!");
         break; }
 
     return( os);
@@ -73,11 +78,11 @@ operator >> ( std::istream& is, CGAL::Min_circle_2<Traits_>& min_circle)
 {
     using namespace std;
 
-    switch ( CGAL::get_mode( is)) {
+    switch ( CGAL::IO::get_mode( is)) {
 
       case CGAL::IO::PRETTY:
         cerr << endl;
-        cerr << "Stream must be in ascii or binary mode" << endl;
+        cerr << "Stream must be in ASCII or binary mode" << endl;
         break;
 
       case CGAL::IO::ASCII:
@@ -89,7 +94,7 @@ operator >> ( std::istream& is, CGAL::Min_circle_2<Traits_>& min_circle)
         break;
 
       default:
-        CGAL_optimisation_assertion_msg( false, "CGAL::IO::mode invalid!");
+        CGAL_assertion_msg( false, "CGAL::IO::mode invalid!");
         break; }
 
     return( is);
@@ -98,3 +103,5 @@ operator >> ( std::istream& is, CGAL::Min_circle_2<Traits_>& min_circle)
 } //namespace CGAL
 
 // ===== EOF ==================================================================
+
+#endif // CGAL_MIN_CIRCLE_2_MIN_CIRCLE_2_IMPL_H

@@ -8,7 +8,7 @@
 #include <CGAL/Surface_mesh_simplification/Edge_collapse_visitor_base.h>
 
 // Stop-condition policy
-#include <CGAL/Surface_mesh_simplification/Policies/Edge_collapse/Count_ratio_stop_predicate.h>
+#include <CGAL/Surface_mesh_simplification/Policies/Edge_collapse/Edge_count_ratio_stop_predicate.h>
 
 #include <iostream>
 #include <fstream>
@@ -44,7 +44,7 @@ struct My_visitor : SMS::Edge_collapse_visitor_base<Surface_mesh>
   My_visitor(Stats* s) : stats(s) {}
 
   // Called during the collecting phase for each edge collected.
-  void OnCollected(const Profile&, const boost::optional<double>&)
+  void OnCollected(const Profile&, const std::optional<double>&)
   {
     ++(stats->collected);
     std::cerr << "\rEdges collected: " << stats->collected << std::flush;
@@ -53,7 +53,7 @@ struct My_visitor : SMS::Edge_collapse_visitor_base<Surface_mesh>
   // Called during the processing phase for each edge selected.
   // If cost is absent the edge won't be collapsed.
   void OnSelected(const Profile&,
-                  boost::optional<double> cost,
+                  std::optional<double> cost,
                   std::size_t initial,
                   std::size_t current)
   {
@@ -69,7 +69,7 @@ struct My_visitor : SMS::Edge_collapse_visitor_base<Surface_mesh>
   // Called during the processing phase for each edge being collapsed.
   // If placement is absent the edge is left uncollapsed.
   void OnCollapsing(const Profile&,
-                    boost::optional<Point> placement)
+                    std::optional<Point> placement)
   {
     if(!placement)
       ++(stats->placement_uncomputable);
@@ -95,7 +95,7 @@ struct My_visitor : SMS::Edge_collapse_visitor_base<Surface_mesh>
 int main(int argc, char** argv)
 {
   Surface_mesh surface_mesh;
-  const char* filename = (argc > 1) ? argv[1] : "data/cube.off";
+  const std::string filename = (argc > 1) ? argv[1] : CGAL::data_file_path("meshes/small_cube.off");
   std::ifstream is(filename);
   if(!is || !(is >> surface_mesh))
   {
@@ -112,7 +112,7 @@ int main(int argc, char** argv)
   // In this example, the simplification stops when the number of undirected edges
   // drops below xx% of the initial count
   const double ratio = (argc > 2) ? std::stod(argv[2]) : 0.1;
-  SMS::Count_ratio_stop_predicate<Surface_mesh> stop(ratio);
+  SMS::Edge_count_ratio_stop_predicate<Surface_mesh> stop(ratio);
 
   Stats stats;
   My_visitor vis(&stats);
@@ -120,12 +120,12 @@ int main(int argc, char** argv)
   // The index maps are not explicitelty passed as in the previous
   // example because the surface mesh items have a proper id() field.
   // On the other hand, we pass here explicit cost and placement
-  // function which differ from the default policies, ommited in
+  // function which differ from the default policies, omitted in
   // the previous example.
   int r = SMS::edge_collapse(surface_mesh, stop, CGAL::parameters::visitor(vis));
 
   std::cout << "\nEdges collected: "  << stats.collected
-            << "\nEdges proccessed: " << stats.processed
+            << "\nEdges processed: "  << stats.processed
             << "\nEdges collapsed: "  << stats.collapsed
             << std::endl
             << "\nEdges not collapsed due to topological constraints: "  << stats.non_collapsable
@@ -136,9 +136,7 @@ int main(int argc, char** argv)
   std::cout << "\nFinished!\n" << r << " edges removed.\n"
             << surface_mesh.number_of_edges() << " final edges.\n";
 
-  std::ofstream os(argc > 3 ? argv[3] : "out.off");
-  os.precision(17);
-  os << surface_mesh;
+  CGAL::IO::write_polygon_mesh((argc > 3) ? argv[3] : "out.off", surface_mesh, CGAL::parameters::stream_precision(17));
 
   return EXIT_SUCCESS;
 }
