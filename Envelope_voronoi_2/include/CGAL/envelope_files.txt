@@ -1,0 +1,36 @@
+envelope_on_surface_3.h    envelope_3.h 
+=======================================
+Calls for global functions.
+
+Eos_divide_and_conquer_3.h   Envelope_divide_and_conquer_3.h
+============
+D&C algorithm.
+
+
+Comments
+========
+1) In some places I have added the Envelope_3 namespace. This is an internal 
+   namespace that should not be visible to others.
+
+
+Problems
+========
+1) How to use the random dividor but still have consistent tests?
+   Ophir: I suggest adding it as argument and in test used the "arbitrary".
+          I also suggest to change the name to "alternating dividor".
+2) Should revise the code using template-template parameters in 
+   Envelope_on_surface_diagram_2.h. Consult Efi. In the meantime, I removed it.
+3) There is no possibility of using a different DCEL. (Basically, there is no
+   such possibility.)
+4) global is_valid function does not work in some cases. (SFINAE?)
+   Check why and uncomment the is_valid in the envelope package 
+   (I have commented some is_valid to make it work).
+5) remove HE_COMP_RES.
+6) Why is notify_before_global_change()/notify_after_global_change() is in the
+   Accessor and not inside the arrangement itself? Who will remember to call 
+   this function?
+7) is_at_infinity in Envelope_divide_and_conquer --- I am not sure what should 
+   be there instead. In the meanwhile, this can leave unneeded vertices on
+   the boundary of the parameter space.
+
+
