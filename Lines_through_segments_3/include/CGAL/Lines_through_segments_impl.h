@@ -40,7 +40,9 @@
 #if LTS_DRAW_ARR
 #include "Arrangement_general_functions.h"
 #endif
+
 #define ONE_SWEEP 1
+
 /*************************************************************
  * This class is the core of the implementation, it holds arrangements on
  * surface at the following types:
@@ -56,107 +58,110 @@ template <typename Lines_through_segments_traits_3,
           typename With_segments>
 class Lines_through_segments_impl {
 public:
-  typedef Lines_through_segments_traits_3 Traits_3;
+  using Traits_3 = Lines_through_segments_traits_3;
 
 private:
- typedef typename Traits_3::Alg_kernel             Alg_kernel;
- typedef typename Traits_3::Rational_kernel        Rational_kernel;
- typedef typename Alg_kernel::FT                   Algebraic;
- typedef typename Rational_kernel::FT              Rational;
- typedef typename Traits_3::Traits_arr_on_plane_2  Traits_arr_on_plane_2;
- typedef typename Traits_3::Traits_arr_on_sphere_2 Traits_arr_on_sphere_2;
+  using Alg_kernel = typename Traits_3::Alg_kernel;
+  using Rational_kernel = typename Traits_3::Rational_kernel;
+  using Algebraic = typename Alg_kernel::FT;
+  using Rational = typename Rational_kernel::FT;
+  using Traits_arr_on_plane_2 = typename Traits_3::Traits_arr_on_plane_2;
+  using Traits_arr_on_sphere_2 = typename Traits_3::Traits_arr_on_sphere_2;
 
- typedef typename Alg_kernel::Point_3              Alg_point_3;
- typedef typename Alg_kernel::Line_3               Alg_line_3;
- typedef typename Alg_kernel::Segment_3            Alg_segment_3;
- typedef typename Alg_kernel::Plane_3              Alg_plane_3;
+  using Alg_point_3 = typename Alg_kernel::Point_3;
+  using Alg_line_3 = typename Alg_kernel::Line_3;
+  using Alg_segment_3 = typename Alg_kernel::Segment_3;
+  using Alg_plane_3 = typename Alg_kernel::Plane_3;
+  using Point_on_plane_2 = typename Traits_arr_on_plane_2::Point_2;
+  using Point_on_sphere_2 = typename Traits_arr_on_sphere_2::Point_2;
 
- typedef typename Rational_kernel::Point_3         Rational_point_3;
- typedef typename Rational_kernel::Line_3          Rational_line_3;
- typedef typename Rational_kernel::Segment_3       Rational_segment_3;
- typedef typename Rational_kernel::Plane_3         Rational_plane_3;
- typedef typename Rational_kernel::Point_2         Rational_point_2;
- typedef typename Rational_kernel::Direction_3     Rational_direction_3;
+  using Rational_point_3 = typename Rational_kernel::Point_3;
+  using Rational_line_3 = typename Rational_kernel::Line_3;
+  using Rational_segment_3 = typename Rational_kernel::Segment_3;
+  using Rational_plane_3 = typename Rational_kernel::Plane_3;
+  using Rational_point_2 = typename Rational_kernel::Point_2;
+  using Rational_direction_3 = typename Rational_kernel::Direction_3;
 
   /***************************************************/
   /*    Arrangement on plane typedefs.               */
   /***************************************************/
 
   /* Extended each edge with its creator line segment.*/
-  typedef Lines_through_segments_arr_ext_dcel<Traits_arr_on_plane_2,
-                                              Rational_segment_3>
-    Dcel_on_plane;
-  typedef CGAL::Arrangement_2<Traits_arr_on_plane_2, Dcel_on_plane>
-    Arrangement_on_plane_2;
-  typedef Lines_through_segments_point_adapt_2<
-    Traits_3,
-    typename Traits_arr_on_plane_2::Point_2,Algebraic> Point_2;
-  typedef typename Traits_arr_on_plane_2::Curve_2         Rational_arc_2;
+  using Dcel_on_plane =
+    Lines_through_segments_arr_ext_dcel<Traits_arr_on_plane_2,
+                                        Rational_segment_3>;
+  using Arrangement_on_plane_2 =
+    CGAL::Arrangement_2<Traits_arr_on_plane_2, Dcel_on_plane>;
 
-  typedef Lines_through_segments_arr_observer<Arrangement_on_plane_2>
-    Lines_through_segments_arr_observer_on_plane;
+  using Point_2 =
+    Lines_through_segments_point_adapt_2<Traits_3, Point_on_plane_2,
+                                         Algebraic>;
+  using Rational_arc_2 = typename Traits_arr_on_plane_2::Curve_2;
 
-  typedef Lines_through_segments_arr_object<Traits_3, With_segments>
-    Arr_object;
+  using Lines_through_segments_arr_observer_on_plane =
+    Lines_through_segments_arr_observer<Arrangement_on_plane_2>;
+
+  using Arr_object =
+    Lines_through_segments_arr_object<Traits_3, With_segments>;
 
   /***************************************************/
   /*    Arrangement on sphere typedefs.              */
   /***************************************************/
 
-  typedef Lines_through_segments_arr_ext_dcel<Traits_arr_on_sphere_2,
-                                              Rational_segment_3>
-    Dcel_geom_traits;
-  typedef CGAL::Arr_spherical_topology_traits_2<Traits_arr_on_sphere_2,
-                                                Dcel_geom_traits>
-    Topol_traits_2;
+  using Dcel_geom_traits =
+    Lines_through_segments_arr_ext_dcel<Traits_arr_on_sphere_2,
+                                        Rational_segment_3>;
+  using Topol_traits_2 =
+    CGAL::Arr_spherical_topology_traits_2<Traits_arr_on_sphere_2,
+                                          Dcel_geom_traits>;
 
-  typedef Lines_through_segments_point_adapt_3<Traits_3,
-                                               typename Traits_arr_on_sphere_2::Point_2,
-                                               Rational>
-    Point_on_sphere_2;
+  using Adapted_point_on_sphere_2 =
+    Lines_through_segments_point_adapt_3<Traits_3, Point_on_sphere_2,
+                                         Rational>;
 
-  typedef typename Traits_arr_on_sphere_2::X_monotone_curve_2
-    X_monotone_curve_on_Sphere_2;
-  typedef typename Traits_arr_on_sphere_2::Curve_2          Curve_2;
-  typedef typename Traits_arr_on_sphere_2::Base_curve_2     Curve_2_no_data;
-  typedef typename Point_on_sphere_2::Location_type         Location_type;
+  using X_monotone_curve_on_Sphere_2 =
+    typename Traits_arr_on_sphere_2::X_monotone_curve_2;
+  using Curve_2 = typename Traits_arr_on_sphere_2::Curve_2;
+  using Curve_2_no_data = typename Traits_arr_on_sphere_2::Base_curve_2;
+  using Location_type = typename Adapted_point_on_sphere_2::Location_type;
 
-  typedef CGAL::Arrangement_on_surface_2<Traits_arr_on_sphere_2, Topol_traits_2>
-    Arrangement_on_sphere_2;
+  using Arrangement_on_sphere_2 =
+    CGAL::Arrangement_on_surface_2<Traits_arr_on_sphere_2, Topol_traits_2>;
 
-  typedef class Lines_through_segments_arr_plane_faces<
-    Arrangement_on_plane_2, Lines_through_segments_arr_observer_on_plane>
-  Lines_through_segments_arr_plane_faces;
+  using Lines_through_segments_arr_plane_faces =
+    class Lines_through_segments_arr_plane_faces
+    <Arrangement_on_plane_2, Lines_through_segments_arr_observer_on_plane>;
 
-  typedef Lines_through_segments_isolated_points
-  <Point_and_segment_pair<Rational_point_3, Rational_segment_3>,
-   Compare_points_on_line<Rational_point_3, Rational_segment_3> >
-  Isolated_points_on_line;
+  using Isolated_points_on_line =
+    Lines_through_segments_isolated_points
+    <Point_and_segment_pair<Rational_point_3, Rational_segment_3>,
+     Compare_points_on_line<Rational_point_3, Rational_segment_3>>;
 
-  typedef Lines_through_segments_isolated_points
-  <Point_and_segment_pair<Point_2, Rational_segment_3>,
-   Compare_points_on_plane<Point_2, Rational_segment_3> >
-    Isolated_points_on_plane;
+  using Isolated_points_on_plane =
+    Lines_through_segments_isolated_points
+    <Point_and_segment_pair<Point_2, Rational_segment_3>,
+     Compare_points_on_plane<Point_2, Rational_segment_3>>;
 
-  typedef Lines_through_segments_isolated_points
-  <Point_and_segment_pair<Point_on_sphere_2, Rational_segment_3>,
-   Compare_points_on_sphere <Point_on_sphere_2, Rational_segment_3> >
-    Isolated_points_on_sphere;
+  using Isolated_points_on_sphere =
+    Lines_through_segments_isolated_points
+    <Point_and_segment_pair<Adapted_point_on_sphere_2, Rational_segment_3>,
+     Compare_points_on_sphere <Adapted_point_on_sphere_2, Rational_segment_3>>;
 
-  typedef Point_and_segment_pair<Point_2, Rational_segment_3>
-    Point_on_plane_and_line_pair;
+  using Point_on_plane_and_line_pair =
+    Point_and_segment_pair<Point_2, Rational_segment_3>;
 
-  typedef Point_and_segment_pair<Point_on_sphere_2, Rational_segment_3>
-    Point_on_sphere_and_line_pair;
+  using Point_on_sphere_and_line_pair =
+    Point_and_segment_pair<Adapted_point_on_sphere_2, Rational_segment_3>;
 
-  typedef Lines_through_segments_traits_on_plane_adapt<Traits_3>  Traits_2_adapt;
+  using Traits_2_adapt =
+    Lines_through_segments_traits_on_plane_adapt<Traits_3>;
 
-  typedef typename Lines_through_segments_output_obj
-  <Traits_3, Rational_segment_3>::Through_3 Through_3;
+  using Through_3 =
+    typename Lines_through_segments_output_obj<Traits_3, Rational_segment_3>::Through_3;
 
 public:
-  typedef Lines_through_segments_arr_observer<Arrangement_on_sphere_2>
-    Lines_through_segments_arr_observer_on_sphere;
+  using Lines_through_segments_arr_observer_on_sphere =
+    Lines_through_segments_arr_observer<Arrangement_on_sphere_2>;
 
   //!
   class Arc_end_points {
@@ -263,10 +268,10 @@ public:
     delete m_obs_on_plane;
   }
 
-  Lines_through_segments_impl(const Rational_segment_3 * _s1,
-                              const Rational_segment_3 * _s2,
-                              const Alg_kernel *alg_kernel,
-                              const Rational_kernel *rational_kernel) :
+  Lines_through_segments_impl(const Rational_segment_3* _s1,
+                              const Rational_segment_3* _s2,
+                              const Alg_kernel* alg_kernel,
+                              const Rational_kernel* rational_kernel) :
     m_arr_g_func(alg_kernel),
     m_alg_kernel(alg_kernel),
     m_rat_kernel(rational_kernel),
@@ -288,7 +293,7 @@ public:
     m_S1_S2_num_of_common_lines = 0;
     Compare_points_on_plane<Point_2, Rational_segment_3> cp;
     m_isolated_points_on_plane = Isolated_points_on_plane(cp);
-    Compare_points_on_sphere<Point_on_sphere_2, Rational_segment_3> cs;
+    Compare_points_on_sphere<Adapted_point_on_sphere_2, Rational_segment_3> cs;
     m_isolated_points_on_sphere = Isolated_points_on_sphere(cs);
 
     /* m_S1 is a point */
@@ -309,8 +314,7 @@ public:
       line_is_a_point(m_S1->source(),*m_S2);
     }
     else if (m_rat_kernel->do_intersect_3_object()(m_S1->supporting_line(),
-                                                   m_S2->supporting_line()))
-    {
+                                                   m_S2->supporting_line())) {
       m_S1_S2_on_the_same_plane = true;
       if (m_S1->supporting_line().has_on(m_S2->source()))
         m_S1_S2_plane = Rational_plane_3(m_S1->supporting_line(),
@@ -382,9 +386,8 @@ public:
    *      S3
    *************************************************************/
 
-  void
-  add_element_to_arrangement_S1S2_on_the_same_plane(const Rational_segment_3& S3)
-  {
+  void add_element_to_arrangement_S1S2_on_the_same_plane
+  (const Rational_segment_3& S3) {
     if (S3.source() == S3.target()) {
       if (m_S1_S2_plane.has_on(S3.source())) {
         add_element_to_plane_arrangement(S3.source(), S3);
@@ -410,7 +413,7 @@ public:
         }
         else {
           auto loc = location(p0_x_diff, p0_y_diff, p0_z_diff);
-          Point_on_sphere_2 pos(p0_x_diff, p0_y_diff, p0_z_diff, loc);
+          Adapted_point_on_sphere_2 pos(p0_x_diff, p0_y_diff, p0_z_diff, loc);
           m_isolated_points_on_sphere.add_element
             (Point_on_sphere_and_line_pair(pos, &S3));
         }
@@ -472,10 +475,10 @@ public:
     }
   }
   /*************************************************************
-   * The following constructor handles the case where the 3 segments are on the
-   * same plane.
-   * It gets a segment and adds a plane which represents all the lines that passes
-   * through S3 and S1 and S2.
+   * The following constructor handles the case where the 3 segments are on
+   * the same plane.
+   * It gets a segment and adds a plane which represents all the lines that
+   * passes through S3 and S1 and S2.
    *
    * The function finds the lines of the end points of S1 with the end points
    * of S2, for each line it finds the intersection with S3.
@@ -500,10 +503,9 @@ public:
    *
    *************************************************************/
   void add_element_to_plane_arrangement(const Rational_segment_3& S3) {
-    if (!m_S1_S2_intersect &&
+    if (! m_S1_S2_intersect &&
         m_S1->supporting_line().has_on(S3.source()) &&
-        m_S1->supporting_line().has_on(S3.target()))
-    {
+        m_S1->supporting_line().has_on(S3.target())) {
       Rational_point_3 ipoint;
       Rational S2_t;
       CGAL::Object result =
@@ -514,7 +516,7 @@ public:
         m_g_func.get_scalar_from_point_on_line(ipoint,
                                                m_S2->supporting_line(),S2_t);
 
-        typename Traits_arr_on_plane_2::Point_2 temp_p;
+        Point_on_plane_2 temp_p;
         m_traits_2_adapt.construct_point(temp_p, Rational(0), S2_t);
 
         m_isolated_points_on_plane.add_element
@@ -525,8 +527,7 @@ public:
     }
     else if (!m_S1_S2_intersect &&
              m_S2->supporting_line().has_on(S3.source()) &&
-             m_S2->supporting_line().has_on(S3.target()))
-    {
+             m_S2->supporting_line().has_on(S3.target())) {
       Rational_point_3 ipoint;
       Rational S1_t;
       CGAL::Object result =
@@ -537,7 +538,7 @@ public:
         m_g_func.get_scalar_from_point_on_line(ipoint,
                                                m_S1->supporting_line(),S1_t);
 
-        typename Traits_arr_on_plane_2::Point_2 temp_p;
+        Point_on_plane_2 temp_p;
         m_traits_2_adapt.construct_point(temp_p, S1_t, Rational(0));
 
         m_isolated_points_on_plane.add_element
@@ -547,14 +548,13 @@ public:
       }
     }
     else {
-      typedef
+      using Lines_through_segments_3_segs_2 =
         Lines_through_segments_3_segs_2<Traits_3,
                                         Lines_through_segments_arr_plane_faces,
                                         Isolated_points_on_plane,
                                         Point_on_plane_and_line_pair,
                                         Arc_end_points,
-                                        With_segments>
-        Lines_through_segments_3_segs_2;
+                                        With_segments>;
 
       Lines_through_segments_3_segs_2 lines_through_segments_3_segs;
 
@@ -576,7 +576,8 @@ public:
    *      S3
    *************************************************************/
 
-  void add_element_to_one_dimensional_arrangement(const Rational_segment_3& S3) {
+  void
+  add_element_to_one_dimensional_arrangement(const Rational_segment_3& S3) {
     m_obs_on_plane->set_is_plane(false);
     /* Get the intersection point of */
     CGAL::Object result =
@@ -595,7 +596,7 @@ public:
           m_g_func.get_scalar_from_point_on_line(ipoint, m_S2->supporting_line(),
                                                  S2_t);
 
-          typename Traits_arr_on_plane_2::Point_2 temp_p;
+          Point_on_plane_2 temp_p;
           m_traits_2_adapt.construct_point(temp_p, Rational(0), S2_t);
 
           m_isolated_points_on_plane.add_element
@@ -615,7 +616,7 @@ public:
             m_g_func.get_scalar_from_point_on_line(qpoint,
                                                    m_S2->supporting_line(),S2_t);
 
-            typename Traits_arr_on_plane_2::Point_2 temp_p;
+            Point_on_plane_2 temp_p;
             m_traits_2_adapt.construct_point(temp_p, Rational(0), S2_t);
 
             m_isolated_points_on_plane.add_element
@@ -670,51 +671,32 @@ public:
     // overlap
 
     if (lines_are_equal) {
-      if (seg2.has_on(seg1.source()) &&
-          seg2.source() != seg1.source() &&
+      if (seg2.has_on(seg1.source()) && seg2.source() != seg1.source() &&
           seg2.target() != seg1.source())
-      {
         return true;
-      }
-      if (seg2.has_on(seg1.target()) &&
-          seg2.source() != seg1.source() &&
+      if (seg2.has_on(seg1.target()) && seg2.source() != seg1.source() &&
           seg2.target() != seg1.source())
-      {
         return true;
-      }
 
-      if (seg1.has_on(seg2.source()) &&
-          seg2.source() != seg1.source() &&
+      if (seg1.has_on(seg2.source()) && seg2.source() != seg1.source() &&
           seg2.target() != seg1.source())
-      {
         return true;
-      }
-      if (seg1.has_on(seg2.target()) &&
-          seg2.source() != seg1.source() &&
+      if (seg1.has_on(seg2.target()) && seg2.source() != seg1.source() &&
           seg2.target() != seg1.source())
-      {
         return true;
-      }
 
-      if (seg1.source() == seg2.source() &&
-          seg1.target() == seg2.target())
-      {
+      if (seg1.source() == seg2.source() && seg1.target() == seg2.target())
         return true;
-      }
-
-      if (seg1.source() == seg2.target() &&
-          seg1.target() == seg2.source())
-      {
+      if (seg1.source() == seg2.target() && seg1.target() == seg2.source())
         return true;
-      }
     }
 
     return false;
   }
 
   void add_element_to_arrangement(const Rational_segment_3& S3) {
-    typedef Point_and_segment_pair<Rational_point_3,Rational_segment_3>
-      Point_on_line_and_segment_pair;
+    using Point_on_line_and_segment_pair =
+      Point_and_segment_pair<Rational_point_3,Rational_segment_3>;
 
     if (m_S1_S2_on_the_same_line) {
       CGAL::Object result =
@@ -895,14 +877,12 @@ public:
           result = m_rat_kernel->intersect_3_object()(S3_ipoint_S2,
                                                       m_S1->supporting_line());
           Rational_point_3 ipoint_S1;
-          if (CGAL::assign(ipoint_S1, result) &&
-              m_S1->has_on(ipoint_S1))
-          {
+          if (CGAL::assign(ipoint_S1, result) && m_S1->has_on(ipoint_S1)) {
             Rational S1_t;
             m_g_func.get_scalar_from_point_on_line(ipoint_S1,
                                                    m_S1->supporting_line(),
                                                    S1_t);
-            typename Traits_arr_on_plane_2::Point_2 temp_p;
+            Point_on_plane_2 temp_p;
             m_traits_2_adapt.construct_point(temp_p, S1_t, S2_t),
             m_isolated_points_on_plane.add_element
               (Point_on_plane_and_line_pair(Point_2(temp_p,
@@ -1032,7 +1012,7 @@ private:
                       p1_x_diff, p1_y_diff, p1_z_diff))
     {
       auto loc = location(p0_x_diff, p0_y_diff, p0_z_diff);
-      Point_on_sphere_2 pos(p0_x_diff, p0_y_diff, p0_z_diff, loc);
+      Adapted_point_on_sphere_2 pos(p0_x_diff, p0_y_diff, p0_z_diff, loc);
 #if ARR_ON_SUR_DEBUG
       std::cout << "Point on sphere" << std::endl;
 #endif
@@ -1045,8 +1025,8 @@ private:
     if (p0_z_diff >= 0 && p1_z_diff >= 0) {
       auto loc1 = location(p0_x_diff, p0_y_diff, p0_z_diff);
       auto loc2 = location(p1_x_diff, p1_y_diff, p1_z_diff);
-      Point_on_sphere_2 pos1(p0_x_diff, p0_y_diff, p0_z_diff, loc1);
-      Point_on_sphere_2 pos2(p1_x_diff, p1_y_diff, p1_z_diff, loc2);
+      Adapted_point_on_sphere_2 pos1(p0_x_diff, p0_y_diff, p0_z_diff, loc1);
+      Adapted_point_on_sphere_2 pos2(p1_x_diff, p1_y_diff, p1_z_diff, loc2);
       auto ctr = m_traits_on_sphere->construct_curve_2_object();
       auto cv = ctr(pos1.get_original_point(), pos2.get_original_point());
 #if ARR_ON_SUR_DEBUG
@@ -1057,8 +1037,8 @@ private:
     else if (p0_z_diff <= 0 && p1_z_diff <= 0) {
       auto loc1 = location(-p0_x_diff, -p0_y_diff, -p0_z_diff);
       auto loc2 = location(-p1_x_diff, -p1_y_diff, -p1_z_diff);
-      Point_on_sphere_2 pos1(-p0_x_diff, -p0_y_diff, -p0_z_diff, loc1);
-      Point_on_sphere_2 pos2(-p1_x_diff, -p1_y_diff, -p1_z_diff, loc2);
+      Adapted_point_on_sphere_2 pos1(-p0_x_diff, -p0_y_diff, -p0_z_diff, loc1);
+      Adapted_point_on_sphere_2 pos2(-p1_x_diff, -p1_y_diff, -p1_z_diff, loc2);
       auto ctr = m_traits_on_sphere->construct_curve_2_object();
       auto cv = ctr(pos1.get_original_point(), pos2.get_original_point());
 #if ARR_ON_SUR_DEBUG
@@ -1087,9 +1067,9 @@ private:
       if (p0_z_diff < 0) {
         auto loc1 = location(z_0_ipoint.x(), z_0_ipoint.y(), z_0_ipoint.z());
         auto loc2 = location(p1_x_diff, p1_y_diff, p1_z_diff);
-        Point_on_sphere_2 pos1(z_0_ipoint.x(), z_0_ipoint.y(), z_0_ipoint.z(),
+        Adapted_point_on_sphere_2 pos1(z_0_ipoint.x(), z_0_ipoint.y(), z_0_ipoint.z(),
                                loc1);
-        Point_on_sphere_2 pos2(p1_x_diff, p1_y_diff, p1_z_diff, loc2);
+        Adapted_point_on_sphere_2 pos2(p1_x_diff, p1_y_diff, p1_z_diff, loc2);
         auto ctr = m_traits_on_sphere->construct_curve_2_object();
         auto cv1 = ctr(pos1.get_original_point(), pos2.get_original_point());
 #if ARR_ON_SUR_DEBUG
@@ -1099,9 +1079,9 @@ private:
 
         loc1 = location(-z_0_ipoint.x(), -z_0_ipoint.y(), -z_0_ipoint.z());
         loc2 = location(-p0_x_diff, -p0_y_diff, -p0_z_diff);
-        Point_on_sphere_2 qos1(-z_0_ipoint.x(), -z_0_ipoint.y(),
+        Adapted_point_on_sphere_2 qos1(-z_0_ipoint.x(), -z_0_ipoint.y(),
                                -z_0_ipoint.z(), loc1);
-        Point_on_sphere_2 qos2(-p0_x_diff, -p0_y_diff, -p0_z_diff, loc2);
+        Adapted_point_on_sphere_2 qos2(-p0_x_diff, -p0_y_diff, -p0_z_diff, loc2);
         auto cv2 = ctr(qos1.get_original_point(), qos2.get_original_point());
 #if ARR_ON_SUR_DEBUG
         std::cout << "Add arc4 = " << cv2 << std::endl;
@@ -1111,9 +1091,9 @@ private:
       else {
         auto loc1 = location(z_0_ipoint.x(), z_0_ipoint.y(), z_0_ipoint.z());
         auto loc2 = location(p0_x_diff, p0_y_diff, p0_z_diff);
-        Point_on_sphere_2 pos1(z_0_ipoint.x(), z_0_ipoint.y(), z_0_ipoint.z(),
+        Adapted_point_on_sphere_2 pos1(z_0_ipoint.x(), z_0_ipoint.y(), z_0_ipoint.z(),
                                loc1);
-        Point_on_sphere_2 pos2(p0_x_diff, p0_y_diff, p0_z_diff, loc2);
+        Adapted_point_on_sphere_2 pos2(p0_x_diff, p0_y_diff, p0_z_diff, loc2);
         auto ctr = m_traits_on_sphere->construct_curve_2_object();
         auto cv1 = ctr(pos1.get_original_point(), pos2.get_original_point());
 #if ARR_ON_SUR_DEBUG
@@ -1123,9 +1103,9 @@ private:
 
         loc1 = location(-z_0_ipoint.x(), -z_0_ipoint.y(), -z_0_ipoint.z());
         loc2 = location(-p1_x_diff, -p1_y_diff, -p1_z_diff);
-        Point_on_sphere_2 qos1(-z_0_ipoint.x(), -z_0_ipoint.y(),
+        Adapted_point_on_sphere_2 qos1(-z_0_ipoint.x(), -z_0_ipoint.y(),
                                -z_0_ipoint.z(), loc1);
-        Point_on_sphere_2 qos2(-p1_x_diff, -p1_y_diff, -p1_z_diff, loc2);
+        Adapted_point_on_sphere_2 qos2(-p1_x_diff, -p1_y_diff, -p1_z_diff, loc2);
         auto cv2 = ctr(qos1.get_original_point(), qos2.get_original_point());
 #if ARR_ON_SUR_DEBUG
         std::cout << "Add arc6 = " << cv2 << std::endl;
@@ -1281,19 +1261,19 @@ private:
   class Created_from_2_unique_lines {
   public:
 
-    bool operator()
-    (typename Arrangement_2::Halfedge_around_vertex_const_circulator first,
-     bool output_s3, /* When true S3 is also part of the output. */
-     const typename Arrangement_2::Dcel::Ext_obj** obj3,
-     const typename Arrangement_2::Dcel::Ext_obj** obj4)
-    {
-      typename Arrangement_2::Halfedge_around_vertex_const_circulator curr;
+    using Halfedge_around_vertex_const_circulator =
+      typename Arrangement_2::Halfedge_around_vertex_const_circulator;
+    bool operator()(Halfedge_around_vertex_const_circulator first,
+                    bool output_s3, /* When true S3 is also part of the output. */
+                    const typename Arrangement_2::Dcel::Ext_obj** obj3,
+                    const typename Arrangement_2::Dcel::Ext_obj** obj4) {
+      Halfedge_around_vertex_const_circulator curr;
 
       /* Its sufficient to look only on the first originating segment
          since if there are two distinct segments the entire edge is
          the output.
       */
-      const typename Arrangement_2::Dcel::Ext_obj *temp_obj =
+      const typename Arrangement_2::Dcel::Ext_obj* temp_obj =
         *(first->segs_begin());
       if (output_s3) *obj3 = temp_obj;
       else temp_obj = *obj3 ;
@@ -1303,8 +1283,7 @@ private:
         const typename Arrangement_2::Dcel::Ext_obj* obj =
           *curr->segs_begin();
 
-        if (obj != temp_obj)
-        {
+        if (obj != temp_obj) {
           *obj4 = obj;
           return true;
         }
@@ -1384,9 +1363,8 @@ public:
 
 private:
   template<typename OutputIterator>
-  void find_all_lines_sphere(OutputIterator out)
-  {
-    typedef typename Arrangement_on_sphere_2::Vertex_iterator Vertex_it;
+  void find_all_lines_sphere(OutputIterator out) {
+    using Vertex_it = typename Arrangement_on_sphere_2::Vertex_iterator;
     Vertex_it vit;
     typename Arrangement_on_sphere_2::Edge_iterator   eit;
 
@@ -1436,7 +1414,7 @@ private:
                                     *eit->segs_begin(), With_segments());
           }
           else {
-            typedef typename Arrangement_on_sphere_2::Halfedge Edge;
+            using Edge = typename Arrangement_on_sphere_2::Halfedge;
             typename Arrangement_on_sphere_2::Dcel::const_iterator it =
               eit->segs_begin();
             typename Arrangement_on_sphere_2::Dcel::const_iterator next_it =
@@ -1444,10 +1422,7 @@ private:
             next_it++;
 
             Through_3 through_3(segment,m_intersection_point_S1S2);
-            LTS::insert_transversal(out,
-                                    through_3,
-                                    m_S1,m_S2,
-                                    *it,
+            LTS::insert_transversal(out, through_3, m_S1,m_S2, *it,
                                     *next_it, With_segments());
           }
 
@@ -1480,7 +1455,7 @@ private:
                     << "NEW LINE SPHERE*****************\n\n"
                     << std::endl;
 #endif
-          Point_on_sphere_2 intersection_point = vit->point();
+          Adapted_point_on_sphere_2 intersection_point = vit->point();
 #if ARR_ON_SUR_DEBUG
           std::cout << "vit->degree() = " <<vit->degree() << std::endl;
 #endif
@@ -1560,9 +1535,9 @@ private:
 
       if (m_isolated_points_on_sphere.size() > 0) {
         Created_from_2_unique_lines<Arrangement_on_sphere_2> valid_vertex;
-        typedef CGAL::Arr_naive_point_location<Arrangement_on_sphere_2>
-          Naive_pl;
-        Naive_pl     naive_pl;
+        using Naive_pl =
+          CGAL::Arr_naive_point_location<Arrangement_on_sphere_2>;
+        Naive_pl naive_pl;
 
         m_arr_g_func.add_isolated_points(m_isolated_points_on_sphere,
                                          m_arr_on_sphere, naive_pl,
@@ -1581,8 +1556,7 @@ private:
    * arr_on_plane if S2 is a line and otherwise as arr_on_line.
    *************************************************************************/
   void line_is_a_point(const Rational_point_3& P1,
-                       const Rational_segment_3& S2)
-  {
+                       const Rational_segment_3& S2) {
     if (S2.source() == S2.target()) {
       m_S1_S2_line = Rational_line_3(P1,S2.source());
       m_S1_S2_on_the_same_line = true;
@@ -1635,10 +1609,10 @@ public:
 
 #if LTS_DRAW_ARR
   void draw_arr() {
-    typedef Arrangement_general_functions<Rational_kernel, Alg_kernel,
-                                          Arrangement_on_plane_2,
-                                          Traits_2_adapt, Point_2>
-      Arrangement_draw;
+    using Arrangement_draw =
+      Arrangement_general_functions<Rational_kernel, Alg_kernel,
+                                    Arrangement_on_plane_2,
+                                    Traits_2_adapt, Point_2>;
     Arrangement_draw arr_draw;
 
     arr_draw(*m_arr_on_plane);
