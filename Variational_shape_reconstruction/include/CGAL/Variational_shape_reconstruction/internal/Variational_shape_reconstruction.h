@@ -4,28 +4,27 @@
 #include <CGAL/Splitters.h>
 
 #include "trianglefit.h"
-
 #include "clustering.h"
 
 namespace qem {
-typedef typename std::unordered_set<std::pair<int, int>, HashPairIndex, EqualPairIndex>     IntPairSet; 
-typedef std::vector<IntList>                                    IntListList;
-typedef CGAL::Bbox_3   Bbox;
+typedef typename std::unordered_set<std::pair<int, int>, HashPairIndex, EqualPairIndex> IntPairSet; 
+typedef std::vector<IntList> IntListList;
+typedef CGAL::Bbox_3 Bbox;
 
 
 class Variational_shape_reconstruction
 {
     private:
 
-        //generators
+        // generators
         size_t m_generator_count;
         std::vector<int> m_generators;
 
         // geometry
-        std::vector<std::pair<Point, size_t>> m_points;
+        std::vector<std::pair<Point, size_t> > m_points;
         Pointset pointset_;
 
-        // knntree
+        // KNN tree
         KNNTree m_tree;
         int m_num_knn = 12;
         
@@ -35,27 +34,29 @@ class Variational_shape_reconstruction
         std::vector<QEM_metric> m_generators_qem;
 
         //init
-        Bbox            m_bbox;
-        double          m_diag;
-        double          m_spacing;
+        Bbox m_bbox;
+        double m_diag;
+        double m_spacing;
 
-        TriangleFit              m_triangle_fit;
+        TriangleFit m_triangle_fit;
         std::vector<int> m_generators_count;
         std::shared_ptr<Clustering> m_cluster;
-        //int m_verbose_level;
-        INIT_QEM_GENERATOR m_init_qem_generator = INIT_QEM_GENERATOR::KMEANS_FARTHEST;
+
+        // int m_verbose_level;
+        INIT_QEM_GENERATORS m_init_generators = INIT_QEM_GENERATORS::KMEANS_FARTHEST;
         VERBOSE_LEVEL m_verbose_level = VERBOSE_LEVEL::HIGH;
 
 
     public:
+
     Variational_shape_reconstruction(const Pointset& pointset,
     int generator_count,
     double euclidean_distance_weight,
     VERBOSE_LEVEL verbose_level,
-    INIT_QEM_GENERATOR init_qem_generator
+    INIT_QEM_GENERATORS INIT_QEM_GENERATORS
     ) :
     m_verbose_level(verbose_level),
-    m_init_qem_generator(init_qem_generator),
+    m_init_generators(INIT_QEM_GENERATORS),
     m_generator_count(generator_count),
     m_euclidean_distance_weight(euclidean_distance_weight)
     {
@@ -74,16 +75,16 @@ class Variational_shape_reconstruction
         m_cluster = std::make_shared<Clustering>(pointset, m_num_knn,m_euclidean_distance_weight, m_verbose_level);
 
         std::cout << "Initialization" << std::endl;
-        switch(m_init_qem_generator)
+        switch(m_init_generators)
         {
-            case INIT_QEM_GENERATOR::KMEANS_PLUSPLUS:
+            case INIT_QEM_GENERATORS::KMEANS_PLUSPLUS:
                 init_random_generators_kmeanspp();
                 if(m_verbose_level != VERBOSE_LEVEL::LOW)
                 {
                     std::cout<<"Initialization method : KMEANS_PLUSPLUS\n";
                 }
             break;
-            case INIT_QEM_GENERATOR::KMEANS_FARTHEST:
+            case INIT_QEM_GENERATORS::KMEANS_FARTHEST:
                 init_random_generators_kmeans_farthest();
                 if(m_verbose_level != VERBOSE_LEVEL::LOW)
                 {
@@ -147,6 +148,7 @@ class Variational_shape_reconstruction
         }
 
     }
+
     /// @brief load the points from a pointset to the m_points list
     /// @param pointset 
     void load_points(const Pointset& pointset)
@@ -159,6 +161,7 @@ class Variational_shape_reconstruction
         if(m_verbose_level != VERBOSE_LEVEL::LOW)
             std::cout << "Number of points: " << pointset_.size() << std::endl;
     }
+
     /// @brief Compute the bounding box of the pointset
     void compute_bounding_box()
     {

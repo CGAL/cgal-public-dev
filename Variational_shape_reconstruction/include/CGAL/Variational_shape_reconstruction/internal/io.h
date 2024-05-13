@@ -1,5 +1,6 @@
 #ifndef CGAL_VARIATIONAL_SHAPE_RECONSTRUCTION_INTERNAL_IO_H
 #define CGAL_VARIATIONAL_SHAPE_RECONSTRUCTION_INTERNAL_IO_H
+
 #include "types.h"
 
     /// @brief Save the pointset colored by cluster 
@@ -28,6 +29,7 @@
         }
         CGAL::IO::write_XYZ(filename, pointset );
     }
+
     /// @brief Save the dual mesh 
     /// @param filename 
     /// @param m_dual_mesh 
@@ -41,6 +43,7 @@
         CGAL::write_off(mesh_file, m_dual_mesh);
         mesh_file.close();
     }
+
     /// @brief Save the soup of triangle of m_facets
     /// @param filename 
     /// @param m_facets list of the indices of each facet
@@ -96,6 +99,7 @@
 
         edge_file.close();
     }
+
     /// @brief Save the rimemanian graph 
     /// IE the graph of the neighbors as edge between the point and its neighbors
     /// @param filename 

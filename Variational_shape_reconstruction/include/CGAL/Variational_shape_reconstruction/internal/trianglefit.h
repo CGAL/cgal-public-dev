@@ -25,8 +25,8 @@
 
 
 
-
 namespace qem {
+
 class TriangleFit{
 public: // template
     typedef std::pair<int, int>                                     IntPair;
@@ -129,6 +129,7 @@ public: // function
         // init map
         for(int i = 0; i < m_points.size(); i++)
             adjacent_verts.insert({i, IntSet()});
+
         // fill map
         for(int i = 0; i < m_edges.size(); i++)
         {
@@ -163,6 +164,7 @@ public: // function
             m_facets.push_back(facet_list);
         }
     }
+
     void update_adjacent_edges(std::vector<float>& adjacent_edges)
     {
         if(m_points.size() == 0 || m_edges.size() == 0)
@@ -475,13 +477,13 @@ public: // function
         int p2 = m_edges[edge_ind].second;
         IntList facet = m_facets[facet_ind];
 
-        //std::cout << "p1 p2: " << p1 << " " << p2 << std::endl;
+        // std::cout << "p1 p2: " << p1 << " " << p2 << std::endl;
 
         int local_ind = -1;
 
         for(int i = 0; i < 3; i++)
         {
-            //std::cout << "Facet " << i << ": " << facet[i] << std::endl;
+            // std::cout << "Facet " << i << ": " << facet[i] << std::endl;
 
             if(facet[i] == p1)
             {
@@ -492,7 +494,7 @@ public: // function
 
         if(local_ind == -1)
         {
-            std::cout << "Wrong local index!!!!!!" << std::endl;
+            std::cout << "Wrong local index" << std::endl;
             return 0.;
         }
 
@@ -508,7 +510,7 @@ public: // function
     {
         if(m_points.size() == 0 || m_edges.size() == 0 || m_facets.size() < 4)
         { 
-            std::cout << "Candidate not available! Reconstruction stops!" << std::endl;
+            std::cout << "Candidate not available - Reconstruction stops" << std::endl;
             return;
         }
 

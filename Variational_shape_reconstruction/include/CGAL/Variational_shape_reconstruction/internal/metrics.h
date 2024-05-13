@@ -7,7 +7,7 @@
 #include "types.h"
 
 typedef CGAL::Aff_transformation_3<Kernel>  Aff_transformation;
-//template <class Kernel>
+
 class QEM_metric
 {
 public:
@@ -47,17 +47,6 @@ public: // functions
     EVec10d& tensors() { return m_tensor; }
     const EVec10d& tensors() const { return m_tensor; }
 
-    /*MatrixXd 4x4_matrix()
-    {
-        MatrixXd qem(4, 4);
-
-        qem <<  m_tensor[0], m_tensor[1], m_tensor[2], m_tensor[3],
-                m_tensor[1], m_tensor[4], m_tensor[5], m_tensor[6],
-                m_tensor[2], m_tensor[5], m_tensor[7], m_tensor[8],
-                m_tensor[3], m_tensor[6], m_tensor[8], m_tensor[9];
-
-        return qem;
-    }*/
 
     Matrix4d get_4x4_svd_matrix()
     {
@@ -93,6 +82,7 @@ public: // functions
 
         return qem;
     }
+
     /// @brief Compute the tensor using a point and its normal and weighted by the area
     /// @param area 
     /// @param query 
@@ -117,6 +107,7 @@ public: // functions
 
         m_tensor = m_tensor * area;
     }
+
     /// @brief Compute the tensor (probabilistic qem) using a point and its normal and weighted by the area
     /// @param area 
     /// @param mean_query 
@@ -150,6 +141,7 @@ public: // functions
 
         m_tensor = m_tensor * area;
     }
+
     /// @brief Compute the qem tensor for a query point and a list of areas and normals
     /// @param query 
     /// @param areas 
@@ -182,6 +174,7 @@ public: // functions
             m_tensor[9] += area * d * d;
         }
     }
+
     /// @brief Compute the affine transformation on a sphere to display the qem error as en ellipsoid
     /// @return the affine transformation
     Aff_transformation aff_transform_sphere()
@@ -193,13 +186,16 @@ public: // functions
                 m_tensor[2], m_tensor[5], m_tensor[7];
 
         Eigen::EigenSolver<MatrixXd> es(A);
+
         // eigenvalues
         VectorXd D = es.eigenvalues().real();
         D = D.cwiseMax(1e-5).cwiseInverse(); // take inverse
         MatrixXd D_inv = MatrixXd::Zero(3, 3);
         D_inv.diagonal() = D / D.sum(); // normalization
+
         // eigenvectors
         MatrixXd V = es.eigenvectors().real();
+
         // new matrix
         MatrixXd new_trans = V * D_inv * V.transpose();
         Aff_transformation aff( new_trans(0, 0), new_trans(0, 1), new_trans(0, 2),
@@ -226,11 +222,13 @@ public: // functions
         this->tensors() = this->tensors() * scale;
         return *this;
     }
+
     /// @brief Compute optimal point using either SVD or the direct inverse
     /// @param cluster_qem 
     /// @param cluster_pole 
     /// @return the optimal point
-    Point compute_optimal_point(QEM_metric& cluster_qem, Point& cluster_pole)
+    Point compute_optimal_point(QEM_metric& cluster_qem, 
+        Point& cluster_pole)
     {
         // solve Qx = b
         Eigen::MatrixXd qem_mat = cluster_qem.get_4x4_svd_matrix();

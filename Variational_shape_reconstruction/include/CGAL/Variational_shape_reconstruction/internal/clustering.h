@@ -21,25 +21,29 @@
 typedef std::pair<Point, std::size_t>                                               Point_with_index;
 typedef std::vector<Point_with_index>                                               PwiList;
 typedef CGAL::First_of_pair_property_map<Point_with_index>                          Point_map_pwi;
-// knntree
+
+// KNN tree
 typedef CGAL::Search_traits_3<Kernel>                                               Traits_base;
 typedef CGAL::Search_traits_adapter<Point_with_index,Point_map_pwi, Traits_base>    Traits;
 typedef CGAL::Orthogonal_k_neighbor_search<Traits>                                  K_neighbor_search;
 typedef typename K_neighbor_search::Tree                                            KNNTree;
 typedef typename K_neighbor_search::Distance                                        KNNDistance;
 
-//Pqueue
-typedef qem::Candidate<int>                                          CCandidate;
-typedef qem::Candidate_more<CCandidate>                              More;
-typedef qem::Custom_priority_queue<CCandidate, More>                 PQueue;
+// Priority queue
+typedef qem::Candidate<int> CCandidate;
+typedef qem::Candidate_more<CCandidate> More;
+typedef qem::Custom_priority_queue<CCandidate, More> PQueue;
+
 namespace qem
 {   
     class Clustering
     {   
         public:
+
         Clustering()
         {
         }
+
         Clustering(const Pointset& pointset,
         size_t num_knn,
         double euclidean_distance_weight,
@@ -51,6 +55,7 @@ namespace qem
             m_verbose_level = verbose_level;
             csv_writer =std::make_shared<DataWriter>(pointset.size());
         }
+
         /// @brief Compute the qem for each point based on the k closest neighbors
         void initialize_qem_map(const KNNTree& m_tree)
         {
@@ -104,14 +109,16 @@ namespace qem
                             << "property uchar green\n"
                             << "property uchar blue\n"
                             << "end_header\n";
+
                 std::vector<Vector> colors;
                 for(int i = 0 ; i < component_count; i++)
                 {
                     double r = (double) rand() / (RAND_MAX);
                     double g = (double) rand() / (RAND_MAX);
                     double b = (double) rand() / (RAND_MAX);
-                    colors.push_back(Vector(r,g,b));
+                    colors.push_back(Vector(r, g, b));
                 }
+
                 int point_index =0;
                 for(Pointset::const_iterator it = pointset_.begin(); it != pointset_.end(); ++ it)
                 {
@@ -119,16 +126,19 @@ namespace qem
                     auto point = pointset_.point(*it);
                     clustering_connected << point.x() << " " << point.y() << " " << point.z() << " ";
                     auto normal = colors[m_component[point_index]];
-                    clustering_connected << static_cast<int>(255*normal.x()) << " " << static_cast<int>(255*normal.y()) << " " << static_cast<int>(255*normal.z()) << std::endl;
+                    clustering_connected << static_cast<int>(255.0 * normal.x()) << " " << 
+                                            static_cast<int>(255.0 * normal.y()) << " " << 
+                                            static_cast<int>(255.0 * normal.z()) << std::endl;
 
                     point_index++;
                 }
                 clustering_connected.close();
             }
+
             if(m_verbose_level != VERBOSE_LEVEL::LOW)
             {
-                std::cout<< "m_component.size() "<<m_component.size()<<std::endl;
-                std::cout<< "point_count "<<point_count<<std::endl;
+                std::cout << "m_component.size() " << m_component.size() << std::endl;
+                std::cout << "point_count " << point_count << std::endl;
             }
 
         }
@@ -145,8 +155,8 @@ namespace qem
             {
                 int idx = queue.back();
                 queue.pop_back();
-                m_component[idx]=component_idx;
-                m_visited[idx]=true;
+                m_component[idx] = component_idx;
+                m_visited[idx] = true;
                 for(auto neighbors_idx : m_graph[idx])
                 {
                     if(!m_visited[neighbors_idx])
@@ -167,6 +177,7 @@ namespace qem
             qem.init_qem_metrics_face(area, query, normal);
             return qem;
         }
+
         /// @brief Compute the sum of the qem neighbor points  for each point in m_vqems
         ///  Also build the graph of neighbors 
         /// @param m_tree the knn tree
@@ -610,15 +621,16 @@ namespace qem
             private:
                 Pointset pointset_;
                 int m_num_knn = 12;
-                double m_dist_weight=0.1;
+                double m_dist_weight = 0.1;
                 //qem
                 std::vector<QEM_metric> m_pqems;
                 std::vector<QEM_metric> m_vqems;
-                std::vector<std::vector<int>> m_graph;
+                std::vector<std::vector<int> > m_graph;
                 std::vector<bool> m_visited;
                 std::vector<int> m_component;
-                int component_count=0;
+                int component_count = 0;
                 VERBOSE_LEVEL m_verbose_level;
+
                 // csv
                 int m_id =0;
                 std::shared_ptr<DataWriter> csv_writer;
