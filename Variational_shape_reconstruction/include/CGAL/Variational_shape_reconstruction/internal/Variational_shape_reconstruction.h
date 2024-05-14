@@ -1,21 +1,40 @@
+// Copyright (c) 2023 GeometryFactory
+// All rights reserved.
+//
+// This file is part of CGAL (www.cgal.org).
+//
+// $URL$
+// $Id$
+// SPDX-License-Identifier: GPL-3.0-or-later OR LicenseRef-Commercial
+//
+// Author(s) : Tong Zhao, Mathieu Ladeuil, Pierre Alliez
+
 #include "io.h"
 #include <CGAL/Search_traits_3.h>
 #include <CGAL/Search_traits_adapter.h>
 #include <CGAL/Splitters.h>
 
+<<<<<<< HEAD
 #include "trianglefit.h"
+=======
+#include "generator.h"
+>>>>>>> e07eca01c3c7c2b979efcef3cb3b2ea423b16ef1
 #include "clustering.h"
+#include "trianglefit.h"
 
 namespace qem {
 typedef typename std::unordered_set<std::pair<int, int>, HashPairIndex, EqualPairIndex> IntPairSet; 
 typedef std::vector<IntList> IntListList;
 typedef CGAL::Bbox_3 Bbox;
 
+typedef typename CGenerator<Kernel> Generator;
+
 
 class Variational_shape_reconstruction
 {
     private:
 
+<<<<<<< HEAD
         // generators
         size_t m_generator_count;
         std::vector<int> m_generators;
@@ -23,16 +42,25 @@ class Variational_shape_reconstruction
         // geometry
         std::vector<std::pair<Point, size_t> > m_points;
         Pointset pointset_;
+=======
+        // Partition
+        std::map<int, int> m_vlabels;
+
+        // generators
+        std::vector<Generator> m_generators;
+
+        // geometry
+        std::vector<std::pair<Point, size_t> > m_points;
+        Pointset m_pointset;
+>>>>>>> e07eca01c3c7c2b979efcef3cb3b2ea423b16ef1
 
         // KNN tree
         KNNTree m_tree;
         int m_num_knn = 12;
         
         double m_euclidean_distance_weight;
-        //Region growing
-        std::map<int, int> m_vlabels;
-        std::vector<QEM_metric> m_generators_qem;
 
+<<<<<<< HEAD
         //init
         Bbox m_bbox;
         double m_diag;
@@ -44,12 +72,25 @@ class Variational_shape_reconstruction
 
         // int m_verbose_level;
         INIT_QEM_GENERATORS m_init_generators = INIT_QEM_GENERATORS::KMEANS_FARTHEST;
-        VERBOSE_LEVEL m_verbose_level = VERBOSE_LEVEL::HIGH;
+=======
 
+        // init
+        Bbox m_bbox;
+        double m_diag;
+        double m_spacing;
+
+        TriangleFit m_triangle_fit;
+        //std::vector<int> m_generators_count;
+        std::shared_ptr<Clustering> m_pClustering;
+
+>>>>>>> e07eca01c3c7c2b979efcef3cb3b2ea423b16ef1
+        VERBOSE_LEVEL m_verbose_level = VERBOSE_LEVEL::HIGH;
+        INIT_QEM_GENERATORS m_init_qem_generators = INIT_QEM_GENERATORS::FARTHEST;
 
     public:
 
     Variational_shape_reconstruction(const Pointset& pointset,
+<<<<<<< HEAD
     int generator_count,
     double euclidean_distance_weight,
     VERBOSE_LEVEL verbose_level,
@@ -58,22 +99,30 @@ class Variational_shape_reconstruction
     m_verbose_level(verbose_level),
     m_init_generators(INIT_QEM_GENERATORS),
     m_generator_count(generator_count),
+=======
+        const int nb_generators,
+        const FT euclidean_distance_weight,
+        const VERBOSE_LEVEL verbose_level,
+        const INIT_QEM_GENERATORS init_qem_generator) :
+    m_verbose_level(verbose_level),
+>>>>>>> e07eca01c3c7c2b979efcef3cb3b2ea423b16ef1
     m_euclidean_distance_weight(euclidean_distance_weight)
     {
-        pointset_ = pointset;
-        load_points(pointset_);
+        m_pointset = pointset;
+        load_points(m_pointset);
         compute_bounding_box();   
 
-        // init kdtree
+        // init KD tree
         m_tree.clear();
         m_tree.insert(m_points.begin(), m_points.end());     
                                                             
         // compute average spacing
         m_spacing = CGAL::compute_average_spacing<CGAL::Sequential_tag>(m_points, 6,
-         CGAL::parameters::point_map(CGAL::First_of_pair_property_map<std::pair<Point, std::size_t>>()));            
+         CGAL::parameters::point_map(CGAL::First_of_pair_property_map<std::pair<Point, std::size_t> >()));
 
-        m_cluster = std::make_shared<Clustering>(pointset, m_num_knn,m_euclidean_distance_weight, m_verbose_level);
+        m_pClustering = std::make_shared<Clustering>(pointset, m_num_knn, m_euclidean_distance_weight, m_verbose_level);
 
+<<<<<<< HEAD
         std::cout << "Initialization" << std::endl;
         switch(m_init_generators)
         {
@@ -146,20 +195,76 @@ class Variational_shape_reconstruction
             clustering_file.close();
             std::cout << "clustering at initialization written to disk" << std::endl;
         }
+=======
+        // init QEM per point and per "vertex" (a point and its neighborhood)
+        m_pClustering->initialize_qem_per_point(m_tree);
+        m_pClustering->initialize_qem_per_vertex(m_tree);
+>>>>>>> e07eca01c3c7c2b979efcef3cb3b2ea423b16ef1
 
+        // init generators
+        initialize_generators(init_qem_generator, nb_generators);
+        init_generator_qems(); // init qem of generators and related optimal locations
     }
 
+<<<<<<< HEAD
+=======
+    void init_generator_qems()
+    {
+        std::vector<Generator>::iterator it;
+        for (it = m_generators.begin(); it != m_generators.end(); it++)
+        {
+            Generator& generator = *it;
+            const int point_index = generator.point_index(); // index of input point
+            generator.location() = compute_optimal_point(vqem(point_index), m_pointset.point(point_index));
+        }
+    }
+
+    QEM_metric& vqem(const int index)
+    {
+        return m_pClustering->vqem(index);
+    }
+
+	void initialize_generators(const INIT_QEM_GENERATORS init_qem_generator,
+        const int nb_generators)
+	{
+		std::cout << "Initialization with " << nb_generators << " generators" << std::endl;
+		switch (m_init_qem_generators)
+		{
+            /*
+		case INIT_QEM_GENERATORS::KMEANS_PLUSPLUS:
+			init_generators_kmeanspp(nb_generators);
+			if (m_verbose_level != VERBOSE_LEVEL::LOW)
+				std::cout << "Initialization method : KMEANS_PLUSPLUS" << std::endl;
+			break;
+		case INIT_QEM_GENERATORS::FARTHEST:
+			init_generators_farthest(nb_generators);
+			if (m_verbose_level != VERBOSE_LEVEL::LOW)
+				std::cout << "Initialization method : FARTHEST" << std::endl;
+			break;
+            */
+		default:
+			init_random_generators(nb_generators);
+			if (m_verbose_level != VERBOSE_LEVEL::LOW)
+				std::cout << "Initialization method : RANDOM" << std::endl;
+			break;
+		}
+	}
+
+
+
+
+>>>>>>> e07eca01c3c7c2b979efcef3cb3b2ea423b16ef1
     /// @brief load the points from a pointset to the m_points list
     /// @param pointset 
     void load_points(const Pointset& pointset)
     {
-        for( Pointset::const_iterator pointset_it = pointset.begin(); pointset_it != pointset.end(); ++ pointset_it )
+        for( Pointset::const_iterator m_pointsetit = pointset.begin(); m_pointsetit != pointset.end(); ++ m_pointsetit )
         {
-            const auto point = pointset.point(*pointset_it);
-            m_points.push_back(std::make_pair(point, std::distance<Pointset::const_iterator>(pointset.begin(), pointset_it)));    
+            const auto point = pointset.point(*m_pointsetit);
+            m_points.push_back(std::make_pair(point, std::distance<Pointset::const_iterator>(pointset.begin(), m_pointsetit)));    
         }
         if(m_verbose_level != VERBOSE_LEVEL::LOW)
-            std::cout << "Number of points: " << pointset_.size() << std::endl;
+            std::cout << "Number of points: " << m_pointset.size() << std::endl;
     }
 
     /// @brief Compute the bounding box of the pointset
@@ -175,63 +280,78 @@ class Variational_shape_reconstruction
         if(m_verbose_level != VERBOSE_LEVEL::LOW)
             std::cout << "Diagonal of bounding box: " << m_diag << std::endl;
     }
+    
+    /*
     std::vector<int> get_generators_per_component()
     {
-
-        auto g = m_cluster->get_generators_per_component(m_generators);
+        auto g = m_pClustering->get_generators_per_component(m_generators);
         for(int i = 0; i < g.size(); i++)
-        {
-            std::cout<< "\ncomponent "<<i<<" gen count : "<<g[i]<<"\n";
-        }
+            std::cout<< "component " << i << " gen count : " << g[i] << std::endl;
+
         return g;
     }
+    */
+
+    /*
     int get_component_count()
     {
-        return m_cluster->get_component_count();
+        return m_pClustering->get_component_count();
     }
+    */
+
     bool is_partionning_valid()
     {
-        return m_vlabels.size() == pointset_.size();
+        return m_vlabels.size() == m_pointset.size();
     }
+
     void set_knn(int num_knn)
     {
         m_num_knn = num_knn;
     }
     void set_distance_weight(int euclidean_distance_weight)
     {
-        m_cluster->set_distance_weight(euclidean_distance_weight);
+        m_pClustering->set_distance_weight(euclidean_distance_weight);
     }
+
     /// @brief Initialize with random generators
-    void init_random_generators()
+    void init_random_generators(const std::size_t nb_generators)
     {
         std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
 
-        std::vector<int> num_range(pointset_.size());
-        std::iota(num_range.begin(), num_range.end(), 0);
+        std::vector<int> num_range(m_pointset.size());
+        std::iota(num_range.begin(), num_range.end(), 0); // fill range with increasing values
 
-        std::random_device rd;
-        std::mt19937 g(27);
-        std::shuffle(num_range.begin(), num_range.end(), g);
+        // random shuffler
+        std::mt19937 random_generator(27);
+        std::shuffle(num_range.begin(), num_range.end(), random_generator);
 
-        std::set<int> selected_indices;
-        for(int i = 0; i < m_generator_count; i++)
+        std::set<int> selected_indices; // set to get them sorted
+        for(int i = 0; i < nb_generators; i++)
+        {
             selected_indices.insert(num_range[i]);
+            // std::cout << "index: " << num_range[i] << std::endl;
+        }
             
-        for(auto &elem: selected_indices) {
-            m_generators.push_back(elem);
-        }   
+        for(auto &point_index : selected_indices) 
+        {
+            m_generators.push_back(Generator(point_index, m_pointset.point(point_index)));
+            // std::cout << "point index: " << point_index << std::endl;
+        }
+
         if(m_verbose_level != VERBOSE_LEVEL::LOW)
-            std::cout << "Number of random poles: " << m_generators.size() << std::endl;
+            std::cout << "#random generators: " << m_generators.size() << std::endl;
 
         std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
         if(m_verbose_level != VERBOSE_LEVEL::LOW)
-            std::cerr << "Random poles in " << std::chrono::duration_cast<std::chrono::microseconds>(end - begin).count() << "[us]" << std::endl;
-        
+            std::cerr << "Random generators in " << std::chrono::duration_cast<std::chrono::microseconds>(end - begin).count() << "ms" << std::endl;
     }
+    
+    /*
+
     /// @brief Initiatlize starting with one random generator and kmeans++
-    void init_random_generators_kmeanspp()
+    void init_generators_kmeanspp(const std::size_t nb_generators)
     {
-        std::vector<int> num_range(pointset_.size());
+        std::vector<int> num_range(m_pointset.size());
         std::iota(num_range.begin(), num_range.end(), 0);
         std::set<int> selected_indices;
         // one generator for k means ++
@@ -242,17 +362,17 @@ class Variational_shape_reconstruction
             m_generators.push_back(elem);
         }   
         std::mt19937 gen;
-        for(int i = 1; i < m_generator_count; i++)
+        for(int i = 1; i < nb_generators; i++)
         {
             std::vector<float> distance_list;
-            for( Pointset::const_iterator pointset_it = pointset_.begin(); pointset_it != pointset_.end(); ++ pointset_it )
+            for( Pointset::const_iterator m_pointsetit = m_pointset.begin(); m_pointsetit != m_pointset.end(); ++ m_pointsetit )
             {
-                const auto point = pointset_.point(*pointset_it);
+                const auto point = m_pointset.point(*m_pointsetit);
                 float distance = std::numeric_limits<float>::max();
                 // we iterate over previously selected generators
                 for(int j = 0 ; j < m_generators.size(); j++)
                 {
-                    float distance_to_generator = CGAL::squared_distance(pointset_.point(m_generators[j]), point);
+                    float distance_to_generator = CGAL::squared_distance(m_pointset.point(m_generators[j]), point);
                     distance = std::min(distance, distance_to_generator);
                 }
                 distance_list.push_back(distance);
@@ -267,11 +387,11 @@ class Variational_shape_reconstruction
 
     }
     /// @brief Initiatlize starting with one random generator and kmeans farthest
-    void init_random_generators_kmeans_farthest()
+    void init_generators_farthest(const std::size_t nb_generators)
     {
         std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
 
-        std::vector<int> num_range(pointset_.size());
+        std::vector<int> num_range(m_pointset.size());
         std::iota(num_range.begin(), num_range.end(), 0);
 
         std::random_device rd;
@@ -288,66 +408,117 @@ class Variational_shape_reconstruction
             m_generators.push_back(elem);
         }   
 
-        for(int i = 1; i < m_generator_count; i++)
+        for(int i = 1; i < nb_generators; i++)
         {
-            std::vector<float> distance_list;
-            for( Pointset::const_iterator pointset_it = pointset_.begin(); pointset_it != pointset_.end(); ++ pointset_it )
+            // fixme: use FT
+            std::vector<double> distance_list;
+
+            for( Pointset::const_iterator m_pointsetit = m_pointset.begin(); m_pointsetit != m_pointset.end(); ++ m_pointsetit )
             {
-                const auto point = pointset_.point(*pointset_it);
-                float distance = std::numeric_limits<float>::max();
+                const auto point = m_pointset.point(*m_pointsetit);
+                double distance = std::numeric_limits<double>::max();
                 // we iterate over previously selected generators
                 for(int j = 0 ; j < m_generators.size(); j++)
                 {
-                    float distance_to_generator = CGAL::squared_distance(pointset_.point(m_generators[j]),point);
+                    double distance_to_generator = CGAL::squared_distance(m_pointset.point(m_generators[j]), point);
                     distance = std::min(distance, distance_to_generator);
                 }
                 distance_list.push_back(distance);
             }
+
             // We take the point the farthest as new generator
-            auto max_distance_iterator = std::max_element(distance_list.begin(),distance_list.end());
+            auto max_distance_iterator = std::max_element(distance_list.begin(), distance_list.end());
             size_t index_max_distance = max_distance_iterator-distance_list.begin();
             m_generators.push_back(index_max_distance);
         }
 
         if(m_verbose_level != VERBOSE_LEVEL::LOW)
-            std::cout << "Number of random poles: " << m_generators.size() << std::endl;
+            std::cout << "Number of generators: " << m_generators.size() << std::endl;
 
         std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
         if(m_verbose_level != VERBOSE_LEVEL::LOW)
-            std::cerr << "Random poles in " << std::chrono::duration_cast<std::chrono::microseconds>(end - begin).count() << "[us]" << std::endl;
+            std::cerr << "Generators in " << std::chrono::duration_cast<std::chrono::microseconds>(end - begin).count() << "[us]" << std::endl;
         
     }
-    /// @brief region growing for n steps user defined
-    /// @param steps 
-    void region_growing(size_t steps)
+
+    */
+
+    /// @brief partition
+    void partition()
     {
         std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
+
         m_vlabels.clear();
-        m_generators_qem.clear();
-        m_cluster->region_growing(m_vlabels, m_generators_qem, m_generators, true);
-        assert(m_vlabels.size() == pointset_.size());
-        std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
-        auto elapsed = std::chrono::duration_cast<std::chrono::microseconds>(end - begin).count()/1000;
-        if(m_verbose_level != VERBOSE_LEVEL::LOW)
-            std::cerr << "\nRegion growing in " << elapsed << "[ms]" << std::endl;
+        m_pClustering->partition(m_vlabels, m_generators, true);
+
+        assert(m_vlabels.size() == m_pointset.size());
     }
     
-    /// @brief update poles
-    /// @param flag 
-    void update_poles(bool &flag)
+    /// @brief update generators
+    /// return true if generators have changed
+    bool update_generators()
     {
-        flag = m_cluster->update_poles(m_vlabels,m_generators_qem, m_generators);
+        return m_pClustering->update_generators(m_vlabels, m_generators);
     }
-    /// @brief region growing for n steps user defined
+
+    /// @brief partition and update generators for n user-defined steps 
     /// @param steps 
-    void region_growing_and_update_poles(size_t steps)
+    void partition_and_update_generators(size_t steps)
     {
         bool flag = true;
-        for(int i = 0 ; i < steps && flag; i++)
+        for(int i = 0; i < steps && flag; i++)
         {
-            region_growing(steps);
-            update_poles(flag);
+            partition();
+            flag = this->update_generators();
         }
+    }
+
+    double compute_clustering_errors()
+    {
+        return m_pClustering->compute_errors(m_vlabels, m_generators);
+    }
+
+    void save_clustering_to_ply(std::string& filename)
+    {
+		std::ofstream file;
+        file.open(filename);
+
+        file << "ply\n"
+			<< "format ascii 1.0\n"
+			<< "element vertex " << m_pointset.size() << "\n"
+			<< "property float x\n"
+			<< "property float y\n"
+			<< "property float z\n"
+			<< "property uchar red\n"
+			<< "property uchar green\n"
+			<< "property uchar blue\n"
+			<< "end_header\n";
+
+            std::vector<Vector> colors;
+            for (int i = 0; i < m_generators.size(); i++)
+            {
+                double r = (double)rand() / (RAND_MAX);
+                double g = (double)rand() / (RAND_MAX);
+                double b = (double)rand() / (RAND_MAX);
+                colors.push_back(Vector(r, g, b));
+            }
+
+            for (int i = 0; i < m_pointset.size(); i++)
+            {
+                if (m_vlabels.find(i) == m_vlabels.end())
+                    continue;
+
+                Vector& color = colors[m_vlabels[i]];
+
+                Point point = m_pointset.point(i);
+                file << point.x() << " " << point.y() << " " << point.z() << " ";
+                int r = static_cast<int>(255 * color.x());
+                int g = static_cast<int>(255 * color.y());
+                int b = static_cast<int>(255 * color.z());
+                file << r << " " << g << " " << b << std::endl;
+            }
+
+            file.close();
     }
 
 
@@ -359,13 +530,16 @@ class Variational_shape_reconstruction
     {
         if(m_verbose_level != VERBOSE_LEVEL::LOW)
             std::cout << "Begin guided split..." << std::endl;
+
         std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
-        auto clusters_count = m_cluster->guided_split_clusters(m_vlabels,m_generators,m_diag,m_spacing,split_ratio, iteration);
+        // auto nb_clusters = m_pClustering->guided_split_clusters(m_vlabels,m_generators,m_diag,m_spacing,split_ratio, iteration);
         std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
         auto elapsed = std::chrono::duration_cast<std::chrono::microseconds>(end - begin).count();
+
         if(m_verbose_level != VERBOSE_LEVEL::LOW)
             std::cerr << "Guided split in " << elapsed << "[us]" << std::endl;
-        return clusters_count;
+
+        return 0; // FIXME
     }
 
     /// @brief automatic clustering
@@ -376,6 +550,7 @@ class Variational_shape_reconstruction
 
         while(iteration++ < steps)
         {
+<<<<<<< HEAD
             region_growing_and_update_poles(steps);
             // generators = guided_split_clusters(split_threshold, iteration++);
         }
@@ -391,98 +566,101 @@ class Variational_shape_reconstruction
         
         return reconstruction(dist_ratio, fitting, coverage, complexity, true);
     }
-
-    Pointset get_point_cloud_clustered()
-    {
-        Pointset pointset;
-        std::vector<Vector> colors;
-        for(int k = 0 ; k < m_generators.size();k++)
-        {
-            double r = (double) rand() / (RAND_MAX);
-            double g = (double) rand() / (RAND_MAX);
-            double b = (double) rand() / (RAND_MAX);
-            colors.push_back(Vector(r,g,b));
+=======
+            partition_and_update_generators(steps);
+            generators = guided_split_clusters(split_threshold, iteration++);
         }
-        for(int i = 0; i < m_points.size();i++)
-        {
-            pointset.insert(m_points[i].first,colors[m_vlabels[i]]);
-        }
-        return pointset;
     }
+>>>>>>> e07eca01c3c7c2b979efcef3cb3b2ea423b16ef1
+
+
     const Polyhedron& get_reconstructed_mesh()
     {
         return m_triangle_fit.get_mesh();
     }
     void write_csv()
     {
-        m_cluster->write_csv();
+        m_pClustering->write_csv();
     }
+
     // reconstruction 
-    bool reconstruction(double dist_ratio, double fitting, double coverage, double complexity, bool use_soft_reconstruction=false)
+    bool reconstruction(const double dist_ratio, 
+        const double fitting, 
+        const double coverage, 
+        const double complexity, 
+        const bool use_soft_reconstruction = false)
     {
-        create_adjacent_edges();
-        create_candidate_facets();
+        if(!create_adjacent_edges()) 
+            return false;
+
+        if(!create_candidate_facets()) 
+            return false;
 
         mlp_reconstruction(dist_ratio, fitting, coverage, complexity);
         
         auto valid = m_triangle_fit.get_mesh().is_valid();
         if(!valid && use_soft_reconstruction)
         {
-            std::cout<<"Manifold Reconstruction failed, trying with Nonmanifold Reconstruction\n";
+            std::cout << "Manifold reconstruction failed, run non-manifold variant" << std::endl;
             non_manifold_reconstruction(dist_ratio, fitting, coverage, complexity);
             valid = m_triangle_fit.get_mesh().is_valid();
         }
         return valid;
     }
-    void create_adjacent_edges()
+
+    bool create_adjacent_edges()
     {
-        if(m_generators.size() == 0)
+        // check generators
+        if(m_generators.empty())
         {
             if(m_verbose_level != VERBOSE_LEVEL::LOW)
-                std::cout << "No available pole!" << std::endl;
-            return;
+                std::cout << "No generators" << std::endl;
+            return false;
         }
 
         std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
 
-        std::vector<Point> dual_points;
-        for(int i = 0; i < m_generators.size(); i++)
-        {
-            Point center;
-            center = compute_optimal_point(m_generators_qem[i], pointset_.point(m_generators[i]));
+        std::vector<Point> generator_locations; 
+        for (int i = 0; i < m_generators.size(); i++)
+            generator_locations.push_back(m_generators[i].location());
 
-            dual_points.push_back(center);
-        }
-
+        // search for adjacent clusters
         IntPairSet adjacent_pairs;
-        for(int i = 0; i < pointset_.size(); i++)
+        for(int i = 0; i < m_pointset.size(); i++)
         {
+            // skip unlabeled points
             if(m_vlabels.find(i) == m_vlabels.end())
                 continue;
 
-            int center_label = m_vlabels[i];
-            K_neighbor_search search(m_tree, pointset_.point(i), m_num_knn);
+            int point_label = m_vlabels[i];
+            K_neighbor_search search(m_tree, m_pointset.point(i), m_num_knn);
 
             for(typename K_neighbor_search::iterator it = search.begin(); it != search.end(); it++)
             {
-                int nb_index = (it->first).second;
+                int neighor_index = (it->first).second;
 
-                if(m_vlabels.find(nb_index) != m_vlabels.end())
+                if(m_vlabels.find(neighor_index) != m_vlabels.end())
                 {
-                    int nb_label = m_vlabels[nb_index];
-                    if(center_label != nb_label) 
-                        adjacent_pairs.insert(std::make_pair(center_label, nb_label));
+                    int neighbor_label = m_vlabels[neighor_index];
+                    if(point_label != neighbor_label)
+                        adjacent_pairs.insert(std::make_pair(point_label, neighbor_label));
                 }              
             }
         }
-        m_triangle_fit.initialize_adjacent_graph(dual_points, adjacent_pairs,m_bbox,m_diag);
+        const bool valid = !adjacent_pairs.empty();
+
+        if(valid)
+            m_triangle_fit.initialize_adjacent_graph(generator_locations, adjacent_pairs, m_bbox, m_diag);
 
         std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
         if(m_verbose_level != VERBOSE_LEVEL::LOW)
-            std::cerr << "Candidate edge in " << std::chrono::duration_cast<std::chrono::microseconds>(end - begin).count() << "[us]" << std::endl;
+            std::cerr << "Candidate edges in " << std::chrono::duration_cast<std::chrono::microseconds>(end - begin).count() << "[us]" << std::endl;
+
+        return valid;
     }
-    // helper ?
-        Point compute_optimal_point(QEM_metric& cluster_qem, Point& cluster_pole)
+
+    
+    Point compute_optimal_point(QEM_metric& cluster_qem, Point& cluster_pole)
     {
         // solve Qx = b
         Eigen::MatrixXd qem_mat = cluster_qem.get_4x4_svd_matrix();
@@ -519,14 +697,17 @@ class Variational_shape_reconstruction
     {
         m_triangle_fit.update_adjacent_edges(adjacent_edges);
     }
-    void create_candidate_facets()
+
+    bool create_candidate_facets()
     {
         std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
-        m_triangle_fit.create_candidate_facets(); 
+        bool valid = m_triangle_fit.create_candidate_facets(); 
         std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
         if(m_verbose_level != VERBOSE_LEVEL::LOW)
             std::cerr << "Candidate facet in " << std::chrono::duration_cast<std::chrono::microseconds>(end - begin).count() << "[us]" << std::endl;
+        return valid;
     }
+
     void update_candidate_facets(std::vector<float>& candidate_facets, std::vector<float>& candidate_normals)
     {
         m_triangle_fit.update_candidate_facets(candidate_facets, candidate_normals); 

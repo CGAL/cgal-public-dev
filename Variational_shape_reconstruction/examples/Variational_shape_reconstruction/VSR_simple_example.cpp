@@ -32,6 +32,7 @@ int main()
 
     size_t generators = 5; 
     const size_t steps = 50;
+
     const double split_threshold = 10e-2;
     const double distance_weight = 10e-5;
 	

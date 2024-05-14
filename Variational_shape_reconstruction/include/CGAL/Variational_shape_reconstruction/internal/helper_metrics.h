@@ -11,11 +11,13 @@
 #include <iostream>
 #include <fstream>
 #include <map>
+
 typedef CGAL::Exact_predicates_inexact_constructions_kernel Kernel;
 typedef Kernel::Point_3                                     Point;
 typedef Kernel::Compare_dihedral_angle_3                    Compare_dihedral_angle_3;
 typedef CGAL::Surface_mesh<Point>                           Mesh;
 namespace PMP = CGAL::Polygon_mesh_processing;
+
 class DataWriter
 {
     // iteration 1 iteration 2 .. iteration n

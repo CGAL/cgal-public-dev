@@ -40,17 +40,17 @@ int main()
     const double distance_weight = 10e-5;
     size_t iteration = 0 ;
 	
-    qem::Variational_shape_reconstruction manager(
+    qem::Variational_shape_reconstruction vsr(
         pointset,
         generators,
         distance_weight,
         qem::VERBOSE_LEVEL::HIGH,
-        qem::INIT_QEM_GENERATOR::KMEANS_PLUSPLUS);
+        qem::INIT_QEM_GENERATORS::KMEANS_PLUSPLUS);
+
     while(generators > 5 )
     {
-        
-		manager.region_growing_and_update_poles(steps);
-        generators = manager.guided_split_clusters(split_threshold, iteration++);
+        vsr.partition_and_update_generators(steps);
+        generators = vsr.guided_split_clusters(split_threshold, iteration++);
     }
     
     // Reconstruction parameters
@@ -60,9 +60,9 @@ int main()
 	const double complexity = 0.3;
 	
     
-    manager.reconstruction(dist_ratio, fitting, coverage, complexity,false);
+    vsr.reconstruction(dist_ratio, fitting, coverage, complexity, false);
 
-	auto mesh = manager.get_reconstructed_mesh();
+	auto mesh = vsr.get_reconstructed_mesh();
     std::ofstream mesh_file;
     mesh_file.open("mesh.off");
     CGAL::write_off(mesh_file, mesh);
