@@ -116,7 +116,7 @@ int main(int argc, char* argv[])
         std::cout << fnormals[fd] << std::endl;
     
     
-    //New things
+    // New things
 
     std::cout << "Sampling output :" << std::endl;
     
