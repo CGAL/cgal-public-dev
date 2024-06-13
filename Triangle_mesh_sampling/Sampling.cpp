@@ -96,9 +96,41 @@ std::vector<Point> generatePoissonDiskSampling(double width, double height, doub
     return points;
 }
 
+//Transform triangle in three space to have a vertex at the origin and another
+//vertex on the x-axis
+std::vector<Point> affineTransformTriangle(Point p1, Point p2, Point p3){
+    
+    double matrix[3][3];
+    matrix[0][0]=0;
+    matrix[0][1]=0;
+    matrix[0][2]=0;
+    
+    matrix[1][0]=p2.x()-p1.x();
+    matrix[1][1]=p2.y()-p1.y();
+    matrix[1][2]=p2.z()-p1.z();
+    
+    matrix[2][0]=p3.x()-p1.x();
+    matrix[2][1]=p3.y()-p1.y();
+    matrix[2][2]=p3.z()-p1.z();
+
+    double normp2 = sqrt(matrix[1][0]*matrix[1][0]+matrix[1][1]*matrix[1][1]+matrix[1][2]*matrix[1][2]);
+    double sq_dist_p1p3 = matrix[2][0]*matrix[2][0]+matrix[2][1]*matrix[2][1]+matrix[2][2]*matrix[2][2];
+    double sq_dist_p2p3 = pow(matrix[2][0]-matrix[1][0],2)+pow(matrix[2][1]-matrix[1][1],2)+pow(matrix[2][2]-matrix[1][2],2);
+    
+    
+    Point p4(0, 0, 0), p5(normp2, 0, 0), p6((sq_dist_p2p3-sq_dist_p1p3-normp2*normp2)/(-2*normp2), sqrt(sq_dist_p1p3-matrix[2][0]*matrix[2][0]), 0);
+    
+    std::vector<Point> points;
+    points.push_back(p4);
+    points.push_back(p5);
+    points.push_back(p6);
+    
+    return points;
+}
+
 int main(int argc, char* argv[])
 {
-    const std::string filename = (argc > 1) ? argv[1] : CGAL::data_file_path("meshes/eight.off");
+    const std::string filename = (argc > 1) ? argv[1] : CGAL::data_file_path("../eight.off");
     Surface_mesh mesh;
     if(!PMP::IO::read_polygon_mesh(filename, mesh))
     {
@@ -117,7 +149,6 @@ int main(int argc, char* argv[])
     
     
     // New things
-    // WIP
 
     std::cout << "Sampling output :" << std::endl;
     
@@ -132,5 +163,14 @@ int main(int argc, char* argv[])
     for (const auto& point : points) {
         std::cout << "(" << point.x() << ", " << point.y() << ", " << point.z() << ")" << std::endl;
     }
+    
+    Point p1(1, 3, 4), p2(4, 1, 3), p3(5, 2, 1);
+    
+    for (const auto& point : affineTransformTriangle(p1, p2, p3)) {
+        std::cout << "(" << point.x() << ", " << point.y() << ", " << point.z() << ")" << std::endl;
+    }
+    
+   
+
     return 0;
 }
