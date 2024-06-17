@@ -25,9 +25,32 @@ namespace PMP = CGAL::Polygon_mesh_processing;
 int kMaxTries = 30; // Number of attempts to find a point
 double kMinDistance = 20.0; // Minimum distance between points
 
+//Function to generate a random point in a triangle
+Point randomInTriangle(double x1, double x2, double y2){
+    
+    double u = (double)rand() / RAND_MAX;
+    double v = (double)rand() / RAND_MAX;
+    
+    // Make sure u + v <= 1
+        if (u + v > 1.0) {
+            u = 1.0 - u;
+            v = 1.0 - v;
+        }
+    
+    double w = 1.0 - u - v;
+    Point randomPoint(u * x1 + v * x2,u * 0 + v * y2,0);
+    
+    return randomPoint;
+}
+
 // Function to check if a point is in a rectangle
 bool isInRectangle(double x, double y, double rectWidth, double rectHeight) {
     return x >= 0 && x <= rectWidth && y >= 0 && y <= rectHeight;
+}
+
+// Function to check if a point is in a triangle
+bool isInTriangle(double x, double y, double x1, double x2, double y2) {
+    return y >= 0 && y <= (y2/x2)*x && y <= (y2/(x2-x1))*(x-x1);
 }
 
 
@@ -55,8 +78,11 @@ bool isFarEnoughFromExistingPoints(double x, double y, const std::vector<std::ve
 }
 
 
-// Generate  Sampling
-std::vector<Point> generatePoissonDiskSampling(double width, double height, double minDistance) {
+// Generate  Sampling Rectangle
+std::vector<Point> generatePoissonDiskSampling(double x1, double x2, double y2, double minDistance) {
+
+    double width = x1;
+    double height = abs(y2);
     srand(time(NULL));
     double cellSize = minDistance / sqrt(2.0);
 
@@ -68,8 +94,12 @@ std::vector<Point> generatePoissonDiskSampling(double width, double height, doub
     std::queue<Point> activePoints;
 
     // Generate first point
-    double startX = width * (double)rand() / RAND_MAX;
-    double startY = height * (double)rand() / RAND_MAX;
+    //double startX = width * (double)rand() / RAND_MAX;
+    //double startY = height * (double)rand() / RAND_MAX;
+    Point random = randomInTriangle(x1,x2,y2);
+    std::cout << "Random Point: (" << random.x() << ", " << random.y() <<  ")" << std::endl;
+    double startX = random.x();
+    double startY = random.y();
     activePoints.push(Point(startX, startY, 0));
     points.push_back(Point(startX, startY, 0));
     grid[(int)(startX / cellSize)][(int)(startY / cellSize)] = true;
@@ -83,8 +113,11 @@ std::vector<Point> generatePoissonDiskSampling(double width, double height, doub
             double distance = minDistance + minDistance * (double)rand() / RAND_MAX;
             double newX = currentPoint.x() + distance * cos(angle);
             double newY = currentPoint.y() + distance * sin(angle);
+           // std::cout << "Test points: (" << newX << ", " << newY <<  ")" << std::endl;
+            
+           // std::cout << "In triangle: " << isInTriangle(newX, newY, x1, x2, y2) << " Far enough: " << isFarEnoughFromExistingPoints(newX, newY, grid, minDistance, cellSize) << std::endl;
 
-            if (isInRectangle(newX, newY, width, height) &&
+            if (isInTriangle(newX, newY, x1, x2, y2) &&
                 isFarEnoughFromExistingPoints(newX, newY, grid, minDistance, cellSize)) {
                 activePoints.push(Point(newX, newY, 0));
                 points.push_back(Point(newX, newY, 0));
@@ -96,40 +129,100 @@ std::vector<Point> generatePoissonDiskSampling(double width, double height, doub
     return points;
 }
 
-//Transform triangle in three space to have a vertex at the origin and another
-//vertex on the x-axis
-std::vector<Point> affineTransformTriangle(Point p1, Point p2, Point p3){
-    
-    double matrix[3][3];
-    matrix[0][0]=0;
-    matrix[0][1]=0;
-    matrix[0][2]=0;
-    
-    matrix[1][0]=p2.x()-p1.x();
-    matrix[1][1]=p2.y()-p1.y();
-    matrix[1][2]=p2.z()-p1.z();
-    
-    matrix[2][0]=p3.x()-p1.x();
-    matrix[2][1]=p3.y()-p1.y();
-    matrix[2][2]=p3.z()-p1.z();
-
-    double normp2 = sqrt(matrix[1][0]*matrix[1][0]+matrix[1][1]*matrix[1][1]+matrix[1][2]*matrix[1][2]);
-    double sq_dist_p1p3 = matrix[2][0]*matrix[2][0]+matrix[2][1]*matrix[2][1]+matrix[2][2]*matrix[2][2];
-    double sq_dist_p2p3 = pow(matrix[2][0]-matrix[1][0],2)+pow(matrix[2][1]-matrix[1][1],2)+pow(matrix[2][2]-matrix[1][2],2);
-    
-    
-    Point p4(0, 0, 0), p5(normp2, 0, 0), p6((sq_dist_p2p3-sq_dist_p1p3-normp2*normp2)/(-2*normp2), sqrt(sq_dist_p1p3-matrix[2][0]*matrix[2][0]), 0);
-    
-    std::vector<Point> points;
-    points.push_back(p4);
-    points.push_back(p5);
-    points.push_back(p6);
-    
-    return points;
+//Normalize a point
+Point normalize(Point p){
+    double length = sqrt(p.x()*p.x()+p.y()*p.y()+p.z()*p.z());
+    Point n(p.x()/length, p.y()/length, p.z()/length);
+    return n;
 }
+//Normalized normal vector of two points
+Point crossProduct(Point p1, Point p2){
+    
+    Point normal(p1.y()*p2.z()-p1.z()*p2.y(),-1*(p1.x()*p2.z()-p1.z()*p2.x()), p1.x()*p2.y()-p1.y()*p2.x());
+    
+    return normal;
+}
+
+
+
+//A function to Poisson sample on a triangle
+std::vector<Point> poissonDiskSamplingOnTriangle(Point q1, Point q2, Point q3){
+    
+    //Make p1 p2 the longest side of the triangle
+    double d12 = (q2.x()-q1.x())*(q2.x()-q1.x())+(q2.y()-q1.y())*(q2.y()-q1.y())+(q2.z()-q1.z())*(q2.z()-q1.z());
+    double d13 = (q3.x()-q1.x())*(q3.x()-q1.x())+(q3.y()-q1.y())*(q3.y()-q1.y())+(q3.z()-q1.z())*(q3.z()-q1.z());
+    double d23 = (q3.x()-q2.x())*(q3.x()-q2.x())+(q3.y()-q2.y())*(q3.y()-q2.y())+(q3.z()-q2.z())*(q3.z()-q2.z());
+    
+    double max_edge_squared = d12;
+    Point p1 = q1;
+    Point p2 = q2;
+    Point p3 = q3;
+    
+    if(d13>max_edge_squared){
+        max_edge_squared = d13;
+        p1 = q1;
+        p2 = q3;
+        p3 = q2;
+    }
+    if(d23>max_edge_squared){
+        max_edge_squared = d23;
+        p1 = q2;
+        p2 = q3;
+        p3 = q1;
+    }
+    
+    //Find rotation matrix so that triangle has an edge on x-axis
+    Point p4(p2.x()-p1.x(), p2.y()-p1.y(),p2.z()-p1.z());
+    Point U(normalize(p4));
+    
+ 
+    Point p5(p3.x()-p1.x(), p3.y()-p1.y(),p3.z()-p1.z());
+    Point W(normalize(crossProduct(U,p5)));
+    
+    Point V(normalize(crossProduct(U,W)));
+    
+    std::cout << "(" << U.x() << ", " << U.y() << ", " << U.z() << ")" << std::endl;
+    std::cout << "(" << V.x() << ", " << V.y() << ", " << V.z() << ")" << std::endl;
+    std::cout << "(" << W.x() << ", " << W.y() << ", " << W.z() << ")" << std::endl;
+    
+    //The matrix [U,V,X]^T maps points in U V space to standard basis
+    //The matrix [U,V,W] maps the standard basis to U V space
+    //The shifted triangle has points (0,0,0), (x1, 0, 0), and (x2, y2, 0)
+    double x1 = U.x()*p4.x()+U.y()*p4.y()+U.z()*p4.z();
+    double x2 = U.x()*p5.x()+U.y()*p5.y()+U.z()*p5.z();
+    double y2 = V.x()*p5.x()+V.y()*p5.y()+V.z()*p5.z();
+    
+
+    //Note y2 could still be negative
+    std::cout << "(" << x1 << "," << x2 << ", " << y2 <<  ")" << std::endl;
+    
+    //Call generate Poisson Disk Sample
+    std::vector<Point> pointsInitial = generatePoissonDiskSampling(x1, x2, abs(y2), kMinDistance);
+    
+    //Put points back in original triangle
+    //Flip y-coordinate if y2 is negative
+    std::vector<Point> pointsUpdate;
+    if(y2 < 0){
+        for (const auto& point : pointsInitial) {
+            Point update(U.x()*point.x()+V.x()*point.y()+W.x()*point.z()+p1.x(), -1*(U.y()*point.x()+V.y()*point.y()+W.y()*point.z())+p1.y(), U.z()*point.x()+V.z()*point.y()+W.z()*point.z()+p1.z());
+            pointsUpdate.push_back(update);
+        }
+    }else{
+        for (const auto& point : pointsInitial) {
+            Point update(U.x()*point.x()+V.x()*point.y()+W.x()*point.z()+p1.x(), U.y()*point.x()+V.y()*point.y()+W.y()*point.z()+p1.y(), U.z()*point.x()+V.z()*point.y()+W.z()*point.z()+p1.z());
+            pointsUpdate.push_back(update);
+        }
+    }
+    
+    return pointsUpdate;
+}
+
+
+
 
 int main(int argc, char* argv[])
 {
+    /*
     const std::string filename = (argc > 1) ? argv[1] : CGAL::data_file_path("../eight.off");
     Surface_mesh mesh;
     if(!PMP::IO::read_polygon_mesh(filename, mesh))
@@ -150,7 +243,7 @@ int main(int argc, char* argv[])
     
     // New things
 
-    std::cout << "Sampling output :" << std::endl;
+    
     
     
     // Rectangle
@@ -163,14 +256,18 @@ int main(int argc, char* argv[])
     for (const auto& point : points) {
         std::cout << "(" << point.x() << ", " << point.y() << ", " << point.z() << ")" << std::endl;
     }
+    */
+    // Triangle
     
-    Point p1(1, 3, 4), p2(4, 1, 3), p3(5, 2, 1);
+    Point z2(100, 200, 300), z1(200, 500, 0), z3(300, 100, 600);
     
-    for (const auto& point : affineTransformTriangle(p1, p2, p3)) {
-        std::cout << "(" << point.x() << ", " << point.y() << ", " << point.z() << ")" << std::endl;
-    }
     
+    std::vector<Point> pointz = poissonDiskSamplingOnTriangle(z3,z1,z2);
    
+    std::cout << "Sampling output :" << std::endl;
+    for (const auto& point : pointz) {
+       std::cout << "(" << point.x() << ", " << point.y() << ", " << point.z() << ")" << std::endl;
+    }
 
     return 0;
 }
