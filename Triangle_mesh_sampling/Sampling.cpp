@@ -203,8 +203,11 @@ double geodesicDistancePoints(Surface_mesh mesh, const Point source, const Point
 
 std::vector<std::vector<std::vector<bool>>> addPointToGrid(Point point, std::vector<std::vector<std::vector<bool>>> grid, double minX, double maxX, double minY, double maxY, double minZ, double maxZ, double cellSize){
     
+    int px =(1 / cellSize)*point.x() - minX*(1 / cellSize);
+    int py =(1 / cellSize)*point.y() - minY*(1 / cellSize);
+    int pz =(1 / cellSize)*point.z() - minZ*(1 / cellSize);
     
-    grid[(int)(1 / cellSize)*point.x() - minX*(1 / cellSize)][(int)(1 / cellSize)*point.y() - minY*(1 / cellSize)][(int)(1 / cellSize)*point.z() - minZ*(1 / cellSize)] = true;
+    grid[px][py][pz] = true;
     
     
     return grid;
@@ -241,6 +244,96 @@ bool isFarEnoughFromExistingPoints(Point point, const std::vector<std::vector<st
     return true;
 }
 
+
+// Generate sample of random points in the annulus around
+// a given point.
+std::vector<Point> randomPoints(Surface_mesh mesh, Point c, int kMaxTries, double minDistance){
+    
+    std::vector<Point> points;
+    
+    
+    //Begin flooding
+    Face_location c_location = PMP::locate(c, mesh);
+    face_descriptor fd = c_location.first;
+    
+
+    double squared_rad = 0.1 * 0.1;
+
+    std::vector<bool> selected(num_faces(mesh), false);
+    std::vector<face_descriptor> selection;
+    selected[fd] = true;
+    selection.push_back(fd);
+    
+    auto do_queue_edge = [&](halfedge_descriptor h)
+    {
+      halfedge_descriptor hopp=opposite(h, mesh);
+      if (is_border(hopp, mesh) || selected[face(hopp, mesh)]) return false;
+
+      K::Segment_3 edge(mesh.point(source(h,mesh)), mesh.point(target(h,mesh)));
+      return K::Compare_squared_distance_3()(c, edge, squared_rad)!=CGAL::LARGER;
+    };
+    
+    
+    std::vector<halfedge_descriptor> queue;
+    for (halfedge_descriptor h : CGAL::halfedges_around_face(halfedge(fd, mesh), mesh))
+      if (do_queue_edge(h))
+        queue.push_back(opposite(h, mesh));
+
+    while (!queue.empty())
+    {
+      halfedge_descriptor h = queue.back();
+      face_descriptor f = face(h, mesh);
+      queue.pop_back();
+      if (!selected[f])
+      {
+        selected[f]=true;
+        selection.push_back(f);
+      }
+
+      h=next(h, mesh);
+      if (do_queue_edge(h)) queue.push_back(opposite(h, mesh));
+      h=next(h, mesh);
+      if (do_queue_edge(h)) queue.push_back(opposite(h, mesh));
+    }
+
+    std::cout << "center: " << c << "\n";
+    for (face_descriptor f : selection)
+      std::cout << f << " ";
+    std::cout << "\n";
+    
+    Surface_mesh sub_mesh;
+    
+    vertex_descriptor u, v, w;
+    
+
+    halfedge_descriptor hi;
+    
+   
+    for (face_descriptor f : selection){
+        hi = mesh.halfedge(f);
+     u = sub_mesh.add_vertex(mesh.point(target(hi,mesh)));
+     hi = next(hi,mesh);
+     v = sub_mesh.add_vertex(mesh.point(target(hi,mesh)));
+     hi = next(hi,mesh);
+     w = sub_mesh.add_vertex(mesh.point(target(hi,mesh)));
+     sub_mesh.add_face(u,v,w);
+       
+    }
+    
+    std::cout << "Sub mesh:" << faces(sub_mesh).size() << std::endl;
+    
+    while(points.size() < kMaxTries){
+        CGAL::Random_points_in_triangle_mesh_3<Surface_mesh>
+              b(sub_mesh);
+        Point d = *b;
+        if(.05 < geodesicDistancePoints(mesh, d, c) && geodesicDistancePoints(mesh, d, c) < .1)
+            points.push_back(d);
+    }
+    
+    
+    return points;
+    
+}
 
 // Generate  Sampling Rectangle
 std::vector<Point> updatedPoissonDiskSampling(Surface_mesh mesh, int sampSize, int kMaxTries, double minDistance) {
@@ -349,80 +442,7 @@ int main(int argc, char* argv[])
     std::cout << "Distance Test:" << geodesicDistancePoints(mesh, points[0],points[1]) << std::endl;
     
     
-    //Begin flooding
     
-    
-
-    Point c = *g;
-    Face_location c_location = PMP::locate(c, mesh);
-    face_descriptor fd = c_location.first;
-    
-    ++g;
-
-    double squared_rad = 0.1 * 0.1;
-
-    std::vector<bool> selected(num_faces(mesh), false);
-    std::vector<face_descriptor> selection;
-    selected[fd] = true;
-    selection.push_back(fd);
-    
-    auto do_queue_edge = [&](halfedge_descriptor h)
-    {
-      halfedge_descriptor hopp=opposite(h, mesh);
-      if (is_border(hopp, mesh) || selected[face(hopp, mesh)]) return false;
-
-      K::Segment_3 edge(mesh.point(source(h,mesh)), mesh.point(target(h,mesh)));
-      return K::Compare_squared_distance_3()(c, edge, squared_rad)!=CGAL::LARGER;
-    };
-    
-    
-    std::vector<halfedge_descriptor> queue;
-    for (halfedge_descriptor h : CGAL::halfedges_around_face(halfedge(fd, mesh), mesh))
-      if (do_queue_edge(h))
-        queue.push_back(opposite(h, mesh));
-
-    while (!queue.empty())
-    {
-      halfedge_descriptor h = queue.back();
-      face_descriptor f = face(h, mesh);
-      queue.pop_back();
-      if (!selected[f])
-      {
-        selected[f]=true;
-        selection.push_back(f);
-      }
-
-      h=next(h, mesh);
-      if (do_queue_edge(h)) queue.push_back(opposite(h, mesh));
-      h=next(h, mesh);
-      if (do_queue_edge(h)) queue.push_back(opposite(h, mesh));
-    }
-
-    std::cout << "center: " << c << "\n";
-    for (face_descriptor f : selection)
-      std::cout << f << " ";
-    std::cout << "\n";
-    
-    Surface_mesh sub_mesh;
-    
-    vertex_descriptor u, v, w;
-    
-
-    halfedge_descriptor hi;
-    
-   
-    for (face_descriptor f : selection){
-        hi = mesh.halfedge(f);
-     u = sub_mesh.add_vertex(mesh.point(target(hi,mesh)));
-     hi = next(hi,mesh);
-     v = sub_mesh.add_vertex(mesh.point(target(hi,mesh)));
-     hi = next(hi,mesh);
-     w = sub_mesh.add_vertex(mesh.point(target(hi,mesh)));
-     sub_mesh.add_face(u,v,w);
-       
-    }
-    
-    std::cout << "Sub mesh:" << faces(sub_mesh).size() << std::endl;
     
     //construct a grid
     double cellSize = .1 / sqrt(2.0);
@@ -452,15 +472,17 @@ int main(int argc, char* argv[])
 
      }
 
-    int gridX = (maxX - minX) / cellSize;
-    int gridY = (maxY - minY) / cellSize;
-    int gridZ = (maxZ - minZ) / cellSize;
+    int gridX = (maxX - minX) / cellSize + 1;
+    int gridY = (maxY - minY) / cellSize + 1;
+    int gridZ = (maxZ - minZ) / cellSize + 1;
 
     
     std::vector<std::vector<std::vector<bool>>> grid(gridX, std::vector<std::vector<bool> >(gridY, std::vector<bool>(gridZ)));
-    std::cout << "Grid test: " << gridX <<", "<< gridY <<", "<< gridZ << std::endl;
+    
+    Point c = *g;
     grid = addPointToGrid(c, grid, minX, maxX, minY, maxY, minZ, maxZ, cellSize);
 
+  
     
     // Printing the 3d vector
     for (int i = 0; i < grid.size(); i++) {
@@ -471,6 +493,20 @@ int main(int argc, char* argv[])
             std::cout << std::endl;
         }
     }
+    
+  
+    
+    std::cout << "30 Random points on sub mesh:" << std::endl;
+    std::cout << "******************" << std::endl;
+    std::vector<Point> sub_points = randomPoints(mesh, c, 30, .05);
+    
+
+    
+    for (const auto& point : sub_points) {
+        std::cout <<  point  << std::endl;
+       std::cout <<  geodesicDistancePoints(mesh, point, c)  << std::endl;
+    }
+  
     
     return 0;
 }
