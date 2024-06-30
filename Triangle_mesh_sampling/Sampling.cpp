@@ -203,38 +203,7 @@ double geodesicDistancePoints(Surface_mesh mesh, const Point source, const Point
 
 
 
-// Function to check if a point is within the minimum distance of existing points
-bool isFarEnoughFromExistingPoints(Point point, const std::vector<std::vector<std::vector<bool>>>& grid, double minX, double maxX, double minY, double maxY, double minZ, double maxZ, double minDistance, double cellSize) {
-    
-    int gridX = (1 / cellSize)*point.x() - minX*(1 / cellSize);
-    int gridY = (1 / cellSize)*point.y() - minY*(1 / cellSize);
-    int gridZ = (1 / cellSize)*point.z() - minZ*(1 / cellSize);
-
-    int minCheckX = fmax(0, gridX - 2);
-    int maxCheckX = fmin((int)grid.size() - 1, gridX + 2);
-    int minCheckY = fmax(0, gridY - 2);
-    int maxCheckY = fmin((int)grid[0].size() - 1, gridY + 2);
-    int minCheckZ = fmax(0, gridY - 2);
-    int maxCheckZ = fmin((int)grid[0][0].size() - 1, gridZ + 2);
-
-    for (int i = minCheckX; i <= maxCheckX; ++i) {
-        for (int j = minCheckY; j <= maxCheckY; ++j) {
-            for(int k = minCheckZ; k <= maxCheckZ; ++k){
-                if (grid[i][j][k]) {
-                    double dx = point.x() - (i * cellSize);
-                    double dy = point.y() - (j * cellSize);
-                    double dz = point.z() - (k * cellSize);
-                    if (dx * dx + dy * dy + dz * dz < minDistance * minDistance)
-                        return false;
-                }
-            }
-        }
-    }
-    return true;
-}
-
-
-// Generate sample of random points in the annulus around
+// Generate sample of kMaxTries random points in the annulus around
 // a given point.
 std::vector<Point> randomPoints(Surface_mesh mesh, Point c, int kMaxTries, double minDistance){
     
@@ -246,7 +215,7 @@ std::vector<Point> randomPoints(Surface_mesh mesh, Point c, int kMaxTries, doubl
     face_descriptor fd = c_location.first;
     
 
-    double squared_rad = 0.1 * 0.1;
+    double squared_rad = 2*minDistance*minDistance;
 
     std::vector<bool> selected(num_faces(mesh), false);
     std::vector<face_descriptor> selection;
@@ -260,7 +229,9 @@ std::vector<Point> randomPoints(Surface_mesh mesh, Point c, int kMaxTries, doubl
 
       K::Segment_3 edge(mesh.point(source(h,mesh)), mesh.point(target(h,mesh)));
         //check if we want geodesic distance here
-      return K::Compare_squared_distance_3()(c, edge, squared_rad)!=CGAL::LARGER;
+        bool checker = (geodesicDistancePoints(mesh, mesh.point(source(h,mesh)), c)< 2*minDistance || geodesicDistancePoints(mesh, mesh.point(target(h,mesh)), c)< 2*minDistance);
+        return checker;
+      //return K::Compare_squared_distance_3()(c, edge, squared_rad)!=CGAL::LARGER;
     };
     
     
@@ -314,7 +285,7 @@ std::vector<Point> randomPoints(Surface_mesh mesh, Point c, int kMaxTries, doubl
         CGAL::Random_points_in_triangle_mesh_3<Surface_mesh>
               b(sub_mesh);
         Point d = *b;
-        if(.05 < geodesicDistancePoints(mesh, d, c) && geodesicDistancePoints(mesh, d, c) < .1)
+        if(geodesicDistancePoints(mesh, d, c) > minDistance && geodesicDistancePoints(mesh, d, c) < 2*minDistance)
             points.push_back(d);
     }
     
@@ -352,7 +323,7 @@ std::vector<std::vector<std::vector<std::vector<Point>>>> buildGrid(Surface_mesh
 
      }
     
-    double cellSize = minDistance / sqrt(2.0);
+    double cellSize = minDistance / sqrt(3.0);
 
     int gridX = (maxX - minX) / cellSize + 1;
     int gridY = (maxY - minY) / cellSize + 1;
@@ -386,16 +357,99 @@ std::vector<std::vector<std::vector<std::vector<Point>>>> addPointToGrid(Point p
     return grid;
     
 }
-// Generate  Sampling Rectangle
-std::vector<Point> updatedPoissonDiskSampling(Surface_mesh mesh, int sampSize, int kMaxTries, double minDistance) {
+
+
+// Function to check if a point is within the minimum distance of existing points
+bool isFarEnoughFromExistingPoints(Surface_mesh mesh, Point point, const std::vector<std::vector<std::vector<std::vector<Point>>>> grid, double minX, double maxX, double minY, double maxY, double minZ, double maxZ, double minDistance, double cellSize) {
+    
+    int gridX = (1 / cellSize)*point.x() - minX*(1 / cellSize);
+    int gridY = (1 / cellSize)*point.y() - minY*(1 / cellSize);
+    int gridZ = (1 / cellSize)*point.z() - minZ*(1 / cellSize);
+
+    int minCheckX = fmax(0, gridX - 2);
+    int maxCheckX = fmin(grid.size()-1 , gridX + 2);
+    int minCheckY = fmax(0, gridY - 2);
+    int maxCheckY = fmin(grid[0].size()-1 , gridY + 2);
+    int minCheckZ = fmax(0, gridY - 2);
+    int maxCheckZ = fmin(grid[0][0].size()-1 , gridZ + 2);
+
+    for (int i = minCheckX; i <= maxCheckX; ++i) {
+        for (int j = minCheckY; j <= maxCheckY; ++j) {
+            for(int k = minCheckZ; k <= maxCheckZ; ++k){
+                if(grid[i][j][k].size()==0){
+                    
+                }else{for(int l = 0; l <= grid[i][j][k].size(); ++l){
+                        if (geodesicDistancePoints(mesh, point, grid[i][j][k][l])<minDistance) {
+                            return false;
+                        }
+                        
+                    }
+                }
+            }
+        }
+    }
+    return true;
+}
+// Generate  Sample
+std::vector<Point> updatedPoissonDiskSampling(Surface_mesh mesh, int kMaxTries, double minDistance) {
+    
+    
+    double cellSize = minDistance / sqrt(3.0);
+    
+    
+    
+    double maxX = -100;
+    double minX = 100;
+    double maxY = -100;
+    double minY = 100;
+    double maxZ = -100;
+    double minZ = 100;
+    
+    BOOST_FOREACH(vertex_descriptor vd, vertices(mesh)){
+        if(mesh.point(vd).x() > maxX)
+            maxX = mesh.point(vd).x();
+        if(mesh.point(vd).x() < minX)
+            minX = mesh.point(vd).x();
+        if(mesh.point(vd).y() > maxY)
+            maxY = mesh.point(vd).y();
+        if(mesh.point(vd).y() < minY)
+            minY = mesh.point(vd).y();
+        if(mesh.point(vd).z() > maxZ)
+            maxZ = mesh.point(vd).z();
+        if(mesh.point(vd).z() < minZ)
+            minZ = mesh.point(vd).z();
+     }
     
     std::vector<Point> points;
     std::queue<Point> activePoints;
     
     CGAL::Random_points_in_triangle_mesh_3<Surface_mesh>
           g(mesh);
-    std::copy_n( g, 1, std::back_inserter(points));
-    activePoints.push(points[0]);
+    Point c = *g;
+    activePoints.push(c);
+    points.push_back(c);
+    
+    // Define a four-dimensional vector
+    std::vector<std::vector<std::vector<std::vector<Point>>>> four_d_grid = buildGrid(mesh, minDistance);
+    
+    while (!activePoints.empty()) {
+        Point currentPoint = activePoints.front();
+        activePoints.pop();
+        
+        std::vector<Point>  randomPointz = randomPoints(mesh, currentPoint, kMaxTries, minDistance);
+        std::cout << "Sizezzz?"<< randomPointz.size()<< std::endl;
+        
+        for (int i = 0; i < randomPointz.size(); ++i){
+            if(isFarEnoughFromExistingPoints(mesh, randomPointz[i], four_d_grid, minX, maxX, minY, maxY, minZ, maxZ, minDistance, cellSize)){
+                std::cout << "I'm adding"<< std::endl;
+                activePoints.push(randomPointz[i]);
+                points.push_back(randomPointz[i]);
+                four_d_grid = addPointToGrid(randomPointz[i], four_d_grid, minX, maxX, minY, maxY, minZ, maxZ, cellSize);
+            }
+        }
+            
+        
+    }
     
     return points;
     
@@ -448,18 +502,6 @@ int main(int argc, char* argv[])
      std::cout << points[0] << std::endl;
     
    
-    
-    
-    std::vector<Point> pointzz = updatedPoissonDiskSampling(mesh,7,kMaxTries,kMinDistance);
-    std::cout << "Function output :" << std::endl;
-    std::cout << "******************" << std::endl;
-    for (const auto& point : pointzz) {
-       std::cout <<  point.x() << " " <<  point.y() << " " <<  point.z()  << std::endl;
-    }
-    
-    
-
-
     /*
    
     std::cout << "Sampling output :" << std::endl;
@@ -477,7 +519,7 @@ int main(int argc, char* argv[])
     BOOST_FOREACH(face_descriptor fd, faces(mesh)){
         std::cout <<  "        " << mesh.point(target(mesh.halfedge(fd),mesh)) << "\n";
       }
-     */
+     
     
 
     
@@ -495,11 +537,12 @@ int main(int argc, char* argv[])
         std::cout <<  point  << std::endl;
        std::cout <<  geodesicDistancePoints(mesh, point, c)  << std::endl;
     }
+     */
     
     //***************************
     //construct a grid
     //***************************
-    double cellSize = .1 / sqrt(2.0);
+    double cellSize = .1 / sqrt(3.0);
     
     
     
@@ -537,15 +580,37 @@ int main(int argc, char* argv[])
     // Define a four-dimensional vector
     std::vector<std::vector<std::vector<std::vector<Point>>>> four_d_grid = buildGrid(mesh,.05);
     
-    
-    
-   
-
     int px =(1 / cellSize)*c.x() - minX*(1 / cellSize);
     int py =(1 / cellSize)*c.y() - minY*(1 / cellSize);
     int pz =(1 / cellSize)*c.z() - minZ*(1 / cellSize);
     std::cout << "Do I have a grid1?" << four_d_grid[px][py][pz].size() << std::endl;
     four_d_grid = addPointToGrid(c, four_d_grid, minX, maxX, minY, maxY, minZ, maxZ, cellSize);
     std::cout << "Do I have a grid2?" << four_d_grid[px][py][pz].size() << std::endl;
+    
+    std::cout << "Grid size? " << four_d_grid.size()<<","<<four_d_grid[0].size()<<","<<four_d_grid[0][0].size() - 1 << std::endl;
+    
+
+    Point c1(c.x()+.1,c.y(),c.z());
+    std::cout << "Point c" << c << std::endl;
+    std::cout << "Point c1 " << c1 << std::endl;
+    
+    int p1x =(1 / cellSize)*c1.x() - minX*(1 / cellSize);
+    int p1y =(1 / cellSize)*c1.y() - minY*(1 / cellSize);
+    int p1z =(1 / cellSize)*c1.z() - minZ*(1 / cellSize);
+    
+    std::cout << "Box c " << px <<","<<py<<","<<pz << std::endl;
+    std::cout << "Box c1 " << p1x <<","<<p1y<<","<<p1z << std::endl;
+    
+    double minDistance = .1;
+    std::cout << "Far enough?" << isFarEnoughFromExistingPoints(mesh, c, four_d_grid, minX, maxX, minY, maxY, minZ, maxZ, minDistance, cellSize) << std::endl;
+    
+    
+    std::vector<Point> pointzz = updatedPoissonDiskSampling(mesh,30,.1);
+    std::cout << "Function output :" << std::endl;
+    std::cout << "******************" << std::endl;
+    for (const auto& point : pointzz) {
+       std::cout <<  point.x() << " " <<  point.y() << " " <<  point.z()  << std::endl;
+    }
+    std::cout << geodesicDistancePoints(mesh, pointzz[0], pointzz[1]) << std::endl;
     return 0;
 }
