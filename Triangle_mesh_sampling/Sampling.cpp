@@ -101,73 +101,6 @@ int kMaxTries = 30; // Number of attempts to find a point
 double kMinDistance = 20.0; // Minimum distance between points
 
 
-// Function to check if a point is in a rectangle
-bool isInRectangle(double x, double y, double rectWidth, double rectHeight) {
-    return x >= 0 && x <= rectWidth && y >= 0 && y <= rectHeight;
-}
-
-// Function to check if a point is in a triangle
-bool isInTriangle(double x, double y, double x1, double x2, double y2) {
-    return y >= 0 && y <= (y2/x2)*x && y <= (y2/(x2-x1))*(x-x1);
-}
-
-
-
-
-/*
-// Generate  Sampling Rectangle
-std::vector<Point> generatePoissonDiskSampling(double x1, double x2, double y2, double minDistance) {
-
-    double width = x1;
-    double height = abs(y2);
-    srand(time(NULL));
-    double cellSize = minDistance / sqrt(2.0);
-
-    int gridWidth = (int)ceil(width / cellSize);
-    int gridHeight = (int)ceil(height / cellSize);
-
-    std::vector<std::vector<bool>> grid(gridWidth, std::vector<bool>(gridHeight, false));
-    std::vector<Point> points;
-    std::queue<Point> activePoints;
-
-    // Generate first point
-    //double startX = width * (double)rand() / RAND_MAX;
-    //double startY = height * (double)rand() / RAND_MAX;
-    Point random = randomInTriangle(x1,x2,y2);
-    std::cout << "Random Point: (" << random.x() << ", " << random.y() <<  ")" << std::endl;
-    double startX = random.x();
-    double startY = random.y();
-    activePoints.push(Point(startX, startY, 0));
-    points.push_back(Point(startX, startY, 0));
-    grid[(int)(startX / cellSize)][(int)(startY / cellSize)] = true;
-
-    while (!activePoints.empty()) {
-        Point currentPoint = activePoints.front();
-        activePoints.pop();
-
-        for (int i = 0; i < kMaxTries; ++i) {
-            double angle = 2 * M_PI * (double)rand() / RAND_MAX;
-            double distance = minDistance + minDistance * (double)rand() / RAND_MAX;
-            double newX = currentPoint.x() + distance * cos(angle);
-            double newY = currentPoint.y() + distance * sin(angle);
-           // std::cout << "Test points: (" << newX << ", " << newY <<  ")" << std::endl;
-            
-           // std::cout << "In triangle: " << isInTriangle(newX, newY, x1, x2, y2) << " Far enough: " << isFarEnoughFromExistingPoints(newX, newY, grid, minDistance, cellSize) << std::endl;
-
-            if (isInTriangle(newX, newY, x1, x2, y2) &&
-                isFarEnoughFromExistingPoints(newX, newY, grid, minDistance, cellSize)) {
-                activePoints.push(Point(newX, newY, 0));
-                points.push_back(Point(newX, newY, 0));
-                grid[(int)(newX / cellSize)][(int)(newY / cellSize)] = true;
-            }
-        }
-    }
-
-    return points;
-}
-
-
-*/
 
 
 double geodesicDistancePoints(Surface_mesh mesh, const Point source, const Point target){
@@ -295,34 +228,12 @@ std::vector<Point> randomPoints(Surface_mesh mesh, Point c, int kMaxTries, doubl
 }
 
 
-std::vector<std::vector<std::vector<std::vector<Point>>>> buildGrid(Surface_mesh mesh, double minDistance){
+std::vector<std::vector<std::vector<std::vector<Point>>>> buildGrid(Surface_mesh mesh, double minX, double maxX, double minY, double maxY, double minZ, double maxZ, double minDistance){
     
     // Define a four-dimensional vector
     std::vector<std::vector<std::vector<std::vector<Point>>>> four_d_grid;
     
-    double maxX = -100;
-    double minX = 100;
-    double maxY = -100;
-    double minY = 100;
-    double maxZ = -100;
-    double minZ = 100;
-    
-    BOOST_FOREACH(vertex_descriptor vd, vertices(mesh)){
-        if(mesh.point(vd).x() > maxX)
-            maxX = mesh.point(vd).x();
-        if(mesh.point(vd).x() < minX)
-            minX = mesh.point(vd).x();
-        if(mesh.point(vd).y() > maxY)
-            maxY = mesh.point(vd).y();
-        if(mesh.point(vd).y() < minY)
-            minY = mesh.point(vd).y();
-        if(mesh.point(vd).z() > maxZ)
-            maxZ = mesh.point(vd).z();
-        if(mesh.point(vd).z() < minZ)
-            minZ = mesh.point(vd).z();
-
-     }
-    
+  
     double cellSize = minDistance / sqrt(3.0);
 
     int gridX = (maxX - minX) / cellSize + 1;
@@ -370,7 +281,7 @@ bool isFarEnoughFromExistingPoints(Surface_mesh mesh, Point point, const std::ve
     int maxCheckX = fmin(grid.size()-1 , gridX + 2);
     int minCheckY = fmax(0, gridY - 2);
     int maxCheckY = fmin(grid[0].size()-1 , gridY + 2);
-    int minCheckZ = fmax(0, gridY - 2);
+    int minCheckZ = fmax(0, gridZ - 2);
     int maxCheckZ = fmin(grid[0][0].size()-1 , gridZ + 2);
 
     for (int i = minCheckX; i <= maxCheckX; ++i) {
@@ -379,7 +290,7 @@ bool isFarEnoughFromExistingPoints(Surface_mesh mesh, Point point, const std::ve
                 if(grid[i][j][k].size()==0){
                     
                 }else{for(int l = 0; l <= grid[i][j][k].size(); ++l){
-                        if (geodesicDistancePoints(mesh, point, grid[i][j][k][l])<minDistance) {
+                        if (geodesicDistancePoints(mesh, point, grid[i][j][k][l]) < minDistance) {
                             return false;
                         }
                         
@@ -393,9 +304,7 @@ bool isFarEnoughFromExistingPoints(Surface_mesh mesh, Point point, const std::ve
 // Generate  Sample
 std::vector<Point> updatedPoissonDiskSampling(Surface_mesh mesh, int kMaxTries, double minDistance) {
     
-    
     double cellSize = minDistance / sqrt(3.0);
-    
     
     
     double maxX = -100;
@@ -430,8 +339,11 @@ std::vector<Point> updatedPoissonDiskSampling(Surface_mesh mesh, int kMaxTries, 
     points.push_back(c);
     
     // Define a four-dimensional vector
-    std::vector<std::vector<std::vector<std::vector<Point>>>> four_d_grid = buildGrid(mesh, minDistance);
+    std::vector<std::vector<std::vector<std::vector<Point>>>> four_d_grid = buildGrid(mesh, minX, maxX, minY, maxY, minZ, maxZ, minDistance);
     
+    four_d_grid = addPointToGrid(c, four_d_grid, minX, maxX, minY, maxY, minZ, maxZ, cellSize);
+    
+
     while (!activePoints.empty()) {
         Point currentPoint = activePoints.front();
         activePoints.pop();
@@ -470,7 +382,7 @@ int main(int argc, char* argv[])
  
     
     
-    std::vector<Point> points = updatedPoissonDiskSampling(mesh,30,.1);
+    std::vector<Point> points = updatedPoissonDiskSampling(mesh,30,.05);
     std::cout << "Function output :" << std::endl;
     std::cout << "******************" << std::endl;
     for (const auto& point : points) {
