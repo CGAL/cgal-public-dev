@@ -1,0 +1,28 @@
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
+<html>
+  <head>
+    <title>About the demo</title>
+  </head>
+  <body>
+    <br>&nbsp;<img src='resources/cgal_logo_ipe_2013.png' height = 170 width = 600><br><br>
+    <b> This program demonstrates several operations on general polygons offered by the 2D Regularized Boolean Set Operations and 2D Minkowski Sums packages of CGAL.</b><br><br>
+
+    &#8226; You can <span style="color: magenta;">create</span>, <span style="color: magenta;">manipulate</span>, <span style="color: magenta;">save</span>, and <span style="color: magenta;">restore</span> general polygons with holes bounded by three types of curves, namely, <span style="color: orange;">line segments</span>, <span style="color: orange;">line segments or circular arcs</span>, and <span style="color: orange;">arcs of Bezier curves</span>. <span style="color: darkblue;">Minkowski sum</span> can be applied only to polygons of the former type.<br>
+
+    &#8226; The program maintains buckets of polygons. Each bucket contains a set of interior-disjoint general polygons with holes. The polygons of a bucket are rendered in a distinct color associated with the bucket; hence called a color bucket. The program starts with three empty color buckets, but you can add more buckets up to a maximum of seven.<br>
+
+    &#8226; Operations are applied to entire buckets, that is, an operand is the set of points that comrise all polygons of a given bucket. The result of an operation is inserted into an empty bucket.<br>
+
+    &#8226; You can apply unary operations, i.e., <span style="color: darkblue;">complement</span>, <span style="color: darkblue;">move</span>, and <span style="color: darkblue;">copy</span>, binary operations, i.e., <span style="color: darkblue;">difference</span>, <span style="color: darkblue;">symetric difference</span>, and <span style="color: darkblue;">Minkowski sum</span>, or operations that accept at least two point sets (color buckets), i.e., <span style="color: darkblue;">intersection</span> and <span style="color: darkblue;">union</span>.<br>
+
+    &#8226; You can <span style="color: darkblue;">save</span> your active point set (bucket) in a file or <span style="color: darkblue;">restore</span> previously saved point sets.<br>
+
+    &#8226; Each operation, including <span style="color: darkblue;">render</span>, <span style="color: darkblue;">save</span>, or <span style="color: darkblue;">restore</span>, is considered a single step.<br>
+
+    &#8226; If you feel that you made a mistake, you can always go back as many steps as you want using <span style="color: red;">Undo</span> operation.<br>
+
+    &#8226; You can drag the scene using the <span style="color: green;">Pan</span> operation and also <span style="color: green;">Recenter</span> the viewport.<br>
+
+    &#8226; Finally, you can <span style="color: red;">Clear</span> selected buckets or <span style="color: red;">Reset</span> the entire program to enter the starting state.<br>
+  </body>
+</html>

@@ -1,0 +1,4 @@
+Bugs related to polyline:-
+1. Switch Error bug	     :- On switching between polyline and any other type of polygon a crash occurs.
+                            This occurs because of a bad alloc or double free that is the pointer pointing to polyline polygon has been freed twice.
+                            Exactly what line is causing this error is unknown.

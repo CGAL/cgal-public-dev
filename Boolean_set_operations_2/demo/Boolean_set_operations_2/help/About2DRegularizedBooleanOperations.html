@@ -1,0 +1,38 @@
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
+<html>
+  <head>
+    <title>About demo</title>
+  <style type="text/css">td {padding:0 16px;}</style>
+  </head>
+  <body>
+    <h1>2D Regularized Boolean Operations</h1>
+    <br><br>
+    <table>
+      <tr>
+	<td style="text-align:center;"><img src='resources/A.png'></td>
+	<td style="text-align:center;"><img src='resources/B.png'></td>
+	<td style="text-align:center;"><img src='resources/intersection.png'></td>
+	<td style="text-align:center;"><img src='resources/sym_diff.png'></td>
+      </tr>
+      <tr>
+	<td style="text-align:center;">A</td>
+	<td style="text-align:center;">B</td>
+	<td style="text-align:center;">Intersection</td>
+	<td style="text-align:center;">Symmetric Difference</td>
+    </table>
+    <p>This package consists of the implementation of Boolean set operations on point sets bounded by weakly x-monotone curves in 2-dimensional Euclidean space. In particular, it contains the implementation of regularized Boolean set-operations, intersection predicates, and point containment predicates. Our package supports the following Boolean set-operations on two point sets P and Q that each is the union of one or more general polygons:</p>
+    <dl>
+    <dt><b>Complement</b></dt>
+    <dd>computes the complement R=P&macr;.</dd>
+    <dt><b>Intersection</dt>
+    <dd>computes the intersection R=P∩Q.</dd>
+    <dt><b>Join</b></dt>
+    <dd>computes the union R=P∪Q.</dd>
+    <dt><b>Difference</b></dt>
+    <dd>computes the difference R=P∖Q.</dd>
+    <dt><b>Symmetric Difference</dt>
+    <dd>computes the symmetric difference P=(P∖Q)∪(Q∖P).</dd>
+    </dl>
+    <p>For more details see <a href='https://doc.cgal.org/latest/Boolean_set_operations_2/index.html'>Boolean_set_operations_2</a>.</p>
+  </body>
+</html>
