@@ -6,6 +6,10 @@
 #include <CGAL/point_generators_3.h>
 #include <CGAL/Surface_mesh_shortest_path.h>
 #include <CGAL/Polygon_mesh_processing/locate.h>
+#include <CGAL/optimal_bounding_box.h>
+
+#include <CGAL/boost/graph/Face_filtered_graph.h>
+#include <boost/property_map/property_map.hpp>
 
 
 #include <boost/variant.hpp>
@@ -20,6 +24,8 @@
 #include <cstdlib>
 #include <ctime>
 #include <queue>
+
+
 
 
 typedef CGAL::Exact_predicates_inexact_constructions_kernel       K;
@@ -44,6 +50,13 @@ typedef Graph_traits::halfedge_descriptor halfedge_descriptor;
 typedef K::FT                                                           FT;
 typedef PMP::Barycentric_coordinates<FT>                                Barycentric_coordinates;
 typedef PMP::Face_location<Surface_mesh, FT>                                    Face_location;
+
+typedef boost::graph_traits<Surface_mesh>::face_descriptor           face_descriptor;
+typedef boost::graph_traits<Surface_mesh>::faces_size_type           faces_size_type;
+typedef Surface_mesh::Property_map<face_descriptor, faces_size_type> FCCmap;
+typedef CGAL::Face_filtered_graph<Surface_mesh>                      Filtered_graph;
+
+
 
 // A model of SurfacemeshShortestPathVisitor storing simplicies
 // using boost::variant
@@ -94,13 +107,6 @@ struct Print_visitor
     std::cout << " Position: " << Surface_mesh_shortest_path::point(f_bc.first, f_bc.second, g) << "\n";
   }
 };
-
-
-
-int kMaxTries = 30; // Number of attempts to find a point
-double kMinDistance = 20.0; // Minimum distance between points
-
-
 
 
 double geodesicDistancePoints(Surface_mesh mesh, const Point source, const Point target){
@@ -162,7 +168,7 @@ std::vector<Point> randomPoints(Surface_mesh mesh, Point c, int kMaxTries, doubl
 
       K::Segment_3 edge(mesh.point(source(h,mesh)), mesh.point(target(h,mesh)));
         //check if we want geodesic distance here
-        return (geodesicDistancePoints(mesh, mesh.point(source(h,mesh)), c)< 2*minDistance || geodesicDistancePoints(mesh, mesh.point(target(h,mesh)), c)< 2*minDistance);;
+        return (geodesicDistancePoints(mesh, mesh.point(source(h,mesh)), c)< 2*minDistance || geodesicDistancePoints(mesh, mesh.point(target(h,mesh)), c)< 2*minDistance);
       //return K::Compare_squared_distance_3()(c, edge, squared_rad)!=CGAL::LARGER;
     };
     
@@ -195,22 +201,15 @@ std::vector<Point> randomPoints(Surface_mesh mesh, Point c, int kMaxTries, doubl
       std::cout << f << " ";
     std::cout << "\n";
     */
+    //create sub mesh
+    Surface_mesh::Property_map<face_descriptor,int> submap;
+    submap = mesh.add_property_map<face_descriptor, int>("f:sub").first;
+    for (face_descriptor f : selection)
+        submap[f]=1;
+    
     Surface_mesh sub_mesh;
-    
-    vertex_descriptor u, v, w;
-    halfedge_descriptor hi;
-    
-   
-    for (face_descriptor f : selection){
-        hi = mesh.halfedge(f);
-        u = sub_mesh.add_vertex(mesh.point(target(hi,mesh)));
-        hi = next(hi,mesh);
-        v = sub_mesh.add_vertex(mesh.point(target(hi,mesh)));
-        hi = next(hi,mesh);
-        w = sub_mesh.add_vertex(mesh.point(target(hi,mesh)));
-        sub_mesh.add_face(u,v,w);
-       
-    }
+    Filtered_graph ffg(mesh, 1, submap);
+    copy_face_graph(ffg, sub_mesh);
     
     //std::cout << "Sub mesh:" << faces(sub_mesh).size() << std::endl;
     
@@ -218,11 +217,11 @@ std::vector<Point> randomPoints(Surface_mesh mesh, Point c, int kMaxTries, doubl
         CGAL::Random_points_in_triangle_mesh_3<Surface_mesh>
               b(sub_mesh);
         Point d = *b;
-        if(geodesicDistancePoints(mesh, d, c) > minDistance && geodesicDistancePoints(mesh, d, c) < 2*minDistance)
+        double dis = geodesicDistancePoints(sub_mesh, d, c);
+        if( dis > minDistance && dis < 2*minDistance)
             points.push_back(d);
     }
-    
-    
+        
     return points;
     
 }
@@ -380,14 +379,17 @@ int main(int argc, char* argv[])
     
     
  
+    double minDistance =  0.05;
+    int kMaxTries = 30; // Number of attempts to find a point
     
-    
-    std::vector<Point> points = updatedPoissonDiskSampling(mesh,30,.05);
+    std::vector<Point> points = updatedPoissonDiskSampling(mesh,kMaxTries,minDistance);
     std::cout << "Function output :" << std::endl;
     std::cout << "******************" << std::endl;
     for (const auto& point : points) {
-       std::cout <<  point  << std::endl;
+      std::cout <<  point  << std::endl;
     }
+
+    
    
     return 0;
 }
