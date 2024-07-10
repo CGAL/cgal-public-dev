@@ -10,7 +10,8 @@
 
 #include <CGAL/boost/graph/Face_filtered_graph.h>
 #include <boost/property_map/property_map.hpp>
-
+#include <CGAL/Heat_method_3/Surface_mesh_geodesic_distances_3.h>
+#include <CGAL/squared_distance_3.h>
 
 #include <boost/variant.hpp>
 #include <boost/lexical_cast.hpp>
@@ -19,12 +20,12 @@
 #include <iostream>
 #include <string>
 
+#include <unordered_map>
 #include <vector>
 #include <cmath>
 #include <cstdlib>
 #include <ctime>
 #include <queue>
-
 
 
 
@@ -56,7 +57,8 @@ typedef boost::graph_traits<Surface_mesh>::faces_size_type           faces_size_
 typedef Surface_mesh::Property_map<face_descriptor, faces_size_type> FCCmap;
 typedef CGAL::Face_filtered_graph<Surface_mesh>                      Filtered_graph;
 
-
+typedef Surface_mesh::Property_map<vertex_descriptor,double> Vertex_distance_map;
+typedef CGAL::Heat_method_3::Surface_mesh_geodesic_distances_3<Surface_mesh, CGAL::Heat_method_3::Direct> Heat_method_idt;
 
 // A model of SurfacemeshShortestPathVisitor storing simplicies
 // using boost::variant
@@ -79,34 +81,7 @@ struct Sequence_collector
     sequence.push_back(std::make_pair(f, alpha));
   }
 };
-// A visitor to print what a variant contains using boost::apply_visitor
-struct Print_visitor
-  : public boost::static_visitor<>
-{
-  int i;
-  Surface_mesh& g;
-  Print_visitor(Surface_mesh& g) :i(-1), g(g) {}
-  void operator()(vertex_descriptor v)
-  {
-    std::cout << "#" << ++i << " Vertex: " << get(boost::vertex_index, g)[v];
-    std::cout << " Position: " << Surface_mesh_shortest_path::point(v, g) << "\n";
-  }
-  void operator()(const std::pair<halfedge_descriptor,double>& h_a)
-  {
-    std::cout << "#" << ++i << " Edge: " << get(CGAL::halfedge_index, g)[h_a.first] << " , ("
-                                           << 1.0 - h_a.second << " , "
-                                           << h_a.second << ")";
-    std::cout << " Position: " << Surface_mesh_shortest_path::point(h_a.first, h_a.second, g) << "\n";
-  }
-  void operator()(const std::pair<face_descriptor, Barycentric_coordinates>& f_bc)
-  {
-    std::cout << "#" << ++i << " Face: " << get(CGAL::face_index, g)[f_bc.first] << " , ("
-                                           << f_bc.second[0] << " , "
-                                           << f_bc.second[1] << " , "
-                                           << f_bc.second[2] << ")";
-    std::cout << " Position: " << Surface_mesh_shortest_path::point(f_bc.first, f_bc.second, g) << "\n";
-  }
-};
+
 
 
 double geodesicDistancePoints(Surface_mesh mesh, const Point source, const Point target){
@@ -123,24 +98,34 @@ double geodesicDistancePoints(Surface_mesh mesh, const Point source, const Point
     
     std::vector<Point> points_in_path;
     shortest_paths.shortest_path_points_to_source_points(query_location_target.first, {{query_location_target.second[0],query_location_target.second[1],query_location_target.second[2]}}, std::back_inserter(points_in_path));
-    /*
+    /*Need to add the visitor from the geodesic distance example back in to print
     Print_visitor print_visitor(mesh);
     for (size_t i = 0; i < sequence_collector.sequence.size(); ++i)
       boost::apply_visitor(print_visitor, sequence_collector.sequence[i]);
     */
     double dist = 0;
-    Point  prePoint = points_in_path[0];
+    Point  pre_point = points_in_path[0];
     
     for (int i = 1; i < points_in_path.size(); ++i){
-        dist = dist + sqrt((points_in_path[i].x()-prePoint.x())*(points_in_path[i].x()-prePoint.x()) + (points_in_path[i].y()-prePoint.y())*(points_in_path[i].y()-prePoint.y()) + (points_in_path[i].z()-prePoint.z())*(points_in_path[i].z()-prePoint.z()));
-        prePoint = points_in_path[i];
+        dist = dist + sqrt(CGAL::squared_distance(points_in_path[i],pre_point));
+        pre_point = points_in_path[i];
     }
     
     return dist;
     
 }
 
+double euclideanDistancePoints(Surface_mesh mesh, const Point source, const Point target){
+     
+    return sqrt(CGAL::squared_distance(source,target));
+    
+}
 
+//function to switch between geodesic and Euclidean distance
+double distancePoints(Surface_mesh mesh, const Point source, const Point target){
+    return geodesicDistancePoints(mesh, source, target);
+    //return euclideanDistancePoints(mesh, source, target);
+}
 
 // Generate sample of kMaxTries random points in the annulus around
 // a given point.
@@ -152,9 +137,6 @@ std::vector<Point> randomPoints(Surface_mesh mesh, Point c, int kMaxTries, doubl
     //Begin flooding
     Face_location c_location = PMP::locate(c, mesh);
     face_descriptor fd = c_location.first;
-    
-
-    double squared_rad = 2*minDistance*minDistance;
 
     std::vector<bool> selected(num_faces(mesh), false);
     std::vector<face_descriptor> selection;
@@ -168,8 +150,7 @@ std::vector<Point> randomPoints(Surface_mesh mesh, Point c, int kMaxTries, doubl
 
       K::Segment_3 edge(mesh.point(source(h,mesh)), mesh.point(target(h,mesh)));
         //check if we want geodesic distance here
-        return (geodesicDistancePoints(mesh, mesh.point(source(h,mesh)), c)< 2*minDistance || geodesicDistancePoints(mesh, mesh.point(target(h,mesh)), c)< 2*minDistance);
-      //return K::Compare_squared_distance_3()(c, edge, squared_rad)!=CGAL::LARGER;
+        return (distancePoints(mesh, mesh.point(source(h,mesh)), c)< 2*minDistance || distancePoints(mesh, mesh.point(target(h,mesh)), c)< 2*minDistance);
     };
     
     
@@ -201,7 +182,7 @@ std::vector<Point> randomPoints(Surface_mesh mesh, Point c, int kMaxTries, doubl
       std::cout << f << " ";
     std::cout << "\n";
     */
-    //create sub mesh
+    //create sub_mesh
     Surface_mesh::Property_map<face_descriptor,int> submap;
     submap = mesh.add_property_map<face_descriptor, int>("f:sub").first;
     for (face_descriptor f : selection)
@@ -212,12 +193,12 @@ std::vector<Point> randomPoints(Surface_mesh mesh, Point c, int kMaxTries, doubl
     copy_face_graph(ffg, sub_mesh);
     
     //std::cout << "Sub mesh:" << faces(sub_mesh).size() << std::endl;
-    
+    //Generate points in annulus
     while(points.size() < kMaxTries){
         CGAL::Random_points_in_triangle_mesh_3<Surface_mesh>
               b(sub_mesh);
         Point d = *b;
-        double dis = geodesicDistancePoints(sub_mesh, d, c);
+        double dis = distancePoints(sub_mesh, d, c);
         if( dis > minDistance && dis < 2*minDistance)
             points.push_back(d);
     }
@@ -232,7 +213,6 @@ std::vector<std::vector<std::vector<std::vector<Point>>>> buildGrid(Surface_mesh
     // Define a four-dimensional vector
     std::vector<std::vector<std::vector<std::vector<Point>>>> four_d_grid;
     
-  
     double cellSize = minDistance / sqrt(3.0);
 
     int gridX = (maxX - minX) / cellSize + 1;
@@ -255,8 +235,7 @@ std::vector<std::vector<std::vector<std::vector<Point>>>> buildGrid(Surface_mesh
     return four_d_grid;
 }
 
-std::vector<std::vector<std::vector<std::vector<Point>>>> addPointToGrid(Point point, std::vector<std::vector<std::vector<std::vector<Point>>>> grid, double minX, double maxX, double minY, double maxY, double minZ, double maxZ, double cellSize){
-    
+std::vector<std::vector<std::vector<std::vector<Point>>>> addPointToGrid(Point point, std::vector<std::vector<std::vector<std::vector<Point>>>> grid, double minX, double minY, double minZ, double cellSize){
     
     int px =(1 / cellSize)*point.x() - minX*(1 / cellSize);
     int py =(1 / cellSize)*point.y() - minY*(1 / cellSize);
@@ -270,7 +249,7 @@ std::vector<std::vector<std::vector<std::vector<Point>>>> addPointToGrid(Point p
 
 
 // Function to check if a point is within the minimum distance of existing points
-bool isFarEnoughFromExistingPoints(Surface_mesh mesh, Point point, const std::vector<std::vector<std::vector<std::vector<Point>>>> grid, double minX, double maxX, double minY, double maxY, double minZ, double maxZ, double minDistance, double cellSize) {
+bool isFarEnoughFromExistingPoints(Surface_mesh mesh, Point point, const std::vector<std::vector<std::vector<std::vector<Point>>>> grid, double minX, double minY, double minZ, double minDistance, double cellSize) {
     
     int gridX = (1 / cellSize)*point.x() - minX*(1 / cellSize);
     int gridY = (1 / cellSize)*point.y() - minY*(1 / cellSize);
@@ -289,7 +268,7 @@ bool isFarEnoughFromExistingPoints(Surface_mesh mesh, Point point, const std::ve
                 if(grid[i][j][k].size()==0){
                     
                 }else{for(int l = 0; l <= grid[i][j][k].size(); ++l){
-                        if (geodesicDistancePoints(mesh, point, grid[i][j][k][l]) < minDistance) {
+                        if (distancePoints(mesh, point, grid[i][j][k][l]) < minDistance) {
                             return false;
                         }
                         
@@ -306,27 +285,30 @@ std::vector<Point> updatedPoissonDiskSampling(Surface_mesh mesh, int kMaxTries, 
     double cellSize = minDistance / sqrt(3.0);
     
     
-    double maxX = -100;
-    double minX = 100;
-    double maxY = -100;
-    double minY = 100;
-    double maxZ = -100;
-    double minZ = 100;
+    std::array<Point, 8> obb_points;
+     CGAL::oriented_bounding_box(mesh, obb_points,
+                                 CGAL::parameters::use_convex_hull(true));
     
-    BOOST_FOREACH(vertex_descriptor vd, vertices(mesh)){
-        if(mesh.point(vd).x() > maxX)
-            maxX = mesh.point(vd).x();
-        if(mesh.point(vd).x() < minX)
-            minX = mesh.point(vd).x();
-        if(mesh.point(vd).y() > maxY)
-            maxY = mesh.point(vd).y();
-        if(mesh.point(vd).y() < minY)
-            minY = mesh.point(vd).y();
-        if(mesh.point(vd).z() > maxZ)
-            maxZ = mesh.point(vd).z();
-        if(mesh.point(vd).z() < minZ)
-            minZ = mesh.point(vd).z();
-     }
+    double maxX = obb_points[0].x();
+    double minX = obb_points[0].x();
+    double maxY = obb_points[0].y();
+    double minY = obb_points[0].y();
+    double maxZ = obb_points[0].z();
+    double minZ = obb_points[0].z();
+    for (const auto& point : obb_points) {
+        if(point.x() > maxX)
+            maxX = point.x();
+        if(point.x() < minX)
+            minX = point.x();
+        if(point.y() > maxY)
+            maxY = point.y();
+        if(point.y() < minY)
+            minY = point.y();
+        if(point.z() > maxZ)
+            maxZ = point.z();
+        if(point.z() < minZ)
+            minZ = point.z();
+    }
     
     std::vector<Point> points;
     std::queue<Point> activePoints;
@@ -340,7 +322,7 @@ std::vector<Point> updatedPoissonDiskSampling(Surface_mesh mesh, int kMaxTries, 
     // Define a four-dimensional vector
     std::vector<std::vector<std::vector<std::vector<Point>>>> four_d_grid = buildGrid(mesh, minX, maxX, minY, maxY, minZ, maxZ, minDistance);
     
-    four_d_grid = addPointToGrid(c, four_d_grid, minX, maxX, minY, maxY, minZ, maxZ, cellSize);
+    four_d_grid = addPointToGrid(c, four_d_grid, minX, minY, minZ, cellSize);
     
 
     while (!activePoints.empty()) {
@@ -349,22 +331,21 @@ std::vector<Point> updatedPoissonDiskSampling(Surface_mesh mesh, int kMaxTries, 
         
         std::vector<Point>  random_Points = randomPoints(mesh, currentPoint, kMaxTries, minDistance);
         
-        
         for (int i = 0; i < random_Points.size(); ++i){
-            if(isFarEnoughFromExistingPoints(mesh, random_Points[i], four_d_grid, minX, maxX, minY, maxY, minZ, maxZ, minDistance, cellSize)){
+            if(isFarEnoughFromExistingPoints(mesh, random_Points[i], four_d_grid, minX, minY, minZ, minDistance, cellSize)){
                 //std::cout << "I'm adding"<< std::endl;
                 activePoints.push(random_Points[i]);
                 points.push_back(random_Points[i]);
-                four_d_grid = addPointToGrid(random_Points[i], four_d_grid, minX, maxX, minY, maxY, minZ, maxZ, cellSize);
+                four_d_grid = addPointToGrid(random_Points[i], four_d_grid, minX, minY, minZ, cellSize);
             }
         }
             
-        
     }
     
     return points;
     
 }
+
 
 int main(int argc, char* argv[])
 {
@@ -377,7 +358,6 @@ int main(int argc, char* argv[])
         return 1;
     }
     
-    
  
     double minDistance =  0.05;
     int kMaxTries = 30; // Number of attempts to find a point
@@ -386,10 +366,9 @@ int main(int argc, char* argv[])
     std::cout << "Function output :" << std::endl;
     std::cout << "******************" << std::endl;
     for (const auto& point : points) {
-      std::cout <<  point  << std::endl;
+     std::cout <<  point  << std::endl;
     }
 
-    
-   
+
     return 0;
 }
