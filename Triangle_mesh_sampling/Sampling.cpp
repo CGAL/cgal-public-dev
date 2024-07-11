@@ -91,6 +91,7 @@ struct Sequence_collector
 
 double geodesicDistancePoints(Surface_mesh mesh, const Point source, const Point target)
 {
+  //Todo: compute tree first outside of function and reuse
   Face_location query_location_source = PMP::locate(source, mesh);
   Face_location query_location_target = PMP::locate(target, mesh);
   // construct a shortest path query object and add a source point
@@ -143,6 +144,7 @@ std::vector<Point> randomPoints(Surface_mesh mesh, Point c, int kMaxTries, doubl
   std::vector<Point> points;
 
   //Begin flooding
+  //Todo: use tree only once
   Face_location c_location = PMP::locate(c, mesh);
   face_descriptor fd = c_location.first;
 
@@ -158,6 +160,7 @@ std::vector<Point> randomPoints(Surface_mesh mesh, Point c, int kMaxTries, doubl
 
     K::Segment_3 edge(mesh.point(source(h,mesh)), mesh.point(target(h,mesh)));
       //check if we want geodesic distance here
+      //Todo: Update with distance to edge and use Euclidean distance
     return (distancePoints<V>(mesh, mesh.point(source(h,mesh)), c)< 2*minDistance ||
             distancePoints<V>(mesh, mesh.point(target(h,mesh)), c)< 2*minDistance);
   };
@@ -203,6 +206,8 @@ std::vector<Point> randomPoints(Surface_mesh mesh, Point c, int kMaxTries, doubl
 
   //std::cout << "Sub mesh:" << faces(sub_mesh).size() << std::endl;
   //Generate points in annulus
+  //Todo: Consider isolated triangle problem
+  //Todo: Polar geodesic sampling funtion here
   while(points.size() < kMaxTries)
   {
     CGAL::Random_points_in_triangle_mesh_3<Surface_mesh> b(sub_mesh);
@@ -289,9 +294,9 @@ isFarEnoughFromExistingPoints(Surface_mesh mesh, Point point,
         }
         else
         {
-          for(int l = 0; l <= grid[i][j][k].size(); ++l)
+          for(Point p : grid[i][j][k])
           {
-            if (distancePoints<V>(mesh, point, grid[i][j][k][l]) < minDistance)
+            if (distancePoints<V>(mesh, point, p) < minDistance)
               return false;
           }
         }
@@ -372,6 +377,7 @@ std::vector<Point> updatedPoissonDiskSampling(Surface_mesh mesh, int kMaxTries, 
 int main(int argc, char* argv[])
 {
   const std::string filename = (argc > 1) ? argv[1] : CGAL::data_file_path("../eight.off");
+  const double minDistance = (argc > 2) ? atof(argv[2]) : 0.05;
   Surface_mesh mesh;
   if(!PMP::IO::read_polygon_mesh(filename, mesh))
   {
@@ -379,7 +385,6 @@ int main(int argc, char* argv[])
     return 1;
   }
 
-  double minDistance =  0.05;
   int kMaxTries = 30; // Number of attempts to find a point
 
   CGAL::Real_timer timer;
@@ -392,6 +397,7 @@ int main(int argc, char* argv[])
   std::copy(points.begin(), points.end(), std::ostream_iterator<Point>(out, "\n"));
   out.close();
 
+#if 1
   ///
   timer.reset();
   points.clear();
@@ -402,7 +408,7 @@ int main(int argc, char* argv[])
   out.open("sampling_geodesic.xyz");
   out << std::setprecision(17);
   std::copy(points.begin(), points.end(), std::ostream_iterator<Point>(out, "\n"));
-
+#endif
 
   return 0;
 }
