@@ -1,43 +1,13 @@
-# Created by the script cgal_create_CMakeLists
-# This is the CMake script for compiling a set of CGAL applications.
+# Created by the script cgal_create_cmake_script
+# This is the CMake script for compiling a CGAL application.
 
-project( mesh )
+cmake_minimum_required(VERSION 3.12...3.29)
+project( Triangle_mesh_sampling )
 
+find_package(CGAL REQUIRED)
 
-cmake_minimum_required(VERSION 3.19.4)
+find_package(Eigen3 3.3.0 REQUIRED)
+include(CGAL_Eigen3_support)
 
-# CGAL and its components
-find_package( CGAL QUIET COMPONENTS  )
-if ( NOT CGAL_FOUND )
-
-  message(STATUS "This project requires the CGAL library, and will not be compiled.")
-  return()
-
-endif()
-
-# include helper file
-include( ${CGAL_USE_FILE} )
-
-
-
-# Boost and its components
-find_package( Boost REQUIRED )
-if ( NOT Boost_FOUND )
-
-  message(STATUS "This project requires the Boost library, and will not be compiled.")
-
-  return()
-
-endif()
-
-# include for local directory
-
-# include for local package
-
-
-# Creating entries for all C++ files with "main" routine
-# ##########################################################
-
-include( CGAL_CreateSingleSourceCGALProgram )
-
-add_executable(hi Sampling.cpp)
+create_single_source_cgal_program( "Sampling.cpp" )
+target_link_libraries(Sampling PUBLIC CGAL::Eigen3_support)
