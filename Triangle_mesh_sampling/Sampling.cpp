@@ -13,6 +13,13 @@
 #include <CGAL/Heat_method_3/Surface_mesh_geodesic_distances_3.h>
 #include <CGAL/squared_distance_3.h>
 
+
+#include <CGAL/AABB_face_graph_triangle_primitive.h>
+#include <CGAL/AABB_tree.h>
+#include <CGAL/AABB_traits.h>
+#include <CGAL/boost/graph/helpers.h>
+#include <CGAL/Dynamic_property_map.h>
+
 #include <CGAL/Real_timer.h>
 
 #include <boost/variant.hpp>
@@ -53,6 +60,8 @@ typedef Graph_traits::halfedge_descriptor halfedge_descriptor;
 typedef K::FT                                                           FT;
 typedef PMP::Barycentric_coordinates<FT>                                Barycentric_coordinates;
 typedef PMP::Face_location<Surface_mesh, FT>                                    Face_location;
+typedef CGAL::AABB_face_graph_triangle_primitive<Surface_mesh>                AABB_face_graph_primitive;
+typedef CGAL::AABB_traits<K, AABB_face_graph_primitive>               AABB_face_graph_traits;
 
 typedef boost::graph_traits<Surface_mesh>::face_descriptor           face_descriptor;
 typedef boost::graph_traits<Surface_mesh>::faces_size_type           faces_size_type;
@@ -89,11 +98,12 @@ struct Sequence_collector
 
 
 
-double geodesicDistancePoints(Surface_mesh mesh, const Point source, const Point target)
+double geodesicDistancePoints(Surface_mesh mesh, const Point source, const Point target, const CGAL::AABB_tree<AABB_face_graph_traits> &tree)
 {
   //Todo: compute tree first outside of function and reuse
-  Face_location query_location_source = PMP::locate(source, mesh);
-  Face_location query_location_target = PMP::locate(target, mesh);
+  Face_location query_location_source = PMP::locate_with_AABB_tree(source, tree, mesh);
+  Face_location query_location_target = PMP::locate_with_AABB_tree(target, tree, mesh);
+  
   // construct a shortest path query object and add a source point
    Surface_mesh_shortest_path shortest_paths(mesh);
   shortest_paths.add_source_point(query_location_source.first, {{query_location_source.second[0],query_location_source.second[1],query_location_source.second[2]}});
@@ -120,32 +130,31 @@ double geodesicDistancePoints(Surface_mesh mesh, const Point source, const Point
   return dist;
 }
 
-double euclideanDistancePoints(Surface_mesh mesh, const Point source, const Point target)
+double euclideanDistancePoints(Surface_mesh mesh, const Point source, const Point target, const CGAL::AABB_tree<AABB_face_graph_traits> &tree)
 {
   return sqrt(CGAL::squared_distance(source,target));
 }
 
 //function to switch between geodesic and Euclidean distance
 template <Distance_version V>
-double distancePoints(Surface_mesh mesh, const Point source, const Point target)
+double distancePoints(Surface_mesh mesh, const Point source, const Point target, const CGAL::AABB_tree<AABB_face_graph_traits> &tree)
 {
   if constexpr (V==GEODESIC_DISTANCE)
-    return geodesicDistancePoints(mesh, source, target);
+    return geodesicDistancePoints(mesh, source, target, tree);
   if constexpr (V==EUCLIDEAN_DISTANCE)
-    return euclideanDistancePoints(mesh, source, target);
+    return euclideanDistancePoints(mesh, source, target, tree);
   return 0;
 }
 
 // Generate sample of kMaxTries random points in the annulus around
 // a given point.
 template <Distance_version V>
-std::vector<Point> randomPoints(Surface_mesh mesh, Point c, int kMaxTries, double minDistance)
+std::vector<Point> randomPoints(Surface_mesh mesh, Point c, int kMaxTries, double minDistance, const CGAL::AABB_tree<AABB_face_graph_traits> &tree)
 {
   std::vector<Point> points;
 
   //Begin flooding
-  //Todo: use tree only once
-  Face_location c_location = PMP::locate(c, mesh);
+  Face_location c_location = PMP::locate_with_AABB_tree(c, tree, mesh);
   face_descriptor fd = c_location.first;
 
   std::vector<bool> selected(num_faces(mesh), false);
@@ -161,8 +170,8 @@ std::vector<Point> randomPoints(Surface_mesh mesh, Point c, int kMaxTries, doubl
     K::Segment_3 edge(mesh.point(source(h,mesh)), mesh.point(target(h,mesh)));
       //check if we want geodesic distance here
       //Todo: Update with distance to edge and use Euclidean distance
-    return (distancePoints<V>(mesh, mesh.point(source(h,mesh)), c)< 2*minDistance ||
-            distancePoints<V>(mesh, mesh.point(target(h,mesh)), c)< 2*minDistance);
+    return (distancePoints<V>(mesh, mesh.point(source(h,mesh)), c, tree)< 2*minDistance ||
+            distancePoints<V>(mesh, mesh.point(target(h,mesh)), c, tree)< 2*minDistance);
   };
 
 
@@ -208,11 +217,13 @@ std::vector<Point> randomPoints(Surface_mesh mesh, Point c, int kMaxTries, doubl
   //Generate points in annulus
   //Todo: Consider isolated triangle problem
   //Todo: Polar geodesic sampling funtion here
+  CGAL::AABB_tree<AABB_face_graph_traits> sub_tree;
+  PMP::build_AABB_tree(sub_mesh, sub_tree);
   while(points.size() < kMaxTries)
   {
     CGAL::Random_points_in_triangle_mesh_3<Surface_mesh> b(sub_mesh);
     Point d = *b;
-    double dis = distancePoints<V>(sub_mesh, d, c);
+    double dis = distancePoints<V>(sub_mesh, d, c, sub_tree);
     if( dis > minDistance && dis < 2*minDistance)
       points.push_back(d);
   }
@@ -270,7 +281,7 @@ template <Distance_version V>
 bool
 isFarEnoughFromExistingPoints(Surface_mesh mesh, Point point,
                               const std::vector<std::vector<std::vector<std::vector<Point>>>> grid,
-                              double minX, double minY, double minZ, double minDistance, double cellSize)
+                              double minX, double minY, double minZ, double minDistance, double cellSize, const CGAL::AABB_tree<AABB_face_graph_traits> &tree)
 {
   int gridX = (1 / cellSize)*point.x() - minX*(1 / cellSize);
   int gridY = (1 / cellSize)*point.y() - minY*(1 / cellSize);
@@ -296,7 +307,7 @@ isFarEnoughFromExistingPoints(Surface_mesh mesh, Point point,
         {
           for(Point p : grid[i][j][k])
           {
-            if (distancePoints<V>(mesh, point, p) < minDistance)
+            if (distancePoints<V>(mesh, point, p, tree) < minDistance)
               return false;
           }
         }
@@ -337,6 +348,9 @@ std::vector<Point> updatedPoissonDiskSampling(Surface_mesh mesh, int kMaxTries, 
     if(point.z() < minZ)
         minZ = point.z();
   }
+    
+  CGAL::AABB_tree<AABB_face_graph_traits> tree;
+  PMP::build_AABB_tree(mesh, tree);
 
   std::vector<Point> points;
   std::queue<Point> activePoints;
@@ -357,10 +371,10 @@ std::vector<Point> updatedPoissonDiskSampling(Surface_mesh mesh, int kMaxTries, 
     Point currentPoint = activePoints.front();
     activePoints.pop();
 
-    std::vector<Point>  random_Points = randomPoints<V>(mesh, currentPoint, kMaxTries, minDistance);
+    std::vector<Point>  random_Points = randomPoints<V>(mesh, currentPoint, kMaxTries, minDistance, tree);
 
     for (int i = 0; i < random_Points.size(); ++i){
-      if(isFarEnoughFromExistingPoints<V>(mesh, random_Points[i], four_d_grid, minX, minY, minZ, minDistance, cellSize))
+      if(isFarEnoughFromExistingPoints<V>(mesh, random_Points[i], four_d_grid, minX, minY, minZ, minDistance, cellSize, tree))
       {
         //std::cout << "I'm adding"<< std::endl;
         activePoints.push(random_Points[i]);
@@ -376,7 +390,7 @@ std::vector<Point> updatedPoissonDiskSampling(Surface_mesh mesh, int kMaxTries, 
 
 int main(int argc, char* argv[])
 {
-  const std::string filename = (argc > 1) ? argv[1] : CGAL::data_file_path("../eight.off");
+  const std::string filename = (argc > 1) ? argv[1] : CGAL::data_file_path("data/meshes/eight.off");
   const double minDistance = (argc > 2) ? atof(argv[2]) : 0.05;
   Surface_mesh mesh;
   if(!PMP::IO::read_polygon_mesh(filename, mesh))
