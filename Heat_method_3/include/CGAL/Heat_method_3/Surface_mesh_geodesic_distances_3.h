@@ -15,6 +15,7 @@
 
 #include <CGAL/license/Heat_method_3.h>
 #include <CGAL/Heat_method_3/internal/Intrinsic_Delaunay_triangulation_3.h>
+#include <CGAL/Heat_method_3/internal/Intrinsic_mollification_3.h>
 #include <CGAL/Heat_method_3/internal/V2V.h>
 #include <CGAL/disable_warnings.h>
 
@@ -48,10 +49,21 @@ struct Direct
 {};
 
 /**
- * A tag class used to specify that the heat method applies the intrinsic Delaunay triangulation to the input mesh.
+ * A tag class used to specify that the heat method applies the intrinsic Delaunay triangulation to
+ * the input mesh.
  */
 struct Intrinsic_Delaunay
-{};
+{
+};
+
+/**
+ * A tag class used to specify that the heat method applies the intrinsic mollification to the input
+ * mesh.
+ */
+template<typename Scheme>
+struct Intrinsic_mollification
+{
+};
 
 namespace internal {
 template <typename TriangleMesh,
