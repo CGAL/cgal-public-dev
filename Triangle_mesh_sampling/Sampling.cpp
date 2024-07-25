@@ -13,6 +13,8 @@
 #include <CGAL/Heat_method_3/Surface_mesh_geodesic_distances_3.h>
 #include <CGAL/squared_distance_3.h>
 
+#include <CGAL/Polygon_mesh_processing/Bsurf/locally_shortest_path.h>
+
 
 #include <CGAL/AABB_face_graph_triangle_primitive.h>
 #include <CGAL/AABB_tree.h>
@@ -59,7 +61,7 @@ typedef Graph_traits::halfedge_descriptor halfedge_descriptor;
 
 typedef K::FT                                                           FT;
 typedef PMP::Barycentric_coordinates<FT>                                Barycentric_coordinates;
-typedef PMP::Face_location<Surface_mesh, FT>                                    Face_location;
+//typedef PMP::Face_location<Surface_mesh, FT>                                    Face_location;
 typedef CGAL::AABB_face_graph_triangle_primitive<Surface_mesh>                AABB_face_graph_primitive;
 typedef CGAL::AABB_traits<K, AABB_face_graph_primitive>               AABB_face_graph_traits;
 
@@ -71,6 +73,8 @@ typedef CGAL::Face_filtered_graph<Surface_mesh>                      Filtered_gr
 typedef Surface_mesh::Property_map<vertex_descriptor,double> Vertex_distance_map;
 typedef CGAL::Heat_method_3::Surface_mesh_geodesic_distances_3<Surface_mesh, CGAL::Heat_method_3::Direct> Heat_method_idt;
 
+typedef PMP::Face_location<Surface_mesh, double>                      Face_location;
+typedef PMP::Edge_location<Surface_mesh, double>                      Edge_location;
 
 enum Distance_version { EUCLIDEAN_DISTANCE, GEODESIC_DISTANCE, HEAT_DISTANCE };
 
@@ -100,7 +104,7 @@ struct Sequence_collector
 
 double geodesicDistancePoints(Surface_mesh mesh, const Point source, const Point target, const CGAL::AABB_tree<AABB_face_graph_traits> &tree)
 {
-  //Todo: compute tree first outside of function and reuse
+  
   Face_location query_location_source = PMP::locate_with_AABB_tree(source, tree, mesh);
   Face_location query_location_target = PMP::locate_with_AABB_tree(target, tree, mesh);
   
@@ -146,6 +150,11 @@ double distancePoints(Surface_mesh mesh, const Point source, const Point target,
   return 0;
 }
 
+
+
+
+
+
 // Generate sample of kMaxTries random points in the annulus around
 // a given point.
 template <Distance_version V>
@@ -168,8 +177,6 @@ std::vector<Point> randomPoints(Surface_mesh mesh, Point c, int kMaxTries, doubl
     if (is_border(hopp, mesh) || selected[face(hopp, mesh)]) return false;
 
     K::Segment_3 edge(mesh.point(source(h,mesh)), mesh.point(target(h,mesh)));
-      //check if we want geodesic distance here
-      //Todo: Update with distance to edge and use Euclidean distance
     return (distancePoints<V>(mesh, mesh.point(source(h,mesh)), c, tree)< 2*minDistance ||
             distancePoints<V>(mesh, mesh.point(target(h,mesh)), c, tree)< 2*minDistance);
   };
@@ -387,10 +394,131 @@ std::vector<Point> updatedPoissonDiskSampling(Surface_mesh mesh, int kMaxTries, 
   return points;
 }
 
+template <Distance_version V>
+std::vector<face_descriptor> faces_in_sub_mesh(Point c, Surface_mesh mesh, double minDistance, const CGAL::AABB_tree<AABB_face_graph_traits> &tree)
+{
+    //Begin flooding
+    Face_location c_location = PMP::locate_with_AABB_tree(c, tree, mesh);
+    face_descriptor fd = c_location.first;
+
+    std::vector<bool> selected(num_faces(mesh), false);
+    std::vector<face_descriptor> selection;
+    selected[fd] = true;
+    selection.push_back(fd);
+
+    auto do_queue_edge = [&](halfedge_descriptor h)
+    {
+      halfedge_descriptor hopp=opposite(h, mesh);
+      if (is_border(hopp, mesh) || selected[face(hopp, mesh)]) return false;
+
+      K::Segment_3 edge(mesh.point(source(h,mesh)), mesh.point(target(h,mesh)));
+      
+      return (distancePoints<V>(mesh, mesh.point(source(h,mesh)), c, tree)< 3*minDistance ||
+              distancePoints<V>(mesh, mesh.point(target(h,mesh)), c, tree)< 3*minDistance);
+    };
+
+
+    std::vector<halfedge_descriptor> queue;
+    for (halfedge_descriptor h : CGAL::halfedges_around_face(halfedge(fd, mesh), mesh))
+      if (do_queue_edge(h))
+        queue.push_back(opposite(h, mesh));
+
+    while (!queue.empty())
+    {
+      halfedge_descriptor h = queue.back();
+      face_descriptor f = face(h, mesh);
+      queue.pop_back();
+      if (!selected[f])
+      {
+        selected[f]=true;
+        selection.push_back(f);
+      }
+
+      h=next(h, mesh);
+      if (do_queue_edge(h)) queue.push_back(opposite(h, mesh));
+      h=next(h, mesh);
+      if (do_queue_edge(h)) queue.push_back(opposite(h, mesh));
+    }
+
+    /*
+    std::cout << "center: " << c << "\n";
+    for (face_descriptor f : selection)
+      std::cout << f << " ";
+    std::cout << "\n";
+    */
+    
+    return selection;
+}
+
+template <Distance_version V>
+bool
+is_far_enough(Point c, Surface_mesh mesh, double minDistance, std::vector<face_descriptor> selection, Surface_mesh::Property_map<face_descriptor,std::vector<Point>> face_points, const CGAL::AABB_tree<AABB_face_graph_traits> &tree)
+{
+    for (face_descriptor f : selection)
+    {
+        for(Point p  : face_points[f])
+        {
+            //We could compute sub_mesh AABB tree and compute distances there
+            if (distancePoints<V>(mesh, c, p, tree) < minDistance)
+                return false;
+        }
+    }
+    return true;
+}
+
+template <Distance_version V>
+std::vector<Point> no_grid_Poisson_disk_sampling(Surface_mesh mesh, int kMaxTries, double minDistance)
+{
+    CGAL::AABB_tree<AABB_face_graph_traits> tree;
+    PMP::build_AABB_tree(mesh, tree);
+
+    std::vector<Point> points;
+    std::queue<Point> activePoints;
+    
+    CGAL::Random_points_in_triangle_mesh_3<Surface_mesh> g(mesh);
+    Point c = *g;
+    Face_location c_location = PMP::locate_with_AABB_tree(c, tree, mesh);
+    
+    Surface_mesh::Property_map<face_descriptor,std::vector<Point>> face_points;
+    face_points = mesh.add_property_map<face_descriptor, std::vector<Point>>("f:face_points").first;
+    
+    face_points[c_location.first].push_back(c);
+    activePoints.push(c);
+    points.push_back(c);
+    
+    while (!activePoints.empty())
+    {
+        Point currentPoint = activePoints.front();
+        activePoints.pop();
+        
+        std::vector<face_descriptor> selection = faces_in_sub_mesh<V>(currentPoint, mesh, minDistance, tree);
+        Face_location current_location = PMP::locate_with_AABB_tree(currentPoint, tree, mesh);
+        
+        for (int i = 0; i < kMaxTries; ++i)
+        {
+            double angle = 2 * M_PI * (double)rand() / RAND_MAX;
+            double distance = minDistance + minDistance * (double)rand() / RAND_MAX;
+            K::Vector_2 dir(cos(angle),sin(angle));
+            std::vector<Face_location> path = PMP::straightest_geodesic<K>(current_location, dir, distance, mesh);
+            Point newPoint = PMP::construct_point(path.back(), mesh);
+
+            if(is_far_enough<V>(newPoint, mesh, minDistance, selection, face_points, tree))
+            {
+                Face_location new_location = PMP::locate_with_AABB_tree(newPoint, tree, mesh);
+                face_points[new_location.first].push_back(newPoint);
+                activePoints.push(newPoint);
+                points.push_back(newPoint);
+            }
+  
+        }
+    }
+    
+    return points;
+}
 
 int main(int argc, char* argv[])
 {
-  const std::string filename = (argc > 1) ? argv[1] : CGAL::data_file_path("data/meshes/eight.off");
+  const std::string filename = (argc > 1) ? argv[1] : CGAL::data_file_path("meshes/eight.off");
   const double minDistance = (argc > 2) ? atof(argv[2]) : 0.05;
   Surface_mesh mesh;
   if(!PMP::IO::read_polygon_mesh(filename, mesh))
@@ -405,12 +533,26 @@ int main(int argc, char* argv[])
   timer.start();
   std::vector<Point> points = updatedPoissonDiskSampling<EUCLIDEAN_DISTANCE>(mesh,kMaxTries,minDistance);
   timer.stop();
-  std::cout << "Euclidean done in " << timer.time() << "s.\n";
+  std::cout << "Grid Euclidean done in " << timer.time() << "s.\n";
   std::ofstream out("sampling_euclidean.xyz");
   out << std::setprecision(17);
   std::copy(points.begin(), points.end(), std::ostream_iterator<Point>(out, "\n"));
   out.close();
-
+    
+  timer.reset();
+  points.clear();
+  timer.start();
+  points = no_grid_Poisson_disk_sampling<EUCLIDEAN_DISTANCE>(mesh,kMaxTries,minDistance);
+  timer.stop();
+  std::cout << "No grid Euclidean done in " << timer.time() << "s.\n";
+  std::ofstream out1("sampling_no_grid.xyz");
+  out1 << std::setprecision(17);
+  std::copy(points.begin(), points.end(), std::ostream_iterator<Point>(out1, "\n"));
+  out1.close();
+    
+  
+ 
+    
 #if 1
   ///
   timer.reset();
