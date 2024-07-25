@@ -57,7 +57,7 @@ int main(int argc, char** argv) {
   CGAL::IO::read_OFF(filepath, polyhedron);
 
   PMP::transform(Affine_transformation_3(CGAL::Translation(),
-    Vector_3(FT(0), FT(0), FT(1))), polyhedron);
+    Vector_3(0, 0, 1)), polyhedron);
 
   std::cout << "* symmetric bounded-error Hausdorff distance: " <<
     PMP::bounded_error_symmetric_Hausdorff_distance<TAG>(surface_mesh, polyhedron, error_bound)
