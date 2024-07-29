@@ -134,7 +134,7 @@ double geodesicDistancePoints(Surface_mesh mesh, const Point source, const Point
   return dist;
 }
 
-double euclideanDistancePoints(Surface_mesh /* mesh */, const Point source, const Point target, const CGAL::AABB_tree<AABB_face_graph_traits> &/* tree */)
+double euclideanDistancePoints(const Point source, const Point target)
 {
   return sqrt(CGAL::squared_distance(source,target));
 }
@@ -146,7 +146,7 @@ double distancePoints(Surface_mesh mesh, const Point source, const Point target,
   if constexpr (V==GEODESIC_DISTANCE)
     return geodesicDistancePoints(mesh, source, target, tree);
   if constexpr (V==EUCLIDEAN_DISTANCE)
-    return euclideanDistancePoints(mesh, source, target, tree);
+    return euclideanDistancePoints(source, target);
   return 0;
 }
 
@@ -395,11 +395,10 @@ std::vector<Point> updatedPoissonDiskSampling(Surface_mesh mesh, std::size_t kMa
 }
 
 template <Distance_version V>
-std::vector<face_descriptor> faces_in_sub_mesh(Point c, Surface_mesh mesh, double minDistance, const CGAL::AABB_tree<AABB_face_graph_traits> &tree)
+std::vector<face_descriptor> faces_in_sub_mesh(Point c, face_descriptor fc, Surface_mesh mesh, double minDistance)
 {
     //Begin flooding
-    Face_location c_location = PMP::locate_with_AABB_tree(c, tree, mesh);
-    face_descriptor fd = c_location.first;
+    face_descriptor fd = fc;
 
     std::vector<bool> selected(num_faces(mesh), false);
     std::vector<face_descriptor> selection;
@@ -413,8 +412,11 @@ std::vector<face_descriptor> faces_in_sub_mesh(Point c, Surface_mesh mesh, doubl
 
       K::Segment_3 edge(mesh.point(source(h,mesh)), mesh.point(target(h,mesh)));
 
-      return (distancePoints<V>(mesh, mesh.point(source(h,mesh)), c, tree)< 3*minDistance ||
-              distancePoints<V>(mesh, mesh.point(target(h,mesh)), c, tree)< 3*minDistance);
+//      return (distancePoints<V>(mesh, mesh.point(source(h,mesh)), c, tree)< 3*minDistance ||
+//              distancePoints<V>(mesh, mesh.point(target(h,mesh)), c, tree)< 3*minDistance);
+
+      return (euclideanDistancePoints(mesh.point(source(h,mesh)), c)< 3*minDistance ||
+              euclideanDistancePoints(mesh.point(target(h,mesh)), c)< 3*minDistance);
     };
 
 
@@ -452,14 +454,15 @@ std::vector<face_descriptor> faces_in_sub_mesh(Point c, Surface_mesh mesh, doubl
 
 template <Distance_version V>
 bool
-is_far_enough(Point c, Surface_mesh mesh, double minDistance, std::vector<face_descriptor> selection, Surface_mesh::Property_map<face_descriptor,std::vector<Point>> face_points, const CGAL::AABB_tree<AABB_face_graph_traits> &tree)
+is_far_enough(Point c, Surface_mesh /* mesh */, double minDistance, std::vector<face_descriptor> selection, Surface_mesh::Property_map<face_descriptor,std::vector<Point>> face_points)
 {
     for (face_descriptor f : selection)
     {
         for(Point p  : face_points[f])
         {
             //We could compute sub_mesh AABB tree and compute distances there
-            if (distancePoints<V>(mesh, c, p, tree) < minDistance)
+            // if (distancePoints<V>(mesh, c, p, tree) < minDistance)
+            if (euclideanDistancePoints(c, p) < minDistance)
                 return false;
         }
     }
@@ -469,30 +472,29 @@ is_far_enough(Point c, Surface_mesh mesh, double minDistance, std::vector<face_d
 template <Distance_version V>
 std::vector<Point> no_grid_Poisson_disk_sampling(Surface_mesh mesh, std::size_t kMaxTries, double minDistance)
 {
-    CGAL::AABB_tree<AABB_face_graph_traits> tree;
-    PMP::build_AABB_tree(mesh, tree);
-
     std::vector<Point> points;
-    std::queue<Point> activePoints;
+    std::queue<std::pair<Point, face_descriptor>> activePoints;
 
     CGAL::Random_points_in_triangle_mesh_3<Surface_mesh> g(mesh);
     Point c = *g;
-    Face_location c_location = PMP::locate_with_AABB_tree(c, tree, mesh);
+    face_descriptor fc = g.last_item_picked();
 
     Surface_mesh::Property_map<face_descriptor,std::vector<Point>> face_points;
     face_points = mesh.add_property_map<face_descriptor, std::vector<Point>>("f:face_points").first;
 
-    face_points[c_location.first].push_back(c);
-    activePoints.push(c);
+    face_points[fc].push_back(c);
+    activePoints.push(std::make_pair(c, fc));
     points.push_back(c);
 
+    Point currentPoint;
+    face_descriptor currentFace;
     while (!activePoints.empty())
     {
-        Point currentPoint = activePoints.front();
+        std::tie(currentPoint, currentFace) = activePoints.front();
         activePoints.pop();
 
-        std::vector<face_descriptor> selection = faces_in_sub_mesh<V>(currentPoint, mesh, minDistance, tree);
-        Face_location current_location = PMP::locate_with_AABB_tree(currentPoint, tree, mesh);
+        std::vector<face_descriptor> selection = faces_in_sub_mesh<V>(currentPoint, currentFace, mesh, minDistance);
+        Face_location current_location = PMP::locate_in_face(currentPoint, currentFace, mesh);
 
         for (std::size_t i = 0; i < kMaxTries; ++i)
         {
@@ -502,11 +504,10 @@ std::vector<Point> no_grid_Poisson_disk_sampling(Surface_mesh mesh, std::size_t 
             std::vector<Face_location> path = PMP::straightest_geodesic<K>(current_location, dir, distance, mesh);
             Point newPoint = PMP::construct_point(path.back(), mesh);
 
-            if(is_far_enough<V>(newPoint, mesh, minDistance, selection, face_points, tree))
+            if(is_far_enough<V>(newPoint, mesh, minDistance, selection, face_points))
             {
-                Face_location new_location = PMP::locate_with_AABB_tree(newPoint, tree, mesh);
-                face_points[new_location.first].push_back(newPoint);
-                activePoints.push(newPoint);
+                face_points[path.back().first].push_back(newPoint);
+                activePoints.push(std::make_pair(newPoint,path.back().first));
                 points.push_back(newPoint);
             }
 
