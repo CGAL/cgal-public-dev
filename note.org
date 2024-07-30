@@ -8,6 +8,9 @@
 ** git checkout -b gsoc2024-mollification-iomar --no-track cgal/master
 
 * TODOs
+** TODO modify edge_lengths to halfedge_lengths
+** TODO may move length calc. inside mollification schemes
+
 ** TODO revisit .clang-format
 ** TODO revisit directory structure
 ** TODO revisit naming convensions
