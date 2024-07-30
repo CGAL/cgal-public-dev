@@ -60,8 +60,7 @@ struct Intrinsic_Delaunay
  * A tag class used to specify that the heat method applies the intrinsic mollification to the input
  * mesh.
  */
-template<typename Scheme>
-struct Intrinsic_mollification
+struct Intrinsic_mollification_constant
 {
 };
 
@@ -366,6 +365,7 @@ private:
       vertex_descriptor current = *(vbegin);
       vertex_descriptor neighbor_one = *(++vbegin);
       vertex_descriptor neighbor_two = *(++vbegin);
+
       Index i = get(vertex_id_map, current);
       Index j = get(vertex_id_map, neighbor_one);
       Index k = get(vertex_id_map, neighbor_two);
@@ -638,9 +638,9 @@ struct Base_helper
   template <class VertexDistanceMap>
   void estimate_geodesic_distances(VertexDistanceMap vdm)
   {
-    CGAL_assertion(
-      !CGAL::Heat_method_3::internal::has_degenerate_faces(
-        base().triangle_mesh(), Traits()));
+    // CGAL_assertion(
+    //   !CGAL::Heat_method_3::internal::has_degenerate_faces(
+    //     base().triangle_mesh(), Traits()));
     base().estimate_geodesic_distances(vdm);
   }
 };
@@ -659,6 +659,27 @@ struct Idt_storage
   Idt_storage(const TriangleMesh& tm)
     : m_idt(tm)
   {}
+};
+
+template<class TriangleMesh,
+         class Scheme,
+         class Traits,
+         class VertexPointMap>
+struct Im_storage
+{
+  Intrinsic_mollification_3<TriangleMesh, Traits> m_im;
+
+  Im_storage(TriangleMesh& tm, VertexPointMap vpm)
+    : m_im(tm)
+  {
+    m_im.template build<Scheme>(vpm);
+  }
+
+  Im_storage(TriangleMesh& tm)
+    : m_im(tm)
+  {
+    m_im.template build<Scheme>();
+  }
 };
 
 template <typename TriangleMesh,
@@ -701,6 +722,49 @@ struct Base_helper<TriangleMesh, Traits, Intrinsic_Delaunay, LA, VertexPointMap>
   void estimate_geodesic_distances(VertexDistanceMap vdm)
   {
     base().estimate_geodesic_distances(this->m_idt.vertex_distance_map(vdm));
+  }
+};
+
+template <typename TriangleMesh,
+          typename Traits,
+          typename LA,
+          typename VertexPointMap>
+struct Base_helper<TriangleMesh, Traits, Intrinsic_mollification_constant, LA, VertexPointMap>
+  : public Im_storage<TriangleMesh, Mollification::Constant, Traits, VertexPointMap>
+  , public Surface_mesh_geodesic_distances_3<Intrinsic_mollification_3<TriangleMesh, Traits>,
+                                             Traits,
+                                             LA,
+                                             typename Intrinsic_mollification_3<TriangleMesh, Traits>::Vertex_point_map>
+{
+  typedef CGAL::Heat_method_3::Intrinsic_mollification_3<TriangleMesh, Traits> Im;
+  typedef Im_storage<TriangleMesh, Mollification::Constant, Traits, VertexPointMap> Im_wrapper;
+
+  typedef Surface_mesh_geodesic_distances_3<Im, Traits, LA, typename Im::Vertex_point_map> type;
+
+  Base_helper(TriangleMesh& tm, VertexPointMap vpm)
+    : Im_wrapper(tm, vpm)
+    , type(this->m_im)
+  {}
+
+  Base_helper(TriangleMesh& tm)
+    :  Im_wrapper(tm)
+    , type(this->m_im)
+  {}
+
+  type& base()
+  {
+    return static_cast<type&>(*this);
+  }
+
+  const type& base() const
+  {
+    return static_cast<const type&>(*this);
+  }
+
+  template <class VertexDistanceMap>
+  void estimate_geodesic_distances(VertexDistanceMap vdm)
+  {
+    base().estimate_geodesic_distances(this->m_im.vertex_distance_map(vdm));
   }
 };
 
@@ -766,8 +830,9 @@ class Surface_mesh_geodesic_distances_3
     >
 #endif
 {
-  static_assert(std::is_same<Mode, Direct>::value ||
-                std::is_same<Mode, Intrinsic_Delaunay>::value);
+  static_assert(
+      std::is_same<Mode, Direct>::value || std::is_same<Mode, Intrinsic_Delaunay>::value ||
+      std::is_same<Mode, Intrinsic_mollification_constant>::value);
 
   // extract real types from Default
 #ifdef CGAL_EIGEN3_ENABLED
@@ -818,14 +883,14 @@ public:
   /*!
     \brief Constructor
   */
-  Surface_mesh_geodesic_distances_3(const TriangleMesh& tm)
+  Surface_mesh_geodesic_distances_3(TriangleMesh& tm)
     : Base_helper(tm)
   {}
 
   /*!
     \brief Constructor
   */
-  Surface_mesh_geodesic_distances_3(const TriangleMesh& tm, Vertex_point_map vpm)
+  Surface_mesh_geodesic_distances_3(TriangleMesh& tm, Vertex_point_map vpm)
     : Base_helper(tm, vpm)
   {}
 

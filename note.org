@@ -1,0 +1,16 @@
+
+
+
+* start
+** git clone git@github.com:CGAL/cgal-public-dev.git
+** git remote add cgal git@github.com:CGAL/cgal.git
+** git fetch --all
+** git checkout -b gsoc2024-mollification-iomar --no-track cgal/master
+
+* TODOs
+** TODO revisit .clang-format
+** TODO revisit directory structure
+** TODO revisit naming convensions
+** TODO copy mesh inside mollification or not?
+** TODO v2v usage
+** TODO triats in details

@@ -343,6 +343,7 @@ private:
       double ineq = edge_lengths[j] + edge_lengths[k] - edge_lengths[i];
       epsilon = (std::max)(epsilon, (std::max)(0., delta-ineq));
     }
+    std::cout << "epsilon = "<< epsilon <<"\n";
     // update edge lengths
     for(edge_descriptor ed : edges(m_intrinsic_tm)) {
         Index i = get(edge_id_map, ed);
