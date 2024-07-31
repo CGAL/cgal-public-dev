@@ -155,90 +155,6 @@ double distancePoints(Surface_mesh mesh, const Point source, const Point target,
 
 
 
-// Generate sample of kMaxTries random points in the annulus around
-// a given point.
-template <Distance_version V>
-std::vector<Point> randomPoints(Surface_mesh mesh, Point c, std::size_t kMaxTries, double minDistance, const CGAL::AABB_tree<AABB_face_graph_traits> &tree)
-{
-  std::vector<Point> points;
-
-  //Begin flooding
-  Face_location c_location = PMP::locate_with_AABB_tree(c, tree, mesh);
-  face_descriptor fd = c_location.first;
-
-  std::vector<bool> selected(num_faces(mesh), false);
-  std::vector<face_descriptor> selection;
-  selected[fd] = true;
-  selection.push_back(fd);
-
-  auto do_queue_edge = [&](halfedge_descriptor h)
-  {
-    halfedge_descriptor hopp=opposite(h, mesh);
-    if (is_border(hopp, mesh) || selected[face(hopp, mesh)]) return false;
-
-    K::Segment_3 edge(mesh.point(source(h,mesh)), mesh.point(target(h,mesh)));
-    return (distancePoints<V>(mesh, mesh.point(source(h,mesh)), c, tree)< 2*minDistance ||
-            distancePoints<V>(mesh, mesh.point(target(h,mesh)), c, tree)< 2*minDistance);
-  };
-
-
-  std::vector<halfedge_descriptor> queue;
-  for (halfedge_descriptor h : CGAL::halfedges_around_face(halfedge(fd, mesh), mesh))
-    if (do_queue_edge(h))
-      queue.push_back(opposite(h, mesh));
-
-  while (!queue.empty())
-  {
-    halfedge_descriptor h = queue.back();
-    face_descriptor f = face(h, mesh);
-    queue.pop_back();
-    if (!selected[f])
-    {
-      selected[f]=true;
-      selection.push_back(f);
-    }
-
-    h=next(h, mesh);
-    if (do_queue_edge(h)) queue.push_back(opposite(h, mesh));
-    h=next(h, mesh);
-    if (do_queue_edge(h)) queue.push_back(opposite(h, mesh));
-  }
-
-  /*
-  std::cout << "center: " << c << "\n";
-  for (face_descriptor f : selection)
-    std::cout << f << " ";
-  std::cout << "\n";
-  */
-  //create sub_mesh
-  Surface_mesh::Property_map<face_descriptor,int> submap;
-  submap = mesh.add_property_map<face_descriptor, int>("f:sub").first;
-  for (face_descriptor f : selection)
-      submap[f]=1;
-
-  Surface_mesh sub_mesh;
-  Filtered_graph ffg(mesh, 1, submap);
-  copy_face_graph(ffg, sub_mesh);
-
-  //std::cout << "Sub mesh:" << faces(sub_mesh).size() << std::endl;
-  //Generate points in annulus
-  //Todo: Consider isolated triangle problem
-  //Todo: Polar geodesic sampling funtion here
-  CGAL::AABB_tree<AABB_face_graph_traits> sub_tree;
-  PMP::build_AABB_tree(sub_mesh, sub_tree);
-  while(points.size() < kMaxTries)
-  {
-    CGAL::Random_points_in_triangle_mesh_3<Surface_mesh> b(sub_mesh);
-    Point d = *b;
-    double dis = distancePoints<V>(sub_mesh, d, c, sub_tree);
-    if( dis > minDistance && dis < 2*minDistance)
-      points.push_back(d);
-  }
-
-  return points;
-}
-
-
 std::vector<std::vector<std::vector<std::vector<Point>>>>
 buildGrid(Surface_mesh /* mesh */, double minX, double maxX, double minY, double maxY, double minZ, double maxZ, double minDistance)
 {
@@ -288,7 +204,7 @@ template <Distance_version V>
 bool
 isFarEnoughFromExistingPoints(Surface_mesh mesh, Point point,
                               const std::vector<std::vector<std::vector<std::vector<Point>>>> grid,
-                              double minX, double minY, double minZ, double minDistance, double cellSize, const CGAL::AABB_tree<AABB_face_graph_traits> &tree)
+                              double minX, double minY, double minZ, double minDistance, double cellSize/*, const CGAL::AABB_tree<AABB_face_graph_traits> &tree8 */)
 {
   int gridX = (1 / cellSize)*point.x() - minX*(1 / cellSize);
   int gridY = (1 / cellSize)*point.y() - minY*(1 / cellSize);
@@ -314,7 +230,8 @@ isFarEnoughFromExistingPoints(Surface_mesh mesh, Point point,
         {
           for(Point p : grid[i][j][k])
           {
-            if (distancePoints<V>(mesh, point, p, tree) < minDistance)
+            if (euclideanDistancePoints(point, p) < minDistance)
+                //distancePoints<V>(mesh, point, p, tree) < minDistance)
               return false;
           }
         }
@@ -356,16 +273,22 @@ std::vector<Point> updatedPoissonDiskSampling(Surface_mesh mesh, std::size_t kMa
         minZ = point.z();
   }
 
-  CGAL::AABB_tree<AABB_face_graph_traits> tree;
-  PMP::build_AABB_tree(mesh, tree);
+  //CGAL::AABB_tree<AABB_face_graph_traits> tree;
+  //PMP::build_AABB_tree(mesh, tree);
 
   std::vector<Point> points;
-  std::queue<Point> activePoints;
+  std::queue<std::pair<Point, face_descriptor>> activePoints;
 
   CGAL::Random_points_in_triangle_mesh_3<Surface_mesh> g(mesh);
   Point c = *g;
-  activePoints.push(c);
+    
+  face_descriptor fc = g.last_item_picked();
+
+  activePoints.push(std::make_pair(c, fc));
   points.push_back(c);
+
+  Point currentPoint;
+  face_descriptor currentFace;
 
   // Define a four-dimensional vector
   std::vector<std::vector<std::vector<std::vector<Point>>>> four_d_grid = buildGrid(mesh, minX, maxX, minY, maxY, minZ, maxZ, minDistance);
@@ -375,20 +298,29 @@ std::vector<Point> updatedPoissonDiskSampling(Surface_mesh mesh, std::size_t kMa
 
   while (!activePoints.empty())
   {
-    Point currentPoint = activePoints.front();
+      
+    std::tie(currentPoint, currentFace) = activePoints.front();
     activePoints.pop();
 
-    std::vector<Point>  random_Points = randomPoints<V>(mesh, currentPoint, kMaxTries, minDistance, tree);
-
-    for (std::size_t i = 0; i < random_Points.size(); ++i){
-      if(isFarEnoughFromExistingPoints<V>(mesh, random_Points[i], four_d_grid, minX, minY, minZ, minDistance, cellSize, tree))
+    Face_location current_location = PMP::locate_in_face(currentPoint, currentFace, mesh);
+   
+    for (std::size_t i = 0; i < kMaxTries; ++i)
       {
-        //std::cout << "I'm adding"<< std::endl;
-        activePoints.push(random_Points[i]);
-        points.push_back(random_Points[i]);
-        four_d_grid = addPointToGrid(random_Points[i], four_d_grid, minX, minY, minZ, cellSize);
-      }
+        double angle = 2 * M_PI * (double)rand() / RAND_MAX;
+        double distance = minDistance + minDistance * (double)rand() / RAND_MAX;
+        K::Vector_2 dir(cos(angle),sin(angle));
+        std::vector<Face_location> path = PMP::straightest_geodesic<K>(current_location, dir, distance, mesh);
+        Point newPoint = PMP::construct_point(path.back(), mesh);
+
+        if(isFarEnoughFromExistingPoints<V>(mesh, newPoint, four_d_grid, minX, minY, minZ, minDistance, cellSize))
+        {
+            activePoints.push(std::make_pair(newPoint,path.back().first));
+            points.push_back(newPoint);
+            four_d_grid = addPointToGrid(newPoint, four_d_grid, minX, minY, minZ, cellSize);
+        }
+
     }
+
   }
 
   return points;
@@ -552,7 +484,7 @@ int main(int argc, char* argv[])
   out1.close();
 
 
-
+/*
 
 #if 1
   ///
@@ -566,6 +498,6 @@ int main(int argc, char* argv[])
   out << std::setprecision(17);
   std::copy(points.begin(), points.end(), std::ostream_iterator<Point>(out, "\n"));
 #endif
-
+*/
   return 0;
 }
