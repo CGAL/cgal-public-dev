@@ -50,6 +50,17 @@ int main()
                                                      maximum_distance(0.011).
                                                      edge_is_constrained_map(CGAL::make_random_access_property_map(ecm)));
 
+  std::cerr << "Region IDs: ";
+  for (std::size_t i = 0; i < region_ids.size(); ++i)
+    std::cerr << i << " -> " << region_ids[i] << "\n";
+  std::cerr << "Corner IDs: ";
+  for (std::size_t i = 0; i < corner_id_map.size(); ++i)
+    std::cerr << i << " -> " << corner_id_map[i] << "\n";
+  for (std::size_t i = 0; i < ecm.size(); ++i)
+    if (ecm[i])
+      std::cerr << "Edge " << i << " is at the boundary of a region\n";
+
+
   // run the remeshing algorithm using filled properties
   Mesh out;
   PMP::remesh_almost_planar_patches(sm,

@@ -26,10 +26,11 @@ int main(int argc, char* argv[])
 
   typedef boost::property_map<Mesh, CGAL::edge_is_feature_t>::type EIFMap;
   typedef boost::property_map<Mesh, CGAL::face_patch_id_t<int> >::type PIMap;
+  PIMap pid = mesh.add_property_map<face_descriptor, int>("f:patch_id", -1).first;
   typedef boost::property_map<Mesh, CGAL::vertex_incident_patches_t<int> >::type VIMap;
 
   EIFMap eif = get(CGAL::edge_is_feature, mesh);
-  PIMap pid = get(CGAL::face_patch_id_t<int>(), mesh);
+  pid = get(CGAL::face_patch_id_t<int>(), mesh);
   VIMap vip = get(CGAL::vertex_incident_patches_t<int>(), mesh);
 
   std::size_t number_of_patches
