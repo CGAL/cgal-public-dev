@@ -13,8 +13,8 @@
 #include <CGAL/Heat_method_3/Surface_mesh_geodesic_distances_3.h>
 #include <CGAL/squared_distance_3.h>
 
-#include <CGAL/Polygon_mesh_processing/Bsurf/locally_shortest_path.h>
 
+#include <CGAL/Polygon_mesh_processing/Bsurf/locally_shortest_path.h>
 
 #include <CGAL/AABB_face_graph_triangle_primitive.h>
 #include <CGAL/AABB_tree.h>
@@ -139,9 +139,20 @@ double euclideanDistancePoints(const Point source, const Point target)
   return sqrt(CGAL::squared_distance(source,target));
 }
 
+double geodesiceApproximation(const Face_location source, const Face_location target, Surface_mesh mesh)
+{
+  PMP::Dual_geodesic_solver<double> solver;
+  PMP::init_geodesic_dual_solver(solver, mesh);
+  std::vector<Edge_location> edge_locations;
+    
+  CGAL::Polygon_mesh_processing::locally_shortest_path<double>(source, target, mesh, edge_locations, solver);
+
+  return PMP::path_length<K>(edge_locations,source,target,mesh);
+}
+
 //function to switch between geodesic and Euclidean distance
 template <Distance_version V>
-double distancePoints(Surface_mesh mesh, const Point source, const Point target, const CGAL::AABB_tree<AABB_face_graph_traits> &tree)
+double distancePoints(Surface_mesh mesh, const Point source, const Point target, const CGAL::AABB_tree<AABB_face_graph_traits> &tree, const Face_location start, const Face_location end)
 {
   if constexpr (V==GEODESIC_DISTANCE)
     return geodesicDistancePoints(mesh, source, target, tree);
@@ -149,9 +160,6 @@ double distancePoints(Surface_mesh mesh, const Point source, const Point target,
     return euclideanDistancePoints(source, target);
   return 0;
 }
-
-
-
 
 
 
@@ -386,15 +394,16 @@ std::vector<face_descriptor> faces_in_sub_mesh(Point c, face_descriptor fc, Surf
 
 template <Distance_version V>
 bool
-is_far_enough(Point c, Surface_mesh /* mesh */, double minDistance, std::vector<face_descriptor> selection, Surface_mesh::Property_map<face_descriptor,std::vector<Point>> face_points)
+is_far_enough(Point c, Face_location c_location, Surface_mesh  mesh , double minDistance, std::vector<face_descriptor> selection, Surface_mesh::Property_map<face_descriptor,std::vector<Point>> face_points)
 {
     for (face_descriptor f : selection)
     {
         for(Point p  : face_points[f])
         {
-            //We could compute sub_mesh AABB tree and compute distances there
+            Face_location old_location = PMP::locate_in_face(p, f, mesh);
             // if (distancePoints<V>(mesh, c, p, tree) < minDistance)
-            if (euclideanDistancePoints(c, p) < minDistance)
+           // if (euclideanDistancePoints(c, p) < minDistance)
+            if (geodesiceApproximation(c_location, old_location, mesh) < minDistance)
                 return false;
         }
     }
@@ -427,20 +436,25 @@ std::vector<Point> no_grid_Poisson_disk_sampling(Surface_mesh mesh, std::size_t 
 
         std::vector<face_descriptor> selection = faces_in_sub_mesh<V>(currentPoint, currentFace, mesh, minDistance);
         Face_location current_location = PMP::locate_in_face(currentPoint, currentFace, mesh);
-
-        for (std::size_t i = 0; i < kMaxTries; ++i)
+        int k = 0;
+        while (k < kMaxTries)
         {
             double angle = 2 * M_PI * (double)rand() / RAND_MAX;
             double distance = minDistance + minDistance * (double)rand() / RAND_MAX;
             K::Vector_2 dir(cos(angle),sin(angle));
             std::vector<Face_location> path = PMP::straightest_geodesic<K>(current_location, dir, distance, mesh);
+            
+            Face_location newLocation = path.back();
             Point newPoint = PMP::construct_point(path.back(), mesh);
 
-            if(is_far_enough<V>(newPoint, mesh, minDistance, selection, face_points))
+            if(is_far_enough<V>(newPoint, newLocation, mesh, minDistance, selection, face_points))
             {
                 face_points[path.back().first].push_back(newPoint);
                 activePoints.push(std::make_pair(newPoint,path.back().first));
                 points.push_back(newPoint);
+            }else
+            {
+                ++k;
             }
 
         }
@@ -482,6 +496,10 @@ int main(int argc, char* argv[])
   out1 << std::setprecision(17);
   std::copy(points.begin(), points.end(), std::ostream_iterator<Point>(out1, "\n"));
   out1.close();
+
+    
+  
+
 
 
 /*
