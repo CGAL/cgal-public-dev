@@ -491,7 +491,7 @@ int main(int argc, char* argv[])
   timer.start();
   points = no_grid_Poisson_disk_sampling<EUCLIDEAN_DISTANCE>(mesh,kMaxTries,minDistance);
   timer.stop();
-  std::cout << "No grid Euclidean done in " << timer.time() << "s.\n";
+  std::cout << "No grid geodesic done in " << timer.time() << "s.\n";
   std::ofstream out1("sampling_no_grid.xyz");
   out1 << std::setprecision(17);
   std::copy(points.begin(), points.end(), std::ostream_iterator<Point>(out1, "\n"));
