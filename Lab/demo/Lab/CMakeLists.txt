@@ -37,7 +37,7 @@ find_package(CGAL REQUIRED OPTIONAL_COMPONENTS Qt6 ImageIO)
 set_package_properties(CGAL PROPERTIES TYPE REQUIRED)
 
 # Find Qt6 itself
-find_package(Qt6 QUIET
+find_package(Qt6 REQUIRED
              COMPONENTS OpenGLWidgets Widgets Qml
              OPTIONAL_COMPONENTS WebSockets Network)
 

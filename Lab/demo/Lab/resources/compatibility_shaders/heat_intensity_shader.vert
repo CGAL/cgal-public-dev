@@ -1,7 +1,7 @@
 
 attribute highp vec4 vertex;
 attribute highp vec3 normals;
-attribute highp vec3 colors;
+attribute highp vec4 colors;
 attribute highp float vdist;
 uniform highp mat4 mvp_matrix;
 uniform highp mat4 mv_matrix;
