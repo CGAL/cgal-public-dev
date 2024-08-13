@@ -32,15 +32,53 @@
 #include <boost/iterator/transform_iterator.hpp>
 
 #include <cmath>
-#include <list>
-#include <set>
-#include <stack>
-#include <unordered_map>
 
-namespace CGAL {
-namespace Heat_method_3 {
+namespace CGAL
+{
+namespace Heat_method_3
+{
+/**
+ * A tag class used to specify that the heat method applies the intrinsic mollification to the input
+ * mesh.
+ */
+namespace internal
+{
+struct Mollification
+{
+};
 
-namespace Mollification {
+template <typename T>
+static constexpr bool is_mollification_scheme_v = std::is_base_of<Mollification, T>::value;
+}  // namespace internal
+
+struct Intrinsic_mollification_constant : internal::Mollification
+{
+};
+
+namespace internal
+{
+template <typename T>
+static constexpr bool always_false = false;
+
+template <typename Scheme>
+struct mollification_scheme
+{
+  template <
+    typename TriangleMesh,
+    typename VertexPointMap,
+    typename HalfEdgeLengthMap,
+    typename NamedParameters = CGAL::parameters::Default_named_parameters,
+    typename Traits = typename Kernel_traits<typename boost::property_traits<
+      typename boost::property_map<TriangleMesh, vertex_point_t>::const_type>::value_type>::Kernel>
+  static void apply(const TriangleMesh &input_tm,
+                    const VertexPointMap &vpm,
+                    HalfEdgeLengthMap &halfedge_length_map,
+                    const NamedParameters &np = CGAL::parameters::default_values())
+  {
+    // mode doesn't need mollification
+    // static_assert(internal::always_false<Scheme>, "mollification scheme not implemented");
+  }
+};
 
 /*!
 \ingroup PkgHeatMethodRef
@@ -70,57 +108,65 @@ listed below
 
   @return void
   */
-template <typename TriangleMesh,
+template <>
+struct mollification_scheme<Intrinsic_mollification_constant>
+{
+  template <
+    typename TriangleMesh,
     typename VertexPointMap,
     typename HalfEdgeLengthMap,
     typename NamedParameters = CGAL::parameters::Default_named_parameters,
-    typename Traits = typename Kernel_traits<typename boost::property_traits<typename boost::
-            property_map<TriangleMesh, vertex_point_t>::const_type>::value_type>::Kernel>
-void constant_mollify(const TriangleMesh &input_tm,
-    const VertexPointMap &vpm,
-    HalfEdgeLengthMap &halfedge_length_map,
-    const NamedParameters &np = CGAL::parameters::default_values())
-{
-  typedef boost::graph_traits<TriangleMesh> graph_traits;
-  typedef typename graph_traits::halfedge_descriptor halfedge_descriptor;
-  /// Geometric typedefs
-  typedef typename Traits::Point_3 Point_3;
-  typedef typename Traits::FT FT;
-  typedef typename Traits::Vector_3 Vector_3;
+    typename Traits = typename Kernel_traits<typename boost::property_traits<
+      typename boost::property_map<TriangleMesh, vertex_point_t>::const_type>::value_type>::Kernel>
 
-  typedef int Index;
+  static void apply(const TriangleMesh &input_tm,
+                    const VertexPointMap &vpm,
+                    HalfEdgeLengthMap &halfedge_length_map,
+                    const NamedParameters &np = CGAL::parameters::default_values())
+  {
+    typedef boost::graph_traits<TriangleMesh> graph_traits;
+    typedef typename graph_traits::halfedge_descriptor halfedge_descriptor;
+    /// Geometric typedefs
+    typedef typename Traits::Point_3 Point_3;
+    typedef typename Traits::FT FT;
+    typedef typename Traits::Vector_3 Vector_3;
 
-  using parameters::choose_parameter;
-  using parameters::get_parameter;
+    typedef int Index;
 
-  FT delta = choose_parameter(get_parameter(np, internal_np::delta),
-      FT{1e-4 * (*std::min_element(halfedges(input_tm).bein(),
-                    halfedges(input_tm).end(),
-                    [&](halfedge_descriptor hd1, halfedge_descriptor hd2) {
-                      return halfedge_length_map[hd1] < halfedge_length_map[hd2];
-                    }))});
+    using parameters::choose_parameter;
+    using parameters::get_parameter;
 
-  // compute smallest length epsilon we can add to
-  // all edges to ensure that the strict triangle
-  // inequality holds with a tolerance of delta
-  FT epsilon = 0;
-  for (halfedge_descriptor hd : halfedges(input_tm)) {
-    halfedge_descriptor hd2 = next(hd, input_tm);
-    halfedge_descriptor hd3 = next(hd2, input_tm);
-    Index i = hd.idx();
-    Index j = hd2.idx();
-    Index k = hd3.idx();
-    FT ineq = halfedge_length_map[j] + halfedge_length_map[k] - halfedge_length_map[i];
-    epsilon = (std::max)(epsilon, (std::max)(0., delta - ineq));
+    FT delta = choose_parameter(
+      get_parameter(np, internal_np::delta),
+      FT{1e-4
+         * (*std::min_element(halfedges(input_tm).begin(),
+                              halfedges(input_tm).end(),
+                              [&](halfedge_descriptor hd1, halfedge_descriptor hd2) {
+                                return get(halfedge_length_map, hd1)
+                                       < get(halfedge_length_map, hd2);
+                              }))});
+
+    // compute smallest length epsilon we can add to
+    // all edges to ensure that the strict triangle
+    // inequality holds with a tolerance of delta
+    FT epsilon = 0;
+    for (halfedge_descriptor hd : halfedges(input_tm))
+      {
+        halfedge_descriptor hd2 = next(hd, input_tm);
+        halfedge_descriptor hd3 = next(hd2, input_tm);
+        FT ineq = get(halfedge_length_map, hd2) + get(halfedge_length_map, hd3)
+                  - get(halfedge_length_map, hd);
+        epsilon = (std::max)(epsilon, (std::max)(0., delta - ineq));
+      }
+    std::cout << "im epsilon = " << epsilon << "\n";
+    // update edge lengths
+    for (halfedge_descriptor hd : halfedges(input_tm))
+      {
+        get(halfedge_length_map, hd) += epsilon;
+      }
   }
-  std::cout << "epsilon = " << epsilon << "\n";
-  // update edge lengths
-  for (halfedge_descriptor hd : halfedges(input_tm)) {
-    Index i = hd.idx();
-    halfedge_length_map[i] += epsilon;
-  }
-}
-}  // namespace Mollification
+};
+}  // namespace internal
 }  // namespace Heat_method_3
 }  // namespace CGAL
 
