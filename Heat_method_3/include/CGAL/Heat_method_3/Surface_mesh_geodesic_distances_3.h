@@ -49,163 +49,119 @@ struct Direct
 {};
 
 /**
- * A tag class used to specify that the heat method applies the intrinsic Delaunay triangulation to
- * the input mesh.
+ * A tag class used to specify that the heat method applies the intrinsic Delaunay triangulation to the input mesh.
  */
 struct Intrinsic_Delaunay
-{
-};
-
-/**
- * A tag class used to specify that the heat method applies the intrinsic mollification to the input
- * mesh.
- */
-struct Intrinsic_mollification_constant
-{
-};
+{};
 
 namespace internal {
 
-template <typename TriangleMesh,
-    typename VertexPointMap,
-    typename HalfedgeLengthMap,
-    typename Traits,
-    bool UseMollification = false>
-class Halfedge_length {
-  // typedef typename Traits::FT FT;
-  typedef double FT;
-  typedef typename boost::graph_traits<TriangleMesh> graph_traits;
-  typedef typename graph_traits::vertex_descriptor vertex_descriptor;
-  typedef typename graph_traits::halfedge_descriptor halfedge_descriptor;
-  // Property map typedefs
-  typedef typename boost::property_traits<VertexPointMap>::reference VertexPointMap_reference;
-
+template <bool UseMollification = false>  // TODO: may enable_if/void_t
+class Cotangent_method {
  public:
-  static void init(const TriangleMesh &tm, const VertexPointMap &, HalfedgeLengthMap &)
+  template <typename Traits, typename TriangleMesh, typename VertexPointMap, typename HalfedgeLengthMap>
+  static void init(const TriangleMesh &, const VertexPointMap &, HalfedgeLengthMap &)
   {
   }
-  static FT calculate(const TriangleMesh &tm,
-      const VertexPointMap &vpm,
-      const HalfedgeLengthMap &he_length_map,
-      const vertex_descriptor v1,
-      const vertex_descriptor v2)
-  {
-    typename Traits::Compute_squared_distance_3 squared_distance =
-        Traits().compute_squared_distance_3_object();
-    VertexPointMap_reference p1 = get(vpm, v1);
-    VertexPointMap_reference p2 = get(vpm, v2);
-    return std::sqrt(to_double(squared_distance(p1, p2)));
-  };
 
-  static FT face_area(const TriangleMesh &tm,
+  template <typename TriangleMesh,
+      typename VertexPointMap,
+      typename HalfedgeLengthMap,
+      typename Traits>
+  static auto calc(const TriangleMesh &,
       const VertexPointMap &vpm,
-      const HalfedgeLengthMap &he_length_map,
-      const vertex_descriptor v1,
-      const vertex_descriptor v2,
-      const vertex_descriptor v3)
+      const HalfedgeLengthMap &,
+      typename boost::graph_traits<TriangleMesh>::vertex_descriptor v1,
+      typename boost::graph_traits<TriangleMesh>::vertex_descriptor v2,
+      typename boost::graph_traits<TriangleMesh>::vertex_descriptor v3,
+      Traits traits)
   {
-    typename Traits::Construct_vector_3 construct_vector = Traits().construct_vector_3_object();
+    typedef typename Traits::FT FT;
+    typedef typename boost::property_traits<VertexPointMap>::reference VertexPointMap_reference;
 
     VertexPointMap_reference p_i = get(vpm, v1);
     VertexPointMap_reference p_j = get(vpm, v2);
     VertexPointMap_reference p_k = get(vpm, v3);
-    Vector_3 v_ij = construct_vector(p_i, p_j);
-    Vector_3 v_ik = construct_vector(p_i, p_k);
-    Vector_3 cross = cross_product(v_ij, v_ik);
-    double N_cross = (CGAL::sqrt(to_double(scalar_product(cross, cross))));
-    return N_cross * (1. / 2);
-  }
-
-  static FT cotangent(const TriangleMesh &tm,
-      const VertexPointMap &vpm,
-      const HalfedgeLengthMap &he_length_map,
-      const vertex_descriptor v1,
-      const vertex_descriptor v2,
-      const vertex_descriptor v3)
-  {
-    FT a =  get(he_length_map, halfedge(v1, v2, tm));
-    FT b =  get(he_length_map, halfedge(v2, v3, tm));
-    FT c =  get(he_length_map, halfedge(v3, v1, tm));
-    FT S = (a + b + c) / 2;
-    return CGAL::sqrt(S * (S - a) * (S - b) * (S - c));
+    return CGAL::Weights::cotangent(p_i, p_j, p_k, traits);
   }
 };
 
-template <typename TriangleMesh,
-    typename VertexPointMap,
-    typename HalfedgeLengthMap,
-    typename Traits>
-class Halfedge_length<TriangleMesh, VertexPointMap, HalfedgeLengthMap, Traits> {
-  typedef typename Traits::FT FT;
-  typedef typename Traits::Point_3 Point_3;
-  typedef typename boost::graph_traits<TriangleMesh> graph_traits;
-  typedef typename graph_traits::vertex_descriptor vertex_descriptor;
-  typedef typename graph_traits::edge_descriptor edge_descriptor;
-  typedef typename graph_traits::halfedge_descriptor halfedge_descriptor;
-  // Property map typedefs
-  typedef typename boost::property_traits<VertexPointMap>::reference VertexPointMap_reference;
-
+template <>
+class Cotangent_method<true> {
  public:
+  template <typename Traits,
+      typename TriangleMesh,
+      typename VertexPointMap,
+      typename HalfedgeLengthMap>
   static void init(
       const TriangleMesh &tm, const VertexPointMap &vpm, HalfedgeLengthMap &he_length_map)
   {
+    typedef typename Traits::FT FT;
+    typedef typename boost::graph_traits<TriangleMesh> graph_traits;
+    typedef typename graph_traits::halfedge_descriptor halfedge_descriptor;
+    typedef typename graph_traits::vertex_descriptor vertex_descriptor;
     typename Traits::Compute_squared_distance_3 squared_distance =
         Traits().compute_squared_distance_3_object();
+    typedef typename boost::property_traits<VertexPointMap>::reference VertexPointMap_reference;
     for (auto e : edges(tm)) {
       halfedge_descriptor hd1 = halfedge(e, tm);
       halfedge_descriptor hd2 = opposite(hd1, tm);
       vertex_descriptor v1 = target(hd1, tm);
-      vertex_descriptor v2 = target(hd1, tm);
+      vertex_descriptor v2 = target(hd2, tm);
       VertexPointMap_reference p1 = get(vpm, v1);
       VertexPointMap_reference p2 = get(vpm, v2);
-      auto e_length = std::sqrt(to_double(squared_distance(p1, p2)));
+      FT e_length = CGAL::approximate_sqrt(squared_distance(p1, p2));
       put(he_length_map, hd1, e_length);
       put(he_length_map, hd2, e_length);
     }
   }
-  static FT calculate(const TriangleMesh &tm,
-      const VertexPointMap &vpm,
-      const HalfedgeLengthMap &he_length_map,
-      const vertex_descriptor v1,
-      const vertex_descriptor v2)
-  {
-    return get(he_length_map, halfedge(v1, v2, tm));
-  }
 
-  static FT face_area(const TriangleMesh &tm,
+  template <typename TriangleMesh,
+      typename VertexPointMap,
+      typename HalfedgeLengthMap,
+      typename Traits>
+  static auto calc(const TriangleMesh &tm,
       const VertexPointMap &vpm,
       const HalfedgeLengthMap &he_length_map,
-      const vertex_descriptor v1,
-      const vertex_descriptor v2,
-      const vertex_descriptor v3)
+      typename boost::graph_traits<TriangleMesh>::vertex_descriptor v1,
+      typename boost::graph_traits<TriangleMesh>::vertex_descriptor v2,
+      typename boost::graph_traits<TriangleMesh>::vertex_descriptor v3,
+      Traits traits)
   {
-    FT a =  get(he_length_map, halfedge(v1, v2, tm).idx());
-    FT b =  get(he_length_map, halfedge(v2, v3, tm));
-    FT c =  get(he_length_map, halfedge(v3, v1, tm));
-    FT S = (a + b + c) / 2;
-    return CGAL::sqrt(S * (S - a) * (S - b) * (S - c));
-  }
+    typedef typename Traits::FT FT;
+#if 0
+    typedef typename boost::property_traits<VertexPointMap>::reference VertexPointMap_reference;
 
-  static FT cotangent(const TriangleMesh &tm,
-      const VertexPointMap &vpm,
-      const HalfedgeLengthMap &he_length_map,
-      const vertex_descriptor v1,
-      const vertex_descriptor v2,
-      const vertex_descriptor v3)
-  {
-    FT a =  get(he_length_map, halfedge(v1, v2, tm));
-    FT b =  get(he_length_map, halfedge(v2, v3, tm));
-    FT c =  get(he_length_map, halfedge(v3, v1, tm));
-    FT S = (a + b + c) / 2;
-    return CGAL::sqrt(S * (S - a) * (S - b) * (S - c));
+    VertexPointMap_reference p_i = get(vpm, v1);
+    VertexPointMap_reference p_j = get(vpm, v2);
+    VertexPointMap_reference p_k = get(vpm, v3);
+    return CGAL::Weights::cotangent(p_i, p_j, p_k, traits);
+#endif
+    const FT a = get(he_length_map, halfedge(v1, v2, tm).first);
+    const FT b = get(he_length_map, halfedge(v2, v3, tm).first);
+    const FT c = get(he_length_map, halfedge(v3, v1, tm).first);
+    const FT S = (a + b + c) / 2;
+    // Compute the area of the triangle using Heron's formula
+    const FT area = CGAL::approximate_sqrt(S * (S - a) * (S - b) * (S - c));
+
+    // If the area is zero or negative, we return an undefined value
+    if (is_zero(area)) {
+        return FT(0); // Undefined cotangent
+    }
+
+    // Compute the cotangent of the angle opposite to edge length_c
+    // cotangent = (length_a^2 + length_b^2 - length_c^2) / (4 * area)    
+    return (CGAL::square(a) + CGAL::square(b) - CGAL::square(c)) / (4 * area);
   }
 };
+}  // namespace internal
 
+namespace internal {
 template <typename TriangleMesh,
           typename Traits,
           typename LA,
           typename VertexPointMap,
-          bool UseMollification = false>
+          typename Scheme>
 class Surface_mesh_geodesic_distances_3
 {
 protected:
@@ -236,17 +192,16 @@ protected:
   Vertex_id_map vertex_id_map;
 
   typedef CGAL::dynamic_face_property_t<Index> Face_property_tag;
-  typedef typename boost::property_map<TriangleMesh, Face_property_tag>::const_type Face_id_map;
+  typedef typename boost::property_map<TriangleMesh, Face_property_tag >::const_type Face_id_map;
   Face_id_map face_id_map;
 
   typedef CGAL::dynamic_halfedge_property_t<FT> Halfedge_length_tag;
   typedef
       typename boost::property_map<TriangleMesh, Halfedge_length_tag>::const_type HalfedgeLengthMap;
-
   HalfedgeLengthMap he_length_map;
 
-  typedef Halfedge_length<TriangleMesh, VertexPointMap, HalfedgeLengthMap, Traits, UseMollification>
-      he_length_calculator;
+  typedef Cotangent_method<is_mollification_scheme_v<Scheme>> cotangent_method;
+
 
  public:
   /*!
@@ -270,7 +225,6 @@ protected:
   Surface_mesh_geodesic_distances_3(const TriangleMesh& tm)
     : Surface_mesh_geodesic_distances_3(tm, get(vertex_point, tm))
   {
-    build();
   }
 
   /**
@@ -364,13 +318,9 @@ public:
     return m_sources;
   }
 
- private:
-  double get_edge_length(vertex_descriptor v1, vertex_descriptor v2) const
-  {
-    return he_length_calculator::calculate(tm, vpm, he_length_map, v1, v2);
-  }
-
-  double summation_of_edges() const
+private:
+  double
+  summation_of_edges() const
   {
     typename Traits::Compute_squared_distance_3 squared_distance = Traits().compute_squared_distance_3_object();
     double edge_sum = 0;
@@ -387,13 +337,9 @@ public:
       VertexPointMap_reference pi = get(vpm,current);
       VertexPointMap_reference pj = get(vpm, neighbor_one);
       VertexPointMap_reference pk = get(vpm, neighbor_two);
-      // FIXME: Use new or old length
-      edge_sum += (CGAL::is_border(opposite(hd, tm), tm) ? 1.0 : 0.5) *
-                  get_edge_length(current, neighbor_one);
-      edge_sum += (CGAL::is_border(opposite(hd2, tm), tm) ? 1.0 : 0.5) *
-                  get_edge_length(neighbor_one, neighbor_two);
-      edge_sum += (CGAL::is_border(opposite(hd3, tm), tm) ? 1.0 : 0.5) *
-                  get_edge_length(neighbor_two, current);
+      edge_sum += (CGAL::is_border(opposite(hd,tm),tm)?1.0:0.5) * std::sqrt(to_double(squared_distance(pi,pj)));
+      edge_sum += (CGAL::is_border(opposite(hd2,tm),tm)?1.0:0.5) * std::sqrt(to_double(squared_distance(pj,pk))) ;
+      edge_sum += (CGAL::is_border(opposite(hd3,tm),tm)?1.0:0.5) * std::sqrt(to_double(squared_distance(pk,pi))) ;
     }
     return edge_sum;
   }
@@ -450,14 +396,6 @@ public:
     }
   }
 
-  template <typename T>
-  auto normalize(T const &V)
-  {
-    auto const slen = V.squared_length();
-    auto const d = CGAL::approximate_sqrt(slen);
-    return V / d;
-  }
-
   void
   compute_unit_gradient()
   {
@@ -490,20 +428,13 @@ public:
       //so (Ncross eij) *uk and so on
       //sum all of those then multiply by 1./(2a)
 
-      // FIXME: Should this value be recalculated using original or mollified?
-      Vector_3 v_ij = normalize(construct_vector(p_i, p_j)) * get_edge_length(current, neighbor_one);
-      Vector_3 v_ik =
-          normalize(construct_vector(p_i, p_k)) * get_edge_length(current, neighbor_two);
+      Vector_3 v_ij = construct_vector(p_i,p_j);
+      Vector_3 v_ik = construct_vector(p_i,p_k);
 
       Vector_3 cross = cross_product(v_ij, v_ik);
       double N_cross = (CGAL::sqrt(to_double(scalar_product(cross,cross))));
       Vector_3 unit_cross = scale(cross, 1./N_cross);
-      double area_face = he_length_calculator::face_area(tm,
-          vpm,
-          he_length_map,
-          current,
-          neighbor_one,
-          neighbor_two);
+      double area_face = N_cross * (1./2);
       double u_i = CGAL::abs(m_solved_u(i));
       double u_j = CGAL::abs(m_solved_u(j));
       double u_k = CGAL::abs(m_solved_u(k));
@@ -535,10 +466,12 @@ public:
       vertex_descriptor current = *(vbegin);
       vertex_descriptor neighbor_one = *(++vbegin);
       vertex_descriptor neighbor_two = *(++vbegin);
-
       Index i = get(vertex_id_map, current);
       Index j = get(vertex_id_map, neighbor_one);
       Index k = get(vertex_id_map, neighbor_two);
+      vertex_descriptor v_i = current;
+      vertex_descriptor v_j = neighbor_one;
+      vertex_descriptor v_k = neighbor_two;
       VertexPointMap_reference p_i = get(vpm, current);
       VertexPointMap_reference p_j = get(vpm, neighbor_one);
       VertexPointMap_reference p_k = get(vpm, neighbor_two);
@@ -552,9 +485,9 @@ public:
       const Vector_3 v_kj = construct_vector(p_k, p_j);
 
       const Traits traits;
-      const FT cotan_i = CGAL::Weights::cotangent(p_k, p_i, p_j, traits);
-      const FT cotan_j = CGAL::Weights::cotangent(p_k, p_j, p_i, traits);
-      const FT cotan_k = CGAL::Weights::cotangent(p_j, p_k, p_i, traits);
+      const FT cotan_i = cotangent_method::calc(tm, vpm, he_length_map, v_k, v_i, v_j, traits);
+      const FT cotan_j = cotangent_method::calc(tm, vpm, he_length_map, v_k, v_j, v_i, traits);
+      const FT cotan_k = cotangent_method::calc(tm, vpm, he_length_map, v_j, v_k, v_i, traits);
 
       const Vector_3& a = m_X[face_i];
       const double i_entry = (CGAL::to_double(scalar_product(a, v_ij) * cotan_k)) +
@@ -672,8 +605,10 @@ private:
     }
     m_source_change_flag = false;
 
-    // init length for mollification
-    he_length_calculator::init(tm, vpm, he_length_map);
+    // init halfedge length for mollification
+    cotangent_method::template init<Traits>(tm, vpm, he_length_map);
+    // mollify
+    mollification_scheme<Scheme>::apply(tm, vpm, he_length_map);
 
     Index i = 0;
     for(vertex_descriptor vd : vertices(tm)){
@@ -715,20 +650,26 @@ private:
       pi = p_i;
       pj = p_j;
       pk = p_k;
+      vertex_descriptor vi = current;
+      vertex_descriptor vj = neighbor_one;
+      vertex_descriptor vk = neighbor_two;
 
-      const double cotan_i = CGAL::to_double(CGAL::Weights::cotangent(pk, pi, pj, traits));
+      const double cotan_i =
+          CGAL::to_double(cotangent_method::calc(tm, vpm, he_length_map, vk, vi, vj, traits));
       m_cotan_matrix.add_coef(j, k, -(1./2) * cotan_i);
       m_cotan_matrix.add_coef(k, j, -(1./2) * cotan_i);
       m_cotan_matrix.add_coef(j, j,  (1./2) * cotan_i);
       m_cotan_matrix.add_coef(k, k,  (1./2) * cotan_i);
 
-      const double cotan_j = CGAL::to_double(CGAL::Weights::cotangent(pk, pj, pi, traits));
+      const double cotan_j =
+          CGAL::to_double(cotangent_method::calc(tm, vpm, he_length_map, vk, vj, vi, traits));
       m_cotan_matrix.add_coef(i, k, -(1./2) * cotan_j);
       m_cotan_matrix.add_coef(k, i, -(1./2) * cotan_j);
       m_cotan_matrix.add_coef(i, i,  (1./2) * cotan_j);
       m_cotan_matrix.add_coef(k, k,  (1./2) * cotan_j);
 
-      const double cotan_k = CGAL::to_double(CGAL::Weights::cotangent(pj, pk, pi, traits));
+      const double cotan_k =
+          CGAL::to_double(cotangent_method::calc(tm, vpm, he_length_map, vj, vk, vi, traits));
       m_cotan_matrix.add_coef(i, j, -(1./2) * cotan_k);
       m_cotan_matrix.add_coef(j, i, -(1./2) * cotan_k);
       m_cotan_matrix.add_coef(i, i,  (1./2) * cotan_k);
@@ -777,6 +718,7 @@ private:
   Matrix m_index_divergence;
   Vector m_solved_phi;
   bool m_source_change_flag;
+
 };
 
 template <typename TriangleMesh,
@@ -785,9 +727,9 @@ template <typename TriangleMesh,
           typename LA,
           typename VertexPointMap>
 struct Base_helper
-  : public Surface_mesh_geodesic_distances_3<TriangleMesh, Traits, LA, VertexPointMap>
+  : public Surface_mesh_geodesic_distances_3<TriangleMesh, Traits, LA, VertexPointMap, Mode>
 {
-  typedef Surface_mesh_geodesic_distances_3<TriangleMesh, Traits, LA, VertexPointMap> type;
+  typedef Surface_mesh_geodesic_distances_3<TriangleMesh, Traits, LA, VertexPointMap, Mode> type;
 
   Base_helper(const TriangleMesh& tm, VertexPointMap vpm)
     : type(tm, vpm)
@@ -810,9 +752,9 @@ struct Base_helper
   template <class VertexDistanceMap>
   void estimate_geodesic_distances(VertexDistanceMap vdm)
   {
-    // CGAL_assertion(
-    //   !CGAL::Heat_method_3::internal::has_degenerate_faces(
-    //     base().triangle_mesh(), Traits()));
+    CGAL_assertion(
+      !CGAL::Heat_method_3::internal::has_degenerate_faces(
+        base().triangle_mesh(), Traits()));
     base().estimate_geodesic_distances(vdm);
   }
 };
@@ -833,21 +775,19 @@ struct Idt_storage
   {}
 };
 
-template <typename TriangleMesh,
-          typename Traits,
-          typename LA,
-          typename VertexPointMap>
+template <typename TriangleMesh, typename Traits, typename LA, typename VertexPointMap>
 struct Base_helper<TriangleMesh, Traits, Intrinsic_Delaunay, LA, VertexPointMap>
-  : public Idt_storage<TriangleMesh, Traits, VertexPointMap>
-  , public Surface_mesh_geodesic_distances_3<Intrinsic_Delaunay_triangulation_3<TriangleMesh, Traits>,
-                                             Traits,
-                                             LA,
-                                             typename Intrinsic_Delaunay_triangulation_3<TriangleMesh, Traits>::Vertex_point_map>
-{
+    : public Idt_storage<TriangleMesh, Traits, VertexPointMap>,
+      public Surface_mesh_geodesic_distances_3<
+          Intrinsic_Delaunay_triangulation_3<TriangleMesh, Traits>,
+          Traits,
+          LA,
+          typename Intrinsic_Delaunay_triangulation_3<TriangleMesh, Traits>::Vertex_point_map,
+          Intrinsic_Delaunay> {
   typedef CGAL::Heat_method_3::Intrinsic_Delaunay_triangulation_3<TriangleMesh, Traits> Idt;
   typedef Idt_storage<TriangleMesh, Traits, VertexPointMap> Idt_wrapper;
 
-  typedef Surface_mesh_geodesic_distances_3<Idt, Traits, LA, typename Idt::Vertex_point_map> type;
+  typedef Surface_mesh_geodesic_distances_3<Idt, Traits, LA, typename Idt::Vertex_point_map, Intrinsic_Delaunay> type;
 
   Base_helper(const TriangleMesh& tm, VertexPointMap vpm)
     : Idt_wrapper(tm, vpm)
@@ -938,9 +878,9 @@ class Surface_mesh_geodesic_distances_3
     >
 #endif
 {
-  static_assert(
-      std::is_same<Mode, Direct>::value || std::is_same<Mode, Intrinsic_Delaunay>::value ||
-      std::is_same<Mode, Intrinsic_mollification_constant>::value);
+  static_assert(std::is_same<Mode, Direct>::value ||
+                std::is_same<Mode, Intrinsic_Delaunay>::value ||
+                internal::is_mollification_scheme_v<Mode>);
 
   // extract real types from Default
 #ifdef CGAL_EIGEN3_ENABLED
@@ -991,14 +931,14 @@ public:
   /*!
     \brief Constructor
   */
-  Surface_mesh_geodesic_distances_3(TriangleMesh& tm)
+  Surface_mesh_geodesic_distances_3(const TriangleMesh& tm)
     : Base_helper(tm)
   {}
 
   /*!
     \brief Constructor
   */
-  Surface_mesh_geodesic_distances_3(TriangleMesh& tm, Vertex_point_map vpm)
+  Surface_mesh_geodesic_distances_3(const TriangleMesh& tm, Vertex_point_map vpm)
     : Base_helper(tm, vpm)
   {}
 
@@ -1164,7 +1104,7 @@ estimate_geodesic_distances(const TriangleMesh& tm,
 
 #endif
 
-} // namespace Heat_method_3
+}  // namespace Heat_method_3
 } // namespace CGAL
 
 #include <CGAL/enable_warnings.h>
