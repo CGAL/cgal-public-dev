@@ -106,8 +106,8 @@ class Cotangent_method<true> {
     for (auto e : edges(tm)) {
       halfedge_descriptor hd1 = halfedge(e, tm);
       halfedge_descriptor hd2 = opposite(hd1, tm);
-      vertex_descriptor v1 = target(hd1, tm);
-      vertex_descriptor v2 = target(hd2, tm);
+      vertex_descriptor v1 = target(e, tm);
+      vertex_descriptor v2 = source(e, tm);
       VertexPointMap_reference p1 = get(vpm, v1);
       VertexPointMap_reference p2 = get(vpm, v2);
       FT e_length = CGAL::approximate_sqrt(squared_distance(p1, p2));

@@ -126,6 +126,7 @@ struct mollification_scheme<Intrinsic_mollification_constant>
   {
     typedef boost::graph_traits<TriangleMesh> graph_traits;
     typedef typename graph_traits::halfedge_descriptor halfedge_descriptor;
+    typedef typename graph_traits::edge_descriptor edge_descriptor;
     /// Geometric typedefs
     typedef typename Traits::Point_3 Point_3;
     typedef typename Traits::FT FT;
@@ -136,34 +137,39 @@ struct mollification_scheme<Intrinsic_mollification_constant>
     using parameters::choose_parameter;
     using parameters::get_parameter;
 
-    FT delta = choose_parameter(
-      get_parameter(np, internal_np::delta),
-      FT{1e-4
-         * (*std::min_element(halfedges(input_tm).begin(),
-                              halfedges(input_tm).end(),
-                              [&](halfedge_descriptor hd1, halfedge_descriptor hd2) {
-                                return get(halfedge_length_map, hd1)
-                                       < get(halfedge_length_map, hd2);
-                              }))});
+    // TODO: use internal_np::delta
+    // FT delta = choose_parameter(get_parameter(np, internal_np::delta),
+    //     FT{1e-4 * (*std::min_element(edges(input_tm).begin(),
+    //                   edges(input_tm).end(),
+    //                   [&](edge_descriptor ed1, edge_descriptor ed2) {
+    //                     return get(halfedge_length_map, halfedge(ed1, input_tm)) <
+    //                            get(halfedge_length_map, halfedge(ed2, input_tm));
+    //                   }))});
+    FT min_length = std::numeric_limits<double>::max();
+    for (edge_descriptor ed : edges( input_tm)) {
+      auto len = get(halfedge_length_map, halfedge(ed, input_tm));
+      if (len != 0 && len < min_length)
+        min_length = len;
+    }
 
+    FT delta = 1e-4 * min_length;
+    std::cout << "delta = " << delta << "\n";
     // compute smallest length epsilon we can add to
     // all edges to ensure that the strict triangle
     // inequality holds with a tolerance of delta
     FT epsilon = 0;
-    for (halfedge_descriptor hd : halfedges(input_tm))
-      {
-        halfedge_descriptor hd2 = next(hd, input_tm);
-        halfedge_descriptor hd3 = next(hd2, input_tm);
-        FT ineq = get(halfedge_length_map, hd2) + get(halfedge_length_map, hd3)
-                  - get(halfedge_length_map, hd);
-        epsilon = (std::max)(epsilon, (std::max)(0., delta - ineq));
-      }
+    for (halfedge_descriptor hd : halfedges(input_tm)) {
+      halfedge_descriptor hd2 = next(hd, input_tm);
+      halfedge_descriptor hd3 = next(hd2, input_tm);
+      FT ineq = get(halfedge_length_map, hd2) + get(halfedge_length_map, hd3) -
+                get(halfedge_length_map, hd);
+      epsilon = (std::max)(epsilon, (std::max)(0., delta - ineq));
+    }
     std::cout << "im epsilon = " << epsilon << "\n";
     // update edge lengths
-    for (halfedge_descriptor hd : halfedges(input_tm))
-      {
-        get(halfedge_length_map, hd) += epsilon;
-      }
+    for (halfedge_descriptor hd : halfedges(input_tm)) {
+      put(halfedge_length_map, hd, epsilon + get(halfedge_length_map, hd));
+    }
   }
 };
 }  // namespace internal

@@ -330,6 +330,7 @@ private:
   void
   mollify(const double delta)
   {
+    std::cout << "delta = " << delta << "\n";
     // compute smallest length epsilon we can add to
     // all edges to ensure that the strict triangle
     // inequality holds with a tolerance of delta
@@ -343,7 +344,7 @@ private:
       double ineq = edge_lengths[j] + edge_lengths[k] - edge_lengths[i];
       epsilon = (std::max)(epsilon, (std::max)(0., delta-ineq));
     }
-    std::cout << "epsilon = "<< epsilon <<"\n";
+    std::cout << "idt epsilon = "<< epsilon <<"\n";
     // update edge lengths
     for(edge_descriptor ed : edges(m_intrinsic_tm)) {
         Index i = get(edge_id_map, ed);
@@ -439,7 +440,7 @@ private:
       stack.push(ed);
     }
 
-    if(CGAL::Heat_method_3::internal::has_degenerate_faces(m_intrinsic_tm, Traits()))
+    // if(CGAL::Heat_method_3::internal::has_degenerate_faces(m_intrinsic_tm, Traits()))
       mollify(min_length*1e-4);
 
     loop_over_edges(stack, mark_edges);
