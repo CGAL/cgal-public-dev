@@ -30,7 +30,8 @@ using HeatMethodDirect = CGAL::Heat_method_3::Surface_mesh_geodesic_distances_3<
 using HeatMethodIDT = CGAL::Heat_method_3::Surface_mesh_geodesic_distances_3<Triangle_mesh,
     CGAL::Heat_method_3::Intrinsic_Delaunay>;
 using HeatMethodIM = CGAL::Heat_method_3::Surface_mesh_geodesic_distances_3<Triangle_mesh,
-    CGAL::Heat_method_3::Intrinsic_mollification_constant>;
+    CGAL::Heat_method_3::Direct,
+    CGAL::Heat_method_3::mollification_scheme_constant>;
 using Traits = CGAL::Surface_mesh_shortest_path_traits<Kernel, Triangle_mesh>;
 using Surface_mesh_shortest_path = CGAL::Surface_mesh_shortest_path<Traits>;
 
