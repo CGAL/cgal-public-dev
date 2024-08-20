@@ -179,7 +179,7 @@ struct mollification_scheme_constant {
       FT e_length = CGAL::approximate_sqrt(squared_distance(p1, p2));
       put(he_length_map, hd1, e_length);
       put(he_length_map, hd2, e_length);
-      min_length = CGAL::min(min_length, e_length);
+      min_length = e_length > FT(0) ? CGAL::min(min_length, e_length) : min_length;
     }
 
     FT delta = choose_parameter(get_parameter(np, internal_np::delta), FT{1e-4 * min_length});
@@ -234,6 +234,134 @@ struct mollification_scheme_constant {
       return FT(0);  // Undefined cotangent
     }
 
+    assert(std::isfinite(area));
+    // Compute the cotangent of the angle opposite to edge length c
+    return (CGAL::square(a) + CGAL::square(b) - CGAL::square(c)) / (4 * area);
+  }
+};
+
+struct mollification_scheme_local_one_by_one {
+  template <typename TriangleMesh,
+            typename VertexPointMap,
+            typename NamedParameters = CGAL::parameters::Default_named_parameters,
+            typename Traits = typename Kernel_traits<typename boost::property_traits<typename boost::
+              property_map<TriangleMesh, vertex_point_t>::const_type>::value_type>::Kernel>
+  static auto apply(const TriangleMesh &tm,
+      const VertexPointMap &vpm,
+      const NamedParameters &np = CGAL::parameters::default_values())
+  {
+    typedef boost::graph_traits<TriangleMesh> graph_traits;
+    typedef typename graph_traits::halfedge_descriptor halfedge_descriptor;
+    typedef typename graph_traits::vertex_descriptor vertex_descriptor;
+    typedef typename graph_traits::edge_descriptor edge_descriptor;
+    /// Geometric typedefs
+    typedef typename Traits::Point_3 Point_3;
+    typedef typename Traits::FT FT;
+    typedef typename Traits::Vector_3 Vector_3;
+    typename Traits::Compute_squared_distance_3 squared_distance =
+        Traits().compute_squared_distance_3_object();
+    typedef typename boost::property_traits<VertexPointMap>::reference VertexPointMap_reference;
+
+    typedef int Index;
+
+    using parameters::choose_parameter;
+    using parameters::get_parameter;
+
+    typedef CGAL::dynamic_halfedge_property_t<FT> Halfedge_length_tag;
+    typedef typename boost::property_map<TriangleMesh, Halfedge_length_tag>::const_type
+        HalfedgeLengthMap;
+
+    HalfedgeLengthMap he_length_map(get(Halfedge_length_tag(), tm));
+
+    FT min_length = std::numeric_limits<double>::max();
+    for (auto e : edges(tm)) {
+      halfedge_descriptor hd1 = halfedge(e, tm);
+      halfedge_descriptor hd2 = opposite(hd1, tm);
+      vertex_descriptor v1 = target(e, tm);
+      vertex_descriptor v2 = source(e, tm);
+      VertexPointMap_reference p1 = get(vpm, v1);
+      VertexPointMap_reference p2 = get(vpm, v2);
+      FT e_length = CGAL::approximate_sqrt(squared_distance(p1, p2));
+      put(he_length_map, hd1, e_length);
+      put(he_length_map, hd2, e_length);
+      min_length = e_length > FT(0) ? CGAL::min(min_length, e_length) : min_length;
+    }
+
+    // TODO: add threshold parameter instead of constant 1e-4
+    FT delta = choose_parameter(get_parameter(np, internal_np::delta), FT{1e-4 * min_length});
+    std::cout << "delta = " << delta << "\n";
+    // compute smallest length epsilon we can add to
+    // all edges to ensure that the strict triangle
+    // inequality holds with a tolerance of delta
+    FT epsilon = 0;
+    for (halfedge_descriptor hd : halfedges(tm)) {
+      halfedge_descriptor hd2 = next(hd, tm);
+      halfedge_descriptor hd3 = next(hd2, tm);
+      std::array<halfedge_descriptor, 3> he = {hd, hd2, hd3};
+      std::array<double, 3> L = {
+          get(he_length_map, hd), get(he_length_map, hd2), get(he_length_map, hd3)};
+      if (std::max(delta + L[0] - L[1] - L[2],
+              std::max(delta - L[0] + L[1] - L[2], delta - L[0] - L[1] + L[2])) < 1e-4 * delta)
+        continue;
+      // Create indices vector and sort based on values
+      std::vector<int> indices(3);
+      std::iota(indices.begin(), indices.end(), 0);  // Fill indices with 0, 1, ..., size-1
+
+      // Sort indices based on values in `row`
+      std::sort(
+          indices.begin(), indices.end(), [&](int i1, int i2) { return L[i1] < L[i2]; });
+
+      // Reorder a, b, c so that c <= b <= a
+      auto a = L[indices[2]];
+      auto b = L[indices[1]];
+      auto c = L[indices[0]];
+
+      // Mollify
+      c = std::max(c, delta + a - b);
+      c = std::max(c, delta + b - a);
+      b = std::max(b, c);
+      a = std::max(a, b);
+
+      // Reorder back to original order
+      set(he_length_map, he[indices[0]], c);
+      set(he_length_map, he[indices[1]], b);
+      set(he_length_map, he[indices[2]], a);
+    }
+
+    return he_length_map;
+  }
+
+  template <typename TriangleMesh,
+            typename VertexPointMap,
+            typename HalfedgeLengthMap,
+            typename Traits>
+  static auto cotangent(const TriangleMesh &tm,
+      const VertexPointMap &vpm,
+      const HalfedgeLengthMap &he_length_map,
+      typename boost::graph_traits<TriangleMesh>::vertex_descriptor v1,
+      typename boost::graph_traits<TriangleMesh>::vertex_descriptor v2,
+      typename boost::graph_traits<TriangleMesh>::vertex_descriptor v3,
+      Traits traits)
+  {
+    typedef typename Traits::FT FT;
+
+    // Retrieve edge lengths from the halfedge length map
+    const FT a = get(he_length_map, halfedge(v1, v2, tm).first);
+    const FT b = get(he_length_map, halfedge(v2, v3, tm).first);
+    const FT c = get(he_length_map, halfedge(v3, v1, tm).first);
+
+    // Compute the semi-perimeter of the triangle
+    const FT S = (a + b + c) / 2;
+
+    // Compute the area of the triangle using Heron's formula
+    const FT area = CGAL::approximate_sqrt(S * (S - a) * (S - b) * (S - c));
+
+    // If the area is zero, return an undefined value
+    if (is_zero(area)) {
+      return FT(0);  // Undefined cotangent
+    }
+
+    assert(std::isfinite(area));
     // Compute the cotangent of the angle opposite to edge length c
     return (CGAL::square(a) + CGAL::square(b) - CGAL::square(c)) / (4 * area);
   }

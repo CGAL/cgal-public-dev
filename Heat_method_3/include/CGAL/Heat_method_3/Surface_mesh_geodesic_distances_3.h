@@ -326,7 +326,11 @@ private:
       Vector_3 v_ik = construct_vector(p_i,p_k);
 
       Vector_3 cross = cross_product(v_ij, v_ik);
-      double N_cross = (CGAL::sqrt(to_double(scalar_product(cross,cross))));
+      double N_cross = (CGAL::sqrt(to_double(scalar_product(cross, cross))));
+      if (is_zero(N_cross)) {
+        m_X[face_i] = Vector_3(0.0, 0.0, 0.0);
+        continue;
+      }
       Vector_3 unit_cross = scale(cross, 1./N_cross);
       double area_face = N_cross * (1./2);
       double u_i = CGAL::abs(m_solved_u(i));
@@ -342,9 +346,11 @@ private:
       Vector_3 edge_sums = scale(cross_product(unit_cross,v_ij), u_k);
       edge_sums = sum(edge_sums, scale(cross_product(unit_cross, construct_vector(p_j,p_k)), u_i));
       edge_sums = sum(edge_sums, scale(cross_product(unit_cross, construct_vector(p_k,p_i)), u_j));
-      edge_sums = scale(edge_sums, (1./area_face));
       double e_magnitude = CGAL::sqrt(to_double(scalar_product(edge_sums,edge_sums)));
+      assert(std::isfinite(e_magnitude));
       m_X[face_i] = scale(edge_sums,(1./e_magnitude));
+      assert(std::isfinite(m_X[face_i][0]));
+
     }
   }
 
@@ -391,6 +397,9 @@ private:
       const double k_entry = (CGAL::to_double(scalar_product(a, v_ki) * cotan_j)) +
                              (CGAL::to_double(scalar_product(a, v_kj) * cotan_i));
 
+      assert(std::isfinite(i_entry));
+      assert(std::isfinite(j_entry));
+      assert(std::isfinite(k_entry));
       indexD.add_coef(i, 0, (1./2)*i_entry);
       indexD.add_coef(j, 0, (1./2)*j_entry);
       indexD.add_coef(k, 0, (1./2)*k_entry);
@@ -574,6 +583,11 @@ private:
 
       //double area_face = CGAL::Polygon_mesh_processing::face_area(f,tm);
       //cross is 2*area
+      assert(std::isfinite(cotan_i));
+      assert(std::isfinite(cotan_j));
+      assert(std::isfinite(cotan_k));
+      assert(std::isfinite(norm_cross));
+
       m_mass_matrix.add_coef(i,i, (1./6.)*norm_cross);
       m_mass_matrix.add_coef(j,j, (1./6.)*norm_cross);
       m_mass_matrix.add_coef(k,k, (1./6.)*norm_cross);
@@ -645,9 +659,9 @@ struct Base_helper
   template <class VertexDistanceMap>
   void estimate_geodesic_distances(VertexDistanceMap vdm)
   {
-    CGAL_assertion(
-      !CGAL::Heat_method_3::internal::has_degenerate_faces(
-        base().triangle_mesh(), Traits()));
+    // CGAL_assertion(
+    //   !CGAL::Heat_method_3::internal::has_degenerate_faces(
+    //     base().triangle_mesh(), Traits()));
     base().estimate_geodesic_distances(vdm);
   }
 };
