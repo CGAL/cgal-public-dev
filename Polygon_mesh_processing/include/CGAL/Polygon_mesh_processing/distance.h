@@ -473,6 +473,26 @@ struct Triangle_structure_sampler_for_triangle_mesh
     min_sq_edge_length = (std::numeric_limits<double>::max)();
   }
 
+  void procede()
+  {
+    using parameters::choose_parameter;
+    using parameters::get_parameter;
+    using parameters::is_default_parameter;
+
+    bool use_pds_e = choose_parameter(get_parameter(this->np, internal_np::use_poisson_disk_sampling_euclidean), false);
+    bool use_pds_g = choose_parameter(get_parameter(this->np, internal_np::use_poisson_disk_sampling_geodesic), false);
+
+    if (use_pds_e || use_pds_g)
+    {
+      //TODO: call here your function
+    }
+    else
+    {
+      static_cast<Base*>(this)->procede();
+    }
+  }
+
+
   std::pair<TriangleIterator, TriangleIterator> get_range()
   {
     return std::make_pair(faces(tm).begin(), faces(tm).end());
