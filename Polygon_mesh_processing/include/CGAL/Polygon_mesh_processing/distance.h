@@ -19,6 +19,7 @@
 #include <CGAL/Polygon_mesh_processing/internal/AABB_traversal_traits_with_Hausdorff_distance.h>
 #include <CGAL/Polygon_mesh_processing/measure.h>
 #include <CGAL/Polygon_mesh_processing/bbox.h>
+#include <CGAL/Polygon_mesh_processing/internal/poisson_disk_sampling.h>
 
 #include <CGAL/AABB_tree.h>
 #include <CGAL/AABB_traits_3.h>
@@ -481,10 +482,15 @@ struct Triangle_structure_sampler_for_triangle_mesh
 
     bool use_pds_e = choose_parameter(get_parameter(this->np, internal_np::use_poisson_disk_sampling_euclidean), false);
     bool use_pds_g = choose_parameter(get_parameter(this->np, internal_np::use_poisson_disk_sampling_geodesic), false);
+    double sampling_radius = choose_parameter(get_parameter(this->np, internal_np::sampling_radius), 1.);
+    // TODO: add max tries as a named parameter
 
     if (use_pds_e || use_pds_g)
     {
-      //TODO: call here your function
+      std::vector<typename GeomTraits::Point_3> points = use_pds_e
+                  ? poisson_disk_sampling<internal::EUCLIDEAN_DISTANCE,GeomTraits>(m, sampling_radius)
+                  : poisson_disk_sampling<internal::GEODESIC_DISTANCE,GeomTraits>(m, sampling_radius);
+      std::copy(points.begin(), points.end(), this->out);
     }
     else
     {
