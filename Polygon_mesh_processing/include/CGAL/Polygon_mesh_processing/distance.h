@@ -484,6 +484,7 @@ struct Triangle_structure_sampler_for_triangle_mesh
     bool use_pds_g = choose_parameter(get_parameter(this->np, internal_np::use_poisson_disk_sampling_geodesic), false);
     double sampling_radius = choose_parameter(get_parameter(this->np, internal_np::sampling_radius), 1.);
     // TODO: add max tries as a named parameter
+    // TODO: add seed as a named parameter
 
     if (use_pds_e || use_pds_g)
     {
