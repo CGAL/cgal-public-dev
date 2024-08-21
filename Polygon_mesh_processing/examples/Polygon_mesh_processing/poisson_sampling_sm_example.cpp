@@ -1,6 +1,7 @@
 #include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
 #include <CGAL/Surface_mesh.h>
 #include <CGAL/Polygon_mesh_processing/distance.h>
+#include <CGAL/Polygon_mesh_processing/Bsurf/locally_shortest_path.h>
 
 #include <CGAL/Polygon_mesh_processing/IO/polygon_mesh_io.h>
 #include <iostream>
