@@ -98,8 +98,9 @@ faces_in_sub_mesh(const typename GeomTraits::Point_3& c,
 //      return (distancePoints<V>(mesh, mesh.point(source(h,mesh)), c, tree)< 3*minDistance ||
 //              distancePoints<V>(mesh, mesh.point(target(h,mesh)), c, tree)< 3*minDistance);
 
-    return (euclideanDistancePoints<GeomTraits>(mesh.point(source(h,mesh)), c)< 3*minDistance ||
-            euclideanDistancePoints<GeomTraits>(mesh.point(target(h,mesh)), c)< 3*minDistance);
+   // return (euclideanDistancePoints<GeomTraits>(mesh.point(source(h,mesh)), c)< 3*minDistance ||
+        //    euclideanDistancePoints<GeomTraits>(mesh.point(target(h,mesh)), c)< 3*minDistance);
+      return typename GeomTraits::Compare_squared_distance_3()(c, edge, sqrt(3*minDistance))!=CGAL::LARGER;
   };
 
 
@@ -204,7 +205,6 @@ poisson_disk_sampling(const TriangleMesh& mesh,
 
       Face_location newLocation = path.back();
       Point newPoint = construct_point(path.back(), mesh);
-
       if(is_far_enough<GeomTraits,V>(newPoint, newLocation, mesh, minDistance, selection, make_random_access_property_map(face_points), solver_ptr))
       {
         face_points[path.back().first].push_back(newPoint);

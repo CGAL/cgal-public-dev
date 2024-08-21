@@ -28,7 +28,7 @@ int main(int argc, char* argv[])
     return 1;
   }
 
-  const double sampling_radius = (argc > 2) ? std::atof(argv[2]) : 0.01;
+  const double sampling_radius = (argc > 2) ? std::atof(argv[2]) : 0.001;
 
   std::vector<Point> points;
   PMP::sample_triangle_mesh(mesh,
