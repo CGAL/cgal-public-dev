@@ -28,13 +28,13 @@ int main(int argc, char* argv[])
     return 1;
   }
 
-  const int points_per_face = (argc > 2) ? std::stoi(argv[2]) : 10;
+  const double sampling_radius = (argc > 2) ? std::stoi(argv[2]) : 10;
 
   std::vector<Point> points;
   PMP::sample_triangle_mesh(mesh,
                             std::back_inserter(points),
-                            CGAL::parameters::number_of_points_per_face(points_per_face).
-                                              use_poisson_disk_sampling_euclidean(true));
+                            CGAL::parameters::use_poisson_disk_sampling_euclidean(true).
+                                              sampling_radius(sampling_radius));
 
   std::ofstream out("sampling.xyz");
   out << std::setprecision(17);

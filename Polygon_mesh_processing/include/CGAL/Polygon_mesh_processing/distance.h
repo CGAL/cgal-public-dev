@@ -488,8 +488,8 @@ struct Triangle_structure_sampler_for_triangle_mesh
     if (use_pds_e || use_pds_g)
     {
       std::vector<typename GeomTraits::Point_3> points = use_pds_e
-                  ? poisson_disk_sampling<internal::EUCLIDEAN_DISTANCE,GeomTraits>(m, sampling_radius)
-                  : poisson_disk_sampling<internal::GEODESIC_DISTANCE,GeomTraits>(m, sampling_radius);
+                  ? internal::poisson_disk_sampling<GeomTraits, internal::EUCLIDEAN_DISTANCE>(tm, sampling_radius)
+                  : internal::poisson_disk_sampling<GeomTraits, internal::GEODESIC_DISTANCE>(tm, sampling_radius);
       std::copy(points.begin(), points.end(), this->out);
     }
     else
