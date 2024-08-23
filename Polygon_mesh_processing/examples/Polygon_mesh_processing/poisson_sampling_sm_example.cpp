@@ -30,13 +30,15 @@ int main(int argc, char* argv[])
 
   const double sampling_radius = (argc > 2) ? std::atof(argv[2]) : 0.009;
     
-  const std::size_t number_of_darts = (argc > 3) ? std::atof(argv[3]) : 30;
+  const std::size_t number_of_darts = (argc > 3) ? std::atof(argv[3]) : 20;
+    
+  CGAL::Random random_seed = (argc > 4) ? std::atof(argv[4]) : CGAL::get_default_random();
 
   std::vector<Point> points;
   PMP::sample_triangle_mesh(mesh,
                             std::back_inserter(points),
                             CGAL::parameters::use_poisson_disk_sampling_euclidean(true).
-                                              sampling_radius(sampling_radius).number_of_darts(number_of_darts));
+                                              sampling_radius(sampling_radius).number_of_darts(number_of_darts).random_seed(CGAL::internal_np::random_seed));
 
   std::ofstream out("sampling.xyz");
   out << std::setprecision(17);

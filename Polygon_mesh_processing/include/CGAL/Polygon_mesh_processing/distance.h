@@ -483,14 +483,15 @@ struct Triangle_structure_sampler_for_triangle_mesh
     bool use_pds_e = choose_parameter(get_parameter(this->np, internal_np::use_poisson_disk_sampling_euclidean), false);
     bool use_pds_g = choose_parameter(get_parameter(this->np, internal_np::use_poisson_disk_sampling_geodesic), false);
     double sampling_radius = choose_parameter(get_parameter(this->np, internal_np::sampling_radius), 1.);
-    // TODO: add max tries as a named parameter
-    // TODO: add seed as a named parameter
+    std::size_t number_of_darts = choose_parameter(get_parameter(this->np, internal_np::number_of_darts),30.);
+    CGAL::Random random_seed = choose_parameter(get_parameter(this->np, internal_np::random_seed),CGAL::get_default_random());
+
 
     if (use_pds_e || use_pds_g)
     {
       std::vector<typename GeomTraits::Point_3> points = use_pds_e
-                  ? internal::poisson_disk_sampling<GeomTraits, internal::EUCLIDEAN_DISTANCE>(tm, sampling_radius)
-                  : internal::poisson_disk_sampling<GeomTraits, internal::GEODESIC_DISTANCE>(tm, sampling_radius);
+                  ? internal::poisson_disk_sampling<GeomTraits, internal::EUCLIDEAN_DISTANCE>(tm, sampling_radius,number_of_darts,random_seed)
+                  : internal::poisson_disk_sampling<GeomTraits, internal::GEODESIC_DISTANCE>(tm, sampling_radius,number_of_darts,random_seed);
       std::copy(points.begin(), points.end(), this->out);
     }
     else

@@ -158,8 +158,8 @@ template <class GeomTraits, Distance_version V, class TriangleMesh>
 std::vector<typename GeomTraits::Point_3>
 poisson_disk_sampling(const TriangleMesh& mesh,
                       double minDistance,
-                      std::size_t kMaxTries = 30.,
-                      CGAL::Random& r = get_default_random())
+                      std::size_t kMaxTries,
+                      CGAL::Random& r)
 {
   using Point = typename GeomTraits::Point_3;
   using Graph_traits = boost::graph_traits<TriangleMesh>;
@@ -201,7 +201,6 @@ poisson_disk_sampling(const TriangleMesh& mesh,
       double distance = minDistance + minDistance * r.get_double();
       typename GeomTraits::Vector_2 dir(cos(angle),sin(angle));
       std::vector<Face_location> path = straightest_geodesic<GeomTraits>(current_location, dir, distance, mesh);
-
       Face_location newLocation = path.back();
       Point newPoint = construct_point(path.back(), mesh);
       if(is_far_enough<GeomTraits,V>(newPoint, newLocation, mesh, minDistance, selection, make_random_access_property_map(face_points), solver_ptr))
