@@ -917,6 +917,36 @@ struct Triangle_structure_sampler_for_triangle_soup
  *     \cgalParamType{unsigned int}
  *     \cgalParamDefault{`0`}
  *   \cgalParamNEnd
+ *
+ *   \cgalParamNBegin{use_poisson_disk_sampling_euclidean}
+ *     \cgalParamDescription{if `true` is passed, the Euclidean distance is used to compute the distance between sampled points.}
+ *     \cgalParamType{Boolean}
+ *     \cgalParamDefault{`false`}
+ *   \cgalParamNEnd
+ *
+ *   \cgalParamNBegin{use_poisson_disk_sampling_geodesic}
+ *     \cgalParamDescription{if `true` is passed, the approximate geodesic distance is used to compute the distance between 
+ *                          sampled points.}
+ *     \cgalParamType{Boolean}
+ *     \cgalParamDefault{`false`}
+ *     \cgalParamExtra{The geodesic distance is approximated using the 'locally_shortest_path'
+ *                     function.}
+ *   \cgalParamNEnd
+ *
+ *   \cgalParamNBegin{sampling_radius}
+ *     \cgalParamDescription{a value used by Poisson disk sampling to specify the minimum allowable distance between 
+ *                          points in the sample.}
+ *     \cgalParamType{double}
+ *     \cgalParamDefault{`1`}
+ *   \cgalParamNEnd
+ *
+ *   \cgalParamNBegin{number_of_darts}
+ *     \cgalParamDescription{a value used by Poisson disk sampling to specify the number of attempts to find a point in the annulus
+ *                          around a sample point that is sufficiently far from all other points in the sample.}
+ *     \cgalParamType{std::size_t}
+ *     \cgalParamDefault{`30`}
+ *   \cgalParamNEnd
+ *
  * \cgalNamedParamsEnd
  *
  * @see `CGAL::Polygon_mesh_processing::sample_triangle_soup()`
