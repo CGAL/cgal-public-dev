@@ -348,7 +348,7 @@ private:
       edge_sums = sum(edge_sums, scale(cross_product(unit_cross, construct_vector(p_k,p_i)), u_j));
       double e_magnitude = CGAL::sqrt(to_double(scalar_product(edge_sums,edge_sums)));
       assert(std::isfinite(e_magnitude));
-      m_X[face_i] = scale(edge_sums,(1./e_magnitude));
+      m_X[face_i] = scale(edge_sums, (is_zero(e_magnitude) ? 1 : 1. / e_magnitude));
       assert(std::isfinite(m_X[face_i][0]));
 
     }

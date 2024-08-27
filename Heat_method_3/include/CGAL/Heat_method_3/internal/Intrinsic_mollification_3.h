@@ -80,7 +80,7 @@ struct Mollification_scheme_identity {
     typedef CGAL::dynamic_halfedge_property_t<FT> Halfedge_length_tag;
     typedef typename boost::property_map<TriangleMesh, Halfedge_length_tag>::const_type
         HalfedgeLengthMap;
-    return HalfedgeLengthMap{get(Halfedge_length_tag(), tm)};
+    return HalfedgeLengthMap{};
   }
 
   /*!
@@ -300,21 +300,22 @@ struct mollification_scheme_local_one_by_one {
       std::array<halfedge_descriptor, 3> he = {hd, hd2, hd3};
       std::array<double, 3> L = {
           get(he_length_map, hd), get(he_length_map, hd2), get(he_length_map, hd3)};
-      if (std::max(delta + L[0] - L[1] - L[2],
-              std::max(delta - L[0] + L[1] - L[2], delta - L[0] - L[1] + L[2])) < 1e-4 * delta)
-        continue;
       // Create indices vector and sort based on values
       std::vector<int> indices(3);
       std::iota(indices.begin(), indices.end(), 0);  // Fill indices with 0, 1, ..., size-1
 
       // Sort indices based on values in `row`
-      std::sort(
-          indices.begin(), indices.end(), [&](int i1, int i2) { return L[i1] < L[i2]; });
-
+      std::sort(indices.begin(), indices.end(), [&](int i1, int i2) { return L[i1] < L[i2]; });
       // Reorder a, b, c so that c <= b <= a
       auto a = L[indices[2]];
       auto b = L[indices[1]];
       auto c = L[indices[0]];
+
+      if (a - b - c > 1e-4)
+        continue;
+
+
+
 
       // Mollify
       c = std::max(c, delta + a - b);
@@ -323,9 +324,9 @@ struct mollification_scheme_local_one_by_one {
       a = std::max(a, b);
 
       // Reorder back to original order
-      set(he_length_map, he[indices[0]], c);
-      set(he_length_map, he[indices[1]], b);
-      set(he_length_map, he[indices[2]], a);
+      put(he_length_map, he[indices[0]], c);
+      put(he_length_map, he[indices[1]], b);
+      put(he_length_map, he[indices[2]], a);
     }
 
     return he_length_map;

@@ -14,6 +14,7 @@ CLOSED: [2024-08-19 ن 02:22]
 CLOSED: [2024-08-19 ن 02:22]
 ** TODO integrate mollification schemes with IDT.
 ** TODO cleanup code.
+** TODO add better argument parsing in example.
 
 ** TODO revisit .clang-format
 ** TODO revisit directory structure
