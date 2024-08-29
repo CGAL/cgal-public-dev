@@ -1,6 +1,6 @@
 # GLFW
 - Auto detection of keyboard layout
-- Set pivot point position (Shift+Right) 
+- Set pivot point position (Shift+Right)
 
 # Qt 
 - Fix drop of performance when normals are displayed
