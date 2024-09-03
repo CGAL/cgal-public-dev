@@ -372,7 +372,7 @@ public:
 
   class Compare_z_at_xy_below_3 {
   protected:
-    const Self* m _self;
+    const Self* m_self;
 
   public:
     Compare_z_at_xy_below_3(const Self* self) : m_self(self) {}

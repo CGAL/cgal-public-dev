@@ -5,7 +5,7 @@
 #include <CGAL/Arithmetic_kernel.h>
 #include <CGAL/Cartesian.h>
 #include <CGAL/Curved_kernel_via_analysis_2/Curved_kernel_via_analysis_2_impl.h>
-// #include <CGAL/Algebraic_curve_kernel_2_generator.h>
+#include <CGAL/Algebraic_curve_kernel_2_generator.h>
 #include <CGAL/envelope_3.h>
 #include <CGAL/Envelope_voronoi_traits_2/Anistropic_voronoi_traits_2.h>
 
