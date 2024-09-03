@@ -13,11 +13,8 @@
 //
 // $URL: $
 // $Id:
-// 
 //
 // Author(s): Ophir Setter          <ophir.setter@cs.tau.ac.il>
-//
-//
 
 #ifndef CGAL_ALGEBRAIC_APOLLONIUS_TRAITS_2_H
 #define CGAL_ALGEBRAIC_APOLLONIUS_TRAITS_2_H
@@ -34,51 +31,36 @@
 
 namespace CGAL {
 
-/*!
- * \class Algebraic_apollonius_traits_2 This class is used to calculate the
+/*! \class Algebraic_apollonius_traits_2 This class is used to calculate the
  * Apollonius diagram. The distance function from an apollonius site is:
- *        
+ *
  *        $d(x) = \sqrt{(p_x - c_x)^2 + (p_y - c_y)^2} - r
  *
  * Where x = (p_x, p_y), (c_x, c-y) is the center of the circle and r is its
  * radius.
- *        
- */  
-template <class CurvedKernel_>
-class Algebraic_apollonius_traits_2 
-: public Algebraic_apollonius_traits_base_2< 
-                                             CurvedKernel_, 
-                                             Algebraic_apollonius_traits_2
-                                             <
-                                               CurvedKernel_
-                                             >,
-                                             Envelope_voronoi_traits_2::
-                                              _Apollonius_disk< 
-                                               typename CurvedKernel_::
-                                               Curve_kernel_2::
-                                               Coordinate_1::
-                                               Rational 
-                                               >,
-                                             CGAL::Field_with_sqrt_tag
-                                           >
+ */
+template <typename CurvedKernel_>
+class Algebraic_apollonius_traits_2 :
+    public Algebraic_apollonius_traits_base_2<CurvedKernel_,
+                                              Algebraic_apollonius_traits_2
+                                              <CurvedKernel_>,
+ Envelope_voronoi_traits_2::_Apollonius_disk<typename CurvedKernel_::
+                                             Curve_kernel_2::
+                                             Coordinate_1::Rational>,
+ CGAL::Field_with_sqrt_tag>
 {
-  typedef CurvedKernel_                            Curved_kernel_2;
-  typedef Algebraic_apollonius_traits_2< 
-    Curved_kernel_2 >                              Self;
-  typedef Envelope_voronoi_traits_2::_Apollonius_disk< 
-    typename CurvedKernel_::
-    Curve_kernel_2::
-    Coordinate_1::
-    Rational >                                     Site_2;
+  using Curved_kernel_2 = CurvedKernel_;
+  using Self = Algebraic_apollonius_traits_2<Curved_kernel_2>;
+  using Site_2 =
+    Envelope_voronoi_traits_2::_Apollonius_disk
+    <typename CurvedKernel_::Curve_kernel_2::Coordinate_1::Rational>;
 
-  typedef Algebraic_apollonius_traits_base_2< 
-    Curved_kernel_2, Self, Site_2, 
-    CGAL::Field_with_sqrt_tag >                    Base;
+  using Base =
+    Algebraic_apollonius_traits_base_2<Curved_kernel_2, Self, Site_2,
+                                       CGAL::Field_with_sqrt_tag>;
 
 public:
-
-  typedef typename Base::Xy_monotone_surface_3     Xy_monotone_surface_3;
-  
+  using Xy_monotone_surface_3 = typename Base::Xy_monotone_surface_3;
 
   //! Compute the distance from a point to a site.
   /*! Compute the distance from a point to a site.
@@ -88,33 +70,29 @@ public:
     \return The distance from the point to this site.
   */
   template <typename NT>
-    static NT distance(const NT &px,
-                       const NT &py, const Site_2& site)
-  {
+  static NT distance(const NT& px, const NT& py, const Site_2& site) {
     const NT cx = site.center().first;
     const NT cy = site.center().second;
-    
+
     NT x = px - cx;
     NT y = py - cy;
-    
+
     return sqrt(x*x + y*y) - NT(site.r());
   }
 
-  class Construct_projected_intersections_2
-  {
+  class Construct_projected_intersections_2 {
   protected:
     const Self * m_traits;
 
   public:
-  Construct_projected_intersections_2(const Self * traits)
-    : m_traits(traits)
+    Construct_projected_intersections_2(const Self * traits) :
+      m_traits(traits)
     {}
 
-    template <class OutputIterator>
-      OutputIterator operator()(const Xy_monotone_surface_3& s1,
-                                const Xy_monotone_surface_3& s2,
-                                OutputIterator o) const
-    {
+    template <typename OutputIterator>
+    OutputIterator operator()(const Xy_monotone_surface_3& s1,
+                              const Xy_monotone_surface_3& s2,
+                              OutputIterator o) const {
       return m_traits->apollonius_bisector(s1.center().first,
                                            s1.center().second,
                                            s1.r(),
@@ -128,9 +106,7 @@ public:
 
   Construct_projected_intersections_2
   construct_projected_intersections_2_object() const
-  {
-    return Construct_projected_intersections_2(this);
-  }
+  { return Construct_projected_intersections_2(this); }
 };
 
 } //namespace CGAL

@@ -13,7 +13,6 @@
 //
 // $URL: $
 // $Id: $
-// 
 //
 // Author(s)     :  Ophir Setter           <ophirset@post.tau.ac.il>
 
@@ -24,56 +23,42 @@
 #define CGAL_FILTERED_ENVELOPE_OBSERVER_H
 
 #include <CGAL/Arr_observer.h>
-
 #include <CGAL/Envelope_voronoi_2/envelope_voronoi_assertions.h>
-
 
 namespace CGAL {
 
-template <class Arrangement_2_>
-class Filtered_envelope_observer : Arr_observer<Arrangement_2_>
-{
- public:
-  typedef Arrangement_2_                               Arrangement_2;
-  typedef Arr_observer<Arrangement_2>                  Base;
-  typedef Filtered_envelope_observer<Arrangement_2>    Self;
+template <typename Arrangement_2_>
+class Filtered_envelope_observer : Arr_observer<Arrangement_2_> {
+public:
+  using Arrangement_2 = Arrangement_2_;
+  using Base = Arr_observer<Arrangement_2>;
+  using Self = Filtered_envelope_observer<Arrangement_2>;
+  using Vertex_handle = typename Base::Vertex_handle;
+  using Halfedge_handle = typename Base::Halfedge_handle;
+  using X_monotone_curve_2 = typename Base::X_monotone_curve_2;
+  using Halfedge_around_vertex_circulator =
+    typename Arrangement_2::Halfedge_around_vertex_circulator;
+  using Vertex = typename Arrangement_2::Vertex;
+  using Halfedge = typename Arrangement_2::Halfedge;
+  using Surfaces_container = typename Vertex::Surfaces_container;
+  using Surface = typename Surfaces_container::value_type;
 
-  typedef typename Base::Vertex_handle                 Vertex_handle;
-  typedef typename Base::Halfedge_handle               Halfedge_handle;
-  typedef typename Base::X_monotone_curve_2            X_monotone_curve_2;
-
-  typedef typename Arrangement_2::Halfedge_around_vertex_circulator
-    Halfedge_around_vertex_circulator;
-  typedef typename Arrangement_2::Vertex               Vertex;
-  typedef typename Arrangement_2::Halfedge             Halfedge;
-  typedef typename Vertex::Surfaces_container          Surfaces_container;
-  typedef typename Surfaces_container::value_type      Surface;
-
-  Filtered_envelope_observer(Arrangement_2 &arr, Surface s1, Surface s2) 
-    : Arr_observer<Arrangement_2_>(arr), _s1(s1), _s2(s2)
+  Filtered_envelope_observer(Arrangement_2& arr, Surface s1, Surface s2) :
+    Arr_observer<Arrangement_2_>(arr), _s1(s1), _s2(s2)
   {}
-  
-  void print_vertex(Vertex_handle v)
-  {
-    typedef typename Vertex::Surfaces_container       Surfaces_container;
+
+  void print_vertex(Vertex_handle v) {
+    using Surfaces_container = typename Vertex::Surfaces_container;
 
     if (v->is_at_infinity())
-    {
       std::cerr << "surfaces of fictitious vertex are:" << std::endl;
-    }
     else
-    {
       std::cerr << "surfaces of " << v->point() << " are:" << std::endl;
-    }
-    typename Surfaces_container::iterator it;
-    for (it = v->surfaces().begin(); it != v->surfaces().end(); ++it)
-    {
+    for (auto it = v->surfaces().begin(); it != v->surfaces().end(); ++it)
       std::cerr << *it << " ";
-    }
   }
-  
-  virtual void after_create_vertex (Vertex_handle v)
-  {
+
+  virtual void after_create_vertex(Vertex_handle v) {
     v->surfaces().insert(_s1);
     v->surfaces().insert(_s2);
   }
@@ -83,8 +68,7 @@ class Filtered_envelope_observer : Arr_observer<Arrangement_2_>
   // of the neighboring edges of e - as the neighboring edges of e are
   // bisectors of of either _s1 with another surface or _s2 with another
   // surface.
-  void add_surfaces_to_vertex(Vertex_handle v, Halfedge_handle e)
-  {
+  void add_surfaces_to_vertex(Vertex_handle v, Halfedge_handle e) {
     CGAL_envelope_voronoi_assertion(v == e->target());
 
     v->surfaces().insert(_s1);
@@ -95,11 +79,10 @@ class Filtered_envelope_observer : Arr_observer<Arrangement_2_>
     v->surfaces().insert(sur1.begin(), sur1.end());
 
     const Surfaces_container &sur2 = e->twin()->prev()->surfaces();
-    v->surfaces().insert(sur2.begin(), sur2.end()); 
+    v->surfaces().insert(sur2.begin(), sur2.end());
   }
 
-  virtual void after_create_edge (Halfedge_handle e)
-  {
+  virtual void after_create_edge(Halfedge_handle e) {
 /*     std::cerr << "before creating edge surfaces are: " << std::endl; */
 /*     print_vertex(e->source()); */
 /*     std::cerr << std::endl; */
@@ -122,8 +105,7 @@ class Filtered_envelope_observer : Arr_observer<Arrangement_2_>
 /*     std::cerr << std::endl; */
   }
 
-  virtual void after_split_edge (Halfedge_handle e1, Halfedge_handle e2)
-  {
+  virtual void after_split_edge(Halfedge_handle e1, Halfedge_handle e2) {
     // The code assumes that e1 is the original halfedge that is split and
     // e2 is the new halfedge that was created from the split.
 
@@ -136,7 +118,7 @@ class Filtered_envelope_observer : Arr_observer<Arrangement_2_>
     v->surfaces().insert(sur.begin(), sur.end());
   }
 
- protected:
+protected:
   Surface _s1;
   Surface _s2;
 };

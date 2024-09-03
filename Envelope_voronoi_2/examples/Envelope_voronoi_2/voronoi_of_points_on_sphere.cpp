@@ -1,66 +1,45 @@
-// Copyright (c) 2005-2007 Tel-Aviv University (Israel).
-// All rights reserved.
-//
-// This file is part of CGAL (www.cgal.org); you may redistribute it under
-// the terms of the Q Public License version 1.0.
-// See the file LICENSE.QPL distributed with CGAL.
-//
-// Licensees holding a valid commercial license may use this file in
-// accordance with the commercial license agreement provided with the software.
-//
-// This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
-// WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
-//
-// $URL$
-// $Id$
-// 
-//
-// Author(s): Ophir Setter          <ophir.setter@post.tau.ac.il>
-//
-
-/*!
- * \file   voronoi_of_points_on_sphere.cpp
- *\brief  An example for a Voronoi diagram of points embedded on the sphere.  
+/*! \file   voronoi_of_points_on_sphere.cpp
+ *\brief  An example for a Voronoi diagram of points embedded on the sphere.
  */
 
-
+#include <fstream>
 #include <iostream>
-#include <CGAL/Exact_predicates_exact_constructions_kernel.h>
+#include <vector>
+#include <vector>
 
+#include <CGAL/Exact_predicates_exact_constructions_kernel.h>
 #include <CGAL/envelope_voronoi_2.h>
 #include <CGAL/envelope_voronoi_2.h>
 #include <CGAL/Envelope_voronoi_traits_2/Spherical_voronoi_diagram_traits_2.h>
 
-using namespace std;
+#include <read_objects.h>
 
-typedef CGAL::Exact_predicates_exact_constructions_kernel        Kernel;
-typedef CGAL::Spherical_voronoi_diagram_traits_2<Kernel>         Voronoi_traits;
-typedef CGAL::Envelope_voronoi_2::Spherical_voronoi_diagram_2<Voronoi_traits>
-  Voronoi_diagram;
-typedef Voronoi_traits::Site_2                                   Site_2;
+using Kernel = CGAL::Exact_predicates_exact_constructions_kernel;
+using Voronoi_traits = CGAL::Spherical_voronoi_diagram_traits_2<Kernel>;
+using Voronoi_diagram =
+  CGAL::Envelope_voronoi_2::Spherical_voronoi_diagram_2<Voronoi_traits>;
+using Site_2 = Voronoi_traits::Site_2;
 
-int main( int argc, char **argv )
-{
-  int n;
-  std::cin >> n;
-  
-  std::list<Site_2> sites;
-  for (int i = 0; i < n; ++i) {
-    Site_2 p;
-    cin >> p;
-    cout << p << endl;
-    sites.push_back(p);
+int main(int argc, char* argv[]) {
+  const char* filename = (argc > 1) ? argv[1] : "data/voronoi_of_points_on_sphere/voronoi.in";
+  std::vector<Kernel::Point_3> points;
+  read_objects<Kernel::Point_3>(filename, std::back_inserter(points));
+  std::vector<Site_2> sites;
+  sites.reserve(points.size());
+  Voronoi_traits traits;
+  auto ctr_pnt = traits.construct_point_2_object();
+  for (const auto& p : points) {
+    Kernel::Vector_3 v(p, CGAL::ORIGIN);
+    sites.push_back(ctr_pnt(v.direction()));
   }
-
   std::cout << "Number of sites: " << sites.size() << std::endl;
-  
+  for (const auto& s : sites) std::cout << s << std::endl;
   Voronoi_diagram diagram;
-  CGAL::voronoi_2 (sites.begin(), sites.end(), diagram);
-
-  std::cout << "Voronoi diagram:" << std::endl <<
-    "V = " << diagram.number_of_vertices() << ", E = " << 
-    diagram.number_of_edges() << ", F = " << diagram.number_of_faces() << 
+  CGAL::voronoi_2(sites.begin(), sites.end(), diagram);
+  std::cout << "Voronoi diagram:" << std::endl
+            << "V = " << diagram.number_of_vertices() << ", E = "
+            << diagram.number_of_edges() << ", F = "
+            << diagram.number_of_faces() <<
     std::endl;
-  
   return 0;
 }

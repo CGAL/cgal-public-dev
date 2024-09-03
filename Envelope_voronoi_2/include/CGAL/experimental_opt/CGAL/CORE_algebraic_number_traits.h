@@ -13,7 +13,7 @@
 //
 // $URL: svn+ssh://ophirset@scm.gforge.inria.fr/svn/cgal/trunk/Arrangement_2/include/CGAL/CORE_algebraic_number_traits.h $
 // $Id: CORE_algebraic_number_traits.h 1872 2007-03-22 12:34:55Z ophirset $
-// 
+//
 //
 // Author(s)     : Ron Wein          <wein@post.tau.ac.il>
 
@@ -30,30 +30,22 @@
 
 namespace CGAL {
 
-/*!
- * \class A traits class for CORE's algebraic number types.
+/*! \class A traits class for CORE's algebraic number types.
  */
-class CORE_algebraic_number_traits
-{
+class CORE_algebraic_number_traits {
 public:
+  using Integer = CORE::BigInt;
+  using Rational = CORE::BigRat;
+  using Polynomial = CORE::Polynomial<Integer>;
+  using Algebraic = CORE::Expr;
 
-  typedef CORE::BigInt                    Integer;
-  typedef CORE::BigRat                    Rational;
-  typedef CORE::Polynomial<Integer>       Polynomial;
-  typedef CORE::Expr                      Algebraic;
-
-  /*!
-   * Get the numerator of a rational number.
+  /*! Get the numerator of a rational number.
    * \param q A rational number.
    * \return The numerator of q.
    */
-  Integer numerator (const Rational& q) const
-  {
-    return (CORE::numerator (q));
-  }
+  Integer numerator(const Rational& q) const { return (CORE::numerator(q)); }
 
-  /*!
-   * Get the denominator of a rational number.
+  /*! Get the denominator of a rational number.
    * \param q A rational number.
    * \return The denominator of q.
    */
@@ -146,13 +138,13 @@ public:
     x.doubleInterval (x_lo, x_hi);
     return (std::make_pair (x_lo, x_hi));
   }
-  
+
   /*!
    * Convert a sequence of rational coefficients to an equivalent sequence
    * of integer coefficients. If the input coefficients are q(1), ..., q(k),
    * where q(i) = n(i)/d(i) then the output coefficients will be of the
    * form:
-   *               n(i) * lcm {d(1), ... , d(k)} 
+   *               n(i) * lcm {d(1), ... , d(k)}
    *       a(i) = -------------------------------
    *               d(i) * gcd {n(1), ... , n(k)}
    *
@@ -311,7 +303,7 @@ public:
    * \param degree The degree of the input polynomial.
    * \param poly Output: The resulting polynomial with integer coefficients.
    * \param poly_denom Output: The denominator for the polynomial.
-   * \return Whether this polynomial is non-zero (false if the polynomial is 
+   * \return Whether this polynomial is non-zero (false if the polynomial is
    *         zero).
    */
   bool construct_polynomial (const Rational *coeffs,
@@ -391,14 +383,14 @@ public:
                               unsigned int q_degree,
                               Polynomial& p_poly, Polynomial& q_poly) const
   {
-    typedef CORE::Polynomial<Rational>            Rat_polynomial;
+    using Rat_polynomial = CORE::Polynomial<Rational>;
 
     // Construct two rational polynomials.
     Rat_polynomial   P = Rat_polynomial (p_degree,
                                          const_cast<Rational*> (p_coeffs));
     Rat_polynomial   Q = Rat_polynomial (q_degree,
                                          const_cast<Rational*> (q_coeffs));
-    
+
     P.contract();
     Q.contract();
 
@@ -416,13 +408,13 @@ public:
 
       coeff = 1;
       q_poly =  construct_polynomial (&coeff, 0);
-      
+
       return (true);
     }
 
     // Compute the GCD of the two polynomials and normalize them.
     Rat_polynomial   g = CORE::gcd (P, Q);
-    
+
     if (g.getTrueDegree() > 0)
     {
       P = P.pseudoRemainder (g);
@@ -443,7 +435,7 @@ public:
     // Scale the result polynomials.
     p_poly.mulScalar (p_scale);
     q_poly.mulScalar (q_scale);
-   
+
     return (true);
   }
 
@@ -502,7 +494,7 @@ public:
     Polynomial   temp = poly;
     return (temp.mulScalar (a));
   }
-                     
+
   /*!
    * Perform "long division" of two polynomials: Given A(x) and B(x) compute
    * two polynomials Q(x) and R(x) such that: A(x) = Q(x)*B(x) + R(x) and
@@ -541,7 +533,7 @@ public:
     // Check if we really have a simple quadratic equation.
     if (degree <= 2)
     {
-      return (solve_quadratic_equation ((degree == 2 ? poly.getCoeff(2) : 0), 
+      return (solve_quadratic_equation ((degree == 2 ? poly.getCoeff(2) : 0),
 					poly.getCoeff(1),
 					poly.getCoeff(0),
 					oi));
@@ -551,7 +543,7 @@ public:
     CORE::Sturm<Integer>       sturm (poly);
     const unsigned int         n_roots = sturm.numberOfRoots();
     unsigned int               i;
-    
+
     for (i = 1; i <= n_roots; i++)
     {
       // Get the i'th real-valued root.
@@ -590,7 +582,7 @@ public:
       Algebraic     alg_min (x_min), alg_max (x_max);
       Algebraic     buffer[2];
       Algebraic    *end_buffer =
-        solve_quadratic_equation ((degree == 2 ? poly.getCoeff(2) : 0), 
+        solve_quadratic_equation ((degree == 2 ? poly.getCoeff(2) : 0),
                                   poly.getCoeff(1),
                                   poly.getCoeff(0),
                                   buffer);

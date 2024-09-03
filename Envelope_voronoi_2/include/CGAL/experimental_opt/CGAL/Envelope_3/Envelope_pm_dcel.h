@@ -20,23 +20,23 @@
 #ifndef CGAL_EOS_PM_DCEL_H
 #define CGAL_EOS_PM_DCEL_H
 
+#include <iostream>
+#include <set>
+
 #include <CGAL/basic.h>
 #include <CGAL/Arr_default_dcel.h>
 #include <CGAL/Unique_hash_map.h>
 #include <CGAL/Envelope_3/Envelope_base.h>
-#include <iostream>
-#include <set>
 
 namespace CGAL {
 
-template <class Data>
-class Eos_dcel_info
-{
+template <typename Data>
+class Eos_dcel_info {
 public:
-  typedef Eos_dcel_info<Data>                         Self;
-  typedef std::list<Data>                         Data_container;
-  typedef typename Data_container::iterator       Data_iterator;
-  typedef typename Data_container::const_iterator Data_const_iterator;
+  using Self = Eos_dcel_info<Data>;
+  using Data_container = std::list<Data>;
+  using Data_iterator = typename Data_container::iterator;
+  using Data_const_iterator = typename Data_container::const_iterator;
 
 protected:
   /*! data container */
@@ -47,10 +47,10 @@ protected:
 
   // the decision that was made
   Dac_decision m_decision;
+
 public:
   /*! Constructor */
-  Eos_dcel_info() : m_is_set(false), m_decision(DAC_DECISION_NOT_SET)
-  {}
+  Eos_dcel_info() : m_is_set(false), m_decision(DAC_DECISION_NOT_SET) {}
 
   /*! \brief returns true iff data has been set already */
   bool get_is_set() const { return m_is_set; }
@@ -58,111 +58,64 @@ public:
   /*! \brief resets the flag  */
   void set_is_set(bool flag) { m_is_set = flag; }
 
-  bool is_decision_set()
-  {
-    return (m_decision != DAC_DECISION_NOT_SET);
-  }
-  
-  Dac_decision get_decision()
-  {
-    return m_decision;
-  }                                                   
+  bool is_decision_set() { return (m_decision != DAC_DECISION_NOT_SET); }
+
+  Dac_decision get_decision() { return m_decision; }
 
   void set_decision(Comparison_result comp)
-  {
-    m_decision = enum_cast<Dac_decision>(comp);
-  }
+  { m_decision = enum_cast<Dac_decision>(comp); }
 
-  void set_decision(Dac_decision dec)
-  {
-    m_decision = dec;
-  }
+  void set_decision(Dac_decision dec) { m_decision = dec; }
 
   /*! User-friendly interface: */
-  size_t number_of_surfaces () const
-  {
-    return (m_data.size());
-  }
+  size_t number_of_surfaces() const { return m_data.size(); }
 
-  Data_const_iterator surfaces_begin () const
-  {
-    return (m_data.begin());
-  }
+  Data_const_iterator surfaces_begin() const { return m_data.begin(); }
 
-  Data_const_iterator surfaces_end () const
-  {
-    return (m_data.end());
-  }
+  Data_const_iterator surfaces_end() const { return m_data.end(); }
 
-   /*!
-   * Get the first Xy-monotone surface associated with the face.
+   /*! Get the first Xy-monotone surface associated with the face.
    * \pre number_of_surfaces() is not 0.
    */
-  const Data& surface() const
-  {
+  const Data& surface() const {
     CGAL_precondition (m_data.size() > 0);
-    return (m_data.front());
+    return m_data.front();
   }
 
-  /*!
-   * Get the number of data objects associated with the face.
+  /*! Get the number of data objects associated with the face.
    */
-  int number_of_data_objects() const
-  {
-    return (m_data.size());
-  }
+  int number_of_data_objects() const { return (m_data.size()); }
 
-  /*!
-   * check if the data is set to be empty
+  /*! check if the data is set to be empty
    */
   bool has_no_data() const
-  {
-    return (m_is_set && number_of_data_objects() == 0);
-  }
-  
+  { return (m_is_set && number_of_data_objects() == 0); }
+
   /*!
    * Get the first data object associated with the face.
    * \pre number_of_data_objects() is not 0.
    */
-  const Data& get_data() const
-  {
-    CGAL_precondition (m_data.size() > 0);
-
+  const Data& get_data() const {
+    CGAL_precondition(m_data.size() > 0);
     return (m_data.front());
   }
 
-  /*!
-   * Get the data iterators (const version).
+  /*! Get the data iterators (const version).
    */
-  Data_const_iterator begin_data() const
-  {
-    return (m_data.begin());
-  }
+  Data_const_iterator begin_data() const { return (m_data.begin()); }
 
-  Data_const_iterator end_data() const
-  {
-    return (m_data.end());
-  }
+  Data_const_iterator end_data() const { return (m_data.end()); }
 
-  /*!
-   * Get the data iterators (non-const version).
+  /*! Get the data iterators (non-const version).
    */
-  Data_iterator begin_data()
-  {
-    return (m_data.begin());
-  }
+  Data_iterator begin_data() { return (m_data.begin()); }
 
-  Data_iterator end_data()
-  {
-    return (m_data.end());
-  }
+  Data_iterator end_data() { return (m_data.end()); }
 
-  /*!
-   * Set a data object to the face.
+  /*! Set a data object to the face.
    * \param data The data object to set.
    */
-  void set_data (const Data & data)
-  {
+  void set_data (const Data & data) {
     clear_data();
     add_data(data);
   }
@@ -172,18 +125,15 @@ public:
    * \param begin A begin iterator for the data range.
    * \param end A past-the-end iterator for the data range.
    */
-  template <class InputIterator>
-  void set_data(const InputIterator & begin, const InputIterator & end)
-  {
+  template <typename InputIterator>
+  void set_data(const InputIterator & begin, const InputIterator & end) {
     clear_data();
     add_data(begin, end);
   }
 
-  /*!
-   * set the data to be empty.
+  /*! Set the data to be empty.
    */
-  void set_no_data()
-  {
+  void set_no_data() {
     clear_data();
     m_is_set = true;
   }
@@ -192,58 +142,48 @@ public:
    * Add a data object to the face.
    * \param data The additional data object.
    */
-  void add_data (const Data & data)
-  {
+  void add_data(const Data & data) {
     m_data.push_back(data);
     m_is_set = true;
   }
 
-  /*!
-   * Add a range of data objects to the face.
+  /*! Add a range of data objects to the face.
    * \param begin A begin iterator for the data range.
    * \param end A past-the-end iterator for the data range.
    */
-  template <class InputIterator>
-  void add_data (const InputIterator & begin, const InputIterator & end)
-  {
-    InputIterator    it;
-    for (it = begin; it != end; it++)
-      m_data.push_back(*it);
+  template <typename InputIterator>
+  void add_data(const InputIterator & begin, const InputIterator & end) {
+    for (auto it = begin; it != end; ++it) m_data.push_back(*it);
     m_is_set = true;
   }
 
-  /*!
-   * Clear the data objects.
+  /*! Clear the data objects.
    */
-  void clear_data ()
-  {
+  void clear_data() {
     m_data.clear();
     m_is_set = false;
   }
 
-  /*!
-   * Check if the set of data objects in the input range is equal to our
+  /*! Check if the set of data objects in the input range is equal to our
    * set of data objects
    */
   template <class InputIterator>
-  bool is_equal_data(const InputIterator & begin, const InputIterator & end) const
-  {
-    if (!get_is_set())
-      return false;
+  bool is_equal_data(const InputIterator& begin,
+                     const InputIterator& end) const {
+    if (! get_is_set()) return false;
 
     // insert the input data objects into a set
     std::set<Data> input_data(begin, end);
     std::set<Data> my_data(begin_data(), end_data());
-    if (input_data.size() != my_data.size())
-      return false;
+    if (input_data.size() != my_data.size()) return false;
     return (my_data == input_data);
   }
 
-  template <class InputIterator>
-  bool has_equal_data(const InputIterator & begin, const InputIterator & end) const
-  {
-    if (!get_is_set())
-      return false;
+  template <typename InputIterator>
+  bool has_equal_data(const InputIterator& begin,
+                      const InputIterator& end) const {
+    if (! get_is_set()) return false;
+
     // insert the input data objects into a set
     std::set<Data> input_data(begin, end);
     std::set<Data> my_data(begin_data(), end_data());
@@ -260,46 +200,41 @@ protected:
   Object m_aux_source[2];
 
 public:
-  template<class HandleType>
-  void set_aux_source(unsigned int id, HandleType h)
-  {
+  template <typename HandleType>
+  void set_aux_source(unsigned int id, HandleType h) {
     CGAL_precondition(id < 2);
     m_aux_source[id] = make_object(h);
   }
-  void set_aux_source(unsigned int id, const Object& o)
-  {
+
+  void set_aux_source(unsigned int id, const Object& o) {
     CGAL_precondition(id < 2);
     CGAL_precondition(!o.is_empty());
     m_aux_source[id] = o;
   }
 
-  const Object& get_aux_source(unsigned int id)
-  {
+  const Object& get_aux_source(unsigned int id) {
     CGAL_precondition(id < 2);
     CGAL_precondition (!m_aux_source[id].is_empty());
     return m_aux_source[id];
   }
 
   /*! \brief returns true iff the point has been set already */
-  bool get_aux_is_set(unsigned int id) const
-  {
+  bool get_aux_is_set(unsigned int id) const {
     CGAL_precondition(id < 2);
-	return (!m_aux_source[id].is_empty());
+    return (!m_aux_source[id].is_empty());
   }
 };
 
 /*! Extend the planar-map vertex */
 template <class Point_2, class Data>
 class Eos_pm_vertex : public CGAL::Arr_vertex_base<Point_2>,
-                           public Eos_dcel_info<Data>
-{
+                      public Eos_dcel_info<Data> {
 protected:
   // all flags are bits in this variable:
   unsigned short flags;
 
   // the flags indications:
-  enum Bit_pos
-  {
+  enum Bit_pos {
     // for an isolated vertex only
     IS_EQUAL   = 0,
     IS_EQUAL_AUX = 1,
@@ -428,10 +363,10 @@ protected:
     // and is not part of the arrangement
     IS_FAKE = 15
   };
-  
+
 public:
   Eos_pm_halfedge() : Eos_dcel_info<Data>(), flags(0)
-  {} 
+  {}
 
  /* void set_is_fake(bool b)
   {
@@ -554,87 +489,71 @@ protected:
     CGAL_assertion(get_bit(ind) == b);
   }
 
-  bool get_bit(unsigned int ind) const
-  {
+  bool get_bit(unsigned int ind) const {
     // (1 << i) is bit i on, other bits off (start counting from 0)
     bool result = flags & (1 << ind);
     return result;
   }
-
 };
 
 /*! Extend the planar-map face */
-template <class Data>
+template <typename Data>
 class Eos_pm_face : public CGAL::Arr_face_base,
-                         public Eos_dcel_info<Data>
-{
+                    public Eos_dcel_info<Data> {
 public:
-  typedef std::list<Data>                         Data_container;
-  typedef typename Data_container::iterator       Data_iterator;
-  typedef typename Data_container::const_iterator Data_const_iterator;
+  using Data_container = std::list<Data>;
+  using Data_iterator = typename Data_container::iterator;
+  using Data_const_iterator = typename Data_container::const_iterator;
 
   /*! Constructor */
-  Eos_pm_face() : Eos_dcel_info<Data>()
-  {}  
+  Eos_pm_face() : Eos_dcel_info<Data>() {}
 };
 
 #if defined(FILTERED_ZONE)
 
-/*! When using filtering for computing the lower envelope of planes 
+/*! When using filtering for computing the lower envelope of planes
   (Voronoi diagram of points) we store the planes that created each edge
   in the edge, and the planes that created each vertex in that vertex.
     */
-template <class Traits, class Data>
-  class Envelope_pm_filtered_vertex : public 
-  Eos_pm_vertex<typename Traits::Point_2, Data>
-{
- public:
-  typedef typename Traits::Xy_monotone_surface_3 Xy_monotone_surface_3;
-  typedef typename Traits::Surface_id            Surface_id;
-  typedef std::set<Surface_id>                   Surfaces_container;
-  
+template <typename Traits, typename Data>
+class Envelope_pm_filtered_vertex :
+  public Eos_pm_vertex<typename Traits::Point_2, Data> {
+public:
+  using Xy_monotone_surface_3 = typename Traits::Xy_monotone_surface_3;
+  using Surface_id = typename Traits::Surface_id;
+  using Surfaces_container = std::set<Surface_id>;
+
   Surfaces_container& surfaces () { return _surfaces; }
   const Surfaces_container& surfaces () const { return _surfaces; }
 
   template <typename Iterator>
-    bool is_on_surfaces(Iterator begin, Iterator end) const
-  {
-    for (; begin != end; ++begin)
-    {
-      if (_surfaces.find(*begin) == _surfaces.end())
-      {
-        return false;
-      }
+  bool is_on_surfaces(Iterator begin, Iterator end) const {
+    for (; begin != end; ++begin) {
+      if (_surfaces.find(*begin) == _surfaces.end()) return false;
     }
-    
     return true;
   }
-  
-  bool is_on_surfaces(Surface_id surf1, Surface_id surf2) const
-  {
+
+  bool is_on_surfaces(Surface_id surf1, Surface_id surf2) const {
     return (surfaces().find(surf1) != surfaces().end()) &&
       (surfaces().find(surf2) != surfaces().end());
   }
-
-  
-
- protected:
-  Surfaces_container _surfaces;  
+protected:
+  Surfaces_container _surfaces;
 };
 
-template <class Traits, class Data>
-  class Envelope_pm_filtered_halfedge : public 
-  Eos_pm_halfedge<typename Traits::X_monotone_curve_2, Data>
-{
- public:
-  typedef typename Traits::Xy_monotone_surface_3 Xy_monotone_surface_3;
-  typedef std::set<typename Traits::Surface_id> Surfaces_container;
-  
+template <typename Traits, typename Data>
+class Envelope_pm_filtered_halfedge :
+  public Eos_pm_halfedge<typename Traits::X_monotone_curve_2, Data> {
+public:
+  using Xy_monotone_surface_3 = typename Traits::Xy_monotone_surface_3;
+  using Surfaces_container = std::set<typename Traits::Surface_id>;
+
   Surfaces_container& surfaces () { return _surfaces; }
   const Surfaces_container& surfaces () const { return _surfaces; }
 
  protected:
-  Surfaces_container _surfaces;  
+  Surfaces_container _surfaces;
 };
 
 template <class Traits, class Data>
@@ -645,35 +564,29 @@ CGAL::Arr_dcel_base<Envelope_pm_filtered_vertex<Traits, Data>,
 {
 public:
 
-  typedef Data                                    Face_data;
-  typedef typename Eos_pm_face<Data>::Data_iterator
-                                                  Face_data_iterator;
-  typedef typename Eos_pm_face<Data>::Data_const_iterator
-                                                  Face_data_const_iterator;
-
-  typedef Data                                    Edge_data;
-  typedef Face_data_iterator                      Edge_data_iterator;
-  typedef Face_data_const_iterator                Edge_data_const_iterator;
-
-  typedef Data                                    Vertex_data;
-  typedef Face_data_iterator                      Vertex_data_iterator;
-  typedef Face_data_const_iterator                Vertex_data_const_iterator;
-
-  typedef Eos_dcel_info<Data>                     Dcel_elem_with_data;
-
-  typedef Data                                    Dcel_data;
-  typedef Face_data_iterator                      Dcel_data_iterator;
-  typedef Face_data_const_iterator                Dcel_data_const_iterator;
+  using Face_data = Data;
+  using Face_data_iterator = typename Eos_pm_face<Data>::Data_iterator;
+  using Face_data_const_iterator =
+    typename Eos_pm_face<Data>::Data_const_iterator;
+  using Edge_data = Data;
+  using Edge_data_iterator = Face_data_iterator;
+  using Edge_data_const_iterator = Face_data_const_iterator;
+  using Vertex_data = Data;
+  using Vertex_data_iterator = Face_data_iterator;
+  using Vertex_data_const_iterator = Face_data_const_iterator;
+  using Dcel_elem_with_data = Eos_dcel_info<Data>;
+  using Dcel_data = Data;
+  using Dcel_data_iterator = Face_data_iterator;
+  using Dcel_data_const_iterator = Face_data_const_iterator;
 
   /*! \struct
    * An auxiliary structure for rebinding the DCEL with a new traits class.
    */
-  template<typename T>
-  struct rebind
-  {
-    typedef Eos_pm_dcel<T, Face_data> other;
+  template <typename T>
+  struct rebind {
+    using other = Eos_pm_dcel<T, Face_data>;
   };
-  
+
   /*! Constructor */
   Eos_pm_dcel() {}
 };
@@ -681,41 +594,33 @@ public:
 #else
 
 /*! A new dcel builder with full Envelope features */
-template <class Traits, class Data>
+template <typename Traits, typename Data>
 class Eos_pm_dcel : public
 CGAL::Arr_dcel_base<Eos_pm_vertex<typename Traits::Point_2, Data>,
                     Eos_pm_halfedge<typename Traits::X_monotone_curve_2, Data>,
-                    Eos_pm_face<Data> >
-{
+                    Eos_pm_face<Data>> {
 public:
-
-  typedef Data                                    Face_data;
-  typedef typename Eos_pm_face<Data>::Data_iterator
-                                                  Face_data_iterator;
-  typedef typename Eos_pm_face<Data>::Data_const_iterator
-                                                  Face_data_const_iterator;
-
-  typedef Data                                    Edge_data;
-  typedef Face_data_iterator                      Edge_data_iterator;
-  typedef Face_data_const_iterator                Edge_data_const_iterator;
-
-  typedef Data                                    Vertex_data;
-  typedef Face_data_iterator                      Vertex_data_iterator;
-  typedef Face_data_const_iterator                Vertex_data_const_iterator;
-
-  typedef Eos_dcel_info<Data>                     Dcel_elem_with_data;
-
-  typedef Data                                    Dcel_data;
-  typedef Face_data_iterator                      Dcel_data_iterator;
-  typedef Face_data_const_iterator                Dcel_data_const_iterator;
+  using Face_data = Data;
+  using Face_data_iterator = typename Eos_pm_face<Data>::Data_iterator;
+  using Face_data_const_iterator =
+    typename Eos_pm_face<Data>::Data_const_iterator;
+  using Edge_data = Data;
+  using Edge_data_iterator = Face_data_iterator;
+  using Edge_data_const_iterator = Face_data_const_iterator;
+  using Vertex_data = Data;
+  using Vertex_data_iterator = Face_data_iterator;
+  using Vertex_data_const_iterator = Face_data_const_iterator;
+  using Dcel_elem_with_data = Eos_dcel_info<Data>;
+  using Dcel_data = Data;
+  using Dcel_data_iterator = Face_data_iterator;
+  using Dcel_data_const_iterator = Face_data_const_iterator;
 
   /*! \struct
    * An auxiliary structure for rebinding the DCEL with a new traits class.
    */
-  template<typename T>
-  struct rebind
-  {
-    typedef Eos_pm_dcel<T, Face_data> other;
+  template <typename T>
+  struct rebind {
+    using other = Eos_pm_dcel<T, Face_data>;
   };
 
   /*! Constructor */

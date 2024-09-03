@@ -10,51 +10,46 @@
 namespace CGAL {
 
 template <class Kernel, class ConicPair_2>
-CGAL::Fig_stream<Kernel>& 
-  operator<< 
+CGAL::Fig_stream<Kernel>&
+  operator<<
   (
-    CGAL::Fig_stream<Kernel>& fig_str, 
+    CGAL::Fig_stream<Kernel>& fig_str,
     const CnX::Conic_point_2< ConicPair_2 >& point
     )
 {
-  typedef typename Kernel::Point_2 Point;
-  typedef std::pair< double, double > DP;
+  using Point = typename Kernel::Point_2;
+  using DP = std::pair< double, double >;
 
-  if (point.x().is_tending()) 
+  if (point.x().is_tending())
   {
     return fig_str;
-  }    
-  if (point.x().number().is_finite()) 
+  }
+  if (point.x().number().is_finite())
   {
     std::pair< double, double > dp = point.to_double();
-    
+
     // draw only if needed
     if (fig_str.bounding_rect().xmin() <= dp.first &&
         dp.first <= fig_str.bounding_rect().xmax() &&
         fig_str.bounding_rect().ymin() <= dp.second &&
         dp.second <= fig_str.bounding_rect().ymax()) {
-      
+
       fig_str << Point(dp.first, dp.second);
     }
   }
   return fig_str;
 }
 
-template <class Kernel, class ConicPoint_2>
-CGAL::Fig_stream<Kernel>& 
-  operator<< 
-  (
-    CGAL::Fig_stream<Kernel>& fig_str, 
-    const CnX::X_conic_segment_2<ConicPoint_2>& segment
-    )
-{
-  typedef std::pair< double, double > DP;
-  
-  typedef typename Kernel::Point_2 Point;
-  typedef typename Kernel::Segment_2 Segment;
+template <typename Kernel, typename ConicPoint_2>
+CGAL::Fig_stream<Kernel>&
+operator<<(CGAL::Fig_stream<Kernel>& fig_str,
+           const CnX::X_conic_segment_2<ConicPoint_2>& segment) {
+  using DP = std::pair< double, double >;
+  using Point = typename Kernel::Point_2;
+  using Segment = typename Kernel::Segment_2;
 
   std::vector< DP > dpoints;
-    
+
   double xmin = fig_str.bounding_rect().xmin();
   double xmax = fig_str.bounding_rect().xmax();
   double ymin = fig_str.bounding_rect().ymin();
@@ -62,24 +57,17 @@ CGAL::Fig_stream<Kernel>&
   double pixel = (xmax - xmin) / fig_str.width();
   segment.discretize_segment(xmin, xmax, ymin, ymax,
                              pixel*10, std::back_inserter(dpoints));
-  
+
   int num_points = static_cast< int >(dpoints.size());
-  if (num_points == 0) 
-  {
-    return fig_str;
-  }
-    
-  if (num_points == 1) 
-  {
-    // draw single point
-    fig_str << segment.source();
-  } 
-  else
-  {
+  if (num_points == 0) return fig_str;
+
+  // draw single point
+  if (num_points == 1) fig_str << segment.source();
+  else {
     // draw source and target as point
-//    fig_str << segment.source();
-//    fig_str << segment.target();
-        
+    // fig_str << segment.source();
+    // fig_str << segment.target();
+
     double x0, y0, x1, y1;
     // and connect the point in the list with small line segments
     for (int i = 0;  i + 1 < num_points; i++) {
@@ -97,4 +85,3 @@ CGAL::Fig_stream<Kernel>&
 } //namespace CGAL
 
 #endif
-

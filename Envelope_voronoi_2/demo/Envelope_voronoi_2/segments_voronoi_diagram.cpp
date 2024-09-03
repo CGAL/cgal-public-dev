@@ -13,17 +13,13 @@
 //
 // $URL: $
 // $Id:  $
-// 
 //
 // Author(s): Ophir Setter          <ophir.setter@post.tau.ac.il>
-//
 
-/*!
-  \file   segment_voronoi_diagram.C
-  \brief  A demo file for the linear Voronoi diagram.
-  \todo   Move this into a more serious demo/example.
-*/
-
+/*! \file   segment_voronoi_diagram.C
+ * \brief  A demo file for the linear Voronoi diagram.
+ * \todo   Move this into a more serious demo/example.
+ */
 
 #include <boost/program_options.hpp>
 #include <boost/static_assert.hpp>
@@ -57,48 +53,46 @@
 
 namespace po = boost::program_options;
 
-typedef CGAL::Arithmetic_kernel                       AK;
-typedef AK::Integer                                   Integer;
-typedef AK::Rational                                  Rational;
-  
-
+using AK = CGAL::Arithmetic_kernel;
+using Integer = AK::Integer;
+using Rational = AK::Rational;
 
 // Definition of Algebraic_kernel_2 (Algebraic_curve_kernel_2)
-typedef Integer                                       Coefficient;
-typedef CGAL::Algebraic_curve_kernel_2_generator<Coefficient>::
-Algebraic_curve_kernel_with_qir_and_bitstream_2       Algebraic_curve_kernel_2;
-typedef CGAL::Curved_kernel_via_analysis_2< Algebraic_curve_kernel_2 > 
-                                                      Curved_kernel_2;
+using Coefficient = Integer;
+using Algebraic_curve_kernel_2_generator =
+  CGAL::Algebraic_curve_kernel_2_generator<Coefficient>;
+using Algebraic_curve_kernel_2 =
+  Algebraic_curve_kernel_2_generator::
+  Algebraic_curve_kernel_with_qir_and_bitstream_2;
+using Curved_kernel_2 =
+  CGAL::Curved_kernel_via_analysis_2<Algebraic_curve_kernel_2>;
 
-typedef Curved_kernel_2::Point_2                      Point_2;
-typedef Curved_kernel_2::Curve_2                      Curve_2;
-typedef Curved_kernel_2::X_monotone_curve_2           X_monotone_curve_2;
+using Point_2 = Curved_kernel_2::Point_2;
+using Curve_2 = Curved_kernel_2::Curve_2;
+using X_monotone_curve_2 = Curved_kernel_2::X_monotone_curve_2;
 
-typedef CGAL::Linear_objects_Voronoi_traits_2< 
-  Curved_kernel_2 >                                   Segment_traits_2;
+using Segment_traits_2 = CGAL::Linear_objects_Voronoi_traits_2<Curved_kernel_2>;
 
+using Linear_kernel_2 = Segment_traits_2::Site_2::Kernel;
+using RTraits = CGAL::Arr_linear_traits_2<Linear_kernel_2>;
+using Arrangement_2 = CGAL::Arrangement_2<RTraits>;
+using Segment_diagram_2 = CGAL::Envelope_diagram_2<Segment_traits_2>;
 
-typedef Segment_traits_2::Site_2::Kernel              Linear_kernel_2;
-typedef CGAL::Arr_linear_traits_2<Linear_kernel_2>    RTraits;
-typedef CGAL::Arrangement_2<RTraits>                  Arrangement_2;
-typedef CGAL::Envelope_diagram_2<Segment_traits_2>    Segment_diagram_2;
+Segment_diagram_2 segment_diagram;
+Arrangement_2 sites;
 
-Segment_diagram_2                 segment_diagram;
-Arrangement_2                     sites;
-
-#if !defined(MWA_NO_UI)
-typedef Linear_kernel_2           Fig_kernel;
-CGAL::Fig_stream<Fig_kernel>      fig_stream;
-std::string                       fig_file;
+#if ! defined(MWA_NO_UI)
+using Fig_kernel = Linear_kernel_2;
+CGAL::Fig_stream<Fig_kernel> fig_stream;
+std::string fig_file;
 
 int W, H;
-
 
 /*****************************************************************/
 // Output operators section
 /*****************************************************************/
 // template <class Kernel>
-// CGAL::Fig_stream<Kernel>& operator<< (CGAL::Fig_stream<Kernel>& fig_str, 
+// CGAL::Fig_stream<Kernel>& operator<< (CGAL::Fig_stream<Kernel>& fig_str,
 //                                       RTraits::Point_2& point)
 // {
 //   fig_str.write_point(point);
@@ -106,7 +100,7 @@ int W, H;
 // }
 
 // template <class Kernel>
-// CGAL::Fig_stream<Kernel>& operator<< (CGAL::Fig_stream<Kernel>& fig_str, 
+// CGAL::Fig_stream<Kernel>& operator<< (CGAL::Fig_stream<Kernel>& fig_str,
 //                                       RTraits::Segment_2& point)
 // {
 //   fig_str.write_segment(point);
@@ -114,7 +108,7 @@ int W, H;
 // }
 
 // template <class Kernel>
-// CGAL::Fig_stream<Kernel>& operator<< (CGAL::Fig_stream<Kernel>& fig_str, 
+// CGAL::Fig_stream<Kernel>& operator<< (CGAL::Fig_stream<Kernel>& fig_str,
 //                                       RTraits::Ray_2& point)
 // {
 //   fig_str.write_ray(point);
@@ -122,7 +116,7 @@ int W, H;
 // }
 
 // template <class Kernel>
-// CGAL::Fig_stream<Kernel>& operator<< (CGAL::Fig_stream<Kernel>& fig_str, 
+// CGAL::Fig_stream<Kernel>& operator<< (CGAL::Fig_stream<Kernel>& fig_str,
 //                                       RTraits::Line_2& point)
 // {
 //   fig_str.write_line(point);
@@ -130,7 +124,7 @@ int W, H;
 // }
 
 // template <class Kernel>
-// CGAL::Fig_stream<Kernel>& operator<< (CGAL::Fig_stream<Kernel>& fig_str, 
+// CGAL::Fig_stream<Kernel>& operator<< (CGAL::Fig_stream<Kernel>& fig_str,
 //                                       const char* c)
 // {
 //   return fig_str;
@@ -179,7 +173,7 @@ CGAL::Fig_stream<Fig_kernel>& operator<< (CGAL::Fig_stream<Fig_kernel>& os,
 // Qt widget & layers
 /*****************************************************************/
 template <class Arr>
-void draw_arr(CGAL::Qt_widget &widget, const Arr& arr, 
+void draw_arr(CGAL::Qt_widget &widget, const Arr& arr,
               CGAL::Color c)
 {
   widget << c;
@@ -188,7 +182,7 @@ void draw_arr(CGAL::Qt_widget &widget, const Arr& arr,
   {
     widget << eit->curve();
   }
-    
+
   typename Arr::Vertex_const_iterator vit;
   for (vit = arr.vertices_begin(); vit != arr.vertices_end(); ++vit)
   {
@@ -198,21 +192,21 @@ void draw_arr(CGAL::Qt_widget &widget, const Arr& arr,
 
 
 template <class Arr>
-void draw_arr(CGAL::Qt_widget &widget, const Arr& arr, 
+void draw_arr(CGAL::Qt_widget &widget, const Arr& arr,
               CGAL::Fig_color fc, CGAL::Fig_line_style l_style)
 {
   if (fig_stream.is_open())
     fig_stream.set_color(fc);
-  
+
   fig_stream << l_style;
-  
+
   typename Arr::Halfedge_const_iterator eit;
   for (eit = arr.halfedges_begin(); eit != arr.halfedges_end(); ++eit)
   {
     if (fig_stream.is_open())
       fig_stream << eit->curve();
   }
-    
+
   typename Arr::Vertex_const_iterator vit;
   for (vit = arr.vertices_begin(); vit != arr.vertices_end(); ++vit)
   {
@@ -228,7 +222,7 @@ class Arrangement_layer : public CGAL::Qt_widget_layer
 public:
   typedef boost::mpl::bool_<draw_fig>               Draw_fig_tag;
 
-  Arrangement_layer(T *t, 
+  Arrangement_layer(T *t,
                     CGAL::Color color = CGAL::ORANGE,
                     CGAL::Fig_color fig_color = CGAL::FIG_GREEN_2,
                     CGAL::Fig_line_style line_style = CGAL::FIG_SOLID)
@@ -259,7 +253,7 @@ protected:
 };
 
 /*****************************************************************/
-// Window 
+// Window
 /*****************************************************************/
 
 class My_window : public QMainWindow
@@ -286,10 +280,10 @@ public:
 // 	    this, SLOT(redraw_win()) );
   }
 
-  void keyPressEvent(QKeyEvent *k) 
+  void keyPressEvent(QKeyEvent *k)
     {
       QMainWindow::keyPressEvent(k);
-      
+
       if (k->key() == Qt::Key_S)
         sites_layer.toggle(!sites_layer.is_active());
 
@@ -305,8 +299,8 @@ public:
         std::cout << "width " << widget->width() << std::endl;
         std::cout << "height " << widget->height() << std::endl;
 
-        
-        Fig_kernel::Iso_rectangle_2 irect (widget->x_min(), widget->y_min(), 
+
+        Fig_kernel::Iso_rectangle_2 irect (widget->x_min(), widget->y_min(),
                                            widget->x_max(), widget->y_max());
         if (fig_file.size() > 0)
         {
@@ -318,7 +312,7 @@ public:
           fig_stream.set_point_size(Rational(widget->x_max() - widget->x_min()) / 75);
         }
       }
-      
+
       widget->redraw();
 
       if (k->key() == Qt::Key_P)
@@ -342,7 +336,7 @@ private:	//members
 CGAL::Qt_widget&
 operator <<(CGAL::Qt_widget & widget, const Point_2& p)
 {
-  widget.get_painter().drawPoint(widget.x_pixel(CGAL::to_double(p.xy().x())), 
+  widget.get_painter().drawPoint(widget.x_pixel(CGAL::to_double(p.xy().x())),
                                  widget.x_pixel(CGAL::to_double(p.xy().y())));
   return widget;
 }
@@ -353,7 +347,7 @@ operator <<(CGAL::Qt_widget & widget, const Point_2& p)
 #endif
 
 /*****************************************************************/
-// Main 
+// Main
 /*****************************************************************/
 
 int main( int argc, char **argv )
@@ -365,20 +359,20 @@ int main( int argc, char **argv )
     ("help", "produce help message")
 #if !defined(MWA_NO_UI)
     ("show,S", "Opens QT window to watch the results.")
-    ("width,W", po::value<int>()->default_value(500), 
+    ("width,W", po::value<int>()->default_value(500),
      "Width of window")
-    ("height,H", po::value<int>()->default_value(500), 
+    ("height,H", po::value<int>()->default_value(500),
      "Height of window")
 #endif
-    ("fig_file_name,F", po::value<std::string>()->default_value(""), 
+    ("fig_file_name,F", po::value<std::string>()->default_value(""),
      "XFig filename")
     ;
-  
+
   po::variables_map vm;
   po::store(po::parse_command_line(argc, argv, desc), vm);
-  po::notify(vm);    
-  
-  if (vm.count("help")) 
+  po::notify(vm);
+
+  if (vm.count("help"))
   {
     std::cout << desc << "\n";
     return 1;
@@ -397,7 +391,7 @@ int main( int argc, char **argv )
   int n;
   std::cin >> n;
   for (int i = 0; i < n; ++i)
-  {  
+  {
     char type;
     std::cin >> type;
 
@@ -411,12 +405,12 @@ int main( int argc, char **argv )
     else
     {
       std::cin >> a >> b >> c >> d;
-      std::cout << "(" << a << ", " << b << "), (" << c << ", " << d << ")" << 
+      std::cout << "(" << a << ", " << b << "), (" << c << ", " << d << ")" <<
         std::endl;
-      
+
       Linear_kernel_2::Point_2 s (a, b);
       Linear_kernel_2::Point_2 t (c, d);
-      
+
       if (type == 'S' || type == 's')
         segments.push_back(Surface_3(Linear_kernel_2::Segment_2(s, t)));
       else if (type == 'R' || type == 'r')
@@ -438,12 +432,12 @@ int main( int argc, char **argv )
     "\tV = " << segment_diagram.number_of_vertices() <<
     "\tE = " << segment_diagram.number_of_edges() <<
     "\tF = " << segment_diagram.number_of_faces() << std::endl;
-  
+
   if (vm.count("show") == false)
     return 0;
 
-  
-  for (std::list<Surface_3>::iterator it = segments.begin(); 
+
+  for (std::list<Surface_3>::iterator it = segments.begin();
        it != segments.end(); ++it)
   {
     if (it->is_point())
@@ -455,7 +449,7 @@ int main( int argc, char **argv )
     else
       insert (sites, RTraits::Curve_2(it->line()));
   }
-          
+
 #if !defined(MWA_NO_UI)
   // *************** UI SECTION ***************
   QApplication app( argc, argv );

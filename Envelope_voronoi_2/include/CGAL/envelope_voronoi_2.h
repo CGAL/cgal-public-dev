@@ -13,7 +13,6 @@
 //
 // $URL: $
 // $Id: $
-// 
 //
 // Author(s)     : Ophir Setter       <ophirset@post.tau.ac.il>
 
@@ -23,31 +22,27 @@
 #include <CGAL/Envelope_voronoi_2/Voronoi_diagram_2.h>
 #include <CGAL/envelope_3.h>
 
-
 namespace CGAL {
 
-template <class InputIterator, class GeomTraits_, class TopTraits_>
-  void voronoi_2 (InputIterator begin, InputIterator end,
-                  Envelope_voronoi_2::Voronoi_diagram_2<GeomTraits_, 
-                  TopTraits_>& min_diagram)
+template <typename InputIterator, typename GeomTraits_, typename TopTraits_>
+  void voronoi_2(InputIterator begin, InputIterator end,
+                 Envelope_voronoi_2::Voronoi_diagram_2<GeomTraits_,
+                 TopTraits_>& min_diagram)
 {
-  typedef Envelope_voronoi_2::Voronoi_diagram_2<GeomTraits_, TopTraits_>
-    VD;
-  typedef typename VD::Base                                   Base;
+  using VD = Envelope_voronoi_2::Voronoi_diagram_2<GeomTraits_, TopTraits_>;
+  using Base = typename VD::Base;
   lower_envelope_3 (begin, end, *static_cast<Base*>(&min_diagram));
 }
 
-template <class InputIterator, class GeomTraits_, class TopTraits_>
-  void farthest_voronoi_2 (InputIterator begin, InputIterator end,
-                           Envelope_voronoi_2::Voronoi_diagram_2<GeomTraits_, 
-                           TopTraits_>& max_diagram)
+template <typename InputIterator, typename GeomTraits_, typename TopTraits_>
+  void farthest_voronoi_2(InputIterator begin, InputIterator end,
+                          Envelope_voronoi_2::Voronoi_diagram_2<GeomTraits_,
+                          TopTraits_>& max_diagram)
 {
-  typedef Envelope_voronoi_2::Voronoi_diagram_2<GeomTraits_, TopTraits_>
-    VD;
-  typedef typename VD::Base                                   Base;
+  using VD = Envelope_voronoi_2::Voronoi_diagram_2<GeomTraits_, TopTraits_>;
+  using Base = typename VD::Base;
   upper_envelope_3 (begin, end, *static_cast<Base*>(&max_diagram));
 }
-
 
 } //namespace CGAL
 

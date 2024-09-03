@@ -6,7 +6,6 @@
 #include <CGAL/Exact_predicates_exact_constructions_kernel.h>
 #include <CGAL/Cartesian.h>
 #include <CGAL/Voronoi_diagram_2.h>
-
 #include <CGAL/CORE_algebraic_number_traits.h>
 #include <CGAL/Arr_conic_traits_2.h>
 
@@ -18,12 +17,10 @@
 #endif
 
 #include <CGAL/Envelope_voronoi_2/Voronoi_diagram_2.h>
-
 #include <CGAL/envelope_3.h>
 #include <CGAL/Envelope_voronoi_traits_2/Point_diagram_traits_2.h>
 #include <CGAL/Envelope_voronoi_traits_2/Apollonius_diagram_traits_2.h>
 #include <CGAL/Envelope_surface_id_traits_2.h>
-
 #include <CGAL/Delaunay_triangulation_2.h>
 #include <CGAL/Delaunay_triangulation_2.h>
 #include <CGAL/Delaunay_triangulation_adaptation_traits_2.h>
@@ -46,137 +43,119 @@
 
 // Voronoi on sphere
 #include <CGAL/Envelope_voronoi_traits_2/Spherical_voronoi_diagram_traits_2.h>
-
 #include <CGAL/algorithm.h>
 
-
-
 // envelope voronoi
-typedef CGAL::Exact_predicates_exact_constructions_kernel Kernel;
+using Kernel = CGAL::Exact_predicates_exact_constructions_kernel;
 
 #if defined(FILTERED_ZONE)
-typedef CGAL::Linear_filtered_voronoi_traits<
-    CGAL::Point_diagram_traits_2<Kernel> >                  Envelope_voronoi_traits_2;
+using Envelope_voronoi_traits_2 =
+  CGAL::Linear_filtered_voronoi_traits<CGAL::Point_diagram_traits_2<Kernel>>;
 #else
-typedef CGAL::Point_diagram_traits_2<Kernel>               
-  Envelope_voronoi_traits_2;
+using Envelope_voronoi_traits_2 = CGAL::Point_diagram_traits_2<Kernel>;
 #endif
-typedef Kernel::Point_2                                   Point_2;
-typedef Kernel::Plane_3                                   Plane_3;
-typedef CGAL::Envelope_voronoi_2::Voronoi_diagram_2<
-Envelope_voronoi_traits_2>                                Envelope_diagram_2;
-
+using Point_2 = Kernel::Point_2;
+using Plane_3 = Kernel::Plane_3;
+using Envelope_diagram_2 =
+  CGAL::Envelope_voronoi_2::Voronoi_diagram_2<Envelope_voronoi_traits_2>;
 
 // triangulation voronoi
-typedef CGAL::Delaunay_triangulation_2<Kernel>            Triangulation;
-typedef CGAL::Delaunay_triangulation_adaptation_traits_2<
-  Triangulation>                                          Adaptation_traits;
-typedef CGAL::Delaunay_triangulation_caching_degeneracy_removal_policy_2<
-  Triangulation>                                          Adaptation_policy;
-typedef CGAL::Voronoi_diagram_2<Triangulation, 
-                                Adaptation_traits, 
-                                Adaptation_policy>        Triangulation_voronoi;
+using Triangulation = CGAL::Delaunay_triangulation_2<Kernel>;
+using Adaptation_traits =
+  CGAL::Delaunay_triangulation_adaptation_traits_2<  Triangulation>;
+using Adaptation_policy =
+  CGAL::Delaunay_triangulation_caching_degeneracy_removal_policy_2
+  <Triangulation>;
+using Triangulation_voronoi =
+  CGAL::Voronoi_diagram_2<Triangulation, Adaptation_traits, Adaptation_policy>;
 
 // envelope apollonius
-typedef CGAL::CORE_algebraic_number_traits              Nt_traits;
-typedef Nt_traits::Rational                             Rational;
-typedef Nt_traits::Algebraic                            Algebraic;
-typedef CGAL::Cartesian<Rational>                       Rat_kernel;
-typedef CGAL::Cartesian<Algebraic>                      Alg_kernel;
+using Nt_traits = CGAL::CORE_algebraic_number_traits;
+using Rational = Nt_traits::Rational;
+using Algebraic = Nt_traits::Algebraic;
+using Rat_kernel = CGAL::Cartesian<Rational>;
+using Alg_kernel = CGAL::Cartesian<Algebraic>;
 #if defined(FILTERED_ZONE)
-typedef CGAL::Filtered_voronoi_conic_traits<
-  CGAL::Apollonius_diagram_traits_2<Rat_kernel, 
-                                  Alg_kernel,
-                                  Nt_traits> >        Env_apollonius_traits;
+using Env_apollonius_traits =
+  CGAL::Filtered_voronoi_conic_traits
+  <CGAL::Apollonius_diagram_traits_2<Rat_kernel, Alg_kernel, Nt_traits>>;
 #else
-typedef CGAL::Apollonius_diagram_traits_2<Rat_kernel, 
-				      Alg_kernel,
-				      Nt_traits>        Env_apollonius_traits;
+using Env_apollonius_traits =
+  CGAL::Apollonius_diagram_traits_2<Rat_kernel, Alg_kernel, Nt_traits>;
 #endif
 
-typedef CGAL::Envelope_voronoi_2::Voronoi_diagram_2<Env_apollonius_traits>
-                                                        Apollonius_env_diagram;
-
-
+using Apollonius_env_diagram =
+  CGAL::Envelope_voronoi_2::Voronoi_diagram_2<Env_apollonius_traits>;
 
 // CGAL Apollonius
 // Apollonius doesn't work with lazy kernel.
-// typedef CGAL::Filtered_kernel<CGAL::Simple_cartesian<CGAL::Lazy_exact_nt<CGAL::Gmpq > > > Apollonius_kernel;
-typedef CGAL::Simple_cartesian<CORE::Expr> Apollonius_kernel;
-typedef CGAL::Apollonius_graph_traits_2<
-  Apollonius_kernel, CGAL::Field_with_sqrt_tag>           Apollonius_traits;
+// using Apollonius_kernel =
+//  CGAL::Filtered_kernel<CGAL::Simple_cartesian<CGAL::Lazy_exact_nt<CGAL::Gmpq >>>;
+using Apollonius_kernel = CGAL::Simple_cartesian<CORE::Expr>;
+using Apollonius_traits =
+  CGAL::Apollonius_graph_traits_2<Apollonius_kernel, CGAL::Field_with_sqrt_tag>;
 //  Apollonius_kernel>                                    Apollonius_traits;
-typedef CGAL::Apollonius_graph_2<Apollonius_traits>     Apollonius_graph;
+using Apollonius_graph = CGAL::Apollonius_graph_2<Apollonius_traits>;
 
 #ifdef USE_EXACUS
 
 // EXACUS apollonius
-typedef NiX::Arithmetic_traits                            AT;
-typedef CnX::Integer_descartes_kernel< AT >               IDK;
+using AT = NiX::Arithmetic_traits;
+using IDK = CnX::Integer_descartes_kernel< AT >;
 
 #if defined(FILTERED_ZONE)
-typedef CGAL::Basic_filtered_voronoi_traits< CGAL::Envelope_surface_id_traits_2<
-CGAL::EXACUS_apollonius_traits_2<IDK> > >
-EXACUS_apollonius_traits;
+using EXACUS_apollonius_traits =
+  CGAL::Basic_filtered_voronoi_traits
+  <CGAL::Envelope_surface_id_traits_2<CGAL::EXACUS_apollonius_traits_2<IDK>>>;
 #else
-typedef CGAL::EXACUS_apollonius_traits_2<IDK>             
-EXACUS_apollonius_traits;
+using EXACUS_apollonius_traits = CGAL::EXACUS_apollonius_traits_2<IDK>;
 #endif
 
-typedef CGAL::Envelope_diagram_2<EXACUS_apollonius_traits> 
-EXACUS_apollonius_diagram;
+using EXACUS_apollonius_diagram =
+  CGAL::Envelope_diagram_2<EXACUS_apollonius_traits>;
 
 // EXACUS using Quadrics
 #if defined(FILTERED_ZONE)
-typedef CGAL::Basic_filtered_voronoi_traits< CGAL::Envelope_surface_id_traits_2<
-QdX::P_quadric_3_envelope_traits< AT > > >     EXACUS_Qdx_traits;
+using EXACUS_Qdx_traits =
+  CGAL::Basic_filtered_voronoi_traits
+  <CGAL::Envelope_surface_id_traits_2<QdX::P_quadric_3_envelope_traits<AT>>>;
 #else
-typedef QdX::P_quadric_3_envelope_traits< AT > EXACUS_Qdx_traits;
+using EXACUS_Qdx_traits = QdX::P_quadric_3_envelope_traits< AT >;
 #endif
-typedef CGAL::Envelope_diagram_2< EXACUS_Qdx_traits > 
-EXACUS_Qdx_apollonius_diagram;
+using EXACUS_Qdx_apollonius_diagram =
+  CGAL::Envelope_diagram_2<EXACUS_Qdx_traits>;
 
-typedef QdX::P_quadric_3< AT >             P_quadric_3;
+using P_quadric_3 = QdX::P_quadric_3<AT>;
 #endif // #ifdef USE_EXACUS
 
 // Voronoi on sphere
 #if defined(FILTERED_ZONE)
-typedef CGAL::Filtered_voronoi_sphere_traits<
-    CGAL::Spherical_voronoi_diagram_traits_2<Kernel> >                   Sphere_traits;
+using Sphere_traits =
+  CGAL::Filtered_voronoi_sphere_traits
+  <CGAL::Spherical_voronoi_diagram_traits_2<Kernel>>;
 #else
-typedef CGAL::Spherical_voronoi_diagram_traits_2<Kernel>                  Sphere_traits;
+using Sphere_traits = CGAL::Spherical_voronoi_diagram_traits_2<Kernel>;
 #endif
-//typedef CGAL::Envelope_diagram_2<
-typedef CGAL::Envelope_voronoi_2::Spherical_voronoi_diagram_2<
-              Sphere_traits>                              Envelope_sphere_2;
+using Envelope_sphere_2 =
+  CGAL::Envelope_voronoi_2::Spherical_voronoi_diagram_2<Sphere_traits>;
 
-
-
-template <class Site>
-class Basic_voronoi
-{
+template <typename Site>
+class Basic_voronoi {
 public:
-  typedef std::vector<Site>        Sites;
+  using Sites = std::vector<Site>;
 
-  Basic_voronoi() :
-    m_filename(0), m_verbose_level(0), m_postscript(false)
-    { }
-  
+  Basic_voronoi() : m_filename(0), m_verbose_level(0), m_postscript(false) {}
+
   virtual ~Basic_voronoi() {}
-  
-  int init()
-    {
-      
-      // temporary until I'll now how to initialize a benchmark.
-      std::ifstream in(m_filename);
-      
-      if (in.good() == false)
-        return -1;
 
-      int n_sites;
-      in >> n_sites;
-      CGAL::copy_n(std::istream_iterator<Site>(in), n_sites, 
-                   std::back_inserter(_sites));
+  int init() {
+    // temporary until I'll now how to initialize a benchmark.
+    std::ifstream in(m_filename);
+    if (in.good() == false) return -1;
+    int n_sites;
+    in >> n_sites;
+    CGAL::copy_n(std::istream_iterator<Site>(in), n_sites,
+                 std::back_inserter(_sites));
 /*
       int n_sites;
       in >> n_sites;
@@ -184,37 +163,30 @@ public:
       {
         Kernel::FT x, y;
         in >> x >> y;
-        
+
         _sites.push_back(Point_2(x, y));
       }
-*/      
-      if (m_verbose_level > 0)
-        std::cout << _sites.size() << " sites" << std::endl;
-      
-      return 0;
-    }
-    
-  void clean()
-    {
-      _sites.clear();
-    }
-  void sync(){}
+*/
+    if (m_verbose_level > 0)
+      std::cout << _sites.size() << " sites" << std::endl;
+    return 0;
+  }
 
-  void set_file_name(const char * filename, int file_index=0) 
-    { 
-      m_filename = filename; 
-    }
-  
+  void clean() { _sites.clear(); }
+  void sync() {}
+
+  void set_file_name(const char * filename, int file_index=0)
+  { m_filename = filename; }
+
   void set_verbose_level(const unsigned int level) { m_verbose_level = level; }
   void set_postscript(const bool postscript) { m_postscript = postscript; }
-  
+
 protected:
   const char * m_filename;
-  Sites   _sites;
+  Sites _sites;
 
   unsigned int m_verbose_level;
   bool m_postscript;
 };
-
 
 #endif

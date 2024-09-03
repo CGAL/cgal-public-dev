@@ -11,9 +11,8 @@
 // This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
 // WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 //
-// $URL: 
-// $Id: 
-// 
+// $URL:
+// $Id:
 //
 // Author(s)     : Ron Wein        <wein@post.tau.ac.il>
 
@@ -34,134 +33,123 @@
 
 namespace CGAL {
 
-
 /*! \class
  * Representation of a circle, a circular arc, or a linear segment, a linear
  * ray or a line segment.
  */
-template <class Kernel_, bool Filter_>
-class _Circle_linear_2 : protected _Circle_segment_2< Kernel_, Filter_ >
-{
+template <typename Kernel_, bool Filter_ = true>
+class _Circle_linear_2 : protected _Circle_segment_2<Kernel_, Filter_> {
 public:
+  using Kernel = Kernel_;
 
-  typedef Kernel_                                          Kernel;
-  typedef typename Kernel::FT                              NT;
-  typedef _One_root_point_2<NT, Filter_>                   Point_2;
-  typedef typename Kernel::Circle_2                        Circle_2;
-  typedef typename Kernel::Segment_2                       Segment_2;
-  typedef typename Kernel::Ray_2                           Ray_2;
-  typedef typename Kernel::Line_2                          Line_2;
-  typedef _Circle_segment_2< Kernel_, Filter_>             Base;
-  typedef _Circle_linear_2< Kernel_, Filter_>              Self;
+  using NT = typename Kernel::FT;
+  using Point_2 = _One_root_point_2<NT, Filter_>;
+  using Circle_2 = typename Kernel::Circle_2;
+  using Segment_2 = typename Kernel::Segment_2;
+  using Ray_2 = typename Kernel::Ray_2;
+  using Line_2 = typename Kernel::Line_2;
+  using Base = _Circle_segment_2< Kernel, Filter_>;
+  using Self = _Circle_linear_2< Kernel, Filter_>;
 
 private:
-
-  typedef typename Point_2::CoordNT                        CoordNT;
+  using CoordNT = typename Point_2::CoordNT;
 
   // Data members:
-  bool          _has_source;  // True if we have source pt. (ray, segment, arc).
-  bool          _has_target;  // True if we have source pt. (ray, segment, arc).
-public:
+  bool m_has_source;  // true if we have source pt. (ray, segment, arc).
+  bool m_has_target;  // true if we have source pt. (ray, segment, arc).
 
+public:
   /*! Default constructor. */
-  _Circle_linear_2 () : Base (),
-    _has_source (false),
-    _has_target (false)
+  _Circle_linear_2() : Base(),
+    m_has_source(false),
+    m_has_target(false)
   {}
 
-  /*!
-   * Constructor from a line segment.
+  /*! Constructor from a line segment.
    * \param seg The segment.
    */
-  _Circle_linear_2 (const Segment_2& seg) : Base(seg),
-    _has_source (true),
-    _has_target (true)
+  _Circle_linear_2(const Segment_2& seg) : Base(seg),
+    m_has_source(true),
+    m_has_target(true)
   {}
 
   /* Constructor from a ray.
    * \param ray The ray.
    */
-  _Circle_linear_2 (const Ray_2& ray) :
-    Base (),
-    _has_source (true),
-    _has_target (false)
+  _Circle_linear_2(const Ray_2& ray) :
+    Base(),
+    m_has_source(true),
+    m_has_target(false)
   {
     Kernel k;
-    this->_line = k.construct_line_2_object() (ray);
-    this->_is_full  = false;
-    this->_has_radius = false;
-    this->_source =  Point_2(ray.source().x(), ray.source().y());
-    this->_orient = COLLINEAR;
+    this->m_line = k.construct_line_2_object()(ray);
+    this->m_is_full  = false;
+    this->m_has_radius = false;
+    this->m_source =  Point_2(ray.source().x(), ray.source().y());
+    this->m_orient = COLLINEAR;
   }
 
   /* Constructor from a line.
    * \param line The line.
    */
-  _Circle_linear_2 (const Line_2& line) :
-    Base (),
-    _has_source (false),
-    _has_target (false)
+  _Circle_linear_2(const Line_2& line) :
+    Base(),
+    m_has_source(false),
+    m_has_target(false)
   {
-    this->_line = line;
-    this->_is_full = true;
-    this->_has_radius = false;
-    this->_orient = COLLINEAR;
+    this->m_line = line;
+    this->m_is_full = true;
+    this->m_has_radius = false;
+    this->m_orient = COLLINEAR;
   }
 
-
-  /*!
-  * Constructor from of a line segment.
+  /*! Constructor from of a line segment.
    * \param ps The source point.
    * \param pt The target point.
    */
-  _Circle_linear_2 (const typename Kernel::Point_2& ps,
-                  const typename Kernel::Point_2& pt) : 
-    Base (ps, pt),
-    _has_source (true),
-    _has_target (true)  
+  _Circle_linear_2(const typename Kernel::Point_2& ps,
+                   const typename Kernel::Point_2& pt) :
+    Base(ps, pt),
+    m_has_source(true),
+    m_has_target(true)
   {}
 
-  /*!
-   * Constructor of a segment, given a supporting line and two endpoints,
+  /*! Constructor of a segment, given a supporting line and two endpoints,
    * which need not necessarily have rational coordinates.
    * \param line The supporting line.
    * \param source The source point.
    * \param target The target point.
    * \pre Both endpoints lie on the supporting line.
    */
-  _Circle_linear_2 (const Line_2& line,
-                  const Point_2& source, const Point_2& target) :
-    Base (line, source, target),
-    _has_source (true),
-    _has_target (true)
+  _Circle_linear_2(const Line_2& line,
+                   const Point_2& source, const Point_2& target) :
+    Base(line, source, target),
+    m_has_source(true),
+    m_has_target(true)
   {}
 
-  /*!
-   * Constructor from a circle.
+  /*! Constructor from a circle.
    * \param circ The circle.
    */
-  _Circle_linear_2 (const Circle_2& circ) :
-    Base (circ),
-    _has_source (false),
-    _has_target (false)
+  _Circle_linear_2(const Circle_2& circ) :
+    Base(circ),
+    m_has_source(false),
+    m_has_target(false)
   {}
 
-  /*!
-   * Constructor from a circle.
+  /*! Constructor from a circle.
    * \param c The circle center.
    * \param r The radius.
    * \param orient The orientation of the circle.
    */
-  _Circle_linear_2 (const typename Kernel::Point_2& c,
-                  const NT& r,
-                  Orientation orient = COUNTERCLOCKWISE) :
-    Base (c, r, orient),
-    _has_source (false),
-    _has_target (false)
+  _Circle_linear_2(const typename Kernel::Point_2& c, const NT& r,
+                   Orientation orient = COUNTERCLOCKWISE) :
+    Base(c, r, orient),
+    m_has_source(false),
+    m_has_target(false)
   {}
 
-  /*!
-   * Constructor of a circular arc, given a supporting circle and two
+  /*! Constructor of a circular arc, given a supporting circle and two
    * endpoints, which need not necessarily have rational coordinates.
    * The orientation of the circle determines the orientation of the arc.
    * \param circ The supporting circle.
@@ -169,15 +157,14 @@ public:
    * \param target The target point.
    * \pre Both endpoints lie on the supporting circle.
    */
-  _Circle_linear_2 (const Circle_2& circ,
-                    const Point_2& source, const Point_2& target) :
-    Base (circ, source, target),
-    _has_source (true),
-    _has_target (true)
+  _Circle_linear_2(const Circle_2& circ,
+                   const Point_2& source, const Point_2& target) :
+    Base(circ, source, target),
+    m_has_source(true),
+    m_has_target(true)
   {}
 
-  /*!
-   * Constructor of a circular arc, given a supporting circle and two
+  /*! Constructor of a circular arc, given a supporting circle and two
    * endpoints, which need not necessarily have rational coordinates.
    * \param c The circle center.
    * \param r The radius.
@@ -186,605 +173,457 @@ public:
    * \param target The target point.
    * \pre Both endpoints lie on the supporting circle.
    */
-  _Circle_linear_2 (const typename Kernel::Point_2& c,
-                    const NT& r, Orientation orient,
-                    const Point_2& source, const Point_2& target) :
-    Base (c, r, orient, source, target),
-    _has_source (true),
-    _has_target (true)
+  _Circle_linear_2(const typename Kernel::Point_2& c,
+                   const NT& r, Orientation orient,
+                   const Point_2& source, const Point_2& target) :
+    Base(c, r, orient, source, target),
+    m_has_source(true),
+    m_has_target(true)
   {}
 
-  /*!
-   * Constructor of a circular arc, from the given three points, in case of
-   * three collinear points, a segment will be constructed.            
+  /*! Constructor of a circular arc, from the given three points, in case of
+   * three collinear points, a segment will be constructed.
    * \param p1 The arc source.
    * \param p2 A point in the interior of the arc.
    * \param p3 The arc target.
    * \pre p1 and p3 are not equal.
    */
-   _Circle_linear_2 (const typename Kernel::Point_2& p1,
-                     const typename Kernel::Point_2& p2,
-                     const typename Kernel::Point_2& p3) :
-    Base (p1, p2, p3),
-    _has_source (true),
-    _has_target (true)
+   _Circle_linear_2(const typename Kernel::Point_2& p1,
+                    const typename Kernel::Point_2& p2,
+                    const typename Kernel::Point_2& p3) :
+    Base(p1, p2, p3),
+    m_has_source(true),
+    m_has_target(true)
   {}
 
-  /*!
-   * Get the orientation of the curve. 
+  /*! Get the orientation of the curve.
    * \return COLLINEAR in case of a line segment,
    *         CLOCKWISE or COUNTERCLOCKWISE for circular curves.
    */
-  inline Orientation orientation () const
-  {
-    return Base::orientation();
-  }
+  inline Orientation orientation() const
+  { return Base::orientation(); }
 
   /*! Check if the curve is has a source point. */
-  bool has_source () const
-  {
-    return _has_source;
-  }
+  bool has_source() const { return m_has_source; }
 
   /*! Check if the curve is has a target point. */
-  bool has_target () const
-  {
-    return _has_target;
-  }
+  bool has_target() const { return m_has_target; }
 
-  /*!
-   * Get the source point.
+  /*! Get the source point.
    * \pre The curve has a source point.
    */
-  const Point_2& source () const
-  {
-    CGAL_precondition (_has_source);
-    return this->_source;
+  const Point_2& source() const {
+    CGAL_precondition(m_has_source);
+    return this->m_source;
   }
 
-  /*!
-   * Get the target point.
+  /*! Get the target point.
    * \pre The curve is not a full circle.
    */
-  const Point_2& target () const
-  {
-    CGAL_precondition (_has_target);
-    return this->_target;
+  const Point_2& target() const {
+    CGAL_precondition(m_has_target);
+    return this->m_target;
   }
 
-  /*!
-   * Get the supporting line.
+  /*! Get the supporting line.
    * \pre The curve orientation is COLLINEAR.
    */
-  const Line_2& supporting_line () const
-  {
-    return Base::supporting_line();
-  }
+  const Line_2& supporting_line() const { return Base::supporting_line(); }
 
-  /*!
-   * Get the supporting circle.
+  /*! Get the supporting circle.
    * \pre The curve orientation is not COLLINEAR.
    */
-  const Circle_2& supporting_circle () const
-  {
-    return Base::supporting_circle();
-  }
+  const Circle_2& supporting_circle() const { return Base::supporting_circle(); }
 
   /*! Check if the curve is a full circle. */
-  bool is_full () const
-  {
-    return Base::is_full();
-  }
-  
-  /*!
-   * Get the vertical tangency points the arc contains.
+  bool is_full() const { return Base::is_full(); }
+
+  /*! Get the vertical tangency points the arc contains.
    * \param vpts Output: The vertical tagnecy points.
    * \pre The curve is circular.
    * \return The number of points (0, 1, or 2).
    */
-  unsigned int vertical_tangency_points (Point_2 *vpts) const
-  {
-    return Base::vertical_tangency_points(vpts);
-  }
+  unsigned int vertical_tangency_points(Point_2 *vpts) const
+  { return Base::vertical_tangency_points(vpts); }
 };
 
-
-/*!
- * Exporter for line segments and circular arcs.
+/*! Exporter for line segments and circular arcs.
  */
-template <class Kernel, bool Filter>
-std::ostream& 
-operator<< (std::ostream& os, 
-            const _Circle_linear_2<Kernel, Filter>& c)
-{
-  if (c.orientation() == COLLINEAR)
-  {
-    if (c.is_full())
-      os << "line: " << c.supporting_line() << std::endl;
+template <typename Kernel, bool Filter>
+std::ostream&
+operator<<(std::ostream& os, const _Circle_linear_2<Kernel, Filter>& c) {
+  if (c.orientation() == COLLINEAR) {
+    if (c.is_full()) os << "line: " << c.supporting_line() << std::endl;
     else if (c.has_source() && c.has_target())
       os<< "segment: " << c.source() << " -> " << c.target() << std::endl;
-    else
-    {
+    else {
       if (c.has_source())
-        os<< "ray: " << c.source() << " supporting line " 
-          << c.supporting_line() << std::endl;
+        os << "ray: " << c.source() << " supporting line "
+           << c.supporting_line() << std::endl;
       else
-        os<< "ray: " << c.target() << " supporting line " 
-          << c.supporting_line() << std::endl;
+        os << "ray: " << c.target() << " supporting line "
+           << c.supporting_line() << std::endl;
     }
   }
-  else
-  {
-    if(!c.is_full())
-    {
+  else {
+    if (! c.is_full()) {
       os << "circular arc: " << c.supporting_circle() << ' '
          << c.source() << " -> " << c.target() << std::endl;
     }
-    else
-    {
+    else {
       os << "circular arc: " << c.supporting_circle()<<std::endl;
     }
   }
 
-  return (os);
+  return os;
 }
 
 /*! \class
  * Representation of an x-monotone circular arc.
  */
-template <class Kernel_, bool Filter_>
-class _X_monotone_circle_linear_2 
-  : protected _X_monotone_circle_segment_2< Kernel_, Filter_ >
-{
+template <typename Kernel_, bool Filter_>
+class _X_monotone_circle_linear_2 :
+    protected _X_monotone_circle_segment_2< Kernel_, Filter_> {
 public:
+  using Kernel = Kernel_;
+  using Self = _X_monotone_circle_linear_2<Kernel, Filter_>;
+  using NT = typename Kernel::FT;
+  using Point_2 = _One_root_point_2<NT, Filter_>;
+  using Circle_2 = typename Kernel::Circle_2;
+  using Ray_2 = typename Kernel::Ray_2;
+  using Line_2 = typename Kernel::Line_2;
+  using Direction_2 = typename Kernel::Direction_2;
+  using CoordNT = typename Point_2::CoordNT;
 
-  typedef Kernel_                                          Kernel;
-  typedef _X_monotone_circle_linear_2<Kernel, Filter_>    Self;
-  typedef typename Kernel::FT                              NT;
-  typedef _One_root_point_2<NT, Filter_>                   Point_2;
-  typedef typename Kernel::Circle_2                        Circle_2;
-  typedef typename Kernel::Ray_2                           Ray_2;
-  typedef typename Kernel::Line_2                          Line_2;
-  typedef typename Kernel::Direction_2                     Direction_2;
-  typedef typename Point_2::CoordNT                        CoordNT;
-
-  typedef _X_monotone_circle_segment_2< Kernel_, Filter_ > Base;
+  using Base = _X_monotone_circle_segment_2< Kernel_, Filter_ >;
 
   // Type definition for the intersection points mapping.
-  typedef typename Base::Curve_id_pair            Curve_id_pair;
-  typedef typename Base::Intersection_point_2     Intersection_point_2;
-  typedef typename Base::Intersection_list        Intersection_list;
+  using Curve_id_pair = typename Base::Curve_id_pair;
+  using Multiplicity = unsigned int;
+  using Intersection_point_2 = typename Base::Intersection_point;
+  using Intersection_list = typename Base::Intersection_list;
 
-
-  typedef typename Base::Intersection_map             Intersection_map;
-  typedef typename Base::Intersection_map_entry       Intersection_map_entry;
-  typedef typename Base::Intersection_map_iterator    Intersection_map_iterator;
+  using Intersection_map = typename Base::Intersection_map;
+  using Intersection_map_entry = typename Base::Intersection_map_entry;
+  using Intersection_map_iterator = typename Base::Intersection_map_iterator;
 
 protected:
-  bool          _has_source;
-  bool          _has_target;
+  bool m_has_source;
+  bool m_has_target;
 
 public:
-
-  /*!
-   * Default constructor.
+  /*! Default constructor.
    */
-  _X_monotone_circle_linear_2 () : Base()
-  {}
+  _X_monotone_circle_linear_2() : Base() {}
 
-  /*!
-   * Construct an arc from a line segment.
+  /*! Construct an arc from a line segment.
    * \param line The supporting line.
    * \param source The source point.
    * \param target The target point.
    */
-  _X_monotone_circle_linear_2 (const Line_2& line,
-                                const Point_2& source, const Point_2& target,
-                                unsigned int index = 0) :
-  Base(line, source, target, index), 
-  _has_source(true), 
-  _has_target(true)
+  _X_monotone_circle_linear_2(const Line_2& line,
+                              const Point_2& source, const Point_2& target,
+                              unsigned int index = 0) :
+    Base(line, source, target, index),
+    m_has_source(true),
+    m_has_target(true)
   {}
 
-  /*!
-   * Construct an arc from a ray.
-   * \param line The supporting line. The ray is in the same direction of 
+  /*! Construct an arc from a ray.
+   * \param line The supporting line. The ray is in the same direction of
    *    the line.
    * \param source The source of the ray.
    */
-  _X_monotone_circle_linear_2 (const Line_2& line,
-                               const Point_2& source,
-                               unsigned int index = 0) :
-  Base(), _has_source(true), _has_target(false)
-  {
+  _X_monotone_circle_linear_2(const Line_2& line, const Point_2& source,
+                              unsigned int index = 0) :
+    Base(),
+    m_has_source(true),
+    m_has_target(false) {
     const Direction_2 pos_dir = Direction_2(0, 1);
     const Direction_2 neg_dir = Direction_2(0, -1);
 
     Kernel k;
-    this->_first = line.a();
-    this->_second = line.b();
-    this->_third = line.c();
-    this->_source = source;
-    this->_info = (index << Base::INDEX_SHIFT_BITS);
-    
-    Direction_2 dir = k.construct_direction_2_object() (line);
-    
-    if (CGAL::sign(this->_second) == ZERO)
-    {
-      this->_info = (this->_info | Base::IS_VERTICAL_SEGMENT_MASK);
-      if (k.equal_2_object()(dir, pos_dir))
-      {
-        this->_info = (this->_info | Base::IS_DIRECTED_RIGHT_MASK);
+    this->m_first = line.a();
+    this->m_second = line.b();
+    this->m_third = line.c();
+    this->m_source = source;
+    this->m_info = (index << Base::INDEX_SHIFT_BITS);
+
+    Direction_2 dir = k.construct_direction_2_object()(line);
+
+    if (CGAL::sign(this->m_second) == ZERO) {
+      this->m_info = (this->m_info | Base::IS_VERTICAL_SEGMENT_MASK);
+      if (k.equal_2_object()(dir, pos_dir)) {
+        this->m_info = (this->m_info | Base::IS_DIRECTED_RIGHT_MASK);
       }
-      else
-      {
+      else {
         CGAL_assertion(k.equal_2_object()(dir, neg_dir));
       }
     }
-    else
-    {
+    else {
       if(k.counterclockwise_in_between_2_object()(dir, neg_dir, pos_dir))
-        this->_info = (this->_info | Base::IS_DIRECTED_RIGHT_MASK);
+        this->m_info = (this->m_info | Base::IS_DIRECTED_RIGHT_MASK);
     }
   }
 
-  /*!
-   * Construct an arc from a line.
+  /*! Construct an arc from a line.
    * \param line The line.
    */
-  _X_monotone_circle_linear_2 (const Line_2& line,
-                               unsigned int index = 0) :
-  Base(), _has_source(false), _has_target(false)
-  {
+  _X_monotone_circle_linear_2(const Line_2& line, unsigned int index = 0) :
+    Base(),
+    m_has_source(false),
+    m_has_target(false) {
     const Direction_2 pos_dir = Direction_2(0, 1);
     const Direction_2 neg_dir = Direction_2(0, -1);
 
     Kernel k;
-    this->_first = line.a();
-    this->_second = line.b();
-    this->_third = line.c();
-    this->_info = (index << Base::INDEX_SHIFT_BITS);
-    
-    Direction_2 dir = k.construct_direction_2_object() (line);
-    
-    if (CGAL::sign(this->_second) == ZERO)
-    {
-      this->_info = (this->_info | Base::IS_VERTICAL_SEGMENT_MASK);
-      if (k.equal_2_object()(dir, pos_dir))
-      {
-        this->_info = (this->_info | Base::IS_DIRECTED_RIGHT_MASK);
-      }
-      else
-      {
-        CGAL_assertion(k.equal_2_object()(dir, neg_dir));
-      }
-    }
-    else
-    {
-      if(k.counterclockwise_in_between_2_object()(dir, neg_dir, pos_dir))
-        this->_info = (this->_info | Base::IS_DIRECTED_RIGHT_MASK);
-    }
+    this->m_first = line.a();
+    this->m_second = line.b();
+    this->m_third = line.c();
+    this->m_info = (index << Base::INDEX_SHIFT_BITS);
 
+    Direction_2 dir = k.construct_direction_2_object()(line);
+
+    if (CGAL::sign(this->m_second) == ZERO) {
+      this->m_info = (this->m_info | Base::IS_VERTICAL_SEGMENT_MASK);
+      if (k.equal_2_object()(dir, pos_dir)) {
+        this->m_info = (this->m_info | Base::IS_DIRECTED_RIGHT_MASK);
+      }
+      else CGAL_assertion(k.equal_2_object()(dir, neg_dir));
+    }
+    else {
+      if(k.counterclockwise_in_between_2_object()(dir, neg_dir, pos_dir))
+        this->m_info = (this->m_info | Base::IS_DIRECTED_RIGHT_MASK);
+    }
   }
 
-  /*!
-   * Construct a segment arc from two kernel points
+  /*! Construct a segment arc from two kernel points
    * \param source the source point.
    * \ param target the target point.
    * \pre source and target are not equal.
    */
-  _X_monotone_circle_linear_2 (const typename Kernel::Point_2& source,
-                                const typename Kernel::Point_2& target) :
-  Base(source, target),
-  _has_source(true),
-  _has_target(true)
-  {  }
-     
+  _X_monotone_circle_linear_2(const typename Kernel::Point_2& source,
+                              const typename Kernel::Point_2& target) :
+    Base(source, target),
+    m_has_source(true),
+    m_has_target(true)
+  {}
 
-  /*! 
-   * Construct a circular arc.
+  /*! Construct a circular arc.
    * \param line The supporting line.
    * \param source The source point.
    * \param target The target point.
    * \param orient The orientation of the arc.
    */
-  _X_monotone_circle_linear_2 (const Circle_2& circ,
-                                const Point_2& source, const Point_2& target,
-                                Orientation orient,
-                                unsigned int index = 0) :
+  _X_monotone_circle_linear_2(const Circle_2& circ,
+                              const Point_2& source, const Point_2& target,
+                              Orientation orient, unsigned int index = 0) :
     Base(circ, source, target, orient, index),
-    _has_source(true),
-    _has_target(true)
+    m_has_source(true),
+    m_has_target(true)
     {}
 
   /*! Check if the curve has source point. */
-  inline bool has_source () const
-  {
-    return _has_source;
-  }
+  inline bool has_source() const { return m_has_source; }
 
   /*! Check if the curve has target point. */
-  inline bool has_target () const
-  {
-    return _has_target;
-  }
+  inline bool has_target() const { return m_has_target; }
 
   /*! Get the source point. */
-  inline const Point_2& source () const
-  {
+  inline const Point_2& source() const {
     CGAL_precondition(has_source());
-    return (this->_source);
+    return this->m_source;
   }
 
   /*! Get the target point. */
-  inline const Point_2& target () const
-  {
+  inline const Point_2& target() const {
     CGAL_precondition(this->has_target());
-    return (this->_target);
+    return this->m_target;
   }
 
   /*! Check if the curve has left endpoint. */
-  inline bool has_left () const
-  {
-    return (((this->_info & this->IS_DIRECTED_RIGHT_MASK) != 0) ? 
-            this->_has_source : this->_has_target);
+  inline bool has_left() const {
+    return (((this->m_info & this->IS_DIRECTED_RIGHT_MASK) != 0) ?
+            this->m_has_source : this->m_has_target);
   }
 
   /*! Check if the curve has right endpoint. */
-  inline bool has_right () const
-  {
-    return (((this->_info & this->IS_DIRECTED_RIGHT_MASK) != 0) ? 
-            this->_has_target : this->_has_source);
+  inline bool has_right() const {
+    return (((this->m_info & this->IS_DIRECTED_RIGHT_MASK) != 0) ?
+            this->m_has_target : this->m_has_source);
   }
 
   /*! Get the left endpoint of the arc. */
-  inline const Point_2& left () const
-  {
+  inline const Point_2& left() const {
     CGAL_precondition(has_left());
-    return (((this->_info & this->IS_DIRECTED_RIGHT_MASK) != 0) ? 
-            this->_source : this->_target);
+    return (((this->m_info & this->IS_DIRECTED_RIGHT_MASK) != 0) ?
+            this->m_source : this->m_target);
   }
 
   /*! Get the right endpoint of the arc. */
-  inline const Point_2& right () const
-  {
+  inline const Point_2& right() const {
     CGAL_precondition(has_right());
-    return (((this->_info & this->IS_DIRECTED_RIGHT_MASK) != 0) ? 
-            this->_target : this->_source);
+    return (((this->m_info & this->IS_DIRECTED_RIGHT_MASK) != 0) ?
+            this->m_target : this->m_source);
   }
 
   /*! Set the left endpoint of the arc. */
-  inline void set_left (const Point_2& p, bool has_left = true)
-  {
-    if ((this->_info & this->IS_DIRECTED_RIGHT_MASK) != 0)
-    {
-      this->_source = p;
-      _has_source = has_left;
+  inline void set_left(const Point_2& p, bool has_left = true) {
+    if ((this->m_info & this->IS_DIRECTED_RIGHT_MASK) != 0) {
+      this->m_source = p;
+      m_has_source = has_left;
     }
-    else
-    { 
-      this->_target = p;
-      _has_target = has_left;
+    else {
+      this->m_target = p;
+      m_has_target = has_left;
     }
   }
 
   /*! Set the left endpoint of the arc. */
-  inline void set_right (const Point_2& p, bool has_right)
-  {
-    if ((this->_info & this->IS_DIRECTED_RIGHT_MASK) != 0)
-    {
-      this->_target = p;
-      _has_target = has_right;
+  inline void set_right(const Point_2& p, bool has_right) {
+    if ((this->m_info & this->IS_DIRECTED_RIGHT_MASK) != 0) {
+      this->m_target = p;
+      m_has_target = has_right;
     }
-    else
-    { 
-      this->_source = p;
-      _has_source = has_right;
+    else {
+      this->m_source = p;
+      m_has_source = has_right;
     }
   }
 
   /*! Check if the arc is linear. */
-  inline bool is_linear () const
-  {
-    return Base::is_linear();
-  }
+  inline bool is_linear() const { return Base::is_linear(); }
 
   /*! Check if the arc is circular. */
-  inline bool is_circular () const
-  {
-    return Base::is_circular();
-  }
+  inline bool is_circular() const { return Base::is_circular(); }
 
   /*! return true iff the arc is directed right lexicoraphically. */
-  bool is_directed_right() const
-  {
-    return Base::is_directed_right();
-  }
+  bool is_directed_right() const { return Base::is_directed_right(); }
 
-  
-  /*!
-   * Get the supporting line.
+  /*! Get the supporting line.
    * \pre The curve orientation is COLLINEAR.
    */
-  const Line_2 supporting_line () const
-  {
-    return Base::supporting_line();
-  }
+  const Line_2 supporting_line() const { return Base::supporting_line(); }
 
-  /*!
-   * Get the supporting circle. 
+  /*! Get the supporting circle.
    * \pre The arc is circular.
    */
-  Circle_2 supporting_circle () const
-  {
-    return Base::supporting_circle();
-  }
+  Circle_2 supporting_circle() const { return Base::supporting_circle(); }
 
   /*! Get the coefficient of y in the equation of the supporting line. */
-  inline const NT& a () const
-  {
-    return Base::a();
-  }
+  inline const NT& a() const { return Base::a(); }
 
   /*! Get the coefficient of y in the equation of the supporting line. */
-  inline const NT& b () const
-  {
-    return Base::b();
-  }
+  inline const NT& b() const { return Base::b(); }
 
   /*! Get the coefficient of y in the equation of the supporting line. */
-  inline const NT& c () const
-  {
-    return Base::c();
-  }
+  inline const NT& c() const { return Base::c(); }
 
-  /*!
-   * Check whether the given point is in the x-range of the arc.
+  /*! Check whether the given point is in the x-range of the arc.
    */
-  bool is_in_x_range (const Point_2& p) const
-  {
+  bool is_in_x_range(const Point_2& p) const {
     // full line
-    if (has_source() == false && this->has_target() == false)
-    {
-      if (is_vertical())
-        return CGAL::compare (p.x(), right().x()) == EQUAL;
+    if (has_source() == false && this->has_target() == false) {
+      if (is_vertical()) return CGAL::compare(p.x(), right().x()) == EQUAL;
 
       // this is a full line
       return true;
     }
-    
-    if (has_left())
-    {
-      Comparison_result res = CGAL::compare (p.x(), left().x());
-      if (res == SMALLER)
-        return (false);
-      else if (res == EQUAL)
-        return (true);
+
+    if (has_left()) {
+      Comparison_result res = CGAL::compare(p.x(), left().x());
+      if (res == SMALLER) return false;
+      else if (res == EQUAL) return true;
     }
 
-    if (has_right())
-      return (CGAL::compare (p.x(), right().x()) != LARGER);
-    
+    if (has_right()) return (CGAL::compare(p.x(), right().x()) != LARGER);
+
     return true;
   }
 
   /*! Check if the arc is a vertical segment. */
-  inline bool is_vertical () const
-  {
-    return ((this->_info & this->IS_VERTICAL_SEGMENT_MASK) != 0);
-  }
+  inline bool is_vertical() const
+  { return ((this->m_info & this->IS_VERTICAL_SEGMENT_MASK) != 0); }
 
-  /*! Get the orientation of the arc. */ 
-  inline Orientation orientation() const
-  {
-    return Base::orientation();
-  }
+  /*! Get the orientation of the arc. */
+  inline Orientation orientation() const { return Base::orientation(); }
 
-  /*!
-   * Check the position of a given point with respect to the arc.
+  /*! Check the position of a given point with respect to the arc.
    */
-  Comparison_result point_position (const Point_2& p) const
-  {
-    if (this->is_linear())
-      return (_line_point_position (p));
-    else
-      return (_circ_point_position (p));
+  Comparison_result point_position(const Point_2& p) const {
+    if (this->is_linear()) return (_line_point_position(p));
+    else return (_circ_point_position(p));
   }
 
-  /*!
-   * Compare the two arcs to the right of their intersection point.
+  /*! Compare the two arcs to the right of their intersection point.
    */
-  Comparison_result compare_to_right (const Self& cv, const Point_2& p) const
-  {
-    return Base::compare_to_right(cv, p);
-  }
+  Comparison_result compare_to_right(const Self& cv, const Point_2& p) const
+  { return Base::compare_to_right(cv, p); }
 
-  /*!
-   * Compare the two arcs to the left of their intersection point.
+  /*! Compare the two arcs to the left of their intersection point.
    */
-  Comparison_result compare_to_left (const Self& cv, const Point_2& p) const
-  {
-    return Base::compare_to_left(cv, p);
-  }
+  Comparison_result compare_to_left(const Self& cv, const Point_2& p) const
+  { return Base::compare_to_left(cv, p); }
 
-  /*!
-   * Check if the two curves are equal.
+  /*! Check if the two curves are equal.
    */
-  bool equals (const Self& cv) const
-  {
-    if (! this->has_same_supporting_curve (cv))
-      return (false);
-    
-    if (has_left() != cv.has_left())
-      return false;
-    if (has_right() != cv.has_right())
-      return false;
+  bool equals(const Self& cv) const {
+    if (! this->has_same_supporting_curve(cv)) return false;
+    if (has_left() != cv.has_left()) return false;
+    if (has_right() != cv.has_right()) return false;
 
-    if (this->is_linear())
-    {
+    if (this->is_linear()) {
       bool res;
-      if (has_left())
-      {
+      if (has_left()) {
         res = left().equals(cv.left());
-        if (res == false)
-          return false;
+        if (res == false)return false;
       }
-      if (has_right())
-        return right().equals(cv.right());
+      if (has_right()) return right().equals(cv.right());
       return true;
     }
 
     // Once again, opposite circular arcs are considered to be equal:
     return ((this->orientation() == cv.orientation() &&
-             this->_source.equals (cv._source) && 
-             this->_target.equals (cv._target)) ||
+             this->m_source.equals(cv.m_source) &&
+             this->m_target.equals(cv.m_target)) ||
             (this->orientation() != cv.orientation() &&
-             this->_source.equals (cv._target) && 
-             this->_target.equals (cv._source)));
+             this->m_source.equals(cv.m_target) &&
+             this->m_target.equals(cv.m_source)));
   }
 
-  /*!
-   * Split the curve at a given point into two sub-arcs.
+  /*! Split the curve at a given point into two sub-arcs.
    */
-  void split (const Point_2& p, Self& c1, Self& c2) const
-  {
+  void split(const Point_2& p, Self& c1, Self& c2) const {
     // split doesn't set our variables, so we use our = first.
     c1 = *this;
     c2 = *this;
     Base::split(p, c1, c2);
 
     // Change the endpoint, such that c1 lies to the right of c2:
-    if (this->is_directed_right())
-    {
-      c1._has_target = true;
-      c2._has_source = true;
+    if (this->is_directed_right()) {
+      c1.m_has_target = true;
+      c2.m_has_source = true;
     }
-    else
-    {
-      c1._has_source = true;
-      c2._has_target = true;
+    else {
+      c1.m_has_source = true;
+      c2.m_has_target = true;
     }
   }
 
-  /*!
-   * Compute the intersections between the two arcs or segments.
+  /*! Compute the intersections between the two arcs or segments.
    */
-  template <class OutputIterator>
-  OutputIterator intersect (const Self& cv, OutputIterator oi,
-                            Intersection_map *inter_map = NULL) const
-  {
+  template <typename OutputIterator>
+  OutputIterator intersect(const Self& cv, OutputIterator oi,
+                           Intersection_map* inter_map = nullptr) const {
     // First check whether the two arcs have the same supporting curve.
-    if (has_same_supporting_curve (cv))
-    {
+    if (this->has_same_supporting_curve(cv)) {
       // Check for overlaps between the two arcs.
-      Self    overlap;
+      Self overlap;
 
-      if (_compute_overlap (cv, overlap))
-      {
+      if (_compute_overlap(cv, overlap)) {
         // There can be just a single overlap between two x-monotone arcs:
-        *oi = CGAL::make_object (overlap);
-        ++oi;
-        return (oi);
+        *oi++ = overlap;
+        return oi;
       }
 
       // In case there is not overlap and the supporting curves are the same,
@@ -792,465 +631,346 @@ public:
       // a common end point.
       // Note that in this case we do not define the multiplicity of the
       // intersection points we report.
-      unsigned int  mult = 0;
-      if (source().equals (cv.source()))
-      {
-        *oi = CGAL::make_object (std::make_pair (left(), mult));
-        ++oi;
-      }
-
-      if (source().equals (cv.target()))
-      {
-        *oi = CGAL::make_object (std::make_pair (right(), mult));
-        ++oi;
-      }
-      if (target().equals (cv.source()))
-      {
-        *oi = CGAL::make_object (std::make_pair (left(), mult));
-        ++oi;
-      }
-
-      if (target().equals (cv.target()))
-      {
-        *oi = CGAL::make_object (std::make_pair (right(), mult));
-        ++oi;
-      }
-
-      return (oi);
+      Multiplicity mult = 0;
+      if (source().equals(cv.source())) *oi++ = std::make_pair(left(), mult);
+      if (source().equals(cv.target())) *oi++ = std::make_pair(right(), mult);
+      if (target().equals(cv.source())) *oi++ = std::make_pair(left(), mult);
+      if (target().equals(cv.target())) *oi++ = std::make_pair(right(), mult);
+      return oi;
     }
 
     // Before computing the intersection points between the two supporting
     // curves, check if their intersection has already been computed and
     // cached.
-    Curve_id_pair                id_pair;
-    Intersection_map_iterator    map_iter;
-    Intersection_list            inter_list;
-    bool                         invalid_ids = false;
+    Curve_id_pair id_pair;
+    Intersection_map_iterator map_iter;
+    Intersection_list inter_list;
+    bool invalid_ids = false;
 
-    if (inter_map != NULL && this->_index() != 0 && cv._index() != 0)
-    {
+    if ((inter_map != nullptr) && (this->_index() != 0) && (cv._index() != 0)) {
       if (this->_index() < cv._index())
-        id_pair = Curve_id_pair (this->_index(), cv._index());
-      else
-        id_pair = Curve_id_pair (cv._index(), this->_index());
-      
-      map_iter = inter_map->find (id_pair);
+        id_pair = Curve_id_pair(this->_index(), cv._index());
+      else id_pair = Curve_id_pair(cv._index(), this->_index());
+
+      map_iter = inter_map->find(id_pair);
     }
-    else
-    {
+    else {
       // In case one of the IDs is invalid, we do not look in the map neither
       // we cache the results.
-      if (inter_map != NULL)
-        map_iter = inter_map->end();
+      if (inter_map != nullptr) map_iter = inter_map->end();
       invalid_ids = true;
     }
 
-    if (inter_map == NULL || map_iter == inter_map->end())
-    {
+    if ((inter_map == nullptr) || (map_iter == inter_map->end())) {
       // Compute the intersections points between the two supporting curves.
-      if (this->is_linear())
-      {
-        if (cv.is_linear())
-          _lines_intersect (cv, inter_list);
-        else
-          cv._circ_line_intersect (*this, inter_list);
+      if (this->is_linear()) {
+        if (cv.is_linear()) this->_lines_intersect(cv, inter_list);
+        else cv._circ_line_intersect(*this, inter_list);
       }
-      else
-      {
-        if (cv.is_linear())
-          _circ_line_intersect (cv, inter_list);
-        else
-          _circs_intersect (cv, inter_list);
+      else {
+        if (cv.is_linear()) this->_circ_line_intersect(cv, inter_list);
+        else this->_circs_intersect(cv, inter_list);
       }
 
       // Cache the result.
-      if (! invalid_ids)
-        (*inter_map)[id_pair] = inter_list;
+      if (! invalid_ids) (*inter_map)[id_pair] = inter_list;
     }
-    else
-    {
+    else {
       // Obtain the precomputed intersection points from the map.
       inter_list = (*map_iter).second;
     }
 
     // Report only the intersection points that lie on both arcs.
-    typename Intersection_list::const_iterator   iter;
-
-    for (iter = inter_list.begin(); iter != inter_list.end(); ++iter)
-    {
-      if (this->_is_between_endpoints (iter->first) &&
-          cv._is_between_endpoints (iter->first))
+    for (auto iter = inter_list.begin(); iter != inter_list.end(); ++iter) {
+      if (this->_is_between_endpoints(iter->first) &&
+          cv._is_between_endpoints(iter->first))
       {
-        *oi = CGAL::make_object (*iter);
-        ++oi;
+        *oi++ = *iter;
       }
     }
 
-    return (oi);
+    return oi;
   }
 
-  /*!
-   * Check whether it is possible to merge our arc with the given arc.
+  /*! Check whether it is possible to merge our arc with the given arc.
    */
-  bool can_merge_with (const Self& cv) const
-  {
+  bool can_merge_with(const Self& cv) const {
     // In order to merge the two arcs, they should have the same supporting
     // curve.
-    if (! this->has_same_supporting_curve (cv))
-      return (false);
+    if (! this->has_same_supporting_curve(cv)) return false;
 
     // Check if the left endpoint of one curve is the right endpoint of the
     // other.
-    return (has_right() && cv.has_left() && right().equals (cv.left()) ||
-            has_left() && cv.has_right() && left().equals (cv.right()));
+    return (has_right() && cv.has_left() && right().equals(cv.left()) ||
+            has_left() && cv.has_right() && left().equals(cv.right()));
   }
 
-  /*!
-   * Merge our arc with the given arc.
+  /*! Merge our arc with the given arc.
    * \pre The two arcs are mergeable.
    */
-  void merge (const Self& cv)
-  {
-    CGAL_precondition (this->can_merge_with (cv));
+  void merge(const Self& cv) {
+    CGAL_precondition(this->can_merge_with(cv));
 
     // Check if we should extend the arc to the left or to the right.
-    if (has_right() && right().equals (cv.left()))
-    {
+    if (has_right() && right().equals(cv.left())) {
       // Extend the arc to the right.
       this->set_right(cv.right(), cv.has_right());
     }
-    else
-    {
-      CGAL_precondition (has_left() && left().equals (cv.right()));
+    else {
+      CGAL_precondition(has_left() && left().equals(cv.right()));
 
       // Extend the arc to the left.
       this->set_left(cv.left(), cv.has_left());
     }
-
-    return;
   }
 
   /*! construct an opposite arc. */
-  Self construct_opposite() const
-  {
+  Self construct_opposite() const {
     Self opp_cv = Base::construct_opposite();
-    opp_cv._has_source = this->_has_target;
-    opp_cv._has_target = this->_has_source;
-
-    return (opp_cv);
+    opp_cv.m_has_source = this->m_has_target;
+    opp_cv.m_has_target = this->m_has_source;
+    return opp_cv;
   }
 
 protected:
-
   /// \name Auxiliary functions for the point_position predicate.
   //@{
 
-  /*!
-   * Check the position of a given point with respect to a line segment.
+  /*! Check the position of a given point with respect to a line segment.
    */
-  Comparison_result _line_point_position (const Point_2& p) const
-  {
+  Comparison_result _line_point_position(const Point_2& p) const {
     // Check if we have a vertical segment.
 
-    CGAL_precondition (this->is_in_x_range(p));
+    CGAL_precondition(this->is_in_x_range(p));
 
-    Comparison_result    res;
+    Comparison_result res;
 
-    if (this->is_vertical())
-    {
+    if (this->is_vertical()) {
       // left() is the lower endpoint:
-      res = CGAL::compare (p.y(), left().y());
-
-      if (res != LARGER)
-        return (res);
+      res = CGAL::compare(p.y(), left().y());
+      if (res != LARGER) return res;
 
       // left() is the upper endpoint:
-      res = CGAL::compare (p.y(), right().y());
-
-      if (res != SMALLER)
-        return (res);
+      res = CGAL::compare(p.y(), right().y());
+      if (res != SMALLER) return res;
 
       // p lies in the interior of the vertical segment:
-      return (EQUAL);
+      return EQUAL;
     }
 
     // Compute the y-coordinate of the vertical projection of p onto the
     // supporting line.
-    const CoordNT        y_proj = (this->a() * p.x() + this->c()) / 
-      (-this->b());
+    const CoordNT y_proj = (this->a() * p.x() + this->c()) / (-this->b());
 
-    return (CGAL::compare (p.y(), y_proj));
+    return CGAL::compare(p.y(), y_proj);
   }
 
-  /*!
-   * Check the position of a given point with respect to a circular arc.
+  /*! Check the position of a given point with respect to a circular arc.
    */
-  Comparison_result _circ_point_position (const Point_2& p) const
-  {
-
-    Comparison_result   c_res = CGAL::compare (p.y(), this->y0());
+  Comparison_result _circ_point_position(const Point_2& p) const {
+    Comparison_result c_res = CGAL::compare(p.y(), this->y0());
 
     if (this->_is_upper())
-    {
       // Check if p lies below the "equator" (while the arc lies above it):
-      if (c_res == SMALLER)
-        return (SMALLER);
-    }
+      if (c_res == SMALLER) return (SMALLER);
     else
-    {
       // Check if p lies above the "equator" (while the arc lies below it):
-      if (c_res == LARGER)
-        return (LARGER);
-    }
+      if (c_res == LARGER) return (LARGER);
 
     // Check if p lies inside the supporting circle, namely we have to check
     // whether (p.x() - x0)^2 + (p.y() - y0)^2 < r^2:
-    Comparison_result   res =
-                         CGAL::compare (CGAL::square (p.x() - this->x0()),
-                                        this->sqr_r() - 
-                                        CGAL::square (p.y() - this->y0()));
+    Comparison_result res =
+      CGAL::compare(CGAL::square(p.x() - this->x0()),
+                    this->sqr_r() - CGAL::square(p.y() - this->y0()));
 
-    if (res == EQUAL)
-      // p lies on the circle:
-      return (EQUAL);
+    // p lies on the circle:
+    if (res == EQUAL) return EQUAL;
 
-    if (this->_is_upper())
-    {
-      // If p is inside the circle, it lies below the upper arc:
-      return (res);
-    }
+    // If p is inside the circle, it lies below the upper arc:
+    if (this->_is_upper()) return res;
     else
-    {
       // If p is inside the circle, it lies above the lower arc:
       return (res == SMALLER ? LARGER : SMALLER);
-    }
   }
   //@}
 
   /// \name Auxiliary functions for computing intersections.
   //@{
 
-  /*!
-   * Check if the given point lies on the arc.
+  /*! Check if the given point lies on the arc.
    * \pre p lies on the supporting curve.
    */
-  bool _is_between_endpoints (const Point_2& p) const
-  {
-    if (this->is_linear())
-    {
-      if (this->is_vertical())
-      {
+  bool _is_between_endpoints(const Point_2& p) const {
+    if (this->is_linear()) {
+      if (this->is_vertical()) {
         // Check if the point is in the y-range of the arc.
         // Note that left() is the lower endpoint and right() is the upper
-        // endpoint of the segment in this case. 
-        Comparison_result    res = CGAL::compare (p.y(), left().y());
+        // endpoint of the segment in this case.
+        Comparison_result    res = CGAL::compare(p.y(), left().y());
 
-        if (has_left() && res == SMALLER)
-          return (false);
-        else if (res == EQUAL)
-          return (true);
+        if (has_left() && res == SMALLER) return false;
+        else if (res == EQUAL) return true;
 
-        if (has_right())
-          return (CGAL::compare (p.y(), right().y()) != LARGER);
-        
+        if (has_right()) return (CGAL::compare(p.y(), right().y()) != LARGER);
+
         return true;
       }
 
       // For non-vertical segments, it is sufficient to check if the point
       // is in the x-range of the arc.
-      return (this->is_in_x_range (p));
+      return this->is_in_x_range(p);
     }
 
     // The supporting curve is a circle:
     // Check whether p lies on the upper or on the lower part of the circle.
-    Comparison_result   c_res = CGAL::compare (p.y(), this->y0());
+    Comparison_result   c_res = CGAL::compare(p.y(), this->y0());
 
     if ((this->_is_upper() && c_res == SMALLER) ||
-        (! this->_is_upper() && c_res == LARGER))
-    {
+        (! this->_is_upper() && c_res == LARGER)) {
       // The point lies on the other half of the circle:
-      return (false);
+      return false;
     }
 
     // Check if the point is in the x-range of the arc.
-    return (this->is_in_x_range (p));
+    return this->is_in_x_range(p);
   }
 
-  /*!
-   * Check if the given point lies in the interior of the arc.
+  /*! Check if the given point lies in the interior of the arc.
    * \pre p lies on the supporting curve.
    */
-  bool _is_strictly_between_endpoints (const Point_2& p) const
-  {
-    if (this->_has_source && p.equals (this->_source))
-      return (false);
-    if (this->_has_target && p.equals (this->_target))
-      return false;
-    
-    return (_is_between_endpoints (p));
+  bool _is_strictly_between_endpoints(const Point_2& p) const {
+    if (this->m_has_source && p.equals(this->m_source)) return false;
+    if (this->m_has_target && p.equals(this->m_target)) return false;
+    return (_is_between_endpoints(p));
   }
 
-  /*!
-   * Compute the overlap with a given arc having the same supporting curve.
+  /*! Compute the overlap with a given arc having the same supporting curve.
    * \param cv The given arc.
    * \param overlap Output: The overlapping arc (if any).
    * \pre The given arc has the same supporting curve as this.
    * \return Whether we found an overlap.
    */
-  bool _compute_overlap (const Self& cv, Self& overlap) const
-  {
+  bool _compute_overlap(const Self& cv, Self& overlap) const {
     // Check if the two arcs are identical.
-    if (this->is_linear())
-    {
+    if (this->is_linear()) {
       // In case of line segments we can swap the source and target:
-      if (equals(cv))
-      {
+      if (equals(cv)) {
         overlap = cv;
-        return (true);
+        return true;
       }
     }
-    else
-    {
+    else {
       if ((this->orientation() == cv.orientation() &&
-           this->_source.equals (cv._source) && 
-           this->_target.equals (cv._target)) ||
+           this->m_source.equals(cv.m_source) &&
+           this->m_target.equals(cv.m_target)) ||
           (this->orientation() != cv.orientation() &&
-           this->_source.equals (cv._target) && 
-           this->_target.equals (cv._source)))
-      {
+           this->m_source.equals(cv.m_target) &&
+           this->m_target.equals(cv.m_source))) {
         overlap = cv;
-        return (true);
+        return true;
       }
     }
 
     Kernel kernel;
     typename Kernel::Compare_xy_2  compare_xy = kernel.compare_xy_2_object();
-    bool cv_left = cv.has_left() ? 
-      _is_strictly_between_endpoints (cv.left()) : (!has_left());
-    bool cv_right = cv.has_right() ? 
-      _is_strictly_between_endpoints (cv.right()) : (!has_right());
+    bool cv_left = cv.has_left() ?
+      _is_strictly_between_endpoints(cv.left()) : (!has_left());
+    bool cv_right = cv.has_right() ?
+      _is_strictly_between_endpoints(cv.right()) : (!has_right());
 
-    if (cv_left)
-    {
-      if (cv_right)
-      {
+    if (cv_left) {
+      if (cv_right) {
         // Case 1 - *this:     +----------->
         //             cv:       +=====>
         overlap = cv;
-        return (true);
+        return true;
       }
-      else
-      {
+      else {
         // Case 2 - *this:     +----------->
         //             cv:               +=====>
         overlap = *this;
         overlap.set_left(cv.left(), cv.has_left());
 
-        return (true);
+        return true;
       }
     }
-    else if (cv_right)
-    {
+    else if (cv_right) {
       // Case 3 - *this:     +----------->
       //             cv:   +=====>
       overlap = *this;
       overlap.set_right(cv.right(), cv.has_right());
 
-      return (true);
+      return true;
     }
-    else if (cv._is_between_endpoints (this->_source) &&
-             cv._is_between_endpoints (this->_target) &&
-             (cv._is_strictly_between_endpoints (this->_source) ||
-              cv._is_strictly_between_endpoints (this->_target)))
-    {
+    else if (cv._is_between_endpoints(this->m_source) &&
+             cv._is_between_endpoints(this->m_target) &&
+             (cv._is_strictly_between_endpoints(this->m_source) ||
+              cv._is_strictly_between_endpoints(this->m_target))) {
       // Case 4 - *this:     +----------->
       //             cv:   +================>
       overlap = *this;
-      return (true);
+      return true;
     }
 
     // If we reached here, there are no overlaps:
-    return (false);
+    return false;
   }
 
-  public:
-  template <class OutputIterator>
-  void approximate(OutputIterator oi, unsigned int n) const
-  {
+public:
+  template <typename OutputIterator>
+  void approximate(OutputIterator oi, unsigned int n) const {
     const double x_left = CGAL::to_double(this->source().x());
     const double y_left = CGAL::to_double(this->source().y());
 
     const double x_right = CGAL::to_double(this->target().x());
     const double y_right = CGAL::to_double(this->target().y());
-    if(this->is_linear())
-    {
-      *oi = std::make_pair(x_left, y_left);
-      ++oi;
-
-      *oi = std::make_pair(x_right, y_right);
-      ++oi;
+    if (this->is_linear()) {
+      *oi++ = std::make_pair(x_left, y_left);
+      *oi++ = std::make_pair(x_right, y_right);
       return;
     }
 
     // Otherwise, sample (n - 1) equally-spaced points in between.
-    const double  app_xcenter = CGAL::to_double (this->_first);
-    const double  app_ycenter = CGAL::to_double (this->_second);
-    const double  app_sqr_rad = CGAL::to_double (this->_third);
-   
-    const double  x_jump = (x_right - x_left) / n;
-    double        x, y;
-    double        disc;
-    unsigned int        i;
+    const double app_xcenter = CGAL::to_double(this->m_first);
+    const double app_ycenter = CGAL::to_double(this->m_second);
+    const double app_sqr_rad = CGAL::to_double(this->m_third);
+
+    const double x_jump = (x_right - x_left) / n;
+    double x, y;
+    double disc;
 
     const bool is_up = this->_is_upper();
-    *oi = std::make_pair (x_left, y_left);   // The left point.
-    ++oi;
-    for (i = 1; i < n; i++)
-    {
+    *oi++ = std::make_pair(x_left, y_left);   // The left point.
+    for (auto i = 1; i < n; ++i) {
       x = x_left + x_jump*i;
       disc = app_sqr_rad - CGAL::square(x - app_xcenter);
       CGAL_precondition(disc >= 0);
-      if(is_up)
-        y = app_ycenter + std::sqrt(disc);
-      else
-        y = app_ycenter - std::sqrt(disc);
-
-      *oi = std::make_pair(x, y);
-      ++oi;
+      if (is_up) y = app_ycenter + std::sqrt(disc);
+      else y = app_ycenter - std::sqrt(disc);
+      *oi++ = std::make_pair(x, y);
     }
-    *oi = std::make_pair(x_right, y_right);   // The right point.
-    ++oi;
+    *oi++ = std::make_pair(x_right, y_right);   // The right point.
   }
 
   //@}
 };
 
-/*!
- * Exporter for circular arcs (or line segments).
+/*! Exporter for circular arcs (or line segments).
  */
-template <class Kernel, bool Filter>
-std::ostream& 
-operator<< (std::ostream& os, 
-            const _X_monotone_circle_linear_2<Kernel, Filter> & arc)
-{
-  typedef typename _X_monotone_circle_linear_2<Kernel, Filter>::Base Base;
+template <typename Kernel, bool Filter>
+std::ostream&
+operator<<(std::ostream& os,
+           const _X_monotone_circle_linear_2<Kernel, Filter> & arc) {
+  using Base = typename _X_monotone_circle_linear_2<Kernel, Filter>::Base;
 
-  if (! arc.is_linear())
-    os << "(" << arc.supporting_circle() << ") ";
-
-  if (arc.has_source())
-    os << "[";
-  else
-    os << "<";
+  if (! arc.is_linear()) os << "(" << arc.supporting_circle() << ") ";
+  if (arc.has_source()) os << "[";
+  else os << "<";
   os << ((Base*)&arc)->source() << " --> " << ((Base*)&arc)->target();
-  
-  if (arc.has_target())
-    os << "]";
-  else
-    os << ">";
-
+  if (arc.has_target()) os << "]";
+  else os << ">";
   os << std::endl;
-  return (os);
+  return os;
 }
 
 } //namespace CGAL

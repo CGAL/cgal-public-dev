@@ -14,15 +14,13 @@
 // $URL: $
 // $Id:  $
 //
-//
 // Author(s): Ophir Setter          <ophir.setter@post.tau.ac.il>
-//
 
 /*! \file Spherical_power_diagram_traits.h
-  This file contains an implementation of traits class for a power
-  diagram of circles on the unit spheres. The circles are created by
-  intersection the unit sphere with a rational plane.
-*/
+ * This file contains an implementation of traits class for a power
+ * diagram of circles on the unit spheres. The circles are created by
+ * intersection the unit sphere with a rational plane.
+ */
 
 #ifndef SPHERICAL_POWER_DIAGRAM_2_H
 #define SPHERICAL_POWER_DIAGRAM_2_H
@@ -32,27 +30,23 @@
 
 namespace CGAL {
 
-template <class T_Kernel>
+template <typename T_Kernel>
 class Spherical_power_diagram_traits_2 :
-    public Arr_geodesic_arc_on_sphere_traits_2<T_Kernel>
-{
+    public Arr_geodesic_arc_on_sphere_traits_2<T_Kernel> {
 public:
-  typedef T_Kernel                                             Kernel;
-  typedef Arr_geodesic_arc_on_sphere_traits_2<Kernel>          Base;
-  typedef Spherical_power_diagram_traits_2<Kernel>             Self;
-
-  typedef typename Kernel::Vector_3                            Vector_3;
-  typedef typename Kernel::Direction_3                         Direction_3;
-  typedef typename Kernel::Plane_3                             Plane_3;
-  typedef typename Kernel::Line_3                              Line_3;
-  typedef typename Kernel::Point_3                             Point_3;
-  typedef typename Kernel::Ray_3                               Ray_3;
-  typedef typename Kernel::Direction_2                         Direction_2;
-
-  typedef typename Base::Point_2                               Point_2;
-  typedef typename Base::X_monotone_curve_2
-    X_monotone_curve_2;
-  typedef typename Base::Curve_2                               Curve_2;
+  using Kernel = T_Kernel;
+  using Base = Arr_geodesic_arc_on_sphere_traits_2<Kernel>;
+  using Self = Spherical_power_diagram_traits_2<Kernel>;
+  using Vector_3 = typename Kernel::Vector_3;
+  using Direction_3 = typename Kernel::Direction_3;
+  using Plane_3 = typename Kernel::Plane_3;
+  using Line_3 = typename Kernel::Line_3;
+  using Point_3 = typename Kernel::Point_3;
+  using Ray_3 = typename Kernel::Ray_3;
+  using Direction_2 = typename Kernel::Direction_2;
+  using Point_2 = typename Base::Point_2;
+  using X_monotone_curve_2 = typename Base::X_monotone_curve_2;
+  using Curve_2 = typename Base::Curve_2;
 
   /*! \todo Get rid of the local var. 'ker'. Pass it through the constructor
    * instead!
@@ -88,30 +82,27 @@ public:
   };
 
 protected:
-
-  //! The function return the bisector plane of the two sites.
-  /*! The function returns the plance that creates the great-circle which
-      is the bisector of the two power circle sites.
-      The function assumes that the sites are not equal. If the two planes
-      are parallel, then the bisector is another parallel plane that passes
-      through the origin.
-      \param s1 The first site.
-      \param s2 The second site.
-      \return The plane that creates the bisector between the two sites.
-  */
+  /*! The function return the bisector plane of the two sites.
+   * The function returns the plance that creates the great-circle which
+   * is the bisector of the two power circle sites.
+   * The function assumes that the sites are not equal. If the two planes
+   * are parallel, then the bisector is another parallel plane that passes
+   * through the origin.
+   * \param s1 The first site.
+   * \param s2 The second site.
+   * \return The plane that creates the bisector between the two sites.
+   */
   static Plane_3 bisector_plane(const Site_2& s1, const Site_2& s2) {
     Kernel k;
-    CGAL_envelope_voronoi_precondition(k.equal_3_object() (s1, s2) == false);
+    CGAL_envelope_voronoi_precondition(k.equal_3_object()(s1, s2) == false);
     typename Kernel::Intersect_3 intersect = k.intersect_3_object();
     const Plane_3& pl1 = s1;
     const Plane_3& pl2 = s2;
     // Object obj = intersect(pl1, pl2);
-    typename boost::result_of<typename Kernel::Intersect_3(Plane_3,
-                                                           Plane_3)>::type
-      result = intersect(pl1, pl2);
+    auto result = intersect(pl1, pl2);
 
     // const Line_3* pl = object_cast<Line_3>(&obj);
-    // if (pl != NULL)
+    // if (pl != nullptr)
     if (result) {
       const Line_3* pl =  std::get_if<Line_3>(&*result);
 
@@ -140,33 +131,29 @@ protected:
   }
 
 public:
-  class Compare_distance_at_point_2
-  {
+  class Compare_distance_at_point_2 {
 
-    //! The function compare the distance between a point and two sites.
     /*! The function compares the distance between a point on the sphere and
-      two circle sites. Currently, the point in the arrangement traits is
-      represented as an extended Kernel::Direction_3.
-      \return
-    */
+     * two circle sites. Currently, the point in the arrangement traits is
+     * represented as an extended Kernel::Direction_3.
+     * \return
+     */
   public:
-    Comparison_result operator()(const Site_2& h1,
-                                 const Site_2& h2,
-                                 const Point_2& p) const
-    {
+    Comparison_result operator()(const Site_2& h1, const Site_2& h2,
+                                 const Point_2& p) const {
       // TODO: this function should intersect rays and planes.
       //       This way we avoid the are_strictly along a line
       //       (which is probably more expensive).
 
-      typedef typename Kernel::FT                          FT;
+      using FT = typename Kernel::FT;
 
       Kernel kernel;
       const Plane_3& pl1 = h1;
       const Plane_3& pl2 = h2;
       if (kernel.equal_3_object() (pl1, pl2) == true) return EQUAL;
 
-      Point_3 o = kernel.construct_point_3_object() (ORIGIN);
-      Line_3 line = kernel.construct_line_3_object() (o, p);
+      Point_3 o = kernel.construct_point_3_object()(ORIGIN);
+      Line_3 line = kernel.construct_line_3_object()(o, p);
       Ray_3 ray = kernel.construct_ray_3_object()(o, p);
       Point_3 point = kernel.construct_point_on_3_object()(ray, 1);
 
@@ -178,15 +165,11 @@ public:
 
       // Object obj1 = intersect_3(line, pl1);
       // const Point_3* p1 = object_cast<Point_3>(&obj1);
-      typename
-        boost::result_of<typename Kernel::Intersect_3(Line_3, Plane_3)>::type
-        result1 = intersect_3(line, pl1);
+      auto result1 = intersect_3(line, pl1);
 
       // Object obj2 = intersect_3(line, pl2);
       // const Point_3* p2 = object_cast<Point_3>(&obj2);
-      typename
-        boost::result_of<typename Kernel::Intersect_3(Line_3, Plane_3)>::type
-        result2 = intersect_3(line, pl2);
+      auto result2 = intersect_3(line, pl2);
 
       const Point_3* p1 = nullptr;
       if (result1) {
@@ -200,22 +183,21 @@ public:
         CGAL_envelope_voronoi_assertion(p2);
       }
 
-      if (!p1 && !p2) return EQUAL;
-      if (!p1) return LARGER;
-      if (!p2) return SMALLER;
+      if (! p1 && !p2) return EQUAL;
+      if (! p1) return LARGER;
+      if (! p2) return SMALLER;
 
       // is_opp_n tells if point pn is on the other side of the origin.
       bool is_opp_1 = are_along_line(point, o, *p1);
       bool is_opp_2 = are_along_line(point, o, *p2);
       if (is_opp_1 && !is_opp_2) return LARGER;
-      if (!is_opp_1 && is_opp_2) return SMALLER;
+      if (! is_opp_1 && is_opp_2) return SMALLER;
 
       CGAL_envelope_voronoi_assertion(is_opp_1 == is_opp_2);
       FT dist1 = dist_3 (o, *p1);
       FT dist2 = dist_3 (o, *p2);
 
-      return is_opp_1 ? opposite(compare(dist1, dist2)) :
-        compare(dist1, dist2);
+      return is_opp_1 ? opposite(compare(dist1, dist2)) : compare(dist1, dist2);
     }
   };
 
@@ -226,10 +208,10 @@ public:
   //!
   class Construct_point_on_x_monotone_2 {
     /*! The function constructs a point on an x-monotone curve.
-      \todo Maybe move this to the geodesic traits.
-    */
+     * \todo Maybe move this to the geodesic traits.
+     */
   private:
-    typedef Self Traits;
+    using Traits = Self;
 
     //! The base traits (in case it has state).
     const Traits* m_traits;
@@ -241,7 +223,7 @@ public:
     Construct_point_on_x_monotone_2(const Traits* traits) : m_traits(traits) {}
 
     //!
-    Point_2 operator() (const X_monotone_curve_2& xcurve) const {
+    Point_2 operator()(const X_monotone_curve_2& xcurve) const {
       const Kernel& kernel = *m_traits;
       auto cons_point_3 = kernel.construct_point_3_object();
       auto cons_ray_3 = kernel.construct_ray_3_object();
@@ -298,7 +280,7 @@ public:
     {
       // One site dominates the other only if they are the same cite
       CGAL_envelope_voronoi_assertion_code(Kernel k;);
-      CGAL_envelope_voronoi_assertion(k.equal_3_object() (h1, h2) == true);
+      CGAL_envelope_voronoi_assertion(k.equal_3_object()(h1, h2) == true);
       return EQUAL;
     }
   };
@@ -310,7 +292,7 @@ public:
   //!
   class Compare_distance_above_2 {
   private:
-    typedef Self Traits;
+    using Traits = Self;
 
     //! The base traits (in case it has state).
     const Traits* m_traits;
@@ -322,11 +304,9 @@ public:
     Compare_distance_above_2(const Traits* traits) : m_traits(traits) {}
 
     //!
-    Comparison_result operator()(const Site_2& h1,
-                                 const Site_2& h2,
-                                 const X_monotone_curve_2& cv) const
-    {
-      typedef typename Kernel::FT                         FT;
+    Comparison_result operator()(const Site_2& h1, const Site_2& h2,
+                                 const X_monotone_curve_2& cv) const {
+      using FT = typename Kernel::FT;
 
       const Kernel& kernel = *m_traits;
 
@@ -344,8 +324,7 @@ public:
       Point_2 d2 = Point_2(ctp(dire(v2)));
 
       Comparison_result res = m_traits->compare_y(d1, d2);
-      if (res != EQUAL)
-        return CGAL::opposite(res);
+      if (res != EQUAL) return CGAL::opposite(res);
 
       // The center of the circle with the larger radius is contained inside
       // the area of dominance.
@@ -380,12 +359,12 @@ public:
   { return Compare_distance_above_2(this); }
 
   /*! class Given to circles on a sphere (represented as planed intersecting
-    the sphere) create their bisector on the unit sphere. A precondition is
-    that both of the planes intersect the unit sphere.
-  */
+   * the sphere) create their bisector on the unit sphere. A precondition is
+   * that both of the planes intersect the unit sphere.
+   */
   class Construct_bisector_2 {
   private:
-    typedef Self Traits;
+    using Traits = Self;
 
     //! The base traits (in case it has state)
     const Traits* m_traits;
@@ -397,27 +376,25 @@ public:
     Construct_bisector_2(const Traits* traits) : m_traits(traits) {}
 
     //!
-    template <class OutputIterator>
-      OutputIterator operator()(const Site_2& s1,
-                                const Site_2& s2,
-                                OutputIterator o) const
-    {
+    template <typename OutputIterator>
+      OutputIterator operator()(const Site_2& s1, const Site_2& s2,
+                                OutputIterator o) const {
       const Kernel& kernel = *m_traits;
 
       // check that both planes intersect the unit sphere.
-      CGAL_envelope_voronoi_precondition_code (Point_3 origin = \
-                              kernel.construct_point_3_object() (ORIGIN));
-      CGAL_envelope_voronoi_precondition (kernel.compute_squared_distance_3_object()     \
-                         (origin, s1) <= 1);
-      CGAL_envelope_voronoi_precondition (kernel.compute_squared_distance_3_object() \
-                         (origin, s2) <= 1);
+      CGAL_envelope_voronoi_precondition_code
+        (Point_3 origin = kernel.construct_point_3_object()(ORIGIN));
+      CGAL_envelope_voronoi_precondition
+        (kernel.compute_squared_distance_3_object()(origin, s1) <= 1);
+      CGAL_envelope_voronoi_precondition
+        (kernel.compute_squared_distance_3_object()(origin, s2) <= 1);
 
       // check that both plane are oriented correctly.
-      CGAL_envelope_voronoi_precondition_msg (                          \
-        kernel.oriented_side_3_object() (s1, origin) == ON_POSITIVE_SIDE, \
+      CGAL_envelope_voronoi_precondition_msg
+        (kernel.oriented_side_3_object()(s1, origin) == ON_POSITIVE_SIDE, \
         "the intersecting plane should be oriented the other way.");
-      CGAL_envelope_voronoi_precondition_msg (                          \
-        kernel.oriented_side_3_object() (s2, origin) == ON_POSITIVE_SIDE, \
+      CGAL_envelope_voronoi_precondition_msg
+        (kernel.oriented_side_3_object()(s2, origin) == ON_POSITIVE_SIDE, \
         "the intersecting plane should be oriented the other way.");
 
       Plane_3 bis = bisector_plane(s1, s2);
@@ -427,16 +404,16 @@ public:
 #else
       // we use 4 different directions to make sure that there is no
       // arc bigger then 180 degrees.
-      typedef typename Kernel::Vector_3                Vector_3;
-      typedef typename Kernel::Direction_3             Direction_3;
+      using Vector_3 = typename Kernel::Vector_3;
+      using Direction_3 = typename Kernel::Direction_3;
 
-      Vector_3 v1 = kernel.construct_base_vector_3_object() (bis, 1);
-      Vector_3 v2 = kernel.construct_base_vector_3_object() (bis, 2);
+      Vector_3 v1 = kernel.construct_base_vector_3_object()(bis, 1);
+      Vector_3 v2 = kernel.construct_base_vector_3_object()(bis, 2);
 
-      Direction_3 d1 = kernel.construct_direction_3_object() (v1);
-      Direction_3 d2 = kernel.construct_direction_3_object() (v2);
-      Direction_3 d3 = kernel.construct_opposite_direction_3_object() (d1);
-      Direction_3 d4 = kernel.construct_opposite_direction_3_object() (d2);
+      Direction_3 d1 = kernel.construct_direction_3_object()(v1);
+      Direction_3 d2 = kernel.construct_direction_3_object()(v2);
+      Direction_3 d3 = kernel.construct_opposite_direction_3_object()(d1);
+      Direction_3 d4 = kernel.construct_opposite_direction_3_object()(d2);
       auto p1 = m_traits->construct_point_2_object()(d1);
       auto p2 = m_traits->construct_point_2_object()(d2);
       auto p3 = m_traits->construct_point_2_object()(d3);
@@ -449,7 +426,7 @@ public:
 #endif
 
       // Temporary!!! Initiating new traits locally.
-      typedef std::list<CGAL::Object>                  Object_list;
+      using Object_list = std::list<CGAL::Object>;
       Object_list x_monotones;
 
 #if defined(CGAL_FULL_X_MONOTONE_GEODESIC_ARC_ON_SPHERE_IS_SUPPORTED)

@@ -14,18 +14,14 @@
 // $URL: $
 // $Id:  $
 //
-//
 // Author(s): Ophir Setter          <ophir.setter@post.tau.ac.il>
-//
 
-/*!
-  \file   Spherical_voronoi_diagram_traits_2.h
-  \brief  The file contains a traits class for the computation of spherical
-  Voronoi diagram on the sphere (VD of points). The points have to reside
-  exactly on the unit sphere. This traits class should be united with the
-  traits class for the power diagram on the sphere.
-*/
-
+/*! \file   Spherical_voronoi_diagram_traits_2.h
+ * \brief The file contains a traits class for the computation of spherical
+ * Voronoi diagram on the sphere (VD of points). The points have to reside
+ * exactly on the unit sphere. This traits class should be united with the
+ * traits class for the power diagram on the sphere.
+ */
 
 #ifndef CGAL_SPHERICAL_VORONOI_DIAGRAM_TRAITS_2_H
 #define CGAL_SPHERICAL_VORONOI_DIAGRAM_TRAITS_2_H
@@ -44,37 +40,33 @@ namespace CGAL {
 //!
 template <typename T_Kernel>
 class Spherical_voronoi_diagram_traits_2 :
-    public Arr_geodesic_arc_on_sphere_traits_2<T_Kernel>
-{
+    public Arr_geodesic_arc_on_sphere_traits_2<T_Kernel> {
  public:
-  typedef T_Kernel                              Kernel;
-  typedef Arr_geodesic_arc_on_sphere_traits_2<Kernel>    Base;
+  using Kernel = T_Kernel;
+  using Base = Arr_geodesic_arc_on_sphere_traits_2<Kernel>;
 
   // Category tags:
-  typedef typename Base::Has_left_category      Has_left_category;
-  typedef typename Base::Has_merge_category     Has_merge_category;
+  using Has_left_category = typename Base::Has_left_category;
+  using Has_merge_category = typename Base::Has_merge_category;
 
-  typedef typename Base::Left_side_category     Left_side_category;
-  typedef typename Base::Bottom_side_category   Bottom_side_category;
-  typedef typename Base::Top_side_category      Top_side_category;
-  typedef typename Base::Right_side_category    Right_side_category;
+  using Left_side_category = typename Base::Left_side_category;
+  using Bottom_side_category = typename Base::Bottom_side_category;
+  using Top_side_category = typename Base::Top_side_category;
+  using Right_side_category = typename Base::Right_side_category;
 
   // Traits objects
-  typedef typename Base::Point_2                Point_2;
-  typedef typename Base::X_monotone_curve_2     X_monotone_curve_2;
-  typedef typename Base::Curve_2                Curve_2;
-  typedef typename Base::Multiplicity           Multiplicity;
+  using Point_2 = typename Base::Point_2;
+  using X_monotone_curve_2 = typename Base::X_monotone_curve_2;
+  using Curve_2 = typename Base::Curve_2;
+  using Multiplicity = typename Base::Multiplicity;
+  using Site_2 = Point_2;
+  using Plane_3 = typename Base::Plane_3;
+  using Ray_3 = typename Kernel::Ray_3;
+  using Point_3 = typename Kernel::Point_3;
+  using Direction_3 = typename Kernel::Direction_3;
+  using Vector_3 = typename Kernel::Vector_3;
 
-  typedef Point_2                               Site_2;
-
-  typedef typename Base::Plane_3                Plane_3;
-
-  typedef typename Kernel::Ray_3                Ray_3;
-  typedef typename Kernel::Point_3              Point_3;
-  typedef typename Kernel::Direction_3          Direction_3;
-  typedef typename Kernel::Vector_3             Vector_3;
-
-  static inline Plane_3 bisector(const Point_2& p1, const Point_2& p2)   {
+  static inline Plane_3 bisector(const Point_2& p1, const Point_2& p2) {
     // The function currently works for nomalized DIFFERENT directions only and
     // not general directions to avoid the need for sqrt.
     Kernel kernel;
@@ -82,29 +74,32 @@ class Spherical_voronoi_diagram_traits_2 :
     CGAL_envelope_voronoi_precondition_code(const Direction_3& d1 = p1);
     CGAL_envelope_voronoi_precondition_code(const Direction_3& d2 = p2);
     CGAL_envelope_voronoi_precondition(! kernel.equal_3_object()(d1, d2));
-    CGAL_envelope_voronoi_precondition_msg(p1.dx()*p1.dx() + p1.dy()*p1.dy() + p1.dz()*p1.dz() == 1, "The directions must be normalized.");
-    CGAL_envelope_voronoi_precondition_msg(p2.dx()*p2.dx() + p2.dy()*p2.dy() + p2.dz()*p2.dz() == 1, "The directions must be normalized.");
+    CGAL_envelope_voronoi_precondition_msg
+      (p1.dx()*p1.dx() + p1.dy()*p1.dy() + p1.dz()*p1.dz() == 1,
+       "The directions must be normalized.");
+    CGAL_envelope_voronoi_precondition_msg
+      (p2.dx()*p2.dx() + p2.dy()*p2.dy() + p2.dz()*p2.dz() == 1,
+       "The directions must be normalized.");
 
-//    typedef typename Kernel::Vector_3     Vector_3;
-//    typedef typename Kernel::FT           FT;
+    // using Vector_3 = typename Kernel::Vector_3;
+    // using FT = typename Kernel::FT;
 
-//     Vector_3 v1 = p1.vector();
-//     Vector_3 v2 = p2.vector();
+    // Vector_3 v1 = p1.vector();
+    // Vector_3 v2 = p2.vector();
 
-//     // The resulting vector is the normal to the plane that is the bisector
-//     // of these two normalized directions (The plane should be directed
-//     // towards p1).
-//     Vector_3 diff = v1 - v2;
-//     FT x = kernel.compute_x_3_object() (diff);
-//     FT y = kernel.compute_y_3_object() (diff);
-//     FT z = kernel.compute_z_3_object() (diff);
+    // // The resulting vector is the normal to the plane that is the bisector
+    // // of these two normalized directions (The plane should be directed
+    // // towards p1).
+    // Vector_3 diff = v1 - v2;
+    // FT x = kernel.compute_x_3_object() (diff);
+    // FT y = kernel.compute_y_3_object() (diff);
+    // FT z = kernel.compute_z_3_object() (diff);
 
-//     typename Kernel::Plane_3 p =
-//       kernel.construct_plane_3_object() (x, y, z, 0);
+    // typename Kernel::Plane_3 p =
+    //   kernel.construct_plane_3_object() (x, y, z, 0);
 
-    typename Kernel::Point_3 q1 (p1.dx(), p1.dy(), p1.dz());
-    typename Kernel::Point_3 q2 (p2.dx(), p2.dy(), p2.dz());
-
+    typename Kernel::Point_3 q1(p1.dx(), p1.dy(), p1.dz());
+    typename Kernel::Point_3 q2(p2.dx(), p2.dy(), p2.dz());
     return kernel.construct_bisector_3_object()(q1, q2);
   }
 
@@ -112,7 +107,7 @@ public:
   //!
   class Compare_distance_at_point_2 {
   private:
-    typedef Spherical_voronoi_diagram_traits_2<Kernel>     Traits;
+    using Traits = Spherical_voronoi_diagram_traits_2<Kernel>;
 
     //! The base traits (in case it has state).
     const Traits* m_traits;
@@ -123,19 +118,14 @@ public:
      */
     Compare_distance_at_point_2(const Traits* traits) : m_traits(traits) {}
 
-    Comparison_result operator()(const Site_2& h1,
-                                 const Site_2& h2,
-                                 const Point_2& p) const
-    {
+    Comparison_result operator()(const Site_2& h1, const Site_2& h2,
+                                 const Point_2& p) const {
       Plane_3 bis = bisector(h1, h2);
 
       const Kernel& kernel = *m_traits;
-      typename Kernel::Ray_3 r =
-        kernel.construct_ray_3_object()(ORIGIN, p);
-      typename Kernel::Vector_3 v =
-        kernel.construct_vector_3_object()(r);
-      typename Kernel::Point_3 po =
-        kernel.construct_translated_point_3_object()(ORIGIN, v);
+      auto r = kernel.construct_ray_3_object()(ORIGIN, p);
+      auto v = kernel.construct_vector_3_object()(r);
+      auto po = kernel.construct_translated_point_3_object()(ORIGIN, v);
       return CGAL::opposite(bis.oriented_side(po));
     }
   };
@@ -147,7 +137,7 @@ public:
   //!
   class Construct_point_on_x_monotone_2 {
   private:
-    typedef Spherical_voronoi_diagram_traits_2<Kernel>     Traits;
+    using Traits = Spherical_voronoi_diagram_traits_2<Kernel>;
 
     //! The base traits (in case it has state).
     const Traits* m_traits;
@@ -159,7 +149,7 @@ public:
     Construct_point_on_x_monotone_2(const Traits* traits) : m_traits(traits) {}
 
     //!
-    Point_2 operator() (const X_monotone_curve_2& xcurve) const {
+    Point_2 operator()(const X_monotone_curve_2& xcurve) const {
       const Kernel& kernel = *m_traits;
       auto cons_point_3 = kernel.construct_point_3_object();
       auto cons_ray_3 = kernel.construct_ray_3_object();
@@ -222,7 +212,7 @@ public:
   //!
   class Compare_distance_above_2 {
   private:
-    typedef Spherical_voronoi_diagram_traits_2<Kernel>     Traits;
+    using Traits = Spherical_voronoi_diagram_traits_2<Kernel>;
 
     //! The base traits (in case it has state).
     const Traits* m_traits;
@@ -234,31 +224,29 @@ public:
     Compare_distance_above_2(const Traits* traits) : m_traits(traits) {}
 
     //!
-    Comparison_result operator()(const Site_2& h1,
-                                 const Site_2& h2,
-                                 const X_monotone_curve_2& cv) const
-    {
-      typedef typename Kernel::Direction_2  Direction_2;
+    Comparison_result operator()(const Site_2& h1, const Site_2& h2,
+                                 const X_monotone_curve_2& cv) const {
+      using Direction_2 = typename Kernel::Direction_2;
 
       const Kernel& kernel = *m_traits;
 
       Comparison_result res = m_traits->compare_y(h1, h2);
       if (res != EQUAL) return CGAL::opposite(res);
 
-//       // Continue here & check the same place on the power diagram
-//       // curve is not vertical - d1 != d2
-//       const Direction_2 d1 = m_traits->project_xy(h1);
-//       const Direction_2 d2 = m_traits->project_xy(h2);
-//       CGAL_envelope_voronoi_assertion(kernel.equal_2_object()(d1, d2) != true);
+      // // Continue here & check the same place on the power diagram
+      // // curve is not vertical - d1 != d2
+      // const Direction_2 d1 = m_traits->project_xy(h1);
+      // const Direction_2 d2 = m_traits->project_xy(h2);
+      // CGAL_envelope_voronoi_assertion(! kernel.equal_2_object()(d1, d2));
 
-//       typename Base::Direction_3 normal = cv.normal();
+      // typename Base::Direction_3 normal = cv.normal();
 
-//       Direction_2 p = (cv.is_directed_right()) ?
-//         Direction_2(-(normal.dy()), normal.dx()) :
-//         Direction_2(normal.dy(), -(normal.dx()));
+      // Direction_2 p = (cv.is_directed_right()) ?
+      //   Direction_2(-(normal.dy()), normal.dx()) :
+      //   Direction_2(normal.dy(), -(normal.dx()));
 
-//       return (kernel.counterclockwise_in_between_2_object()(p, d1, d2)) ?
-//         SMALLER : LARGER;
+      // return (kernel.counterclockwise_in_between_2_object()(p, d1, d2)) ?
+      //   SMALLER : LARGER;
 
       // Each point is contained inside its area of dominance.
       // (Do not forget to check if the curve is directed right.)
@@ -283,7 +271,7 @@ public:
   //!
   class Construct_bisector_2 {
   private:
-    typedef Spherical_voronoi_diagram_traits_2<Kernel>     Traits;
+    using Traits = Spherical_voronoi_diagram_traits_2<Kernel>;
 
     //! The base traits (in case it has state).
     const Traits* m_traits;
@@ -294,11 +282,9 @@ public:
      */
     Construct_bisector_2(const Traits* traits) : m_traits(traits) {}
 
-    template <class OutputIterator>
-      OutputIterator operator()(const Site_2& s1,
-                                const Site_2& s2,
-                                OutputIterator o) const
-    {
+    template <typename OutputIterator>
+      OutputIterator operator()(const Site_2& s1, const Site_2& s2,
+                                OutputIterator o) const {
       // this is a temporary implementation that will change when the
       // traits class would enable to build Curve_2 from a plane.
       typename Kernel::Plane_3 bis((typename Kernel::Plane_3)
@@ -309,17 +295,17 @@ public:
 #else
       // we use 4 different directions to make sure that there is no
       // arc bigger then 180 degrees.
-      typedef typename Kernel::Vector_3                Vector_3;
-      typedef typename Kernel::Direction_3             Direction_3;
+      using Vector_3 = typename Kernel::Vector_3;
+      using Direction_3 = typename Kernel::Direction_3;
 
       const Kernel& kernel = *m_traits;
-      Vector_3 v1 = kernel.construct_base_vector_3_object() (bis, 1);
-      Vector_3 v2 = kernel.construct_base_vector_3_object() (bis, 2);
+      Vector_3 v1 = kernel.construct_base_vector_3_object()(bis, 1);
+      Vector_3 v2 = kernel.construct_base_vector_3_object()(bis, 2);
 
-      Direction_3 d1 = kernel.construct_direction_3_object() (v1);
-      Direction_3 d2 = kernel.construct_direction_3_object() (v2);
-      Direction_3 d3 = kernel.construct_opposite_direction_3_object() (d1);
-      Direction_3 d4 = kernel.construct_opposite_direction_3_object() (d2);
+      Direction_3 d1 = kernel.construct_direction_3_object()(v1);
+      Direction_3 d2 = kernel.construct_direction_3_object()(v2);
+      Direction_3 d3 = kernel.construct_opposite_direction_3_object()(d1);
+      Direction_3 d4 = kernel.construct_opposite_direction_3_object()(d2);
       auto p1 = m_traits->construct_point_2_object()(d1);
       auto p2 = m_traits->construct_point_2_object()(d2);
       auto p3 = m_traits->construct_point_2_object()(d3);
@@ -332,7 +318,7 @@ public:
 #endif
 
       // Temporary!!! Initiating new traits locally.
-      typedef std::list<CGAL::Object>                  Object_list;
+      using Object_list = std::list<CGAL::Object>;
       Object_list x_monotones;
 
 #if defined(CGAL_FULL_X_MONOTONE_GEODESIC_ARC_ON_SPHERE_IS_SUPPORTED)
@@ -360,7 +346,6 @@ public:
 
   Construct_bisector_2 construct_bisector_2_object() const
   { return Construct_bisector_2(this); }
-
 };
 
 } //namespace CGAL

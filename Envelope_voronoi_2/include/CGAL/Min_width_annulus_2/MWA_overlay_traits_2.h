@@ -11,13 +11,10 @@
 // This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
 // WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 //
-// $URL: 
-// $Id: 
-// 
+// $URL:
+// $Id:
 //
 // Author(s)     : Ophir Setter <ophir.setter@cs.tau.ac.il
-//                 
-
 
 #ifndef CGAL_MWA_OVERLAY_TRAITS_2_H
 #define CGAL_MWA_OVERLAY_TRAITS_2_H
@@ -34,35 +31,31 @@ namespace CGAL {
   {                                                                     \
     v->first.add_data(v1->begin_data(), v1->end_data());                \
     v->second.add_data(v2->begin_data(), v2->end_data());               \
-  } 
+  }
 
-/*!
- * \class Min_width_annulus_overlay_2
+/*! \class Min_width_annulus_overlay_2
  * Class used when computing the minimum width annulus. For each new created
  * feature, we save the info from both arrangements, as well as from which
  * arrangement it came from.
  */
-template <class ArrangementA, class ArrangementB, class ArrangementR>
-class MWA_overlay_traits_2
-{
+template <typename ArrangementA, class ArrangementB, class ArrangementR>
+class MWA_overlay_traits_2 {
 public:
+  using Vertex_handle_A = typename ArrangementA::Vertex_const_handle;
+  using Halfedge_handle_A = typename ArrangementA::Halfedge_const_handle;
+  using Face_handle_A = typename ArrangementA::Face_const_handle;
 
-  typedef typename ArrangementA::Vertex_const_handle    Vertex_handle_A;
-  typedef typename ArrangementA::Halfedge_const_handle  Halfedge_handle_A;
-  typedef typename ArrangementA::Face_const_handle      Face_handle_A;
+  using Vertex_handle_B = typename ArrangementB::Vertex_const_handle;
+  using Halfedge_handle_B = typename ArrangementB::Halfedge_const_handle;
+  using Face_handle_B = typename ArrangementB::Face_const_handle;
 
-  typedef typename ArrangementB::Vertex_const_handle    Vertex_handle_B;
-  typedef typename ArrangementB::Halfedge_const_handle  Halfedge_handle_B;
-  typedef typename ArrangementB::Face_const_handle      Face_handle_B;
-  
-  typedef typename ArrangementR::Vertex_handle          Vertex_handle_R;
-  typedef typename ArrangementR::Halfedge_handle        Halfedge_handle_R;
-  typedef typename ArrangementR::Face_handle            Face_handle_R;
+  using Vertex_handle_R = typename ArrangementR::Vertex_handle;
+  using Halfedge_handle_R = typename ArrangementR::Halfedge_handle;
+  using Face_handle_R = typename ArrangementR::Face_handle;
 
   /*! Destructor. */
-  virtual ~MWA_overlay_traits_2 ()
-  {}
-  
+  virtual ~MWA_overlay_traits_2() {}
+
   MWA_OVERLAY_TRAITS_FUNC(create_vertex, Vertex_handle_A, Vertex_handle_B, \
                           Vertex_handle_R);
   MWA_OVERLAY_TRAITS_FUNC(create_vertex, Vertex_handle_A, Halfedge_handle_B, \
@@ -75,20 +68,19 @@ public:
                           Vertex_handle_R);
   MWA_OVERLAY_TRAITS_FUNC(create_vertex, Halfedge_handle_A, Halfedge_handle_B, \
                           Vertex_handle_R);
-  
+
   MWA_OVERLAY_TRAITS_FUNC(create_edge, Halfedge_handle_A, Halfedge_handle_B, \
                           Halfedge_handle_R);
   MWA_OVERLAY_TRAITS_FUNC(create_edge, Halfedge_handle_A, Face_handle_B, \
                           Halfedge_handle_R);
   MWA_OVERLAY_TRAITS_FUNC(create_edge, Face_handle_A, Halfedge_handle_B, \
                           Halfedge_handle_R);
-  
+
   MWA_OVERLAY_TRAITS_FUNC(create_face, Face_handle_A, Face_handle_B,    \
                           Face_handle_R);
-  
+
 };
 
 } //namespace CGAL
 
 #endif // CGAL_MWA_OVERLAY_TRAITS_2_H
-
