@@ -64,9 +64,9 @@ using GeneratorFunction = std::function<LCC(const std::string&)>;
 using ValidationData = std::tuple<InputFile, OutputFile, GeneratorFunction>;
 
 ValidationData validation_data[] = {
-  {"mesh1.off", "mesh1-1r-20x20x20", [](const std::string& path){
-    return default_two_refinement(path, 20);
-  }},
+  // {"mesh1.off", "mesh1-1r-20x20x20", [](const std::string& path){
+  //   return default_two_refinement(path, 20);
+  // }},
   // {"mesh2.off", "mesh2-1r-20x20x20", [](const std::string& path){
   //   return default_two_refinement(path, 20);
   // }},
@@ -75,9 +75,9 @@ ValidationData validation_data[] = {
   // }},
 
   // 2 Levels of refinement
-  // {"mesh1.off", "mesh1-2r-20x20x20", [](const std::string& path){
-  //   return default_two_refinement(path, 20, 2);
-  // }},
+  {"mesh1.off", "mesh1-2r-20x20x20", [](const std::string& path){
+    return default_two_refinement(path, 20, 2);
+  }},
 
   // 3 Levels of refinement
   // Do not try, it just takes ages to save the combinatorial map

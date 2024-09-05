@@ -680,6 +680,7 @@ namespace CGAL::HexRefinement::TwoRefinement {
       }
 
       const auto all_valid = [&](){
+        // TODO, possibilité que l'array est vide
         CGAL_postcondition_msg(owned_cc_to_handle.empty() && unowned_cc_to_handle.empty(), "");
         bool invalid = has_invalid_volume(owned_ghost_area, owned_cc_to_handle, true)
                     or has_invalid_volume(unowned_ghost_area, unowned_cc_to_handle, false);
@@ -1158,7 +1159,7 @@ namespace CGAL::HexRefinement::TwoRefinement {
       found = other_face_handle != nullptr && other_face_handle->info().plane[plane];
 
       // Add the incident volume only if it is inside the refinement domain
-      if (!found && other_vol_handle != nullptr)
+      if (!found && other_vol_handle != nullptr && other_vol_handle->info().type > VolumeType::NONE)
         __additional_volumes.push_back(other_face);
     }
 
@@ -1433,6 +1434,15 @@ namespace CGAL::HexRefinement::TwoRefinement {
 
     size_t id0 = lcc.attribute<0>(extremity0)->id;
     size_t id1 = lcc.attribute<0>(extremity1)->id;
+
+    if (id0 == DartInfo::VertexAttr::max_id or id1 == DartInfo::VertexAttr::max_id){
+      lcc.mark_cell<2>(node, proc.debug);
+      lcc.mark_cell<0>(node, proc.debug2);
+      lcc.mark_cell<0>(extremity0, proc.debug2);
+      lcc.mark_cell<0>(extremity1, proc.debug2);
+      debug_stream.push(l_thread_id);
+      std::this_thread::sleep_for(std::chrono::hours(1));
+    }
     assert(id0 != DartInfo::VertexAttr::max_id);
     assert(id1 != DartInfo::VertexAttr::max_id);
     auto tid = get_temp_vertex_id<AltVertexIdSingle>(id0, id1);
@@ -2135,8 +2145,8 @@ namespace CGAL::HexRefinement::TwoRefinement {
         });
       }
 
-      // EXIT: if no more changes are received
-      if (empty_count >= proc.neighboring_threads.size())
+      // EXIT: if no more changes are received, and we haven't sent changes either
+      if (marked_cells->empty() && empty_count >= proc.neighboring_threads.size())
         break;
 
       // Clear all received nodes
@@ -2330,17 +2340,6 @@ namespace CGAL::HexRefinement::TwoRefinement {
 
     face_attr.template_id = 0;
 
-    // In multi threaded code, check if both volumes are owned, otherwise skip
-    bool is_markable = true;
-
-    // Might not be needed,
-
-    // if constexpr (std::is_same_v<HexData, ProcessData>){
-    //   auto& front_vol = lcc.attribute<3>(face)->info();
-    //   auto back_vol_attr = lcc.attribute<3>(lcc.beta<3>(face));
-    //   is_markable = front_vol.owned or (back_vol_attr != nullptr && back_vol_attr->info().owned);
-    // }
-
     auto edges = lcc.darts_of_cell<2,1>(face);
     assert(edges.size() == 4);
     // Add neighboring faces
@@ -2349,7 +2348,7 @@ namespace CGAL::HexRefinement::TwoRefinement {
       bool marked = lcc.is_marked(dit, hdata.template_mark);
       bool identified = lcc.is_marked(dit, hdata.identified_mark);
 
-      if (is_markable && !marked && identified){
+      if (!marked && identified){
         lcc.mark_cell<0>(dit, hdata.template_mark);
         rdata.marked_nodes.push_back(dit);
       }
@@ -2728,8 +2727,9 @@ namespace CGAL::HexRefinement::TwoRefinement {
         continue;
       }
 
-      // Reset all volumes inside the refinement domain
-      current_info = DartInfo::VolumeAttrValue();
+      // Reset all other volumes
+      current_info.iteration = -1;
+      current_info.type = VolumeType::NONE;
 
       // Reevaluate the identification status of those who were identified
       if (old_info.type == VolumeType::IDENTIFIED && cellIdentifier(lcc, it->dart()))
@@ -2865,69 +2865,6 @@ namespace CGAL::HexRefinement::TwoRefinement {
      }
 
   }
-
-  // TODO, messy code but it works
-  // Only works on a uniform grid
-  Dart_handle find_area_on_grid(ProcessData& proc, Dart_handle from, PlaneNormal fromPlane, const AreaId& area, bool owned){
-    LCC& lcc = proc.lcc;
-
-    const auto can_move_right = [&](Dart_handle d) { return !lcc.is_free<3>(lcc.beta(d, 1, 2)); };
-    const auto right = [&](Dart_handle d){ return lcc.beta(d, 1, 2, 3, 2, 1); };
-    const auto can_move_up = [&](Dart_handle d) { return !lcc.is_free<3>(lcc.beta(d, 1, 1, 2)); };
-    const auto up = [&](Dart_handle d){ return lcc.beta(d, 1, 1, 2, 3, 2); };
-
-    const int x_axis = (fromPlane + 1)%3;
-    const int y_axis = (fromPlane + 2)%3;
-    Dart_handle position = from;
-
-    // Offset rules for owned areas
-    // If area searched is inside a owned area, offset the starting dart to be in a owned area
-    if (owned){
-      if (proc.negative_axes[y_axis]){
-        assert(!lcc.attribute<3>(position)->info().owned);
-        position = up(up(position));
-      }
-
-      if (proc.negative_axes[x_axis]){
-        assert(!lcc.attribute<3>(position)->info().owned);
-        position = right(right(position));
-      }
-
-      // assert(is_volume_owned(position));
-    }
-
-    // Offset rules for unowned area
-    // Because two areas cannot overlap
-    else if (!owned){
-      bool x_offset = proc.negative_axes[x_axis] && area[x_axis] == 0;
-      bool y_offset = proc.negative_axes[y_axis] && area[y_axis] == 0;
-
-      if (x_offset) position = right(right(position));
-      if (y_offset) position = up(up(position));
-    }
-
-    const DartInfo::VolumeAttrValue* vol_attr = &lcc.attribute<3>(position)->info();
-
-    if (area[x_axis] > 0){
-      while (can_move_right(position) && (vol_attr->area_id[x_axis] <= 0 or vol_attr->owned != owned)){
-        position = right(position);
-        vol_attr = &lcc.attribute<3>(position)->info();
-      }
-    }
-
-    if (area[y_axis] > 0){
-      while (can_move_up(position) && (vol_attr->area_id[y_axis] <= 0 or vol_attr->owned != owned)){
-        position = up(position);
-        vol_attr = &lcc.attribute<3>(position)->info();
-      }
-    }
-
-    if (!are_areas_equivalent(vol_attr->area_id, area, owned) or vol_attr->owned != owned){
-      return lcc.null_dart_descriptor;
-    }
-
-    return position;
-  };
 
   void assign_ghost_handles(ProcessData& proc){
     auto& volumes = proc.lcc.attributes<3>();
@@ -3494,7 +3431,7 @@ namespace CGAL::HexRefinement::TwoRefinement {
     auto& attributes = lcc.attributes<3>();
 
     for (auto it = attributes.begin(), end = attributes.end(); it != end; it++){
-      if (it->info().type > VolumeType::NONE && it->info().owned){
+      if (it->info().type > VolumeType::NONE){
         mark_k_cells_of_i_cell<3, 0>(lcc, it->dart(), hdata.identified_mark);
       }
     }
@@ -3639,9 +3576,6 @@ namespace CGAL::HexRefinement::TwoRefinement {
     for (int r = 0; r < nb_levels; r++){
       if (r == 0) initial_setup(hdata, cellIdentifier);
       else setup_next_level(hdata, cellIdentifier);
-
-      // debug_stream.push(l_thread_id);
-      // std::this_thread::sleep_for(std::chrono::hours(1));
 
       expand_identified_cells(hdata, r, nb_levels);
 
@@ -3851,7 +3785,18 @@ namespace CGAL::HexRefinement {
       auto a = lcc.attribute<2>(dart);
       auto b = lcc.attribute<3>(dart);
 
-      return b->info().cc_id != DartInfo::VolumeAttrValue::max_cc_id ? red() : blue();
+      // if (a != nullptr && a->info().plane[0]) return red();
+      // if (a != nullptr && a->info().plane[1]) return green();
+      // if (a != nullptr && a->info().plane[2]) return orange();
+
+      if (lcc.is_whole_cell_marked<2>(dart, hdata.debug)) return purple();
+
+      if (b != nullptr){
+        if (b->info().type >= VolumeType::IDENTIFIED) return red() ;
+        if (b->info().type >= VolumeType::ID_EXPANSION) return yellow() ;
+        return blue();
+      }
+      return black();
 
       if (b == nullptr) return blue();
 
@@ -3878,6 +3823,10 @@ namespace CGAL::HexRefinement {
       return true;
     };
     gso.vertex_color = [&](const LCC& lcc, LCC::Dart_const_handle dart){
+      return lcc.is_marked(dart, hdata.template_mark) ? red()
+      :  lcc.is_marked(dart, hdata.debug) ? green()
+      :  lcc.is_marked(dart, hdata.debug2) ? orange()
+      :  black();
       return lcc.attribute<0>(dart)->id == DartInfo::VertexAttr::max_id ? red() : blue();
       // return lcc.is_whole_cell_marked<0>(dart, hdata.template_mark) ? red() : black();
       auto a = lcc.is_whole_cell_marked<0>(dart, hdata.debug);
@@ -3985,10 +3934,10 @@ namespace CGAL::HexRefinement {
       threads[i] = std::thread(two_refinement_algorithm<ProcessData>, std::ref(proc_datas[i]), std::ref(cellIdentifier), nb_levels, i);
     }
 
-    // while (true) {
-    //   auto i = debug_stream.waitNextItem();
-    //   debug_render(proc_datas[i]);
-    // }
+    while (true) {
+      auto i = debug_stream.waitNextItem();
+      debug_render(proc_datas[i]);
+    }
 
     for (int i = 0; i < nb_threads; i++){
       threads[i].join();
