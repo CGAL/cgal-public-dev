@@ -53,6 +53,14 @@ struct Direct
 struct Intrinsic_Delaunay
 {};
 
+template <typename T>
+auto normalize(T const &V)
+{
+  auto const slen = V.squared_length();
+  auto const d = CGAL::approximate_sqrt(slen);
+  return V / d;
+}
+
 namespace internal {
 template <typename TriangleMesh,
           typename Traits,
@@ -303,13 +311,14 @@ private:
     }
     CGAL::Vertex_around_face_iterator<TriangleMesh> vbegin, vend, vmiddle;
     for(face_descriptor f : faces(tm)) {
+      const Traits traits;
       boost::tie(vbegin, vend) = vertices_around_face(halfedge(f,tm),tm);
       vertex_descriptor current = *(vbegin);
       vertex_descriptor neighbor_one = *(++vbegin);
       vertex_descriptor neighbor_two = *(++vbegin);
-      VertexPointMap_reference p_i = get(vpm,current);
-      VertexPointMap_reference p_j = get(vpm, neighbor_one);
-      VertexPointMap_reference p_k = get(vpm, neighbor_two);
+      // VertexPointMap_reference p_i = get(vpm,current);
+      // VertexPointMap_reference p_j = get(vpm, neighbor_one);
+      // VertexPointMap_reference p_k = get(vpm, neighbor_two);
       Index face_i = get(face_id_map, f);
 
       Index i = get(vertex_id_map, current);
@@ -321,18 +330,21 @@ private:
       //cross that with eij, ejk, eki
       //so (Ncross eij) *uk and so on
       //sum all of those then multiply by 1./(2a)
+      auto vs = MollificationScheme::face_vectors(
+          tm, vpm, he_length_map, current, neighbor_one, neighbor_two, traits);
+      auto v_ij = vs[0];
+      auto v_jk = vs[1];
+      auto v_ki = vs[2];
 
-      Vector_3 v_ij = construct_vector(p_i,p_j);
-      Vector_3 v_ik = construct_vector(p_i,p_k);
-
-      Vector_3 cross = cross_product(v_ij, v_ik);
+      Vector_3 cross = cross_product(v_ij, -v_ki);
       double N_cross = (CGAL::sqrt(to_double(scalar_product(cross, cross))));
       if (is_zero(N_cross)) {
         m_X[face_i] = Vector_3(0.0, 0.0, 0.0);
         continue;
       }
       Vector_3 unit_cross = scale(cross, 1./N_cross);
-      double area_face = N_cross * (1./2);
+      double area_face = MollificationScheme::face_area(
+          tm, vpm, he_length_map, current, neighbor_one, neighbor_two, traits);
       double u_i = CGAL::abs(m_solved_u(i));
       double u_j = CGAL::abs(m_solved_u(j));
       double u_k = CGAL::abs(m_solved_u(k));
@@ -344,8 +356,9 @@ private:
         u_k = u_k * r_Mag;
       }
       Vector_3 edge_sums = scale(cross_product(unit_cross,v_ij), u_k);
-      edge_sums = sum(edge_sums, scale(cross_product(unit_cross, construct_vector(p_j,p_k)), u_i));
-      edge_sums = sum(edge_sums, scale(cross_product(unit_cross, construct_vector(p_k,p_i)), u_j));
+      edge_sums = sum(edge_sums, scale(cross_product(unit_cross, v_jk), u_i));
+      edge_sums = sum(edge_sums, scale(cross_product(unit_cross, v_ki), u_j));
+      edge_sums = scale(edge_sums, (1./area_face)); // FIXME: remove unneeded
       double e_magnitude = CGAL::sqrt(to_double(scalar_product(edge_sums,edge_sums)));
       assert(std::isfinite(e_magnitude));
       m_X[face_i] = scale(edge_sums, (is_zero(e_magnitude) ? 1 : 1. / e_magnitude));
@@ -372,17 +385,20 @@ private:
       vertex_descriptor v_i = current;
       vertex_descriptor v_j = neighbor_one;
       vertex_descriptor v_k = neighbor_two;
-      VertexPointMap_reference p_i = get(vpm, current);
-      VertexPointMap_reference p_j = get(vpm, neighbor_one);
-      VertexPointMap_reference p_k = get(vpm, neighbor_two);
+      // VertexPointMap_reference p_i = get(vpm, current);
+      // VertexPointMap_reference p_j = get(vpm, neighbor_one);
+      // VertexPointMap_reference p_k = get(vpm, neighbor_two);
       Index face_i = get(face_id_map, f);
 
-      const Vector_3 v_ij = construct_vector(p_i, p_j);
-      const Vector_3 v_ik = construct_vector(p_i, p_k);
-      const Vector_3 v_ji = construct_vector(p_j, p_i);
-      const Vector_3 v_jk = construct_vector(p_j, p_k);
-      const Vector_3 v_ki = construct_vector(p_k, p_i);
-      const Vector_3 v_kj = construct_vector(p_k, p_j);
+      auto vs = MollificationScheme::face_vectors(
+          tm, vpm, he_length_map, current, neighbor_one, neighbor_two, Traits());
+      auto v_ij = vs[0];
+      auto v_jk = vs[1];
+      auto v_ki = vs[2];
+
+      const Vector_3 v_ik = -v_ki;
+      const Vector_3 v_ji = -v_ij;
+      const Vector_3 v_kj = -v_jk;
 
       const Traits traits;
       const FT cotan_i = MollificationScheme::cotangent(tm, vpm, he_length_map, v_k, v_i, v_j, traits);
@@ -597,6 +613,20 @@ private:
     }
     m_cotan_matrix.assemble_matrix();
     m_mass_matrix.assemble_matrix();
+
+    auto M = Eigen::MatrixXd(m_cotan_matrix.eigen_object());
+    Eigen::EigenSolver<Eigen::MatrixXd> solver(M);
+    Eigen::VectorXd eigenvalues = solver.eigenvalues().real();
+    std::vector<double> sorted_eigenvalues(eigenvalues.data(), eigenvalues.data() + eigenvalues.size());
+    std::sort(sorted_eigenvalues.begin(), sorted_eigenvalues.end());
+    double min_eigenvalue = sorted_eigenvalues.front();
+    double max_eigenvalue = sorted_eigenvalues.back();
+    std::cout << "Min eigenvalue: " << min_eigenvalue << ", Max eigenvalue: " << max_eigenvalue << std::endl;
+    // Print the first 10 eigenvalues or fewer if there are less than 10
+    std::cout << "First 10 eigenvalues:\n";
+    for (int i = 0; i < std::min<std::size_t>(10, sorted_eigenvalues.size()); ++i) {
+        std::cout << "Eigenvalue " << i + 1 << ": " << sorted_eigenvalues[i] << std::endl;
+    }
 
     m_time_step = 1./(num_edges(tm));
     m_time_step = m_time_step*summation_of_edges();

@@ -62,10 +62,11 @@ set(demo_SOURCES ${SOURCES_GLOB})
 add_executable(demo ${demo_SOURCES} ${demo_HEADERS})
 
 add_to_cached_list( CGAL_EXECUTABLE_TARGETS demo )
-
+find_package(SuiteSparse REQUIRED)   # Find SuiteSparse package
 # Link the executable to CGAL and third-party libraries
-target_link_libraries(demo PRIVATE CGAL::CGAL CGAL::Eigen3_support)
+target_link_libraries(demo PRIVATE CGAL::CGAL CGAL::Eigen3_support /home/islam/code/geometry-central/build/src/libgeometry-central.a ${SuiteSparse_LIBRARIES})
 
 target_include_directories(
   demo PUBLIC $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
-                         $<BUILD_INTERFACE:${demo_INCLUDE_DIR}>)
+                         $<BUILD_INTERFACE:${demo_INCLUDE_DIR}>
+                         $<BUILD_INTERFACE:/home/islam/code/geometry-central/include>)

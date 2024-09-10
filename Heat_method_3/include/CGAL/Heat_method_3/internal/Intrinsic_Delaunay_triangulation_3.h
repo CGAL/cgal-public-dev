@@ -441,7 +441,7 @@ private:
     }
 
     // if(CGAL::Heat_method_3::internal::has_degenerate_faces(m_intrinsic_tm, Traits()))
-      mollify(min_length*1e-4);
+    mollify(min_length*1e-4);
 
     loop_over_edges(stack, mark_edges);
     //now that edges are calculated, go through and for each face, calculate the vertex positions around it
@@ -475,8 +475,10 @@ private:
       double e2_len = edge_lengths[e2];
       double e3_len = edge_lengths[e3];
       double angle_a = -(e2_len*e2_len) + e3_len*e3_len + e1_len*e1_len;
-      angle_a = acos(angle_a/(2*e3_len*e1_len));
+      angle_a = acos(std::clamp(angle_a/(2*e3_len*e1_len), -1.0, 1.0));
       Point_2 p31(e3_len*std::cos(angle_a), e3_len*std::sin(angle_a));
+      assert(std::isfinite(e3_len*std::cos(angle_a)));
+      assert(std::isfinite(e3_len*std::sin(angle_a)));
       put(hcm,prev(hd,m_intrinsic_tm),p31);
 
     }

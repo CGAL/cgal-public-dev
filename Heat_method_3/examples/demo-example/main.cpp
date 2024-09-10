@@ -8,6 +8,10 @@
 #include <CGAL/boost/graph/graph_traits_Surface_mesh.h>
 #include <CGAL/boost/graph/helpers.h>
 
+#include "geometrycentral/surface/exact_geodesics.h"
+#include "geometrycentral/surface/meshio.h"
+#include "geometrycentral/surface/heat_method_distance.h"
+
 #include <cmath>
 #include <csignal>
 #include <filesystem>
@@ -34,12 +38,18 @@ using HeatMethodDirect = CGAL::Heat_method_3::Surface_mesh_geodesic_distances_3<
     CGAL::Heat_method_3::Direct>;
 using HeatMethodIDT = CGAL::Heat_method_3::Surface_mesh_geodesic_distances_3<Triangle_mesh,
     CGAL::Heat_method_3::Intrinsic_Delaunay>;
-using HeatMethodIM = CGAL::Heat_method_3::Surface_mesh_geodesic_distances_3<Triangle_mesh,
+using HeatMethodIMGC = CGAL::Heat_method_3::Surface_mesh_geodesic_distances_3<Triangle_mesh,
     CGAL::Heat_method_3::Direct,
     CGAL::Heat_method_3::mollification_scheme_constant>;
-using HeatMethodIML = CGAL::Heat_method_3::Surface_mesh_geodesic_distances_3<Triangle_mesh,
+using HeatMethodIMLO = CGAL::Heat_method_3::Surface_mesh_geodesic_distances_3<Triangle_mesh,
     CGAL::Heat_method_3::Direct,
     CGAL::Heat_method_3::mollification_scheme_local_one_by_one>;
+using HeatMethodIMLOI = CGAL::Heat_method_3::Surface_mesh_geodesic_distances_3<Triangle_mesh,
+    CGAL::Heat_method_3::Direct,
+                                                                             CGAL::Heat_method_3::mollification_scheme_local_one_by_one_interpolation>;
+using HeatMethodIMLC = CGAL::Heat_method_3::Surface_mesh_geodesic_distances_3<Triangle_mesh,
+    CGAL::Heat_method_3::Direct,
+                                                                             CGAL::Heat_method_3::mollification_scheme_local_constant>;
 using Traits = CGAL::Surface_mesh_shortest_path_traits<Kernel, Triangle_mesh>;
 using Surface_mesh_shortest_path = CGAL::Surface_mesh_shortest_path<Traits>;
 typedef typename Traits::Vector_3 Vector_3;
@@ -127,7 +137,7 @@ void signal_handler(int signal)
     stop_requested = true;
   }
 }
-
+using namespace geometrycentral::surface;
 int main(int argc, char *argv[])
 {
   std::signal(SIGINT, signal_handler);
@@ -148,9 +158,14 @@ int main(int argc, char *argv[])
       std::cerr << "Error: Invalid or empty input file or not a triangle mesh." << std::endl;
       return EXIT_FAILURE;
     }
-
     // Property maps for distance values
-    auto [vertex_distance_direct, vertex_distance_idt, vertex_distance_im, vertex_distance_true] =
+    auto [vertex_distance_direct,
+        vertex_distance_idt,
+        vertex_distance_imgc,
+        vertex_distance_imlc,
+        vertex_distance_imlo,
+        vertex_distance_imloi,
+        vertex_distance_true] =
         std::tuple{mesh.add_property_map<VertexDescriptor, double>(
                            "v:distance_direct", std::numeric_limits<double>::infinity())
                        .first,
@@ -158,7 +173,16 @@ int main(int argc, char *argv[])
                     "v:distance_idt", std::numeric_limits<double>::infinity())
                 .first,
             mesh.add_property_map<VertexDescriptor, double>(
-                    "v:distance_im", std::numeric_limits<double>::infinity())
+                    "v:distance_imgc", std::numeric_limits<double>::infinity())
+                .first,
+            mesh.add_property_map<VertexDescriptor, double>(
+                    "v:distance_imlc", std::numeric_limits<double>::infinity())
+                .first,
+            mesh.add_property_map<VertexDescriptor, double>(
+                    "v:distance_imlo", std::numeric_limits<double>::infinity())
+                .first,
+            mesh.add_property_map<VertexDescriptor, double>(
+                    "v:distance_imloi", std::numeric_limits<double>::infinity())
                 .first,
             mesh.add_property_map<VertexDescriptor, double>(
                     "v:distance_true", std::numeric_limits<double>::infinity())
@@ -174,20 +198,36 @@ int main(int argc, char *argv[])
     heat_method_idt.add_source(source_vertex);
     heat_method_idt.estimate_geodesic_distances(vertex_distance_idt);
 
-    HeatMethodIM heat_method_im(mesh);
-    heat_method_im.add_source(source_vertex);
-    heat_method_im.estimate_geodesic_distances(vertex_distance_im);
+    HeatMethodIMGC heat_method_imgc(mesh);
+    heat_method_imgc.add_source(source_vertex);
+    heat_method_imgc.estimate_geodesic_distances(vertex_distance_imgc);
+    
+    HeatMethodIMLC heat_method_imlc(mesh);
+    heat_method_imlc.add_source(source_vertex);
+    heat_method_imlc.estimate_geodesic_distances(vertex_distance_imlc);
 
+    HeatMethodIMLO heat_method_imlo(mesh);
+    heat_method_imlo.add_source(source_vertex);
+    heat_method_imlo.estimate_geodesic_distances(vertex_distance_imlo);
+
+    HeatMethodIMLOI heat_method_imloi(mesh);
+    heat_method_imloi.add_source(source_vertex);
+    heat_method_imloi.estimate_geodesic_distances(vertex_distance_imloi);
+    
     // gound truth
     Surface_mesh_shortest_path shortest_paths(mesh);
     bool has_degenerate_faces =
         false;  // CGAL::Heat_method_3::internal::has_degenerate_faces(mesh, Traits());
+
+    std::vector<double> ttt_errors(num_vertices(mesh));
     if (!has_degenerate_faces) {
       Surface_mesh_shortest_path shortest_paths(mesh);
       shortest_paths.add_source_point(source_vertex);
 
+      int i = 0;
       for (auto v : vertices(mesh)) {
         double true_distance = shortest_paths.shortest_distance_to_source_points(v).first;
+        ttt_errors[i++] = true_distance;
         put(vertex_distance_true, v, true_distance);
       }
     }
@@ -195,28 +235,80 @@ int main(int argc, char *argv[])
       vertex_distance_true = vertex_distance_idt;
     }
 
+    VertexData<double> distToSourceMMP;
+    VertexData<double> distToSourceHeat;
+    if (argc > 2) {
+      // Load a mesh
+      std::unique_ptr<SurfaceMesh> mesh;
+      std::unique_ptr<VertexPositionGeometry> geometry;
+      std::tie(mesh, geometry) = readSurfaceMesh(filename);
+      // Create the GeodesicAlgorithmExact
+      GeodesicAlgorithmExact mmp(*mesh, *geometry);
+
+      // Pick a few points as the source set
+      std::vector<SurfacePoint> sourcePoints;
+      Vertex v;
+      for (auto vi : mesh->vertices()) {
+        v = vi;
+        break;
+      }
+      sourcePoints.push_back(SurfacePoint(v));
+
+      // Run MMP from these source points
+      mmp.propagate(sourcePoints);
+
+      // Get the distance function at all mesh vertices
+      distToSourceMMP = mmp.getDistanceFunction();
+      distToSourceHeat = heatMethodDistance(*geometry, v);
+      std::vector<double> dir_errors(mesh->nVertices());
+      int i = 0;
+      for (Vertex vertex : mesh->vertices()) {
+        // double distanceMMP = distToSourceMMP[vertex];
+        double distanceMMP = atoi(argv[2]) > 2 ? ttt_errors[i]: distToSourceMMP[vertex];
+        double distanceHeat = distToSourceHeat[vertex];
+        dir_errors[i++] = calculate_relative_error(distanceHeat, distanceMMP);
+      }
+      double mean_direct_error = calculate_mean(dir_errors);
+      double stddev_direct_error = calculate_standard_deviation(dir_errors);
+
+      std::cout << "Crane's IDT Method Errors: Mean = " << mean_direct_error
+                << ", Std = " << stddev_direct_error <<  (atoi(argv[2]) > 2) << std::endl;
+      // const auto &vertexPositions = geometry->vertexPositions;
+      // const auto &pos = vertexPositions[v];
+      // std::cout << "Vertex " << v << ": (" << pos.x << ", " << pos.y << ", " << pos.z << ")"
+      //           << std::endl;
+    }
+    // auto vpm = get(boost::vertex_point, mesh);
+    // for (auto v : vertices(mesh)) {
+    //   auto pos = get(vpm, v);
+    //   std::cout << "Vertex " << ": (" << pos[0] << ", " << pos[1] << ", " << pos[2] << ")"
+    //             << std::endl;
+    //   break;
+    // }
+
     // Compute errors
     size_t vertices_cnt = num_vertices(mesh);
     std::vector<double> dir_errors(vertices_cnt);
-    std::vector<double> im_errors(vertices_cnt);
     std::vector<double> idt_errors(vertices_cnt);
+    std::vector<double> imgc_errors(vertices_cnt);
+    std::vector<double> imlc_errors(vertices_cnt);
+    std::vector<double> imlo_errors(vertices_cnt);
+    std::vector<double> imloi_errors(vertices_cnt);
 
     // Compute min and max distance
     double min_distance = std::numeric_limits<double>::max();
     double max_distance = std::numeric_limits<double>::lowest();
     for (const auto vertex : vertices(mesh)) {
       size_t index = vertex.idx();
-      dir_errors[index] = calculate_relative_error(
-          get(vertex_distance_direct, vertex), get(vertex_distance_true, vertex));
-      idt_errors[index] = calculate_relative_error(
-          get(vertex_distance_idt, vertex), get(vertex_distance_true, vertex));
-      im_errors[index] = calculate_relative_error(
-          get(vertex_distance_im, vertex), get(vertex_distance_true, vertex));
-      double dist1 = get(vertex_distance_direct, vertex);
-      double dist2 = get(vertex_distance_idt, vertex);
-      double dist3 = get(vertex_distance_im, vertex);
-      min_distance = std::min(std::min(min_distance, dist1), std::min(dist2, dist3));
-      max_distance = std::max(std::max(max_distance, dist1), std::max(dist2, dist3));
+      auto L = get(vertex_distance_true, vertex);
+      dir_errors[index] = calculate_relative_error(get(vertex_distance_direct, vertex), L);
+      idt_errors[index] = calculate_relative_error(get(vertex_distance_idt, vertex), L);
+      imgc_errors[index] = calculate_relative_error(get(vertex_distance_imgc, vertex), L);
+      imlc_errors[index] = calculate_relative_error(get(vertex_distance_imlc, vertex), L);
+      imlo_errors[index] = calculate_relative_error(get(vertex_distance_imlo, vertex), L);
+      imloi_errors[index] = calculate_relative_error(get(vertex_distance_imloi, vertex), L);
+      min_distance = std::min(min_distance, L);
+      max_distance = std::max(max_distance, L);
     }
 
     // Calculate and display mean and standard deviation
@@ -226,14 +318,26 @@ int main(int argc, char *argv[])
     double mean_idt_error = calculate_mean(idt_errors);
     double stddev_idt_error = calculate_standard_deviation(idt_errors);
 
-    double mean_im_error = calculate_mean(im_errors);
-    double stddev_im_error = calculate_standard_deviation(im_errors);
+    double mean_imgc_error = calculate_mean(imgc_errors);
+    double stddev_imgc_error = calculate_standard_deviation(imgc_errors);
+    double mean_imlc_error = calculate_mean(imlc_errors);
+    double stddev_imlc_error = calculate_standard_deviation(imlc_errors);
+    double mean_imlo_error = calculate_mean(imlo_errors);
+    double stddev_imlo_error = calculate_standard_deviation(imlo_errors);
+    double mean_imloi_error = calculate_mean(imloi_errors);
+    double stddev_imloi_error = calculate_standard_deviation(imloi_errors);
 
     std::cout << "Direct Method Errors: Mean = " << mean_direct_error
-              << ", Std Dev = " << stddev_direct_error << std::endl;
+              << ", Std = " << stddev_direct_error << std::endl;
     std::cout << "IDT    Method Errors: Mean = " << mean_idt_error
-              << ", Std Dev = " << stddev_idt_error << std::endl;
-    std::cout << "IM     Method Errors: Mean = " << mean_im_error << ", Std Dev = " << stddev_im_error
+              << ", Std = " << stddev_idt_error << std::endl;
+    std::cout << "IMGC   Method Errors: Mean = " << mean_imgc_error << ", Std = " << stddev_imgc_error
+              << std::endl;
+    std::cout << "IMLC   Method Errors: Mean = " << mean_imlc_error << ", Std = " << stddev_imlc_error
+              << std::endl;
+    std::cout << "IMLO   Method Errors: Mean = " << mean_imlo_error << ", Std = " << stddev_imlo_error
+              << std::endl;
+    std::cout << "IMLOI   Method Errors: Mean = " << mean_imloi_error << ", Std = " << stddev_imloi_error
               << std::endl;
 
     std::cout << "Distances: Max = " << max_distance << ", min = " << min_distance << std::endl;
@@ -257,16 +361,22 @@ int main(int argc, char *argv[])
     std::map<std::string, std::string> distance_to_filename = {
         {"vertex_distance_direct", "output_direct.ply"},
         {"vertex_distance_idt", "output_idt.ply"},
-        {"vertex_distance_im", "output_im.ply"},
+        {"vertex_distance_imgc", "output_imgc.ply"},
+        {"vertex_distance_imlc", "output_imlc.ply"},
+        {"vertex_distance_imlo", "output_imlo.ply"},
+        {"vertex_distance_imloi", "output_imloi.ply"},
         {"vertex_distance_true", "output_true.ply"}};
 
-    std::array<std::pair<std::string, std::string>, 4> distances_lst = {
+    std::array<std::pair<std::string, std::string>, 7> distances_lst = {
         std::make_pair("v:distance_direct", "vertex_distance_direct"),
         std::make_pair("v:distance_idt", "vertex_distance_idt"),
-        std::make_pair("v:distance_im", "vertex_distance_im"),
+        std::make_pair("v:distance_imgc", "vertex_distance_imgc"),
+        std::make_pair("v:distance_imlc", "vertex_distance_imlc"),
+        std::make_pair("v:distance_imlo", "vertex_distance_imlo"),
+        std::make_pair("v:distance_imloi", "vertex_distance_imloi"),
         std::make_pair("v:distance_true", "vertex_distance_true")};
-    for (std::size_t i = 0, n = has_degenerate_faces ? 3 : 4; i < n; ++i) {
-      auto tm = copy_mesh(mesh);
+    for (std::size_t i = 0, n = has_degenerate_faces ? 6 : 7; i < n; ++i) {
+      auto tm = mesh;
       auto ecm = tm.add_property_map<EdgeDescriptor, bool>("e:is_constrained", 0).first;
 
       auto vertex_color_map =
@@ -431,7 +541,7 @@ int main(int argc, char *argv[])
           VertexDescriptor source_vertex = *vertices(mesh).first;
 
           try {
-            HeatMethodIM heat_method_im(mesh);
+            HeatMethodIMLOI heat_method_im(mesh);
             heat_method_im.add_source(source_vertex);
             heat_method_im.estimate_geodesic_distances(vertex_distance_im);
 
@@ -439,7 +549,7 @@ int main(int argc, char *argv[])
             heat_method_direct.add_source(source_vertex);
             heat_method_direct.estimate_geodesic_distances(vertex_distance_direct);
 
-            HeatMethodIML heat_method_idt(mesh);
+            HeatMethodIMGC heat_method_idt(mesh);
             heat_method_idt.add_source(source_vertex);
             heat_method_idt.estimate_geodesic_distances(vertex_distance_idt);
 
