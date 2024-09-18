@@ -56,16 +56,22 @@ typedef typename Traits::Vector_3 Vector_3;
 
 // Function to calculate the mean of a vector
 template <typename T>
-T calculate_mean(const std::vector<T> &data)
+T calculate_mean(std::vector<T> &data)
 {
   if (data.empty())
     return T(0);
-  return std::accumulate(data.begin(), data.end(), T(0)) / data.size();
+  size_t size = data.size();
+  auto mid = data.begin() + size / 2;
+
+  // For odd-sized vectors, find the middle element
+  std::nth_element(data.begin(), mid, data.end());
+  return *mid;
+  // return std::accumulate(data.begin(), data.end(), T(0)) / data.size();
 }
 
 // Function to calculate the standard deviation of a vector
 template <typename T>
-T calculate_standard_deviation(const std::vector<T> &data)
+T calculate_standard_deviation(std::vector<T> &data)
 {
   if (data.size() < 2)
     return T(0);
@@ -271,7 +277,7 @@ int main(int argc, char *argv[])
       double mean_direct_error = calculate_mean(dir_errors);
       double stddev_direct_error = calculate_standard_deviation(dir_errors);
 
-      std::cout << "Crane's IDT Method Errors: Mean = " << mean_direct_error
+      std::cout << "Crane's IDT Method Errors: Median = " << mean_direct_error
                 << ", Std = " << stddev_direct_error <<  (atoi(argv[2]) > 2) << std::endl;
       // const auto &vertexPositions = geometry->vertexPositions;
       // const auto &pos = vertexPositions[v];
@@ -327,17 +333,17 @@ int main(int argc, char *argv[])
     double mean_imloi_error = calculate_mean(imloi_errors);
     double stddev_imloi_error = calculate_standard_deviation(imloi_errors);
 
-    std::cout << "Direct Method Errors: Mean = " << mean_direct_error
+    std::cout << "Direct Method Errors: Median = " << mean_direct_error
               << ", Std = " << stddev_direct_error << std::endl;
-    std::cout << "IDT    Method Errors: Mean = " << mean_idt_error
+    std::cout << "IDT    Method Errors: Median = " << mean_idt_error
               << ", Std = " << stddev_idt_error << std::endl;
-    std::cout << "IMGC   Method Errors: Mean = " << mean_imgc_error << ", Std = " << stddev_imgc_error
+    std::cout << "IMGC   Method Errors: Median = " << mean_imgc_error << ", Std = " << stddev_imgc_error
               << std::endl;
-    std::cout << "IMLC   Method Errors: Mean = " << mean_imlc_error << ", Std = " << stddev_imlc_error
+    std::cout << "IMLC   Method Errors: Median = " << mean_imlc_error << ", Std = " << stddev_imlc_error
               << std::endl;
-    std::cout << "IMLO   Method Errors: Mean = " << mean_imlo_error << ", Std = " << stddev_imlo_error
+    std::cout << "IMLO   Method Errors: Median = " << mean_imlo_error << ", Std = " << stddev_imlo_error
               << std::endl;
-    std::cout << "IMLOI   Method Errors: Mean = " << mean_imloi_error << ", Std = " << stddev_imloi_error
+    std::cout << "IMLOI   Method Errors: Median = " << mean_imloi_error << ", Std = " << stddev_imloi_error
               << std::endl;
 
     std::cout << "Distances: Max = " << max_distance << ", min = " << min_distance << std::endl;
@@ -521,37 +527,62 @@ int main(int argc, char *argv[])
 
           // Property maps for distance values
           auto [vertex_distance_direct,
-              vertex_distance_idt,
-              vertex_distance_im,
-              vertex_distance_true] =
-              std::tuple{mesh.add_property_map<VertexDescriptor, double>(
-                                 "v:distance_direct", std::numeric_limits<double>::infinity())
-                             .first,
-                  mesh.add_property_map<VertexDescriptor, double>(
-                          "v:distance_idt", std::numeric_limits<double>::infinity())
-                      .first,
-                  mesh.add_property_map<VertexDescriptor, double>(
-                          "v:distance_im", std::numeric_limits<double>::infinity())
-                      .first,
-                  mesh.add_property_map<VertexDescriptor, double>(
-                          "v:distance_true", std::numeric_limits<double>::infinity())
-                      .first};
+        vertex_distance_idt,
+        vertex_distance_imgc,
+        vertex_distance_imlc,
+        vertex_distance_imlo,
+        vertex_distance_imloi,
+        vertex_distance_true] =
+        std::tuple{mesh.add_property_map<VertexDescriptor, double>(
+                           "v:distance_direct", std::numeric_limits<double>::infinity())
+                       .first,
+            mesh.add_property_map<VertexDescriptor, double>(
+                    "v:distance_idt", std::numeric_limits<double>::infinity())
+                .first,
+            mesh.add_property_map<VertexDescriptor, double>(
+                    "v:distance_imgc", std::numeric_limits<double>::infinity())
+                .first,
+            mesh.add_property_map<VertexDescriptor, double>(
+                    "v:distance_imlc", std::numeric_limits<double>::infinity())
+                .first,
+            mesh.add_property_map<VertexDescriptor, double>(
+                    "v:distance_imlo", std::numeric_limits<double>::infinity())
+                .first,
+            mesh.add_property_map<VertexDescriptor, double>(
+                    "v:distance_imloi", std::numeric_limits<double>::infinity())
+                .first,
+            mesh.add_property_map<VertexDescriptor, double>(
+                    "v:distance_true", std::numeric_limits<double>::infinity())
+                .first};
 
           // Initialize heat methods
           VertexDescriptor source_vertex = *vertices(mesh).first;
 
           try {
-            HeatMethodIMLOI heat_method_im(mesh);
-            heat_method_im.add_source(source_vertex);
-            heat_method_im.estimate_geodesic_distances(vertex_distance_im);
+           HeatMethodDirect heat_method_direct(mesh);
+    heat_method_direct.add_source(source_vertex);
+    heat_method_direct.estimate_geodesic_distances(vertex_distance_direct);
 
-            HeatMethodDirect heat_method_direct(mesh);
-            heat_method_direct.add_source(source_vertex);
-            heat_method_direct.estimate_geodesic_distances(vertex_distance_direct);
+    HeatMethodIDT heat_method_idt(mesh);
+    heat_method_idt.add_source(source_vertex);
+    heat_method_idt.estimate_geodesic_distances(vertex_distance_idt);
 
-            HeatMethodIMGC heat_method_idt(mesh);
-            heat_method_idt.add_source(source_vertex);
-            heat_method_idt.estimate_geodesic_distances(vertex_distance_idt);
+    HeatMethodIMGC heat_method_imgc(mesh);
+    heat_method_imgc.add_source(source_vertex);
+    heat_method_imgc.estimate_geodesic_distances(vertex_distance_imgc);
+    
+    HeatMethodIMLC heat_method_imlc(mesh);
+    heat_method_imlc.add_source(source_vertex);
+    heat_method_imlc.estimate_geodesic_distances(vertex_distance_imlc);
+
+    HeatMethodIMLO heat_method_imlo(mesh);
+    heat_method_imlo.add_source(source_vertex);
+    heat_method_imlo.estimate_geodesic_distances(vertex_distance_imlo);
+
+    HeatMethodIMLOI heat_method_imloi(mesh);
+    heat_method_imloi.add_source(source_vertex);
+    heat_method_imloi.estimate_geodesic_distances(vertex_distance_imloi);
+
 
             // gound truth
             bool has_degenerate_faces =
@@ -564,57 +595,72 @@ int main(int argc, char *argv[])
             }
             // Compute errors
             size_t vertices_cnt = num_vertices(mesh);
-            std::vector<double> dir_errors(vertices_cnt);
-            std::vector<double> im_errors(vertices_cnt);
-            std::vector<double> idt_errors(vertices_cnt);
-
+std::vector<double> dir_errors(vertices_cnt);
+    std::vector<double> idt_errors(vertices_cnt);
+    std::vector<double> imgc_errors(vertices_cnt);
+    std::vector<double> imlc_errors(vertices_cnt);
+    std::vector<double> imlo_errors(vertices_cnt);
+    std::vector<double> imloi_errors(vertices_cnt);
+    
             // Compute min and max distance
             double min_distance = std::numeric_limits<double>::max();
             double max_distance = std::numeric_limits<double>::lowest();
             for (const auto vertex : vertices(mesh)) {
               size_t index = vertex.idx();
-              dir_errors[index] = calculate_relative_error(
-                  get(vertex_distance_direct, vertex), get(vertex_distance_true, vertex));
-              idt_errors[index] = calculate_relative_error(
-                  get(vertex_distance_idt, vertex), get(vertex_distance_true, vertex));
-              im_errors[index] = calculate_relative_error(
-                  get(vertex_distance_im, vertex), get(vertex_distance_true, vertex));
-              double dist1 = get(vertex_distance_direct, vertex);
-              min_distance = std::min(min_distance, dist1);
-              max_distance = std::max(max_distance, dist1);
+      auto L = get(vertex_distance_true, vertex);
+      dir_errors[index] = calculate_relative_error(get(vertex_distance_direct, vertex), L);
+      idt_errors[index] = calculate_relative_error(get(vertex_distance_idt, vertex), L);
+      imgc_errors[index] = calculate_relative_error(get(vertex_distance_imgc, vertex), L);
+      imlc_errors[index] = calculate_relative_error(get(vertex_distance_imlc, vertex), L);
+      imlo_errors[index] = calculate_relative_error(get(vertex_distance_imlo, vertex), L);
+      imloi_errors[index] = calculate_relative_error(get(vertex_distance_imloi, vertex), L);
+      min_distance = std::min(min_distance, L);
+      max_distance = std::max(max_distance, L);
             }
 
             // Calculate and display mean and standard deviation
-            double mean_direct_error = calculate_mean(dir_errors);
-            double stddev_direct_error = calculate_standard_deviation(dir_errors);
+            // Calculate and display mean and standard deviation
+    double mean_direct_error = calculate_mean(dir_errors);
+    double stddev_direct_error = calculate_standard_deviation(dir_errors);
 
-            double mean_idt_error = calculate_mean(idt_errors);
-            double stddev_idt_error = calculate_standard_deviation(idt_errors);
+    double mean_idt_error = calculate_mean(idt_errors);
+    double stddev_idt_error = calculate_standard_deviation(idt_errors);
 
-            double mean_im_error = calculate_mean(im_errors);
-            double stddev_im_error = calculate_standard_deviation(im_errors);
+    double mean_imgc_error = calculate_mean(imgc_errors);
+    double stddev_imgc_error = calculate_standard_deviation(imgc_errors);
+    double mean_imlc_error = calculate_mean(imlc_errors);
+    double stddev_imlc_error = calculate_standard_deviation(imlc_errors);
+    double mean_imlo_error = calculate_mean(imlo_errors);
+    double stddev_imlo_error = calculate_standard_deviation(imlo_errors);
+    double mean_imloi_error = calculate_mean(imloi_errors);
+    double stddev_imloi_error = calculate_standard_deviation(imloi_errors);
 
-            std::cout << "Direct Method Errors: Mean = " << mean_direct_error
-                      << ", Std Dev = " << stddev_direct_error << std::endl;
-            std::cout << "IDT    Method Errors: Mean = " << mean_idt_error
-                      << ", Std Dev = " << stddev_idt_error << std::endl;
-            std::cout << "IM     Method Errors: Mean = " << mean_im_error
-                      << ", Std Dev = " << stddev_im_error << std::endl;
+    std::cout << "Direct Method Errors: Median = " << mean_direct_error
+              << ", Std = " << stddev_direct_error << std::endl;
+    std::cout << "IDT    Method Errors: Median = " << mean_idt_error
+              << ", Std = " << stddev_idt_error << std::endl;
+    std::cout << "IMGC   Method Errors: Median = " << mean_imgc_error << ", Std = " << stddev_imgc_error
+              << std::endl;
+    std::cout << "IMLC   Method Errors: Median = " << mean_imlc_error << ", Std = " << stddev_imlc_error
+              << std::endl;
+    std::cout << "IMLO   Method Errors: Median = " << mean_imlo_error << ", Std = " << stddev_imlo_error
+              << std::endl;
+    std::cout << "IMLOI   Method Errors: Median = " << mean_imloi_error << ", Std = " << stddev_imloi_error
+              << std::endl;
 
-            std::cout << "Distances: Max = " << max_distance << ", min = " << min_distance
-                      << std::endl;
-            std::cout << "Mesh has degenerate face ? "
+    std::cout << "Distances: Max = " << max_distance << ", min = " << min_distance << std::endl;
+    std::cout << "Mesh has degenerate face ? "
                       << (CGAL::Heat_method_3::internal::has_degenerate_faces(mesh, Traits())
                                  ? "yes"
                                  : "no")
                       << std::endl;
 
-            if (std::isfinite(mean_direct_error))
-              dir_tot_errors.push_back(mean_direct_error);
-            if (std::isfinite(mean_idt_error))
-              idt_tot_errors.push_back(mean_idt_error);
-            if (std::isfinite(mean_im_error))
-              im_tot_errors.push_back(mean_im_error);
+            // if (std::isfinite(mean_direct_error))
+            //   dir_tot_errors.push_back(mean_direct_error);
+            // if (std::isfinite(mean_idt_error))
+            //   idt_tot_errors.push_back(mean_idt_error);
+            // if (std::isfinite(mean_im_error))
+            //   im_tot_errors.push_back(mean_im_error);
           }
           catch (const std::runtime_error &e) {
             std::cerr << "Caught exception: " << e.what() << " - Skipping to next iteration."
@@ -633,13 +679,13 @@ int main(int argc, char *argv[])
       double mean_im_error = calculate_mean(im_tot_errors);
       double stddev_im_error = calculate_standard_deviation(im_tot_errors);
 
-      std::cout << "\nDirect Method Errors: Mean = " << mean_direct_error
+      std::cout << "\nDirect Method Errors: Median = " << mean_direct_error
                 << ", Std Dev = " << stddev_direct_error << ", cnt = " << dir_tot_errors.size()
                 << std::endl;
-      std::cout << "IDT Method Errors: Mean = " << mean_idt_error
+      std::cout << "IDT Method Errors: Median = " << mean_idt_error
                 << ", Std Dev = " << stddev_idt_error << ", cnt = " << idt_tot_errors.size()
                 << std::endl;
-      std::cout << "IM Method Errors: Mean = " << mean_im_error << ", Std Dev = " << stddev_im_error
+      std::cout << "IM Method Errors: Median = " << mean_im_error << ", Std Dev = " << stddev_im_error
                 << ", cnt = " << im_tot_errors.size() << std::endl;
     }
     catch (const fs::filesystem_error &e) {

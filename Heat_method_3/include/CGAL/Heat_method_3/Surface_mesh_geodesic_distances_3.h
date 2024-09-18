@@ -402,7 +402,7 @@ private:
 
       const Traits traits;
       const FT cotan_i = MollificationScheme::cotangent(tm, vpm, he_length_map, v_k, v_i, v_j, traits);
-      const FT cotan_j = MollificationScheme::cotangent(tm, vpm, he_length_map, v_k, v_j, v_i, traits);
+      const FT cotan_j = MollificationScheme::cotangent(tm, vpm, he_length_map, v_i, v_j, v_k, traits);
       const FT cotan_k = MollificationScheme::cotangent(tm, vpm, he_length_map, v_j, v_k, v_i, traits);
 
       const Vector_3& a = m_X[face_i];
@@ -579,7 +579,7 @@ private:
       m_cotan_matrix.add_coef(k, k,  (1./2) * cotan_i);
 
       const double cotan_j =
-        CGAL::to_double(MollificationScheme::cotangent(tm, vpm, he_length_map, vk, vj, vi, traits));
+        CGAL::to_double(MollificationScheme::cotangent(tm, vpm, he_length_map, vi, vj, vk, traits));
       m_cotan_matrix.add_coef(i, k, -(1./2) * cotan_j);
       m_cotan_matrix.add_coef(k, i, -(1./2) * cotan_j);
       m_cotan_matrix.add_coef(i, i,  (1./2) * cotan_j);
@@ -614,19 +614,19 @@ private:
     m_cotan_matrix.assemble_matrix();
     m_mass_matrix.assemble_matrix();
 
-    auto M = Eigen::MatrixXd(m_cotan_matrix.eigen_object());
-    Eigen::EigenSolver<Eigen::MatrixXd> solver(M);
-    Eigen::VectorXd eigenvalues = solver.eigenvalues().real();
-    std::vector<double> sorted_eigenvalues(eigenvalues.data(), eigenvalues.data() + eigenvalues.size());
-    std::sort(sorted_eigenvalues.begin(), sorted_eigenvalues.end());
-    double min_eigenvalue = sorted_eigenvalues.front();
-    double max_eigenvalue = sorted_eigenvalues.back();
-    std::cout << "Min eigenvalue: " << min_eigenvalue << ", Max eigenvalue: " << max_eigenvalue << std::endl;
-    // Print the first 10 eigenvalues or fewer if there are less than 10
-    std::cout << "First 10 eigenvalues:\n";
-    for (int i = 0; i < std::min<std::size_t>(10, sorted_eigenvalues.size()); ++i) {
-        std::cout << "Eigenvalue " << i + 1 << ": " << sorted_eigenvalues[i] << std::endl;
-    }
+    // auto M = Eigen::MatrixXd(m_cotan_matrix.eigen_object());
+    // Eigen::EigenSolver<Eigen::MatrixXd> solver(M);
+    // Eigen::VectorXd eigenvalues = solver.eigenvalues().real();
+    // std::vector<double> sorted_eigenvalues(eigenvalues.data(), eigenvalues.data() + eigenvalues.size());
+    // std::sort(sorted_eigenvalues.begin(), sorted_eigenvalues.end());
+    // double min_eigenvalue = sorted_eigenvalues.front();
+    // double max_eigenvalue = sorted_eigenvalues.back();
+    // std::cout << "Min eigenvalue: " << min_eigenvalue << ", Max eigenvalue: " << max_eigenvalue << std::endl;
+    // // Print the first 10 eigenvalues or fewer if there are less than 10
+    // std::cout << "First 10 eigenvalues:\n";
+    // for (int i = 0; i < std::min<std::size_t>(10, sorted_eigenvalues.size()); ++i) {
+    //     std::cout << "Eigenvalue " << i + 1 << ": " << sorted_eigenvalues[i] << std::endl;
+    // }
 
     m_time_step = 1./(num_edges(tm));
     m_time_step = m_time_step*summation_of_edges();

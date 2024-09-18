@@ -250,7 +250,7 @@ struct mollification_scheme_constant {
     }
     avg_length /=  tm.number_of_edges();
 
-    FT delta = choose_parameter(get_parameter(np, internal_np::delta), FT{avg_length * 1e-4});
+    FT delta = choose_parameter(get_parameter(np, internal_np::delta), FT{avg_length * 1e-3});
     std::cout << "delta = " << delta << "\n";
     // compute smallest length epsilon we can add to
     // all edges to ensure that the strict triangle
@@ -380,6 +380,7 @@ struct mollification_scheme_local_one_by_one {
       const NamedParameters &np = CGAL::parameters::default_values())
   {
     typedef boost::graph_traits<TriangleMesh> graph_traits;
+    typedef typename graph_traits::face_descriptor face_descriptor;
     typedef typename graph_traits::halfedge_descriptor halfedge_descriptor;
     typedef typename graph_traits::vertex_descriptor vertex_descriptor;
     typedef typename graph_traits::edge_descriptor edge_descriptor;
@@ -420,15 +421,23 @@ struct mollification_scheme_local_one_by_one {
     avg_length /=  tm.number_of_edges();
 
     // TODO: add threshold parameter instead of constant 1e-4
-    FT delta = choose_parameter(get_parameter(np, internal_np::delta), FT{avg_length * 1e-4});
+    FT delta = choose_parameter(get_parameter(np, internal_np::delta), FT{avg_length * 1e-3});
     std::cout << "delta = " << delta << "\n";
     // compute smallest length epsilon we can add to
     // all edges to ensure that the strict triangle
     // inequality holds with a tolerance of delta
     FT epsilon = 0;
-    for (halfedge_descriptor hd : halfedges(tm)) {
-      halfedge_descriptor hd2 = next(hd, tm);
-      halfedge_descriptor hd3 = next(hd2, tm);
+    CGAL::Vertex_around_face_iterator<TriangleMesh> vbegin, vend;
+    for (face_descriptor f : faces(tm)) {
+      boost::tie(vbegin, vend) = vertices_around_face(halfedge(f,tm),tm);
+      vertex_descriptor v0 = *(vbegin);
+      vertex_descriptor v1 = *(++vbegin);
+      vertex_descriptor v2 = *(++vbegin);
+
+      halfedge_descriptor hd = halfedge(v0, v1, tm).first;
+      halfedge_descriptor hd2 = halfedge(v1, v2, tm).first;
+      halfedge_descriptor hd3 = halfedge(v2, v0, tm).first;
+
       std::array<halfedge_descriptor, 3> he = {hd, hd2, hd3};
       std::array<double, 3> L = {
           get(he_length_map, hd), get(he_length_map, hd2), get(he_length_map, hd3)};
@@ -447,8 +456,8 @@ struct mollification_scheme_local_one_by_one {
         continue;
 
       // Mollify
-      c = std::max(c, delta + a - b);
-      c = std::max(c, delta + b - a); // NOTE: not needed
+      c = std::max(c, (delta + a - b));
+      c = std::max(c, (delta + b - a));  // NOTE: not needed
       b = std::max(b, c);
       a = std::max(a, b);
 
@@ -610,17 +619,23 @@ struct mollification_scheme_local_one_by_one_interpolation {
     }
     avg_length /=  tm.number_of_edges();
     // TODO: add threshold parameter instead of constant 1e-4
-    FT delta = choose_parameter(get_parameter(np, internal_np::delta), FT{avg_length * 1e-4});
+    FT delta = choose_parameter(get_parameter(np, internal_np::delta), FT{avg_length * 1e-3});
     std::cout << "delta = " << delta << "\n";
     // compute smallest length epsilon we can add to
     // all edges to ensure that the strict triangle
     // inequality holds with a tolerance of delta
     FT epsilon = 0;
     auto x = 0;
+    CGAL::Vertex_around_face_iterator<TriangleMesh> vbegin, vend;
     for (face_descriptor f : faces(tm)) {
-      halfedge_descriptor hd = halfedge(f, tm);
-      halfedge_descriptor hd2 = next(hd, tm);
-      halfedge_descriptor hd3 = next(hd2, tm);
+      boost::tie(vbegin, vend) = vertices_around_face(halfedge(f,tm),tm);
+      vertex_descriptor v0 = *(vbegin);
+      vertex_descriptor v1 = *(++vbegin);
+      vertex_descriptor v2 = *(++vbegin);
+
+      halfedge_descriptor hd = halfedge(v0, v1, tm).first;
+      halfedge_descriptor hd2 = halfedge(v1, v2, tm).first;
+      halfedge_descriptor hd3 = halfedge(v2, v0, tm).first;
 
       std::array<halfedge_descriptor, 3> he = {hd, hd2, hd3};
       std::array<double, 3> L = {
@@ -654,7 +669,6 @@ struct mollification_scheme_local_one_by_one_interpolation {
       put(he_length_map, he[indices[0]], c);
       put(he_length_map, he[indices[1]], b);
       put(he_length_map, he[indices[2]], a);
-      assert((a + b - c >= delta) && (a + c - b >= delta) && (b + c - a >= delta));
     }
 
     return he_length_map;
@@ -808,17 +822,23 @@ struct mollification_scheme_local_constant {
     }
     avg_length /=  tm.number_of_edges();
     // TODO: add threshold parameter instead of constant 1e-4
-    FT delta = choose_parameter(get_parameter(np, internal_np::delta), FT{avg_length * 1e-4});
+    FT delta = choose_parameter(get_parameter(np, internal_np::delta), FT{avg_length * 1e-3});
     std::cout << "delta = " << delta << "\n";
     // compute smallest length epsilon we can add to
     // all edges to ensure that the strict triangle
     // inequality holds with a tolerance of delta
     FT epsilon = 0;
-    auto x = 0;
+    CGAL::Vertex_around_face_iterator<TriangleMesh> vbegin, vend;
     for (face_descriptor f : faces(tm)) {
-      halfedge_descriptor hd = halfedge(f, tm);
-      halfedge_descriptor hd2 = next(hd, tm);
-      halfedge_descriptor hd3 = next(hd2, tm);
+      boost::tie(vbegin, vend) = vertices_around_face(halfedge(f,tm),tm);
+      vertex_descriptor v0 = *(vbegin);
+      vertex_descriptor v1 = *(++vbegin);
+      vertex_descriptor v2 = *(++vbegin);
+
+      halfedge_descriptor hd = halfedge(v0, v1, tm).first;
+      halfedge_descriptor hd2 = halfedge(v1, v2, tm).first;
+      halfedge_descriptor hd3 = halfedge(v2, v0, tm).first;
+
       std::array<halfedge_descriptor, 3> he = {hd, hd2, hd3};
       std::array<double, 3> L = {
           get(he_length_map, hd), get(he_length_map, hd2), get(he_length_map, hd3)};
@@ -837,9 +857,12 @@ struct mollification_scheme_local_constant {
       epsilon = (std::max)(epsilon, (std::max)(0., delta - ineq));
       ineq = a + c - b;
       epsilon = (std::max)(epsilon, (std::max)(0., delta - ineq));
-      put(he_length_map, he[0], L[0] + epsilon);
-      put(he_length_map, he[1], L[1] + epsilon);
-      put(he_length_map, he[2], L[2] + epsilon);
+      a = L[0] + epsilon;
+      b = L[1] + epsilon;
+      c = L[2] + epsilon;
+      put(he_length_map, he[0], a);
+      put(he_length_map, he[1], b);
+      put(he_length_map, he[2], c);
     }
 
     return he_length_map;
