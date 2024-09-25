@@ -40,16 +40,20 @@ using HeatMethodIDT = CGAL::Heat_method_3::Surface_mesh_geodesic_distances_3<Tri
     CGAL::Heat_method_3::Intrinsic_Delaunay>;
 using HeatMethodIMGC = CGAL::Heat_method_3::Surface_mesh_geodesic_distances_3<Triangle_mesh,
     CGAL::Heat_method_3::Direct,
-    CGAL::Heat_method_3::mollification_scheme_constant>;
+    CGAL::Heat_method_3::Mollification_scheme_constant>;
 using HeatMethodIMLO = CGAL::Heat_method_3::Surface_mesh_geodesic_distances_3<Triangle_mesh,
     CGAL::Heat_method_3::Direct,
-    CGAL::Heat_method_3::mollification_scheme_local_one_by_one>;
+    CGAL::Heat_method_3::Mollification_scheme_local_one_by_one>;
 using HeatMethodIMLOI = CGAL::Heat_method_3::Surface_mesh_geodesic_distances_3<Triangle_mesh,
     CGAL::Heat_method_3::Direct,
-                                                                             CGAL::Heat_method_3::mollification_scheme_local_one_by_one_interpolation>;
+    CGAL::Heat_method_3::Mollification_scheme_local_one_by_one_interpolation>;
 using HeatMethodIMLC = CGAL::Heat_method_3::Surface_mesh_geodesic_distances_3<Triangle_mesh,
     CGAL::Heat_method_3::Direct,
-                                                                             CGAL::Heat_method_3::mollification_scheme_local_constant>;
+    CGAL::Heat_method_3::Mollification_scheme_local_constant>;
+using HeatMethodIMLLP = CGAL::Heat_method_3::Surface_mesh_geodesic_distances_3<Triangle_mesh,
+    CGAL::Heat_method_3::Direct,
+    CGAL::Heat_method_3::Mollification_scheme_local_minimal_distance_linear>;
+
 using Traits = CGAL::Surface_mesh_shortest_path_traits<Kernel, Triangle_mesh>;
 using Surface_mesh_shortest_path = CGAL::Surface_mesh_shortest_path<Traits>;
 typedef typename Traits::Vector_3 Vector_3;
@@ -171,6 +175,7 @@ int main(int argc, char *argv[])
         vertex_distance_imlc,
         vertex_distance_imlo,
         vertex_distance_imloi,
+        vertex_distance_imllp,
         vertex_distance_true] =
         std::tuple{mesh.add_property_map<VertexDescriptor, double>(
                            "v:distance_direct", std::numeric_limits<double>::infinity())
@@ -189,6 +194,9 @@ int main(int argc, char *argv[])
                 .first,
             mesh.add_property_map<VertexDescriptor, double>(
                     "v:distance_imloi", std::numeric_limits<double>::infinity())
+                .first,
+            mesh.add_property_map<VertexDescriptor, double>(
+                    "v:distance_imllp", std::numeric_limits<double>::infinity())
                 .first,
             mesh.add_property_map<VertexDescriptor, double>(
                     "v:distance_true", std::numeric_limits<double>::infinity())
@@ -219,6 +227,10 @@ int main(int argc, char *argv[])
     HeatMethodIMLOI heat_method_imloi(mesh);
     heat_method_imloi.add_source(source_vertex);
     heat_method_imloi.estimate_geodesic_distances(vertex_distance_imloi);
+
+    HeatMethodIMLLP heat_method_imllp(mesh);
+    heat_method_imllp.add_source(source_vertex);
+    heat_method_imllp.estimate_geodesic_distances(vertex_distance_imllp);
     
     // gound truth
     Surface_mesh_shortest_path shortest_paths(mesh);
@@ -300,6 +312,7 @@ int main(int argc, char *argv[])
     std::vector<double> imlc_errors(vertices_cnt);
     std::vector<double> imlo_errors(vertices_cnt);
     std::vector<double> imloi_errors(vertices_cnt);
+    std::vector<double> imllp_errors(vertices_cnt);
 
     // Compute min and max distance
     double min_distance = std::numeric_limits<double>::max();
@@ -313,6 +326,7 @@ int main(int argc, char *argv[])
       imlc_errors[index] = calculate_relative_error(get(vertex_distance_imlc, vertex), L);
       imlo_errors[index] = calculate_relative_error(get(vertex_distance_imlo, vertex), L);
       imloi_errors[index] = calculate_relative_error(get(vertex_distance_imloi, vertex), L);
+      imllp_errors[index] = calculate_relative_error(get(vertex_distance_imllp, vertex), L);
       min_distance = std::min(min_distance, L);
       max_distance = std::max(max_distance, L);
     }
@@ -332,6 +346,8 @@ int main(int argc, char *argv[])
     double stddev_imlo_error = calculate_standard_deviation(imlo_errors);
     double mean_imloi_error = calculate_mean(imloi_errors);
     double stddev_imloi_error = calculate_standard_deviation(imloi_errors);
+    double mean_imllp_error = calculate_mean(imllp_errors);
+    double stddev_imllp_error = calculate_standard_deviation(imllp_errors);
 
     std::cout << "Direct Method Errors: Median = " << mean_direct_error
               << ", Std = " << stddev_direct_error << std::endl;
@@ -344,6 +360,8 @@ int main(int argc, char *argv[])
     std::cout << "IMLO   Method Errors: Median = " << mean_imlo_error << ", Std = " << stddev_imlo_error
               << std::endl;
     std::cout << "IMLOI   Method Errors: Median = " << mean_imloi_error << ", Std = " << stddev_imloi_error
+              << std::endl;
+    std::cout << "IMLLP   Method Errors: Median = " << mean_imllp_error << ", Std = " << stddev_imllp_error
               << std::endl;
 
     std::cout << "Distances: Max = " << max_distance << ", min = " << min_distance << std::endl;
@@ -532,6 +550,7 @@ int main(int argc, char *argv[])
         vertex_distance_imlc,
         vertex_distance_imlo,
         vertex_distance_imloi,
+        vertex_distance_imllp,
         vertex_distance_true] =
         std::tuple{mesh.add_property_map<VertexDescriptor, double>(
                            "v:distance_direct", std::numeric_limits<double>::infinity())
@@ -550,6 +569,9 @@ int main(int argc, char *argv[])
                 .first,
             mesh.add_property_map<VertexDescriptor, double>(
                     "v:distance_imloi", std::numeric_limits<double>::infinity())
+                .first,
+            mesh.add_property_map<VertexDescriptor, double>(
+                    "v:distance_imllp", std::numeric_limits<double>::infinity())
                 .first,
             mesh.add_property_map<VertexDescriptor, double>(
                     "v:distance_true", std::numeric_limits<double>::infinity())
@@ -582,25 +604,27 @@ int main(int argc, char *argv[])
     HeatMethodIMLOI heat_method_imloi(mesh);
     heat_method_imloi.add_source(source_vertex);
     heat_method_imloi.estimate_geodesic_distances(vertex_distance_imloi);
+    HeatMethodIMLLP heat_method_imllp(mesh);
+    heat_method_imllp.add_source(source_vertex);
+    heat_method_imllp.estimate_geodesic_distances(vertex_distance_imllp);
 
-
-            // gound truth
-            bool has_degenerate_faces =
-                CGAL::Heat_method_3::internal::has_degenerate_faces(mesh, Traits());
-            Surface_mesh_shortest_path shortest_paths(mesh);
-            shortest_paths.add_source_point(source_vertex);
-            for (auto v : vertices(mesh)) {
-              double true_distance = shortest_paths.shortest_distance_to_source_points(v).first;
-              put(vertex_distance_true, v, true_distance);
-            }
-            // Compute errors
-            size_t vertices_cnt = num_vertices(mesh);
-std::vector<double> dir_errors(vertices_cnt);
+    // gound truth
+    bool has_degenerate_faces = CGAL::Heat_method_3::internal::has_degenerate_faces(mesh, Traits());
+    Surface_mesh_shortest_path shortest_paths(mesh);
+    shortest_paths.add_source_point(source_vertex);
+    for (auto v : vertices(mesh)) {
+      double true_distance = shortest_paths.shortest_distance_to_source_points(v).first;
+      put(vertex_distance_true, v, true_distance);
+    }
+    // Compute errors
+    size_t vertices_cnt = num_vertices(mesh);
+    std::vector<double> dir_errors(vertices_cnt);
     std::vector<double> idt_errors(vertices_cnt);
     std::vector<double> imgc_errors(vertices_cnt);
     std::vector<double> imlc_errors(vertices_cnt);
     std::vector<double> imlo_errors(vertices_cnt);
     std::vector<double> imloi_errors(vertices_cnt);
+    std::vector<double> imllp_errors(vertices_cnt);
     
             // Compute min and max distance
             double min_distance = std::numeric_limits<double>::max();
@@ -614,6 +638,7 @@ std::vector<double> dir_errors(vertices_cnt);
       imlc_errors[index] = calculate_relative_error(get(vertex_distance_imlc, vertex), L);
       imlo_errors[index] = calculate_relative_error(get(vertex_distance_imlo, vertex), L);
       imloi_errors[index] = calculate_relative_error(get(vertex_distance_imloi, vertex), L);
+      imllp_errors[index] = calculate_relative_error(get(vertex_distance_imllp, vertex), L);
       min_distance = std::min(min_distance, L);
       max_distance = std::max(max_distance, L);
             }
@@ -634,6 +659,8 @@ std::vector<double> dir_errors(vertices_cnt);
     double stddev_imlo_error = calculate_standard_deviation(imlo_errors);
     double mean_imloi_error = calculate_mean(imloi_errors);
     double stddev_imloi_error = calculate_standard_deviation(imloi_errors);
+    double mean_imllp_error = calculate_mean(imllp_errors);
+    double stddev_imllp_error = calculate_standard_deviation(imllp_errors);
 
     std::cout << "Direct Method Errors: Median = " << mean_direct_error
               << ", Std = " << stddev_direct_error << std::endl;
@@ -646,6 +673,8 @@ std::vector<double> dir_errors(vertices_cnt);
     std::cout << "IMLO   Method Errors: Median = " << mean_imlo_error << ", Std = " << stddev_imlo_error
               << std::endl;
     std::cout << "IMLOI   Method Errors: Median = " << mean_imloi_error << ", Std = " << stddev_imloi_error
+              << std::endl;
+    std::cout << "IMLLP   Method Errors: Median = " << mean_imllp_error << ", Std = " << stddev_imllp_error
               << std::endl;
 
     std::cout << "Distances: Max = " << max_distance << ", min = " << min_distance << std::endl;
