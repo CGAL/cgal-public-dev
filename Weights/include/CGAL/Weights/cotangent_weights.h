@@ -22,6 +22,7 @@
 #include <CGAL/Point_2.h>
 #include <CGAL/Point_3.h>
 #include <CGAL/utility.h>
+#include <CGAL/Heat_method_3/internal/Intrinsic_mollification_3.h>
 
 namespace CGAL {
 namespace Weights {
@@ -308,7 +309,8 @@ public:
 // CGAL Lab -> Hole_filling_plugin.cpp
 template<typename PolygonMesh,
          typename VertexPointMap,
-         typename GeomTraits>
+         typename GeomTraits,
+         typename MollificationScheme = Heat_method_3::Mollification_scheme_local_minimal_distance_linear>
 class Secure_cotangent_weight_with_voronoi_area
 {
   using vertex_descriptor = typename boost::graph_traits<PolygonMesh>::vertex_descriptor;
@@ -318,9 +320,15 @@ class Secure_cotangent_weight_with_voronoi_area
   using FT = typename GeomTraits::FT;
   using Vector_3 = typename GeomTraits::Vector_3;
 
+  typedef CGAL::dynamic_halfedge_property_t<FT> Halfedge_length_tag;
+  typedef typename boost::property_map<PolygonMesh, Halfedge_length_tag>::const_type
+  HalfedgeLengthMap;
+
 private:
   const PolygonMesh& m_pmesh;
   const VertexPointMap m_vpm;
+  HalfedgeLengthMap he_length_map;
+
   GeomTraits m_traits;
 
   Cotangent_weight<PolygonMesh, VertexPointMap, GeomTraits> cotangent_weight_calculator;
@@ -332,7 +340,9 @@ public:
     : m_pmesh(pmesh), m_vpm(vpm), m_traits(traits),
       cotangent_weight_calculator(m_pmesh, m_vpm, m_traits,
                                   true /*clamp*/, true /*bound from below*/)
-  { }
+  {
+    he_length_map = MollificationScheme::apply(m_pmesh, vpm);
+  }
 
   FT w_i(const vertex_descriptor v_i) const
   {
@@ -341,7 +351,23 @@ public:
 
   FT w_ij(const halfedge_descriptor he) const
   {
-    return cotangent_weight_calculator(he);
+    // return cotangent_weight_calculator(he);
+    if (is_border(he, m_pmesh))
+      return FT{0};
+    auto half_weight = [&] (const halfedge_descriptor he) -> FT
+    {
+      if(is_border(he, m_pmesh))
+        return FT{0};
+
+      const vertex_descriptor v0 = target(he, m_pmesh);
+      const vertex_descriptor v1 = source(he, m_pmesh);
+      const vertex_descriptor v2 = target(next(he, m_pmesh), m_pmesh);
+
+      FT weight = MollificationScheme::cotangent(m_pmesh, m_vpm, he_length_map, v0, v2, v1, m_traits);
+      return weight / FT(2);
+    };
+
+    return half_weight(he) + half_weight(opposite(he, m_pmesh));
   }
 
 private:

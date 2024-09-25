@@ -51,7 +51,7 @@ file(GLOB HEADER_GLOB ${demo_INCLUDE_DIR}/*.hpp)
 file(GLOB SOURCES_GLOB ${demo_SOURCE_DIR}/*.cpp)
 
 set(demo_HEADERS ${HEADER_GLOB})
-set(demo_SOURCES ${SOURCES_GLOB})
+# set(demo_SOURCES ${SOURCES_GLOB})
 
 # include for local package
 
@@ -59,7 +59,7 @@ set(demo_SOURCES ${SOURCES_GLOB})
 # Creating entries for target: demo
 # ############################
 
-add_executable(demo ${demo_SOURCES} ${demo_HEADERS})
+add_executable(demo ${CMAKE_CURRENT_SOURCE_DIR}/main.cpp ${demo_HEADERS})
 
 add_to_cached_list( CGAL_EXECUTABLE_TARGETS demo )
 find_package(SuiteSparse REQUIRED)   # Find SuiteSparse package
@@ -70,3 +70,10 @@ target_include_directories(
   demo PUBLIC $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
                          $<BUILD_INTERFACE:${demo_INCLUDE_DIR}>
                          $<BUILD_INTERFACE:/home/islam/code/geometry-central/include>)
+add_executable(fair ${CMAKE_CURRENT_SOURCE_DIR}/fair.cpp ${demo_HEADERS})
+add_to_cached_list( CGAL_EXECUTABLE_TARGETS fair )
+target_link_libraries(fair PRIVATE CGAL::CGAL CGAL::Eigen3_support)
+
+target_include_directories(
+  fair PUBLIC $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
+                         $<BUILD_INTERFACE:${demo_INCLUDE_DIR}>)                       
