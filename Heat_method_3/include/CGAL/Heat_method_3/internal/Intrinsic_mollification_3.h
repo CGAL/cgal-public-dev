@@ -87,6 +87,34 @@ struct Mollification_scheme_identity {
     typedef CGAL::dynamic_halfedge_property_t<FT> Halfedge_length_tag;
     typedef typename boost::property_map<TriangleMesh, Halfedge_length_tag>::const_type
         HalfedgeLengthMap;
+    // typedef boost::graph_traits<TriangleMesh> graph_traits;
+    // typedef typename graph_traits::halfedge_descriptor halfedge_descriptor;
+    // typedef typename graph_traits::vertex_descriptor vertex_descriptor;
+    // typedef typename graph_traits::edge_descriptor edge_descriptor;
+    // /// Geometric typedefs
+    // typedef typename Traits::Point_3 Point_3;
+    // typedef typename Traits::FT FT;
+    // typedef typename Traits::Vector_3 Vector_3;
+    // typename Traits::Compute_squared_distance_3 squared_distance =
+    //     Traits().compute_squared_distance_3_object();
+    // typedef typename boost::property_traits<VertexPointMap>::reference VertexPointMap_reference;
+
+    // typedef int Index;
+
+    // HalfedgeLengthMap he_length_map(get(Halfedge_length_tag(), tm));
+
+    // for (auto e : edges(tm)) {
+    //   halfedge_descriptor hd1 = halfedge(e, tm);
+    //   halfedge_descriptor hd2 = opposite(hd1, tm);
+    //   vertex_descriptor v1 = target(e, tm);
+    //   vertex_descriptor v2 = source(e, tm);
+    //   VertexPointMap_reference p1 = get(vpm, v1);
+    //   VertexPointMap_reference p2 = get(vpm, v2);
+    //   FT e_length = CGAL::approximate_sqrt(squared_distance(p1, p2));
+    //   put(he_length_map, hd1, e_length);
+    //   put(he_length_map, hd2, e_length);
+    // }
+    // return he_length_map;
     return HalfedgeLengthMap{};
   }
 
@@ -112,6 +140,108 @@ struct Mollification_scheme_identity {
    *
    * \return The cotangent weight of the angle opposite to the edge between `v1` and `v2`.
    */
+  template <typename TriangleMesh,
+      typename VertexPointMap,
+      typename HalfedgeLengthMap,
+      typename Traits>
+  static auto cotangent(const TriangleMesh &tm,
+      const VertexPointMap &vpm,
+      const HalfedgeLengthMap &he_length_map,
+      typename boost::graph_traits<TriangleMesh>::vertex_descriptor v1,
+      typename boost::graph_traits<TriangleMesh>::vertex_descriptor v2,
+      typename boost::graph_traits<TriangleMesh>::vertex_descriptor v3,
+      Traits traits)
+  {
+    typedef typename Traits::FT FT;
+    typedef typename boost::property_traits<VertexPointMap>::reference VertexPointMap_reference;
+
+    VertexPointMap_reference p_i = get(vpm, v1);
+    VertexPointMap_reference p_j = get(vpm, v2);
+    VertexPointMap_reference p_k = get(vpm, v3);
+    return CGAL::Weights::cotangent(p_i, p_j, p_k, traits);
+  }
+
+  template <typename TriangleMesh,
+      typename VertexPointMap,
+      typename HalfedgeLengthMap,
+      typename Traits>
+  static auto face_area(const TriangleMesh &tm,
+      const VertexPointMap &vpm,
+      const HalfedgeLengthMap &he_length_map,
+      typename boost::graph_traits<TriangleMesh>::vertex_descriptor v1,
+      typename boost::graph_traits<TriangleMesh>::vertex_descriptor v2,
+      typename boost::graph_traits<TriangleMesh>::vertex_descriptor v3,
+      Traits traits)
+  {
+    typename Traits::Construct_vector_3 construct_vector = traits.construct_vector_3_object();
+
+    auto p_i = get(vpm, v1);
+    auto p_j = get(vpm, v2);
+    auto p_k = get(vpm, v3);
+    Vector_3 v_ij = construct_vector(p_i, p_j);
+    Vector_3 v_ik = construct_vector(p_i, p_k);
+    Vector_3 cross = cross_product(v_ij, v_ik);
+    double N_cross = (CGAL::sqrt(to_double(scalar_product(cross, cross))));
+    return N_cross * (1. / 2);
+  }
+  template <typename TriangleMesh,
+      typename VertexPointMap,
+      typename HalfedgeLengthMap,
+      typename Traits>
+  static std::array<typename Traits::Vector_3, 3> face_vectors(const TriangleMesh &tm,
+      const VertexPointMap &vpm,
+      const HalfedgeLengthMap &he_length_map,
+      typename boost::graph_traits<TriangleMesh>::vertex_descriptor v1,
+      typename boost::graph_traits<TriangleMesh>::vertex_descriptor v2,
+      typename boost::graph_traits<TriangleMesh>::vertex_descriptor v3,
+      Traits traits)
+  {
+    typedef typename Traits::Vector_3 Vector_3;
+    typename Traits::Construct_vector_3 construct_vector = traits.construct_vector_3_object();
+
+    auto p_i = get(vpm, v1);
+    auto p_j = get(vpm, v2);
+    auto p_k = get(vpm, v3);
+    Vector_3 v_ij = construct_vector(p_i, p_j);
+    Vector_3 v_jk = construct_vector(p_j, p_k);
+    Vector_3 v_ki = construct_vector(p_k, p_i);
+    return {v_ij, v_jk, v_ki};
+  }
+  template <typename TriangleMesh,
+      typename VertexPointMap,
+      typename HalfedgeLengthMap,
+      typename Traits>
+  static auto length(const TriangleMesh &tm,
+      const VertexPointMap &vpm,
+      const HalfedgeLengthMap &he_length_map,
+      typename boost::graph_traits<TriangleMesh>::vertex_descriptor v1,
+      typename boost::graph_traits<TriangleMesh>::vertex_descriptor v2,
+      Traits traits)
+  {
+    typename Traits::Compute_squared_distance_3 squared_distance =
+        traits.compute_squared_distance_3_object();
+    auto p1 = get(vpm, v1);
+    auto p2 = get(vpm, v2);
+    return std::sqrt(to_double(squared_distance(p1, p2)));
+  }
+};
+
+struct Mollification_scheme_idt_wrap {
+  template <typename TriangleMesh,
+      typename VertexPointMap,
+      typename NamedParameters = CGAL::parameters::Default_named_parameters,
+      typename Traits = typename Kernel_traits<typename boost::property_traits<typename boost::
+              property_map<TriangleMesh, vertex_point_t>::const_type>::value_type>::Kernel>
+  static auto apply(const TriangleMesh &tm,
+      const VertexPointMap &vpm,
+      const NamedParameters &np = CGAL::parameters::default_values())
+  {
+    typedef typename Traits::FT FT;
+    typedef CGAL::dynamic_halfedge_property_t<FT> Halfedge_length_tag;
+    typedef typename boost::property_map<TriangleMesh, Halfedge_length_tag>::const_type
+        HalfedgeLengthMap;
+    return HalfedgeLengthMap{};
+  }
   template <typename TriangleMesh,
       typename VertexPointMap,
       typename HalfedgeLengthMap,
@@ -781,8 +911,8 @@ struct Mollification_scheme_local_minimal_distance_linear : public Mollification
       const int L1 = 1;
       const int L2 = 2;
       lp.set_a(L0, 0,  1.0); lp.set_a(L1, 0, 1.0); lp.set_a(L2, 0, -1.0); lp.set_b(0, delta);  //  L0 + L1 - L2  >= delta
-      lp.set_a(L0, 1,  1.0); lp.set_a(L1, 1, -1.0); lp.set_a(L2,10, 1.0); lp.set_b(1, delta);  //  L0 - L1 + L2  >= delta
-      lp.set_a(L0, 2,  -1.0); lp.set_a(L1, 2, 1.0); lp.set_a(L2, 2, 1); lp.set_b(2, delta);  //  -L0 + L1 + L2  >= delta
+      lp.set_a(L0, 1,  1.0); lp.set_a(L1, 1, -1.0); lp.set_a(L2,1, 1.0); lp.set_b(1, delta);  //  L0 - L1 + L2  >= delta
+      lp.set_a(L0, 2,  -1.0); lp.set_a(L1, 2, 1.0); lp.set_a(L2, 2, 1.0); lp.set_b(2, delta);  //  -L0 + L1 + L2  >= delta
       lp.set_a(L0, 3,  1.0); lp.set_b(3, L[0]);  //  L0 >= L0_old
       lp.set_a(L1, 4,  1.0); lp.set_b(4, L[1]);  //  L1 >= L1_old
       lp.set_a(L2, 5,  1.0); lp.set_b(5, L[2]);  //  L2 >= L2_old
@@ -801,6 +931,131 @@ struct Mollification_scheme_local_minimal_distance_linear : public Mollification
       b = L[1];
       c = L[2];
       assert((a + b - c >= delta-1e-5) && (a + c - b >= delta-1e-5) && (b + c - a >= delta-1e-5));
+    }
+
+    return he_length_map;
+  }
+};
+
+struct Mollification_scheme_global_minimal_distance_linear : public Mollification_scheme_common {
+  template <typename TriangleMesh,
+      typename VertexPointMap,
+      typename NamedParameters = CGAL::parameters::Default_named_parameters,
+      typename Traits = typename Kernel_traits<typename boost::property_traits<typename boost::
+              property_map<TriangleMesh, vertex_point_t>::const_type>::value_type>::Kernel>
+  static auto apply(const TriangleMesh &tm,
+      const VertexPointMap &vpm,
+      const NamedParameters &np = CGAL::parameters::default_values())
+  {
+    typedef boost::graph_traits<TriangleMesh> graph_traits;
+    typedef typename graph_traits::halfedge_descriptor halfedge_descriptor;
+    typedef typename graph_traits::vertex_descriptor vertex_descriptor;
+    typedef typename graph_traits::face_descriptor face_descriptor;
+    typedef typename graph_traits::edge_descriptor edge_descriptor;
+    /// Geometric typedefs
+    typedef typename Traits::Point_3 Point_3;
+    typedef typename Traits::FT FT;
+    typedef typename Traits::Vector_3 Vector_3;
+    typename Traits::Compute_squared_distance_3 squared_distance =
+        Traits().compute_squared_distance_3_object();
+    typedef typename boost::property_traits<VertexPointMap>::reference VertexPointMap_reference;
+
+    typedef int Index;
+
+    using parameters::choose_parameter;
+    using parameters::get_parameter;
+
+    typedef CGAL::MP_Float ET;
+
+    // program and solution types
+    typedef CGAL::Quadratic_program<double> Program;
+    typedef CGAL::Quadratic_program_solution<double> Solution;
+    typedef typename Solution::Variable_value_iterator Variable_value_iterator;
+    typedef CGAL::Real_embeddable_traits<typename Variable_value_iterator::value_type> RE_traits;
+    typename RE_traits::To_double to_double;
+
+
+    typedef CGAL::dynamic_halfedge_property_t<FT> Halfedge_length_tag;
+    typedef typename boost::property_map<TriangleMesh, Halfedge_length_tag>::const_type
+        HalfedgeLengthMap;
+
+    HalfedgeLengthMap he_length_map(get(Halfedge_length_tag(), tm));
+
+    double min_length = std::numeric_limits<double>::max();
+    double max_length = -1;
+    FT avg_length = 0;
+    for (auto e : edges(tm)) {
+      halfedge_descriptor hd1 = halfedge(e, tm);
+      halfedge_descriptor hd2 = opposite(hd1, tm);
+      vertex_descriptor v1 = target(e, tm);
+      vertex_descriptor v2 = source(e, tm);
+      VertexPointMap_reference p1 = get(vpm, v1);
+      VertexPointMap_reference p2 = get(vpm, v2);
+      FT e_length = CGAL::approximate_sqrt(squared_distance(p1, p2));
+      put(he_length_map, hd1, e_length);
+      put(he_length_map, hd2, e_length);
+      min_length = e_length > FT(0) ? CGAL::min(min_length, e_length) : min_length;
+      max_length = CGAL::max(max_length, e_length);
+      avg_length += e_length;
+    }
+    avg_length /=  tm.number_of_edges();
+    // TODO: add threshold parameter instead of constant 1e-4
+    FT delta = choose_parameter(get_parameter(np, internal_np::delta), FT{avg_length * Kdelta});
+    std::cout << "delta = " << delta << "\n";
+    // compute smallest length epsilon we can add to
+    // all edges to ensure that the strict triangle
+    // inequality holds with a tolerance of delta
+    FT epsilon = 0;
+    CGAL::Vertex_around_face_iterator<TriangleMesh> vbegin, vend;
+    Program lp(CGAL::LARGER, true, 0, false, max_length);
+    typedef CGAL::dynamic_edge_property_t<Index> Edge_property_tag;
+    typedef typename boost::property_map<TriangleMesh, Edge_property_tag>::type Edge_id_map;
+    auto edge_id_map = get(Edge_property_tag(), tm);
+    Index edge_i = 0;
+    for (edge_descriptor ed : edges(tm)) {
+      lp.set_c(edge_i, 1.0);
+      put(edge_id_map, ed, edge_i++);
+    }
+
+    Index i = 0;
+    for (face_descriptor f : faces(tm)) {
+      boost::tie(vbegin, vend) = vertices_around_face(halfedge(f,tm),tm);
+      vertex_descriptor v0 = *(vbegin);
+      vertex_descriptor v1 = *(++vbegin);
+      vertex_descriptor v2 = *(++vbegin);
+
+      halfedge_descriptor hd = halfedge(v0, v1, tm).first;
+      halfedge_descriptor hd2 = halfedge(v1, v2, tm).first;
+      halfedge_descriptor hd3 = halfedge(v2, v0, tm).first;
+
+      Index L0 = get(edge_id_map, edge(hd, tm));
+      Index L1 = get(edge_id_map, edge(hd2, tm));
+      Index L2 = get(edge_id_map, edge(hd3, tm));
+      assert(L0 != L1 && L1 != L2);
+      std::array<double, 3> L = {
+          get(he_length_map, hd), get(he_length_map, hd2), get(he_length_map, hd3)};
+
+      lp.set_a(L0, i,  1.0); lp.set_a(L1, i, 1.0); lp.set_a(L2, i, -1.0); lp.set_b(i, delta);  //  L0 + L1 - L2  >= delta
+      ++i;
+      lp.set_a(L0, i,  1.0); lp.set_a(L1, i, -1.0); lp.set_a(L2,i, 1.0); lp.set_b(i, delta);  //  L0 - L1 + L2  >= delta
+      ++i;
+      lp.set_a(L0, i,  -1.0); lp.set_a(L1, i, 1.0); lp.set_a(L2, i, 1.0); lp.set_b(i, delta);  //  -L0 + L1 + L2  >= delta
+      ++i;
+      lp.set_u(L0,true,  L[0]);
+      lp.set_u(L1,true,  L[1]);
+      lp.set_u(L2,true,  L[2]);
+    }
+    // solve the program, using ET as the exact type
+    Solution solution = CGAL::solve_linear_program(lp, double());
+    // get variables
+    auto X = solution.variable_values_begin();
+
+    i = 0;
+    for (edge_descriptor ed : edges(tm)) {
+      halfedge_descriptor hd1 = halfedge(ed, tm);
+      halfedge_descriptor hd2 = opposite(hd1, tm);
+      put(he_length_map, hd1, to_double(X[i]));
+      put(he_length_map, hd2, to_double(X[i++]));
     }
 
     return he_length_map;
