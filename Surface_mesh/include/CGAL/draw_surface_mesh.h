@@ -24,7 +24,7 @@ A call to this function blocks the execution of the program until the drawing wi
 - Linking with the cmake target `CGAL::CGAL_Basic_viewer`/`CGAL::CGAL_Basic_viewer_Qt` will link with `CGAL_Qt6` and add the definition `CGAL_USE_BASIC_VIEWER`/`CGAL_USE_BASIC_VIEWER_QT`.
 - Linking with the cmake target `CGAL::CGAL_Basic_viewer_GLFW` will link with `CGAL_GLFW` and add the definition `CGAL_USE_BASIC_VIEWER_GLFW`.
 
-\tparam SM which must be an instanciation of a `CGAL::Surface_mesh<...>`.
+\tparam SM which must be an instantiation of a `CGAL::Surface_mesh<...>`.
 \tparam GSOptions a model of `GraphicsSceneOptions` concept.
 
 \param sm the surface mesh to draw.
@@ -56,7 +56,7 @@ A shortcut to `CGAL::draw(sm, Graphics_scene_options{})`.
 
 adds the vertices, edges and faces of `sm` into the given graphic scene `gs`. Parameters of the cells are taken from the optional graphics scene options parameter `gso`. Note that `gs` is not cleared before being filled (to enable to draw several data structures in the same basic viewer).
 
-\tparam SM which must be an instanciation of a `CGAL::Surface_mesh<...>`.
+\tparam SM which must be an instantiation of a `CGAL::Surface_mesh<...>`.
 \tparam GSOptions a model of `GraphicsSceneOptions` concept.
 
 \param sm the surface mesh to draw.
@@ -115,11 +115,10 @@ struct Graphics_scene_options_surface_mesh
 
   Graphics_scene_options_surface_mesh(const SM& amesh)
   {
-    bool found=false;
-    std::tie(vcolors, found)=
-        amesh.template property_map<vertex_descriptor, CGAL::IO::Color>("v:color");
-    if(found)
+    auto _vcolors = amesh.template property_map<vertex_descriptor, CGAL::IO::Color>("v:color");
+    if(_vcolors.has_value())
     {
+      vcolors = _vcolors.value();
       this->colored_vertex=[](const SM &, vertex_descriptor)->bool { return true; };
       this->vertex_color=[this](const SM &, vertex_descriptor v)->CGAL::IO::Color
       { return get(vcolors, v); };
@@ -127,10 +126,10 @@ struct Graphics_scene_options_surface_mesh
     else
     { this->colored_vertex=[](const SM &, vertex_descriptor)->bool { return false; }; }
 
-    std::tie(ecolors, found)=
-        amesh.template property_map<edge_descriptor, CGAL::IO::Color>("e:color");
-    if(found)
+    auto _ecolors = amesh.template property_map<edge_descriptor, CGAL::IO::Color>("e:color");
+    if(_ecolors.has_value())
     {
+      ecolors = _ecolors.value();
       this->colored_edge=[](const SM &, edge_descriptor)->bool { return true; };
       this->edge_color=[this](const SM &, edge_descriptor e)->CGAL::IO::Color
       { return get(ecolors, e); };
@@ -138,10 +137,10 @@ struct Graphics_scene_options_surface_mesh
     else
     { this->colored_edge=[](const SM &, edge_descriptor)->bool { return false; }; }
 
-    std::tie(fcolors, found)=
-        amesh.template property_map<face_descriptor, CGAL::IO::Color>("f:color");
-    if(found)
+    auto _fcolors = amesh.template property_map<face_descriptor, CGAL::IO::Color>("f:color");
+    if(_fcolors.has_value())
     {
+      fcolors = _fcolors.value();
       this->colored_face=[](const SM &, face_descriptor)->bool { return true; };
       this->face_color=[this](const SM &, face_descriptor f)->CGAL::IO::Color
       { return get(fcolors, f); };
