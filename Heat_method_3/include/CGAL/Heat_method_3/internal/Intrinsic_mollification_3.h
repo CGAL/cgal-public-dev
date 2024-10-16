@@ -34,10 +34,14 @@
 #include <boost/iterator/transform_iterator.hpp>
 
 #include <cmath>
+#include <limits>
 
 #include <CGAL/QP_models.h>
 #include <CGAL/QP_functions.h>
 #include <CGAL/MP_Float.h>
+
+#include "Eigen/SparseCore"
+#include <osqp++.h>
 
 namespace CGAL {
 namespace Heat_method_3 {
@@ -355,7 +359,7 @@ struct Mollification_scheme_common {
     const FT area = CGAL::approximate_sqrt(S * (S - a) * (S - b) * (S - c));
 
     // If the area is zero, return an undefined value
-    if (is_zero(area)) {
+    if (is_zero(area) || !std::isfinite(area)) {
       return FT(0);  // Undefined cotangent
     }
 
@@ -434,7 +438,7 @@ struct Mollification_scheme_common {
  * value is computed based on the smallest edge length in the mesh and the specified `delta`.
  *
  */
-struct Mollification_scheme_constant : public Mollification_scheme_common {
+struct Mollification_scheme_global_constant : public Mollification_scheme_common {
   template <typename TriangleMesh,
       typename VertexPointMap,
       typename NamedParameters = CGAL::parameters::Default_named_parameters,
@@ -485,7 +489,6 @@ struct Mollification_scheme_constant : public Mollification_scheme_common {
     avg_length /=  tm.number_of_edges();
 
     FT delta = choose_parameter(get_parameter(np, internal_np::delta), FT{avg_length * Kdelta});
-    std::cout << "delta = " << delta << "\n";
     // compute smallest length epsilon we can add to
     // all edges to ensure that the strict triangle
     // inequality holds with a tolerance of delta
@@ -496,7 +499,6 @@ struct Mollification_scheme_constant : public Mollification_scheme_common {
       FT ineq = get(he_length_map, hd2) + get(he_length_map, hd3) - get(he_length_map, hd);
       epsilon = (std::max)(epsilon, (std::max)(0., delta - ineq));
     }
-    std::cout << "im epsilon = " << epsilon << "\n";
 
     // update edge lengths
     for (halfedge_descriptor hd : halfedges(tm)) {
@@ -560,7 +562,7 @@ struct Mollification_scheme_local_one_by_one : public Mollification_scheme_commo
 
     // TODO: add threshold parameter instead of constant 1e-4
     FT delta = choose_parameter(get_parameter(np, internal_np::delta), FT{avg_length * Kdelta});
-    std::cout << "delta = " << delta << "\n";
+
     // compute smallest length epsilon we can add to
     // all edges to ensure that the strict triangle
     // inequality holds with a tolerance of delta
@@ -661,7 +663,7 @@ struct Mollification_scheme_local_one_by_one_interpolation : public Mollificatio
     avg_length /=  tm.number_of_edges();
     // TODO: add threshold parameter instead of constant 1e-4
     FT delta = choose_parameter(get_parameter(np, internal_np::delta), FT{avg_length * Kdelta});
-    std::cout << "delta = " << delta << "\n";
+
     // compute smallest length epsilon we can add to
     // all edges to ensure that the strict triangle
     // inequality holds with a tolerance of delta
@@ -768,7 +770,7 @@ struct Mollification_scheme_local_constant : public Mollification_scheme_common 
     avg_length /=  tm.number_of_edges();
     // TODO: add threshold parameter instead of constant 1e-4
     FT delta = choose_parameter(get_parameter(np, internal_np::delta), FT{avg_length * Kdelta});
-    std::cout << "delta = " << delta << "\n";
+
     // compute smallest length epsilon we can add to
     // all edges to ensure that the strict triangle
     // inequality holds with a tolerance of delta
@@ -878,7 +880,7 @@ struct Mollification_scheme_local_minimal_distance_linear : public Mollification
     avg_length /=  tm.number_of_edges();
     // TODO: add threshold parameter instead of constant 1e-4
     FT delta = choose_parameter(get_parameter(np, internal_np::delta), FT{avg_length * Kdelta});
-    std::cout << "delta = " << delta << "\n";
+
     // compute smallest length epsilon we can add to
     // all edges to ensure that the strict triangle
     // inequality holds with a tolerance of delta
@@ -937,7 +939,7 @@ struct Mollification_scheme_local_minimal_distance_linear : public Mollification
   }
 };
 
-struct Mollification_scheme_global_minimal_distance_linear : public Mollification_scheme_common {
+struct Mollification_scheme_local_minimal_distance_quadratic : public Mollification_scheme_common {
   template <typename TriangleMesh,
       typename VertexPointMap,
       typename NamedParameters = CGAL::parameters::Default_named_parameters,
@@ -969,7 +971,7 @@ struct Mollification_scheme_global_minimal_distance_linear : public Mollificatio
 
     // program and solution types
     typedef CGAL::Quadratic_program<double> Program;
-    typedef CGAL::Quadratic_program_solution<double> Solution;
+    typedef CGAL::Quadratic_program_solution<ET> Solution;
     typedef typename Solution::Variable_value_iterator Variable_value_iterator;
     typedef CGAL::Real_embeddable_traits<typename Variable_value_iterator::value_type> RE_traits;
     typename RE_traits::To_double to_double;
@@ -1001,23 +1003,159 @@ struct Mollification_scheme_global_minimal_distance_linear : public Mollificatio
     avg_length /=  tm.number_of_edges();
     // TODO: add threshold parameter instead of constant 1e-4
     FT delta = choose_parameter(get_parameter(np, internal_np::delta), FT{avg_length * Kdelta});
-    std::cout << "delta = " << delta << "\n";
+
     // compute smallest length epsilon we can add to
     // all edges to ensure that the strict triangle
     // inequality holds with a tolerance of delta
     FT epsilon = 0;
     CGAL::Vertex_around_face_iterator<TriangleMesh> vbegin, vend;
-    Program lp(CGAL::LARGER, true, 0, false, max_length);
+    for (face_descriptor f : faces(tm)) {
+      boost::tie(vbegin, vend) = vertices_around_face(halfedge(f,tm),tm);
+      vertex_descriptor v0 = *(vbegin);
+      vertex_descriptor v1 = *(++vbegin);
+      vertex_descriptor v2 = *(++vbegin);
+
+      halfedge_descriptor hd = halfedge(v0, v1, tm).first;
+      halfedge_descriptor hd2 = halfedge(v1, v2, tm).first;
+      halfedge_descriptor hd3 = halfedge(v2, v0, tm).first;
+
+      std::array<halfedge_descriptor, 3> he = {hd, hd2, hd3};
+      std::array<double, 3> L = {
+          get(he_length_map, hd), get(he_length_map, hd2), get(he_length_map, hd3)};
+
+      auto a = L[0];
+      auto b = L[1];
+      auto c = L[2];
+
+      if ((a + b - c >= delta) && (a + c - b >= delta) && (b + c - a >= delta))
+        continue;
+      Program lp(CGAL::LARGER, true, 0, false, max_length);
+      // Program lp(CGAL::LARGER, true, min_length * 1e-4, true, max_length);
+      // now set the non-default entries
+      const int L0 = 0;
+      const int L1 = 1;
+      const int L2 = 2;
+      lp.set_a(L0, 0,  1.0); lp.set_a(L1, 0, 1.0); lp.set_a(L2, 0, -1.0); lp.set_b(0, delta);  //  L0 + L1 - L2  >= delta
+      lp.set_a(L0, 1,  1.0); lp.set_a(L1, 1, -1.0); lp.set_a(L2,1, 1.0); lp.set_b(1, delta);  //  L0 - L1 + L2  >= delta
+      lp.set_a(L0, 2,  -1.0); lp.set_a(L1, 2, 1.0); lp.set_a(L2, 2, 1.0); lp.set_b(2, delta);  //  -L0 + L1 + L2  >= delta
+      lp.set_a(L0, 3,  1.0); lp.set_b(3, L[0]);  //  L0 >= L0_old
+      lp.set_a(L1, 4,  1.0); lp.set_b(4, L[1]);  //  L1 >= L1_old
+      lp.set_a(L2, 5,  1.0); lp.set_b(5, L[2]);  //  L2 >= L2_old
+      // (L0 - L0_old)^2 = L0^2 - 2 L0 L0_old + L0_old^2
+      lp.set_d(L0, L0, 2.0); lp.set_c(L0, -2 * L[0]);
+      lp.set_d(L1, L1, 2.0); lp.set_c(L1, -2 * L[1]);
+      lp.set_d(L2, L2, 2.0); lp.set_c(L2, -2 * L[2]);
+      lp.set_c0(L[2] * L[2] + L[1] * L[1] + L[0] * L[0]);
+
+      // solve the program, using ET as the exact type
+      Solution solution = CGAL::solve_quadratic_program(lp, ET());
+      // get variables
+      auto X = solution.variable_values_begin();
+
+      L = {to_double(X[0]), to_double(X[1]), to_double(X[2])};
+      put(he_length_map, he[0], L[0]);
+      put(he_length_map, he[1], L[1]);
+      put(he_length_map, he[2], L[2]);
+      a = L[0];
+      b = L[1];
+      c = L[2];
+      assert((a + b - c >= delta-1e-5) && (a + c - b >= delta-1e-5) && (b + c - a >= delta-1e-5));
+    }
+
+    return he_length_map;
+  }
+};
+
+
+struct Mollification_scheme_global_minimal_distance_linear : public Mollification_scheme_common {
+  template <typename TriangleMesh,
+      typename VertexPointMap,
+      typename NamedParameters = CGAL::parameters::Default_named_parameters,
+      typename Traits = typename Kernel_traits<typename boost::property_traits<typename boost::
+              property_map<TriangleMesh, vertex_point_t>::const_type>::value_type>::Kernel>
+  static auto apply(const TriangleMesh &tm,
+      const VertexPointMap &vpm,
+      const NamedParameters &np = CGAL::parameters::default_values())
+  {
+    typedef boost::graph_traits<TriangleMesh> graph_traits;
+    typedef typename graph_traits::halfedge_descriptor halfedge_descriptor;
+    typedef typename graph_traits::vertex_descriptor vertex_descriptor;
+    typedef typename graph_traits::face_descriptor face_descriptor;
+    typedef typename graph_traits::edge_descriptor edge_descriptor;
+    /// Geometric typedefs
+    typedef typename Traits::Point_3 Point_3;
+    typedef typename Traits::FT FT;
+    typedef typename Traits::Vector_3 Vector_3;
+    typename Traits::Compute_squared_distance_3 squared_distance =
+        Traits().compute_squared_distance_3_object();
+    typedef typename boost::property_traits<VertexPointMap>::reference VertexPointMap_reference;
+
+    typedef int Index;
+
+    using parameters::choose_parameter;
+    using parameters::get_parameter;
+
+    typedef CGAL::dynamic_halfedge_property_t<FT> Halfedge_length_tag;
+    typedef typename boost::property_map<TriangleMesh, Halfedge_length_tag>::const_type
+        HalfedgeLengthMap;
+
+    HalfedgeLengthMap he_length_map(get(Halfedge_length_tag(), tm));
+
+    double min_length = std::numeric_limits<double>::max();
+    double max_length = -1;
+    FT avg_length = 0;
+    for (auto e : edges(tm)) {
+      halfedge_descriptor hd1 = halfedge(e, tm);
+      halfedge_descriptor hd2 = opposite(hd1, tm);
+      vertex_descriptor v1 = target(e, tm);
+      vertex_descriptor v2 = source(e, tm);
+      VertexPointMap_reference p1 = get(vpm, v1);
+      VertexPointMap_reference p2 = get(vpm, v2);
+      FT e_length = CGAL::approximate_sqrt(squared_distance(p1, p2));
+      put(he_length_map, hd1, e_length);
+      put(he_length_map, hd2, e_length);
+      min_length = e_length > FT(0) ? CGAL::min(min_length, e_length) : min_length;
+      max_length = CGAL::max(max_length, e_length);
+      avg_length += e_length;
+    }
+    avg_length /=  tm.number_of_edges();
+    // TODO: add threshold parameter instead of constant 1e-4
+    FT delta = choose_parameter(get_parameter(np, internal_np::delta), FT{avg_length * Kdelta});
+
+    // compute smallest length epsilon we can add to
+    // all edges to ensure that the strict triangle
+    // inequality holds with a tolerance of delta
+    FT epsilon = 0;
+    CGAL::Vertex_around_face_iterator<TriangleMesh> vbegin, vend;
     typedef CGAL::dynamic_edge_property_t<Index> Edge_property_tag;
     typedef typename boost::property_map<TriangleMesh, Edge_property_tag>::type Edge_id_map;
     auto edge_id_map = get(Edge_property_tag(), tm);
     Index edge_i = 0;
+
+    auto edges_cnt = num_edges(tm);
+    auto faces_cnt = num_faces(tm);
+    Eigen::SparseMatrix<double> constraint_matrix(3*faces_cnt + edges_cnt, edges_cnt);
+    Eigen::SparseMatrix<double> objective_matrix(edges_cnt, edges_cnt);
+    constraint_matrix.setZero();
+    objective_matrix.setZero();
+    osqp::OsqpInstance instance;
+    instance.objective_matrix = objective_matrix;
+    instance.objective_vector.resize(edges_cnt);
+    instance.constraint_matrix = constraint_matrix;
+    instance.lower_bounds.resize(edges_cnt + 3*faces_cnt);
+    instance.upper_bounds.resize(edges_cnt + 3*faces_cnt);
     for (edge_descriptor ed : edges(tm)) {
-      lp.set_c(edge_i, 1.0);
+      auto L = get(he_length_map, halfedge(ed, tm));
+      // L0 + L1 + ...
+      // instance.objective_matrix.coeffRef(edge_i, edge_i) = 2.0;
+      instance.objective_vector(edge_i) = 1.0;
+      // L_0 <= L <= infy
+      instance.constraint_matrix.coeffRef(edge_i, edge_i) = 1.0;
+      instance.lower_bounds(edge_i) = L;
+      instance.upper_bounds(edge_i) = std::numeric_limits<double>::infinity();
       put(edge_id_map, ed, edge_i++);
     }
 
-    Index i = 0;
     for (face_descriptor f : faces(tm)) {
       boost::tie(vbegin, vend) = vertices_around_face(halfedge(f,tm),tm);
       vertex_descriptor v0 = *(vbegin);
@@ -1034,28 +1172,206 @@ struct Mollification_scheme_global_minimal_distance_linear : public Mollificatio
       assert(L0 != L1 && L1 != L2);
       std::array<double, 3> L = {
           get(he_length_map, hd), get(he_length_map, hd2), get(he_length_map, hd3)};
-
-      lp.set_a(L0, i,  1.0); lp.set_a(L1, i, 1.0); lp.set_a(L2, i, -1.0); lp.set_b(i, delta);  //  L0 + L1 - L2  >= delta
-      ++i;
-      lp.set_a(L0, i,  1.0); lp.set_a(L1, i, -1.0); lp.set_a(L2,i, 1.0); lp.set_b(i, delta);  //  L0 - L1 + L2  >= delta
-      ++i;
-      lp.set_a(L0, i,  -1.0); lp.set_a(L1, i, 1.0); lp.set_a(L2, i, 1.0); lp.set_b(i, delta);  //  -L0 + L1 + L2  >= delta
-      ++i;
-      lp.set_u(L0,true,  L[0]);
-      lp.set_u(L1,true,  L[1]);
-      lp.set_u(L2,true,  L[2]);
+      // delta <= L0 + L1 - L2
+      instance.constraint_matrix.coeffRef(edge_i, L0) = 1.0;
+      instance.constraint_matrix.coeffRef(edge_i, L1) = 1.0;
+      instance.constraint_matrix.coeffRef(edge_i, L2) = -1.0;
+      instance.lower_bounds(edge_i) = delta;
+      instance.upper_bounds(edge_i) = std::numeric_limits<double>::infinity();
+      ++edge_i;
+      // delta <= L0 - L1 + L2
+      instance.constraint_matrix.coeffRef(edge_i, L0) = 1.0;
+      instance.constraint_matrix.coeffRef(edge_i, L1) = -1.0;
+      instance.constraint_matrix.coeffRef(edge_i, L2) = 1.0;
+      instance.lower_bounds(edge_i) = delta;
+      instance.upper_bounds(edge_i) = std::numeric_limits<double>::infinity();
+      ++edge_i;
+      // delta <= -L0 + L1 + L2
+      instance.constraint_matrix.coeffRef(edge_i, L0) = -1.0;
+      instance.constraint_matrix.coeffRef(edge_i, L1) = 1.0;
+      instance.constraint_matrix.coeffRef(edge_i, L2) = 1.0;
+      instance.lower_bounds(edge_i) = delta;
+      instance.upper_bounds(edge_i) = std::numeric_limits<double>::infinity();
+      ++edge_i;
     }
-    // solve the program, using ET as the exact type
-    Solution solution = CGAL::solve_linear_program(lp, double());
-    // get variables
-    auto X = solution.variable_values_begin();
+    instance.constraint_matrix.makeCompressed();
+    instance.objective_matrix.makeCompressed();
 
-    i = 0;
+    osqp::OsqpSolver solver;
+    osqp::OsqpSettings settings;
+    settings.verbose = false;
+    settings.warm_start = true;
+    // Edit settings if appropriate.
+    auto status = solver.Init(instance, settings);
+    assert(status.ok());
+    // Assuming status.ok().
+    osqp::OsqpExitCode exit_code = solver.Solve();
+    // Assuming exit_code == OsqpExitCode::kOptimal.
+    double optimal_objective = solver.objective_value();
+    Eigen::VectorXd optimal_solution = solver.primal_solution();
+    assert(exit_code == osqp::OsqpExitCode::kOptimal);
+
     for (edge_descriptor ed : edges(tm)) {
       halfedge_descriptor hd1 = halfedge(ed, tm);
       halfedge_descriptor hd2 = opposite(hd1, tm);
-      put(he_length_map, hd1, to_double(X[i]));
-      put(he_length_map, hd2, to_double(X[i++]));
+      Index idx = get(edge_id_map, ed);
+      put(he_length_map, hd1, optimal_solution(idx));
+      put(he_length_map, hd2, optimal_solution(idx));
+    }
+
+    return he_length_map;
+  }
+};
+
+struct Mollification_scheme_global_minimal_distance_quadratic : public Mollification_scheme_common {
+  template <typename TriangleMesh,
+      typename VertexPointMap,
+      typename NamedParameters = CGAL::parameters::Default_named_parameters,
+      typename Traits = typename Kernel_traits<typename boost::property_traits<typename boost::
+              property_map<TriangleMesh, vertex_point_t>::const_type>::value_type>::Kernel>
+  static auto apply(const TriangleMesh &tm,
+      const VertexPointMap &vpm,
+      const NamedParameters &np = CGAL::parameters::default_values())
+  {
+    typedef boost::graph_traits<TriangleMesh> graph_traits;
+    typedef typename graph_traits::halfedge_descriptor halfedge_descriptor;
+    typedef typename graph_traits::vertex_descriptor vertex_descriptor;
+    typedef typename graph_traits::face_descriptor face_descriptor;
+    typedef typename graph_traits::edge_descriptor edge_descriptor;
+    /// Geometric typedefs
+    typedef typename Traits::Point_3 Point_3;
+    typedef typename Traits::FT FT;
+    typedef typename Traits::Vector_3 Vector_3;
+    typename Traits::Compute_squared_distance_3 squared_distance =
+        Traits().compute_squared_distance_3_object();
+    typedef typename boost::property_traits<VertexPointMap>::reference VertexPointMap_reference;
+
+    typedef int Index;
+
+    using parameters::choose_parameter;
+    using parameters::get_parameter;
+
+    typedef CGAL::dynamic_halfedge_property_t<FT> Halfedge_length_tag;
+    typedef typename boost::property_map<TriangleMesh, Halfedge_length_tag>::const_type
+        HalfedgeLengthMap;
+
+    HalfedgeLengthMap he_length_map(get(Halfedge_length_tag(), tm));
+
+    double min_length = std::numeric_limits<double>::max();
+    double max_length = -1;
+    FT avg_length = 0;
+    for (auto e : edges(tm)) {
+      halfedge_descriptor hd1 = halfedge(e, tm);
+      halfedge_descriptor hd2 = opposite(hd1, tm);
+      vertex_descriptor v1 = target(e, tm);
+      vertex_descriptor v2 = source(e, tm);
+      VertexPointMap_reference p1 = get(vpm, v1);
+      VertexPointMap_reference p2 = get(vpm, v2);
+      FT e_length = CGAL::approximate_sqrt(squared_distance(p1, p2));
+      put(he_length_map, hd1, e_length);
+      put(he_length_map, hd2, e_length);
+      min_length = e_length > FT(0) ? CGAL::min(min_length, e_length) : min_length;
+      max_length = CGAL::max(max_length, e_length);
+      avg_length += e_length;
+    }
+    avg_length /=  tm.number_of_edges();
+    // TODO: add threshold parameter instead of constant 1e-4
+    FT delta = choose_parameter(get_parameter(np, internal_np::delta), FT{avg_length * Kdelta});
+
+    // compute smallest length epsilon we can add to
+    // all edges to ensure that the strict triangle
+    // inequality holds with a tolerance of delta
+    FT epsilon = 0;
+    CGAL::Vertex_around_face_iterator<TriangleMesh> vbegin, vend;
+    typedef CGAL::dynamic_edge_property_t<Index> Edge_property_tag;
+    typedef typename boost::property_map<TriangleMesh, Edge_property_tag>::type Edge_id_map;
+    auto edge_id_map = get(Edge_property_tag(), tm);
+    Index edge_i = 0;
+
+    auto edges_cnt = num_edges(tm);
+    auto faces_cnt = num_faces(tm);
+    Eigen::SparseMatrix<double> constraint_matrix(3*faces_cnt + edges_cnt, edges_cnt);
+    Eigen::SparseMatrix<double> objective_matrix(edges_cnt, edges_cnt);
+    constraint_matrix.setZero();
+    objective_matrix.setZero();
+    osqp::OsqpInstance instance;
+    instance.objective_matrix = objective_matrix;
+    instance.objective_vector.resize(edges_cnt);
+    instance.constraint_matrix = constraint_matrix;
+    instance.lower_bounds.resize(edges_cnt + 3*faces_cnt);
+    instance.upper_bounds.resize(edges_cnt + 3*faces_cnt);
+    for (edge_descriptor ed : edges(tm)) {
+      auto L = get(he_length_map, halfedge(ed, tm));
+      // (L0 - L0_old)^2 = L0^2 - 2 L0 L0_old + L0_old^2
+      // NOTE: constant L0_old^2 is ignored.
+      instance.objective_matrix.coeffRef(edge_i, edge_i) = 2.0;
+      instance.objective_vector(edge_i) = -2.0 * L;
+      // L_0 <= L <= infy
+      instance.constraint_matrix.coeffRef(edge_i, edge_i) = 1.0;
+      instance.lower_bounds(edge_i) = L;
+      instance.upper_bounds(edge_i) = std::numeric_limits<double>::infinity();
+      put(edge_id_map, ed, edge_i++);
+    }
+
+    for (face_descriptor f : faces(tm)) {
+      boost::tie(vbegin, vend) = vertices_around_face(halfedge(f,tm),tm);
+      vertex_descriptor v0 = *(vbegin);
+      vertex_descriptor v1 = *(++vbegin);
+      vertex_descriptor v2 = *(++vbegin);
+
+      halfedge_descriptor hd = halfedge(v0, v1, tm).first;
+      halfedge_descriptor hd2 = halfedge(v1, v2, tm).first;
+      halfedge_descriptor hd3 = halfedge(v2, v0, tm).first;
+
+      Index L0 = get(edge_id_map, edge(hd, tm));
+      Index L1 = get(edge_id_map, edge(hd2, tm));
+      Index L2 = get(edge_id_map, edge(hd3, tm));
+      assert(L0 != L1 && L1 != L2);
+      std::array<double, 3> L = {
+          get(he_length_map, hd), get(he_length_map, hd2), get(he_length_map, hd3)};
+      // delta <= L0 + L1 - L2
+      instance.constraint_matrix.coeffRef(edge_i, L0) = 1.0;
+      instance.constraint_matrix.coeffRef(edge_i, L1) = 1.0;
+      instance.constraint_matrix.coeffRef(edge_i, L2) = -1.0;
+      instance.lower_bounds(edge_i) = delta;
+      instance.upper_bounds(edge_i) = std::numeric_limits<double>::infinity();
+      ++edge_i;
+      // delta <= L0 - L1 + L2
+      instance.constraint_matrix.coeffRef(edge_i, L0) = 1.0;
+      instance.constraint_matrix.coeffRef(edge_i, L1) = -1.0;
+      instance.constraint_matrix.coeffRef(edge_i, L2) = 1.0;
+      instance.lower_bounds(edge_i) = delta;
+      instance.upper_bounds(edge_i) = std::numeric_limits<double>::infinity();
+      ++edge_i;
+      // delta <= -L0 + L1 + L2
+      instance.constraint_matrix.coeffRef(edge_i, L0) = -1.0;
+      instance.constraint_matrix.coeffRef(edge_i, L1) = 1.0;
+      instance.constraint_matrix.coeffRef(edge_i, L2) = 1.0;
+      instance.lower_bounds(edge_i) = delta;
+      instance.upper_bounds(edge_i) = std::numeric_limits<double>::infinity();
+      ++edge_i;
+    }
+    instance.constraint_matrix.makeCompressed();
+    instance.objective_matrix.makeCompressed();
+
+    osqp::OsqpSolver solver;
+    osqp::OsqpSettings settings;
+    settings.verbose = false;
+    // Edit settings if appropriate.
+    auto status = solver.Init(instance, settings);
+
+    // Assuming status.ok().
+    osqp::OsqpExitCode exit_code = solver.Solve();
+    // Assuming exit_code == OsqpExitCode::kOptimal.
+    double optimal_objective = solver.objective_value();
+    Eigen::VectorXd optimal_solution = solver.primal_solution();
+
+    for (edge_descriptor ed : edges(tm)) {
+      halfedge_descriptor hd1 = halfedge(ed, tm);
+      halfedge_descriptor hd2 = opposite(hd1, tm);
+      Index idx = get(edge_id_map, ed);
+      put(he_length_map, hd1, optimal_solution(idx));
+      put(he_length_map, hd2, optimal_solution(idx));
     }
 
     return he_length_map;

@@ -8,10 +8,6 @@
 #include <CGAL/boost/graph/graph_traits_Surface_mesh.h>
 #include <CGAL/boost/graph/helpers.h>
 
-#include "geometrycentral/surface/exact_geodesics.h"
-#include "geometrycentral/surface/meshio.h"
-#include "geometrycentral/surface/heat_method_distance.h"
-
 #include <cmath>
 #include <csignal>
 #include <filesystem>
@@ -20,9 +16,38 @@
 #include <numeric>
 #include <string>
 #include <vector>
+#include "CGAL/Heat_method_3/internal/Intrinsic_mollification_3.h"
 
 namespace fs = std::filesystem;
 
+
+class Timer {
+public:
+    Timer() : start_time_point_(std::chrono::high_resolution_clock::now())
+             {}
+
+    void start() {
+        start_time_point_ = std::chrono::high_resolution_clock::now();
+    }
+
+    void end(const char *str)
+    {
+      // end_time_point_ = std::chrono::high_resolution_clock::now();
+      // std::cout << str << " Elpased time = "
+      //           << std::chrono::duration<double, std::milli>(end_time_point_ - start_time_point_)
+      //                      .count()
+      //           << " msec \n";
+    }
+
+    void reset() {
+        start();
+    }
+
+private:
+    std::chrono::high_resolution_clock::time_point start_time_point_;
+    std::chrono::high_resolution_clock::time_point end_time_point_;
+};
+Timer timer;
 // Define types
 using Kernel = CGAL::Exact_predicates_inexact_constructions_kernel;
 // using Kernel = CGAL::Simple_cartesian<double>;
@@ -40,7 +65,7 @@ using HeatMethodIDT = CGAL::Heat_method_3::Surface_mesh_geodesic_distances_3<Tri
     CGAL::Heat_method_3::Intrinsic_Delaunay>;
 using HeatMethodIMGC = CGAL::Heat_method_3::Surface_mesh_geodesic_distances_3<Triangle_mesh,
     CGAL::Heat_method_3::Direct,
-    CGAL::Heat_method_3::Mollification_scheme_constant>;
+    CGAL::Heat_method_3::Mollification_scheme_global_constant>;
 using HeatMethodIMLO = CGAL::Heat_method_3::Surface_mesh_geodesic_distances_3<Triangle_mesh,
     CGAL::Heat_method_3::Direct,
     CGAL::Heat_method_3::Mollification_scheme_local_one_by_one>;
@@ -53,9 +78,15 @@ using HeatMethodIMLC = CGAL::Heat_method_3::Surface_mesh_geodesic_distances_3<Tr
 using HeatMethodIMLLP = CGAL::Heat_method_3::Surface_mesh_geodesic_distances_3<Triangle_mesh,
     CGAL::Heat_method_3::Direct,
     CGAL::Heat_method_3::Mollification_scheme_local_minimal_distance_linear>;
+using HeatMethodIMLQP = CGAL::Heat_method_3::Surface_mesh_geodesic_distances_3<Triangle_mesh,
+    CGAL::Heat_method_3::Direct,
+    CGAL::Heat_method_3::Mollification_scheme_local_minimal_distance_quadratic>;
 using HeatMethodIMGLP = CGAL::Heat_method_3::Surface_mesh_geodesic_distances_3<Triangle_mesh,
     CGAL::Heat_method_3::Direct,
     CGAL::Heat_method_3::Mollification_scheme_global_minimal_distance_linear>;
+using HeatMethodIMGQP = CGAL::Heat_method_3::Surface_mesh_geodesic_distances_3<Triangle_mesh,
+    CGAL::Heat_method_3::Direct,
+    CGAL::Heat_method_3::Mollification_scheme_global_minimal_distance_quadratic>;
 
 using Traits = CGAL::Surface_mesh_shortest_path_traits<Kernel, Triangle_mesh>;
 using Surface_mesh_shortest_path = CGAL::Surface_mesh_shortest_path<Traits>;
@@ -144,16 +175,16 @@ double calculate_relative_error(double estimated_value, double true_value)
 }
 
 volatile bool stop_requested = false;
-void signal_handler(int signal)
-{
-  if (signal == SIGINT) {
-    stop_requested = true;
-  }
-}
-using namespace geometrycentral::surface;
+// void signal_handler(int signal)
+// {
+//   if (signal == SIGINT) {
+//     stop_requested = true;
+//   }
+// }
+
 int main(int argc, char *argv[])
 {
-  std::signal(SIGINT, signal_handler);
+  // std::signal(SIGINT, signal_handler);
   // Input filename
   const std::string filename =
       (argc > 1) ? argv[1]
@@ -179,7 +210,9 @@ int main(int argc, char *argv[])
         vertex_distance_imlo,
         vertex_distance_imloi,
         vertex_distance_imllp,
+        vertex_distance_imlqp,
         vertex_distance_imglp,
+        vertex_distance_imgqp,
         vertex_distance_true] =
         std::tuple{mesh.add_property_map<VertexDescriptor, double>(
                            "v:distance_direct", std::numeric_limits<double>::infinity())
@@ -203,7 +236,13 @@ int main(int argc, char *argv[])
                     "v:distance_imllp", std::numeric_limits<double>::infinity())
                 .first,
             mesh.add_property_map<VertexDescriptor, double>(
+                    "v:distance_imlqp", std::numeric_limits<double>::infinity())
+                .first,
+            mesh.add_property_map<VertexDescriptor, double>(
                     "v:distance_imglp", std::numeric_limits<double>::infinity())
+                .first,
+            mesh.add_property_map<VertexDescriptor, double>(
+                    "v:distance_imgqp", std::numeric_limits<double>::infinity())
                 .first,
             mesh.add_property_map<VertexDescriptor, double>(
                     "v:distance_true", std::numeric_limits<double>::infinity())
@@ -211,37 +250,43 @@ int main(int argc, char *argv[])
 
     // Initialize heat methods
     VertexDescriptor source_vertex = *vertices(mesh).first;
-    HeatMethodDirect heat_method_direct(mesh);
+    timer.start();    HeatMethodDirect heat_method_direct(mesh);timer.end("init heat_method_direct");
     heat_method_direct.add_source(source_vertex);
-    heat_method_direct.estimate_geodesic_distances(vertex_distance_direct);
+    timer.start();    heat_method_direct.estimate_geodesic_distances(vertex_distance_direct);timer.end("query heat_method_direct");
 
-    HeatMethodIDT heat_method_idt(mesh);
+    timer.start();    HeatMethodIDT heat_method_idt(mesh);timer.end("init heat_method_idt");
     heat_method_idt.add_source(source_vertex);
-    heat_method_idt.estimate_geodesic_distances(vertex_distance_idt);
+    timer.start();    heat_method_idt.estimate_geodesic_distances(vertex_distance_idt);timer.end("query heat_method_idt");
 
-    HeatMethodIMGC heat_method_imgc(mesh);
+    timer.start();    HeatMethodIMGC heat_method_imgc(mesh);timer.end("init heat_method_imgc");
     heat_method_imgc.add_source(source_vertex);
-    heat_method_imgc.estimate_geodesic_distances(vertex_distance_imgc);
+    timer.start();    heat_method_imgc.estimate_geodesic_distances(vertex_distance_imgc);timer.end("query heat_method_imgc");
     
-    HeatMethodIMLC heat_method_imlc(mesh);
+    timer.start();    HeatMethodIMLC heat_method_imlc(mesh);timer.end("init heat_method_imlc");
     heat_method_imlc.add_source(source_vertex);
-    heat_method_imlc.estimate_geodesic_distances(vertex_distance_imlc);
+    timer.start();    heat_method_imlc.estimate_geodesic_distances(vertex_distance_imlc);timer.end("query heat_method_imlc");
 
-    HeatMethodIMLO heat_method_imlo(mesh);
+    timer.start();    HeatMethodIMLO heat_method_imlo(mesh);timer.end("init heat_method_imlo");
     heat_method_imlo.add_source(source_vertex);
-    heat_method_imlo.estimate_geodesic_distances(vertex_distance_imlo);
+    timer.start();    heat_method_imlo.estimate_geodesic_distances(vertex_distance_imlo);timer.end("query heat_method_imlo");
 
-    HeatMethodIMLOI heat_method_imloi(mesh);
+    timer.start();    HeatMethodIMLOI heat_method_imloi(mesh);timer.end("init heat_method_imloi");
     heat_method_imloi.add_source(source_vertex);
-    heat_method_imloi.estimate_geodesic_distances(vertex_distance_imloi);
+    timer.start();    heat_method_imloi.estimate_geodesic_distances(vertex_distance_imloi);timer.end("query heat_method_imloi");
 
-    HeatMethodIMLLP heat_method_imllp(mesh);
+    timer.start();    HeatMethodIMLLP heat_method_imllp(mesh);timer.end("init heat_method_imllp");
     heat_method_imllp.add_source(source_vertex);
-    heat_method_imllp.estimate_geodesic_distances(vertex_distance_imllp);
+    timer.start();    heat_method_imllp.estimate_geodesic_distances(vertex_distance_imllp);timer.end("query heat_method_imllp");
+    timer.start();    HeatMethodIMLQP heat_method_imlqp(mesh);timer.end("init heat_method_imlqp");
+    heat_method_imlqp.add_source(source_vertex);
+    timer.start();    heat_method_imlqp.estimate_geodesic_distances(vertex_distance_imlqp);timer.end("query heat_method_imlqp");
 
-    HeatMethodIMGLP heat_method_imglp(mesh);
-    heat_method_imglp.add_source(source_vertex);
-    heat_method_imglp.estimate_geodesic_distances(vertex_distance_imglp);
+    timer.start();    HeatMethodIMGLP heat_method_imglp(mesh);timer.end("init heat_method_imglp");
+    heat_method_imglp.add_source(source_vertex);    
+    timer.start();    heat_method_imglp.estimate_geodesic_distances(vertex_distance_imglp);timer.end("query heat_method_imglp");
+    timer.start();    HeatMethodIMGQP heat_method_imgqp(mesh);timer.end("init heat_method_imgqp");
+    heat_method_imgqp.add_source(source_vertex);    
+    timer.start();    heat_method_imgqp.estimate_geodesic_distances(vertex_distance_imgqp);timer.end("query heat_method_imgqp");
     
     // gound truth
     Surface_mesh_shortest_path shortest_paths(mesh);
@@ -273,7 +318,9 @@ int main(int argc, char *argv[])
     std::vector<double> imlo_errors(vertices_cnt);
     std::vector<double> imloi_errors(vertices_cnt);
     std::vector<double> imllp_errors(vertices_cnt);
+    std::vector<double> imlqp_errors(vertices_cnt);
     std::vector<double> imglp_errors(vertices_cnt);
+    std::vector<double> imgqp_errors(vertices_cnt);
 
     // Compute min and max distance
     double min_distance = std::numeric_limits<double>::max();
@@ -288,7 +335,9 @@ int main(int argc, char *argv[])
       imlo_errors[index] = calculate_relative_error(get(vertex_distance_imlo, vertex), L);
       imloi_errors[index] = calculate_relative_error(get(vertex_distance_imloi, vertex), L);
       imllp_errors[index] = calculate_relative_error(get(vertex_distance_imllp, vertex), L);
+      imlqp_errors[index] = calculate_relative_error(get(vertex_distance_imlqp, vertex), L);
       imglp_errors[index] = calculate_relative_error(get(vertex_distance_imglp, vertex), L);
+      imgqp_errors[index] = calculate_relative_error(get(vertex_distance_imgqp, vertex), L);
       min_distance = std::min(min_distance, L);
       max_distance = std::max(max_distance, L);
     }
@@ -310,8 +359,12 @@ int main(int argc, char *argv[])
     double stddev_imloi_error = calculate_standard_deviation(imloi_errors);
     double mean_imllp_error = calculate_mean(imllp_errors);
     double stddev_imllp_error = calculate_standard_deviation(imllp_errors);
+    double mean_imlqp_error = calculate_mean(imlqp_errors);
+    double stddev_imlqp_error = calculate_standard_deviation(imlqp_errors);
     double mean_imglp_error = calculate_mean(imglp_errors);
     double stddev_imglp_error = calculate_standard_deviation(imglp_errors);
+    double mean_imgqp_error = calculate_mean(imgqp_errors);
+    double stddev_imgqp_error = calculate_standard_deviation(imgqp_errors);
 
     std::cout << "Direct Method Errors: Median = " << mean_direct_error
               << ", Std = " << stddev_direct_error << std::endl;
@@ -327,7 +380,11 @@ int main(int argc, char *argv[])
               << std::endl;
     std::cout << "IMLLP   Method Errors: Median = " << mean_imllp_error << ", Std = " << stddev_imllp_error
               << std::endl;
+    std::cout << "IMLQP   Method Errors: Median = " << mean_imlqp_error << ", Std = " << stddev_imlqp_error
+              << std::endl;
     std::cout << "IMGLP   Method Errors: Median = " << mean_imglp_error << ", Std = " << stddev_imglp_error
+              << std::endl;
+    std::cout << "IMGQP   Method Errors: Median = " << mean_imgqp_error << ", Std = " << stddev_imgqp_error
               << std::endl;
 
     std::cout << "Distances: Max = " << max_distance << ", min = " << min_distance << std::endl;
@@ -517,7 +574,9 @@ int main(int argc, char *argv[])
         vertex_distance_imlo,
         vertex_distance_imloi,
         vertex_distance_imllp,
+        vertex_distance_imlqp,
         vertex_distance_imglp,
+        vertex_distance_imgqp,
         vertex_distance_true] =
         std::tuple{mesh.add_property_map<VertexDescriptor, double>(
                            "v:distance_direct", std::numeric_limits<double>::infinity())
@@ -541,7 +600,13 @@ int main(int argc, char *argv[])
                     "v:distance_imllp", std::numeric_limits<double>::infinity())
                 .first,
             mesh.add_property_map<VertexDescriptor, double>(
+                    "v:distance_imlqp", std::numeric_limits<double>::infinity())
+                .first,
+            mesh.add_property_map<VertexDescriptor, double>(
                     "v:distance_imglp", std::numeric_limits<double>::infinity())
+                .first,
+            mesh.add_property_map<VertexDescriptor, double>(
+                    "v:distance_imgqp", std::numeric_limits<double>::infinity())
                 .first,
             mesh.add_property_map<VertexDescriptor, double>(
                     "v:distance_true", std::numeric_limits<double>::infinity())
@@ -551,36 +616,42 @@ int main(int argc, char *argv[])
           VertexDescriptor source_vertex = *vertices(mesh).first;
 
           try {
-           HeatMethodDirect heat_method_direct(mesh);
+            timer.start();           HeatMethodDirect heat_method_direct(mesh);timer.end("init heat_method_direct");
     heat_method_direct.add_source(source_vertex);
-    heat_method_direct.estimate_geodesic_distances(vertex_distance_direct);
+    timer.start();    heat_method_direct.estimate_geodesic_distances(vertex_distance_direct);timer.end("query heat_method_direct");
 
-    HeatMethodIDT heat_method_idt(mesh);
+    timer.start();    HeatMethodIDT heat_method_idt(mesh);timer.end("init heat_method_idt");
     heat_method_idt.add_source(source_vertex);
-    heat_method_idt.estimate_geodesic_distances(vertex_distance_idt);
+    timer.start();    heat_method_idt.estimate_geodesic_distances(vertex_distance_idt);timer.end("query heat_method_idt");
 
-    HeatMethodIMGC heat_method_imgc(mesh);
+    timer.start();    HeatMethodIMGC heat_method_imgc(mesh);timer.end("init heat_method_imgc");
     heat_method_imgc.add_source(source_vertex);
-    heat_method_imgc.estimate_geodesic_distances(vertex_distance_imgc);
+    timer.start();    heat_method_imgc.estimate_geodesic_distances(vertex_distance_imgc);timer.end("query heat_method_imgc");
     
-    HeatMethodIMLC heat_method_imlc(mesh);
+    timer.start();    HeatMethodIMLC heat_method_imlc(mesh);timer.end("init heat_method_imlc");
     heat_method_imlc.add_source(source_vertex);
-    heat_method_imlc.estimate_geodesic_distances(vertex_distance_imlc);
+    timer.start();    heat_method_imlc.estimate_geodesic_distances(vertex_distance_imlc);timer.end("query heat_method_imlc");
 
-    HeatMethodIMLO heat_method_imlo(mesh);
+    timer.start();    HeatMethodIMLO heat_method_imlo(mesh);timer.end("init heat_method_imlo");
     heat_method_imlo.add_source(source_vertex);
-    heat_method_imlo.estimate_geodesic_distances(vertex_distance_imlo);
+    timer.start();    heat_method_imlo.estimate_geodesic_distances(vertex_distance_imlo);timer.end("query heat_method_imlo");
 
-    HeatMethodIMLOI heat_method_imloi(mesh);
+    timer.start();    HeatMethodIMLOI heat_method_imloi(mesh);timer.end("init heat_method_imloi");
     heat_method_imloi.add_source(source_vertex);
-    heat_method_imloi.estimate_geodesic_distances(vertex_distance_imloi);
-    HeatMethodIMLLP heat_method_imllp(mesh);
+    timer.start();    heat_method_imloi.estimate_geodesic_distances(vertex_distance_imloi);timer.end("query heat_method_imloi");
+    timer.start();    HeatMethodIMLLP heat_method_imllp(mesh);timer.end("init heat_method_imllp");
     heat_method_imllp.add_source(source_vertex);
-    heat_method_imllp.estimate_geodesic_distances(vertex_distance_imllp);
+    timer.start();    heat_method_imllp.estimate_geodesic_distances(vertex_distance_imllp);timer.end("query heat_method_imllp");
+    timer.start();    HeatMethodIMLQP heat_method_imlqp(mesh);timer.end("init heat_method_imlqp");
+    heat_method_imlqp.add_source(source_vertex);
+    timer.start();    heat_method_imlqp.estimate_geodesic_distances(vertex_distance_imlqp);timer.end("query heat_method_imlqp");
 
-    HeatMethodIMGLP heat_method_imglp(mesh);
+    timer.start();    HeatMethodIMGLP heat_method_imglp(mesh);timer.end("init heat_method_imglp");
     heat_method_imglp.add_source(source_vertex);
-    heat_method_imglp.estimate_geodesic_distances(vertex_distance_imglp);
+    timer.start();    heat_method_imglp.estimate_geodesic_distances(vertex_distance_imglp);timer.end("query heat_method_imglp");
+    timer.start();    HeatMethodIMGQP heat_method_imgqp(mesh);timer.end("init heat_method_imgqp");
+    heat_method_imgqp.add_source(source_vertex);
+    timer.start();    heat_method_imgqp.estimate_geodesic_distances(vertex_distance_imgqp);timer.end("query heat_method_imgqp");
 
     // gound truth
     bool has_degenerate_faces = CGAL::Heat_method_3::internal::has_degenerate_faces(mesh, Traits());
@@ -599,7 +670,9 @@ int main(int argc, char *argv[])
     std::vector<double> imlo_errors(vertices_cnt);
     std::vector<double> imloi_errors(vertices_cnt);
     std::vector<double> imllp_errors(vertices_cnt);
+    std::vector<double> imlqp_errors(vertices_cnt);
     std::vector<double> imglp_errors(vertices_cnt);
+    std::vector<double> imgqp_errors(vertices_cnt);
     
             // Compute min and max distance
             double min_distance = std::numeric_limits<double>::max();
@@ -614,7 +687,9 @@ int main(int argc, char *argv[])
       imlo_errors[index] = calculate_relative_error(get(vertex_distance_imlo, vertex), L);
       imloi_errors[index] = calculate_relative_error(get(vertex_distance_imloi, vertex), L);
       imllp_errors[index] = calculate_relative_error(get(vertex_distance_imllp, vertex), L);
+      imlqp_errors[index] = calculate_relative_error(get(vertex_distance_imlqp, vertex), L);
       imglp_errors[index] = calculate_relative_error(get(vertex_distance_imglp, vertex), L);
+      imgqp_errors[index] = calculate_relative_error(get(vertex_distance_imgqp, vertex), L);
       min_distance = std::min(min_distance, L);
       max_distance = std::max(max_distance, L);
             }
@@ -637,8 +712,12 @@ int main(int argc, char *argv[])
     double stddev_imloi_error = calculate_standard_deviation(imloi_errors);
     double mean_imllp_error = calculate_mean(imllp_errors);
     double stddev_imllp_error = calculate_standard_deviation(imllp_errors);
+    double mean_imlqp_error = calculate_mean(imlqp_errors);
+    double stddev_imlqp_error = calculate_standard_deviation(imlqp_errors);
     double mean_imglp_error = calculate_mean(imglp_errors);
     double stddev_imglp_error = calculate_standard_deviation(imglp_errors);
+    double mean_imgqp_error = calculate_mean(imgqp_errors);
+    double stddev_imgqp_error = calculate_standard_deviation(imgqp_errors);
 
     std::cout << "Direct Method Errors: Median = " << mean_direct_error
               << ", Std = " << stddev_direct_error << std::endl;
@@ -654,7 +733,11 @@ int main(int argc, char *argv[])
               << std::endl;
     std::cout << "IMLLP   Method Errors: Median = " << mean_imllp_error << ", Std = " << stddev_imllp_error
               << std::endl;
+    std::cout << "IMLQP   Method Errors: Median = " << mean_imlqp_error << ", Std = " << stddev_imlqp_error
+              << std::endl;
     std::cout << "IMGLP   Method Errors: Median = " << mean_imglp_error << ", Std = " << stddev_imglp_error
+              << std::endl;
+    std::cout << "IMGQP   Method Errors: Median = " << mean_imgqp_error << ", Std = " << stddev_imgqp_error
               << std::endl;
 
     std::cout << "Distances: Max = " << max_distance << ", min = " << min_distance << std::endl;

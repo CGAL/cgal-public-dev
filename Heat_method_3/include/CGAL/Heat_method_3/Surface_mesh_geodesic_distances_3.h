@@ -338,13 +338,14 @@ private:
 
       Vector_3 cross = cross_product(v_ij, -v_ki);
       double N_cross = (CGAL::sqrt(to_double(scalar_product(cross, cross))));
-      if (is_zero(N_cross)) {
+      double area_face = MollificationScheme::face_area(
+          tm, vpm, he_length_map, current, neighbor_one, neighbor_two, traits);
+      if (is_zero(N_cross) || !std::isfinite(N_cross) || !std::isfinite(area_face)) {
         m_X[face_i] = Vector_3(0.0, 0.0, 0.0);
         continue;
       }
       Vector_3 unit_cross = scale(cross, 1./N_cross);
-      double area_face = MollificationScheme::face_area(
-          tm, vpm, he_length_map, current, neighbor_one, neighbor_two, traits);
+
       double u_i = CGAL::abs(m_solved_u(i));
       double u_j = CGAL::abs(m_solved_u(j));
       double u_k = CGAL::abs(m_solved_u(k));
@@ -512,6 +513,36 @@ public:
   }
 
 private:
+ class Timer {
+  public:
+   Timer() : start_time_point_(std::chrono::high_resolution_clock::now())
+   {
+   }
+
+   void start()
+   {
+     start_time_point_ = std::chrono::high_resolution_clock::now();
+   }
+
+   void end(const char *str)
+   {
+     end_time_point_ = std::chrono::high_resolution_clock::now();
+     std::cout
+         << str << " Elpased time = "
+         << std::chrono::duration<double, std::milli>(end_time_point_ - start_time_point_).count()
+         << " msec \n";
+   }
+
+   void reset()
+   {
+     start();
+   }
+
+  private:
+   std::chrono::high_resolution_clock::time_point start_time_point_;
+   std::chrono::high_resolution_clock::time_point end_time_point_;
+ };
+
   void
   build()
   {
@@ -525,7 +556,9 @@ private:
     m_source_change_flag = false;
 
     // mollify
+    Timer timer;
     he_length_map = MollificationScheme::apply(tm, vpm);
+    timer.end(typeid(MollificationScheme).name());
 
     Index i = 0;
     for(vertex_descriptor vd : vertices(tm)){
