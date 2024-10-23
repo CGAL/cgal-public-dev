@@ -107,6 +107,11 @@ protected:
   HalfedgeLengthMap he_length_map;
 
  public:
+  HalfedgeLengthMap &lengths()
+  {
+    return he_length_map;
+  };
+
   /*!
     \brief Constructor
   */

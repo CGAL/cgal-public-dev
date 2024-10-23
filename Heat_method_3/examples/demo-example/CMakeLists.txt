@@ -91,7 +91,7 @@ target_include_directories(
                          $<BUILD_INTERFACE:${demo_INCLUDE_DIR}>)                       
 add_executable(idt ${CMAKE_CURRENT_SOURCE_DIR}/idt.cpp ${demo_HEADERS})
 add_to_cached_list( CGAL_EXECUTABLE_TARGETS fair )
-target_link_libraries(idt PRIVATE CGAL::CGAL CGAL::Eigen3_support)
+target_link_libraries(idt PRIVATE CGAL::CGAL CGAL::Eigen3_support osqp-cpp)
 
 target_include_directories(
   idt PUBLIC $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
