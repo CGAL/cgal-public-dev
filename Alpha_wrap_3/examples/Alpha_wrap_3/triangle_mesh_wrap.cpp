@@ -1,3 +1,5 @@
+#define CGAL_AW3_PROFILING
+
 #include "output_helper.h"
 
 #include <CGAL/Exact_predicates_inexact_constructions_kernel.h>

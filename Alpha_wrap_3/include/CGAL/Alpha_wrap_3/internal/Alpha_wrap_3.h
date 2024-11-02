@@ -184,6 +184,15 @@ protected:
 
   Alpha_PQ m_queue;
 
+#ifdef CGAL_AW3_PROFILING
+  mutable unsigned int m_R1_calls = 0;
+  mutable unsigned int m_R1_calls_with_infinite_cell = 0;
+  mutable unsigned int m_R1_actual_calls = 0;
+  mutable unsigned int m_R2_calls = 0;
+  mutable CGAL::Real_timer m_R1_timer;
+  mutable CGAL::Real_timer m_R2_timer;
+#endif
+
 public:
   Alpha_wrapper_3()
 #ifdef CGAL_AW3_USE_SORTED_PRIORITY_QUEUE
@@ -206,6 +215,20 @@ public:
   {
     static_assert(std::is_floating_point<FT>::value);
   }
+
+#ifdef CGAL_AW3_PROFILING
+  ~Alpha_wrapper_3()
+  {
+    std::cout << "R1 calls: " << m_R1_calls << std::endl;
+    std::cout << "R1 calls w/ inf cells " << m_R1_calls_with_infinite_cell << std::endl;
+    std::cout << "R1 actual calls: " << m_R1_actual_calls << std::endl;
+    std::cout << "R2 calls: " << m_R2_calls << std::endl;
+    std::cout << "R1 time: " << m_R1_timer.time() << std::endl;
+    std::cout << "R2 time: " << m_R2_timer.time() << std::endl;
+    std::cout << "average time per R1 call: " << m_R1_timer.time() / m_R1_calls << std::endl;
+    std::cout << "average time per R2 call: " << m_R2_timer.time() / m_R2_calls << std::endl;
+  }
+#endif
 
   void clear()
   {
@@ -931,6 +954,14 @@ private:
     typename Geom_traits::Construct_translated_point_3 translate = geom_traits().construct_translated_point_3_object();
     typename Geom_traits::Construct_scaled_vector_3 scale = geom_traits().construct_scaled_vector_3_object();
 
+#ifdef CGAL_AW3_PROFILING
+    ++m_R1_calls;
+    if(m_tr.is_infinite(ch))
+      ++m_R1_calls_with_infinite_cell;
+
+    m_R1_timer.start();
+#endif
+
     const Point_3& neighbor_cc = circumcenter(neighbor);
     const Ball_3 neighbor_cc_offset_ball = ball(neighbor_cc, m_sq_offset);
     const bool is_neighbor_cc_in_offset = m_oracle.do_intersect(neighbor_cc_offset_ball);
@@ -966,6 +997,10 @@ private:
 
     if(is_neighbor_cc_in_offset)
     {
+#ifdef CGAL_AW3_PROFILING
+      ++m_R1_actual_calls;
+#endif
+
       const Point_3& ch_cc = circumcenter(ch);
 
       // If the voronoi edge intersects the offset, the steiner point is the first intersection
@@ -974,9 +1009,18 @@ private:
 #ifdef CGAL_AW3_DEBUG_STEINER_COMPUTATION
         std::cout << "Steiner found through first_intersection(): " << steiner_point << std::endl;
 #endif
+#ifdef CGAL_AW3_PROFILING
+      m_R1_timer.stop();
+#endif
         return Steiner_status::RULE_1;
       }
     }
+
+#ifdef CGAL_AW3_PROFILING
+    m_R1_timer.stop();
+    ++m_R2_calls;
+    m_R2_timer.start();
+#endif
 
     Tetrahedron_with_outside_info<Geom_traits> tet(neighbor, geom_traits());
     if(m_oracle.do_intersect(tet))
@@ -1000,8 +1044,16 @@ private:
       std::cout << "Steiner: " << steiner_point << std::endl;
 #endif
 
+#ifdef CGAL_AW3_PROFILING
+    m_R2_timer.stop();
+#endif
+
       return Steiner_status::RULE_2;
     }
+
+#ifdef CGAL_AW3_PROFILING
+    m_R2_timer.stop();
+#endif
 
 #ifdef CGAL_AW3_DEBUG_STEINER_COMPUTATION
     std::cout << "No Steiner point" << std::endl;
