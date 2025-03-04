@@ -1,13 +1,13 @@
 #include <CGAL/Simple_cartesian.h>
 #include <CGAL/point_generators_3.h>
-#include <CGAL/Orthogonal_k_neighbor_search.h>
+//#include <CGAL/Orthogonal_k_neighbor_search.h>
 #include <CGAL/Search_traits_3.h>
+//#include <CGAL/Orthogonal_incremental_neighbor_search.h>
+
  
 #include <tbb/blocked_range.h>
 #include <tbb/parallel_for.h>
  
-
-
 
 #include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
 #include <CGAL/Surface_mesh.h>
@@ -18,6 +18,10 @@
 #include <iostream>
 #include <string>
 #include <vector>
+
+#include <CGAL/Kd_tree.h>
+#include <CGAL/algorithm.h>
+#include <CGAL/Fuzzy_sphere.h>
  
 typedef CGAL::Exact_predicates_inexact_constructions_kernel   K;
 typedef K::Point_3                                            Point;
@@ -29,12 +33,21 @@ typedef CGAL::Surface_mesh<Point>                             Mesh;
 typedef boost::graph_traits<Mesh>::vertex_descriptor          vertex_descriptor;
 typedef boost::graph_traits<Mesh>::face_descriptor            face_descriptor;
 
-using Traits = CGAL::Search_traits_3<K>;
-using Neighbor_search = CGAL::Orthogonal_k_neighbor_search<Traits>;
-using Tree = Neighbor_search::Tree;
-using Point_with_distance = Neighbor_search::Point_with_transformed_distance;
+typedef CGAL::Search_traits_3<K> Traits;
+typedef CGAL::Fuzzy_sphere<Traits> Fuzzy_circle;
+typedef CGAL::Kd_tree<Traits> Tree;
+
+//typedef CGAL::Search_traits_3<K> TreeTraits;
+//typedef CGAL::Orthogonal_incremental_neighbor_search<TreeTraits> NN_incremental_search;
+//typedef NN_incremental_search::iterator NN_iterator;
+//typedef NN_incremental_search::Tree Tree;
+
+//using Traits = CGAL::Search_traits_3<K>;
+//using Neighbor_search = CGAL::Orthogonal_k_neighbor_search<Traits>;
+//using Tree = Neighbor_search::Tree;
+//using Point_with_distance = Neighbor_search::Point_with_transformed_distance;
  
-using Generator = CGAL::Random_points_in_sphere_3<Point>;
+
 
 namespace PMP = CGAL::Polygon_mesh_processing;
  
@@ -52,9 +65,9 @@ int main(int argc, char* argv[])
    
   const int points_per_face = (argc > 2) ? std::stoi(argv[2]) : 30;
    
-  std::vector<Point> pointz;
+  std::vector<Point> points;
   PMP::sample_triangle_mesh(mesh,
-                              std::back_inserter(pointz),
+                              std::back_inserter(points),
                               CGAL::parameters::number_of_points_per_area_unit(50000));
    
    
@@ -62,28 +75,55 @@ int main(int argc, char* argv[])
   PMP::sample_triangle_mesh(mesh,
                               point_set.point_back_inserter());
    
-  std::cout << pointz.size() << std::endl;
+  std::cout << points.size() << std::endl;
     
   std::cout << mesh.number_of_faces() << std::endl;
   std::ofstream out("initial_sample.xyz");
   out << std::setprecision(17);
-  std::copy(pointz.begin(), pointz.end(), std::ostream_iterator<Point>(out, "\n"));
+  std::copy(points.begin(), points.end(), std::ostream_iterator<Point>(out, "\n"));
   out.close();
     
     
-  const unsigned int N = 1000;
+  //const unsigned int N = 1000;
   const unsigned int k = 6;
  
   // Generate N points in a sphere
-  std::vector<Point> points;
-  points.reserve (N);
-  Generator generator;
-  for (unsigned int i = 0; i < N; ++ i)
-    points.push_back (*(generator++));
+  //std::vector<Point> points;
+  //points.reserve (N);
+  //Generator generator;
+  //for (unsigned int i = 0; i < N; ++ i)
+   // points.push_back (*(generator++));
  
   // Build tree in parallel
   Tree tree(points.begin(), points.end());
   tree.build<CGAL::Parallel_tag>();
+    
+  Point query = points.front();
+  Fuzzy_circle default_range(query, .02);
+    
+  boost::optional<Point> any = tree.search_any_point(default_range);
+    if(any)
+       std::cout << *any << " is in the query circle\n";
+     else
+       std::cout << "Empty query circle\n";
+    
+     std::vector<Point> result;
+     tree.search(std::back_inserter(result), default_range);
+    
+     std::cout << "\nPoints in circle with center " << query << " and radius 0.02" << std::endl;
+    
+ // std::list<Point>::iterator it;
+  for (size_t i = 0; i < result.size(); ++i) {
+            std::cout << result[i] << "\n ";
+        }
+  
+    
+  std::ofstream out1("ball_o_points.xyz");
+  out1 << std::setprecision(17);
+  std::copy(result.begin(), result.end(), std::ostream_iterator<Point>(out1, "\n"));
+  out1.close();
+    
+/*
  
   // Query tree in parallel
   std::vector<std::vector<Point> > neighbors (points.size());
@@ -104,6 +144,6 @@ int main(int argc, char* argv[])
                            neighbors[s].push_back (pwd.first);
                        }
                      });
- 
+ */
   return 0;
 }
