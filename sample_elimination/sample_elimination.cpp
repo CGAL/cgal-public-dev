@@ -49,7 +49,7 @@ struct Weighted {
 
 struct CompareWeighted {
     bool operator()(const Weighted& a, const Weighted& b) {
-        return a.weight > b.weight; // Min-heap based on age
+        return a.weight < b.weight; // Max-heap based on age
     }
 };
 
@@ -144,6 +144,13 @@ int main(int argc, char* argv[])
       neighbors.clear();
       
   }
+    
+ Weighted first = weightedHeap.top();
+ weightedHeap.pop();
+ Weighted second = weightedHeap.top();
+ std::cout << "\nHeap check: " << first.weight << " > " << second.weight << "?" << std::endl;
+    
+ 
     
 /*
  
