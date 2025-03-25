@@ -39,6 +39,9 @@ typedef CGAL::Search_traits_3<K> Traits;
 typedef CGAL::Fuzzy_sphere<Traits> Fuzzy_circle;
 typedef CGAL::Kd_tree<Traits> Tree;
 
+
+namespace PMP = CGAL::Polygon_mesh_processing;
+
 struct Weighted {
     Point point;
     double weight;
@@ -67,7 +70,6 @@ double weight (Point p, std::vector<Point> neighbors)
 }
 
 
-namespace PMP = CGAL::Polygon_mesh_processing;
  
 int main(int argc, char* argv[])
 {
@@ -93,9 +95,9 @@ int main(int argc, char* argv[])
   //PMP::sample_triangle_mesh(mesh,
                            //   point_set.point_back_inserter());
    
-  std::cout << points.size() << std::endl;
+  std::cout << "Initial sample size: " << points.size() << std::endl;
     
-  std::cout << mesh.number_of_faces() << std::endl;
+  std::cout << "Number of faces in my mesh: " << mesh.number_of_faces() << std::endl;
   std::ofstream out("initial_sample.xyz");
   out << std::setprecision(17);
   std::copy(points.begin(), points.end(), std::ostream_iterator<Point>(out, "\n"));
@@ -111,18 +113,18 @@ int main(int argc, char* argv[])
   Point query = points.front();
   Fuzzy_circle default_range(query, .02);
     
-  std::optional<Point> any = tree.search_any_point(default_range);
-    if(any)
-       std::cout << *any << " is in the query circle\n";
-     else
-       std::cout << "Empty query circle\n";
+  //std::optional<Point> any = tree.search_any_point(default_range);
+  //  if(any)
+  //     std::cout << *any << " is in the query circle\n";
+   //  else
+   //    std::cout << "Empty query circle\n";
     
-     std::vector<Point> result;
-     tree.search(std::back_inserter(result), default_range);
+  std::vector<Point> result;
+  tree.search(std::back_inserter(result), default_range);
     
-     std::cout << "\nPoints in circle with center " << query << " and radius 0.02" << std::endl;
+  std::cout << "\nPoints in circle with center: " << query << " and radius: 0.02" << std::endl;
     
- // std::list<Point>::iterator it;
+ 
   for (size_t i = 0; i < result.size(); ++i) {
             std::cout << result[i] << "\n ";
         }
