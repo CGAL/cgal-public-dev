@@ -15,6 +15,10 @@
 #include <iostream>
 #include <vector>
 
+// #include <CGAL/IO/read_polygon_mesh.h>
+// #include <CGAL/draw_surface_mesh.h>
+
+
 using Kernel = CGAL::Simple_cartesian<double>;
 using FT = typename Kernel::FT;
 using Point = typename Kernel::Point_3;
@@ -31,22 +35,95 @@ using Polygon_range = std::vector<std::vector<std::size_t> >;
 using Mesh = CGAL::Surface_mesh<Point>;
 
 // "Devil" - https://www-sop.inria.fr/galaad/surface/
-auto devil_value = [](const Point& point)
+// auto devil_value = [](const Point& point)
+// {
+//   const FT x = point.x(), y = point.y(), z = point.z();
+//   return x*x*x*x + 2*x*x*z*z - 0.36*x*x - y*y*y*y + 0.25*y*y + z*z*z*z;
+// };
+
+// auto devil_gradient = [](const Point& point)
+// {
+//   const FT x = point.x(), y = point.y(), z = point.z();
+
+//   const FT gx = 4*x*x*x + 4*x*z*z - 0.72*x;
+//   const FT gy = -4*y*y*y + 0.5*y;
+//   const FT gz = 4*x*x*z + 4*z*z*z;
+//   Vector g(gx, gy, gz);
+//   return g / std::sqrt(gx*gx + gy*gy + gz*gz);
+// };
+
+// auto S22_value = [](const Point& point)
+// {
+//   const FT x = point.x(), y = point.y(), z = point.z();
+//   return 4*x*x*z + y*y*y + 4*y*x;
+// };
+
+// auto S22_gradient = [](const Point& point)
+// {
+//   const FT x = point.x(), y = point.y(), z = point.z();
+  
+//   const FT gx = 8*x*z + 4*y;
+//   const FT gy = 3*y*y + 4*x;
+//   const FT gz = 4*x*x;
+//   Vector g(gx, gy, gz);
+//   return g / std::sqrt(gx*gx + gy*gy + gz*gz);
+// };
+
+// auto Kusner_Schmitt_value = [](const Point& point)
+// {
+//   const FT x = point.x(), y = point.y(), z = point.z();
+//   return x*x*y*y*z*z
+//          + 3*x*x*y*y + 3*x*x*z*z + 9*x*x
+//          + 3*y*y*z*z + 9*y*y + 9*z*z
+//          - 32*x*y*z - 5.0;
+// };
+
+// auto Kusner_Schmitt_gradient = [](const Point& p) 
+// {
+//   const FT x = p.x(), y = p.y(), z = p.z();
+
+//   const FT gx = 2*x*y*y*z*z + 6*x*y*y + 6*x*z*z + 18*x - 32*y*z;
+//   const FT gy = 2*x*x*y*z*z + 6*x*x*y + 6*y*z*z + 18*y - 32*x*z;
+//   const FT gz = 2*x*x*y*y*z + 6*x*x*z + 6*y*y*z + 18*z - 32*x*y;
+
+//   Vector g(gx, gy, gz);
+//   return g / std::sqrt(gx*gx + gy*gy + gz*gz);
+// };
+
+auto Shallowtail_value = [](const Point& p) 
 {
-  const FT x = point.x(), y = point.y(), z = point.z();
-  return x*x*x*x + 2*x*x*z*z - 0.36*x*x - y*y*y*y + 0.25*y*y + z*z*z*z;
+  const FT x = p.x(), y = p.y(), z = p.z();
+  return -4 * z*z*z * y*y
+       - 27 * y*y*y*y
+       + 16 * x * z*z*z*z
+       - 128 * x*x * z*z
+       + 144 * x * y*y * z
+       + 256 * x*x*x;
 };
 
-auto devil_gradient = [](const Point& point)
-{
-  const FT x = point.x(), y = point.y(), z = point.z();
 
-  const FT gx = 4*x*x*x + 4*x*z*z - 0.72*x;
-  const FT gy = -4*y*y*y + 0.5*y;
-  const FT gz = 4*x*x*z + 4*z*z*z;
+auto Shallowtail_gradient = [](const Point& p) 
+{
+  const FT x = p.x(), y = p.y(), z = p.z();
+
+  const FT gx = 16 * std::pow(z, 4)
+        - 256 * x * z * z
+        + 144 * y * y * z
+        + 768 * x * x;
+
+  const FT gy = -8 * z * z * z * y
+        - 108 * y * y * y
+        + 288 * x * y * z;
+
+  const FT gz = -12 * z * z * y * y
+        + 64 * x * z * z * z
+        - 256 * x * x * z
+        + 144 * x * y * y;
   Vector g(gx, gy, gz);
   return g / std::sqrt(gx*gx + gy*gy + gz*gz);
 };
+
+
 
 int main(int argc, char** argv)
 {
@@ -63,9 +140,16 @@ int main(int argc, char** argv)
   std::cout << "Cell #: " << grid.xdim() << ", " << grid.ydim() << ", " << grid.zdim() << std::endl;
 
   // fill up values & gradients
-  Values values { devil_value, grid };
-  Gradients gradients { devil_gradient, grid };
+  // Values values { devil_value, grid };
+  // Values values { S22_value, grid };
+  // Values values { Kusner_Schmitt_value, grid };
+  Values values { Shallowtail_value, grid };
 
+  // Gradients gradients { devil_gradient, grid };
+  // Gradients gradients { S22_gradient, grid };
+  // Gradients gradients { Kusner_Schmitt_gradient, grid };
+  Gradients gradients { Shallowtail_gradient, grid };
+  
   // Below is equivalent to:
   //   Domain domain { grid, values, gradients };
   Domain domain = CGAL::Isosurfacing::create_dual_contouring_domain_3(grid, values, gradients);
@@ -94,6 +178,10 @@ int main(int argc, char** argv)
   CGAL::IO::write_polygon_mesh("dual_contouring.off", mesh, CGAL::parameters::stream_precision(17));
 
   std::cout << "Done" << std::endl;
+
+  // CGAL::Surface_mesh sm;
+  // CGAL::IO::read_polygon_mesh(“dual_contouring.off”, sm);
+  // CGAL::draw(sm);
 
   return EXIT_SUCCESS;
 }
