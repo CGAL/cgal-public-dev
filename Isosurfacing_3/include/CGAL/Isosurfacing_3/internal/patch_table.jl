@@ -1,4 +1,5 @@
-# Taoli Shen
+# Taoli Shen 
+# generate the polygon_cases lookup table from triangle_cases
 function triangle_cases_to_polygon_cases(triangle_cases::Vector{Int}, output_filename::String)
     N_CASE = 256
     N_COL = 16
