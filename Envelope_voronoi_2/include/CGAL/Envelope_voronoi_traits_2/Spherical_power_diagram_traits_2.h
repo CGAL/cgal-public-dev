@@ -126,7 +126,7 @@ protected:
 
     // planes are parallel, return a parallel plane through the origin.
     Point_3 o = k.construct_point_3_object()(ORIGIN);
-    Vector_3 orth_v = k.construct_orthogonal_vector_3_object()(s1);
+    Vector_3 orth_v = k.construct_orthogonal_vector_3_object()(static_cast<const Plane_3&>(s1));
     return k.construct_plane_3_object()(o, orth_v);
   }
 
@@ -311,8 +311,8 @@ public:
       const Kernel& kernel = *m_traits;
 
       auto ortho = kernel.construct_orthogonal_vector_3_object();
-      Vector_3 v1 = ortho(h1);
-      Vector_3 v2 = ortho(h2);
+      Vector_3 v1 = ortho(static_cast<const Plane_3&>(h1));
+      Vector_3 v2 = ortho(static_cast<const Plane_3&>(h2));
 
       auto oppo = kernel.construct_opposite_vector_3_object();
       v1 = oppo(v1);
