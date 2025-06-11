@@ -79,6 +79,7 @@ namespace Polygon_mesh_processing {
 namespace Autorefinement {
 
 /** \ingroup PMP_corefinement_grp
+ * \cgalModels{PMPAutorefinementVisitor}
  *  %Default visitor model of `PMPAutorefinementVisitor`.
  *  All of its functions have an empty body. This class can be used as a
  *  base class if only some of the functions of the concept require to be
@@ -1495,7 +1496,7 @@ void autorefine_triangle_soup(PointRange& soup_points,
   std::string mode = "parallel";
 #endif
 
-// It might be possible to optimise the hardcoded value below
+// It might be possible to optimize the hardcoded value below
 // but the less triangles the faster will anyway be the operation.
 // So it's probably not critical.
 #ifdef CGAL_LINKED_WITH_TBB
