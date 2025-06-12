@@ -16,9 +16,8 @@
 
 /**
  * \ingroup PkgSurfaceMeshShortestPathRef
- * \file CGAL/Surface_mesh_shortest_path.h
- * Convenience header file only including `CGAL/Surface_mesh_shortest_path/Surface_mesh_shortest_path.h`
- * and `CGAL/Surface_mesh_shortest_path/Surface_mesh_shortest_path_traits.h`.
+ * \file CGAL/Surface_mesh_approximate_shortest_path.h
+ * Convenience header file including headers of the package.
  */
 
 #include <CGAL/Surface_mesh_approximate_shortest_path/Surface_mesh_approximate_shortest_path.h>
