@@ -4,6 +4,7 @@
 #include <CGAL/license/Isosurfacing_3.h>
 
 #include <CGAL/Isosurfacing_3/internal/tables.h>
+#include <CGAL/Isosurfacing_3/internal/marching_cubes_functors.h>
 
 #include <CGAL/assertions.h>
 #include <CGAL/Container_helper.h>
@@ -18,6 +19,10 @@
 #include <bitset>
 #include <unordered_map>
 
+#include <CGAL/Eigen_matrix.h>
+#include <CGAL/Eigen_vector.h>
+#include <Eigen/SVD>
+
 namespace CGAL {
 namespace Isosurfacing {
 namespace internal {
@@ -27,8 +32,8 @@ template <typename Domain>
 bool patch_position_QEM(
     const Domain& domain,
     const typename Domain::cell_descriptor& c,
-    const std::vector<Point_3>& patch_points,
-    const std::vector<Vector_3>& patch_normals,
+    const std::vector<typename Domain::Geom_traits::Point_3>& patch_points,
+    const std::vector<typename Domain::Geom_traits::Vector_3>& patch_normals,
     const bool constrain_to_cell,
     typename Domain::Geom_traits::Point_3& p) 
 {
@@ -70,8 +75,7 @@ bool patch_position_QEM(
     }
 
     std::size_t en = patch_points.size();
-    if (en == 0)
-        return false;
+    if (en < 3) return false; // at least 3 points needed for a plane
 
     for(const auto& ep : patch_points)
     {
@@ -104,7 +108,7 @@ bool patch_position_QEM(
         rhs += d_k * n_k;
     }
 
-    Eigen::JacobiSVD<Eigen::Matrix<FT, 3, 3>> svd(A, Eigen::ComputeThinU | Eigen::ComputeThinV);
+    Eigen::JacobiSVD<Eigen::Matrix<FT, 3, 3>> svd(A, Eigen::ComputeFullU | Eigen::ComputeFullV);
     svd.setThreshold(1e-3);
 
     Eigen::Matrix<FT, 3, 1> x_hat;
@@ -128,18 +132,17 @@ bool patch_position_QEM(
 
 // generate quads for dual vertices in DMC
 template <typename EdgeDescriptor, 
-          typename Point_3, 
           typename PolygonRange>
 void generate_quad_dmc(
     const EdgeDescriptor& e,
-    const std::unordered_map<EdgeDescriptor, std::vector<Point_3>>& edge_to_dual_vertices,
+    const std::unordered_map<EdgeDescriptor, std::vector<std::size_t>>& edge_to_dual_vertices,
     PolygonRange& polygons)
 {
     auto it = edge_to_dual_vertices.find(e);
     if (it == edge_to_dual_vertices.end())
         return; 
 
-    const std::vector<Point_3>& dual_vertices = it->second;
+    const std::vector<std::size_t>& dual_vertices = it->second;
     if (dual_vertices.size()< 3)
         return; 
 
@@ -150,11 +153,10 @@ void generate_quad_dmc(
 
 // dual marching cube
 template <typename Domain, 
-          typename PointRange, 
           typename PolygonRange>
 void dual_marching_cubes(const Domain& domain,
                          const typename Domain::Geom_traits::FT isovalue,
-                        //  PointRange& points,
+                         std::vector<typename Domain::Geom_traits::Point_3>& points,
                          PolygonRange& polygons,
                          bool constrain_to_cell)
 {
@@ -196,7 +198,8 @@ void dual_marching_cubes(const Domain& domain,
     domain.for_each_edge(edge_positioner);
 
     // compute the dual vertices for each polygon patch and output a edge to dual vertex map for the quad generation later
-    std::unordered_map<edge_descriptor, std::vector<Point_3>> edge_to_dual_vertices;
+    std::unordered_map<edge_descriptor, std::vector<size_t>> edge_to_dual_vertices;
+    std::unordered_map<Point_3, std::size_t> point_to_index; // to avoid duplicates
     auto cell_patch_positioner = [&](const cell_descriptor& c)
     {
         constexpr std::size_t vpc = Domain::VERTICES_PER_CELL;
@@ -208,7 +211,7 @@ void dual_marching_cubes(const Domain& domain,
 
         const int* row = &Cube_table::polygon_cases[i_case * 16];
         int k = 0;
-        std::vector<Point_3> patch_dual_vertices;
+        std::vector<std::size_t> patch_dual_vertices_idx;
         std::vector<std::vector<int>> all_patch;
 
         // loop over edges in the lookup table
@@ -217,7 +220,7 @@ void dual_marching_cubes(const Domain& domain,
             std::vector<int> current_patch_edge_local_idx;
             while (row[k] != -2 && row[k] != -1)
                 current_patch_edge_local_idx.push_back(row[k++]); // collect local edge indices in one patch
-            all_patch.push_back(current_patch_edge_local_idx);
+            
 
             // collect intersections and gradients for this patch
             std::vector<Point_3> patch_points;
@@ -236,28 +239,44 @@ void dual_marching_cubes(const Domain& domain,
             // compute the dual vertex for this patch
             if (patch_points.size() >= 3) {
                 Point_3 dual_vertex;
-                bool success = patch_position_QEM(domain, c, patch_points, patch_grads, dual_vertex, constrain_to_cell);
+                bool success = patch_position_QEM(domain, c, patch_points, patch_grads, constrain_to_cell, dual_vertex);
                 if(success)
-                    patch_dual_vertices.push_back(dual_vertex);
+                {
+                    std::size_t dual_vertex_idx;
+                    auto u = point_to_index.find(dual_vertex);
+                    if (u == point_to_index.end()) 
+                    {
+                        dual_vertex_idx = points.size();
+                        points.push_back(dual_vertex);
+                        point_to_index[dual_vertex] = dual_vertex_idx;
+                    } 
+                    else  dual_vertex_idx = u->second;
+
+                    patch_dual_vertices_idx.push_back(dual_vertex_idx); // collect a dual vertex 
+                    all_patch.push_back(current_patch_edge_local_idx); // collect a patch
+                }
             }
 
             if (row[k] == -2) ++k;
         }
 
+        CGAL_assertion(patch_dual_vertices_idx.size() == all_patch.size());
+
         // map edge to dual vertices
         // the ordering of patch_dual_vertices is consistent with all_patch
-        int patch_size = patch_dual_vertices.size();
+        int patch_size = patch_dual_vertices_idx.size();
         for (int patch_idx = 0; patch_idx < patch_size; patch_idx++)
         {
             // loop over all edges in this patch
             for (int local_edge_idx : all_patch[patch_idx]) 
             {
                 auto global_edge = cell_edges[local_edge_idx];
-                edge_to_dual_vertices[global_edge].push_back(patch_dual_vertices[patch_idx]);
+                edge_to_dual_vertices[global_edge].push_back(patch_dual_vertices_idx[patch_idx]);
             }
         }
     };
 
+    
     domain.for_each_cell(cell_patch_positioner);
 
     // generate quads
@@ -273,3 +292,5 @@ void dual_marching_cubes(const Domain& domain,
 } // namespace internal
 } // namespace Isosurfacing
 } // namespace CGAL
+
+#endif

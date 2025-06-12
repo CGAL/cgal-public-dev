@@ -4,6 +4,8 @@
 cmake_minimum_required(VERSION 3.1...3.23)
 project( Isosurfacing_3_Examples )
 
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../../include)
+
 find_package(CGAL REQUIRED COMPONENTS ImageIO)
 
 find_package(Eigen3 3.1.0 QUIET) #(3.1.0 or greater)
@@ -31,6 +33,7 @@ if(TARGET CGAL::Eigen3_support)
   create_single_source_cgal_program("contouring_implicit_data.cpp")
   create_single_source_cgal_program("contouring_mesh_offset.cpp")
   create_single_source_cgal_program("contouring_octree.cpp")
+  create_single_source_cgal_program("dual_marching_cubes.cpp")
 
   target_link_libraries(dual_contouring PRIVATE CGAL::Eigen3_support)
   target_link_libraries(contouring_discrete_data PRIVATE CGAL::Eigen3_support)
@@ -38,6 +41,7 @@ if(TARGET CGAL::Eigen3_support)
   target_link_libraries(contouring_implicit_data PRIVATE CGAL::Eigen3_support)
   target_link_libraries(contouring_mesh_offset PRIVATE CGAL::Eigen3_support)
   target_link_libraries(contouring_octree PRIVATE CGAL::Eigen3_support)
+  target_link_libraries(dual_marching_cubes PRIVATE CGAL::Eigen3_support)
 
   if(TARGET CGAL::TBB_support)
     target_link_libraries(dual_contouring PRIVATE CGAL::TBB_support)
@@ -46,6 +50,7 @@ if(TARGET CGAL::Eigen3_support)
     target_link_libraries(contouring_implicit_data PRIVATE CGAL::TBB_support)
     target_link_libraries(contouring_mesh_offset PRIVATE CGAL::TBB_support)
     target_link_libraries(contouring_octree PRIVATE CGAL::TBB_support)
+    target_link_libraries(dual_marching_cubes PRIVATE CGAL::TBB_support)
   endif()
 else()
   message(STATUS "NOTICE: Some examples use Eigen, and will not be compiled.")
