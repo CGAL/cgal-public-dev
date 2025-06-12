@@ -131,24 +131,70 @@ bool patch_position_QEM(
 
 
 // generate quads for dual vertices in DMC
-template <typename EdgeDescriptor, 
+template <typename Domain,
+          typename EdgeDescriptor, 
           typename PolygonRange>
-void generate_quad_dmc(
-    const EdgeDescriptor& e,
-    const std::unordered_map<EdgeDescriptor, std::vector<std::size_t>>& edge_to_dual_vertices,
-    PolygonRange& polygons)
+void generate_quad_dmc(const EdgeDescriptor& e,
+                       const Domain& domain,
+                       const std::unordered_map<EdgeDescriptor, std::vector<std::size_t>>& edge_to_dual_vertices,
+                       PolygonRange& polygons)
 {
+    using FT = typename Domain::Geom_traits::FT;
+
+    const auto& vertices = domain.incident_vertices(e);
+
+    const FT val_0 = domain.value(vertices[0]);
+    const FT val_1 = domain.value(vertices[1]);
     auto it = edge_to_dual_vertices.find(e);
+
     if (it == edge_to_dual_vertices.end())
         return; 
 
-    const std::vector<std::size_t>& dual_vertices = it->second;
-    if (dual_vertices.size()< 3)
+    const std::vector<std::size_t>& dual_vertices_idx = it->second;
+    if (dual_vertices_idx.size()< 3)
         return; 
 
-    polygons.emplace_back(dual_vertices.begin(), dual_vertices.end());
+    // consistent global winding direction
+    std::vector<std::size_t> temp = dual_vertices_idx; // make a local copy
+    if(val_0>val_1) std::reverse(temp.begin(), temp.end());
+
+    polygons.emplace_back(temp.begin(), temp.end());
 }
 
+
+// reorder the dual vertices of each edge to be in local cyclic order
+template <typename Domain, 
+          typename EdgeDescriptor>
+void reorder_edge_to_dual_vertices(const Domain& domain,
+                                   const std::unordered_map<typename Domain::cell_descriptor, std::vector<size_t>>& cell_to_dual_vertices,
+                                   std::unordered_map<EdgeDescriptor, std::vector<std::size_t>>& edge_to_dual_vertices)
+{
+    for (auto& pair : edge_to_dual_vertices)
+    {
+        const EdgeDescriptor& e = pair.first;
+        std::vector<std::size_t>& unordered_dual_vertices = pair.second;
+
+        std::vector<std::size_t> ordered_dual_vertices;
+        const auto& cells = domain.incident_cells(e);
+        for (const auto& cell : cells)
+        {
+            auto it = cell_to_dual_vertices.find(cell);
+            if (it != cell_to_dual_vertices.end())
+            {
+                for (const auto& dual_idx : it->second)
+                {
+                    // add this dual if it actually appears in unordered_dual_vertices for this edge
+                    if (std::find(unordered_dual_vertices.begin(), unordered_dual_vertices.end(), dual_idx) != unordered_dual_vertices.end())
+                    {
+                        ordered_dual_vertices.push_back(dual_idx);
+                    }
+                }
+            }
+        }
+        // replace the old by the ordered
+        unordered_dual_vertices = std::move(ordered_dual_vertices);
+    }
+}
 
 
 // dual marching cube
@@ -200,6 +246,8 @@ void dual_marching_cubes(const Domain& domain,
     // compute the dual vertices for each polygon patch and output a edge to dual vertex map for the quad generation later
     std::unordered_map<edge_descriptor, std::vector<size_t>> edge_to_dual_vertices;
     std::unordered_map<Point_3, std::size_t> point_to_index; // to avoid duplicates
+    std::unordered_map<cell_descriptor, std::vector<size_t>> cell_to_dual_vertices; // to keep track of local cyclic order
+
     auto cell_patch_positioner = [&](const cell_descriptor& c)
     {
         constexpr std::size_t vpc = Domain::VERTICES_PER_CELL;
@@ -272,17 +320,21 @@ void dual_marching_cubes(const Domain& domain,
             {
                 auto global_edge = cell_edges[local_edge_idx];
                 edge_to_dual_vertices[global_edge].push_back(patch_dual_vertices_idx[patch_idx]);
+                cell_to_dual_vertices[c].push_back(patch_dual_vertices_idx[patch_idx]); 
             }
         }
     };
 
-    
     domain.for_each_cell(cell_patch_positioner);
+
+    // reorder the dual vertices of each edge to be in local cyclic order
+    reorder_edge_to_dual_vertices(domain, cell_to_dual_vertices, edge_to_dual_vertices);
+
 
     // generate quads
     auto generate_quad = [&](const edge_descriptor& e) 
     {
-        generate_quad_dmc(e, edge_to_dual_vertices, polygons);
+        generate_quad_dmc(e, domain, edge_to_dual_vertices, polygons);
     };
     domain.for_each_edge(generate_quad);
 

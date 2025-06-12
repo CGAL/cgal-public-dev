@@ -11,6 +11,8 @@
 #include <CGAL/IO/polygon_mesh_io.h>
 #include <CGAL/Polygon_mesh_processing/polygon_soup_to_polygon_mesh.h>
 
+#include <CGAL/IO/write_off_points.h>
+
 
 #include <cmath>
 #include <iostream>
@@ -140,6 +142,9 @@ int main(int argc, char** argv)
     std::cout << "Soup #vertices: " << points.size() << std::endl;
     std::cout << "Soup #quads: " << quads.size() << std::endl;
 
+    std::ofstream out("DMC-soup.off");
+
+    CGAL::IO::write_OFF("DMC-soup.off", points, quads); // print soup to OFF file
 
     if(!CGAL::Polygon_mesh_processing::is_polygon_soup_a_polygon_mesh(quads)) {
         std::cerr << "Warning: the soup is not a 2-manifold surface, non-manifoldness?..." << std::endl;
