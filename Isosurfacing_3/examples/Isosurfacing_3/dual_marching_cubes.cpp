@@ -11,7 +11,7 @@
 #include <CGAL/IO/polygon_mesh_io.h>
 #include <CGAL/Polygon_mesh_processing/polygon_soup_to_polygon_mesh.h>
 
-#include <CGAL/IO/write_off_points.h>
+// #include <CGAL/IO/write_off_points.h>
 
 
 #include <cmath>
@@ -36,41 +36,57 @@ using Mesh = CGAL::Surface_mesh<Point>;
 
 // example function
 
-auto Sphere_value = [](const Point& p) {
-    const FT x = p.x(), y = p.y(), z = p.z();
-    return x*x + y*y + z*z - 1; 
-};
-
-auto Sphere_gradient = [](const Point& p) {
-    const FT x = p.x(), y = p.y(), z = p.z();
-    const FT gx = 2.0 * x;
-    const FT gy = 2.0 * y;
-    const FT gz = 2.0 * z;
-    Vector g(gx, gy, gz);
-    return g / std::sqrt(gx*gx + gy*gy + gz*gz);
-};
-
-// auto Kusner_Schmitt_value = [](const Point& point)
-// {
-//   const FT x = point.x(), y = point.y(), z = point.z();
-//   return x*x*y*y*z*z
-//          + 3*x*x*y*y + 3*x*x*z*z + 9*x*x
-//          + 3*y*y*z*z + 9*y*y + 9*z*z
-//          - 32*x*y*z - 5.0;
+// auto Sphere_value = [](const Point& p) {
+//     const FT x = p.x(), y = p.y(), z = p.z();
+//     return x*x + y*y + z*z - 1; 
 // };
 
-// auto Kusner_Schmitt_gradient = [](const Point& p) 
+// auto Sphere_gradient = [](const Point& p) {
+//     const FT x = p.x(), y = p.y(), z = p.z();
+//     const FT gx = 2.0 * x;
+//     const FT gy = 2.0 * y;
+//     const FT gz = 2.0 * z;
+//     Vector g(gx, gy, gz);
+//     return g / std::sqrt(gx*gx + gy*gy + gz*gz);
+// };
+
+auto Kusner_Schmitt_value = [](const Point& point)
+{
+  const FT x = point.x(), y = point.y(), z = point.z();
+  return x*x*y*y*z*z
+         + 3*x*x*y*y + 3*x*x*z*z + 9*x*x
+         + 3*y*y*z*z + 9*y*y + 9*z*z
+         - 32*x*y*z - 5.0;
+};
+
+auto Kusner_Schmitt_gradient = [](const Point& p) 
+{
+  const FT x = p.x(), y = p.y(), z = p.z();
+
+  const FT gx = 2*x*y*y*z*z + 6*x*y*y + 6*x*z*z + 18*x - 32*y*z;
+  const FT gy = 2*x*x*y*z*z + 6*x*x*y + 6*y*z*z + 18*y - 32*x*z;
+  const FT gz = 2*x*x*y*y*z + 6*x*x*z + 6*y*y*z + 18*z - 32*x*y;
+
+  Vector g(gx, gy, gz);
+  return g / std::sqrt(gx*gx + gy*gy + gz*gz);
+};
+
+// auto S22_value = [](const Point& point)
 // {
-//   const FT x = p.x(), y = p.y(), z = p.z();
+//   const FT x = point.x(), y = point.y(), z = point.z();
+//   return 4*x*x*z + y*y*y + 4*y*x;
+// };
 
-//   const FT gx = 2*x*y*y*z*z + 6*x*y*y + 6*x*z*z + 18*x - 32*y*z;
-//   const FT gy = 2*x*x*y*z*z + 6*x*x*y + 6*y*z*z + 18*y - 32*x*z;
-//   const FT gz = 2*x*x*y*y*z + 6*x*x*z + 6*y*y*z + 18*z - 32*x*y;
-
+// auto S22_gradient = [](const Point& point)
+// {
+//   const FT x = point.x(), y = point.y(), z = point.z();
+  
+//   const FT gx = 8*x*z + 4*y;
+//   const FT gy = 3*y*y + 4*x;
+//   const FT gz = 4*x*x;
 //   Vector g(gx, gy, gz);
 //   return g / std::sqrt(gx*gx + gy*gy + gz*gz);
 // };
-
 
 // auto Shallowtail_value = [](const Point& p) {
 //     const FT x = p.x(), y = p.y(), z = p.z();
@@ -113,11 +129,16 @@ int main(int argc, char** argv)
     std::cout << "Cell dimensions: " << grid.spacing()[0] << " " << grid.spacing()[1] << " " << grid.spacing()[2] << std::endl;
     std::cout << "Cell #: " << grid.xdim() << ", " << grid.ydim() << ", " << grid.zdim() << std::endl;
 
-    Values values { Sphere_value, grid };
+    // Values values { Sphere_value, grid };
+    Values values { Kusner_Schmitt_value, grid };
+    // Values values { S22_value, grid };
     // Values values { Shallowtail_value, grid };
 
-    Gradients gradients { Sphere_gradient, grid };
+    // Gradients gradients { Sphere_gradient, grid };
+    Gradients gradients { Kusner_Schmitt_gradient, grid };
+    // Gradients gradients { S22_gradient, grid };
     // Gradients gradients { Shallowtail_gradient, grid };
+
     Domain domain = CGAL::Isosurfacing::create_dual_contouring_domain_3(grid, values, gradients);
 
     // Output containers
@@ -126,12 +147,13 @@ int main(int argc, char** argv)
 
     std::cout << "Running Dual Marching Cubes with isovalue = " << isovalue << std::endl;
 
-    CGAL::Isosurfacing::internal::dual_marching_cubes(domain, isovalue, points, quads, /*constrain_to_cell=*/false);
+    CGAL::Isosurfacing::internal::dual_marching_cubes(domain, isovalue, points, quads, false);
 
     for (size_t i = 0; i < points.size(); ++i)
     std::cout << "Vertex " << i << ": " << points[i] << std::endl;
 
-    for (const auto& poly : quads) {
+    for (const auto& poly : quads) 
+    {
         std::cout << "Face: ";
         for (auto idx : poly)
             std::cout << idx << " ";
@@ -144,7 +166,7 @@ int main(int argc, char** argv)
 
     std::ofstream out("DMC-soup.off");
 
-    CGAL::IO::write_OFF("DMC-soup.off", points, quads); // print soup to OFF file
+    // CGAL::IO::write_OFF("DMC-soup.off", points, quads); // print soup to OFF file
 
     if(!CGAL::Polygon_mesh_processing::is_polygon_soup_a_polygon_mesh(quads)) {
         std::cerr << "Warning: the soup is not a 2-manifold surface, non-manifoldness?..." << std::endl;

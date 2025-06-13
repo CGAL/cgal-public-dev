@@ -173,8 +173,9 @@ void reorder_edge_to_dual_vertices(const Domain& domain,
     {
         const EdgeDescriptor& e = pair.first;
         std::vector<std::size_t>& unordered_dual_vertices = pair.second;
-
         std::vector<std::size_t> ordered_dual_vertices;
+        std::unordered_set<std::size_t> seen; // track unique duals for this edge
+
         const auto& cells = domain.incident_cells(e);
         for (const auto& cell : cells)
         {
@@ -184,7 +185,8 @@ void reorder_edge_to_dual_vertices(const Domain& domain,
                 for (const auto& dual_idx : it->second)
                 {
                     // add this dual if it actually appears in unordered_dual_vertices for this edge
-                    if (std::find(unordered_dual_vertices.begin(), unordered_dual_vertices.end(), dual_idx) != unordered_dual_vertices.end())
+                    if (std::find(unordered_dual_vertices.begin(), unordered_dual_vertices.end(), dual_idx) != unordered_dual_vertices.end()
+                        && seen.insert(dual_idx).second) 
                     {
                         ordered_dual_vertices.push_back(dual_idx);
                     }
@@ -329,7 +331,6 @@ void dual_marching_cubes(const Domain& domain,
 
     // reorder the dual vertices of each edge to be in local cyclic order
     reorder_edge_to_dual_vertices(domain, cell_to_dual_vertices, edge_to_dual_vertices);
-
 
     // generate quads
     auto generate_quad = [&](const edge_descriptor& e) 
