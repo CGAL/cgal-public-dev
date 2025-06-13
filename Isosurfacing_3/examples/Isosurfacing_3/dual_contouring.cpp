@@ -125,7 +125,60 @@ auto Kusner_Schmitt_gradient = [](const Point& p)
 //   return g / std::sqrt(gx*gx + gy*gy + gz*gz);
 // };
 
+auto rotated_wave_value = [](const Point& p) 
+{
+    const FT theta = 30; // rotation angle
+    const FT x = p.x(), y = p.y(), z = p.z();
+    const FT sinT = std::sin(theta);
+    const FT cosT = std::cos(theta);
 
+    FT xx = x * cosT + z * sinT;
+    FT zz = -x * sinT + z * cosT;
+
+    FT val1 = zz - std::sin(xx) - std::sin(y);
+    FT val2 = val1 - 0.3;
+    FT val3 = val1 + 0.3;
+    return val1 * val2 * val3;
+};
+
+auto rotated_wave_gradient = [](const Point& p) 
+{
+    const FT theta = 30; // rotation angle
+    const FT x = p.x(), y = p.y(), z = p.z();
+
+    const FT sinT = std::sin(theta);
+    const FT cosT = std::cos(theta);
+
+    FT xp = x * cosT + z * sinT;
+    FT zp = -x * sinT + z * cosT;
+
+    FT sxp = std::sin(xp);
+    FT cxp = std::cos(xp);
+    FT sy = std::sin(y);
+    FT cy = std::cos(y);
+
+    FT u = zp - sxp - sy;
+
+    FT u_m = u - 0.3;
+    FT u_0 = u;
+    FT u_p = u + 0.3;
+
+    FT prod = u_m * u_0 * u_p;
+
+    FT dudx = (-sinT) - cxp * cosT; 
+    FT dudy = -cy; 
+    FT dudz = (cosT) - cxp * sinT; 
+
+    // product rule
+    FT sum_factors = (u_0 * u_p) + (u_m * u_p) + (u_m * u_0);
+
+    FT gx = dudx * sum_factors;
+    FT gy = dudy * sum_factors;
+    FT gz = dudz * sum_factors;
+
+    Vector g(gx, gy, gz);
+    return g / std::sqrt(gx*gx + gy*gy + gz*gz);
+};
 
 int main(int argc, char** argv)
 {
@@ -144,13 +197,16 @@ int main(int argc, char** argv)
   // fill up values & gradients
   // Values values { devil_value, grid };
   // Values values { S22_value, grid };
-  Values values { Kusner_Schmitt_value, grid };
+  // Values values { Kusner_Schmitt_value, grid };
   // Values values { Shallowtail_value, grid };
+  Values values { rotated_wave_value, grid};
+
 
   // Gradients gradients { devil_gradient, grid };
   // Gradients gradients { S22_gradient, grid };
-  Gradients gradients { Kusner_Schmitt_gradient, grid };
+  // Gradients gradients { Kusner_Schmitt_gradient, grid };
   // Gradients gradients { Shallowtail_gradient, grid };
+  Gradients gradients { rotated_wave_gradient, grid};
   
   // Below is equivalent to:
   //   Domain domain { grid, values, gradients };
