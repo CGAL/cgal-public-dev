@@ -11,6 +11,8 @@
 #include <CGAL/IO/polygon_mesh_io.h>
 #include <CGAL/Polygon_mesh_processing/polygon_soup_to_polygon_mesh.h>
 
+#include <CGAL/IO/write_off_points.h>
+
 #include <cmath>
 #include <iostream>
 #include <vector>
@@ -69,59 +71,59 @@ using Mesh = CGAL::Surface_mesh<Point>;
 //   return g / std::sqrt(gx*gx + gy*gy + gz*gz);
 // };
 
-// auto Kusner_Schmitt_value = [](const Point& point)
-// {
-//   const FT x = point.x(), y = point.y(), z = point.z();
-//   return x*x*y*y*z*z
-//          + 3*x*x*y*y + 3*x*x*z*z + 9*x*x
-//          + 3*y*y*z*z + 9*y*y + 9*z*z
-//          - 32*x*y*z - 5.0;
-// };
-
-// auto Kusner_Schmitt_gradient = [](const Point& p) 
-// {
-//   const FT x = p.x(), y = p.y(), z = p.z();
-
-//   const FT gx = 2*x*y*y*z*z + 6*x*y*y + 6*x*z*z + 18*x - 32*y*z;
-//   const FT gy = 2*x*x*y*z*z + 6*x*x*y + 6*y*z*z + 18*y - 32*x*z;
-//   const FT gz = 2*x*x*y*y*z + 6*x*x*z + 6*y*y*z + 18*z - 32*x*y;
-
-//   Vector g(gx, gy, gz);
-//   return g / std::sqrt(gx*gx + gy*gy + gz*gz);
-// };
-
-auto Shallowtail_value = [](const Point& p) 
+auto Kusner_Schmitt_value = [](const Point& point)
 {
-  const FT x = p.x(), y = p.y(), z = p.z();
-  return -4 * z*z*z * y*y
-       - 27 * y*y*y*y
-       + 16 * x * z*z*z*z
-       - 128 * x*x * z*z
-       + 144 * x * y*y * z
-       + 256 * x*x*x;
+  const FT x = point.x(), y = point.y(), z = point.z();
+  return x*x*y*y*z*z
+         + 3*x*x*y*y + 3*x*x*z*z + 9*x*x
+         + 3*y*y*z*z + 9*y*y + 9*z*z
+         - 32*x*y*z - 5.0;
 };
 
-
-auto Shallowtail_gradient = [](const Point& p) 
+auto Kusner_Schmitt_gradient = [](const Point& p) 
 {
   const FT x = p.x(), y = p.y(), z = p.z();
 
-  const FT gx = 16 * std::pow(z, 4)
-        - 256 * x * z * z
-        + 144 * y * y * z
-        + 768 * x * x;
+  const FT gx = 2*x*y*y*z*z + 6*x*y*y + 6*x*z*z + 18*x - 32*y*z;
+  const FT gy = 2*x*x*y*z*z + 6*x*x*y + 6*y*z*z + 18*y - 32*x*z;
+  const FT gz = 2*x*x*y*y*z + 6*x*x*z + 6*y*y*z + 18*z - 32*x*y;
 
-  const FT gy = -8 * z * z * z * y
-        - 108 * y * y * y
-        + 288 * x * y * z;
-
-  const FT gz = -12 * z * z * y * y
-        + 64 * x * z * z * z
-        - 256 * x * x * z
-        + 144 * x * y * y;
   Vector g(gx, gy, gz);
   return g / std::sqrt(gx*gx + gy*gy + gz*gz);
 };
+
+// auto Shallowtail_value = [](const Point& p) 
+// {
+//   const FT x = p.x(), y = p.y(), z = p.z();
+//   return -4 * z*z*z * y*y
+//        - 27 * y*y*y*y
+//        + 16 * x * z*z*z*z
+//        - 128 * x*x * z*z
+//        + 144 * x * y*y * z
+//        + 256 * x*x*x;
+// };
+
+
+// auto Shallowtail_gradient = [](const Point& p) 
+// {
+//   const FT x = p.x(), y = p.y(), z = p.z();
+
+//   const FT gx = 16 * std::pow(z, 4)
+//         - 256 * x * z * z
+//         + 144 * y * y * z
+//         + 768 * x * x;
+
+//   const FT gy = -8 * z * z * z * y
+//         - 108 * y * y * y
+//         + 288 * x * y * z;
+
+//   const FT gz = -12 * z * z * y * y
+//         + 64 * x * z * z * z
+//         - 256 * x * x * z
+//         + 144 * x * y * y;
+//   Vector g(gx, gy, gz);
+//   return g / std::sqrt(gx*gx + gy*gy + gz*gz);
+// };
 
 
 
@@ -142,13 +144,13 @@ int main(int argc, char** argv)
   // fill up values & gradients
   // Values values { devil_value, grid };
   // Values values { S22_value, grid };
-  // Values values { Kusner_Schmitt_value, grid };
-  Values values { Shallowtail_value, grid };
+  Values values { Kusner_Schmitt_value, grid };
+  // Values values { Shallowtail_value, grid };
 
   // Gradients gradients { devil_gradient, grid };
   // Gradients gradients { S22_gradient, grid };
-  // Gradients gradients { Kusner_Schmitt_gradient, grid };
-  Gradients gradients { Shallowtail_gradient, grid };
+  Gradients gradients { Kusner_Schmitt_gradient, grid };
+  // Gradients gradients { Shallowtail_gradient, grid };
   
   // Below is equivalent to:
   //   Domain domain { grid, values, gradients };
@@ -165,6 +167,10 @@ int main(int argc, char** argv)
 
   std::cout << "Soup #vertices: " << points.size() << std::endl;
   std::cout << "Soup #triangles: " << triangles.size() << std::endl;
+
+  std::ofstream out("DC-soup.off");
+
+  CGAL::IO::write_OFF("DC-soup.off", points, triangles); // print soup to OFF file
 
   if(!CGAL::Polygon_mesh_processing::is_polygon_soup_a_polygon_mesh(triangles)) {
     std::cerr << "Warning: the soup is not a 2-manifold surface, non-manifoldness?..." << std::endl;
