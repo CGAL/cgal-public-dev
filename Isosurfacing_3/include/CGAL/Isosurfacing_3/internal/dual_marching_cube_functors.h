@@ -27,7 +27,40 @@ namespace CGAL {
 namespace Isosurfacing {
 namespace internal {
 
-// compute the dual vertices of each patch of a cell
+// generate dual vertex of each patch as the centroid of the patch
+template <typename Domain>
+bool patch_position_centroid(
+    const Domain& domain,
+    const std::vector<typename Domain::Geom_traits::Point_3>& patch_points,
+    typename Domain::Geom_traits::Point_3& p)
+{
+    using Geom_traits = typename Domain::Geom_traits;
+    using FT          = typename Geom_traits::FT;
+    using Point_3     = typename Geom_traits::Point_3;
+
+    typename Geom_traits::Compute_x_3 x_coord = domain.geom_traits().compute_x_3_object();
+    typename Geom_traits::Compute_y_3 y_coord = domain.geom_traits().compute_y_3_object();
+    typename Geom_traits::Compute_z_3 z_coord = domain.geom_traits().compute_z_3_object();
+    typename Geom_traits::Construct_point_3 point = domain.geom_traits().construct_point_3_object();
+
+    const std::size_t n = patch_points.size();
+    if (n == 0)
+        return false;
+
+    FT x(0), y(0), z(0);
+    for (const auto& q : patch_points)
+    {
+        x += x_coord(q);
+        y += y_coord(q);
+        z += z_coord(q);
+    }
+
+    p = point(x / n, y / n, z / n);
+    return true;
+}
+
+
+// compute the dual vertex of each patch of a cell using qem
 template <typename Domain>
 bool patch_position_QEM(
     const Domain& domain,
@@ -289,7 +322,8 @@ void dual_marching_cubes(const Domain& domain,
             // compute the dual vertex for this patch
             if (patch_points.size() >= 3) {
                 Point_3 dual_vertex;
-                bool success = patch_position_QEM(domain, c, patch_points, patch_grads, constrain_to_cell, dual_vertex);
+                // bool success = patch_position_QEM(domain, c, patch_points, patch_grads, constrain_to_cell, dual_vertex);
+                bool success = patch_position_centroid(domain, patch_points, dual_vertex);
                 if(success)
                 {
                     std::size_t dual_vertex_idx;
