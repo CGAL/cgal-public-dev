@@ -25,14 +25,21 @@
 
 namespace CGAL {
 namespace Isosurfacing {
+
+    // vertex placement strategy
+    enum class Vertex_strategy
+    {
+        QEM,
+        Centroid
+    };
+
 namespace internal {
 
 // generate dual vertex of each patch as the centroid of the patch
 template <typename Domain>
-bool patch_position_centroid(
-    const Domain& domain,
-    const std::vector<typename Domain::Geom_traits::Point_3>& patch_points,
-    typename Domain::Geom_traits::Point_3& p)
+bool patch_position_centroid(const Domain& domain,
+                             const std::vector<typename Domain::Geom_traits::Point_3>& patch_points,
+                             typename Domain::Geom_traits::Point_3& p)
 {
     using Geom_traits = typename Domain::Geom_traits;
     using FT          = typename Geom_traits::FT;
@@ -62,13 +69,12 @@ bool patch_position_centroid(
 
 // compute the dual vertex of each patch of a cell using qem
 template <typename Domain>
-bool patch_position_QEM(
-    const Domain& domain,
-    const typename Domain::cell_descriptor& c,
-    const std::vector<typename Domain::Geom_traits::Point_3>& patch_points,
-    const std::vector<typename Domain::Geom_traits::Vector_3>& patch_normals,
-    const bool constrain_to_cell,
-    typename Domain::Geom_traits::Point_3& p) 
+bool patch_position_QEM(const Domain& domain,
+                        const typename Domain::cell_descriptor& c,
+                        const std::vector<typename Domain::Geom_traits::Point_3>& patch_points,
+                        const std::vector<typename Domain::Geom_traits::Vector_3>& patch_normals,
+                        const bool constrain_to_cell,
+                        typename Domain::Geom_traits::Point_3& p) 
 {
     using Geom_traits = typename Domain::Geom_traits;
     using FT = typename Geom_traits::FT;
@@ -232,6 +238,7 @@ void reorder_edge_to_dual_vertices(const Domain& domain,
 }
 
 
+
 // dual marching cube
 template <typename Domain, 
           typename PolygonRange>
@@ -239,7 +246,8 @@ void dual_marching_cubes(const Domain& domain,
                          const typename Domain::Geom_traits::FT isovalue,
                          std::vector<typename Domain::Geom_traits::Point_3>& points,
                          PolygonRange& polygons,
-                         bool constrain_to_cell)
+                         bool constrain_to_cell,
+                         Isosurfacing::Vertex_strategy strategy)
 {
     using FT = typename Domain::Geom_traits::FT;
     using Point_3 = typename Domain::Geom_traits::Point_3;
@@ -255,33 +263,38 @@ void dual_marching_cubes(const Domain& domain,
 
     static_assert(Domain::VERTICES_PER_CELL == 8);
 
-    auto edge_positioner = [&](const edge_descriptor& e) 
-    {
-        const auto& evs = domain.incident_vertices(e);
-        const vertex_descriptor& v0 = evs[0];
-        const vertex_descriptor& v1 = evs[1];
-        const Point_3& p0 = domain.point(v0);
-        const Point_3& p1 = domain.point(v1);
-        const FT val0 = domain.value(v0);
-        const FT val1 = domain.value(v1);
+    // auto edge_positioner = [&](const edge_descriptor& e) 
+    // {
+    //     const auto& evs = domain.incident_vertices(e);
+    //     const vertex_descriptor& v0 = evs[0];
+    //     const vertex_descriptor& v1 = evs[1];
+    //     const Point_3& p0 = domain.point(v0);
+    //     const Point_3& p1 = domain.point(v1);
+    //     const FT val0 = domain.value(v0);
+    //     const FT val1 = domain.value(v1);
 
-        Point_3 p;
-        if (!domain.construct_intersection(p0, p1, val0, val1, isovalue, p))
-            return;
+    //     Point_3 p;
+    //     if (!domain.construct_intersection(p0, p1, val0, val1, isovalue, p))
+    //         return;
 
-        Vector_3 g = domain.gradient(p);
+    //     Vector_3 g = domain.gradient(p);
 
-        edge_to_point_id[e] = edge_points.size();
-        edge_points.push_back(p);
-        edge_gradients.push_back(g);
-    };
+    //     edge_to_point_id[e] = edge_points.size();
+    //     edge_points.push_back(p);
+    //     edge_gradients.push_back(g);
+    // };
 
-    domain.for_each_edge(edge_positioner);
+    // domain.for_each_edge(edge_positioner);
 
     // compute the dual vertices for each polygon patch and output a edge to dual vertex map for the quad generation later
     std::unordered_map<edge_descriptor, std::vector<size_t>> edge_to_dual_vertices;
     std::unordered_map<Point_3, std::size_t> point_to_index; // to avoid duplicates
     std::unordered_map<cell_descriptor, std::vector<size_t>> cell_to_dual_vertices; // to keep track of local cyclic order
+
+    // std::ofstream debug_out("patch_dual_vertices_log.txt"); // debug
+    constexpr FT tol = 1e-5;
+    const Point_3 target_vertex(-0.295698, 2.88988, 3.21928);
+    // const Point_3 target_vertex(-0.285791, 2.90516, 3.30311);
 
     auto cell_patch_positioner = [&](const cell_descriptor& c)
     {
@@ -308,22 +321,50 @@ void dual_marching_cubes(const Domain& domain,
             // collect intersections and gradients for this patch
             std::vector<Point_3> patch_points;
             std::vector<Vector_3> patch_grads;
+
             for (int local_edge_idx : current_patch_edge_local_idx) 
             {
                 const edge_descriptor& global_edge = cell_edges[local_edge_idx]; 
-                const auto it = edge_to_point_id.find(global_edge);
-                if (it == edge_to_point_id.end())
-                    continue; // skip if  not intersected
-                auto global_idx = it->second;
-                patch_points.push_back(edge_points[global_idx]);
-                patch_grads.push_back(edge_gradients[global_idx]);
+                // const auto it = edge_to_point_id.find(global_edge);
+                // if (it == edge_to_point_id.end())
+                //     continue; // skip if  not intersected
+                // auto global_idx = it->second;
+                // patch_points.push_back(edge_points[global_idx]);
+                // patch_grads.push_back(edge_gradients[global_idx]);
+
+                const auto& evs = domain.incident_vertices(global_edge);
+                const vertex_descriptor& v0 = evs[0];
+                const vertex_descriptor& v1 = evs[1];
+                const Point_3& p0 = domain.point(v0);
+                const Point_3& p1 = domain.point(v1);
+                const FT val0 = domain.value(v0);
+                const FT val1 = domain.value(v1);
+
+                Point_3 p;
+                if (!domain.construct_intersection(p0, p1, val0, val1, isovalue, p)) continue;
+
+                Vector_3 g = domain.gradient(p);
+                patch_points.push_back(p);
+                patch_grads.push_back(g);
             }
+
 
             // compute the dual vertex for this patch
             if (patch_points.size() >= 3) {
                 Point_3 dual_vertex;
-                // bool success = patch_position_QEM(domain, c, patch_points, patch_grads, constrain_to_cell, dual_vertex);
-                bool success = patch_position_centroid(domain, patch_points, dual_vertex);
+
+                bool success = false;
+                switch(strategy)
+                {
+                    case Vertex_strategy::QEM:
+                        success = patch_position_QEM(domain, c, patch_points, patch_grads, constrain_to_cell, dual_vertex);
+                        break;
+                    
+                    case Vertex_strategy::Centroid:
+                        success = patch_position_centroid(domain, patch_points, dual_vertex);
+                        break;
+                }
+                
                 if(success)
                 {
                     std::size_t dual_vertex_idx;
@@ -338,6 +379,43 @@ void dual_marching_cubes(const Domain& domain,
 
                     patch_dual_vertices_idx.push_back(dual_vertex_idx); // collect a dual vertex 
                     all_patch.push_back(current_patch_edge_local_idx); // collect a patch
+
+                    // debug
+                    // auto close = [](const Point_3& a, const Point_3& b) 
+                    // {
+                    //     return (CGAL::abs(a.x() - b.x()) < tol &&
+                    //             CGAL::abs(a.y() - b.y()) < tol &&
+                    //             CGAL::abs(a.z() - b.z()) < tol);
+                    // };
+
+                    // if (close(dual_vertex, target_vertex)) 
+                    // {
+                    //     std::cout << "Matched target dual vertex!\n";
+                    //     std::cout << "i_case = " << i_case << "\n";
+                    //     std::ofstream ofs("matched_cell_vertices.off");
+                    //     ofs << "OFF\n";
+                    //     ofs << "8 12 0\n"; 
+
+                    //     for (std::size_t i = 0; i < vpc; ++i)
+                    //     {
+                    //         const Point_3& p = corners[i];
+                    //         ofs << p.x() << " " << p.y() << " " << p.z() << "\n";
+                    //     }
+                    //     ofs.close();
+
+                    //     std::exit(0);
+                    // }
+
+                    // for (const auto& pt : patch_points)
+                    //     debug_out << "(" << pt.x() << " " << pt.y() << " " << pt.z() << ") ";
+                    // debug_out << "=> (" << dual_vertex.x() << " " << dual_vertex.y() << " " << dual_vertex.z() << ")\n";
+
+                    // if (close(dual_vertex, target_vertex)) {
+                    //     debug_out << "Target dual vertex generated, stopping.\n";
+                    //     debug_out.close();
+                    //     std::exit(0);
+                    // }
+
                 }
             }
 
@@ -373,7 +451,17 @@ void dual_marching_cubes(const Domain& domain,
     };
     domain.for_each_edge(generate_quad);
 
-};
+}
+
+
+// // topologically correct dual marching cube
+// template <typename Domain, 
+//           typename PolygonRange>
+// void dual_marching_cube_tmc(const Domain& domain,
+//                          const typename Domain::Geom_traits::FT isovalue,
+//                          std::vector<typename Domain::Geom_traits::Point_3>& points,
+//                          PolygonRange& polygons,
+//                          bool constrain_to_cell)
 
 
 } // namespace internal
