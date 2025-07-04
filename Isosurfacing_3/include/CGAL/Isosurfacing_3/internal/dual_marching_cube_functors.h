@@ -1,9 +1,10 @@
-#ifndef CGAL_ISOSURFACING_3_INTERNAL_MANIFOLD_DUAL_CONTOURING_H
-#define CGAL_ISOSURFACING_3_INTERNAL_MANIFOLD_DUAL_CONTOURING_H
+#ifndef CGAL_ISOSURFACING_3_INTERNAL_DUAL_MARCHING_CUBE_H
+#define CGAL_ISOSURFACING_3_INTERNAL_DUAL_MARCHING_CUBE_H
 
 #include <CGAL/license/Isosurfacing_3.h>
 
 #include <CGAL/Isosurfacing_3/internal/tables.h>
+#include <CGAL/Isosurfacing_3/internal/tmc_dmc_functors.h>
 #include <CGAL/Isosurfacing_3/internal/marching_cubes_functors.h>
 
 #include <CGAL/assertions.h>
@@ -256,12 +257,12 @@ void dual_marching_cubes(const Domain& domain,
     using edge_descriptor = typename Domain::edge_descriptor;
     using cell_descriptor = typename Domain::cell_descriptor;
 
-    // edghe intersections and gradients 
-    std::unordered_map<edge_descriptor, std::size_t> edge_to_point_id;
-    std::vector<Point_3> edge_points;
-    std::vector<Vector_3> edge_gradients;
-
     static_assert(Domain::VERTICES_PER_CELL == 8);
+
+    // edghe intersections and gradients 
+    // std::unordered_map<edge_descriptor, std::size_t> edge_to_point_id;
+    // std::vector<Point_3> edge_points;
+    // std::vector<Vector_3> edge_gradients;
 
     // auto edge_positioner = [&](const edge_descriptor& e) 
     // {
@@ -292,8 +293,8 @@ void dual_marching_cubes(const Domain& domain,
     std::unordered_map<cell_descriptor, std::vector<size_t>> cell_to_dual_vertices; // to keep track of local cyclic order
 
     // std::ofstream debug_out("patch_dual_vertices_log.txt"); // debug
-    constexpr FT tol = 1e-5;
-    const Point_3 target_vertex(-0.295698, 2.88988, 3.21928);
+    // constexpr FT tol = 1e-5;
+    // const Point_3 target_vertex(-0.295698, 2.88988, 3.21928);
     // const Point_3 target_vertex(-0.285791, 2.90516, 3.30311);
 
     auto cell_patch_positioner = [&](const cell_descriptor& c)
@@ -454,14 +455,304 @@ void dual_marching_cubes(const Domain& domain,
 }
 
 
-// // topologically correct dual marching cube
-// template <typename Domain, 
-//           typename PolygonRange>
-// void dual_marching_cube_tmc(const Domain& domain,
-//                          const typename Domain::Geom_traits::FT isovalue,
-//                          std::vector<typename Domain::Geom_traits::Point_3>& points,
-//                          PolygonRange& polygons,
-//                          bool constrain_to_cell)
+// topologically correct dual marching cube
+// dual marching cube
+template <typename Domain, 
+          typename PolygonRange>
+void dual_marching_cubes_tmc(const Domain& domain,
+                         const typename Domain::Geom_traits::FT isovalue,
+                         std::vector<typename Domain::Geom_traits::Point_3>& points,
+                         PolygonRange& polygons,
+                         bool constrain_to_cell,
+                         Isosurfacing::Vertex_strategy strategy)
+{
+    using FT = typename Domain::Geom_traits::FT;
+    using Point_3 = typename Domain::Geom_traits::Point_3;
+    using Vector_3 = typename Domain::Geom_traits::Vector_3;
+    using vertex_descriptor = typename Domain::vertex_descriptor;
+    using edge_descriptor = typename Domain::edge_descriptor;
+    using cell_descriptor = typename Domain::cell_descriptor;
+
+    static_assert(Domain::VERTICES_PER_CELL == 8);
+
+    // compute the dual vertices for each polygon patch and output a edge to dual vertex map for the quad generation later
+    std::unordered_map<edge_descriptor, std::vector<size_t>> edge_to_dual_vertices;
+    std::unordered_map<Point_3, std::size_t> point_to_index; // to avoid duplicates
+    std::unordered_map<cell_descriptor, std::vector<size_t>> cell_to_dual_vertices; // to keep track of local cyclic order
+
+    auto cell_patch_positioner = [&](const cell_descriptor& c)
+    {
+        constexpr std::size_t vpc = Domain::VERTICES_PER_CELL;
+
+        const auto& cell_edges = domain.cell_edges(c);
+
+        std::array<FT, vpc> values;
+        std::array<Point_3, vpc> corners;
+        const std::size_t i_case = get_cell_corners(domain, c, isovalue, corners, values, true);
+
+        // skip empty / full cells
+        constexpr std::size_t ones = (1 << 8) - 1;
+        if((i_case & ones) == ones || // all bits set
+            (i_case & ones) == 0) // no bits set
+            return;
+        
+        // ambiguous case 
+        const int tcm = Cube_table::t_ambig[i_case];
+        if(tcm == 105)
+        {
+            std::vector<std::array<Point_3, 3>> triangles;
+            std::vector<std::vector<Point_3>> all_patch_ambi;
+
+            bool success = CGAL::Isosurfacing::internal::p_slice(domain, c, isovalue, corners, values, i_case, true, triangles);
+            if(!success) return;
+            
+            // then merge triangles for patches
+            for (const auto& tri : triangles) 
+            {
+                bool merged = false;
+
+                for (auto& patch : all_patch_ambi) 
+                {
+                    for (const auto& p1 : tri) 
+                    {
+                        if (std::find(patch.begin(), patch.end(), p1) != patch.end()) 
+                        {
+                            for (const auto& pt : tri) 
+                            {
+                                if (std::find(patch.begin(), patch.end(), pt) == patch.end()) patch.push_back(pt);
+                            }
+                            merged = true;
+                            break;
+                        }
+                    }
+                    if (merged) break;
+                }
+
+                if (!merged) all_patch_ambi.emplace_back(tri.begin(), tri.end()); // new patch with this triangle’s vertices
+            }
+
+            // compute the dual vertex for each patch
+            for (const auto& patch_points: all_patch_ambi )
+            {
+                if (patch_points.size() >= 3) 
+                {
+                    std::vector<Vector_3> patch_grads; 
+                    std::vector<edge_descriptor> current_patch_edges;
+
+                    for (const auto& p: patch_points)
+                    {
+                        patch_grads.push_back(domain.gradient(p)); // collect gradients
+
+                        // loop over each cell edge and check if it is one that the current patch point intersect with
+                        for (int i = 0; i < 12; ++i) 
+                        {
+                            const auto& e = cell_edges[i];
+                            const vertex_descriptor& v0 = e[0];
+                            const vertex_descriptor& v1 = e[1];
+                            const Point_3& p0 = domain.point(v0);
+                            const Point_3& p1 = domain.point(v1);
+                            const FT val0 = domain.value(v0);
+                            const FT val1 = domain.value(v1);
+
+                            Point_3 pe;
+                            if (!domain.construct_intersection(p0, p1, val0, val1, isovalue, pe)) continue;
+
+                            if (CGAL::squared_distance(pe, p) < 1e-10)
+                            {
+                                current_patch_edges.push_back(e);
+                                break;
+                            }
+                        }
+                    }
+                        
+                    Point_3 dual_vertex;
+
+                    bool success = false;
+                    switch(strategy)
+                    {
+                        case Vertex_strategy::QEM:
+                            success = patch_position_QEM(domain, c, patch_points, patch_grads, constrain_to_cell, dual_vertex);
+                            break;
+                        
+                        case Vertex_strategy::Centroid:
+                            success = patch_position_centroid(domain, patch_points, dual_vertex);
+                            break;
+                    }
+                    
+                    if(success)
+                    {
+                        std::size_t dual_vertex_idx;
+                        auto u = point_to_index.find(dual_vertex);
+                        if (u == point_to_index.end()) // if no duplicates
+                        {
+                            dual_vertex_idx = points.size();
+                            points.push_back(dual_vertex);
+                            point_to_index[dual_vertex] = dual_vertex_idx;
+                        } 
+                        else  dual_vertex_idx = u->second;
+
+                        cell_to_dual_vertices[c].push_back(dual_vertex_idx); 
+
+                        for (const auto& e: current_patch_edges)
+                        {
+                            edge_to_dual_vertices[e].push_back(dual_vertex_idx);
+                        }
+                        
+                    }
+                }
+            }
+                // // debug
+                // if ([&]() 
+                //     {
+                //         std::array<Point_3, 8> target = {{
+                //             Point_3(-0.362319, 2.82609, 3.11594),
+                //             Point_3(-0.217391, 2.82609, 3.11594),
+                //             Point_3(-0.362319, 2.97101, 3.11594),
+                //             Point_3(-0.217391, 2.97101, 3.11594),
+                //             Point_3(-0.362319, 2.82609, 3.26087),
+                //             Point_3(-0.217391, 2.82609, 3.26087),
+                //             Point_3(-0.362319, 2.97101, 3.26087),
+                //             Point_3(-0.217391, 2.97101, 3.26087),
+                //         }};
+                //         for (int i = 0; i < 8; ++i) {
+                //             if (CGAL::squared_distance(corners[i], target[i]) > 1e-10)
+                //                 return false;
+                //         }
+                //         return true;
+                //     }())
+                // {
+                //     for(const auto& t: triangles)
+                //     {
+                //         for(const auto& p : t)
+                //         {
+                //             std::cout << "("
+                //                     << CGAL::to_double(p.x()) << ", "
+                //                     << CGAL::to_double(p.y()) << ", "
+                //                     << CGAL::to_double(p.z()) << ") ";
+                //         }
+                //         std::cout << "\n";
+                //     }
+                //     // // print cell corners
+                //     // for (std::size_t i = 0; i < vpc; ++i)
+                //     // {
+                //     //     const Point_3& p = corners[i];
+                //     //     std::cout << p.x() << " " << p.y() << " " << p.z() << "\n";
+                //     // }
+                //     std::exit(0);
+                // }
+
+        }
+
+        else // regular cases
+        {
+            const int* row = &Cube_table::polygon_cases[i_case * 16];
+            int k = 0;
+
+            std::vector<std::vector<int>> all_patch;
+            std::vector<std::size_t> patch_dual_vertices_idx;
+
+            // loop over edges in the lookup table
+            while (row[k] != -1)
+            {
+                std::vector<int> current_patch_edge_local_idx;
+                while (row[k] != -2 && row[k] != -1)
+                    current_patch_edge_local_idx.push_back(row[k++]); // collect local edge indices in one patch
+                
+
+                // collect intersections and gradients for this patch
+                std::vector<Point_3> patch_points;
+                std::vector<Vector_3> patch_grads;
+
+                for (int local_edge_idx : current_patch_edge_local_idx) 
+                {
+                    const edge_descriptor& global_edge = cell_edges[local_edge_idx]; 
+
+                    const auto& evs = domain.incident_vertices(global_edge);
+                    const vertex_descriptor& v0 = evs[0];
+                    const vertex_descriptor& v1 = evs[1];
+                    const Point_3& p0 = domain.point(v0);
+                    const Point_3& p1 = domain.point(v1);
+                    const FT val0 = domain.value(v0);
+                    const FT val1 = domain.value(v1);
+
+                    Point_3 p;
+                    if (!domain.construct_intersection(p0, p1, val0, val1, isovalue, p)) continue;
+
+                    Vector_3 g = domain.gradient(p);
+                    patch_points.push_back(p);
+                    patch_grads.push_back(g);
+                }
+
+
+                // compute the dual vertex for this patch
+                if (patch_points.size() >= 3) {
+                    Point_3 dual_vertex;
+
+                    bool success = false;
+                    switch(strategy)
+                    {
+                        case Vertex_strategy::QEM:
+                            success = patch_position_QEM(domain, c, patch_points, patch_grads, constrain_to_cell, dual_vertex);
+                            break;
+                        
+                        case Vertex_strategy::Centroid:
+                            success = patch_position_centroid(domain, patch_points, dual_vertex);
+                            break;
+                    }
+                    
+                    if(success)
+                    {
+                        std::size_t dual_vertex_idx;
+                        auto u = point_to_index.find(dual_vertex);
+                        if (u == point_to_index.end()) 
+                        {
+                            dual_vertex_idx = points.size();
+                            points.push_back(dual_vertex);
+                            point_to_index[dual_vertex] = dual_vertex_idx;
+                        } 
+                        else  dual_vertex_idx = u->second;
+
+                        patch_dual_vertices_idx.push_back(dual_vertex_idx); // collect a dual vertex 
+                        all_patch.push_back(current_patch_edge_local_idx); // collect a patch
+
+                    }
+                }
+
+                if (row[k] == -2) ++k;
+            }
+
+            CGAL_assertion(patch_dual_vertices_idx.size() == all_patch.size());
+
+            // map edge to dual vertices
+            // the ordering of patch_dual_vertices_idx is consistent with all_patch
+            int patch_size = patch_dual_vertices_idx.size();
+            for (int patch_idx = 0; patch_idx < patch_size; patch_idx++)
+            {
+                // loop over all edges in this patch
+                for (int local_edge_idx : all_patch[patch_idx]) 
+                {
+                    auto global_edge = cell_edges[local_edge_idx];
+                    edge_to_dual_vertices[global_edge].push_back(patch_dual_vertices_idx[patch_idx]);
+                }
+                cell_to_dual_vertices[c].push_back(patch_dual_vertices_idx[patch_idx]); 
+            }
+        }
+        
+    };
+
+    domain.for_each_cell(cell_patch_positioner);
+
+    // reorder the dual vertices of each edge to be in local cyclic order
+    reorder_edge_to_dual_vertices(domain, cell_to_dual_vertices, edge_to_dual_vertices);
+
+    // generate quads
+    auto generate_quad = [&](const edge_descriptor& e) 
+    {
+        generate_quad_dmc(e, domain, edge_to_dual_vertices, polygons);
+    };
+    domain.for_each_edge(generate_quad);
+    
+}
 
 
 } // namespace internal

@@ -88,32 +88,32 @@ using Mesh = CGAL::Surface_mesh<Point>;
 //   return g / std::sqrt(gx*gx + gy*gy + gz*gz);
 // };
 
-auto Shallowtail_value = [](const Point& p) {
-    const FT x = p.x(), y = p.y(), z = p.z();
-    return -4 * z*z*z * y*y
-         - 27 * y*y*y*y
-         + 16 * x * z*z*z*z
-         - 128 * x*x * z*z
-         + 144 * x * y*y * z
-         + 256 * x*x*x;
-};
+// auto Shallowtail_value = [](const Point& p) {
+//     const FT x = p.x(), y = p.y(), z = p.z();
+//     return -4 * z*z*z * y*y
+//          - 27 * y*y*y*y
+//          + 16 * x * z*z*z*z
+//          - 128 * x*x * z*z
+//          + 144 * x * y*y * z
+//          + 256 * x*x*x;
+// };
 
-auto Shallowtail_gradient = [](const Point& p) {
-    const FT x = p.x(), y = p.y(), z = p.z();
-    const FT gx = 16 * std::pow(z, 4)
-        - 256 * x * z * z
-        + 144 * y * y * z
-        + 768 * x * x;
-    const FT gy = -8 * z * z * z * y
-        - 108 * y * y * y
-        + 288 * x * y * z;
-    const FT gz = -12 * z * z * y * y
-        + 64 * x * z * z * z
-        - 256 * x * x * z
-        + 144 * x * y * y;
-    Vector g(gx, gy, gz);
-    return g / std::sqrt(gx*gx + gy*gy + gz*gz);
-};
+// auto Shallowtail_gradient = [](const Point& p) {
+//     const FT x = p.x(), y = p.y(), z = p.z();
+//     const FT gx = 16 * std::pow(z, 4)
+//         - 256 * x * z * z
+//         + 144 * y * y * z
+//         + 768 * x * x;
+//     const FT gy = -8 * z * z * z * y
+//         - 108 * y * y * y
+//         + 288 * x * y * z;
+//     const FT gz = -12 * z * z * y * y
+//         + 64 * x * z * z * z
+//         - 256 * x * x * z
+//         + 144 * x * y * y;
+//     Vector g(gx, gy, gz);
+//     return g / std::sqrt(gx*gx + gy*gy + gz*gz);
+// };
 
 auto rotated_wave_value = [](const Point& p) 
 {
@@ -205,7 +205,8 @@ int main(int argc, char** argv)
 
     std::cout << "Running Dual Marching Cubes with isovalue = " << isovalue << std::endl;
 
-    CGAL::Isosurfacing::internal::dual_marching_cubes(domain, isovalue, points, quads, false);
+    // CGAL::Isosurfacing::internal::dual_marching_cubes(domain, isovalue, points, quads, false, CGAL::Isosurfacing::Vertex_strategy::Centroid);
+    CGAL::Isosurfacing::internal::dual_marching_cubes_tmc(domain, isovalue, points, quads, true, CGAL::Isosurfacing::Vertex_strategy::Centroid);
 
     // for (size_t i = 0; i < points.size(); ++i)
     // std::cout << "Vertex " << i << ": " << points[i] << std::endl;
@@ -222,9 +223,9 @@ int main(int argc, char** argv)
     std::cout << "Soup #vertices: " << points.size() << std::endl;
     std::cout << "Soup #quads: " << quads.size() << std::endl;
 
-    std::ofstream out("DMC-soup.off");
+    std::ofstream out("DMC-centroid-soup.off");
 
-    CGAL::IO::write_OFF("DMC-soup.off", points, quads); // print soup to OFF file
+    CGAL::IO::write_OFF("DMC-centroid-soup.off", points, quads); // print soup to OFF file
 
     if(!CGAL::Polygon_mesh_processing::is_polygon_soup_a_polygon_mesh(quads)) {
         std::cerr << "Warning: the soup is not a 2-manifold surface, non-manifoldness?..." << std::endl;
