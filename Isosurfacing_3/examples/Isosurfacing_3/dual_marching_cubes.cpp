@@ -205,8 +205,8 @@ int main(int argc, char** argv)
 
     std::cout << "Running Dual Marching Cubes with isovalue = " << isovalue << std::endl;
 
-    // CGAL::Isosurfacing::internal::dual_marching_cubes(domain, isovalue, points, quads, false, CGAL::Isosurfacing::Vertex_strategy::Centroid);
-    CGAL::Isosurfacing::internal::dual_marching_cubes_tmc(domain, isovalue, points, quads, true, CGAL::Isosurfacing::Vertex_strategy::Centroid);
+    CGAL::Isosurfacing::internal::dual_marching_cubes(domain, isovalue, points, quads, false, CGAL::Isosurfacing::Vertex_strategy::Centroid);
+    // CGAL::Isosurfacing::internal::dual_marching_cubes_tmc(domain, isovalue, points, quads, true, CGAL::Isosurfacing::Vertex_strategy::QEM);
 
     // for (size_t i = 0; i < points.size(); ++i)
     // std::cout << "Vertex " << i << ": " << points[i] << std::endl;
@@ -223,9 +223,9 @@ int main(int argc, char** argv)
     std::cout << "Soup #vertices: " << points.size() << std::endl;
     std::cout << "Soup #quads: " << quads.size() << std::endl;
 
-    std::ofstream out("DMC-centroid-soup.off");
+    std::ofstream out("DMC-soup.off");
 
-    CGAL::IO::write_OFF("DMC-centroid-soup.off", points, quads); // print soup to OFF file
+    CGAL::IO::write_OFF("DMC-soup.off", points, quads); // print soup to OFF file
 
     if(!CGAL::Polygon_mesh_processing::is_polygon_soup_a_polygon_mesh(quads)) {
         std::cerr << "Warning: the soup is not a 2-manifold surface, non-manifoldness?..." << std::endl;
