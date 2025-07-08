@@ -263,7 +263,6 @@ void dual_marching_cubes(const Domain& domain,
     // std::unordered_map<edge_descriptor, std::size_t> edge_to_point_id;
     // std::vector<Point_3> edge_points;
     // std::vector<Vector_3> edge_gradients;
-
     // auto edge_positioner = [&](const edge_descriptor& e) 
     // {
     //     const auto& evs = domain.incident_vertices(e);
@@ -273,18 +272,14 @@ void dual_marching_cubes(const Domain& domain,
     //     const Point_3& p1 = domain.point(v1);
     //     const FT val0 = domain.value(v0);
     //     const FT val1 = domain.value(v1);
-
     //     Point_3 p;
     //     if (!domain.construct_intersection(p0, p1, val0, val1, isovalue, p))
     //         return;
-
     //     Vector_3 g = domain.gradient(p);
-
     //     edge_to_point_id[e] = edge_points.size();
     //     edge_points.push_back(p);
     //     edge_gradients.push_back(g);
     // };
-
     // domain.for_each_edge(edge_positioner);
 
     // compute the dual vertices for each polygon patch and output a edge to dual vertex map for the quad generation later
@@ -292,7 +287,8 @@ void dual_marching_cubes(const Domain& domain,
     std::unordered_map<Point_3, std::size_t> point_to_index; // to avoid duplicates
     std::unordered_map<cell_descriptor, std::vector<size_t>> cell_to_dual_vertices; // to keep track of local cyclic order
 
-    // std::ofstream debug_out("patch_dual_vertices_log.txt"); // debug
+    // debug
+    // std::ofstream debug_out("patch_dual_vertices_log.txt");  
     // constexpr FT tol = 1e-5;
     // const Point_3 target_vertex(-0.295698, 2.88988, 3.21928);
     // const Point_3 target_vertex(-0.285791, 2.90516, 3.30311);
@@ -326,6 +322,7 @@ void dual_marching_cubes(const Domain& domain,
             for (int local_edge_idx : current_patch_edge_local_idx) 
             {
                 const edge_descriptor& global_edge = cell_edges[local_edge_idx]; 
+
                 // const auto it = edge_to_point_id.find(global_edge);
                 // if (it == edge_to_point_id.end())
                 //     continue; // skip if  not intersected
@@ -351,7 +348,8 @@ void dual_marching_cubes(const Domain& domain,
 
 
             // compute the dual vertex for this patch
-            if (patch_points.size() >= 3) {
+            if (patch_points.size() >= 3) 
+            {
                 Point_3 dual_vertex;
 
                 bool success = false;
@@ -388,7 +386,6 @@ void dual_marching_cubes(const Domain& domain,
                     //             CGAL::abs(a.y() - b.y()) < tol &&
                     //             CGAL::abs(a.z() - b.z()) < tol);
                     // };
-
                     // if (close(dual_vertex, target_vertex)) 
                     // {
                     //     std::cout << "Matched target dual vertex!\n";
@@ -396,21 +393,17 @@ void dual_marching_cubes(const Domain& domain,
                     //     std::ofstream ofs("matched_cell_vertices.off");
                     //     ofs << "OFF\n";
                     //     ofs << "8 12 0\n"; 
-
                     //     for (std::size_t i = 0; i < vpc; ++i)
                     //     {
                     //         const Point_3& p = corners[i];
                     //         ofs << p.x() << " " << p.y() << " " << p.z() << "\n";
                     //     }
                     //     ofs.close();
-
                     //     std::exit(0);
                     // }
-
                     // for (const auto& pt : patch_points)
                     //     debug_out << "(" << pt.x() << " " << pt.y() << " " << pt.z() << ") ";
                     // debug_out << "=> (" << dual_vertex.x() << " " << dual_vertex.y() << " " << dual_vertex.z() << ")\n";
-
                     // if (close(dual_vertex, target_vertex)) {
                     //     debug_out << "Target dual vertex generated, stopping.\n";
                     //     debug_out.close();
@@ -455,6 +448,40 @@ void dual_marching_cubes(const Domain& domain,
 }
 
 
+// check if a point p is on the edge e
+template <typename Domain>
+bool point_lies_on_segment(const Domain& domain,
+                           const typename Domain::Geom_traits::Point_3& p, 
+                           const typename Domain::edge_descriptor& e,
+                           double tol = 1e-6)
+{
+    using Point_3 = typename Domain::Geom_traits::Point_3;
+    using vertex_descriptor = typename Domain::vertex_descriptor;
+    using Vector_3 = typename Domain::Geom_traits::Vector_3;
+
+    const auto& evs = domain.incident_vertices(e);
+    const vertex_descriptor& v0 = evs[0];
+    const vertex_descriptor& v1 = evs[1];
+    const Point_3& p0 = domain.point(v0);
+    const Point_3& p1 = domain.point(v1);
+
+    Vector_3 v = p1 - p0;
+    Vector_3 w = p - p0;
+
+    Vector_3 cross = CGAL::cross_product(v, w);
+    if (CGAL::squared_length(cross) > tol * tol)
+        return false;
+
+    // check 0 <= dot(w, v) <= ||v||^2
+    auto dot = w * v;
+    auto v_len2 = CGAL::squared_length(v);
+    if (dot < -tol || dot > v_len2 + tol)
+        return false;
+
+    return true;
+}
+
+
 // topologically correct dual marching cube
 // dual marching cube
 template <typename Domain, 
@@ -480,17 +507,23 @@ void dual_marching_cubes_tmc(const Domain& domain,
     std::unordered_map<Point_3, std::size_t> point_to_index; // to avoid duplicates
     std::unordered_map<cell_descriptor, std::vector<size_t>> cell_to_dual_vertices; // to keep track of local cyclic order
 
-    // // debug
+    // debug
     // std::array<Point_3, 8> target = {{
-    //                                 Point_3(-0.362319, 2.82609, 3.11594),
-    //                                 Point_3(-0.217391, 2.82609, 3.11594),
-    //                                 Point_3(-0.362319, 2.97101, 3.11594),
-    //                                 Point_3(-0.217391, 2.97101, 3.11594),
-    //                                 Point_3(-0.362319, 2.82609, 3.26087),
-    //                                 Point_3(-0.217391, 2.82609, 3.26087),
-    //                                 Point_3(-0.362319, 2.97101, 3.26087),
-    //                                 Point_3(-0.217391, 2.97101, 3.26087),
+    //                                 Point_3(-2.10145, -2.10145, 2.10145),
+    //                                 Point_3(-1.95652, -2.10145, 2.10145),
+    //                                 Point_3(-2.10145, -1.95652, 2.10145),
+    //                                 Point_3(-1.95652, -1.95652, 2.10145),
+    //                                 Point_3(-2.10145, -2.10145, 2.24638),
+    //                                 Point_3(-1.95652, -2.10145, 2.24638),
+    //                                 Point_3(-2.10145, -1.95652, 2.24638),
+    //                                 Point_3(-1.95652, -1.95652, 2.24638),
     //                             }};
+
+    // // debug 
+    // const Point_3 target1(-2.15469, -2.04175, 2.18708);
+    // const Point_3 target2(-2.12155, -2.17391, 2.13747);
+    // const Point_3 target3(-2.08107, -2.17391, 2.20993);
+    // const Point_3 target(-2.09784, -2.09691, 2.24259);
 
     auto cell_patch_positioner = [&](const cell_descriptor& c)
     {
@@ -550,6 +583,41 @@ void dual_marching_cubes_tmc(const Domain& domain,
                 if (!merged) all_patch_ambi.emplace_back(tri.begin(), tri.end()); // new patch with this triangle’s vertices
             }
 
+            // //debug
+            // if ([&]() 
+            //     {
+            //         std::array<Point_3, 8> target = {{
+            //             Point_3(-2.10145, -2.10145, 2.10145),
+            //             Point_3(-1.95652, -2.10145, 2.10145),
+            //             Point_3(-2.10145, -1.95652, 2.10145),
+            //             Point_3(-1.95652, -1.95652, 2.10145),
+            //             Point_3(-2.10145, -2.10145, 2.24638),
+            //             Point_3(-1.95652, -2.10145, 2.24638),
+            //             Point_3(-2.10145, -1.95652, 2.24638),
+            //             Point_3(-1.95652, -1.95652, 2.24638),
+            //         }};
+            //         for (int i = 0; i < 8; ++i) {
+            //             if (CGAL::squared_distance(corners[i], target[i]) > 1e-8)
+            //                 return false;
+            //         }
+            //         return true;
+            //     }())
+            // {
+            //     std::cout << "all_patch_ambi has patches of size ";
+            //     for (const auto& patch: all_patch_ambi)
+            //     {
+            //         std::cout << patch.size() << " | "; 
+            //         for (const auto& p: patch)
+            //         {
+            //             std::cout << "vertex: (" 
+            //                     << CGAL::to_double(p.x()) << ", "
+            //                     << CGAL::to_double(p.y()) << ", "
+            //                     << CGAL::to_double(p.z()) << ") \n";
+            //         }
+            //     }
+            //     std::cout<< "\n";
+            // }
+
             // compute the dual vertex for each patch
             for (const auto& patch_points: all_patch_ambi )
             {
@@ -566,17 +634,6 @@ void dual_marching_cubes_tmc(const Domain& domain,
                         for (int i = 0; i < 12; ++i) 
                         {
                             const auto& e = cell_edges[i];
-                            const auto& evs = domain.incident_vertices(e);
-                            const vertex_descriptor& v0 = evs[0];
-                            const vertex_descriptor& v1 = evs[1];
-                            const Point_3& p0 = domain.point(v0);
-                            const Point_3& p1 = domain.point(v1);
-                            const FT val0 = domain.value(v0);
-                            const FT val1 = domain.value(v1);
-
-                            Point_3 pe;
-                            if (!domain.construct_intersection(p0, p1, val0, val1, isovalue, pe)) continue;
-                            double d = CGAL::squared_distance(pe, p);
 
                             // // debug
                             // if (d < 1e-4)
@@ -590,8 +647,7 @@ void dual_marching_cubes_tmc(const Domain& domain,
                             //                                 << CGAL::to_double(pe.z()) << ")\n";
                             //     std::cout << "dist = " << d << "\n";
                             // }
-
-                            if (d < 1e-3)
+                            if (point_lies_on_segment(domain, p,e))
                             {
                                 current_patch_edges.push_back(e);
                                 break;
@@ -599,7 +655,47 @@ void dual_marching_cubes_tmc(const Domain& domain,
                             
                         }
                     }
-                        
+                    
+                    // //debug
+                    // if ([&]() 
+                    //     {
+                    //         std::array<Point_3, 8> target = {{
+                    //             Point_3(-2.10145, -2.10145, 2.10145),
+                    //             Point_3(-1.95652, -2.10145, 2.10145),
+                    //             Point_3(-2.10145, -1.95652, 2.10145),
+                    //             Point_3(-1.95652, -1.95652, 2.10145),
+                    //             Point_3(-2.10145, -2.10145, 2.24638),
+                    //             Point_3(-1.95652, -2.10145, 2.24638),
+                    //             Point_3(-2.10145, -1.95652, 2.24638),
+                    //             Point_3(-1.95652, -1.95652, 2.24638),
+                    //         }};
+                    //         for (int i = 0; i < 8; ++i) {
+                    //             if (CGAL::squared_distance(corners[i], target[i]) > 1e-8)
+                    //                 return false;
+                    //         }
+                    //         return true;
+                    //     }())
+                    // {
+                    //     std::cout << "current_patch_edges has patches of size "
+                    //      << current_patch_edges.size(); 
+                    //     std::cout<< "\n";
+                    //     for (const auto& e: current_patch_edges)
+                    //     {
+                    //         const auto& evs = domain.incident_vertices(e);
+                    //         const vertex_descriptor& p0 = evs[0];
+                    //         const vertex_descriptor& p1 = evs[1];
+                    //         const Point_3& v0 = domain.point(p0);
+                    //         const Point_3& v1 = domain.point(p1);
+                    //         std::cout << "Edge: (" 
+                    //             << CGAL::to_double(v0.x()) << ", "
+                    //             << CGAL::to_double(v0.y()) << ", "
+                    //             << CGAL::to_double(v0.z()) << ") -- ("
+                    //             << CGAL::to_double(v1.x()) << ", "
+                    //             << CGAL::to_double(v1.y()) << ", "
+                    //             << CGAL::to_double(v1.z()) << ") \n";
+                    //     }
+                    // }
+            
                     Point_3 dual_vertex;
 
                     bool success = false;
@@ -620,18 +716,18 @@ void dual_marching_cubes_tmc(const Domain& domain,
                             break;
                     }
                     
-                    // debug
+                    // //debug
                     // if ([&]() 
                     //     {
                     //         std::array<Point_3, 8> target = {{
-                    //             Point_3(-0.362319, 2.82609, 3.11594),
-                    //             Point_3(-0.217391, 2.82609, 3.11594),
-                    //             Point_3(-0.362319, 2.97101, 3.11594),
-                    //             Point_3(-0.217391, 2.97101, 3.11594),
-                    //             Point_3(-0.362319, 2.82609, 3.26087),
-                    //             Point_3(-0.217391, 2.82609, 3.26087),
-                    //             Point_3(-0.362319, 2.97101, 3.26087),
-                    //             Point_3(-0.217391, 2.97101, 3.26087),
+                    //             Point_3(-2.10145, -2.10145, 2.10145),
+                    //             Point_3(-1.95652, -2.10145, 2.10145),
+                    //             Point_3(-2.10145, -1.95652, 2.10145),
+                    //             Point_3(-1.95652, -1.95652, 2.10145),
+                    //             Point_3(-2.10145, -2.10145, 2.24638),
+                    //             Point_3(-1.95652, -2.10145, 2.24638),
+                    //             Point_3(-2.10145, -1.95652, 2.24638),
+                    //             Point_3(-1.95652, -1.95652, 2.24638),
                     //         }};
                     //         for (int i = 0; i < 8; ++i) {
                     //             if (CGAL::squared_distance(corners[i], target[i]) > 1e-8)
@@ -658,6 +754,30 @@ void dual_marching_cubes_tmc(const Domain& domain,
                     //             << CGAL::to_double(v1.x()) << ", "
                     //             << CGAL::to_double(v1.y()) << ", "
                     //             << CGAL::to_double(v1.z()) << ") \n";
+                    //     }
+                    // }
+                    
+                    //debug 
+                    // if (CGAL::squared_distance(dual_vertex, target) < 1e-8) 
+                    // {
+                    //     std::cout << "generated from tmc cases \n";
+                    //     std::cout << "Found matching dual vertex!\n";
+                    //     std::cout << "  Cell vertices:\n";
+                    //     for (std::size_t i = 0; i < vpc; ++i) 
+                    //     {
+                    //         const Point_3& corner = domain.point(domain.cell_vertices(c)[i]);
+                    //         std::cout << "    (" 
+                    //                 << CGAL::to_double(corner.x()) << ", "
+                    //                 << CGAL::to_double(corner.y()) << ", "
+                    //                 << CGAL::to_double(corner.z()) << ")\n";
+                    //     }
+                    //     std::cout << "  Patch points:\n";
+                    //     for (const auto& pt : patch_points) 
+                    //     {
+                    //         std::cout << "    (" 
+                    //                 << CGAL::to_double(pt.x()) << ", "
+                    //                 << CGAL::to_double(pt.y()) << ", "
+                    //                 << CGAL::to_double(pt.z()) << ")\n";
                     //     }
                     // }
 
@@ -796,6 +916,30 @@ void dual_marching_cubes_tmc(const Domain& domain,
                             break;
                     }
                     
+                    // // debug
+                    // if (CGAL::squared_distance(dual_vertex, target) < 1e-8)
+                    // {
+                    //     std::cout << "generated from regular cases\n";
+                    //     std::cout << "Found matching dual vertex!\n";
+                    //     std::cout << "  Cell vertices:\n";
+                    //     for (std::size_t i = 0; i < vpc; ++i) 
+                    //     {
+                    //         const Point_3& corner = domain.point(domain.cell_vertices(c)[i]);
+                    //         std::cout << "    (" 
+                    //                 << CGAL::to_double(corner.x()) << ", "
+                    //                 << CGAL::to_double(corner.y()) << ", "
+                    //                 << CGAL::to_double(corner.z()) << ")\n";
+                    //     }
+                    //     std::cout << "  Patch points:\n";
+                    //     for (const auto& pt : patch_points) 
+                    //     {
+                    //         std::cout << "    (" 
+                    //                 << CGAL::to_double(pt.x()) << ", "
+                    //                 << CGAL::to_double(pt.y()) << ", "
+                    //                 << CGAL::to_double(pt.z()) << ")\n";
+                    //     }
+                    // }
+
                     if(success)
                     {
                         std::size_t dual_vertex_idx;
@@ -841,23 +985,37 @@ void dual_marching_cubes_tmc(const Domain& domain,
     // reorder the dual vertices of each edge to be in local cyclic order
     reorder_edge_to_dual_vertices(domain, cell_to_dual_vertices, edge_to_dual_vertices);
 
+    // // debug
+    // const Point_3 v1(-2.10145, -2.10145, 2.10145);
+    // const Point_3 v2(-2.10145, -2.10145, 2.24638);
 
     // generate quads
     auto generate_quad = [&](const edge_descriptor& e) 
     {
         // // debug
-        // const auto& evs = domain.incident_vertices(e);
-        // const vertex_descriptor& v0 = evs[0];
-        // const vertex_descriptor& v1 = evs[1];
-        // const Point_3& p0 = domain.point(v0);
-        // const Point_3& p1 = domain.point(v1);
-        // const FT val0 = domain.value(v0);
-        // const FT val1 = domain.value(v1);
-        // Point_3 p;
-        // if (domain.construct_intersection(p0, p1, val0, val1, isovalue, p)) {
-        //     if (edge_to_dual_vertices.find(e) == edge_to_dual_vertices.end()) {
-        //         std::cout << "BUG? Intersecting edge missing dual vertex\n";
-        //     }
+        // auto it = edge_to_dual_vertices.find(e);
+        // if (it != edge_to_dual_vertices.end())
+        // {
+        //     const std::vector<std::size_t>& dual_vertices_idx = it->second;
+        //     std::cout << "Edge with " << dual_vertices_idx.size() << " dual vertices:\n";
+        //     const auto& evs = domain.incident_vertices(e);
+        //     const Point_3& p0 = domain.point(evs[0]);
+        //     const Point_3& p1 = domain.point(evs[1]);
+        //      if ((CGAL::squared_distance(v1, p0) < 1e-8 && CGAL::squared_distance(v2, p1) < 1e-8) ||
+        //     (CGAL::squared_distance(v1, p1) < 1e-8 && CGAL::squared_distance(v2, p0) < 1e-8))
+        //     {
+        //         const std::vector<std::size_t>& dual_vertices_idx = it->second;
+        //         std::cout << "Matched edge with " << dual_vertices_idx.size() << " dual vertices:\n";
+        //         for (std::size_t idx : dual_vertices_idx) 
+        //         {
+        //             const auto& pt = points[idx];
+        //             std::cout << "    Dual vertex: (" 
+        //                     << CGAL::to_double(pt.x()) << ", " 
+        //                     << CGAL::to_double(pt.y()) << ", " 
+        //                     << CGAL::to_double(pt.z()) << ")\n";
+        //         }
+        //         std::exit(0); 
+        //     }   
         // }
 
         generate_quad_dmc(e, domain, edge_to_dual_vertices, polygons);

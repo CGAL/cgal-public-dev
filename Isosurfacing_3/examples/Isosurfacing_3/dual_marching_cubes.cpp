@@ -205,8 +205,8 @@ int main(int argc, char** argv)
 
     std::cout << "Running Dual Marching Cubes with isovalue = " << isovalue << std::endl;
 
-    CGAL::Isosurfacing::internal::dual_marching_cubes(domain, isovalue, points, quads, false, CGAL::Isosurfacing::Vertex_strategy::Centroid);
-    // CGAL::Isosurfacing::internal::dual_marching_cubes_tmc(domain, isovalue, points, quads, true, CGAL::Isosurfacing::Vertex_strategy::QEM);
+    // CGAL::Isosurfacing::internal::dual_marching_cubes(domain, isovalue, points, quads, false, CGAL::Isosurfacing::Vertex_strategy::Centroid);
+    CGAL::Isosurfacing::internal::dual_marching_cubes_tmc(domain, isovalue, points, quads, true, CGAL::Isosurfacing::Vertex_strategy::Centroid);
 
     // for (size_t i = 0; i < points.size(); ++i)
     // std::cout << "Vertex " << i << ": " << points[i] << std::endl;
