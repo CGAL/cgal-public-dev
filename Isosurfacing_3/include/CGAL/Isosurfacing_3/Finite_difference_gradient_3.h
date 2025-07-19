@@ -45,7 +45,8 @@ public:
 
 private:
   const std::function<FT(const Point_3&)> m_function;
-  const FT m_delta, m_half_step_inv;
+  const FT m_dx, m_dy, m_dz;
+  const FT m_half_step_inv_x, m_half_step_inv_y, m_half_step_inv_z;
 
   GeomTraits m_gt;
 
@@ -56,16 +57,22 @@ public:
    * \tparam ValueFunction must be a model of `IsosurfacingValueField_3`.
    *
    * \param function the function giving the scalar value at each point
-   * \param delta the distance between samples for calculating the finite differences
+   * \param dx the distance between samples for calculating the finite differences in the x direction
+   * \param dy the distance between samples for calculating the finite differences in the y direction
+   * \param dz the distance between samples for calculating the finite differences in the z direction
    * \param gt the geometric traits class
    */
   template <typename ValueFunction>
   Finite_difference_gradient_3(const ValueFunction& function,
-                               const FT delta,
+                               const FT dx,
+                               const FT dy,
+                               const FT dz,
                                const Geom_traits& gt = Geom_traits())
     : m_function{function},
-      m_delta{delta},
-      m_half_step_inv{FT{1} / (FT{2} * m_delta)},
+      m_dx{dx}, m_dy{dy}, m_dz{dz},
+      m_half_step_inv_x{FT{1} / (FT{2} * dx)},
+      m_half_step_inv_y{FT{1} / (FT{2} * dy)},
+      m_half_step_inv_z{FT{1} / (FT{2} * dz)},
       m_gt{gt}
   { }
 
@@ -86,21 +93,30 @@ public:
     // at six points with distance delta around the query point
     const FT x = x_coord(p), y = y_coord(p), z = z_coord(p);
 
-    const Point_3 p0 = point(x + m_delta, y, z);
-    const Point_3 p1 = point(x - m_delta, y, z);
-    const Point_3 p2 = point(x, y + m_delta, z);
-    const Point_3 p3 = point(x, y - m_delta, z);
-    const Point_3 p4 = point(x, y, z + m_delta);
-    const Point_3 p5 = point(x, y, z - m_delta);
+    const Point_3 p0 = point(x + m_dx, y, z);
+    const Point_3 p1 = point(x - m_dx, y, z);
+    const Point_3 p2 = point(x, y + m_dy, z);
+    const Point_3 p3 = point(x, y - m_dy, z);
+    const Point_3 p4 = point(x, y, z + m_dz);
+    const Point_3 p5 = point(x, y, z - m_dz);
 
-    const FT gx = (m_function(p0) - m_function(p1)) * m_half_step_inv;
-    const FT gy = (m_function(p2) - m_function(p3)) * m_half_step_inv;
-    const FT gz = (m_function(p4) - m_function(p5)) * m_half_step_inv;
+    const FT gx = (m_function(p0) - m_function(p1)) * m_half_step_inv_x;
+    const FT gy = (m_function(p2) - m_function(p3)) * m_half_step_inv_y;
+    const FT gz = (m_function(p4) - m_function(p5)) * m_half_step_inv_z;
+
 
     const FT n = CGAL::approximate_sqrt(CGAL::square(gx) + CGAL::square(gy) + CGAL::square(gz));
 
     if(is_zero(n))
     {
+
+      std::cout << "Sampling: p0 = " << p0 << " → " << m_function(p0) << std::endl;
+      std::cout << "          p1 = " << p1 << " → " << m_function(p1) << std::endl;
+      std::cout << "          p2 = " << p2 << " → " << m_function(p2) << std::endl;
+      std::cout << "          p3 = " << p3 << " → " << m_function(p3) << std::endl;
+      std::cout << "          p4 = " << p4 << " → " << m_function(p4) << std::endl;
+      std::cout << "          p5 = " << p5 << " → " << m_function(p5) << std::endl;
+
       CGAL_warning(false && "interpolated gradient is the null vector!");
       return vector(0,0,0);
     }
