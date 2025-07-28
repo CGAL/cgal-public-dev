@@ -50,12 +50,12 @@ int main(int argc, char** argv)
     // const std::size_t nx = 256;
     // const std::size_t ny = 256;
     // const std::size_t nz = 98;
-    const double vx = 1.0, vy = 1.0, vz = 1.0;
+    const double vx = 1, vy = 1, vz = 1;
     // const std::size_t offset = 0;
 
     if (!image.read_raw(raw_file.c_str(), nx, ny, nz, vx, vy, vz)) 
     {
-        std::cerr << "Error: failed to read raw fiel " << raw_file << std::endl;
+        std::cerr << "Error: failed to read raw file " << raw_file << std::endl;
         return EXIT_FAILURE;
     }
 
@@ -64,26 +64,44 @@ int main(int argc, char** argv)
             << image.ydim() << " x "
             << image.zdim() << std::endl;
 
+    // // Log raw image values
+    // std::ofstream log("raw_image_values.log");
+    // log << "# x y z value\n";
+    // for (std::size_t x = 0; x < nx; ++x)
+    //     for (std::size_t y = 0; y < ny; ++y)
+    //         for (std::size_t z = 0; z < nz; ++z)
+    //         {
+    //             FT val = image.value(x, y, z);
+    //             if (!CGAL::is_finite(val))
+    //             {
+    //                 std::cerr << "Non-finite value at (" << x << ", " << y << ", " << z
+    //                         << "): " << val << "\n";
+    //                 log.close();
+    //                 return EXIT_FAILURE;
+    //             }
+    //             log << x << " " << y << " " << z << " " << val << "\n";
+    //         }
+    // log.close();
+    // std::cout << "Raw voxel values logged to raw_image_values.log\n";
+
     const CGAL::Bbox_3 bbox(0.0, 0.0, 0.0, vx * nx, vy * ny, vz * nz);
-    Grid grid(bbox, CGAL::make_array<std::size_t>(nx, ny, nz));
 
-    // Values values([&](const Point& p) -> FT 
-    // {
-    //     float x = static_cast<float>(p.x());
-    //     float y = static_cast<float>(p.y());
-    //     float z = static_cast<float>(p.z());
+    std::size_t factor = 3;
+    // Grid grid(bbox, CGAL::make_array<std::size_t>(nx / factor, ny / factor, nz / factor));
+    Grid grid(bbox, CGAL::make_array<std::size_t>(100, 100, 100));
 
-    //     return static_cast<FT>(image.value(x, y, z));
-    // }, grid);
-
-    // -1 to get rid of the segfault
     Values values([&](const Point& p) -> FT 
     {
         float x = std::clamp(static_cast<float>(p.x()), 0.0f, float(vx * (nx - 1)));
         float y = std::clamp(static_cast<float>(p.y()), 0.0f, float(vy * (ny - 1)));
         float z = std::clamp(static_cast<float>(p.z()), 0.0f, float(vz * (nz - 1)));
 
-        return static_cast<FT>(image.value(x, y, z));
+         float val = image.value(x, y, z);
+        if (std::isnan(val)) {
+            return std::numeric_limits<FT>::quiet_NaN(); // propagate NaN to domain
+        }
+
+        return static_cast<FT>(val);
     }, grid);
 
     Gradient gradients(values, FT(1), FT(1), FT(1)); 
@@ -116,7 +134,7 @@ int main(int argc, char** argv)
     // exit(0);
 
     // CGAL::Isosurfacing::internal::dual_marching_cubes(domain, isovalue, points, quads, false, CGAL::Isosurfacing::Vertex_strategy::QEM);
-    CGAL::Isosurfacing::internal::dual_marching_cubes_tmc(domain, isovalue, points, quads, true, CGAL::Isosurfacing::Vertex_strategy::Centroid);
+    CGAL::Isosurfacing::internal::dual_marching_cubes_tmc(domain, isovalue, points, quads, false, CGAL::Isosurfacing::Vertex_strategy::QEM);
 
     std::cout << "Soup #vertices: " << points.size() << std::endl;
     std::cout << "Soup #quads: " << quads.size() << std::endl;
