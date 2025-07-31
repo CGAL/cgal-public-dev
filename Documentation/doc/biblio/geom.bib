@@ -4493,7 +4493,7 @@ cell neighborhood in $O(m)$ time."
 , month =       nov
 , year =        1988
 , pages =       "75--80"
-, keywords =    "weighted euclidean metric, Voronoi partitions, Voronoi diagrams, geometrical problems, point set"
+, keywords =    "weighted Euclidean metric, Voronoi partitions, Voronoi diagrams, geometrical problems, point set"
 , update =      "93.05 schwarzkopf"
 , annote =      "Multiplicative weights in $n$ dimensions. Incremental
                  algorithm"
@@ -13535,13 +13535,14 @@ small factor with respect to floating-point calculation."
 @article{b-ip-48a
 , author =      "F. Bagemihl"
 , title =       "On indecomposable polyhedra"
-, journal =     "Amer. Math. Monthly"
-, volume =      "??"
+, journal =     "The American Mathematical Monthly"
+, volume =      "55"
 , month =       sep
 , year =        1948
 , pages =       "411--413"
 , succeeds =    "b-ip-??"
 , update =      "98.11 bibrelex"
+, publisher =   "Taylor \& Francis"
 }
 
 @inproceedings{bdegm-cvgls-97
@@ -20462,7 +20463,7 @@ $O(n^2)$ in the plane."
 }
 
 @article{bg-sfche-89
-, title = "On the space-filling curve heuristic for the euclidean traveling salesman problem"
+, title = "On the space-filling curve heuristic for the Euclidean traveling salesman problem"
 , author = "D. Bertsimas and M. Grigni"
 , journal = "Operations Research Letters"
 , year = 1989
@@ -21004,7 +21005,7 @@ $O(n^2)$ in the plane."
 , update =      "98.11 bibrelex, 98.03 mitchell"
 , abstract =    "Let $\cal P$ be a finite arrangement of non-overlapping open
 cubes with side-lengths not exceeding 1 in the $3$-dimensional
-euclidean space. Let $S$ and $T$ be two points lying outside
+Euclidean space. Let $S$ and $T$ be two points lying outside
 the open cubes. Assume one needs to find a short path emanating
 from $S$ and terminating at $T$ avoiding the cubes of $\cal P$
 under the restriction that the cubes are not known prior to the search.
@@ -31215,7 +31216,7 @@ determinants."
 , volume =      5
 , year =        1995
 , pages =       "125--144"
-, keywords =    "spanners, geometric graphs, greedy algorithm, transformational method, sparse spanners, euclidean graphs"
+, keywords =    "spanners, geometric graphs, greedy algorithm, transformational method, sparse spanners, Euclidean graphs"
 , succeeds =    "cdns-nsrgs-92"
 , update =      "96.09 devillers"
 }
@@ -44360,7 +44361,7 @@ information is available.  In some cases, it is possible to improve the
 expected randomized complexity of algorithms from $O(n\log n)$ to
 $O(n\log^{\star} n)$.  This technique applies in the following
 applications~: triangulation of a simple polygon, skeleton of a simple
-polygon, Delaunay triangulation of points knowing the EMST (euclidean
+polygon, Delaunay triangulation of points knowing the EMST (Euclidean
 minimum spanning tree)."
 }
 
@@ -137479,7 +137480,7 @@ depth."
 , number =      3
 , year =        1991
 , pages =       "221--230"
-, keywords =    "constrained relative neighborhood graphs (crng), constrained gabriel graphs (cgg), euclidean plane, Delaunay triangulation"
+, keywords =    "constrained relative neighborhood graphs (crng), constrained gabriel graphs (cgg), Euclidean plane, Delaunay triangulation"
 , update =      "93.09 rote"
 , annote =      "CRNG and CGG are subgraphs of CDT."
 , abstract =    "The original relative neighborhood graph (RNG) and
@@ -149746,7 +149747,7 @@ code."
 
 @book{y-snegi-79
 , author =      "I. M. Yaglom"
-, title =       "A simple non-euclidean geometry and its physical basis"
+, title =       "A simple non-Euclidean geometry and its physical basis"
 , publisher =   "Springer-Verlag"
 , year =        1979
 , update =      "98.03 bibrelex"
@@ -152084,4 +152085,36 @@ keywords = {polygonal surface mesh, Surface reconstruction, kinetic framework, s
   pages={121--131},
   year={2014},
   publisher={Elsevier}
+}
+
+@unpublished{lazard:hal-04907149,
+  TITLE = {{Removing self-intersections in 3D meshes while preserving floating-point coordinates}},
+  AUTHOR = {Lazard, Sylvain and Valque, Leo},
+  URL = {https://inria.hal.science/hal-04907149},
+  NOTE = {working paper or preprint},
+  YEAR = {2025},
+  MONTH = Jan,
+  KEYWORDS = {Snap rounding ; mesh intersection ; robustness},
+  PDF = {https://inria.hal.science/hal-04907149v1/file/Snap-HAL.pdf},
+  HAL_ID = {hal-04907149},
+  HAL_VERSION = {v1},
+}
+
+@inproceedings{si2005meshing,
+  title={Meshing piecewise linear complexes by constrained {Delaunay} tetrahedralizations},
+  author={Si, Hang and G{\"a}rtner, Klaus},
+  booktitle={Proceedings of the 14th International Meshing Roundtable},
+  pages={147--163},
+  year={2005},
+  organization={Springer}
+}
+
+@article{si2015tetgen,
+  title={TetGen, a {Delaunay}-based quality tetrahedral mesh generator},
+  author={Hang, Si},
+  journal={ACM Trans. Math. Softw},
+  volume={41},
+  number={2},
+  pages={11},
+  year={2015}
 }
