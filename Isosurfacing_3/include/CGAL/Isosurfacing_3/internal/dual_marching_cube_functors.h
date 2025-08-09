@@ -395,7 +395,20 @@ void dual_marching_cubes(const Domain& domain,
                 Point_3 p;
                 if (!domain.construct_intersection(p0, p1, val0, val1, isovalue, p)) continue;
 
-                if (!is_valid_point<Domain>(p)) continue; // skip invalid points
+                // if (!is_valid_point<Domain>(p)) continue; // skip invalid points
+                if (!is_valid_point<Domain>(p))
+                {
+                    std::cerr << "Invalid point detected: p0 (" 
+                                << CGAL::to_double(p0.x()) << ", "
+                                << CGAL::to_double(p0.y()) << ", "
+                                << CGAL::to_double(p0.z()) << ")\n"
+                                << "p1 ("
+                                << CGAL::to_double(p1.x()) << ", "
+                                << CGAL::to_double(p1.y()) << ", "
+                                << CGAL::to_double(p1.z()) << ")\n";
+                    continue;
+                }
+
 
                 Vector_3 g = domain.gradient(p);
                 patch_points.push_back(p);
@@ -563,6 +576,18 @@ void dual_marching_cubes_tmc(const Domain& domain,
     std::unordered_map<Point_3, std::size_t> point_to_index; // to avoid duplicates
     std::unordered_map<cell_descriptor, std::vector<size_t>> cell_to_dual_vertices; // to keep track of local cyclic order
 
+    // document the source of each dual vertex for nonmanifold edge tracking
+    enum class DualSrc : uint8_t { Regular, TMC_NoTunnel, TMC_Tunnel };
+
+    // prefer Tunnel > NoTunnel > Regular when the same point is reused
+    auto upgrade_src = [](DualSrc oldv, DualSrc newv) {
+        if (oldv == DualSrc::TMC_Tunnel || newv == DualSrc::TMC_Tunnel) return DualSrc::TMC_Tunnel;
+        if (oldv == DualSrc::TMC_NoTunnel || newv == DualSrc::TMC_NoTunnel) return DualSrc::TMC_NoTunnel;
+        return DualSrc::Regular;
+    };
+
+    std::unordered_map<std::size_t, DualSrc> dual_src;
+
     // debug
     // std::array<Point_3, 8> target = {{
     //                                 Point_3(-2.10145, -2.10145, 2.10145),
@@ -590,10 +615,34 @@ void dual_marching_cubes_tmc(const Domain& domain,
     // const Point_3 target(109.726, 58.836799999999997, 14.1892);
     // const Point_3 target(63.229100000000003, 127.131, 88.099199999999996);
     // const Point_3 target(61.230699999999999, 140.911, 84.399600000000007);
-    const Point_3 target(169.55600000000001, 95.151700000000005, 49.012700000000002);
+    // const Point_3 target(169.55600000000001, 95.151700000000005, 49.012700000000002);
     // const Point_3 target(166.16800000000001, 93.595299999999995, 46.805700000000002);
+    // const Point_3 target(109.907, 108.431, 35.1872);
+    // const Point_3 target(109.661, 110.134, 34.3311);
+    // const Point_3 target(110.302, 109.476, 35.0793);
+    // const Point_3 target(110.331, 112.404, 34.3367);
 
+    auto is_cell_tmc_tunnel = [&](const auto& triangles, const auto& cell_edges) -> bool
+    {
+        // Any triangle vertex that is NOT on any of the 12 cell edges ⇒ interior (hexagon) vertex.
+        int interior_count = 0;
 
+        for (const auto& tri : triangles) 
+        {
+            for (const auto& p : tri) 
+            {
+                bool on_any_edge = false;
+                for (int i = 0; i < 12; ++i) 
+                {
+                    if (point_lies_on_segment(domain, p, cell_edges[i])) { on_any_edge = true; break; }
+                }
+                if (!on_any_edge) { interior_count++; }
+            }
+        }
+        // Tunnel cases (popcount(q_sol)==6) create multiple interior hexagon uses.
+        // One interior vertex might appear in many tris, so we just need a threshold > 0.
+        return interior_count > 0;
+    };
 
     auto cell_patch_positioner = [&](const cell_descriptor& c)
     {
@@ -629,6 +678,8 @@ void dual_marching_cubes_tmc(const Domain& domain,
             bool success = CGAL::Isosurfacing::internal::p_slice(domain, c, isovalue, corners, values, i_case, true, triangles);
             if(!success) return;
             
+            const bool tmc_tunnel = is_cell_tmc_tunnel(triangles, cell_edges); // check if a tunnel is generated in the tmc case
+
             // then merge triangles for patches
             for (const auto& tri : triangles) 
             {
@@ -709,7 +760,15 @@ void dual_marching_cubes_tmc(const Domain& domain,
 
                     for (const auto& p: patch_points)
                     {
-                        if (!is_valid_point<Domain>(p)) continue; // skip invalid points
+                        // if (!is_valid_point<Domain>(p)) continue; // skip invalid points
+                        if (!is_valid_point<Domain>(p))
+                        {
+                            std::cerr << "Invalid point detected: p (" 
+                                      << CGAL::to_double(p.x()) << ", "
+                                      << CGAL::to_double(p.y()) << ", "
+                                      << CGAL::to_double(p.z()) << ")\n";
+                            continue;
+                        }
 
                         filtered_patch_points.push_back(p);
                         patch_grads.push_back(domain.gradient(p)); // collect gradients
@@ -843,46 +902,46 @@ void dual_marching_cubes_tmc(const Domain& domain,
                     // }
 
                     // debug
-                    if (CGAL::squared_distance(dual_vertex, target) < 1e-6) 
-                    {
-                        std::cout << "generated from tmc cases \n";
-                        std::cout << "Found matching dual vertex!\n";
-                        std::cout << "dual vertex: (" 
-                                << CGAL::to_double(dual_vertex.x()) << ", "
-                                << CGAL::to_double(dual_vertex.y()) << ", "
-                                << CGAL::to_double(dual_vertex.z()) << ")\n";
-                        std::cout << "  Cell vertices:\n";
-                        for (std::size_t i = 0; i < vpc; ++i) 
-                        {
-                            const Point_3& corner = domain.point(domain.cell_vertices(c)[i]);
-                            std::cout << "    (" 
-                                    << CGAL::to_double(corner.x()) << ", "
-                                    << CGAL::to_double(corner.y()) << ", "
-                                    << CGAL::to_double(corner.z()) << ")\n";
-                        }
-                        std::cout << "  Patch points:\n";
-                        for (const auto& pt : patch_points) 
-                        {
-                            std::cout << "    (" 
-                                    << CGAL::to_double(pt.x()) << ", "
-                                    << CGAL::to_double(pt.y()) << ", "
-                                    << CGAL::to_double(pt.z()) << ")\n";
-                        }
-                        std::cout << "  Triangles:\n";
-                        for (std::size_t i = 0; i < triangles.size(); ++i)
-                        {
-                            const auto& tri = triangles[i];
-                            std::cout << "  Triangle " << i << ":\n";
-                            for (const auto& pt : tri)
-                            {
-                                std::cout << "    (" 
-                                        << CGAL::to_double(pt.x()) << ", "
-                                        << CGAL::to_double(pt.y()) << ", "
-                                        << CGAL::to_double(pt.z()) << ")\n";
-                            }
-                        }
-                        // std::exit(0);
-                    }
+                    // if (CGAL::squared_distance(dual_vertex, target) < 1e-6) 
+                    // {
+                    //     std::cout << "generated from tmc cases \n";
+                    //     std::cout << "Found matching dual vertex!\n";
+                    //     std::cout << "dual vertex: (" 
+                    //             << CGAL::to_double(dual_vertex.x()) << ", "
+                    //             << CGAL::to_double(dual_vertex.y()) << ", "
+                    //             << CGAL::to_double(dual_vertex.z()) << ")\n";
+                    //     std::cout << "  Cell vertices:\n";
+                    //     for (std::size_t i = 0; i < vpc; ++i) 
+                    //     {
+                    //         const Point_3& corner = domain.point(domain.cell_vertices(c)[i]);
+                    //         std::cout << "    (" 
+                    //                 << CGAL::to_double(corner.x()) << ", "
+                    //                 << CGAL::to_double(corner.y()) << ", "
+                    //                 << CGAL::to_double(corner.z()) << ")\n";
+                    //     }
+                    //     std::cout << "  Patch points:\n";
+                    //     for (const auto& pt : patch_points) 
+                    //     {
+                    //         std::cout << "    (" 
+                    //                 << CGAL::to_double(pt.x()) << ", "
+                    //                 << CGAL::to_double(pt.y()) << ", "
+                    //                 << CGAL::to_double(pt.z()) << ")\n";
+                    //     }
+                    //     std::cout << "  Triangles:\n";
+                    //     for (std::size_t i = 0; i < triangles.size(); ++i)
+                    //     {
+                    //         const auto& tri = triangles[i];
+                    //         std::cout << "  Triangle " << i << ":\n";
+                    //         for (const auto& pt : tri)
+                    //         {
+                    //             std::cout << "    (" 
+                    //                     << CGAL::to_double(pt.x()) << ", "
+                    //                     << CGAL::to_double(pt.y()) << ", "
+                    //                     << CGAL::to_double(pt.z()) << ")\n";
+                    //         }
+                    //     }
+                    //     // std::exit(0);
+                    // }
 
                     if(success)
                     {
@@ -893,8 +952,23 @@ void dual_marching_cubes_tmc(const Domain& domain,
                             dual_vertex_idx = points.size();
                             points.push_back(dual_vertex);
                             point_to_index[dual_vertex] = dual_vertex_idx;
+
+                            // label the source
+                            dual_src[dual_vertex_idx] = tmc_tunnel ? DualSrc::TMC_Tunnel
+                                               : DualSrc::TMC_NoTunnel;
                         } 
-                        else  dual_vertex_idx = u->second;
+                        else  
+                        {
+                            dual_vertex_idx = u->second;
+
+                            // if the point is duplicate, find the old tag and update the new one
+                            auto it = dual_src.find(dual_vertex_idx);
+                            DualSrc prev = (it == dual_src.end()) // if we cant find the previous label, default to the new tag
+                                ? (tmc_tunnel ? DualSrc::TMC_Tunnel: DualSrc::TMC_NoTunnel) 
+                                : it->second;
+                            dual_src[dual_vertex_idx] = upgrade_src(prev, tmc_tunnel ? DualSrc::TMC_Tunnel
+                                                                                    : DualSrc::TMC_NoTunnel);
+                        }
 
                         cell_to_dual_vertices[c].push_back(dual_vertex_idx); 
 
@@ -996,7 +1070,20 @@ void dual_marching_cubes_tmc(const Domain& domain,
                     Point_3 p;
                     if (!domain.construct_intersection(p0, p1, val0, val1, isovalue, p)) continue;
 
-                    if (!is_valid_point<Domain>(p)) continue; // skip invalid points
+                    // if (!is_valid_point<Domain>(p)) continue; // skip invalid points
+                    if (!is_valid_point<Domain>(p))
+                        {
+                            std::cerr << "Invalid point detected: p0 (" 
+                                      << CGAL::to_double(p0.x()) << ", "
+                                      << CGAL::to_double(p0.y()) << ", "
+                                      << CGAL::to_double(p0.z()) << ")\n"
+                                      << "p1 ("
+                                      << CGAL::to_double(p1.x()) << ", "
+                                      << CGAL::to_double(p1.y()) << ", "
+                                      << CGAL::to_double(p1.z()) << ")\n";
+                            continue;
+                        }
+
 
                     Vector_3 g = domain.gradient(p);
                     patch_points.push_back(p);
@@ -1022,34 +1109,34 @@ void dual_marching_cubes_tmc(const Domain& domain,
                     }
                     
                     // debug
-                    if (CGAL::squared_distance(dual_vertex, target) < 1e-6)
-                    {
-                        std::cout << "generated from regular cases\n";
-                        std::cout << "Found matching dual vertex!\n";
-                        std::cout << "dual vertex: (" 
-                                << CGAL::to_double(dual_vertex.x()) << ", "
-                                << CGAL::to_double(dual_vertex.y()) << ", "
-                                << CGAL::to_double(dual_vertex.z()) << ")\n";
-                        std::cout << "  Cell vertices:\n";
-                        for (std::size_t i = 0; i < vpc; ++i) 
-                        {
-                            const Point_3& corner = domain.point(domain.cell_vertices(c)[i]);
-                            std::cout << "    (" 
-                                    << CGAL::to_double(corner.x()) << ", "
-                                    << CGAL::to_double(corner.y()) << ", "
-                                    << CGAL::to_double(corner.z()) << ")\n";
-                        }
-                        std::cout << "  Patch points:\n";
-                        for (const auto& pt : patch_points) 
-                        {
-                            std::cout << "    (" 
-                                    << CGAL::to_double(pt.x()) << ", "
-                                    << CGAL::to_double(pt.y()) << ", "
-                                    << CGAL::to_double(pt.z()) << ")\n";
-                        }
-                        std::cout << "case number = " << i_case << "\n";
-                        // std::exit(0);
-                    }
+                    // if (CGAL::squared_distance(dual_vertex, target) < 1e-6)
+                    // {
+                    //     std::cout << "generated from regular cases\n";
+                    //     std::cout << "Found matching dual vertex!\n";
+                    //     std::cout << "dual vertex: (" 
+                    //             << CGAL::to_double(dual_vertex.x()) << ", "
+                    //             << CGAL::to_double(dual_vertex.y()) << ", "
+                    //             << CGAL::to_double(dual_vertex.z()) << ")\n";
+                    //     std::cout << "  Cell vertices:\n";
+                    //     for (std::size_t i = 0; i < vpc; ++i) 
+                    //     {
+                    //         const Point_3& corner = domain.point(domain.cell_vertices(c)[i]);
+                    //         std::cout << "    (" 
+                    //                 << CGAL::to_double(corner.x()) << ", "
+                    //                 << CGAL::to_double(corner.y()) << ", "
+                    //                 << CGAL::to_double(corner.z()) << ")\n";
+                    //     }
+                    //     std::cout << "  Patch points:\n";
+                    //     for (const auto& pt : patch_points) 
+                    //     {
+                    //         std::cout << "    (" 
+                    //                 << CGAL::to_double(pt.x()) << ", "
+                    //                 << CGAL::to_double(pt.y()) << ", "
+                    //                 << CGAL::to_double(pt.z()) << ")\n";
+                    //     }
+                    //     std::cout << "case number = " << i_case << "\n";
+                    //     // std::exit(0);
+                    // }
 
                     if(success)
                     {
@@ -1060,11 +1147,25 @@ void dual_marching_cubes_tmc(const Domain& domain,
                             dual_vertex_idx = points.size();
                             points.push_back(dual_vertex);
                             point_to_index[dual_vertex] = dual_vertex_idx;
+                            
+                            // label the source
+                            dual_src[dual_vertex_idx] = DualSrc::Regular;
+
                         } 
-                        else  dual_vertex_idx = u->second;
+                        else  
+                        {
+                            dual_vertex_idx = u->second;
+
+                            // if the point is duplicate, find the old tag and update the new one
+                            auto it = dual_src.find(dual_vertex_idx);
+                            DualSrc prev = (it == dual_src.end()) ? DualSrc::Regular : it->second;
+                            dual_src[dual_vertex_idx] = upgrade_src(prev, DualSrc::Regular);
+                        }
+
 
                         patch_dual_vertices_idx.push_back(dual_vertex_idx); // collect a dual vertex 
                         all_patch.push_back(current_patch_edge_local_idx); // collect a patch
+
 
                     }
                 }
@@ -1132,6 +1233,58 @@ void dual_marching_cubes_tmc(const Domain& domain,
         generate_quad_dmc(e, domain, edge_to_dual_vertices, polygons);
     };
     domain.for_each_edge(generate_quad);
+
+    // count how many polygons share each dual edge 
+    std::unordered_map<
+        std::pair<std::size_t,std::size_t>, 
+        int, 
+        boost::hash<std::pair<std::size_t,std::size_t>>
+    > dual_edge_use;
+
+    // normalize orientation
+    auto norm_edge = [](std::size_t a, std::size_t b) 
+    {
+        return (a < b) ? std::pair<std::size_t,std::size_t>(a,b)
+                    : std::pair<std::size_t,std::size_t>(b,a);
+    };
+
+    for (const auto& poly : polygons) 
+    {
+        const int m = static_cast<int>(poly.size());   // triangles or quads (or n-gons)
+        for (int i = 0; i < m; ++i) {
+            auto e = norm_edge(poly[i], poly[(i+1)%m]); //%m to wrap around
+            dual_edge_use[e] += 1;
+        }
+    }
+
+    // report nonmanifold edgesz
+    for (const auto& [e, cnt] : dual_edge_use) 
+    {
+        auto [a,b] = e;
+
+        if (cnt == 1) std::cout << "[DUAL-EDGE boundary] (" << a << "," << b << ") faces=" << cnt << "\n";
+        else if (cnt >= 3) 
+        {
+            std::cout << "[DUAL-EDGE NONMANIFOLD] ...\n";
+
+            // the the source of the dual vertex
+            auto get_src = [&](std::size_t dual_vertex_index) 
+            {
+                if (auto it = dual_src.find(dual_vertex_index); it != dual_src.end()) return it->second;
+
+                // if somehow cannot find the tag, warn and default to regular
+                std::cout << "dual vertex index" << dual_vertex_index << "does not have a tag \n";
+                return DualSrc::Regular;
+            };
+
+            auto src_a = get_src(a);
+            auto src_b = get_src(b);
+            std::cout << "[DUAL-EDGE NONMANIFOLD] (" << a << "," << b << ") incident_faces=" << cnt << "\n";
+            // 0 = Regular; 1 = TMC_NoTunnel; 2 = TMC_Tunnel
+            std::cout << "  sources: a=" << int(src_a) << " b=" << int(src_b) << "\n";
+        }
+    }
+
     
 }
 
