@@ -115,7 +115,6 @@ int main(int argc, char** argv)
 
     // std::size_t non_zero_count = 0;
     // float min_val = 1e9, max_val = -1e9;
-
     // for (std::size_t k = 0; k < nz; ++k)
     // for (std::size_t j = 0; j < ny; ++j)
     //     for (std::size_t i = 0; i < nx; ++i) 
@@ -127,13 +126,11 @@ int main(int argc, char** argv)
     //         max_val = std::max(max_val, val);
     //     }
     //     }
-
     // std::cout << "Non-zero voxels: " << non_zero_count << std::endl;
     // std::cout << "Actual non-zero min = " << min_val << ", max = " << max_val << std::endl;
-
     // exit(0);
 
-    // CGAL::Isosurfacing::internal::dual_marching_cubes(domain, isovalue, points, quads, false, CGAL::Isosurfacing::Vertex_strategy::QEM);
+    // CGAL::Isosurfacing::internal::dual_marching_cubes(domain, isovalue, points, quads, false, CGAL::Isosurfacing::Vertex_strategy::Centroid);
     CGAL::Isosurfacing::internal::dual_marching_cubes_tmc(domain, isovalue, points, quads, false, CGAL::Isosurfacing::Vertex_strategy::QEM);
 
     std::cout << "Soup #vertices: " << points.size() << std::endl;
