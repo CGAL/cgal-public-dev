@@ -331,8 +331,10 @@ bool point_lies_on_segment(const Domain& domain,
 // hash for std::pair<size_t,size_t>
 struct PairHash 
 {
-    std::size_t operator()(const std::pair<std::size_t,std::size_t>& p) const noexcept 
+    std::size_t operator()(const std::pair<std::size_t,std::size_t>& p) const noexcept
+    {
         return std::hash<std::size_t>{}(p.first)^(std::hash<std::size_t>{}(p.second) << 1);
+    } 
 };
 
 struct FaceRec 
@@ -366,7 +368,7 @@ void subdivide_quads_skip_incident(const Domain& domain,
     nme_set.reserve(nme.size());
     for (const auto& e: nme) nme_set.insert(e);
 
-    auto is_nme = [&](std::size_t a, std::size_t b) -> bool {return nme_set.count(norm_edge(a,b))}; //if found, return 1 else 0
+    auto is_nme = [&](std::size_t a, std::size_t b) -> bool {return nme_set.count(norm_edge(a,b));}; //if found, return 1 else 0
 
     // compute the centroid and return its index
     auto centroid3 = [&](std::size_t a, std::size_t b, std::size_t c) -> std::size_t 
@@ -458,9 +460,10 @@ primal_edge_for_quad(const Domain& domain,
     const auto& v2 = domain.cell_vertices(c2);
     const auto& v3 = domain.cell_vertices(c3);
 
-    auto contains = [](const auto& arr, const vertex_descriptor& v) 
+    auto contains = [&](const auto& arr, const auto& v) -> bool 
     {
-        for (const auto& a : arr) return (a==v) ? true:false
+        for (const auto& a : arr) if (a == v) return true;
+        return false; 
     };
 
     std::vector<vertex_descriptor> common;
@@ -473,7 +476,7 @@ primal_edge_for_quad(const Domain& domain,
         {
             // check duplicate
             bool duplicate = false;
-            for (const auto& c : common) if (c == a) { dup = true; break; }
+            for (const auto& c : common) if (c == a) { duplicate = true; break; }
             if (!duplicate) common.push_back(a);
         }
     }
@@ -522,11 +525,11 @@ static void merge_into(std::vector<std::vector<std::size_t>>& groups,std::size_t
 // compute primal faces for each nme
 template <typename Domain>
 std::vector<typename Domain::vertex_descriptor>
-void primal_face(const Domain& domain,
+primal_face(const Domain& domain,
                 const typename Domain::cell_descriptor& cell_a,
                 const typename Domain::cell_descriptor& cell_b)
 {
-    using vertex_descriptor = Domain::vertex_descriptor;
+    using vertex_descriptor = typename Domain::vertex_descriptor;
 
     const auto& verts_a = domain.cell_vertices(cell_a);
     const auto& verts_b = domain.cell_vertices(cell_b);
@@ -606,7 +609,7 @@ enum class AD_pair{D02, D13};
 // decide the correct pairing based on asymptotic decider
 template <typename Domain>
 AD_pair asymptotic_decider(const Domain& domain,
-                          const std::array<typename Domain::vertex_descriptor,4>& primal_fv, 
+                          const std::vector<typename Domain::vertex_descriptor>& primal_fv, 
                           const typename Domain::Geom_traits::FT isovalue)
 {
     using FT = typename Domain::Geom_traits::FT;
@@ -631,7 +634,7 @@ AD_pair asymptotic_decider(const Domain& domain,
 }
 
 // for each nme, merge vertices of incident quads after subdvision according to asymptotic decider
-template <typename Domain>
+template <typename Domain, typename PairHash>
 void centers_to_merge_for_nme(const Domain& domain,
                         const std::pair<std::size_t, std::size_t> e, //nme; [a,b] must be normalized already: a<b
                         const std::unordered_map<std::pair<std::size_t,std::size_t>, std::vector<std::size_t>, PairHash>& edge_to_faces,
@@ -645,7 +648,9 @@ void centers_to_merge_for_nme(const Domain& domain,
     auto [a,b] = e;
 
     // incident faces to this nme e
-    const auto& faces = edge_to_faces[e];
+    auto it = edge_to_faces.find(e);
+    CGAL_assertion(it != edge_to_faces.end()); 
+    const auto& faces = it->second;
 
     // find the index of a value 
     auto find_idx = [](const std::array<std::size_t, 4>& v, std::size_t key)->int
@@ -751,12 +756,13 @@ void centers_to_merge_for_nme(const Domain& domain,
 // update polygons and points to resolve manifold edges
 // merge points at their centroid
 template <typename Domain, typename PolygonRange>
-void update_quads(const std::vector<std::vector<std::size_t>> to_be_merged_points,
+void update_quads(const Domain& domain,
+                  const std::vector<std::vector<std::size_t>> to_be_merged_points,
                   std::vector<typename Domain::Geom_traits::Point_3>& points,
                   std::vector<std::vector<std::size_t>>& to_add,
                   PolygonRange& polygons)
 {
-    using Point_3  = typename Geom_traits::Point_3;
+    using Point_3  = typename Domain::Geom_traits::Point_3;
 
     const std::size_t n = points.size();
 
@@ -1808,8 +1814,8 @@ void dual_marching_cubes_tmc(const Domain& domain,
     }
 
     if (nme.empty()) return;
-    
-    std::unordered_map<std::size_t, FaceRec>& old_fid_to_FaceRec;
+
+    std::unordered_map<std::size_t, FaceRec> old_fid_to_FaceRec;
     std::vector<std::vector<std::size_t>> to_add;
 
     // collect all unique faces incident to nme
@@ -1833,7 +1839,7 @@ void dual_marching_cubes_tmc(const Domain& domain,
         centers_to_merge_for_nme(domain, e, edge_to_faces, old_fid_to_FaceRec, dual_vertex_cell, isovalue, to_be_merged_points);
     }
 
-    update_quads(to_be_merged_points, points, to_add, polygons);
+    update_quads(domain, to_be_merged_points, points, to_add, polygons);
 }
 
 
