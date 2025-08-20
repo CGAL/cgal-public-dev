@@ -19,6 +19,8 @@
 #include <array>
 #include <bitset>
 #include <unordered_map>
+#include <algorithm>
+#include <numeric>
 
 #include <CGAL/Eigen_matrix.h>
 #include <CGAL/Eigen_vector.h>
@@ -292,6 +294,534 @@ bool is_duplicate_patch(const std::vector<Point_3>& new_patch,
 }
 
 
+// check if a point p is on the edge e
+template <typename Domain>
+bool point_lies_on_segment(const Domain& domain,
+                           const typename Domain::Geom_traits::Point_3& p, 
+                           const typename Domain::edge_descriptor& e,
+                           double tol = 1e-6)
+{
+    using Point_3 = typename Domain::Geom_traits::Point_3;
+    using vertex_descriptor = typename Domain::vertex_descriptor;
+    using Vector_3 = typename Domain::Geom_traits::Vector_3;
+
+    const auto& evs = domain.incident_vertices(e);
+    const vertex_descriptor& v0 = evs[0];
+    const vertex_descriptor& v1 = evs[1];
+    const Point_3& p0 = domain.point(v0);
+    const Point_3& p1 = domain.point(v1);
+
+    Vector_3 v = p1 - p0;
+    Vector_3 w = p - p0;
+
+    Vector_3 cross = CGAL::cross_product(v, w);
+    if (CGAL::squared_length(cross) > tol * tol)
+        return false;
+
+    // check 0 <= dot(w, v) <= ||v||^2
+    auto dot = w * v;
+    auto v_len2 = CGAL::squared_length(v);
+    if (dot < -tol || dot > v_len2 + tol)
+        return false;
+
+    return true;
+}
+
+
+// hash for std::pair<size_t,size_t>
+struct PairHash 
+{
+    std::size_t operator()(const std::pair<std::size_t,std::size_t>& p) const noexcept 
+        return std::hash<std::size_t>{}(p.first)^(std::hash<std::size_t>{}(p.second) << 1);
+};
+
+struct FaceRec 
+{
+    std::array<std::size_t,4> quad_verts;   // {v0,v1,v2,v3} from the original face
+    std::array<std::size_t,4> ring_centers; // {c01,c12,c23,c30} in the same order
+};
+
+// subdivide each quad into 5 quads 
+// remove all incident quads
+template <typename Domain,
+          typename PolygonRange>
+void subdivide_quads_skip_incident(const Domain& domain,
+                                    const std::vector<std::size_t>& face_ids,
+                                    const std::vector<std::pair<std::size_t,std::size_t>>& nme, 
+                                    std::vector<typename Domain::Geom_traits::Point_3>& points,
+                                    PolygonRange& polygons,
+                                    std::unordered_map<std::size_t, FaceRec>& old_fid_to_FaceRec, // for vertex merging later
+                                    std::vector<std::vector<std::size_t>>& to_add)
+{
+    using Point_3 = typename Domain::Geom_traits::Point_3;
+
+    auto norm_edge = [](std::size_t a, std::size_t b) 
+    {
+        return (a < b) ? std::pair<std::size_t,std::size_t>(a,b)
+                    : std::pair<std::size_t,std::size_t>(b,a);
+    };
+
+    // hashset for fast lookup
+    std::unordered_set<std::pair<std::size_t,std::size_t>, PairHash> nme_set;
+    nme_set.reserve(nme.size());
+    for (const auto& e: nme) nme_set.insert(e);
+
+    auto is_nme = [&](std::size_t a, std::size_t b) -> bool {return nme_set.count(norm_edge(a,b))}; //if found, return 1 else 0
+
+    // compute the centroid and return its index
+    auto centroid3 = [&](std::size_t a, std::size_t b, std::size_t c) -> std::size_t 
+    {
+        std::vector<Point_3> patch_points = {points[a], points[b], points[c]};
+        Point_3 p;
+        bool success = patch_position_centroid(domain, patch_points, p);
+        if (!success) 
+        {
+            std::cout << "WARN: patch_position_centroid not success\n";
+            return 0;
+        }
+        points.push_back(p);
+        return points.size() - 1;
+    };
+
+    std::vector<std::size_t> to_erase;
+    to_erase.reserve(face_ids.size());
+
+    // std::vector<std::vector<std::size_t>> to_add;
+    // to_add.reserve(face_ids.size() * 4);
+
+    for(std::size_t fid: face_ids)
+    {
+        if (fid >= polygons.size()) {
+            std::cout << "WARN: face id " << fid << " out of range; skipping\n";
+            continue;
+        }
+
+        const auto& face = polygons[fid];
+        if (face.size() != 4)
+        {
+            std::cout << "WARN: face " << fid << " is not a quad; skipping subdivision\n";
+            continue;
+        }
+
+        const std::size_t v0 = face[0];
+        const std::size_t v1 = face[1];
+        const std::size_t v2 = face[2];
+        const std::size_t v3 = face[3];
+
+        const std::size_t c01 = centroid3(v0, v1, v2);
+        const std::size_t c12 = centroid3(v1, v2, v3);
+        const std::size_t c23 = centroid3(v2, v3, v0);
+        const std::size_t c30 = centroid3(v3, v0, v1);
+        
+        old_fid_to_FaceRec.emplace(fid, FaceRec{{v0,v1,v2,v3},{c01,c12,c23,c30}});
+
+        // center quad
+        to_add.push_back({ c01, c12, c23, c30 });
+
+        // add each side quad only if its outer edge is NOT an NME
+        if (!is_nme(v0, v1)) to_add.push_back({ v0, v1, c01, c30 });
+        if (!is_nme(v1, v2)) to_add.push_back({ v1, v2, c12, c01 });
+        if (!is_nme(v2, v3)) to_add.push_back({ v2, v3, c23, c12 });
+        if (!is_nme(v3, v0)) to_add.push_back({ v3, v0, c30, c23 });
+
+        to_erase.push_back(fid);
+    }
+
+    // erase originals in descending order 
+    std::sort(to_erase.begin(), to_erase.end());
+    to_erase.erase(std::unique(to_erase.begin(), to_erase.end()), to_erase.end());
+    for (auto it = to_erase.rbegin(); it != to_erase.rend(); ++it) {
+         // convert index to iterator and erase that polygon
+        auto poly_it = polygons.begin() + static_cast<std::ptrdiff_t>(*it);
+        polygons.erase(poly_it);
+    }
+
+    // // append new quads
+    // for (auto& f : to_add)
+    //     polygons.push_back(std::move(f));
+}
+
+// get the vertices of the associated primal edge given the 4 cells of the 4 dual vertices of a quad
+template <typename Domain>
+std::pair<typename Domain::vertex_descriptor,
+          typename Domain::vertex_descriptor>
+primal_edge_for_quad(const Domain& domain,
+                     const typename Domain::cell_descriptor& c0,
+                     const typename Domain::cell_descriptor& c1,
+                     const typename Domain::cell_descriptor& c2,
+                     const typename Domain::cell_descriptor& c3)
+{
+    using vertex_descriptor = typename Domain::vertex_descriptor;
+
+    const auto& v0 = domain.cell_vertices(c0);
+    const auto& v1 = domain.cell_vertices(c1);
+    const auto& v2 = domain.cell_vertices(c2);
+    const auto& v3 = domain.cell_vertices(c3);
+
+    auto contains = [](const auto& arr, const vertex_descriptor& v) 
+    {
+        for (const auto& a : arr) return (a==v) ? true:false
+    };
+
+    std::vector<vertex_descriptor> common;
+    common.reserve(2);
+
+    // pick vertices that are present in all 4 cells
+    for (const vertex_descriptor& a : v0)
+    {
+        if (contains(v1, a) && contains(v2, a) && contains(v3, a))
+        {
+            // check duplicate
+            bool duplicate = false;
+            for (const auto& c : common) if (c == a) { dup = true; break; }
+            if (!duplicate) common.push_back(a);
+        }
+    }
+
+    // Expect exactly 2 primal vertices (a primal edge)
+    CGAL_assertion(common.size() == 2);
+
+    return {common[0], common[1]};
+}
+
+// groups  : vector of disjoint sets  (e.g. {{A,B}, {D,E,F}, …})
+// u, v    : two indices that must end up in the same set
+static void merge_into(std::vector<std::vector<std::size_t>>& groups,std::size_t u, std::size_t v)
+{
+    if (u == v) return;                     
+
+    int igu = -1, igv = -1;                     // group indices containing u and v
+    for (int i = 0; i < (int)groups.size(); ++i)
+    {
+        const auto& G = groups[i];
+        if (igu == -1 && std::find(G.begin(), G.end(), u) != G.end()) igu = i;
+        if (igv == -1 && std::find(G.begin(), G.end(), v) != G.end()) igv = i;
+        if (igu != -1 && igv != -1) break;
+    }
+
+    if (igu == -1 && igv == -1)            // neither in a group → create new
+        groups.push_back({u, v});
+
+    else if (igu != -1 && igv == -1)       // u in group, v not
+        groups[igu].push_back(v);
+
+    else if (igu == -1 && igv != -1)       // v in group, u not
+        groups[igv].push_back(u);
+
+    else if (igu != igv)                   // both in different groups then merge
+    {
+        if (groups[igu].size() < groups[igv].size()) std::swap(igu, igv);
+        auto& big  = groups[igu];
+        auto& small = groups[igv];
+        big.insert(big.end(), small.begin(), small.end()); // alwatys merge the small size group into the big one to save total moves
+        groups.erase(groups.begin() + igv);
+    }
+}
+
+
+// compute primal faces for each nme
+template <typename Domain>
+std::vector<typename Domain::vertex_descriptor>
+void primal_face(const Domain& domain,
+                const typename Domain::cell_descriptor& cell_a,
+                const typename Domain::cell_descriptor& cell_b)
+{
+    using vertex_descriptor = Domain::vertex_descriptor;
+
+    const auto& verts_a = domain.cell_vertices(cell_a);
+    const auto& verts_b = domain.cell_vertices(cell_b);
+
+    std::array<vertex_descriptor,4> common{};
+
+    int k = 0;
+
+    // find the 4 common primal vertices (the separating face)
+    for (const vertex_descriptor& va : verts_a) 
+    {
+        for (const vertex_descriptor& vb : verts_b) 
+        {
+            if (va == vb) 
+            {
+                if (k < 4) common[k++] = va;
+                break;
+            }
+        }
+    }
+
+    CGAL_assertion(k==4);
+
+    auto in_common = [&](const vertex_descriptor& v)
+    {
+        for (int i=0;i<4;++i) if (common[i] == v) return true;
+        return false;
+    };
+
+    std::vector<vertex_descriptor> ordered;
+    ordered.reserve(4);
+    ordered.push_back(common[0]);
+
+    const auto& cell_edges = domain.cell_edges(cell_a);
+
+    for (int added = 1; added < 4;) 
+    {
+        const auto curr = ordered.back();
+        bool advanced = false;
+
+        for (const auto& ce : cell_edges) 
+        {
+            const auto& ev = domain.incident_vertices(ce);
+            // check both directions; stay on the separating face using in_common
+            if (ev[0] == curr && in_common(ev[1]) &&
+                std::find(ordered.begin(), ordered.end(), ev[1]) == ordered.end())
+            {
+                ordered.push_back(ev[1]);
+                ++added;
+                advanced = true;
+                break;
+            }
+            if (ev[1] == curr && in_common(ev[0]) &&
+                std::find(ordered.begin(), ordered.end(), ev[0]) == ordered.end())
+            {
+                ordered.push_back(ev[0]);
+                ++added;
+                advanced = true;
+                break;
+            }
+        }
+
+        CGAL_assertion(advanced); // prevents infinite loop 
+        if (!advanced) break;     
+    }
+
+    CGAL_assertion(ordered.size() == 4);
+
+    return ordered;
+}
+
+
+
+// pairing direction for asymptotic decider
+enum class AD_pair{D02, D13};
+
+// decide the correct pairing based on asymptotic decider
+template <typename Domain>
+AD_pair asymptotic_decider(const Domain& domain,
+                          const std::array<typename Domain::vertex_descriptor,4>& primal_fv, 
+                          const typename Domain::Geom_traits::FT isovalue)
+{
+    using FT = typename Domain::Geom_traits::FT;
+
+    const FT f0 = domain.value(primal_fv[0]);
+    const FT f1 = domain.value(primal_fv[1]);
+    const FT f2 = domain.value(primal_fv[2]);
+    const FT f3 = domain.value(primal_fv[3]);
+
+    // val = (f0*f3 - f1*f2) / (f0 + f3 - f1 - f2)
+    const FT denom = f0 + f3 - f1 - f2;
+    const FT eps = FT(1e-12);
+
+    // tie-breaker
+    if (CGAL::abs(denom) <= eps) return ((f0 + f2) > (f1 + f3)) ? AD_pair::D13 : AD_pair::D02;
+
+    const FT val = (f0 * f3 - f1 * f2) / denom;
+    if (isovalue > val) return AD_pair::D13; 
+    if (isovalue < val) return AD_pair::D02;
+
+    return AD_pair::D02; // just in case all above fail
+}
+
+// for each nme, merge vertices of incident quads after subdvision according to asymptotic decider
+template <typename Domain>
+void centers_to_merge_for_nme(const Domain& domain,
+                        const std::pair<std::size_t, std::size_t> e, //nme; [a,b] must be normalized already: a<b
+                        const std::unordered_map<std::pair<std::size_t,std::size_t>, std::vector<std::size_t>, PairHash>& edge_to_faces,
+                        const std::unordered_map<std::size_t, FaceRec>& face_rec,  
+                        const std::vector<typename Domain::cell_descriptor>& dual_vertex_cell,
+                        const typename Domain::Geom_traits::FT isovalue,
+                        std::vector<std::vector<std::size_t>>& to_be_merged_points)
+{
+    using vertex_descriptor = typename Domain::vertex_descriptor;
+
+    auto [a,b] = e;
+
+    // incident faces to this nme e
+    const auto& faces = edge_to_faces[e];
+
+    // find the index of a value 
+    auto find_idx = [](const std::array<std::size_t, 4>& v, std::size_t key)->int
+    {
+        for (int i=0;i<(int)v.size();++i) if (v[i]==key) return i;
+        return -1;
+    };
+
+    // For each incident face, locate which edge is (a,b) in that face’s v0..v3 cycle,
+    // then pick the two adjacent side centers (indices k and (k+3)%4).
+    struct FaceSide 
+    {
+        std::array<std::size_t,2> side_centers;    // the two centers along the (a,b) edge of this face
+        std::array<vertex_descriptor, 2>  primal_edge;     // the primal edge this face sits on (2 primal verts)
+    };
+    std::vector<FaceSide> per_face; per_face.reserve(4);
+
+    for (std::size_t fid : faces)
+    {
+        const auto iterat = face_rec.find(fid);
+        CGAL_assertion(iterat != face_rec.end());
+        const auto& rec = iterat->second;
+
+        // original dual-vertex cycle of that quad
+        const std::array<std::size_t,4>& quad_verts = rec.quad_verts;            // size 4: {v0,v1,v2,v3}
+        const std::array<std::size_t, 4>& centroid_verts = rec.ring_centers;         // size 4: {c01,c12,c23,c30}
+        CGAL_assertion(quad_verts.size()==4 && centroid_verts.size()==4);
+
+        // locate the position where edge (V[k], V[k+1]) == (a,b) (up to orientation)
+        int ia = find_idx(quad_verts, a);
+        int ib = find_idx(quad_verts, b);
+        CGAL_assertion(ia>=0 && ib>=0);
+        // ensure they are adjacent on the 4-cycle
+        bool adjab = ((ia+1)%4 == ib); 
+        bool adjba = ((ib+1)%4 == ia);
+        CGAL_assertion(adjab || adjba);
+
+        int k = adjab ? ia : ib; // edge is (V[k], V[k+1]) but orientation can go either way
+
+        // the two side centers adjacent to that edge on this face:
+        // consistent with the face vertices ordering
+        std::array<std::size_t,2> sides = { centroid_verts[k], centroid_verts[ (k+3) % 4 ] };
+
+        const auto c0 = dual_vertex_cell[quad_verts[0]];
+        const auto c1 = dual_vertex_cell[quad_verts[1]];
+        const auto c2 = dual_vertex_cell[quad_verts[2]];
+        const auto c3 = dual_vertex_cell[quad_verts[3]];
+        auto pe = primal_edge_for_quad(domain, c0,c1,c2,c3); // get the primal edge associated with this quad
+
+        per_face.push_back({sides, {pe.first, pe.second}});
+    }
+
+    const auto& cell_a = dual_vertex_cell[a];
+    const auto& cell_b = dual_vertex_cell[b];
+    auto pf = primal_face(domain, cell_a, cell_b); 
+    AD_pair pairing = asymptotic_decider(domain, pf, isovalue); 
+
+    // helper to compare unordered primal edges
+    auto same_edge = [](const std::array<vertex_descriptor,2>& e, vertex_descriptor x, vertex_descriptor y)
+    {
+        return ( (e[0]==x && e[1]==y) || (e[0]==y && e[1]==x) );
+    };
+
+    //    E0=(pf[0],pf[1]), E1=(pf[1],pf[2]), E2=(pf[2],pf[3]), E3=(pf[3],pf[0])
+    std::array<std::size_t,2> side_centers_E0{SIZE_MAX, SIZE_MAX}; // store face-centers associated with E0
+    std::array<std::size_t,2> side_centers_E1{SIZE_MAX, SIZE_MAX}; // store face-centers associated with E1
+    std::array<std::size_t,2> side_centers_E2{SIZE_MAX, SIZE_MAX}; // store face-centers associated with E2
+    std::array<std::size_t,2> side_centers_E3{SIZE_MAX, SIZE_MAX}; // store face-centers associated with E3
+
+
+    for (const auto& fs : per_face) // fs = FaceSide struct
+    {
+        const auto& e = fs.primal_edge;
+        if (same_edge(e, pf[0],pf[1])) side_centers_E0 = fs.side_centers;// E0 
+        else if (same_edge(e, pf[1],pf[2])) side_centers_E1 = fs.side_centers;// E1 
+        else if (same_edge(e, pf[2],pf[3])) side_centers_E2 = fs.side_centers;// E2
+        else if (same_edge(e, pf[3],pf[0])) side_centers_E3 = fs.side_centers;// E3
+        else {CGAL_assertion(false);}
+    }
+    CGAL_assertion(side_centers_E0[0]!=SIZE_MAX && side_centers_E0[1]!=SIZE_MAX && side_centers_E1[0]!=SIZE_MAX
+    && side_centers_E1[1]!=SIZE_MAX && side_centers_E2[0]!=SIZE_MAX && side_centers_E2[1]!=SIZE_MAX && side_centers_E3[0]!=SIZE_MAX && side_centers_E3[1]!=SIZE_MAX);
+
+    // vertex pairing based on the result from asymptotic decider
+    if (pairing == AD_pair::D02) // {E0, E1}, {E2, E3}
+    { 
+        merge_into(to_be_merged_points, side_centers_E0[0], side_centers_E1[0]);
+        merge_into(to_be_merged_points, side_centers_E0[1], side_centers_E1[1]);
+        merge_into(to_be_merged_points, side_centers_E2[0], side_centers_E3[0]);
+        merge_into(to_be_merged_points, side_centers_E2[1], side_centers_E3[1]);
+    } 
+    else 
+    { // AD_pair::D13 // {E0, E3}, {E1, E2}
+        merge_into(to_be_merged_points, side_centers_E0[0], side_centers_E3[0]);
+        merge_into(to_be_merged_points, side_centers_E0[1], side_centers_E3[1]);
+        merge_into(to_be_merged_points, side_centers_E2[0], side_centers_E1[0]);
+        merge_into(to_be_merged_points, side_centers_E2[1], side_centers_E1[1]);
+    }
+}
+
+
+
+
+// update polygons and points to resolve manifold edges
+// merge points at their centroid
+template <typename Domain, typename PolygonRange>
+void update_quads(const std::vector<std::vector<std::size_t>> to_be_merged_points,
+                  std::vector<typename Domain::Geom_traits::Point_3>& points,
+                  std::vector<std::vector<std::size_t>>& to_add,
+                  PolygonRange& polygons)
+{
+    using Point_3  = typename Geom_traits::Point_3;
+
+    const std::size_t n = points.size();
+
+    //build a representative map with identity e.g. rep_of[4] = 4
+    std::vector<std::size_t> rep_of(n);
+    std::iota(rep_of.begin(), rep_of.end(), 0);
+
+    // place each merge group at its centroid, update points[rep]
+    for (const auto& group: to_be_merged_points)
+    {
+        if (group.empty()) continue;
+
+        // the group is reprsented by the smallest index rep
+        const std::size_t rep = *std::min_element(group.begin(), group.end());
+
+        // gather patch points
+        std::vector<Point_3> patch_pts;
+        patch_pts.reserve(group.size());
+        for (std::size_t v : group) {
+            patch_pts.push_back(points[v]);
+            rep_of[v] = rep;               // redirect every group member to rep
+        }
+
+        // compute centroid; if it ever returns false, keep current rep position
+        Point_3 p = points[rep];
+        if (patch_position_centroid(domain, patch_pts, p)) points[rep] = p; // write centroid into representative
+    }
+
+    std::vector<std::size_t> new_index(n, static_cast<std::size_t>(-1));
+    std::vector<Point_3> new_points;
+    new_points.reserve(n);
+
+    for (int i = 0; i < n; ++i) {
+        if (rep_of[i] == i) // identity representative, i.e. the unaffected
+        {                      
+            new_index[i] = static_cast<std::size_t>(new_points.size());
+            new_points.push_back(points[i]);       // copy unaffected coord
+        }
+    }
+    // give affected the index of their representative
+    for (int i = 0; i < n; ++i) 
+    {
+        if (new_index[i] == static_cast<std::size_t>(-1)) new_index[i] = new_index[ rep_of[i] ];
+    }
+
+    points = std::move(new_points); // replace new_points by points and discard new_ponts
+
+    // helper to remap old index to new index
+    auto remap_poly = [&](std::vector<std::size_t>& q) 
+    {
+        for (auto& v : q) v = new_index[v];
+        CGAL_assertion(q[0]!=q[1] && q[1]!=q[2] && q[2]!=q[3] && q[3]!=q[0] && q[0]!=q[2] && q[1]!=q[3]);
+    };
+
+    for (auto& q : polygons) remap_poly(q);
+    for (auto& q : to_add)   remap_poly(q);
+
+    // append to_add to polygons
+    polygons.insert(polygons.end(),
+                    std::make_move_iterator(to_add.begin()),
+                    std::make_move_iterator(to_add.end()));
+    to_add.clear(); // dont need to_add anymore
+}
+
+
 // dual marching cube
 template <typename Domain, 
           typename PolygonRange>
@@ -517,50 +1047,18 @@ void dual_marching_cubes(const Domain& domain,
 }
 
 
-// check if a point p is on the edge e
-template <typename Domain>
-bool point_lies_on_segment(const Domain& domain,
-                           const typename Domain::Geom_traits::Point_3& p, 
-                           const typename Domain::edge_descriptor& e,
-                           double tol = 1e-6)
-{
-    using Point_3 = typename Domain::Geom_traits::Point_3;
-    using vertex_descriptor = typename Domain::vertex_descriptor;
-    using Vector_3 = typename Domain::Geom_traits::Vector_3;
-
-    const auto& evs = domain.incident_vertices(e);
-    const vertex_descriptor& v0 = evs[0];
-    const vertex_descriptor& v1 = evs[1];
-    const Point_3& p0 = domain.point(v0);
-    const Point_3& p1 = domain.point(v1);
-
-    Vector_3 v = p1 - p0;
-    Vector_3 w = p - p0;
-
-    Vector_3 cross = CGAL::cross_product(v, w);
-    if (CGAL::squared_length(cross) > tol * tol)
-        return false;
-
-    // check 0 <= dot(w, v) <= ||v||^2
-    auto dot = w * v;
-    auto v_len2 = CGAL::squared_length(v);
-    if (dot < -tol || dot > v_len2 + tol)
-        return false;
-
-    return true;
-}
-
 
 // topologically correct dual marching cube
 // dual marching cube
 template <typename Domain, 
           typename PolygonRange>
 void dual_marching_cubes_tmc(const Domain& domain,
-                         const typename Domain::Geom_traits::FT isovalue,
-                         std::vector<typename Domain::Geom_traits::Point_3>& points,
-                         PolygonRange& polygons,
-                         bool constrain_to_cell,
-                         Isosurfacing::Vertex_strategy strategy)
+                             const typename Domain::Geom_traits::FT isovalue,
+                             std::vector<typename Domain::Geom_traits::Point_3>& points,
+                             PolygonRange& polygons,
+                             bool constrain_to_cell,
+                             Isosurfacing::Vertex_strategy strategy,
+                             bool post_process)
 {
     using FT = typename Domain::Geom_traits::FT;
     using Point_3 = typename Domain::Geom_traits::Point_3;
@@ -575,6 +1073,8 @@ void dual_marching_cubes_tmc(const Domain& domain,
     std::unordered_map<edge_descriptor, std::vector<size_t>> edge_to_dual_vertices;
     std::unordered_map<Point_3, std::size_t> point_to_index; // to avoid duplicates
     std::unordered_map<cell_descriptor, std::vector<size_t>> cell_to_dual_vertices; // to keep track of local cyclic order
+    std::vector<cell_descriptor> dual_vertex_cell; // use later for track primal face for asymptotic decider
+
 
     // document the source of each dual vertex for nonmanifold edge tracking
     enum class DualSrc : uint8_t { Regular, TMC_NoTunnel, TMC_Tunnel };
@@ -952,6 +1452,7 @@ void dual_marching_cubes_tmc(const Domain& domain,
                             dual_vertex_idx = points.size();
                             points.push_back(dual_vertex);
                             point_to_index[dual_vertex] = dual_vertex_idx;
+                            dual_vertex_cell.push_back(c);
 
                             // label the source
                             dual_src[dual_vertex_idx] = tmc_tunnel ? DualSrc::TMC_Tunnel
@@ -1147,6 +1648,7 @@ void dual_marching_cubes_tmc(const Domain& domain,
                             dual_vertex_idx = points.size();
                             points.push_back(dual_vertex);
                             point_to_index[dual_vertex] = dual_vertex_idx;
+                            dual_vertex_cell.push_back(c);
                             
                             // label the source
                             dual_src[dual_vertex_idx] = DualSrc::Regular;
@@ -1234,12 +1736,23 @@ void dual_marching_cubes_tmc(const Domain& domain,
     };
     domain.for_each_edge(generate_quad);
 
+    // -------------------------------------------------------------------------------------
+    // below is for resolving nonmanifold edges
+    // -------------------------------------------------------------------------------------
+    if (!post_process) return;
+
     // count how many polygons share each dual edge 
     std::unordered_map<
         std::pair<std::size_t,std::size_t>, 
         int, 
         boost::hash<std::pair<std::size_t,std::size_t>>
     > dual_edge_use;
+
+    std::unordered_map<
+        std::pair<std::size_t,std::size_t>, 
+        std::vector<std::size_t>,
+        boost::hash<std::pair<std::size_t,std::size_t>>
+    > edge_to_faces;
 
     // normalize orientation
     auto norm_edge = [](std::size_t a, std::size_t b) 
@@ -1248,23 +1761,32 @@ void dual_marching_cubes_tmc(const Domain& domain,
                     : std::pair<std::size_t,std::size_t>(b,a);
     };
 
+    std::size_t fid = 0;
     for (const auto& poly : polygons) 
     {
-        const int m = static_cast<int>(poly.size());   // triangles or quads (or n-gons)
-        for (int i = 0; i < m; ++i) {
+        const int m = static_cast<int>(poly.size());   
+        for (int i = 0; i < m; ++i) 
+        {
             auto e = norm_edge(poly[i], poly[(i+1)%m]); //%m to wrap around
             dual_edge_use[e] += 1;
+
+            auto& faces = edge_to_faces[e];
+            if (std::find(faces.begin(), faces.end(), fid) == faces.end()) faces.push_back(fid);
         }
+        ++fid;
     }
 
-    // report nonmanifold edgesz
+    // get all nonmanifold edges; nme if > 2 incident faces 
+    std::vector<std::pair<std::size_t, std::size_t>> nme;
     for (const auto& [e, cnt] : dual_edge_use) 
     {
         auto [a,b] = e;
 
-        if (cnt == 1) std::cout << "[DUAL-EDGE boundary] (" << a << "," << b << ") faces=" << cnt << "\n";
+        // if (cnt == 1) std::cout << "[DUAL-EDGE boundary] (" << a << "," << b << ") faces=" << cnt << "\n";
+        if (cnt == 1) continue; // boundary edge
         else if (cnt >= 3) 
         {
+            nme.emplace_back(a,b);
             std::cout << "[DUAL-EDGE NONMANIFOLD] ...\n";
 
             // the the source of the dual vertex
@@ -1285,7 +1807,33 @@ void dual_marching_cubes_tmc(const Domain& domain,
         }
     }
 
+    if (nme.empty()) return;
     
+    std::unordered_map<std::size_t, FaceRec>& old_fid_to_FaceRec;
+    std::vector<std::vector<std::size_t>> to_add;
+
+    // collect all unique faces incident to nme
+    std::unordered_set<std::size_t> uniq;
+    uniq.reserve(nme.size() * 4);
+    for (auto& e: nme)
+    {
+        auto it = edge_to_faces.find(e);
+        if (it == edge_to_faces.end()) continue;
+        uniq.insert(it->second.begin(), it->second.end());
+    }
+    std::vector<std::size_t> face_ids(uniq.begin(), uniq.end());
+    std::sort(face_ids.begin(), face_ids.end());
+
+    subdivide_quads_skip_incident(domain, face_ids, nme, points, polygons, old_fid_to_FaceRec, to_add);
+
+    // return all sets of points id need to be merged 
+    std::vector<std::vector<std::size_t>> to_be_merged_points; 
+    for (auto& e: nme)
+    {
+        centers_to_merge_for_nme(domain, e, edge_to_faces, old_fid_to_FaceRec, dual_vertex_cell, isovalue, to_be_merged_points);
+    }
+
+    update_quads(to_be_merged_points, points, to_add, polygons);
 }
 
 
