@@ -607,31 +607,35 @@ primal_face(const Domain& domain,
 enum class AD_pair{D02, D13};
 
 // decide the correct pairing based on asymptotic decider
+// S = (f0 - iso)*(f2 - iso) - (f1 - iso)*(f3 - iso)
+// if S > 0 → AD_pair::D02  
+//      – choose diagonal pf[0]–pf[2]  
+//      – edge groupings: {E01, E12} and {E23, E30}  
+// if S < 0 → AD_pair::D13  
+//      – choose diagonal pf[1]–pf[3]  
+//      – edge groupings: {E01, E30} and {E12, E23}  
+//  if S ≈ 0 → tie case, resolved deterministically (here defaults to D02)
 template <typename Domain>
 AD_pair asymptotic_decider(const Domain& domain,
-                          const std::vector<typename Domain::vertex_descriptor>& primal_fv, 
-                          const typename Domain::Geom_traits::FT isovalue)
+                           const std::vector<typename Domain::vertex_descriptor>& pf,
+                           const typename Domain::Geom_traits::FT iso)
 {
     using FT = typename Domain::Geom_traits::FT;
 
-    const FT f0 = domain.value(primal_fv[0]);
-    const FT f1 = domain.value(primal_fv[1]);
-    const FT f2 = domain.value(primal_fv[2]);
-    const FT f3 = domain.value(primal_fv[3]);
+    const FT f0 = domain.value(pf[0]); // pf order must be a 0-1-2-3 loop
+    const FT f1 = domain.value(pf[1]);
+    const FT f2 = domain.value(pf[2]);
+    const FT f3 = domain.value(pf[3]);
 
-    // val = (f0*f3 - f1*f2) / (f0 + f3 - f1 - f2)
-    const FT denom = f0 + f3 - f1 - f2;
-    const FT eps = FT(1e-12);
+    const FT S = (f0 - iso)*(f2 - iso) - (f1 - iso)*(f3 - iso);
 
-    // tie-breaker
-    if (CGAL::abs(denom) <= eps) return ((f0 + f2) > (f1 + f3)) ? AD_pair::D13 : AD_pair::D02;
-
-    const FT val = (f0 * f3 - f1 * f2) / denom;
-    if (isovalue > val) return AD_pair::D13; 
-    if (isovalue < val) return AD_pair::D02;
-
-    return AD_pair::D02; // just in case all above fail
+    const FT tol = FT(0);
+    if (S >  tol) return AD_pair::D02; // diagonal (0,2) → groups {E01,E12} & {E23,E30}
+    if (S < -tol) return AD_pair::D13; // diagonal (1,3) → groups {E01,E30} & {E12,E23}
+    return AD_pair::D02;               // deterministic tiebreak
 }
+
+
 
 // for each nme, merge vertices of incident quads after subdvision according to asymptotic decider
 template <typename Domain, typename PairHash>
@@ -641,7 +645,8 @@ void centers_to_merge_for_nme(const Domain& domain,
                         const std::unordered_map<std::size_t, FaceRec>& face_rec,  
                         const std::vector<typename Domain::cell_descriptor>& dual_vertex_cell,
                         const typename Domain::Geom_traits::FT isovalue,
-                        std::vector<std::vector<std::size_t>>& to_be_merged_points)
+                        std::vector<std::vector<std::size_t>>& to_be_merged_points,
+                    std::vector<typename Domain::Geom_traits::Point_3>& points)
 {
     using vertex_descriptor = typename Domain::vertex_descriptor;
 
@@ -694,11 +699,36 @@ void centers_to_merge_for_nme(const Domain& domain,
         // consistent with the face vertices ordering
         std::array<std::size_t,2> sides = { centroid_verts[k], centroid_verts[ (k+3) % 4 ] };
 
+        //debug print
+        const auto q0 = points[sides[0]];
+        const auto q1 = points[sides[1]];
+        std::cout << "[face " << fid << "] k=" << k
+            << " sides={" << sides[0] << "," << sides[1] << "}\n"
+            << "   s[0]: (" << CGAL::to_double(q0.x()) << ", "
+                            << CGAL::to_double(q0.y()) << ", "
+                            << CGAL::to_double(q0.z()) << ")\n"
+            << "   s[1]: (" << CGAL::to_double(q1.x()) << ", "
+                            << CGAL::to_double(q1.y()) << ", "
+                            << CGAL::to_double(q1.z()) << ")\n";
+
         const auto c0 = dual_vertex_cell[quad_verts[0]];
         const auto c1 = dual_vertex_cell[quad_verts[1]];
         const auto c2 = dual_vertex_cell[quad_verts[2]];
         const auto c3 = dual_vertex_cell[quad_verts[3]];
         auto pe = primal_edge_for_quad(domain, c0,c1,c2,c3); // get the primal edge associated with this quad
+
+        //debug
+        // const auto& v0 = pe.first;
+        // const auto& v1 = pe.second;
+        // const auto& P0 = domain.point(v0);
+        // const auto& P1 = domain.point(v1);
+        // std::cout << "Primal edge : \n"
+        //         << "  v0 -> (" << CGAL::to_double(P0.x()) << ", "
+        //                         << CGAL::to_double(P0.y()) << ", "
+        //                         << CGAL::to_double(P0.z()) << ")\n"
+        //         << "  v1 -> (" << CGAL::to_double(P1.x()) << ", "
+        //                         << CGAL::to_double(P1.y()) << ", "
+        //                         << CGAL::to_double(P1.z()) << ")\n";
 
         per_face.push_back({sides, {pe.first, pe.second}});
     }
@@ -706,7 +736,25 @@ void centers_to_merge_for_nme(const Domain& domain,
     const auto& cell_a = dual_vertex_cell[a];
     const auto& cell_b = dual_vertex_cell[b];
     auto pf = primal_face(domain, cell_a, cell_b); 
+
     AD_pair pairing = asymptotic_decider(domain, pf, isovalue); 
+
+    // debug
+    using FT = typename Domain::Geom_traits::FT;
+    const auto P0 = domain.point(pf[0]); const FT V0 = domain.value(pf[0]);
+    const auto P1 = domain.point(pf[1]); const FT V1 = domain.value(pf[1]);
+    const auto P2 = domain.point(pf[2]); const FT V2 = domain.value(pf[2]);
+    const auto P3 = domain.point(pf[3]); const FT V3 = domain.value(pf[3]);
+    std::cout << "[AD audit] pf corners (id -> coord, value):\n";
+    auto pv = [&](int i, const auto& P, FT V){
+        std::cout << "  pf["<<i<<"] -> (" << CGAL::to_double(P.x()) << ", "
+                                         << CGAL::to_double(P.y()) << ", "
+                                         << CGAL::to_double(P.z()) << "), "
+                  << "val=" << CGAL::to_double(V) << "\n";
+    };
+    pv(0,P0,V0); pv(1,P1,V1); pv(2,P2,V2); pv(3,P3,V3);
+    std::cout << "Asymptotic decider pairing: " << ((pairing == AD_pair::D02) ? "D02" : "D13") << "\n";
+    std::cout << "isovalue = " << CGAL::to_double(isovalue) << "\n";
 
     // helper to compare unordered primal edges
     auto same_edge = [](const std::array<vertex_descriptor,2>& e, vertex_descriptor x, vertex_descriptor y)
@@ -736,17 +784,19 @@ void centers_to_merge_for_nme(const Domain& domain,
     // vertex pairing based on the result from asymptotic decider
     if (pairing == AD_pair::D02) // {E0, E1}, {E2, E3}
     { 
-        merge_into(to_be_merged_points, side_centers_E0[0], side_centers_E1[0]);
-        merge_into(to_be_merged_points, side_centers_E0[1], side_centers_E1[1]);
-        merge_into(to_be_merged_points, side_centers_E2[0], side_centers_E3[0]);
-        merge_into(to_be_merged_points, side_centers_E2[1], side_centers_E3[1]);
+        // since the ordering (either CCW/CW) is consistent, the side_centers goes around and thus has flipped pairs
+        // we need to merge e.g. E0[0] with E1[1], E0[1] with E1[0], etc.
+        merge_into(to_be_merged_points, side_centers_E0[0], side_centers_E1[1]);
+        merge_into(to_be_merged_points, side_centers_E0[1], side_centers_E1[0]);
+        merge_into(to_be_merged_points, side_centers_E2[0], side_centers_E3[1]);
+        merge_into(to_be_merged_points, side_centers_E2[1], side_centers_E3[0]);
     } 
     else 
     { // AD_pair::D13 // {E0, E3}, {E1, E2}
-        merge_into(to_be_merged_points, side_centers_E0[0], side_centers_E3[0]);
-        merge_into(to_be_merged_points, side_centers_E0[1], side_centers_E3[1]);
-        merge_into(to_be_merged_points, side_centers_E2[0], side_centers_E1[0]);
-        merge_into(to_be_merged_points, side_centers_E2[1], side_centers_E1[1]);
+        merge_into(to_be_merged_points, side_centers_E0[0], side_centers_E3[1]);
+        merge_into(to_be_merged_points, side_centers_E0[1], side_centers_E3[0]);
+        merge_into(to_be_merged_points, side_centers_E2[0], side_centers_E1[1]);
+        merge_into(to_be_merged_points, side_centers_E2[1], side_centers_E1[0]);
     }
 }
 
@@ -1107,26 +1157,14 @@ void dual_marching_cubes_tmc(const Domain& domain,
     //                             }};
 
     // // debug 
-    // const Point_3 target(185.299, 179.63, 72.2626);
-    // const Point_3 target(183.596, 178.42400000000001, 73.252499999999998);
-    // const Point_3 target(64.6465, 134.465, 93.0505);
-    // const Point_3 target(64.6465, 139.636, 93.0505);
-    // const Point_3 target(175.83799999999999, 87.919200000000004, 92.060599999999994);
-    // const Point_3 target(176.34899999999999, 88.960099999999997, 92.653599999999997);
-    // const Point_3 target(82.830799999999996, 90.669200000000004, 61.5822);
-    // const Point_3 target(82.747500000000002, 90.505099999999999, 61.373699999999999);
-    // const Point_3 target(189.779, 154.18299999999999, 53.939999999999998);
-    // const Point_3 target(190.131, 155.852, 54.178600000000003);
-    // const Point_3 target(109.822, 58.737900000000003, 13.5657);
-    // const Point_3 target(109.726, 58.836799999999997, 14.1892);
-    // const Point_3 target(63.229100000000003, 127.131, 88.099199999999996);
-    // const Point_3 target(61.230699999999999, 140.911, 84.399600000000007);
-    // const Point_3 target(169.55600000000001, 95.151700000000005, 49.012700000000002);
-    // const Point_3 target(166.16800000000001, 93.595299999999995, 46.805700000000002);
     // const Point_3 target(109.907, 108.431, 35.1872);
     // const Point_3 target(109.661, 110.134, 34.3311);
     // const Point_3 target(110.302, 109.476, 35.0793);
     // const Point_3 target(110.331, 112.404, 34.3367);
+    const Point_3 target1(65.8811, 135.8070, 93.4010);
+    const Point_3 target2(65.8587, 138.4150, 93.4168);
+    // const Point_3 target1(110.331, 112.404, 34.3367);
+    // const Point_3 target2(109.661, 110.134, 34.3311);
 
     auto is_cell_tmc_tunnel = [&](const auto& triangles, const auto& cell_edges) -> bool
     {
@@ -1793,7 +1831,7 @@ void dual_marching_cubes_tmc(const Domain& domain,
         else if (cnt >= 3) 
         {
             nme.emplace_back(a,b);
-            std::cout << "[DUAL-EDGE NONMANIFOLD] ...\n";
+            // std::cout << "[DUAL-EDGE NONMANIFOLD] ...\n";
 
             // the the source of the dual vertex
             auto get_src = [&](std::size_t dual_vertex_index) 
@@ -1801,15 +1839,15 @@ void dual_marching_cubes_tmc(const Domain& domain,
                 if (auto it = dual_src.find(dual_vertex_index); it != dual_src.end()) return it->second;
 
                 // if somehow cannot find the tag, warn and default to regular
-                std::cout << "dual vertex index" << dual_vertex_index << "does not have a tag \n";
+                // std::cout << "dual vertex index" << dual_vertex_index << "does not have a tag \n";
                 return DualSrc::Regular;
             };
 
             auto src_a = get_src(a);
             auto src_b = get_src(b);
-            std::cout << "[DUAL-EDGE NONMANIFOLD] (" << a << "," << b << ") incident_faces=" << cnt << "\n";
+            // std::cout << "[DUAL-EDGE NONMANIFOLD] (" << a << "," << b << ") incident_faces=" << cnt << "\n";
             // 0 = Regular; 1 = TMC_NoTunnel; 2 = TMC_Tunnel
-            std::cout << "  sources: a=" << int(src_a) << " b=" << int(src_b) << "\n";
+            // std::cout << "  sources: a=" << int(src_a) << " b=" << int(src_b) << "\n";
         }
     }
 
@@ -1836,7 +1874,15 @@ void dual_marching_cubes_tmc(const Domain& domain,
     std::vector<std::vector<std::size_t>> to_be_merged_points; 
     for (auto& e: nme)
     {
-        centers_to_merge_for_nme(domain, e, edge_to_faces, old_fid_to_FaceRec, dual_vertex_cell, isovalue, to_be_merged_points);
+        const Point_3 p1 = points[e.first];
+        const Point_3 p2 = points[e.second];
+        if ((CGAL::squared_distance(p1, target1) < 1e-6 && CGAL::squared_distance(p2, target2) < 1e-6) || (CGAL::squared_distance(p1, target2) < 1e-6 && CGAL::squared_distance(p2, target1) < 1e-6))
+        {
+            std::cout << "Matched target nonmanifold edge \n";
+
+        }
+        centers_to_merge_for_nme(domain, e, edge_to_faces, old_fid_to_FaceRec, dual_vertex_cell, isovalue, to_be_merged_points, points);
+
     }
 
     update_quads(domain, to_be_merged_points, points, to_add, polygons);
