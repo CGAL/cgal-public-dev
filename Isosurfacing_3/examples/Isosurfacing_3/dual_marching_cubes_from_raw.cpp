@@ -88,7 +88,7 @@ int main(int argc, char** argv)
 
     std::size_t factor = 3;
     // Grid grid(bbox, CGAL::make_array<std::size_t>(nx / factor, ny / factor, nz / factor));
-    Grid grid(bbox, CGAL::make_array<std::size_t>(100, 100, 100));
+    Grid grid(bbox, CGAL::make_array<std::size_t>(30, 30, 30));
 
     Values values([&](const Point& p) -> FT 
     {
@@ -131,12 +131,14 @@ int main(int argc, char** argv)
     // exit(0);
 
     // CGAL::Isosurfacing::internal::dual_marching_cubes(domain, isovalue, points, quads, false, CGAL::Isosurfacing::Vertex_strategy::Centroid);
-    CGAL::Isosurfacing::internal::dual_marching_cubes_tmc(domain, isovalue, points, quads, false, CGAL::Isosurfacing::Vertex_strategy::QEM);
+    CGAL::Isosurfacing::internal::dual_marching_cubes_tmc(domain, isovalue, points, quads, false, CGAL::Isosurfacing::Vertex_strategy::Centroid, CGAL::Isosurfacing::internal::PostProcessOff());
 
     std::cout << "Soup #vertices: " << points.size() << std::endl;
     std::cout << "Soup #quads: " << quads.size() << std::endl;
 
     CGAL::IO::write_OFF(out_file, points, quads);
+
+    CGAL::Isosurfacing::internal::write_all_cells_off(grid, "all_cells.off");
 
     if (!CGAL::Polygon_mesh_processing::is_polygon_soup_a_polygon_mesh(quads)) {
         std::cerr << "Warning: the soup is not a 2-manifold surface, non-manifoldness?..." << std::endl;
