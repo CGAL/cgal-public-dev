@@ -6,6 +6,7 @@
 #include <CGAL/Isosurfacing_3/internal/tables.h>
 #include <CGAL/Isosurfacing_3/internal/tmc_dmc_functors.h>
 #include <CGAL/Isosurfacing_3/internal/marching_cubes_functors.h>
+#include <CGAL/Polygon_mesh_processing/orient_polygon_soup.h>
 
 #include <CGAL/assertions.h>
 #include <CGAL/Container_helper.h>
@@ -19,6 +20,7 @@
 #include <array>
 #include <bitset>
 #include <unordered_map>
+#include <unordered_set>
 #include <algorithm>
 #include <numeric>
 
@@ -657,6 +659,8 @@ void centers_to_merge_for_nme(const Domain& domain,
     CGAL_assertion(it != edge_to_faces.end()); 
     const auto& faces = it->second;
 
+    if (faces.size()!=4) return; // if less then 4 incident faces, then the mesh is inherently nonmanifold, nothing to do
+
     // find the index of a value 
     auto find_idx = [](const std::array<std::size_t, 4>& v, std::size_t key)->int
     {
@@ -682,7 +686,6 @@ void centers_to_merge_for_nme(const Domain& domain,
         // original dual-vertex cycle of that quad
         const std::array<std::size_t,4>& quad_verts = rec.quad_verts;            // size 4: {v0,v1,v2,v3}
         const std::array<std::size_t, 4>& centroid_verts = rec.ring_centers;         // size 4: {c01,c12,c23,c30}
-        CGAL_assertion(quad_verts.size()==4 && centroid_verts.size()==4);
 
         // locate the position where edge (V[k], V[k+1]) == (a,b) (up to orientation)
         int ia = find_idx(quad_verts, a);
@@ -877,6 +880,30 @@ void update_quads(const Domain& domain,
     to_add.clear(); // dont need to_add anymore
 }
 
+
+
+// use orient_polygon_soup to return all non-manifold vertices
+// not optimal here since we create copies of points and polygons
+struct NMVVisitor : CGAL::Polygon_mesh_processing::Default_orientation_visitor 
+{
+  std::unordered_set<std::size_t>& out;  
+  explicit NMVVisitor(std::unordered_set<std::size_t>& out_) : out(out_) {}
+  void non_manifold_vertex(std::size_t v, std::size_t) { out.insert(v); }
+};
+
+template <typename PointRange, typename PolygonRange>
+std::unordered_set<std::size_t>
+find_nonmanifold_vertices(const PointRange& points, const PolygonRange& polygons)
+{
+  auto pts   = points;   // run on copies; the routine mutates inputs
+  auto polys = polygons;
+
+  std::unordered_set<std::size_t> nmv;
+  NMVVisitor vis(nmv);
+  CGAL::Polygon_mesh_processing::orient_polygon_soup(pts, polys, CGAL::parameters::visitor(vis));
+
+  return nmv;            
+}
 
 // dual marching cube
 template <typename Domain, 
@@ -1781,8 +1808,10 @@ void dual_marching_cubes_tmc(const Domain& domain,
     domain.for_each_edge(generate_quad);
 
     // -------------------------------------------------------------------------------------
-    // below is for resolving nonmanifold edges
+    // below is for resolving nonmanifold edges and nonmanifold vertices
     // -------------------------------------------------------------------------------------
+
+    // 1. resolve nonmanifold edges
     if (!post_process) return;
 
     // count how many polygons share each dual edge 
@@ -1886,6 +1915,20 @@ void dual_marching_cubes_tmc(const Domain& domain,
     }
 
     update_quads(domain, to_be_merged_points, points, to_add, polygons);
+
+    // 2. resolve nonmanifold vertices
+    std::unordered_set<std::size_t> nmv = find_nonmanifold_vertices(points, polygons);
+    if (nmv.empty()) 
+    {
+        std::cout << "no nonmanifold vertices found\n; exit...";
+        return;
+    }
+
+    for (auto v_id: nmv)
+    {
+        const auto c = dual_vertex_cell[v_id];
+    }
+
 }
 
 
