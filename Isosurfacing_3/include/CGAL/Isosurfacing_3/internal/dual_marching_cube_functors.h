@@ -40,84 +40,11 @@ namespace Isosurfacing {
 
 namespace internal {
 
-    #include <CGAL/Isosurfacing_3/Cartesian_grid_3.h>
+#include <CGAL/Isosurfacing_3/Cartesian_grid_3.h>
 #include <CGAL/number_utils.h> // CGAL::to_double
 #include <fstream>
 #include <string>
 
-// Writes ALL voxel cells as independent hexahedra (6 quads each).
-// Grid must provide xdim(), ydim(), zdim() (vertex counts) and point(i,j,k).
-template <typename Grid>
-bool write_all_cells_off(const Grid& grid, const std::string& path)
-{
-    const std::size_t X = grid.xdim(); // vertex dims
-    const std::size_t Y = grid.ydim();
-    const std::size_t Z = grid.zdim();
-    if (X < 2 || Y < 2 || Z < 2) return false;
-
-    const std::size_t nx = X - 1;      // cell dims
-    const std::size_t ny = Y - 1;
-    const std::size_t nz = Z - 1;
-
-    const std::size_t n_cells  = nx * ny * nz;
-    const std::size_t n_verts  = n_cells * 8;  // per cell (dup vertices)
-    const std::size_t n_faces  = n_cells * 6;  // 6 quads per cell
-
-    std::ofstream out(path);
-    if (!out) return false;
-
-    out << "OFF\n";
-    out << n_verts << " " << n_faces << " 0\n";
-
-    // Emit vertices: for each cell, write its 8 corners in fixed order.
-    // Corner order (local indices 0..7):
-    // 0:(i,j,k)   1:(i+1,j,k)   2:(i+1,j+1,k)   3:(i,j+1,k)
-    // 4:(i,j,k+1) 5:(i+1,j,k+1) 6:(i+1,j+1,k+1) 7:(i,j+1,k+1)
-    for (std::size_t k = 0; k < nz; ++k)
-      for (std::size_t j = 0; j < ny; ++j)
-        for (std::size_t i = 0; i < nx; ++i)
-        {
-            const auto p000 = grid.point(i    , j    , k    );
-            const auto p100 = grid.point(i + 1, j    , k    );
-            const auto p110 = grid.point(i + 1, j + 1, k    );
-            const auto p010 = grid.point(i    , j + 1, k    );
-            const auto p001 = grid.point(i    , j    , k + 1);
-            const auto p101 = grid.point(i + 1, j    , k + 1);
-            const auto p111 = grid.point(i + 1, j + 1, k + 1);
-            const auto p011 = grid.point(i    , j + 1, k + 1);
-
-            const auto emit = [&](const auto& P){
-                out << CGAL::to_double(P.x()) << " "
-                    << CGAL::to_double(P.y()) << " "
-                    << CGAL::to_double(P.z()) << "\n";
-            };
-
-            emit(p000); emit(p100); emit(p110); emit(p010);
-            emit(p001); emit(p101); emit(p111); emit(p011);
-        }
-
-    // Emit faces: 6 quads per cell, referencing the 8 local verts.
-    // Outward orientation for an axis-aligned right-handed grid.
-    // Face order: z- (bottom), z+ (top), x- , x+ , y- , y+
-    std::size_t base = 0;
-    for (std::size_t c = 0; c < n_cells; ++c, base += 8)
-    {
-        // bottom z- : 0 1 2 3
-        out << "4 " << base+0 << " " << base+1 << " " << base+2 << " " << base+3 << "\n";
-        // top z+    : 4 7 6 5
-        out << "4 " << base+4 << " " << base+7 << " " << base+6 << " " << base+5 << "\n";
-        // x-        : 0 3 7 4
-        out << "4 " << base+0 << " " << base+3 << " " << base+7 << " " << base+4 << "\n";
-        // x+        : 1 5 6 2
-        out << "4 " << base+1 << " " << base+5 << " " << base+6 << " " << base+2 << "\n";
-        // y-        : 0 4 5 1
-        out << "4 " << base+0 << " " << base+4 << " " << base+5 << " " << base+1 << "\n";
-        // y+        : 3 2 6 7
-        out << "4 " << base+3 << " " << base+2 << " " << base+6 << " " << base+7 << "\n";
-    }
-
-    return true;
-}
 
 // generate dual vertex of each patch as the centroid of the patch
 template <typename Domain>
@@ -986,14 +913,11 @@ find_nonmanifold_vertices(const PointRange& points, const PolygonRange& polygons
 
 
 // dimension of grid
-struct gridDim
-{
-    std::size_t nx, ny, nz;
-};
+struct gridDim {std::size_t nx, ny, nz;};
 
 // check if a cell is on the boundary of the grid
-template<typename Domain>
-inline bool is_boundary_cell(const typename Domain::cell_descriptor& c, const gridDim& d) 
+template<typename cell_descriptor>
+inline bool is_boundary_cell(const cell_descriptor& c, const gridDim& d) 
 {
     return (c[0] == 0 || c[0] == d.nx-1 ||
             c[1] == 0 || c[1] == d.ny-1 ||
@@ -1001,14 +925,15 @@ inline bool is_boundary_cell(const typename Domain::cell_descriptor& c, const gr
 }
 
 // to determine which sides of the cell should be padded
+// 2^6 = 64 possible combinations so uint8_t is sufficient
 enum cellSide : uint8_t 
 {
   XMIN=1<<0, XMAX=1<<1, YMIN=1<<2,
   YMAX=1<<3, ZMIN=1<<4, ZMAX=1<<5
 };
 
-template<typename Domain>
-uint8_t which_cellSide(const typename Domain::cell_descriptor& c, const gridDim& d) 
+template<typename cell_descriptor>
+uint8_t get_cellSide(const cell_descriptor& c, const gridDim& d) 
 {
     uint8_t m = 0;
     if (c[0] == 0)      m |= XMIN;
@@ -1019,6 +944,28 @@ uint8_t which_cellSide(const typename Domain::cell_descriptor& c, const gridDim&
     if (c[2] == d.nz-1) m |= ZMAX;
     return m;
 }
+
+
+// build padded grid, pad one layer on each side
+template<typename Grid>
+Grid make_padded_grid(const Grid& g) 
+{
+  const std::size_t nx=g.xdim(), ny=g.ydim(), nz=g.zdim();   // vertex counts
+  const auto p000=g.point(0,0,0), pX=g.point(1,0,0), pY=g.point(0,1,0), pZ=g.point(0,0,1);
+  const double hx = CGAL::to_double(pX.x()-p000.x());
+  const double hy = CGAL::to_double(pY.y()-p000.y());
+  const double hz = CGAL::to_double(pZ.z()-p000.z());
+  const auto pmin=g.point(0,0,0), pmax=g.point(nx-1,ny-1,nz-1);
+  const double xmin=CGAL::to_double(pmin.x()), ymin=CGAL::to_double(pmin.y()), zmin=CGAL::to_double(pmin.z());
+  const double xmax=CGAL::to_double(pmax.x()), ymax=CGAL::to_double(pmax.y()), zmax=CGAL::to_double(pmax.z());
+
+  CGAL::Bbox_3 bbP(xmin - hx, ymin - hy, zmin - hz,
+                   xmax + hx, ymax + hy, zmax + hz);
+
+  return Grid(bbP, CGAL::make_array<std::size_t>(nx + 2, ny + 2, nz + 2));
+
+}
+
 
 // dual marching cube
 template <typename Domain, 
@@ -2286,10 +2233,8 @@ void dual_marching_cubes_tmc(const Domain& domain,
     domain.for_each_edge(generate_quad);
 
     // -------------------------------------------------------------------------------------
-    // below is for resolving nonmanifold edges and nonmanifold vertices
+    // below is for resolving nonmanifold edges
     // -------------------------------------------------------------------------------------
-
-    // 1. resolve nonmanifold edges
 
     // count how many polygons share each dual edge 
     std::unordered_map<
@@ -2393,18 +2338,6 @@ void dual_marching_cubes_tmc(const Domain& domain,
 
     update_quads(domain, to_be_merged_points, points, to_add, polygons);
 
-    // 2. resolve nonmanifold vertices
-    std::unordered_set<std::size_t> nmv = find_nonmanifold_vertices(points, polygons);
-    if (nmv.empty()) 
-    {
-        std::cout << "no nonmanifold vertices found\n; exit...";
-        return;
-    }
-    // for (auto v_id: nmv)
-    // {
-    //     const auto c = dual_vertex_cell[v_id];
-    //     if (!is_boundary_cell(con))
-    // }
 
 }
 

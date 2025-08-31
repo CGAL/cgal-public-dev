@@ -86,9 +86,14 @@ int main(int argc, char** argv)
 
     const CGAL::Bbox_3 bbox(0.0, 0.0, 0.0, vx * nx, vy * ny, vz * nz);
 
+    
     std::size_t factor = 3;
     // Grid grid(bbox, CGAL::make_array<std::size_t>(nx / factor, ny / factor, nz / factor));
     Grid grid(bbox, CGAL::make_array<std::size_t>(30, 30, 30));
+
+    // make padded grid to resolve nonmanifold vertices (works but not for all and change original geometry (bad))
+    // Grid grid1(bbox, CGAL::make_array<std::size_t>(30, 30, 30));
+    // Grid grid = CGAL::Isosurfacing::internal::make_padded_grid(grid1);
 
     Values values([&](const Point& p) -> FT 
     {
@@ -104,7 +109,7 @@ int main(int argc, char** argv)
         return static_cast<FT>(val);
     }, grid);
 
-    Gradient gradients(values, FT(1), FT(1), FT(1)); 
+    Gradient gradients(values, FT(vx), FT(vy), FT(vz));
 
     Domain domain = CGAL::Isosurfacing::create_dual_contouring_domain_3(grid, values, gradients);
 
@@ -113,32 +118,17 @@ int main(int argc, char** argv)
 
     std::cout << "Running Dual Marching Cubes on " << raw_file << " with isovalue = " << isovalue << std::endl;
 
-    // std::size_t non_zero_count = 0;
-    // float min_val = 1e9, max_val = -1e9;
-    // for (std::size_t k = 0; k < nz; ++k)
-    // for (std::size_t j = 0; j < ny; ++j)
-    //     for (std::size_t i = 0; i < nx; ++i) 
-    // {
-    //     float val = image.value(i, j, k);
-    //     if (val != 0) {
-    //         ++non_zero_count;
-    //         min_val = std::min(min_val, val);
-    //         max_val = std::max(max_val, val);
-    //     }
-    //     }
-    // std::cout << "Non-zero voxels: " << non_zero_count << std::endl;
-    // std::cout << "Actual non-zero min = " << min_val << ", max = " << max_val << std::endl;
-    // exit(0);
 
     // CGAL::Isosurfacing::internal::dual_marching_cubes(domain, isovalue, points, quads, false, CGAL::Isosurfacing::Vertex_strategy::Centroid);
-    CGAL::Isosurfacing::internal::dual_marching_cubes_tmc(domain, isovalue, points, quads, false, CGAL::Isosurfacing::Vertex_strategy::Centroid, CGAL::Isosurfacing::internal::PostProcessOff());
+    // CGAL::Isosurfacing::internal::dual_marching_cubes_tmc(domain, isovalue, points, quads, false, CGAL::Isosurfacing::Vertex_strategy::Centroid, CGAL::Isosurfacing::internal::PostProcessOff());
+
+    CGAL::Isosurfacing::internal::gridDim gridDims = {grid.xdim(), grid.ydim(), grid.zdim()};
+    CGAL::Isosurfacing::internal::dual_marching_cubes_tmc(domain, isovalue, points, quads, false, CGAL::Isosurfacing::Vertex_strategy::Centroid, CGAL::Isosurfacing::internal::PostProcessOn(), gridDims);
 
     std::cout << "Soup #vertices: " << points.size() << std::endl;
     std::cout << "Soup #quads: " << quads.size() << std::endl;
 
     CGAL::IO::write_OFF(out_file, points, quads);
-
-    CGAL::Isosurfacing::internal::write_all_cells_off(grid, "all_cells.off");
 
     if (!CGAL::Polygon_mesh_processing::is_polygon_soup_a_polygon_mesh(quads)) {
         std::cerr << "Warning: the soup is not a 2-manifold surface, non-manifoldness?..." << std::endl;
