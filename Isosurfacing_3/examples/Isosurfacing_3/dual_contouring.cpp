@@ -71,26 +71,26 @@ using Mesh = CGAL::Surface_mesh<Point>;
 //   return g / std::sqrt(gx*gx + gy*gy + gz*gz);
 // };
 
-auto Kusner_Schmitt_value = [](const Point& point)
-{
-  const FT x = point.x(), y = point.y(), z = point.z();
-  return x*x*y*y*z*z
-         + 3*x*x*y*y + 3*x*x*z*z + 9*x*x
-         + 3*y*y*z*z + 9*y*y + 9*z*z
-         - 32*x*y*z - 5.0;
-};
+// auto Kusner_Schmitt_value = [](const Point& point)
+// {
+//   const FT x = point.x(), y = point.y(), z = point.z();
+//   return x*x*y*y*z*z
+//          + 3*x*x*y*y + 3*x*x*z*z + 9*x*x
+//          + 3*y*y*z*z + 9*y*y + 9*z*z
+//          - 32*x*y*z - 5.0;
+// };
 
-auto Kusner_Schmitt_gradient = [](const Point& p) 
-{
-  const FT x = p.x(), y = p.y(), z = p.z();
+// auto Kusner_Schmitt_gradient = [](const Point& p) 
+// {
+//   const FT x = p.x(), y = p.y(), z = p.z();
 
-  const FT gx = 2*x*y*y*z*z + 6*x*y*y + 6*x*z*z + 18*x - 32*y*z;
-  const FT gy = 2*x*x*y*z*z + 6*x*x*y + 6*y*z*z + 18*y - 32*x*z;
-  const FT gz = 2*x*x*y*y*z + 6*x*x*z + 6*y*y*z + 18*z - 32*x*y;
+//   const FT gx = 2*x*y*y*z*z + 6*x*y*y + 6*x*z*z + 18*x - 32*y*z;
+//   const FT gy = 2*x*x*y*z*z + 6*x*x*y + 6*y*z*z + 18*y - 32*x*z;
+//   const FT gz = 2*x*x*y*y*z + 6*x*x*z + 6*y*y*z + 18*z - 32*x*y;
 
-  Vector g(gx, gy, gz);
-  return g / std::sqrt(gx*gx + gy*gy + gz*gz);
-};
+//   Vector g(gx, gy, gz);
+//   return g / std::sqrt(gx*gx + gy*gy + gz*gz);
+// };
 
 // auto Shallowtail_value = [](const Point& p) 
 // {

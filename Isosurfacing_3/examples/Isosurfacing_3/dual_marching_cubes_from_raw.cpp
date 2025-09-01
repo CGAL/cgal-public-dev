@@ -119,11 +119,10 @@ int main(int argc, char** argv)
     std::cout << "Running Dual Marching Cubes on " << raw_file << " with isovalue = " << isovalue << std::endl;
 
 
-    // CGAL::Isosurfacing::internal::dual_marching_cubes(domain, isovalue, points, quads, false, CGAL::Isosurfacing::Vertex_strategy::Centroid);
-    // CGAL::Isosurfacing::internal::dual_marching_cubes_tmc(domain, isovalue, points, quads, false, CGAL::Isosurfacing::Vertex_strategy::Centroid, CGAL::Isosurfacing::internal::PostProcessOff());
+    // CGAL::Isosurfacing::internal::dual_marching_cubes(domain, isovalue, points, quads, false, CGAL::Isosurfacing::Vertex_strategy::QEM);
+    // CGAL::Isosurfacing::internal::dual_marching_cubes_tmc(domain, isovalue, points, quads, false, CGAL::Isosurfacing::Vertex_strategy::QEM, CGAL::Isosurfacing::internal::PostProcessOff());
 
-    CGAL::Isosurfacing::internal::gridDim gridDims = {grid.xdim(), grid.ydim(), grid.zdim()};
-    CGAL::Isosurfacing::internal::dual_marching_cubes_tmc(domain, isovalue, points, quads, false, CGAL::Isosurfacing::Vertex_strategy::Centroid, CGAL::Isosurfacing::internal::PostProcessOn(), gridDims);
+    CGAL::Isosurfacing::internal::dual_marching_cubes_tmc(domain, isovalue, points, quads, false, CGAL::Isosurfacing::Vertex_strategy::Centroid, CGAL::Isosurfacing::internal::PostProcessOn());
 
     std::cout << "Soup #vertices: " << points.size() << std::endl;
     std::cout << "Soup #quads: " << quads.size() << std::endl;

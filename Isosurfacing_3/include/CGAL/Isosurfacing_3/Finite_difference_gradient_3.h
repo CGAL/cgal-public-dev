@@ -50,6 +50,8 @@ private:
 
   GeomTraits m_gt;
 
+  mutable std::size_t nan_count = 0; 
+
 public:
   /**
    * \brief creates a new instance of this gradient class.
@@ -109,6 +111,8 @@ public:
 
     if(is_zero(n))
     {
+      ++nan_count;
+      std::cout << "number of NaN gradients: " << nan_count << std::endl;
 
       std::cout << "Sampling: p0 = " << p0 << " → " << m_function(p0) << std::endl;
       std::cout << "          p1 = " << p1 << " → " << m_function(p1) << std::endl;
@@ -119,6 +123,7 @@ public:
 
       CGAL_warning(false && "interpolated gradient is the null vector!");
       return vector(0,0,0);
+
     }
 
     return vector(gx / n, gy / n, gz / n);
