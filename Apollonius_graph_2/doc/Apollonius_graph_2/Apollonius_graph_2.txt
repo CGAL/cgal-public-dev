@@ -285,7 +285,7 @@ The `Vertex_conflict_2` predicate. The left-most, bottom-most and top-most circl
 What we essentially want to compute when we construct incrementally a
 Voronoi diagram, is whether the object to be inserted destroys an edge
 of the Voronoi diagram or not. In the case of points this is really
-easy and it amounts to the well known <I>incircle</I> test.
+easy and it amounts to the well-known <I>incircle</I> test.
 In the case
 of circles the situation is more complicated. We can have six possible
 outcomes as to what portion of an edge of the Apollonius diagram the

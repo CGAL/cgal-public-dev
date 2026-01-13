@@ -219,7 +219,7 @@ diagram. The points defining the power diagram are the projections of
 the points in \f$ \mathcal{P}\f$ onto \f$ \mathcal{H}\f$, each point weighted
 with its negative square distance to \f$ \mathcal{H}\f$. Algorithms for the
 computation of power diagrams via the dual regular triangulation are
-well known and for example provided by \cgal in the class
+well-known and for example provided by \cgal in the class
 `Regular_triangulation_2<Gt, Tds>`.
 
 \subsection InterpolationImplementation_1 Implementation
