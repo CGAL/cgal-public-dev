@@ -312,12 +312,13 @@ private:
       ++level;
 
       // Select randomly vertices of the new level
-      for(vertex_descriptor v: vertices(above_sm))
-        if(rng.get_int(0,RATIO-1)==0){
-          vertex_descriptor base = get(to_base_maps[level-1], v);
-          select_points.emplace_back(get(vpm, base));
-          select_vertices[select_points.back()] = v;
-        }
+      while(select_points.size()==0)
+        for(vertex_descriptor v: vertices(above_sm))
+          if(rng.get_int(0,RATIO-1)==0){
+            vertex_descriptor base = get(to_base_maps[level-1], v);
+            select_points.emplace_back(get(vpm, base));
+            select_vertices[select_points.back()] = v;
+          }
 
       // Compute the graph of the new level
       PolygonMesh new_sm;
