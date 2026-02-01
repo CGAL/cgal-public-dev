@@ -35,7 +35,7 @@
 namespace CGAL {
 
 /**
-* \ingroup PkgConvexHull3Functions
+* \ingroup PkgConvexHull3Queries
 *
 * computes the furthest point of the range along the direction.
 *
@@ -73,7 +73,6 @@ Point_3
 #else
 typename Point_set_processing_3_np_helper<Range, NamedParameters>::Const_point_map::key_type
 #endif
-// typename Kernel_traits<Vector_3>::Kernel::Point_3
 extreme_point_3(const Range& r, const Direction_3 &dir, const NamedParameters &np) {
   using CGAL::parameters::choose_parameter;
   using CGAL::parameters::get_parameter;
@@ -115,7 +114,7 @@ extreme_point_3(const Range& r, const Direction_3 &dir, const NamedParameters &n
 }
 
 /**
-* \ingroup PkgConvexHull3Functions
+* \ingroup PkgConvexHull3Queries
 *
 * computes the furthest point of the convex graph along the direction `dir` and returns the associated vertex.
 *

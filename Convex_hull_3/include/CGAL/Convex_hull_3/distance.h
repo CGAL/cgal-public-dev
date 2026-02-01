@@ -134,7 +134,6 @@ Vector_3 tetrahedron_dir_to_origin(boost::container::small_vector<Vector_3, 4>& 
   const typename K::Construct_cross_product_vector_3 cross=k.construct_cross_product_vector_3_object();
   const typename K::Compute_scalar_product_3 dot=k.compute_scalar_product_3_object();
   const typename K::Orientation_3 orientation = k.orientation_3_object();
-  const typename K::Collinear_3 collinear = k.collinear_3_object();
 
   Vector_3 &a=simplex[0];
   Vector_3 &b=simplex[1];
@@ -298,8 +297,6 @@ struct Separation_distance_functor{
 
     //The Kernel used is EPECK and not the one of the named parameter
     const K &k=K();
-
-    const typename K::Construct_cross_product_vector_3 cross=k.construct_cross_product_vector_3_object();
 
     unsigned long planeStatPerPair = 0;
     do {

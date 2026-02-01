@@ -9,6 +9,9 @@
 /// \defgroup PkgConvexHull3Predicates Intersection Test Functions
 /// \ingroup PkgConvexHull3Ref
 
+/// \defgroup PkgConvexHull3Queries Directional Queries Functions
+/// \ingroup PkgConvexHull3Ref
+
 /*! \defgroup PkgConvexHull3Functions Convex Hull Functions
    \ingroup PkgConvexHull3Ref
 The function `CGAL::convex_hull_3()` computes the convex hull of a given set of

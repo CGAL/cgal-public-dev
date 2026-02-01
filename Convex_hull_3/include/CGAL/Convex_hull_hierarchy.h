@@ -30,12 +30,12 @@ namespace CGAL{
   ///
   /// More specifically, the structure is optimized for `CGAL::extreme_vertex_3()`, which is used by `CGAL::Convex_hull_3::do_intersect()`.
   /// The computational complexities of `CGAL::extreme_point_3()` and consequently `CGAL::Convex_hull_3::do_intersect()` is \f$O(n)\f$ for a range of points,
-  /// \f$O(\sqrt{n})\f$ on average for a graph and \f$O(\log{n})\f$ on average for a Convex_hull_hierarchy, where $n$ is the number of points of the object.
+  /// \f$O(\sqrt{n})\f$ on average for a graph and \f$O(\log{n})\f$ on average for a Convex_hull_hierarchy, where \f$n\f$ is the number of points of the object.
   ///
   /// Building this structure has linear complexity and is faster than computing a convex hull, but more costly than a single call to `CGAL::Convex_hull_3::do_intersect()`.
   /// It is therefore relevant when many intersection queries are performed, particularly when a convex hull has a large number of vertices.
   ///
-  /// To evaluate this class, we generated convex hulls by sampling $n$ random points on the unit sphere, computing their convex hulls, and performing intersection tests between them.
+  /// To evaluate this class, we generated convex hulls by sampling \f$n\f$ random points on the unit sphere, computing their convex hulls, and performing intersection tests between them.
   ///
   /// Average performance measurements (times in milliseconds).
   ///
@@ -118,13 +118,15 @@ struct Convex_hull_hierarchy{
   Convex_hull_hierarchy(const Graph &g, const NamedParameters& np = parameters::default_values()){
     PolygonMesh ch;
     bool compute_convex_hull = parameters::choose_parameter(parameters::get_parameter(np, internal_np::compute_convex_hull), true);
+    size_t seed = parameters::choose_parameter(parameters::get_parameter(np, internal_np::random_seed), 0);
+    Random rng = (seed != 0)?Random(seed):get_default_random();
     if(compute_convex_hull)
       convex_hull_3(g, ch, np);
     else
       copy_face_graph(g, ch, np);
     hierarchy_sm.reserve(MAX_HIERARCHY_DEPTH);
     hierarchy_sm.push_back(std::move(ch));
-    init_hierarchy();
+    init_hierarchy(rng);
   };
 
    /**
@@ -140,7 +142,7 @@ struct Convex_hull_hierarchy{
     convex_hull_3(begin, end, ch, traits);
     hierarchy_sm.reserve(MAX_HIERARCHY_DEPTH);
     hierarchy_sm.push_back(std::move(ch));
-    init_hierarchy(traits);
+    init_hierarchy(get_default_random(), traits);
   };
 
   // /// returns the number of the higher level of the hierarchy.
@@ -178,7 +180,6 @@ struct Convex_hull_hierarchy{
         NamedParameters,
         Default_GT
       > ::type;
-    IGT gt = choose_parameter<IGT>(get_parameter(np, internal_np::geom_traits));
 
     using Default_geom_traits_converter = Cartesian_converter<GT, IGT>;
     using GTC = typename internal_np::Lookup_named_param_def <
@@ -200,7 +201,7 @@ struct Convex_hull_hierarchy{
   * @param dir the direction
   * @param np an optional sequence of \ref bgl_namedparameters "Named Parameters" among the ones listed below
   *
-  * \return `PolygonMesh::vertex_descriptor`
+  * \return a `boost::graph_traits<Mesh>::vertex_descriptor`
   */
   template <typename Direction_3,
             typename NamedParameters=parameters::Default_named_parameters>
@@ -286,8 +287,8 @@ struct Convex_hull_hierarchy{
   }
 
 private:
-  template <typename Traits = Convex_hull_traits_3<GT , Mesh> >
-  void init_hierarchy(const Traits &traits = Traits()){
+  template <typename Random, typename Traits = Convex_hull_traits_3<GT , Mesh> >
+  void init_hierarchy(Random &rng = get_default_random(), const Traits &traits = Traits()){
     VPM vpm = get_const_property_map(vertex_point, hierarchy_sm[0]);
 
     size_t size=vertices(hierarchy_sm[0]).size();
@@ -348,11 +349,10 @@ private:
   std::vector<V2VMap> next_in_hierarchy_maps;
   // Given a vertex of level n, give the correspondant vertex of level 0
   std::vector<V2VMap> to_base_maps;
-  Random rng;
 };
 
 /**
-* \ingroup PkgConvexHull3Functions
+* \ingroup PkgConvexHull3Queries
 *
 * computes the furthest point of the convex hull along the direction.
 *
@@ -377,7 +377,7 @@ private:
 *   \cgalParamNEnd
 * \cgalNamedParamsEnd
 *
-* \return a `Mesh::vertex_descriptor`
+* \return a `boost::graph_traits<Mesh>::vertex_descriptor`
 */
 template <class Mesh, class Direction_3, class NamedParameters>
 #if DOXYGEN_RUNNING

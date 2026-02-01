@@ -14,6 +14,7 @@
 #include <CGAL/Convex_hull_hierarchy.h>
 
 #include <boost/property_map/vector_property_map.hpp>
+#include <CGAL/point_generators_3.h>
 
 #include <vector>
 #include <fstream>
@@ -231,21 +232,18 @@ struct Test{
   void test_random_tetrahedra(int N, CGAL::Random &r)
   {
     using Tet = typename K::Tetrahedron_3;
-
-    auto random_point=[&](){
-      return P(r.get_double(0, 1), r.get_double(0, 1), r.get_double(0, 1));
-    };
+    CGAL::Random_points_in_cube_3<P> gen (1, r);
     for(int i=0; i<N; ++i)
     {
-      P p0 = random_point();
-      P p1 = random_point();
-      P p2 = random_point();
-      P p3 = random_point();
+      P p0 = *gen++;
+      P p1 = *gen++;
+      P p2 = *gen++;
+      P p3 = *gen++;
 
-      P q0 = random_point();
-      P q1 = random_point();
-      P q2 = random_point();
-      P q3 = random_point();
+      P q0 = *gen++;
+      P q1 = *gen++;
+      P q2 = *gen++;
+      P q3 = *gen++;
 
       std::vector<P> a({p1,p2,p3,p0});
       std::vector<P> b({q1,q2,q3,q0});
