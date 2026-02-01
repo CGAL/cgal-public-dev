@@ -89,6 +89,7 @@ extreme_point_3(const Range& r, const Direction_3 &dir, const NamedParameters &n
       Default_GT
     > ::type;
   GT gt = choose_parameter<GT>(get_parameter(np, internal_np::geom_traits));
+  using Vector_3 = typename GT::Vector_3;
 
   using Default_geom_traits_converter = Cartesian_converter<Point_GT, GT>;
   using GTC=typename internal_np::Lookup_named_param_def <
