@@ -39,8 +39,8 @@ namespace CGAL {
 *
 * computes the furthest point of the range along the direction.
 *
-* @tparam PointRange is a model of `ConstRange`. The value type of its iterator is the key type of the named parameter `point_map`.
-* @tparam Direction_3 is a model of CGAL::Direction_3.
+* @tparam Range is a model of `ConstRange`. The value type of its iterator is the key type of the named parameter `point_map`.
+* @tparam Direction_3 is a model of `CGAL::Direction_3`.
 * @tparam NamedParameters a sequence of \ref bgl_namedparameters "Named Parameters"
 *
 * @param r the range of points
@@ -50,7 +50,7 @@ namespace CGAL {
 * \cgalNamedParamsBegin
 *   \cgalParamNBegin{point_map}
 *     \cgalParamDescription{a property map associating points to the elements of `r`}
-*     \cgalParamType{a model of `ReadablePropertyMap` whose value types are the same for `np1` and `np2`}
+*     \cgalParamType{a model of `ReadablePropertyMap` with value type is a model `CGAL::Point_3`}
 *     \cgalParamDefault{`CGAL::Identity_property_map`}
 *   \cgalParamNEnd
 *   \cgalParamNBegin{geom_traits}
@@ -61,11 +61,11 @@ namespace CGAL {
 *   \cgalParamNBegin{geom_traits_converter}
 *     \cgalParamDescription{A Converter from the point type of `point_map` to the point type of `geom_traits`}
 *     \cgalParamType{a class model of `NT_Converter`}
-*     \cgalParamDefault{a \cgal `Cartesian_converter` deduced from ` point_map` and `geom_traits`, using `CGAL::Kernel_traits`}
+*     \cgalParamDefault{a \cgal `Cartesian_converter` deduced from `point_map` and `geom_traits`, using `CGAL::Kernel_traits`}
 *   \cgalParamNEnd
 * \cgalNamedParamsEnd
 *
-* \return an instance of the key type of `point_map` parameter.
+* \return an instance of the key type of `point_map` parameter
 */
 template <class Range, class Direction_3, class NamedParameters>
 #if DOXYGEN_RUNNING
@@ -210,8 +210,6 @@ extreme_vertex_3(const Graph& g, const Direction_3 &dir, const NamedParameters &
   // Since convex, local maximum is a global maximum
   return argmax;
 }
-
-// #endif
 
 } // CGAL namespace
 
