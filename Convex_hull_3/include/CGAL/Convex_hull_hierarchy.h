@@ -30,7 +30,7 @@ namespace CGAL{
   ///
   /// More specifically, the structure is optimized for `CGAL::extreme_vertex_3()`, which is used by `CGAL::Convex_hull_3::do_intersect()`.
   /// The computational complexities of `CGAL::extreme_point_3()` and consequently `CGAL::Convex_hull_3::do_intersect()` is \f$O(n)\f$ for a range of points,
-  /// \f$O(\sqrt{n})\f$ on average for a graph and \f$O(\log{n})\f$ on average for a Convex_hull_hierarchy, where \f$n\f$ is the number of points of the object.
+  /// \f$O(\sqrt{n})\f$ on average for a graph, but only \f$O(\log{n})\f$ on average for a `Convex_hull_hierarchy`, where \f$n\f$ is the number of points of the object.
   ///
   /// Building this structure has linear complexity and is faster than computing a convex hull, but more costly than a single call to `CGAL::Convex_hull_3::do_intersect()`.
   /// It is therefore relevant when many intersection queries are performed, particularly when a convex hull has a large number of vertices.
@@ -51,7 +51,7 @@ namespace CGAL{
   /// | 100,000     | 399.377  | 32.0424  | 5.50728 | 0.39127 | 0.05841  |
   ///
   /// @tparam PolygonMesh The polygon mesh used to construct each level of the hierarchy. Must be a model of `VertexListGraph` and `MutableFaceGraph`.
-  ///         An internal property map for ` CGAL::vertex_point_t` must be available, with a value type that is a model of `Kernel::Point_3`.
+  ///         An internal property map for `CGAL::vertex_point_t` must be available, with a value type that is a model of `Kernel::Point_3`.
 #if DOXYGEN_RUNNING
 template < class PolygonMesh>
 #else
@@ -86,10 +86,10 @@ struct Convex_hull_hierarchy{
   using V2VMap = typename boost::property_map<PolygonMesh, dynamic_vertex_property_t<vertex_descriptor> >::type;
 
   /**
-  * constructor taking the points associated to the vertices of  `g`.
+  * Constructor taking the points associated to the vertices of `g`.
   *
-  * @tparam Graph: a model of `VertexListGraph`
-  * @tparam NamedParameters: a sequence of named parameters
+  * @tparam Graph a model of `VertexListGraph`
+  * @tparam NamedParameters a sequence of named parameters
   *
   * @param g the graph
   * @param np an optional sequence of \ref bgl_namedparameters "Named Parameters" among the ones listed below
@@ -101,13 +101,12 @@ struct Convex_hull_hierarchy{
   *     \cgalParamDefault{If this parameter is omitted, an internal property map for ` CGAL::vertex_point_t`  must be available in `VertexListGraph`}
   *   \cgalParamNEnd
   *   \cgalParamNBegin{compute_convex_hull}
-  *     \cgalParamDescription{If set to `true`, the convex hull of `g` is compute. Otherwise, `g` is supposed to be convex.}
-  *     \cgalParamType{bool}
+  *     \cgalParamDescription{If set to `true`, the convex hull of `g` is computed. Otherwise, `g` must be convex.}
+  *     \cgalParamType{Boolean}
   *     \cgalParamDefault{true}
-  *     \cgalParamExtra{If set to `false`, `g` must be convex.}
   *   \cgalParamNEnd
   *   \cgalParamNBegin{random_seed}
-  *     \cgalParamDescription{Define the seed used by}
+  *     \cgalParamDescription{Define the seed used by the hierarchy.}
   *     \cgalParamType{unsigned int}
   *     \cgalParamDefault{The seed used by `CGAL::get_default_random()`.}
   *   \cgalParamNEnd
@@ -130,7 +129,7 @@ struct Convex_hull_hierarchy{
   };
 
    /**
-  * constructor taking the points in the range `[first, last)`.
+  * Constructor taking the points in the range `[first, last)`.
   *
   * @tparam RangeIterator must be an input iterator with a value type equivalent to `Traits::Point_3`
   * @tparam Traits must be a model of the concept ConvexHullTraits_3. For the purposes of checking the postcondition that the convex hull is valid,
@@ -195,7 +194,7 @@ struct Convex_hull_hierarchy{
   /**
   * constructs the furthest point of the convex hull along the direction and returns the corresponding vertex.
   *
-  * @tparam Direction_3 model of `Kernel::Direction_3`. The kernel does not require to be the same as the one used by the Mesh
+  * @tparam Direction_3 model of `Kernel::Direction_3`. The kernel is not required to be the same as the one used by `PolygonMesh`
   * @tparam NamedParameters a sequence of \ref bgl_namedparameters "Named Parameters"
   *
   * @param dir the direction
@@ -355,9 +354,10 @@ private:
 /**
 * \ingroup PkgConvexHull3Queries
 *
-* computes the furthest point of the convex hull along the direction; If not unique, a single vertex is returned.
+* computes the furthest point of the convex hull along the direction.
+* If not unique, a single vertex is returned.
 *
-* @tparam Mesh a model of `VertexListGraph` and `MutableFaceGraph` used by`CGAL::Convex_hull_hierarchy`
+* @tparam Mesh a model of `VertexListGraph` and `MutableFaceGraph`
 * @tparam Direction_3: is a model of CGAL::Direction_3.
 * @tparam NamedParameters a sequence of \ref bgl_namedparameters "Named Parameters"
 *
@@ -392,4 +392,4 @@ extreme_vertex_3(const Convex_hull_hierarchy<Mesh> &ch, const Direction_3 &dir, 
 
 }
 
-#endif
+#endif // CGAL_CONVEX_HULL_HIERARCHY_3_H

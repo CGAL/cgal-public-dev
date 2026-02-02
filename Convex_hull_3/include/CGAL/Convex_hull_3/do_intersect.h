@@ -277,7 +277,7 @@ struct Do_intersect_traits<K, K, Converter, true> {
 * They are not required to use the same input type.
 *
 * @tparam Convex_1 is a model of `ConstRange` or a model of `VertexListGraph` and `AdjacencyGraph` or an instance of `CGAL::Convex_hull_hierarchy`
-* @tparam Convex_1 same as Convex_2
+* @tparam Convex_2 same as `Convex_1`
 * @tparam NamedParameters_1 a sequence of \ref bgl_namedparameters "Named Parameters"
 * @tparam NamedParameters_2 a sequence of \ref bgl_namedparameters "Named Parameters"
 *

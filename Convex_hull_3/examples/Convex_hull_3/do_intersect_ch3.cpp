@@ -40,7 +40,7 @@ int main(int argc, char* argv[])
                                                CGAL::parameters::point_map(sm1.points()),
                                                CGAL::parameters::point_map(sm2.points()));
 
-  // Convex_hull_hierarchy is data structure for fast intersection test of Convex_hull
+  // When performing many intersection tests, we can construct an optimized version of the convex hull with the class `Convex_hull_hierarchy`
   Convex_hull_hierarchy hsm1(sm1);
   Convex_hull_hierarchy hsm2(sm2);
   res = CGAL::Convex_hull_3::do_intersect(hsm1, hsm2);
