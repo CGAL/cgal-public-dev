@@ -219,7 +219,7 @@ typedef const Point_3& reference;
 /// @{
 
 /*!
-creates  an input iterator `g` generating points of type `Point_3` uniformly
+creates an input iterator `g` generating points of type `Point_3` uniformly
 distributed inside the 3D triangle with vertices \f$ p, q \f$ and \f$ r \f$, i.e., \f$*g = \alpha p + \beta q + \gamma r \f$, for some
 \f$ \alpha, \beta, \gamma \in [0, 1] \f$ and \f$ \alpha + \beta + \gamma = 1 \f$.
 Two random numbers are needed from `rnd` for each point.
@@ -229,7 +229,7 @@ Random_points_in_triangle_3(Point_3& p, Point_3& q, Point_3& r, Random& rnd =
 get_default_random());
 
 /*!
-creates  an input iterator `g` generating points of type `Point_3` uniformly
+creates an input iterator `g` generating points of type `Point_3` uniformly
 distributed inside a 3D triangle \f$t\f$ with vertices \f$ p, q \f$ and \f$ r \f$, i.e., \f$*g = \alpha p + \beta q + \gamma r \f$, for some
 \f$ \alpha, \beta, \gamma \in [0, 1] \f$ and \f$ \alpha + \beta + \gamma = 1 \f$.
 Two random numbers are needed from `rnd` for each point.
@@ -429,7 +429,7 @@ typedef const Point_3& reference;
 /// @{
 
 /*!
-creates  an input iterator `g` generating points of type `Point_3` uniformly
+creates an input iterator `g` generating points of type `Point_3` uniformly
 distributed inside the tetrahedron with vertices \f$ p, q, r \f$ and \f$ s \f$, i.e., \f$*g = \alpha p + \beta q + \gamma r + \delta s \f$, for some
 \f$ \alpha, \beta, \gamma, \delta \in [0, 1] \f$ and \f$ \alpha + \beta + \gamma + \delta = 1 \f$.
 Three random numbers are needed from `rnd` for each point.
@@ -439,7 +439,7 @@ Random_points_in_tetrahedron_3(Point_3& p, Point_3& q, Point_3& r, Point_3& s, R
 get_default_random());
 
 /*!
-creates  an input iterator `g` generating points of type `Point_3` uniformly
+creates an input iterator `g` generating points of type `Point_3` uniformly
 distributed inside a tetrahedron \f$t\f$ with vertices \f$ p, q, r \f$ and \f$ s \f$, i.e., \f$*g = \alpha p + \beta q + \gamma r + \delta s \f$, for some
 \f$ \alpha, \beta, \gamma, \delta \in [0, 1] \f$ and \f$ \alpha + \beta + \gamma + \delta = 1 \f$.
 Three random numbers are needed from `rnd` for each point.
@@ -512,7 +512,7 @@ typedef const Point_3& reference;
 /// @{
 
 /*!
-creates  an input iterator `g` generating points of type `Point_3` uniformly
+creates an input iterator `g` generating points of type `Point_3` uniformly
 distributed between the triangles of the range. Each triangle has a probability to be chosen to hold the point depending on its area.
 */
 template<typename TriangleRange>
@@ -595,7 +595,7 @@ typedef const Point_3& reference;
 /// @{
 
 /*!
-creates  an input iterator `g` generating points of type `Point_3` uniformly
+creates an input iterator `g` generating points of type `Point_3` uniformly
 distributed in the faces of `mesh`. Each triangle has a probability to be chosen to hold the point depending on its area.
 */
 Random_points_in_triangle_mesh_3(const TriangleMesh& mesh, VertexPointMap vpm = get(vertex_point, mesh), Random& rnd = get_default_random() );
@@ -677,7 +677,7 @@ typedef const value_type& reference;
 /// @{
 
 /*!
-creates  an input iterator `g` generating points of type `Weighted_point_3` uniformly
+creates an input iterator `g` generating points of type `Weighted_point_3` uniformly
 distributed on the mesh. Each triangle has a probability to be chosen to hold the point depending on its area.
 
 */
@@ -760,7 +760,7 @@ typedef const value_type& reference;
 /// @{
 
 /*!
-creates  an input iterator `g` generating points of type `Weighted_point_3` uniformly
+creates an input iterator `g` generating points of type `Weighted_point_3` uniformly
 distributed inside the tetrahedra of the mesh. Each tetrahedron has a probability to be chosen to hold the point depending on its volume.
 
 */
@@ -911,7 +911,7 @@ typedef const Point_3& reference;
 /// @{
 
 /*!
-creates  an input iterator `g` generating points of type `Point_3` uniformly
+creates an input iterator `g` generating points of type `Point_3` uniformly
 distributed between the triangles of the range. Each triangle has a probability to be chosen to hold the point depending on its area.
 */
 Random_points_in_triangle_soup_3(const PointRange& points, const TriangleRange& triangles, Random& rnd = get_default_random() );
@@ -992,7 +992,7 @@ typedef const Point_3& reference;
 /// @{
 
 /*!
-creates  an input iterator `g` generating points of type `Point_3` uniformly
+creates an input iterator `g` generating points of type `Point_3` uniformly
 distributed on the edges of the graph. Each edge has a probability to be chosen to hold the point depending on its length.
 */
 Random_points_on_edge_list_graph_3(const EdgeListGraph& mesh, VertexPointMap vpm = get(vertex_point, mesh), Random& rnd = get_default_random() );
