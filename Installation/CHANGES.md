@@ -45,6 +45,12 @@ Release date: July 2026
     parameter any longer. (This third optional parameter was introduced a few years ago, and now abandoned only for
     `do_intersect()`.)
 
+### [Polygon Mesh Processing](https://doc.cgal.org/6.2/Manual/packages.html#PkgPolygonMeshProcessing)
+- Add function `CGAL::Polygon_mesh_processing::kernel()`, to compute the kernel of a polygon mesh.
+- Add function `CGAL::Polygon_mesh_processing::is_empty_kernel()`, to indicate if the kernel of a polygon mesh is empty.
+- Add function `CGAL::Polygon_mesh_processing::kernel_point()`, to compute a single point inside the kernel of a polygon mesh.
+- Add `use_convex_specialization` parameter to `CGAL::Polygon_mesh_processing::clip()` and `CGAL::Polygon_mesh_processing::refine_with_plane()`.
+
 ## [Release 6.1](https://github.com/CGAL/cgal/releases/tag/v6.1)
 
 Release date: Sept 2025
@@ -2852,15 +2858,6 @@ Release date: April 2016
     and volume of simplices or group of simplices of a polygon mesh.
 - Add function `bbox_3()` to compute the bounding box of a polygon
     mesh.
-- Add function `CGAL::Polygon_mesh_processing::kernel()`, to compute the
-    kernel of a polygon mesh.
-- Add function `CGAL::Polygon_mesh_processing::is_empty_kernel()`, to
-    indicate if the kernel of a polygon mesh is empty.
-- Add function `CGAL::Polygon_mesh_processing::kernel_point()`, to compute
-    a single point inside the kernel of a polygon mesh.
-- Add `use_convex_specialization` parameter to
-    `CGAL::Polygon_mesh_processing::clip()` and
-    `CGAL::Polygon_mesh_processing::refine_with_plane()`.
 
 ### Point Set Processing
 
