@@ -310,7 +310,7 @@ kernel(const FaceRange& face_range,
   *   \cgalParamNEnd
   *
   *   \cgalParamNBegin{random_seed}
-  *     \cgalParamDescription{used to initialize the random number generator of the algorithm.}
+  *     \cgalParamDescription{is used to initialize the random number generator of the algorithm.}
   *     \cgalParamType{unsigned int}
   *     \cgalParamDefault{use `std::default_random_engine()`}
   *   \cgalParamNEnd
@@ -381,7 +381,7 @@ kernel(const FaceRange& face_range,
   * \brief computes the kernel of the given polygon mesh.
   *
   * This is a convenience overload that calls the overload above
-  * on all faces of the mesh
+  * on all faces of the mesh.
   */
 template <typename PolygonMesh,
           typename NamedParameters = parameters::Default_named_parameters,
