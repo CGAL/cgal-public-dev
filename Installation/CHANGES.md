@@ -21,7 +21,9 @@ Release date: July 2026
   - `import_from_plane_graph()` → `read_plane_graph_in_lcc()`
   - `import_from_polyhedron_3()` → `polyhedron_3_to_lcc()`
   - `import_from_triangulation_3()` → `triangulation_3_to_lcc()`
-- The old function names are still available but marked as deprecated for backward compatibility.
+  - The old function names are still available but marked as deprecated for backward compatibility.
+
+- **New functions**: Two functions are added `CGAL::IO::read_VTK<LCC>()` and `CGAL::IO::write_VTK<LCC>()` adding the ability to read and write .vtk files (legacy ASCII) for 3D `Linear_cell_complex` (dimension 3, ambient dimension 3). These functions support per-vertex and per-volume scalar fields and handle various VTK cell types.
 
 ### [Shape Detection](https://doc.cgal.org/6.2/Manual/packages.html#PkgShapeDetection)
 
