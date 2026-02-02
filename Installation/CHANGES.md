@@ -47,6 +47,10 @@ Release date: July 2026
     parameter any longer. (This third optional parameter was introduced a few years ago, and now abandoned only for
     `do_intersect()`.)
 
+### [2D Triangulations](https://doc.cgal.org/6.2/Manual/packages.html#PkgTriangulation2)
+
+- Add the function `insert_unique_constraints()` to the class `Constrained_Delaunay_triangulation_2` identical to the function `insert_constraints()` except that it removes duplicated constraints before inserting them in the triangulation.
+
 ## [Release 6.1](https://github.com/CGAL/cgal/releases/tag/v6.1)
 
 Release date: Sept 2025
