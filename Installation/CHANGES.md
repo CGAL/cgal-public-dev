@@ -3902,6 +3902,12 @@ Release date: October 2012
     (used by the free function `convex_hull_2` when forward iterators
     are provided as input).
 
+### 3D Convex Hulls
+
+-   Added the functions `Convex_hull::do_intersect()` to the package `Convex_hull_3`, which enable testing the intersection of two convex hulls.
+-   Added the functions `extreme_point_3()` to the package `Convex_hull_3`, which return the farthest point of a convex hull in a given direction.
+-   Added the class `Convex_hull_hierarchy` to the package `Convex_hull_3`, which represents a convex hull and is optimized for use with the above functions.
+
 ### Combinatorial Maps
 
 -   Minor bugfix; replace some functors by methods.
