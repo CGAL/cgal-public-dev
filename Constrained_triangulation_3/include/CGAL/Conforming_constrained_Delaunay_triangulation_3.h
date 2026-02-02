@@ -4364,8 +4364,8 @@ public:
 
     auto test_edge = [&](Cell_handle cell, Vertex_handle v0, int index_v0, Vertex_handle v1, int index_v1)
     {
-      auto value_returned = [this, v0, v1](bool b, bool not_visited, std::array<Vertex_handle, 3> triangle_vertices = {}) {
-        if constexpr (cdt_3_can_use_cxx20_format()) if(this->debug().regions()) {
+      auto value_returned = [this, v0, v1](bool b, bool not_visited, std::array<Vertex_handle, 3> triangle_vertices = std::array<Vertex_handle, 3>()) {
+      if constexpr (cdt_3_can_use_cxx20_format()) if(this->debug().regions()) {
           std::cerr << cdt_3_format("test_edge {}   {}   return {} {}\n",
                                     IO::oformat(v0, with_point_and_info),
                                     IO::oformat(v1, with_point_and_info),
