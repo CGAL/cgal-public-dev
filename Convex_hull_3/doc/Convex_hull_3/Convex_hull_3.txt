@@ -6,7 +6,7 @@ namespace CGAL {
 \anchor Chapter_3D_Convex_Hulls
 \anchor chapconvexhull3
 \cgalAutoToc
-\authors Susan Hert and Stefan Schirra
+\authors Samuel Hornus, Susan Hert, Stefan Schirra and Leo Valque
 
 \cgalFigureBegin{figchbimba,chull_bimba.png}
 The convex hull of a model made of 192135 points.
@@ -179,6 +179,13 @@ the static approach needed 0.18s, while the dynamic approach needed 1.90s.
 
 The measurements have been performed using \cgal 3.9, using the \gnu \cpp compiler version 4.3.5, under Linux (Debian distribution),
 with the compilation options <TT>-O3 -DCGAL_NDEBUG</TT>. The computer used was equipped with a 64bit Intel Xeon 2.27GHz processor and 12GB of RAM.
+
+
+\section Convex_hull_3History Implementation History
+
+The initial version of this package was implemented by Susan Hert and Stefan Schirra and released in 2011.
+The functions `do_intersect()`, `extreme_point_3()` and the class `Convex_hull_hierarchy` were implemented in 2026 by Samuel Hornus and Leo Valque, under the supervision of Sébastien Loriot.
+
 
 */
 } /* namespace CGAL */
