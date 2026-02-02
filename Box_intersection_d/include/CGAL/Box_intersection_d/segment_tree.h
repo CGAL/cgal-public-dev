@@ -468,7 +468,7 @@ void segment_tree( RandomAccessIter1 p_begin, RandomAccessIter1 p_end,
         // make two calls for roots of segment tree at next level.
         segment_tree( p_begin, p_end, i_begin, i_span_end, inf, sup,
                       callback, traits, cutoff, dim - 1,  in_order );
-        // If the two range of box are separated that second calls is not needed
+        // If the two ranges of boxes are separated that second call is not needed
         if constexpr(Predicate_traits::has_unique_box_traits)
             segment_tree( i_begin, i_span_end, p_begin, p_end, inf, sup,
                         callback, traits, cutoff, dim - 1, !in_order );
