@@ -47,6 +47,10 @@ Release date: July 2026
     parameter any longer. (This third optional parameter was introduced a few years ago, and now abandoned only for
     `do_intersect()`.)
 
+### [Intersecting Sequences of dD Iso-oriented Boxes](https://doc.cgal.org/6.2/Manual/packages.html#PkgBoxIntersectionD)
+- The function `CGAL::box_intersection_d()` now accept ranges with different box types.
+- Add the box type `CGAL::Box_with_info<FT, dim, Info>`. it stores a variable of type Info accessible via `info()`.
+
 ## [Release 6.1](https://github.com/CGAL/cgal/releases/tag/v6.1)
 
 Release date: Sept 2025
