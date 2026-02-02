@@ -30,7 +30,7 @@ This package offers multiple functions to compute consistent face orientations f
 \subsection PMPPolygonSoups Polygon Soups
 
 When the faces of a polygon mesh are given but the connectivity is unknown,
-this set of faces is called a \e polygon \e soup.
+this set of faces is called a \e polygon soup \e.
 
 Before running any of the algorithms on a polygon soup,
 one should ensure that the polygons are consistently oriented.
@@ -108,7 +108,7 @@ and `CGAL::Polygon_mesh_processing::stitch_borders()` can perform such repairing
 functions can be used to stitch halfedges that are part of the same boundary(ies), whereas the third
 function is more generic and can also stitch halfedges that live on different borders.
 
-The input mesh should be manifold; otherwise, stitching may not succeed.
+The input mesh should represent a manifold surface; otherwise, stitching may not succeed.
 
 \subsubsection StitchingExample Stitching Example
 
@@ -141,7 +141,8 @@ starting from a border halfedge and walking the halfedges of this border, a geom
 more than once (although, with different vertices) before reaching the initial border halfedge again. The functions
 `CGAL::Polygon_mesh_processing::merge_duplicated_vertices_in_boundary_cycle()` and
 `CGAL::Polygon_mesh_processing::merge_duplicated_vertices_in_boundary_cycle()`, which merge
-vertices at identical positions, can be used to repair this configuration.
+vertices at identical positions, can be used to repair this configuration. During the operation,
+the boundary cycle is split into several boundary cycles, at each duplicated position.
 
 \section PMPGeometricRepair Geometric Repair
 
@@ -158,8 +159,8 @@ to prevent the removal of such elements (`collapse_length_threshold` and `flip_t
 Given a soup of triangles, a self-intersection is defined as the intersection of two triangles from the soup
 such that the intersection is not defined by the convex hull of one, two or three shared vertices.
 In other words, it is an intersection that happens in the interior of one of the two triangles, or in the interior
-of one their edges, except if identical points are associated to different vertices of the triangle soup which
-would then also includes overlaps of duplicated points.
+of one of their edges, except if identical points are associated to different vertices of the triangle soup which
+would then also include overlaps of duplicated points.
 
 The function `CGAL::Polygon_mesh_processing::autorefine_triangle_soup()` provides a way to refine a triangle soup
 using the intersections of the triangles from the soup. In particular, if some points are duplicated they will be

@@ -1,6 +1,6 @@
 /// \defgroup PkgPMPMeshRepairRef Reference Manual
 
-/// \defgroup PMP_orientation_grp Orientation Functions
+/// \defgroup PMP_orientation_grp Orientation
 ///  Functions to compute or change the orientation of faces and surfaces.
 /// \ingroup PkgPolygonMeshProcessingRef
 

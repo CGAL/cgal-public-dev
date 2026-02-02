@@ -63,7 +63,7 @@ The page \ref bgl_namedparameters "Named Parameters" describes their usage.
 - `CGAL::Polygon_mesh_processing::clip()`
 - `CGAL::Polygon_mesh_processing::split()`
 
-\cgalCRPSection{Sclicing}
+\cgalCRPSection{Slicing}
 - `CGAL::Polygon_mesh_slicer`
 - `CGAL::Polygon_mesh_processing::refine_with_plane()`
 - `CGAL::Polygon_mesh_processing::refine_mesh_at_isolevel()`
