@@ -355,7 +355,7 @@ private:
 /**
 * \ingroup PkgConvexHull3Queries
 *
-* computes the furthest point of the convex hull along the direction.
+* computes the furthest point of the convex hull along the direction; If not unique, a single vertex is returned.
 *
 * @tparam Mesh a model of `VertexListGraph` and `MutableFaceGraph` used by`CGAL::Convex_hull_hierarchy`
 * @tparam Direction_3: is a model of CGAL::Direction_3.

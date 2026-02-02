@@ -37,7 +37,7 @@ namespace CGAL {
 /**
 * \ingroup PkgConvexHull3Queries
 *
-* computes the furthest point of the range along the direction.
+* computes the furthest point of the range along the direction; If not unique, a single point is returned.
 *
 * @tparam Range is a model of `ConstRange`. The value type of its iterator is the key type of the named parameter `point_map`.
 * @tparam Direction_3 is a model of `CGAL::Direction_3`.
@@ -117,7 +117,7 @@ extreme_point_3(const Range& r, const Direction_3 &dir, const NamedParameters &n
 /**
 * \ingroup PkgConvexHull3Queries
 *
-* computes the furthest point of the convex graph along the direction and returns the associated vertex.
+* computes the furthest point of the convex graph along the direction and returns the associated vertex; If not unique, a single vertex is returned.
 *
 * @tparam Graph is a model of `VertexListGraph` and `AdjacencyGraph`.
 * @tparam Direction_3 is a model of `Kernel::Direction_3`.
