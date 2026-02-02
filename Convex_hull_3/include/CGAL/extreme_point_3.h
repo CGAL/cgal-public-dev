@@ -117,7 +117,7 @@ extreme_point_3(const Range& r, const Direction_3 &dir, const NamedParameters &n
 /**
 * \ingroup PkgConvexHull3Queries
 *
-* computes the furthest point of the convex graph along the direction `dir` and returns the associated vertex.
+* computes the furthest point of the convex graph along the direction and returns the associated vertex.
 *
 * @tparam Graph is a model of `VertexListGraph` and `AdjacencyGraph`.
 * @tparam Direction_3 is a model of `Kernel::Direction_3`.
