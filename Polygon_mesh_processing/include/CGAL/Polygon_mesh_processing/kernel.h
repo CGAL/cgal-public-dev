@@ -46,6 +46,7 @@ kernel(const FaceRange& face_range,
 {
   using parameters::choose_parameter;
   using parameters::get_parameter;
+  using parameters::is_default_parameter;
 
   // graph typedefs
   using BGT = boost::graph_traits<PolygonMesh>;
@@ -81,6 +82,7 @@ kernel(const FaceRange& face_range,
   bool shuffle_planes = choose_parameter(get_parameter(np, internal_np::shuffle_planes), true);
   bool check_euler_characteristic = !choose_parameter(get_parameter(np, internal_np::allow_open_input), false) && std::size_t(std::distance(face_range.begin(), face_range.end()))==faces(pm).size();
   unsigned seed = choose_parameter(get_parameter(np, internal_np::random_seed), unsigned(-1));
+  auto rng = is_default_parameter<NamedParameters, internal_np::random_seed_t>::value ? std::default_random_engine(): std::default_random_engine(seed);
 
   // Immediate exit if the input is well-formed and not of genus zero
   if(check_euler_characteristic && (vertices(pm).size() - edges(pm).size() + faces(pm).size() != 2)){
@@ -137,7 +139,7 @@ kernel(const FaceRange& face_range,
 
   std::vector<face_descriptor> planes(face_range.begin(), face_range.end());
   if(shuffle_planes)
-    std::shuffle(planes.begin(), planes.end(), std::default_random_engine(seed));
+    std::shuffle(planes.begin(), planes.end(), rng);
 
   // Cut iteratively the temporary kernel by halfspaces
   for(auto f: planes){
@@ -307,6 +309,12 @@ kernel(const FaceRange& face_range,
   *     \cgalParamDefault{a \cgal Kernel deduced from the point type, using `CGAL::Kernel_traits`}
   *   \cgalParamNEnd
   *
+  *   \cgalParamNBegin{random_seed}
+  *     \cgalParamDescription{used to initialize the random number generator of the algorithm.}
+  *     \cgalParamType{unsigned int}
+  *     \cgalParamDefault{use `std::default_random_engine()`}
+  *   \cgalParamNEnd
+  *
   *   \cond SKIP_IN_MANUAL
   *
   *   \cgalParamNBegin{use_bounding_box_filtering}
@@ -319,12 +327,6 @@ kernel(const FaceRange& face_range,
   *     \cgalParamDescription{If set to `true`, the planes are considered in a random order to compute the kernel, improving runtime in most scenarios.}
   *     \cgalParamType{Boolean}
   *     \cgalParamDefault{`true`}
-  *   \cgalParamNEnd
-  *
-  *   \cgalParamNBegin{random_seed}
-  *     \cgalParamDescription{The seed use by the shuffle option}
-  *     \cgalParamType{unsigned int}
-  *     \cgalParamDefault{`unsigned(-1)`}
   *   \cgalParamNEnd
   *
   *   \cgalParamNBegin{visitor}
