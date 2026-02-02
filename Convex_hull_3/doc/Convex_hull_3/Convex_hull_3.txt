@@ -157,7 +157,7 @@ that is model of the concept `MutableFaceGraph`, e.g. `Polyhedron_3` and `Surfac
 \section Convex_hull_3Do_intersect Intersection Test of Convex Hulls
 
 `CGAL::Convex_hull_3::do_intersect()` determines whether two convex hulls intersect or not.
-Input hulls can be provided in three forms: as range of points, as graph model of `Vertex_list_graph` and `AdjacencyGraph` or as instance of the `Convex_hull_hierarchy` class.
+Input hulls can be provided in three forms: as range of points, as graph model of `VertexListGraph` and `AdjacencyGraph` or as instance of the `Convex_hull_hierarchy` class.
 
 When many intersection queries are  performed on a convex hull, a `CGAL::Convex_hull_hierarchy` can be constructed for it to accelerate intersection tests, particularly when the convex hull has a large number of vertices (see `CGAL::Convex_hull_hierarchy` for more details).
 
