@@ -8,6 +8,7 @@
 #include <CGAL/Delaunay_mesher_no_edge_refinement_2.h>
 #include <CGAL/Triangulation_conformer_2.h>
 
+#include <cstdlib>
 #include <fstream>
 #include <iostream>
 #include <vector>
@@ -29,14 +30,14 @@ int main(int argc, char*argv[] )
   // std::ifstream in(argv[1]);
   std::ifstream in(argc>1?argv[1]:"mini.obj");
   if(!in)
-    return false;
+    return EXIT_FAILURE;
 
   std::vector<Point_2> points;
   std::vector<std::vector<std::size_t> > id_polylines;
   std::vector<std::vector<std::size_t> > unused_id_polygons;
   bool success = CGAL::IO::internal::read_OBJ(in, points, id_polylines, unused_id_polygons);
   if(!success)
-    return false;
+    return EXIT_FAILURE;
 
   double squared_distance = (std::numeric_limits<double>::max)();
   for(const std::vector<std::size_t>& id_pl : id_polylines) {
@@ -61,5 +62,5 @@ int main(int argc, char*argv[] )
 
   CGAL::make_conforming_Gabriel_2(cdt);
   std::cout << "done" << std::endl;
-  return true;
+  return EXIT_SUCCESS;
 }
