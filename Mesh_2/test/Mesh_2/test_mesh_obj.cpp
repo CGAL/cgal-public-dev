@@ -61,5 +61,5 @@ int main(int argc, char*argv[] )
 
   CGAL::make_conforming_Gabriel_2(cdt);
   std::cout << "done" << std::endl;
-  return true;
+  return 0;
 }
