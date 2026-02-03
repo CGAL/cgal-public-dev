@@ -520,11 +520,10 @@ Random_points_in_triangles_3(const TriangleRange& triangulation, Random& rnd =
 get_default_random() );
 
 /*!
-returns the address of an input triangle containing the last point generated.
-\pre a point must have been generated before calling the function
+returns the last point generated and a pointer to the input triangle used to generate that point.
 */
-const Triangle_3*
-last_item_picked() const;
+std::pair<Point_3, const Triangle_3*>
+point_and_support() const;
 
 /// @}
 
@@ -601,11 +600,10 @@ distributed in the faces of `mesh`. Each triangle has a probability to be chosen
 Random_points_in_triangle_mesh_3(const TriangleMesh& mesh, VertexPointMap vpm = get(vertex_point, mesh), Random& rnd = get_default_random() );
 
 /*!
-returns a face containing the last point generated.
-\pre a point must have been generated before calling the function
+returns the last point generated and a descriptor of the face used to generate that point.
 */
-typename boost::graph_traits<TriangleMesh>::face_descriptor
-last_item_picked() const;
+std::pair<Point_3, typename boost::graph_traits<TriangleMesh>::face_descriptor>
+point_and_support() const;
 
 /// @}
 
@@ -684,11 +682,10 @@ distributed on the mesh. Each triangle has a probability to be chosen to hold th
 Random_points_in_tetrahedral_mesh_boundary_3( const C3T3& c3t3,Random& rnd = get_default_random() );
 
 /*!
-returns a facet containing the last point generated.
-\pre a point must have been generated before calling the function
+returns the last point generated and the facet used to generate that point.
 */
-typename C3t3::Triangulation::Facet
-last_item_picked() const;
+std::pair<Point_3, typename C3t3::Triangulation::Facet>
+point_and_support() const;
 
 /// @}
 
@@ -768,12 +765,10 @@ Random_points_in_tetrahedral_mesh_3( const C3T3& c3t3,Random& rnd = get_default_
 
 
 /*!
-returns a cell containing the last point generated.
-\pre a point must have been generated before calling the function
+returns the last point generated and a handle to the cell used to generate that point.
 */
-typename C3t3::Triangulation::Cell_handle
-
-last_item_picked() const;
+std::pair<Point_3, typename C3t3::Triangulation::Cell_handle>
+point_and_support() const;
 
 /// @}
 
@@ -917,11 +912,10 @@ distributed between the triangles of the range. Each triangle has a probability 
 Random_points_in_triangle_soup_3(const PointRange& points, const TriangleRange& triangles, Random& rnd = get_default_random() );
 
 /*!
-returns the id in the input range of the triangle containing the last point generated.
-\pre a point must have been generated before calling the function
+returns the last point generated and the id in the input range of the triangle used to generate that point.
 */
-std::size_t
-last_item_picked() const;
+std::pair<Point_3, std::size_t>
+point_and_support() const;
 
 /// @}
 
@@ -999,11 +993,10 @@ Random_points_on_graph_edges_3(const EdgeListGraph& mesh, VertexPointMap vpm = g
 
 
 /*!
-returns a face containing the last point generated.
-\pre a point must have been generated before calling the function
+returns the last point generated and a descriptor of the edge used to generate that point.
 */
-typename boost::graph_traits<EdgeListGraph>::edge_descriptor
-last_item_picked() const;
+std::pair<Point_3, typename boost::graph_traits<EdgeListGraph>::edge_descriptor>
+point_and_support() const;
 
 /// @}
 

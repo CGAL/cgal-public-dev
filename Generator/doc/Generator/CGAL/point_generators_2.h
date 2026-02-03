@@ -414,11 +414,10 @@ Random_points_in_triangle_mesh_2(const Triangulation& triangulation, Random& rnd
 get_default_random() );
 
 /*!
-returns a face containing the last point generated.
-\pre a point must have been generated before calling the function
+returns the last point generated and a handle of the face used ot generate that point.
 */
-typename Triangulation::Face_handle
-last_item_picked() const;
+std::pair<Point_2,typename Triangulation::Face_handle>
+point_and_support() const;
 
 /// @}
 
@@ -492,11 +491,10 @@ Random_points_in_triangles_2(const TriangleRange& triangles, Random& rnd =
 get_default_random() );
 
 /*!
-returns the address of an input triangle containing the last point generated.
-\pre a point must have been generated before calling the function
+returns the last point generated and a pointer to the input triangle used to generate that point.
 */
-const Triangle_2*
-last_item_picked() const;
+std::pair<Point_2, const Triangle_2*>
+point_and_support() const;
 
 /// @}
 
