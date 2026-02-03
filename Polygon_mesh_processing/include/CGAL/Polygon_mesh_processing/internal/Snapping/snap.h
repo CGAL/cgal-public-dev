@@ -769,7 +769,7 @@ std::size_t split_edges(EdgesToSplitContainer& edges_to_split,
         Segment s { get(vpm_T, source(h_to_split, tm_T)), get(vpm_T, target(h_to_split, tm_T)) };
         tentative_new_position = gt.construct_projected_point_3_object()(s, tentative_new_position);
 #ifdef CGAL_PMP_SNAP_DEBUG_PP
-        std::cout << "Tenative snapping position updated to: " << tentative_new_position << std::endl;
+        std::cout << "Tentative snapping position updated to: " << tentative_new_position << std::endl;
 #endif
       }
 
