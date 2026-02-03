@@ -30,7 +30,7 @@ This package offers multiple functions to compute consistent face orientations f
 \subsection PMPPolygonSoups Polygon Soups
 
 When the faces of a polygon mesh are given but the connectivity is unknown,
-this set of faces is called a \e polygon soup \e.
+this set of faces is called a <em>polygon soup</em>.
 
 Before running any of the algorithms on a polygon soup,
 one should ensure that the polygons are consistently oriented.

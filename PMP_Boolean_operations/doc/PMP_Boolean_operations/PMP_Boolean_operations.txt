@@ -33,10 +33,6 @@ and \ref PMPSlicer.
 
 \section PMPBoolOpDef Core Concepts and Definitions
 
-\subsection PMPBoolOpApproach Approach
-
-\cgal does exact stuff, and handles degeneracies. [TODO]
-
 \subsection coref_def_subsec Definitions
 
 <b>Corefinement</b>: Given two triangulated surface meshes, the <i>corefinement</i> of these two meshes
@@ -47,15 +43,12 @@ of both refined meshes.
 consists in refining the mesh/soup such that all intersections between triangles
 form a subset of the edges of the output.
 
-\todo more information on coplanar patches.
 
 \cgalFigureBegin{coref_fig, corefine.png}
 Corefinement of two triangulated surface meshes. (Left) Input meshes; (Right)
 The two input meshes after corefinement. The common edges of the two meshes are
 drawn in green.
 \cgalFigureEnd
-
-\todo below needs manifoldness to be true
 
 <b>Volume bounded by a triangulated surface mesh</b> Given a closed triangulated surface
 mesh, each connected component splits the 3D space into two subspaces. The vertex
@@ -126,41 +119,69 @@ the triangulated surface meshes bounding the union of `C` and `S`,
 `C` minus `S`, the intersection of `C` and `S`, and `S` minus `C`.
 \cgalFigureEnd
 
-\subsection coref_bolop_input Input Requirements
+\subsection coref_bolop_input Input and Output Requirements
 
-There are no restrictions on the topology of the input volumes.
+\subsubsection coref_bolop_input_corefsub Corefinement Based Operations
+
+There is no restriction on the topology of the input volumes.
 However, certain requirements must be met to ensure that the operation is feasible.
-First, the input meshes must not self-intersect. Second, the operation is only possible if the output
-can be bounded by a manifold triangulated surface mesh.
+First, the input meshes must be manifold triangulated surfaces bounding volumes.
+In particular, this means that they should not self-intersect.
+Second, the operation is only possible if the output can be bounded by a manifold triangulated surface mesh.
 In particular, this means that the output volume must not contain regions of zero thickness.
 Mathematically, the intersection with an infinitesimally small ball
 centered at any point of the output volume must be a topological ball. At the surface level, this means
 that no non-manifold vertex or edge is allowed in the output. For example, it
 is not possible to compute the union of two cubes that are disjoint but share an edge.
 If such scenarios arise, consider using the package \ref PkgNef3.
+Alternatively, a special visitor (`CGAL::Polygon_mesh_processing::Corefinement::Non_manifold_output_visitor`) is provided for such cases
+and enables the user to get a triangle soup representing such a non-manifold output.
+See the example \ref Polygon_mesh_processing/corefinement_mesh_non_manifold_intersection.cpp
 
 It is possible to update the input so that it contains the result (in-place operation).
 In this case, the entire mesh is not copied; only the region around the
 intersection polyline is modified. However, note that if the Boolean operation is not
 possible, the input mesh will still be corefined.
 
+If the input meshes contain triangles that are coplanar, it is guaranteed that the triangulations of those triangles
+in the two corefined meshes will be identical. Also all edges of those refined triangles will be reported as intersection
+edges (both in the function `CGAL::Polygon_mesh_processing::surface_intersection()` and in the named parameter
+`edge_is_constrained_map()` of corefine prefixed functions).
+
+\subsubsection coref_bolop_input_autorefsub Autorefinement
+
+There is no restriction on the input for the function `CGAL::Polygon_mesh_processing::autorefine_triangle_soup()`.
+Degenerate triangles will be eliminated, duplicated points will be merged. If several triangles are coplanar,
+the output will contain as many copies of the triangulation of those refined triangles.
+
+
 \subsection coref_valid_subsec Kernel Choice and Output Validity
 
-The corefinement operation (which is also used internally in the Boolean operations) will correctly modify the topology of the input surface mesh
-if the point type used in the point property maps of the input meshes is
-from a \cgal Kernel with exact predicates. If the kernel does not
-provide exact constructions, the embedding of the output surface mesh may
-contain self-intersections. For consecutive operations, it is recommended to use a point property map with points from a kernel with exact
-predicates and exact constructions
-(such as `CGAL::Exact_predicates_exact_constructions_kernel`).
+\subsubsection coref_valid_subsubsec Corefinement Based Operations
 
-In practice, this means that with exact predicates and inexact constructions,
-edges will be split at each intersection with a triangle but the
-position of the intersection point might create self-intersections due to
-the limited precision of floating point numbers.
+The minimal requirements of the corefinement based operations to terminate without crashing is to use a \cgal Kernel with exact predicates
+(such as `CGAL::Exact_predicates_inexact_constructions_kernel`). The graph structure is then always guaranteed to have the right topology as
+exact constructions are used internally. However, because of the rounding of the coordinates of the new intersection points, the embedding
+of the output surface meshes in the chosen kernel may feature self-intersections.
+This embedding issue goes away if a kernel with additionally exact constructions (such as `CGAL::Exact_predicates_exact_constructions_kernel`)
+is used. In particular, for consecutive operations, it is recommended to use a kernel with exact predicates and exact constructions.
 
-For the specific case of `CGAL::Polygon_mesh_processing::autorefine_triangle_soup()`,
-the option `apply_iterative_snap_rounding` is a robust heuristic to resolve this issue.
+From a user point of view, the choice of the kernel is done using the named parameter `geom_traits()`.
+If not provided, the kernel is deduced from the point type of the named parameter `vertex_point_map()`, which is by default the
+internal vertex point map of the mutable face graph used as input.
+If we take the example of `CGAL::Surface_mesh<CGAL::Point_3<K>>`, the kernel used will be `K`.
+
+
+\subsubsection autoref_valid_subsubsec Autorefinement
+
+As for corefinement based operations described in the previous section, the function
+`CGAL::Polygon_mesh_processing::autorefine_triangle_soup()` requires a kernel with exact predicates
+in order to guarantee to terminate without issue. The output will then have the same topology as the
+exact output (for a triangle soup this means the indexed points and triangles will be the same
+as if exact computations were used). If non-exact constructions are used, points will be naively rounded
+and self-intersection might be created.
+In order to avoid that, we provide a robust heuristic that can be enabled using the named parameter
+`apply_iterative_snap_rounding()`.
 When set to `true`, it ensures that coordinates are rounded to fit in `double`
 with potential additional subdivisions, preventing self-intersections.
 
