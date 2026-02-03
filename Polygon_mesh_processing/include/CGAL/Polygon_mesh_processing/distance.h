@@ -559,7 +559,7 @@ struct Triangle_structure_sampler_for_triangle_mesh
     using parameters::get_parameter;
 
     std::size_t nb_points = choose_parameter(get_parameter(this->np, internal_np::number_of_points_on_edges), 0);
-    Random_points_on_edge_list_graph_3<Mesh, Vpm, Creator> g(tm, pmap);
+    Random_points_on_graph_edges_3<Mesh, Vpm, Creator> g(tm, pmap);
     if(nb_points == 0)
     {
       if(nb_pts_l_u == 0)

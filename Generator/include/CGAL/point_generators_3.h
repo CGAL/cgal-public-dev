@@ -430,7 +430,7 @@ template <class EdgeListGraph,
                             typename Kernel_traits< typename boost::property_traits<VertexPointMap>::value_type >::Kernel::RT,
                             typename boost::property_traits<VertexPointMap>::value_type >
 >
-struct Random_points_on_edge_list_graph_3
+struct Random_points_on_graph_edges_3
   : public Generic_random_point_generator<
              typename boost::graph_traits <EdgeListGraph>::edge_descriptor,
              CGAL::Property_map_to_unary_function<CGAL::Segment_from_edge_descriptor_map<
@@ -448,16 +448,16 @@ struct Random_points_on_edge_list_graph_3
                      EdgeListGraph,VertexPointMap>                          Object_from_id;
   typedef typename boost::graph_traits<EdgeListGraph>::edge_descriptor      Id;
   typedef P result_type;
-  typedef Random_points_on_edge_list_graph_3< EdgeListGraph, VertexPointMap, Creator>  This;
+  typedef Random_points_on_graph_edges_3< EdgeListGraph, VertexPointMap, Creator>  This;
 
-  Random_points_on_edge_list_graph_3( const EdgeListGraph& mesh,Random& rnd = get_default_random())
+  Random_points_on_graph_edges_3( const EdgeListGraph& mesh,Random& rnd = get_default_random())
     : Base( edges(mesh),
             CGAL::Property_map_to_unary_function<Object_from_id>(Object_from_id(&mesh, get(vertex_point, mesh))),
             internal::Apply_approx_sqrt<typename Kernel_traits<P>::Kernel::Compute_squared_length_3>(),
             rnd )
   {
   }
-  Random_points_on_edge_list_graph_3( const EdgeListGraph& mesh, VertexPointMap vpm, Random& rnd = get_default_random())
+  Random_points_on_graph_edges_3( const EdgeListGraph& mesh, VertexPointMap vpm, Random& rnd = get_default_random())
     : Base( edges(mesh),
             CGAL::Property_map_to_unary_function<Object_from_id>(Object_from_id(&mesh, vpm)),
             internal::Apply_approx_sqrt<typename Kernel_traits<P>::Kernel::Compute_squared_length_3>(),

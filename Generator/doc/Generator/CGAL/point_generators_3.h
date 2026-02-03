@@ -932,7 +932,7 @@ namespace CGAL {
 
 /*!
 
-The class `Random_points_on_edge_list_graph_3` is an input iterator creating points uniformly
+The class `Random_points_on_graph_edges_3` is an input iterator creating points uniformly
 distributed on the edges of a graph model of `EdgeListGraph`.
 The graph must be valid and unchanged while the generator is used.
 
@@ -955,7 +955,7 @@ template < class EdgeListGraph,
            class Creator = Creator_uniform_3<
                             typename Kernel_traits< typename boost::property_traits<VertexPointMap>::value_type >::Kernel::RT,
                             typename boost::property_traits<VertexPointMap>::value_type > >
-struct Random_points_on_edge_list_graph_3 {
+struct Random_points_on_graph_edges_3 {
 
 /// \name Types
 /// @{
@@ -995,7 +995,7 @@ typedef const Point_3& reference;
 creates an input iterator `g` generating points of type `Point_3` uniformly
 distributed on the edges of the graph. Each edge has a probability to be chosen to hold the point depending on its length.
 */
-Random_points_on_edge_list_graph_3(const EdgeListGraph& mesh, VertexPointMap vpm = get(vertex_point, mesh), Random& rnd = get_default_random() );
+Random_points_on_graph_edges_3(const EdgeListGraph& mesh, VertexPointMap vpm = get(vertex_point, mesh), Random& rnd = get_default_random() );
 
 
 /*!
@@ -1007,6 +1007,6 @@ last_item_picked() const;
 
 /// @}
 
-}; /* end Random_points_on_edge_list_graph_3 */
+}; /* end Random_points_on_graph_edges_3 */
 
 } /* end namespace CGAL */

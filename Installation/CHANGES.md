@@ -13,7 +13,7 @@ Release date: July 2026
 - The old function names are still available but marked as deprecated for backward compatibility.
 
 ### Geometric Object Generators
-- Add the function `last_item_picked()` to several generators to get the element containing the last generated point. Affected generators are `Random_points_in_triangles_2`, `Random_points_in_triangles_3`, `Random_points_in_triangle_mesh_3`, `Random_points_in_tetrahedral_mesh_boundary_3`, `Random_points_in_tetrahedral_mesh_3`, `Random_points_in_triangle_soup_3`, and `Random_points_on_edge_list_graph_3`.
+- Add the function `last_item_picked()` to several generators to get the element containing the last generated point. Affected generators are `Random_points_in_triangles_2`, `Random_points_in_triangles_3`, `Random_points_in_triangle_mesh_3`, `Random_points_in_tetrahedral_mesh_boundary_3`, `Random_points_in_tetrahedral_mesh_3`, `Random_points_in_triangle_soup_3`, and `Random_points_on_graph_edges_3`.
 
 ## [Release 6.1](https://github.com/CGAL/cgal/releases/tag/v6.1)
 
