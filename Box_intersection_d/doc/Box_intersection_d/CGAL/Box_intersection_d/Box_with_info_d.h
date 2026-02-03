@@ -60,9 +60,8 @@ public:
 /// @{
 
 /*!
-number type to represent the box
-boundaries. Allowed are the built-in types `int`, `unsigned
-int`, `float`, and `double`.
+number type to represent the box boundaries. 
+Allowed are the built-in types `int`, `unsigned int`, `float`, and `double`.
 */
 typedef unspecified_type NT;
 
