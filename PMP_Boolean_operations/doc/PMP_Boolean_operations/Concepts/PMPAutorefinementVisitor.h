@@ -1,4 +1,4 @@
-/// \ingroup PkgPolygonMeshProcessingConcepts
+/// \ingroup PkgPMPBooleanOperationsConcepts
 /// \cgalConcept
 ///
 /// The concept `PMPAutorefinementVisitor` defines the requirements for the visitor

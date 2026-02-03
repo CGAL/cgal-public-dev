@@ -1,4 +1,6 @@
 /// \defgroup PkgPMPBooleanOperationsRef Reference Manual
+/// \defgroup PkgPMPBooleanOperationsConcepts Concepts
+/// \ingroup PkgPMPBooleanOperationsRef
 
 /// \defgroup PMP_corefinement_grp Corefinement and Autorefinement
 /// Functions to corefine triangulated surface meshes and triangle soups.
