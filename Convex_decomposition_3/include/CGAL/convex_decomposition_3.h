@@ -38,7 +38,7 @@ namespace CGAL {
 \ingroup PkgConvexDecomposition3Ref
 
 The function `convex_decomposition_3()` inserts additional facets
-into the given  Nef polyhedron `N`, such that each bounded
+into the given Nef polyhedron `N`, such that each bounded
 marked volume (the outer volume is unbounded) is subdivided into convex
 pieces. The modified polyhedron represents a decomposition into
 \cgalBigO{r^2} convex pieces, where \f$ r\f$ is the number of edges that have two
