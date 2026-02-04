@@ -190,10 +190,10 @@ body  {color: black; background-color: #C0C0D0; font-family: sans-serif;}
 <td class="{status_1}"><a class="logs1" href="logs1/{basename1}">Logs</a></td>
 <td class="warn-count1 {status_1}">{warn_count1}</td>
 <td class="error-count1 {status_1}">{err_count1}</td>
-<td class="{status_2}><a class="logs2" href="logs2/{basename2}">Logs</a></td>
+<td class="{status_2}"><a class="logs2" href="logs2/{basename2}">Logs</a></td>
 <td class="warn-count2 {status_2}">{warn_count2}</td>
 <td class="error-count2 {status_2}">{err_count2}</td>
-<td class="{status_master}><a class="logs_master" href="logs_master/{basename_master}">Logs</a></td>
+<td class="{status_master}"><a class="logs_master" href="logs_master/{basename_master}">Logs</a></td>
 <td class="warn-count_master {status_master}">{warn_count_master}</td>
 <td class="error-count_master {status_master}">{err_count_master}</td>
 </tr>'''.format(
