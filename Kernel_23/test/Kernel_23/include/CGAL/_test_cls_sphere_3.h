@@ -140,7 +140,7 @@ _test_cls_sphere_3(const R& )
  assert(!CGAL::Sphere_3<R>(CGAL::Point_3<R>(0, 0, 0), 4).has_on_unbounded_side(CGAL::Iso_cuboid_3<R>(CGAL::Point_3<R>(-2, 0, 0), CGAL::Point_3<R>(2, 0, 0))) );
  assert(!CGAL::Sphere_3<R>(CGAL::Point_3<R>(0, 0, 0), 4).has_on_unbounded_side(CGAL::Iso_cuboid_3<R>(CGAL::Point_3<R>(-2, 0, 0), CGAL::Point_3<R>(-3, 0, 0))));
  assert( CGAL::Sphere_3<R>(CGAL::Point_3<R>(0, 0, 0), 4).has_on_unbounded_side(CGAL::Iso_cuboid_3<R>(CGAL::Point_3<R>(FT(-2.1), 0, 0), CGAL::Point_3<R>(-3, 0, 0))));
- assert( CGAL::Sphere_3<R>(CGAL::Point_3<R>(0, 0, 0), 4).has_on_unbounded_side(CGAL::Iso_cuboid_3<R>(CGAL::Point_3<R>(-3, -3, -3), CGAL::Point_3<R>(3, 3, 3))));
+ assert(!CGAL::Sphere_3<R>(CGAL::Point_3<R>(0, 0, 0), 4).has_on_unbounded_side(CGAL::Iso_cuboid_3<R>(CGAL::Point_3<R>(-3, -3, -3), CGAL::Point_3<R>(3, 3, 3))));
 
  std::cout << '.';
 

@@ -112,7 +112,7 @@ struct Orthtree_traits_base<GeomTraits, 2> {
   using Bbox_d = typename GeomTraits::Iso_rectangle_2;
   using Sphere_d = typename GeomTraits::Circle_2;
   using Cartesian_const_iterator_d = typename GeomTraits::Cartesian_const_iterator_2;
-  using Has_on_bounded_side = typename GeomTraits::Has_on_bounded_side_2;
+  using Has_on_unbounded_side = typename GeomTraits::Has_on_unbounded_side_2;
 
   enum Adjacency {
     LEFT,
@@ -129,8 +129,8 @@ struct Orthtree_traits_base<GeomTraits, 2> {
     };
   }
 
-  Has_on_bounded_side has_on_bounded_side_object() const {
-    return GeomTraits().has_on_bounded_side_3_object();
+  Has_on_unbounded_side has_on_unbounded_side_object() const {
+    return GeomTraits().has_on_unbounded_side_3_object();
   }
 };
 
@@ -144,7 +144,7 @@ struct Orthtree_traits_base<GeomTraits, 3> {
   using Bbox_d = typename GeomTraits::Iso_cuboid_3;
   using Sphere_d = typename GeomTraits::Sphere_3;
   using Cartesian_const_iterator_d = typename GeomTraits::Cartesian_const_iterator_3;
-  using Has_on_bounded_side = typename GeomTraits::Has_on_bounded_side_3;
+  using Has_on_unbounded_side = typename GeomTraits::Has_on_unbounded_side_3;
 
   enum Adjacency {
     LEFT,
@@ -174,8 +174,8 @@ struct Orthtree_traits_base<GeomTraits, 3> {
     };
   }
 
-  Has_on_bounded_side has_on_bounded_side_object() const {
-    return GeomTraits().has_on_bounded_side_3_object();
+  Has_on_unbounded_side has_on_unbounded_side_object() const {
+    return GeomTraits().has_on_unbounded_side_3_object();
   }
 };
 

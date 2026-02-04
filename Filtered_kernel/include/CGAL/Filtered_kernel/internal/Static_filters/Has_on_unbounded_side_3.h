@@ -58,6 +58,7 @@ public:
       fit_in_double(s.squared_radius(), ssr))
     {
       CGAL_BRANCH_PROFILER_BRANCH_1(tmp);
+      bool center_inside = true;
 
       if ((ssr < 1.11261183279326254436e-293) || (ssr > 2.80889552322236673473e+306)) {
         CGAL_BRANCH_PROFILER_BRANCH_2(tmp);
@@ -71,6 +72,8 @@ public:
       {
         double bxmin_scx = bxmin - scx;
         max1 = bxmin_scx;
+
+        center_inside = false;
 
         distance = square(bxmin_scx);
         double_tmp_result = (distance - ssr);
@@ -90,6 +93,8 @@ public:
       {
         double scx_bxmax = scx - bxmax;
         max1 = scx_bxmax;
+
+        center_inside = false;
 
         distance = square(scx_bxmax);
         double_tmp_result = (distance - ssr);
@@ -128,6 +133,8 @@ public:
           max1 = bymin_scy;
         }
 
+        center_inside = false;
+
         distance += square(bymin_scy);
       }
       else if (scy > bymax)
@@ -136,6 +143,9 @@ public:
         if (max1 < scy_bymax) {
           max1 = scy_bymax;
         }
+
+        center_inside = false;
+
         distance += square(scy_bymax);
       }
       else {
@@ -158,7 +168,7 @@ public:
 
       eps = 1.99986535548615598560e-15 * (std::max)(ssr, square(max1));
 
-      if (double_tmp_result > eps) {
+      if (!center_inside && double_tmp_result > eps) {
         return true;
       }
 
@@ -169,6 +179,9 @@ public:
         if (max1 < bzmin_scz) {
           max1 = bzmin_scz;
         }
+
+        center_inside = false;
+
         distance += square(bzmin_scz);
       }
       else if (scz > bzmax)
@@ -177,6 +190,8 @@ public:
         if (max1 < scz_bzmax) {
           max1 = scz_bzmax;
         }
+
+        center_inside = false;
 
         distance += square(scz_bzmax);
       }
@@ -192,6 +207,9 @@ public:
 
         distance += square(d);
       }
+
+      if (center_inside)
+        return false;
 
       double_tmp_result = (distance - ssr);
       if ((max1 < 3.33558365626356687717e-147) || (max1 > 1.67597599124282407923e+153)) {

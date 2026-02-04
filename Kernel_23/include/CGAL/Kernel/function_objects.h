@@ -3872,6 +3872,10 @@ namespace CommonKernelFunctors {
 
       const Point_2& center = c.center();
 
+      if ((center.x() >= r.xmin()) && (center.x() <= r.xmax()) &&
+        (center.y() >= r.ymin()) && (center.y() <= r.ymax()))
+        return false;
+
       // x
       d = (std::min)(square(center.x() - r.xmin()), square(center.x() - r.xmax()));
 
@@ -3926,6 +3930,11 @@ namespace CommonKernelFunctors {
       FT distance = FT(0);
 
       const Point_3& center = s.center();
+
+      if ((center.x() >= c.xmin()) && (center.x() <= c.xmax()) &&
+        (center.y() >= c.ymin()) && (center.y() <= c.ymax()) &&
+        (center.z() >= c.zmin()) && (center.z() <= c.zmax()))
+        return false;
 
       // x
       d = (std::min)(square(center.x() - c.xmin()), square(center.x() - c.xmax()));

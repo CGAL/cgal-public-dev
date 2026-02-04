@@ -51,7 +51,7 @@ namespace Orthtree_impl {
 
 BOOST_MPL_HAS_XXX_TRAIT_DEF(Node_data)
 BOOST_MPL_HAS_XXX_TRAIT_DEF(Squared_distance_of_element)
-BOOST_MPL_HAS_XXX_TRAIT_DEF(Has_on_bounded_side)
+BOOST_MPL_HAS_XXX_TRAIT_DEF(Has_on_unbounded_side)
 
 template <class GT, bool has_data>
 struct Node_data_wrapper;
@@ -127,7 +127,7 @@ public:
 #ifndef DOXYGEN_RUNNING
   static inline constexpr bool has_data = Orthtree_impl::has_Node_data<GeomTraits>::value;
   static inline constexpr bool supports_neighbor_search = Orthtree_impl::has_Squared_distance_of_element<GeomTraits>::value;
-  static inline constexpr bool supports_ball_search = Orthtree_impl::has_Has_on_bounded_side<GeomTraits>::value;
+  static inline constexpr bool supports_ball_search = Orthtree_impl::has_Has_on_unbounded_side<GeomTraits>::value;
 #else
   static inline constexpr bool has_data = bool_value; ///< `true` if `GeomTraits` is a model of `OrthtreeTraitsWithData` and `false` otherwise.
   static inline constexpr bool supports_neighbor_search = bool_value; ///< `true` if `GeomTraits` is a model of `CollectionPartitioningOrthtreeTraits` and `false` otherwise.
@@ -796,7 +796,7 @@ public:
 
     `bool operator()(Traits::Sphere_d, Traits::Bbox_d)`
 
-    `Kernel::HasOnBoundedSide_2` and `Kernel::HasOnBoundedSide_3` are compatible concepts for dimenions 2 and 3.
+    `Kernel::HasOnUnboundedSide_2` and `Kernel::HasOnUnboundedSide_3` are compatible concepts for dimenions 2 and 3.
 
     \tparam OutputIterator a model of `OutputIterator` that accepts `Node_index` types
 
@@ -809,7 +809,7 @@ public:
   template <typename OutputIterator>
   auto intersected_nodes(const Point& center, const FT squared_radius, OutputIterator output) const -> std::enable_if_t<Orthtree::supports_ball_search, OutputIterator> {
     return intersected_nodes_recursive(Sphere(center, squared_radius), root(), output, [&](const Sphere& query, const typename Traits::Bbox_d& box) -> bool
-      {return CGAL::do_intersect(query, box) || m_traits.has_on_bounded_side_object()(query, box); });
+      {return !m_traits.has_on_unbounded_side_object()(query, box); });
   }
 
   /*!

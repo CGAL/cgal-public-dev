@@ -178,6 +178,8 @@ public:
     {
       CGAL_BRANCH_PROFILER_BRANCH_1(tmp);
 
+      bool center_inside = true;
+
       if ((csr < 1.11261183279326254436e-293) || (csr > 2.80889552322236673473e+306)) {
         CGAL_BRANCH_PROFILER_BRANCH_2(tmp);
         return Base::operator()(c, r);
@@ -190,6 +192,8 @@ public:
       {
         double bxmin_cx = rxmin - cx;
         max1 = bxmin_cx;
+
+        center_inside = false;
 
         distance = square(bxmin_cx);
         double_tmp_result = (distance - csr);
@@ -209,6 +213,8 @@ public:
       {
         double cx_bxmax = cx - rxmax;
         max1 = cx_bxmax;
+
+        center_inside = false;
 
         distance = square(cx_bxmax);
         double_tmp_result = (distance - csr);
@@ -246,6 +252,8 @@ public:
           max1 = bymin_scy;
         }
 
+        center_inside = false;
+
         distance += square(bymin_scy);
         double_tmp_result = (distance - csr);
       }
@@ -255,6 +263,9 @@ public:
         if (max1 < scy_bymax) {
           max1 = scy_bymax;
         }
+
+        center_inside = false;
+
         distance += square(scy_bymax);
         double_tmp_result = (distance - csr);
       }
@@ -269,6 +280,9 @@ public:
 
         distance += square(d);
       }
+
+      if (center_inside)
+        return false;
 
       double_tmp_result = (distance - csr);
 
