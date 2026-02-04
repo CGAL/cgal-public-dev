@@ -56,7 +56,7 @@ can be recovered and made consistent to build a valid polygon mesh. The function
 `CGAL::Polygon_mesh_processing::polygon_soup_to_polygon_mesh()`
 performs this mesh construction step.
 
-\cgalExample{Polygon_mesh_processing/orient_polygon_soup_example.cpp}
+\cgalExample{PMP_Mesh_repair/orient_polygon_soup_example.cpp}
 
 Inversely, a polygon soup can be constructed from a polygon mesh,
 using the function `CGAL::Polygon_mesh_processing::polygon_mesh_to_polygon_soup()`.
@@ -76,7 +76,7 @@ This package provides functions for orienting faces in a closed polygon mesh:
 
 The following example demonstrates how to repair and orient a soup to obtain a mesh from a reference:
 
-\cgalExample{Polygon_mesh_processing/orientation_pipeline_example.cpp}
+\cgalExample{PMP_Mesh_repair/orientation_pipeline_example.cpp}
 
 \section PMPCombinatorialRepair Combinatorial Repair
 
@@ -115,7 +115,7 @@ The input mesh should represent a manifold surface; otherwise, stitching may not
 The following example applies the stitching operation to a simple quad mesh
 with duplicated border edges.
 
-\cgalExample{Polygon_mesh_processing/stitch_borders_example.cpp}
+\cgalExample{PMP_Mesh_repair/stitch_borders_example.cpp}
 
 \subsection PMPManifoldness Polygon Mesh Manifoldness
 Non-manifold vertices can be detected using the function `CGAL::Polygon_mesh_processing::is_non_manifold_vertex()`.
@@ -131,7 +131,7 @@ to the input non-manifold vertex.
 In the following example, a non-manifold configuration is artificially created and
 fixed with the help of the functions described above.
 
-\cgalExample{Polygon_mesh_processing/manifoldness_repair_example.cpp}
+\cgalExample{PMP_Mesh_repair/manifoldness_repair_example.cpp}
 
 \subsection PMPDuplicateVertexBoundaryCycle Duplicated Vertices in Boundary Cycles
 
@@ -187,7 +187,7 @@ In the following example, the degenerate faces of a triangle mesh
 are removed, the connectivity is fixed, and the number of removed faces
 is output.
 
-\cgalExample{Polygon_mesh_processing/remove_degeneracies_example.cpp}
+\cgalExample{PMP_Mesh_repair/remove_degeneracies_example.cpp}
 \endif
 
 \section PMPHoleFilling Hole Filling
@@ -232,7 +232,7 @@ This package provides four functions for hole filling:
 
 The following example triangulates a hole described by an input polyline.
 
-\cgalExample{Polygon_mesh_processing/triangulate_polyline_example.cpp}
+\cgalExample{PMP_Mesh_repair/triangulate_polyline_example.cpp}
 
 \subsubsection HFExample_2 Hole Filling From the Border of the Hole
 
@@ -246,7 +246,7 @@ Optionally, only holes not exceeding a specified diameter or number of edges can
 This example assumes the mesh is stored in a `CGAL::Surface_mesh` data structure. Analogous examples
 for `CGAL::Polyhedron_3` and other classes are available in the code base.
 
-\cgalExample{Polygon_mesh_processing/hole_filling_example_SM.cpp}
+\cgalExample{PMP_Mesh_repair/hole_filling_example_SM.cpp}
 
  \cgalFigureBegin{Triangulated_fork, fork.jpg}
  Holes in the fork model are filled with triangle patches.
@@ -255,7 +255,7 @@ for `CGAL::Polyhedron_3` and other classes are available in the code base.
 An additional parameter, `visitor`, can be used to track the algorithm's phases,
 enabling users to implement timeouts or monitor progress.
 
-\cgalExample{Polygon_mesh_processing/hole_filling_visitor_example.cpp}
+\cgalExample{PMP_Mesh_repair/hole_filling_visitor_example.cpp}
 
 \subsection HFPerformance Performance
 

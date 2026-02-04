@@ -85,13 +85,13 @@ intersection of the input meshes will be marked as constrained. Additionally,
 if a constrained edge is split during corefinement,
 the resulting sub-edges will also be marked as constrained.
 
-\cgalExample{Polygon_mesh_processing/corefinement_SM.cpp}
+\cgalExample{PMP_Boolean_operations/corefinement_SM.cpp}
 
 The function `CGAL::Polygon_mesh_processing::autorefine_triangle_soup()` provides a way
 to refine a triangle soup using the intersections of the triangles from the soup.
 In particular, if some points are duplicated they will be merged.
 
-\cgalExample{Polygon_mesh_processing/soup_autorefinement.cpp}
+\cgalExample{PMP_Boolean_operations/soup_autorefinement.cpp}
 
 \subsection coref_bolop_subsec Computing Mesh Boolean Operations
 
@@ -110,7 +110,7 @@ of the runtime.
 
 The following basic example illustrates how to compute the union of two meshes:
 
-\cgalExample{Polygon_mesh_processing/corefinement_mesh_union.cpp}
+\cgalExample{PMP_Boolean_operations/corefinement_mesh_union.cpp}
 
 \cgalFigureBegin{boolop_fig, bool_op.png}
 Let `C` and `S` be the volumes bounded by the triangulated surface meshes of
@@ -136,7 +136,7 @@ is not possible to compute the union of two cubes that are disjoint but share an
 If such scenarios arise, consider using the package \ref PkgNef3.
 Alternatively, a special visitor (`CGAL::Polygon_mesh_processing::Corefinement::Non_manifold_output_visitor`) is provided for such cases
 and enables the user to get a triangle soup representing such a non-manifold output.
-See the example \ref Polygon_mesh_processing/corefinement_mesh_non_manifold_intersection.cpp
+See the example \ref PMP_Boolean_operations/corefinement_mesh_non_manifold_intersection.cpp
 
 It is possible to update the input so that it contains the result (in-place operation).
 In this case, the entire mesh is not copied; only the region around the
@@ -220,7 +220,7 @@ subtract a volume and update the first input triangulated surface mesh
 meshes are marked and the region around them is remeshed isotropically
 while preserving the intersection polyline.
 
-\cgalExample{Polygon_mesh_processing/corefinement_difference_remeshed.cpp}
+\cgalExample{PMP_Boolean_operations/corefinement_difference_remeshed.cpp}
 
 \subsubsection coref_ex_consq_subsec Robustness of Consecutive Operations
 
@@ -232,7 +232,7 @@ are stored as a property of the mesh vertices and can be reused in later operati
 With this property, it is possible to manipulate a mesh with points having floating point coordinates
 while benefiting from the robustness provided by exact constructions.
 
-\cgalExample{Polygon_mesh_processing/corefinement_consecutive_bool_op.cpp}
+\cgalExample{PMP_Boolean_operations/corefinement_consecutive_bool_op.cpp}
 
 \section coref_clip Clipping and Splitting Meshes
 
@@ -294,7 +294,7 @@ The example below illustrates how to use the mesh slicer for a given
 triangle mesh and a plane. Two constructors are used in the example
 for pedagogical purposes.
 
-\cgalExample{Polygon_mesh_processing/mesh_slicer_example.cpp}
+\cgalExample{PMP_Boolean_operations/mesh_slicer_example.cpp}
 
 \section PMPBoolOpHistory Implementation History
 

@@ -6,14 +6,6 @@ EXTRACT_ALL                =  false
 HIDE_UNDOC_CLASSES         =  true
 WARN_IF_UNDOCUMENTED       =  false
 
-INPUT += ${CGAL_PACKAGE_INCLUDE_DIR}/CGAL/Polygon_mesh_processing/IO/polygon_mesh_io.h
-INPUT += ${CGAL_Shape_detection_INCLUDE_DIR}/CGAL/Polygon_mesh_processing/region_growing.h
-
-STRIP_FROM_PATH += ${CGAL_Shape_detection_INCLUDE_DIR}
-
-# macros to be used inside the code
-ALIASES += "cgalDescribePolylineType=A polyline is defined as a sequence of points, each pair of contiguous points defines a segment of the polyline. If the first and last points of the polyline are identical, the polyline is closed."
-
 EXCLUDE_SYMBOLS += experimental
 
 HTML_EXTRA_FILES           = ${CGAL_PACKAGE_DOC_DIR}/fig/selfintersections.jpg \
@@ -30,3 +22,10 @@ HTML_EXTRA_FILES           = ${CGAL_PACKAGE_DOC_DIR}/fig/selfintersections.jpg \
                              ${CGAL_PACKAGE_DOC_DIR}/fig/bimba-mean0.050000-0.002000.jpg
 
 EXAMPLE_PATH += ${CGAL_Poisson_surface_reconstruction_3_EXAMPLE_DIR}
+EXAMPLE_PATH += ${CGAL_PMP_Remeshing_EXAMPLE_DIR}
+
+STRIP_FROM_PATH += ${CGAL_Shape_detection_INCLUDE_DIR}
+INPUT += ${CGAL_Shape_detection_INCLUDE_DIR}/CGAL/Polygon_mesh_processing/region_growing.h
+
+# macros to be used inside the code
+ALIASES += "cgalDescribePolylineType=A polyline is defined as a sequence of points, each pair of contiguous points defines a segment of the polyline. If the first and last points of the polyline are identical, the polyline is closed."

@@ -1,14 +1,14 @@
 /*!
-\example Polygon_mesh_processing/hole_filling_example.cpp
-\example Polygon_mesh_processing/hole_filling_example_SM.cpp
-\example Polygon_mesh_processing/hole_filling_visitor_example.cpp
-\example Polygon_mesh_processing/stitch_borders_example.cpp
-\example Polygon_mesh_processing/manifoldness_repair_example.cpp
-\example Polygon_mesh_processing/repair_polygon_soup_example.cpp
-\example Polygon_mesh_processing/triangulate_polyline_example.cpp
-\example Polygon_mesh_processing/orientation_pipeline_example.cpp
-\example Polygon_mesh_processing/cc_compatible_orientations.cpp
-\example Polygon_mesh_processing/orient_polygon_soup_example.cpp
+\example PMP_Mesh_repair/hole_filling_example.cpp
+\example PMP_Mesh_repair/hole_filling_example_SM.cpp
+\example PMP_Mesh_repair/hole_filling_visitor_example.cpp
+\example PMP_Mesh_repair/stitch_borders_example.cpp
+\example PMP_Mesh_repair/manifoldness_repair_example.cpp
+\example PMP_Mesh_repair/repair_polygon_soup_example.cpp
+\example PMP_Mesh_repair/triangulate_polyline_example.cpp
+\example PMP_Mesh_repair/orientation_pipeline_example.cpp
+\example PMP_Mesh_repair/cc_compatible_orientations.cpp
+\example PMP_Mesh_repair/orient_polygon_soup_example.cpp
 */
 
 namespace PMP = CGAL::Polygon_mesh_processing;

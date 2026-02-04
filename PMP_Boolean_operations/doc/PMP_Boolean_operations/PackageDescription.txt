@@ -59,7 +59,8 @@ The page \ref bgl_namedparameters "Named Parameters" describes their usage.
 - `CGAL::Polygon_mesh_processing::corefine_and_compute_difference()`
 - `CGAL::Polygon_mesh_processing::corefine_and_compute_intersection()`
 - `CGAL::Polygon_mesh_processing::corefine_and_compute_boolean_operations()`
-- `CGAL::Polygon_mesh_processing::surface_intersection()`
+- `CGAL::Polygon_mesh_processing::surface_intersection()` (deprecated)
+- `CGAL::Polygon_mesh_processing::intersection_polylines()`
 
 \cgalCRPSection{Clipping and Splitting}
 - `CGAL::Polygon_mesh_processing::clip()`

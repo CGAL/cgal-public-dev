@@ -54,12 +54,12 @@ is selected, orthogonal to the normal vector computed by `CGAL::Polygon_mesh_pro
 in this plane. This approach is chosen because the constrained Delaunay triangulation maximizes
 the minimum angle among all triangles, given the edges of the face.
 
-\cgalExample{Polygon_mesh_processing/triangulate_faces_example.cpp}
+\cgalExample{PMP_Remeshing/triangulate_faces_example.cpp}
 
 An optional parameter, `visitor`, enables tracking of how faces are subdivided during triangulation.
 The following example demonstrates its usage.
 
-\cgalExample{Polygon_mesh_processing/triangulate_faces_split_visitor_example.cpp}
+\cgalExample{PMP_Remeshing/triangulate_faces_split_visitor_example.cpp}
 
 \section PMPRemeshingLocal Local Remeshing
 
@@ -110,7 +110,7 @@ should be applied to the list of constrained edges prior to remeshing.
 
 The following example demonstrates a complete usage of the isotropic remeshing function.
 
-\cgalExample{Polygon_mesh_processing/isotropic_remeshing_example.cpp}
+\cgalExample{PMP_Remeshing/isotropic_remeshing_example.cpp}
 
 \subsection acvdrem Approximated Discrete Centroidal Voronoi Diagram (ACVD) Remeshing
 
@@ -164,7 +164,7 @@ to solve the linear system.
 The following example calls the functions `CGAL::Polygon_mesh_processing::refine()`
 and `CGAL::Polygon_mesh_processing::fair()` for some selected regions on the input triangle mesh.
 
-\cgalExample{Polygon_mesh_processing/refine_fair_example.cpp}
+\cgalExample{PMP_Remeshing/refine_fair_example.cpp}
 
 \subsection PMPRemeshingSmoothing Smoothing
 
@@ -184,7 +184,7 @@ of vertices over the smoothed region.
 
 A simple example is provided below.
 
-\cgalExample{Polygon_mesh_processing/mesh_smoothing_example.cpp}
+\cgalExample{PMP_Remeshing/mesh_smoothing_example.cpp}
 
 \cgalFigureAnchor{PMPFigMeshSmoothing}
 <center>
@@ -208,10 +208,10 @@ Statistics for the various combinations of mesh smoothing.
 moves vertices following an area-based Laplacian smoothing scheme, performed
 at each vertex in an estimated tangent plane to the surface.
 The full algorithm is described in \cgalCite{botsch2010PMP}.
-The example \ref Polygon_mesh_processing/tangential_relaxation_example.cpp shows how this
+The example \ref PMP_Remeshing/tangential_relaxation_example.cpp shows how this
 mesh relaxation function can be used.
 
-\cgalExample{Polygon_mesh_processing/tangential_relaxation_example.cpp}
+\cgalExample{PMP_Remeshing/tangential_relaxation_example.cpp}
 
 - Shape smoothing: `CGAL::Polygon_mesh_processing::smooth_shape()` moves vertices towards a weighted
 barycenter of their neighbors along the mean curvature flow. The curvature flow algorithm for shape
@@ -224,7 +224,7 @@ The smoothed shape converges toward a sphere while remaining conformally equival
 
 A simple example is provided below.
 
-\cgalExample{Polygon_mesh_processing/shape_smoothing_example.cpp}
+\cgalExample{PMP_Remeshing/shape_smoothing_example.cpp}
 
 \cgalFigureAnchor{PMPFigShapeSmoothing}
 <center>
@@ -252,7 +252,7 @@ surface approximation, topology, and one-dimensional feature sampling.
 An example demonstrating remeshing of a triangulated surface mesh with the Delaunay refinement
 algorithm, while preserving detected sharp edges, is provided below.
 
-\cgalExample{Polygon_mesh_processing/delaunay_remeshing_example.cpp}
+\cgalExample{PMP_Remeshing/delaunay_remeshing_example.cpp}
 
 \section PMPdecimate Remeshing of (Almost) Planar Patches
 
@@ -263,7 +263,7 @@ as a single large polygonal face if it forms a simply connected patch.
 This can be accomplished using the function `CGAL::Polygon_mesh_processing::remesh_planar_patches()`,
 which detects planar regions using geometric predicates for coplanarity and collinearity.
 
-\cgalExample{Polygon_mesh_processing/remesh_planar_patches.cpp}
+\cgalExample{PMP_Remeshing/remesh_planar_patches.cpp}
 
 Exact coplanarity and collinearity tests may result in unexpectedly small planar regions due to
 imperfections in the input geometry. To address this, a threshold on the angle between adjacent
@@ -282,7 +282,7 @@ Similarly, the function `CGAL::Polygon_mesh_processing::detect_corners_of_region
 to detect corner vertices on the border of the planar regions detected by running the region growing
 algorithm on border segments of the patch.
 
-\cgalExample{Polygon_mesh_processing/remesh_almost_planar_patches.cpp}
+\cgalExample{PMP_Remeshing/remesh_almost_planar_patches.cpp}
 
 \cgalFigureAnchor{decimate_cheese}
 <center>
@@ -325,7 +325,7 @@ The following example demonstrates extrusion in both directions by projecting po
 along the vertex normal. If the `Bottom` function were the identity, this would result
 in a one-sided extrusion.
 
-\cgalExample{Polygon_mesh_processing/extrude.cpp}
+\cgalExample{PMP_Remeshing/extrude.cpp}
 
 \section PMPRemeshingHistory Implementation History
 

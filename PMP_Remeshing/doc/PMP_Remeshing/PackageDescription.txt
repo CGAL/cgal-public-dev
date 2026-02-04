@@ -57,8 +57,8 @@ The page \ref bgl_namedparameters "Named Parameters" describes their usage.
 - `CGAL::Polygon_mesh_processing::triangulate_polygons()`
 
 \cgalCRPSection{Remeshing (Local Approach)}
-- \link PMP_local_remeshing_grp `CGAL::Polygon_mesh_processing::isotropic_remeshing()` \endlink
-- \link PMP_local_remeshing_grp `CGAL::Polygon_mesh_processing::split_long_edges()` \endlink
+- `CGAL::Polygon_mesh_processing::isotropic_remeshing()`
+- `CGAL::Polygon_mesh_processing::split_long_edges()`
 - `CGAL::Polygon_mesh_processing::approximated_centroidal_Voronoi_diagram_remeshing()`
 - `CGAL::Polygon_mesh_processing::smooth_mesh()` (deprecated)
 - `CGAL::Polygon_mesh_processing::angle_and_area_smoothing()`
@@ -69,7 +69,7 @@ The page \ref bgl_namedparameters "Named Parameters" describes their usage.
 - `CGAL::Polygon_mesh_processing::random_perturbation()`
 
 \cgalCRPSection{Global Remeshing}
-- \link PMP_global_remeshing_grp `CGAL::Polygon_mesh_processing::surface_Delaunay_remeshing()` \endlink
+- `CGAL::Polygon_mesh_processing::surface_Delaunay_remeshing()`
 
 \cgalCRPSection{Planar Patch Simplification}
 - `CGAL::Polygon_mesh_processing::remesh_planar_patches()`

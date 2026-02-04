@@ -1,4 +1,1 @@
-This package contains the documentation of the Polygon_mesh_processing functions
-that perform detection and treatment of defects in polygon meshes.
-
-The implementations are located in the `Polygon_mesh_processing` package.
+This package contains functions that perform detection and treatment of defects in polygon meshes.

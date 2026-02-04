@@ -8,13 +8,3 @@ HIDE_UNDOC_CLASSES         =  true
 WARN_IF_UNDOCUMENTED       =  false
 
 EXCLUDE_SYMBOLS += experimental
-
-INPUT += ${CGAL_Polygon_mesh_processing_INCLUDE_DIR}/CGAL/Polygon_mesh_processing/autorefinement.h
-INPUT += ${CGAL_Polygon_mesh_processing_INCLUDE_DIR}/CGAL/Polygon_mesh_processing/corefinement.h
-INPUT += ${CGAL_Polygon_mesh_processing_INCLUDE_DIR}/CGAL/Polygon_mesh_processing/clip.h
-INPUT += ${CGAL_Polygon_mesh_processing_INCLUDE_DIR}/CGAL/Polygon_mesh_processing/intersection.h
-INPUT += ${CGAL_Polygon_mesh_processing_INCLUDE_DIR}/CGAL/Polygon_mesh_processing/refine_with_plane.h
-INPUT += ${CGAL_Polygon_mesh_processing_INCLUDE_DIR}/CGAL/Polygon_mesh_processing/refine_mesh_at_isolevel.h
-INPUT += ${CGAL_Polygon_mesh_processing_INCLUDE_DIR}/CGAL/Polygon_mesh_slicer.h
-
-EXAMPLE_PATH += ${CGAL_Polygon_mesh_processing_EXAMPLE_DIR}

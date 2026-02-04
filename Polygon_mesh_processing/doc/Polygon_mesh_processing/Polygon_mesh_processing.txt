@@ -583,7 +583,7 @@ The function \link CGAL::Polygon_mesh_processing::approximate_max_distance_to_po
 
 In the following example, a mesh is isotropically remeshed and the approximate distance between the input and the output is computed.
 
-\cgalExample{Polygon_mesh_processing/hausdorff_distance_remeshing_example.cpp}
+\cgalExample{PMP_Remeshing/hausdorff_distance_remeshing_example.cpp}
 
 \subsubsection PoissonDistanceExample Max Distance Between Point Set and Surface Example
 
