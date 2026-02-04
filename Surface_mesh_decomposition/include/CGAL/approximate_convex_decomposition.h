@@ -651,7 +651,7 @@ void rayshooting_fill(std::vector<int8_t>& grid, const Vec3_uint& grid_size, con
           Ray_intersection intersection = tree.first_intersection(Ray_3(c, dirs[i]));
           if (intersection) {
             // A segment intersection is not helpful as it means the triangle normal is orthogonal to the ray
-            if (std::get_if<Point_3>(&(intersection->first))) {
+            if (std::get_if<Point_3>(&intersection->first)) {
               face_descriptor fd = intersection->second;
               Vector_3 n = Polygon_mesh_processing::compute_face_normal(fd, mesh);
               if (dirs[i] * n > 0)
@@ -715,7 +715,7 @@ void rayshooting_fill(std::vector<int8_t>& grid, const Vec3_uint& grid_size, con
           Ray_intersection intersection = tree.first_intersection(Ray_3(c, dirs[i]));
           if (intersection) {
             // A segment intersection is not helpful as it means the triangle normal is orthogonal to the ray
-            if (std::get_if<Point_3>(&(intersection->first))) {
+            if (std::get_if<Point_3>(&intersection->first)) {
               face_descriptor fd = intersection->second;
               Vector_3 n = Polygon_mesh_processing::compute_face_normal(fd, mesh);
               if (dirs[i] * n > 0)
@@ -1182,8 +1182,6 @@ bool finished(Candidate<GeomTraits> &c, const NamedParameters& np) {
 
 template<typename GeomTraits, typename FaceGraph>
 void shrink_candidates(const FaceGraph& tmesh, std::vector<Candidate<GeomTraits>>& candidates, const Bbox_3& bbox, const typename GeomTraits::FT& voxel_size, CGAL::Sequential_tag) {
-  using face_descriptor = typename boost::graph_traits<FaceGraph>::face_descriptor;
-
   using Point_3 = typename GeomTraits::Point_3;
   using Segment_3 = typename GeomTraits::Segment_3;
   using Triangle_3 = typename GeomTraits::Triangle_3;
@@ -1244,33 +1242,30 @@ void shrink_candidates(const FaceGraph& tmesh, std::vector<Candidate<GeomTraits>
     }
 
     for (auto& i : intersections) {
-      const Point_3* p;
-      const Segment_3* s;
-      const Triangle_3* t;
-      const std::vector<Point_3>* v;
-      if (p = std::get_if<Point_3>(&(i.first))) {
+      const Point_3* p = std::get_if<Point_3>(&i.first);
+      const Segment_3* s = std::get_if<Segment_3>(&i.first);
+      const Triangle_3* t = std::get_if<Triangle_3>(&i.first);
+      const std::vector<Point_3>* v = std::get_if<std::vector<Point_3>>(&i.first);
+      if (p != nullptr) {
         pts.push_back(*p);
       }
-      else if (s = std::get_if<Segment_3>(&(i.first))) {
+      else if (s != nullptr) {
         pts.push_back(s->source());
         pts.push_back(s->target());
       }
-      else if (t = std::get_if<Triangle_3>(&(i.first))) {
+      else if (t != nullptr) {
         pts.push_back((*t)[0]);
         pts.push_back((*t)[1]);
         pts.push_back((*t)[2]);
       }
-      else if (v = std::get_if<std::vector<Point_3>>(&(i.first))) {
+      else if (v != nullptr) {
         std::copy(v->begin(), v->end(), std::back_inserter(pts));
       }
     }
 
-    bool added = false;
     for (std::size_t c = 0; c < 8; c++)
-      if (taken[c]) {
+      if (taken[c])
         pts.push_back(corners[c]);
-        added = true;
-      }
 
     pts.reserve(pts.size() + c.new_surface.size() * 8);
 
@@ -1310,8 +1305,6 @@ void shrink_candidates(const FaceGraph& tmesh, std::vector<Candidate<GeomTraits>
 template<typename GeomTraits, typename FaceGraph>
 void shrink_candidates(const FaceGraph& tmesh, std::vector<Candidate<GeomTraits>>& candidates, const Bbox_3& bbox, const typename GeomTraits::FT& voxel_size, CGAL::Parallel_tag) {
 #ifdef CGAL_LINKED_WITH_TBB
-  using face_descriptor = typename boost::graph_traits<FaceGraph>::face_descriptor;
-
   using Point_3 = typename GeomTraits::Point_3;
   using Segment_3 = typename GeomTraits::Segment_3;
   using Triangle_3 = typename GeomTraits::Triangle_3;
@@ -1372,32 +1365,29 @@ void shrink_candidates(const FaceGraph& tmesh, std::vector<Candidate<GeomTraits>
     }
 
     for (auto& i : intersections) {
-      const Point_3* p;
-      const Segment_3* s;
-      const Triangle_3* t;
-      const std::vector<Point_3>* v;
-      if (p = std::get_if<Point_3>(&(i.first))) {
+      const Point_3* p = std::get_if<Point_3>(&i.first);
+      const Segment_3* s = std::get_if<Segment_3>(&i.first);
+      const Triangle_3* t = std::get_if<Triangle_3>(&i.first);
+      const std::vector<Point_3>* v = std::get_if<std::vector<Point_3>>(&i.first);
+      if (p != nullptr) {
         pts.push_back(*p);
       }
-      else if (s = std::get_if<Segment_3>(&(i.first))) {
+      else if (s != nullptr) {
         pts.push_back(s->source());
         pts.push_back(s->target());
       }
-      else if (t = std::get_if<Triangle_3>(&(i.first))) {
+      else if (t != nullptr) {
         pts.push_back((*t)[0]);
         pts.push_back((*t)[1]);
         pts.push_back((*t)[2]);
       }
-      else if (v = std::get_if<std::vector<Point_3>>(&(i.first)))
+      else if (v != nullptr)
         std::copy(v->begin(), v->end(), std::back_inserter(pts));
     }
 
-    bool added = false;
     for (std::size_t c = 0; c < 8; c++)
-      if (taken[c]) {
+      if (taken[c])
         pts.push_back(corners[c]);
-        added = true;
-      }
 
     pts.reserve(pts.size() + c.new_surface.size() * 8);
 
@@ -1436,6 +1426,7 @@ void shrink_candidates(const FaceGraph& tmesh, std::vector<Candidate<GeomTraits>
   tbb::parallel_for_each(candidates, shrink);
 #else
   assert(false);
+  CGAL_USE(tmesh);
   CGAL_USE(candidates);
   CGAL_USE(bbox);
   CGAL_USE(voxel_size);
@@ -1563,7 +1554,7 @@ void merge(std::vector<Convex_hull_candidate<GeomTraits>>& candidates, const typ
   std::vector<Merged_candidate> todo;
   std::priority_queue<Merged_candidate> queue;
 
-  const auto do_merge = [hull_volume, &hulls, &num_hulls](Merged_candidate& m) {
+  const auto do_merge = [hull_volume, &hulls](Merged_candidate& m) {
     const Convex_hull_candidate<GeomTraits>& ci = hulls[m.ch_a];
     const Convex_hull_candidate<GeomTraits>& cj = hulls[m.ch_b];
 
@@ -1677,6 +1668,7 @@ void merge(std::vector<Convex_hull_candidate<GeomTraits>>& candidates, const typ
     candidates.push_back(std::move(hulls[i]));
 #else
   CGAL_USE(candidates);
+  CGAL_USE(max_convex_hulls);
   CGAL_USE(hull_volume);
   assert(false);
 #endif
