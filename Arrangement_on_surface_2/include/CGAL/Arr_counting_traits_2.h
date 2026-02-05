@@ -357,8 +357,9 @@ public:
       m_object(base.do_intersect_2_object()), m_counter(counter) {}
 
     /*! operates */
-    bool operator()(const X_monotone_curve_2& xc1, const X_monotone_curve_2& xc2, bool closed = true) const
-    { ++m_counter; return m_object(xc1, xc2, closed); }
+    bool operator()(const X_monotone_curve_2& xc1, const X_monotone_curve_2& xc2,
+                    bool consider_common_endpoints = true) const
+    { ++m_counter; return m_object(xc1, xc2, consider_common_endpoints); }
   };
 
   /*! A functor that computes intersections between \f$x\f$-monotone curves. */

@@ -24,8 +24,8 @@ namespace internal {
 // Specialized do_intersect with several tests skipped because at
 // this point, we already know the order of points
 template <typename Point_2, typename Traits>
-bool do_closed_segment_intersect(const Point_2& l1, const Point_2& r1, const Point_2& l2, const Point_2& r2,
-                                 const Traits& traits) {
+bool do_segment_intersect_consider_common_endpoints(const Point_2& l1, const Point_2& r1,
+                                                    const Point_2& l2, const Point_2& r2, const Traits& traits) {
   auto cmpare_xy = traits.compare_xy_2_object();
   auto compute_orientation = traits.orientation_2_object();
 
@@ -66,8 +66,8 @@ bool do_closed_segment_intersect(const Point_2& l1, const Point_2& r1, const Poi
 // Specialized do_intersect with several tests skipped because at
 // this point, we already know the order of points
 template <typename Point_2, typename Traits>
-bool do_open_segment_intersect(const Point_2& l1, const Point_2& r1, const Point_2& l2, const Point_2& r2,
-                               const Traits& traits) {
+bool do_segment_intersect_ignore_common_endpoint(const Point_2& l1, const Point_2& r1,
+                                                 const Point_2& l2, const Point_2& r2, const Traits& traits) {
   auto cmpare_xy = traits.compare_xy_2_object();
   auto compute_orientation = traits.orientation_2_object();
 
@@ -137,7 +137,9 @@ bool do_segment_intersect(const Segment& seg1, const Segment& seg2, bool closed,
    default: break; // LERGER
   }
 
-  return (closed) ? do_closed_segment_intersect(l1, r1, l2, r2, traits) : do_open_segment_intersect(l1, r1, l2, r2, traits);
+  return (closed) ?
+    do_segment_intersect_consider_common_endpoints(l1, r1, l2, r2, traits) :
+    do_segment_intersect_ignore_common_endpoint(l1, r1, l2, r2, traits);
 }
 
 }

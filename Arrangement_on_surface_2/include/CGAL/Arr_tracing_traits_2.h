@@ -611,18 +611,20 @@ public:
      * a given output iterator.
      * \param xcv1 the first curve.
      * \param xcv2 the ssecond curve.
-     * \param closed indicates whether the curves are closed
-     * \return `true` if `xc1` and `xc2` are closed and intersect or if `xc1` and `xc2` are open and intersect
-     * in at least one of their interiors, and `false` otherwise.
+     * \param consider_common_endpoints indicates whether common endpoints should be counted as intersections.
+     * \return `true` if `consider_common_endpoints` is true and `xcv1` and `xcv2` intersect or if
+     *  `consider_common_endpoints` is `false and at least one of the interiors of `xcv1` and `xcv2` intersect,
+     *   and `false` otherwise.
      */
-    bool operator()(const X_monotone_curve_2& xcv1, const X_monotone_curve_2& xcv2, bool closed = true) const {
-      if (! m_enabled) return m_object(xcv1, xcv2, closed);
+    bool operator()(const X_monotone_curve_2& xcv1, const X_monotone_curve_2& xcv2,
+                    bool consider_common_endpoints = true) const {
+      if (! m_enabled) return m_object(xcv1, xcv2, consider_common_endpoints);
 
       std::cout << "do_intersect" << std::endl
                 << "  xcv1: " << xcv1 << std::endl
                 << "  xcv2: " << xcv2 << std::endl
-                << "  closed: " << closed << std::endl;
-      auto res = m_object(xcv1, xcv2, closed);
+                << "  consider_common_endpoints: " << consider_common_endpoints << std::endl;
+      auto res = m_object(xcv1, xcv2, consider_common_endpoints);
       std::cout << "  result: " << res << std::endl;
       return res;
     }

@@ -557,11 +557,14 @@ public:
     /*! determines whether two given \f$x\f$-monotone curves intersect.
      * \param xcv1 the first curve.
      * \param xcv2 the second curve.
-     * \param closed indicates whether the curves are closed.
-     * \return a boolean flag indicating whether the curves intersect.
+     * \param consider_common_endpoints indicates whether common endpoints should be counted as intersections.
+     * \return `true` if `consider_common_endpoints` is true and `xcv1` and `xcv2` intersect or if
+     *  `consider_common_endpoints` is `false and at least one of the interiors of `xcv1` and `xcv2` intersect,
+     *   and `false` otherwise.
      */
-    bool operator()(const X_monotone_curve_2& xcv1, const X_monotone_curve_2& xcv2, bool closed = true) const
-    { return Aos_2::internal::do_segment_intersect(xcv1, xcv2, closed, m_traits); }
+    bool operator()(const X_monotone_curve_2& xcv1, const X_monotone_curve_2& xcv2,
+                    bool consider_common_endpoints = true) const
+    { return Aos_2::internal::do_segment_intersect(xcv1, xcv2, consider_common_endpoints, m_traits); }
   };
 
   /*! obtains a `Do_intersect_2` functor object. */

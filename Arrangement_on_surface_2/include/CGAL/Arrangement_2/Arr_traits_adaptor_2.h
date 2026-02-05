@@ -528,14 +528,18 @@ public:
     /*! determines whether two x-monotone curves intersect.
      * \param xcv1 the first curve.
      * \param xcv2 the second curve.
-     * \return true if xcv1 and xcv2 intersect false otherwise.
+     * \param consider_common_endpoints indicates whether common endpoints should be counted as intersections.
+     * \return `true` if `consider_common_endpoints` is true and `xcv1` and `xcv2` intersect or if
+     *  `consider_common_endpoints` is `false and at least one of the interiors of `xcv1` and `xcv2` intersect,
+     *   and `false` otherwise.
      */
-    bool operator()(const X_monotone_curve_2& xcv1, const X_monotone_curve_2& xcv2, bool closed = true) const {
+    bool operator()(const X_monotone_curve_2& xcv1, const X_monotone_curve_2& xcv2,
+                    bool consider_common_endpoints = true) const {
       // The function is implemented based on the Has_do_intersect category.
       // If the category indicates that "do_intersect" is available, it calls
       // the function with same name defined in the base class. Otherwise, it
       // uses the intersection construction to implement this predicate.
-      return _do_intersect_imp(xcv1, xcv2, closed, has_intersect_2<Base>());
+      return _do_intersect_imp(xcv1, xcv2, consider_common_endpoints, has_intersect_2<Base>());
     }
 
   protected:
@@ -556,25 +560,25 @@ public:
 
     /*! Implementation of the operator() in case the HasDoIntersect tag is true.
      */
-    bool _do_intersect_imp(const X_monotone_curve_2& xcv1, const X_monotone_curve_2& xcv2, bool closed,
-                           std::true_type) const {
+    bool _do_intersect_imp(const X_monotone_curve_2& xcv1, const X_monotone_curve_2& xcv2,
+                           bool consider_common_endpoints, std::true_type) const {
       const Base* base = m_self;
-      return (base->do_intersect_2_object()(xcv1, xcv2, closed));
+      return (base->do_intersect_2_object()(xcv1, xcv2, consider_common_endpoints));
     }
 
     /*! Implementation of the operator() in case the HasDoIntersect tag is false.
      */
-    bool _do_intersect_imp(const X_monotone_curve_2& xcv1, const X_monotone_curve_2& xcv2, bool closed,
-                           std::false_type) const {
+    bool _do_intersect_imp(const X_monotone_curve_2& xcv1, const X_monotone_curve_2& xcv2,
+                           bool consider_common_endpoints, std::false_type) const {
       using Intersection_point = std::pair<Point_2, Multiplicity>;
       using Intersection_result = std::variant<Intersection_point, X_monotone_curve_2>;
       std::list<Intersection_result> intersections;
       m_self->intersect_2_object()(xcv1, xcv2, back_inserter(intersections));
-      if (closed) return ! intersections.empty();
+      if (consider_common_endpoints) return ! intersections.empty();
 
       // Check whether the open curves intersect
 
-      // If the closed curves do not intersect, so do the open curves
+      // If the curves do not intersect at all, endpoints do not matter
       if (intersections.empty()) return false;
 
       // If there are more than 2 intersections, return true
@@ -588,12 +592,12 @@ public:
       auto ctr_min_vertex = m_self->construct_min_vertex_2_object();
       auto ctr_max_vertex = m_self->construct_max_vertex_2_object();
 
-      // If the first intersection point of the closed curves is not an endpoint of the first curve, return true
+      // If the first intersection point of the curves is not an endpoint of the first curve, return true
       const auto& min_p1 = ctr_min_vertex(xcv1);
       const auto& max_p1 = ctr_max_vertex(xcv1);
       if ((cmp_xy(min_p1, p_first_p->first) != EQUAL) && (cmp_xy(max_p1, p_first_p->first) != EQUAL)) return true;
 
-      // If the first intersection point of the closed curves is not an endpoint of the second curve, return true
+      // If the first intersection point of the curves is not an endpoint of the second curve, return true
       const auto& min_p2 = ctr_min_vertex(xcv2);
       const auto& max_p2 = ctr_max_vertex(xcv2);
       if ((cmp_xy(min_p2, p_first_p->first) != EQUAL) && (cmp_xy(max_p2, p_first_p->first) != EQUAL)) return true;

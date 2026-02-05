@@ -1108,32 +1108,37 @@ public:
     /*! determines whether two given \f$x\f$-monotone curves intersect.
      * \param xcv1 the first curve.
      * \param xcv2 the second curve.
-     * \param closed indicates whether the curves are closed.
-     * \return a boolean flag indicating whether the curves intersect.
+     * \param consider_common_endpoints indicates whether common endpoints should be counted as intersections.
+     * \return `true` if `consider_common_endpoints` is true and `xcv1` and `xcv2` intersect or if
+     *  `consider_common_endpoints` is `false and at least one of the interiors of `xcv1` and `xcv2` intersect,
+     *   and `false` otherwise.
      */
-    bool operator()(const X_monotone_curve_2& xcv1, const X_monotone_curve_2& xcv2, bool closed = true) const {
-      /* Testing collisions between closed polycurves is relatively simple.
-       * Testing collision between open polycurves is more challenging.
+    bool operator()(const X_monotone_curve_2& xcv1, const X_monotone_curve_2& xcv2,
+                    bool consider_common_endpoints = true) const {
+      /* Testing collisions between polycurves (while counting common
+       * endpoints as intersections) is relatively simple.  Testing collision
+       * between polycurves while ignoring common endpoints is more challenging.
        *
-       * Firstwe compare the most right point of xcv1 and the most left point of
-       * xcv2 and vice verse. If the curves are disjoint we trivially return.
+       * First we compare the most right point of xcv1 and the most left point
+       * of xcv2 and vice verse. If the curves are disjoint we trivially return.
        * Observe that if the most right point of one curve coincides with the
-       * most left point of the other curve, the closed curves intersect, but
-       * the open curves do not.
+       * most left point of the other curve, the curves intersect, but the when
+       * ignoring common endpoints they do not.
        *
        * Second, we find the first indices (from the left) of the subcurves of
        * our polycurves that have common \f$x\f$-coordinates and traverse the
        * to the right.
        *
-       * If the polycurves are open, we treat the first pair of subcurves of the
-       * polycurves as open. We also treat the last pair of subcurves as open.
-       * We treat all other pairs as closed. This plain procedure does not
-       * detect intersections between endpoints of subcurves, which are interior
-       * to at leadt one of the polycurves. Therefore, we need to check further
+       * If common endpoints are ignored, we ignore common endpoints of the
+       * first pair of subcurves of the polycurves. We also treat the last pair
+       * of subcurves the same.  When comparing all other pairs we count common
+       * endpoints as intersections. This plain procedure does not detect
+       * intersections between endpoints of subcurves, which are interior to at
+       * least one of the polycurves. Therefore, we need to check further
        * whether endpoints coincide under certain conditions,
        *
        * The conditions and special testing have been carefully coded for
-       * maximum performance (for open as well as for closed polycurves).
+       * maximum performance (while considering or ignoring common endpoints).
        */
       const Subcurve_traits_2* geom_traits = m_poly_traits.subcurve_traits_2();
       auto cmp_y_at_x = m_poly_traits.compare_y_at_x_2_object();
@@ -1161,12 +1166,12 @@ public:
       // Early ellimination
       switch (cmp_xy(xcv1[l1], ARR_MAX_END, xcv2[f2], ARR_MIN_END)) {
        case SMALLER: return false;
-       case EQUAL: return closed;
+       case EQUAL: return consider_common_endpoints;
        default: break; // LERGER
       }
       switch (cmp_xy(xcv2[l2], ARR_MAX_END, xcv1[f1], ARR_MIN_END)) {
        case SMALLER: return false;
-       case EQUAL: return closed;
+       case EQUAL: return consider_common_endpoints;
        default: break; // LERGER
       }
 
@@ -1193,10 +1198,10 @@ public:
       }
       else {
         CGAL_assertion(left_res == EQUAL);
-        if (closed) return true;
+        if (consider_common_endpoints) return true;
       }
 
-      if (! closed && ((i1 == f1) && (i2 == f2))) {
+      if (! consider_common_endpoints && ((i1 == f1) && (i2 == f2))) {
         // Exclude the first iteration from the loop if the first subcurves of
         // the 2 polycurves share the same X-coordinates.  (This is special in
         // case of open intersections.)
@@ -1245,7 +1250,7 @@ public:
 
       // Traverse the polycurves
       do {
-        auto flag = (closed || (i1 != l1) || (i2 != l2));
+        auto flag = (consider_common_endpoints || (i1 != l1) || (i2 != l2));
         if (do_intersect(xcv1[i1], xcv2[i2], flag)) return true;
 
         // Advance the indices
