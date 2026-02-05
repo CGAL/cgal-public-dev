@@ -26,12 +26,12 @@ namespace internal {
 template <typename Point_2, typename Traits>
 bool do_segment_intersect_consider_common_endpoints(const Point_2& l1, const Point_2& r1,
                                                     const Point_2& l2, const Point_2& r2, const Traits& traits) {
-  auto cmpare_xy = traits.compare_xy_2_object();
+  auto compare_xy = traits.compare_xy_2_object();
   auto compute_orientation = traits.orientation_2_object();
 
-  auto res1 = make_certain(cmpare_xy(l1, l2));
+  auto res1 = make_certain(compare_xy(l1, l2));
   if (res1 == EQUAL) return true;
-  auto res2 = make_certain(cmpare_xy(r1, r2));
+  auto res2 = make_certain(compare_xy(r1, r2));
   if (res2 == EQUAL) return true;
 
   if (res1 == SMALLER) {
@@ -68,12 +68,12 @@ bool do_segment_intersect_consider_common_endpoints(const Point_2& l1, const Poi
 template <typename Point_2, typename Traits>
 bool do_segment_intersect_ignore_common_endpoint(const Point_2& l1, const Point_2& r1,
                                                  const Point_2& l2, const Point_2& r2, const Traits& traits) {
-  auto cmpare_xy = traits.compare_xy_2_object();
+  auto compare_xy = traits.compare_xy_2_object();
   auto compute_orientation = traits.orientation_2_object();
 
-  auto res1 = make_certain(cmpare_xy(l1, l2));
+  auto res1 = make_certain(compare_xy(l1, l2));
   if (res1 == EQUAL) return (make_certain(compute_orientation(l1, r1, r2)) == COLLINEAR);
-  auto res2 = make_certain(cmpare_xy(r1, r2));
+  auto res2 = make_certain(compare_xy(r1, r2));
   if (res2 == EQUAL) return (make_certain(compute_orientation(r2, l2, l1)) == COLLINEAR);
 
   if (res1 == SMALLER) {
@@ -111,7 +111,7 @@ template <typename Segment, typename Traits>
 bool do_segment_intersect(const Segment& seg1, const Segment& seg2, bool closed, const Traits& traits) {
   auto ctr_min_vertex = traits.construct_min_vertex_2_object();
   auto ctr_max_vertex = traits.construct_max_vertex_2_object();
-  auto cmpare_xy = traits.compare_xy_2_object();
+  auto compare_xy = traits.compare_xy_2_object();
 
   const auto& l1 = ctr_min_vertex(seg1);
   const auto& r1 = ctr_max_vertex(seg1);
@@ -126,12 +126,12 @@ bool do_segment_intersect(const Segment& seg1, const Segment& seg2, bool closed,
   // 5. l2, l1, r2, r1
   // 6. l2, l1, r1, r2
   // Handle cases (1) and (4) first (relatively trivial):
-  switch (make_certain(cmpare_xy(r1, l2))) {
+  switch (make_certain(compare_xy(r1, l2))) {
    case SMALLER: return false;
    case EQUAL: return closed;
    default: break; // LERGER
   }
-  switch (make_certain(cmpare_xy(r2, l1))) {
+  switch (make_certain(compare_xy(r2, l1))) {
    case SMALLER: return false;
    case EQUAL: return closed;
    default: break; // LERGER
