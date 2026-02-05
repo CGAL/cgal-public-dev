@@ -379,6 +379,7 @@ CGAL_add_named_parameter_with_compatibility(do_reset_c3t3_t, do_reset_c3t3, do_r
 CGAL_add_named_parameter_with_compatibility(mesh_param_t, mesh_param, mesh_options)
 CGAL_add_named_parameter_with_compatibility(manifold_param_t, manifold_param, manifold_option)
 CGAL_add_named_parameter_with_compatibility(features_option_param_t,features_options_param,features_options)
+CGAL_add_named_parameter_with_compatibility(surface_only_param_t,surface_only_param,surface_only_option)
 CGAL_add_named_parameter_with_compatibility(initial_points_generator_param_t,initial_points_generator_param,initial_points_generator)
 CGAL_add_named_parameter_with_compatibility(initial_points_param_t,initial_points_param,initial_points)
 
@@ -419,3 +420,6 @@ CGAL_add_named_parameter(maximum_height_t, maximum_height, maximum_height)
 // List of named parameters used in the package 'Constrained_triangulation_3'
 CGAL_add_named_parameter(plc_face_id_t, plc_face_id, plc_face_id)
 CGAL_add_named_parameter(with_plc_face_id_t, with_plc_face_id, with_plc_face_id)
+
+// List of named parameters used in the package 'Barycentric_coordinates_3'
+CGAL_add_named_parameter(computation_policy_t, computation_policy, computation_policy)
