@@ -65,7 +65,7 @@ bool read_polylines(const std::string& filename,
     std::vector<Point_2> points;
     std::vector<std::vector<std::size_t> > id_polylines;
     std::vector<std::vector<std::size_t> > unused_id_polygons;
-    bool success = CGAL::IO::internal::read_OBJ(in, points, id_polylines, unused_id_polygons);
+    bool success = CGAL::IO::internal::read_OBJ(in, points, unused_id_polygons, id_polylines);
     if(!success)
       return false;
 
