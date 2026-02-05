@@ -121,10 +121,10 @@ namespace Mesh_2 {
       const Vertex_handle& mvi = tr.tds().mirror_vertex(fh, i);
 
       return( ( tr.is_infinite(vi) ||
-                this->operator()(tr, va, vb, vi->point()) )
+                this->operator()(tr, va, vb, vi->point(), vi) )
               &&
               ( tr.is_infinite(mvi) ||
-                this->operator()(tr, va, vb, mvi->point()) )
+                this->operator()(tr, va, vb, mvi->point(), mvi) )
               );
     }
 
@@ -149,12 +149,14 @@ namespace Mesh_2 {
     bool operator()(const Tr& tr,
                     const Face_handle& fh,
                     const int i,
-                    const Point& p) const
+                    const Point& p,
+                    Vertex_handle encroaching_vertex = Vertex_handle()) const
     {
       return this->operator()(tr,
                               fh->vertex(tr. cw(i)),
                               fh->vertex(tr.ccw(i)),
-                              p);
+                              p,
+                              encroaching_vertex);
     }
 
     /**
@@ -164,7 +166,8 @@ namespace Mesh_2 {
     bool operator()(const Tr& tr,
                     const Vertex_handle& va,
                     const Vertex_handle& vb,
-                    const Point& p) const
+                    const Point& p,
+                    [[maybe_unused]] Vertex_handle encroaching_vertex = Vertex_handle()) const
       {
         typedef typename Geom_traits::Angle_2 Angle_2;
 
@@ -173,7 +176,20 @@ namespace Mesh_2 {
         const Point& a = va->point();
         const Point& b = vb->point();
 
-        return( angle(a, p, b) == ACUTE );
+        auto is_conform = ( angle(a, p, b) != OBTUSE );
+#if CGAL_MESH_2_DEBUG_BAD_EDGES
+        if(!is_conform) {
+          std::cerr << "  edge " << CGAL::IO::oformat(va, CGAL::With_point_tag{})
+                    << " -- " << CGAL::IO::oformat(vb, CGAL::With_point_tag{})
+                    << " is encroached by ";
+          if(encroaching_vertex != Vertex_handle()) {
+            std::cerr << IO::oformat(encroaching_vertex, With_point_tag{}) << std::endl;
+          } else {
+            std::cerr << "point " << CGAL::IO::oformat(p) << std::endl;
+          }
+        }
+#endif // CGAL_MESH_2_DEBUG_BAD_EDGES
+        return is_conform;
       }
   };
 
