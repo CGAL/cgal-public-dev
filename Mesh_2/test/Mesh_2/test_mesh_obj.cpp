@@ -29,14 +29,14 @@ int main(int argc, char*argv[] )
   // std::ifstream in(argv[1]);
   std::ifstream in(argc>1?argv[1]:"mini.obj");
   if(!in)
-    return false;
+    return 1;
 
   std::vector<Point_2> points;
   std::vector<std::vector<std::size_t> > id_polylines;
   std::vector<std::vector<std::size_t> > unused_id_polygons;
   bool success = CGAL::IO::internal::read_OBJ(in, points, id_polylines, unused_id_polygons);
   if(!success)
-    return false;
+    return 1;
 
   double squared_distance = (std::numeric_limits<double>::max)();
   for(const std::vector<std::size_t>& id_pl : id_polylines) {
