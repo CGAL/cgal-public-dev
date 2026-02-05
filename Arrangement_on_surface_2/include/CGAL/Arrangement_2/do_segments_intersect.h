@@ -108,7 +108,7 @@ bool do_open_segment_intersect(const Point_2& l1, const Point_2& r1, const Point
 /*! determines whether two segments intersect.
  */
 template <typename Segment, typename Traits>
-do_segment_intersect(const Segment& seg1, const Segment& seg2, bool closed, const Traits& traits) {
+bool do_segment_intersect(const Segment& seg1, const Segment& seg2, bool closed, const Traits& traits) {
   auto ctr_min_vertex = traits.construct_min_vertex_2_object();
   auto ctr_max_vertex = traits.construct_max_vertex_2_object();
   auto cmpare_xy = traits.compare_xy_2_object();
