@@ -1713,7 +1713,7 @@ void merge(std::vector<Convex_hull_candidate<GeomTraits>>& candidates, const typ
 
   std::priority_queue<Merged_candidate> queue;
 
-  const auto do_merge = [hull_volume, &hulls, &num_hulls](Merged_candidate& m) {
+  const auto do_merge = [hull_volume, &hulls](Merged_candidate& m) {
     Convex_hull_candidate<GeomTraits>& ci = hulls[m.ch_a];
     Convex_hull_candidate<GeomTraits>& cj = hulls[m.ch_b];
 
