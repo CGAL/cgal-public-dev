@@ -175,13 +175,6 @@ public:
     Face_handle fh = bad_faces.front()->second;
     current_badness = is_bad(bad_faces.front()->first);
 
-    CGAL_assertion_code
-      (typename Geom_traits::Orientation_2 orientation =
-       triangulation_ref_impl().geom_traits().orientation_2_object()
-       );
-    CGAL_assertion(orientation(fh->vertex(0)->point(),
-                               fh->vertex(1)->point(),
-                               fh->vertex(2)->point()) != COLLINEAR );
     return fh;
   }
 
