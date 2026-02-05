@@ -15,13 +15,13 @@
 
 #include <CGAL/license/Surface_sweep_2.h>
 
-/* A compatible output iterator that accepts a std::variant and dispatches its
+/* A compatible output iterator that accepts a `std::variant` and dispatches its
  * alternatives to different sinks via a visitor.
  *
- * Designed to replace boost::function_output_iterator when the algorithm emits
+ * Designed to replace `boost::function_output_iterator` when the algorithm emits
  * heterogeneous output (e.g., `Point_2` or `X_monotone_curve_2`).
  *
- * Many CGAL concepts (e.g., AosTraits::MakeXMonotone_2) require an operation that writes
+ * Many \cgal concepts (e.g., `AosTraits::MakeXMonotone_2`) require an operation that writes
  * results to an `OutputIterator` whose value type is:
  *
  * `std::variant<T1, T2, ...>`
@@ -29,7 +29,7 @@
  * However:
  * 1. `boost::function_output_iterator` receives one type
  * 2. Visitors (operator()) are invoked after assignment
- * 3. CGAL freely copies, assigns, and default-constructs output iterators
+ * 3. \cgal freely copies, assigns, and default-constructs output iterators
  * `variant_output_iterator` bridges this gap.
  */
 
