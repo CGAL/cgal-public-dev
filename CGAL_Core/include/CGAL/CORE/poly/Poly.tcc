@@ -462,14 +462,14 @@ Polynomial<NT> & Polynomial<NT>::operator*=(const Polynomial<NT>& p) { // *=
     return *this;
   }
   int d = degree + p.getDegree();
-  std::vector<NT>  c(d+1, 0);
+  std::vector<NT> c(d+1, 0);
 
   for (int i = 0; i<=p.getDegree(); i++)
     for (int j = 0; j<=degree; j++) {
       c[i+j] += p.coeff[i] * coeff[j];
     }
   degree = d;
-  coeff.swap(C);
+  coeff.swap(c);
   return *this;
 }
 
@@ -495,7 +495,7 @@ Polynomial<NT> & Polynomial<NT>::mulXpower(int s) {
     // AF ??  coeff = NULL;
     return *this;
   }
-  std::vector<NT>  c(d+1, 0);
+  std::vector<NT> c(d+1, 0);
   if (s>0)
     for (int j=0;  j <= d; j++) {
       if (j <= degree)
