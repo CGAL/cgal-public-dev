@@ -163,7 +163,7 @@ template <typename Vis>
 bool Do_intersect_surface_sweep_2<Vis>::_do_intersect(Subcurve* c1, Subcurve* c2) {
   CGAL_assertion(c1 != c2);
   auto do_intersect = this->m_traits->do_intersect_2_object();
-  if (! do_intersect(c1->last_curve(), c2->last_curve(), m_closed)) return false;
+  if (! do_intersect(c1->last_curve(), c2->last_curve(), m_consider_common_endpoints)) return false;
   this->m_visitor->found_intersection();
   return true;
 }

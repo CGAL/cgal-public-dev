@@ -36,16 +36,17 @@ namespace Surface_sweep_2 {
 /*! Determine whether any curves in a given range intersect pairwise.
  * \param begin An input iterator of the the range.
  * \param end A input past-the-end iterator of the range.
+ * \param consider_common_endpoints Indicates whether common endpoints should be considered.
  * \return (true) if any pair of curves intersect; (false) otherwise.
  */
 template <typename CurveInputIterator, typename Traits>
-bool do_intersect(CurveInputIterator begin, CurveInputIterator end, bool closed, Traits& traits) {
+bool do_intersect(CurveInputIterator begin, CurveInputIterator end, bool consider_common_endpoints, Traits& traits) {
   // If the curves are not \f$x\f$-monotone, subdivide them into \f$x\f$-monotone curves.
   using Visitor = Do_intersect_visitor<Traits>;
   using Surface_sweep = Do_intersect_surface_sweep_2<Visitor>;
 
   Visitor visitor;
-  Surface_sweep surface_sweep(&traits, &visitor, closed);
+  Surface_sweep surface_sweep(&traits, &visitor, consider_common_endpoints);
 
   using X_monotone_curve_2 = typename Traits::X_monotone_curve_2;
   using value_type = typename std::iterator_traits<CurveInputIterator>::value_type;
@@ -67,10 +68,10 @@ bool do_intersect(CurveInputIterator begin, CurveInputIterator end, bool closed,
 /*!
  */
 template <typename CurveInputIterator>
-bool do_intersect(CurveInputIterator begin, CurveInputIterator end, bool closed = true) {
+bool do_intersect(CurveInputIterator begin, CurveInputIterator end, bool consider_common_endpoints = true) {
   using Curve = typename std::iterator_traits<CurveInputIterator>::value_type;
   typename Default_arr_traits<Curve>::Traits traits;
-  return do_intersect(begin, end, closed, traits);
+  return do_intersect(begin, end, consider_common_endpoints, traits);
 }
 
 } // namespace Surface_sweep_2

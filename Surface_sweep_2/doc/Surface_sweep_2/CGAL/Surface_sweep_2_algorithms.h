@@ -106,34 +106,29 @@ namespace Surface_sweep_2 {
 /*! \ingroup PkgSurfaceSweep2Ref
  *
  * Given a range of curves, check whether there is at least one pair of curves
- * that intersect. The value-type of `InputIterator` is a curve type. If closed
- * is `true`, the curves are considered close. Otherwise, they are considered
- * open. If the curve are considered close, the function returns `true` if the
- * curves in the range pairwise intersect, and false otherwise. If the curves
- * are considered open, the function returns `true` if the curves in the range
- * pairwise intersect in their interiros, and false otherwise.
+ * that intersect. The value-type of `InputIterator` is a curve type. If
+ * `consider_common_endpoints` is `true`, common endpoints are considered.
+ * Otherwise, common endpoints are not counted as intersections.
  */
 template <typename InputIterator>
 bool do_intersect(InputIterator curves_begin,
                   InputIterator curves_end,
-                  bool closed = true);
+                  bool consider_common_endpoints = true);
 
 /*! \ingroup PkgSurfaceSweep2Ref
  *
  * Given a range of curves, check whether there is at least one pair of curves
- * that intersect. The value-type of `InputIterator` is a curve type. If closed
- * is `true`, the curves are considered close. Otherwise, they are considered
- * open. If the curve are considered close, the function returns `true` if the
- * curves in the range pairwise intersect, and false otherwise. If the curves
- * are considered open, the function returns `true` if the curves in the range
- * pairwise intersect in their interiros, and false otherwise. The `Traits` type
- * must be a model of the `AosTraits_2` concept, such that the value-type of
- * `InputIterator` is either `Traits::Curve_2` or `Traits::X_monotone_curve_2`.
+ * that intersect. The value-type of `InputIterator` is a curve type. If
+ * `consider_common_endpoints` is `true`, common endpoints are considered.
+ * Otherwise, common endpoints are not counted as intersections. The `Traits`
+ * type must be a model of the `AosTraits_2` concept, such that the value-type
+ * of `InputIterator` is either `Traits::Curve_2` or
+ * `Traits::X_monotone_curve_2`.
  */
 template <typename InputIterator, typename Traits>
 bool do_intersect(InputIterator curves_begin,
                   InputIterator curves_end,
-                  bool closed = true,
+                  bool consider_common_endpoints = true,
                   Traits traits = Default_traits());
 
 } // namespace Surface_sweep_2

@@ -336,16 +336,17 @@ int main(int argc, char* argv[]) {
     return 1;
   }
 
-#if 0
+#if 1
   {
   // Verify Single
+  Polyline_traits traits;
   X_monotone_polyline xcv0, xcv1, xcv2, xcv3, xcv4, xcv5;
-  traits.push_back_2_object()(xcv0, X_monotone_segment(Point(2, 1), Point(0, 2)));
-  traits.push_back_2_object()(xcv1, X_monotone_segment(Point(0, 1), Point(1, 1)));
-  traits.push_back_2_object()(xcv2, X_monotone_segment(Point(1, 1), Point(3, 0)));
-  traits.push_back_2_object()(xcv3, X_monotone_segment(Point(3, 0), Point(1, 1)));
-  traits.push_back_2_object()(xcv4, X_monotone_segment(Point(2, 1), Point(3, 1)));
-  std::vector<X_monotone_polyline> xcurves = {xcv1, xcv2, xcv3, xcv4};
+  traits.push_back_2_object()(xcv0, X_monotone_segment(Point(0, 0), Point(0, 2)));
+  traits.push_back_2_object()(xcv1, X_monotone_segment(Point(1, 0), Point(1, 1)));
+  // traits.push_back_2_object()(xcv2, X_monotone_segment(Point(1, 1), Point(3, 0)));
+  // traits.push_back_2_object()(xcv3, X_monotone_segment(Point(3, 0), Point(1, 1)));
+  // traits.push_back_2_object()(xcv4, X_monotone_segment(Point(2, 1), Point(3, 1)));
+  std::vector<X_monotone_polyline> xcurves = {xcv0, xcv1};
   if (do_draw) draw(xcurves);
   auto [match, res1] = verify_intersections(xcurves, traits, closed);
   if (! match) {
@@ -353,6 +354,7 @@ int main(int argc, char* argv[]) {
     return -1;
   }
   auto res2 = CGAL::Surface_sweep_2::do_intersect(xcurves.begin(), xcurves.end(), closed, traits);
+  std::cout << "res: " << res2 << std::endl;
   if (res1 != res2) {
     std::cerr << "Error: Surface_sweep_2::do_intersect() and do_intersect() do not match; seed (" << seed << ")\n";
     return -1;

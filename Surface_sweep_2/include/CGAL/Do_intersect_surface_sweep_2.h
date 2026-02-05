@@ -83,15 +83,17 @@ public:
   /*! constructs.
    * \param visitor A pointer to a sweep-line visitor object.
    */
-  Do_intersect_surface_sweep_2(Visitor* visitor, bool closed = true) : Base(visitor), m_closed(closed) {}
+  Do_intersect_surface_sweep_2(Visitor* visitor, bool consider_common_endpoints = true) :
+    Base(visitor), m_consider_common_endpoints(consider_common_endpoints) {}
 
   /*! constructs.
    * \param traits A pointer to a sweep-line traits object.
    * \param visitor A pointer to a sweep-line visitor object.
    */
-  Do_intersect_surface_sweep_2(const Geometry_traits_2* traits, Visitor* visitor, bool closed = true) :
+  Do_intersect_surface_sweep_2(const Geometry_traits_2* traits, Visitor* visitor,
+                               bool consider_common_endpoints = true) :
     Base(traits, visitor),
-    m_closed(closed)
+    m_consider_common_endpoints(consider_common_endpoints)
   {}
 
   /*! destructs. */
@@ -207,7 +209,7 @@ protected:
   bool _remove_curve_from_status_line(Subcurve* leftCurve);
 
 private:
-  bool m_closed;
+  bool m_consider_common_endpoints;
 };
 
 } // namespace Surface_sweep_2
