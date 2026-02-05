@@ -54,7 +54,7 @@ int main(int argc, char* argv[]) {
     return m.number_of_faces();
   };
 
-  auto simplify = [](Mesh& m, int start, int end) -> bool {
+  auto simplify = [](Mesh& m, std::size_t start, std::size_t end) -> bool {
     for(auto i = end - 1; i >= start; --i) {
       const auto f = m.faces().begin() + i;
       CGAL::Euler::remove_face(halfedge(*f, m), m);
