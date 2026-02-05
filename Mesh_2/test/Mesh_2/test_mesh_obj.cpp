@@ -25,6 +25,7 @@
 #include <fstream>
 #include <iostream>
 #include <limits>
+#include <numeric>
 #include <string>
 #include <vector>
 
@@ -45,26 +46,46 @@ struct Obj_data {
   std::vector<std::vector<std::size_t> > polylines;
 };
 
-static std::ofstream save_obj(const Obj_data& data, const std::string& filename)
+static auto save_obj(const Obj_data& data, const std::string& filename)
 {
-  std::ofstream out(filename);
+  struct Stream_plus_unused {
+    std::ofstream out;
+    std::vector<std::size_t> is_point_unused;
+  } stream_plus_unused{ std::ofstream{filename}, {} };
+
+  auto& out = stream_plus_unused.out;
+  auto& is_point_unused = stream_plus_unused.is_point_unused;
+  is_point_unused.resize(data.points.size(), 1);
+
   out.precision(17);
   if(!out)
-    return out;
+    return stream_plus_unused;
+
+  for(const std::vector<std::size_t>& pl : data.polylines) {
+    if(pl.size() < 2)
+      continue;
+    for(std::size_t id : pl) {
+      is_point_unused[id] = 0;
+    }
+  }
 
   for(const Point_2& p : data.points) {
-    out << "v " << p.x() << " " << p.y() << " 0\n";
+    if(is_point_unused[&p - &data.points[0]] == 0) {
+      out << "v " << p.x() << " " << p.y() << " 0\n";
+    }
   }
+
+  std::partial_sum(is_point_unused.begin(), is_point_unused.end(), is_point_unused.begin());
   for(const std::vector<std::size_t>& pl : data.polylines) {
     if(pl.size() < 2)
       continue;
     out << "l";
     for(std::size_t id : pl) {
-      out << " " << (id + 1);
+      out << " " << (id + 1 - is_point_unused[id]);
     }
     out << "\n";
   }
-  return out;
+  return stream_plus_unused;
 }
 
 static int run_mesh(const Obj_data& data)
@@ -87,7 +108,7 @@ static int run_mesh(const Obj_data& data)
     }
   }
 
-  auto file_stream = save_obj(data, "initial_cdt.obj");
+  auto [file_stream, points_ids_offsets] = save_obj(data, "initial_cdt.obj");
 
   if(cdt.dimension() == 2) {
     CDT::Face_circulator fc = cdt.incident_faces(cdt.infinite_vertex()), done = fc;
@@ -100,7 +121,8 @@ static int run_mesh(const Obj_data& data)
       //   std::cerr << CGAL::IO::oformat(va, CGAL::With_point_tag{}) << "  "
       //             << CGAL::IO::oformat(vb, CGAL::With_point_tag{}) << "\n";
         cdt.insert_constraint(va, vb);
-        file_stream << "l " << (va->info() + 1) << " " << (vb->info() + 1) << "\n";
+        file_stream << "l " << (va->info() + 1 - points_ids_offsets[va->info()]) << " "
+                    << (vb->info() + 1 - points_ids_offsets[vb->info()]) << "\n";
       }
       ++fc;
     } while (fc != done);
