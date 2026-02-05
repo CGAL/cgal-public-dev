@@ -60,7 +60,7 @@ typename Kernel_traits<Direction_3>::Kernel::Point_3 extreme_point_3_wrapper(con
   using CGAL::parameters::get_parameter;
 
   if constexpr(Convex_hull_3::internal::is_instance_of_CHH<Convex>){
-    return c.extreme_point_3(dir, np);
+    return c.extreme_point_3(dir);
   } else if constexpr(CGAL::IO::internal::is_Range_v<Convex>){
     using NP_helper= Point_set_processing_3_np_helper<Convex, NamedParameters>;
 

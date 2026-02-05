@@ -158,7 +158,9 @@ that is model of the concept `MutableFaceGraph`, e.g. `Polyhedron_3` and `Surfac
 
 `CGAL::Convex_hull_3::do_intersect(ch1, ch2)` determines whether two convex hulls intersect or not.
 
-Input hulls can be provided as a range of points or as a graph, and may be of different types. Furthermore, when many intersection queries use the same object, one should wrap that input in the class `CGAL::Convex_hull_hierarchy` as to construct an optimized view of the convex hull and accelerate intersection tests. This is especially true when the convex hull is made of a large number of vertices (see `CGAL::Convex_hull_hierarchy` for more details).
+Input hulls can be provided as a range of points or as a graph, and may be of different types.
+Furthermore, when many intersection queries use the same object, one should wrap that input in the class `CGAL::Convex_hull_hierarchy` as to construct an optimized view of the convex hull and accelerate intersection tests.
+This is especially true when the convex hull is made of a large number of vertices (see `CGAL::Convex_hull_hierarchy` for more details).
 
 \subsection Do_intersectExample Example
 The following program reads points from two input files, computes their convex hulls with `Convex_hull_hierarchy` and prints if they intersect or not.

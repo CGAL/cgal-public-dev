@@ -878,7 +878,7 @@ const CGAL::Point_3<Kernel>& t);
 /*!
 returns `CGAL::LARGER`
 iff the scalar product of `u` and
-`v` is larger than the scalar product of `w` and `x`, `CGAL::SMALLER`, iff it is smaller,
+`v` is larger than the scalar product `sp`, `CGAL::SMALLER`, iff it is smaller,
 and `CGAL::EQUAL` iff both are equal.
 */
 template <typename Kernel>
@@ -890,7 +890,7 @@ compare_scalar_product(const CGAL::Vector_3<Kernel> &u,
 /*!
 returns `CGAL::LARGER`
 iff the scalar product of `u` and
-`v` is larger than the scalar product `sp`, `CGAL::SMALLER`, iff it is smaller,
+`v` is larger than the scalar product of `w` and `x`, `CGAL::SMALLER`, iff it is smaller,
 and `CGAL::EQUAL` iff both are equal.
 */
 template <typename Kernel>

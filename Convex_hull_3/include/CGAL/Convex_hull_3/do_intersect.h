@@ -273,10 +273,14 @@ struct Do_intersect_traits<K, K, Converter, true> {
 *
 * \brief checks if the convex hulls intersect or not.
 *
-* each input can be provided as a range, a mesh, or as the specialized structure CGAL::Convex_hull_hierarchy.
-* They are not required to use the same input type.
+* Input hulls can be provided as a range of points or as a graph, and may be of different types.
+* Furthermore, when many intersection queries use the same object, one should wrap that input in the class `CGAL::Convex_hull_hierarchy` as to construct an optimized view of the convex hull and accelerate intersection tests.
+* This is especially true when the convex hull is made of a large number of vertices (see `CGAL::Convex_hull_hierarchy` for more details).
 *
-* @tparam Convex_1 is a model of `ConstRange` or a model of `VertexListGraph` and `AdjacencyGraph` or an instance of `CGAL::Convex_hull_hierarchy`
+* @tparam Convex_1 is one of the following types:\n
+*  - a model of `ConstRange`
+*  - a model of `VertexListGraph` and `AdjacencyGraph`
+*  - an instance of `CGAL::Convex_hull_hierarchy`
 * @tparam Convex_2 same as `Convex_1`
 * @tparam NamedParameters_1 a sequence of \ref bgl_namedparameters "Named Parameters"
 * @tparam NamedParameters_2 a sequence of \ref bgl_namedparameters "Named Parameters"
@@ -297,9 +301,12 @@ struct Do_intersect_traits<K, K, Converter, true> {
 *     \cgalParamDescription{when `ch1` (`ch2`) is a mesh, it is a property map associating points to its vertices}
 *     \cgalParamType{a model of `ReadablePropertyMap` whose value types are the same for `ch1` and `ch2`}
 *     \cgalParamDefault{boost::get(CGAL::vertex_point, g)}
-*     \cgalParamExtra{used only if `ch1` (`ch2`) is model of `VertexListGraph` and `AdjacencyGraph`.
-*                     If this parameter is omitted, an internal property map for `CGAL::vertex_point_t` must be available in `Convex_1` (`Convex_2`).}
+*     \cgalParamExtra{used only if `ch1` (`ch2`) is model of `VertexListGraph` and `AdjacencyGraph`.}
+*     \cgalParamExtra{If this parameter is omitted, an internal property map for `CGAL::vertex_point_t` must be available in `Convex_1` (`Convex_2`).}
 *   \cgalParamNEnd
+*
+*   \cond SKIP_IN_MANUAL
+*
 *   \cgalParamNBegin{geom_traits}
 *     \cgalParamDescription{An instance of a geometric traits class}
 *     \cgalParamType{a class model of `Kernel`}
@@ -314,19 +321,22 @@ struct Do_intersect_traits<K, K, Converter, true> {
 *     \cgalParamExtra{`np1` only}
 *     \cgalParamDefault{`0`}
 *   \cgalParamNEnd
+*
+* \endcond
+*
 * \cgalNamedParamsEnd
 *
 * \see `CGAL::Convex_hull_hierarchy`
 */
-template <class Convex1, class Convex2,
+template <class Convex_1, class Convex_2,
           class NamedParameters_1 = parameters::Default_named_parameters,
           class NamedParameters_2 = parameters::Default_named_parameters>
-bool do_intersect(const Convex1& ch1, const Convex2& ch2,
+bool do_intersect(const Convex_1& ch1, const Convex_2& ch2,
                   const NamedParameters_1& np1 = parameters::default_values(),
                   const NamedParameters_2& np2 = parameters::default_values()){
   using CGAL::parameters::choose_parameter;
   using CGAL::parameters::get_parameter;
-  using GT= typename internal::GetGeomTraitsFromConvex<Convex1, NamedParameters_1>::type;
+  using GT= typename internal::GetGeomTraitsFromConvex<Convex_1, NamedParameters_1>::type;
   // GT gt = choose_parameter<GT>(get_parameter(np1, internal_np::geom_traits));
   return Do_intersect_traits<GT>().do_intersect_object()(ch1, ch2, np1, np2);
 }

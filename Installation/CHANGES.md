@@ -38,6 +38,12 @@ Release date: July 2026
     parameter any longer. (This third optional parameter was introduced a few years ago, and now abandoned only for
     `do_intersect()`.)
 
+### [3D Convex hull](https://doc.cgal.org/6.2/Manual/packages.html#PkgConvexHull3)
+
+-   Added the functions `Convex_hull::do_intersect()` to the package `Convex_hull_3`, which enable testing the intersection of two convex hulls.
+-   Added the functions `extreme_point_3()` to the package `Convex_hull_3`, which return the farthest point of a convex hull in a given direction.
+-   Added the class `Convex_hull_hierarchy` to the package `Convex_hull_3`, which represents a convex hull and is optimized for use with the above functions.
+
 ## [Release 6.1](https://github.com/CGAL/cgal/releases/tag/v6.1)
 
 Release date: Sept 2025
@@ -3901,12 +3907,6 @@ Release date: October 2012
 -   Speed up the preprocessing stage of the Akl-Toussaint implementation
     (used by the free function `convex_hull_2` when forward iterators
     are provided as input).
-
-### 3D Convex Hulls
-
--   Added the functions `Convex_hull::do_intersect()` to the package `Convex_hull_3`, which enable testing the intersection of two convex hulls.
--   Added the functions `extreme_point_3()` to the package `Convex_hull_3`, which return the farthest point of a convex hull in a given direction.
--   Added the class `Convex_hull_hierarchy` to the package `Convex_hull_3`, which represents a convex hull and is optimized for use with the above functions.
 
 ### Combinatorial Maps
 

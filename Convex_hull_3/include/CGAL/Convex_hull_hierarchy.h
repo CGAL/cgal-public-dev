@@ -97,7 +97,7 @@ struct Convex_hull_hierarchy{
   * \cgalNamedParamsBegin
   *   \cgalParamNBegin{vertex_point_map}
   *     \cgalParamDescription{a property map associating points to the vertices of  `g`}
-  *     \cgalParamType{a model of `ReadWritePropertyMap` whose value type is a point type}
+  *     \cgalParamType{a model of `ReadablePropertyMap` whose value type is a point type}
   *     \cgalParamDefault{If this parameter is omitted, an internal property map for ` CGAL::vertex_point_t`  must be available in `VertexListGraph`}
   *   \cgalParamNEnd
   *   \cgalParamNBegin{compute_convex_hull}
@@ -115,10 +115,14 @@ struct Convex_hull_hierarchy{
   template <typename Graph,
             typename NamedParameters=parameters::Default_named_parameters>
   Convex_hull_hierarchy(const Graph &g, const NamedParameters& np = parameters::default_values()){
+    using parameters::choose_parameter;
+    using parameters::get_parameter;
+    using parameters::is_default_parameter;
+
     PolygonMesh ch;
-    bool compute_convex_hull = parameters::choose_parameter(parameters::get_parameter(np, internal_np::compute_convex_hull), true);
-    size_t seed = parameters::choose_parameter(parameters::get_parameter(np, internal_np::random_seed), 0);
-    Random rng = (seed != 0)?Random(seed):get_default_random();
+    bool compute_convex_hull = choose_parameter(get_parameter(np, internal_np::compute_convex_hull), true);
+    size_t seed = choose_parameter(get_parameter(np, internal_np::random_seed), 0);
+    Random rng = (is_default_parameter<NamedParameters, internal_np::random_seed_t>::value)? get_default_random(): Random(seed);
     if(compute_convex_hull)
       convex_hull_3(g, ch, np);
     else
@@ -131,8 +135,8 @@ struct Convex_hull_hierarchy{
    /**
   * Constructor taking the points in the range `[first, last)`.
   *
-  * @tparam RangeIterator must be an input iterator with a value type equivalent to `Traits::Point_3`
-  * @tparam Traits must be a model of the concept ConvexHullTraits_3. For the purposes of checking the postcondition that the convex hull is valid,
+  * @tparam RangeIterator is an input iterator with a value type equivalent to `Traits::Point_3`
+  * @tparam Traits is a model of the concept ConvexHullTraits_3. For the purposes of checking the postcondition that the convex hull is valid,
   *         `Traits` must also be a model of the concept `IsStronglyConvexTraits_3`. Furthermore, `Traits` must define a type `PolygonMesh` that is a model of `MutableFaceGraph`.
   */
   template <typename RangeIterator, typename Traits = Convex_hull_traits_3<GT , Mesh> >
@@ -144,7 +148,8 @@ struct Convex_hull_hierarchy{
     init_hierarchy(get_default_random(), traits);
   };
 
-  // /// returns the number of the higher level of the hierarchy.
+  // /// Returns the index of the deepest level of the hierarchy (the one with the fewest vertices).
+  // /// This corresponds to the number of levels minus one.
   /// @private
   std::size_t maxlevel() const{
     return hierarchy_sm.size()-1;
@@ -161,80 +166,52 @@ struct Convex_hull_hierarchy{
     return hierarchy_sm[0];
   }
 
-  /// returns a reference to the mesh stored by the class.
-  PolygonMesh& mesh(){
-    return hierarchy_sm[0];
-  }
+  // /// returns a reference to the mesh stored by the class.
+  // PolygonMesh& mesh(){
+  //   return hierarchy_sm[0];
+  // }
 
   /// @private
-  template <typename Direction_3,
-            typename NamedParameters=parameters::Default_named_parameters>
-  typename Kernel_traits<Direction_3>::Kernel::Point_3 extreme_point_3(const Direction_3 &dir, const NamedParameters &np=parameters::default_values) const {
-    using CGAL::parameters::choose_parameter;
-    using CGAL::parameters::get_parameter;
-
-    using Default_GT = typename Kernel_traits<Direction_3>::Kernel;
-    using IGT=typename internal_np::Lookup_named_param_def <
-        internal_np::geom_traits_t,
-        NamedParameters,
-        Default_GT
-      > ::type;
-
-    using Default_geom_traits_converter = Cartesian_converter<GT, IGT>;
-    using GTC = typename internal_np::Lookup_named_param_def <
-        internal_np::geom_traits_converter_t,
-        NamedParameters,
-        Default_geom_traits_converter
-      > ::type;
-    GTC converter = choose_parameter<GTC>(get_parameter(np, internal_np::geom_traits_converter));
+  template <typename Direction>
+  typename Kernel_traits<Direction>::Kernel::Point_3 extreme_point_3(const Direction &dir) const {
+    using Dir_GT = typename Kernel_traits<Direction>::Kernel;
+    using GTC = Cartesian_converter<GT, Dir_GT>;
+    GTC converter;
     VPM vpm = get_const_property_map(vertex_point, hierarchy_sm[0]);
-    return converter(get(vpm, extreme_vertex_3(dir, np)));
+    return converter(get(vpm, extreme_vertex_3(dir)));
   }
 
   /**
-  * constructs the furthest point of the convex hull along the direction and returns the corresponding vertex.
+  * computes the point of the convex hull whose orthogonal projection onto that direction is maximal and returns the associated vertex.
+  * If not unique, a single vertex is returned.
   *
-  * @tparam Direction_3 model of `Kernel::Direction_3`. The kernel is not required to be the same as the one used by `PolygonMesh`
-  * @tparam NamedParameters a sequence of \ref bgl_namedparameters "Named Parameters"
+  * @tparam Direction must be a `Direction_3` typedef of a \cgal kernel
   *
   * @param dir the direction
-  * @param np an optional sequence of \ref bgl_namedparameters "Named Parameters" among the ones listed below
-  *
-  * \return a `boost::graph_traits<Mesh>::vertex_descriptor`
   */
-  template <typename Direction_3,
-            typename NamedParameters=parameters::Default_named_parameters>
-  vertex_descriptor extreme_vertex_3(const Direction_3 &dir, const NamedParameters &np=parameters::default_values) const {
-    using CGAL::parameters::choose_parameter;
-    using CGAL::parameters::get_parameter;
-
-    using Default_GT = typename Kernel_traits<Direction_3>::Kernel;
-    using IGT=typename internal_np::Lookup_named_param_def <
-        internal_np::geom_traits_t,
-        NamedParameters,
-        Default_GT
-      > ::type;
-    IGT gt = choose_parameter<IGT>(get_parameter(np, internal_np::geom_traits));
-
-    using Default_geom_traits_converter = Cartesian_converter<GT, IGT>;
-    using GTC = typename internal_np::Lookup_named_param_def <
-        internal_np::geom_traits_converter_t,
-        NamedParameters,
-        Default_geom_traits_converter
-      > ::type;
-    GTC converter = choose_parameter<GTC>(get_parameter(np, internal_np::geom_traits_converter));
+  template <typename Direction
+          /* ,typename NamedParameters=parameters::Default_named_parameters */
+           >
+  vertex_descriptor extreme_vertex_3(const Direction &dir
+                                  /*,const NamedParameters &np=parameters::default_values()*/
+                                    ) const
+  {
+    using Dir_GT = typename Kernel_traits<Direction>::Kernel;
+    using GTC = Cartesian_converter<GT, Dir_GT>;
+    Dir_GT gt;
+    GTC converter;
 
     auto vector_3 = gt.construct_vector_3_object();
     auto csp = gt.compare_scalar_product_3_object();
 
     VPM vpm = get_const_property_map(vertex_point, hierarchy_sm[0]);
-    const typename IGT::Vector_3 &vdir = dir.vector();
+    const typename Dir_GT::Vector_3 &vdir = dir.vector();
 
     size_t level=maxlevel();
 
     const PolygonMesh &sm = hierarchy_sm[level];
     if(level == 0)
-      return CGAL::extreme_vertex_3(sm, dir, np);
+      return CGAL::extreme_vertex_3(sm, dir);
 
     vertex_descriptor argmax = *vertices(sm).begin();
     Vector_3 vec_max = vector_3(ORIGIN, converter(get(vpm, get(to_base_maps[level], argmax))));
@@ -354,40 +331,23 @@ private:
 /**
 * \ingroup PkgConvexHull3Queries
 *
-* computes the furthest point of the convex hull along the direction.
+* computes the point of the convex hull whose orthogonal projection onto that direction is maximal and returns the associated vertex.
 * If not unique, a single vertex is returned.
 *
 * @tparam Mesh a model of `VertexListGraph` and `MutableFaceGraph`
-* @tparam Direction_3: is a model of CGAL::Direction_3.
-* @tparam NamedParameters a sequence of \ref bgl_namedparameters "Named Parameters"
+* @tparam Direction is a model of `Kernel::Direction_3`.
 *
 * @param ch the convex hull
 * @param dir the direction
-* @param np an optional sequence of \ref bgl_namedparameters "Named Parameters" among the ones listed below
 *
-* \cgalNamedParamsBegin
-*   \cgalParamNBegin{geom_traits}
-*     \cgalParamDescription{An instance of a geometric traits class}
-*     \cgalParamType{a class model of `Kernel`}
-*     \cgalParamDefault{a \cgal kernel deduced from `Direction_3`, using `CGAL::Kernel_traits`}
-*   \cgalParamNEnd
-*   \cgalParamNBegin{geom_traits_converter}
-*     \cgalParamDescription{A Converter from the point type of `vertex_point_map` to the point type of `geom_traits`}
-*     \cgalParamType{a class model of `NT_Converter`}
-*     \cgalParamDefault{a \cgal `Cartesian_converter` deduced from ` vertex_point_map` and `geom_traits`, using `CGAL::Kernel_traits`}
-*   \cgalParamNEnd
-* \cgalNamedParamsEnd
-*
-* \return a `boost::graph_traits<Mesh>::vertex_descriptor`
 */
-template <class Mesh, class Direction_3, class NamedParameters>
-#if DOXYGEN_RUNNING
-vertex_descriptor
-#else
+template <class Mesh, class Direction /*, class NamedParameters*/
+          >
 typename boost::graph_traits<Mesh>::vertex_descriptor
-#endif
-extreme_vertex_3(const Convex_hull_hierarchy<Mesh> &ch, const Direction_3 &dir, const NamedParameters &np){
-  return ch.extreme_vertex_3(dir, np);
+extreme_vertex_3(const Convex_hull_hierarchy<Mesh> &ch, const Direction &dir /*, const NamedParameters &np */
+                )
+{
+  return ch.extreme_vertex_3(dir);
 }
 
 }

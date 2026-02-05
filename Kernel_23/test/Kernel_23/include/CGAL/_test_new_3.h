@@ -23,6 +23,7 @@
 #include <CGAL/squared_distance_3.h>
 #include <CGAL/_test_compare_dihedral_angle_3.h>
 #include <CGAL/_test_compare_angle_3.h>
+#include <CGAL/_test_compare_salar_product_3.h>
 #include <CGAL/Has_member.h>
 
 #include <CGAL/use.h>
@@ -629,6 +630,10 @@ test_new_3(const R& rep)
     bool tmp = _test_compare_angle_3(rep);
     assert(tmp);
   }
+  {
+    bool tmp = _test_compare_scalar_product_3(rep);
+    assert(tmp);
+  }
 
   typename R::Compare_distance_3 compare_dist
         = rep.compare_distance_3_object();
@@ -658,6 +663,14 @@ test_new_3(const R& rep)
   tmp34ab = CGAL::compare_distance(p2,p3,p2,p3);
   tmp34ab = CGAL::compare_distance(p1, p2, p3, p4);
   tmp34ab = CGAL::compare_distance(p1, p2, p3);
+
+typename R::Compare_scalar_product_3 compare_sp;
+        = rep.compare_scalar_product_3_object();
+  tmp34ab = compare_sp(v3,v4,FT(1));
+  tmp34ab = compare_sp(v3,v4,v3,v4);
+
+  tmp34ab = CGAL::compare_scalar_product(v3,v4,v3,v4);
+  tmp34ab = CGAL::compare_scalar_product(v3,v4,FT(1));
 
   typename R::Compare_power_distance_3 compare_power_dist
         = rep.compare_power_distance_3_object();

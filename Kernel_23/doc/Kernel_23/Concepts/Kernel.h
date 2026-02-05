@@ -1468,7 +1468,7 @@ public:
   /*!
     a model of `Kernel::CompareScalarProduct_3`
   */
-  typedef unspecified_type CompareScalarProduct_3;
+  typedef unspecified_type Compare_scalar_product_3;
 
   /*!
     a model of `Kernel::LessDistanceToPoint_3`

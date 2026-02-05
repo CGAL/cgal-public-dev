@@ -37,10 +37,11 @@ namespace CGAL {
 /**
 * \ingroup PkgConvexHull3Queries
 *
-* computes the furthest point of the range along the direction; If not unique, a single point is returned.
+* computes the point whose orthogonal projection onto that direction is maximal.
+* If not unique, a single point is returned.
 *
-* @tparam Range is a model of `ConstRange`. The value type of its iterator is the key type of the named parameter `point_map`.
-* @tparam Direction_3 is a model of `CGAL::Direction_3`.
+* @tparam PointRange is a model of `ConstRange`. The value type of its iterator is the key type of the named parameter `point_map`.
+* @tparam Direction must be a `Direction_3` typedef of a \cgal kernel
 * @tparam NamedParameters a sequence of \ref bgl_namedparameters "Named Parameters"
 *
 * @param r the range of points
@@ -53,6 +54,9 @@ namespace CGAL {
 *     \cgalParamType{a model of `ReadablePropertyMap` with value type is a model `CGAL::Point_3`}
 *     \cgalParamDefault{`CGAL::Identity_property_map`}
 *   \cgalParamNEnd
+*
+* \cond SKIP_IN_MANUAL
+*
 *   \cgalParamNBegin{geom_traits}
 *     \cgalParamDescription{An instance of a geometric traits class}
 *     \cgalParamType{a class model of `Kernel`}
@@ -63,26 +67,29 @@ namespace CGAL {
 *     \cgalParamType{a class model of `NT_Converter`}
 *     \cgalParamDefault{a \cgal `Cartesian_converter` deduced from `point_map` and `geom_traits`, using `CGAL::Kernel_traits`}
 *   \cgalParamNEnd
+*
+* \endcond
+*
 * \cgalNamedParamsEnd
 *
 * \return an instance of the key type of `point_map` parameter
 */
-template <class Range, class Direction_3, class NamedParameters>
+template <class PointRange, class Direction, class NamedParameters = parameters::Default_named_parameters>
 #if DOXYGEN_RUNNING
 Point_3
 #else
-typename Point_set_processing_3_np_helper<Range, NamedParameters>::Const_point_map::key_type
+typename Point_set_processing_3_np_helper<PointRange, NamedParameters>::Const_point_map::key_type
 #endif
-extreme_point_3(const Range& r, const Direction_3 &dir, const NamedParameters &np) {
+extreme_point_3(const PointRange& r, const Direction &dir, const NamedParameters &np = parameters::default_values()) {
   using CGAL::parameters::choose_parameter;
   using CGAL::parameters::get_parameter;
-  using NP_helper= Point_set_processing_3_np_helper<Range, NamedParameters>;
+  using NP_helper= Point_set_processing_3_np_helper<PointRange, NamedParameters>;
 
   using PointMap= typename NP_helper::Const_point_map;
   PointMap point_map = NP_helper::get_const_point_map(r, np);
 
   using Point_GT = typename NP_helper::Geom_traits;
-  using Default_GT = typename Kernel_traits<Direction_3>::Kernel;
+  using Default_GT = typename Kernel_traits<Direction>::Kernel;
   using GT=typename internal_np::Lookup_named_param_def <
       internal_np::geom_traits_t,
       NamedParameters,
@@ -117,10 +124,11 @@ extreme_point_3(const Range& r, const Direction_3 &dir, const NamedParameters &n
 /**
 * \ingroup PkgConvexHull3Queries
 *
-* computes the furthest point of the convex graph along the direction and returns the associated vertex; If not unique, a single vertex is returned.
+* computes the point of the convex hull whose orthogonal projection onto that direction is maximal and returns the associated vertex.
+* If not unique, a single vertex is returned.
 *
 * @tparam Graph is a model of `VertexListGraph` and `AdjacencyGraph`.
-* @tparam Direction_3 is a model of `Kernel::Direction_3`.
+* @tparam Direction must be a `Direction_3` typedef of a \cgal kernel
 * @tparam NamedParameters a sequence of \ref bgl_namedparameters "Named Parameters"
 *
 * @param g the convex graph
@@ -136,6 +144,9 @@ extreme_point_3(const Range& r, const Direction_3 &dir, const NamedParameters &n
 *     \cgalParamDefault{boost::get(CGAL::vertex_point, g)}
 *     \cgalParamExtra{If this parameter is omitted, an internal property map for `CGAL::vertex_point_t` must be available in `Graph`.}
 *   \cgalParamNEnd
+*
+* \cond SKIP_IN_MANUAL
+*
 *   \cgalParamNBegin{geom_traits}
 *     \cgalParamDescription{An instance of a geometric traits class}
 *     \cgalParamType{a class model of `Kernel`}
@@ -146,17 +157,15 @@ extreme_point_3(const Range& r, const Direction_3 &dir, const NamedParameters &n
 *     \cgalParamType{a class model of `NT_Converter`}
 *     \cgalParamDefault{a \cgal `Cartesian_converter` deduced from ` vertex_point_map`  and `geom_traits`, using `CGAL::Kernel_traits`}
 *   \cgalParamNEnd
+*
+* \endcond
+*
 * \cgalNamedParamsEnd
 *
-* \return a `boost::graph_traits<Graph>::vertex_descriptor`
 */
-template <class Graph, class NamedParameters, class Direction_3>
-#if DOXYGEN_RUNNING
-vertex_descriptor
-#else
+template <class Graph, class Direction, class NamedParameters = parameters::Default_named_parameters>
 typename boost::graph_traits<Graph>::vertex_descriptor
-#endif
-extreme_vertex_3(const Graph& g, const Direction_3 &dir, const NamedParameters &np) {
+extreme_vertex_3(const Graph& g, const Direction &dir, const NamedParameters &np = parameters::default_values()) {
   using CGAL::parameters::choose_parameter;
   using CGAL::parameters::get_parameter;
 
@@ -169,7 +178,7 @@ extreme_vertex_3(const Graph& g, const Direction_3 &dir, const NamedParameters &
   using GetGeomTraits = GetGeomTraits<Graph, NamedParameters>;
   using GraphGT= typename GetGeomTraits::type;
 
-  using Default_GT = typename Kernel_traits<Direction_3>::Kernel;
+  using Default_GT = typename Kernel_traits<Direction>::Kernel;
   using GT=typename internal_np::Lookup_named_param_def <
       internal_np::geom_traits_t,
       NamedParameters,
