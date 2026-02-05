@@ -333,7 +333,7 @@ public:
     /*! determines whether two given \f$x\f$-monotone curves intersect.
      * \param xcv1 the first curve.
      * \param xcv2 the second curve.
-     * \patam closed indicates whether the curves are closed or open.
+     * \param closed indicates whether the curves are closed or open.
      * \return a boolean flag indicating whether the curves intersect.
      * \todo Reimplement without using Intersect_2 to make robust (and efficient) with EPIC.
      */
