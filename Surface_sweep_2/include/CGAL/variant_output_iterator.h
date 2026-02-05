@@ -21,7 +21,7 @@
  * Designed to replace boost::function_output_iterator when the algorithm emits
  * heterogeneous output (e.g., `Point_2` or `X_monotone_curve_2`).
  *
- * Many CGAL concepts (e.g., Make_x_monotone_2) require an operation that writes
+ * Many CGAL concepts (e.g., AosTraits::MakeXMonotone_2) require an operation that writes
  * results to an `OutputIterator` whose value type is:
  *
  * `std::variant<T1, T2, ...>`
