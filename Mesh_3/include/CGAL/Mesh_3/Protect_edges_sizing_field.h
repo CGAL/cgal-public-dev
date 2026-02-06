@@ -1475,18 +1475,16 @@ refine_balls()
     restart = false;
     boost::unordered_map<Vertex_handle, FT, Hash_fct> new_sizes;
 
-    for(typename Tr::Finite_edges_iterator eit = tr.finite_edges_begin(),
-        end = tr.finite_edges_end(); eit != end; ++eit)
+    for(const Edge& e : c3t3_.edges_in_complex())
     {
       if(forced_stop()) break;
-      const Vertex_handle& va = eit->first->vertex(eit->second);
-      const Vertex_handle& vb = eit->first->vertex(eit->third);
-      const bool is_edge_in_complex = c3t3_.is_in_complex(va,vb);
+      const auto& [va, vb] = tr.vertices(e);
+      const bool is_edge_in_complex = true;
 
       if( // topology condition
           non_adjacent_but_intersect(va, vb, is_edge_in_complex)
           // approximation condition
-       || (use_distance_field() && approx_is_too_large(*eit, is_edge_in_complex)))
+       || (use_distance_field() && approx_is_too_large(e, is_edge_in_complex)))
       {
         using CGAL::Mesh_3::internal::distance_divisor;
 
@@ -1538,13 +1536,13 @@ refine_balls()
     new_sizes.clear();
 
     // Update size of balls
-    for (const std::pair<Vertex_handle,FT>& it : new_sizes_copy)
+    for (const auto& [v, new_size] : new_sizes_copy)
     {
       if(forced_stop()) break;
-      const Vertex_handle v = it.first;
-      const FT new_size = it.second;
+
       // Set size of the ball to new value
-      if(use_minimal_size() && new_size < minimal_size_) {
+      if(use_minimal_size() && new_size < minimal_size_)
+      {
         if(!is_special(v)) {
           change_ball_size(v, minimal_weight(), true); // special ball
 
