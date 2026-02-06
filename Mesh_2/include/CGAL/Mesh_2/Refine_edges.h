@@ -354,6 +354,9 @@ protected:
   template <typename Constraint_hierarchy_tag>
   void scan_triangulation_impl(Constraint_hierarchy_tag)
   {
+    if(tr.dimension() < 2)
+      return;
+
     // general case (no constraint hierarchy)
 
     for(Finite_edges_iterator ei = tr.finite_edges_begin();
@@ -370,6 +373,9 @@ protected:
 
   void scan_triangulation_impl(Tag_true)
   {
+    if(tr.dimension() < 2)
+      return;
+
     for(const auto& [v1, v2] : tr.subconstraints())
     {
       if(!is_locally_conform(tr, v1, v2) ){
