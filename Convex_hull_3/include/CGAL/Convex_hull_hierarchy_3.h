@@ -25,12 +25,12 @@
 
 namespace CGAL{
 
-  /// \ingroup PkgConvexHull3Ref
+  /// \ingroup PkgConvexHull3Intersections
   /// \brief This class stores a convex hull in a data structure optimized for fast intersection tests.
   ///
   /// More specifically, the structure is optimized for `CGAL::extreme_vertex_3()`, which is used by `CGAL::Convex_hull_3::do_intersect()`.
   /// The computational complexities of `CGAL::extreme_point_3()` and consequently `CGAL::Convex_hull_3::do_intersect()` is \f$O(n)\f$ for a range of points,
-  /// \f$O(\sqrt{n})\f$ on average for a graph, but only \f$O(\log{n})\f$ on average for a `Convex_hull_hierarchy`, where \f$n\f$ is the number of points of the object.
+  /// \f$O(\sqrt{n})\f$ on average for a graph, but only \f$O(\log{n})\f$ on average for a `Convex_hull_hierarchy_3`, where \f$n\f$ is the number of points of the object.
   ///
   /// Building this structure has linear complexity and is faster than computing a convex hull, but more costly than a single call to `CGAL::Convex_hull_3::do_intersect()`.
   /// It is therefore relevant when many intersection queries are performed, particularly when a convex hull has a large number of vertices.
@@ -51,7 +51,7 @@ namespace CGAL{
   /// | 100,000     | 399.377  | 32.0424  | 5.50728 | 0.39127 | 0.05841  |
   ///
   /// @tparam PolygonMesh The polygon mesh used to construct each level of the hierarchy. Must be a model of `VertexListGraph` and `MutableFaceGraph`.
-  ///         An internal property map for `CGAL::vertex_point_t` must be available, with a value type that is a model of `Kernel::Point_3`.
+  ///         An internal property map for `CGAL::vertex_point_t` must be available, with a value type that is a `Point_3` typedef of a \cgal kernel.
 #if DOXYGEN_RUNNING
 template < class PolygonMesh>
 #else
@@ -60,18 +60,15 @@ template < class PolygonMesh,
            int RATIO_BETWEEN_LEVELS = 24,
            int MINSIZE_FOR_NEXT_LEVEL = RATIO_BETWEEN_LEVELS*6>
 #endif
-struct Convex_hull_hierarchy{
+struct Convex_hull_hierarchy_3{
   // parameterization of the hierarchy
   /// @private
   constexpr static size_t RATIO = RATIO_BETWEEN_LEVELS;
   /// @private
   constexpr static size_t MAXSIZE_FOR_NAIVE_SEARCH = RATIO;
 
-  /// The mesh type.
-  using Mesh = PolygonMesh;
-
   /// @private
-  using VPM = typename boost::property_map<Mesh, CGAL::vertex_point_t>::const_type;
+  using VPM = typename boost::property_map<PolygonMesh, CGAL::vertex_point_t>::const_type;
 
   /// @private
   using Point_3 = typename boost::property_traits<VPM>::value_type;
@@ -86,7 +83,7 @@ struct Convex_hull_hierarchy{
   using V2VMap = typename boost::property_map<PolygonMesh, dynamic_vertex_property_t<vertex_descriptor> >::type;
 
   /**
-  * Constructor taking the points associated to the vertices of `g`.
+  * Constructor taking a graph `g`. If `compute_convex_hull` is set to `true`, compute and use the convex hull of `g` instead.
   *
   * @tparam Graph a model of `VertexListGraph`
   * @tparam NamedParameters a sequence of named parameters
@@ -96,7 +93,7 @@ struct Convex_hull_hierarchy{
   *
   * \cgalNamedParamsBegin
   *   \cgalParamNBegin{vertex_point_map}
-  *     \cgalParamDescription{a property map associating points to the vertices of  `g`}
+  *     \cgalParamDescription{a property map associating points to the vertices of `g`}
   *     \cgalParamType{a model of `ReadablePropertyMap` whose value type is a point type}
   *     \cgalParamDefault{If this parameter is omitted, an internal property map for ` CGAL::vertex_point_t`  must be available in `VertexListGraph`}
   *   \cgalParamNEnd
@@ -114,7 +111,7 @@ struct Convex_hull_hierarchy{
   */
   template <typename Graph,
             typename NamedParameters=parameters::Default_named_parameters>
-  Convex_hull_hierarchy(const Graph &g, const NamedParameters& np = parameters::default_values()){
+  Convex_hull_hierarchy_3(const Graph &g, const NamedParameters& np = parameters::default_values()){
     using parameters::choose_parameter;
     using parameters::get_parameter;
     using parameters::is_default_parameter;
@@ -135,12 +132,12 @@ struct Convex_hull_hierarchy{
    /**
   * Constructor taking the points in the range `[first, last)`.
   *
-  * @tparam RangeIterator is an input iterator with a value type equivalent to `Traits::Point_3`
+  * @tparam PointIterator is an input iterator with a value type equivalent to `Traits::Point_3`
   * @tparam Traits is a model of the concept ConvexHullTraits_3. For the purposes of checking the postcondition that the convex hull is valid,
-  *         `Traits` must also be a model of the concept `IsStronglyConvexTraits_3`. Furthermore, `Traits` must define a type `PolygonMesh` that is a model of `MutableFaceGraph`.
+  *         `Traits` must also be a model of the concept `IsStronglyConvexTraits_3`.
   */
-  template <typename RangeIterator, typename Traits = Convex_hull_traits_3<GT , Mesh> >
-  Convex_hull_hierarchy(RangeIterator begin, RangeIterator end, const Traits &traits = Traits()){
+  template <typename PointIterator, typename Traits = Convex_hull_traits_3<GT , PolygonMesh> >
+  Convex_hull_hierarchy_3(PointIterator begin, PointIterator end, const Traits &traits = Traits()){
     PolygonMesh ch;
     convex_hull_3(begin, end, ch, traits);
     hierarchy_sm.reserve(MAX_HIERARCHY_DEPTH);
@@ -166,11 +163,6 @@ struct Convex_hull_hierarchy{
     return hierarchy_sm[0];
   }
 
-  // /// returns a reference to the mesh stored by the class.
-  // PolygonMesh& mesh(){
-  //   return hierarchy_sm[0];
-  // }
-
   /// @private
   template <typename Direction>
   typename Kernel_traits<Direction>::Kernel::Point_3 extreme_point_3(const Direction &dir) const {
@@ -189,12 +181,8 @@ struct Convex_hull_hierarchy{
   *
   * @param dir the direction
   */
-  template <typename Direction
-          /* ,typename NamedParameters=parameters::Default_named_parameters */
-           >
-  vertex_descriptor extreme_vertex_3(const Direction &dir
-                                  /*,const NamedParameters &np=parameters::default_values()*/
-                                    ) const
+  template <typename Direction>
+  vertex_descriptor extreme_vertex_3(const Direction &dir) const
   {
     using Dir_GT = typename Kernel_traits<Direction>::Kernel;
     using GTC = Cartesian_converter<GT, Dir_GT>;
@@ -263,7 +251,7 @@ struct Convex_hull_hierarchy{
   }
 
 private:
-  template <typename Random, typename Traits = Convex_hull_traits_3<GT , Mesh> >
+  template <typename Random, typename Traits = Convex_hull_traits_3<GT , PolygonMesh> >
   void init_hierarchy(Random &rng = get_default_random(), const Traits &traits = Traits()){
     VPM vpm = get_const_property_map(vertex_point, hierarchy_sm[0]);
 
@@ -331,7 +319,7 @@ private:
 /**
 * \ingroup PkgConvexHull3Queries
 *
-* computes the point of the convex hull whose orthogonal projection onto that direction is maximal and returns the associated vertex.
+* returns the vertex of the convex hull whose geometric position projected onto that direction is maximal.
 * If not unique, a single vertex is returned.
 *
 * @tparam Mesh a model of `VertexListGraph` and `MutableFaceGraph`
@@ -341,11 +329,9 @@ private:
 * @param dir the direction
 *
 */
-template <class Mesh, class Direction /*, class NamedParameters*/
-          >
-typename boost::graph_traits<Mesh>::vertex_descriptor
-extreme_vertex_3(const Convex_hull_hierarchy<Mesh> &ch, const Direction &dir /*, const NamedParameters &np */
-                )
+template <class PolygonMesh, class Direction>
+typename boost::graph_traits<PolygonMesh>::vertex_descriptor
+extreme_vertex_3(const Convex_hull_hierarchy_3<PolygonMesh> &ch, const Direction &dir)
 {
   return ch.extreme_vertex_3(dir);
 }

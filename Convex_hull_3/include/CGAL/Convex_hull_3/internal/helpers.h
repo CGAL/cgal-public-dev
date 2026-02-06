@@ -21,7 +21,7 @@
 #include <CGAL/Named_function_parameters.h>
 #include <CGAL/boost/graph/named_params_helper.h>
 
-#include <CGAL/Convex_hull_hierarchy.h>
+#include <CGAL/Convex_hull_hierarchy_3.h>
 #include <CGAL/extreme_point_3.h>
 
 #ifdef CGAL_PROFILE_CONVEX_HULL_DO_INTERSECT
@@ -34,7 +34,7 @@ template <class T>
 inline constexpr bool is_instance_of_CHH = false;
 
 template <class Arg>
-inline constexpr bool is_instance_of_CHH< Convex_hull_hierarchy<Arg> > = true;
+inline constexpr bool is_instance_of_CHH< Convex_hull_hierarchy_3<Arg> > = true;
 
 // template class to deduce the GT from Convex and NamedParameters
 template<class Convex,
@@ -50,7 +50,7 @@ struct GetGeomTraitsFromConvex<Convex, NamedParameters, true>{
 };
 
 template<class Mesh, class NamedParameters>
-struct GetGeomTraitsFromConvex<Convex_hull_hierarchy<Mesh>, NamedParameters, false>{
+struct GetGeomTraitsFromConvex<Convex_hull_hierarchy_3<Mesh>, NamedParameters, false>{
   typedef typename GetGeomTraits<Mesh, NamedParameters>::type type;
 };
 

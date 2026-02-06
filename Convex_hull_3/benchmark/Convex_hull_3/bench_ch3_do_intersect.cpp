@@ -8,7 +8,7 @@
 #include <CGAL/Surface_mesh.h>
 #include <CGAL/Extreme_points_traits_adapter_3.h>
 #include <CGAL/convex_hull_3.h>
-#include <CGAL/Convex_hull_hierarchy.h>
+#include <CGAL/Convex_hull_hierarchy_3.h>
 #include <CGAL/Convex_hull_3/do_intersect.h>
 #include <CGAL/Convex_hull_3/distance.h>
 
@@ -191,7 +191,7 @@ private:
     CGAL::Real_timer t;
     std::vector< std::vector<P> > points_ranges;
     std::vector< CGAL::Surface_mesh<P> > hulls;
-    std::vector< CGAL::Convex_hull_hierarchy< CGAL::Surface_mesh<P> > > hulls_hierarchy;
+    std::vector< CGAL::Convex_hull_hierarchy_3< CGAL::Surface_mesh<P> > > hulls_hierarchy;
 
     double nb_tests=double(N*(N-1)/2);
 

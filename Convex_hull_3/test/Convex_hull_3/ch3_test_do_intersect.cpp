@@ -11,7 +11,7 @@
 #include <CGAL/Convex_hull_3/do_intersect.h>
 #include <CGAL/Convex_hull_3/distance.h>
 #include <CGAL/convex_hull_3.h>
-#include <CGAL/Convex_hull_hierarchy.h>
+#include <CGAL/Convex_hull_hierarchy_3.h>
 
 #include <boost/property_map/vector_property_map.hpp>
 #include <CGAL/point_generators_3.h>
@@ -77,11 +77,11 @@ struct Test{
       assert(CGAL::Convex_hull_3::experimental::separation_distance(sm_b, sm_a)==true_distance);
     }
 
-    CGAL::Convex_hull_hierarchy<Mesh> hsm_a(vec_a.begin(),vec_a.end()), hsm_b(vec_b.begin(),vec_b.end());
+    CGAL::Convex_hull_hierarchy_3<Mesh> hsm_a(vec_a.begin(),vec_a.end()), hsm_b(vec_b.begin(),vec_b.end());
     assert(CGAL::Convex_hull_3::do_intersect(hsm_a, hsm_b)==result);
     assert(CGAL::Convex_hull_3::do_intersect(hsm_b, hsm_a)==result);
 
-    CGAL::Convex_hull_hierarchy<Mesh> hsm_a_2(sm_a), hsm_b_2(sm_b);
+    CGAL::Convex_hull_hierarchy_3<Mesh> hsm_a_2(sm_a), hsm_b_2(sm_b);
     assert(CGAL::Convex_hull_3::do_intersect(hsm_a_2, hsm_b_2)==result);
     assert(CGAL::Convex_hull_3::do_intersect(hsm_b_2, hsm_a_2)==result);
 
@@ -112,8 +112,8 @@ struct Test{
     assert(CGAL::Convex_hull_3::do_intersect(sm_b_pm, sm_a_pm, CGAL::parameters::vertex_point_map(vpm_b),
                                                                CGAL::parameters::vertex_point_map(vpm_a))==result);
 
-    CGAL::Convex_hull_hierarchy<Mesh> hsm_a_pm(sm_a_pm, CGAL::parameters::vertex_point_map(vpm_a));
-    CGAL::Convex_hull_hierarchy<Mesh> hsm_b_pm(sm_b_pm, CGAL::parameters::vertex_point_map(vpm_b));
+    CGAL::Convex_hull_hierarchy_3<Mesh> hsm_a_pm(sm_a_pm, CGAL::parameters::vertex_point_map(vpm_a));
+    CGAL::Convex_hull_hierarchy_3<Mesh> hsm_b_pm(sm_b_pm, CGAL::parameters::vertex_point_map(vpm_b));
     assert(CGAL::Convex_hull_3::do_intersect(hsm_a_pm, hsm_b_pm)==result);
     assert(CGAL::Convex_hull_3::do_intersect(hsm_b_pm, hsm_a_pm)==result);
   }

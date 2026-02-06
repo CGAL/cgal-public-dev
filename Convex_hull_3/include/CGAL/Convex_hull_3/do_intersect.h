@@ -21,7 +21,7 @@
 
 #include <CGAL/Kernel_23/internal/Has_boolean_tags.h>
 
-#include <CGAL/Convex_hull_hierarchy.h>
+#include <CGAL/Convex_hull_hierarchy_3.h>
 #include <CGAL/extreme_point_3.h>
 #include <CGAL/intersections.h>
 
@@ -269,18 +269,18 @@ struct Do_intersect_traits<K, K, Converter, true> {
 };
 
 /**
-* \ingroup PkgConvexHull3Predicates
+* \ingroup PkgConvexHull3Intersections
 *
 * \brief checks whether two convex hulls intersect or not.
 *
 * Input hulls can be provided as a range of points or as a graph, and may be of different types.
-* Furthermore, when many intersection queries use the same object, one should wrap that input in the class `CGAL::Convex_hull_hierarchy` as to construct an optimized view of the convex hull and accelerate intersection tests.
-* This is especially true when the convex hull is made of a large number of vertices (see `CGAL::Convex_hull_hierarchy` for more details).
+* Furthermore, when many intersection queries use the same object, one should wrap that input in the class `CGAL::Convex_hull_hierarchy_3` as to construct an optimized view of the convex hull and accelerate intersection tests.
+* This is especially true when the convex hull is made of a large number of vertices (see `CGAL::Convex_hull_hierarchy_3` for more details).
 *
 * @tparam Convex_1 is one of the following types:\n
 *  - a model of `ConstRange`
 *  - a model of `VertexListGraph` and `AdjacencyGraph`
-*  - an instance of `CGAL::Convex_hull_hierarchy`
+*  - an instance of `CGAL::Convex_hull_hierarchy_3`
 * @tparam Convex_2 same as `Convex_1`
 * @tparam NamedParameters_1 a sequence of \ref bgl_namedparameters "Named Parameters"
 * @tparam NamedParameters_2 a sequence of \ref bgl_namedparameters "Named Parameters"
@@ -326,7 +326,7 @@ struct Do_intersect_traits<K, K, Converter, true> {
 *
 * \cgalNamedParamsEnd
 *
-* \see `CGAL::Convex_hull_hierarchy`
+* \see `CGAL::Convex_hull_hierarchy_3`
 */
 template <class Convex_1, class Convex_2,
           class NamedParameters_1 = parameters::Default_named_parameters,

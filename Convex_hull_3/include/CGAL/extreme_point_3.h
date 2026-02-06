@@ -37,7 +37,7 @@ namespace CGAL {
 /**
 * \ingroup PkgConvexHull3Queries
 *
-* computes the point whose orthogonal projection onto that direction is maximal.
+* returns the point of the convex hull whose projection onto that direction is maximal.
 * If not unique, a single point is returned.
 *
 * @tparam PointRange is a model of `ConstRange`. The value type of its iterator is the key type of the named parameter `point_map`.
@@ -124,7 +124,7 @@ extreme_point_3(const PointRange& r, const Direction &dir, const NamedParameters
 /**
 * \ingroup PkgConvexHull3Queries
 *
-* computes the point of the convex hull whose orthogonal projection onto that direction is maximal and returns the associated vertex.
+* returns the vertex of the convex hull whose geometric position projected onto that direction is maximal.
 * If not unique, a single vertex is returned.
 *
 * @tparam Graph is a model of `VertexListGraph` and `AdjacencyGraph`.

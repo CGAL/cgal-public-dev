@@ -5,7 +5,7 @@
 #include <CGAL/convex_hull_3.h>
 #include <CGAL/Convex_hull_3/distance.h>
 #include <CGAL/Convex_hull_3/do_intersect.h>
-#include <CGAL/Convex_hull_hierarchy.h>
+#include <CGAL/Convex_hull_hierarchy_3.h>
 
 #include <CGAL/boost/graph/IO/polygon_mesh_io.h>
 #include <CGAL/IO/polygon_soup_io.h>
@@ -17,7 +17,7 @@ typedef CGAL::Exact_predicates_inexact_constructions_kernel      K;
 typedef K::Point_3                                               Point_3;
 typedef CGAL::Surface_mesh<Point_3>                              Mesh;
 typedef Mesh::Property_map<Mesh::Vertex_index, Point_3>          PointMap;
-typedef CGAL::Convex_hull_hierarchy<Mesh>                        Convex_hull_hierarchy;
+typedef CGAL::Convex_hull_hierarchy_3<Mesh>                      Convex_hull_hierarchy_3;
 
 int main(int argc, char* argv[])
 {
@@ -40,9 +40,9 @@ int main(int argc, char* argv[])
                                                CGAL::parameters::point_map(sm1.points()),
                                                CGAL::parameters::point_map(sm2.points()));
 
-  // When performing many intersection tests, we can construct an optimized version of the convex hull with the class `Convex_hull_hierarchy`
-  Convex_hull_hierarchy hsm1(sm1);
-  Convex_hull_hierarchy hsm2(sm2);
+  // When performing many intersection tests, we can construct an optimized version of the convex hull with the class `Convex_hull_hierarchy_3`
+  Convex_hull_hierarchy_3 hsm1(sm1);
+  Convex_hull_hierarchy_3 hsm2(sm2);
   res = CGAL::Convex_hull_3::do_intersect(hsm1, hsm2);
   std::cout << "do convex hulls intersect? " << std::boolalpha << res << "\n";
 

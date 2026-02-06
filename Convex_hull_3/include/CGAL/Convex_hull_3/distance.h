@@ -24,7 +24,7 @@
 
 #include <CGAL/Exact_predicates_exact_constructions_kernel.h>
 
-#include <CGAL/Convex_hull_hierarchy.h>
+#include <CGAL/Convex_hull_hierarchy_3.h>
 #include <CGAL/Convex_hull_3/internal/helpers.h>
 #include <CGAL/squared_distance_3.h>
 
@@ -346,31 +346,49 @@ struct Separation_distance_functor{
 } // end of predicates_impl namespace
 
 
-#if DOXYGEN_RUNNING
 /**
-* \ingroup PkgConvexHull3Predicates
+* \ingroup PkgConvexHull3Intersections
 *
-* computes a lower bound on the squared distance between the convex hulls of two point sets, returning zero when the hulls intersect.
+* \brief compute the separation distance of two convex hulls returning zero if they intersect.
 *
-* @tparam PointRange: is a model of `ConstRange`. The value type of its iterator is the key type of the named parameter `point_map`.
+* Input hulls can be provided as a range of points or as a graph, and may be of different types.
+* Furthermore, when many intersection queries use the same object, one should wrap that input in the class `CGAL::Convex_hull_hierarchy_3` as to construct an optimized view of the convex hull and accelerate intersection tests.
+* This is especially true when the convex hull is made of a large number of vertices (see `CGAL::Convex_hull_hierarchy_3` for more details).
+*
+* @tparam Convex_1 is one of the following types:\n
+*  - a model of `ConstRange`
+*  - a model of `VertexListGraph` and `AdjacencyGraph`
+*  - an instance of `CGAL::Convex_hull_hierarchy_3`
+* @tparam Convex_2 same as `Convex_1`
 * @tparam NamedParameters_1 a sequence of \ref bgl_namedparameters "Named Parameters"
 * @tparam NamedParameters_2 a sequence of \ref bgl_namedparameters "Named Parameters"
 *
-* @param r1 first point range
-* @param r2 second point range
+* @param ch1 the first convex hull
+* @param ch2 the second convex hull
 * @param np1 an optional sequence of \ref bgl_namedparameters "Named Parameters" among the ones listed below
 * @param np2 an optional sequence of \ref bgl_namedparameters "Named Parameters" among the ones listed below
 *
 * \cgalNamedParamsBegin
 *   \cgalParamNBegin{point_map}
-*     \cgalParamDescription{a property map associating points to the elements of `r1` (`r2`)}
-*     \cgalParamType{a model of `ReadablePropertyMap` whose value types are the same for `np1` and `np2`}
+*     \cgalParamDescription{when `ch1` (`ch2`) is a range, it is a property map associating points to its elements}
+*     \cgalParamType{a model of `ReadablePropertyMap` whose value types are the same for `ch1` and `ch2`}
 *     \cgalParamDefault{`CGAL::Identity_property_map`}
+*     \cgalParamExtra{used only if `ch1` (`ch2`) is model of `ConstRange`}
 *   \cgalParamNEnd
+*   \cgalParamNBegin{vertex_point_map}
+*     \cgalParamDescription{when `ch1` (`ch2`) is a mesh, it is a property map associating points to its vertices}
+*     \cgalParamType{a model of `ReadablePropertyMap` whose value types are the same for `ch1` and `ch2`}
+*     \cgalParamDefault{boost::get(CGAL::vertex_point, g)}
+*     \cgalParamExtra{used only if `ch1` (`ch2`) is model of `VertexListGraph` and `AdjacencyGraph`.}
+*     \cgalParamExtra{If this parameter is omitted, an internal property map for `CGAL::vertex_point_t` must be available in `Convex_1` (`Convex_2`).}
+*   \cgalParamNEnd
+*
+*   \cond SKIP_IN_MANUAL
+*
 *   \cgalParamNBegin{geom_traits}
 *     \cgalParamDescription{An instance of a geometric traits class}
 *     \cgalParamType{a class model of `Kernel`}
-*     \cgalParamDefault{a \cgal kernel deduced from the point type, using `CGAL::Kernel_traits`}
+*     \cgalParamDefault{a \cgal kernel deduced from the point type of the input, using `CGAL::Kernel_traits`}
 *     \cgalParamExtra{`np1` only}
 *   \cgalParamNEnd
 *   \cgalParamNBegin{number_of_iterations}
@@ -381,115 +399,18 @@ struct Separation_distance_functor{
 *     \cgalParamExtra{`np1` only}
 *     \cgalParamDefault{`0`}
 *   \cgalParamNEnd
+*
+* \endcond
+*
 * \cgalNamedParamsEnd
 *
-* \note The point sets do not need to be in convex position.
-*
+* \see `CGAL::Convex_hull_hierarchy_3`
 */
-template <class PointRange,
-          class NamedParameters_1 = parameters::Default_named_parameters,
-          class NamedParameters_2 = parameters::Default_named_parameters>
-FT separation_distance(const PointRange& r1, const PointRange& r2,
-                       const NamedParameters_1& np1 = parameters::default_values(),
-                       const NamedParameters_2& np2 = parameters::default_values());
-
-/**
-* \ingroup PkgConvexHull3Predicates
-*
-* computes a lower bound on the squared distance between the two convex graphs, returning zero when their hulls intersect.
-*
-* @tparam Graph is a model of `VertexListGraph` and `AdjacencyGraph`.
-* @tparam NamedParameters_1 a sequence of \ref bgl_namedparameters "Named Parameters"
-* @tparam NamedParameters_2 a sequence of \ref bgl_namedparameters "Named Parameters"
-*
-* @param g1 the first convex graph
-* @param g2 the second convex graph
-* @param np1 an optional sequence of \ref bgl_namedparameters "Named Parameters" among the ones listed below
-* @param np2 an optional sequence of \ref bgl_namedparameters "Named Parameters" among the ones listed below
-*
-* @warning The input graph must represent a convex object to guarantee a correct answer.
-*
-* \cgalNamedParamsBegin
-*   \cgalParamNBegin{vertex_point_map}
-*     \cgalParamDescription{a property map associating points to the vertices of `g1` (`g2`)}
-*     \cgalParamType{a model of `ReadablePropertyMap` whose value types are the same for `np1` and `np2`}
-*     \cgalParamDefault{boost::get(CGAL::vertex_point, g)}
-*     \cgalParamExtra{If this parameter is omitted, an internal property map for `CGAL::vertex_point_t` must be available in `Graph`.}
-*   \cgalParamNEnd
-*   \cgalParamNBegin{geom_traits}
-*     \cgalParamDescription{An instance of a geometric traits class}
-*     \cgalParamType{a class model of `Kernel`}
-*     \cgalParamDefault{a \cgal kernel deduced from the point type, using `CGAL::Kernel_traits`}
-*     \cgalParamExtra{`np1` only}
-*   \cgalParamNEnd
-*   \cgalParamNBegin{number_of_iterations}
-*     \cgalParamDescription{if not `0` (no limit), indicates the maximum number of iterations performed by the algorithm.
-                            if this value is not `0`, then the return value can be zero even if the convex hulls does not intersect.
-*                           However, the value reported remains a lower bound of the distance between the convex.}
-*     \cgalParamType{a positive integer convertible to `std::size_t`}
-*     \cgalParamExtra{`np1` only}
-*     \cgalParamDefault{`0`}
-*   \cgalParamNEnd
-* \cgalNamedParamsEnd
-*
-* \see `CGAL::Convex_hull_3::do_intersect`
-*
-*/
-template <class Graph,
-          class NamedParameters_1 = parameters::Default_named_parameters,
-          class NamedParameters_2 = parameters::Default_named_parameters>
-FT separation_distance(const Graph& g1, const Graph& g2,
-                       const NamedParameters_1& np1 = parameters::default_values(),
-                       const NamedParameters_2& np2 = parameters::default_values());
-
-/**
-* \ingroup PkgConvexHull3Predicates
-*
-* computes a lower bound on the squared distance between the two convex hulls, returning zero when they intersect.
-*
-* @tparam ConvexHullHierarchy an instance of `CGAL::Convex_hull_hierarchy`
-* @tparam NamedParameters_1 a sequence of \ref bgl_namedparameters "Named Parameters"
-* @tparam NamedParameters_2 a sequence of \ref bgl_namedparameters "Named Parameters"
-*
-* @param ch1 the first convex hull
-* @param ch2 the second convex hull
-* @param np1 an optional sequence of \ref bgl_namedparameters "Named Parameters" among the ones listed below
-* @param np2 an optional sequence of \ref bgl_namedparameters "Named Parameters" among the ones listed below
-*
-* \cgalNamedParamsBegin
-*   \cgalParamNBegin{geom_traits}
-*     \cgalParamDescription{An instance of a geometric traits class}
-*     \cgalParamType{a class model of `Kernel`}
-*     \cgalParamDefault{a \cgal kernel deduced from the point type, using `CGAL::Kernel_traits`}
-*     \cgalParamExtra{`np1` only}
-*   \cgalParamNEnd
-*   \cgalParamNBegin{number_of_iterations}
-*     \cgalParamDescription{if not `0` (no limit), indicates the maximum number of iterations performed by the algorithm.
-                            If this value is not `0`, then the return value can be zero even if the convex hulls does not intersect.
-*                           However, the value reported remains a lower bound of the distance between the convex.}
-*     \cgalParamType{a positive integer convertible to `std::size_t`}
-*     \cgalParamExtra{`np1` only}
-*     \cgalParamDefault{`0`}
-*   \cgalParamNEnd
-* \cgalNamedParamsEnd
-*
-* \see `CGAL::Convex_hull_3::do_intersect`
-*
-*/
-template <class ConvexHullHierarchy,
-          class NamedParameters_1 = parameters::Default_named_parameters,
-          class NamedParameters_2 = parameters::Default_named_parameters>
-FT separation_distance(const ConvexHullHierarchy& ch1, const ConvexHullHierarchy& ch2,
-                       const NamedParameters_1& np1 = parameters::default_values(),
-                       const NamedParameters_2& np2 = parameters::default_values());
-
-#else
-
-template <class Convex1, class Convex2,
+template <class Convex_1, class Convex_2,
           class NamedParameters_1 = parameters::Default_named_parameters,
           class NamedParameters_2 = parameters::Default_named_parameters>
 typename internal::GetGeomTraitsFromConvex<Convex1, NamedParameters_1>::type::FT
-separation_distance(const Convex1& c1, const Convex2& c2,
+separation_distance(const Convex_1& c1, const Convex_2& c2,
                     const NamedParameters_1& np1 = parameters::default_values(),
                     const NamedParameters_2& np2 = parameters::default_values()){
   using CGAL::parameters::choose_parameter;
@@ -497,12 +418,10 @@ separation_distance(const Convex1& c1, const Convex2& c2,
 
   //The function need exact computation to works correctly
   using EPECK=Exact_predicates_exact_constructions_kernel;
-  using GT= typename internal::GetGeomTraitsFromConvex<Convex1, NamedParameters_1>::type;
+  using GT= typename internal::GetGeomTraitsFromConvex<Convex_1, NamedParameters_1>::type;
   // GT gt = choose_parameter<GT>(get_parameter(np1, internal_np::geom_traits));
   return predicates_impl::Separation_distance_functor<GT, EPECK>()(c1, c2, np1, np2);
 }
-
-#endif
 
 } // end of experimental
 
