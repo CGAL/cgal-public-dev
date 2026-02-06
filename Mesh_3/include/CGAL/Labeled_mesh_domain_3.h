@@ -436,8 +436,7 @@ public:
    *   `CGAL::Implicit_multi_domain_to_labeling_function_wrapper` is a good candidate for this template parameter
    *   if there are several components to mesh.
    * \tparam NamedParameters a sequence of \ref bgl_namedparameters "Named Parameters"
-   * \tparam BoundingObject either a bounding sphere (of type `Sphere_3`), a bounding box (type `Bbox_3`),
-   *                         or a bounding `Iso_cuboid_3`
+   * \tparam BoundingObject either a bounding sphere (of type `Sphere_3`), a bounding box (type `Bbox_3` or `Iso_cuboid_3`)
    *
    * \param function the labeling function
    * \param bounding_object the bounding object bounding the meshable space.
@@ -876,8 +875,8 @@ public:
    * \tparam Function a type compatible with the signature `FT(Point_3)`: it takes a point as argument,
    *                  and returns a scalar value. That object must be model of `CopyConstructible`
    * \tparam NamedParameters a sequence of \ref bgl_namedparameters "Named Parameters"
-   * \tparam BoundingObject either a bounding sphere (of type `Sphere_3`), a bounding box (type `Bbox_3`),
-   *                         or a bounding `Iso_cuboid_3` which is required to circumscribe
+   * \tparam BoundingObject either a bounding sphere (of type `Sphere_3`), a bounding box
+   *         (type `Bbox_3` or `Iso_cuboid_3`) which is required to circumscribe
    *                         the surface and to have its center inside the domain.
    *
    * \param function the implicit function
