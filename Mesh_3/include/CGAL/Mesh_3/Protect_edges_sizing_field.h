@@ -1243,7 +1243,7 @@ insert_balls(const Vertex_handle& vp,
   // ai+1 = ai + r
   // ai+1 = a0 + r*(i+1)
   //   an = a0 + r*n
-  //   sq = sp + r + r*n
+  //   sq = sp + r + r*n = sp + r*(n+1)
   //    r = (sq-sp) / (n+1)
   //
   //   d = Sum(ai)
