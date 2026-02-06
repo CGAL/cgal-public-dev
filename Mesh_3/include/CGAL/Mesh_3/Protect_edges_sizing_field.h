@@ -1256,7 +1256,7 @@ insert_balls(const Vertex_handle& vp,
   // =======================
 
   const FT d_signF = static_cast<FT>(d_sign);
-  int n = static_cast<int>(std::floor(FT(2)*(d-sq) / (sp+sq))+.5);
+  std::size_t n = static_cast<std::size_t>(std::floor(FT(2)*(d-sq) / (sp+sq))+.5);
   // if( minimal_weight() != 0 && n == 0 ) return;
 
   if(nonlinear_growth_of_balls && refine_balls_iteration_nb < 3)
