@@ -5,6 +5,7 @@
 // #define CGAL_MESH_2_DEBUG_BAD_FACES 1
 // #define CGAL_MESH_2_DEBUG_CLUSTERS 1
 // #define CGAL_MESH_2_DEBUG_INSERTIONS 1
+// #define CGAL_CDT_2_DEBUG_INTERSECTIONS 1
 #include <CGAL/bisect_failures.h>
 #include <CGAL/Constrained_Delaunay_triangulation_2.h>
 #include <CGAL/Constrained_triangulation_plus_2.h>
@@ -146,6 +147,7 @@ static int run_mesh(const Obj_data& data)
     // CGAL::IO::write_VTU(filename, cdt, CGAL::IO::ASCII);
     ++i;
   }
+  CGAL_assertion(cdt.is_valid(true));
   std::cout << "done" << std::endl;
   CGAL::IO::write_VTU("conformed_cdt.vtu", cdt, CGAL::IO::ASCII);
   return EXIT_SUCCESS;
