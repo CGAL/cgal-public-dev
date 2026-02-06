@@ -89,7 +89,7 @@ make_implicit_to_labeling_function_wrapper(Function f)
 
 The class `Implicit_multi_domain_to_labeling_function_wrapper` is a helper class to get a function with integer values
 labeling the components of a multidomain. The multidomain is described through a set of functions `{fi(p), i=1, ...n}`.
-Each component corresponds to a sign vector `[s1, s2, ..., sn]` where si is the sign of the function `fi(p)` at a point `p` of the component.
+Each component corresponds to a sign vector `[s1, s2, ..., sn]` where `si` is the sign of the function `fi(p)` at a point `p` of the component.
 
 This wrapper class can be passed to  the template constructor `Labeled_mesh_domain_3()` as first template parameter.
 
