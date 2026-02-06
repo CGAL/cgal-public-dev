@@ -272,8 +272,8 @@ private:
     const Point& b = vb->point();
 
 #ifdef CGAL_MESH_2_DEBUG_CLUSTERS
-    std::cerr << "split_cluster_point(" << va->point()
-              << " , " << vb->point() << ")\n"
+    std::cerr << "split_cluster_point(" << IO::oformat(va, With_point_tag{})
+              << " , " << IO::oformat(vb, With_point_tag{}) << ")\n"
               << "  reduced: " << c.is_reduced() << "\nresult:  ";
 #endif // CGAL_MESH_2_DEBUG_CLUSTERS
     if( c.is_reduced() ) {
