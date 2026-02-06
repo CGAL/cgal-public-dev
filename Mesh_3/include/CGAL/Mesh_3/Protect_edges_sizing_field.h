@@ -1257,7 +1257,6 @@ insert_balls(const Vertex_handle& vp,
 
   const FT d_signF = static_cast<FT>(d_sign);
   std::size_t n = static_cast<std::size_t>(std::floor(FT(2)*(d-sq) / (sp+sq))+.5);
-  // if( minimal_weight() != 0 && n == 0 ) return;
 
   if(nonlinear_growth_of_balls && refine_balls_iteration_nb < 3)
   {
@@ -1318,7 +1317,7 @@ insert_balls(const Vertex_handle& vp,
     }
   } // nonlinear_growth_of_balls
 
-  const FT r = (sq - sp) / FT(n+1);
+  const FT r = (sq - sp) / FT(n+1);// radius variation
 
 #if CGAL_MESH_3_PROTECTION_DEBUG & 1
   std::cerr << "  n=" << n
@@ -1382,7 +1381,7 @@ insert_balls(const Vertex_handle& vp,
   Bare_point prev_pt = p;
   FT dist_to_prev = pt_dist;
 
-  for(int i = 1; i <= n; ++i)
+  for(std::size_t i = 1; i <= n; ++i)
   {
     // New point position
     const auto [new_point, polyline_iter]
@@ -1396,6 +1395,7 @@ insert_balls(const Vertex_handle& vp,
     const std::size_t nbv = c3t3_.triangulation().number_of_vertices();
     std::pair<Vertex_handle, ErasedVeOutIt> pair =
       smart_insert_point(new_point, point_weight, dim, index, prev, out);
+
     Vertex_handle new_vertex = pair.first;
     if(use_minimal_size() && new_vertex == Vertex_handle())
       continue; // insertion failed, probably hidden by existing ball
@@ -1404,22 +1404,25 @@ insert_balls(const Vertex_handle& vp,
     out = pair.second;
     domain_.set_polyline_iterator(new_point, polyline_iter, curve_index);
 
-    const bool vertex_was_inserted = (c3t3_.triangulation().number_of_vertices() > nbv);
-
     // Add edge to c3t3
+    const bool vertex_was_inserted = (c3t3_.triangulation().number_of_vertices() > nbv);
     if(vertex_was_inserted && !c3t3_.is_in_complex(prev, new_vertex)) {
       c3t3_.add_to_complex(prev, new_vertex, curve_index);
     }
-    prev = new_vertex;
 
-    // Step size
-    step_size += r;
-    norm_step_size = dleft_frac * step_size;
+    // Update step size
+    if(r > 0)
+    {
+      step_size += r;
+      norm_step_size = dleft_frac * step_size;
+      dist_to_prev = d_signF* norm_step_size;
+    }
 
-    // Update and Increment distance
-    dist_to_prev = d_signF* norm_step_size;
+    // Increment total distance to vp
     pt_dist += dist_to_prev;
 
+    // prepare for next for-loop round
+    prev = new_vertex;
     prev_pt = new_point;
     p_loc = polyline_iter;
   }
