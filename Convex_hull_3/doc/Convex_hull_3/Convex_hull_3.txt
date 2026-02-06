@@ -6,7 +6,7 @@ namespace CGAL {
 \anchor Chapter_3D_Convex_Hulls
 \anchor chapconvexhull3
 \cgalAutoToc
-\authors Samuel Hornus, Susan Hert, Stefan Schirra and Leo Valque
+\authors Samuel Hornus, Susan Hert, Stefan Schirra, and Leo Valque
 
 \cgalFigureBegin{figchbimba,chull_bimba.png}
 The convex hull of a model made of 192135 points.

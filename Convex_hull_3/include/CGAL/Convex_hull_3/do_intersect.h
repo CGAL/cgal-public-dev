@@ -271,7 +271,7 @@ struct Do_intersect_traits<K, K, Converter, true> {
 /**
 * \ingroup PkgConvexHull3Predicates
 *
-* \brief checks if the convex hulls intersect or not.
+* \brief checks whether two convex hulls intersect or not.
 *
 * Input hulls can be provided as a range of points or as a graph, and may be of different types.
 * Furthermore, when many intersection queries use the same object, one should wrap that input in the class `CGAL::Convex_hull_hierarchy` as to construct an optimized view of the convex hull and accelerate intersection tests.

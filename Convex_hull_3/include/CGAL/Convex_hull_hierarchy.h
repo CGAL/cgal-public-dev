@@ -182,7 +182,7 @@ struct Convex_hull_hierarchy{
   }
 
   /**
-  * computes the point of the convex hull whose orthogonal projection onto that direction is maximal and returns the associated vertex.
+  * returns the vertex of the convex hull whose geometric position projected onto that direction is maximal.
   * If not unique, a single vertex is returned.
   *
   * @tparam Direction must be a `Direction_3` typedef of a \cgal kernel
