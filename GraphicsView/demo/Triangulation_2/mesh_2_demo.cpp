@@ -662,7 +662,7 @@ public:
     addColorOnlyRow(layout, "Bad faces", show_bad_faces_, bad_faces_color_);
     addColorAndWidthRow(layout, "Encroached edges", show_encroached_edges_, encroached_edges_color_, encroached_edges_width_);
     addColorAndWidthRow(layout, "Clusters", show_clusters_, clusters_color_, clusters_width_);
-    
+
     setLayout(layout);
   }
 
