@@ -558,7 +558,7 @@ compare_scalar_product(const typename K::Vector_3 &a,
                        const typename K::FT &sp,
                        const K &k)
 {
-  return k.compare_scalar_product()(a, b, sp);
+  return k.compare_scalar_product_3_object()(a, b, sp);
 }
 
 template < class K >
@@ -570,7 +570,7 @@ compare_scalar_product(const typename K::Vector_3 &a,
                        const typename K::Vector_3 &d,
                        const K &k)
 {
-  return k.compare_scalar_product(a, b, c, d);
+  return k.compare_scalar_product_3_object()(a, b, c, d);
 }
 
 

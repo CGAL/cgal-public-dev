@@ -109,9 +109,9 @@ extreme_point_3(const PointRange& r, const Direction &dir, const NamedParameters
   auto vector_3 = gt.construct_vector_3_object();
   auto csp = gt.compare_scalar_product_3_object();
 
-  typename Range::const_iterator argmax=r.begin();
+  typename PointRange::const_iterator argmax=r.begin();
   Vector_3 vec_max = vector_3(ORIGIN, converter(get(point_map, *argmax)));
-  for(typename Range::const_iterator it=++r.begin(); it!=r.end(); ++it){
+  for(typename PointRange::const_iterator it=++r.begin(); it!=r.end(); ++it){
     Vector_3 vec = vector_3(ORIGIN, converter(get(point_map, *it)));
     if(csp(vec_max, dir.vector(), vec, dir.vector())==SMALLER){
       vec_max=vec;
