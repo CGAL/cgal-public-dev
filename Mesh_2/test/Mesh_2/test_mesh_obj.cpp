@@ -135,17 +135,17 @@ static int run_mesh(const Obj_data& data)
             << "  Smallest squared distance between constraint endpoints: "
             << squared_distance << "\n";
 
-  CGAL::refine_Delaunay_mesh_2(cdt, CGAL::parameters::criteria(CGAL::Delaunay_mesh_criteria_2<CDT>{}));
+  // CGAL::refine_Delaunay_mesh_2(cdt, CGAL::parameters::criteria(CGAL::Delaunay_mesh_criteria_2<CDT>{}));
 
-  // CGAL::Triangulation_conformer_2<CDT> conform(cdt);
-  // conform.init_Gabriel();
-  // auto i = 0u;
-  // while(!conform.is_conforming_done()) {
-  //   conform.try_one_step_conforming_Gabriel();
-  //   // std::string filename = "debug-conforming-gabriel-step-" + std::to_string(i) + ".vtu";
-  //   // CGAL::IO::write_VTU(filename, cdt, CGAL::IO::ASCII);
-  //   ++i;
-  // }
+  CGAL::Triangulation_conformer_2<CDT> conform(cdt);
+  conform.init_Gabriel();
+  auto i = 0u;
+  while(!conform.is_conforming_done()) {
+    conform.try_one_step_conforming_Gabriel();
+    // std::string filename = "debug-conforming-gabriel-step-" + std::to_string(i) + ".vtu";
+    // CGAL::IO::write_VTU(filename, cdt, CGAL::IO::ASCII);
+    ++i;
+  }
   std::cout << "done" << std::endl;
   CGAL::IO::write_VTU("conformed_cdt.vtu", cdt, CGAL::IO::ASCII);
   return EXIT_SUCCESS;
