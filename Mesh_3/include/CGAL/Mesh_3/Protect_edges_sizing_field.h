@@ -1119,10 +1119,10 @@ insert_balls_on_edges()
         insert_balls(vp, vq, curve_index, CGAL::POSITIVE, Emptyset_iterator());
       }
       set_treated(curve_index);
+//      std::stringstream s;
+//      s << "dump-mesh-curve-" << curve_index << ".binary.cgal";
+//      debug_dump_c3t3(s.str(), c3t3_);
     }
-    // std::stringstream s;
-    // s << "dump-mesh-curve-" << curve_index << ".binary.cgal";
-    // debug_dump_c3t3(s.str(), c3t3_);
   }
 } //end insert_balls_on_edges()
 
