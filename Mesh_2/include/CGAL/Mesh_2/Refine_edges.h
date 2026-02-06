@@ -29,10 +29,9 @@
 #include <CGAL/tags.h>
 
 #include <boost/iterator/filter_iterator.hpp>
-
 #include <boost/iterator/transform_iterator.hpp>
+
 #include <iterator>
-#include <limits>
 #include <optional>
 #include <stack>
 #include <type_traits>
@@ -625,43 +624,68 @@ protected:
               << IO::oformat(vb, With_point_tag{}) << ") = ";
     std::cerr << p << '\n';
 #endif // CGAL_MESH_2_DEBUG_REFINEMENT_POINTS
-    if constexpr(std::is_floating_point_v<FT>) {
-      Is_locally_conforming_Gabriel<Tr> is_locally_conforming_Gabriel{};
-      constexpr FT max_FT = (std::numeric_limits<FT>::max)();
-      auto ulp = [&](const FT& x) { return std::nextafter(x, max_FT) - x; };
-      auto sq_delta = 256 * CGAL::square((std::min)(ulp(p.x()), ulp(p.y())));
+    return maybe_snap_to_existing_vertex(edge, p);
+  }
 
-      typename Tr::Segment ab(this->va->point(), this->vb->point());
-      std::optional<FT> min_height_squared;
-      Vertex_handle closest_encroaching_vertex;
-      auto e = edge;
-      for(int i = 0; i < 2; ++i, e = triangulation_ref_impl().mirror_edge(e)) {
-        auto [c, index] = e;
-        if(triangulation_ref_impl().is_infinite(c))
-          continue;
-        auto cp = c->vertex(index)->point();
-        if(is_locally_conforming_Gabriel(triangulation_ref_impl(), c, index, cp))
-          continue;
-        auto height_squared = squared_distance(cp, ab);
-        if(!min_height_squared || height_squared < *min_height_squared) {
-          closest_encroaching_vertex = c->vertex(index);
-          min_height_squared = height_squared;
-        }
-      }
-      if(min_height_squared) {
-        FT edge_length_squared = squared_distance(this->va->point(), this->vb->point());
-        if(*min_height_squared * FT(10000) < edge_length_squared && *min_height_squared < sq_delta) {
-          // the angle is smaller than approx 0.5 degree, and the distance is very small
-          // so we consider that the point is aligned with ab
-#ifdef CGAL_MESH_2_DEBUG_REFINEMENT_POINTS
-          std::cerr << "return point of existing vertex " << IO::oformat(closest_encroaching_vertex, With_point_tag{})
-                    << std::endl;
-#endif // CGAL_MESH_2_DEBUG_REFINEMENT_POINTS
-          return closest_encroaching_vertex->point();
-        }
+  auto get_closest_encroaching_vertex(Edge e) const {
+    struct Result {
+      Vertex_handle vertex;
+      FT squared_distance;
+    };
+    std::optional<Result> result;
+    Is_locally_conforming_Gabriel<Tr> is_locally_conforming_Gabriel{};
+
+    for(int i = 0; i < 2; ++i, e = tr.mirror_edge(e)) {
+      auto [c, index] = e;
+      if(tr.is_infinite(c))
+        continue;
+      auto v = c->vertex(index);
+      auto p = v->point();
+      if(is_locally_conforming_Gabriel(tr, c, index, p, v))
+        continue;
+      auto va = e.first->vertex(tr.cw (e.second));
+      auto vb = e.first->vertex(tr.ccw(e.second));
+      typename Tr::Segment ab(va->point(), vb->point());
+      auto height_squared = squared_distance(p, ab);
+      if(!result || height_squared < result->squared_distance) {
+        result = Result{c->vertex(index), height_squared};
       }
     }
+    return result;
+  }
 
+  Point maybe_snap_to_existing_vertex(const Edge& edge, Point p) const {
+    if constexpr(std::is_floating_point_v<FT>) {
+      auto cstr_bbox = tr.geom_traits().construct_bbox_2_object();
+      auto do_intersect = tr.geom_traits().do_intersect_2_object();
+      auto va = edge.first->vertex(tr.cw (edge.second));
+      auto vb = edge.first->vertex(tr.ccw(edge.second));
+
+      auto closest_encroaching_vertex = get_closest_encroaching_vertex(edge);
+      if(!closest_encroaching_vertex) {
+        return p;
+      }
+      FT edge_length_squared = squared_distance(va->point(), vb->point());
+      if(closest_encroaching_vertex->squared_distance * FT(10000) > edge_length_squared) {
+        return p;
+      }
+
+      // here, the angle is smaller than approx 0.5 degree, and the distance is very small
+      // so we consider that the point is aligned with ab
+
+      auto bbox = cstr_bbox(closest_encroaching_vertex->vertex->point());
+      bbox.dilate(4);
+      if(do_intersect(bbox, typename Tr::Segment(va->point(), vb->point()))
+         )
+      {
+#ifdef CGAL_MESH_2_DEBUG_REFINEMENT_POINTS
+        std::cerr << "return point of existing vertex "
+                  << IO::oformat(closest_encroaching_vertex->vertex, With_point_tag{}) << std::endl;
+  #endif // CGAL_MESH_2_DEBUG_REFINEMENT_POINTS
+        p = closest_encroaching_vertex->vertex->point();
+        return p;
+      }
+    }
     return p;
   }
 

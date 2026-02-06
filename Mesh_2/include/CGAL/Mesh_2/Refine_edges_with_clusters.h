@@ -120,19 +120,21 @@ public:
           std::cerr << "midpoint(" << IO::oformat(this->va, With_point_tag{})
                     << " , " << IO::oformat(this->vb, With_point_tag{}) << ")\n";
 #endif // CGAL_MESH_2_DEBUG_CLUSTERS
-          return display_return_point(midpoint(this->va->point(), this->vb->point()));
-        }
-      else {
+          return display_return_point(
+              this->maybe_snap_to_existing_vertex(edge, midpoint(this->va->point(), this->vb->point())));
+      } else {
         // va only is a cluster
         va_has_a_cluster = true;
-        return display_return_point(split_cluster_point(this->va,this->vb,ca));
+        return display_return_point(
+            this->maybe_snap_to_existing_vertex(edge, split_cluster_point(this->va, this->vb, ca)));
       }
     } else
     if( clusters.get_cluster(this->vb,this->va,cb,cb_it) ){
       // vb only is a cluster
       vb_has_a_cluster = true;
-      return display_return_point(split_cluster_point(this->vb,this->va,cb));
-    }else{
+      return display_return_point(
+          this->maybe_snap_to_existing_vertex(edge, split_cluster_point(this->vb, this->va, cb)));
+    } else {
       // no cluster
 
 #ifdef CGAL_MESH_2_DEBUG_CLUSTERS
