@@ -187,6 +187,7 @@ public:
     Subdomain_index, Surface_patch_index>::type           Index;
 
 #ifdef DOXYGEN_RUNNING
+  /// @brief Type of indexes to characterize the lowest dimensional face of the input
   typedef std::variant<Subdomain_index, Surface_patch_index> Index;
 #endif
 
