@@ -183,10 +183,10 @@ public:
 
   // Type of indexes to characterize the lowest dimensional face of the input
   // complex on which a vertex lie
+#ifndef DOXYGEN_RUNNING
   typedef typename Mesh_3::internal::Index_generator<
     Subdomain_index, Surface_patch_index>::type           Index;
-
-#ifdef DOXYGEN_RUNNING
+#else
   /// @brief Type of indexes to characterize the lowest dimensional face of the input
   typedef std::variant<Subdomain_index, Surface_patch_index> Index;
 #endif
