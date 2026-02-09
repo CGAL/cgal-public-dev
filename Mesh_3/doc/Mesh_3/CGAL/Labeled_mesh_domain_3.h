@@ -1,5 +1,6 @@
 namespace CGAL {
 
+
 /*!
 \ingroup PkgMesh3Domains
 
@@ -34,21 +35,9 @@ intersection tests and intersection computations
 through a bisection method. This parameter must be instantiated
 with a model of the concept `BisectionGeometricTraits_3`.
 
-\cgalHeading{Labeling function}
+\tparam SubdomainIndex is the type of the indices of the subdomains.
+\tparam SurfacePatchIndex is the type of the indices of the surface patches.
 
-A labeling function `f` must return `0` if the point isn't located in any subdomain. The return type of labeling functions is an integer.
-
-Let `p` be a Point.
-<ul>
-<li>`f(p)=0` means that `p` is outside domain.</li>
-<li>`f(p)=a`, `a!=0` means that `p` is inside subdomain `a`.</li>
-</ul>
-`CGAL::Implicit_multi_domain_to_labeling_function_wrapper` is a good candidate for this template parameter
-if there are several components to mesh.
-
-The function type can be any model of the concept `Callable` compatible with the signature
-`Subdomain_index(const %Point_3&)`: it can be a function, a function object, a lambda expression...
-that takes a `%Point_3` as argument, and returns a type convertible to `Subdomain_index`.
 
 \cgalModels{MeshDomain_3}
 
@@ -57,9 +46,9 @@ that takes a `%Point_3` as argument, and returns a type convertible to `Subdomai
 
 */
 template<class BGT,
-         class Subdomain_index_ = int,
-         class Surface_patch_index_ = std::pair<Subdomain_index_,
-                                                Subdomain_index_> >
+         class SubdomainIndex_ = int,
+         class SurfacePatchIndex_ = std::pair<SubdomainIndex_,
+                                              SubdomainIndex_> >
 class Labeled_mesh_domain_3
 {
 public:
@@ -71,20 +60,34 @@ public:
 ///@{
   /// The subdomain index of this model of `MeshDomain_3`
   typedef Subdomain_index_                  Subdomain_index;
+
+   /// \anchor Mesh3Labeling_function
   /// The type of object that stores the function using type-erasure.
+  /// A labeling function `f` must return `0` if the point is not located in any subdomain. The return type of labeling functions is an integer.
+///
+/// Let `p` be a point.
+/// <ul>
+/// <li>`f(p)=0` means that `p` is outside domain.</li>
+/// <li>`f(p)=a`, `a!=0` means that `p` is inside subdomain `a`.</li>
+/// </ul>
+///
+/// The function type can be any model of the concept `Callable` compatible with the signature
+/// `Subdomain_index(const %Point_3&)`: it can be a function, a function object, a lambda expression...
+/// that takes a `%Point_3` as argument, and returns a type convertible to `Subdomain_index`.
+
   typedef std::function< Subdomain_index(const Point_3 &)> Labeling_function;
 ///@}
 
 /// \name Types imported from the geometric traits class
 ///@{
   /// The point type of the geometric traits class
-  typedef typename Geom_traits::Point_3      Point_3;
+  typedef typename BGT::Point_3      Point_3;
   /// The sphere type of the geometric traits class
-  typedef typename Geom_traits::Sphere_3     Sphere_3;
+  typedef typename BGT::Sphere_3     Sphere_3;
   /// The iso-cuboid type of the geometric traits class
-  typedef typename Geom_traits::Iso_cuboid_3 Iso_cuboid_3;
+  typedef typename BGT::Iso_cuboid_3 Iso_cuboid_3;
   /// The number type (a field type) of the geometric traits class
-  typedef typename Geom_traits::FT           FT;
+  typedef typename BGT::FT           FT;
 ///@}
 
 
@@ -92,10 +95,11 @@ public:
 /// @{
   /*!  \brief Construction from a function, a bounding object and a relative error bound.
    *
-   * \tparam Function a type compatible with `Labeling_function`
+   * \tparam Function a type compatible with \ref Mesh3Labeling_function "Labeling_function".
+   *   `CGAL::Implicit_multi_domain_to_labeling_function_wrapper` is a good candidate for this template parameter
+   *   if there are several components to mesh.
    * \tparam NamedParameters a sequence of \ref bgl_namedparameters "Named Parameters"
-   * \tparam Bounding_object either a bounding sphere (of type `Sphere_3`), a bounding box (type `Bbox_3`),
-   *                         or a bounding `Iso_cuboid_3`
+   * \tparam BoundingObject either a bounding sphere (of type `Sphere_3`), a bounding box (type `Bbox_3` or `Iso_cuboid_3`)
    *
    * \param function the labeling function
    * \param bounding_object the bounding object bounding the meshable space.
@@ -310,8 +314,8 @@ public:
    * \tparam Function a type compatible with the signature `FT(Point_3)`: it takes a point as argument,
    *                  and returns a scalar value. That object must be model of `CopyConstructible`
    * \tparam NamedParameters a sequence of \ref bgl_namedparameters "Named Parameters"
-   * \tparam Bounding_object either a bounding sphere (of type `Sphere_3`), a bounding box (type `Bbox_3`),
-   *                         or a bounding `Iso_cuboid_3` which is required to circumscribe
+   * \tparam BoundingObject either a bounding sphere (of type `Sphere_3`), a bounding box
+   *         (type `Bbox_3` or `Iso_cuboid_3`) which is required to circumscribe
    *                         the surface and to have its center inside the domain.
    *
    * \param function the implicit function
@@ -337,9 +341,9 @@ public:
    * \snippet Mesh_3/mesh_implicit_sphere_variable_size.cpp Domain creation
    *
    */
-  template<typename Function, typename Bounding_object, typename CGAL_NP_TEMPLATE_PARAMETERS>
+  template<typename Function, typename BoundingObject, typename CGAL_NP_TEMPLATE_PARAMETERS>
   static Labeled_mesh_domain_3 create_implicit_mesh_domain(const Function& function,
-                                                           const Bounding_object& bounding_object,
+                                                           const BoundingObject& bounding_object,
                                                            const CGAL_NP_CLASS& np = parameters::default_values());
 /// @}
   /*
@@ -369,9 +373,9 @@ public:
   }
 
   /*
-   * Returns true if point `p` is in the domain. If `p` is in the
+   * Returns `true` if point `p` is in the domain. If `p` is in the
    *  domain, the parameter index is set to the index of the subdomain
-   *  including $p$. It is set to the default value otherwise.
+   *  including `p`. It is set to the default value otherwise.
    */
   struct Is_in_domain
   {
