@@ -46,9 +46,9 @@ with a model of the concept `BisectionGeometricTraits_3`.
 
 */
 template<class BGT,
-         class SubdomainIndex_ = int,
-         class SurfacePatchIndex_ = std::pair<SubdomainIndex_,
-                                              SubdomainIndex_> >
+         class SubdomainIndex = int,
+         class SurfacePatchIndex = std::pair<SubdomainIndex_,
+                                            SubdomainIndex_> >
 class Labeled_mesh_domain_3
 {
 public:
