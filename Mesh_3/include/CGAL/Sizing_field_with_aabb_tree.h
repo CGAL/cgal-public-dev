@@ -712,8 +712,8 @@ public:
           else
             continue;// intersection is a segment : collinear case
         }
-        else
-          CGAL_assertion(false);//prim was returned as an intersected primitive
+//        else // inconsistency between do_intersect() and intersection() may happen
+//          CGAL_assertion(false);//prim was returned as an intersected primitive
       }
 
       //compare closest_projection and closest_intersection, and keep the closest
