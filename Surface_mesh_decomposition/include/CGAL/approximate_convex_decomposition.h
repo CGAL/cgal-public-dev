@@ -58,6 +58,7 @@ enum Grid_cell : int8_t {
   INSIDE = 1
 };
 
+inline
 void export_grid(const std::string& filename, const Bbox_3& bb, std::vector<int8_t>& grid, const Vec3_uint& grid_size, double voxel_size) {
   const auto vox = [&grid, &grid_size](unsigned int x, unsigned int y, unsigned int z) -> int8_t& {
     return grid[z + (y * grid_size[2]) + (x * grid_size[1] * grid_size[2])];
@@ -206,6 +207,7 @@ void export_grid_voxels(const std::string& filename, const Bbox_3& bb, std::vect
   stream.close();
 }
 
+inline
 void export_voxels(const std::string& filename, const Bbox_3& bb, std::vector<Vec3_uint>& voxels, double voxel_size) {
   std::ofstream stream(filename);
 
