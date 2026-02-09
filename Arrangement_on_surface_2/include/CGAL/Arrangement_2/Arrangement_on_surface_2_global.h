@@ -1113,13 +1113,9 @@ bool is_valid(const Arrangement_on_surface_2<GeometryTraits_2, TopologyTraits>& 
   // Arrangement types (iterator and circulator types).
   using Arr = Arrangement_on_surface_2<Gt2, Tt>;
   using Allocator = typename Arr::Allocator;
-  using Edge_const_iterator = typename Arr::Edge_const_iterator;
   using Halfedge_const_handle = typename Arr::Halfedge_const_handle;
-  using Inner_ccb_const_iterator = typename Arr::Inner_ccb_const_iterator;
-  using Face_const_iterator = typename Arr::Face_const_iterator;
   using Face_const_handle = typename Arr::Face_const_handle;
   using Vertex_const_handle = typename Arr::Vertex_const_handle;
-  using Isolated_vertex_const_iterator = typename Arr::Isolated_vertex_const_iterator;
   using Halfedge_around_vertex_const_circulator = typename Arr::Halfedge_around_vertex_const_circulator;
 
   using X_monotone_curve_2 = typename Gt2::X_monotone_curve_2;
