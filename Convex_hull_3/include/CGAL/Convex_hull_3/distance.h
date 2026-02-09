@@ -409,7 +409,7 @@ struct Separation_distance_functor{
 template <class Convex_1, class Convex_2,
           class NamedParameters_1 = parameters::Default_named_parameters,
           class NamedParameters_2 = parameters::Default_named_parameters>
-typename internal::GetGeomTraitsFromConvex<Convex1, NamedParameters_1>::type::FT
+typename internal::GetGeomTraitsFromConvex<Convex_1, NamedParameters_1>::type::FT
 separation_distance(const Convex_1& c1, const Convex_2& c2,
                     const NamedParameters_1& np1 = parameters::default_values(),
                     const NamedParameters_2& np2 = parameters::default_values()){
