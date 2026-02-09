@@ -12,7 +12,7 @@ Any boundary facet is labeled <a,b>, with a<b, where a and b are the
 tags of its incident subdomains.
 Thus, a boundary facet of the domain is labeled <0,b>, where b!=0.
 
-This class includes a <em>labeling function</em> that provides the index of the subdomain in which any
+This class includes a \link Mesh3Labeling_function <em>labeling function</em> \endlink that provides the index of the subdomain in which any
 query point lies. An intersection between a segment and bounding
 surfaces is detected when both segment endpoints are associated with different
 values of subdomain indices. The intersection is then constructed by bisection.
@@ -47,8 +47,8 @@ with a model of the concept `BisectionGeometricTraits_3`.
 */
 template<class BGT,
          class SubdomainIndex = int,
-         class SurfacePatchIndex = std::pair<SubdomainIndex_,
-                                            SubdomainIndex_> >
+         class SurfacePatchIndex = std::pair<SubdomainIndex,
+                                            SubdomainIndex> >
 class Labeled_mesh_domain_3
 {
 public:
