@@ -73,7 +73,6 @@
 #include <QMenuBar>
 #include <QMessageBox>
 #include <QObject>
-#include <QOverload>
 #include <QPainter>
 #include <QPalette>
 #include <QPushButton>
