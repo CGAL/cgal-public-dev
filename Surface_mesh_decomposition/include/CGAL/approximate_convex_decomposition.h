@@ -350,6 +350,7 @@ typename GeomTraits::Iso_cuboid_3 bbox_voxel_bbox(const Bbox_uint& voxelbb, cons
   );
 }
 
+inline
 void scanline_floodfill(Grid_cell label, std::vector<int8_t>& grid, const Vec3_uint& grid_size, std::deque<Vec3_uint>& todo) {
   const auto vox = [&grid, &grid_size](unsigned int x, unsigned int y, unsigned int z) -> int8_t& {
     return grid[z + (y * grid_size[2]) + (x * grid_size[1] * grid_size[2])];
@@ -466,6 +467,7 @@ void scanline_floodfill(Grid_cell label, std::vector<int8_t>& grid, const Vec3_u
 }
 
 // Valid voxel grids separate OUTSIDE from INSIDE via SURFACE
+inline
 bool is_valid(std::vector<int8_t>& grid, const Vec3_uint& grid_size) {
   const auto vox = [&grid, &grid_size](unsigned int x, unsigned int y, unsigned int z) -> int8_t& {
     return grid[z + (y * grid_size[2]) + (x * grid_size[1] * grid_size[2])];
@@ -517,6 +519,7 @@ bool is_valid(std::vector<int8_t>& grid, const Vec3_uint& grid_size) {
 }
 
 // Only works for closed meshes
+inline
 void label_floodfill(std::vector<int8_t>& grid, const Vec3_uint& grid_size) {
   // Walk around boundary and start floodfill when voxel label is INSIDE
   const auto vox = [&grid, &grid_size](unsigned int x, unsigned int y, unsigned int z) -> int8_t& {
@@ -568,6 +571,7 @@ void label_floodfill(std::vector<int8_t>& grid, const Vec3_uint& grid_size) {
     }
 }
 
+inline
 void naive_floodfill(std::vector<int8_t>& grid, const Vec3_uint& grid_size) {
   const auto vox = [&grid, &grid_size](unsigned int x, unsigned int y, unsigned int z) -> int8_t& {
     return grid[z + (y * grid_size[2]) + (x * grid_size[1] * grid_size[2])];
@@ -803,6 +807,7 @@ typename GeomTraits::FT volume(const std::vector<typename GeomTraits::Point_3> &
   return vol;
 }
 
+inline
 void enlarge(Bbox_uint& bbox, const Vec3_uint& v) {
   bbox.lower[0] = (std::min<unsigned int>)(bbox.lower[0], v[0]);
   bbox.lower[1] = (std::min<unsigned int>)(bbox.lower[1], v[1]);
@@ -991,6 +996,7 @@ void split(std::vector<Candidate_> &candidates, Candidate_& c, unsigned int axis
     candidates.emplace_back(std::move(lower));
 }
 
+inline
 std::size_t concavity(const Vec3_uint& s, const Vec3_uint& e, int axis, std::vector<int8_t>& grid, const Vec3_uint& grid_size) {
   const auto vox = [&grid, &grid_size](const Vec3_uint &v) -> int8_t& {
     return grid[v[2] + (v[1] * grid_size[2]) + (v[0] * grid_size[1] * grid_size[2])];
@@ -1020,6 +1026,7 @@ std::size_t concavity(const Vec3_uint& s, const Vec3_uint& e, int axis, std::vec
   return (i - s[axis]) + (e[axis] - j);
 }
 
+inline
 void choose_splitting_location_by_concavity(unsigned int& axis, unsigned int& location, const Bbox_uint &bbox, std::vector<int8_t>& grid, const Vec3_uint& grid_size) {
   std::size_t length = bbox.upper[axis] - bbox.lower[axis] + 1;
 
