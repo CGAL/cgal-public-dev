@@ -186,6 +186,10 @@ public:
   typedef typename Mesh_3::internal::Index_generator<
     Subdomain_index, Surface_patch_index>::type           Index;
 
+#ifdef DOXYGEN_RUNNING
+  typedef std::variant<Subdomain_index, Surface_patch_index> Index;
+#endif
+
   typedef std::tuple<Point_3,Index,int> Intersection;
 
   typedef typename IGT::FT         FT;
@@ -375,7 +379,7 @@ public:
   /**
    * constructs a set of `n` points on the surface, and output them to
    *  the output iterator `pts` whose value type is required to be
-   *  `std::pair<Points_3, Index>`.
+   *  `std::pair<Point_3, %Index>`.
    */
   struct Construct_initial_points
   {

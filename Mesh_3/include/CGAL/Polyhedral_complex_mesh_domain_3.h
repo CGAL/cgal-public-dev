@@ -74,7 +74,7 @@ If the domain has sub-domains, each one must be the union of one or many
 connected components of the complement of the 2D surface. The sub-domains
 have indices, of integral type `Subdomain_index`, and the exterior of the
 mesh domain is associated with the subdomain index `0`, like for any mesh
-domain in CGAL.
+domain in \cgal.
 
 Each polyhedral surface is oriented, and has two sides. The positive side
 is union of the positive side of all of its facets, usually named the
