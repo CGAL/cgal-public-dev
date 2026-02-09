@@ -1159,7 +1159,7 @@ public:
 
       const std::size_t zero{0};
       const std::size_t one{1};
-      const std::size_t mone{-1};
+      const std::size_t mone(-1);
       auto [f1, l1, d1] = (dir1 == SMALLER) ? std::make_tuple(zero, n1-1, one) : std::make_tuple(n1-1, zero, mone);
       auto [f2, l2, d2] = (dir2 == SMALLER) ? std::make_tuple(zero, n2-1, one) : std::make_tuple(n2-1, zero, mone);
 
