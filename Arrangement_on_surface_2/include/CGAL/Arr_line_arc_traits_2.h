@@ -38,6 +38,9 @@
 #include <CGAL/Arr_tags.h>
 #include <CGAL/global_functions_circular_kernel_2.h>
 
+#include <list>
+#include <variant>
+
 namespace CGAL {
 
 // Traits class for CGAL::Arrangement_2 (and similar) based on a
@@ -139,7 +142,7 @@ public:
       using Intersection_point = std::pair<Point_2, Multiplicity>;
       using Intersection_result = std::variant<Intersection_point, X_monotone_curve_2>;
       std::list<Intersection_result> intersections;
-      m_traits.intersect_2_object()(xcv1, xcv2, back_inserter(intersections));
+      m_traits.intersect_2_object()(xcv1, xcv2, std::back_inserter(intersections));
       if (consider_common_endpoints) return ! intersections.empty();
 
       // Check whether the open curves intersect
