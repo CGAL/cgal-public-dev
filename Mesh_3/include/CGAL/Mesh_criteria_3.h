@@ -288,7 +288,7 @@ typedef Mesh_cell_criteria_3<Tr> Cell_criteria;
  *   \cgalParamNEnd
  *   \cgalParamNBegin{facet_topology}
  *     \cgalParamDescription{the set of topological constraints
- *                           which have to be verified by each surface facet. See `Mesh_facet_topology` manual page to
+ *                           which have to be verified by each surface facet. See `CGAL::Mesh_facet_topology` manual page to
  *                           get all possible values.}
  *     \cgalParamDefault{CGAL::FACET_VERTICES_ON_SURFACE}
  *   \cgalParamNEnd
