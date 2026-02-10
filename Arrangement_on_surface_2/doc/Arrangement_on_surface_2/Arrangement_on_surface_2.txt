@@ -3281,8 +3281,8 @@ see Section \ref aos_sssec-tr_landmarks_concept.
 
 <DT>\link AosBasicTraits_2::Equal_2 <B>`Equal_2`</B>\endlink:
 <DD>There are two overloaded Boolean operators that test equality. One
-  returns true iff two given points represent the same geometric point
-  in the two-dimensional surface, and the second returns true iff the
+  returns `true` iff two given points represent the same geometric point
+  in the two-dimensional surface, and the second returns `true` iff the
   graphs of two given \f$x\f$-monotone curves are the
   same.\cgalFootnote{The predicate that tests equality between graphs
   of two \f$x\f$-monotone curves is used only for testing as part of
