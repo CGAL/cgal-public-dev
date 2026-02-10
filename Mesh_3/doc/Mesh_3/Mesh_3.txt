@@ -21,8 +21,8 @@ and/or subdivided in several subdomains.
 
 Boundary and subdivision surfaces are either
 smooth or piecewise smooth surfaces, formed with planar or curved surface patches.
-Surfaces may exhibit 1-dimensional features (e.g. crease edges)
-and 0-dimensional features (e.g. singular points as corners
+Surfaces may exhibit 1-dimensional features (e.g., crease edges)
+and 0-dimensional features (e.g., singular points as corners
 tips, cusps or darts), that have to be fairly
 approximated in the mesh.
 
