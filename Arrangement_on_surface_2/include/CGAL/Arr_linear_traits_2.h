@@ -981,20 +981,8 @@ public:
       return false;
     }
 
-    //! Line---ray
-    bool do_intersect(const Line_2& line1, const Ray_2& ray2, bool /* consider_common_endpoints */ = true) const {
-      const Kernel& kernel = m_traits;
-      return kernel.do_intersect_2_object()(line1, ray2);
-    }
-
-    //! Line---seg
-    bool do_intersect(const Line_2& line1, const Segment_2& seg2, bool /* consider_common_endpoints */ = true) const {
-      const Kernel& kernel = m_traits;
-      return kernel.do_intersect_2_object()(line1, seg2);
-    }
-
     //! ray---ray
-    bool do_intersect(const Ray_2& ray1, const Ray_2& ray2, bool consider_common_endpoints = true) const {
+    bool do_intersect_rr(const Ray_2& ray1, const Ray_2& ray2, bool consider_common_endpoints = true) const {
       //! \todo Optimize to enable the use of EPIC
       const Kernel& kernel = m_traits;
       if (consider_common_endpoints) return kernel.do_intersect_2_object()(ray1, ray2);
@@ -1002,7 +990,7 @@ public:
    }
 
     //! ray---segment
-    bool do_intersect(const Ray_2& ray1, const Segment_2& seg2, bool consider_common_endpoints = true) const {
+    bool do_intersect_rs(const Ray_2& ray1, const Segment_2& seg2, bool consider_common_endpoints = true) const {
       //! \todo Optimize to enable the use of EPIC
       const Kernel& kernel = m_traits;
       if (consider_common_endpoints) return kernel.do_intersect_2_object()(ray1, seg2);
@@ -1010,15 +998,17 @@ public:
    }
 
     //! segment---segment
-    bool do_intersect(const Segment_2& seg1, const Segment_2& seg2, bool consider_common_endpoints = true) const
+    bool do_intersect_ss(const Segment_2& seg1, const Segment_2& seg2, bool consider_common_endpoints = true) const
     { return Aos_2::internal::do_segment_intersect(seg1, seg2, consider_common_endpoints, m_traits); }
 
-    //
-    bool do_intersect(Line_2& line1, const X_monotone_curve_2& xcv2, bool consider_common_endpoints = true) const {
+    /*! Detect intersections between a line an an \f$x\f$-monotone curve.
+     * A line is open by definition; thus, `consider_common_endpoints` is irrelevant.
+     */
+    bool do_intersect(Line_2& line1, const X_monotone_curve_2& xcv2, bool /* consider_common_endpoints */ = true) const {
       const Kernel& kernel = m_traits;
       if (xcv2.is_segment()) {
         Segment_2 seg2 = xcv2.segment();
-        return do_intersect(line1, seg2, consider_common_endpoints);
+        return kernel.do_intersect_2_object()(line1, seg2);
       }
       if (xcv2.is_line()) {
         Line_2 line2 = xcv2.line();
@@ -1026,37 +1016,39 @@ public:
       }
       CGAL_assertion(xcv2.is_ray());
       Ray_2 ray2 = xcv2.ray();
-      return do_intersect(line1, ray2, consider_common_endpoints);
+      return kernel.do_intersect_2_object()(line1, ray2);
     }
 
     //
     bool do_intersect(Ray_2& ray1, const X_monotone_curve_2& xcv2, bool consider_common_endpoints = true) const {
       if (xcv2.is_segment()) {
         Segment_2 seg2 = xcv2.segment();
-        return do_intersect(ray1, seg2, consider_common_endpoints);
+        return do_intersect_rs(ray1, seg2, consider_common_endpoints);
       }
       if (xcv2.is_line()) {
+        const Kernel& kernel = m_traits;
         Line_2 line2 = xcv2.line();
-        return do_intersect(line2, ray1, consider_common_endpoints);
+        return kernel.do_intersect_2_object()(line2, ray1);
       }
       CGAL_assertion(xcv2.is_ray());
       Ray_2 ray2 = xcv2.ray();
-      return do_intersect(ray1, ray2, consider_common_endpoints);
+      return do_intersect_rr(ray1, ray2, consider_common_endpoints);
     }
 
     //
     bool do_intersect(Segment_2& seg1, const X_monotone_curve_2& xcv2, bool consider_common_endpoints = true) const {
       if (xcv2.is_segment()) {
         Segment_2 seg2 = xcv2.segment();
-        return do_intersect(seg1, seg2, consider_common_endpoints);
+        return do_intersect_ss(seg1, seg2, consider_common_endpoints);
       }
       if (xcv2.is_line()) {
+        const Kernel& kernel = m_traits;
         Line_2 line2 = xcv2.line();
-        return do_intersect(line2, seg1, consider_common_endpoints);
+        return kernel.do_intersect_2_object()(line2, seg1);
       }
       CGAL_assertion(xcv2.is_ray());
       Ray_2 ray2 = xcv2.ray();
-      return do_intersect(ray2, seg1, consider_common_endpoints);
+      return do_intersect_rs(ray2, seg1, consider_common_endpoints);
     }
 
   public:
