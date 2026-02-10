@@ -26,7 +26,7 @@
 
 /// \defgroup PkgMesh3Functions Mesh Generation Functions
 /// \ingroup PkgMesh3Ref
-/// The two main functions to generate a mesh are `make_mesh_3()` and `refine_mesh_3()`.
+/// The two main functions to generate a mesh are `CGAL::make_mesh_3()` and `CGAL::refine_mesh_3()`.
 /// The other functions enable to optimize an existing mesh.
 
 /// \defgroup PkgMesh3Initializers Mesh Initialization Functors
@@ -108,6 +108,7 @@ and their associated classes:
 - `CGAL::Mesh_domain_with_polyline_features_3<MD>`
 - `CGAL::Mesh_polyhedron_3<IGT>`
 - `CGAL::Implicit_multi_domain_to_labeling_function_wrapper<Function>`
+- `CGAL::Image_3`
 
 The following functors are available for feature detection:
 
