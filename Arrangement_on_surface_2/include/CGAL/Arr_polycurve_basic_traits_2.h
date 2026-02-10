@@ -1141,7 +1141,6 @@ public:
        * maximum performance (while considering or ignoring common endpoints).
        */
       const Subcurve_traits_2* geom_traits = m_poly_traits.subcurve_traits_2();
-      auto cmp_y_at_x = m_poly_traits.compare_y_at_x_2_object();
       auto do_intersect = geom_traits->do_intersect_2_object();
       auto cmp_endpts = geom_traits->compare_endpoints_xy_2_object();
       auto cmp_xy = m_poly_traits.compare_xy_2_object();
@@ -2440,8 +2439,7 @@ public:
       auto trim = geom_traits->trim_2_object();
 
       //check whether src and tgt lies on the polycurve/polycurve.
-      CGAL_precondition_code
-        (auto cmp_y_at_x_2 = m_poly_traits.compare_y_at_x_2_object());
+      CGAL_precondition_code(auto cmp_y_at_x_2 = m_poly_traits.compare_y_at_x_2_object());
       CGAL_precondition(cmp_y_at_x_2(source, xcv) == EQUAL);
       CGAL_precondition(cmp_y_at_x_2(target, xcv) == EQUAL);
 
@@ -2455,11 +2453,10 @@ public:
        * right or if the curve is oriented from left to right but points are
        * from right to left, reverse.
        */
-      auto [src, trg] =
-        (((m_poly_traits.compare_endpoints_xy_2_object()(xcv) == LARGER) &&
-          (m_poly_traits.compare_x_2_object()(source, target) == SMALLER)) ||
-         ((m_poly_traits.compare_endpoints_xy_2_object()(xcv) == SMALLER) &&
-          (m_poly_traits.compare_x_2_object()(source, target) == LARGER))) ?
+      auto [src, trg] = (((m_poly_traits.compare_endpoints_xy_2_object()(xcv) == LARGER) &&
+                          (m_poly_traits.compare_x_2_object()(source, target) == SMALLER)) ||
+                         ((m_poly_traits.compare_endpoints_xy_2_object()(xcv) == SMALLER) &&
+                          (m_poly_traits.compare_x_2_object()(source, target) == LARGER))) ?
         std::make_tuple(target, source) : std::make_tuple(source, target);
 
       // std::cout << "**************the new source: " << source
