@@ -807,17 +807,6 @@ smart_insert_point(const Bare_point& p, Weight w, int dim, const Index& index, V
 
   const Weighted_point wp0 = cwp(p); // with weight 0, used for locate()
 
-#ifdef DEBUG_NAN_POINTS
-  if(bbox_of_domain.has_on_unbounded_side(p))
-  {
-    std::cout << "Warning: Point " << p << " is outside the bounding box of the domain." << std::endl;
-    std::cout << "         Bbox is " << bbox_of_domain << std::endl;
-    debug_dump_c3t3("dump-before-insert-point-outside-bbox.binary.cgal", c3t3_);
-
-    exit(EXIT_FAILURE);
-  }
-#endif
-
   Cell_handle ch = Cell_handle();
   if(tr.dimension() > 2)
   {
