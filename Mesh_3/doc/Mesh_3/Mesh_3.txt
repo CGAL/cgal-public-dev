@@ -710,8 +710,8 @@ The domain is therefore a multi-domain
 where each subdomain corresponds to a specific tissue.
 
 In the following example, the image is read from the file
-`liver.inr.gz` which is encoded in the format of the library Inrimage
-`https://www-pequan.lip6.fr/~bereziat/inrimage/`.
+`liver.inr.gz` which is encoded in the format of the
+<a href="https://gitlab.lip6.fr/inrimage/inrimage">InrImage library</a>.
 The resulting mesh is shown in \cgalFigureRef{figureliver_3d_image_mesh}.
 
 \cgalExample{Mesh_3/mesh_3D_image.cpp}
