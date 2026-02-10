@@ -189,7 +189,7 @@ bool read_xcurves(std::ifstream& inp, X_monotone_curves& xcurves, const Traits& 
 
 template <typename Curves_, typename Ctr>
 bool read_curves_(std::ifstream& inp, Curves_& curves, const Traits& traits, const Ctr& ctr) {
-  int count;
+  std::size_t count;
   inp >> skip_comment >> count;
   // std::cout << "read_curves " << count << "\n";
   for (std::size_t i = 0; i < count; ++i) {
