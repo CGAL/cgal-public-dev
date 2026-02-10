@@ -1751,7 +1751,7 @@ private:
   }
 
   /**
-   * Returns false if there is a vertex belonging to one facet of `facets`
+   * Returns `false` if there is a vertex belonging to one facet of `facets`
    * which has not his dimension < 3
    */
   bool check_no_inside_vertices(const Facet_vector& facets) const;

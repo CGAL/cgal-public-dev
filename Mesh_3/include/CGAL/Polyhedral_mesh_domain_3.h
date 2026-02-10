@@ -188,7 +188,7 @@ public:
     Subdomain_index, Surface_patch_index>::type           Index;
 #else
   /// @brief Type of indexes to characterize the lowest dimensional face of the input
-  typedef std::variant<Subdomain_index, Surface_patch_index> Index;
+  typedef unspecified_type Index;
 #endif
 
   typedef std::tuple<Point_3,Index,int> Intersection;

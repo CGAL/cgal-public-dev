@@ -181,7 +181,7 @@ Model of `::Kernel::HasOnBoundedSide_3`.
 
 That function object must provide the operator:
 - `bool operator()(Sphere_3 s, Point_3 p)` which
-returns true iff `p` lies on the bounded side of `s`.
+returns `true` iff `p` lies on the bounded side of `s`.
 */
 typedef unspecified_type Has_on_bounded_side_3;
 
