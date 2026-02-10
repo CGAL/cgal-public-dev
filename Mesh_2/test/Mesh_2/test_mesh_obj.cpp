@@ -140,12 +140,12 @@ static int run_mesh(const Obj_data& data)
 
   CGAL::Triangulation_conformer_2<CDT> conform(cdt);
   conform.init_Gabriel();
-  auto i = 0u;
+  // auto i = 0u;
   while(!conform.is_conforming_done()) {
     conform.try_one_step_conforming_Gabriel();
     // std::string filename = "debug-conforming-gabriel-step-" + std::to_string(i) + ".vtu";
     // CGAL::IO::write_VTU(filename, cdt, CGAL::IO::ASCII);
-    ++i;
+    // ++i;
   }
   CGAL_assertion(cdt.is_valid(true));
   std::cout << "done" << std::endl;
