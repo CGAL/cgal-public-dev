@@ -31,7 +31,9 @@
 <link href="$relpath^../Manual/search/search.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="$relpath^../Manual/search/searchdata.js"></script>
 <script type="text/javascript" src="$relpath^../Manual/search/search.js"></script>
-<link href="$relpath^../Manual/search/search.css" rel="stylesheet" type="text/css"/>
+<script type="text/javascript">
+document.addEventListener('DOMContentLoaded', init_search);
+</script>
 <!-- Manually done below. -->
 <link href="$relpath^../Manual/$stylesheet" rel="stylesheet" type="text/css" />
 <link href="$relpath$../Manual/cgal_stylesheet.css" rel="stylesheet" type="text/css" />
@@ -60,19 +62,15 @@ $extrastylesheet
        insertion. That's why we have to do it manually here. Notice
        that we also take pngs from the Manual. -->
   <div id="MSearchBox" class="MSearchBoxInactive">
-      <span class="left">
-         <span id="MSearchSelect"
-               onmouseover="return searchBox.OnSearchSelectShow()"
-               onmouseout="return searchBox.OnSearchSelectHide()">&#160;
-        </span>
+    <span class="left">
+      <span id="MSearchSelect" class="search-icon" onmouseover="return searchBox.OnSearchSelectShow()" onmouseout="return searchBox.OnSearchSelectHide()"><span class="search-icon-dropdown"></span></span>
         <input type="text" id="MSearchField" value="" placeholder="Search" accesskey="S"
-               onfocus="searchBox.OnSearchFieldFocus(true)"
-               onblur="searchBox.OnSearchFieldFocus(false)"
-               onkeyup="searchBox.OnSearchFieldChange(event)"/>
-      </span>
-      <span class="right">
-            <a id="MSearchClose" href="javascript:searchBox.CloseResultsWindow()"><img id="MSearchCloseImg" border="0" src="$relpath^../Manual/search/close.svg" alt=""/></a>
-      </span>
+          onfocus="searchBox.OnSearchFieldFocus(true)" 
+          onblur="searchBox.OnSearchFieldFocus(false)" 
+          onkeyup="searchBox.OnSearchFieldChange(event)"/>
+    </span><span class="right">
+      <a id="MSearchClose" href="javascript:searchBox.CloseResultsWindow()"><div id="MSearchCloseImg" class="close-icon"></div></a>
+    </span>
   </div>
 
 </div>
