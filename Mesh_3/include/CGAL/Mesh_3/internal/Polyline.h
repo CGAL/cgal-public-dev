@@ -609,7 +609,6 @@ private:
       return FT(0);
 
     FT result;
-    bool endpt;
     if(p_it->length_from_start && q_it->length_from_start)
     {
       if(orientation == CGAL::POSITIVE)
@@ -619,8 +618,6 @@ private:
               ? length()
               : *(q_it->length_from_start);
         result = xq - xp;
-        if(result < 0 && is_loop())
-          result += length();
       }
       else
       {
@@ -629,11 +626,9 @@ private:
               ? length()
               : *(p_it->length_from_start);
         result = xp - xq;
-        if(result < 0 && is_loop())
-          result += length();
       }
-      CGAL_assertion(result > 0);
-      return result;
+      if(result < 0 && is_loop())
+        result += length();
     }
     else
     {
@@ -643,8 +638,10 @@ private:
         result += distance(*it, *next_it);
         it = next_it;
       } // end loop ]p_it, q_it[
-      return result;
     }
+
+    CGAL_assertion(result > 0);
+    return result;
   }
 
   Angle angle(const Point_3& p,
