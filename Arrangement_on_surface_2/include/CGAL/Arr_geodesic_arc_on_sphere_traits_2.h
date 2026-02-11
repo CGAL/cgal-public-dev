@@ -1564,7 +1564,7 @@ public:
       using Intersection_point = std::pair<Point_2, Multiplicity>;
       using Intersection_result = std::variant<Intersection_point, X_monotone_curve_2>;
       std::list<Intersection_result> intersections;
-      m_traits.intersect_2_object()(xcv1, xcv2, back_inserter(intersections));
+      m_traits.intersect_2_object()(xcv1, xcv2, std::back_inserter(intersections));
 
       // If the curves do not intersect at all, endpoints do not matter
       if (intersections.empty()) return false;
