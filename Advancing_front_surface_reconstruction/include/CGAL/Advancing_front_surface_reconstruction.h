@@ -2105,7 +2105,7 @@ namespace CGAL {
         }
       while((!_ordered_border.empty())&&(K <= K)&&(min_K != infinity())&&(K!=K_prev));
 
-#ifdef AFSR_VERBOSE
+#ifdef CGAL_AFSR_VERBOSE
       if ((min_K < infinity())&&(!_ordered_border.empty())) {
         std::cout << "   [ next K required = " << min_K << " ]" << std::endl;
       }
@@ -2445,7 +2445,7 @@ namespace CGAL {
               }
             while (!L_v.empty() && (L_v.size() < itmp));
           }
-#ifdef AFSR_VERBOSE
+#ifdef CGAL_AFSR_VERBOSE
           if(L_v.size() > 0){
             std::cout << "   " << L_v.size() << " non-regular points." << std::endl;
           }
