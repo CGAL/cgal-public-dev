@@ -15,6 +15,11 @@ Release date: July 2026
     (Wachspress, mean value, discrete harmonic and tetrahedron coordinates) for points located inside closed convex
     3D polyhedra.
 
+### [2D Conforming Triangulations and Meshes](https://doc.cgal.org/6.2/Manual/packages.html#PkgMesh2)
+
+- The implementation is more robust to degenerate inputs, such as polygons with microscopic edges, or nearly collinear points.
+- **Breaking change**: The concept [`DelaunayMeshTraits_2`](https://doc.cgal.org/6.2/Mesh_2/classDelaunayMeshTraits__2.html) now requires the functor `Construct_bbox_2`.
+
 ### [Linear Cell Complex](https://doc.cgal.org/6.2/Manual/packages.html#PkgLinearCellComplex)
 
 - **API Changes**: The following import functions have been deprecated and renamed for better naming clarity and consistency:
@@ -1012,8 +1017,7 @@ Release date: July 2021
   - Polygon mesh I/O functions can be found in the package [BGL](https://doc.cgal.org/5.3/Manual/packages.html#PkgBGL).
   - Polygon soup I/O can be found in the package [Stream_support](https://doc.cgal.org/5.3/Manual/packages.html#PkgStreamSupport).
 
-A comprehensive list of the supported file formats is available in the Stream_support package
-[here](https://doc.cgal.org/5.3/Stream_support/index.html#IOstreamSupportedFormats);
+A comprehensive list of the supported file formats is available in [the Stream_support package here](https://doc.cgal.org/5.3/Stream_support/index.html#IOstreamSupportedFormats);
 inversely, the following [page](https://doc.cgal.org/5.3/Stream_support/IOStreamSupportedFileFormats.html)
 can be used to find out which CGAL data structures can be used given a specific file format.
 
