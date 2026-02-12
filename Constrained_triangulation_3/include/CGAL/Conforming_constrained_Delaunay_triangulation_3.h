@@ -3039,7 +3039,7 @@ private:
                               CDT_2& non_const_cdt_2, Fh_region& non_const_fh_region)
   {
     if(this->debug().regions()) {
-      auto guard_color = CGAL::IO::make_color_guards(CGAL::IO::Ansi_color::Yellow, std::cerr);
+      auto guard_color = CGAL::IO::make_color_guards<CGAL::IO::Ansi_color::Yellow>(std::cerr);
       std::cerr << "restore_subface_region face index: " << face_index << ", region #" << region_index << "\n";
     }
     auto guard_indenting = CGAL::IO::make_indenting_guards("| ", std::cerr, std::cout);
@@ -3967,7 +3967,7 @@ private:
       if(this->debug().copy_triangulation_into_hole() || this->debug().verbose_special_cases() ||
          this->debug().restore_faces())
       {
-        auto guard_color = CGAL::IO::make_color_guards(CGAL::IO::Ansi_color::Green, std::cerr);
+        auto guard_color = CGAL::IO::make_color_guards<CGAL::IO::Ansi_color::Green>(std::cerr);
         std::cerr << cdt_3_format("restore_face({}): CDT_2 has {} vertices\n", face_index, cdt_2.number_of_vertices());
       }
     for(const auto& edge : cdt_2.finite_edges()) {
