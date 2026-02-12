@@ -9,10 +9,13 @@
 #include <algorithm>
 #include <cassert>
 #include <cstdlib>
+#include <exception>
 #include <iostream>
 #include <map>
 #include <numeric>
 #include <sstream>
+#include <stdexcept>
+#include <string>
 #include <vector>
 
 // Test: bisecting a vector to find which elements cause a "failure"
@@ -128,7 +131,7 @@ int test(int test_id,
   if(expect_failure != (caught_exception || result_code != EXIT_SUCCESS)) {
     std::cerr << "Test failed! Expected failure: " << expect_failure << ", but got "
               << (caught_exception ? "" : "no ") << "exception and result code is " << result_code << ".\n";
-    abort();
+    std::abort();
   }
 
   if(expected_bad_elements != final_bad_data ||
@@ -147,7 +150,7 @@ int test(int test_id,
     std::cerr << display_elements(other_error_data);
     std::cerr << "\n  Other elements (should not be used): ";
     std::cerr << display_elements(other__should_not_be_used);
-    abort();
+    std::abort();
   }
 
   return EXIT_SUCCESS;
