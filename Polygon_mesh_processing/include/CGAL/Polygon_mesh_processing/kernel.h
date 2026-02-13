@@ -276,7 +276,7 @@ kernel(const FaceRange& face_range,
   *   <li>If the dimension of the kernel is `0` (i.e., the kernel is a single point), the output mesh contains one isolated vertex.</li>
   * </ul>
   *
-  * @tparam FaceRange a model of `ConstRange` with `boost::graph_traits<TriangleMesh>::%face_descriptor` as value type
+  * @tparam FaceRange a model of `ConstRange` with `boost::graph_traits<PolygonMesh>::%face_descriptor` as value type
   * @tparam PolygonMesh a model of `VertexListGraph`, `HalfedgeListGraph` and `FaceListGraph`
   * @tparam PolygonMeshOut a model of `MutableFaceGraph`, `VertexListGraph` and `FaceListGraph`
   *
