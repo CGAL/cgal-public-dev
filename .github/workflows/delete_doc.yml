@@ -34,5 +34,5 @@ jobs:
          git rm -r "${PR_NUMBER}/" || true
          # `git diff --quiet` exits with 1 if there is a diff
          if ! git diff --staged --quiet; then
-           git commit -a --amend -m"base commit" && git push -f -u origin master
+           git commit -a --amend -m"sole commit" && git push -f -u origin master
          fi
