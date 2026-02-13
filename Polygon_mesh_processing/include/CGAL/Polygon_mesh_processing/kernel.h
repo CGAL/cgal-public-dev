@@ -404,7 +404,7 @@ kernel(const PolygonMesh& pm,
   * of all the halfspaces on the negative side of the oriented planes defined by a range of faces
   * of the input mesh.
   *
-  * See `CGAL::Polygon_mesh_processing::kernel()` for a comprehensive desription of the parameters.
+  * See `CGAL::Polygon_mesh_processing::kernel()` for a comprehensive description of the parameters.
   */
 template <typename FaceRange,
           typename PolygonMesh,
@@ -427,7 +427,7 @@ bool has_empty_kernel(const FaceRange& face_range,
   * of all the halfspaces on the negative side of the oriented planes defined by a range of faces
   * of the input mesh.
   *
-  * See `CGAL::Polygon_mesh_processing::kernel()` for a comprehensive desription of the parameters.
+  * See `CGAL::Polygon_mesh_processing::kernel()` for a comprehensive description of the parameters.
   */
 template <typename PolygonMesh,
           typename CGAL_NP_TEMPLATE_PARAMETERS>
@@ -446,7 +446,7 @@ bool has_empty_kernel(const PolygonMesh& pm,
   * of all the halfspaces on the negative side of the oriented planes defined by a range of faces
   * of the input mesh.
   *
-  * See `CGAL::Polygon_mesh_processing::kernel()` for a comprehensive desription of the parameters.
+  * See `CGAL::Polygon_mesh_processing::kernel()` for a comprehensive description of the parameters.
   *
   * \return `std::nullopt` if and only if the kernel is empty.
   */
@@ -482,7 +482,7 @@ kernel_point(const FaceRange& face_range,
   * of all the halfspaces on the negative side of the oriented planes defined by a range of faces
   * of the input mesh.
   *
-  * See `CGAL::Polygon_mesh_processing::kernel()` for a comprehensive desription of the parameters.
+  * See `CGAL::Polygon_mesh_processing::kernel()` for a comprehensive description of the parameters.
   *
   * \return `std::nullopt` if and only if the kernel is empty.
   */
