@@ -1568,7 +1568,7 @@ public:
      */
     double segment_length(const X_monotone_curve_2& xcv) const {
       auto ctr_min_vertex = m_traits.construct_min_vertex_2_object();
-      auto max_vertex = m_traits.construct_ctr_max_vertex_2_object();
+      auto ctr_max_vertex = m_traits.construct_max_vertex_2_object();
       const auto& minv = ctr_min_vertex(xcv);
       const auto& maxv = ctr_max_vertex(xcv);
       auto x1 = CGAL::to_double(minv.x());
