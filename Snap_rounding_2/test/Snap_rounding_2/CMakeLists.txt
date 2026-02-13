@@ -1,7 +1,7 @@
 # Created by the script cgal_create_cmake_script
 # This is the CMake script for compiling a CGAL application.
 
-cmake_minimum_required(VERSION 3.12...3.29)
+cmake_minimum_required(VERSION 3.12...3.31)
 project(Snap_rounding_2_Tests)
 
 find_package(CGAL REQUIRED)
@@ -26,7 +26,7 @@ function(add_Snap_rounding_tests name)
       TEST "${test_name}_compare_results"
       APPEND
       PROPERTY DEPENDS "${test_name}")
-    if(POLICY CMP0066) # CMake 3.7 or later
+    if(POLICY CMP0066) # CMake 3.7 (or greater)
       set_property(TEST "${test_name}" PROPERTY FIXTURES_SETUP
                                                 "${test_name}_compare_results")
       set_property(TEST "${test_name}_compare_results" APPEND

@@ -26,7 +26,6 @@ Modular_arithmetic
 Number_types
 Orthtree
 Point_set_3
-Point_set_processing_3
 Polygon
 Polygon_mesh_processing
 Principal_component_analysis
@@ -44,6 +43,4 @@ Stream_support
 Surface_mesh
 Surface_mesh_segmentation
 TDS_2
-TDS_3
 Triangulation_2
-Triangulation_3

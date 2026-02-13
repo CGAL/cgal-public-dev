@@ -165,6 +165,10 @@ namespace CGAL {
       { return idx; }
       size_type index(const_iterator cit) const
       { return cit; }
+      const Dart& operator[] (size_type i) const
+      { return mmap.mdarts[i]; }
+      Dart& operator[] (size_type i)
+      { return mmap.mdarts[i]; }
       bool is_used(size_type i) const
       { return mmap.mdarts.is_used(i); }
       bool owns(size_type i) const
@@ -189,7 +193,7 @@ namespace CGAL {
     void init_storage()
     {
       // Allocate a dart for null_dart_descriptor
-      assert(mdarts.empty()); // the compact container is empty
+      CGAL_assertion(mdarts.empty()); // the compact container is empty
       Dart_index local_null_dart_descriptor = mdarts.emplace();
       if(local_null_dart_descriptor!=0)
       {

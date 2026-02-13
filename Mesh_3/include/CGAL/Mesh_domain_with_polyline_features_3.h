@@ -624,7 +624,7 @@ public:
   add_features_and_incidences
   (InputIterator first, InputIterator end,
    PolylinePMap polyline_pmap,
-   IncidentPatchesIndicesPMap incident_paches_indices_pmap,
+   IncidentPatchesIndicesPMap incident_patches_indices_pmap,
    IndicesOutputIterator out /* = CGAL::Emptyset_iterator() */);
 
   template <typename InputIterator, typename IndicesOutputIterator>
@@ -961,9 +961,9 @@ get_curves(OutputIterator out) const
       q_index = p_index;
     }
 
-    *out++ = std::make_tuple(eit->first,
-                                     std::make_pair(p,p_index),
-                                     std::make_pair(q,q_index));
+    *out++ = {eit->first,
+              std::make_pair(p,p_index),
+              std::make_pair(q,q_index)};
   }
 
   return out;

@@ -28,7 +28,7 @@ void test (bool expr, const char* msg)
     ++ nb_success;
 }
 
-bool copy_and_assignement()
+bool copy_and_assignment()
 {
   Point_set ps1;
   ps1.add_property_map("prop", int(3));
@@ -103,7 +103,7 @@ int main (int, char**)
   test (!(point_set.has_property_map<Color> ("color")), "point set shouldn't have colors.");
   Point_set::Property_map<Color> color_prop;
   bool garbage;
-  boost::tie (color_prop, garbage) = point_set.add_property_map ("color", Color());
+  std::tie (color_prop, garbage) = point_set.add_property_map ("color", Color());
   test (point_set.has_property_map<Color> ("color"), "point set should have colors.");
 
   for (Point_set::iterator it = point_set.begin(); it != point_set.end(); ++ it)
@@ -150,7 +150,7 @@ int main (int, char**)
   std::unordered_set<Point_set::Index> std_hash;
   boost::unordered_set<Point_set::Index> boost_hash;
 
-  test(copy_and_assignement(), "copy and assignement");
+  test(copy_and_assignment(), "copy and assignment");
 
   std::cerr << nb_success << "/" << nb_test << " test(s) succeeded." << std::endl;
 

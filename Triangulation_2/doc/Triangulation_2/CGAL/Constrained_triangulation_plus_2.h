@@ -77,16 +77,17 @@ A default constructed `Constraint_id` is a singular value that can not be the ID
   typedef unspecified_type Constraint_id;
 
 /*!
-An iterator to visit
+A bidirectional iterator to visit
 all the input constraints. The order of visit is undefined.
 The value type of this iterator is `Constraint_id`.
 */
 typedef unspecified_type Constraint_iterator;
 
 /*!
-A range type for iterating over all constraints.
+A range type for iterating over all constraints. The iterator type of
+the range is `Constraint_iterator`.
 */
-typedef Iterator_range<Constraint_iterator> Constraints;
+typedef unspecified_type Constraints;
 
 
 /*!
@@ -95,22 +96,33 @@ A subconstraint is a pair of vertices that correspond to an `Edge`.
 typedef std::pair<Vertex_handle, Vertex_handle> Subconstraint;
 
 /*!
-An iterator
-to visit all the subconstraints of the triangulation.
+A bidirectional iterator to visit all the subconstraints of the triangulation.
 The order of visit is undefined.
-The value type of this iterator is `std::pair<Subconstraint,std::list<Context>*>`
-corresponding to the vertices of the
-subconstraint.
+The value type of this iterator is `Subconstraint`.
 */
 typedef unspecified_type Subconstraint_iterator;
 
 /*!
-A range type for iterating over all subconstraints.
+A range type for iterating over all subconstraints. The iterator type of
+the range is `Subconstraint_iterator`.
 */
-typedef Iterator_range<Subconstraint_iterator> Subconstraints;
+typedef unspecified_type Subconstraints;
 
 /*!
-An iterator on the
+A bidirectional iterator to visit all the subconstraints of the triangulation and the
+contexts of their enclosing constraints. The order of visit is undefined.
+The value type of this iterator is `const std::pair<const Subconstraint, std::list<Context>*>`.
+*/
+typedef unspecified_type Subconstraint_and_contexts_iterator;
+
+/*!
+A range type for iterating over all subconstraints. The iterator type of
+the range is `Subconstraint_and_contexts_iterator`.
+*/
+typedef unspecified_type Subconstraints_and_contexts;
+
+/*!
+A bidirectional iterator on the
 vertices of the chain of subconstraints representing a
 constraint. The value type of this iterator is `Vertex_handle`.
 */
@@ -152,10 +164,8 @@ through a subconstraint.
   };
 
 /*!
-An iterator on
-constraints enclosing a given subconstraint. The value type of this
-iterator
-is `Context`.
+A bidirectional iterator on constraints enclosing a given subconstraint.
+The value type of this iterator is `Context`.
 */
 typedef unspecified_type Context_iterator;
 
@@ -293,7 +303,7 @@ using the vertex handles of its endpoints.
 In case the constraints are degenerate the points are inserted, but no
 constraints.
 
-\tparam ConstraintIterator must be an `InputIterator` with the value type `std::pair<Point,Point>` or `Segment`.
+\tparam ConstraintIterator is an `InputIterator` with value type `std::pair<Point,Point>` or `Segment`
 
 \return the number of inserted points.
 */
@@ -301,18 +311,45 @@ template <class ConstraintIterator>
 std::size_t insert_constraints(ConstraintIterator first, ConstraintIterator last);
 
 /*!
+Same as `insert_constraints(begin,end)` except that duplicated pairs of points are only considered once.
+
+Inserting the same constraint several times may cause problems in
+case of intersecting segments and non-exact constructions.
+
+\return the number of inserted points.
+\tparam ConstraintIterator is an `InputIterator` with value type `std::pair<Point,Point>` or `Segment`.
+*/
+template <class ConstraintIterator>
+std::size_t insert_unique_constraints(ConstraintIterator first, ConstraintIterator last);
+
+/*!
 Same as above except that each constraint is given as a pair of indices of the points
 in the range [points_first, points_last). The indices must go from 0 to `std::distance(points_first, points_last)`
-\tparam PointIterator is an `InputIterator` with the value type `Point`.
-\tparam IndicesIterator is an `InputIterator` with `std::pair<Int,
-Int>` where `Int` is an integral type implicitly convertible to
-`std::size_t`
-\note points are inserted even if they are not endpoint of a constraint.
+
+\tparam PointIterator is an `InputIterator` with value type `Point`.
+\tparam IndicesIterator is an `InputIterator` with value type `std::pair<Int, Int>` where
+`Int` is an integral type implicitly convertible to `std::size_t`
+
+\note points are inserted even if they are not an endpoint of a constraint.
 \return the number of inserted points.
 */
 template <class PointIterator, class IndicesIterator>
 std::size_t insert_constraints(PointIterator points_first, PointIterator points_last,
                                IndicesIterator indices_first, IndicesIterator indices_last);
+
+/*!
+Same as `insert_constraint(points_first, points_last, indices_first, indices_last)` except that duplicated pair of points are only considered once.
+
+Inserting the same constraint several times may cause problems in
+case of intersecting segments and non-exact constructions.
+
+\return the number of inserted points.
+\tparam PointIterator is an `InputIterator` with value type `Point`.
+\tparam IndicesIterator is an `InputIterator` with value type `std::pair<Int, Int>` where `Int` is an integral type implicitly convertible to `std::size_t`
+*/
+template <class PointIterator, class IndicesIterator>
+std::size_t insert_unique_constraints(PointIterator points_first, PointIterator points_last,
+                                      IndicesIterator indices_first, IndicesIterator indices_last);
 
 
 /*!
@@ -348,6 +385,11 @@ void remove_constraint(Constraint_id cid);
 
 /// \name Access
 /// @{
+///
+/// \note
+/// Since CGAL-6.1, the value type of the range returned by `subconstraints()` has changed from
+/// `const std::pair<const Subconstraint, std::list<Context>*>` to `Subconstraint`.
+/// The old range type is now returned by the function `subconstraints_and_contexts()`.
 
 /*!
 returns a `Constraint_iterator` that points at the first
@@ -380,6 +422,22 @@ Subconstraint_iterator subconstraints_end() const;
 returns a range of subconstraints.
 */
 Subconstraints subconstraints() const;
+
+/*!
+returns a `Subconstraint_and_contexts_iterator` pointing at the first
+subconstraint of the triangulation.
+*/
+Subconstraint_and_contexts_iterator subconstraints_and_contexts_begin() const;
+
+/*!
+returns the past-the-end iterator of the subconstraints of the triangulation.
+*/
+Subconstraint_and_contexts_iterator subconstraints_and_contexts_end() const;
+
+/*!
+returns a range of subconstraints with the contexts of their enclosing constraints.
+*/
+Subconstraints_and_contexts subconstraints_and_contexts() const;
 
 /*!
 returns the number of constraints enclosing the subconstraint

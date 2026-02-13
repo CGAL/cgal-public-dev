@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.12...3.29)
+cmake_minimum_required(VERSION 3.19...3.31)
 project(Kernel_23_Tests)
 
 find_package(CGAL REQUIRED COMPONENTS Core)
@@ -32,15 +32,53 @@ create_single_source_cgal_program("test_kernel__.cpp")
 create_single_source_cgal_program("test_projection_traits.cpp")
 create_single_source_cgal_program("test_Projection_traits_xy_3_Intersect_2.cpp")
 
+add_executable("test_gdb_pretty_printers" "test_gdb_pretty_printers.cpp")
+target_link_libraries("test_gdb_pretty_printers" PRIVATE CGAL::CGAL)
+if(CGAL_ENABLE_TESTING)
+  cgal_add_compilation_test("test_gdb_pretty_printers")
+  find_program(GDB_EXECUTABLE gdb)
+  if(NOT GDB_EXECUTABLE)
+    add_test(NAME "execution   of  test_gdb_pretty_printers"
+      COMMAND "$<TARGET_FILE:test_gdb_pretty_printers>")
+    message(VERBOSE "GDB executable not found, test expected to fail")
+    set_tests_properties("execution   of  test_gdb_pretty_printers"
+      PROPERTIES WILL_FAIL TRUE)
+  else()
+    message(VERBOSE "GDB executable found: ${GDB_EXECUTABLE}")
+    file(GENERATE
+           OUTPUT "$<CONFIG>/test_gdb_pretty_printers.gdb"
+           CONTENT "
+             set auto-load safe-path /
+             set debuginfod enabled off
+             file \"$<TARGET_FILE:test_gdb_pretty_printers>\"
+             run
+             bt
+             frame function abort
+             up
+             p p
+             quit
+             "
+          TARGET "test_gdb_pretty_printers")
+    add_test(NAME "execution   of  test_gdb_pretty_printers"
+      COMMAND "${GDB_EXECUTABLE}" --batch --quiet --nx
+        -x "${CMAKE_CURRENT_BINARY_DIR}/$<CONFIG>/test_gdb_pretty_printers.gdb"
+        )
+
+    set_tests_properties("execution   of  test_gdb_pretty_printers"
+      PROPERTIES
+      PASS_REGULAR_EXPRESSION "CGAL pretty printers auto-loaded")
+  endif()
+endif()
+
 if(CGAL_KERNEL_23_TEST_RT_FT_PREDICATE_FLAGS)
   # Templated operators:
   # - create a lot of possible combinations, which is expensive to test
   # - create issues because some combinations might be RT-sufficient whereas others will require FT
   #
-  # add_definitions(-DCGAL_KERNEL_23_TEST_RT_FT_PREDICATES_TEST_PREDICATES_WITH_TEMPLATED_OPERATORS)
+  # add_compile_definitions(CGAL_KERNEL_23_TEST_RT_FT_PREDICATES_TEST_PREDICATES_WITH_TEMPLATED_OPERATORS)
 
   create_single_source_cgal_program("atomic_compilation_test.cpp")
-  target_precompile_headers(atomic_compilation_test PUBLIC [["atomic_RT_FT_predicate_headers.h"]])
+  target_precompile_headers(atomic_compilation_test PRIVATE [["atomic_RT_FT_predicate_headers.h"]])
 
   create_single_source_cgal_program("test_RT_or_FT_predicates.cpp")
   target_compile_definitions(test_RT_or_FT_predicates PRIVATE

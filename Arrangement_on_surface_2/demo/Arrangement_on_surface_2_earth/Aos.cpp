@@ -1,4 +1,4 @@
-// Copyright(c) 2023, 2024 Tel-Aviv University (Israel).
+// Copyright (c) 2023, 2024 Tel-Aviv University (Israel).
 // All rights reserved.
 //
 // This file is part of CGAL (www.cgal.org).
@@ -907,7 +907,7 @@ void Aos::save_arr(Kml::Placemarks& placemarks, const std::string& file_name) {
 
     js_faces.push_back(std::move(js_face));
   }
-  std::cout << "total num half-edges = " << total_num_half_edges << std::endl;
+  std::cout << "total num halfedges = " << total_num_half_edges << std::endl;
 
   // save the arrangement
   std::ofstream ofile(file_name);

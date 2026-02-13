@@ -520,7 +520,7 @@ private:
     void set_event_lines(InputIterator1 event_begin,
                          InputIterator1 event_end,
                          InputIterator2 intermediate_begin,
-                         InputIterator2 CGAL_precondition_code(intermediate_end)) const {
+                         InputIterator2 CGAL_assertion_code(intermediate_end)) const {
 
         if(! this->ptr()->event_coordinates) {
 
@@ -1722,7 +1722,7 @@ private:
     std::vector<std::optional<Bound> >& intermediate_values() const
       {
         if(! this->ptr()->intermediate_values) {
-            // This is created during event_coordiantes()
+            // This is created during event_coordinates()
             event_coordinates();
             CGAL_assertion(bool(this->ptr()->intermediate_values));
         }
