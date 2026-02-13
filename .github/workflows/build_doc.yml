@@ -61,11 +61,11 @@ jobs:
           echo "trigger_build=${trigger_build}" >> $GITHUB_OUTPUT
 
       - name: Check permissions
-        if: ( steps.check_comment_body.outputs.trigger_build || false ) && (inputs.pr_number || env.author_association == 'OWNER' || env.author_association == 'MEMBER')
+        if: ( steps.check_comment_body.outputs.trigger_build || false ) && (inputs.pr_number || github.event_name == 'push' || env.author_association == 'OWNER' || env.author_association == 'MEMBER')
         run: echo "Authorized"
 
       - name: No permissions
-        if: ( steps.check_comment_body.outputs.trigger_build || false ) && (! inputs.pr_number && env.author_association != 'OWNER' && env.author_association != 'MEMBER' )
+        if: ( steps.check_comment_body.outputs.trigger_build || false ) && (! inputs.pr_number && github.event_name != 'push' && env.author_association != 'OWNER' && env.author_association != 'MEMBER' )
         run: |
           echo 'ERROR: User ${{ github.actor }} is not allowed to trigger the build of the documentation with /build:* or /force-build:*'
           exit 1
