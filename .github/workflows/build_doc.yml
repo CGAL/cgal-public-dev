@@ -51,7 +51,7 @@ jobs:
         env:
           trigger_build: ${{ inputs && inputs.pr_number || startsWith(env.comment_body, '/build:') || startsWith(env.comment_body, '/force-build:')  || github.event_name == 'push'}}
           force_build: ${{ inputs && inputs.force_build || startsWith(env.comment_body, '/force-build:') || github.event_name == 'push' }}
-        if: inputs.pr_number || startsWith(env.comment_body, '/build:') || startsWith(env.comment_body, '/force-build:' || github.event_name == 'push')
+        if: inputs.pr_number || startsWith(env.comment_body, '/build:') || startsWith(env.comment_body, '/force-build:') || github.event_name == 'push'
         run: |
           if [ "${trigger_build}" = "false" ]; then
             echo "No build requested"
