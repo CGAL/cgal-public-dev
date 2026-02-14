@@ -2260,7 +2260,7 @@ Release date: April 2018
     METIS functions `METIS_PartMeshNodal` and `METIS_PartMeshDual` are
     offered.
 
-    [METIS library]: http://glaros.dtc.umn.edu/gkhome/metis/metis/overview
+    [METIS library]: https://github.com/KarypisLab/METIS
 
 ## Release 4.11
 
