@@ -40,7 +40,7 @@ typedef Mesh_domain::FT FT;
 
 class Domain_with_polyline_tester
 {
-  typedef std::vector<Point>  Polyline;
+  typedef std::vector<std::pair<Point,FT>>  Polyline;
   typedef std::list<Polyline> Polylines;
 
   typedef Mesh_domain::Corner_index         Ci;
@@ -49,8 +49,9 @@ class Domain_with_polyline_tester
   typedef Mesh_domain::Index                Index;
 
   typedef std::vector<std::pair<Ci, Point> >        Corners_vector;
+  typedef Polyline::const_iterator                  Polyline_iterator;
   typedef std::pair<Point, Index>                   P_and_i;
-  typedef std::tuple<Csi,P_and_i,P_and_i>   Curve_tuple;
+  typedef std::tuple<Csi, Polyline_iterator,P_and_i,P_and_i>   Curve_tuple;
   typedef std::vector<Curve_tuple>                  Curves_vector;
 
 public:
@@ -78,9 +79,9 @@ public:
     Polylines polylines (1);
     Polyline& polyline = polylines.front();
 
-    polyline.push_back(p1_);
-    polyline.push_back(p2_);
-    polyline.push_back(p3_);
+    polyline.push_back(std::make_pair(p1_, 0));
+    polyline.push_back(std::make_pair(p2_, 1));
+    polyline.push_back(std::make_pair(p3_, 2));
 
     domain_.add_features(polylines.begin(),polylines.end());
   }
@@ -90,11 +91,11 @@ public:
     Polylines polylines (1);
     Polyline& polyline = polylines.front();
 
-    polyline.push_back(p1_);
-    polyline.push_back(p2_);
-    polyline.push_back(p3_);
-    polyline.push_back(p4_);
-    polyline.push_back(p1_);
+    polyline.push_back(std::make_pair(p1_, 0));
+    polyline.push_back(std::make_pair(p2_, 1));
+    polyline.push_back(std::make_pair(p3_, 2));
+    polyline.push_back(std::make_pair(p4_, 3));
+    polyline.push_back(std::make_pair(p1_, 4));
 
     domain_.add_features(polylines.begin(),polylines.end());
   }
@@ -193,18 +194,18 @@ private:
 
   Point get_first_point(const Curve_tuple& tuple) const
   {
-    return std::get<1>(tuple).first;
+    return std::get<2>(tuple).first;
   }
 
   Point get_second_point(const Curve_tuple& tuple) const
   {
-    return std::get<2>(tuple).first;
+    return std::get<3>(tuple).first;
   }
 
   Csi get_curve_index() const
   {
     Curves_vector curves;
-    domain_.get_curves(std::back_inserter(curves));
+    // domain_.get_curves(std::back_inserter(curves));
     assert(curves.size() == 1);
 
     return get_curve_index(curves.front());
