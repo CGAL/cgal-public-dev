@@ -555,6 +555,10 @@ void
 Protect_edges_sizing_field<C3T3, MD, Sf, Df>::
 operator()(const bool refine)
 {
+  domain_.clear_point_to_polyline_iterator_cache();
+  // TODO: that caching of iterators should not be the responsibility of the
+  // domain, but of the Protect_edges_sizing_field class. -- LR, 2026-02-16
+
   // This class is only meant to be used with non-periodic triangulations
   CGAL_assertion(!(std::is_same_v<typename Tr::Periodic_tag, CGAL::Tag_true>));
 

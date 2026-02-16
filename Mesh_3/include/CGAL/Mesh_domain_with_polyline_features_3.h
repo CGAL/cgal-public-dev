@@ -585,6 +585,11 @@ public:
 #endif
   } // build_curves_aabb_tree()
 
+  void clear_point_to_polyline_iterator_cache() const
+  {
+    vertex_to_polyline_iterator_.clear();
+  }
+
   Polyline_const_iterator locate_in_polyline(const Point_3& p,
                                              const int dim,
                                              const Curve_index& index) const
