@@ -15,6 +15,7 @@
 //******************************************************************************
 
 #include <CGAL/Mesh_domain_with_polyline_features_3.h>
+#include <CGAL/Mesh_3/internal/Polyline.h>
 #include "test_utilities.h"
 
 #include <vector>
@@ -40,7 +41,8 @@ typedef Mesh_domain::FT FT;
 
 class Domain_with_polyline_tester
 {
-  typedef std::vector<std::pair<Point,FT>>  Polyline;
+  typedef CGAL::Mesh_3::internal::Polyline<K_e_i>  Mesh_polyline;
+  typedef std::vector<Point>                       Polyline;
   typedef std::list<Polyline> Polylines;
 
   typedef Mesh_domain::Corner_index         Ci;
@@ -49,7 +51,7 @@ class Domain_with_polyline_tester
   typedef Mesh_domain::Index                Index;
 
   typedef std::vector<std::pair<Ci, Point> >        Corners_vector;
-  typedef Polyline::const_iterator                  Polyline_iterator;
+  typedef Mesh_polyline::const_iterator             Polyline_iterator;
   typedef std::pair<Point, Index>                   P_and_i;
   typedef std::tuple<Csi, Polyline_iterator,P_and_i,P_and_i>   Curve_tuple;
   typedef std::vector<Curve_tuple>                  Curves_vector;
@@ -79,9 +81,9 @@ public:
     Polylines polylines (1);
     Polyline& polyline = polylines.front();
 
-    polyline.push_back(std::make_pair(p1_, 0));
-    polyline.push_back(std::make_pair(p2_, 1));
-    polyline.push_back(std::make_pair(p3_, 2));
+    polyline.push_back(p1_);
+    polyline.push_back(p2_);
+    polyline.push_back(p3_);
 
     domain_.add_features(polylines.begin(),polylines.end());
   }
@@ -91,11 +93,11 @@ public:
     Polylines polylines (1);
     Polyline& polyline = polylines.front();
 
-    polyline.push_back(std::make_pair(p1_, 0));
-    polyline.push_back(std::make_pair(p2_, 1));
-    polyline.push_back(std::make_pair(p3_, 2));
-    polyline.push_back(std::make_pair(p4_, 3));
-    polyline.push_back(std::make_pair(p1_, 4));
+    polyline.push_back(p1_);
+    polyline.push_back(p2_);
+    polyline.push_back(p3_);
+    polyline.push_back(p4_);
+    polyline.push_back(p1_);
 
     domain_.add_features(polylines.begin(),polylines.end());
   }
@@ -231,6 +233,7 @@ int main()
 {
   std::cout << "Test corners" << std::endl;
   Domain_with_polyline_tester domain_corner_tester;
+
   domain_corner_tester.build_corners();
   domain_corner_tester.test_corners();
 
