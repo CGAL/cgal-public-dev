@@ -1094,7 +1094,7 @@ insert_balls_on_edges()
                                   curve_index,
                                   Vertex_handle(),
                                   CGAL::Emptyset_iterator()).first;
-          if(use_minimal_size() && vp != Vertex_handle())
+          if(vp != Vertex_handle())
             domain_.set_polyline_iterator(p, p_polyline_iter, curve_index);
         }
 
