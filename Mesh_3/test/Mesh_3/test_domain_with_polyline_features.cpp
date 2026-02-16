@@ -207,7 +207,7 @@ private:
   Csi get_curve_index() const
   {
     Curves_vector curves;
-    // domain_.get_curves(std::back_inserter(curves));
+    domain_.get_curves(std::back_inserter(curves));
     assert(curves.size() == 1);
 
     return get_curve_index(curves.front());
