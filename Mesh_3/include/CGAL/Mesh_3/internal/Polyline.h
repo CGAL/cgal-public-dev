@@ -454,6 +454,10 @@ public:
     const Point_3 result = translate(*previous, move);
 
     const_iterator result_iterator = (sgn == CGAL::POSITIVE) ? previous : pit;
+    if(result_iterator->point == result && result_iterator != points_.begin())
+    {
+      --result_iterator;
+    }
     CGAL_assertion(result_iterator == locate_point(result));
 
     return {result, result_iterator};
