@@ -558,7 +558,7 @@ clip_convex(PolygonMesh& pm,
         side_trg = ON_ORIENTED_BOUNDARY;
       }
 
-      // Memorize the edges targetting the plane
+      // Memorize the edges targeting the plane
       if(side_src == ON_POSITIVE_SIDE && side_trg == ON_ORIENTED_BOUNDARY)
         split_edge = h;
       else if(side_src == ON_NEGATIVE_SIDE && side_trg == ON_ORIENTED_BOUNDARY)

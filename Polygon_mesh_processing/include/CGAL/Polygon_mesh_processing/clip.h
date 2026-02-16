@@ -1067,7 +1067,7 @@ bool clip(PolygonMesh& pm,
   constexpr bool traits_supports_cdt2 = !internal::Has_member_Does_not_support_CDT2<GT>::value;
   auto vos = get(dynamic_vertex_property_t<Oriented_side>(), pm);
   auto ecm = get(dynamic_edge_property_t<bool>(), pm, false);
-  auto construct_orthognal_vector = traits.construct_orthogonal_vector_3_object();
+  auto construct_orthogonal_vector = traits.construct_orthogonal_vector_3_object();
 
   if (traits_supports_cdt2 && triangulate && !is_triangle_mesh(pm))
     triangulate = false;
@@ -1126,9 +1126,9 @@ bool clip(PolygonMesh& pm,
     if (clip_volume)
     {
       if (triangulate)
-        internal::close_and_triangulate<GT>(pm, vpm, construct_orthognal_vector(plane), visitor);
+        internal::close_and_triangulate<GT>(pm, vpm, construct_orthogonal_vector(plane), visitor);
       else if (!internal::close<GT>(pm, vpm, plane.orthogonal_vector(), visitor))
-        internal::close_and_triangulate<GT>(pm, vpm, construct_orthognal_vector(plane), visitor);
+        internal::close_and_triangulate<GT>(pm, vpm, construct_orthogonal_vector(plane), visitor);
     }
   }
   else
