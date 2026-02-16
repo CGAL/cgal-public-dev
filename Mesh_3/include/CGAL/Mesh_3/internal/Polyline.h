@@ -404,7 +404,7 @@ public:
         distance += length();
     }
 
-    // initialize iterators and walf forward or backward to find the segment
+    // initialize iterators and walk forward or backward to find the segment
     // containing the point at distance from start_it_pt
     const CGAL::Sign sgn = CGAL::sign(distance);
 
