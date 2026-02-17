@@ -628,6 +628,12 @@ public:
     vertex_to_polyline_iterator_[pc] = it;
   }
 
+  auto remove_polyline_iterator(const Point_3& p, const Curve_index& index) const
+  {
+    Point_on_curve pc{p, index};
+    return vertex_to_polyline_iterator_.erase(pc);
+  }
+
   void dump_curve(const Curve_index& index, const std::string& prefix) const
   {
     std::string filename(prefix);

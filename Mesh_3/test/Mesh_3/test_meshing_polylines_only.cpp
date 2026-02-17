@@ -35,7 +35,7 @@ int main(int argc, char** argv)
 {
   if(argc != 2) {
     std::cerr << "This test needs a filename as argument.\n";
-    return 0;
+    return 1;
   }
   typedef K::Point_3 Point;
 

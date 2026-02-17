@@ -1468,11 +1468,11 @@ refine_balls()
     restart = false;
     boost::unordered_map<Vertex_handle, FT, Hash_fct> new_sizes;
 
-    for(const Edge& e : c3t3_.edges_in_complex())
+    for(const Edge& e : tr.finite_edges())
     {
       if(forced_stop()) break;
       const auto& [va, vb] = tr.vertices(e);
-      const bool is_edge_in_complex = true;
+      const bool is_edge_in_complex = c3t3_.is_in_complex(va,vb);
 
       if( // topology condition
           non_adjacent_but_intersect(va, vb, is_edge_in_complex)
@@ -2135,6 +2135,7 @@ repopulate(InputIterator begin, InputIterator last,
   // Remove last edge
   c3t3_.remove_from_complex(*previous, *current);
 
+  auto cp = c3t3_.triangulation().geom_traits().construct_point_3_object();
   // Remove vertices (don't remove the first one and the last one)
   current = begin;
   while ( ++current != last )
@@ -2156,6 +2157,7 @@ repopulate(InputIterator begin, InputIterator last,
     }
     std::cerr  << CGAL::IO::oformat(c3t3_.index(*current)) << std::endl;
 #endif // CGAL_MESH_3_PROTECTION_DEBUG
+    domain_.remove_polyline_iterator(cp(c3t3_.triangulation().point(*current)), index);
     *out++ = *current;
     c3t3_.triangulation().remove(*current);
     if(forced_stop()) return out;
