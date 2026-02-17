@@ -56,24 +56,28 @@ public:
   // Index Types
   //-------------------------------------------------------
   // Type of indexes for cells of the input complex
+
 /// \name Types
 ///@{
+
+  /// \anchor Mesh3Labeling_function
+
   /// The subdomain index of this model of `MeshDomain_3`
   typedef Subdomain_index_                  Subdomain_index;
 
-   /// \anchor Mesh3Labeling_function
+
   /// The type of object that stores the function using type-erasure.
   /// A labeling function `f` must return `0` if the point is not located in any subdomain. The return type of labeling functions is an integer.
-///
-/// Let `p` be a point.
-/// <ul>
-/// <li>`f(p)=0` means that `p` is outside the domain.</li>
-/// <li>`f(p)=a`, `a!=0` means that `p` is inside subdomain `a`.</li>
-/// </ul>
-///
-/// The function type must be a model of the concept `Callable` with signature
-/// `Subdomain_index(const %Point_3&)`: it can be a function, a function object, a lambda expression...
-/// that takes a `%Point_3` as argument, and returns a type convertible to `Subdomain_index`.
+  ///
+  /// Let `p` be a point.
+  /// <ul>
+  /// <li>`f(p)=0` means that `p` is outside the domain.</li>
+  /// <li>`f(p)=a`, `a!=0` means that `p` is inside subdomain `a`.</li>
+  /// </ul>
+  ///
+  /// The function type must be a model of the concept `Callable` with signature
+  /// `Subdomain_index(const %Point_3&)`: it can be a function, a function object, a lambda expression...
+  /// that takes a `%Point_3` as argument, and returns a type convertible to `Subdomain_index`.
 
   typedef std::function< Subdomain_index(const Point_3 &)> Labeling_function;
 ///@}
