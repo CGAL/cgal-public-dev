@@ -4,6 +4,19 @@
 
 Release date: July 2026
 
+### [Polygon Mesh Processing](https://doc.cgal.org/6.2/Manual/packages.html#PkgPolygonMeshProcessing) (major changes)
+
+-   The "Polygon Mesh Processing" package has been reorganized into several packages.
+    "Polygon Mesh Processing" retains the core functionalities, while advanced and specialized features
+    have been moved to dedicated packages:
+  - [Boolean Operations On Meshes](https://doc.cgal.org/6.2/Manual/packages.html#PkgPMPBooleanOperations): algorithms for Boolean operations on polygon meshes;
+    clipping, splitting, and slicing with planes, boxes, or other meshes; and kernel computations.
+  - [Meshing and Remeshing of Polygon Meshes](https://doc.cgal.org/6.2/Manual/packages.html#PkgPMPRemeshing): algorithms for meshing and remeshing, such as triangulation, refinement, simplification, optimization, and smoothing.
+  - [Polygon Mesh Repair](https://doc.cgal.org/6.2/Manual/packages.html#PkgPMPMeshRepair): tools for detecting and correcting combinatorial and geometric defects in polygon meshes and polygon soups, including face orientation, hole filling, removal of degeneracies, and boundary stitching.
+   This does not induce any breaking change and is fully transparent: header includes such as
+   `#include <CGAL/Polygon_mesh_processing/XXX.h>` do not need to be changed and will include
+   the appropriate header from the new packages.
+
 ### [2D Arrangements](https://doc.cgal.org/6.2/Manual/packages.html#PkgArrangementOnSurface2)
 
 -   Introduced a Geometry Traits concept for arrangement on surfaces that enables the provision of the disconnected portions of an approximation of a curve within a given bounding box.
@@ -57,11 +70,19 @@ Release date: July 2026
     parameter any longer. (This third optional parameter was introduced a few years ago, and now abandoned only for
     `do_intersect()`.)
 
-### [Polygon Mesh Processing](https://doc.cgal.org/6.2/Manual/packages.html#PkgPolygonMeshProcessing)
-- Add function `CGAL::Polygon_mesh_processing::kernel()`, to compute the kernel of a polygon mesh.
-- Add function `CGAL::Polygon_mesh_processing::is_empty_kernel()`, to indicate if the kernel of a polygon mesh is empty.
-- Add function `CGAL::Polygon_mesh_processing::kernel_point()`, to compute a single point inside the kernel of a polygon mesh.
-- Add `use_convex_specialization` parameter to `CGAL::Polygon_mesh_processing::clip()` and `CGAL::Polygon_mesh_processing::refine_with_plane()`.
+### [Polygon Mesh Processing](https://doc.cgal.org/6.2/Manual/packages.html#PkgPolygonMeshProcessing) (breaking changes)
+-   The header `CGAL/Polygon_mesh_processing/border.h` has been deprecated and its content
+    ([`CGAL::border_halfedges()`]() and [`CGAL::extract_boundary_cycles()`]()) moved to
+    `CGAL/boost/graph/border.h`.
+
+### [Polygon Mesh Processing (Boolean Operations on Meshes)](https://doc.cgal.org/6.2/Manual/packages.html#PkgPMPBooleanOperations)
+- Added function `CGAL::Polygon_mesh_processing::kernel()`, to compute the kernel of a polygon mesh.
+- Added function `CGAL::Polygon_mesh_processing::is_empty_kernel()`, to indicate if the kernel of a polygon mesh is empty.
+- Added function `CGAL::Polygon_mesh_processing::kernel_point()`, to compute a single point inside the kernel of a polygon mesh.
+- Added `use_convex_specialization` parameter to `CGAL::Polygon_mesh_processing::clip()` and `CGAL::Polygon_mesh_processing::refine_with_plane()`.
+- The function [`CGAL::Polygon_mesh_processing::surface_intersection()`](), which can be used to
+  compute the polylines that represent the intersection between two polyhedral surfaces has been
+  renamed to [`CGAL::Polygon_mesh_processing::intersection_polylines()`]().
 
 ### [2D Triangulations](https://doc.cgal.org/6.2/Manual/packages.html#PkgTriangulation2)
 

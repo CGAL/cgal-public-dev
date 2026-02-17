@@ -12,8 +12,11 @@ namespace CGAL {
 </center>
 <!--- Fish: Thingy #451870 Sea: Thingy #1514903 -->
 
-\note Starting with CGAL 6.2, the documentation for the "Polygon Mesh Processing" package has been reorganized into several specialized packages. This package retains the core functionalities, while advanced and specialized features have been moved to dedicated packages:<br><br>
-- \link PkgPMPBooleanOperations Boolean Operations On Meshes\endlink: algorithms for Boolean operations on polygon meshes, including clipping, splitting, and slicing with planes, boxes, or other meshes.
+\note With CGAL 6.2, the "Polygon Mesh Processing" package has been reorganized into several packages.
+This package retains the core functionalities, while advanced and specialized features have been moved
+to dedicated packages:<br><br>
+- \link PkgPMPBooleanOperations Boolean Operations On Meshes\endlink: algorithms for Boolean operations
+on polygon meshes; clipping, splitting, and slicing with planes, boxes, or other meshes; and kernel computations.
 - \link PkgPMPRemeshing Meshing and Remeshing of Polygon Meshes\endlink: algorithms for meshing and remeshing, such as triangulation, refinement, simplification, optimization, and smoothing.
 - \link PkgPMPMeshRepair Polygon Mesh Repair\endlink: tools for detecting and correcting combinatorial and geometric defects in polygon meshes and polygon soups, including face orientation, hole filling, removal of degeneracies, and boundary stitching.
 
