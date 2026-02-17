@@ -1,25 +1,30 @@
-#include <ios>
-#include <string>
-#include <iostream>
+#include <CGAL/config.h>
+
+#include <cctype>
 #include <fstream>
+#include <ios>
+#include <iostream>
+#include <string>
 
 int main(int argc, char** argv)
 {
-  if(argc != 3)
+  if(argc != 3 && argc != 1)
   {
     std::cerr << "Usage: " << argv[0] << " input.medit output.off" << std::endl;
     return 1;
   }
-  std::ifstream input(argv[1]);
+  std::string input_filename = (argc == 3) ? argv[1] : CGAL::data_file_path("meshes/elephant.mesh");
+  std::string output_filename = (argc == 3) ? argv[2] : "output.off";
+  std::ifstream input(input_filename);
   if(!input)
   {
-    std::cerr << "Cannot open file " << argv[1] << std::endl;
+    std::cerr << "Cannot open file " << input_filename << std::endl;
     return 1;
   }
-  std::ofstream output(argv[2]);
+  std::ofstream output(output_filename);
   if(!output)
   {
-    std::cerr << "Cannot open file " << argv[2] << std::endl;
+    std::cerr << "Cannot open file " << output_filename << std::endl;
     return 1;
   }
   bool verbose = true;
@@ -84,15 +89,12 @@ int main(int argc, char** argv)
     std::string x, y, z, index;
     input >> x >> y >> z >> index;
     output << x << ' ' << y << ' ' << z << '\n';
-    if(i < 10) std::cerr << x << ' ' << y << ' ' << z << '\n';
   }
   while(std::getline(is, line) && line != "End")
   {
     if(line.find("Triangles") != std::string::npos)
     {
       is >> nf;
-      if(verbose)
-        std::cerr << "Reading "<< nf << " triangles" << std::endl;
       for(int i=0; i<nf; ++i)
       {
         int n[3];
@@ -104,7 +106,6 @@ int main(int argc, char** argv)
           return 1;
         }
         output << "3 " << n[0] - 1 << ' ' << n[1] - 1 << ' ' << n[2] - 1 << '\n';
-        if(i < 10) std::cerr << n[0] - 1 << ' ' << n[1] - 1 << ' ' << n[2] - 1 << '\n';
       }
     }
   }
