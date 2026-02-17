@@ -48,7 +48,7 @@ with a model of the concept `BisectionGeometricTraits_3`.
 template<class BGT,
          class SubdomainIndex = int,
          class SurfacePatchIndex = std::pair<SubdomainIndex,
-                                            SubdomainIndex> >
+                                             SubdomainIndex> >
 class Labeled_mesh_domain_3
 {
 public:
@@ -67,11 +67,11 @@ public:
 ///
 /// Let `p` be a point.
 /// <ul>
-/// <li>`f(p)=0` means that `p` is outside domain.</li>
+/// <li>`f(p)=0` means that `p` is outside the domain.</li>
 /// <li>`f(p)=a`, `a!=0` means that `p` is inside subdomain `a`.</li>
 /// </ul>
 ///
-/// The function type can be any model of the concept `Callable` compatible with the signature
+/// The function type must be a model of the concept `Callable` with signature
 /// `Subdomain_index(const %Point_3&)`: it can be a function, a function object, a lambda expression...
 /// that takes a `%Point_3` as argument, and returns a type convertible to `Subdomain_index`.
 

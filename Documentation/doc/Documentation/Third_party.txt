@@ -323,12 +323,12 @@ The \osqp web site is <A HREF="https://osqp.org">`https://osqp.org`</A>.
 \subsection thirdpartyVTK VTK
 
 \vtk is the Visualization Toolkit.
-In \cgal, this library is used in the examples of the \ref PkgMesh3 package.
+In \cgal, this library is used in some examples of the \ref PkgMesh3 package.
 The \vtk web site is <A HREF="https://vtk.org/">`https://vtk.org`</A>.
 
 \subsection thirdpartyITK ITK
 
 \itk is the Insight Toolkit.
-In \cgal, this library is used in the examples of the \ref PkgMesh3 package.
+In \cgal, this library is used in some examples of the \ref PkgMesh3 package.
 The \itk web site is <A HREF="https://itk.org/">`https://itk.org`</A>.
 */
