@@ -23,6 +23,7 @@ create_single_source_cgal_program("test_degenerate_pmp_clip_split_corefine.cpp")
 create_single_source_cgal_program("test_isolevel_refinement.cpp")
 create_single_source_cgal_program("test_pmp_clip.cpp")
 create_single_source_cgal_program("test_snap_rounding.cpp")
+create_single_source_cgal_program("test_mesh_kernel.cpp")
 
 find_package(TBB QUIET)
 include(CGAL_TBB_support)

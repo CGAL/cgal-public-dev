@@ -4,7 +4,7 @@ namespace CGAL {
 \anchor Chapter_PMPBooleanOperations
 
 \cgalAutoToc
-\authors Sébastien Loriot and Ilker O. Yaz
+\authors Sébastien Loriot, Léo Valque, and Ilker O. Yaz
 
 \cgalFigureAnchor{PMPBoolOPBanner}
 <center>
@@ -296,12 +296,25 @@ for pedagogical purposes.
 
 \cgalExample{PMP_Boolean_operations/mesh_slicer_example.cpp}
 
+\subsection coref_kernel Mesh Kernels
+
+\cgalFigureBegin{coref_kernel_figure, kernel.png}
+Mesh kernel: From left to right: (i) The input mesh; (ii) The kernel of the input; (iii) The kernel inside its mesh. All segments between a point of the kernel and a point of the mesh are inside the mesh.
+\cgalFigureEnd
+
+As illustrated on \cgalFigureRef{coref_kernel_figure}, the kernel of a mesh is defined as the set of points from which the entire surface of the mesh is visible. More formally, a point belongs to the kernel if,
+for every point on the mesh, the segment connecting them lies inside the mesh. Equivalently, the kernel is the intersection of all the half-spaces on the negative side of the oriented planes defined by
+the faces of the mesh. The functions `CGAL::Polygon_mesh_processing::kernel()`, `CGAL::Polygon_mesh_processing::kernel_point()` and `CGAL::Polygon_mesh_processing::has_empty_kernel()` output the full kernel, a single point inside it or
+a Boolean indicating whether the kernel exists or not, respectively.
+
 \section PMPBoolOpHistory Implementation History
 
 Corefinement was introduced in \cgal 4.10 by Sébastien Loriot.
 
 The `apply_iterative_snap_rounding` option for autorefinement was developed by Sylvain Lazard
 and Léo Vaque \cgalCite{valquelazard2025}, and implemented by Léo Valque in 2025.
+
+The kernel functions and the convex specialization of `CGAL::Polygon_mesh_processing::clip()` and `CGAL::Polygon_mesh_processing::refine_with_plane()` were implemented in 2025, by Léo Valque, inspired by the work of Sorgente et al. \cgalCite{sorgente2022polyhedron}.
 
 */
 } /* namespace CGAL */

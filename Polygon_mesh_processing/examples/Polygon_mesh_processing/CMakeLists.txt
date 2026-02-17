@@ -23,6 +23,7 @@ create_single_source_cgal_program("polyhedral_envelope_mesh_containment.cpp" )
 create_single_source_cgal_program("sample_example.cpp" )
 create_single_source_cgal_program("self_intersections_example.cpp" )
 create_single_source_cgal_program("volume_connected_components.cpp")
+create_single_source_cgal_program("mesh_kernel_example.cpp")
 
 find_package(Eigen3 QUIET)
 include(CGAL_Eigen3_support)

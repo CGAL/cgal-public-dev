@@ -18,6 +18,10 @@
 /// Functions to split meshes using planes.
 /// \ingroup PkgPMPBooleanOperationsRef
 
+/// \defgroup PMP_kernel_grp Mesh Kernel
+/// Functions to compute kernel of polyhedra.
+/// \ingroup PkgPMPBooleanOperationsRef
+
 /*!
 \addtogroup PkgPMPBooleanOperationsRef
 
@@ -70,6 +74,11 @@ The page \ref bgl_namedparameters "Named Parameters" describes their usage.
 - `CGAL::Polygon_mesh_slicer`
 - `CGAL::Polygon_mesh_processing::refine_with_plane()`
 - `CGAL::Polygon_mesh_processing::refine_mesh_at_isolevel()`
+
+\cgalCRPSection{Kernel Computation}
+- `CGAL::Polygon_mesh_processing::kernel()`
+- `CGAL::Polygon_mesh_processing::has_empty_kernel()`
+- `CGAL::Polygon_mesh_processing::kernel_point()`
 
 \cgalCRPSection{See Also}
 - `CGAL::Polygon_mesh_processing::IO::read_polygon_mesh()`
