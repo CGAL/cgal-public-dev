@@ -652,7 +652,5 @@ The implementation is based on \cgalCite{cgal:lrtc-iccmps-20}.
 <a href="https://dgtal-team.github.io/doc-nightly/moduleCurvatureMeasures.html">DGtal's implementation</a>
 was also referenced during development.
 
-The kernel functions and the convex specialization of `CGAL::Polygon_mesh_processing::clip()` and `CGAL::Polygon_mesh_processing::refine_with_plane()` were implemented in 2025, by Léo Valque, inspired by the work of Sorgente et al. \cgalCite{sorgente2022polyhedron}.
-
 */
 } /* namespace CGAL */

@@ -29,7 +29,7 @@
 \cgalPkgPicture{pmp-boolop-icon.png}
 
 \cgalPkgSummaryBegin
-\cgalPkgAuthors{Sébastien Loriot and Ilker O. Yaz}
+\cgalPkgAuthors{Sébastien Loriot, Léo Valque, and Ilker O. Yaz}
 \cgalPkgDesc{This package provides a collection of methods and classes to compute
 Boolean operations on meshes (union, intersection, and difference), clipping and splitting
 of meshes using planes, boxes, or other meshes, and slicing of triangulated surfaces.}
@@ -75,7 +75,7 @@ The page \ref bgl_namedparameters "Named Parameters" describes their usage.
 - `CGAL::Polygon_mesh_processing::refine_with_plane()`
 - `CGAL::Polygon_mesh_processing::refine_mesh_at_isolevel()`
 
-\cgalCRPSection{Kernel Computation}
+\cgalCRPSection{%Kernel Computation}
 - `CGAL::Polygon_mesh_processing::kernel()`
 - `CGAL::Polygon_mesh_processing::has_empty_kernel()`
 - `CGAL::Polygon_mesh_processing::kernel_point()`
