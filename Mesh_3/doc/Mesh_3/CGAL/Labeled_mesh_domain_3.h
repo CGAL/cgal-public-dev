@@ -12,7 +12,7 @@ Any boundary facet is labeled <a,b>, with a<b, where a and b are the
 tags of its incident subdomains.
 Thus, a boundary facet of the domain is labeled <0,b>, where b!=0.
 
-This class includes a \link Mesh3Labeling_function <em>labeling function</em> \endlink that provides the index of the subdomain in which any
+This class includes a \link Labeling_function <em>labeling function</em>\endlink that provides the index of the subdomain in which any
 query point lies. An intersection between a segment and bounding
 surfaces is detected when both segment endpoints are associated with different
 values of subdomain indices. The intersection is then constructed by bisection.
@@ -68,7 +68,6 @@ public:
 
 
   /// \brief The type of object that stores the function using type-erasure.
-  /// \anchor Mesh3Labeling_function
   /// \details A labeling function `f` must return `0` if the point is not located in any subdomain. The return type of labeling functions is an integer.
   ///
   /// Let `p` be a point.
