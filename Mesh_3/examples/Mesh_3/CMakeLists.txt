@@ -101,11 +101,15 @@ target_link_libraries(mesh_polyhedral_domain_with_features_sizing
 target_link_libraries(mesh_polyhedral_domain_with_edge_distance
                       PRIVATE CGAL::Eigen3_support)
 
+create_single_source_cgal_program("surface_mesh_to_tetrahedral_mesh.cpp")
+target_link_libraries(surface_mesh_to_tetrahedral_mesh
+                      PRIVATE CGAL::Eigen3_support)
+
 create_single_source_cgal_program("mesh_polyhedral_domain_with_features_sm.cpp")
 target_link_libraries(mesh_polyhedral_domain_with_features_sm
                       PRIVATE CGAL::Eigen3_support)
 
-create_single_source_cgal_program(
+                      create_single_source_cgal_program(
   "mesh_polyhedral_domain_with_lipschitz_sizing.cpp")
 target_link_libraries(mesh_polyhedral_domain_with_lipschitz_sizing
                       PRIVATE CGAL::Eigen3_support)
@@ -226,7 +230,8 @@ if(CGAL_ACTIVATE_CONCURRENT_MESH_3 AND TARGET CGAL::TBB_support)
     mesh_polyhedral_domain_with_edge_distance
     mesh_polyhedral_domain_with_features_sm
     mesh_polyhedral_domain_with_lipschitz_sizing
-    mesh_two_implicit_spheres_with_balls)
+    mesh_two_implicit_spheres_with_balls
+    surface_mesh_to_tetrahedral_mesh)
     if(TARGET ${target})
       target_link_libraries(${target} PRIVATE CGAL::TBB_support)
     endif()
