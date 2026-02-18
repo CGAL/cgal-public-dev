@@ -60,14 +60,16 @@ public:
 /// \name Types
 ///@{
 
-  /// \anchor Mesh3Labeling_function
+
 
   /// The subdomain index of this model of `MeshDomain_3`
   typedef Subdomain_index_                  Subdomain_index;
 
 
-  /// The type of object that stores the function using type-erasure.
-  /// A labeling function `f` must return `0` if the point is not located in any subdomain. The return type of labeling functions is an integer.
+
+  /// \brief The type of object that stores the function using type-erasure.
+  /// \anchor Mesh3Labeling_function
+  /// \details A labeling function `f` must return `0` if the point is not located in any subdomain. The return type of labeling functions is an integer.
   ///
   /// Let `p` be a point.
   /// <ul>
