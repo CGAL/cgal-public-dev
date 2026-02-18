@@ -100,8 +100,8 @@ public:
 /// @{
   /*!  \brief Construction from a function, a bounding object and a relative error bound.
    *
-   * \tparam Function a type compatible with \ref Mesh3Labeling_function "Labeling_function".
-   *   `CGAL::Implicit_multi_domain_to_labeling_function_wrapper` is a good candidate for this template parameter
+   * \tparam Function a type compatible with \link Labeling_function <em>labeling function</em>\endlink.
+   *   The class `CGAL::Implicit_multi_domain_to_labeling_function_wrapper` is a good candidate for this template parameter
    *   if there are several components to mesh.
    * \tparam NamedParameters a sequence of \ref bgl_namedparameters "Named Parameters"
    * \tparam BoundingObject either a bounding sphere (of type `Sphere_3`), a bounding box (type `Bbox_3` or `Iso_cuboid_3`)
