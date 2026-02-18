@@ -12,7 +12,7 @@ Any boundary facet is labeled <a,b>, with a<b, where a and b are the
 tags of its incident subdomains.
 Thus, a boundary facet of the domain is labeled <0,b>, where b!=0.
 
-This class includes a \link Labeling_function <em>labeling function</em>\endlink that provides the index of the subdomain in which any
+This class includes a \link Labeling_function `Labeling_function` \endlink that provides the index of the subdomain in which any
 query point lies. An intersection between a segment and bounding
 surfaces is detected when both segment endpoints are associated with different
 values of subdomain indices. The intersection is then constructed by bisection.
@@ -100,7 +100,7 @@ public:
 /// @{
   /*!  \brief Construction from a function, a bounding object and a relative error bound.
    *
-   * \tparam Function a type compatible with \link Labeling_function <em>labeling function</em>\endlink.
+   * \tparam Function a type compatible with \link Labeling_function `Labeling_function`\endlink.
    *   The class `CGAL::Implicit_multi_domain_to_labeling_function_wrapper` is a good candidate for this template parameter
    *   if there are several components to mesh.
    * \tparam NamedParameters a sequence of \ref bgl_namedparameters "Named Parameters"
