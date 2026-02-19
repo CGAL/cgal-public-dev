@@ -3,11 +3,12 @@
 #include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
 #include <CGAL/Surface_mesh.h>
 
-#include <CGAL/Polygon_mesh_processing/border.h>
 #include <CGAL/Polygon_mesh_processing/connected_components.h>
 #include <CGAL/Polygon_mesh_processing/internal/Snapping/snap.h>
 #include <CGAL/Polygon_mesh_processing/internal/Snapping/helper.h>
 #include <CGAL/Polygon_mesh_processing/stitch_borders.h>
+
+#include <CGAL/boost/graph/border.h>
 
 #include <iostream>
 #include <fstream>
@@ -29,7 +30,7 @@ using halfedge_descriptor = boost::graph_traits<Mesh>::halfedge_descriptor;
 void stitch(Mesh& mesh)
 {
   std::vector<halfedge_descriptor> boundaries;
-  PMP::extract_boundary_cycles(mesh, std::back_inserter(boundaries));
+  CGAL::extract_boundary_cycles(mesh, std::back_inserter(boundaries));
   std::cout << "Snapping " << boundaries.size() << " border(s)" << std::endl;
 
   for(halfedge_descriptor hd : boundaries)
@@ -55,7 +56,7 @@ bool test(const std::string& filepath,
   auto tol_map = mesh.template add_property_map<vertex_descriptor, FT>("v:tol", 0).first;
 
   std::vector<halfedge_descriptor> boundaries;
-  PMP::extract_boundary_cycles(mesh, std::back_inserter(boundaries));
+  CGAL::extract_boundary_cycles(mesh, std::back_inserter(boundaries));
   std::size_t nb_boundaries = boundaries.size();
 
   std::size_t nb_cc = PMP::internal::number_of_connected_components(mesh);
@@ -88,7 +89,7 @@ bool test(const std::string& filepath,
   // Now all CCs at once
 
   std::vector<halfedge_descriptor> border_vertices;
-  PMP::border_halfedges(mesh, std::back_inserter(border_vertices));
+  CGAL::border_halfedges(mesh, std::back_inserter(border_vertices));
 
   PMP::internal::assign_tolerance_with_local_edge_length_bound(border_vertices, tol_map, def_tol, mesh);
   PMP::internal::snap_non_conformal(border_vertices, mesh, tol_map, border_vertices, mesh, tol_map, true /*self snapping*/,
@@ -101,7 +102,7 @@ bool test(const std::string& filepath,
 
   // Recount boundaries
   boundaries.clear();
-  PMP::extract_boundary_cycles(mesh, std::back_inserter(boundaries));
+  CGAL::extract_boundary_cycles(mesh, std::back_inserter(boundaries));
   nb_boundaries = boundaries.size();
 
   // Recount connected components
