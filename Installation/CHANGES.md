@@ -4,6 +4,11 @@
 
 Release date: July 2026
 
+### [Generalized Barycentric Coordinates 3](https://doc.cgal.org/6.2/Manual/packages.html#PkgBarycentricCoordinates3) (new package)
+-   This package provides functions to compute various types of generalized barycentric coordinates
+    (Wachspress, mean value, discrete harmonic and tetrahedron coordinates) for points located inside closed convex
+    3D polyhedra.
+
 ### [Polygon Mesh Processing](https://doc.cgal.org/6.2/Manual/packages.html#PkgPolygonMeshProcessing) (major changes)
 
 -   The "Polygon Mesh Processing" package has been reorganized into several packages.
@@ -22,11 +27,6 @@ Release date: July 2026
 -   Introduced a Geometry Traits concept for arrangement on surfaces that enables the provision of the disconnected portions of an approximation of a curve within a given bounding box.
 -   Made the `Arr_linear_traits_2` a model of the new concept.
 -   Added overloads of `draw(Arrangement_on_surface_2& arr, Bbox& bbox, ...)` that enable the drawing of arrangements induced by unbounded curves.
-
-### [Generalized Barycentric Coordinates 3](https://doc.cgal.org/6.2/Manual/packages.html#PkgBarycentricCoordinates3) (new package)
--   This package provides functions to compute various types of generalized barycentric coordinates
-    (Wachspress, mean value, discrete harmonic and tetrahedron coordinates) for points located inside closed convex
-    3D polyhedra.
 
 ### [2D Conforming Triangulations and Meshes](https://doc.cgal.org/6.2/Manual/packages.html#PkgMesh2)
 
@@ -70,23 +70,34 @@ Release date: July 2026
     parameter any longer. (This third optional parameter was introduced a few years ago, and now abandoned only for
     `do_intersect()`.)
 
-### [Polygon Mesh Processing](https://doc.cgal.org/6.2/Manual/packages.html#PkgPolygonMeshProcessing) (breaking changes)
--   The header `CGAL/Polygon_mesh_processing/border.h` has been deprecated and its content
-    ([`CGAL::border_halfedges()`]() and [`CGAL::extract_boundary_cycles()`]()) moved to
-    `CGAL/boost/graph/border.h`.
+### [Polygon Mesh Processing](https://doc.cgal.org/6.2/Manual/packages.html#PkgPolygonMeshProcessing)
+-   **Breaking change**: The header `CGAL/Polygon_mesh_processing/border.h` has been deprecated and its content
+    ([`CGAL::border_halfedges()`]() and [`CGAL::extract_boundary_cycles()`]()) have been moved to
+    the new header [`CGAL/boost/graph/border.h`]().
+-   Added function `CGAL::Polygon_mesh_processing::kernel()`, to compute the kernel of a polygon mesh.
+-   Added function `CGAL::Polygon_mesh_processing::is_empty_kernel()`, to indicate if the kernel of a polygon mesh is empty.
+-   Added function `CGAL::Polygon_mesh_processing::kernel_point()`, to compute a single point inside the kernel of a polygon mesh.
+-   Added `use_convex_specialization` parameter to `CGAL::Polygon_mesh_processing::clip()` and `CGAL::Polygon_mesh_processing::refine_with_plane()`.
 
 ### [Polygon Mesh Processing (Boolean Operations on Meshes)](https://doc.cgal.org/6.2/Manual/packages.html#PkgPMPBooleanOperations)
-- Added function `CGAL::Polygon_mesh_processing::kernel()`, to compute the kernel of a polygon mesh.
-- Added function `CGAL::Polygon_mesh_processing::is_empty_kernel()`, to indicate if the kernel of a polygon mesh is empty.
-- Added function `CGAL::Polygon_mesh_processing::kernel_point()`, to compute a single point inside the kernel of a polygon mesh.
-- Added `use_convex_specialization` parameter to `CGAL::Polygon_mesh_processing::clip()` and `CGAL::Polygon_mesh_processing::refine_with_plane()`.
-- The function [`CGAL::Polygon_mesh_processing::surface_intersection()`](), which can be used to
-  compute the polylines that represent the intersection between two polyhedral surfaces has been
-  renamed to [`CGAL::Polygon_mesh_processing::intersection_polylines()`]().
+-   Added function `CGAL::Polygon_mesh_processing::kernel()`, to compute the kernel of a polygon mesh.
+-   Added function `CGAL::Polygon_mesh_processing::is_empty_kernel()`, to indicate if the kernel of a polygon mesh is empty.
+-   Added function `CGAL::Polygon_mesh_processing::kernel_point()`, to compute a single point inside the kernel of a polygon mesh.
+-   Added `use_convex_specialization` parameter to `CGAL::Polygon_mesh_processing::clip()` and `CGAL::Polygon_mesh_processing::refine_with_plane()`.
+-   The function [`CGAL::Polygon_mesh_processing::surface_intersection()`](), which can be used to
+    compute the polylines that represent the intersection between two polyhedral surfaces has been
+    renamed to [`CGAL::Polygon_mesh_processing::intersection_polylines()`]().
+
+### [Tetrahedral Mesh Generation](https://doc.cgal.org/6.2/Manual/packages.html#PkgMesh3)
+
+-   **Breaking change**: Removed the class template `CGAL::Implicit_vector_to_labeling_function_wrapper` as well as
+    the constructor of `CGAL::Polyhedral_mesh_domain_with_features_3` that has a filename as parameter,
+    which were deprecated since CGAL-4.5.
+-   **Breaking change**:  Added the requirement for a nested type `Iso_cuboid_3` to the concept `BisectionGeometricTraits_3`.
 
 ### [2D Triangulations](https://doc.cgal.org/6.2/Manual/packages.html#PkgTriangulation2)
 
-- Add the function `insert_unique_constraints()` to the class `Constrained_Delaunay_triangulation_2` identical to the function `insert_constraints()` except that it removes duplicated constraints before inserting them in the triangulation.
+- Add the function `insert_unique_constraints()` to the class `CGAL::Constrained_Delaunay_triangulation_2` identical to the function `insert_constraints()` except that it removes duplicated constraints before inserting them in the triangulation.
 
 ### [Stream Support](https://doc.cgal.org/6.2/Manual/packages.html#PkgStreamSupport)
 
