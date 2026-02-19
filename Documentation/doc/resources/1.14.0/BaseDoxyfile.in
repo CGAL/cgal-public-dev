@@ -488,6 +488,14 @@ HTML_HEADER            = ${CGAL_DOC_HEADER_PACKAGE}
 
 HTML_FOOTER            = ${CGAL_DOC_RESOURCE_DIR}/footer.html
 
+# If the HTML_DYNAMIC_SECTIONS tag is set to YES then the generated HTML
+# documentation will contain sections that can be hidden and shown after the
+# page has loaded.
+# The default value is: NO.
+# This tag requires that the tag GENERATE_HTML is set to YES.
+
+HTML_DYNAMIC_SECTIONS  = YES
+
 # If the HTML_CODE_FOLDING tag is set to YES then classes and functions can be
 # dynamically folded and expanded in the generated HTML source code.
 # The default value is: YES.
