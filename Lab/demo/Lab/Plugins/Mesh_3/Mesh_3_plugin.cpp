@@ -1,8 +1,5 @@
-#include "config.h"
 #include "config_mesh_3.h"
-#include <qelapsedtimer.h>
 
-#ifdef CGAL_LAB_DEMO_USE_SURFACE_MESHER
 #include <CGAL/Three/CGAL_Lab_plugin_interface.h>
 #include <CGAL/Three/Three.h>
 #include <CGAL/Three/Scene_group_item.h>
@@ -17,9 +14,9 @@
 #include <QFileDialog>
 #include <QMessageBox>
 #include <QDesktopServices>
+#include <QElapsedTimer>
 #include <QUrl>
 #include <QVariant>
-#include <fstream>
 
 #include <gsl/pointers>
 
@@ -1063,5 +1060,3 @@ treat_result(Scene_item& source_item,
 }
 
 #include "Mesh_3_plugin.moc"
-
-#endif // CGAL_LAB_DEMO_USE_SURFACE_MESHER
