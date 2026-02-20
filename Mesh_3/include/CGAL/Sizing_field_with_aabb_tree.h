@@ -614,23 +614,23 @@ public:
       //todo : check segment is not degenerate
       auto plane = GT().construct_plane_3_object();
       auto base_vector = GT().construct_base_vector_3_object();
-      auto scale = GT().construct_scaled_vector_3_object();
+      auto scaled = GT().construct_scaled_vector_3_object();
       auto sqlen = GT().compute_squared_length_3_object();
       auto triangle = GT().construct_triangle_3_object();
-      auto translate = GT().construct_translated_point_3_object();
+      auto translated = GT().construct_translated_point_3_object();
       auto opp = GT().construct_opposite_vector_3_object();
 
       const Vector_3& curr_normal = curr_segment.to_vector();
       const Plane_3 curr_ortho_plane = plane(p, curr_normal);
       Vector_3 base1 = base_vector(curr_ortho_plane, 1);
       Vector_3 base2 = base_vector(curr_ortho_plane, 2);
-      scale(base1, 2.* result / CGAL::approximate_sqrt(sqlen(base1)));
-      scale(base2, 2.* result / CGAL::approximate_sqrt(sqlen(base2)));
+      base1 = scaled(base1, 2.* result / CGAL::approximate_sqrt(sqlen(base1)));
+      base2 = scaled(base2, 2.* result / CGAL::approximate_sqrt(sqlen(base2)));
 
-      const Point_3 pright = translate(p, base2);
-      const Point_3 pleft = translate(p, opp(base2));
-      const Point_3 ptop = translate(p, base1);
-      const Point_3 pbottom = translate(p, opp(base1));
+      const Point_3 pright = translated(p, base2);
+      const Point_3 pleft = translated(p, opp(base2));
+      const Point_3 ptop = translated(p, base1);
+      const Point_3 pbottom = translated(p, opp(base1));
       const auto tr1 = triangle(pleft, ptop, pright);
       const auto tr2 = triangle(pleft, pright, pbottom);
 
@@ -646,6 +646,8 @@ public:
       std::cerr << std::endl;
       std::cerr << "p = " << p << std::endl;
       std::cerr << "curr_ortho_plane = " << curr_ortho_plane << std::endl;
+      std::cerr << "tr1: " << tr1 << std::endl;
+      std::cerr << "tr2: " << tr2 << std::endl;
       std::cerr << "PRIMITIVES FOUND : " << prims.size() << std::endl;
 #endif
 
