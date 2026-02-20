@@ -1887,7 +1887,6 @@ Protect_edges_sizing_field<C3T3, MD, Sf>::
 insert_balls_on_edges()
 {
   // Get features
-  // Get features
   struct Feature_tuple
   {
     Curve_index curve_index_;

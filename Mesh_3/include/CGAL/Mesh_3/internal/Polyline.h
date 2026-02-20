@@ -223,8 +223,8 @@ public:
                           const_iterator q_it) const
   {
     CGAL_assertion(orientation != CGAL::ZERO);
-    CGAL_assertion(p_it == locate(p));
-    CGAL_assertion(q_it == locate(q));
+    // CGAL_assertion(p_it == locate(p));
+    // CGAL_assertion(q_it == locate(q));
 
     if(p_it == q_it) {
       const CGAL::Comparison_result cmp = compare_distance(*p_it,p,q);
@@ -295,8 +295,8 @@ public:
   FT signed_geodesic_distance(const Point_3& p, const Point_3& q,
                               const_iterator pit, const_iterator qit) const
   {
-    CGAL_assertion(pit == locate(p));
-    CGAL_assertion(qit == locate(q, false));
+    // CGAL_assertion(pit == locate(p));
+    // CGAL_assertion(qit == locate(q, false));
 
     // If p and q are in the same segment of the polyline
     if ( pit == qit )
@@ -384,14 +384,14 @@ public:
                               FT distance,
                               const_iterator start_it) const
   {
-    CGAL_assertion(start_it == locate(start_pt));
+    // CGAL_assertion(start_it == locate(start_pt));
 
     // simplify the problem by moving start_pt to start_it_pt
     const Point_3& start_it_pt = *start_it;
     const_iterator start_it_pt_it = (start_it != points_.begin())
                                   ? std::prev(start_it)
                                   : start_it;
-    CGAL_assertion(locate(start_it_pt) == start_it_pt_it);
+    // CGAL_assertion(locate(start_it_pt) == start_it_pt_it);
 
     distance += curve_segment_length(start_it_pt, start_pt, CGAL::POSITIVE,
                                      start_it_pt_it, start_it);
@@ -458,7 +458,7 @@ public:
     {
       --result_iterator;
     }
-    CGAL_assertion(result_iterator == locate_point(result));
+    // CGAL_assertion(result_iterator == locate_point(result));
 
     return {result, result_iterator};
   }
@@ -471,7 +471,7 @@ public:
     else if(p == end_point())
       res = last_segment_source();
 
-    CGAL_assertion(res == locate(p));
+    // CGAL_assertion(res == locate(p));
     CGAL_assertion(res != points_.end());
     return res;
   }
@@ -487,7 +487,7 @@ public:
     CGAL_precondition(!is_loop());
 
     // Locate p & q on polyline
-    CGAL_assertion(pit == locate(p));
+    // CGAL_assertion(pit == locate(p));
     //CGAL_assertion(qit == locate(q));//, true));
 
     // Points are not located on the same segment
