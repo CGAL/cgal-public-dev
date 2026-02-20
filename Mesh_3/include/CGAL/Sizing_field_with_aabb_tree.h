@@ -22,6 +22,7 @@
 #include <cstddef>
 #include <memory>
 #include <limits>
+#include <optional>
 
 #include <CGAL/Mesh_3/experimental/Facet_patch_id_map.h>
 #include <CGAL/Mesh_3/experimental/Get_curve_index.h>
@@ -649,7 +650,7 @@ public:
 #endif
 
       Point_3 closest_intersection;
-      Input_curves_AABB_tree_primitive_ closest_primitive = prims[0];
+      std::optional<Input_curves_AABB_tree_primitive_> opt_closest_primitive;
       FT sqd_intersection = -1;
       for(Input_curves_AABB_tree_primitive_ prim : prims)
       {
@@ -706,7 +707,7 @@ public:
             {
               sqd_intersection = new_sqd;
               closest_intersection = intersection_point;
-              closest_primitive = prim;
+              opt_closest_primitive = prim;
             }
           }
           else
@@ -724,15 +725,20 @@ public:
         {
           sqd_intersection = tmp_sqd;
           closest_intersection = curves_projection_traits.closest_point();
-          closest_primitive = Input_curves_AABB_tree_primitive_(
+          opt_closest_primitive = Input_curves_AABB_tree_primitive_(
             curves_projection_traits.closest_point_and_primitive().second);
         }
       }
 #ifdef CGAL_MESH_3_PROTECTION_HIGH_VERBOSITY
-      std::cout << " curve_id = " << curve_id
-                << " proj_cid = " << closest_primitive.id().first->first
-                << " (" << get(d_ptr->get_curve_index, closest_primitive.id()) << ")"
-                << std::endl;
+      std::cout << " curve_id = " << curve_id;
+      if (opt_closest_primitive)
+      {
+        std::cout << " proj_cid = " << opt_closest_primitive->id().first->first
+                  << " (" << get(d_ptr->get_curve_index, opt_closest_primitive->id()) << ")";
+      } else {
+        std::cout << " proj_cid = none";
+      }
+      std::cout << std::endl;
       std::cerr << " --- domain.curves_aabb_tree().traversal \n";
 #endif // CGAL_MESH_3_PROTECTION_HIGH_VERBOSITY
       if (sqd_intersection > 0)
@@ -761,7 +767,7 @@ public:
                              "Closest CURVE id: %4%\n"
                              "Ids are { ")
             % result % p % curve_id
-            % closest_primitive.id().first->first;
+            % (opt_closest_primitive ? opt_closest_primitive->id().first->first : -1);
           for(int i : ids) {
             s << i << " ";
           }
