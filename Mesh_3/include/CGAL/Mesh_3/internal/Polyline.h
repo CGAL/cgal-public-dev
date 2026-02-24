@@ -407,13 +407,14 @@ public:
     // initialize iterators and walk forward or backward to find the segment
     // containing the point at distance from start_it_pt
     const CGAL::Sign sgn = CGAL::sign(distance);
+    const FT ft_sgn = (sgn == CGAL::POSITIVE) ? FT(1) : ((sgn == CGAL::NEGATIVE) ? FT(-1) : FT(0));
 
     const_iterator previous = start_it;
     const_iterator pit = (sgn == CGAL::POSITIVE)
                        ? next_segment_source(previous)
                        : previous_segment_source(previous);
 
-    FT segment_length = sgn * this->distance(point(previous), point(pit));
+    FT segment_length = ft_sgn * this->distance(point(previous), point(pit));
     bool signed_changed = false;
 
     while(!signed_changed && CGAL::abs(distance) > CGAL::abs(segment_length))
@@ -437,7 +438,7 @@ public:
       }
 
       // update segment length
-      segment_length = sgn * this->distance(point(previous), point(pit));
+      segment_length = ft_sgn * this->distance(point(previous), point(pit));
     };
 
     // return point at distance from current segment source
