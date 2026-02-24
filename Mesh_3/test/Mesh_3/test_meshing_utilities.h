@@ -27,6 +27,7 @@
 #include <CGAL/optimize_mesh_3.h>
 #include <CGAL/remove_far_points_in_mesh_3.h>
 
+#include <CGAL/SMDS_3/Dump_c3t3.h>
 #include <CGAL/Mesh_3/Triangle_accessor_primitive.h>
 #include <CGAL/Triangle_accessor_3.h>
 #include <CGAL/AABB_tree.h>
@@ -35,17 +36,14 @@
 #include <CGAL/disable_warnings.h>
 
 #include <limits>
-#include <vector>
 #include <boost/optional/optional_io.hpp>
 
 // IO
-#include <fstream>
 #include <iostream>
 
-#include <climits>
 #define STD_SIZE_T_MAX UINT_MAX
 
-struct Bissection_tag {};
+struct Bisection_tag {};
 struct Polyhedral_tag {};
 
 // Verify that the time stamps of vertices and cells are strictly
@@ -212,6 +210,8 @@ struct Tester
     std::cerr << "\tNumber of facets: " << c3t3.number_of_facets_in_complex() << "\n";
     std::cerr << "\tNumber of vertices: " << c3t3.triangulation().number_of_vertices() << "\n";
 
+    dump_c3t3(c3t3, "dump_c3t3");
+
     std::size_t dist_facets ( std::distance(c3t3.facets_in_complex_begin(),
                                             c3t3.facets_in_complex_end()) );
     std::size_t dist_cells ( std::distance(c3t3.cells_in_complex_begin(),
@@ -301,7 +301,7 @@ struct Tester
   template<typename C3t3, typename MeshDomain>
   void verify_c3t3_combinatorics(const C3t3& c3t3,
                                  const MeshDomain& domain,
-                                 const Bissection_tag) const
+                                 const Bisection_tag) const
   {
     typedef typename C3t3::Triangulation        Tr;
     typedef typename Tr::Facet                  Facet;
@@ -354,7 +354,7 @@ struct Tester
   template<typename C3t3, typename MeshDomain>
   double compute_hausdorff_distance(const C3t3&,
                                     const MeshDomain&,
-                                    const Bissection_tag) const
+                                    const Bisection_tag) const
   {
     return 0.;
   }
@@ -411,7 +411,7 @@ struct Tester
   template<typename C3t3, typename MeshDomain>
   void verify_c3t3_hausdorff_distance(const C3t3&,
                                       const MeshDomain&,
-                                      const Bissection_tag,
+                                      const Bisection_tag,
                                       const double) const
   { //nothing to do
   }
