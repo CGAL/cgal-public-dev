@@ -13,6 +13,9 @@
 #ifndef CGAL_PERIODIC_3_MESH_3_PROTECT_EDGES_SIZING_FIELD_H
 #define CGAL_PERIODIC_3_MESH_3_PROTECT_EDGES_SIZING_FIELD_H
 
+// This file was a fork from Mesh_3's Protect_edges_sizing_field.h
+// due to incompatibilities:
+
 // Main differences with Mesh_3's version:
 // - A map [Vertex_handle] --> [position in full space] because:
 //   * This position might not be (in full space coordinates) in the canonical instance
@@ -23,7 +26,12 @@
 //   to sharp features.
 // - Various minor improvements over the original code, which should be brought back
 //   (unordered sets, improving 'unchecked_vertices', etc.)
-// - No wonky indentation :)
+
+// It is now significantly behind in patches compared to the Mesh_3 version, missing in particular:
+// - edge distance fields
+// - minimal ball size
+// - early stop triggers
+// - polyline location
 
 #include <CGAL/license/Periodic_3_mesh_3.h>
 
