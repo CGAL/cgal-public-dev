@@ -179,8 +179,21 @@ public:
     : Cb (v0, v1, v2, v3, n0, n1, n2, n3)
     , surface_index_table_()
     , surface_center_table_()
+    , surface_center_index_table_()
   { }
 
+  Mesh_surface_cell_base_3(const Mesh_surface_cell_base_3& rhs)
+    : Cb(rhs)
+     , surface_index_table_()
+     , surface_center_table_()
+     , surface_center_index_table_()
+  {
+    for(int i=0; i <4; i++){
+      surface_index_table_[i] = rhs.surface_index_table_[i];
+      surface_center_table_[i]= rhs.surface_center_table_[i];
+      surface_center_index_table_[i] = rhs.surface_center_index_table_[i];
+    }
+  }
 
   /// Destructor
   ~Mesh_surface_cell_base_3() { }

@@ -203,6 +203,18 @@ public:
 #endif
   {}
 
+  Mesh_cell_base_3(const Mesh_cell_base_3& rhs)
+    : Base(rhs)
+    , subdomain_index_(rhs.subdomain_index_)
+    , sliver_value_(rhs.sliver_value_)
+    , sliver_cache_validity_(rhs.sliver_cache_validity_)
+#ifdef CGAL_INTRUSIVE_LIST
+    , next_intrusive_(rhs.next_intrusive_)
+    , previous_intrusive_(rhs.previous_intrusive_)
+#endif
+  {
+  }
+
   // Default copy constructor and assignment operator are ok
 
   // Returns the index of the cell of the input complex that contains the cell
