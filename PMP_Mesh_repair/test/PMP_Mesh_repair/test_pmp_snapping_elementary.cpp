@@ -122,16 +122,16 @@ int main(int, char**)
 {
   // for each line: input, base tolerance, expected CC, expected boundary count
 
-  test("data_snapping/part-0.ply", 0.1, 1, 1);
-  test("data_snapping/part-1.ply", 0.1, 1, 2);
-  test("data_snapping/part-2.ply", 0.1, 1, 1);
-  test("data_snapping/part-3.ply", 0.1, 1, 1);
-  test("data_snapping/part-4.ply", 0.1, 1, 1);
-  test("data_snapping/part-5.ply", 0.1, 1, 1);
-  test("data_snapping/part-6.ply", 0.1, 1, 1);
-  test("data_snapping/part-7.ply", 0.1, 1, 1);
-  test("data_snapping/part-8.ply", 0.1, 1, 1);
-  test("data_snapping/part-9.ply", 0.1, 1, 1);
+  test("data-snapping/part-0.ply", 0.1, 1, 1);
+  test("data-snapping/part-1.ply", 0.1, 1, 2);
+  test("data-snapping/part-2.ply", 0.1, 1, 1);
+  test("data-snapping/part-3.ply", 0.1, 1, 1);
+  test("data-snapping/part-4.ply", 0.1, 1, 1);
+  test("data-snapping/part-5.ply", 0.1, 1, 1);
+  test("data-snapping/part-6.ply", 0.1, 1, 1);
+  test("data-snapping/part-7.ply", 0.1, 1, 1);
+  test("data-snapping/part-8.ply", 0.1, 1, 1);
+  test("data-snapping/part-9.ply", 0.1, 1, 1);
 
   std::cout << "OK" << std::endl;
 
