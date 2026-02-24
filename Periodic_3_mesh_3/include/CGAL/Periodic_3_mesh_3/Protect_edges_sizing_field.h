@@ -1887,39 +1887,31 @@ Protect_edges_sizing_field<C3T3, MD, Sf>::
 insert_balls_on_edges()
 {
   // Get features
-  struct Feature_tuple
-  {
-    Curve_index curve_index_;
-    Polyline_iterator polyline_begin_;
-    std::pair<Bare_point, Index> point_s_;
-    std::pair<Bare_point, Index> point_t_;
-  };
-  typedef std::vector<Feature_tuple> Input_features;
-
-  Input_features input_features;
+  using Feature_tuple =
+      std::tuple<Curve_index, Polyline_iterator, std::pair<Bare_point, Index>, std::pair<Bare_point, Index>>;
+  std::vector<Feature_tuple> input_features;
   domain_.get_curves(std::back_inserter(input_features));
 
   // Iterate on edges
-  for(const Feature_tuple& ft : input_features)
+  for (const auto& [curve_index, polyline_begin, point_s, point_t] : input_features)
   {
-    const Curve_index& curve_index = ft.curve_index_;
     if(! is_treated(curve_index))
     {
 #if CGAL_MESH_3_PROTECTION_DEBUG & 1
       std::cerr << "** treat curve #" << curve_index << std::endl;
       std::cerr << "is it a loop? " << domain_.is_loop(curve_index) << std::endl;
 #endif
-      const Bare_point& p = ft.point_s_.first;
-      const Index& p_index = ft.point_s_.second;
-      const Polyline_iterator& p_polyline_iter = ft.polyline_begin_;
+      const Bare_point& p = point_s.first;
+      const Index& p_index = point_s.second;
+      const Polyline_iterator& p_polyline_iter = polyline_begin;
 
       Vertex_handle vp,vq;
       if(! domain_.is_loop(curve_index))
       {
         vp = get_vertex_corner_from_point(p, p_index);
 
-        const Bare_point& q = ft.point_t_.first;
-        const Index& q_index = ft.point_t_.second;
+        const Bare_point& q = point_t.first;
+        const Index& q_index = point_t.second;
         vq = get_vertex_corner_from_point(q, q_index);
       }
       else
@@ -1950,7 +1942,9 @@ insert_balls_on_edges()
                                   p_index,
                                   curve_index,
                                   CGAL::Emptyset_iterator()).first;
-          domain_.set_polyline_iterator(p, p_polyline_iter);
+
+          if(vp != Vertex_handle())
+            domain_.set_polyline_iterator(p, p_polyline_iter, curve_index);
         }
         // No 'else' because in that case 'is_vertex(..)' already filled
         // the variable 'vp'.
