@@ -236,6 +236,13 @@ public:
   typedef Edge_iterator                        Finite_edges_iterator;
   typedef Vertex_iterator                      Finite_vertices_iterator;
 
+  typedef Iterator_range<Prevent_deref<Finite_cells_iterator,
+                                       const Cell_handle&> >         Finite_cell_handles;
+  typedef Iterator_range<Finite_facets_iterator> Finite_facets;
+  typedef Iterator_range<Finite_edges_iterator> Finite_edges;
+  typedef Iterator_range<Prevent_deref<Finite_vertices_iterator,
+                                       const Vertex_handle&> >       Finite_vertex_handles;
+
   int dimension() const { return (number_of_vertices() == 0) ? -2 : 3; }
 
   template<class T>
@@ -1729,11 +1736,21 @@ public:
     return _tds.edges_end();
   }
 
+  Finite_edges finite_edges() const
+  {
+    return Finite_edges(finite_edges_begin(), finite_edges_end());
+  }
+
   Facet_iterator finite_facets_begin() const {
     return _tds.facets_begin();
   }
   Facet_iterator finite_facets_end() const {
     return _tds.facets_end();
+  }
+
+  Finite_facets finite_facets() const
+  {
+    return Finite_facets(finite_facets_begin(), finite_facets_end());
   }
 
   // All iterators (= finite, for periodic triangulations)
