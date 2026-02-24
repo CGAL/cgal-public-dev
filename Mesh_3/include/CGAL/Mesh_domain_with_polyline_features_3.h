@@ -680,30 +680,28 @@ OutputIterator
 Mesh_domain_with_polyline_features_3<MD_>::
 get_curves(OutputIterator out) const
 {
-  for ( typename Edges::const_iterator
-       eit = edges_.begin(), end = edges_.end() ; eit != end ; ++eit )
+  for (const auto& [curve_index, polyline] : edges_)
   {
-    CGAL_assertion( eit->second.is_valid() );
+    CGAL_assertion( polyline.is_valid() );
 
-    const Point_3& p = eit->second.start_point();
-    const Point_3& q = eit->second.end_point();
+    const Point_3& p = polyline.start_point();
+    const Point_3& q = polyline.end_point();
 
-    Index p_index, q_index;
-    if ( ! eit->second.is_loop() )
-    {
-      p_index = point_corner_index(p);
-      q_index = point_corner_index(q);
-    }
-    else
-    {
-      p_index = index_from_curve_index(eit->first);
-      q_index = p_index;
-    }
+    const auto p_position_in_polyline = polyline.points_.cbegin();
 
-    *out++ = {eit->first,
-              eit->second.points_.begin(),
-              std::make_pair(p,p_index),
-              std::make_pair(q,q_index)};
+    const bool is_polyline_a_loop = polyline.is_loop();
+
+    Index p_index = is_polyline_a_loop ?
+        index_from_curve_index(curve_index) :
+        point_corner_index(p);
+    Index q_index = is_polyline_a_loop ?
+        p_index :
+        point_corner_index(q);
+
+    *out++ = std::make_tuple(curve_index,
+                             p_position_in_polyline,
+                             std::make_pair(p, p_index),
+                             std::make_pair(q, q_index));
   }
 
   return out;
