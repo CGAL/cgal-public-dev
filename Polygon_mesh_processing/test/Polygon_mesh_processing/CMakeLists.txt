@@ -32,7 +32,6 @@ create_single_source_cgal_program("test_pmp_np_function.cpp")
 create_single_source_cgal_program("test_shape_predicates.cpp")
 create_single_source_cgal_program("issue_8730.cpp")
 create_single_source_cgal_program("issue_7164.cpp")
-create_single_source_cgal_program("test_mesh_kernel.cpp")
 
 find_package(Eigen3 QUIET)
 include(CGAL_Eigen3_support)
