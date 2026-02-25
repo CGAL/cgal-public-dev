@@ -28,21 +28,30 @@
 #include <CGAL/AABB_traits_3.h>
 #include <CGAL/is_streamable.h>
 #include <CGAL/Real_timer.h>
+#include <CGAL/Profile_counter.h>
 #include <CGAL/property_map.h>
 #include <CGAL/SMDS_3/internal/indices_management.h>
 #include <CGAL/Mesh_3/internal/Polyline.h>
+#include <CGAL/tags.h>
 
+#include <boost/container_hash/hash.hpp>
 #include <boost/functional/hash.hpp>
+#include <boost/property_map/property_map.hpp>
 
-#include <vector>
-#include <set>
-#include <map>
 #include <algorithm>
+#include <cstddef>
+#include <fstream>
+#include <iterator>
+#include <map>
+#include <memory>
+#include <ostream>
+#include <set>
+#include <string>
+#include <tuple>
 #include <type_traits>
 #include <unordered_map>
-
-#include <variant>
-#include <memory>
+#include <utility>
+#include <vector>
 
 namespace CGAL {
 
@@ -128,11 +137,11 @@ whose endpoints are the added corners.
 \sa `MeshPolyline_3`
 \sa `CGAL::Polyhedral_mesh_domain_3<Polyhedron,IGT>`
 */
-template < typename MD >
+template < typename MD, API_version version = API_version::v2 >
 class Mesh_domain_with_polyline_features_3
   : public MD
 {
-  typedef Mesh_domain_with_polyline_features_3<MD>   Self;
+  typedef Mesh_domain_with_polyline_features_3<MD, version>   Self;
 
 public:
   /// \name Types
@@ -168,18 +177,51 @@ public:
 
   using Polyline = Mesh_3::internal::Polyline<GT>;
   using Polyline_const_iterator = typename Polyline::const_iterator;
-  using Point_and_location = typename Polyline::Point_and_location;
+
+  using Point_and_position = typename Polyline::Point_and_position;
+
+  using Get_curves_output_type_v1 = std::tuple<Curve_index,
+                                               std::pair<Point_3, Index>,
+                                               std::pair<Point_3, Index> >;
+  using Get_curves_output_type_v2 = std::tuple<Curve_index,
+                                               Polyline_const_iterator,
+                                               std::pair<Point_3, Index>,
+                                               std::pair<Point_3, Index> >;
+
+  // helper template to use with static_assert
+  template <typename>
+  static constexpr bool dependent_is_API_version_2 = (version == API_version::v2);
+
+  using Get_curves_output_type =
+      std::conditional_t<version == API_version::v1, Get_curves_output_type_v1, Get_curves_output_type_v2>;
+
+  // A local tag type used as a *compilation barrier* for the API v2-only code path.
+  // It appears as the type of `Position_on_curve` when `version == API_version::v1`
+  // so that any attempt to use v2-specific functions with a v1-only mesh domain
+  // produces a clear compilation error. The constructor is intentionally deleted
+  // to prevent accidental instantiation; the type is used purely at compile time.
+  struct API_version_2_only
+  {
+    API_version_2_only() = delete;
+  };
+
+  using Position_on_curve =
+      std::conditional_t<version == API_version::v1,
+                         API_version_2_only,
+                         Polyline_const_iterator
+                         >;
 
   /// \name Creation
   /// @{
 
   // forwards the arguments to the constructor of the base class.
-  template <typename ... T>
-  Mesh_domain_with_polyline_features_3(const T& ...o)
-    : MD(o...)
-    , current_corner_index_(1)
-    , current_curve_index_(1)
-    , curves_aabb_tree_is_built(false) {}
+  using MD::MD;
+
+  Mesh_domain_with_polyline_features_3(const MD& base_domain) : MD(base_domain) {}
+
+  template <typename Other_MD, API_version other_version,
+            typename = std::enable_if_t<std::is_same_v<MD, Other_MD> && (other_version != version)>>
+  Mesh_domain_with_polyline_features_3(const Mesh_domain_with_polyline_features_3<Other_MD, other_version>&) = delete;
 
   Mesh_domain_with_polyline_features_3(const Mesh_domain_with_polyline_features_3&) = default;
 
@@ -318,8 +360,8 @@ public:
 
   FT curve_segment_length(const Point_3& p,
                           const Point_3 q,
-                          const Polyline_const_iterator p_it,
-                          const Polyline_const_iterator q_it,
+                          const Position_on_curve p_it,
+                          const Position_on_curve q_it,
                           const Curve_index& curve_index,
                           CGAL::Orientation orientation) const;
 
@@ -327,17 +369,17 @@ public:
   FT curve_length(const Curve_index& curve_index) const;
 
   /// implements `MeshDomainWithFeatures_3::construct_point_on_curve()`.
-  Point_and_location
-  construct_point_on_curve(const Point_3& starting_point,
-                           const Curve_index& curve_index,
-                           FT distance,
-                           Polyline_const_iterator starting_point_it) const;
-
-  /// implements `MeshDomainWithFeatures_3::construct_point_on_curve()`.
   Point_3
   construct_point_on_curve(const Point_3& starting_point,
                            const Curve_index& curve_index,
                            FT distance) const;
+
+  /// implements `MeshDomainWithFeatures_3::construct_point_on_curve()`.
+  Point_and_position
+  construct_point_on_curve(const Point_3& starting_point,
+                           const Curve_index& curve_index,
+                           FT distance,
+                           Position_on_curve starting_point_it) const;
 
   /// implements `MeshDomainWithFeatures_3::distance_sign_along_loop()`.
   CGAL::Sign distance_sign_along_loop(const Point_3& p,
@@ -349,9 +391,9 @@ public:
                                       const Point_3& q,
                                       const Point_3& r,
                                       const Curve_index& index,
-                                      Polyline_const_iterator pit,
-                                      Polyline_const_iterator qit,
-                                      Polyline_const_iterator rit) const;
+                                      Position_on_curve pit,
+                                      Position_on_curve qit,
+                                      Position_on_curve rit) const;
 
 
   /// implements `MeshDomainWithFeatures_3::distance_sign()`.
@@ -362,8 +404,8 @@ public:
   CGAL::Sign distance_sign(const Point_3& p,
                            const Point_3& q,
                            const Curve_index& index,
-                           Polyline_const_iterator pit,
-                           Polyline_const_iterator qit) const;
+                           Position_on_curve pit,
+                           Position_on_curve qit) const;
 
   /// implements `MeshDomainWithFeatures_3::is_loop()`.
   bool is_loop(const Curve_index& index) const;
@@ -378,14 +420,14 @@ public:
                                 CGAL::Orientation orientation,
                                 const Point_3& c1, const Point_3& c2,
                                 const FT sq_r1, const FT sq_r2,
-                                const Polyline_const_iterator c1_it,
-                                const Polyline_const_iterator c2_it) const;
+                                const Position_on_curve c1_it,
+                                const Position_on_curve c2_it) const;
 
   /// locates the corner point `p` on the curve identified by `curve_index`
-  Polyline_const_iterator locate_corner(const Curve_index& curve_index,
+  Position_on_curve locate_corner(const Curve_index& curve_index,
                                         const Point_3& p) const;
 
-  Polyline_const_iterator locate_point(const Curve_index& curve_index, const Point_3& p) const;
+  Position_on_curve locate_point(const Curve_index& curve_index, const Point_3& p) const;
 
   /**
    * Returns the index to be stored in a vertex lying on the surface identified
@@ -443,8 +485,8 @@ public:
                               const Curve_index& curve_index) const;
 
   FT signed_geodesic_distance(const Point_3& p, const Point_3& q,
-                              Polyline_const_iterator pit,
-                              Polyline_const_iterator qit,
+                              Position_on_curve pit,
+                              Position_on_curve qit,
                               const Curve_index& curve_index) const;
 
   template <typename Surf_p_index, typename IncidenceMap>
@@ -503,11 +545,11 @@ private:
 
   Corners corners_;
   Corners_tmp_incidences corners_tmp_incidences_;
-  Corner_index current_corner_index_;
+  Corner_index current_corner_index_ = 1;
   Corners_incidences corners_incidences_;
 
   Edges edges_;
-  Curve_index current_curve_index_;
+  Curve_index current_curve_index_ = 1;
   Edges_incidences edges_incidences_;
 
 public:
@@ -516,7 +558,7 @@ public:
 
 private:
   mutable std::shared_ptr<Curves_AABB_tree> curves_aabb_tree_ptr_;
-  mutable bool curves_aabb_tree_is_built;
+  mutable bool curves_aabb_tree_is_built = false;
 
   struct Point_on_curve
   {
@@ -536,7 +578,7 @@ private:
     }
   };
   mutable std::unordered_map<Point_on_curve,
-                             Polyline_const_iterator,
+                             Position_on_curve,
                              boost::hash<Point_on_curve>> vertex_to_polyline_iterator_;
 
 public:
@@ -585,31 +627,33 @@ public:
 #endif
   } // build_curves_aabb_tree()
 
-  void clear_point_to_polyline_iterator_cache() const
+  template <typename T = void>
+  void clear_point_to_polyline_iterator_cache(const T* = nullptr) const
   {
+    static_assert(dependent_is_API_version_2<T>, "only available in API version 2");
     vertex_to_polyline_iterator_.clear();
   }
 
-  Polyline_const_iterator locate_in_polyline(const Point_3& p,
-                                             const int dim,
-                                             const Curve_index& index) const
+  Position_on_curve locate_in_polyline(const Point_3& p,
+                                       const int dim,
+                                       const Curve_index& index) const
   {
     CGAL_assertion(dim == 0 || dim == 1);
 
-     Polyline_const_iterator it;
+     Position_on_curve it;
      if(dim == 0) // corner
        it = locate_corner(index, p);
      else
      {
        Point_on_curve pc{p, index};
-       const Polyline_const_iterator pit = vertex_to_polyline_iterator_.at(pc);
+       const Position_on_curve pit = vertex_to_polyline_iterator_.at(pc);
        it = pit;
      }
      return it;
   }
 
   void set_polyline_iterator(const Point_3& p,
-                             Polyline_const_iterator it,
+                             Position_on_curve it,
                              const Curve_index& index) const
   {
     CGAL_assertion(it != edges_.at(index).points_.end());
@@ -628,8 +672,10 @@ public:
     vertex_to_polyline_iterator_[pc] = it;
   }
 
-  auto remove_polyline_iterator(const Point_3& p, const Curve_index& index) const
-  {
+  template <typename T = void>
+  auto remove_polyline_iterator(const Point_3& p,
+                                const Curve_index& index) const {
+    static_assert(dependent_is_API_version_2<T>, "only available in API version 2");
     Point_on_curve pc{p, index};
     return vertex_to_polyline_iterator_.erase(pc);
   }
@@ -659,10 +705,10 @@ public:
 
 
 
-template <class MD_>
+template <class MD_, API_version version>
 template <typename OutputIterator>
 OutputIterator
-Mesh_domain_with_polyline_features_3<MD_>::
+Mesh_domain_with_polyline_features_3<MD_, version>::
 get_corners(OutputIterator out) const
 {
   for ( typename Corners::const_iterator
@@ -674,10 +720,10 @@ get_corners(OutputIterator out) const
   return out;
 }
 
-template <class MD_>
+template <class MD_, API_version version>
 template <typename OutputIterator>
 OutputIterator
-Mesh_domain_with_polyline_features_3<MD_>::
+Mesh_domain_with_polyline_features_3<MD_, version>::
 get_curves(OutputIterator out) const
 {
   for (const auto& [curve_index, polyline] : edges_)
@@ -686,8 +732,6 @@ get_curves(OutputIterator out) const
 
     const Point_3& p = polyline.start_point();
     const Point_3& q = polyline.end_point();
-
-    const auto p_position_in_polyline = polyline.points_.cbegin();
 
     const bool is_polyline_a_loop = polyline.is_loop();
 
@@ -698,20 +742,28 @@ get_curves(OutputIterator out) const
         p_index :
         point_corner_index(q);
 
-    *out++ = std::make_tuple(curve_index,
-                             p_position_in_polyline,
-                             std::make_pair(p, p_index),
-                             std::make_pair(q, q_index));
+    if constexpr (version == API_version::v1) {
+      *out++ = std::make_tuple(curve_index,
+                               std::make_pair(p,p_index),
+                               std::make_pair(q,q_index));
+    } else {
+      const auto p_position_in_polyline = polyline.points_.cbegin();
+
+      *out++ = std::make_tuple(curve_index,
+                               p_position_in_polyline,
+                               std::make_pair(p,p_index),
+                               std::make_pair(q,q_index));
+    }
   }
 
   return out;
 }
 
 
-template <class MD_>
-typename Mesh_domain_with_polyline_features_3<MD_>::Index
-Mesh_domain_with_polyline_features_3<MD_>::
-point_corner_index(const Point_3& p) const
+template <class MD_, API_version version>
+auto
+Mesh_domain_with_polyline_features_3<MD_, version>::
+point_corner_index(const Point_3& p) const -> Index
 {
   typename Corners::const_iterator p_index_it = corners_.find(p);
   if ( p_index_it == corners_.end() )
@@ -724,12 +776,12 @@ point_corner_index(const Point_3& p) const
 }
 
 
-template <class MD_>
-typename Mesh_domain_with_polyline_features_3<MD_>::FT
-Mesh_domain_with_polyline_features_3<MD_>::
+template <class MD_, API_version version>
+auto
+Mesh_domain_with_polyline_features_3<MD_, version>::
 curve_segment_length(const Point_3& p, const Point_3 q,
                      const Curve_index& curve_index,
-                     CGAL::Orientation orientation) const
+                     CGAL::Orientation orientation) const -> FT
 {
   // Get corresponding polyline
   typename Edges::const_iterator eit = edges_.find(curve_index);
@@ -738,15 +790,15 @@ curve_segment_length(const Point_3& p, const Point_3 q,
   return eit->second.curve_segment_length(p, q, orientation);
 }
 
-template <class MD_>
-typename Mesh_domain_with_polyline_features_3<MD_>::FT
-Mesh_domain_with_polyline_features_3<MD_>::
+template <class MD_, API_version version>
+auto
+Mesh_domain_with_polyline_features_3<MD_, version>::
 curve_segment_length(const Point_3& p,
                      const Point_3 q,
-                     const Polyline_const_iterator p_it,
-                     const Polyline_const_iterator q_it,
+                     const Position_on_curve p_it,
+                     const Position_on_curve q_it,
                      const Curve_index& curve_index,
-                     CGAL::Orientation orientation) const
+                     CGAL::Orientation orientation) const -> FT
 {
   // Get corresponding polyline
   typename Edges::const_iterator eit = edges_.find(curve_index);
@@ -755,10 +807,10 @@ curve_segment_length(const Point_3& p,
   return eit->second.curve_segment_length(p, q, orientation, p_it, q_it);
 }
 
-template <class MD_>
-typename Mesh_domain_with_polyline_features_3<MD_>::FT
-Mesh_domain_with_polyline_features_3<MD_>::
-curve_length(const Curve_index& curve_index) const
+template <class MD_, API_version version>
+auto
+Mesh_domain_with_polyline_features_3<MD_, version>::
+curve_length(const Curve_index& curve_index) const -> FT
 {
   // Get corresponding polyline
   typename Edges::const_iterator eit = edges_.find(curve_index);
@@ -768,13 +820,13 @@ curve_length(const Curve_index& curve_index) const
 }
 
 
-template <class MD_>
-typename Mesh_domain_with_polyline_features_3<MD_>::Point_and_location
-Mesh_domain_with_polyline_features_3<MD_>::
+template <class MD_, API_version version>
+auto
+Mesh_domain_with_polyline_features_3<MD_, version>::
 construct_point_on_curve(const Point_3& starting_point,
                          const Curve_index& curve_index,
                          FT distance,
-                         Polyline_const_iterator starting_point_it) const
+                         Position_on_curve starting_point_it) const -> Point_and_position
 {
   // Get corresponding polyline
   typename Edges::const_iterator eit = edges_.find(curve_index);
@@ -784,12 +836,12 @@ construct_point_on_curve(const Point_3& starting_point,
   return eit->second.point_at(starting_point, distance, starting_point_it);
 }
 
-template <class MD_>
-typename Mesh_domain_with_polyline_features_3<MD_>::Point_3
-Mesh_domain_with_polyline_features_3<MD_>::
+template <class MD_, API_version version>
+auto
+Mesh_domain_with_polyline_features_3<MD_, version>::
 construct_point_on_curve(const Point_3& starting_point,
                          const Curve_index& curve_index,
-                         FT distance) const
+                         FT distance) const -> Point_3
 {
   // Get corresponding polyline
   typename Edges::const_iterator eit = edges_.find(curve_index);
@@ -801,10 +853,10 @@ construct_point_on_curve(const Point_3& starting_point,
 
 
 /// @cond DEVELOPERS
-template <class MD_>
-typename Mesh_domain_with_polyline_features_3<MD_>::Corner_index
-Mesh_domain_with_polyline_features_3<MD_>::
-add_corner(const Point_3& p)
+template <class MD_, API_version version>
+auto
+Mesh_domain_with_polyline_features_3<MD_, version>::
+add_corner(const Point_3& p) -> Corner_index
 {
   typename Corners::iterator cit = corners_.lower_bound(p);
 
@@ -820,10 +872,10 @@ add_corner(const Point_3& p)
 }
 
 
-template <class MD_>
+template <class MD_, API_version version>
 template <typename InputIterator, typename IndicesOutputIterator>
 IndicesOutputIterator
-Mesh_domain_with_polyline_features_3<MD_>::
+Mesh_domain_with_polyline_features_3<MD_, version>::
 add_corners(InputIterator first, InputIterator end,
             IndicesOutputIterator indices_out)
 {
@@ -833,10 +885,10 @@ add_corners(InputIterator first, InputIterator end,
   return indices_out;
 }
 
-template <class MD_>
-typename Mesh_domain_with_polyline_features_3<MD_>::Corner_index
-Mesh_domain_with_polyline_features_3<MD_>::
-register_corner(const Point_3& p, const Curve_index& curve_index)
+template <class MD_, API_version version>
+auto
+Mesh_domain_with_polyline_features_3<MD_, version>::
+register_corner(const Point_3& p, const Curve_index& curve_index) -> Corner_index
 {
   // 'add_corner' will itself seek if 'p' is already a corner, and, in that case,
   // return the Corner_index that has been assigned to this position.
@@ -847,10 +899,10 @@ register_corner(const Point_3& p, const Curve_index& curve_index)
 }
 
 
-template <class MD_>
-typename Mesh_domain_with_polyline_features_3<MD_>::Corner_index
-Mesh_domain_with_polyline_features_3<MD_>::
-add_corner_with_context(const Point_3& p, const Surface_patch_index& surface_patch_index)
+template <class MD_, API_version version>
+auto
+Mesh_domain_with_polyline_features_3<MD_, version>::
+add_corner_with_context(const Point_3& p, const Surface_patch_index& surface_patch_index) -> Corner_index
 {
   Corner_index index = add_corner(p);
 
@@ -862,10 +914,10 @@ add_corner_with_context(const Point_3& p, const Surface_patch_index& surface_pat
 /// @endcond
 
 
-template <class MD_>
+template <class MD_, API_version version>
 template <typename InputIterator, typename IndicesOutputIterator>
 IndicesOutputIterator
-Mesh_domain_with_polyline_features_3<MD_>::
+Mesh_domain_with_polyline_features_3<MD_, version>::
 add_features(InputIterator first, InputIterator end,
              IndicesOutputIterator indices_out)
 {
@@ -913,13 +965,13 @@ struct Get_patches_id_from_polyline_with_context
 } // end namespace details
 /// @endcond
 
-template <class MD_>
+template <class MD_, API_version version>
 template <typename InputIterator,
           typename PolylinePMap,
           typename IncidentPatchesIndicesPMap,
           typename IndicesOutputIterator>
 IndicesOutputIterator
-Mesh_domain_with_polyline_features_3<MD_>::
+Mesh_domain_with_polyline_features_3<MD_, version>::
 add_features_and_incidences(InputIterator first, InputIterator end,
                             PolylinePMap polyline_pmap,
                             IncidentPatchesIndicesPMap inc_patches_ind_pmap,
@@ -950,12 +1002,12 @@ add_features_and_incidences(InputIterator first, InputIterator end,
 }
 
 /// @cond DEVELOPERS
-template <class MD_>
-typename Mesh_domain_with_polyline_features_3<MD_>::FT
-Mesh_domain_with_polyline_features_3<MD_>::
+template <class MD_, API_version version>
+auto
+Mesh_domain_with_polyline_features_3<MD_, version>::
 signed_geodesic_distance(const Point_3& p,
                          const Point_3& q,
-                         const Curve_index& curve_index) const
+                         const Curve_index& curve_index) const -> FT
 {
   // Get corresponding polyline
   typename Edges::const_iterator eit = edges_.find(curve_index);
@@ -965,13 +1017,13 @@ signed_geodesic_distance(const Point_3& p,
   return eit->second.signed_geodesic_distance(p, q);
 }
 
-template <class MD_>
-typename Mesh_domain_with_polyline_features_3<MD_>::FT
-Mesh_domain_with_polyline_features_3<MD_>::
+template <class MD_, API_version version>
+auto
+Mesh_domain_with_polyline_features_3<MD_, version>::
 signed_geodesic_distance(const Point_3& p, const Point_3& q,
-                         Polyline_const_iterator pit,
-                         Polyline_const_iterator qit,
-                         const Curve_index& curve_index) const
+                         Position_on_curve pit,
+                         Position_on_curve qit,
+                         const Curve_index& curve_index) const -> FT
 {
   // Get corresponding polyline
   typename Edges::const_iterator eit = edges_.find(curve_index);
@@ -982,10 +1034,10 @@ signed_geodesic_distance(const Point_3& p, const Point_3& q,
 }
 
 
-template <class MD_>
+template <class MD_, API_version version>
 template <typename InputIterator, typename IndicesOutputIterator>
 IndicesOutputIterator
-Mesh_domain_with_polyline_features_3<MD_>::
+Mesh_domain_with_polyline_features_3<MD_, version>::
 add_features_with_context(InputIterator first, InputIterator end,
                           IndicesOutputIterator indices_out)
 {
@@ -997,10 +1049,10 @@ add_features_with_context(InputIterator first, InputIterator end,
      indices_out);
 }
 
-template <class MD_>
+template <class MD_, API_version version>
 template <typename Surf_p_index, typename IncidenceMap>
 void
-Mesh_domain_with_polyline_features_3<MD_>::
+Mesh_domain_with_polyline_features_3<MD_, version>::
 reindex_patches(const std::vector<Surf_p_index>& map,
                 IncidenceMap& incidence_map)
 {
@@ -1020,20 +1072,20 @@ reindex_patches(const std::vector<Surf_p_index>& map,
   }
 }
 
-template <class MD_>
+template <class MD_, API_version version>
 template <typename Surf_p_index>
 void
-Mesh_domain_with_polyline_features_3<MD_>::
+Mesh_domain_with_polyline_features_3<MD_, version>::
 reindex_patches(const std::vector<Surf_p_index>& map)
 {
   reindex_patches(map, edges_incidences_);
   reindex_patches(map, corners_incidences_);
 }
 
-template <class MD_>
+template <class MD_, API_version version>
 template <typename IndicesOutputIterator>
 IndicesOutputIterator
-Mesh_domain_with_polyline_features_3<MD_>::
+Mesh_domain_with_polyline_features_3<MD_, version>::
 get_incidences(Curve_index id,
                IndicesOutputIterator indices_out) const
 {
@@ -1047,10 +1099,10 @@ get_incidences(Curve_index id,
   return std::copy(incidences.begin(), incidences.end(), indices_out);
 }
 
-template <class MD_>
+template <class MD_, API_version version>
 template <typename IndicesOutputIterator>
 IndicesOutputIterator
-Mesh_domain_with_polyline_features_3<MD_>::
+Mesh_domain_with_polyline_features_3<MD_, version>::
 get_corner_incidences(Corner_index id,
                       IndicesOutputIterator indices_out) const
 {
@@ -1062,10 +1114,10 @@ get_corner_incidences(Corner_index id,
   return std::copy(incidences.begin(), incidences.end(), indices_out);
 }
 
-template <class MD_>
+template <class MD_, API_version version>
 template <typename IndicesOutputIterator>
 IndicesOutputIterator
-Mesh_domain_with_polyline_features_3<MD_>::
+Mesh_domain_with_polyline_features_3<MD_, version>::
 get_corner_incident_curves(Corner_index id,
                            IndicesOutputIterator indices_out) const
 {
@@ -1150,12 +1202,12 @@ operator()(std::ostream& os, Point p, typename MDwPF_::Curve_index id,
 /// @endcond
 
 /// @cond DEVELOPERS
-template <class MD_>
+template <class MD_, API_version version>
 void
-Mesh_domain_with_polyline_features_3<MD_>::
+Mesh_domain_with_polyline_features_3<MD_, version>::
 display_corner_incidences(std::ostream& os, Point_3 p, Corner_index id)
 {
-  typedef Mesh_domain_with_polyline_features_3<MD_> Mdwpf;
+  typedef Mesh_domain_with_polyline_features_3<MD_, version> Mdwpf;
   typedef is_streamable<Surface_patch_index> i_s_spi;
   typedef is_streamable<Curve_index> i_s_csi;
 
@@ -1165,9 +1217,9 @@ display_corner_incidences(std::ostream& os, Point_3 p, Corner_index id)
   D_i_t_p()(os, p, id, corners_incidences_[id]);
 }
 /// @endcond
-template <class MD_>
+template <class MD_, API_version version>
 void
-Mesh_domain_with_polyline_features_3<MD_>::
+Mesh_domain_with_polyline_features_3<MD_, version>::
 compute_corners_incidences()
 {
   for(typename Corners::iterator
@@ -1214,9 +1266,9 @@ compute_corners_incidences()
 }
 
 /// @cond DEVELOPERS
-template <class MD_>
-const typename Mesh_domain_with_polyline_features_3<MD_>::Surface_patch_index_set&
-Mesh_domain_with_polyline_features_3<MD_>::
+template <class MD_, API_version version>
+const typename Mesh_domain_with_polyline_features_3<MD_, version>::Surface_patch_index_set&
+Mesh_domain_with_polyline_features_3<MD_, version>::
 get_incidences(Curve_index id) const
 {
   typename Edges_incidences::const_iterator it = edges_incidences_.find(id);
@@ -1225,10 +1277,10 @@ get_incidences(Curve_index id) const
   return it->second;
 }
 
-template <class MD_>
+template <class MD_, API_version version>
 template <typename InputIterator>
-typename Mesh_domain_with_polyline_features_3<MD_>::Curve_index
-Mesh_domain_with_polyline_features_3<MD_>::
+typename Mesh_domain_with_polyline_features_3<MD_, version>::Curve_index
+Mesh_domain_with_polyline_features_3<MD_, version>::
 insert_edge(InputIterator first, InputIterator end)
 {
   CGAL_assertion(std::distance(first,end) > 1);
@@ -1260,13 +1312,13 @@ insert_edge(InputIterator first, InputIterator end)
 }
 /// @endcond
 
-template <class MD_>
+template <class MD_, API_version version>
 CGAL::Sign
-Mesh_domain_with_polyline_features_3<MD_>::
+Mesh_domain_with_polyline_features_3<MD_, version>::
 distance_sign(const Point_3& p, const Point_3& q,
               const Curve_index& index,
-              Polyline_const_iterator pit,
-              Polyline_const_iterator qit) const
+              Position_on_curve pit,
+              Position_on_curve qit) const
 {
   typename Edges::const_iterator eit = edges_.find(index);
   CGAL_assertion(eit != edges_.end());
@@ -1280,9 +1332,9 @@ distance_sign(const Point_3& p, const Point_3& q,
     return CGAL::NEGATIVE;
 }
 
-template <class MD_>
+template <class MD_, API_version version>
 CGAL::Sign
-Mesh_domain_with_polyline_features_3<MD_>::
+Mesh_domain_with_polyline_features_3<MD_, version>::
 distance_sign(const Point_3& p,
               const Point_3& q,
               const Curve_index& curve_index) const
@@ -1299,9 +1351,9 @@ distance_sign(const Point_3& p,
     return CGAL::NEGATIVE;
 }
 
-template <class MD_>
+template <class MD_, API_version version>
 CGAL::Sign
-Mesh_domain_with_polyline_features_3<MD_>::
+Mesh_domain_with_polyline_features_3<MD_, version>::
 distance_sign_along_loop(const Point_3& p,
                          const Point_3& q,
                          const Point_3& r,
@@ -1324,15 +1376,16 @@ distance_sign_along_loop(const Point_3& p,
   else { return CGAL::NEGATIVE; }
 }
 
-template <class MD_>
-CGAL::Sign Mesh_domain_with_polyline_features_3<MD_>::
+template <class MD_, API_version version>
+CGAL::Sign
+Mesh_domain_with_polyline_features_3<MD_, version>::
 distance_sign_along_loop(const Point_3& p,
                          const Point_3& q,
                          const Point_3& r,
                          const Curve_index& index,
-                         Polyline_const_iterator pit,
-                         Polyline_const_iterator qit,
-                         Polyline_const_iterator rit) const
+                         Position_on_curve pit,
+                         Position_on_curve qit,
+                         Position_on_curve rit) const
 {
   CGAL_assertion(p != q);
   CGAL_assertion(p != r);
@@ -1352,9 +1405,9 @@ distance_sign_along_loop(const Point_3& p,
   }
 }
 
-template <class MD_>
+template <class MD_, API_version version>
 bool
-Mesh_domain_with_polyline_features_3<MD_>::
+Mesh_domain_with_polyline_features_3<MD_, version>::
 is_loop(const Curve_index& index) const
 {
   // Find edge
@@ -1364,15 +1417,15 @@ is_loop(const Curve_index& index) const
   return eit->second.is_loop();
 }
 
-template <class MD_>
+template <class MD_, API_version version>
 bool
-Mesh_domain_with_polyline_features_3<MD_>::
+Mesh_domain_with_polyline_features_3<MD_, version>::
 is_curve_segment_covered(const Curve_index& index,
                          CGAL::Orientation orientation,
                          const Point_3& c1, const Point_3& c2,
                          const FT sq_r1, const FT sq_r2,
-                         const Polyline_const_iterator c1_it,
-                         const Polyline_const_iterator c2_it) const
+                         const Position_on_curve c1_it,
+                         const Position_on_curve c2_it) const
 {
   typename Edges::const_iterator eit = edges_.find(index);
   CGAL_assertion(eit != edges_.end());
@@ -1383,9 +1436,9 @@ is_curve_segment_covered(const Curve_index& index,
                                               c1_it, c2_it);
 }
 
-template <class MD_>
+template <class MD_, API_version version>
 bool
-Mesh_domain_with_polyline_features_3<MD_>::
+Mesh_domain_with_polyline_features_3<MD_, version>::
 is_curve_segment_covered(const Curve_index& index,
                          CGAL::Orientation orientation,
                          const Point_3& c1, const Point_3& c2,
@@ -1397,22 +1450,22 @@ is_curve_segment_covered(const Curve_index& index,
   return eit->second.is_curve_segment_covered(orientation, c1, c2, sq_r1, sq_r2);
 }
 
-template <class MD_>
-typename Mesh_domain_with_polyline_features_3<MD_>::Polyline_const_iterator
-Mesh_domain_with_polyline_features_3<MD_>::
+template <class MD_, API_version version>
+auto
+Mesh_domain_with_polyline_features_3<MD_, version>::
 locate_corner(const Curve_index& curve_index,
-              const Point_3& p) const
+              const Point_3& p) const -> Position_on_curve
 {
   typename Edges::const_iterator eit = edges_.find(curve_index);
   CGAL_assertion(eit != edges_.end());
   return eit->second.locate_corner(p);
 }
 
-template <class MD_>
-typename Mesh_domain_with_polyline_features_3<MD_>::Polyline_const_iterator
-Mesh_domain_with_polyline_features_3<MD_>::
+template <class MD_, API_version version>
+auto
+Mesh_domain_with_polyline_features_3<MD_, version>::
 locate_point(const Curve_index& curve_index,
-             const Point_3& p) const
+             const Point_3& p) const -> Position_on_curve
 {
   typename Edges::const_iterator eit = edges_.find(curve_index);
   CGAL_assertion(eit != edges_.end());

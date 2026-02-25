@@ -102,7 +102,7 @@ int main (int argc, char** argv){
   assert(is_valid(poly));
 
   Polyhedral_mesh_domain::Polyhedron polyhedron;
-  CGAL::IO::read_OFF(CGAL::data_file_path("data/meshes/elephant.off"), polyhedron);
+  CGAL::IO::read_OFF(CGAL::data_file_path("meshes/elephant.off"), polyhedron);
   Polyhedral_mesh_domain domain(polyhedron);
   namespace p = CGAL::parameters;
   // Mesh criteria (no cell_size set)

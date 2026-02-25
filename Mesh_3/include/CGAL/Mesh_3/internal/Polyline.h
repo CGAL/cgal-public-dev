@@ -93,7 +93,7 @@ class Polyline
 
 public:
   typedef typename Data::const_iterator const_iterator;
-  typedef std::pair<Point_3, const_iterator> Point_and_location;
+  typedef std::pair<Point_3, const_iterator> Point_and_position;
 
   Polyline() {}
   ~Polyline() {}
@@ -223,8 +223,10 @@ public:
                           const_iterator q_it) const
   {
     CGAL_assertion(orientation != CGAL::ZERO);
-    // CGAL_assertion(p_it == locate(p));
-    // CGAL_assertion(q_it == locate(q));
+#if CGAL_MESH_3_PROTECTION_DEBUG
+    CGAL_assertion(p_it == locate(p));
+    CGAL_assertion(q_it == locate(q));
+#endif
 
     if(p_it == q_it) {
       const CGAL::Comparison_result cmp = compare_distance(*p_it,p,q);
@@ -295,9 +297,10 @@ public:
   FT signed_geodesic_distance(const Point_3& p, const Point_3& q,
                               const_iterator pit, const_iterator qit) const
   {
-    // CGAL_assertion(pit == locate(p));
-    // CGAL_assertion(qit == locate(q, false));
-
+#if CGAL_MESH_3_PROTECTION_DEBUG
+    CGAL_assertion(pit == locate(p));
+    CGAL_assertion(qit == locate(q, false));
+#endif
     // If p and q are in the same segment of the polyline
     if ( pit == qit )
     {
@@ -380,18 +383,22 @@ public:
   /// returns a point at geodesic distance `distance` from `start_pt` along the
   /// polyline. The polyline is oriented from starting point to end point.
   /// The distance could be negative.
-  Point_and_location point_at(const Point_3& start_pt,
+  Point_and_position point_at(const Point_3& start_pt,
                               FT distance,
                               const_iterator start_it) const
   {
-    // CGAL_assertion(start_it == locate(start_pt));
+#if CGAL_MESH_3_PROTECTION_DEBUG
+    CGAL_assertion(start_it == locate(start_pt));
+#endif
 
     // simplify the problem by moving start_pt to start_it_pt
     const Point_3& start_it_pt = *start_it;
     const_iterator start_it_pt_it = (start_it != points_.begin())
                                   ? std::prev(start_it)
                                   : start_it;
-    // CGAL_assertion(locate(start_it_pt) == start_it_pt_it);
+#if CGAL_MESH_3_PROTECTION_DEBUG
+    CGAL_assertion(locate(start_it_pt) == start_it_pt_it);
+#endif
 
     distance += curve_segment_length(start_it_pt, start_pt, CGAL::POSITIVE,
                                      start_it_pt_it, start_it);
@@ -459,7 +466,9 @@ public:
     {
       --result_iterator;
     }
-    // CGAL_assertion(result_iterator == locate_point(result));
+#if CGAL_MESH_3_PROTECTION_DEBUG
+    CGAL_assertion(result_iterator == locate_point(result));
+#endif
 
     return {result, result_iterator};
   }
@@ -472,7 +481,9 @@ public:
     else if(p == end_point())
       res = last_segment_source();
 
-    // CGAL_assertion(res == locate(p));
+#if CGAL_MESH_3_PROTECTION_DEBUG
+    CGAL_assertion(res == locate(p));
+#endif
     CGAL_assertion(res != points_.end());
     return res;
   }
@@ -488,8 +499,10 @@ public:
     CGAL_precondition(!is_loop());
 
     // Locate p & q on polyline
-    // CGAL_assertion(pit == locate(p));
-    //CGAL_assertion(qit == locate(q));//, true));
+#if CGAL_MESH_3_PROTECTION_DEBUG
+    CGAL_assertion(pit == locate(p));
+    CGAL_assertion(qit == locate(q));//, true));
+#endif
 
     // Points are not located on the same segment
     if ( pit != qit ) { return (pit <= qit); }

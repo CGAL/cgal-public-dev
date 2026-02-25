@@ -16,6 +16,7 @@
 
 #include <CGAL/Mesh_domain_with_polyline_features_3.h>
 #include <CGAL/Mesh_3/internal/Polyline.h>
+#include <CGAL/tags.h>
 #include "test_utilities.h"
 
 #include <vector>
@@ -34,7 +35,7 @@ struct Dummy_domain
 };
 
 typedef Dummy_domain<K_e_i> Smooth_domain;
-typedef CGAL::Mesh_domain_with_polyline_features_3<Smooth_domain> Mesh_domain;
+typedef CGAL::Mesh_domain_with_polyline_features_3<Smooth_domain, CGAL::API_version::v1> Mesh_domain;
 typedef Mesh_domain::Point_3 Point;
 typedef Mesh_domain::FT FT;
 
@@ -53,7 +54,7 @@ class Domain_with_polyline_tester
   typedef std::vector<std::pair<Ci, Point> >        Corners_vector;
   typedef Mesh_polyline::const_iterator             Polyline_iterator;
   typedef std::pair<Point, Index>                   P_and_i;
-  typedef std::tuple<Csi, Polyline_iterator,P_and_i,P_and_i>   Curve_tuple;
+  typedef std::tuple<Csi,P_and_i,P_and_i>           Curve_tuple;
   typedef std::vector<Curve_tuple>                  Curves_vector;
 
 public:
@@ -196,12 +197,12 @@ private:
 
   Point get_first_point(const Curve_tuple& tuple) const
   {
-    return std::get<2>(tuple).first;
+    return std::get<1>(tuple).first;
   }
 
   Point get_second_point(const Curve_tuple& tuple) const
   {
-    return std::get<3>(tuple).first;
+    return std::get<2>(tuple).first;
   }
 
   Csi get_curve_index() const

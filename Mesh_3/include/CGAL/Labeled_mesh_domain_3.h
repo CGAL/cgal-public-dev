@@ -263,6 +263,8 @@ protected:
     , squared_error_bound_(squared_error_bound(bbox_,error_bound))
   {}
 
+  Labeled_mesh_domain_3_impl(const Labeled_mesh_domain_3_impl&) = default;
+
   // The function which answers subdomain queries
   typedef std::function<Subdomain_index(const Point_3&)> Function;
   Function function_;
@@ -429,6 +431,8 @@ public:
 
 /// \name Creation
 /// @{
+  Labeled_mesh_domain_3(const Labeled_mesh_domain_3&) = default;
+
   /*!  \brief Construction from a function, a bounding object and a relative error bound.
    *
    * \tparam Function a type compatible with `Labeling_function`
