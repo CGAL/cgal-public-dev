@@ -2228,7 +2228,7 @@ insert_balls(const Vertex_handle& vp,
   }
 
   // Launch balls
-  for(int i = 1 ; i <= n ; ++i)
+  for(auto i = 1u ; i <= n ; ++i)
   {
     // New point position
     Bare_point new_point =
