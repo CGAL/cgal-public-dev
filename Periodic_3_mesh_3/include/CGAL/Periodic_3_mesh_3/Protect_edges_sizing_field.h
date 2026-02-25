@@ -154,7 +154,7 @@ private:
   /// Attempts to remove a vertex that corresponds to a dummy point from the triangulation.
   /// Failure happens when the removal of that vertex would cause the triangulation
   /// to switch to 27-sheets.
-  bool try_to_remove_dummy_vertex(const Vertex_handle dummy_vertex) const;
+  bool try_to_remove_dummy_vertex(const Vertex_handle dummy_vertex);
 
   /// Given a maximal weight 'intended_weight', computes the maximal squared size (weight)
   /// of the protection ball at 'protection_vertex' such that the ball does not contain
@@ -1029,12 +1029,12 @@ dump_dummy_points(const std::string filename) const
 template <typename C3T3, typename MD, typename Sf>
 bool
 Protect_edges_sizing_field<C3T3, MD, Sf>::
-try_to_remove_dummy_vertex(const Vertex_handle dummy_vertex) const
+try_to_remove_dummy_vertex(const Vertex_handle dummy_vertex)
 {
   // 'dummy_vertex' must correspond to a dummy point
   CGAL_precondition(is_dummy_vertex(dummy_vertex));
 
-  return c3t3_.triangulation().remove(dummy_vertex);
+  return tr().remove(dummy_vertex);
 }
 
 
