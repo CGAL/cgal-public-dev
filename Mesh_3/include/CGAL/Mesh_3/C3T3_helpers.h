@@ -1753,7 +1753,7 @@ private:
   }
 
   /**
-   * Returns false if there is a vertex belonging to one facet of `facets`
+   * Returns `false` if there is a vertex belonging to one facet of `facets`
    * which has not his dimension < 3
    */
   bool check_no_inside_vertices(const Facet_vector& facets) const;
@@ -1824,7 +1824,7 @@ private:
   }
 
   /**
-   * Returns the facets of `cells` (returns each facet only once i.e. use
+   * Returns the facets of `cells` (returns each facet only once, i.e., use
    * canonical facet)
    */
   Facet_vector get_facets(const Cell_vector& cells) const
@@ -1893,7 +1893,7 @@ private:
   }
 #else
   /**
-   * Returns the facets of `cells` (returns each facet only once i.e. use
+   * Returns the facets of `cells` (returns each facet only once, i.e., use
    * canonical facet)
    */
   template <typename ForwardIterator>
@@ -1984,7 +1984,7 @@ private:
 
 
   /**
-   * Returns the facets of `cells` (returns each facet only once i.e. use
+   * Returns the facets of `cells` (returns each facet only once, i.e., use
    * canonical facet)
    */
   template <typename ForwardIterator>

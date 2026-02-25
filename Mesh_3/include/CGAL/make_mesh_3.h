@@ -610,6 +610,7 @@ C3T3 make_mesh_3(const MeshDomain& domain, const MeshCriteria& criteria, const C
     parameters::internal::Features_options features_param = choose_parameter(get_parameter(np, internal_np::features_options_param), parameters::features(domain).v);
     parameters::internal::Mesh_3_options mesh_options_param = choose_parameter(get_parameter(np, internal_np::mesh_param), parameters::internal::Mesh_3_options());
     parameters::internal::Manifold_options manifold_options_param = choose_parameter(get_parameter(np, internal_np::manifold_param), parameters::internal::Manifold_options());
+    parameters::internal::Surface_options surface_options_param = choose_parameter(get_parameter(np, internal_np::surface_only_param), parameters::internal::Surface_options{false});
 
     // range of initial points
     using Initial_point = std::pair<typename MeshDomain::Point_3, typename MeshDomain::Index>;
@@ -635,7 +636,8 @@ C3T3 make_mesh_3(const MeshDomain& domain, const MeshCriteria& criteria, const C
             exude_param, perturb_param, odt_param, lloyd_param,
             features_param.features(), mesh_options_param,
             manifold_options_param,
-            initial_points_gen_param);
+            initial_points_gen_param,
+            surface_options_param);
     return c3t3;
 }
 
@@ -676,7 +678,8 @@ void make_mesh_3_impl(C3T3& c3t3,
                       const parameters::internal::Mesh_3_options& mesh_options = {},
                       const parameters::internal::Manifold_options& manifold_options = {},
                       const parameters::internal::Initialization_options<MeshDomain, C3T3, InitPtsVec>&
-                        initialization_options = {})
+                        initialization_options = {},
+                      const parameters::internal::Surface_options& surface_options = {})
 {
 #ifdef CGAL_MESH_3_INITIAL_POINTS_NO_RANDOM_SHOOTING
   CGAL::get_default_random() = CGAL::Random(0);
@@ -702,7 +705,8 @@ void make_mesh_3_impl(C3T3& c3t3,
   refine_mesh_3(c3t3, domain, criteria,
                 parameters::exude_options=exude, parameters::perturb_options=perturb, parameters::odt_options=odt, parameters::lloyd_options= lloyd,
                 parameters::no_reset_c3t3(), parameters::mesh_options= mesh_options,
-                parameters::manifold_option= manifold_options);
+                parameters::manifold_option= manifold_options,
+                parameters::surface_only_option = surface_options);
 }
 
 #endif //DOXYGEN_RUNNING
