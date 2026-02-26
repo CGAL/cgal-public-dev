@@ -97,7 +97,7 @@ public:
   {
     CGAL_precondition(facet>=0 && facet<4);
     char current_bits = bits_;
-    while (bits_.compare_exchange_weak(current_bits, current_bits | (1 << facet)) )
+    while (!bits_.compare_exchange_weak(current_bits, current_bits | char(1 << facet)) )
     {
       current_bits = bits_;
     }
@@ -108,8 +108,9 @@ public:
   {
     CGAL_precondition(facet>=0 && facet<4);
     char current_bits = bits_;
-    while (bits_.compare_exchange_weak(current_bits, current_bits & (15 & ~(1 << facet))))
-    {
+    char mask = char(15 & ~(1 << facet));
+    char wanted_value = current_bits & mask;
+    while(!bits_.compare_exchange_weak(current_bits, wanted_value)) {
       current_bits = bits_;
     }
   }
