@@ -1933,7 +1933,7 @@ insert_balls_on_edges()
           vp = smart_insert_point(p,
                                   CGAL::square(p_size),
                                   1 /*dim*/,
-                                  curve_index,
+                                  p_index,
                                   Vertex_handle(),
                                   curve_index,
                                   CGAL::Emptyset_iterator()).first;
@@ -2368,10 +2368,8 @@ refine_balls()
     new_sizes.clear();
 
     // Update size of balls
-    for (const std::pair<Vertex_handle,FT>& it : new_sizes_copy)
+    for (auto [v, new_size] : new_sizes_copy)
     {
-      Vertex_handle v = it.first;
-      const FT new_size = it.second;
       // Set size of the ball to new value
       if(minimal_size_ != FT() && new_size < minimal_size_)
       {
