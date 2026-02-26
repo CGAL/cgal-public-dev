@@ -38,7 +38,15 @@
 #include <CGAL/Number_types/internal/Exact_type_selector.h>
 #include <CGAL/NT_converter.h>
 #include <CGAL/Unique_hash_map.h>
+#include <CGAL/tags.h>
 #include <CGAL/use.h>
+#include <CGAL/utility.h>
+#include <boost/unordered/unordered_map_fwd.hpp>
+#include <CGAL/IO/io.h>
+#include <CGAL/Iterator_range.h>
+#include <CGAL/Triangulation_utils_3.h>
+#include <CGAL/enum.h>
+#include <CGAL/iterator.h>
 
 #ifndef CGAL_NO_STRUCTURAL_FILTERING
 #include <CGAL/Filtered_kernel/internal/Static_filters/tools.h>
@@ -50,14 +58,18 @@
 #include <boost/random/uniform_smallint.hpp>
 #include <boost/random/variate_generator.hpp>
 #include <boost/tuple/tuple.hpp>
-#include <boost/unordered_map.hpp>
+#include <boost/unordered/unordered_map.hpp>
 
-#include <iostream>
 #include <algorithm>
-#include <cmath>
-#include <functional>
+#include <array>
+#include <cstddef>
+#include <iostream>
 #include <list>
+#include <map>
+#include <set>
+#include <stack>
 #include <utility>
+#include <vector>
 
 namespace CGAL {
 
@@ -182,11 +194,11 @@ public:
 private:
   typedef typename GT::FT                      FT;
   typedef std::pair< Vertex_handle, Offset >   Virtual_vertex;
-  typedef boost::unordered_map<Vertex_handle, Virtual_vertex>
+  typedef boost::unordered::unordered_map<Vertex_handle, Virtual_vertex>
                                                Virtual_vertex_map;
   typedef typename Virtual_vertex_map::const_iterator
                                                Virtual_vertex_map_it;
-  typedef boost::unordered_map<Vertex_handle, std::vector<Vertex_handle > >
+  typedef boost::unordered::unordered_map<Vertex_handle, std::vector<Vertex_handle > >
                                                Virtual_vertex_reverse_map;
   typedef typename Virtual_vertex_reverse_map::const_iterator
                                                Virtual_vertex_reverse_map_it;
