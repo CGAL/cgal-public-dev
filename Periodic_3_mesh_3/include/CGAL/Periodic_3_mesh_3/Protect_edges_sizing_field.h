@@ -47,7 +47,6 @@
 #endif
 
 #include <CGAL/enum.h>
-#include <CGAL/STL_Extension/internal/Has_member_visited.h>
 #include <CGAL/iterator.h>
 #include <CGAL/number_utils.h>
 #include <CGAL/Periodic_3_Delaunay_triangulation_traits_3.h>
@@ -1054,10 +1053,8 @@ get_maximum_weight(const Vertex_handle protection_vertex, const FT intended_weig
   finite_incident_cells.reserve(64);
   tr().incident_cells(protection_vertex, std::back_inserter(finite_incident_cells));
 
-  Tr_helpers tr_helpers;
-  const FT nearest_sq_dist = tr_helpers.template get_sq_distance_to_closest_vertex
-                               <CGAL_NTS internal::Has_member_visited<typename Dt::Vertex> >(
-                                 tr(), protection_vertex, finite_incident_cells);
+  const FT nearest_sq_dist =
+    Tr_helpers::get_sq_distance_to_closest_vertex(tr(), protection_vertex, finite_incident_cells);
 
   if(nearest_sq_dist < intended_weight)
     max_possible_weight = nearest_sq_dist;
@@ -1448,10 +1445,8 @@ insert_corners()
       finite_incident_cells.reserve(64);
       dt.incident_cells(vh, std::back_inserter(finite_incident_cells));
 
-      Dt_helpers helpers;
-      const FT nearest_sq_dist = helpers.template get_sq_distance_to_closest_vertex
-                                   <CGAL_NTS internal::Has_member_visited<typename Dt::Vertex> >(
-                                     dt, vh, finite_incident_cells);
+      const FT nearest_sq_dist =
+          Dt_helpers::get_sq_distance_to_closest_vertex(dt, vh, finite_incident_cells);
 
       w = (std::min)(w, nearest_sq_dist / FT(9));
 #if CGAL_MESH_3_PROTECTION_DEBUG & 1
@@ -1649,10 +1644,8 @@ smart_insert_point(const Bare_point& p, Weight w, int dim, const Index& index,
       finite_incident_cells.reserve(64);
       tr().incident_cells(v, std::back_inserter(finite_incident_cells));
 
-      Tr_helpers tr_helpers;
-      const FT nearest_sq_dist = tr_helpers.template get_sq_distance_to_closest_vertex
-                                   <CGAL_NTS internal::Has_member_visited<typename Dt::Vertex> >(
-                                     tr(), v, finite_incident_cells);
+      const FT nearest_sq_dist =
+          Tr_helpers::get_sq_distance_to_closest_vertex(tr(), v, finite_incident_cells);
 
       CGAL_assertion(nearest_sq_dist > 0.);
 

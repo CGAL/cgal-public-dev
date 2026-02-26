@@ -20,14 +20,16 @@
 #include <CGAL/license/Mesh_3.h>
 
 #include <CGAL/enum.h>
+#include <CGAL/STL_Extension/internal/Has_member_visited.h>
 #include <CGAL/STL_Extension/internal/Has_nested_type_Bare_point.h>
+#include <CGAL/tags.h>
 #include <CGAL/Time_stamper.h>
 
+#include <boost/mpl/eval_if.hpp>
 #include <boost/mpl/identity.hpp>
 #include <boost/unordered_set.hpp>
 
 #include <algorithm>
-#include <iostream>
 #include <iterator>
 #include <limits>
 #include <utility>
@@ -140,18 +142,31 @@ public:
    *
    * \pre `vh` is not the infinite vertex
    */
-  template<typename Tag> // Two versions to distinguish using 'Has_visited_for_vertex_extractor'
+  // Two versions to distinguish using 'Has_visited_for_vertex_extractor'
+  static
   FT get_sq_distance_to_closest_vertex(const Tr& tr,
                                        const Vertex_handle& vh,
                                        const Cell_vector& incident_cells,
-                                       typename std::enable_if_t<Tag::value>* = nullptr) const;
-
+                                       Tag_true);
   // @todo are the two versions really worth it, I can't tell the difference from a time POV...
-  template<typename Tag>
+  static
   FT get_sq_distance_to_closest_vertex(const Tr& tr,
                                        const Vertex_handle& vh,
                                        const Cell_vector& incident_cells,
-                                       typename std::enable_if_t<!Tag::value>* = nullptr) const;
+                                       Tag_false);
+  static
+  FT get_sq_distance_to_closest_vertex(const Tr& tr,
+                                       const Vertex_handle& vh,
+                                       const Cell_vector& incident_cells)
+  {
+    using Vertex = typename Tr::Vertex;
+    static constexpr bool vertex_has_member_visited =
+        CGAL::internal::Has_member_visited<Vertex>::value;
+
+    return get_sq_distance_to_closest_vertex(tr, vh, incident_cells,
+                                             Boolean_tag<vertex_has_member_visited>{});
+  }
+
 
 private:
   /**
@@ -405,13 +420,12 @@ inside_protecting_balls(const Tr& tr,
 /// Return the squared distance from vh to its closest vertex
 /// if `Has_visited_for_vertex_extractor` is `true`
 template<typename Tr>
-template<typename Tag>
 typename Triangulation_helpers<Tr>::FT
 Triangulation_helpers<Tr>::
 get_sq_distance_to_closest_vertex(const Tr& tr,
                                   const Vertex_handle& vh,
                                   const Cell_vector& incident_cells,
-                                  typename std::enable_if_t<Tag::value>*) const
+                                  Tag_true)
 {
   CGAL_precondition(!tr.is_infinite(vh));
 
@@ -464,13 +478,12 @@ get_sq_distance_to_closest_vertex(const Tr& tr,
 /// Return the squared distance from vh to its closest vertex
 /// if `Has_visited_for_vertex_extractor` is `false`
 template<typename Tr>
-template<typename Tag>
 typename Triangulation_helpers<Tr>::FT
 Triangulation_helpers<Tr>::
 get_sq_distance_to_closest_vertex(const Tr& tr,
                                   const Vertex_handle& vh,
                                   const Cell_vector& incident_cells,
-                                  typename std::enable_if_t<!Tag::value>*) const
+                                  Tag_false)
 {
   CGAL_precondition(!tr.is_infinite(vh));
 

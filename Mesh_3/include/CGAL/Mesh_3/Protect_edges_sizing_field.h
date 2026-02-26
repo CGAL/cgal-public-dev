@@ -46,7 +46,6 @@
 #include <CGAL/Mesh_error_code.h>
 #include <CGAL/number_type_config.h>
 #include <CGAL/number_utils.h>
-#include <CGAL/STL_Extension/internal/Has_member_visited.h>
 #include <CGAL/STL_Extension/internal/mesh_option_classes.h>
 #include <CGAL/tags.h>
 #include <CGAL/Time_stamper.h>
@@ -847,10 +846,8 @@ insert_corners()
       finite_incident_cells.reserve(64);
       dt.finite_incident_cells(vh, std::back_inserter(finite_incident_cells));
 
-      Dt_helpers helpers;
-      const FT nearest_sq_dist = helpers.template get_sq_distance_to_closest_vertex
-                                   <CGAL_NTS internal::Has_member_visited<typename Dt::Vertex> >(
-                                     dt, vh, finite_incident_cells);
+      const FT nearest_sq_dist =
+          Dt_helpers::get_sq_distance_to_closest_vertex(dt, vh, finite_incident_cells);
 
       w = (std::min)(w, nearest_sq_dist / FT(9));
 
