@@ -137,158 +137,6 @@ struct Mesh_domain_get_curves_output_type<MD, false> {
 template <typename MD>
 using Mesh_domain_get_curves_output_type_t = typename Mesh_domain_get_curves_output_type<MD>::type;
 
-template<typename Derived>
-struct Protect_edges_sizing_field_versioned_API
-{
-  const auto& derived() const { return *static_cast<const Derived*>(this); }
-  const auto& tr() const { return derived().c3t3_.triangulation(); }
-  const auto& domain() const { return derived().domain_; }
-
-  static constexpr API_version api_version = Derived::api_version;
-
-  template <typename Bare_point, typename Curve_index, typename FT, typename Position_on_curve>
-  auto construct_point_on_curve(const Bare_point& p,
-                                const Curve_index& curve_index,
-                                const FT distance,
-                                [[maybe_unused]] Position_on_curve position_on_curve) const
-  {
-    if constexpr (api_version == API_version::v2) {
-      return domain().construct_point_on_curve(p, curve_index, distance, position_on_curve);
-    } else {
-      return std::make_pair(domain().construct_point_on_curve(p, curve_index, distance), Void{});
-    }
-  }
-
-  template <typename Bare_point, typename Position_on_curve, typename Curve_index>
-  auto curve_segment_length(const Bare_point& p1,
-                            const Bare_point& p2,
-                            [[maybe_unused]] Position_on_curve pos1,
-                            [[maybe_unused]] Position_on_curve pos2,
-                            const Curve_index& curve_index,
-                            const CGAL::Orientation orientation) const
-  {
-    if constexpr (api_version == API_version::v2) {
-      return domain().curve_segment_length(p1, p2, pos1, pos2, curve_index, orientation);
-    } else {
-      return domain().curve_segment_length(p1, p2, curve_index, orientation);
-    }
-  }
-
-  template <typename Bare_point, typename Position_on_curve, typename Curve_index>
-  auto distance_sign_along_loop(const Bare_point& start_p,
-                                const Bare_point& next_p,
-                                const Bare_point& next_along_curve_p,
-                                const Curve_index& curve_index,
-                                [[maybe_unused]] Position_on_curve start_pos,
-                                [[maybe_unused]] Position_on_curve next_pos,
-                                [[maybe_unused]] Position_on_curve next_along_curve_pos) const
-  {
-    if constexpr (api_version == API_version::v2) {
-      return domain().distance_sign_along_loop(start_p, next_p, next_along_curve_p, curve_index,
-                                                        start_pos, next_pos, next_along_curve_pos);
-    } else {
-      return domain().distance_sign_along_loop(start_p, next_p, next_along_curve_p, curve_index);
-    }
-  }
-
-  template <typename Bare_point, typename Position_on_curve, typename Curve_index>
-  auto distance_sign(const Bare_point& start_p,
-                     const Bare_point& next_p,
-                     const Curve_index& curve_index,
-                     [[maybe_unused]] Position_on_curve start_pos,
-                     [[maybe_unused]] Position_on_curve next_pos) const
-  {
-    if constexpr (api_version == API_version::v2) {
-      return domain().distance_sign(start_p, next_p, curve_index, start_pos, next_pos);
-    } else {
-      return domain().distance_sign(start_p, next_p, curve_index);
-    }
-  }
-
-  template <typename Bare_point, typename Curve_index, typename Weight, typename Position_on_curve, typename Orientation>
-  auto is_curve_segment_covered(const Curve_index& curve_index,
-                                const Orientation orientation,
-                                const Bare_point& p1,
-                                const Bare_point& p2,
-                                const Weight& w1,
-                                const Weight& w2,
-                                [[maybe_unused]] Position_on_curve pos1,
-                                [[maybe_unused]] Position_on_curve pos2) const
-  {
-    if constexpr (api_version == API_version::v2) {
-      return domain().is_curve_segment_covered(curve_index, orientation, p1, p2, w1, w2, pos1, pos2);
-    } else {
-      return domain().is_curve_segment_covered(curve_index, orientation, p1, p2, w1, w2);
-    }
-  }
-
-  template <typename Feature_tuple>
-  static auto convert_to_tuple_of_size_4(const Feature_tuple& ft)
-  {
-    if constexpr (api_version == API_version::v2) {
-      const auto& [curve_index, pos, point_s, point_t] = ft;
-      return std::tie(curve_index, pos, point_s, point_t);
-    } else {
-      static constexpr Void void_;
-      const auto& [curve_index, point_s, point_t] = ft;
-      return std::tie(curve_index, void_, point_s, point_t);
-    }
-  }
-
-  template <typename Vh, typename Curve_index>
-  auto locate_in_polyline([[maybe_unused]] const Vh& v,
-                          [[maybe_unused]] const Curve_index& curve_index) const
-  {
-    if constexpr (api_version == API_version::v2) {
-      return domain().locate_in_polyline(derived().cp(derived().point(v)), v->in_dimension(), curve_index);
-    } else {
-      return Void{};
-    }
-  }
-
-  template <typename Bare_point, typename Position_on_curve, typename Curve_index>
-  auto signed_geodesic_distance(const Bare_point& pa,
-                                const Bare_point& pb,
-                                [[maybe_unused]] Position_on_curve pa_pos,
-                                [[maybe_unused]] Position_on_curve pb_pos,
-                                const Curve_index& curve_index) const
-  {
-    if constexpr (api_version == API_version::v2) {
-      return domain().signed_geodesic_distance(pa, pb, pa_pos, pb_pos, curve_index);
-    } else {
-      return domain().signed_geodesic_distance(pa, pb, curve_index);
-    }
-
-  }
-
-  void clear_point_to_polyline_iterator_cache() const
-  {
-    if constexpr (api_version == API_version::v2) {
-      domain().clear_point_to_polyline_iterator_cache();
-    }
-  }
-
-  template <typename Bare_point, typename Position_on_curve, typename Curve_index>
-  void set_polyline_iterator([[maybe_unused]] const Bare_point& p,
-                             [[maybe_unused]] Position_on_curve position_on_curve,
-                             [[maybe_unused]] const Curve_index& curve_index) const
-  {
-    if constexpr (api_version == API_version::v2) {
-      domain().set_polyline_iterator(p, position_on_curve, curve_index);
-    }
-  }
-
-  template <typename Bare_point, typename Curve_index>
-  void remove_polyline_iterator([[maybe_unused]] const Bare_point& p,
-                                [[maybe_unused]] const Curve_index& curve_index) const
-  {
-    if constexpr (api_version == API_version::v2) {
-      domain().remove_polyline_iterator(p, curve_index);
-    }
-  }
-
-
-};
 
 template<typename C3T3,
          typename MeshDomain,
@@ -296,10 +144,7 @@ template<typename C3T3,
          typename DistanceFunction = CGAL::Default>
 class Protect_edges_sizing_field
   : public CGAL::SMDS_3::internal::Debug_messages_tools
-  , public Protect_edges_sizing_field_versioned_API<
-             Protect_edges_sizing_field<C3T3, MeshDomain, SizingFunction, DistanceFunction> >
 {
-
   typedef Protect_edges_sizing_field          Self;
 
 protected:
@@ -307,10 +152,7 @@ protected:
   static constexpr API_version api_version =
       std::tuple_size_v<get_curve_output_type> == 3 ? API_version::v1 : API_version::v2;
 
-  using API =  Protect_edges_sizing_field_versioned_API<Self>;
-  friend API;
-
-  const API& api() const { return static_cast<const API&>(*this); }
+  const Self& api() const { return *this; }
 
 public:
   typedef typename C3T3::Triangulation        Tr;
@@ -329,6 +171,7 @@ public:
   typedef typename MeshDomain::Curve_index          Curve_index;
   typedef typename MeshDomain::Corner_index         Corner_index;
   typedef typename MeshDomain::Index                Index;
+  typedef typename MeshDomain::Position_on_curve    Position_on_curve;
 
   using Distance_Function = DistanceFunction;
 
@@ -686,6 +529,10 @@ private:
     return c3t3_.triangulation();
   }
 
+  const auto& domain() const {
+    return domain_;
+  }
+
   const auto& geom_traits() const {
     return c3t3_.triangulation().geom_traits();
   }
@@ -693,6 +540,136 @@ private:
   const auto& point(Vertex_handle vh) const {
     return c3t3_.triangulation().point(vh);
   }
+
+protected:
+
+  auto construct_point_on_curve(const Bare_point& p,
+                                const Curve_index& curve_index,
+                                const FT distance,
+                                [[maybe_unused]] Position_on_curve position_on_curve) const
+  {
+    if constexpr(api_version == API_version::v2) {
+      return domain().construct_point_on_curve(p, curve_index, distance, position_on_curve);
+    } else {
+      return std::make_pair(domain().construct_point_on_curve(p, curve_index, distance), Void{});
+    }
+  }
+
+  auto curve_segment_length(const Bare_point& p1,
+                            const Bare_point& p2,
+                            [[maybe_unused]] Position_on_curve pos1,
+                            [[maybe_unused]] Position_on_curve pos2,
+                            const Curve_index& curve_index,
+                            const CGAL::Orientation orientation) const {
+    if constexpr(api_version == API_version::v2) {
+      return domain().curve_segment_length(p1, p2, pos1, pos2, curve_index, orientation);
+    } else {
+      return domain().curve_segment_length(p1, p2, curve_index, orientation);
+    }
+  }
+
+  auto distance_sign_along_loop(const Bare_point& start_p,
+                                const Bare_point& next_p,
+                                const Bare_point& next_along_curve_p,
+                                const Curve_index& curve_index,
+                                [[maybe_unused]] Position_on_curve start_pos,
+                                [[maybe_unused]] Position_on_curve next_pos,
+                                [[maybe_unused]] Position_on_curve next_along_curve_pos) const {
+    if constexpr(api_version == API_version::v2) {
+      return domain().distance_sign_along_loop(start_p, next_p, next_along_curve_p, curve_index, start_pos, next_pos,
+                                               next_along_curve_pos);
+    } else {
+      return domain().distance_sign_along_loop(start_p, next_p, next_along_curve_p, curve_index);
+    }
+  }
+
+  auto distance_sign(const Bare_point& start_p,
+                     const Bare_point& next_p,
+                     const Curve_index& curve_index,
+                     [[maybe_unused]] Position_on_curve start_pos,
+                     [[maybe_unused]] Position_on_curve next_pos) const {
+    if constexpr(api_version == API_version::v2) {
+      return domain().distance_sign(start_p, next_p, curve_index, start_pos, next_pos);
+    } else {
+      return domain().distance_sign(start_p, next_p, curve_index);
+    }
+  }
+
+  auto is_curve_segment_covered(const Curve_index& curve_index,
+                                const Orientation orientation,
+                                const Bare_point& p1,
+                                const Bare_point& p2,
+                                const Weight& w1,
+                                const Weight& w2,
+                                [[maybe_unused]] Position_on_curve pos1,
+                                [[maybe_unused]] Position_on_curve pos2) const {
+    if constexpr(api_version == API_version::v2) {
+      return domain().is_curve_segment_covered(curve_index, orientation, p1, p2, w1, w2, pos1, pos2);
+    } else {
+      return domain().is_curve_segment_covered(curve_index, orientation, p1, p2, w1, w2);
+    }
+  }
+
+  template <typename Feature_tuple>
+  static auto convert_to_tuple_of_size_4(const Feature_tuple& ft)
+  {
+    if constexpr(api_version == API_version::v2) {
+      const auto& [curve_index, pos, point_s, point_t] = ft;
+      return std::tie(curve_index, pos, point_s, point_t);
+    } else {
+      static constexpr Void void_;
+      const auto& [curve_index, point_s, point_t] = ft;
+      return std::tie(curve_index, void_, point_s, point_t);
+    }
+  }
+
+  auto locate_in_polyline([[maybe_unused]] const Vertex_handle& v,
+                          [[maybe_unused]] const Curve_index& curve_index) const
+  {
+    if constexpr(api_version == API_version::v2) {
+      return domain().locate_in_polyline(cp(point(v)), v->in_dimension(), curve_index);
+    } else {
+      return Void{};
+    }
+  }
+
+  auto signed_geodesic_distance(const Bare_point& pa,
+                                const Bare_point& pb,
+                                [[maybe_unused]] Position_on_curve pa_pos,
+                                [[maybe_unused]] Position_on_curve pb_pos,
+                                const Curve_index& curve_index) const
+  {
+    if constexpr(api_version == API_version::v2) {
+      return domain().signed_geodesic_distance(pa, pb, pa_pos, pb_pos, curve_index);
+    } else {
+      return domain().signed_geodesic_distance(pa, pb, curve_index);
+    }
+  }
+
+  void clear_point_to_polyline_iterator_cache() const
+  {
+    if constexpr(api_version == API_version::v2) {
+      domain().clear_point_to_polyline_iterator_cache();
+    }
+  }
+
+  void set_polyline_iterator([[maybe_unused]] const Bare_point& p,
+                             [[maybe_unused]] Position_on_curve position_on_curve,
+                             [[maybe_unused]] const Curve_index& curve_index) const
+  {
+    if constexpr(api_version == API_version::v2) {
+      domain().set_polyline_iterator(p, position_on_curve, curve_index);
+    }
+  }
+
+  void remove_polyline_iterator([[maybe_unused]] const Bare_point& p,
+                                [[maybe_unused]] const Curve_index& curve_index) const
+  {
+    if constexpr(api_version == API_version::v2) {
+      domain().remove_polyline_iterator(p, curve_index);
+    }
+  }
+
 
 private:
   C3T3& c3t3_;
