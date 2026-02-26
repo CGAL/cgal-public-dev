@@ -23,12 +23,21 @@
 #include <CGAL/license/Mesh_3.h>
 
 
+#include <CGAL/assertions.h>
+#include <CGAL/IO/io.h>
 #include <CGAL/Regular_triangulation_vertex_base_3.h>
 #include <CGAL/SMDS_3/internal/indices_management.h>
 #include <CGAL/SMDS_3/io_signature.h>
 #include <CGAL/Has_timestamp.h>
 #include <CGAL/tags.h>
+#include <CGAL/TDS_3/internal/Dummy_tds_3.h>
+#include <CGAL/Time_stamper.h>
+
 #include <atomic>
+#include <cstddef>
+#include <istream>
+#include <ostream>
+#include <string>
 
 namespace CGAL {
 
@@ -250,7 +259,7 @@ private:
   Vertex_handle next_intrusive_;
   Vertex_handle previous_intrusive_;
 #endif
-  std::size_t time_stamp_ = std::size_t(-2);
+  std::size_t time_stamp_ = Time_stamper<void>::invalid_time_stamp;
 public:
 
   friend std::istream& operator>>(std::istream &is, Mesh_vertex_3& v)
