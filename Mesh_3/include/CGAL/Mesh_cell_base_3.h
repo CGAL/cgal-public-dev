@@ -212,8 +212,7 @@ public:
     , next_intrusive_(rhs.next_intrusive_)
     , previous_intrusive_(rhs.previous_intrusive_)
 #endif
-  {
-  }
+  {}
 
   // Default copy constructor and assignment operator are ok
 
