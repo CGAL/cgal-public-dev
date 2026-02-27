@@ -33,7 +33,9 @@
 #include <CGAL/TDS_3/internal/Dummy_tds_3.h>
 #include <CGAL/Time_stamper.h>
 
-#include <atomic>
+#ifdef CGAL_LINKED_WITH_TBB
+#  include <atomic>
+#endif
 #include <cstddef>
 #include <istream>
 #include <ostream>
@@ -154,7 +156,7 @@ public:
   // that contains the vertex
   void set_dimension(const int dimension) {
     CGAL_assertion(dimension < 4);
-    dimension_ = short(dimension);
+    dimension_ = static_cast<short>(dimension);
   }
 
   // Tells if the vertex is marked as a special protecting ball
@@ -163,7 +165,7 @@ public:
   // Marks or unmarks the vertex as a special protecting ball
   void set_special(bool special = true) {
     if(special != (dimension_ < -1) )
-      dimension_ = short(-2-dimension_);
+      dimension_ = static_cast<short>(-2-dimension_);
   }
 
   // Returns the index of the lowest dimensional face of the input 3D complex
