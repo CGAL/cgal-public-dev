@@ -1884,13 +1884,12 @@ Protect_edges_sizing_field<C3T3, MD, Sf>::
 insert_balls_on_edges()
 {
   // Get features
-  using Feature_tuple =
-      std::tuple<Curve_index, Polyline_iterator, std::pair<Bare_point, Index>, std::pair<Bare_point, Index>>;
+  using Feature_tuple = typename MD::Get_curves_output_type;
   std::vector<Feature_tuple> input_features;
   domain_.get_curves(std::back_inserter(input_features));
 
   // Iterate on edges
-  for (const auto& [curve_index, polyline_begin, point_s, point_t] : input_features)
+  for (const auto& [curve_index, p_info, q_info] : input_features)
   {
     if(! is_treated(curve_index))
     {
@@ -1898,17 +1897,14 @@ insert_balls_on_edges()
       std::cerr << "** treat curve #" << curve_index << std::endl;
       std::cerr << "is it a loop? " << domain_.is_loop(curve_index) << std::endl;
 #endif
-      const Bare_point& p = point_s.first;
-      const Index& p_index = point_s.second;
-      const Polyline_iterator& p_polyline_iter = polyline_begin;
+      const auto& [p, p_index, p_position] = p_info;
 
       Vertex_handle vp,vq;
       if(! domain_.is_loop(curve_index))
       {
         vp = get_vertex_corner_from_point(p, p_index);
 
-        const Bare_point& q = point_t.first;
-        const Index& q_index = point_t.second;
+        const auto& [q, q_index, q_position] = q_info;
         vq = get_vertex_corner_from_point(q, q_index);
       }
       else
@@ -1939,7 +1935,7 @@ insert_balls_on_edges()
                                   CGAL::Emptyset_iterator()).first;
 
           if(vp != Vertex_handle())
-            domain_.set_polyline_iterator(p, p_polyline_iter, curve_index);
+            domain_.set_polyline_iterator(p, p_position, curve_index);
         }
         // No 'else' because in that case 'is_vertex(..)' already filled
         // the variable 'vp'.

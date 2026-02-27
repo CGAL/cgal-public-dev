@@ -53,6 +53,7 @@
 #include <CGAL/unordered_flat_set.h>
 #include <CGAL/use.h>
 
+#include <boost/container_hash/hash.hpp>
 #include <boost/mpl/has_xxx.hpp>
 #include <boost/iterator/function_output_iterator.hpp>
 #ifndef CGAL_NO_ASSERTIONS
@@ -77,6 +78,7 @@
 #include <stack>
 #include <string>
 #include <tuple>
+#include <type_traits>
 #include <utility>
 #include <vector>
 
@@ -146,13 +148,6 @@ class Protect_edges_sizing_field
 {
   typedef Protect_edges_sizing_field          Self;
 
-protected:
-  using get_curve_output_type = Mesh_domain_get_curves_output_type_t<MeshDomain>;
-  static constexpr API_version api_version =
-      std::tuple_size_v<get_curve_output_type> == 3 ? API_version::v1 : API_version::v2;
-
-  const Self& api() const { return *this; }
-
 public:
   typedef typename C3T3::Triangulation        Tr;
   typedef typename Tr::Bare_point             Bare_point;
@@ -170,7 +165,6 @@ public:
   typedef typename MeshDomain::Curve_index          Curve_index;
   typedef typename MeshDomain::Corner_index         Corner_index;
   typedef typename MeshDomain::Index                Index;
-  typedef typename MeshDomain::Position_on_curve    Position_on_curve;
 
   using Distance_Function = DistanceFunction;
 
@@ -236,10 +230,6 @@ private:
 
   /// Refine balls.
   void refine_balls();
-
-  /// Return the vertex which corresponds to the corner located at point `p`.
-  Vertex_handle get_vertex_corner_from_point(const Bare_point& p,
-                                             const Index& p_index) const;
 
   /// Inserts `point(p,w)` into the triangulation and set its dimension to `dim`
   /// and its index to `index`.
@@ -542,6 +532,92 @@ private:
 
 protected:
 
+  using get_curve_output_type = Mesh_domain_get_curves_output_type_t<MeshDomain>;
+  using Curve_info = std::tuple_element_t<1, get_curve_output_type>;
+
+  static constexpr API_version api_version =
+      std::tuple_size_v<Curve_info> == 2 ? API_version::v1 : API_version::v2;
+
+  using Position_on_curve = std::conditional_t<api_version == API_version::v1,
+                                               Void,
+                                               std::tuple_element_t<2, Curve_info>>;
+
+  using Corner_and_curve_index = std::pair<Corner_index, Curve_index>;
+  using Corner_and_curve_index_hash =boost::hash<Corner_and_curve_index>;
+
+  using Corners_positions_on_incident_curves =
+      std::conditional_t<api_version == API_version::v1,
+                         Void,
+                         CGAL::unordered_flat_map<Corner_and_curve_index,
+                                                  Position_on_curve,
+                                                  Corner_and_curve_index_hash>
+                         >;
+
+  Self& api() { return *this; }
+  const Self& api() const { return *this; }
+
+  auto index_from_corner_index(Corner_index index) const {
+    return domain().index_from_corner_index(index);
+  }
+
+  auto corner_index(Index index) const {
+    return domain().corner_index(index);
+  }
+
+  auto index_from_curve_index(Curve_index index) const {
+    return domain().index_from_curve_index(index);
+  }
+
+  auto curve_index(Index index) const {
+    return domain().curve_index(index);
+  }
+
+  bool is_loop(Curve_index curve_index) const {
+    return domain().is_loop(curve_index);
+  }
+
+  auto curve_length(Curve_index curve_index) const {
+    return domain().curve_length(curve_index);
+  }
+
+  template <typename Output_iterator>
+  auto get_corners(Output_iterator out_it) const {
+    return domain().get_corners(out_it);
+  }
+
+  using Feature_tuple = Mesh_domain_get_curves_output_type_t<MeshDomain>;
+
+  template <typename It>
+  static auto convert_iterator(It it) {
+    if constexpr (api_version == API_version::v1) {
+      auto convert_tuple = [](const Feature_tuple& feature) {
+        const auto& [curve_index, pair1, pair2] = feature;
+        const auto& [p1, index1] = pair1;
+        const auto& [p2, index2] = pair2;
+        return std::make_tuple(curve_index,
+                               std::make_tuple(p1, index1, Void{}),
+                               std::make_tuple(p2, index2, Void{}));
+      };
+      return boost::make_transform_iterator(it, convert_tuple);
+    } else {
+      return it;
+    }
+  }
+
+  struct Range_of_curves {
+    std::vector<Feature_tuple> input_features_;
+
+    auto begin() const { return convert_iterator(input_features_.cbegin()); }
+    auto end() const { return convert_iterator(input_features_.cend()); }
+  };
+
+  Range_of_curves get_curves() const {
+    Range_of_curves range_of_curves;
+    domain().get_curves(std::back_inserter(range_of_curves.input_features_));
+
+    return range_of_curves;
+  }
+
   auto construct_point_on_curve(const Bare_point& p,
                                 const Curve_index& curve_index,
                                 const FT distance,
@@ -609,16 +685,14 @@ protected:
     }
   }
 
-  template <typename Feature_tuple>
-  static auto convert_to_tuple_of_size_4(const Feature_tuple& ft)
+  void register_curve_corner([[maybe_unused]] const Curve_index& curve_index,
+                             [[maybe_unused]] const Index& p_index,
+                             [[maybe_unused]] Position_on_curve position_on_curve)
   {
     if constexpr(api_version == API_version::v2) {
-      const auto& [curve_index, pos, point_s, point_t] = ft;
-      return std::tie(curve_index, pos, point_s, point_t);
-    } else {
-      static constexpr Void void_;
-      const auto& [curve_index, point_s, point_t] = ft;
-      return std::tie(curve_index, void_, point_s, point_t);
+      auto pair = std::make_pair(domain().corner_index(p_index), curve_index);
+      [[maybe_unused]] auto [_, inserted] = corners_on_curves_.try_emplace(pair, position_on_curve);
+      CGAL_assertion(true == inserted);
     }
   }
 
@@ -626,7 +700,15 @@ protected:
                           [[maybe_unused]] const Curve_index& curve_index) const
   {
     if constexpr(api_version == API_version::v2) {
-      return domain().locate_in_polyline(cp(point(v)), v->in_dimension(), curve_index);
+      auto in_dimension = v->in_dimension();
+      if(in_dimension == 0) {
+        auto corner_index = domain().corner_index(v->index());
+        auto pos = corners_on_curves_.find(std::make_pair(corner_index, curve_index));
+        CGAL_assertion(pos != corners_on_curves_.end());
+        return pos->second;
+      }
+      auto bare_point = cp(point(v));
+      return domain().locate_in_polyline(bare_point, in_dimension, curve_index);
     } else {
       return Void{};
     }
@@ -689,6 +771,8 @@ private:
   CGAL_NO_UNIQUE_ADDRESS const Distance_Function edge_distance_;
   std::set<Curve_index> treated_edges_;
   Vertex_set unchecked_vertices_;
+  CGAL::unordered_flat_map<Corner_index, Vertex_handle> corner_vertices_;
+  CGAL_NO_UNIQUE_ADDRESS Corners_positions_on_incident_curves corners_on_curves_;
   int refine_balls_iteration_nb;
   bool nonlinear_growth_of_balls;
   const std::size_t maximal_number_of_vertices_;
@@ -798,7 +882,7 @@ insert_corners()
   using Initial_corners = std::vector<Initial_corner>;
 
   Initial_corners corners;
-  domain_.get_corners(std::back_inserter(corners));
+  api().get_corners(std::back_inserter(corners));
 
 #if CGAL_MESH_3_PROTECTION_DEBUG & 1
   std::cout << corners.size() << " corners to treat" << std::endl;
@@ -816,7 +900,7 @@ insert_corners()
   for ( const auto& [corner_index, p] : corners )
   {
     if(forced_stop()) break;
-    Index p_index = domain_.index_from_corner_index(corner_index);
+    Index p_index = api().index_from_corner_index(corner_index);
 
 #if CGAL_MESH_3_PROTECTION_DEBUG & 1
       std::cerr << "\n** treat corner #" << CGAL::IO::oformat(p_index) << std::endl;
@@ -858,6 +942,7 @@ insert_corners()
     // Insert corner with ball (dim is zero because p is a corner)
     Vertex_handle v = smart_insert_point(p, w, 0, p_index, Vertex_handle(),
                                          CGAL::Emptyset_iterator()).first;
+    this->corner_vertices_[corner_index] = v;
     CGAL_assertion(v != Vertex_handle());
     CGAL_assertion(c3t3_.in_dimension(v) == 0);
 
@@ -1191,15 +1276,10 @@ void
 Protect_edges_sizing_field<C3T3, MD, Sf, Df>::
 insert_balls_on_edges()
 {
-  using Feature_tuple = Mesh_domain_get_curves_output_type_t<MD>;
-  std::vector<Feature_tuple> input_features;
-  domain_.get_curves(std::back_inserter(input_features));
-
   // Iterate on edges
-  for (const auto& ft : input_features)
+  auto curves = api().get_curves();
+  for (const auto& [curve_index, p_info, q_info] : curves)
   {
-    const auto& [curve_index, point_s_position, point_s, point_t] =
-        api().convert_to_tuple_of_size_4(ft);
     if(forced_stop()) break;
     if(is_treated(curve_index)) continue;
 
@@ -1207,22 +1287,28 @@ insert_balls_on_edges()
 #if CGAL_MESH_3_PROTECTION_DEBUG & 1
       std::cerr << "\n** treat curve #" << curve_index << std::endl;
 #endif
-      const auto& [p, p_index] = point_s;
+      const auto& [p, p_index, p_position] = p_info;
 
       Vertex_handle vp,vq;
-      if ( ! domain_.is_loop(curve_index) )
+      if ( ! api().is_loop(curve_index) )
       {
-        const auto& [q, q_index] = point_t;
+        const auto& [q, q_index, q_position] = q_info;
 
-        vp = get_vertex_corner_from_point(p, p_index);
-        vq = get_vertex_corner_from_point(q, q_index);
+        vp = corner_vertices_.at(api().corner_index(p_index));
+        vq = corner_vertices_.at(api().corner_index(q_index));
+        api().register_curve_corner(curve_index, p_index, p_position);
+        api().register_curve_corner(curve_index, q_index, q_position);
       }
       else
       {
         // Even if the curve is a cycle, it can intersect other curves at
         // its first point (here 'p'). In that case, 'p' is a corner, even
         // if the curve is a cycle.
-        if(!tr().is_vertex(cwp(p), vp))
+        if(tr().is_vertex(cwp(p), vp))
+        {
+          api().register_curve_corner(curve_index, p_index, p_position);
+        }
+        else
         {
           // if 'p' is not a corner, find out a second point 'q' on the
           // curve, "far" from 'p', and limit the radius of the ball of 'p'
@@ -1234,13 +1320,13 @@ insert_balls_on_edges()
           // not a curve index (corresponding dimension is 1)
           // curve_index is the correct one here
 
-          FT curve_length = domain_.curve_length(curve_index);
+          FT curve_length = api().curve_length(curve_index);
 
           auto [other_point, _] =
             api().construct_point_on_curve(p,
                                            curve_index,
                                            curve_length / 2,
-                                           point_s_position);
+                                           p_position);
           p_size = (std::min)(p_size,
                               compute_distance(p, other_point) / 3);
           vp = smart_insert_point(p,
@@ -1250,7 +1336,7 @@ insert_balls_on_edges()
                                   Vertex_handle(),
                                   CGAL::Emptyset_iterator()).first;
           if(vp != Vertex_handle())
-            api().set_polyline_iterator(p, point_s_position, curve_index);
+            api().set_polyline_iterator(p, p_position, curve_index);
         }
 
         // No 'else' because in that case 'is_vertex(..)' already filled
@@ -1275,24 +1361,6 @@ insert_balls_on_edges()
 } //end insert_balls_on_edges()
 
 
-template <typename C3T3, typename MD, typename Sf, typename Df>
-typename Protect_edges_sizing_field<C3T3, MD, Sf, Df>::Vertex_handle
-Protect_edges_sizing_field<C3T3, MD, Sf, Df>::
-get_vertex_corner_from_point(const Bare_point& p, const Index&) const
-{
-  // Get vertex_handle associated to corner (dim=0) point
-  Vertex_handle v;
-  CGAL_assertion_code( bool q_found = )
-
-  // Let the weight be 0, because is_vertex only locates the point, and
-  // check that the location type is VERTEX.
-  tr().is_vertex(cwp(p), v);
-
-  CGAL_assertion( q_found );
-  CGAL_assertion(v->in_dimension() == 0);
-  return v;
-}
-
 
 template <typename C3T3, typename MD, typename Sf, typename Df>
 template <typename ErasedVeOutIt>
@@ -1308,11 +1376,11 @@ insert_balls(const Vertex_handle& vp,
   const FT sp = get_radius(vp);
   const FT sq = get_radius(vq);
 
-  CGAL_assertion(vp != vq || domain_.is_loop(curve_index));
+  CGAL_assertion(vp != vq || api().is_loop(curve_index));
 
   // Compute geodesic distance
   const FT pq_length = (vp == vq) ?
-    domain_.curve_length(curve_index)
+    api().curve_length(curve_index)
     :
     curve_segment_length(vp, vq, curve_index, orientation);
 
@@ -1425,9 +1493,9 @@ insert_balls(const Vertex_handle& vp,
                                        d_signF * d / 2,
                                        api().locate_in_polyline(vp, curve_index));
       const Bare_point new_point = bp;
-      const int dim = 1; // new_point is on edge
-      const Index index = domain_.index_from_curve_index(curve_index);
-      const FT point_weight = CGAL::square(size_(new_point, dim, index));
+      const int dim_1 = 1; // new_point is on edge
+      const Index index = api().index_from_curve_index(curve_index);
+      const FT point_weight = CGAL::square(size_(new_point, dim_1, index));
 #if CGAL_MESH_3_PROTECTION_DEBUG & 1
       std::cerr << "  middle point: " << new_point << std::endl;
       std::cerr << "  new weight: " << point_weight << std::endl;
@@ -1435,7 +1503,7 @@ insert_balls(const Vertex_handle& vp,
       std::pair<Vertex_handle, ErasedVeOutIt> pair =
         smart_insert_point(new_point,
                            point_weight,
-                           dim,
+                           dim_1,
                            index,
                            Vertex_handle(),
                            out);
@@ -1514,8 +1582,8 @@ insert_balls(const Vertex_handle& vp,
   }
 
   // Index and dimension
-  const int dim = 1; // new_point is on edge
-  const Index index = domain_.index_from_curve_index(curve_index);
+  const int dim_1 = 1; // new_point is on edge
+  const Index index = api().index_from_curve_index(curve_index);
 
   // Launch balls
   auto p_loc = api().locate_in_polyline(vp, curve_index);
@@ -1540,7 +1608,7 @@ insert_balls(const Vertex_handle& vp,
     // Insert point into c3t3
     const std::size_t nbv = tr().number_of_vertices();
     std::pair<Vertex_handle, ErasedVeOutIt> pair =
-      smart_insert_point(new_point, point_weight, dim, index, prev, out);
+      smart_insert_point(new_point, point_weight, dim_1, index, prev, out);
 
     Vertex_handle new_vertex = pair.first;
     if(use_minimal_size() && new_vertex == Vertex_handle())
@@ -2024,9 +2092,9 @@ curve_segment_length(const Vertex_handle v1,
   if(use_minimal_size())
   {
     if (get_dimension(v1) == 1)
-      v1_valid_curve_index = (domain_.curve_index(v1->index()) == curve_index);
+      v1_valid_curve_index = (api().curve_index(v1->index()) == curve_index);
     if (get_dimension(v2) == 1)
-      v2_valid_curve_index = (domain_.curve_index(v2->index()) == curve_index);
+      v2_valid_curve_index = (api().curve_index(v2->index()) == curve_index);
   }
 
   const Bare_point p1 = cp(point(v1));
@@ -2125,7 +2193,7 @@ orientation_of_walk(const Vertex_handle& start,
   const Bare_point start_p = cp(start_wp);
   const Bare_point next_p = cp(next_wp);
 
-  if(domain_.is_loop(curve_index)) {
+  if(api().is_loop(curve_index)) {
     // if the curve is a cycle, the direction is the direction passing
     // through the next vertex, and the next-next vertex
     Vertex_handle next_along_curve = next_vertex_along_curve(next,start,curve_index);
@@ -2204,7 +2272,7 @@ next_vertex_along_curve(const Vertex_handle& start,
 {
   CGAL_USE(curve_index);
   CGAL_precondition( c3t3_.curve_index(start, previous) == curve_index);
-  CGAL_precondition( domain_.is_loop(curve_index) ||
+  CGAL_precondition( api().is_loop(curve_index) ||
                      (! c3t3_.is_in_complex(start)) );
 
   Adjacent_vertices adjacent_vertices;
@@ -2410,7 +2478,7 @@ repopulate_edges_around_corner(const Vertex_handle& v, ErasedVeOutIt out)
     // if `v` is incident to a cycle, it might be that the full cycle,
     // including the edge `[next, v]`, has already been processed by
     // `analyze_and_repopulate()` walking in the other direction.
-    if(domain_.is_loop(curve_index) && !c3t3_.is_in_complex(v, next))
+    if(api().is_loop(curve_index) && !c3t3_.is_in_complex(v, next))
       continue;
 
     const CGAL::Orientation orientation = orientation_of_walk(v, next, curve_index);

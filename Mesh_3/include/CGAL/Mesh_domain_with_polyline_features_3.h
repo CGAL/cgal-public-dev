@@ -179,21 +179,23 @@ public:
   using Polyline_const_iterator = typename Polyline::const_iterator;
 
   using Point_and_position = typename Polyline::Point_and_position;
+  using Point_and_index = std::pair<Point_3, Index>;
+  using Point_index_and_position = std::tuple<Point_3, Index, Polyline_const_iterator>;
 
   using Get_curves_output_type_v1 = std::tuple<Curve_index,
-                                               std::pair<Point_3, Index>,
-                                               std::pair<Point_3, Index> >;
+                                               Point_and_index,
+                                               Point_and_index>;
   using Get_curves_output_type_v2 = std::tuple<Curve_index,
-                                               Polyline_const_iterator,
-                                               std::pair<Point_3, Index>,
-                                               std::pair<Point_3, Index> >;
-
-  // helper template to use with static_assert
-  template <typename>
-  static constexpr bool dependent_is_API_version_2 = (version == API_version::v2);
+                                               Point_index_and_position,
+                                               Point_index_and_position>;
 
   using Get_curves_output_type =
       std::conditional_t<version == API_version::v1, Get_curves_output_type_v1, Get_curves_output_type_v2>;
+
+protected:
+  // helper template to use with static_assert
+  template <typename>
+  static constexpr bool dependent_is_API_version_2 = (version == API_version::v2);
 
   // A local tag type used as a *compilation barrier* for the API v2-only code path.
   // It appears as the type of `Position_on_curve` when `version == API_version::v1`
@@ -211,6 +213,7 @@ public:
                          Polyline_const_iterator
                          >;
 
+public:
   /// \name Creation
   /// @{
 
@@ -744,15 +747,16 @@ get_curves(OutputIterator out) const
 
     if constexpr (version == API_version::v1) {
       *out++ = std::make_tuple(curve_index,
-                               std::make_pair(p,p_index),
-                               std::make_pair(q,q_index));
+                               std::make_pair(p, p_index),
+                               std::make_pair(q, q_index));
     } else {
       const auto p_position_in_polyline = polyline.points_.cbegin();
+      const auto q_position_in_polyline =
+          is_polyline_a_loop ? p_position_in_polyline : polyline.points_.cend() - 2;
 
       *out++ = std::make_tuple(curve_index,
-                               p_position_in_polyline,
-                               std::make_pair(p,p_index),
-                               std::make_pair(q,q_index));
+                               std::make_tuple(p, p_index, p_position_in_polyline),
+                               std::make_tuple(q, q_index, q_position_in_polyline));
     }
   }
 
