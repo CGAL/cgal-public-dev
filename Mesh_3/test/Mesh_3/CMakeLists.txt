@@ -135,6 +135,7 @@ if(TARGET CGAL::TBB_support)
       "execution   of  test_mesh_3_issue_8773"
       "execution   of  test_mesh_cell_base_3"
       "execution   of  test_remeshing_polyhedron"
+      "execution   of  test_mesh_cell_base_3"
       PROPERTY RUN_SERIAL 1)
     if(TARGET test_meshing_3D_image)
       set_property(TEST
