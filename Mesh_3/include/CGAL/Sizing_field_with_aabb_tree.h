@@ -15,14 +15,24 @@
 
 #include <CGAL/license/Mesh_3.h>
 
-#include <CGAL/Profile_counter.h>
+#include <CGAL/assertions.h>
+#include <CGAL/Default.h>
 #include <CGAL/Delaunay_triangulation_3.h>
+#include <CGAL/enum.h>
 #include <CGAL/Mesh_3/Protect_edges_sizing_field.h> // for weight_modifier
+#include <CGAL/number_utils.h>
+#include <CGAL/Profile_counter.h>
+#include <CGAL/tags.h>
 
 #include <cstddef>
-#include <memory>
+#include <iostream>
 #include <limits>
+#include <map>
+#include <memory>
 #include <optional>
+#include <set>
+#include <utility>
+#include <vector>
 
 #include <CGAL/Mesh_3/experimental/Facet_patch_id_map.h>
 #include <CGAL/Mesh_3/experimental/Get_curve_index.h>
@@ -479,19 +489,17 @@ public:
                      CGAL::sqrt(squared_distance(p, closest_point_and_primitive->first))),
                      result);
 
-        auto display_msg = [&] {
+        [[maybe_unused]]auto display_msg = [&] {
+          const auto [closest_pt, closest_prim_id] = *closest_point_and_primitive;
           std::stringstream s;
           s.copyfmt(std::cerr);
 
-          s << boost::format("Sizing field is %1% at point (%2%)"
-                             " on curve #%3% !\n"
-                             "Closest point: %4%\n"
-                             "Closest face id: %5%\n"
-                             "Ids are { ")
-            % result % p % curve_id
-            % closest_point_and_primitive->first
-            % CGAL::IO::oformat(get(d_ptr->facet_patch_id_map,
-                                closest_point_and_primitive->second));
+          s << "Sizing field is " << result << " at point (" << p << ")"
+            << " on curve #" << curve_id << " !\n"
+            << "Closest point: " << closest_pt << "\n"
+            << "Closest face id: "
+            << CGAL::IO::oformat(get(d_ptr->facet_patch_id_map, closest_prim_id)) << "\n"
+            << "Ids are { ";
           for(Patch_index i : ids) {
             s << CGAL::IO::oformat(i) << " ";
           }
@@ -508,7 +516,7 @@ public:
         CGAL_warning_msg(result > (d_ / 1e7), display_msg().c_str());
 #endif
         if(result <= 0) {
-          CGAL_error_msg(display_msg().c_str());
+          // CGAL_error_msg(display_msg().c_str());
           return 0;
         }
 
@@ -611,6 +619,12 @@ public:
       const Point_3 pbottom = translated(p, opp(base1));
       const auto tr1 = triangle(pleft, ptop, pright);
       const auto tr2 = triangle(pleft, pright, pbottom);
+
+      if(tr1.is_degenerate() || tr2.is_degenerate())
+      {
+        // TODO: maybe display a message?
+        return result;
+      }
 
       // find intersected primitives
       std::vector<Input_curves_AABB_tree_primitive_> prims;
