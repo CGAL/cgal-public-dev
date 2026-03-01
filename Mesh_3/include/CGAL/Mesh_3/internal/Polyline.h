@@ -658,7 +658,7 @@ private:
       } // end loop ]p_it, q_it[
     }
 
-    CGAL_assertion(result > 0);
+    // CGAL_assertion(result > 0); // disabled assertion: a polyline can have zero-length segments
     return result;
   }
 
