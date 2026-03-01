@@ -129,6 +129,7 @@ int main(int argc, char*argv[])
   const double size_bound = diagonal_length * 0.05;
   const Features_sizing_field edge_sizing_field(0.07, domain);
   const Mesh_criteria criteria(params::edge_size(edge_sizing_field)
+                                      .edge_min_size(size_bound / 1.e6)
                                       .facet_angle(25)
                                       .facet_size(size_bound)
                                       .facet_distance(size_bound * 0.1)
