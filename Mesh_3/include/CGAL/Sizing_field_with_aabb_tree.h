@@ -476,66 +476,44 @@ public:
 
         result =
           (std::min)(FT(0.9 / CGAL::sqrt(CGAL::Mesh_3::internal::weight_modifier) *
-                     CGAL_NTS
-                     sqrt(squared_distance(p,
-                                                 closest_point_and_primitive->first))),
+                     CGAL::sqrt(squared_distance(p, closest_point_and_primitive->first))),
                      result);
 
-#ifdef CGAL_MESH_3_PROTECTION_HIGH_VERBOSITY
-        {
+        auto display_msg = [&] {
           std::stringstream s;
+          s.copyfmt(std::cerr);
 
-          s << boost::format("\nSizing field is %1% at point (%2%)"
+          s << boost::format("Sizing field is %1% at point (%2%)"
                              " on curve #%3% !\n"
-                             "Closest face id: %4%\n"
+                             "Closest point: %4%\n"
+                             "Closest face id: %5%\n"
                              "Ids are { ")
             % result % p % curve_id
+            % closest_point_and_primitive->first
             % CGAL::IO::oformat(get(d_ptr->facet_patch_id_map,
                                 closest_point_and_primitive->second));
           for(Patch_index i : ids) {
             s << CGAL::IO::oformat(i) << " ";
           }
           s << "}\n";
-          std::cerr << s.str();
+          return s.str();
+        };
+#ifdef CGAL_MESH_3_PROTECTION_HIGH_VERBOSITY
+        {
+          std::cerr << display_msg();
           std::cerr << result << " (result)\n";
         }
 #endif // CGAL_MESH_3_PROTECTION_HIGH_VERBOSITY
-#ifndef CGAL_NO_ASSERTIONS
-        if(result <= 0) {
-          std::stringstream s;
-
-          s << boost::format("Sizing field is %1% at point (%2%)"
-                             " on curve #%3% !\n"
-                             "Closest face id: %4%\n"
-                             "Ids are { ")
-            % result % p % curve_id
-            % CGAL::IO::oformat(get(d_ptr->facet_patch_id_map,
-                                closest_point_and_primitive->second));
-          for(Patch_index i : ids) {
-            s << CGAL::IO::oformat(i) << " ";
-          }
-          s << "}\n";
-          CGAL_assertion_msg(result <=0, s.str().c_str());
-        }
 #ifdef PROTECTION_DEBUG
-        else if (result <= (d_ / 1e7)) {
-          std::stringstream s;
-          s << boost::format("Sizing field is %1% at point (%2%)"
-                             " on curve #%3% !\n"
-                             "Closest face id: %4%\n"
-                             "Ids are { ")
-            % result % p % curve_id
-            % closest_point_and_primitive->second->patch_id();
-          for(Patch_index i : ids) {
-            s << CGAL::IO::oformat(i) << " ";
-          }
-          s << "}\n";
-          std::cerr << "ERROR at " << __FILE__ << " line " << __LINE__ << " :\n"
-                    << s.str() << std::endl;
+        CGAL_warning_msg(result > (d_ / 1e7), display_msg().c_str());
+#endif
+        if(result <= 0) {
+          CGAL_error_msg(display_msg().c_str());
+          return 0;
         }
-#endif // PROTECTION_DEBUG
-#endif // CGAL_NO_ASSERTIONS
+
       } // end if(!aabb_tree.empty())
+
       //Compute distance to the curves, and exclude the one on which p lies
       CGAL::Mesh_3::Filtered_projection_traits<typename Input_curves_AABB_tree_::AABB_traits,
                                                Get_curve_index >
