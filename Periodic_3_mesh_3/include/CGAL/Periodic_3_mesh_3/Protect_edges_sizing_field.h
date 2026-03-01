@@ -1897,14 +1897,14 @@ insert_balls_on_edges()
       std::cerr << "** treat curve #" << curve_index << std::endl;
       std::cerr << "is it a loop? " << domain_.is_loop(curve_index) << std::endl;
 #endif
-      const auto& [p, p_index, p_position] = p_info;
+      const auto& [p, p_dim, p_index, p_position] = p_info;
 
       Vertex_handle vp,vq;
       if(! domain_.is_loop(curve_index))
       {
         vp = get_vertex_corner_from_point(p, p_index);
 
-        const auto& [q, q_index, q_position] = q_info;
+        const auto& [q, q_dim, q_index, q_position] = q_info;
         vq = get_vertex_corner_from_point(q, q_index);
       }
       else

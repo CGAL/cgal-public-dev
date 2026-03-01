@@ -539,7 +539,7 @@ protected:
 
   using Position_on_curve = std::conditional_t<api_version == API_version::v1,
                                                Void,
-                                               std::tuple_element_t<2, Curve_info>>;
+                                               std::tuple_element_t<3, Curve_info>>;
 
   using Corner_and_curve_index = std::pair<Corner_index, Curve_index>;
   using Corner_and_curve_index_hash =boost::hash<Corner_and_curve_index>;
@@ -619,8 +619,8 @@ protected:
         const auto& [p1, index1] = pair1;
         const auto& [p2, index2] = pair2;
         return std::make_tuple(curve_index,
-                               std::make_tuple(p1, index1, Void{}),
-                               std::make_tuple(p2, index2, Void{}));
+                               std::make_tuple(p1, 0, index1, Void{}),
+                               std::make_tuple(p2, 0, index2, Void{}));
       };
       return boost::make_transform_iterator(it, convert_tuple);
     } else {
@@ -709,12 +709,23 @@ protected:
     }
   }
 
+  void register_new_corner(Corner_index corner_index, Vertex_handle v) {
+    this->corner_vertices_[corner_index] = v;
+  }
+
   void register_curve_corner([[maybe_unused]] const Curve_index& curve_index,
                              [[maybe_unused]] const Index& p_index,
-                             [[maybe_unused]] Position_on_curve position_on_curve)
+                             [[maybe_unused]] Position_on_curve position_on_curve,
+                             [[maybe_unused]] Position_on_curve start_position)
   {
     if constexpr(api_version == API_version::v2) {
       auto key = Corner_and_curve_index(domain().corner_index(p_index), curve_index);
+#if CGAL_MESH_3_PROTECTION_DEBUG & 128
+      std::cerr << "Register corner #" << key.first
+                << " on curve " << curve_index
+                << " with position_on_curve=" << (position_on_curve - start_position) << "\n"
+                << "  vp: " << IO::oformat(corner_vertices_.at(key.first), With_point_tag{}) << "\n";
+#endif
       [[maybe_unused]] auto [_, inserted] = corners_on_curves_.try_emplace(key, position_on_curve);
       CGAL_assertion(true == inserted);
     }
@@ -728,7 +739,15 @@ protected:
       if(in_dimension == 0) {
         auto corner_index = domain().corner_index(v->index());
         auto pos = corners_on_curves_.find(Corner_and_curve_index(corner_index, curve_index));
-        CGAL_assertion(pos != corners_on_curves_.end());
+        CGAL_assertion_msg(pos != corners_on_curves_.end(),
+                           std::invoke([&] {
+                             std::stringstream ss;
+                             ss.copyfmt(std::cerr);
+                             ss << "position_on_curve(v=" << IO::oformat(v, With_point_tag{})
+                                << " (corner index: " << corner_index
+                                << ", curve_index=" << curve_index << "): v is a corner but its position is not found!";
+                             return ss.str();
+                           }).c_str());
         return pos->second;
       }
       auto bare_point = cp(point(v));
@@ -973,7 +992,7 @@ insert_corners()
     Vertex_handle v = smart_insert_point(p, w, 0, p_index, locate_hint_vh,
                                          CGAL::Emptyset_iterator()).first;
     locate_hint_vh = v;
-    this->corner_vertices_[corner_index] = v;
+    api().register_new_corner(corner_index, v);
     CGAL_assertion(v != Vertex_handle());
     CGAL_assertion(c3t3_.in_dimension(v) == 0);
 
@@ -1320,29 +1339,43 @@ insert_balls_on_edges()
 #if CGAL_MESH_3_PROTECTION_DEBUG & 1
       std::cerr << "\n** treat curve #" << curve_index << std::endl;
 #endif
-      const auto& [p, p_index, p_position] = p_info;
+      const auto& [p, p_dim, p_index, p_position] = p_info;
 
       Vertex_handle vp,vq;
       if ( ! api().is_loop(curve_index) )
       {
-        const auto& [q, q_index, q_position] = q_info;
+        const auto& [q, q_dim, q_index, q_position] = q_info;
 
         vp = corner_vertices_.at(api().corner_index(p_index));
         vq = corner_vertices_.at(api().corner_index(q_index));
-        api().register_curve_corner(curve_index, p_index, p_position);
-        api().register_curve_corner(curve_index, q_index, q_position);
+        api().register_curve_corner(curve_index, p_index, p_position, p_position);
+        api().register_curve_corner(curve_index, q_index, q_position, p_position);
       }
       else
       {
+#if CGAL_MESH_3_PROTECTION_DEBUG & 128
+        std::cerr << "Curve #" << curve_index << " is a loop.\n";
+#endif
         // Even if the curve is a cycle, it can intersect other curves at
         // its first point (here 'p'). In that case, 'p' is a corner, even
         // if the curve is a cycle.
         if(tr().is_vertex(cwp(p), vp))
         {
-          api().register_curve_corner(curve_index, p_index, p_position);
+#if CGAL_MESH_3_PROTECTION_DEBUG & 128
+          std::cerr << "vp: " << IO::oformat(vp, With_point_tag{}) << "\n";
+          std::cerr << "vp.in_dimension(): " << vp->in_dimension() << "\n";
+          std::cerr << "p_dim: " << p_dim << "\n";
+          std::cerr << "p_index: " << IO::oformat(p_index) << "\n";
+#endif
+          CGAL_assertion(vp->in_dimension() == p_dim);
+
+          if(p_dim == 0) {
+            api().register_curve_corner(curve_index, p_index, p_position, p_position);
+          }
         }
         else
         {
+          CGAL_assertion(p_dim == 1);
           // if 'p' is not a corner, find out a second point 'q' on the
           // curve, "far" from 'p', and limit the radius of the ball of 'p'
           // with the third of the distance from 'p' to 'q'.
@@ -1617,7 +1650,7 @@ insert_balls(const Vertex_handle& vp,
   auto prev_pos = vp_pos;
 #if CGAL_MESH_3_PROTECTION_DEBUG
   if constexpr (api_version == API_version::v2) {
-    CGAL_assertion(n == 0 || p_loc == domain().locate_point(curve_index, p));
+    CGAL_assertion(n == 0 || vp_pos == domain().locate_point(curve_index, p));
   }
 #endif
   Bare_point prev_pt = p;
@@ -2338,7 +2371,7 @@ repopulate(InputIterator begin, InputIterator last,
   std::cerr << "repopulate(begin=" << disp_vert(*begin) << "\n"
             << "           last=" << disp_vert(*last)  << "\n"
             << "           distance(begin, last)=" << std::distance(begin, last) << ",\n"
-            << "           index=" << CGAL::IO::oformat(index) << ",\n"
+            << "           curve_index=" << CGAL::IO::oformat(curve_index) << ",\n"
             << "           orientation=" << orientation << ")\n";
 #endif
   CGAL_assertion( std::distance(begin,last) >= 0 );

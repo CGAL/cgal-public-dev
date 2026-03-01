@@ -44,6 +44,7 @@
 #include <iterator>
 #include <map>
 #include <memory>
+#include <optional>
 #include <ostream>
 #include <set>
 #include <string>
@@ -180,14 +181,14 @@ public:
 
   using Point_and_position = typename Polyline::Point_and_position;
   using Point_and_index = std::pair<Point_3, Index>;
-  using Point_index_and_position = std::tuple<Point_3, Index, Polyline_const_iterator>;
+  using Point_dim_index_and_position = std::tuple<Point_3, int, Index, Polyline_const_iterator>;
 
   using Get_curves_output_type_v1 = std::tuple<Curve_index,
                                                Point_and_index,
                                                Point_and_index>;
   using Get_curves_output_type_v2 = std::tuple<Curve_index,
-                                               Point_index_and_position,
-                                               Point_index_and_position>;
+                                               Point_dim_index_and_position,
+                                               Point_dim_index_and_position>;
 
   using Get_curves_output_type =
       std::conditional_t<version == API_version::v1, Get_curves_output_type_v1, Get_curves_output_type_v2>;
@@ -530,7 +531,7 @@ private:
 
   /// returns Index associated to p (p must be the coordinates of a corner
   /// point)
-  Index point_corner_index(const Point_3& p) const;
+  std::optional<Corner_index> point_corner_index(const Point_3& p) const;
 
 private:
   typedef std::map<Point_3,Corner_index> Corners;
@@ -738,12 +739,15 @@ get_curves(OutputIterator out) const
 
     const bool is_polyline_a_loop = polyline.is_loop();
 
-    Index p_index = is_polyline_a_loop ?
-        index_from_curve_index(curve_index) :
-        point_corner_index(p);
-    Index q_index = is_polyline_a_loop ?
-        p_index :
-        point_corner_index(q);
+    auto p_corner_index_opt = point_corner_index(p);
+    auto q_corner_index_opt = point_corner_index(q);
+
+    Index p_index = p_corner_index_opt.has_value() ? index_from_corner_index(p_corner_index_opt.value())
+                                               : index_from_curve_index(curve_index);
+    Index q_index = q_corner_index_opt.has_value() ? index_from_corner_index(q_corner_index_opt.value())
+                                               : index_from_curve_index(curve_index);
+    int p_dim = p_corner_index_opt.has_value() ? 0 : 1;
+    int q_dim = q_corner_index_opt.has_value() ? 0 : 1;
 
     if constexpr (version == API_version::v1) {
       *out++ = std::make_tuple(curve_index,
@@ -755,8 +759,8 @@ get_curves(OutputIterator out) const
           is_polyline_a_loop ? p_position_in_polyline : polyline.points_.cend() - 2;
 
       *out++ = std::make_tuple(curve_index,
-                               std::make_tuple(p, p_index, p_position_in_polyline),
-                               std::make_tuple(q, q_index, q_position_in_polyline));
+                               std::make_tuple(p, p_dim, p_index, p_position_in_polyline),
+                               std::make_tuple(q, q_dim, q_index, q_position_in_polyline));
     }
   }
 
@@ -767,13 +771,12 @@ get_curves(OutputIterator out) const
 template <class MD_, API_version version>
 auto
 Mesh_domain_with_polyline_features_3<MD_, version>::
-point_corner_index(const Point_3& p) const -> Index
+point_corner_index(const Point_3& p) const -> std::optional<Corner_index>
 {
   typename Corners::const_iterator p_index_it = corners_.find(p);
   if ( p_index_it == corners_.end() )
   {
-    CGAL_assertion(false);
-    return Index();
+    return std::nullopt;
   }
 
   return p_index_it->second;
@@ -869,10 +872,10 @@ add_corner(const Point_3& p) -> Corner_index
     return cit->second;
 
   // ... otherwise, insert it!
-  const Corner_index index = current_corner_index_++;
-  corners_.insert(cit, std::make_pair(p, index));
+  const Corner_index corner_index = current_corner_index_++;
+  corners_.insert(cit, std::make_pair(p, corner_index));
 
-  return index;
+  return corner_index;
 }
 
 
