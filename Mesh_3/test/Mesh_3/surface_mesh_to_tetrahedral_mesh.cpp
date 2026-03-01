@@ -30,10 +30,10 @@
 #include <csignal>
 #include <cstdlib>
 #include <fstream>
-#include <future>
 #include <iostream>
 #include <ostream>
 #include <string>
+#include <thread>
 #include <utility>
 
 // Domain
@@ -68,6 +68,9 @@ void signal_handler(int signal)
 
 int main(int argc, char*argv[])
 {
+  std::cout.precision(17);
+  std::cerr.precision(17);
+  std::clog.precision(17);
   const std::string input_file_name = (argc > 1) ? argv[1] : CGAL::data_file_path("meshes/fandisk.off");
   const std::string output_file_name = (argc > 2) ? argv[2] : "out-tetmesh.vtu";
   Surface_mesh surface_mesh;
@@ -145,59 +148,66 @@ int main(int argc, char*argv[])
             << ")..." << std::endl;
 
   std::atomic<std::size_t> nb_of_protecting_balls{0};
-  bool protection_done = false;
-
-  auto meshing_task = [&] {
-    // c3t3 = CGAL::make_mesh_3<C3t3>(domain, criteria, manifold_criteria, mesh_options);
-
-    CGAL::Mesh_3::internal::C3t3_initializer<C3t3, Mesh_domain, Mesh_criteria> mesh_initializer;
-    mesh_initializer(c3t3, domain, criteria, true, mesh_options.v);
-
-    if(stop_meshing) return;
-
-    nb_of_protecting_balls.store(c3t3.triangulation().number_of_vertices(), std::memory_order_release);
-
-    CGAL::refine_mesh_3(c3t3, domain, criteria, manifold_criteria, mesh_options);
-  };
+  std::atomic<bool> meshing_finished{false};
 
   namespace chr = std::chrono;
   auto start_time = chr::system_clock::now();
 
-  auto meshing_future = std::async(std::launch::async, meshing_task);
+  auto monitoring_task = [&] {
+    std::size_t nb_of_vertices = 0;
+    bool protection_done = false;
+    while(!meshing_finished.load(std::memory_order_acquire))
+    {
+      std::this_thread::sleep_for(chr::seconds(1));
+
+      if(!protection_done) {
+        auto nb = nb_of_protecting_balls.load(std::memory_order_acquire);
+        if(nb > 0) {
+          std::cout << "Protection phase completed (" << nb << " protecting balls). Starting meshing phase..." << std::endl;
+          protection_done = true;
+        }
+      }
+      auto current_time = chr::system_clock::now();
+      auto elapsed_time = chr::duration_cast<chr::seconds>(current_time - start_time).count();
+      std::size_t current_nb_of_vertices = c3t3.triangulation().number_of_vertices();
+      std::cout << "  " <<  std::to_string(elapsed_time) + " seconds, ";
+      if(stop_meshing.load(std::memory_order_acquire)) {
+        std::cout << "interrupted, ";
+      } else if(protection_done) {
+        std::cout << "meshing,     ";
+      } else {
+        std::cout << "protection,  ";
+      }
+      std::cout << "number of vertices: " << current_nb_of_vertices
+                << "   (" << (current_nb_of_vertices - nb_of_vertices) << " new vertices)"
+                << std::endl;
+      nb_of_vertices = current_nb_of_vertices;
+    }
+  };
 
   std::signal(SIGINT, signal_handler);
 
-  std::size_t nb_of_vertices = 0;
-  while(std::future_status::ready != meshing_future.wait_until(chr::system_clock::now() + chr::seconds(1)))
-  {
-    if(!protection_done) {
-      auto nb = nb_of_protecting_balls.load(std::memory_order_acquire);
-      if(nb > 0) {
-        std::cout << "Protection phase completed (" << nb << " protecting balls). Starting meshing phase..." << std::endl;
-        protection_done = true;
-      }
-    }
-    auto current_time = chr::system_clock::now();
-    auto elapsed_time = chr::duration_cast<chr::seconds>(current_time - start_time).count();
-    std::size_t current_nb_of_vertices = c3t3.triangulation().number_of_vertices();
-    std::cout << "  " <<  std::to_string(elapsed_time) + " seconds, ";
-    if(stop_meshing.load(std::memory_order_acquire)) {
-      std::cout << "interrupted, ";
-    } else if(protection_done) {
-      std::cout << "meshing,     ";
-    } else {
-      std::cout << "protection,  ";
-    }
-    std::cout << "number of vertices: " << current_nb_of_vertices
-              << "   (" << (current_nb_of_vertices - nb_of_vertices) << " new vertices)"
-              << std::endl;
-    nb_of_vertices = current_nb_of_vertices;
+  // Start monitoring thread
+  std::thread monitoring_thread(monitoring_task);
+
+  // Run meshing on main thread
+  // c3t3 = CGAL::make_mesh_3<C3t3>(domain, criteria, manifold_criteria, mesh_options);
+  CGAL::Mesh_3::internal::C3t3_initializer<C3t3, Mesh_domain, Mesh_criteria> mesh_initializer;
+  mesh_initializer(c3t3, domain, criteria, true, mesh_options.v);
+
+  if(!stop_meshing) {
+    nb_of_protecting_balls.store(c3t3.triangulation().number_of_vertices(), std::memory_order_release);
+    CGAL::refine_mesh_3(c3t3, domain, criteria, manifold_criteria, mesh_options);
   }
 
-  meshing_future.wait();
+  // Signal monitoring thread to stop and wait for it
+  meshing_finished.store(true, std::memory_order_release);
+  monitoring_thread.join();
 
+  int exit_code = EXIT_SUCCESS;
   if(stop_meshing) {
-    std::cout << "Meshing interrupted.\n";
+    std::cout << "ERROR: Meshing interrupted.\n";
+    exit_code = EXIT_FAILURE;
   } else {
     std::cout << "Meshing completed.\n";
   }
@@ -219,5 +229,5 @@ int main(int argc, char*argv[])
     std::cout << "Tet mesh written to file " << output_file_name << std::endl;
   }
 
-  return EXIT_SUCCESS;
+  return exit_code;
 }
