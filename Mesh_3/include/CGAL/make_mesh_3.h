@@ -275,7 +275,7 @@ struct C3t3_initializer_base
 template < typename C3T3,
            typename MeshDomain,
            typename MeshCriteria,
-           bool MeshDomainHasHasFeatures,
+           bool MeshDomainHasHasFeatures = ::CGAL::internal::has_Has_features<MeshDomain>::value,
            typename HasFeatures = int>
 struct C3t3_initializer {};
 
@@ -689,9 +689,7 @@ void make_mesh_3_impl(C3T3& c3t3,
   Mesh_3::internal::C3t3_initializer<
     C3T3,
     MeshDomain,
-    MeshCriteria,
-    ::CGAL::internal::has_Has_features<MeshDomain>::value,
-    int>()(c3t3,
+    MeshCriteria>()(c3t3,
            domain,
            criteria,
            with_features,

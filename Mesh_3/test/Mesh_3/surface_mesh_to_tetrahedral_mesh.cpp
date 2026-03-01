@@ -1,4 +1,7 @@
 #include <CGAL/config.h>
+
+#include <CGAL/boost/graph/graph_traits_Surface_mesh.h>
+#include <CGAL/boost/graph/helpers.h>
 #include <CGAL/Default.h>
 #include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
 #include <CGAL/IO/io.h>
@@ -7,20 +10,27 @@
 #include <CGAL/iterator.h>
 #include <CGAL/make_mesh_3.h>
 #include <CGAL/Mesh_complex_3_in_triangulation_3.h>
+#include <CGAL/Mesh_3/parameters.h>
 #include <CGAL/Mesh_criteria_3.h>
 #include <CGAL/Mesh_triangulation_3.h>
+#include <CGAL/Named_function_parameters.h>
 #include <CGAL/number_utils.h>
 #include <CGAL/Polygon_mesh_processing/manifoldness.h>
 #include <CGAL/Polygon_mesh_processing/IO/polygon_mesh_io.h>
 #include <CGAL/Polygon_mesh_processing/self_intersections.h>
 #include <CGAL/Polyhedral_mesh_domain_with_features_3.h>
 #include <CGAL/Real_timer.h>
+#include <CGAL/refine_mesh_3.h>
 #include <CGAL/Sizing_field_with_aabb_tree.h>
 #include <CGAL/Surface_mesh/Surface_mesh.h>
 #include <CGAL/tags.h>
 
+#include <atomic>
+#include <chrono>
+#include <csignal>
 #include <cstdlib>
 #include <fstream>
+#include <future>
 #include <iostream>
 #include <ostream>
 #include <string>
@@ -32,7 +42,7 @@ using Surface_mesh = CGAL::Surface_mesh<K::Point_3>;
 using Mesh_domain = CGAL::Polyhedral_mesh_domain_with_features_3<K, Surface_mesh>;
 
 
-#ifdef CGAL_CONCURRENT_MESH_3
+#ifdef CGAL_LINKED_WITH_TBB
 using Concurrency_tag = CGAL::Parallel_tag;
 #else
 using Concurrency_tag = CGAL::Sequential_tag;
@@ -48,7 +58,13 @@ using C3t3 = CGAL::Mesh_complex_3_in_triangulation_3<
 using Features_sizing_field = CGAL::Sizing_field_with_aabb_tree<K, Mesh_domain>;
 using Mesh_criteria = CGAL::Mesh_criteria_3<Tr>;
 
-namespace params = CGAL::parameters;
+std::atomic<bool> stop_meshing{false};
+void signal_handler(int signal)
+{
+  if(signal == SIGINT) {
+    stop_meshing.store(true, std::memory_order_release);
+  }
+}
 
 int main(int argc, char*argv[])
 {
@@ -101,6 +117,8 @@ int main(int argc, char*argv[])
   // Get sharp features
   domain.detect_features();
 
+  namespace params = CGAL::parameters;
+
   // Mesh criteria
   auto bbox = domain.bbox();
   const double diagonal_length =
@@ -113,19 +131,79 @@ int main(int argc, char*argv[])
                                       .facet_distance(size_bound * 0.1)
                                       .cell_radius_edge_ratio(3)
                                       .cell_size(size_bound));
+
   const auto manifold_criteria = manifold ? (is_closed ? params::manifold()
                                                        : params::manifold_with_boundary())
                                           : (params::non_manifold());
 
+  auto mesh_options = params::mesh_3_options(params::nonlinear_growth_of_balls(true)
+                                                    .pointer_to_stop_atomic_boolean(&stop_meshing));
   // Mesh generation
-  std::cout << "Start meshing..." << std::endl;
-  CGAL::Real_timer timer;
-  timer.start();
-  C3t3 c3t3 = CGAL::make_mesh_3<C3t3>(domain, criteria, manifold_criteria,
-                                      params::mesh_3_options(params::nonlinear_growth_of_balls = true));
-  timer.stop();
+  C3t3 c3t3;
 
-  std::cout << "Meshing completed in " << timer.time() << " seconds." << std::endl;
+  std::cout << "Start meshing (" << (Concurrency_tag::is_parallel ? "parallel" : "sequential")
+            << ")..." << std::endl;
+
+  std::atomic<std::size_t> nb_of_protecting_balls{0};
+  bool protection_done = false;
+
+  auto meshing_task = [&] {
+    // c3t3 = CGAL::make_mesh_3<C3t3>(domain, criteria, manifold_criteria, mesh_options);
+
+    CGAL::Mesh_3::internal::C3t3_initializer<C3t3, Mesh_domain, Mesh_criteria> mesh_initializer;
+    mesh_initializer(c3t3, domain, criteria, true, mesh_options.v);
+
+    if(stop_meshing) return;
+
+    nb_of_protecting_balls.store(c3t3.triangulation().number_of_vertices(), std::memory_order_release);
+
+    CGAL::refine_mesh_3(c3t3, domain, criteria, manifold_criteria, mesh_options);
+  };
+
+  namespace chr = std::chrono;
+  auto start_time = chr::system_clock::now();
+
+  auto meshing_future = std::async(std::launch::async, meshing_task);
+
+  std::signal(SIGINT, signal_handler);
+
+  std::size_t nb_of_vertices = 0;
+  while(std::future_status::ready != meshing_future.wait_until(chr::system_clock::now() + chr::seconds(1)))
+  {
+    if(!protection_done) {
+      auto nb = nb_of_protecting_balls.load(std::memory_order_acquire);
+      if(nb > 0) {
+        std::cout << "Protection phase completed (" << nb << " protecting balls). Starting meshing phase..." << std::endl;
+        protection_done = true;
+      }
+    }
+    auto current_time = chr::system_clock::now();
+    auto elapsed_time = chr::duration_cast<chr::seconds>(current_time - start_time).count();
+    std::size_t current_nb_of_vertices = c3t3.triangulation().number_of_vertices();
+    std::cout << "  " <<  std::to_string(elapsed_time) + " seconds, ";
+    if(stop_meshing.load(std::memory_order_acquire)) {
+      std::cout << "interrupted, ";
+    } else if(protection_done) {
+      std::cout << "meshing,     ";
+    } else {
+      std::cout << "protection,  ";
+    }
+    std::cout << "number of vertices: " << current_nb_of_vertices
+              << "   (" << (current_nb_of_vertices - nb_of_vertices) << " new vertices)"
+              << std::endl;
+    nb_of_vertices = current_nb_of_vertices;
+  }
+
+  meshing_future.wait();
+
+  if(stop_meshing) {
+    std::cout << "Meshing interrupted.\n";
+  } else {
+    std::cout << "Meshing completed.\n";
+  }
+  auto end_time = chr::system_clock::now();
+  auto elapsed_time = chr::duration_cast<chr::seconds>(end_time - start_time).count();
+  std::cout << "  elapsed time:             " << static_cast<double>(elapsed_time) << " seconds." << std::endl;
   std::cout << "  number of vertices:       " << c3t3.triangulation().number_of_vertices() << std::endl;
   std::cout << "  number of surface facets: " << c3t3.number_of_facets() << std::endl;
   std::cout << "  number of cells:          " << c3t3.number_of_cells() << std::endl;

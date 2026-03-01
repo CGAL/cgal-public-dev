@@ -101,10 +101,6 @@ target_link_libraries(mesh_polyhedral_domain_with_features_sizing
 target_link_libraries(mesh_polyhedral_domain_with_edge_distance
                       PRIVATE CGAL::Eigen3_support)
 
-create_single_source_cgal_program("surface_mesh_to_tetrahedral_mesh.cpp")
-target_link_libraries(surface_mesh_to_tetrahedral_mesh
-                      PRIVATE CGAL::Eigen3_support)
-
 create_single_source_cgal_program("mesh_polyhedral_domain_with_features_sm.cpp")
 target_link_libraries(mesh_polyhedral_domain_with_features_sm
                       PRIVATE CGAL::Eigen3_support)
