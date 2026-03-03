@@ -80,7 +80,6 @@ find_crossing_edge(PolygonMesh& pm,
       bool is_local_max=true;
       for(auto v: vertices_around_target(src ,pm)){
         sp_trg = sq(plane, get(vpm, v));
-        CGAL_assertion(sq(plane, get(vpm, v)) == sp_trg);
         // Check if v in the direction to the plane
         if(compare(sp_src, sp_trg)==direction_to_zero){
           if(sign(sp_trg)!=direction_to_zero){
@@ -445,7 +444,8 @@ remove_bounded_region_and_fill(PolygonMesh& pm,
 
   // Case where the output is degenerated to a segment
   if(vertices(pm).size() < 3){
-    remove_face(*faces(pm).begin(), pm);
+    if(faces(pm).size())
+      remove_face(*faces(pm).begin(), pm);
     for(edge_descriptor e: edges(pm))
       remove_edge(e, pm);
     for(vertex_descriptor v: vertices(pm))
@@ -530,7 +530,7 @@ clip_convex(PolygonMesh& pm,
         remove_vertex(v1, pm); // Degenerate to a point
       }
     }
-    return v0;
+    return *vertices(pm).begin();
 
   } else if(faces(pm).size()==1){
     // Dimension == 2
