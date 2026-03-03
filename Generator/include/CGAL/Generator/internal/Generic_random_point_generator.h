@@ -94,7 +94,7 @@ public:
   std::pair<P,Id> point_and_support() const
   {
     CGAL_assertion(last_picked_id != std::size_t(-1));
-    return std::pair(this->operator(),ids[last_picked_id]);
+    return std::pair(this->operator*(),ids[last_picked_id]);
   }
 };
 
