@@ -4,16 +4,29 @@
 
 Release date: July 2026
 
+### [Generalized Barycentric Coordinates 3](https://doc.cgal.org/6.2/Manual/packages.html#PkgBarycentricCoordinates3) (new package)
+-   This package provides functions to compute various types of generalized barycentric coordinates
+    (Wachspress, mean value, discrete harmonic and tetrahedron coordinates) for points located inside closed convex
+    3D polyhedra.
+
+### [Polygon Mesh Processing](https://doc.cgal.org/6.2/Manual/packages.html#PkgPolygonMeshProcessing) (major changes)
+
+-   The "Polygon Mesh Processing" package has been reorganized into several packages.
+    "Polygon Mesh Processing" retains the core functionalities, while advanced and specialized features
+    have been moved to dedicated packages:
+  - [Boolean Operations On Meshes](https://doc.cgal.org/6.2/Manual/packages.html#PkgPMPBooleanOperations): algorithms for Boolean operations on polygon meshes;
+    clipping, splitting, and slicing with planes, boxes, or other meshes; and kernel computations.
+  - [Meshing and Remeshing of Polygon Meshes](https://doc.cgal.org/6.2/Manual/packages.html#PkgPMPRemeshing): algorithms for meshing and remeshing, such as triangulation, refinement, simplification, optimization, and smoothing.
+  - [Polygon Mesh Repair](https://doc.cgal.org/6.2/Manual/packages.html#PkgPMPMeshRepair): tools for detecting and correcting combinatorial and geometric defects in polygon meshes and polygon soups, including face orientation, hole filling, removal of degeneracies, and boundary stitching.
+   This does not induce any breaking change and is fully transparent: header includes such as
+   `#include <CGAL/Polygon_mesh_processing/XXX.h>` do not need to be changed and will include
+   the appropriate header from the new packages.
+
 ### [2D Arrangements](https://doc.cgal.org/6.2/Manual/packages.html#PkgArrangementOnSurface2)
 
 -   Introduced a Geometry Traits concept for arrangement on surfaces that enables the provision of the disconnected portions of an approximation of a curve within a given bounding box.
 -   Made the `Arr_linear_traits_2` a model of the new concept.
 -   Added overloads of `draw(Arrangement_on_surface_2& arr, Bbox& bbox, ...)` that enable the drawing of arrangements induced by unbounded curves.
-
-### [Generalized Barycentric Coordinates 3](https://doc.cgal.org/6.2/Manual/packages.html#PkgBarycentricCoordinates3) (new package)
--   This package provides functions to compute various types of generalized barycentric coordinates
-    (Wachspress, mean value, discrete harmonic and tetrahedron coordinates) for points located inside closed convex
-    3D polyhedra.
 
 ### [2D Conforming Triangulations and Meshes](https://doc.cgal.org/6.2/Manual/packages.html#PkgMesh2)
 
@@ -57,18 +70,30 @@ Release date: July 2026
     parameter any longer. (This third optional parameter was introduced a few years ago, and now abandoned only for
     `do_intersect()`.)
 
+### [Polygon Mesh Processing](https://doc.cgal.org/6.2/Manual/packages.html#PkgPolygonMeshProcessing)
+-   **Breaking change**: The header `CGAL/Polygon_mesh_processing/border.h` has been deprecated and its content
+    ([`CGAL::border_halfedges()`]() and [`CGAL::extract_boundary_cycles()`]()) have been moved to
+    the new header [`CGAL/boost/graph/border.h`]().
+-   Added function `CGAL::Polygon_mesh_processing::kernel()`, to compute the kernel of a polygon mesh.
+-   Added function `CGAL::Polygon_mesh_processing::is_empty_kernel()`, to indicate if the kernel of a polygon mesh is empty.
+-   Added function `CGAL::Polygon_mesh_processing::kernel_point()`, to compute a single point inside the kernel of a polygon mesh.
+-   Added `use_convex_specialization` parameter to `CGAL::Polygon_mesh_processing::clip()` and `CGAL::Polygon_mesh_processing::refine_with_plane()`.
+
+### [Polygon Mesh Processing (Boolean Operations on Meshes)](https://doc.cgal.org/6.2/Manual/packages.html#PkgPMPBooleanOperations)
+-   Added function `CGAL::Polygon_mesh_processing::kernel()`, to compute the kernel of a polygon mesh.
+-   Added function `CGAL::Polygon_mesh_processing::is_empty_kernel()`, to indicate if the kernel of a polygon mesh is empty.
+-   Added function `CGAL::Polygon_mesh_processing::kernel_point()`, to compute a single point inside the kernel of a polygon mesh.
+-   Added `use_convex_specialization` parameter to `CGAL::Polygon_mesh_processing::clip()` and `CGAL::Polygon_mesh_processing::refine_with_plane()`.
+-   The function [`CGAL::Polygon_mesh_processing::surface_intersection()`](), which can be used to
+    compute the polylines that represent the intersection between two polyhedral surfaces has been
+    renamed to [`CGAL::Polygon_mesh_processing::intersection_polylines()`]().
+
 ### [Tetrahedral Mesh Generation](https://doc.cgal.org/6.2/Manual/packages.html#PkgMesh3)
 
-- **Breaking change**: Removed the class template `CGAL::Implicit_vector_to_labeling_function_wrapper` as well as
+-   **Breaking change**: Removed the class template `CGAL::Implicit_vector_to_labeling_function_wrapper` as well as
     the constructor of `CGAL::Polyhedral_mesh_domain_with_features_3` that has a filename as parameter,
     which were deprecated since CGAL-4.5.
-- **Breaking change**:  Added the requirement for a nested type `Iso_cuboid_3` to the concept `BisectionGeometricTraits_3`.
-
-### [Polygon Mesh Processing](https://doc.cgal.org/6.2/Manual/packages.html#PkgPolygonMeshProcessing)
-- Add function `CGAL::Polygon_mesh_processing::kernel()`, to compute the kernel of a polygon mesh.
-- Add function `CGAL::Polygon_mesh_processing::is_empty_kernel()`, to indicate if the kernel of a polygon mesh is empty.
-- Add function `CGAL::Polygon_mesh_processing::kernel_point()`, to compute a single point inside the kernel of a polygon mesh.
-- Add `use_convex_specialization` parameter to `CGAL::Polygon_mesh_processing::clip()` and `CGAL::Polygon_mesh_processing::refine_with_plane()`.
+-   **Breaking change**:  Added the requirement for a nested type `Iso_cuboid_3` to the concept `BisectionGeometricTraits_3`.
 
 ### [2D Triangulations](https://doc.cgal.org/6.2/Manual/packages.html#PkgTriangulation2)
 
