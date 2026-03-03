@@ -1831,8 +1831,8 @@ protected:
       "and restored at next start.<br><br>";
     text += "Press <b>F</b> to display the frame rate, <b>A</b> for the "
       "world axis, ";
-    text += "<b>Alt+Return</b> for full screen mode and <b>Control+S</b> "
-      "to save a snapshot. ";
+    text += "<b>Alt+Return</b> for full screen mode and <b>F2</b> "
+      "to save a screenshot. ";
     text += "See the <b>Keyboard</b> tab in this window for a complete "
       "shortcut list.<br><br>";
     text += "Double clicks automates single click actions: A left button "
@@ -1843,7 +1843,7 @@ protected:
       "defines the camera <i>Revolve Around Point</i>. ";
     text += "See the <b>Mouse</b> tab and the documentation web pages for "
       "details.<br><br>";
-    text += "Press <b>Escape</b> to exit the viewer.";
+    text += "Press <b>Control+Q</b> to exit the viewer.";
     return text;
   }
 
