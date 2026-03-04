@@ -52,7 +52,7 @@ void alpha_wrap_triangle_soup(Points& pr,
 
   // AW3
   Oracle oracle;
-  oracle.add_triangles(pr, fr);
+  oracle.add_triangle_soup(pr, fr);
   AW3::internal::Alpha_wrapper_3<Oracle> aw3(oracle);
 
   Mesh wrap;

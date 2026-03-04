@@ -71,18 +71,21 @@ bool has_bounded_edge_length(const TriangleMesh& wrap,
 {
   using Geom_traits = typename GetGeomTraits<TriangleMesh, NamedParameters>::type;
   using FT = typename Geom_traits::FT;
-  using VPM = typename CGAL::GetVertexPointMap<PolygonMesh, NamedParameters>::type;
+  using VPM = typename CGAL::GetVertexPointMap<TriangleMesh, NamedParameters>::type;
 
-  Geom_traits gt = choose_parameter<Geom_traits>(get_parameter(in_np, internal_np::geom_traits));
+  using parameters::get_parameter;
+  using parameters::choose_parameter;
+
+  Geom_traits gt = choose_parameter<Geom_traits>(get_parameter(np, internal_np::geom_traits));
   VPM vpm = choose_parameter(get_parameter(np, internal_np::vertex_point),
-                             get_const_property_map(vertex_point, tmesh));
+                             get_const_property_map(vertex_point, wrap));
 
   const FT sq_alpha_bound = 4 * square(alpha);
   for(auto e : edges(wrap))
   {
-    if(gt.compare_squared_distance(get(vpm, source(e, wrap)),
-                                   get(vpm, target(e, wrap)),
-                                   sq_alpha_bound) == LARGER)
+    if(gt.compare_squared_distance_3_object()(get(vpm, source(e, wrap)),
+                                              get(vpm, target(e, wrap)),
+                                              sq_alpha_bound) == LARGER)
     {
 #ifdef CGAL_AW3_DEBUG
       const FT sqd = Polygon_mesh_processing::squared_edge_length(e, wrap, np);
