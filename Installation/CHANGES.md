@@ -99,6 +99,12 @@ Release date: July 2026
 
 - Add the function `insert_unique_constraints()` to the class `CGAL::Constrained_Delaunay_triangulation_2` identical to the function `insert_constraints()` except that it removes duplicated constraints before inserting them in the triangulation.
 
+### [STL Extension](https://doc.cgal.org/6.2/Manual/packages.html#PkgSTLExtension)
+
+- Added new debugging utility for finding minimal failing test cases:
+  - [`CGAL::bisect_failures`](https://doc.cgal.org/6.2/STL_Extension/group__PkgSTLExtensionUtilities.html)
+    template function that uses bisection to isolate minimal failing subsets from complex input data
+
 ### [Stream Support](https://doc.cgal.org/6.2/Manual/packages.html#PkgStreamSupport)
 
 - Added new stream formatting capabilities for improved debugging and logging:
