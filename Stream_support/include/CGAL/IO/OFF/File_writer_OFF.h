@@ -156,7 +156,7 @@ public:
   }
 
   // unsupported by the OFF file format, but needed for Generic_writer
-  void write_polyline_header(std::size_t polylines) { CGAL_precondition(polylines == 0); }
+  void write_polyline_header(std::size_t CGAL_precondition_code(polylines)) { CGAL_precondition(polylines == 0); }
   void write_polyline_begin(std::size_t) { }
   void write_polyline_vertex_index(std::size_t) { }
   void write_polyline_end() { }
