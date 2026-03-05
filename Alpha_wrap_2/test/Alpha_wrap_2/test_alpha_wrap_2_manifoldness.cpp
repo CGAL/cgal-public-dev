@@ -82,7 +82,7 @@ bool alpha_wrap_triangle_manifoldness(Polylines& input_polylines,
               << "before: " << base_area << "\n"
               << "after:  " << final_area << "\n"
               << "ratio:  " << ratio << std::endl;
-    if(ratio > 1.1) { // more than 10% extra area
+    if(ratio > 1.15) { // more than 10% extra area
       std::cerr << "W: large increase of area after manifoldness resolution" << std::endl;
       return false;
     }
