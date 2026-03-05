@@ -18,6 +18,7 @@
 #include <iostream>
 #include <fstream>
 #include <limits>
+#include <memory>
 
 using namespace CGAL::Three;
 
@@ -216,10 +217,14 @@ CGAL_Lab_off_plugin::load_obj(QFileInfo fileinfo) {
     return nullptr;
   }
 
-  Scene_surface_mesh_item* mesh_item = new Scene_surface_mesh_item();
-  mesh_item->setName(fileinfo.completeBaseName());
+  auto set_name = [&](CGAL::Three::Scene_item* item){
+    item->setName(fileinfo.completeBaseName());
+    return item;
+  };
+
+  auto mesh_item = std::make_unique<Scene_surface_mesh_item>();
   if(mesh_item->load_obj(in))
-    return mesh_item;
+    return set_name(mesh_item.release());
 
   in.clear();
   in.seekg(0, std::ios::beg);
@@ -235,9 +240,9 @@ CGAL_Lab_off_plugin::load_obj(QFileInfo fileinfo) {
   }
 
   if(!polygons.empty()) {
-    Scene_polygon_soup_item* soup_item = new Scene_polygon_soup_item();
+    auto soup_item = std::make_unique<Scene_polygon_soup_item>();
     soup_item->load(points, polygons);
-    return soup_item;
+    return set_name(soup_item.release());
   }
 
   if(!polylines.empty()) {
@@ -250,10 +255,10 @@ CGAL_Lab_off_plugin::load_obj(QFileInfo fileinfo) {
       }
       item_polylines.push_back(std::move(item_pl));
     }
-    Scene_polylines_item* polyline_item = new Scene_polylines_item;
-    polyline_item->polylines = item_polylines;
+    auto polyline_item = std::make_unique<Scene_polylines_item>();
+    polyline_item->polylines = std::move(item_polylines);
     std::cout << "Number of polylines in item: " << polyline_item->polylines.size() << std::endl;
-    return polyline_item;
+    return set_name(polyline_item.release());
   }
 
   return nullptr;

@@ -96981,7 +96981,7 @@ addition to their own purposes before conducting the conversion."
                  in a unit square. We show that the greedy triangulation
                  of $S$ can be computed in $O(n \log^{1.5} n)$ expected
                  time (without bucketing). The best previously known
-                 upper-bound on the expected-time performance of an
+                 upper bound on the expected-time performance of an
                  algorithm for the greedy triangulation was $O(n^2)$."
 }
 
@@ -135997,7 +135997,7 @@ Contains C code."
 
 @article{s-ubccr-75
 , author =      "R. Stanley"
-, title =       "The upper-bound conjecture and {Cohen-Macaulay} rings"
+, title =       "The upper bound conjecture and {Cohen-Macaulay} rings"
 , journal =     "Stud. Appl. Math."
 , volume =      54
 , year =        1975
@@ -152087,17 +152087,19 @@ keywords = {polygonal surface mesh, Surface reconstruction, kinetic framework, s
   publisher={Elsevier}
 }
 
-@unpublished{lazard:hal-04907149,
-  TITLE = {{Removing self-intersections in 3D meshes while preserving floating-point coordinates}},
-  AUTHOR = {Lazard, Sylvain and Valque, Leo},
-  URL = {https://inria.hal.science/hal-04907149},
-  NOTE = {working paper or preprint},
-  YEAR = {2025},
-  MONTH = Jan,
-  KEYWORDS = {Snap rounding ; mesh intersection ; robustness},
-  PDF = {https://inria.hal.science/hal-04907149v1/file/Snap-HAL.pdf},
-  HAL_ID = {hal-04907149},
-  HAL_VERSION = {v1},
+@article{valquelazard2025,
+author = {Valque, Léo and Lazard, Sylvain},
+title = {Resolving self-intersections in 3D meshes while preserving floating-point coordinates},
+journal = {Computer Graphics Forum},
+volume = {44},
+number = {5},
+pages = {e70197},
+keywords = {CCS Concepts, • Computing methodologies → Model development and analysis, Mesh models, • Theory of computation → Computational geometry},
+doi = {https://doi.org/10.1111/cgf.70197},
+url = {https://onlinelibrary.wiley.com/doi/abs/10.1111/cgf.70197},
+eprint = {https://onlinelibrary.wiley.com/doi/pdf/10.1111/cgf.70197},
+abstract = {Abstract We present a straightforward and robust method for resolving the mesh intersection problem. We focus specifically on the challenge caused by the intersections resulting from the conversion of the vertices coordinates from their exact mathematical values to a fixed-precision floating-point format. Our method takes as input a soup of triangles and outputs intersection-free models whose vertices coordinates are all represented with double-precision floating-point format. We evaluated our approach thoroughly, considering a large collection of meshes. In particular, we can process all the 4524 models in Thingi10K [ZJ16] that contain self-intersections. This outperforms previous state-of-the-art approaches: On the 527 models of Thingi10K for which naive rounding fails, Zhou et al.'s approach [ZGZJ16] is capable of handling 91\% of them, and Valque's 94\% [Val24]. In terms of time efficiency, our approach handles about 50k vertices per second on average, which is faster to that of Zhou et al. by a factor 1.4 on these non-trivial models and is faster than that of Valque by several order of magnitude.},
+year = {2025}
 }
 
 @inproceedings{si2005meshing,
@@ -152130,3 +152132,14 @@ keywords = {polygonal surface mesh, Surface reconstruction, kinetic framework, s
   url = {https://doi.org/10.1111/cgf.70184},
   year={2025}
 }
+
+@article{sorgente2022polyhedron,
+  title={Polyhedron kernel computation using a geometric approach},
+  author={Sorgente, Tommaso and Biasotti, Silvia and Spagnuolo, Michela},
+  journal={Computers \& Graphics},
+  volume={105},
+  pages={94--104},
+  year={2022},
+  publisher={Elsevier}
+}
+
