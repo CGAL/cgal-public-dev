@@ -406,8 +406,8 @@ public:
   typename U2::Circle_3
   operator()(const typename U1::Circle_3& c) const
   {
-    return k2.construct_circle_3_object()(operator()(k1.construct_diametral_sphere_3_object()(c)),
-                                          operator()(k1.construct_supporting_plane_3_object()(c)),
+    return k2.construct_circle_3_object()(operator()(k1.construct_sphere_3_object()(c)),
+                                          operator()(k1.construct_plane_3_object()(c)),
                                           1);
   }
 
