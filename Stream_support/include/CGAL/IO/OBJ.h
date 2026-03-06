@@ -323,7 +323,7 @@ bool read_OBJ(std::istream& is,
   const bool verbose = parameters::choose_parameter(parameters::get_parameter(np, internal_np::verbose), false);
 
   std::vector<std::vector<std::size_t> > unused_polylines;
-  bool success = internal::read_OBJ(is, points, unused_polylines, polygons,
+  bool success = internal::read_OBJ(is, points, polygons, unused_polylines,
                                     CGAL::Emptyset_iterator(), CGAL::Emptyset_iterator(),
                                     verbose);
 
