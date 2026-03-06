@@ -30,7 +30,6 @@
 #include <iostream>
 #include <istream>
 #include <limits>
-#include <memory_resource>
 #include <ostream>
 #include <stack>
 #include <utility>
@@ -42,6 +41,13 @@
 #include <boost/iterator/function_output_iterator.hpp>
 #include <boost/unordered_set.hpp>
 #include <boost/unordered/unordered_set_fwd.hpp>
+
+#if defined(__has_include) && __has_include(<memory_resource>)
+#include <memory_resource>
+#else
+#include <boost/container/pmr/polymorphic_allocator.hpp>
+#include <boost/container/pmr/monotonic_buffer_resource.hpp>
+#endif
 
 #include <CGAL/assertions.h>
 #include <CGAL/config.h>
@@ -83,6 +89,12 @@ namespace TDS_3 {
 
 namespace internal {
 
+#if defined(__has_include) && __has_include(<memory_resource>)
+  namespace pmr = std::pmr;
+#else
+  namespace pmr = boost::container::pmr;
+#endif
+
   template <typename Handle>
   using handle_value_t = CGAL::cpp20::remove_cvref_t<decltype(*std::declval<Handle>())>;
 
@@ -90,12 +102,12 @@ namespace internal {
   class Visited_vertex {
     using Hash = CGAL::Hash_handles_with_or_without_timestamps;
     using Equal = std::equal_to<Vertex_handle>;
-    using Allocator =  std::pmr::polymorphic_allocator<Vertex_handle>;
+    using Allocator =  pmr::polymorphic_allocator<Vertex_handle>;
 
     std::array<Vertex_handle, 192> visited_vertices_buffer;
-    std::pmr::monotonic_buffer_resource buffer_resource{visited_vertices_buffer.data(),
+    pmr::monotonic_buffer_resource buffer_resource{visited_vertices_buffer.data(),
                                                         visited_vertices_buffer.size() * sizeof(Vertex_handle)};
-    std::pmr::polymorphic_allocator<Vertex_handle> allocator{&buffer_resource};
+    pmr::polymorphic_allocator<Vertex_handle> allocator{&buffer_resource};
     CGAL::unordered_flat_set<Vertex_handle, Hash, Equal, Allocator> visited_vertices{allocator};
   public:
     void reserve(std::size_t n) {
