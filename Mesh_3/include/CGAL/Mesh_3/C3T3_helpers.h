@@ -3208,6 +3208,9 @@ move_point_topo_change(const Vertex_handle& old_vertex,
   reset_circumcenter_cache(insertion_conflict_cells);
   reset_sliver_cache(insertion_conflict_cells);
 
+  if(insertion_conflict_boundary.empty())
+    return old_vertex; // new_location is a vertex already
+
   Vertex_handle nv = move_point_topo_change_conflict_zone_known(old_vertex, new_position,
                                 insertion_conflict_boundary[0],
                                 insertion_conflict_cells.begin(),
