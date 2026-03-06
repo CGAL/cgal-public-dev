@@ -153,12 +153,6 @@ public:
   }
 
   typename R::Boolean
-  has_on_bounded_side(const Iso_cuboid_3& c) const
-  {
-    return R().has_on_bounded_side_3_object()(*this, c);
-  }
-
-  typename R::Boolean
   has_on_unbounded_side(const Point_3_ &p) const
   {
     return bounded_side(p) == ON_UNBOUNDED_SIDE;

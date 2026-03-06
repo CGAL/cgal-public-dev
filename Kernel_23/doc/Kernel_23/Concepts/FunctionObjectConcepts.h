@@ -8093,18 +8093,6 @@ public:
                   const Kernel::Point_2&p);
 
   /*!
-    returns true iff `s` lies on the bounded side of `c`.
-  */
-  bool operator()(const Kernel::Circle_2&c,
-                  const Kernel::Segment_2&s);
-
-  /*!
-    returns true iff `i` lies on the bounded side of `c`.
-  */
-  bool operator()(const Kernel::Circle_2&c,
-                  const Kernel::Iso_rectangle_2&i);
-
-  /*!
     returns true iff `p` lies on the bounded side of `i`.
   */
   bool operator()(const Kernel::Iso_rectangle_2&i,
@@ -8146,12 +8134,6 @@ public:
   */
   bool operator()(const Kernel::Sphere_3&s,
                   const Kernel::Point_3&p);
-
-  /*!
-    returns true iff `i` lies on the bounded side of `s`.
-  */
-  bool operator()(const Kernel::Sphere_3& s,
-                  const Kernel::Iso_cuboid_3& i);
 
   /*!
     returns true iff `p` lies on the bounded side of `t`.

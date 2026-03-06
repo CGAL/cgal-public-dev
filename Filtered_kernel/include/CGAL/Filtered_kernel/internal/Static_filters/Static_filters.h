@@ -73,8 +73,6 @@
 #include <CGAL/Filtered_kernel/internal/Static_filters/Power_side_of_oriented_power_circle_2.h>
 #include <CGAL/Filtered_kernel/internal/Static_filters/Power_side_of_oriented_power_sphere_3.h>
 #include <CGAL/Filtered_kernel/internal/Static_filters/Compare_distance_3.h>
-#include <CGAL/Filtered_kernel/internal/Static_filters/Has_on_bounded_side_2.h>
-#include <CGAL/Filtered_kernel/internal/Static_filters/Has_on_bounded_side_3.h>
 #include <CGAL/Filtered_kernel/internal/Static_filters/Has_on_unbounded_side_2.h>
 #include <CGAL/Filtered_kernel/internal/Static_filters/Has_on_unbounded_side_3.h>
 
@@ -133,8 +131,6 @@ public:
   typedef Static_filters_predicates::Power_side_of_oriented_power_sphere_3<K_base>                          Power_side_of_oriented_power_sphere_3;
 
   typedef Static_filters_predicates::Compare_distance_3<K_base>             Compare_distance_3;
-  typedef Static_filters_predicates::Has_on_bounded_side_2<K_base>          Has_on_bounded_side_2;
-  typedef Static_filters_predicates::Has_on_bounded_side_3<K_base>          Has_on_bounded_side_3;
   typedef Static_filters_predicates::Has_on_unbounded_side_2<K_base>        Has_on_unbounded_side_2;
   typedef Static_filters_predicates::Has_on_unbounded_side_3<K_base>        Has_on_unbounded_side_3;
 
@@ -214,14 +210,6 @@ public:
   Compare_distance_3
   compare_distance_3_object() const
   { return Compare_distance_3();}
-
-  Has_on_bounded_side_2
-  has_on_bounded_side_2_object() const
-  { return Has_on_bounded_side_2(); }
-
-  Has_on_bounded_side_3
-  has_on_bounded_side_3_object() const
-  { return Has_on_bounded_side_3(); }
 
   Has_on_unbounded_side_2
   has_on_unbounded_side_2_object() const

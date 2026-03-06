@@ -188,11 +188,6 @@ bool has_on_bounded_side(const Point_3<Kernel> &p) const;
 /*!
 
 */
-bool has_on_bounded_side(const Iso_cuboid_3<Kernel> &b) const
-
-/*!
-
-*/
 bool has_on_unbounded_side(const Point_3<Kernel> &p) const;
 
 /*!

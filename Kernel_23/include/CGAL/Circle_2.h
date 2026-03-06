@@ -138,18 +138,6 @@ public:
   }
 
   typename R::Boolean
-  has_on_bounded_side(const Iso_rectangle_2& r) const
-  {
-    return R().has_on_bounded_side_2_object()(*this, r);
-  }
-
-  typename R::Boolean
-  has_on_bounded_side(const Segment_2& s) const
-  {
-    return R().has_on_bounded_side_2_object()(*this, s);
-  }
-
-  typename R::Boolean
   has_on_unbounded_side(const Point_2 &p) const
   {
     return bounded_side(p) == ON_UNBOUNDED_SIDE;
