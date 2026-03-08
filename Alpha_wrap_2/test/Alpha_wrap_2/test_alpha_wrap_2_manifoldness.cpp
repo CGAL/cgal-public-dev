@@ -33,8 +33,8 @@ using Point_2 = K::Point_2;
 using Vector_2 = K::Vector_2;
 
 using Points = std::vector<Point_2>;
-using Polyline = std::vector<Point_2>;
-using Polylines = std::vector<Polyline>;
+using Polyline_2 = std::vector<Point_2>;
+using Polylines = std::vector<Polyline_2>;
 using Multipolygon = CGAL::Multipolygon_with_holes_2<K>;
 
 bool alpha_wrap_triangle_manifoldness(Polylines& input_polylines,
