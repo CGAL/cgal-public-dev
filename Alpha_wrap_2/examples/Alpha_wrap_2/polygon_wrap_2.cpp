@@ -18,8 +18,7 @@ using K = CGAL::Exact_predicates_inexact_constructions_kernel;
 using Point_2 = K::Point_2;
 
 using Multipolygon = CGAL::Multipolygon_with_holes_2<K>;
-using Polygon_with_holes = Multipolygon::Polygon_with_holes_2;
-using Polygon = Polygon_with_holes::Polygon_2;
+
 
 int main(int argc, char** argv)
 {

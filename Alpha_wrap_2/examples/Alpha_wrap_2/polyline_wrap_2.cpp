@@ -15,8 +15,8 @@ using K = CGAL::Exact_predicates_inexact_constructions_kernel;
 using Point_2 = K::Point_2;
 
 using Points = std::vector<Point_2>;
-using Polyline = std::vector<Point_2>;
-using Polylines = std::vector<Polyline>;
+using Polyline_2 = std::vector<Point_2>;
+using Polylines = std::vector<Polyline_2>;
 
 using Multipolygon = CGAL::Multipolygon_with_holes_2<K>;
 
@@ -46,7 +46,7 @@ int main(int argc, char** argv)
   const double relative_offset = (argc > 3) ? std::stod(argv[3]) : 300.;
 
   CGAL::Bbox_2 bbox;
-  for(const Polyline& ls : mls_in)
+  for(const Polyline_2& ls : mls_in)
     for(const Point_2& pt : ls)
       bbox += pt.bbox();
 
