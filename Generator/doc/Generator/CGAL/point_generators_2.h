@@ -414,7 +414,7 @@ Random_points_in_triangle_mesh_2(const Triangulation& triangulation, Random& rnd
 get_default_random() );
 
 /*!
-returns the last point generated and a handle of the face used ot generate that point.
+returns the last point generated and a handle of the face used to generate that point.
 */
 std::pair<Point_2,typename Triangulation::Face_handle>
 point_and_support() const;
