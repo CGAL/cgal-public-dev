@@ -1804,8 +1804,10 @@ protected:
       }
       else if ((e->key()==::Qt::Key_F2))
       {
-        capture_screenshot(QString("./screenshot.png"));
-        displayMessage(QString("Screenshot saved in ./screenshot"));
+        if(capture_screenshot(QString("./screenshot.png")))
+            displayMessage(QString("Screenshot saved in ./screenshot.png"));
+        else
+            displayMessage(QString("Failed to take screenshot"));
       }
       else
       { CGAL::QGLViewer::keyPressEvent(e); } // By default call QGLViewer key press
@@ -1847,14 +1849,14 @@ protected:
     return text;
   }
 
-  void capture_screenshot(const QString& file_path)
+  bool capture_screenshot(const QString& file_path)
   {
     QScreen *screen;
     screen = QApplication::primaryScreen();
 
     // auto geom = screen->geometry();
     auto qpx_pixmap = screen->grabWindow(this->winId());
-    qpx_pixmap.save(file_path);
+    return qpx_pixmap.save(file_path);
   }
 
 public:
