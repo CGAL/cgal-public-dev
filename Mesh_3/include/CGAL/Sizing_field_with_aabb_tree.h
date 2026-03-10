@@ -368,6 +368,9 @@ public:
 #endif // CGAL_MESH_3_PROTECTION_HIGH_VERBOSITY
     FT result = d_ptr->d_;
     if(dim == 0) {
+      // --------------------------------
+      // if dim is 0 (for corners)
+      // --------------------------------
       if(d_ptr->dt.dimension() < 1) {
 #ifdef CGAL_MESH_3_PROTECTION_HIGH_VERBOSITY
         std::cerr << result << "(dt.dimension() < 1)\n";
@@ -460,12 +463,18 @@ public:
       } // end if(corners.find(p) != corners.end()) and !aabb_tree.empty()
     } // end if(dim == 0)
     else if(dim != 1) {
+      // ----------------------------------------------------------
+      // if dim is 2 or 3 (in the 2D complex, or inside the domain)
+      // ----------------------------------------------------------
 #ifdef CGAL_MESH_3_PROTECTION_HIGH_VERBOSITY
       std::cerr << result << "\n";
 #endif // CGAL_MESH_3_PROTECTION_HIGH_VERBOSITY
       return result;
     }
-    else { // dim == 1
+    else {
+      // ------------------------------------
+      // if dim is 1 (for 1D featured curves)
+      // ------------------------------------
       const typename MeshDomain::Curve_index& curve_id =
         d_ptr->domain.curve_index(id);
       const Patches_ids& ids = d_ptr->curves_incident_patches[curve_id];
@@ -776,7 +785,10 @@ public:
 #endif // CGAL_MESH_3_PROTECTION_HIGH_VERBOSITY
         }
       }
-    } // end dim == 1
+      // --------------------------------
+      // end of "dim is 1"
+      // --------------------------------
+    }
 #ifdef CGAL_MESH_3_PROTECTION_HIGH_VERBOSITY
     std::cerr << result << std::endl;
 #endif // CGAL_MESH_3_PROTECTION_HIGH_VERBOSITY
