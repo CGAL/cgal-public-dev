@@ -64,7 +64,7 @@ namespace internal {
 template <typename Input>                                                                          \
 struct is_##TYPE##_range                                                                           \
 {                                                                                                  \
-  static constexpr bool value = []() -> bool {                                                     \
+  static constexpr bool compute_value() {                                                          \
     if constexpr (!boost::has_range_const_iterator<Input>::value) {                                \
       return false;                                                                                \
     } else {                                                                                       \
@@ -77,7 +77,8 @@ struct is_##TYPE##_range                                                        
       else                                                                                         \
         return std::is_same_v<value_type, typename Kernel::TYPE>;                                  \
     }                                                                                              \
-  }();                                                                                             \
+  }                                                                                                \
+  static constexpr bool value = compute_value();                                                   \
 };
 
 CGAL_IS_RANGE_OF_KERNEL_OBJECT(Point_2)
