@@ -15,6 +15,8 @@
 
 #include <CGAL/license/Mesh_3.h>
 
+#include <CGAL/AABB_tree/internal/AABB_node.h>
+#include <CGAL/AABB_tree/internal/AABB_search_tree.h>
 #include <CGAL/assertions.h>
 #include <CGAL/Default.h>
 #include <CGAL/Delaunay_triangulation_3.h>
@@ -38,6 +40,7 @@
 #include <CGAL/Mesh_3/experimental/Get_curve_index.h>
 #include <CGAL/Mesh_3/experimental/AABB_filtered_projection_traits.h>
 
+#include <boost/container/container_fwd.hpp> // for boost::container::ordered_unique_range
 #include <boost/container/flat_set.hpp>
 #if defined(CGAL_MESH_3_PROTECTION_HIGH_VERBOSITY) || defined(CGAL_NO_ASSERTIONS) == 0
 #  include <sstream>
