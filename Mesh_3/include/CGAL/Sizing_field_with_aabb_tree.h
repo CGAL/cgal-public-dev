@@ -356,6 +356,9 @@ public:
                     const int dim,
                     const Index& id) const
   { /// @TODO rework this huge member function, and split it into several ones
+
+    using CGAL::sqrt;
+
     CGAL_PROFILER("Sizing field");
 #ifdef CGAL_MESH_3_PROTECTION_HIGH_VERBOSITY
     if(dim <= 1) {
@@ -402,7 +405,7 @@ public:
         const typename Dt::Vertex_handle vh = d_ptr->dt.nearest_vertex(p, ch);
         nearest = d_ptr->dt.point(vh);
       }
-      const FT dist = CGAL_NTS sqrt(squared_distance( nearest, p));
+      const FT dist = sqrt(squared_distance( nearest, p));
       // std::cerr << (std::min)(dist / FT(1.5), d_) << "\n";
       result = (std::min)(dist * FT(0.5), result);
 
@@ -420,8 +423,7 @@ public:
 
         if(closest_point_and_primitive != std::nullopt) {
           result =
-            (std::min)(FT(0.9 / CGAL::sqrt(CGAL::Mesh_3::internal::weight_modifier) *
-                       CGAL_NTS
+            (std::min)(FT(0.9 / sqrt(CGAL::Mesh_3::internal::weight_modifier) *
                        sqrt(squared_distance(p,
                                                    closest_point_and_primitive->first))),
                        result);
@@ -488,8 +490,8 @@ public:
                                      closest_point_and_primitive->second)) == 0);
 
         result =
-          (std::min)(FT(0.9 / CGAL::sqrt(CGAL::Mesh_3::internal::weight_modifier) *
-                     CGAL::sqrt(squared_distance(p, closest_point_and_primitive->first))),
+          (std::min)(FT(0.9 / sqrt(CGAL::Mesh_3::internal::weight_modifier) *
+                     sqrt(squared_distance(p, closest_point_and_primitive->first))),
                      result);
 
         [[maybe_unused]]auto display_msg = [&] {
@@ -698,7 +700,7 @@ public:
             std::cerr << "\n  dist = " << dist << "\n";
 #endif
 
-            if (CGAL_NTS sqrt(new_sqd) > 0.9 * dist)
+            if (sqrt(new_sqd) > 0.9 * dist)
               continue;
             if (sqd_intersection == -1 || new_sqd < sqd_intersection)
             {
@@ -743,11 +745,11 @@ public:
 #ifdef CGAL_MESH_3_PROTECTION_HIGH_VERBOSITY
         std::cerr << "FOUND!\n";
         std::cerr << "  closest_point: " << closest_intersection << "\n"
-                  << "  distance = " << CGAL_NTS sqrt(sqd_intersection) << std::endl;
+                  << "  distance = " << sqrt(sqd_intersection) << std::endl;
 #endif // CGAL_MESH_3_PROTECTION_HIGH_VERBOSITY
         FT new_result =
           (std::min)(FT(0.45 / CGAL::sqrt(CGAL::Mesh_3::internal::weight_modifier) *
-                     CGAL_NTS sqrt(sqd_intersection)),
+                     sqrt(sqd_intersection)),
                      d_ptr->d_);
 
 #ifdef CGAL_MESH_3_PROTECTION_HIGH_VERBOSITY
