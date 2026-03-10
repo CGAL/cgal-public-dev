@@ -1604,6 +1604,7 @@ public:
   Vertex_range & vertices() const
   { return const_cast<Tds*>(this)->_vertices; }
 
+  /// @TODO document?
   /// Vertex ranges defining a simplex
   static std::array<Vertex_handle, 2> vertices(const Edge& e)
   {

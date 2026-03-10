@@ -352,7 +352,7 @@ public:
   double operator()(const Point_3& p,
                     const int dim,
                     const Index& id) const
-  {
+  { /// @TODO rework this huge member function, and split it into several ones
     CGAL_PROFILER("Sizing field");
 #ifdef CGAL_MESH_3_PROTECTION_HIGH_VERBOSITY
     if(dim <= 1) {
