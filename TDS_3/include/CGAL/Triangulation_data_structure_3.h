@@ -95,9 +95,9 @@ namespace internal {
 #if defined(__has_include) && __has_include(<memory_resource>)
     using Allocator =  std::pmr::polymorphic_allocator<Vertex_handle>;
     std::array<Vertex_handle, 192> visited_vertices_buffer;
-    pmr::monotonic_buffer_resource buffer_resource{visited_vertices_buffer.data(),
+    std::pmr::monotonic_buffer_resource buffer_resource{visited_vertices_buffer.data(),
                                                         visited_vertices_buffer.size() * sizeof(Vertex_handle)};
-    pmr::polymorphic_allocator<Vertex_handle> allocator{&buffer_resource};
+    std::pmr::polymorphic_allocator<Vertex_handle> allocator{&buffer_resource};
     CGAL::unordered_flat_set<Vertex_handle, Hash, Equal, Allocator> visited_vertices{allocator};
 #else
     boost::unordered::unordered_set<Vertex_handle> visited_vertices;
