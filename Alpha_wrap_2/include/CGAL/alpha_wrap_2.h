@@ -107,14 +107,15 @@ struct is_MultipolygonWithHoles
 template <typename Input>
 struct is_MultiLineString
 {
-  static constexpr bool value = []() -> bool {
+  static constexpr bool compute_value() {
     if constexpr (boost::has_range_const_iterator<Input>::value) {
       using Outer_range = typename boost::range_value<Input>::type;
       return is_Point_2_range<Outer_range>::value;
     } else {
       return false;
     }
-  }();
+  }
+  static constexpr bool value = compute_value();
 };
 
 } // namespace internal
