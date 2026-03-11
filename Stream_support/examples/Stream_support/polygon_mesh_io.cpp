@@ -21,7 +21,7 @@ int main(int argc, char** argv)
     std::cerr << "Error reading " << argv[1] << "\n";
     return EXIT_FAILURE;
   }
-  if (!CGAL::IO::write_polygon_soup(argv[2], points, polygons))
+  if (!CGAL::IO::write_polygon_soup(argv[2], points, polygons, CGAL::parameters::stream_precision(17)))
   {
     std::cerr << "Error writing " << argv[2] << "\n";
     return EXIT_FAILURE;
