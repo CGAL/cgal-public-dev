@@ -115,6 +115,10 @@ Release date: July 2026
     and [`CGAL::IO::Basic_color_stream_guard`](https://doc.cgal.org/6.2/Stream_support/classCGAL_1_1IO_1_1Basic__color__stream__guard.html)
     for ANSI color support in terminal output
 
+### [Intersecting Sequences of dD Iso-oriented Boxes](https://doc.cgal.org/6.2/Manual/packages.html#PkgBoxIntersectionD)
+- The function `CGAL::box_intersection_d()` now accepts ranges with different box types.
+- Add the box type `CGAL::Box_with_info<FT, dim, Info>`, which stores a variable of type `Info` accessible via `info()`.
+
 ## [Release 6.1](https://github.com/CGAL/cgal/releases/tag/v6.1)
 
 Release date: Sept 2025
