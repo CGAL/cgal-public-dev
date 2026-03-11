@@ -116,10 +116,10 @@ public:
     for(iterator it = this->begin(); it != this->end(); it++)
     {
       const Point& p = *it;
-      xrange[0] = std::min(xrange[0],p.x());
-      xrange[1] = std::max(xrange[1],p.x());
-      yrange[0] = std::min(yrange[0],p.y());
-      yrange[1] = std::max(yrange[1],p.y());
+      xrange[0] = (std::min)(xrange[0],p.x());
+      xrange[1] = (std::max)(xrange[1],p.x());
+      yrange[0] = (std::min)(yrange[0],p.y());
+      yrange[1] = (std::max)(yrange[1],p.y());
     }
   }
 
@@ -181,7 +181,7 @@ public:
     }
     xrange[2] = xrange[1]-xrange[0];
     yrange[2] = yrange[1]-yrange[0];
-    FT range = std::max(xrange[2],yrange[2]);
+    FT range = (std::max)(xrange[2],yrange[2]);
 
     for(iterator c = this->begin();
         c != this->end();
@@ -205,7 +205,7 @@ public:
 
     xrange[2] = xrange[1]-xrange[0];
     yrange[2] = yrange[1]-yrange[0];
-    FT range = stretch * std::max(xrange[2],yrange[2]);
+    FT range = stretch * (std::max)(xrange[2],yrange[2]);
     FT xmid = 0.5*(xrange[0]+xrange[1]);
     FT ymid = 0.5*(yrange[0]+yrange[1]);
     xmin = xmid-0.5*range;
