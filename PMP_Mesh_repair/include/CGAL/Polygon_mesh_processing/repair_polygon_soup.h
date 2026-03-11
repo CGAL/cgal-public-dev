@@ -901,9 +901,13 @@ DuplicateOutputIterator collect_duplicate_polygons(const PointRange& points,
 ///   \cgalParamNEnd
 ///
 ///   \cgalParamNBegin{erase_all_duplicates}
-///     \cgalParamDescription{Parameter to indicate, when multiple polygons are duplicates,
-///                           whether all the duplicate polygons should be removed
-///                           or if one (arbitrarily chosen) face should be kept.}
+///     \cgalParamDescription{If set to `true` and multiple polygons are duplicates, all duplicates are removed instead of keeping one (arbitrarily chosen).}
+///     \cgalParamType{Boolean}
+///     \cgalParamDefault{`false`}
+///   \cgalParamNEnd
+///
+///   \cgalParamNBegin{erase_even_duplicates}
+///     \cgalParamDescription{If set to `true` and an even number of polygons are duplicates, all duplicates are removed instead of keeping one (arbitrarily chosen).}
 ///     \cgalParamType{Boolean}
 ///     \cgalParamDefault{`false`}
 ///   \cgalParamNEnd
@@ -931,6 +935,7 @@ std::size_t merge_duplicate_polygons_in_polygon_soup(const PointRange& points,
   typedef typename CGAL::internal::Polygon_types<PointRange, PolygonRange>::P_ID                         P_ID;
 
   const bool erase_all_duplicates = choose_parameter(get_parameter(np, internal_np::erase_all_duplicates), false);
+  const bool erase_even_duplicates = choose_parameter(get_parameter(np, internal_np::erase_even_duplicates), false);
   const bool same_orientation = choose_parameter(get_parameter(np, internal_np::require_same_orientation), false);
 
 #ifdef CGAL_PMP_REPAIR_POLYGON_SOUP_VERBOSE_PP
@@ -972,7 +977,7 @@ std::size_t merge_duplicate_polygons_in_polygon_soup(const PointRange& points,
     const std::vector<P_ID>& duplicate_polygons = all_duplicate_polygons.back();
     CGAL_assertion(duplicate_polygons.size() >= 2);
 
-    std::size_t i = erase_all_duplicates ? 0 : 1;
+    std::size_t i = erase_all_duplicates ? 0 : (erase_even_duplicates ? duplicate_polygons.size() % 2: 1);
     for(; i<duplicate_polygons.size(); ++i)
     {
       const P_ID polygon_to_remove_id = duplicate_polygons[i];
@@ -1123,9 +1128,13 @@ struct Polygon_soup_fixer<PointRange, PolygonRange, std::array<PID, N> >
 ///   \cgalParamNEnd
 ///
 ///   \cgalParamNBegin{erase_all_duplicates}
-///     \cgalParamDescription{Parameter to indicate, when multiple polygons are duplicates,
-///                           whether all the duplicate polygons should be removed
-///                           or if one (arbitrarily chosen) face should be kept.}
+///     \cgalParamDescription{If set to `true` and multiple polygons are duplicates, all duplicates are removed instead of keeping one (arbitrarily chosen).}
+///     \cgalParamType{Boolean}
+///     \cgalParamDefault{`false`}
+///   \cgalParamNEnd
+///
+///   \cgalParamNBegin{erase_even_duplicates}
+///     \cgalParamDescription{If set to `true` and an even number of polygons are duplicates, all duplicates are removed instead of keeping one (arbitrarily chosen).}
 ///     \cgalParamType{Boolean}
 ///     \cgalParamDefault{`false`}
 ///   \cgalParamNEnd
