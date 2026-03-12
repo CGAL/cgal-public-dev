@@ -6,7 +6,7 @@ project(Alpha_wrap_2_Demo)
 
 find_package(CGAL REQUIRED OPTIONAL_COMPONENTS Qt6)
 
-find_package(Qt6 QUIET COMPONENTS Widgets)
+find_package(Qt6)
 
 if(CGAL_Qt6_FOUND AND Qt6_FOUND)
   add_compile_definitions(QT_NO_KEYWORDS)
@@ -24,7 +24,7 @@ if(CGAL_Qt6_FOUND AND Qt6_FOUND)
 
   add_to_cached_list(CGAL_EXECUTABLE_TARGETS Alpha_wrap_2)
 
-  target_link_libraries(Alpha_wrap_2 PRIVATE CGAL::CGAL CGAL::CGAL_Qt6 Qt6::Widgets)
+  target_link_libraries(Alpha_wrap_2 PRIVATE CGAL::CGAL CGAL::CGAL_Qt6 Opengl32)
 
   include(${CGAL_MODULES_DIR}/CGAL_add_test.cmake)
   cgal_add_compilation_test(Alpha_wrap_2)
