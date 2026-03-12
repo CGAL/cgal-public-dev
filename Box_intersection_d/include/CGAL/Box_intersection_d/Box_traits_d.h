@@ -166,7 +166,7 @@ struct Predicate_traits_d : public BoxTraits_1{
     template<class Bp1, class Bp2>
     static bool is_lo_less_lo(Bp1 a, Bp2 b, int dim) {
         if constexpr(std::is_same_v<Bp1, Bp2>)
-            // We nned to check ids if the boxes have the same types
+            // We need to check ids if the boxes have the same types
             if constexpr(std::is_same_v< std::remove_cv_t<std::remove_reference_t<Box_parameter_1>>,
                                          std::remove_cv_t<std::remove_reference_t<Bp1>>>)
                 return BoxTraits_1::min_coord(a,dim)  < BoxTraits_1::min_coord(b,dim) ||
