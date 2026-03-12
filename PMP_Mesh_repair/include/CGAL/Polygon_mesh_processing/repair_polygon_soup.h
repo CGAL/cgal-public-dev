@@ -941,6 +941,7 @@ std::size_t merge_duplicate_polygons_in_polygon_soup(const PointRange& points,
 #ifdef CGAL_PMP_REPAIR_POLYGON_SOUP_VERBOSE_PP
   std::cout << "Only polygons with the same orientation are duplicates: " << std::boolalpha << same_orientation << std::endl;
   std::cout << "Erase all duplicate polygons: " << std::boolalpha << erase_all_duplicates << std::endl;
+  std::cout << "Erase even duplicate polygons: " << std::boolalpha << erase_even_duplicates << std::endl;
 #endif
 
   typedef typename GetPolygonGeomTraits<PointRange, PolygonRange, NamedParameters>::type Traits;

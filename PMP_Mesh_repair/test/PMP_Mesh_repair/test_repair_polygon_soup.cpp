@@ -270,10 +270,18 @@ void test_merge_duplicate_polygons(const bool /*verbose*/ = false)
   assert(res == 5 && polygons_copy.size() == 1);
 
   // Remove all duplicates but different orientations are different polygons
-  res = PMP::merge_duplicate_polygons_in_polygon_soup(points, polygons,
+  polygons_copy = polygons;
+  res = PMP::merge_duplicate_polygons_in_polygon_soup(points, polygons_copy,
                                                       params::erase_all_duplicates(true)
                                                              .require_same_orientation(true));
-  assert(res == 2 && polygons.size() == 4);
+  assert(res == 2 && polygons_copy.size() == 4);
+
+  // Remove even duplicates
+  polygons_copy = polygons;
+  res = PMP::merge_duplicate_polygons_in_polygon_soup(points, polygons_copy,
+                                                      params::erase_even_duplicates(true)
+                                                             .require_same_orientation(false));
+  assert(res == 4 && polygons_copy.size() == 2);
 }
 
 void test_simplify_polygons(const bool /*verbose*/ = false)
