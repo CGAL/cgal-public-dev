@@ -5504,7 +5504,7 @@ The following functionality has been added or changed:
     bounding boxes of more complicated geometries. Useful for (self-)
     intersection tests of surfaces etc.
 - 2D Snap Rounding (new package)
-    Snap Rounding is a well known method for converting
+    Snap Rounding is a well-known method for converting
     arbitrary-precision arrangements of segments into a fixed-precision
     representation. In the study of robust geometric computing, it can
     be classified as a finite precision approximation technique.
