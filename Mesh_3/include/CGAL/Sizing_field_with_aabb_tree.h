@@ -357,7 +357,8 @@ public:
                     const Index& id) const
   { /// @TODO rework this huge member function, and split it into several ones
 
-    using CGAL::sqrt;
+    using CGAL::sqrt; // for exact number types supported by CGAL
+    using std::sqrt;  // for built-in floating points (aka `double`)
 
     CGAL_PROFILER("Sizing field");
 #ifdef CGAL_MESH_3_PROTECTION_HIGH_VERBOSITY
