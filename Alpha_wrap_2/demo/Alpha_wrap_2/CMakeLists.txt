@@ -6,6 +6,9 @@ project(Alpha_wrap_2_Demo)
 
 find_package(CGAL REQUIRED OPTIONAL_COMPONENTS Qt6)
 
+find_package(OpenGL QUIET)
+
+
 find_package(Qt6)
 
 if(CGAL_Qt6_FOUND AND Qt6_FOUND)
@@ -24,7 +27,10 @@ if(CGAL_Qt6_FOUND AND Qt6_FOUND)
 
   add_to_cached_list(CGAL_EXECUTABLE_TARGETS Alpha_wrap_2)
 
-  target_link_libraries(Alpha_wrap_2 PRIVATE CGAL::CGAL CGAL::CGAL_Qt6 Opengl32)
+  target_link_libraries(Alpha_wrap_2 PRIVATE CGAL::CGAL CGAL::CGAL_Qt6)
+  if(OpenGL_FOUND)
+    target_link_libraries(Alpha_wrap_2 PRIVATE OpenGL::GL)
+  endif()
 
   include(${CGAL_MODULES_DIR}/CGAL_add_test.cmake)
   cgal_add_compilation_test(Alpha_wrap_2)
