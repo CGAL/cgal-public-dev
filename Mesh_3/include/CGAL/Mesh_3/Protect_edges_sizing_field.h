@@ -87,10 +87,11 @@ namespace CGAL {
 namespace Mesh_3 {
 namespace internal {
 
-const double min_intersection_factor = .4; // (1-alpha)
-const double weight_modifier = .81; //0.9025;//0.81;
-const double distance_divisor = 2.1;
-const int max_nb_vertices_to_reevaluate_size = 10;
+inline constexpr double min_intersection_factor = .4; // (1-alpha)
+inline constexpr double distance_modifier = .9;
+inline constexpr double weight_modifier = distance_modifier * distance_modifier;
+inline constexpr double distance_divisor = 2.1;
+inline constexpr int max_nb_vertices_to_reevaluate_size = 10;
 
 // for the origins of `refine_balls_max_nb_of_loops`, that dates from the
 // very beginning of this file:
