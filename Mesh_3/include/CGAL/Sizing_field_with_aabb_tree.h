@@ -15,17 +15,20 @@
 
 #include <CGAL/license/Mesh_3.h>
 
+#include <CGAL/config.h>
+
 #include <CGAL/AABB_tree/internal/AABB_node.h>
 #include <CGAL/AABB_tree/internal/AABB_search_tree.h>
 #include <CGAL/assertions.h>
 #include <CGAL/Default.h>
 #include <CGAL/Delaunay_triangulation_3.h>
 #include <CGAL/enum.h>
-#include <CGAL/Mesh_3/Protect_edges_sizing_field.h> // for weight_modifier
+#include <CGAL/IO/io_tags.h>
 #include <CGAL/number_utils.h>
 #include <CGAL/Profile_counter.h>
 #include <CGAL/tags.h>
 
+#include <cmath>
 #include <cstddef>
 #include <iostream>
 #include <limits>
@@ -333,6 +336,18 @@ public:
     result = projection_traits.closest_point_and_primitive();
     return result;
   }
+
+  template <typename Range>
+  static auto display_set(Range&& range) {
+    auto display_range = [range = std::forward<Range>(range)](auto& stream) -> auto& {
+      stream << "{ ";
+      for(const auto& element : range) {
+        stream << CGAL::IO::oformat(element) << " ";
+      }
+      return stream << "}";
+    };
+    return CGAL::IO::oformat(std::move(display_range), CGAL::IO_manip_tag{});
+  }
 #endif // DOXYGEN_RUNNING
 
 public:
@@ -361,9 +376,9 @@ public:
 #endif // CGAL_MESH_3_PROTECTION_HIGH_VERBOSITY
     FT result = d_ptr->d_;
     if(dim == 0) {
-      // --------------------------------
+      // ================================
       // if dim is 0 (for corners)
-      // --------------------------------
+      // ================================
       if(d_ptr->dt.dimension() < 1) {
 #ifdef CGAL_MESH_3_PROTECTION_HIGH_VERBOSITY
         std::cerr << result << "(dt.dimension() < 1)\n";
@@ -385,14 +400,13 @@ public:
         nearest = d_ptr->dt.point(vs[0]);
 //         std::cerr << "sq_dist = " << squared_distance(p, nearest)
 //                   << std::endl;
-        for (typename std::vector<typename Dt::Vertex_handle>::const_iterator
-               it = vs.begin(); it != vs.end(); ++it)
+        for (auto vh : vs)
         {
-//           std::cerr << "sq_dist = " << squared_distance(p, dt.point(*it))
-//                   << std::endl;
-          if(compare_distance(p, d_ptr->dt.point(*it), nearest) == CGAL::SMALLER) {
+          auto p_vh = d_ptr->dt.point(vh);
+//           std::cerr << "sq_dist = " << squared_distance(p, p_vh) << std::endl;
+          if(compare_distance(p, p_vh, nearest) == CGAL::SMALLER) {
 //             std::cerr << "  nearest!\n";
-            nearest = d_ptr->dt.point(*it);
+            nearest = p_vh;
           }
         }
       } else {
@@ -432,17 +446,14 @@ public:
                                " on corner!\n"
                                "Closest face id: %3%\n"
                                "Closest point: %4%\n"
-                               "Ids are { ")
+                               "Ids are ")
               % group(setprecision(17),result)
               % group(setprecision(17),p)
               % CGAL::IO::oformat(get(d_ptr->facet_patch_id_map,
                                   closest_point_and_primitive->second))
               % group(setprecision(17),
                       closest_point_and_primitive->first);
-            for(Patch_index i : ids) {
-              s << CGAL::IO::oformat(i) << " ";
-            }
-            s << "}\n";
+            s << display_set(ids) << "\n";
             std::cerr << s.str();
             std::cerr << result << " (result)\n";
           }
@@ -455,34 +466,32 @@ public:
       } // end if(corners.find(p) != corners.end()) and !aabb_tree.empty()
     } // end if(dim == 0)
     else if(dim != 1) {
-      // ----------------------------------------------------------
+      // ==========================================================
       // if dim is 2 or 3 (in the 2D complex, or inside the domain)
-      // ----------------------------------------------------------
+      // ==========================================================
 #ifdef CGAL_MESH_3_PROTECTION_HIGH_VERBOSITY
       std::cerr << result << "\n";
 #endif // CGAL_MESH_3_PROTECTION_HIGH_VERBOSITY
       return result;
     }
     else {
-      // ------------------------------------
+      // ====================================
       // if dim is 1 (for 1D featured curves)
-      // ------------------------------------
-      const typename MeshDomain::Curve_index& curve_id =
-        d_ptr->domain.curve_index(id);
+      // ====================================
+      const auto& curve_id = d_ptr->domain.curve_index(id);
       const Patches_ids& ids = d_ptr->curves_incident_patches[curve_id];
       CGAL_assertion(! ids.empty());
+
+      // -------------------------------------------------------
+      // compute distance to closest non incident surface patch
+      // -------------------------------------------------------
 
       if(!d_ptr->aabb_tree.empty()) {
         //Compute distance to surface patches
         const auto closest_point_and_primitive = closest_point_on_surfaces(p, ids);
         if(closest_point_and_primitive == std::nullopt) {
 #ifdef CGAL_MESH_3_PROTECTION_HIGH_VERBOSITY
-          std::cerr << result << " (projection not found) ids:";
-          for(Patch_index i : ids) {
-            std::cerr << " " << CGAL::IO::oformat(i);
-          }
-          std::cerr << "\n";
-
+          std::cerr << result << " (projection not found) ids: " << display_set(ids) << "\n";
 #endif // CGAL_MESH_3_PROTECTION_HIGH_VERBOSITY
           return result;
         }
@@ -505,11 +514,7 @@ public:
             << "Closest point: " << closest_pt << "\n"
             << "Closest face id: "
             << CGAL::IO::oformat(get(d_ptr->facet_patch_id_map, closest_prim_id)) << "\n"
-            << "Ids are { ";
-          for(Patch_index i : ids) {
-            s << CGAL::IO::oformat(i) << " ";
-          }
-          s << "}\n";
+            << "Ids are " << display_set(ids) << "\n";
           return s.str();
         };
 #ifdef CGAL_MESH_3_PROTECTION_HIGH_VERBOSITY
@@ -546,6 +551,7 @@ public:
       auto [closest_pt, closest_prim_id]
         = d_ptr->domain.curves_aabb_tree().closest_point_and_primitive(p);
 
+      // `closest_prim_id` is a pair,      // and its `.first` is an iterator in a map (curve_id -> polyline)
       Curve_index closest_curve_id = closest_prim_id.first->first;
       if(curve_id != closest_curve_id)
       {
@@ -765,21 +771,18 @@ public:
           s << boost::format("\nSizing field is %1% at point (%2%)"
                              " on curve #%3% !\n"
                              "Closest CURVE id: %4%\n"
-                             "Ids are { ")
+                             "Ids are ")
             % result % p % curve_id
             % (opt_closest_primitive ? opt_closest_primitive->id().first->first : -1);
-          for(int i : ids) {
-            s << i << " ";
-          }
-          s << "}\n";
+          s << display_set(ids) << "\n";
           std::cerr << s.str();
           std::cerr << result << " (result)\n";
 #endif // CGAL_MESH_3_PROTECTION_HIGH_VERBOSITY
         }
       }
-      // --------------------------------
+      // ================================
       // end of "dim is 1"
-      // --------------------------------
+      // ================================
     }
 #ifdef CGAL_MESH_3_PROTECTION_HIGH_VERBOSITY
     std::cerr << result << std::endl;
