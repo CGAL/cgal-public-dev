@@ -262,24 +262,31 @@ void test_merge_duplicate_polygons(const bool /*verbose*/ = false)
                                                       params::default_values());
   assert(res == 3 && polygons_copy.size() == 3);
 
-  // Remove all duplicates
+  // Remove all duplicates (Deprecated)
   polygons_copy = polygons;
   res = PMP::merge_duplicate_polygons_in_polygon_soup(points, polygons_copy,
                                                       params::erase_all_duplicates(true)
                                                              .require_same_orientation(false));
   assert(res == 5 && polygons_copy.size() == 1);
 
+  // Remove all duplicates
+  polygons_copy = polygons;
+  res = PMP::merge_duplicate_polygons_in_polygon_soup(points, polygons_copy,
+                                                      params::erase_policy(PMP::ERASE_ALL)
+                                                             .require_same_orientation(false));
+  assert(res == 5 && polygons_copy.size() == 1);
+
   // Remove all duplicates but different orientations are different polygons
   polygons_copy = polygons;
   res = PMP::merge_duplicate_polygons_in_polygon_soup(points, polygons_copy,
-                                                      params::erase_all_duplicates(true)
+                                                      params::erase_policy(PMP::ERASE_ALL)
                                                              .require_same_orientation(true));
   assert(res == 2 && polygons_copy.size() == 4);
 
   // Remove even duplicates
   polygons_copy = polygons;
   res = PMP::merge_duplicate_polygons_in_polygon_soup(points, polygons_copy,
-                                                      params::erase_even_duplicates(true)
+                                                      params::erase_policy(PMP::KEEP_ONE_IF_ODD)
                                                              .require_same_orientation(false));
   assert(res == 4 && polygons_copy.size() == 2);
 }
