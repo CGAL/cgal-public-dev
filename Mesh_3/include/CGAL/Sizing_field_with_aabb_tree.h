@@ -432,9 +432,7 @@ public:
 
         if(closest_point_and_primitive != std::nullopt) {
           result =
-            (std::min)(FT(0.9 / sqrt(CGAL::Mesh_3::internal::weight_modifier) *
-                       sqrt(squared_distance(p,
-                                                   closest_point_and_primitive->first))),
+            (std::min)(sqrt(squared_distance(p, closest_point_and_primitive->first)),
                        result);
 #ifdef CGAL_MESH_3_PROTECTION_HIGH_VERBOSITY
           {
@@ -500,8 +498,7 @@ public:
                                      closest_point_and_primitive->second)) == 0);
 
         result =
-          (std::min)(FT(0.9 / sqrt(CGAL::Mesh_3::internal::weight_modifier) *
-                     sqrt(squared_distance(p, closest_point_and_primitive->first))),
+          (std::min)(sqrt(squared_distance(p, closest_point_and_primitive->first)),
                      result);
 
         [[maybe_unused]]auto display_msg = [&] {
@@ -755,9 +752,7 @@ public:
                   << "  distance = " << sqrt(sqd_intersection) << std::endl;
 #endif // CGAL_MESH_3_PROTECTION_HIGH_VERBOSITY
         FT new_result =
-          (std::min)(FT(0.45 / CGAL::sqrt(CGAL::Mesh_3::internal::weight_modifier) *
-                     sqrt(sqd_intersection)),
-                     d_ptr->d_);
+          (std::min)(FT(sqrt(sqd_intersection)) / 2, d_ptr->d_);
 
 #ifdef CGAL_MESH_3_PROTECTION_HIGH_VERBOSITY
         std::cerr << "result     = " << result << "\n";
