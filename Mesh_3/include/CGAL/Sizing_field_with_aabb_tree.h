@@ -530,16 +530,9 @@ public:
 
       } // end if(!aabb_tree.empty())
 
-      //Compute distance to the curves, and exclude the one on which p lies
-      CGAL::Mesh_3::Filtered_projection_traits<typename Input_curves_AABB_tree_::AABB_traits,
-                                               Get_curve_index >
-        curves_projection_traits(curve_id,
-                                 d_ptr->domain.curves_aabb_tree().traits(),
-                                 d_ptr->get_curve_index);
-
-      d_ptr->domain.curves_aabb_tree().traversal(p, curves_projection_traits);
-
-      //Compute distance to the curve on which p lies
+      // ----------------------------------------------
+      // Retrieve the segment of curve on which p lies
+      // ----------------------------------------------
       typedef typename GT::Segment_3                        Segment_3;
       typedef typename GT::Plane_3                          Plane_3;
       typedef typename GT::Sphere_3                         Sphere_3;
@@ -718,7 +711,19 @@ public:
         }
 //        else // inconsistency between do_intersect() and intersection() may happen
 //          CGAL_assertion(false);//prim was returned as an intersected primitive
-      }
+      } // end loop on curve_primitives
+
+      // -------------------------------------
+      // compute distance to the other curves
+      // -------------------------------------
+      //Compute distance to the curves, and exclude the one on which p lies
+      CGAL::Mesh_3::Filtered_projection_traits<typename Input_curves_AABB_tree_::AABB_traits,
+                                               Get_curve_index >
+        curves_projection_traits(curve_id,
+                                 d_ptr->domain.curves_aabb_tree().traits(),
+                                 d_ptr->get_curve_index);
+
+      d_ptr->domain.curves_aabb_tree().traversal(p, curves_projection_traits);
 
       //compare closest_projection and closest_intersection, and keep the closest
       if (curves_projection_traits.found())
