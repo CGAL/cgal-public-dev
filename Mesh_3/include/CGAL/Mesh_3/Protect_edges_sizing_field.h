@@ -73,13 +73,15 @@
 #include <optional>
 #include <ostream>
 #include <set>
-#include <sstream>
 #include <stack>
 #include <string>
 #include <tuple>
 #include <type_traits>
 #include <utility>
 #include <vector>
+
+// std::ostringstream is used in assertion messages and debug messages
+#include <sstream> // IWYU pragma: keep
 
 namespace CGAL {
 namespace Mesh_3 {
@@ -741,7 +743,7 @@ protected:
         auto pos = corners_on_curves_.find(Corner_and_curve_index(corner_index, curve_index));
         CGAL_assertion_msg(pos != corners_on_curves_.end(),
                            std::invoke([&] {
-                             std::stringstream ss;
+                             std::ostringstream ss;
                              ss.copyfmt(std::cerr);
                              ss << "position_on_curve(v=" << IO::oformat(v, With_point_tag{})
                                 << " (corner index: " << corner_index
@@ -1415,7 +1417,7 @@ insert_balls_on_edges()
         insert_balls(vp, vq, curve_index, CGAL::POSITIVE, Emptyset_iterator());
       }
       set_treated(curve_index);
-//      std::stringstream s;
+//      std::ostringstream s;
 //      s << "dump-mesh-curve-" << curve_index << ".binary.cgal";
 //      debug_dump_c3t3(s.str(), c3t3_);
     }
@@ -1483,7 +1485,7 @@ insert_balls(const Vertex_handle& vp,
 
 #if ! defined(CGAL_NO_PRECONDITIONS)
   if(sp < minimal_size_) {
-    std::stringstream msg;
+    std::ostringstream msg;
     msg.precision(17);
     msg << "Error: the mesh sizing field is smaller than minimal size ";
     msg << " at point (" << cp(vp_wp) << ")!";
