@@ -303,14 +303,6 @@ public:
     }
   }
 
-  auto squared_distance(const Point_3& p,
-                        const Point_3& q) const -> FT
-  {
-    typename Kernel_::Compute_squared_distance_3 sq_dist =
-      Kernel_().compute_squared_distance_3_object();
-    return sq_dist(p, q);
-  }
-
   std::optional<Point_and_primitive_id>
   closest_point_on_surfaces(const Point_3& p,
                             const Patches_ids& patch_ids_to_ignore) const
@@ -323,7 +315,7 @@ public:
       if(d_ptr->kd_trees_ptrs[i]) {
         const Kd_tree& kd_tree = *d_ptr->kd_trees_ptrs[i];
         const Point_and_primitive_id closest_point = kd_tree.closest_point(p);
-        if(!result || CGAL::compare_distance(p, closest_point.first, result->first) == CGAL::SMALLER)
+        if(!result || compare_distance(p, closest_point.first, result->first) == CGAL::SMALLER)
         {
           result = closest_point;
         }
@@ -393,13 +385,12 @@ public:
         nearest = d_ptr->dt.point(vs[0]);
 //         std::cerr << "sq_dist = " << squared_distance(p, nearest)
 //                   << std::endl;
-        typename Kernel_::Compare_distance_3 compare_dist;
         for (typename std::vector<typename Dt::Vertex_handle>::const_iterator
                it = vs.begin(); it != vs.end(); ++it)
         {
 //           std::cerr << "sq_dist = " << squared_distance(p, dt.point(*it))
 //                   << std::endl;
-          if(compare_dist(p, d_ptr->dt.point(*it), nearest) == CGAL::SMALLER) {
+          if(compare_distance(p, d_ptr->dt.point(*it), nearest) == CGAL::SMALLER) {
 //             std::cerr << "  nearest!\n";
             nearest = d_ptr->dt.point(*it);
           }
@@ -828,6 +819,8 @@ private:
     Patch_index min_patch_id{};
   };
   std::shared_ptr<Private_data> d_ptr;
+  CGAL_NO_UNIQUE_ADDRESS typename Kernel_::Compute_squared_distance_3 squared_distance{};
+  CGAL_NO_UNIQUE_ADDRESS typename Kernel_::Compare_distance_3 compare_distance{};
 };
 
 }//end namespace CGAL
