@@ -31,12 +31,12 @@ if(CGAL_Qt6_FOUND AND Qt6_FOUND)
   if(OpenGL_FOUND)
     target_link_libraries(Alpha_wrap_2 PRIVATE OpenGL::GL)
   endif()
+  #workaround warnings on macOs
+  target_compile_definitions(Alpha_wrap_2 PRIVATE GL_SILENCE_DEPRECATION)
 
   include(${CGAL_MODULES_DIR}/CGAL_add_test.cmake)
   cgal_add_compilation_test(Alpha_wrap_2)
 
-  include(${CGAL_MODULES_DIR}/CGAL_add_test.cmake)
-  cgal_add_compilation_test(Alpha_wrap_2)
 else()
   message("NOTICE: This demo requires CGAL and Qt6, and will not be compiled.")
 endif()
