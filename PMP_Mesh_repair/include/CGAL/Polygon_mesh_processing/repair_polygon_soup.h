@@ -923,8 +923,8 @@ DuplicateOutputIterator collect_duplicate_polygons(const PointRange& points,
 ///                           `CGAL::Polygon_mesh_processing::ERASE_ALL` remove all duplicates. <BR>
 ///                           `CGAL::Polygon_mesh_processing::KEEP_ONE` keep one arbitrarily chosen polygon. <BR>
 ///                           `CGAL::Polygon_mesh_processing::KEEP_ONE_IF_ODD` keep one polygon if their number is odd, and remove all of them otherwise.}
-///     \cgalParamType{CGAL::Polygon_mesh_processing::Erase_policy}
-///     \cgalParamDefault{CGAL::Polygon_mesh_processing::KEEP_ONE}
+///     \cgalParamType{`CGAL::Polygon_mesh_processing::Erase_policy`}
+///     \cgalParamDefault{`CGAL::Polygon_mesh_processing::KEEP_ONE`}
 ///   \cgalParamNEnd
 ///
 ///   \cgalParamNBegin{require_same_orientation}
@@ -1169,8 +1169,8 @@ struct Polygon_soup_fixer<PointRange, PolygonRange, std::array<PID, N> >
 ///                           `CGAL::Polygon_mesh_processing::ERASE_ALL` remove all duplicates. <BR>
 ///                           `CGAL::Polygon_mesh_processing::KEEP_ONE` keep one arbitrarily chosen polygon. <BR>
 ///                           `CGAL::Polygon_mesh_processing::KEEP_ONE_IF_ODD` keep one polygon if their number is odd, and remove all of them otherwise.}
-///     \cgalParamType{CGAL::Polygon_mesh_processing::Erase_policy}
-///     \cgalParamDefault{CGAL::Polygon_mesh_processing::KEEP_ONE}
+///     \cgalParamType{`CGAL::Polygon_mesh_processing::Erase_policy`}
+///     \cgalParamDefault{`CGAL::Polygon_mesh_processing::KEEP_ONE`}
 ///   \cgalParamNEnd
 ///
 ///   \cgalParamNBegin{require_same_orientation}
