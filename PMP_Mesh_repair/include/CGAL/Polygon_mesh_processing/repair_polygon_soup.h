@@ -915,14 +915,14 @@ DuplicateOutputIterator collect_duplicate_polygons(const PointRange& points,
 ///                           or if one (arbitrarily chosen) face should be kept.}
 ///     \cgalParamType{Boolean}
 ///     \cgalParamDefault{`false`}
-///     \cgalParamWarning{Deprecated! Use erase_policy instead. This parameter is ignored if an erase_policy is provided.}
+///     \warning Deprecated! Use `erase_policy` instead. This parameter is ignored if an `erase_policy` is provided.
 ///   \cgalParamNEnd
 ///
 ///   \cgalParamNBegin{erase_policy}
-///     \cgalParamDescription{specifies the policy applied when multiple polygons are duplicates.
-///                           `CGAL::Polygon_mesh_processing::ERASE_ALL`removes all duplicates.
-///                           `CGAL::Polygon_mesh_processing::KEEP_ONE` keep one arbitrarily chosen polygon.
-///                           `CGAL::Polygon_mesh_processing::KEEP_ONE_IF_ODD` keeps one polygon if their number is odd, and removes all of them otherwise.}
+///     \cgalParamDescription{specifies the policy applied when multiple polygons are duplicates. <BR>
+///                           `CGAL::Polygon_mesh_processing::ERASE_ALL` remove all duplicates. <BR>
+///                           `CGAL::Polygon_mesh_processing::KEEP_ONE` keep one arbitrarily chosen polygon. <BR>
+///                           `CGAL::Polygon_mesh_processing::KEEP_ONE_IF_ODD` keep one polygon if their number is odd, and remove all of them otherwise.}
 ///     \cgalParamType{CGAL::Polygon_mesh_processing::Erase_policy}
 ///     \cgalParamDefault{CGAL::Polygon_mesh_processing::KEEP_ONE}
 ///   \cgalParamNEnd
@@ -1161,14 +1161,14 @@ struct Polygon_soup_fixer<PointRange, PolygonRange, std::array<PID, N> >
 ///                           or if one (arbitrarily chosen) face should be kept.}
 ///     \cgalParamType{Boolean}
 ///     \cgalParamDefault{`false`}
-///     \cgalParamWarning{Deprecated! Use erase_policy instead. This parameter is ignored if an erase_policy is provided.}
+///     \warning Deprecated! Use `erase_policy` instead. This parameter is ignored if an `erase_policy` is provided.
 ///   \cgalParamNEnd
 ///
 ///   \cgalParamNBegin{erase_policy}
-///     \cgalParamDescription{specifies the policy applied when multiple polygons are duplicates.
-///                           `CGAL::Polygon_mesh_processing::ERASE_ALL`removes all duplicates.
-///                           `CGAL::Polygon_mesh_processing::KEEP_ONE` keep one arbitrarily chosen polygon.
-///                           `CGAL::Polygon_mesh_processing::KEEP_ONE_IF_ODD` keeps one polygon if their number is odd, and removes all of them otherwise.}
+///     \cgalParamDescription{specifies the policy applied when multiple polygons are duplicates. <BR>
+///                           `CGAL::Polygon_mesh_processing::ERASE_ALL` remove all duplicates. <BR>
+///                           `CGAL::Polygon_mesh_processing::KEEP_ONE` keep one arbitrarily chosen polygon. <BR>
+///                           `CGAL::Polygon_mesh_processing::KEEP_ONE_IF_ODD` keep one polygon if their number is odd, and remove all of them otherwise.}
 ///     \cgalParamType{CGAL::Polygon_mesh_processing::Erase_policy}
 ///     \cgalParamDefault{CGAL::Polygon_mesh_processing::KEEP_ONE}
 ///   \cgalParamNEnd

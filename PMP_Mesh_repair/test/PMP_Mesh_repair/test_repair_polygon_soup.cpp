@@ -262,7 +262,7 @@ void test_merge_duplicate_polygons(const bool /*verbose*/ = false)
                                                       params::default_values());
   assert(res == 3 && polygons_copy.size() == 3);
 
-  // Remove all duplicates (Deprecated)
+  // Remove all duplicates (Deprecated parameter)
   polygons_copy = polygons;
   res = PMP::merge_duplicate_polygons_in_polygon_soup(points, polygons_copy,
                                                       params::erase_all_duplicates(true)
