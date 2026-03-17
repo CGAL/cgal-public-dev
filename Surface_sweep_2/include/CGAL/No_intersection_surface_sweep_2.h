@@ -161,7 +161,7 @@ public:
 
   using Attribute = typename Event::Attribute;
 
-  using Compare_curves = class Curve_comparer<Gt2, Event, Subcurve>;
+  using Compare_curves = Curve_comparer<Gt2, Event, Subcurve>;
   using Status_line = Multiset<Subcurve*, Compare_curves, Allocator>;
   using Status_line_iterator = typename Status_line::iterator;
 
