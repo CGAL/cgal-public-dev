@@ -158,8 +158,7 @@ protected:
    */
   template <typename CurveInputIterator>
   bool _init_do_intersect_curves(CurveInputIterator curves_begin, CurveInputIterator curves_end) {
-    std::size_t index = 0;
-    for (auto cit = curves_begin; cit != curves_end; ++cit, ++index) {
+    for (auto cit = curves_begin; cit != curves_end; ++cit) {
       auto overlap = this->_init_curve(*cit);
       if (overlap) return true;
     }
