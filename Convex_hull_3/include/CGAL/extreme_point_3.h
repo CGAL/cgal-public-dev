@@ -202,7 +202,7 @@ extreme_vertex_3(const Graph& g, const Direction &dir, const NamedParameters &np
   if(vertices(g).size()<20)
     return extreme_point_3(vertices(g), dir, parameters::point_map(point_map));
 
-  //Walks on the mesh to find a local maximun
+  // Walks on the mesh to find a local maximum
   vertex_descriptor argmax = *vertices(g).begin();
   Vector_3 vec_max = vector_3(ORIGIN, converter(get(point_map,argmax)));
   bool is_local_max;

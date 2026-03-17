@@ -140,7 +140,7 @@ private:
 
   void Tet_stretched(int N)
   {
-    std::cout << "Tetrahedrons streched" << std::endl;
+    std::cout << "Tetrahedrons stretched" << std::endl;
     std::vector<PR> a;
     std::vector<PR> b;
     for(int i=0; i<N; ++i)

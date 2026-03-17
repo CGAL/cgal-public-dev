@@ -310,9 +310,9 @@ private:
   }
 
   std::vector< PolygonMesh > hierarchy_sm;
-  // Given a vertex of level n, give the correspondant vertex of level n-1
+  // Given a vertex of level n, give the correspondent vertex of level n-1
   std::vector<V2VMap> next_in_hierarchy_maps;
-  // Given a vertex of level n, give the correspondant vertex of level 0
+  // Given a vertex of level n, give the correspondent vertex of level 0
   std::vector<V2VMap> to_base_maps;
 };
 
