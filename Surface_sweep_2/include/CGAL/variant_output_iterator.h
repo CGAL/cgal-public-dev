@@ -36,7 +36,6 @@
 #include <variant>
 #include <iterator>
 #include <utility>
-#include <memory>
 
 namespace CGAL {
 namespace detail {
@@ -59,7 +58,7 @@ public:
   /// Required by CGAL
   variant_output_iterator() = default;
 
-  explicit variant_output_iterator(Visitor visitor) : visitor_(std::make_shared<Visitor>(std::move(visitor))) {}
+  explicit variant_output_iterator(Visitor visitor) : visitor_(std::move(visitor)) {}
 
   // Now ALWAYS copyable & assignable
   variant_output_iterator(const variant_output_iterator&) = default;
@@ -69,13 +68,27 @@ public:
   variant_output_iterator& operator++()    { return *this; }
   variant_output_iterator& operator++(int) { return *this; }
 
-  variant_output_iterator& operator=(Variant const& v) {
-    std::visit(*visitor_, v);
+  // Manual dispatch is often 1-2% faster for 2-3 types
+  // because it avoids the function pointer overhead of std::visit.
+
+  // Efficient assignment for L-values
+  variant_output_iterator& operator=(const Variant& v) {
+    if (v.index() == 0) visitor_(std::get<0>(v));
+    else if (v.index() == 1) visitor_(std::get<1>(v));
+    else std::visit(visitor_, v); // Fallback for safety/more types
+    return *this;
+  }
+
+  // Efficient assignment for R-values (Moves)
+  variant_output_iterator& operator=(Variant&& v) {
+    if (v.index() == 0) visitor_(std::get<0>(std::move(v)));
+    else if (v.index() == 1) visitor_(std::get<1>(std::move(v)));
+    else std::visit(visitor_, std::move(v));
     return *this;
   }
 
 private:
-  std::shared_ptr<Visitor> visitor_;
+  Visitor visitor_;
 };
 
 template <typename Variant, typename... Fs>
