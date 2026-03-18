@@ -597,67 +597,74 @@ public:
         p_polyline_const_it = std::prev(p_polyline_const_it);
       }
 
+      // --------------------------------------------------
+      // compute the orthogonal distance to the same curve
+      // --------------------------------------------------
+
+      // warning: constructor of segment from two points
       const Segment_3 curr_segment(*closest_prim_id.second,
                                    *(closest_prim_id.second + 1));
-      const FT sqlen_curr_segment = CGAL::squared_distance(curr_segment.source(),
-                                                           curr_segment.target());
-      //todo : check segment is not degenerate
-      auto plane = GT().construct_plane_3_object();
-      auto base_vector = GT().construct_base_vector_3_object();
-      auto scaled = GT().construct_scaled_vector_3_object();
-      auto sqlen = GT().compute_squared_length_3_object();
-      auto triangle = GT().construct_triangle_3_object();
-      auto translated = GT().construct_translated_point_3_object();
-      auto opp = GT().construct_opposite_vector_3_object();
-
       const Vector_3& curr_normal = curr_segment.to_vector();
+
+      auto plane = GT().construct_plane_3_object();
       const Plane_3 curr_ortho_plane = plane(p, curr_normal);
-      Vector_3 base1 = base_vector(curr_ortho_plane, 1);
-      Vector_3 base2 = base_vector(curr_ortho_plane, 2);
-      base1 = scaled(base1, 2.* result / CGAL::approximate_sqrt(sqlen(base1)));
-      base2 = scaled(base2, 2.* result / CGAL::approximate_sqrt(sqlen(base2)));
-
-      const Point_3 pright = translated(p, base2);
-      const Point_3 pleft = translated(p, opp(base2));
-      const Point_3 ptop = translated(p, base1);
-      const Point_3 pbottom = translated(p, opp(base1));
-      const auto tr1 = triangle(pleft, ptop, pright);
-      const auto tr2 = triangle(pleft, pright, pbottom);
-
-      if(tr1.is_degenerate() || tr2.is_degenerate())
-      {
-        // TODO: maybe display a message?
-        return result;
-      }
-
+      const FT sqlen_curr_segment = squared_distance(curr_segment.source(),
+                                                     curr_segment.target());
       // find intersected primitives
-      std::vector<Input_curves_AABB_tree_primitive_> prims;
-      d_ptr->domain.curves_aabb_tree().
-          all_intersected_primitives(tr1, std::back_inserter(prims));
-      d_ptr->domain.curves_aabb_tree().
-          all_intersected_primitives(tr2, std::back_inserter(prims));
+      std::vector<Input_curves_AABB_tree_primitive_> curve_primitives;
+      {
+        //todo : check segment is not degenerate
+        auto base_vector = GT().construct_base_vector_3_object();
+        auto scaled = GT().construct_scaled_vector_3_object();
+        auto sq_length = GT().compute_squared_length_3_object();
+        auto triangle = GT().construct_triangle_3_object();
+        auto translated = GT().construct_translated_point_3_object();
+        auto opp = GT().construct_opposite_vector_3_object();
 
+        Vector_3 base1 = base_vector(curr_ortho_plane, 1);
+        Vector_3 base2 = base_vector(curr_ortho_plane, 2);
+        base1 = scaled(base1, 2.* result / CGAL::approximate_sqrt(sq_length(base1)));
+        base2 = scaled(base2, 2.* result / CGAL::approximate_sqrt(sq_length(base2)));
 
+        const Point_3 pright = translated(p, base2);
+        const Point_3 pleft = translated(p, opp(base2));
+        const Point_3 ptop = translated(p, base1);
+        const Point_3 pbottom = translated(p, opp(base1));
+        const auto tr1 = triangle(pleft, ptop, pright);
+        const auto tr2 = triangle(pleft, pright, pbottom);
+
+        if(tr1.is_degenerate() || tr2.is_degenerate())
+        {
+          // TODO: maybe display a message?
+          return result;
+        }
+
+        d_ptr->domain.curves_aabb_tree().
+            all_intersected_primitives(tr1, std::back_inserter(curve_primitives));
+        d_ptr->domain.curves_aabb_tree().
+            all_intersected_primitives(tr2, std::back_inserter(curve_primitives));
 #ifdef CGAL_MESH_3_PROTECTION_HIGH_VERBOSITY
-      std::cerr << std::endl;
-      std::cerr << "p = " << p << std::endl;
-      std::cerr << "curr_ortho_plane = " << curr_ortho_plane << std::endl;
-      std::cerr << "tr1: " << tr1 << std::endl;
-      std::cerr << "tr2: " << tr2 << std::endl;
-      std::cerr << "PRIMITIVES FOUND : " << prims.size() << std::endl;
-#endif
+        std::cerr << std::endl;
+        std::cerr << "p = " << p << std::endl;
+        std::cerr << "curr_ortho_plane = " << curr_ortho_plane << std::endl;
+        std::cerr << "tr1: " << tr1 << std::endl;
+        std::cerr << "tr2: " << tr2 << std::endl;
+        std::cerr << "PRIMITIVES FOUND : " << curve_primitives.size() << std::endl;
+  #endif
+      }
 
       Point_3 closest_intersection;
       std::optional<Input_curves_AABB_tree_primitive_> opt_closest_primitive;
       FT sqd_intersection = -1;
-      for(Input_curves_AABB_tree_primitive_ prim : prims)
+      for(Input_curves_AABB_tree_primitive_ prim : curve_primitives)
       {
+        auto prim_curve_id = prim.id().first->first;
+
+        if (curve_id != prim_curve_id && closest_curve_id != prim_curve_id)
+          continue;//don't deal with the same curves as what is done above
+
         if (prim.id() == closest_prim_id)//curr_prim.id())
           continue;//closest_prim_id is the closest primitive
-
-        if (curve_id != prim.id().first->first
-         || closest_curve_id != prim.id().first->first)
-          continue;//don't deal with the same curves as what is done above
 
         const auto int_res = CGAL::intersection(prim.datum(), curr_ortho_plane);
         if (int_res)
@@ -727,6 +734,9 @@ public:
 
       d_ptr->domain.curves_aabb_tree().traversal(p, curves_projection_traits);
 
+      // ----------------------------------------
+      // compare distances and conclude (for 1d)
+      // ----------------------------------------
       //compare closest_projection and closest_intersection, and keep the closest
       if (curves_projection_traits.found())
       {
