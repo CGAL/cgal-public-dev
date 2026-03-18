@@ -915,7 +915,7 @@ DuplicateOutputIterator collect_duplicate_polygons(const PointRange& points,
 ///                           or if one (arbitrarily chosen) face should be kept.}
 ///     \cgalParamType{Boolean}
 ///     \cgalParamDefault{`false`}
-///     \warning Deprecated! Use `erase_policy` instead. This parameter is ignored if an `erase_policy` is provided.
+///     \deprecated Use `erase_policy` instead. This parameter is ignored if an `erase_policy` is provided.
 ///   \cgalParamNEnd
 ///
 ///   \cgalParamNBegin{erase_policy}
@@ -951,11 +951,13 @@ std::size_t merge_duplicate_polygons_in_polygon_soup(const PointRange& points,
   typedef typename CGAL::internal::Polygon_types<PointRange, PolygonRange>::P_ID                         P_ID;
 
   Erase_policy erase_policy = choose_parameter(get_parameter(np, internal_np::erase_policy), KEEP_ONE);
+#ifndef CGAL_NO_DEPRECATED_CODE
   if constexpr(parameters::is_default_parameter<NamedParameters, internal_np::erase_policy_t>::value)
     if(choose_parameter(get_parameter(np, internal_np::erase_all_duplicates), false)){
-      CGAL_warning_msg(false, "The named parameter 'erase_all_duplicates' is deprecated. Use 'erase_policy' instead.");
+      // CGAL_warning_msg(false, "The named parameter 'erase_all_duplicates' is deprecated. Use 'erase_policy' instead.");
       erase_policy = ERASE_ALL;
     }
+#endif // CGAL_NO_DEPRECATED_CODE
 
   const bool same_orientation = choose_parameter(get_parameter(np, internal_np::require_same_orientation), false);
 
@@ -1161,7 +1163,7 @@ struct Polygon_soup_fixer<PointRange, PolygonRange, std::array<PID, N> >
 ///                           or if one (arbitrarily chosen) face should be kept.}
 ///     \cgalParamType{Boolean}
 ///     \cgalParamDefault{`false`}
-///     \warning Deprecated! Use `erase_policy` instead. This parameter is ignored if an `erase_policy` is provided.
+///     \deprecated Use `erase_policy` instead. This parameter is ignored if an `erase_policy` is provided.
 ///   \cgalParamNEnd
 ///
 ///   \cgalParamNBegin{erase_policy}
