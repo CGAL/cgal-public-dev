@@ -264,7 +264,7 @@ public:
 
     ::glEnable(GL_BLEND);
     ::glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-    ::glColor4f(0.25,0.25,0.25,0.8);
+    ::glColor4d(0.25,0.25,0.25,0.8);
     ::glBegin(GL_TRIANGLES);
     for(const Face_handle& fh2 : tr.finite_face_handles()) {
       if(fh2->is_outside())
@@ -458,7 +458,7 @@ public:
 
     ::glEnable(GL_BLEND);
     ::glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-    ::glColor4f(0.25,0.25,0.25,0.25);
+    ::glColor4d(0.25,0.25,0.25,0.25);
     ::glLineWidth(0.5f);
 
     std::vector<Gate> gates;
@@ -502,7 +502,7 @@ public:
       ::glLineWidth(1.5f);
       gl_draw_first_empty_circle_on_the_voronoi_edge(alpha_or_max_empty_circle_sq_radius,
                                                      eh2, tr, true);
-      ::glColor4f(0.25,0.25,0.25,0.25);
+      ::glColor4d(0.25,0.25,0.25,0.25);
       ::glLineWidth(0.5f);
     }
   }
@@ -517,7 +517,7 @@ public:
     ::glLineWidth(1.9f);
     ::glEnable(GL_BLEND);
     ::glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-    ::glColor4f(0.25,0.25,0.25,0.8);
+    ::glColor4d(0.25,0.25,0.25,0.8);
     const Gate& gate = queue.top();
     const Edge& eh2 = gate.edge();
     if(gate.has_steiner_point()) {
