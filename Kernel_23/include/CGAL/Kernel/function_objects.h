@@ -188,25 +188,21 @@ namespace CommonKernelFunctors {
   };
 
   template <typename K>
-  class Compare_scalar_product_3
+  class Compare_foo_bar_3
   {
     typedef typename K::Comparison_result  Comparison_result;
-    typedef typename K::Vector_3           Vector_3;
-    typedef typename K::FT                 FT;
+    typedef typename K::Point_3           Point_3;
+    typedef typename K::Direction_3           Direction_3;
   public:
     Comparison_result
-    operator()(const Vector_3& u, const Vector_3& v, const FT& sp) const
+    operator()(const Direction_3& dir,
+               const Point_3& p,
+               const Point_3& q) const
     {
       typename K::Compute_scalar_product_3 scalar_product = K().compute_scalar_product_3_object();
-      return CGAL::compare(scalar_product(u,v), sp);
-    }
-
-    Comparison_result
-    operator()(const Vector_3& u, const Vector_3& v,
-               const Vector_3& w, const Vector_3& x) const
-    {
-      typename K::Compute_scalar_product_3 scalar_product = K().compute_scalar_product_3_object();
-      return CGAL::compare(scalar_product(u,v), scalar_product(w,x));
+      typename K::Construct_vector_3 construct_vector = K().construct_vector_3_object();
+      return CGAL::compare(scalar_product(construct_vector(ORIGIN, p), construct_vector(dir)),
+                           scalar_product(construct_vector(ORIGIN, q), construct_vector(dir)));
     }
   };
 

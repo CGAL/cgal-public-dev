@@ -9017,10 +9017,10 @@ public:
 
   \cgalRefines{AdaptableTernaryFunction}
 
-  \sa `compare_scalar_product_grp`
+  \sa `CGAL::compare_foo_bar()`
 
 */
-class CompareScalarProduct_3 {
+class CompareFooBar_3 {
 public:
 
   /// \name Operations
@@ -9028,23 +9028,13 @@ public:
   /// @{
 
   /*!
-  returns `CGAL::LARGER` iff the scalar product of `u` and `v` is larger than the scalar product `sp`,
-  `CGAL::SMALLER`, iff it is smaller,
-  and `CGAL::EQUAL` iff both are equal.
-*/
-  Comparison_result operator()(const Kernel::Vector_3 &u,
-                               const Kernel::Vector_3 &v,
-                               const Kernel::FT &sp);
-
-  /*!
-    returns `CGAL::LARGER` iff the scalar product of `u` and `v` is larger than the scalar product of `w` and `x`,
-    `CGAL::SMALLER`, iff it is smaller,
-    and `CGAL::EQUAL` iff both are equal.
+    returns `CGAL::LARGER` iff the scalar product of `p-ORIGIN` and `dir.vector()`
+    is larger than the scalar product of `q-dir` and `dir.vector()`,
+    `CGAL::SMALLER`, iff it is smaller, and `CGAL::EQUAL` iff both are equal.
   */
-  Comparison_result operator()(const Kernel::Vector_3 &u,
-                               const Kernel::Vector_3 &v,
-                               const Kernel::Vector_3 &w,
-                               const Kernel::Vector_3 &x);
+  Comparison_result operator()(const Kernel::Direction_3 &dir,
+                               const Kernel::Point_3 &p,
+                               const Kernel::Point_3 &q);
 
   /// @}
 

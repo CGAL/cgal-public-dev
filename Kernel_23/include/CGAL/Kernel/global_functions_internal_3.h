@@ -553,24 +553,12 @@ compare_lexicographically_xyz(const typename K::Point_3 &p,
 template < class K >
 inline
 typename K::Comparison_result
-compare_scalar_product(const typename K::Vector_3 &a,
-                       const typename K::Vector_3 &b,
-                       const typename K::FT &sp,
-                       const K &k)
+compare_foo_bar(const typename K::Direction_3 &dir,
+                const typename K::Point_3 &p,
+                const typename K::Point_3 &q,
+                const K &k)
 {
-  return k.compare_scalar_product_3_object()(a, b, sp);
-}
-
-template < class K >
-inline
-typename K::Comparison_result
-compare_scalar_product(const typename K::Vector_3 &a,
-                       const typename K::Vector_3 &b,
-                       const typename K::Vector_3 &c,
-                       const typename K::Vector_3 &d,
-                       const K &k)
-{
-  return k.compare_scalar_product_3_object()(a, b, c, d);
+  return k.compare_foo_bar_3_object()(dir, p, q);
 }
 
 
