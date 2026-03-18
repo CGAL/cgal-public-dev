@@ -551,8 +551,10 @@ public:
         // else //distance must be very small
         //  radius = 10 * distance(p, closest_pt)
 
+        auto point_it_in_polyline = closest_prim_id.second;
+
         FT sqr = (p == closest_pt) // p may coincide with closest_pt, on different feature curves
-            ? 0.0001 * squared_distance(*closest_prim_id.second, *(closest_prim_id.second + 1))
+            ? 0.0001 * squared_distance(*point_it_in_polyline, *(point_it_in_polyline + 1))
             : 100 * squared_distance(p, closest_pt);
 
         bool valid_closest_found = false;
