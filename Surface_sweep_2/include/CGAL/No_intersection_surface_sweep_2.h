@@ -438,7 +438,7 @@ protected:
   bool _init_indexed_curves(const EdgeRange& edges, const Accessor& accessor) {
     std::vector<Event_queue_iterator> events(accessor.nb_vertices());
 
-    bool overlap;
+    bool overlap = false;
     for (const auto& e : edges) {
       std::size_t max_end = accessor.max_end_index(e);
       std::size_t min_end = accessor.min_end_index(e);
