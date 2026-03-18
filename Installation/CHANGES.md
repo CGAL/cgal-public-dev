@@ -12,6 +12,13 @@ Release date: July 2026
     accepts two `x`-monotone curves and a boolean flag that indicates whether common endpoints should be considered or ignored.
     The operator determines whether the curves intersect, and it can be used with an inexact-construction kernel.
 
+### [2D Intersection of Curves](https://doc.cgal.org/6.2/Manual/packages.html#PkgSurfaceSweep2)
+
+- Deprecated `CGAL::do_curves_intersect()`, which assumed open curves. Replaced by
+    `CGAL::Surface_sweep_2::do_intersect()`. Notice (i) the introduction of the new namespace `Surface_sweep_2`,
+    and (ii) the addition of the `closed` parameter, which defaults to `true`. To match the behavior of the
+    deprecated function, set `closed` to false.
+
 ### [Generalized Barycentric Coordinates 3](https://doc.cgal.org/6.2/Manual/packages.html#PkgBarycentricCoordinates3) (new package)
 -   This package provides functions to compute various types of generalized barycentric coordinates
     (Wachspress, mean value, discrete harmonic and tetrahedron coordinates) for points located inside closed convex
@@ -54,18 +61,10 @@ Release date: July 2026
     parameter any longer. (This third optional parameter was introduced a few years ago, and now abandoned only for
     `do_intersect()`.)
 
-<<<<<<< HEAD
-### [2D Intersection of Curves](https://doc.cgal.org/6.2/Manual/packages.html#PkgSurfaceSweep2)
-
-- Deprecated `CGAL::do_curves_intersect()`, which assumed open curves. Replaced by
-    `CGAL::Surface_sweep_2::do_intersect()`. Notice (i) the introduction of the new namespace `Surface_sweep_2`,
-    and (ii) the addition of the `closed` parameter, which defaults to `true`. To match the behavior of the
-    deprecated function, set `closed` to false.
-=======
 ### [2D Triangulations](https://doc.cgal.org/6.2/Manual/packages.html#PkgTriangulation2)
 
-- Add the function `insert_unique_constraints()` to the class `Constrained_Delaunay_triangulation_2` identical to the function `insert_constraints()` except that it removes duplicated constraints before inserting them in the triangulation.
->>>>>>> main
+- Add the function `insert_unique_constraints()` to the class `CGAL::Constrained_Delaunay_triangulation_2` identical to the function `insert_constraints()` except that it removes duplicated constraints before inserting them in the triangulation.
+
 
 ## [Release 6.1](https://github.com/CGAL/cgal/releases/tag/v6.1)
 
