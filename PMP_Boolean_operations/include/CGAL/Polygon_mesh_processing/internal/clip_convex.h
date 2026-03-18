@@ -121,7 +121,7 @@ find_crossing_edge(PolygonMesh& pm,
       }
     }
 
-    // Nothing on negative side
+    // Nothing on positive side
     if(no_positive_side){
       if constexpr(!parameters::is_default_parameter<NamedParameters, internal_np::face_to_face_map_t>::value){
         // Search a coplanar face
@@ -282,8 +282,6 @@ refine_convex_with_plane(PolygonMesh& pm,
   } while(target(h, pm)!=v_start || (boundaries.empty() && h!=h_start));
 
   CGAL_assertion(is_valid_polygon_mesh(pm));
-  CGAL_assertion(!boundaries.empty());
-
   return boundaries;
 }
 
@@ -469,6 +467,7 @@ clip_convex(PolygonMesh& pm,
 
   // graph typedefs
   using BGT = boost::graph_traits<PolygonMesh>;
+  using face_descriptor = typename BGT::face_descriptor;
   using halfedge_descriptor = typename BGT::halfedge_descriptor;
   using edge_descriptor = typename BGT::edge_descriptor;
   using vertex_descriptor = typename BGT::vertex_descriptor;
@@ -611,6 +610,20 @@ clip_convex(PolygonMesh& pm,
   if(he == boost::graph_traits<PolygonMesh>::null_halfedge())
     return parameters::choose_parameter(parameters::get_parameter(np, internal_np::starting_vertex_descriptor), *vertices(pm).begin());
   const auto &boundaries =refine_convex_with_plane(pm, plane, he, np);
+  if(boundaries.empty()){ // No edges in the plane after refine, it means there are only a vertex
+    Point_3 p = get(vpm, target(he, pm));
+    vertex_descriptor v0 = target(he, pm);
+    CGAL_assertion(oriented_side(plane, p) == ON_ORIENTED_BOUNDARY);
+    for(face_descriptor f: faces(pm))
+      remove_face(f, pm);
+    for(edge_descriptor e: edges(pm))
+      remove_edge(e, pm);
+    for(vertex_descriptor v: vertices(pm))
+      if(v!=v0)
+        remove_vertex(v, pm);
+    set_halfedge(v0, BGT::null_halfedge(), pm);
+    return v0;
+  }
   return remove_bounded_region_and_fill(pm, boundaries, source(he, pm), np, plane_fd);
 }
 
