@@ -136,6 +136,9 @@ Release date: July 2026
 -   Added the functions `extreme_point_3()` to the package `Convex_hull_3`, which return the farthest point of a convex hull in a given direction.
 -   Added the class `Convex_hull_hierarchy` to the package `Convex_hull_3`, which represents a convex hull and is optimized for use with the above functions.
 
+### Geometric Object Generators
+- Add the function `point_and_support()` to several generators to get the last point generated point and the support element containing it. Affected generators are `Random_points_in_triangles_2`, `Random_points_in_triangles_3`, `Random_points_in_triangle_mesh_3`, `Random_points_in_tetrahedral_mesh_boundary_3`, `Random_points_in_tetrahedral_mesh_3`, `Random_points_in_triangle_soup_3`, and `Random_points_on_graph_edges_3`.
+
 ## [Release 6.1](https://github.com/CGAL/cgal/releases/tag/v6.1)
 
 Release date: Sept 2025
