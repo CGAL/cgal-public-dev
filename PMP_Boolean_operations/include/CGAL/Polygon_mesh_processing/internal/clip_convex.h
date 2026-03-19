@@ -619,9 +619,8 @@ clip_convex(PolygonMesh& pm,
     return parameters::choose_parameter(parameters::get_parameter(np, internal_np::starting_vertex_descriptor), *vertices(pm).begin());
   const auto &boundaries =refine_convex_with_plane(pm, plane, he, np);
   if(boundaries.empty()){ // No edges in the plane after refine, it means there are only a vertex
-    Point_3 p = get(vpm, target(he, pm));
     vertex_descriptor v0 = target(he, pm);
-    CGAL_assertion(oriented_side(plane, p) == ON_ORIENTED_BOUNDARY);
+    CGAL_assertion(oriented_side(plane, get(vpm, v0)) == ON_ORIENTED_BOUNDARY);
     for(face_descriptor f: faces(pm))
       remove_face(f, pm);
     for(edge_descriptor e: edges(pm))
