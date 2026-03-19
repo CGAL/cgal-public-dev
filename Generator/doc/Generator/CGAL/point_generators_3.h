@@ -849,7 +849,7 @@ namespace CGAL {
 /*!
 
 The class `Random_points_in_triangle_soup_3` is an input iterator creating points uniformly distributed inside a soup of triangles.
-The triangle range must be valid and unchanged while the generator is used. Triangle are triple of indices referring to position of points
+The triangle range must be valid and unchanged while the generator is used. Triangles are triplets of indices referring to position of points
 in the input point range.
 
 \tparam PointRange a model of the concepts `RandomAccessContainer` with value type begin a point from a \cgal kernel
