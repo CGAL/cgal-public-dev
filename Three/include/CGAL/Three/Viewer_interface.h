@@ -32,6 +32,11 @@ class QOpenGLFramebufferObject;
 class TextRenderer;
 class TextListItem;
 
+#ifdef __GNUC__
+#  pragma GCC diagnostic push
+#  pragma GCC diagnostic ignored "-Wsfinae-incomplete"
+#endif
+
 //! \file Viewer_interface.h
 #include <CGAL/Three/Viewer_config.h> // for VIEWER_EXPORT
 namespace CGAL{
@@ -293,4 +298,8 @@ public:
 }; // end class Viewer_interface
 }
 }
+#ifdef __GNUC__
+#  pragma GCC diagnostic pop
+#endif
+
 #endif // VIEWER_INTERFACE_H
