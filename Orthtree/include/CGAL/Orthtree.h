@@ -796,7 +796,7 @@ public:
 
     `bool operator()(Traits::Sphere_d, Traits::Bbox_d)`
 
-    `Kernel::HasOnUnboundedSide_2` and `Kernel::HasOnUnboundedSide_3` are compatible concepts for dimenions 2 and 3.
+    `Kernel::HasOnUnboundedSide_2` and `Kernel::HasOnUnboundedSide_3` are compatible concepts for dimensions 2 and 3.
 
     \tparam OutputIterator a model of `OutputIterator` that accepts `Node_index` types
 
