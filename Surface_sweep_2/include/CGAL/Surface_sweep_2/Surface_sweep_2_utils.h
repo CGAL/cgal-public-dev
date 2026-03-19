@@ -50,8 +50,8 @@ void make_x_monotone(CurveInputIterator begin, CurveInputIterator end,
   using X_monotone_curve_2 = typename Traits::X_monotone_curve_2;
   using Variant = std::variant<Point_2, X_monotone_curve_2>;
   auto out =
-    CGAL::make_variant_output_iterator<Variant>([it_pt](const Point_2& pt) mutable { *it_pt++ = pt; },
-                                                [it_xcv](const X_monotone_curve_2& xcv) mutable { *it_xcv++ = xcv; });
+    CGAL::make_variant_output_iterator<Variant>(std::function([it_pt](const Point_2& pt) mutable { *it_pt++ = pt; }),
+                                                std::function([it_xcv](const X_monotone_curve_2& xcv) mutable { *it_xcv++ = xcv; }));
   auto mk_x_monotone = traits.make_x_monotone_2_object();
   for (auto it = begin; it != end; ++it) mk_x_monotone(*it, out);
 }
