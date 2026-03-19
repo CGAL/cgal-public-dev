@@ -56,17 +56,17 @@ std::string lstr(Location loc) {
     return "UNKNOWN";
 }
 
-Point p(long long x, long long y) {
+Point p(int x, int y) {
     return Point(CGAL::Exact_rational(x), CGAL::Exact_rational(y));
 }
 
-Point pq(long long xn, long long xd, long long yn, long long yd) {
+Point pq(int xn, int xd, int yn, int yd) {
     CGAL::Exact_rational x = CGAL::Exact_rational(xn) / CGAL::Exact_rational(xd);
     CGAL::Exact_rational y = CGAL::Exact_rational(yn) / CGAL::Exact_rational(yd);
     return Point(x, y);
 }
 
-Ring ring_from_ints(std::initializer_list<std::pair<long long, long long>> pts) {
+Ring ring_from_ints(std::initializer_list<std::pair<int, int>> pts) {
     Ring out;
     out.reserve(pts.size());
     for (const auto& pt : pts) {
@@ -79,10 +79,10 @@ bool on_segment(const Point& a, const Point& b, const Point& q) {
     if (CGAL::orientation(a, b, q) != CGAL::COLLINEAR) {
         return false;
     }
-    const CGAL::Exact_rational min_x = std::min(a.x(), b.x());
-    const CGAL::Exact_rational max_x = std::max(a.x(), b.x());
-    const CGAL::Exact_rational min_y = std::min(a.y(), b.y());
-    const CGAL::Exact_rational max_y = std::max(a.y(), b.y());
+    const CGAL::Exact_rational min_x = (std::min)(a.x(), b.x());
+    const CGAL::Exact_rational max_x = (std::max)(a.x(), b.x());
+    const CGAL::Exact_rational min_y = (std::min)(a.y(), b.y());
+    const CGAL::Exact_rational max_y = (std::max)(a.y(), b.y());
     return (min_x <= q.x() && q.x() <= max_x && min_y <= q.y() && q.y() <= max_y);
 }
 
