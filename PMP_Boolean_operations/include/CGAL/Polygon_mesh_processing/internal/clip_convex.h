@@ -57,12 +57,20 @@ find_crossing_edge(PolygonMesh& pm,
   GT traits = choose_parameter<GT>(get_parameter(np, internal_np::geom_traits));
 
   using FT = typename GT::FT;
+  using Plane_3 = typename GT::Plane_3;
+  using Point_3 = typename GT::Point_3;
 
   auto vpm = choose_parameter(get_parameter(np, internal_np::vertex_point),
                               get_property_map(vertex_point, pm));
 
   auto oriented_side = traits.oriented_side_3_object();
-  auto sq = traits.compute_squared_distance_3_object();
+  auto normal = traits.construct_orthogonal_vector_3_object();
+  auto vector = traits.construct_vector_3_object();
+  auto point_on = traits.construct_point_on_3_object();
+  auto dot = traits.compute_scalar_product_3_object();
+  auto sq = [&](const Plane_3& pl, const Point_3& p){
+    return dot(vector(point_on(pl), p), normal(pl));
+  };
 
   // ____________________ Find a crossing edge _____________________
 
