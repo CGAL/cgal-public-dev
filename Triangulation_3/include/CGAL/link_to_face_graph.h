@@ -134,6 +134,21 @@ link_to_face_graph(const Triangulation_3& t,
   return inf;
 }
 
+#ifndef DOXYGEN_RUNNING
+#ifndef CGAL_NO_DEPRECATED_CODE
+template<class Triangulation_3,
+         class TriangleMesh>
+typename boost::graph_traits<TriangleMesh>::vertex_descriptor
+link_to_face_graph(const Triangulation_3& t,
+                   typename Triangulation_3::Vertex_handle vh,
+                   TriangleMesh& tm,
+                   bool ignore_infinite_faces)
+{
+  link_to_face_graph(t, vh, tm, CGAL::parameters::ignore_infinite_faces(ignore_infinite_faces));
+}
+#endif
+#endif
+
 } //namespace CGAL
 
 #endif //CGAL_LINK_TO_FACE_GRAPH_H
