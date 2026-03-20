@@ -162,15 +162,6 @@ namespace CGAL {
     {
     public:
 
-        // Workaround for a bug in g++4.4 in ADL for function next:
-        // we provide the types needed for std::iterator_traits<Surface_mesh::halfedge_index>,
-        // although this descriptor is not an iterator.
-        typedef void iterator_category;
-        typedef void value_type;
-        typedef void difference_type;
-        typedef void pointer;
-        typedef void reference;
-
         SM_Halfedge_index() : SM_Index<SM_Halfedge_index>((std::numeric_limits<size_type>::max)()) {}
 
         explicit SM_Halfedge_index(size_type _idx) : SM_Index<SM_Halfedge_index>(_idx) {}
