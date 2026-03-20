@@ -448,11 +448,12 @@ remove_bounded_region_and_fill(PolygonMesh& pm,
     }
   }
 
-  // Case where the output is degenerated to a segment
+  // Case where the output is degenerated to a segment or a vertex
   if(vertices(pm).size() < 3){
-    if(faces(pm).size())
+    if(!faces(pm).empty())
       remove_face(*faces(pm).begin(), pm);
-    for(edge_descriptor e: edges(pm))
+    std::vector<edge_descriptor> edges_to_remove(edges(pm).begin(), edges(pm).end());
+    for(edge_descriptor e: edges_to_remove)
       remove_edge(e, pm);
     for(vertex_descriptor v: vertices(pm))
       set_halfedge(v, BGT::null_halfedge(), pm);
@@ -621,13 +622,19 @@ clip_convex(PolygonMesh& pm,
   if(boundaries.empty()){ // No edges in the plane after refine, it means there are only a vertex
     vertex_descriptor v0 = target(he, pm);
     CGAL_assertion(oriented_side(plane, get(vpm, v0)) == ON_ORIENTED_BOUNDARY);
-    for(face_descriptor f: faces(pm))
+    std::vector<face_descriptor> faces_to_remove(faces(pm).begin(), faces(pm).end());
+    for(face_descriptor f: faces_to_remove)
       remove_face(f, pm);
-    for(edge_descriptor e: edges(pm))
+    std::vector<edge_descriptor> edges_to_remove(edges(pm).begin(), edges(pm).end());
+    for(edge_descriptor e: edges_to_remove)
       remove_edge(e, pm);
+    std::vector<vertex_descriptor> vertices_to_remove;
+    vertices_to_remove.reserve(vertices(pm).size()-1);
     for(vertex_descriptor v: vertices(pm))
       if(v!=v0)
-        remove_vertex(v, pm);
+        vertices_to_remove.push_back(v);
+    for(vertex_descriptor v: vertices_to_remove)
+      remove_vertex(v, pm);
     set_halfedge(v0, BGT::null_halfedge(), pm);
     return v0;
   }
