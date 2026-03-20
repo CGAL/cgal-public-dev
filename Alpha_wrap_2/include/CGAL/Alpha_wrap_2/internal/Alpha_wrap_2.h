@@ -1114,11 +1114,14 @@ private:
 #endif
 
 #ifdef CGAL_AW2_COMPUTE_AND_STORE_STEINER_INFO_AT_GATE_CREATION
-    Point_2 steiner_point;
-    Steiner_status steiner_status = compute_steiner_point(new_gate, steiner_point);
-    new_gate.m_steiner_status = steiner_status;
-    if (steiner_status == Steiner_status::RULE_1 || steiner_status == Steiner_status::RULE_2)
-      new_gate.m_steiner_point = steiner_point;
+    if(status != Edge_status::HAS_INFINITE_NEIGHBOR)
+    {
+      Point_2 steiner_point;
+      Steiner_status steiner_status = compute_steiner_point(new_gate, steiner_point);
+      new_gate.m_steiner_status = steiner_status;
+      if (steiner_status == Steiner_status::RULE_1 || steiner_status == Steiner_status::RULE_2)
+        new_gate.m_steiner_point = steiner_point;
+    }
 #endif
 
 #ifdef CGAL_AW2_USE_SORTED_PRIORITY_QUEUE
