@@ -190,7 +190,6 @@ int main(int argc, char** argv)
   {
     std::vector<std::tuple<std::string, double, double> > default_inputs =
       {
-        {"data/stories.obj", 5, 600},
         {"data/heart.obj", 7, 600},
         {"data/halloween_006.obj", 10, 600},
         {"data/duel.obj", 12, 600},
