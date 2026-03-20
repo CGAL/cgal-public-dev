@@ -909,15 +909,6 @@ DuplicateOutputIterator collect_duplicate_polygons(const PointRange& points,
 ///     \cgalParamExtra{The geometric traits class must be compatible with the vertex point type.}
 ///   \cgalParamNEnd
 ///
-///   \cgalParamNBegin{erase_all_duplicates}
-///     \cgalParamDescription{Parameter to indicate, when multiple polygons are duplicates,
-///                           whether all the duplicate polygons should be removed
-///                           or if one (arbitrarily chosen) face should be kept.}
-///     \cgalParamType{Boolean}
-///     \cgalParamDefault{`false`}
-///     \deprecated Use `erase_policy` instead. This parameter is ignored if an `erase_policy` is provided.
-///   \cgalParamNEnd
-///
 ///   \cgalParamNBegin{erase_policy}
 ///     \cgalParamDescription{specifies the policy applied when multiple polygons are duplicates. <BR>
 ///                           `CGAL::Polygon_mesh_processing::ERASE_ALL` remove all duplicates. <BR>
@@ -1155,15 +1146,6 @@ struct Polygon_soup_fixer<PointRange, PolygonRange, std::array<PID, N> >
 ///                    are identical. For each functor `Foo`, a function `Foo foo_object()` must be provided.}
 ///     \cgalParamDefault{a \cgal Kernel deduced from the point type, using `CGAL::Kernel_traits`}
 ///     \cgalParamExtra{The geometric traits class must be compatible with the vertex point type.}
-///   \cgalParamNEnd
-///
-///   \cgalParamNBegin{erase_all_duplicates}
-///     \cgalParamDescription{Parameter to indicate, when multiple polygons are duplicates,
-///                           whether all the duplicate polygons should be removed
-///                           or if one (arbitrarily chosen) face should be kept.}
-///     \cgalParamType{Boolean}
-///     \cgalParamDefault{`false`}
-///     \deprecated Use `erase_policy` instead. This parameter is ignored if an `erase_policy` is provided.
 ///   \cgalParamNEnd
 ///
 ///   \cgalParamNBegin{erase_policy}
