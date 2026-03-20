@@ -910,9 +910,9 @@ DuplicateOutputIterator collect_duplicate_polygons(const PointRange& points,
 ///   \cgalParamNEnd
 ///
 ///   \cgalParamNBegin{erase_policy}
-///     \cgalParamDescription{specifies the policy applied when multiple polygons are duplicates. <BR>
-///                           `CGAL::Polygon_mesh_processing::ERASE_ALL` remove all duplicates. <BR>
-///                           `CGAL::Polygon_mesh_processing::KEEP_ONE` keep one arbitrarily chosen polygon. <BR>
+///     \cgalParamDescription{specifies the policy applied when multiple polygons are duplicates.
+///                           `CGAL::Polygon_mesh_processing::ERASE_ALL` remove all duplicates.
+///                           `CGAL::Polygon_mesh_processing::KEEP_ONE` keep one arbitrarily chosen polygon.
 ///                           `CGAL::Polygon_mesh_processing::KEEP_ONE_IF_ODD` keep one polygon if their number is odd, and remove all of them otherwise.}
 ///     \cgalParamType{`CGAL::Polygon_mesh_processing::Erase_policy`}
 ///     \cgalParamDefault{`CGAL::Polygon_mesh_processing::KEEP_ONE`}
