@@ -4,6 +4,16 @@
 
 Release date: July 2026
 
+### [2D Alpha Wrapping (new package)](https://doc.cgal.org/6.2/Manual/packages.html#PkgAlphaWrap2)
+- This component takes a polygon soup, a 2D segment soup, and/or a 2D point set as input,
+  and generates a valid (watertight, intersection-free and 1-manifold) multi-polygon that
+  strictly encloses the input. The algorithm proceeds by shrink-wrapping
+  and refining a 2D Delaunay triangulation starting from a loose bounding box of the input.
+  Two user-defined parameters, alpha and offset, offer control over the maximum size
+  of cavities where the shrink-wrapping process can enter, and the tightness
+  of the final polygon(s) to the input, respectively. Once combined, these parameters
+  provide a means to trade fidelity to the input for complexity of the output.
+
 ### [Generalized Barycentric Coordinates 3](https://doc.cgal.org/6.2/Manual/packages.html#PkgBarycentricCoordinates3) (new package)
 -   This package provides functions to compute various types of generalized barycentric coordinates
     (Wachspress, mean value, discrete harmonic and tetrahedron coordinates) for points located inside closed convex
@@ -54,7 +64,7 @@ Release date: July 2026
 
   - added function `intersected_nodes()` with an intersection functor and a convenience overload for a ball query.
 
-### [Shape Detection](https://doc.cgal.org/6.2/Manual/packages.html#PkgShapeDetection) 
+### [Shape Detection](https://doc.cgal.org/6.2/Manual/packages.html#PkgShapeDetection)
 
 - Added the region type [`CGAL::Shape_detection::Polygon_mesh::Plane_face_region`](https://doc.cgal.org/6.2/Shape_detection/class_c_g_a_l_1_1_shape__detection_1_1_polygon__mesh_1_1_plane__face__region.html) that extends the support plane of the seed face without refitting the plane to the region
 - Added the region type [`CGAL::Shape_detection::Polygon_mesh::Line_segment_region`](https://doc.cgal.org/6.2/Shape_detection/classCGAL_1_1Shape__detection_1_1Segment__set_1_1Line__segment__region.html) that extends the support line of the seed segment without refitting the line to the region
