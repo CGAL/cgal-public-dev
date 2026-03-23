@@ -105,13 +105,13 @@ extreme_point_3(const PointRange& r, const Direction &dir, const NamedParameters
     > ::type;
   GTC converter = choose_parameter<GTC>(get_parameter(np, internal_np::geom_traits_converter));
 
-  auto csp = gt.compare_foo_bar_3_object();
+  auto csp = gt.compare_projection_along_direction_3_object();
 
   typename PointRange::const_iterator argmax=r.begin();
   auto p_max = converter(get(point_map, *argmax));
   for(typename PointRange::const_iterator it=++r.begin(); it!=r.end(); ++it){
     auto p = converter(get(point_map, *it));
-    if(csp(dir, p_max, p)==SMALLER){
+    if(csp(p_max, p, dir)==SMALLER){
       p_max=p;
       argmax=it;
     }
@@ -192,7 +192,7 @@ extreme_vertex_3(const Graph& g, const Direction &dir, const NamedParameters &np
     > ::type;
   GTC converter = choose_parameter<GTC>(get_parameter(np, internal_np::geom_traits_converter));
 
-  auto csp = gt.compare_foo_bar_3_object();
+  auto csp = gt.compare_projection_along_direction_3_object();
 
   // If the number of vertices is small, simply test all vertices
   if(vertices(g).size()<20)
@@ -206,7 +206,7 @@ extreme_vertex_3(const Graph& g, const Direction &dir, const NamedParameters &np
     is_local_max=true;
     for(auto v: vertices_around_target(argmax, g)){
       auto p = converter(get(point_map, v));
-      if(csp(dir, p_max, p)==SMALLER){
+      if(csp(p_max, p, dir)==SMALLER){
         p_max = p;
         argmax = v;
         is_local_max=false; // repeat with the new vertex

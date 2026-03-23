@@ -865,9 +865,10 @@ const CGAL::Point_3<Kernel>& t);
 /// \ingroup kernel_global_function
 
 /*!
-returns `CGAL::LARGER` iff the scalar product of `p-ORIGIN` and `dir.vector()`
-is larger than the scalar product of `q-dir` and `dir.vector()`,
-`CGAL::SMALLER`, iff it is smaller, and `CGAL::EQUAL` iff both are equal.
+returns, given the line `l` passing through the origin and of direction `dir`,
+`CGAL::SMALLER`, `CGAL::LARGER`, and `CGAL::EQUAL` if when comparing the distances to the origin of
+the projections onto `l`,  the point `p` is closer, farther, and equal to `q`,
+respectively.
 
 \sa `compare_distance_to_point_grp`
 \sa `compare_signed_distance_to_line_grp`
@@ -881,9 +882,9 @@ is larger than the scalar product of `q-dir` and `dir.vector()`,
 */
 template <typename Kernel>
 Comparison_result
-compare_foo_bar(const CGAL::Direction_3<Kernel> &dir,
-                const CGAL::Point_3<Kernel> &p,
-                const CGAL::Point_3<Kernel> &q);
+compare_projection_along_direction_3(const CGAL::Point_3<Kernel> &p,
+                                     const CGAL::Point_3<Kernel> &q,
+                                     const CGAL::Direction_3<Kernel> &dir);
 
 
 /// \defgroup compare_slopes_grp CGAL::compare_slope()

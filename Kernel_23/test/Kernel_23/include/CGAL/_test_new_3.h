@@ -659,10 +659,10 @@ test_new_3(const R& rep)
   tmp34ab = CGAL::compare_distance(p1, p2, p3, p4);
   tmp34ab = CGAL::compare_distance(p1, p2, p3);
 
-typename R::Compare_foo_bar_3 compare_sp
-        = rep.compare_foo_bar_3_object();
-  tmp34ab = compare_sp(d5,p1,p2);
-  tmp34ab = CGAL::compare_foo_bar(d5,p1,p2);
+typename R::Compare_projection_along_direction_3 compare_sp
+        = rep.compare_projection_along_direction_3_object();
+  tmp34ab = compare_sp(p1,p2, d5);
+  tmp34ab = CGAL::compare_projection_along_direction(p1,p2,d5);
 
   typename R::Compare_power_distance_3 compare_power_dist
         = rep.compare_power_distance_3_object();

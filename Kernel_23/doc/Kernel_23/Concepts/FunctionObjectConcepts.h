@@ -9017,10 +9017,10 @@ public:
 
   \cgalRefines{AdaptableTernaryFunction}
 
-  \sa `CGAL::compare_foo_bar()`
+  \sa `CGAL::compare_projection_along_direction()`
 
 */
-class CompareFooBar_3 {
+class CompareProjectionAlongDirection_3 {
 public:
 
   /// \name Operations
@@ -9028,13 +9028,14 @@ public:
   /// @{
 
   /*!
-    returns `CGAL::LARGER` iff the scalar product of `p-ORIGIN` and `dir.vector()`
-    is larger than the scalar product of `q-dir` and `dir.vector()`,
-    `CGAL::SMALLER`, iff it is smaller, and `CGAL::EQUAL` iff both are equal.
+    returns, given the line `l` passing through the origin and of direction `dir`,
+    `CGAL::SMALLER`, `CGAL::LARGER`, and `CGAL::EQUAL` if when comparing the distances to the origin of
+    the projections onto `l`,  the point `p` is closer, farther, and equal to `q`,
+    respectively.
   */
-  Comparison_result operator()(const Kernel::Direction_3 &dir,
-                               const Kernel::Point_3 &p,
-                               const Kernel::Point_3 &q);
+  Comparison_result operator()(const Kernel::Point_3 &p,
+                               const Kernel::Point_3 &q,
+                               const Kernel::Direction_3 &dir);
 
   /// @}
 

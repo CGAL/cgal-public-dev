@@ -188,16 +188,16 @@ namespace CommonKernelFunctors {
   };
 
   template <typename K>
-  class Compare_foo_bar_3
+  class Compare_projection_along_direction_3
   {
     typedef typename K::Comparison_result  Comparison_result;
     typedef typename K::Point_3           Point_3;
     typedef typename K::Direction_3           Direction_3;
   public:
     Comparison_result
-    operator()(const Direction_3& dir,
-               const Point_3& p,
-               const Point_3& q) const
+    operator()(const Point_3& p,
+               const Point_3& q,
+               const Direction_3& dir) const
     {
       typename K::Compute_scalar_product_3 scalar_product = K().compute_scalar_product_3_object();
       typename K::Construct_vector_3 construct_vector = K().construct_vector_3_object();

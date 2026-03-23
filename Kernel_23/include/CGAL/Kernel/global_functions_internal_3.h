@@ -553,12 +553,12 @@ compare_lexicographically_xyz(const typename K::Point_3 &p,
 template < class K >
 inline
 typename K::Comparison_result
-compare_foo_bar(const typename K::Direction_3 &dir,
-                const typename K::Point_3 &p,
-                const typename K::Point_3 &q,
-                const K &k)
+compare_projection_along_direction(const typename K::Point_3 &p,
+                                   const typename K::Point_3 &q,
+                                   const typename K::Direction_3 &dir,
+                                   const K &k)
 {
-  return k.compare_foo_bar_3_object()(dir, p, q);
+  return k.compare_projection_along_direction_3_object()(p, q, dir);
 }
 
 

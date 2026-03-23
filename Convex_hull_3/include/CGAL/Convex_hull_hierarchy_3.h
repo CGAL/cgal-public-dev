@@ -189,7 +189,7 @@ struct Convex_hull_hierarchy_3{
     Dir_GT gt;
     GTC converter;
 
-    auto csp = gt.compare_foo_bar_3_object();
+    auto csp = gt.compare_projection_along_direction_3_object();
 
     VPM vpm = get_const_property_map(vertex_point, hierarchy_sm[0]);
 
@@ -206,7 +206,7 @@ struct Convex_hull_hierarchy_3{
       for(auto vh=++(vertices(sm).begin()); vh!=vertices(sm).end(); ++vh){
         vertex_descriptor v = *vh;
         auto p = converter(get(vpm, get(to_base_maps[level], v)));
-        if(csp(dir, p_max, p)==SMALLER){
+        if(csp(p_max, p, dir)==SMALLER){
           p_max=p;
           argmax=v;
         }
@@ -232,7 +232,7 @@ struct Convex_hull_hierarchy_3{
         is_local_max=true;
         for(vertex_descriptor v: vertices_around_target(argmax ,csm)){
           auto p = converter(get(vpm, get(cbase, v)));
-          if(csp(dir, p_max, p)==SMALLER){
+          if(csp(p_max, p, dir)==SMALLER){
             p_max = p;
             argmax = v;
             is_local_max = false; // repeat with the new vertex
