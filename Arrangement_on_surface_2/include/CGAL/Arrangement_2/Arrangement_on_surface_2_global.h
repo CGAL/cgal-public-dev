@@ -1156,7 +1156,7 @@ bool is_valid(const Arrangement_on_surface_2<GeometryTraits_2, TopologyTraits>& 
     // Check all holes in the current face.
     auto fh = fit;
     for (auto ic_it = fh->inner_ccbs_begin(); ic_it != fh->inner_ccbs_end(); ++ic_it) {
-      auto ccb = *ic_it;
+      Halfedge_const_handle ccb = *ic_it;
       auto is_first = true;
       Vertex_const_handle left_v;
       do {
