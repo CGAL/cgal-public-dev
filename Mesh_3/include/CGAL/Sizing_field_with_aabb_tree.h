@@ -362,7 +362,7 @@ public:
   double operator()(const Point_3& p,
                     const int dim,
                     const Index& id) const
-  { /// @TODO rework this huge member function, and split it into several ones
+  { ///  \todo rework this huge member function, and split it into several ones
 
     using CGAL::sqrt; // for exact number types supported by CGAL
     using std::sqrt;  // for built-in floating points (aka `double`)
