@@ -54,6 +54,28 @@
 namespace CGAL {
 namespace internal {
 
+template <class Base, class Visitor>
+struct Is_valid_compose
+{
+  Is_valid_compose(const Base& base, const Visitor& visitor)
+    : base(base)
+    , visitor(visitor)
+  {}
+
+  template<class Point_3>
+  bool operator()(const std::vector<Point_3>& pts,
+                  int v0, int v1, int v2) const
+  {
+    if (visitor.accept_face(v0, v1, v2))
+      return base(pts, v0, v1, v2);
+    return false;
+  }
+
+  const Base& base;
+  const Visitor& visitor;
+};
+
+
 /************************************************************************
  * Lookup tables
  ************************************************************************/
@@ -892,7 +914,7 @@ private:
     CGAL_assertion(v0 != -1); // edge can not be incident to infinite vertex
 
     if( v0 + 1 == v1 || // border edge - should not check v0 = 0, v1 = n-1, because it is the initial edge where the algorithm starts
-        W.get(v0, v1) != Weight::DEFAULT() ) // the range is previously processed
+        W.get(v0, v1) != Weight::DEFAULT() ) // the range is previously processed // TODO: try to call accept_face() only here!
     { return; }
 
     visitor.quadratic_step();
@@ -1330,14 +1352,12 @@ template <
   typename PointRange, // need size()
   typename Tracer,
   typename Visitor,
-  typename Validity_checker,
   typename Traits
 >
 bool
 triangulate_hole_polyline_with_cdt(const PointRange& points,
                                    Tracer& tracer,
                                    Visitor& visitor,
-                                   const Validity_checker& is_valid,
                                    const Traits& traits,
                                    const typename Traits::FT max_squared_distance)
 {
@@ -1447,12 +1467,6 @@ triangulate_hole_polyline_with_cdt(const PointRange& points,
     vertices[v->info()] = v;
   }
 
-  if (vertices.size()!=cdt.number_of_vertices())
-  {
-    visitor.end_planar_phase(false);
-    return false;
-  }
-
   try
   {
     for (std::size_t i = 0; i < size; ++i) {
@@ -1510,7 +1524,8 @@ triangulate_hole_polyline_with_cdt(const PointRange& points,
 
       std::sort(is.begin(), is.end());
       lambda.put(is[0], is[2], is[1]);
-      if (!is_valid(P, is[0], is[1], is[2])) {
+      if (!visitor.accept_face(is[0], is[1], is[2]))
+      {
         // std::cerr << "WARNING: validity, cdt 2 falls back to the original solution!" << std::endl;
         visitor.end_planar_phase(false);
         return false;

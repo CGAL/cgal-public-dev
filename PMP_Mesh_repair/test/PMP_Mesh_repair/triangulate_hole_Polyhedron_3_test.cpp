@@ -3,16 +3,15 @@
 #include <CGAL/Polygon_mesh_processing/triangulate_hole.h>
 
 
-#ifdef POLY
 #include <CGAL/Polyhedron_3.h>
-#else
 #include <CGAL/Surface_mesh.h>
-#endif
 
 #include <CGAL/boost/graph/helpers.h>
 #include <CGAL/assertions.h>
 #include <CGAL/boost/graph/Euler_operations.h>
 #include <CGAL/Weights/uniform_weights.h>
+#include <CGAL/boost/graph/generators.h>
+#include <CGAL/Polygon_mesh_processing/triangulate_faces.h>
 
 #include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
 
@@ -389,11 +388,224 @@ void generate_elephant_with_hole()
     }
 }
 
+struct Triangulate_face_visitor
+  : public CGAL::Polygon_mesh_processing::Triangulate_faces::Default_visitor<Polyhedron>
+{
+  using Mesh = CGAL::Surface_mesh<Kernel::Point_3>;
+  using Vertex_index = Mesh::Vertex_index;
+  using Face_index = Mesh::Face_index;
+
+  std::array<Vertex_handle,3> forbidden_face;
+  Triangulate_face_visitor(Vertex_index v0, Vertex_index v1, Vertex_index v2)
+  {
+    forbidden_face=CGAL::make_array(v0,v1,v2);
+    std::sort(forbidden_face.begin(), forbidden_face.end());
+  }
+
+  bool accept_face(Face_index,
+                   Vertex_index v0, Vertex_index v1, Vertex_index v2) const
+  {
+    auto a = CGAL::make_array(v0, v1, v2);
+    std::sort(a.begin(), a.end());
+
+    return a!=forbidden_face;
+  }
+
+  using CGAL::Polygon_mesh_processing::Triangulate_faces::Default_visitor<Polyhedron>::accept_face; // TODO doc me
+};
+
+struct Triangulate_face_visitor_reject_all
+  : public CGAL::Polygon_mesh_processing::Triangulate_faces::Default_visitor<Polyhedron>
+{
+  using Mesh = CGAL::Surface_mesh<Kernel::Point_3>;
+  using Vertex_index = Mesh::Vertex_index;
+  using Face_index = Mesh::Face_index;
+
+  constexpr
+  bool accept_face(Face_index,
+                   Vertex_index , Vertex_index , Vertex_index) const
+  {
+    return false;
+  }
+
+  using CGAL::Polygon_mesh_processing::Triangulate_faces::Default_visitor<Polyhedron>::accept_face;
+};
+
+struct Hole_filling_visitor
+  : public CGAL::Polygon_mesh_processing::Hole_filling::Default_visitor
+{
+  std::array<int, 3> forbidden_face;
+  Hole_filling_visitor(int i0, int i1, int i2)
+  {
+    forbidden_face=CGAL::make_array(i0,i1,i2);
+    std::sort(forbidden_face.begin(), forbidden_face.end());
+  }
+
+
+  bool accept_face(int i0, int i1, int i2) const
+  {
+    auto a =CGAL::make_array(i0,i1,i2);
+    std::sort(a.begin(), a.end());
+    return a!=forbidden_face;
+  }
+};
+
+struct Hole_filling_visitor_reject_all
+  : public CGAL::Polygon_mesh_processing::Hole_filling::Default_visitor
+{
+  bool accept_face(int , int , int ) const
+  {
+    return false;
+  }
+};
+
+void test_with_forbidden_triangles()
+{
+  using Mesh = CGAL::Surface_mesh<Kernel::Point_3>;
+
+  Mesh mesh;
+  auto vpm = get(CGAL::vertex_point, mesh);
+  CGAL::make_hexahedron(CGAL::Bbox_3(-1,-1,-1,1,1,1), mesh, CGAL::parameters::do_not_triangulate_faces(true));
+  auto fit = faces(mesh).begin();
+  while (fit!=faces(mesh).end())
+  {
+    auto h = halfedge(*fit, mesh);
+    if (get(vpm, source(h,mesh)).z()==1 && get(vpm, target(h,mesh)).z()==1 && get(vpm, target(next(h,mesh),mesh)).z()==1)
+      break;
+    ++fit;
+  }
+
+  auto hv = CGAL::Euler::add_center_vertex(halfedge(*fit, mesh), mesh);
+  auto v = target(hv, mesh);
+  put(vpm, v, Kernel::Point_3(0.5,0.5,1));
+  std::vector<Halfedge_handle> hedges;
+  for (auto h : CGAL::halfedges_around_target(hv, mesh))
+    hedges.push_back(h);
+  for (Halfedge_handle h : hedges)
+  {
+    Kernel::Point_3 mp = CGAL::midpoint(get(vpm, source(h, mesh)), get(vpm, target(h, mesh)));
+    auto hnew = CGAL::Euler::split_edge(h, mesh);
+    put(vpm, target(hnew, mesh), mp);
+  }
+  CGAL::Polygon_mesh_processing::triangulate_faces(mesh);
+  auto h = CGAL::Euler::remove_center_vertex(halfedge(v, mesh), mesh);
+
+  // testing triangulate_faces
+  {
+    auto m1=mesh;
+    m1.collect_garbage();
+    auto m2=m1;
+    auto m3=m1;
+    auto m4=m1;
+
+    //look for the quad face
+    Mesh::Halfedge_index hq;
+    for (Mesh::Halfedge_index h : halfedges(m1))
+    {
+      if (!CGAL::is_triangle(h, m1))
+      {
+        hq=h;
+      }
+    }
+
+    std::pair diag1(source(hq,m1), target(next(hq,m1), m1));
+    std::pair diag2(target(hq,m2), source(prev(hq,m2), m2));
+    Triangulate_face_visitor vis1(source(hq,m1), target(hq,m1), target(next(hq,m1), m1));
+    Triangulate_face_visitor vis2(source(hq,m2), target(hq,m2), source(prev(hq,m2), m2));
+
+    CGAL::Polygon_mesh_processing::triangulate_faces(m1, CGAL::parameters::visitor(vis1));
+    CGAL::Polygon_mesh_processing::triangulate_faces(m2, CGAL::parameters::visitor(vis2));
+    CGAL::Polygon_mesh_processing::triangulate_faces(m3, CGAL::parameters::visitor(Triangulate_face_visitor_reject_all()));
+
+    assert(CGAL::is_triangle_mesh(m1));
+    assert(CGAL::is_triangle_mesh(m2));
+    assert(!CGAL::is_triangle_mesh(m3));
+
+    assert(!halfedge(diag1.first, diag1.second, m1).second);
+    assert(!halfedge(diag2.first, diag2.second, m2).second);
+
+    auto mp = CGAL::midpoint(m4.point(source(hq,m4)), m4.point(target(hq, m4)));
+    m4.point(target(CGAL::Euler::split_edge(hq, m4), m4))=mp;
+
+    auto m5=m4;
+    auto m6=m4;
+
+    CGAL::Polygon_mesh_processing::triangulate_faces(m4);
+
+    Triangulate_face_visitor vis5(source(hq,m4), target(hq,m4), target(next(hq,m4), m4)); // m4 on purpose
+    std::pair diag5(source(hq,m4), source(prev(hq,m4), m4));
+    CGAL::Polygon_mesh_processing::triangulate_faces(m5, CGAL::parameters::visitor(vis5));
+    CGAL::Polygon_mesh_processing::triangulate_faces(m6, CGAL::parameters::visitor(Triangulate_face_visitor_reject_all()));
+    assert(CGAL::is_triangle_mesh(m4));
+    assert(CGAL::is_triangle_mesh(m5));
+    assert(!CGAL::is_triangle_mesh(m6));
+    assert(!halfedge(diag5.first, diag5.second, m5).second);
+  }
+
+  CGAL::Euler::remove_face(h, mesh);
+  mesh.collect_garbage();
+
+  for (auto h2 : halfedges(mesh))
+  {
+    if (is_border(h2, mesh))
+    {
+      h=h2;
+      break;
+    }
+  }
+
+  std::array< std::pair<bool, bool>, 4 > configs = {{ {true, true}, {true, false}, {false, true}, {false, false}}};
+
+  for (auto c : configs)
+  {
+    auto mesh0 = mesh;
+    auto mesh1 = mesh;
+    auto mesh2 = mesh;
+    auto mesh3 = mesh;
+    std::pair diag(target(h, mesh), target(next(next(h,mesh),mesh),mesh));
+    std::pair diag1(source(h, mesh), target(next(h,mesh),mesh));
+  // TODO: test that the visitor is using the vertices as documented!
+    CGAL::Polygon_mesh_processing::triangulate_hole(mesh0, h, CGAL::parameters::visitor(Hole_filling_visitor(0,1,2)).use_delaunay_triangulation(c.first).use_2d_constrained_delaunay_triangulation(c.second));
+    CGAL::Polygon_mesh_processing::triangulate_hole(mesh1, h, CGAL::parameters::visitor(Hole_filling_visitor(0,1,3)).use_delaunay_triangulation(c.first).use_2d_constrained_delaunay_triangulation(c.second));
+    CGAL::Polygon_mesh_processing::triangulate_hole(mesh2, h, CGAL::parameters::visitor(Hole_filling_visitor_reject_all()).use_delaunay_triangulation(c.first).use_2d_constrained_delaunay_triangulation(c.second));
+
+    assert(CGAL::is_closed(mesh0));
+    assert(CGAL::is_closed(mesh1));
+    assert(!CGAL::is_closed(mesh2));
+    assert(!halfedge(diag.first, diag.second, mesh0).second);
+    assert(!halfedge(diag1.first, diag1.second, mesh1).second);
+
+    auto mp = CGAL::midpoint(mesh3.point(source(h,mesh3)), mesh3.point(target(h, mesh3)));
+    mesh3.point(target(CGAL::Euler::split_edge(h, mesh3), mesh3))=mp;
+
+    auto mesh4=mesh3;
+    auto mesh5=mesh3;
+
+    std::map<Mesh::Vertex_index, int> vmap;
+    int i=0;
+    for (auto haf : CGAL::halfedges_around_face(h, mesh3))
+      vmap[target(haf,mesh3)]=i++;
+
+    CGAL::Polygon_mesh_processing::triangulate_hole(mesh3, h, CGAL::parameters::use_delaunay_triangulation(c.first).use_2d_constrained_delaunay_triangulation(c.second));
+    Hole_filling_visitor vis4(vmap.at(source(h,mesh3)), vmap.at(target(h,mesh3)), vmap.at(target(next(h,mesh3), mesh3))); // mesh3 on purpose
+    std::pair diag4(source(h,mesh3), source(prev(h,mesh3), mesh3));
+
+    CGAL::Polygon_mesh_processing::triangulate_hole(mesh4, h, CGAL::parameters::visitor(vis4).use_delaunay_triangulation(c.first).use_2d_constrained_delaunay_triangulation(c.second));
+    CGAL::Polygon_mesh_processing::triangulate_hole(mesh5, h, CGAL::parameters::visitor(Hole_filling_visitor_reject_all()).use_delaunay_triangulation(c.first).use_2d_constrained_delaunay_triangulation(c.second));
+
+    assert(CGAL::is_closed(mesh3));
+    assert(CGAL::is_closed(mesh4));
+    assert(!CGAL::is_closed(mesh5));
+    assert(!halfedge(diag4.first, diag4.second, mesh4).second);
+  }
+}
+
+
 int main()
 {
   std::cout.precision(17);
   std::cerr.precision(17);
-
+  test_with_forbidden_triangles();
   generate_elephant_with_hole();
   std::vector<std::string> input_files;
   input_files.push_back("elephant_triangle_hole.off");
