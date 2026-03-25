@@ -56,7 +56,7 @@ namespace Polygon_mesh_processing {
       void end_refine_phase() const {}
       void start_fair_phase() const {}
       void end_fair_phase() const {}
-      constexpr bool accept_face(int,int,int) const { return true; }
+      constexpr bool accept_triangle(int,int,int) const { return true; }
     #endif
     };
 
@@ -66,7 +66,7 @@ namespace Polygon_mesh_processing {
   struct Default_user_is_face_valid
   {
     constexpr
-    bool accept_face( int /* v0 */, int /* v1 */, int /* v2 */) const
+    bool accept_triangle( int /* v0 */, int /* v1 */, int /* v2 */) const
     {
       return true;
     }

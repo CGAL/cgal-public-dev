@@ -58,7 +58,6 @@ struct Default_visitor
   {
     return true;
   }
-  using Hole_filling::Default_visitor::accept_face;
 };
 
 template <class PolygonMesh, class Triangulation_visitor>
@@ -71,9 +70,9 @@ struct Visitor_Wrapper
   face_descriptor f;
   std::vector<vertex_descriptor> verts;
 
-  bool accept_face(int i0, int i1, int i2) const
+  bool accept_triangle(int i0, int i1, int i2) const
   {
-    if (!static_cast<const Triangulation_visitor*>(this)->accept_face(i0, i1, i2))
+    if (!static_cast<const Triangulation_visitor*>(this)->accept_triangle(i0, i1, i2))
       return false;
     return static_cast<const Triangulation_visitor*>(this)->accept_face(f, verts[i0], verts[i1], verts[i2]);
   }

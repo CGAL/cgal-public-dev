@@ -68,7 +68,7 @@ public:
   /// in a polygon mesh (`0` being the target of the input border halfedge, `1` the target of the next border halfedge, ...).
   /// If `false` is returned, the triangle will not be used. If `true` is returned, the triangle will be
   /// added to the candidate triangles.
-  bool accept_face(int i0, int i1, int i2);
+  bool accept_triangle(int i0, int i1, int i2);
 
 
 };

@@ -410,8 +410,6 @@ struct Triangulate_face_visitor
 
     return a!=forbidden_face;
   }
-
-  using CGAL::Polygon_mesh_processing::Triangulate_faces::Default_visitor<Polyhedron>::accept_face; // TODO doc me
 };
 
 struct Triangulate_face_visitor_reject_all
@@ -427,8 +425,6 @@ struct Triangulate_face_visitor_reject_all
   {
     return false;
   }
-
-  using CGAL::Polygon_mesh_processing::Triangulate_faces::Default_visitor<Polyhedron>::accept_face;
 };
 
 struct Hole_filling_visitor
