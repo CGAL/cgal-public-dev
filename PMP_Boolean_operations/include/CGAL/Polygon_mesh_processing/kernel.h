@@ -219,10 +219,10 @@ kernel(const FaceRange& face_range,
   }
 
   if(used_to_find_a_point){
-    bool require_strictly_inside = choose_parameter(get_parameter(np, internal_np::require_strictly_inside), true);
+    bool strictly_inside = choose_parameter(get_parameter(np, internal_np::strictly_inside), true);
 
     // If we don't want a point on the surface and the kernel is degenerated, do nothing
-    if(require_strictly_inside && ((vertices(kernel).size()<3) || (faces(kernel).size()==1))){
+    if(strictly_inside && ((vertices(kernel).size()<3) || (faces(kernel).size()==1))){
       clear(kernel);
       return;
     }
@@ -460,7 +460,7 @@ bool has_empty_kernel(const PolygonMesh& pm,
   * In addition to the parameters available in `CGAL::Polygon_mesh_processing::kernel()`, the following parameter is also available:
   *
   * \cgalNamedParamsBegin
-  *   \cgalParamNBegin{require_strictly_inside}
+  *   \cgalParamNBegin{strictly_inside}
   *     \cgalParamDescription{If set to `true`, the returned point is required to lie strictly inside
   *         the mesh and not on its boundary. If the kernel is degenerate, this requirement
   *         cannot be satisfied and no point is returned.}

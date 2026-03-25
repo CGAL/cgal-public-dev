@@ -52,7 +52,7 @@ void test_clip_convex_on_mesh(const Mesh &m, const Plane_3 &pl, std::size_t expe
 template<class Mesh>
 void test_kernel_on_mesh(const Mesh &input, std::size_t expected_nb_vertices, std::size_t expected_nb_edges, std::size_t expected_nb_faces, double expected_volume = 0){
   assert(PMP::has_empty_kernel(input, CGAL::parameters::allow_open_input(true)) == (expected_nb_vertices == 0));
-  assert((PMP::kernel_point(input, CGAL::parameters::allow_open_input(true).require_strictly_inside(false)) != std::nullopt) == (expected_nb_vertices != 0));
+  assert((PMP::kernel_point(input, CGAL::parameters::allow_open_input(true).strictly_inside(false)) != std::nullopt) == (expected_nb_vertices != 0));
 
   Mesh kernel;
   PMP::kernel(input, kernel, CGAL::parameters::allow_open_input(true));
