@@ -11,6 +11,8 @@ Release date: July 2026
 
 ### [Polygon Mesh Processing](https://doc.cgal.org/6.2/Manual/packages.html#PkgPolygonMeshProcessing) (major changes)
 
+- **Breaking change**: Update the visitor concepts `PMPTriangulateFaceVisitor` and `PMPHolefillingVisitor` to request functions `accept_face()` and `accept_triangle()`, respectively. These functions can be used to tweak the way faces and holes are triangles by black listing some candidate triangles.
+    User visitors inheriting from the default visitors do not require any update.
 -   The "Polygon Mesh Processing" package has been reorganized into several packages.
     "Polygon Mesh Processing" retains the core functionalities, while advanced and specialized features
     have been moved to dedicated packages:
@@ -54,7 +56,7 @@ Release date: July 2026
 
   - added function `intersected_nodes()` with an intersection functor and a convenience overload for a ball query.
 
-### [Shape Detection](https://doc.cgal.org/6.2/Manual/packages.html#PkgShapeDetection) 
+### [Shape Detection](https://doc.cgal.org/6.2/Manual/packages.html#PkgShapeDetection)
 
 - Added the region type [`CGAL::Shape_detection::Polygon_mesh::Plane_face_region`](https://doc.cgal.org/6.2/Shape_detection/class_c_g_a_l_1_1_shape__detection_1_1_polygon__mesh_1_1_plane__face__region.html) that extends the support plane of the seed face without refitting the plane to the region
 - Added the region type [`CGAL::Shape_detection::Polygon_mesh::Line_segment_region`](https://doc.cgal.org/6.2/Shape_detection/classCGAL_1_1Shape__detection_1_1Segment__set_1_1Line__segment__region.html) that extends the support line of the seed segment without refitting the line to the region
