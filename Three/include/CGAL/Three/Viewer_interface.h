@@ -32,7 +32,7 @@ class QOpenGLFramebufferObject;
 class TextRenderer;
 class TextListItem;
 
-#ifdef __GNUC__
+#if defined(__has_warning) && __has_warning("-Wsfinae-incomplete")
 #  pragma GCC diagnostic push
 #  pragma GCC diagnostic ignored "-Wsfinae-incomplete"
 #endif
@@ -298,7 +298,8 @@ public:
 }; // end class Viewer_interface
 }
 }
-#ifdef __GNUC__
+
+#if defined(__has_warning) && __has_warning("-Wsfinae-incomplete")
 #  pragma GCC diagnostic pop
 #endif
 
