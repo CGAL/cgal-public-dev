@@ -914,7 +914,7 @@ private:
     CGAL_assertion(v0 != -1); // edge can not be incident to infinite vertex
 
     if( v0 + 1 == v1 || // border edge - should not check v0 = 0, v1 = n-1, because it is the initial edge where the algorithm starts
-        W.get(v0, v1) != Weight::DEFAULT() ) // the range is previously processed // TODO: try to call accept_face() only here!
+        W.get(v0, v1) != Weight::DEFAULT() ) // the range is previously processed
     { return; }
 
     visitor.quadratic_step();
