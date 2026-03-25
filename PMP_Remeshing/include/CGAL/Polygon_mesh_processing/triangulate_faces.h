@@ -235,7 +235,7 @@ public:
     if(border_vertices.size() <= 3)
       return true;
 
-    if(border_vertices.size() == 4) // TODO: also use is_valid
+    if(border_vertices.size() == 4)
     {
       std::array<halfedge_descriptor,4> hverts;
       hverts[0] = halfedge(f, pmesh);
