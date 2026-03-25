@@ -59,20 +59,6 @@ namespace Polygon_mesh_processing {
       constexpr bool accept_triangle(int,int,int) const { return true; }
     #endif
     };
-
-
-#ifndef DOXYGEN_RUNNING
-  // probably not needed if we're using c++17 constexpr
-  struct Default_user_is_face_valid
-  {
-    constexpr
-    bool accept_triangle( int /* v0 */, int /* v1 */, int /* v2 */) const
-    {
-      return true;
-    }
-  };
-#endif
-
   } // namespace Hole_filling
 
   /*!
@@ -793,6 +779,7 @@ bool use_dt3 =
            points,
            tracer,
            visitor,
+           is_valid,
            choose_parameter<Kernel>(get_parameter(np, internal_np::geom_traits)),
            max_squared_distance))
       {

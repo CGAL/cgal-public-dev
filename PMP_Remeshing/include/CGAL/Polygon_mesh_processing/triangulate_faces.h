@@ -117,13 +117,10 @@ private:
     typedef CGAL::Triple<int, int, int> Face_indices;
     std::vector<Face_indices> patch;
 
-    auto gt_np = parameters::get_parameter(np, internal_np::geom_traits);
-    auto dt_np = parameters::get_parameter(np, internal_np::use_delaunay_triangulation);
-    auto threshold_np = parameters::get_parameter(np, internal_np::threshold_distance);
-
-    auto new_np = parameters::visitor(visitor)
-                             .use_2d_constrained_delaunay_triangulation(true)
-                             .combine(gt_np, dt_np, threshold_np);
+    // visitor and bool are "replaced" if they already exist in `np` because we will
+    // return the first one seen while unstacking the NP inheritance stack
+    auto new_np = np.visitor(visitor)
+                    .use_2d_constrained_delaunay_triangulation(true);
 
     PMP::triangulate_hole_polyline(hole_points, std::back_inserter(patch), new_np);
 

@@ -1352,12 +1352,14 @@ template <
   typename PointRange, // need size()
   typename Tracer,
   typename Visitor,
+  typename Validity_checker,
   typename Traits
 >
 bool
 triangulate_hole_polyline_with_cdt(const PointRange& points,
                                    Tracer& tracer,
                                    Visitor& visitor,
+                                   const Validity_checker& is_valid,
                                    const Traits& traits,
                                    const typename Traits::FT max_squared_distance)
 {
@@ -1467,6 +1469,12 @@ triangulate_hole_polyline_with_cdt(const PointRange& points,
     vertices[v->info()] = v;
   }
 
+  if (vertices.size()!=cdt.number_of_vertices())
+  {
+    visitor.end_planar_phase(false);
+    return false;
+  }
+
   try
   {
     for (std::size_t i = 0; i < size; ++i) {
@@ -1524,7 +1532,7 @@ triangulate_hole_polyline_with_cdt(const PointRange& points,
 
       std::sort(is.begin(), is.end());
       lambda.put(is[0], is[2], is[1]);
-      if (!visitor.accept_triangle(is[0], is[1], is[2]))
+      if (!is_valid(P, is[0], is[1], is[2]))
       {
         // std::cerr << "WARNING: validity, cdt 2 falls back to the original solution!" << std::endl;
         visitor.end_planar_phase(false);

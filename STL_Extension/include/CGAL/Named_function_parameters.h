@@ -419,19 +419,6 @@ struct Named_function_parameters
     return Named_function_parameters<OT, OTag, self>(np.v,*this).combine(nps...);
   }
 
-  template <typename ... NPS>
-  auto
-  combine(internal_np::Param_not_found, const NPS& ... nps) const
-  {
-    return this->combine(nps...);
-  }
-
-  auto
-  combine(internal_np::Param_not_found) const
-  {
-    return *this;
-  }
-
   // typedef for SFINAE
   typedef int CGAL_Named_function_parameters_class;
 };

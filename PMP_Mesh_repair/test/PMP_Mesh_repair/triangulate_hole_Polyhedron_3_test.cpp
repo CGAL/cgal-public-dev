@@ -438,7 +438,7 @@ struct Hole_filling_visitor
   }
 
 
-  bool accept_face(int i0, int i1, int i2) const
+  bool accept_triangle(int i0, int i1, int i2) const
   {
     auto a =CGAL::make_array(i0,i1,i2);
     std::sort(a.begin(), a.end());
@@ -449,7 +449,7 @@ struct Hole_filling_visitor
 struct Hole_filling_visitor_reject_all
   : public CGAL::Polygon_mesh_processing::Hole_filling::Default_visitor
 {
-  bool accept_face(int , int , int ) const
+  bool accept_triangle(int , int , int ) const
   {
     return false;
   }
