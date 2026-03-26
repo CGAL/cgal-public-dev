@@ -201,8 +201,7 @@ namespace CommonKernelFunctors {
     {
       typename K::Compute_scalar_product_3 scalar_product = K().compute_scalar_product_3_object();
       typename K::Construct_vector_3 construct_vector = K().construct_vector_3_object();
-      return CGAL::compare(scalar_product(construct_vector(ORIGIN, p), construct_vector(dir)),
-                           scalar_product(construct_vector(ORIGIN, q), construct_vector(dir)));
+      return CGAL::sign(scalar_product(construct_vector(q, p), construct_vector(dir)));
     }
   };
 
