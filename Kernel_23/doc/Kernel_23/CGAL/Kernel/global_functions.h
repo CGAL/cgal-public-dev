@@ -866,9 +866,8 @@ const CGAL::Point_3<Kernel>& t);
 
 /*!
 returns, given the line `l` passing through the origin and of direction `dir`,
-`CGAL::SMALLER`, `CGAL::LARGER`, and `CGAL::EQUAL` if when comparing the distances to the origin of
-the projections onto `l`,  the point `p` is closer, farther, and equal to `q`,
-respectively.
+`CGAL::SMALLER`, `CGAL::EQUAL`, or `CGAL::LARGER` if the projection of `p` on `l`
+precedes, coincides, or follows that of `q` in the direction pointed by `dir`.
 
 \sa `compare_distance_to_point_grp`
 \sa `compare_signed_distance_to_line_grp`
