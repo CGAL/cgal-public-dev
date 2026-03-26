@@ -37,7 +37,8 @@ namespace Polygon_mesh_processing {
 namespace Triangulate_faces {
 
 /** \ingroup PMP_meshing_grp
-*   %Default new face visitor model of `PMPTriangulateFaceVisitor`.
+*   %Default visitor model for the functions `triangulate_face()` and `triangulate_faces()`, model of `PMPTriangulateFaceVisitor`.
+*   \tparam PolygonMesh a model of `FaceListGraph` and `MutableFaceGraph`
 *   All its functions have an empty body. This class can be used as a
 *   base class if only some of the functions of the concept require to be
 *   overridden.
@@ -46,9 +47,10 @@ template<class PolygonMesh>
 struct Default_visitor
   : public Hole_filling::Default_visitor
 {
-  typedef boost::graph_traits<PolygonMesh> GT;
-  typedef typename GT::face_descriptor face_descriptor;
-  typedef typename GT::vertex_descriptor vertex_descriptor;
+  /// face descriptor type
+  typedef typename boost::graph_traits<PolygonMesh>::face_descriptor face_descriptor;
+  /// vertex descriptor type
+  typedef typename boost::graph_traits<PolygonMesh>::vertex_descriptor vertex_descriptor;
 
   void before_subface_creations(face_descriptor /*f_old*/) {}
   void after_subface_creations() {}
@@ -360,7 +362,9 @@ public:
 *
 *   \cgalParamNBegin{visitor}
 *     \cgalParamDescription{a visitor that enables to track how faces are triangulated into subfaces}
-*     \cgalParamType{a class model of `PMPTriangulateFaceVisitor` and `PMPHolefillingVisitor`}
+*     \cgalParamType{a class model of `PMPTriangulateFaceVisitor` and `PMPHolefillingVisitor`,
+*                    with `PMPTriangulateFaceVisitor::face_descriptor` and `PMPTriangulateFaceVisitor::vertex_descriptor` being
+*                    the corresponding descriptor types of `booost::graph_traits<PolygonMesh>`}
 *     \cgalParamDefault{`Triangulate_faces::Default_visitor<PolygonMesh>`}
 *     \cgalParamExtra{Note that the visitor will be copied, so
 *                     it must not have any data member that does not have a reference-like type.}
@@ -419,7 +423,9 @@ bool triangulate_face(typename boost::graph_traits<PolygonMesh>::face_descriptor
 *
 *   \cgalParamNBegin{visitor}
 *     \cgalParamDescription{a visitor that enables to track how faces are triangulated into subfaces}
-*     \cgalParamType{a class model of `PMPTriangulateFaceVisitor` and `PMPHolefillingVisitor`}
+*     \cgalParamType{a class model of `PMPTriangulateFaceVisitor` and `PMPHolefillingVisitor`,
+*                    with `PMPTriangulateFaceVisitor::face_descriptor` and `PMPTriangulateFaceVisitor::vertex_descriptor` being
+*                    the corresponding descriptor types of `booost::graph_traits<PolygonMesh>`}
 *     \cgalParamDefault{`Triangulate_faces::Default_visitor<PolygonMesh>`}
 *     \cgalParamExtra{Note that the visitor will be copied, so
 *                     it must not have any data member that does not have a reference-like type.}
@@ -492,7 +498,8 @@ bool triangulate_faces(FaceRange face_range,
 *
 *   \cgalParamNBegin{visitor}
 *     \cgalParamDescription{a visitor that enables to track how faces are triangulated into subfaces}
-*     \cgalParamType{a class model of `PMPTriangulateFaceVisitor` and `PMPHolefillingVisitor`}
+*     \cgalParamType{a class model of `PMPTriangulateFaceVisitor` and `PMPHolefillingVisitor`,
+*                    with `PMPTriangulateFaceVisitor::face_descriptor` and `PMPTriangulateFaceVisitor::vertex_descriptor` being `std::size_t`.}
 *     \cgalParamDefault{`Triangulate_faces::Default_visitor<PolygonMesh>`}
 *     \cgalParamExtra{Note that the visitor will be copied, so
 *                     it must not have any data member that does not have a reference-like type.}
@@ -524,7 +531,7 @@ bool triangulate_faces(PolygonMesh& pmesh,
 namespace Triangulate_polygons {
 
 /** \ingroup PMP_meshing_grp
-*   %Default new polygon visitor model of `PMPTriangulateFaceVisitor`.
+*   %Default visitor for the function `triangulate_polygons()`, model of `PMPTriangulateFaceVisitor`.
 *   All its functions have an empty body. This class can be used as a
 *   base class if only some of the functions of the concept require to be
 *   overridden.
@@ -532,18 +539,46 @@ namespace Triangulate_polygons {
 struct Default_visitor
   : public Hole_filling::Default_visitor
 {
-  template <typename Polygon>
-  void before_subface_creations(const Polygon& /*f_old*/) {}
+  /// face id type, refering to the position of the polygon in the input range
+  using face_descriptor = std::size_t;
+  /// vertex id type
+  using vertex_descriptor = std::size_t;
 
-  template <typename Polygon>
-  void after_subface_created(const Polygon& /*f_new*/) {}
+  void before_subface_creations(face_descriptor) {}
+
+  void after_subface_created(face_descriptor) {}
 
   void after_subface_creations() {}
+
+  constexpr
+  bool accept_face(face_descriptor /*f*/, vertex_descriptor /*v0*/, vertex_descriptor /*v1*/, vertex_descriptor /*v2*/) const
+  {
+    return true;
+  }
 };
 
 } // namespace Triangulate_polygons
 
 namespace internal {
+
+template <class Triangulation_visitor>
+struct Visitor_Wrapper
+  : public Triangulation_visitor
+{
+  std::size_t poly_id;
+  const std::vector<std::size_t>& pid_map;
+
+  bool accept_triangle(int i0, int i1, int i2) const
+  {
+    if (!static_cast<const Triangulation_visitor*>(this)->accept_triangle(i0, i1, i2))
+      return false;
+    return static_cast<const Triangulation_visitor*>(this)->accept_face(poly_id, pid_map[i0], pid_map[i1], pid_map[i2]);
+  }
+
+  Visitor_Wrapper(std::size_t poly_id,  const std::vector<std::size_t>& pid_map, Triangulation_visitor& tvisitor)
+    : Triangulation_visitor(tvisitor), poly_id(poly_id), pid_map(pid_map)
+  {}
+};
 
 class Triangulate_polygon_soup_modifier
 {
@@ -556,9 +591,10 @@ private:
            typename NamedParameters>
   bool triangulate_polygon_with_hole_filling(const Polygon& polygon,
                                              const PointRange& points,
+                                             std::size_t poly_id,
                                              PolygonRange& triangulated_polygons, // output
                                              PMap pm,
-                                             Visitor visitor,
+                                             Visitor& visitor,
                                              const NamedParameters& np)
   {
     namespace PMP = CGAL::Polygon_mesh_processing;
@@ -578,22 +614,19 @@ private:
     // use hole filling
     typedef CGAL::Triple<int, int, int> Face_indices;
     std::vector<Face_indices> patch;
-    PMP::triangulate_hole_polyline(hole_points, std::back_inserter(patch), np);
+    Visitor_Wrapper new_visitor(poly_id, polygon, visitor);
+    PMP::triangulate_hole_polyline(hole_points, std::back_inserter(patch), np.visitor(new_visitor));
 
     if(patch.empty())
       return false;
-
-    visitor.before_subface_creations(polygon);
 
     for(const Face_indices& triangle : patch)
     {
       triangulated_polygons.push_back({hole_points_indices[triangle.first],
                                        hole_points_indices[triangle.second],
                                        hole_points_indices[triangle.third]});
-      visitor.after_subface_created(triangulated_polygons.back());
+      visitor.after_subface_created(triangulated_polygons.size()-1);
     }
-
-    visitor.after_subface_creations();
     return true;
   }
 
@@ -601,10 +634,13 @@ public:
   template <typename Polygon,
             typename PointRange,
             typename PolygonRange,
+            typename Visitor,
             typename NamedParameters>
   bool operator()(const Polygon& polygon,
                   const PointRange& points,
+                  std::size_t poly_id,
                   PolygonRange& triangulated_polygons,
+                  Visitor& visitor,
                   const NamedParameters& np)
   {
     // PointMap
@@ -621,20 +657,11 @@ public:
     using FT = typename Traits::FT;
     using PID = typename std::iterator_traits<typename Polygon::const_iterator>::value_type;
 
-    // Visitor
-    using Visitor = typename internal_np::Lookup_named_param_def<
-                                            internal_np::visitor_t,
-                                            NamedParameters,
-                                            Triangulate_polygons::Default_visitor // default
-                                          >::type;
-
     using parameters::choose_parameter;
     using parameters::get_parameter;
 
     PMap pm = choose_parameter<PMap>(get_parameter(np, internal_np::point_map));
     Traits traits = choose_parameter<Traits>(get_parameter(np, internal_np::geom_traits));
-    Visitor visitor = choose_parameter<Visitor>(get_parameter(np, internal_np::visitor),
-                                                Triangulate_polygons::Default_visitor());
 
     typename Traits::Construct_cross_product_vector_3 cross_product =
       traits.construct_cross_product_vector_3_object();
@@ -647,6 +674,30 @@ public:
       Point_ref p2 = get(pm, points[polygon[2]]);
       Point_ref p3 = get(pm, points[polygon[3]]);
 
+      if (!visitor.accept_face(poly_id, polygon[0], polygon[1], polygon[3]) ||
+          !visitor.accept_face(poly_id, polygon[0], polygon[2], polygon[3]))
+      {
+        if (!visitor.accept_face(poly_id, polygon[0], polygon[1], polygon[2]) ||
+            !visitor.accept_face(poly_id, polygon[0], polygon[2], polygon[3]))
+        {
+          return false;
+        }
+        triangulated_polygons.push_back({polygon[0], polygon[1], polygon[2]});
+        triangulated_polygons.push_back({polygon[0], polygon[2], polygon[3]});
+        visitor.after_subface_created(triangulated_polygons.size()-2);
+        visitor.after_subface_created(triangulated_polygons.size()-1);
+        return true;
+      }
+
+      if (!visitor.accept_face(poly_id, polygon[0], polygon[1], polygon[2]) ||
+          !visitor.accept_face(poly_id, polygon[0], polygon[2], polygon[3]))
+      {
+        triangulated_polygons.push_back({polygon[0], polygon[1], polygon[3]});
+        triangulated_polygons.push_back({polygon[1], polygon[2], polygon[3]});
+        visitor.after_subface_created(triangulated_polygons.size()-2);
+        visitor.after_subface_created(triangulated_polygons.size()-1);
+        return true;
+      }
       /* Chooses the diagonal that will split the quad in two triangles that maximize
        * the scalar product of the un-normalized normals of the two triangles.
        * The lengths of the un-normalized normals (computed using cross-products of two vectors)
@@ -656,9 +707,6 @@ public:
        * In particular, if the two triangles are oriented in different directions,
        * the scalar product will be negative.
        */
-      visitor.before_subface_creations(polygon);
-
-
       typename Traits::Vector_3 p0p1=p1-p0;
       typename Traits::Vector_3 p1p2=p2-p1;
       typename Traits::Vector_3 p2p3=p3-p2;
@@ -699,16 +747,13 @@ public:
           triangulated_polygons.push_back({polygon[1], polygon[2], polygon[3]});
         }
       }
-
-      visitor.after_subface_created(triangulated_polygons[triangulated_polygons.size()-2]);
-      visitor.after_subface_created(triangulated_polygons[triangulated_polygons.size()-1]);
-
-      visitor.after_subface_creations();
+      visitor.after_subface_created(triangulated_polygons.size()-2);
+      visitor.after_subface_created(triangulated_polygons.size()-1);
 
       return true;
     }
 
-    return triangulate_polygon_with_hole_filling(polygon, points, triangulated_polygons, pm, visitor, np);
+    return triangulate_polygon_with_hole_filling(polygon, points, poly_id, triangulated_polygons, pm, visitor, np);
   }
 }; // class Triangulate_polygon_soup_modifier
 
@@ -774,19 +819,31 @@ bool triangulate_polygons(const PointRange& points,
   PolygonRange triangulated_polygons;
   triangulated_polygons.reserve(polygons.size());
 
+  auto visitor = parameters::choose_parameter<Triangulate_polygons::Default_visitor>(
+                   parameters::get_parameter(np, internal_np::visitor));
+
   bool success = true;
 
   internal::Triangulate_polygon_soup_modifier modifier;
-  for(const Polygon& polygon : polygons)
+  for(std::size_t poly_id=0; poly_id<polygons.size(); ++poly_id)
   {
+    Polygon& polygon = polygons[poly_id];
+
+    visitor.before_subface_creations(poly_id);
     if(polygon.size() <= 3)
     {
-      triangulated_polygons.push_back(polygon);
-      continue;
+      triangulated_polygons.push_back(std::move(polygon));
+      visitor.after_subface_created(triangulated_polygons.size()-1);
     }
+    else
+      if(!modifier(polygon, points, poly_id, triangulated_polygons, visitor, np))
+      {
+        success = false;
+        triangulated_polygons.push_back(std::move(polygon));
+        visitor.after_subface_created(triangulated_polygons.size()-1);
+      }
 
-    if(!modifier(polygon, points, triangulated_polygons, np))
-      success = false;
+    visitor.after_subface_creations();
   }
 
   std::swap(polygons, triangulated_polygons);

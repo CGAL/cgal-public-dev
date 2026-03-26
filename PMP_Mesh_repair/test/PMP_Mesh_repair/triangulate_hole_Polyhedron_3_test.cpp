@@ -387,7 +387,7 @@ void generate_elephant_with_hole()
       return;
     }
 }
-
+// visitors for triangulate_faces
 struct Triangulate_face_visitor
   : public CGAL::Polygon_mesh_processing::Triangulate_faces::Default_visitor<Polyhedron>
 {
@@ -412,6 +412,7 @@ struct Triangulate_face_visitor
   }
 };
 
+//visitors for triangulate_hole_polyline
 struct Triangulate_face_visitor_reject_all
   : public CGAL::Polygon_mesh_processing::Triangulate_faces::Default_visitor<Polyhedron>
 {
@@ -455,13 +456,46 @@ struct Hole_filling_visitor_reject_all
   }
 };
 
+// visitors for triangulate_polygons()
+struct Triangulate_polygon_visitor
+  : public CGAL::Polygon_mesh_processing::Triangulate_polygons::Default_visitor
+{
+  std::array<std::size_t,3> forbidden_face;
+  Triangulate_polygon_visitor(std::size_t v0, std::size_t v1, std::size_t v2)
+  {
+    forbidden_face=CGAL::make_array(v0,v1,v2);
+    std::sort(forbidden_face.begin(), forbidden_face.end());
+  }
+
+  bool accept_face(std::size_t,
+                   std::size_t v0, std::size_t v1, std::size_t v2) const
+  {
+    auto a = CGAL::make_array(v0, v1, v2);
+    std::sort(a.begin(), a.end());
+
+    return a!=forbidden_face;
+  }
+};
+
+struct Triangulate_polygon_visitor_reject_all
+  : public CGAL::Polygon_mesh_processing::Triangulate_polygons::Default_visitor
+{
+  constexpr
+  bool accept_face(std::size_t,std::size_t,std::size_t,std::size_t) const
+  {
+    return false;
+  }
+};
+
 void test_with_forbidden_triangles()
 {
   using Mesh = CGAL::Surface_mesh<Kernel::Point_3>;
+  namespace PMP = CGAL::Polygon_mesh_processing;
+  namespace params = CGAL::parameters;
 
   Mesh mesh;
   auto vpm = get(CGAL::vertex_point, mesh);
-  CGAL::make_hexahedron(CGAL::Bbox_3(-1,-1,-1,1,1,1), mesh, CGAL::parameters::do_not_triangulate_faces(true));
+  CGAL::make_hexahedron(CGAL::Bbox_3(-1,-1,-1,1,1,1), mesh, params::do_not_triangulate_faces(true));
   auto fit = faces(mesh).begin();
   while (fit!=faces(mesh).end())
   {
@@ -483,7 +517,7 @@ void test_with_forbidden_triangles()
     auto hnew = CGAL::Euler::split_edge(h, mesh);
     put(vpm, target(hnew, mesh), mp);
   }
-  CGAL::Polygon_mesh_processing::triangulate_faces(mesh);
+  PMP::triangulate_faces(mesh);
   auto h = CGAL::Euler::remove_center_vertex(halfedge(v, mesh), mesh);
 
   // testing triangulate_faces
@@ -509,9 +543,9 @@ void test_with_forbidden_triangles()
     Triangulate_face_visitor vis1(source(hq,m1), target(hq,m1), target(next(hq,m1), m1));
     Triangulate_face_visitor vis2(source(hq,m2), target(hq,m2), source(prev(hq,m2), m2));
 
-    CGAL::Polygon_mesh_processing::triangulate_faces(m1, CGAL::parameters::visitor(vis1));
-    CGAL::Polygon_mesh_processing::triangulate_faces(m2, CGAL::parameters::visitor(vis2));
-    CGAL::Polygon_mesh_processing::triangulate_faces(m3, CGAL::parameters::visitor(Triangulate_face_visitor_reject_all()));
+    PMP::triangulate_faces(m1, params::visitor(vis1));
+    PMP::triangulate_faces(m2, params::visitor(vis2));
+    PMP::triangulate_faces(m3, params::visitor(Triangulate_face_visitor_reject_all()));
 
     assert(CGAL::is_triangle_mesh(m1));
     assert(CGAL::is_triangle_mesh(m2));
@@ -526,12 +560,12 @@ void test_with_forbidden_triangles()
     auto m5=m4;
     auto m6=m4;
 
-    CGAL::Polygon_mesh_processing::triangulate_faces(m4);
+    PMP::triangulate_faces(m4);
 
     Triangulate_face_visitor vis5(source(hq,m4), target(hq,m4), target(next(hq,m4), m4)); // m4 on purpose
     std::pair diag5(source(hq,m4), source(prev(hq,m4), m4));
-    CGAL::Polygon_mesh_processing::triangulate_faces(m5, CGAL::parameters::visitor(vis5));
-    CGAL::Polygon_mesh_processing::triangulate_faces(m6, CGAL::parameters::visitor(Triangulate_face_visitor_reject_all()));
+    PMP::triangulate_faces(m5, params::visitor(vis5));
+    PMP::triangulate_faces(m6, params::visitor(Triangulate_face_visitor_reject_all()));
     assert(CGAL::is_triangle_mesh(m4));
     assert(CGAL::is_triangle_mesh(m5));
     assert(!CGAL::is_triangle_mesh(m6));
@@ -561,9 +595,9 @@ void test_with_forbidden_triangles()
     std::pair diag(target(h, mesh), target(next(next(h,mesh),mesh),mesh));
     std::pair diag1(source(h, mesh), target(next(h,mesh),mesh));
   // TODO: test that the visitor is using the vertices as documented!
-    CGAL::Polygon_mesh_processing::triangulate_hole(mesh0, h, CGAL::parameters::visitor(Hole_filling_visitor(0,1,2)).use_delaunay_triangulation(c.first).use_2d_constrained_delaunay_triangulation(c.second));
-    CGAL::Polygon_mesh_processing::triangulate_hole(mesh1, h, CGAL::parameters::visitor(Hole_filling_visitor(0,1,3)).use_delaunay_triangulation(c.first).use_2d_constrained_delaunay_triangulation(c.second));
-    CGAL::Polygon_mesh_processing::triangulate_hole(mesh2, h, CGAL::parameters::visitor(Hole_filling_visitor_reject_all()).use_delaunay_triangulation(c.first).use_2d_constrained_delaunay_triangulation(c.second));
+    PMP::triangulate_hole(mesh0, h, params::visitor(Hole_filling_visitor(0,1,2)).use_delaunay_triangulation(c.first).use_2d_constrained_delaunay_triangulation(c.second));
+    PMP::triangulate_hole(mesh1, h, params::visitor(Hole_filling_visitor(0,1,3)).use_delaunay_triangulation(c.first).use_2d_constrained_delaunay_triangulation(c.second));
+    PMP::triangulate_hole(mesh2, h, params::visitor(Hole_filling_visitor_reject_all()).use_delaunay_triangulation(c.first).use_2d_constrained_delaunay_triangulation(c.second));
 
     assert(CGAL::is_closed(mesh0));
     assert(CGAL::is_closed(mesh1));
@@ -582,18 +616,92 @@ void test_with_forbidden_triangles()
     for (auto haf : CGAL::halfedges_around_face(h, mesh3))
       vmap[target(haf,mesh3)]=i++;
 
-    CGAL::Polygon_mesh_processing::triangulate_hole(mesh3, h, CGAL::parameters::use_delaunay_triangulation(c.first).use_2d_constrained_delaunay_triangulation(c.second));
+    PMP::triangulate_hole(mesh3, h, params::use_delaunay_triangulation(c.first).use_2d_constrained_delaunay_triangulation(c.second));
     Hole_filling_visitor vis4(vmap.at(source(h,mesh3)), vmap.at(target(h,mesh3)), vmap.at(target(next(h,mesh3), mesh3))); // mesh3 on purpose
     std::pair diag4(source(h,mesh3), source(prev(h,mesh3), mesh3));
 
-    CGAL::Polygon_mesh_processing::triangulate_hole(mesh4, h, CGAL::parameters::visitor(vis4).use_delaunay_triangulation(c.first).use_2d_constrained_delaunay_triangulation(c.second));
-    CGAL::Polygon_mesh_processing::triangulate_hole(mesh5, h, CGAL::parameters::visitor(Hole_filling_visitor_reject_all()).use_delaunay_triangulation(c.first).use_2d_constrained_delaunay_triangulation(c.second));
+    PMP::triangulate_hole(mesh4, h, params::visitor(vis4).use_delaunay_triangulation(c.first).use_2d_constrained_delaunay_triangulation(c.second));
+    PMP::triangulate_hole(mesh5, h, params::visitor(Hole_filling_visitor_reject_all()).use_delaunay_triangulation(c.first).use_2d_constrained_delaunay_triangulation(c.second));
 
     assert(CGAL::is_closed(mesh3));
     assert(CGAL::is_closed(mesh4));
     assert(!CGAL::is_closed(mesh5));
     assert(!halfedge(diag4.first, diag4.second, mesh4).second);
   }
+
+  // now test triangulate_hole_polyline
+  using P = Kernel::Point_3;
+  std::vector<P> quad = {P(0,0,0), P(1,0,0), P(1,1,0), P(0,1,0)};
+  std::vector<std::tuple<int,int,int> > triangles1, triangles2, triangles3;
+  PMP::triangulate_hole_polyline(quad, std::back_inserter(triangles1), params::visitor(Hole_filling_visitor(0,1,2)));
+  PMP::triangulate_hole_polyline(quad, std::back_inserter(triangles2), params::visitor(Hole_filling_visitor(0,1,3)));
+  PMP::triangulate_hole_polyline(quad, std::back_inserter(triangles3), params::visitor(Hole_filling_visitor_reject_all()));
+
+  auto triangle_not_present = [](std::tuple<int,int,int> t, int i0, int i1, int i2)
+  {
+    auto a = CGAL::make_array(get<0>(t), get<1>(t), get<2>(t));
+    std::sort(a.begin(), a.end());
+    return a[0]!=i0 || a[1]!=i1 || a[2]!=i2;
+  };
+
+  assert(triangles1.size()==2);
+  assert(triangles2.size()==2);
+  assert(triangles3.empty());
+
+  assert(triangle_not_present(triangles1[0], 0, 1, 2) && triangle_not_present(triangles1[1], 0, 1, 2));
+  assert(triangle_not_present(triangles2[0], 0, 1, 3) && triangle_not_present(triangles2[1], 0, 1, 3));
+
+  std::vector<P> octo = {P(0,0,0), P(0.5,-0.5,0), P(1,0,0), P(1.5,0.5,0), P(1,1,0), P(0.5, 1.5, 0), P(0,1,0), P(-0.5,0.5,0)};
+  std::vector<std::tuple<int,int,int> > triangles4, triangles5, triangles6;
+  PMP::triangulate_hole_polyline(octo, std::back_inserter(triangles4));
+  assert(triangles4.size()==6);
+  auto [i0,i1,i2] = triangles4[0];
+  PMP::triangulate_hole_polyline(octo, std::back_inserter(triangles5), params::visitor(Hole_filling_visitor(i0,i1,i2)));
+  PMP::triangulate_hole_polyline(octo, std::back_inserter(triangles6), params::visitor(Hole_filling_visitor_reject_all()));
+  assert(triangles5.size()==6);
+  assert(triangles6.empty());
+  if (i2<i0) std::swap(i0,i2);
+  if (i1<i0) std::swap(i0,i1);
+  if (i2<i1) std::swap(i2,i1);
+  assert(triangle_not_present(triangles1[0], i0, i1, i2) && triangle_not_present(triangles1[1], i0, i1, i2));
+
+  // finally test triangulate_polygons
+  std::vector<P> points_quad = { P(-1,0,0), P(0,0,0), P(1,0,0), P(1,1,0), P(0,1,0)};
+  std::vector<std::vector<std::size_t>> polygons_quad1 = {{0,1,4}, {1,2,3,4}}, polygons_quad2=polygons_quad1, polygons_quad3=polygons_quad1;
+  PMP::triangulate_polygons(points_quad, polygons_quad1, params::visitor(Triangulate_polygon_visitor(1,2,3)));
+  PMP::triangulate_polygons(points_quad, polygons_quad2, params::visitor(Triangulate_polygon_visitor(1,2,4)));
+  PMP::triangulate_polygons(points_quad, polygons_quad3, params::visitor(Triangulate_polygon_visitor_reject_all()));
+
+  assert(polygons_quad1.size()==3);
+  assert(polygons_quad2.size()==3);
+  assert(polygons_quad3.size()==2);
+
+  auto polygon_not_present = [](std::vector<std::size_t> v, std::size_t i0, std::size_t i1, std::size_t i2)
+  {
+    std::sort(v.begin(), v.end());
+    return v[0]!=i0 || v[1]!=i1 || v[2]!=i2;
+  };
+
+  assert(polygon_not_present(polygons_quad1[0], 1, 2, 3) && polygon_not_present(polygons_quad1[1], 1, 2, 3));
+  assert(polygon_not_present(polygons_quad2[0], 1, 2, 4) && polygon_not_present(polygons_quad2[1], 1, 2, 4));
+
+  std::vector<P> points_octo = {P(-1,0,0), P(0,0,0), P(0.5,-0.5,0), P(1,0,0), P(1.5,0.5,0), P(1,1,0), P(0.5, 1.5, 0), P(0,1,0), P(-0.5,0.5,0)};
+  std::vector<std::vector<std::size_t>> polygons_octo1 ={{0,1,7}, {1,2,3,4,5,6,7,8}}, polygons_octo2=polygons_octo1, polygons_octo3=polygons_octo1;
+
+
+  PMP::triangulate_polygons(points_octo, polygons_octo1, params::visitor(Triangulate_polygon_visitor(1,2,3)));
+  assert(polygons_octo1.size()==7);
+  auto vals = polygons_octo1[1];
+  std::sort(vals.begin(), vals.end());
+  PMP::triangulate_polygons(points_octo, polygons_octo2, params::visitor(Triangulate_polygon_visitor(vals[0],vals[1],vals[2])));
+  PMP::triangulate_polygons(points_octo, polygons_octo3, params::visitor(Triangulate_polygon_visitor_reject_all()));
+  assert(polygons_octo2.size()==7);
+  assert(polygons_octo3.size()==2);
+  for (int i=0;i<7;++i)
+  {
+    assert(polygon_not_present(polygons_octo2[i], vals[0],vals[1],vals[2]));
+  }
+
 }
 
 

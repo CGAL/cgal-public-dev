@@ -1,3 +1,4 @@
+
 /// \ingroup PkgPolygonMeshProcessingConcepts
 /// \cgalConcept
 ///
@@ -7,7 +8,7 @@
 ///
 /// \cgalRefines{CopyConstructible}
 /// \cgalHasModelsBegin
-/// \cgalHasModels{CGAL::Polygon_mesh_processing::Triangulate_faces::Default_visitor}
+/// \cgalHasModels{CGAL::Polygon_mesh_processing::Triangulate_faces::Default_visitor,CGAL::Polygon_mesh_processing::Triangulate_polygons::Default_visitor}
 /// \cgalHasModelsEnd
 
 
