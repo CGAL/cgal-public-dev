@@ -1012,7 +1012,6 @@ public:
     /// adds a new edge, and resizes edge and halfedge properties if necessary.
     Halfedge_index add_edge()
     {
-      Halfedge_index h0, h1;
       size_type inf = (std::numeric_limits<size_type>::max)();
       if(recycle_ && (edges_freelist_ != inf)){
         size_type idx = edges_freelist_;
