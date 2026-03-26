@@ -4,6 +4,13 @@
 
 Release date: July 2026
 
+### [2D and 3D Linear Geometry Kernel](https://doc.cgal.org/6.2/Manual/packages.html#PkgKernel23)
+
+- Added a new concept, `CompareProjectionAlongDirection_3`,
+     to the 3D Kernel concepts to compare the order of projected points on a line. Corresponding functors
+     in the model (`Compare_projection_along_direction_3`) and free function (`compare_projection_along_direction()`)
+     have also been added.
+
 ### [Generalized Barycentric Coordinates 3](https://doc.cgal.org/6.2/Manual/packages.html#PkgBarycentricCoordinates3) (new package)
 -   This package provides functions to compute various types of generalized barycentric coordinates
     (Wachspress, mean value, discrete harmonic and tetrahedron coordinates) for points located inside closed convex
