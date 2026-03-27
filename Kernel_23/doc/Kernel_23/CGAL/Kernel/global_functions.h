@@ -865,9 +865,8 @@ const CGAL::Point_3<Kernel>& t);
 /// \ingroup kernel_global_function
 
 /*!
-returns, given the line `l` passing through the origin and of direction `dir`,
-`CGAL::SMALLER`, `CGAL::EQUAL`, or `CGAL::LARGER` if the projection of `p` on `l`
-precedes, coincides, or follows that of `q` in the direction pointed by `dir`.
+returns `CGAL::SMALLER`, `CGAL::EQUAL`, or `CGAL::LARGER` if the projection of `p` onto
+a line with direction `dir` precedes, coincides, or follows that of `q` in the direction pointed by `dir`.
 
 \sa `compare_distance_to_point_grp`
 \sa `compare_signed_distance_to_line_grp`

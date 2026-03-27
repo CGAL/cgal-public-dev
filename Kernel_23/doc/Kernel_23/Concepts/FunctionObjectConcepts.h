@@ -9028,9 +9028,8 @@ public:
   /// @{
 
   /*!
-    returns, given the line `l` passing through the origin and of direction `dir`,
-    `CGAL::SMALLER`, `CGAL::EQUAL`, or `CGAL::LARGER` if the projection of `p` on
-    `l` precedes, coincides, or follows that of `q` in the direction pointed by `dir`.
+    returns `CGAL::SMALLER`, `CGAL::EQUAL`, or `CGAL::LARGER` if the projection of `p` onto
+    a line with direction `dir` precedes, coincides, or follows that of `q` in the direction pointed by `dir`.
   */
   Comparison_result operator()(const Kernel::Point_3 &p,
                                const Kernel::Point_3 &q,
