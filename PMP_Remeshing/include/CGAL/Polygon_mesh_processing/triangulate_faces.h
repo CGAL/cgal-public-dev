@@ -63,7 +63,7 @@ struct Default_visitor
 };
 
 template <class PolygonMesh, class Triangulation_visitor>
-struct Visitor_Wrapper
+struct Visitor_wrapper
   : public Triangulation_visitor
 {
   using vertex_descriptor = typename boost::graph_traits<PolygonMesh>::vertex_descriptor;
@@ -79,7 +79,7 @@ struct Visitor_Wrapper
     return static_cast<const Triangulation_visitor*>(this)->accept_face(f, verts[i0], verts[i1], verts[i2]);
   }
 
-  Visitor_Wrapper(PolygonMesh& pmesh, face_descriptor f, Triangulation_visitor& tvisitor)
+  Visitor_wrapper(PolygonMesh& pmesh, face_descriptor f, Triangulation_visitor& tvisitor)
     : Triangulation_visitor(tvisitor), f(f)
   {
     auto h = halfedge(f, pmesh), hstart=h;
@@ -323,9 +323,9 @@ public:
       return true;
     }
 
-    Triangulate_faces::Visitor_Wrapper<PolygonMesh,Visitor> visitor_wrapper(pmesh, f, visitor);
+    Triangulate_faces::Visitor_wrapper<PolygonMesh,Visitor> Visitor_wrapper(pmesh, f, visitor);
 
-    return triangulate_face_with_hole_filling(f, pmesh, border_vertices, hole_points, visitor_wrapper, np);
+    return triangulate_face_with_hole_filling(f, pmesh, border_vertices, hole_points, Visitor_wrapper, np);
   }
 }; // class Triangulate_polygon_mesh_modifier
 
@@ -562,7 +562,7 @@ struct Default_visitor
 namespace internal {
 
 template <class Triangulation_visitor>
-struct Visitor_Wrapper
+struct Visitor_wrapper
   : public Triangulation_visitor
 {
   std::size_t poly_id;
@@ -575,7 +575,7 @@ struct Visitor_Wrapper
     return static_cast<const Triangulation_visitor*>(this)->accept_face(poly_id, pid_map[i0], pid_map[i1], pid_map[i2]);
   }
 
-  Visitor_Wrapper(std::size_t poly_id,  const std::vector<std::size_t>& pid_map, Triangulation_visitor& tvisitor)
+  Visitor_wrapper(std::size_t poly_id,  const std::vector<std::size_t>& pid_map, Triangulation_visitor& tvisitor)
     : Triangulation_visitor(tvisitor), poly_id(poly_id), pid_map(pid_map)
   {}
 };
@@ -614,7 +614,7 @@ private:
     // use hole filling
     typedef CGAL::Triple<int, int, int> Face_indices;
     std::vector<Face_indices> patch;
-    Visitor_Wrapper new_visitor(poly_id, polygon, visitor);
+    Visitor_wrapper new_visitor(poly_id, polygon, visitor);
     PMP::triangulate_hole_polyline(hole_points, std::back_inserter(patch), np.visitor(new_visitor));
 
     if(patch.empty())
