@@ -561,12 +561,12 @@ struct Default_visitor
 
 namespace internal {
 
-template <class Triangulation_visitor>
+template <class Triangulation_visitor, class Polygon>
 struct Visitor_wrapper
   : public Triangulation_visitor
 {
   std::size_t poly_id;
-  const std::vector<std::size_t>& pid_map;
+  const Polygon& pid_map;
 
   bool accept_triangle(int i0, int i1, int i2) const
   {
@@ -575,7 +575,7 @@ struct Visitor_wrapper
     return static_cast<const Triangulation_visitor*>(this)->accept_face(poly_id, pid_map[i0], pid_map[i1], pid_map[i2]);
   }
 
-  Visitor_wrapper(std::size_t poly_id,  const std::vector<std::size_t>& pid_map, Triangulation_visitor& tvisitor)
+  Visitor_wrapper(std::size_t poly_id,  const Polygon& pid_map, Triangulation_visitor& tvisitor)
     : Triangulation_visitor(tvisitor), poly_id(poly_id), pid_map(pid_map)
   {}
 };
