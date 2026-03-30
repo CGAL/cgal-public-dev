@@ -110,7 +110,7 @@ extreme_point_3(const PointRange& r, const Direction &dir, const NamedParameters
   typename PointRange::const_iterator argmax=r.begin();
   auto p_max = converter(get(point_map, *argmax));
   for(typename PointRange::const_iterator it=++r.begin(); it!=r.end(); ++it){
-    auto p = converter(get(point_map, *it));
+    const auto& p = converter(get(point_map, *it));
     if(csp(p_max, p, dir)==SMALLER){
       p_max=p;
       argmax=it;
@@ -205,7 +205,7 @@ extreme_vertex_3(const Graph& g, const Direction &dir, const NamedParameters &np
   do{
     is_local_max=true;
     for(auto v: vertices_around_target(argmax, g)){
-      auto p = converter(get(point_map, v));
+      const auto& p = converter(get(point_map, v));
       if(csp(p_max, p, dir)==SMALLER){
         p_max = p;
         argmax = v;
