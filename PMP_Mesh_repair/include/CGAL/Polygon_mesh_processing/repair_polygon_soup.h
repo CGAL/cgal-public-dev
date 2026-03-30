@@ -49,7 +49,7 @@ namespace Polygon_mesh_processing {
  /*!
  * \ingroup PMP_combinatorial_repair_grp
  *
- * \brief Policies controlling how duplicate polygons are handled.
+ * \brief Policies controlling how duplicate polygons are handled in polygon soup repair functions.
  */
 enum Erase_policy {
   ERASE_ALL, KEEP_ONE, KEEP_ONE_IF_ODD
@@ -910,10 +910,10 @@ DuplicateOutputIterator collect_duplicate_polygons(const PointRange& points,
 ///   \cgalParamNEnd
 ///
 ///   \cgalParamNBegin{erase_policy}
-///     \cgalParamDescription{specifies the policy applied when multiple polygons are duplicates.
-///                           `CGAL::Polygon_mesh_processing::ERASE_ALL` remove all duplicates.
-///                           `CGAL::Polygon_mesh_processing::KEEP_ONE` keep one arbitrarily chosen polygon.
-///                           `CGAL::Polygon_mesh_processing::KEEP_ONE_IF_ODD` keep one polygon if their number is odd, and remove all of them otherwise.}
+///     \cgalParamDescription{specifies the policy applied when multiple polygons are duplicates:
+///                           `CGAL::Polygon_mesh_processing::ERASE_ALL` removes all duplicates.
+///                           `CGAL::Polygon_mesh_processing::KEEP_ONE` keeps one arbitrarily chosen polygon.
+///                           `CGAL::Polygon_mesh_processing::KEEP_ONE_IF_ODD` keeps one polygon if the number of duplicate polygons is odd, and removes all of them otherwise.}
 ///     \cgalParamType{`CGAL::Polygon_mesh_processing::Erase_policy`}
 ///     \cgalParamDefault{`CGAL::Polygon_mesh_processing::KEEP_ONE`}
 ///   \cgalParamNEnd
