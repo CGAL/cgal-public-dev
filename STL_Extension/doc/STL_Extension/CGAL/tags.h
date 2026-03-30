@@ -4,7 +4,7 @@ namespace CGAL {
 /*!
 \ingroup PkgSTLExtensionUtilities
 
-Depending on `bool b` the class `Boolean_tag` indicates that
+Depending on `bool B` the class `Boolean_tag` indicates that
 something is `true` or `false` respectively.
 
 \sa `CGAL::Tag_true`
@@ -71,19 +71,29 @@ struct Null_functor {
 \ingroup PkgSTLExtensionUtilities
 Tag used to disable concurrency.
 For example, it may be used by a user to request the sequential version of an algorithm.
+
+\sa `Parallel_tag`
+\sa `Parallel_if_available_tag`
 */
-struct Sequential_tag {};
+struct Sequential_tag {
+  static constexpr bool is_parallel = false;
+};
 
 /*!
 \ingroup PkgSTLExtensionUtilities
 Tag used to enable concurrency.
 For example, it may be used by a user to request the parallel version of an algorithm.
+
+\sa `Sequential_tag`
+\sa `Parallel_if_available_tag`
 */
-struct Parallel_tag {};
+struct Parallel_tag {
+  static constexpr bool is_parallel = true;
+};
 
 /*!
 \ingroup PkgSTLExtensionUtilities
-This tag is a convenience typedef to `Parallel_tag` if the third party library \ref thirdpartyTBB
+This is a convenience alias to `Parallel_tag` if the third party library \ref thirdpartyTBB
 has been found and linked, and to `Sequential_tag` otherwise.
 */
 struct Parallel_if_available_tag {};
