@@ -11,7 +11,7 @@ something is `true` or `false` respectively.
 \sa `CGAL::Tag_false`
 
 */
-template< bool b >
+template< bool B >
 struct Boolean_tag {
 
 /// \name Constants
@@ -19,7 +19,7 @@ struct Boolean_tag {
 /*!
 
 */
-static const bool value = b;
+static const bool value = B;
 
 /// @}
 
@@ -35,7 +35,7 @@ The typedef `Tag_false` is `Boolean_tag<false>`.
 It is used to indicate, for example,
 that a certain feature is not available in a class.
 
-\sa `CGAL::Boolean_tag<b>`
+\sa `CGAL::Boolean_tag<B>`
 \sa `CGAL::Tag_true`
 */
 typedef CGAL::Boolean_tag<false> Tag_false;
@@ -48,7 +48,7 @@ The typedef `Tag_true` is `Boolean_tag<true>`.
 It is used to indicate, for example,
 that a certain feature is available in a class.
 
-\sa `CGAL::Boolean_tag<b>`
+\sa `CGAL::Boolean_tag<B>`
 \sa `CGAL::Tag_false`
 */
 typedef CGAL::Boolean_tag<true> Tag_true;
