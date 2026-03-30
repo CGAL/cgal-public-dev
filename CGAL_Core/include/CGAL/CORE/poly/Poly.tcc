@@ -147,7 +147,6 @@ void Polynomial<NT>::constructFromString(std::string & s, char myX) {
     }
   }
 
-  // AF ??: coeff = NULL;//Did this to ape the constructor from polynomial above
   *this = getpoly(s);
 }
 
@@ -492,7 +491,6 @@ Polynomial<NT> & Polynomial<NT>::mulXpower(int s) {
   if (d < 0) {
     degree = -1;
     coeff.resize(0);
-    // AF ??  coeff = NULL;
     return *this;
   }
   std::vector<NT> c(d+1, 0);
