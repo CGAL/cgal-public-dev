@@ -15,11 +15,12 @@
 namespace PMP = CGAL::Polygon_mesh_processing;
 namespace params = CGAL::parameters;
 
-typedef CGAL::Exact_predicates_inexact_constructions_kernel     K;
-typedef K::Point_3                                              Point_3;
+using Erase_policy = PMP::Duplicate_polygon_erase_policy;
 
-typedef CGAL::Surface_mesh<Point_3>                             Mesh;
-typedef std::vector<std::size_t>                                CGAL_polygon;
+using K       = CGAL::Exact_predicates_inexact_constructions_kernel;
+using Point_3 = K::Point_3;
+using Mesh    = CGAL::Surface_mesh<Point_3>;
+using CGAL_polygon = std::vector<std::size_t>;
 
 void test_polygon_canonicalization(const bool verbose = false)
 {
@@ -265,21 +266,21 @@ void test_merge_duplicate_polygons(const bool /*verbose*/ = false)
   // Remove all duplicates
   polygons_copy = polygons;
   res = PMP::merge_duplicate_polygons_in_polygon_soup(points, polygons_copy,
-                                                      params::erase_policy(PMP::ERASE_ALL)
+                                                      params::erase_policy(Erase_policy::ERASE_ALL)
                                                              .require_same_orientation(false));
   assert(res == 5 && polygons_copy.size() == 1);
 
   // Remove all duplicates but different orientations are different polygons
   polygons_copy = polygons;
   res = PMP::merge_duplicate_polygons_in_polygon_soup(points, polygons_copy,
-                                                      params::erase_policy(PMP::ERASE_ALL)
+                                                      params::erase_policy(Erase_policy::ERASE_ALL)
                                                              .require_same_orientation(true));
   assert(res == 2 && polygons_copy.size() == 4);
 
   // Remove even duplicates
   polygons_copy = polygons;
   res = PMP::merge_duplicate_polygons_in_polygon_soup(points, polygons_copy,
-                                                      params::erase_policy(PMP::KEEP_ONE_IF_ODD)
+                                                      params::erase_policy(Erase_policy::KEEP_ONE_IF_ODD)
                                                              .require_same_orientation(false));
   assert(res == 4 && polygons_copy.size() == 2);
 
@@ -294,7 +295,7 @@ void test_merge_duplicate_polygons(const bool /*verbose*/ = false)
   polygons_copy = polygons;
   res = PMP::merge_duplicate_polygons_in_polygon_soup(points, polygons_copy,
                                                       params::erase_all_duplicates(true)
-                                                             .erase_policy(PMP::KEEP_ONE)
+                                                             .erase_policy(Erase_policy::KEEP_ONE)
                                                              .require_same_orientation(false));
   assert(res == 3 && polygons_copy.size() == 3);
 
@@ -302,7 +303,7 @@ void test_merge_duplicate_polygons(const bool /*verbose*/ = false)
   polygons_copy = polygons;
   res = PMP::merge_duplicate_polygons_in_polygon_soup(points, polygons_copy,
                                                       params::erase_all_duplicates(true)
-                                                             .erase_policy(PMP::KEEP_ONE_IF_ODD)
+                                                             .erase_policy(Erase_policy::KEEP_ONE_IF_ODD)
                                                              .require_same_orientation(false));
   assert(res == 4 && polygons_copy.size() == 2);
 }
