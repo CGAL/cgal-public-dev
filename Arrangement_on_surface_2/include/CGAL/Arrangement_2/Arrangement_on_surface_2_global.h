@@ -1175,9 +1175,9 @@ bool is_valid(const Arrangement_on_surface_2<GeometryTraits_2, TopologyTraits>& 
     }
 
     // Check all isolated vertices in the current face.
-    for (auto iv_it = fh->isolated_vertices_begin(); iv_it != fh->isolated_vertices_end(); ++iv_it) {
+    using Ivc_iterator = typename Arr::Isolated_vertex_const_iterator;
+    for (Ivc_iterator iv_it = fh->isolated_vertices_begin(); iv_it != fh->isolated_vertices_end(); ++iv_it) {
       if (iv_it->face() != fit) return false;
-
       vf_list.push_back(std::make_pair(Vertex_const_handle(iv_it), fh));
     }
   }
