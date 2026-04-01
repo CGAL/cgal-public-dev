@@ -420,7 +420,6 @@ struct Triangulate_face_visitor_reject_all
   using Vertex_index = Mesh::Vertex_index;
   using Face_index = Mesh::Face_index;
 
-  constexpr
   bool accept_face(Face_index,
                    Vertex_index , Vertex_index , Vertex_index) const
   {
