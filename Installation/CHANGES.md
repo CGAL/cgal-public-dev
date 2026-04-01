@@ -39,6 +39,10 @@ Release date: July 2026
     - `!Has_on_unbounded_side_2::operator(Circle_2, Segment_2)` or
     - `!Has_on_unbounded_side_2::operator(Circle_2, Iso_rectangle_2)` or
     - `!Has_on_unbounded_side_3::operator(Sphere_3, Iso_cuboid_3)`
+- Added a new concept, `CompareProjectionAlongDirection_3`,
+     to the 3D Kernel concepts to compare the order of projected points on a line. Corresponding functors
+     in the model (`Compare_projection_along_direction_3`) and free function (`compare_projection_along_direction()`)
+     have also been added.
 
 ### [2D Arrangements](https://doc.cgal.org/6.2/Manual/packages.html#PkgArrangementOnSurface2)
 
