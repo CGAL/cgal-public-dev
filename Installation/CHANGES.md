@@ -21,6 +21,8 @@ Release date: July 2026
 
 ### [Polygon Mesh Processing](https://doc.cgal.org/6.2/Manual/packages.html#PkgPolygonMeshProcessing) (major changes)
 
+- **Breaking change**: Update the visitor concepts `PMPTriangulateFaceVisitor` and `PMPHolefillingVisitor` to request functions `accept_face()` and `accept_triangle()`, respectively. These functions can be used to tweak the way faces and holes are triangles by black listing some candidate triangles.
+    User visitors inheriting from the default visitors do not require any update.
 -   The "Polygon Mesh Processing" package has been reorganized into several packages.
     "Polygon Mesh Processing" retains the core functionalities, while advanced and specialized features
     have been moved to dedicated packages:
