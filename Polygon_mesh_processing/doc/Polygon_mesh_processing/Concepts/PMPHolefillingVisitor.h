@@ -63,7 +63,7 @@ public:
   void end_fair_phase();
 
   /// called before considering a triangle made from the points with indices i0, i1, and i2 to triangulate a hole.
-  /// The indices refers to the position of the points in the input point range if trangulating a polyline, or to
+  /// The indices refers to the position of the points in the input point range if triangulating a polyline, or to
   /// the position of the vertices along the cycle of halfedges of the input border halfedge if triangulating a hole
   /// in a polygon mesh (`0` being the target of the input border halfedge, `1` the target of the next border halfedge, ...).
   /// If `false` is returned, the triangle will not be used. If `true` is returned, the triangle will be
