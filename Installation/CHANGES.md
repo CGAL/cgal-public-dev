@@ -47,10 +47,19 @@ Release date: July 2026
      have also been added.
 
 ### [2D Arrangements](https://doc.cgal.org/6.2/Manual/packages.html#PkgArrangementOnSurface2)
-
--   Introduced a Geometry Traits concept for arrangement on surfaces that enables the provision of the disconnected portions of an approximation of a curve within a given bounding box.
+-   Introduced a Geometry Traits concept for arrangements on surfaces that enables the provision of the disconnected portions of an approximation of a curve within a given bounding box.
 -   Made the `Arr_linear_traits_2` a model of the new concept.
 -   Added overloads of `draw(Arrangement_on_surface_2& arr, Bbox& bbox, ...)` that enable the drawing of arrangements induced by unbounded curves.
+-   Introduced the concept `AosTraits::Do_intersect_2`. A model of this concept must provide an operator that
+    accepts two `x`-monotone curves and a boolean flag that indicates whether common endpoints should be considered or ignored.
+    The operator determines whether the curves intersect, and it can be used with an inexact-construction kernel.
+
+### [2D Intersection of Curves](https://doc.cgal.org/6.2/Manual/packages.html#PkgSurfaceSweep2)
+
+- Deprecated `CGAL::do_curves_intersect()`, which assumed open curves. Replaced by
+    `CGAL::Surface_sweep_2::do_intersect()`. Notice (i) the introduction of the new namespace `Surface_sweep_2`,
+    and (ii) the addition of the `closed` parameter, which defaults to `true`. To match the behavior of the
+    deprecated function, set `closed` to false.
 
 ### [2D Conforming Triangulations and Meshes](https://doc.cgal.org/6.2/Manual/packages.html#PkgMesh2)
 
