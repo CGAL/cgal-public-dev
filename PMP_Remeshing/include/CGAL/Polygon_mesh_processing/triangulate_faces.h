@@ -539,7 +539,7 @@ namespace Triangulate_polygons {
 struct Default_visitor
   : public Hole_filling::Default_visitor
 {
-  /// face id type, refering to the position of the polygon in the input range
+  /// face id type, referring to the position of the polygon in the input range
   using face_descriptor = std::size_t;
   /// vertex id type
   using vertex_descriptor = std::size_t;
