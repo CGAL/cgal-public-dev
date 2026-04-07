@@ -457,7 +457,7 @@ bool has_empty_kernel(const PolygonMesh& pm,
   *
   * See `CGAL::Polygon_mesh_processing::kernel()` for a comprehensive description of the parameters.
   *
-  * In addition to the parameters available in `CGAL::Polygon_mesh_processing::kernel()`, the following parameter is also available:
+  * In addition to the parameters available in `CGAL::Polygon_mesh_processing::kernel()`, the following named parameter is also available:
   *
   * \cgalNamedParamsBegin
   *   \cgalParamNBegin{strictly_inside}
