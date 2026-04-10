@@ -28,7 +28,13 @@ template<class GetPlacement>
 class Bounded_normal_change_placement
 {
 public:
-  Bounded_normal_change_placement(const GetPlacement& get_placement = GetPlacement())
+  template <typename GP = GetPlacement,
+            std::enable_if_t<std::is_default_constructible_v<GP>, int> = 0>
+  Bounded_normal_change_placement()
+    : m_get_placement()
+  {}
+
+  Bounded_normal_change_placement(const GetPlacement& get_placement)
     : m_get_placement(get_placement)
   {}
 
