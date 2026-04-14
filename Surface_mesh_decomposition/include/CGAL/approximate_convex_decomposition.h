@@ -620,9 +620,9 @@ void naive_floodfill(std::vector<int8_t>& grid, const Vec3_uint& grid_size) {
   }
 }
 
+#ifdef CGAL_LINKED_WITH_TBB
 template<typename FaceGraph, typename GeomTraits>
 void rayshooting_fill(std::vector<int8_t>& grid, const Vec3_uint& grid_size, const Bbox_3& bb, const typename GeomTraits::FT& voxel_size, const FaceGraph& mesh, CGAL::Parallel_tag) {
-#ifdef CGAL_LINKED_WITH_TBB
   const auto vox = [&grid, &grid_size](unsigned int x, unsigned int y, unsigned int z) -> int8_t& {
     return grid[z + (y * grid_size[2]) + (x * grid_size[1] * grid_size[2])];
     };
@@ -676,14 +676,8 @@ void rayshooting_fill(std::vector<int8_t>& grid, const Vec3_uint& grid_size, con
       }
   }
     );
-#else
-  CGAL_USE(grid);
-  CGAL_USE(grid_size);
-  CGAL_USE(bb);
-  CGAL_USE(voxel_size);
-  CGAL_USE(mesh);
-#endif
 }
+#endif
 
 template<typename FaceGraph, typename GeomTraits>
 void rayshooting_fill(std::vector<int8_t>& grid, const Vec3_uint& grid_size, const Bbox_3& bb, const typename GeomTraits::FT& voxel_size, const FaceGraph& mesh, CGAL::Sequential_tag) {
@@ -1522,9 +1516,9 @@ void recurse(std::vector<Candidate<GeomTraits>>& candidates, std::vector<int8_t>
     std::move(final_candidates.begin(), final_candidates.end(), std::back_inserter(candidates));
 }
 
+#ifdef CGAL_LINKED_WITH_TBB
 template<typename GeomTraits>
 void merge(std::vector<Convex_hull_candidate<GeomTraits>>& candidates, const typename GeomTraits::FT& hull_volume, const unsigned int max_convex_hulls, CGAL::Parallel_tag) {
-#ifdef CGAL_LINKED_WITH_TBB
   if (candidates.size() <= max_convex_hulls)
     return;
 
@@ -1675,13 +1669,8 @@ void merge(std::vector<Convex_hull_candidate<GeomTraits>>& candidates, const typ
 
   for (std::size_t i : keep)
     candidates.push_back(std::move(hulls[i]));
-#else
-  CGAL_USE(candidates);
-  CGAL_USE(max_convex_hulls);
-  CGAL_USE(hull_volume);
-  assert(false);
-#endif
 }
+#endif
 
 template<typename GeomTraits>
 void merge(std::vector<Convex_hull_candidate<GeomTraits>>& candidates, const typename GeomTraits::FT& hull_volume, const unsigned int max_convex_hulls, CGAL::Sequential_tag) {
@@ -1918,7 +1907,7 @@ void merge(std::vector<Convex_hull_candidate<GeomTraits>>& candidates, const typ
  *   \cgalParamNBegin{concurrency_tag}
  *     \cgalParamDescription{a tag indicating if the task should be done using one or several threads.}
  *     \cgalParamType{Either `CGAL::Sequential_tag`, or `CGAL::Parallel_tag`, or `CGAL::Parallel_if_available_tag`}
- *     \cgalParamDefault{`CGAL::Parallel_if_available_tag`}
+ *     \cgalParamDefault{`CGAL::Sequential_tag`}
  *   \cgalParamNEnd
  *
  *   \cgalParamNBegin{geom_traits}
@@ -1946,7 +1935,7 @@ std::size_t approximate_convex_decomposition(const FaceGraph& tmesh, OutputItera
   using Point_3 = typename Geom_traits::Point_3;
   const unsigned int num_voxels = parameters::choose_parameter(parameters::get_parameter(np, internal_np::maximum_number_of_voxels), 1000000);
   const bool refitting = parameters::choose_parameter(parameters::get_parameter(np, internal_np::refitting), true);
-  using Concurrency_tag = typename internal_np::Lookup_named_param_def<internal_np::concurrency_tag_t, NamedParameters, Parallel_if_available_tag>::type;
+  using Concurrency_tag = typename internal_np::Lookup_named_param_def<internal_np::concurrency_tag_t, NamedParameters, Sequential_tag>::type;
 
   CGAL_precondition(CGAL::is_closed(tmesh));
 
