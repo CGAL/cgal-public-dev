@@ -23,7 +23,6 @@
 
 #include <CGAL/convex_hull_3.h>
 #include <CGAL/Polygon_mesh_processing/bbox.h>
-#include <CGAL/Polygon_mesh_processing/compute_normal.h>
 #include <CGAL/Polygon_mesh_processing/triangle.h>
 #include <CGAL/Polygon_mesh_processing/shape_predicates.h>
 #include <CGAL/Polygon_mesh_processing/measure.h>
@@ -620,8 +619,8 @@ void naive_floodfill(std::vector<int8_t>& grid, const Vec3_uint& grid_size) {
   }
 }
 
-template<typename FaceGraph, typename GeomTraits, typename Concurrency_tag>
-void rayshooting_fill(std::vector<int8_t>& grid, const Vec3_uint& grid_size, const Bbox_3& bb, const typename GeomTraits::FT& voxel_size, const FaceGraph& mesh, Concurrency_tag) {
+template<typename FaceGraph, typename GeomTraits, typename VPM, typename Concurrency_tag>
+void rayshooting_fill(std::vector<int8_t>& grid, const Vec3_uint& grid_size, const Bbox_3& bb, const typename GeomTraits::FT& voxel_size, const FaceGraph& mesh, VPM vpm, Concurrency_tag) {
   const auto vox = [&grid, &grid_size](unsigned int x, unsigned int y, unsigned int z) -> int8_t& {
     return grid[z + (y * grid_size[2]) + (x * grid_size[1] * grid_size[2])];
     };
@@ -658,8 +657,10 @@ void rayshooting_fill(std::vector<int8_t>& grid, const Vec3_uint& grid_size, con
             // A segment intersection is not helpful as it means the triangle normal is orthogonal to the ray
             if (std::get_if<Point_3>(&intersection->first)) {
               face_descriptor fd = intersection->second;
-              Vector_3 n = Polygon_mesh_processing::compute_face_normal(fd, mesh);
-              if (dirs[i] * n > 0)
+              auto h = halfedge(fd, mesh);
+              if (orientation(get(vpm, source(h, mesh)),
+                              get(vpm, target(h, mesh)),
+                              get(vpm, target(next(h, mesh), mesh)), c) != POSITIVE)
                 inside++;
               else
                 outside++;
@@ -836,8 +837,8 @@ void compute_candidate(Candidate<GeomTraits> &c, const Bbox_3& bb, typename Geom
   c.ch.volume_error = CGAL::abs(c.ch.volume - c.ch.voxel_volume) / c.ch.voxel_volume;
 }
 
-template<typename FaceGraph, typename GeomTraits, typename Concurrency_tag>
-void fill_grid(Candidate<GeomTraits> &c, std::vector<int8_t> &grid, const FaceGraph &mesh, const Bbox_3& bb, const Vec3_uint& grid_size, const typename GeomTraits::FT& voxel_size, Concurrency_tag tag) {
+template<typename FaceGraph, typename GeomTraits, typename VPM, typename Concurrency_tag>
+void fill_grid(Candidate<GeomTraits> &c, std::vector<int8_t> &grid, const FaceGraph &mesh, VPM vpm, const Bbox_3& bb, const Vec3_uint& grid_size, const typename GeomTraits::FT& voxel_size, Concurrency_tag tag) {
   const auto vox = [&grid, &grid_size](unsigned int x, unsigned int y, unsigned int z) -> int8_t& {
     return grid[z + (y * grid_size[2]) + (x * grid_size[1] * grid_size[2])];
     };
@@ -862,7 +863,7 @@ void fill_grid(Candidate<GeomTraits> &c, std::vector<int8_t> &grid, const FaceGr
   if (CGAL::is_closed(mesh))
     naive_floodfill(grid, grid_size);
   else
-    rayshooting_fill<FaceGraph, GeomTraits>(grid, grid_size, bb, voxel_size, mesh, tag);
+    rayshooting_fill<FaceGraph, GeomTraits>(grid, grid_size, bb, voxel_size, mesh, vpm, tag);
 
   c.bbox.upper = {grid_size[0] - 1, grid_size[1] - 1, grid_size[2] - 1};
 
@@ -875,9 +876,9 @@ void fill_grid(Candidate<GeomTraits> &c, std::vector<int8_t> &grid, const FaceGr
           c.surface.push_back({x, y, z});
 }
 
-template<typename GeomTraits, typename FaceGraph, typename Concurrency_tag>
-void init(Candidate<GeomTraits> &c, const FaceGraph& mesh, std::vector<int8_t>& grid, const Bbox_3& bb, const Vec3_uint& grid_size, const typename GeomTraits::FT& voxel_size, Concurrency_tag tag) {
-  internal::fill_grid(c, grid, mesh, bb, grid_size, voxel_size, tag);
+template<typename GeomTraits, typename FaceGraph, typename VPM, typename Concurrency_tag>
+void init(Candidate<GeomTraits> &c, const FaceGraph& mesh, VPM vpm, std::vector<int8_t>& grid, const Bbox_3& bb, const Vec3_uint& grid_size, const typename GeomTraits::FT& voxel_size, Concurrency_tag tag) {
+  internal::fill_grid(c, grid, mesh, vpm, bb, grid_size, voxel_size, tag);
   compute_candidate(c, bb, voxel_size);
 }
 
@@ -1629,7 +1630,7 @@ std::size_t approximate_convex_decomposition(const FaceGraph& tmesh, OutputItera
   std::vector<int8_t> grid(grid_size[0] * grid_size[1] * grid_size[2], internal::Grid_cell::INSIDE);
 
   std::vector<internal::Candidate<Geom_traits>> candidates(1);
-  internal::init(candidates[0], tmesh, grid, bb, grid_size, voxel_size, Concurrency_tag());
+  internal::init(candidates[0], tmesh, vpm, grid, bb, grid_size, voxel_size, Concurrency_tag());
 
   if (hull_volume == 0) {
     *out_volumes = std::make_pair(std::move(candidates[0].ch.points), std::move(candidates[0].ch.indices));
