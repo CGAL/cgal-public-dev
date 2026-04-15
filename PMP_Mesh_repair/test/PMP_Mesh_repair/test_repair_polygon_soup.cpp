@@ -1,5 +1,3 @@
-#include <CGAL/Installation/internal/disable_deprecation_warnings_and_errors.h>
-
 #include <CGAL/Polygon_mesh_processing/repair_polygon_soup.h>
 #include <CGAL/Surface_mesh.h>
 #include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
@@ -282,6 +280,7 @@ void test_merge_duplicate_polygons(const bool /*verbose*/ = false)
                                                              .require_same_orientation(false));
   assert(res == 4 && polygons_copy.size() == 2);
 
+#ifndef CGAL_NO_DEPRECATED_CODE
   // Remove all duplicates (Deprecated parameter)
   polygons_copy = polygons;
   res = PMP::merge_duplicate_polygons_in_polygon_soup(points, polygons_copy,
@@ -304,6 +303,7 @@ void test_merge_duplicate_polygons(const bool /*verbose*/ = false)
                                                              .erase_policy(Erase_policy::KEEP_ONE_IF_ODD)
                                                              .require_same_orientation(false));
   assert(res == 4 && polygons_copy.size() == 2);
+#endif
 }
 
 void test_simplify_polygons(const bool /*verbose*/ = false)
