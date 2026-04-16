@@ -4168,9 +4168,9 @@ public:
   }
 
   void recheck_for_missing_subfaces() {
-    for(int i = 0, end = face_constraint_misses_subfaces.size(); i < end; ++i) {
+    for(auto i = 0u, end = face_constraint_misses_subfaces.size(); i < end; ++i) {
       if(this->face_data[i].skip_face == false) {
-        search_for_missing_subfaces(i);
+        search_for_missing_subfaces(static_cast<CDT_3_signed_index>(i));
       }
     }
   }
