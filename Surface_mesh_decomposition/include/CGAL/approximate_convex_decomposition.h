@@ -619,6 +619,7 @@ void naive_floodfill(std::vector<int8_t>& grid, const Vec3_uint& grid_size) {
   }
 }
 
+#ifdef CGAL_APPROX_CONVEX_DECOMPOSITION_ACCEPTS_NON_CLOSED_INPUT
 template<typename FaceGraph, typename GeomTraits, typename VPM, typename Concurrency_tag>
 void rayshooting_fill(std::vector<int8_t>& grid, const Vec3_uint& grid_size, const Bbox_3& bb, const typename GeomTraits::FT& voxel_size, const FaceGraph& mesh, VPM vpm, Concurrency_tag) {
   const auto vox = [&grid, &grid_size](unsigned int x, unsigned int y, unsigned int z) -> int8_t& {
@@ -684,6 +685,7 @@ void rayshooting_fill(std::vector<int8_t>& grid, const Vec3_uint& grid_size, con
     for (std::size_t x = 0; x < grid_size[0]; x++)
       yz_run(x);
 }
+#endif
 
 template<typename GeomTraits>
 struct Convex_hull_candidate {
@@ -860,10 +862,16 @@ void fill_grid(Candidate<GeomTraits> &c, std::vector<int8_t> &grid, const FaceGr
         }
   }
 
+#ifdef CGAL_APPROX_CONVEX_DECOMPOSITION_ACCEPTS_NON_CLOSED_INPUT
   if (CGAL::is_closed(mesh))
     naive_floodfill(grid, grid_size);
   else
     rayshooting_fill<FaceGraph, GeomTraits>(grid, grid_size, bb, voxel_size, mesh, vpm, tag);
+#else
+  CGAL_USE(vpm);
+  CGAL_USE(tag);
+  naive_floodfill(grid, grid_size);
+#endif
 
   c.bbox.upper = {grid_size[0] - 1, grid_size[1] - 1, grid_size[2] - 1};
 
@@ -1584,7 +1592,9 @@ std::size_t approximate_convex_decomposition(const FaceGraph& tmesh, OutputItera
   const bool refitting = parameters::choose_parameter(parameters::get_parameter(np, internal_np::refitting), true);
   using Concurrency_tag = typename internal_np::Lookup_named_param_def<internal_np::concurrency_tag_t, NamedParameters, Sequential_tag>::type;
 
+#ifndef CGAL_APPROX_CONVEX_DECOMPOSITION_ACCEPTS_NON_CLOSED_INPUT
   CGAL_precondition(CGAL::is_closed(tmesh));
+#endif
 
   if (faces(tmesh).size() == 0)
     return 0;
