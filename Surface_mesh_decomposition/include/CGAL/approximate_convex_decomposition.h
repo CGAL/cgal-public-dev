@@ -1497,10 +1497,13 @@ void merge(std::vector<Convex_hull_candidate<GeomTraits>>& candidates, const typ
 /**
  * \ingroup PkgConvexDecomposition3Ref
  *
- * \brief approximates the closed input mesh by a number of convex volumes.
- *        The input mesh is voxelized and the voxels intersecting with the mesh are labeled as surface. The remaining voxels are labeled as outside or inside.
- *        In a next step, the convex hull of the mesh is hierarchically split until the `volume_error` threshold is satisfied or the `maximum_depth` is reached.
- *        Finally, a greedy pairwise merging combines smaller convex volumes until `maximum_number_of_convex_volumes` is met.
+ * \brief approximates a closed input mesh by a set of convex volumes, which union encloses the input mesh.
+ *
+ * The bounding box of the input mesh is decomposed into regular voxels.
+ * Voxels intersecting the input mesh are then labeled as surface, while the remaining one are labeled outside or inside
+ * according to their position with reference to the domain bounded by the closed input mesh.
+ * Next, the convex hull of the mesh is hierarchically split until the `volume_error` threshold is satisfied or the `maximum_depth` is reached.
+ * Finally, a greedy pairwise merging algorithm combines smaller convex volumes until `maximum_number_of_convex_volumes` is met.
  *
  * \tparam FaceGraph a model of `HalfedgeListGraph`, and `FaceListGraph`
  *
@@ -1580,6 +1583,9 @@ void merge(std::vector<Convex_hull_candidate<GeomTraits>>& candidates, const typ
  * \pre `tmesh` is a triangle mesh.
  * \pre `tmesh` is not self-intersecting.
  * \pre CGAL::is_closed(`tmesh`).
+ *
+ * \note If the input mesh is not closed, we recommand to first use the function `CGAL::alpha_wrap_3()` to generate an enclosing of the input mesh to apply this function onto.
+ *
  * \sa `CGAL::Polygon_mesh_processing::polygon_soup_to_polygon_mesh()`
  */
 template<typename FaceGraph, typename OutputIterator, typename NamedParameters = parameters::Default_named_parameters>
