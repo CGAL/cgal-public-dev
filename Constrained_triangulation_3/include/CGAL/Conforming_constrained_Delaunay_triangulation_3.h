@@ -2351,6 +2351,7 @@ private:
   {
     const CDT_2& cdt_2 = face_cdt_2[polygon_contraint_id];
 
+    face_constraint_misses_subfaces_reset(static_cast<std::size_t>(polygon_contraint_id));
     for(const auto fh: cdt_2.all_face_handles())
     {
       if(fh->info().is_outside_the_face) continue;
@@ -4028,6 +4029,9 @@ public:
         the_process_made_progress = false;
       }
     }
+    CGAL_assertion_code(recheck_constrained_Delaunay());
+    CGAL_assertion_msg(face_constraint_misses_subfaces_find_first() == face_constraint_misses_subfaces_npos,
+                       "All faces have been restored, but the triangulation is a CDT. This should not happen.");
   }
 
   void add_bbox_points_if_not_dimension_3() {
