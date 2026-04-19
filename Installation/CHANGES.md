@@ -127,6 +127,13 @@ Release date: July 2026
     compute the polylines that represent the intersection between two polyhedral surfaces has been
     renamed to [`CGAL::Polygon_mesh_processing::intersection_polylines()`]().
 
+### [Polygon Mesh Processing (Mesh Repair)](https://doc.cgal.org/6.2/Manual/packages.html#PkgPMPMeshRepair)
+-   Added `erase_policy` parameter to `CGAL::Polygon_mesh_processing::repair_polygon_soup()` and
+    `CGAL::Polygon_mesh_processing::merge_duplicate_polygons_in_polygon_soup()`. This parameter offers three policies: erase all duplicates polygons,
+    keep one of the duplicates (default) and keep one if the number of duplicates is odd.
+-   `erase_all_duplicates` parameter of `CGAL::Polygon_mesh_processing::repair_polygon_soup()` and
+    `CGAL::Polygon_mesh_processing::merge_duplicate_polygons_in_polygon_soup()` is now deprecated.
+
 ### [Tetrahedral Mesh Generation](https://doc.cgal.org/6.2/Manual/packages.html#PkgMesh3)
 
 -   **Breaking change**: Removed the class template `CGAL::Implicit_vector_to_labeling_function_wrapper` as well as
