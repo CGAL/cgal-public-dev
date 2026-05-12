@@ -16,6 +16,8 @@
 
 
 #include <CGAL/property_map.h>
+#include <CGAL/Splat_surface_reconstruction_3/internal/Box_grid.h>
+
 
 namespace CGAL {
 
