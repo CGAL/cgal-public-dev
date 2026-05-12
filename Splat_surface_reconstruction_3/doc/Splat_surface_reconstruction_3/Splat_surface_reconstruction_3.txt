@@ -1,0 +1,28 @@
+namespace CGAL {
+/*!
+
+\mainpage User Manual
+\anchor Chapter_Splat_Surface_Reconstruction
+\cgalAutoToc
+\authors Pranav Jain, Martin Skrodzki
+
+\section Splat_surface_reconstruction_3Introduction Introduction
+
+This \cgal component implements a surface reconstruction method which
+takes as input point sets with oriented normals and compute_average_spacing
+
+\cgalFigureBegin{Splat_surface_reconstruction_3figintroduction, SplatIntroduction.jpg}
+Splat surface reconstruction.\n
+Left:  Right: reconstructed surface mesh.
+\cgalFigureEnd
+
+The following example reads a point set and reconstructs a surface using Splat reconstruction.
+
+\cgalExample{Splat_surface_reconstruction_3/splat_reconstruction_function.cpp}
+
+
+\section SplatSurfReconstDesignHistory Design and Implementation History
+
+The initial implementation
+*/
+} /* namespace CGAL */
