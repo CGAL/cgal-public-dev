@@ -9,8 +9,8 @@
 //
 // Author(s)     : Pranav Jain
 
-#ifndef CGAL_SPLAT_SURFACE_RECONSTRUCTION_INTERNAL_BOX_GRID_H
-#define CGAL_SPLAT_SURFACE_RECONSTRUCTION_INTERNAL_BOX_GRID_H
+#ifndef CGAL_SPLAT_SURFACE_RECONSTRUCTION_3_INTERNAL_BOX_GRID_H
+#define CGAL_SPLAT_SURFACE_RECONSTRUCTION_3_INTERNAL_BOX_GRID_H
 
 #include <CGAL/license/Splat_surface_reconstruction_3.h>
 
@@ -26,4 +26,4 @@ struct Box_grid
   }  // namespace internal
 } // namespace Splat_surface_reconstruction_3
 } // namespace CGAL
-#endif // CGAL_SPLAT_SURFACE_RECONSTRUCTION_INTERNAL_BOX_GRID_H
+#endif // CGAL_SPLAT_SURFACE_RECONSTRUCTION_3_INTERNAL_BOX_GRID_H
