@@ -1,1 +1,0 @@
-/home/yury/Projects/CPPProj/GSOC/cgal-public-dev/Partition_2/include/CGAL/polygon_function_objects.h

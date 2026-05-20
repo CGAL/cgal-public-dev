@@ -1,1 +1,0 @@
-/home/yury/Projects/CPPProj/GSOC/cgal-public-dev/Alpha_shapes_2/include/CGAL/Alpha_shape_face_base_2.h

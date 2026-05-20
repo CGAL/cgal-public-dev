@@ -1,1 +1,0 @@
-/home/yury/Projects/CPPProj/GSOC/cgal-public-dev/Circular_kernel_3/include/CGAL/Simple_spherical_kernel_3.h

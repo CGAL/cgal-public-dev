@@ -1,1 +1,0 @@
-/home/yury/Projects/CPPProj/GSOC/cgal-public-dev/Spatial_searching/include/CGAL/Euclidean_distance.h

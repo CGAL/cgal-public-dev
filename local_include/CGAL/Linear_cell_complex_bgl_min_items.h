@@ -1,1 +1,0 @@
-/home/yury/Projects/CPPProj/GSOC/cgal-public-dev/Linear_cell_complex/include/CGAL/Linear_cell_complex_bgl_min_items.h

@@ -1,1 +1,0 @@
-/home/yury/Projects/CPPProj/GSOC/cgal-public-dev/Inscribed_areas/include/CGAL/Largest_empty_iso_rectangle_2.h

@@ -1,1 +1,0 @@
-/home/yury/Projects/CPPProj/GSOC/cgal-public-dev/BGL/include/CGAL/draw_face_graph.h

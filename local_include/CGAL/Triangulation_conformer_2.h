@@ -1,1 +1,0 @@
-/home/yury/Projects/CPPProj/GSOC/cgal-public-dev/Mesh_2/include/CGAL/Triangulation_conformer_2.h

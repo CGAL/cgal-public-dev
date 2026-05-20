@@ -1,1 +1,0 @@
-/home/yury/Projects/CPPProj/GSOC/cgal-public-dev/Ridges_3/include/CGAL/Vertex2Data_Property_Map_with_std_map.h

@@ -1,1 +1,0 @@
-/home/yury/Projects/CPPProj/GSOC/cgal-public-dev/Triangulation_on_sphere_2/include/CGAL/Triangulation_on_sphere_face_base_2.h

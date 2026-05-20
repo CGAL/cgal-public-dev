@@ -1,1 +1,0 @@
-/home/yury/Projects/CPPProj/GSOC/cgal-public-dev/Visibility_2/include/CGAL/Rotational_sweep_visibility_2.h

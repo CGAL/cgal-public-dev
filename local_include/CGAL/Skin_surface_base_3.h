@@ -1,1 +1,0 @@
-/home/yury/Projects/CPPProj/GSOC/cgal-public-dev/Skin_surface_3/include/CGAL/Skin_surface_base_3.h

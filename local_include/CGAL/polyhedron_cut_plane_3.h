@@ -1,1 +1,0 @@
-/home/yury/Projects/CPPProj/GSOC/cgal-public-dev/Polyhedron/include/CGAL/polyhedron_cut_plane_3.h

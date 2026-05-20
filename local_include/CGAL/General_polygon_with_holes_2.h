@@ -1,1 +1,0 @@
-/home/yury/Projects/CPPProj/GSOC/cgal-public-dev/Polygon/include/CGAL/General_polygon_with_holes_2.h

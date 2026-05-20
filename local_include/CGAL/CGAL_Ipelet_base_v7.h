@@ -1,1 +1,0 @@
-/home/yury/Projects/CPPProj/GSOC/cgal-public-dev/CGAL_ipelets/include/CGAL/CGAL_Ipelet_base_v7.h

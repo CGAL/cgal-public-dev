@@ -1,1 +1,0 @@
-/home/yury/Projects/CPPProj/GSOC/cgal-public-dev/Surface_mesher/include/CGAL/Surface_mesh_triangulation_generator_3.h

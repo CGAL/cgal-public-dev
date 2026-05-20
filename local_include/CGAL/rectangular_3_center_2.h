@@ -1,1 +1,0 @@
-/home/yury/Projects/CPPProj/GSOC/cgal-public-dev/Bounding_volumes/include/CGAL/rectangular_3_center_2.h

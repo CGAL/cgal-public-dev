@@ -1,1 +1,0 @@
-/home/yury/Projects/CPPProj/GSOC/cgal-public-dev/Distance_3/include/CGAL/squared_distance_3.h

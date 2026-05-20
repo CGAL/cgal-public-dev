@@ -1,1 +1,0 @@
-/home/yury/Projects/CPPProj/GSOC/cgal-public-dev/Interpolation/include/CGAL/regular_neighbor_coordinates_2.h
