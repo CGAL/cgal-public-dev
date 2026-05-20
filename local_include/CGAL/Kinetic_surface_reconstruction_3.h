@@ -1,0 +1,1 @@
+/home/yury/Projects/CPPProj/GSOC/cgal-public-dev/Kinetic_surface_reconstruction/include/CGAL/Kinetic_surface_reconstruction_3.h

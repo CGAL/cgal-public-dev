@@ -1,0 +1,1 @@
+/home/yury/Projects/CPPProj/GSOC/cgal-public-dev/Straight_skeleton_2/include/CGAL/Polygon_offset_builder_traits_2.h

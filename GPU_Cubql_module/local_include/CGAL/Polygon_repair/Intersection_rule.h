@@ -1,0 +1,1 @@
+/home/yury/Projects/CPPProj/GSOC/cgal-public-dev/Polygon_repair/include/CGAL/Polygon_repair/Intersection_rule.h

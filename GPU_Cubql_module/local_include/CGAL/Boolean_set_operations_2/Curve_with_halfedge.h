@@ -1,0 +1,1 @@
+/home/yury/Projects/CPPProj/GSOC/cgal-public-dev/Boolean_set_operations_2/include/CGAL/Boolean_set_operations_2/Curve_with_halfedge.h

@@ -1,0 +1,1 @@
+/home/yury/Projects/CPPProj/GSOC/cgal-public-dev/Mesh_3/include/CGAL/Mesh_3/Labeled_mesh_domain_3_image.h

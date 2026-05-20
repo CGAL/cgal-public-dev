@@ -1,0 +1,1 @@
+/home/yury/Projects/CPPProj/GSOC/cgal-public-dev/Minkowski_sum_2/include/CGAL/Small_side_angle_bisector_decomposition_2.h

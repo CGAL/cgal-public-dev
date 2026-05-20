@@ -1,0 +1,1 @@
+/home/yury/Projects/CPPProj/GSOC/cgal-public-dev/Surface_mesher/include/CGAL/Surface_mesher/Surface_mesher_regular_edges.h

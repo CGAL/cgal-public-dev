@@ -1,0 +1,1 @@
+/home/yury/Projects/CPPProj/GSOC/cgal-public-dev/Surface_mesh_topology/include/CGAL/Polygonal_schema_min_items.h

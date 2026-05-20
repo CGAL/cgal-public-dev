@@ -1,0 +1,1 @@
+/home/yury/Projects/CPPProj/GSOC/cgal-public-dev/Mesh_3/include/CGAL/Mesh_3/Construct_initial_points_gray_image.h

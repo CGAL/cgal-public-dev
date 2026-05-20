@@ -1,0 +1,1 @@
+/home/yury/Projects/CPPProj/GSOC/cgal-public-dev/Surface_mesh_approximation/include/CGAL/Variational_shape_approximation.h

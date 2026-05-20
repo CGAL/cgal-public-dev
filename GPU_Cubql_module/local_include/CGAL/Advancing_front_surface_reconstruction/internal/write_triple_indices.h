@@ -1,0 +1,1 @@
+/home/yury/Projects/CPPProj/GSOC/cgal-public-dev/Advancing_front_surface_reconstruction/include/CGAL/Advancing_front_surface_reconstruction/internal/write_triple_indices.h

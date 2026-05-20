@@ -1,0 +1,1 @@
+/home/yury/Projects/CPPProj/GSOC/cgal-public-dev/GraphicsView/include/CGAL/auto_link/Qt.h

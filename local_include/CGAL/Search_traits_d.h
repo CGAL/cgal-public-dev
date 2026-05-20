@@ -1,0 +1,1 @@
+/home/yury/Projects/CPPProj/GSOC/cgal-public-dev/Spatial_searching/include/CGAL/Search_traits_d.h

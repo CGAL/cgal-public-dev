@@ -1,0 +1,1 @@
+/home/yury/Projects/CPPProj/GSOC/cgal-public-dev/GraphicsView/include/CGAL/Qt/CGAL_Qt_config.h

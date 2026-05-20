@@ -1,0 +1,1 @@
+/home/yury/Projects/CPPProj/GSOC/cgal-public-dev/Cartesian_kernel/include/CGAL/Cartesian/predicates_on_planes_3.h

@@ -1,0 +1,1 @@
+/home/yury/Projects/CPPProj/GSOC/cgal-public-dev/Intersections_3/include/CGAL/Intersections_3/internal/Triangle_3_Triangle_3_do_intersect.h

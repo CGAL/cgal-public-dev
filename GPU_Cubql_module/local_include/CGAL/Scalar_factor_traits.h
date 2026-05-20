@@ -1,0 +1,1 @@
+/home/yury/Projects/CPPProj/GSOC/cgal-public-dev/Algebraic_foundations/include/CGAL/Scalar_factor_traits.h

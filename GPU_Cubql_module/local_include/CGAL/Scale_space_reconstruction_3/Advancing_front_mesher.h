@@ -1,0 +1,1 @@
+/home/yury/Projects/CPPProj/GSOC/cgal-public-dev/Scale_space_reconstruction_3/include/CGAL/Scale_space_reconstruction_3/Advancing_front_mesher.h

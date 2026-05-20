@@ -1,0 +1,39 @@
+# --- PATHS ---
+CGAL_ROOT   = /home/yury/Projects/CPPProj/GSOC/cgal-public-dev
+CUBQL_ROOT ?= /home/yury/Projects/CPPProj/Cubql
+CUDA_PATH  ?= /usr/local/cuda
+LIBS_DIR    = $(CUBQL_ROOT)/build
+
+NVCC        = $(CUDA_PATH)/bin/nvcc
+
+# --- COMPILER FLAGS ---
+CC_FLAGS    = -O3 -std=c++17 --expt-relaxed-constexpr -rdc=true --extended-lambda -DCUBQL_HAVE_CUDA=1
+
+# Architecture for your RTX 5060 Ti
+GENCODE     = -gencode arch=compute_120,code=sm_120
+
+# --- INCLUDES ---
+# Explicitly adding the foundational package include paths for your local CGAL clone
+INCLUDES    = -Iinclude \
+              -I$(CGAL_ROOT)/Core/include \
+              -I$(CGAL_ROOT)/Surface_mesh/include \
+              -I$(CGAL_ROOT)/Polygon_mesh_processing/include \
+              -I$(CGAL_ROOT)/STL_Extension/include \
+              -I$(CUBQL_ROOT) \
+              -I$(CUDA_PATH)/include \
+              -I$(CUBQL_ROOT)/samples/common
+
+# --- LIBRARIES ---
+LIBS        = -L$(LIBS_DIR) -Xlinker -rpath,$(LIBS_DIR) \
+              -lcuBQL_cuda_float2 -lcuBQL_cuda_float3 \
+              -lcudart -lcudadevrt \
+              -lgmp -lmpfr
+
+# --- TARGETS ---
+all: meshIntersectionRegistration
+
+meshIntersectionRegistration: meshIntersectionRegistration.cu
+	$(NVCC) $(CC_FLAGS) $(GENCODE) $(INCLUDES) meshIntersectionRegistration.cu $(LIBS) -o meshIntersectionRegistration
+
+clean:
+	rm -f meshIntersectionRegistration

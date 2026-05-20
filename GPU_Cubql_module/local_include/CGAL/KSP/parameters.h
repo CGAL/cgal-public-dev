@@ -1,0 +1,1 @@
+/home/yury/Projects/CPPProj/GSOC/cgal-public-dev/Kinetic_space_partition/include/CGAL/KSP/parameters.h

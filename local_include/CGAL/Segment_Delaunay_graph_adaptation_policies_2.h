@@ -1,0 +1,1 @@
+/home/yury/Projects/CPPProj/GSOC/cgal-public-dev/Voronoi_diagram_2/include/CGAL/Segment_Delaunay_graph_adaptation_policies_2.h

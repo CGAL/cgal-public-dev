@@ -1,0 +1,1 @@
+/home/yury/Projects/CPPProj/GSOC/cgal-public-dev/Isosurfacing_3/include/CGAL/Isosurfacing_3/internal/implicit_shapes_helper.h

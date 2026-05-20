@@ -1,0 +1,1 @@
+/home/yury/Projects/CPPProj/GSOC/cgal-public-dev/Isosurfacing_3/include/CGAL/Isosurfacing_3/Value_function_3.h

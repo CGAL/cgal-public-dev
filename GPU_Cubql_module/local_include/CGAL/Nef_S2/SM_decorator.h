@@ -1,0 +1,1 @@
+/home/yury/Projects/CPPProj/GSOC/cgal-public-dev/Nef_S2/include/CGAL/Nef_S2/SM_decorator.h

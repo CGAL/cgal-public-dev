@@ -1,0 +1,1 @@
+/home/yury/Projects/CPPProj/GSOC/cgal-public-dev/SMDS_3/include/CGAL/Compact_simplicial_mesh_cell_base_3.h
