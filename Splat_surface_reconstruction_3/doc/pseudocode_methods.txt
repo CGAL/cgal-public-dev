@@ -1,0 +1,72 @@
+function run(points, normals, params):
+    cloud = PointCloud(points, normals)
+
+    if normals missing:
+        cloud.estimateNormals()
+
+    boxGrid.build(cloud.points, params.boxSize = params.targetEdgeLength,
+                  queryRadius = params.targetEdgeLength)
+
+    for each box in boxGrid:
+        box.normal = boxGrid.computeBoxNormal(box)
+        if box.normal is inconsistent with any point normal in box:
+            warn("splat size / parameter choice may be too large")
+
+    if params.useIndividualSplatSizes:
+        for each point:
+            point.splatRadius = estimateLocalSplatRadius(point, boxGrid)
+    else:
+        for each point:
+            point.splatRadius = params.splatSize
+
+    graph = empty mesh graph
+    regionManager = empty
+    candidateQueues = empty
+    projectionChecker = ProjectionChecker(boxGrid)
+
+    v0 = projectStartingVertex(params.startA)
+    v1 = projectStartingVertex(params.startB)
+    addVertexToGraph(graph, v0)
+    addVertexToGraph(graph, v1)
+
+    initialCandidates = CandidateGenerator.generateInitialCandidates(v0, v1, cloud, boxGrid, params)
+    for cand in initialCandidates:
+        candidateQueues.push(cand)
+
+    while not candidateQueues.empty():
+        cand = candidateQueues.popBest()
+
+        if cand.stale:
+            continue
+
+        if not cand.priorityStillValid(graph):
+            cand.priority = cand.recomputePriority(graph)
+            candidateQueues.push(cand)
+            continue
+
+        if violatesMinimumDistance(cand.position, graph, params.targetEdgeLength):
+            continue
+
+        nearbyVertices = boxGrid.getNearbyVertices(cand.position)
+        nearbyEdges = regionManager.getNearbyEdges(cand.position)
+
+        if not projectionChecker.accept(cand, nearbyVertices, nearbyEdges):
+            continue
+
+        newV = graph.addVertex(cand.position, VertexNormal(cand))
+        graph.addEdge(newV, cand.parentA)
+        graph.addEdge(newV, cand.parentB)
+
+        regionManager.updateBordersOnInsertion(graph, newV, cand.parentA, cand.parentB)
+
+        newCandidates = CandidateGenerator.generateFromVertex(newV, graph, boxGrid, params)
+        for nc in newCandidates:
+            candidateQueues.push(nc)
+
+    for region in regionManager.regions():
+        if region.borderLength() <= params.maxBorderLength:
+            RegionTriangulator.triangulate(region, graph.mesh)
+        else:
+            leaveAsHole(region)
+
+    return graph.mesh
