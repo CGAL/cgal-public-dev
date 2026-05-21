@@ -100,8 +100,8 @@ bool read_PLY_with_properties(std::istream& is,
 
 // documented in ../PLY.h
 template <typename OutputIteratorValueType,
-typename PointOutputIterator,
- typename CGAL_NP_TEMPLATE_PARAMETERS_NO_DEFAULT>
+          typename PointOutputIterator,
+          typename CGAL_NP_TEMPLATE_PARAMETERS_NO_DEFAULT>
 bool read_PLY(std::istream& is,
               PointOutputIterator output,
               const CGAL_NP_CLASS& np ,
@@ -121,9 +121,9 @@ bool read_PLY(std::istream& is,
   PointMap point_map = NP_helper::get_point_map(np);
   NormalMap normal_map = NP_helper::get_normal_map(np);
 
-  return read_PLY_with_properties(is, output,
-                                  make_ply_point_reader(point_map),
-                                  make_ply_normal_reader(normal_map));
+  return read_PLY_with_properties<OutputIteratorValueType>(is, output,
+                                                           make_ply_point_reader(point_map),
+                                                           make_ply_normal_reader(normal_map));
 }
 
 // documentation in ../PLY.h

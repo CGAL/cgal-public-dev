@@ -31,39 +31,27 @@ namespace CGAL {
 
     This function relies mainly on the size parameter `spacing`.
 
-    \tparam PointInputIterator is a model of `InputIterator`.
-
-    \tparam PointMap is a model of `ReadablePropertyMap` with value
-    type `Point_3<Kernel>`.
-
-    \tparam NormalMap is a model of `ReadablePropertyMap` with value
-    type `Vector_3<Kernel>`.
-
+    \tparam PointRange is a model of `Range`.
+    \tparam NormalRange is a model of `Range`.
     \tparam PolygonMesh a model of `MutableFaceGraph` with an internal
     point property map.
 
 
-    \param begin iterator on the first point of the sequence.
-    \param end past the end iterator of the point sequence.
-    \param point_map property map: value_type of `InputIterator` -> Point_3.
-    \param normal_map property map: value_type of `InputIterator` -> Vector_3.
+    \param points the range of points.
+    \param normals the range of normals.
     \param output_mesh where the reconstruction is stored.
     \param spacing size parameter.
     \return `true` if reconstruction succeeded, `false` otherwise.
   */
-  template <typename PointInputIterator,
-            typename PointMap,
-            typename NormalMap,
+  template <typename PointRange,typename NormalRange,
             typename PolygonMesh>
   bool
-  splat_surface_reconstruction(PointInputIterator begin,
-                               PointInputIterator end,
-                               PointMap point_map,
-                               NormalMap normal_map,
+  splat_surface_reconstruction(const PointRange& points,
+                               const NormalRange& normals,
                                PolygonMesh& output_mesh,
                                double spacing)
   {
-    typedef typename boost::property_traits<PointMap>::value_type Point;
+    typedef typename PointRange::value_type Point;
     typedef typename Kernel_traits<Point>::Kernel Kernel;
     typedef typename Kernel::Sphere_3 Sphere;
     typedef typename Kernel::FT FT;
