@@ -4,6 +4,7 @@
 #include <CGAL/IO/polygon_mesh_io.h>
 #include <CGAL/compute_average_spacing.h>
 #include <CGAL/jet_estimate_normals.h>
+#include <CGAL/mst_orient_normals.h>
 #include <CGAL/splat_surface_reconstruction.h>
 
 #include <vector>
@@ -60,6 +61,9 @@ int main(int argc, char* argv[])
     CGAL::jet_estimate_normals<CGAL::Sequential_tag>
       (indices, 6, CGAL::parameters::point_map(CGAL::make_random_access_property_map(points))
                                     .normal_map(CGAL::make_random_access_property_map(normals)));
+    CGAL::mst_orient_normals(indices, 6,
+                             CGAL::parameters::point_map(CGAL::make_random_access_property_map(points))
+                                              .normal_map(CGAL::make_random_access_property_map(normals)));
   }
 
   std::cout << "First 10 points with normals:" << std::endl;
