@@ -24,11 +24,19 @@ struct CGALTrianglePair {
     IntersectionPair originalPair; // Keep track of original IDs for the output
 };
 
-// Declare the external function compiled by nvcc
+// Mirror structural declaration from kernels.cu to prevent ABI mismatch
+struct GPUTimingBreakdown {
+    double uploadTime = 0.0;
+    double executionTime = 0.0; // BVH Build + Query Passes
+    double downloadTime = 0.0;
+};
+
+// Declare the external function compiled by nvcc (Updated with 6th argument)
 extern "C" long long runMeshIntersection(
     const cuBQL::Triangle* hA, int NA, 
     const cuBQL::Triangle* hB, int NB, 
-    std::vector<IntersectionPair>& hPairs);
+    std::vector<IntersectionPair>& hPairs,
+    GPUTimingBreakdown& outTimings); // <--- Synchronized with kernels.cu
 
 // Helper helper to convert your cuBQL::Triangle layout to a CGAL Triangle3 object
 Triangle3 convertToCGAL(const cuBQL::Triangle& t) {
@@ -50,8 +58,6 @@ int main(int ac, char** av) {
 
     // 1. MESH LOADING
     double t0 = cuBQL::getCurrentTime();
-    //  std::vector<cuBQL::Triangle> hA = cuBQL::samples::loadOFFCGAL(av[1]);
-    //  std::vector<cuBQL::Triangle> hB = cuBQL::samples::loadOFFCGAL(av[2]);
 
     std::vector<cuBQL::Triangle> hA = cuBQL::samples::loadOFF(av[1]);
     std::vector<cuBQL::Triangle> hB = cuBQL::samples::loadOFF(av[2]);
@@ -60,9 +66,10 @@ int main(int ac, char** av) {
     int NB = hB.size();
     std::cout << "[Step 1] Load Meshes from Disk: " << cuBQL::prettyDouble(cuBQL::getCurrentTime() - t0) << "s\n";
 
-    // Call out into our CUDA module translation unit (Returns initial AABB hits)
+    // Call out into our CUDA module translation unit (Now collecting metrics)
     std::vector<IntersectionPair> hPairs;
-    long long totalAABBHits = runMeshIntersection(hA.data(), NA, hB.data(), NB, hPairs);
+    GPUTimingBreakdown gpuTimings; // <--- Target container instantiation
+    long long totalAABBHits = runMeshIntersection(hA.data(), NA, hB.data(), NB, hPairs, gpuTimings);
 
     // --- NEW: TWO-LOOP CGAL FILTERING & CLEAN TIMING ---
     
@@ -91,6 +98,11 @@ int main(int ac, char** av) {
         }
     }
     double time_intersection = cuBQL::getCurrentTime() - t_inter_start;
+    
+    std::cout << "[Step 7.0] GPU Pipeline Breakdown:\n";
+    std::cout << "  |---> Host->Device Upload:     " << cuBQL::prettyDouble(gpuTimings.uploadTime) << "s\n";
+    std::cout << "  |---> BVH Build & Search:      " << cuBQL::prettyDouble(gpuTimings.executionTime) << "s\n";
+    std::cout << "  |---> Device->Host Download:   " << cuBQL::prettyDouble(gpuTimings.downloadTime) << "s\n";
     
     std::cout << "[Step 7.5] CGAL Exact Filtering Total: " << cuBQL::prettyDouble(time_conversion + time_intersection) << "s\n";
     std::cout << "  |---> Data Conversion Loop:    " << cuBQL::prettyDouble(time_conversion) << "s\n";
