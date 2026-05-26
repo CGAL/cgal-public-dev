@@ -259,12 +259,14 @@ public:
     // calculating it as the average of two vertices on other ends
     // of halfedges as updating is done during an edge split
     FT vertex_size = 0;
-    CGAL_assertion(CGAL::halfedges_around_target(v, pmesh).size() == 2);
+    const int nb_incident_halfedges =
+      static_cast<int>(CGAL::halfedges_around_target(v, pmesh).size());
+    CGAL_assertion(nb_incident_halfedges == 2);
     for (halfedge_descriptor ha: CGAL::halfedges_around_target(v, pmesh))
     {
       vertex_size += get(m_vertex_sizing_map, source(ha, pmesh));
     }
-    vertex_size /= CGAL::halfedges_around_target(v, pmesh).size();
+    vertex_size /= nb_incident_halfedges;
 
     put(m_vertex_sizing_map, v, vertex_size);
   }
