@@ -52,15 +52,25 @@ __global__ void fillKernel(IntersectionPair *pairs, const int *offsets, const cu
     }, bvhA, query);
 }
 
-// Host entry point called from main.cpp
+// Struct to hold individual GPU phase timings (in seconds)
+struct GPUTimingBreakdown {
+    double uploadTime = 0.0;
+    double executionTime = 0.0; // BVH Build + Query Passes
+    double downloadTime = 0.0;
+};
+
+// Update the external C signature to return our new timing struct
 extern "C" long long runMeshIntersection(
     const cuBQL::Triangle* hA, int NA, 
     const cuBQL::Triangle* hB, int NB, 
-    std::vector<IntersectionPair>& hPairs) 
+    std::vector<IntersectionPair>& hPairs,
+    GPUTimingBreakdown& outTimings) // <--- Passing the struct by reference
 {
     double t0;
 
-    // 2. GPU ALLOCATION & UPLOAD
+    // ==========================================
+    // PHASE 1: GPU ALLOCATION & UPLOAD
+    // ==========================================
     t0 = cuBQL::getCurrentTime();
     cuBQL::Triangle *dA, *dB;
     CUBQL_CUDA_CALL(Malloc(&dA, NA * sizeof(cuBQL::Triangle)));
@@ -68,10 +78,15 @@ extern "C" long long runMeshIntersection(
     CUBQL_CUDA_CALL(Memcpy(dA, hA, NA * sizeof(cuBQL::Triangle), cudaMemcpyDefault));
     CUBQL_CUDA_CALL(Memcpy(dB, hB, NB * sizeof(cuBQL::Triangle), cudaMemcpyDefault));
     CUBQL_CUDA_SYNC_CHECK();
-    std::cout << "[Step 2] GPU Alloc & Upload:    " << cuBQL::prettyDouble(cuBQL::getCurrentTime() - t0) << "s\n";
+    
+    outTimings.uploadTime = cuBQL::getCurrentTime() - t0;
 
-    // 3. BVH BUILD
-    t0 = cuBQL::getCurrentTime();
+    // ==========================================
+    // PHASE 2: BVH BUILD & KERNEL SEARCH EXECUTION
+    // ==========================================
+    t0 = cuBQL::getCurrentTime(); // Reset timer for execution
+    
+    // BVH BUILD
     cuBQL::box3f *dBoxes;
     CUBQL_CUDA_CALL(Malloc(&dBoxes, NA * sizeof(cuBQL::box3f)));
     generateBoxes<<<cuBQL::divRoundUp(NA, 256), 256>>>(dBoxes, dA, NA);
@@ -80,45 +95,46 @@ extern "C" long long runMeshIntersection(
     cuBQL::gpuBuilder(bvh, dBoxes, NA, cuBQL::BuildConfig());
     CUBQL_CUDA_SYNC_CHECK();
     CUBQL_CUDA_CALL(Free(dBoxes));
-    std::cout << "[Step 3] BVH Generation:        " << cuBQL::prettyDouble(cuBQL::getCurrentTime() - t0) << "s\n";
 
-    // 4. QUERY PASS 1 (COUNTING)
-    t0 = cuBQL::getCurrentTime();
+    // QUERY PASS 1 (COUNTING)
     int *dCounts, *dOffsets;
     CUBQL_CUDA_CALL(Malloc(&dCounts, NB * sizeof(int)));
     CUBQL_CUDA_CALL(Malloc(&dOffsets, NB * sizeof(int)));
     
     countKernel<<<cuBQL::divRoundUp(NB, 128), 128>>>(dCounts, dA, bvh, dB, NB);
     CUBQL_CUDA_SYNC_CHECK();
-    std::cout << "[Step 4] Count Kernel (Pass 1): " << cuBQL::prettyDouble(cuBQL::getCurrentTime() - t0) << "s\n";
 
-    // 5. THRUST REDUCE & SCAN
-    t0 = cuBQL::getCurrentTime();
+    // THRUST REDUCE & SCAN
     thrust::device_ptr<int> dev_counts(dCounts);
     thrust::device_ptr<int> dev_offsets(dOffsets);
     long long totalIntersections = thrust::reduce(dev_counts, dev_counts + NB, 0LL, thrust::plus<long long>());
     thrust::exclusive_scan(dev_counts, dev_counts + NB, dev_offsets);
     CUBQL_CUDA_SYNC_CHECK();
-    std::cout << "[Step 5] Thrust Reduce & Scan:  " << cuBQL::prettyDouble(cuBQL::getCurrentTime() - t0) << "s\n";
 
-    // 6. QUERY PASS 2 (FILLING)
-    t0 = cuBQL::getCurrentTime();
+    // QUERY PASS 2 (FILLING)
     IntersectionPair *dPairs = nullptr;
     if (totalIntersections > 0) {
         CUBQL_CUDA_CALL(Malloc(&dPairs, totalIntersections * sizeof(IntersectionPair)));
         fillKernel<<<cuBQL::divRoundUp(NB, 128), 128>>>(dPairs, dOffsets, dA, bvh, dB, NB);
         CUBQL_CUDA_SYNC_CHECK();
     }
-    std::cout << "[Step 6] Fill Kernel (Pass 2):  " << cuBQL::prettyDouble(cuBQL::getCurrentTime() - t0) << "s\n";
+    
+    outTimings.executionTime = cuBQL::getCurrentTime() - t0;
 
-    // 7. DOWNLOAD FROM GPU
-    t0 = cuBQL::getCurrentTime();
+    // ==========================================
+    // PHASE 3: DOWNLOAD FROM GPU
+    // ==========================================
+    t0 = cuBQL::getCurrentTime(); // Reset timer for download
+    
     if (totalIntersections > 0) {
         hPairs.resize(totalIntersections);
         CUBQL_CUDA_CALL(Memcpy(hPairs.data(), dPairs, totalIntersections * sizeof(IntersectionPair), cudaMemcpyDefault));
     }
-    std::cout << "[Step 7] Download Results:      " << cuBQL::prettyDouble(cuBQL::getCurrentTime() - t0) << "s\n";
+    CUBQL_CUDA_SYNC_CHECK();
+    
+    outTimings.downloadTime = cuBQL::getCurrentTime() - t0;
 
+    // Cleanup memory
     CUBQL_CUDA_CALL(Free(dA)); CUBQL_CUDA_CALL(Free(dB));
     CUBQL_CUDA_CALL(Free(dCounts)); CUBQL_CUDA_CALL(Free(dOffsets));
     if (dPairs) CUBQL_CUDA_CALL(Free(dPairs));

@@ -7,7 +7,10 @@ find_package(CGAL REQUIRED PATHS "${CMAKE_CURRENT_SOURCE_DIR}/../../cgal-build" 
 # 2. Define path variables for cuBQL and CUDA context
 set(CUBQL_ROOT "/home/yury/Projects/CPPProj/Cubql" CACHE PATH "Path to cuBQL source root")
 set(CUBQL_BUILD "${CUBQL_ROOT}/build")
+
+# 3. Find threading dependencies (Threads for general use, TBB for CGAL parallelization)
 find_package(Threads REQUIRED)
+find_package(TBB REQUIRED)
 
 # ====================================================================
 # TARGET 1: Your Original Project (main.cpp)
@@ -23,6 +26,9 @@ set_target_properties(meshIntersectionRegistration PROPERTIES
     CUDA_SEPARABLE_COMPILATION ON
 )
 
+# Enable CGAL parallel features via TBB macro
+target_compile_definitions(meshIntersectionRegistration PRIVATE CGAL_LINKED_WITH_TBB)
+
 target_include_directories(meshIntersectionRegistration PRIVATE
     include
     ${CUBQL_ROOT}
@@ -35,6 +41,7 @@ target_link_libraries(meshIntersectionRegistration PRIVATE
     gmp
     mpfr
     Threads::Threads
+    TBB::tbb
     "${CUBQL_BUILD}/libcuBQL_cuda_float2.so"
     "${CUBQL_BUILD}/libcuBQL_cuda_float3.so"
 )
@@ -56,6 +63,9 @@ set_target_properties(meshIntersectionBatch PROPERTIES
     INSTALL_RPATH "${CUBQL_BUILD}" # Automatically fixes dynamic .so loading at runtime
 )
 
+# Enable CGAL parallel features via TBB macro
+target_compile_definitions(meshIntersectionBatch PRIVATE CGAL_LINKED_WITH_TBB)
+
 # Force high-performance release flags specifically for this target's files
 target_compile_options(meshIntersectionBatch PRIVATE 
     $<$<COMPILE_LANGUAGE:CXX>:-O3 -march=native -DNDEBUG>
@@ -75,6 +85,7 @@ target_link_libraries(meshIntersectionBatch PRIVATE
     gmp         # FIXED: Using lowercase system fallback
     mpfr        # FIXED: Using lowercase system fallback
     Threads::Threads
+    TBB::tbb
     "${CUBQL_BUILD}/libcuBQL_cuda_float2.so"
     "${CUBQL_BUILD}/libcuBQL_cuda_float3.so"
 )
