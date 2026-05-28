@@ -89,3 +89,20 @@ target_link_libraries(meshIntersectionBatch PRIVATE
     "${CUBQL_BUILD}/libcuBQL_cuda_float2.so"
     "${CUBQL_BUILD}/libcuBQL_cuda_float3.so"
 )
+
+# ====================================================================
+# TARGET 3: Quick Precision Pair Checker (pair_check.cpp)
+# ====================================================================
+add_executable(pairCheck pair_check.cpp)
+
+set_target_properties(pairCheck PROPERTIES
+    CXX_STANDARD 17
+    CXX_STANDARD_REQUIRED ON
+)
+
+# Link only against CGAL and its dependency core libraries
+target_link_libraries(pairCheck PRIVATE
+    CGAL::CGAL
+    gmp
+    mpfr
+)
