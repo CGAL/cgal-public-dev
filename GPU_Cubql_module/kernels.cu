@@ -34,15 +34,55 @@ __device__ inline float dotProduct(const cuBQL::vec3f &u, const cuBQL::vec3f &v)
     return u.x * v.x + u.y * v.y + u.z * v.z;
 }
 
-// Fast, conservative Triangle-Triangle intersection filter
+// // Fast, conservative Triangle-Triangle intersection filter
+// __device__ bool triangleIntersects(const cuBQL::Triangle &A, const cuBQL::Triangle &B) {
+//     // 1. First Pass: Quick AABB overlap rejection
+//     if (!A.bounds().overlaps(B.bounds())) return false;
+
+//     // 2. Compute Plane Equation for Triangle A
+//     cuBQL::vec3f e1A = A.b - A.a;
+//     cuBQL::vec3f e2A = A.c - A.a;
+//     cuBQL::vec3f nA = crossProduct(e1A, e2A);
+//     float dA = -dotProduct(nA, A.a);
+
+//     // Compute signed distances of B's vertices to A's plane
+//     float dB0 = dotProduct(nA, B.a) + dA;
+//     float dB1 = dotProduct(nA, B.b) + dA;
+//     float dB2 = dotProduct(nA, B.c) + dA;
+
+//     // If all vertices of B are on the same side of A's plane, no intersection
+//     if ((dB0 > 1e-5f && dB1 > 1e-5f && dB2 > 1e-5f) || 
+//         (dB0 < -1e-5f && dB1 < -1e-5f && dB2 < -1e-5f)) return false;
+
+//     // 3. Compute Plane Equation for Triangle B
+//     cuBQL::vec3f e1B = B.b - B.a;
+//     cuBQL::vec3f e2B = B.c - B.a;
+//     cuBQL::vec3f nB = crossProduct(e1B, e2B);
+//     float dB_plane = -dotProduct(nB, B.a);
+
+//     // Compute signed distances of A's vertices to B's plane
+//     float dA0 = dotProduct(nB, A.a) + dB_plane;
+//     float dA1 = dotProduct(nB, A.b) + dB_plane;
+//     float dA2 = dotProduct(nB, A.c) + dB_plane;
+
+//     // If all vertices of A are on the same side of B's plane, no intersection
+//     if ((dA0 > 1e-5f && dA1 > 1e-5f && dA2 > 1e-5f) || 
+//         (dA0 < -1e-5f && dA1 < -1e-5f && dA2 < -1e-5f)) return false;
+
+//     // 4. Coplanar or complex edge-overlap case
+//     return true;
+// }
+
+// Fast, highly-tight conservative Triangle-Triangle intersection filter
 __device__ bool triangleIntersects(const cuBQL::Triangle &A, const cuBQL::Triangle &B) {
-    // 1. First Pass: Quick AABB overlap rejection
+    // 1. First Pass: Quick AABB overlap rejection (Keep this, it's incredibly fast)
     if (!A.bounds().overlaps(B.bounds())) return false;
 
     // 2. Compute Plane Equation for Triangle A
-    cuBQL::vec3f e1A = A.b - A.a;
-    cuBQL::vec3f e2A = A.c - A.a;
-    cuBQL::vec3f nA = crossProduct(e1A, e2A);
+    cuBQL::vec3f e0A = A.b - A.a;
+    cuBQL::vec3f e1A = A.c - A.b; // Using cyclic edges: b-a, c-b, a-c
+    cuBQL::vec3f e2A = A.a - A.c;
+    cuBQL::vec3f nA = crossProduct(e0A, -e2A); // Normal of A
     float dA = -dotProduct(nA, A.a);
 
     // Compute signed distances of B's vertices to A's plane
@@ -50,14 +90,16 @@ __device__ bool triangleIntersects(const cuBQL::Triangle &A, const cuBQL::Triang
     float dB1 = dotProduct(nA, B.b) + dA;
     float dB2 = dotProduct(nA, B.c) + dA;
 
-    // If all vertices of B are on the same side of A's plane, no intersection
+    // Reject if all vertices of B are on the same side of A's plane
+    // SIMD-friendly sign check (robust against epsilon issues)
     if ((dB0 > 1e-5f && dB1 > 1e-5f && dB2 > 1e-5f) || 
         (dB0 < -1e-5f && dB1 < -1e-5f && dB2 < -1e-5f)) return false;
 
     // 3. Compute Plane Equation for Triangle B
-    cuBQL::vec3f e1B = B.b - B.a;
-    cuBQL::vec3f e2B = B.c - B.a;
-    cuBQL::vec3f nB = crossProduct(e1B, e2B);
+    cuBQL::vec3f e0B = B.b - B.a;
+    cuBQL::vec3f e1B = B.c - B.b;
+    cuBQL::vec3f e2B = B.a - B.c;
+    cuBQL::vec3f nB = crossProduct(e0B, -e2B); // Normal of B
     float dB_plane = -dotProduct(nB, B.a);
 
     // Compute signed distances of A's vertices to B's plane
@@ -65,11 +107,54 @@ __device__ bool triangleIntersects(const cuBQL::Triangle &A, const cuBQL::Triang
     float dA1 = dotProduct(nB, A.b) + dB_plane;
     float dA2 = dotProduct(nB, A.c) + dB_plane;
 
-    // If all vertices of A are on the same side of B's plane, no intersection
+    // Reject if all vertices of A are on the same side of B's plane
     if ((dA0 > 1e-5f && dA1 > 1e-5f && dA2 > 1e-5f) || 
         (dA0 < -1e-5f && dA1 < -1e-5f && dA2 < -1e-5f)) return false;
 
-    // 4. Coplanar or complex edge-overlap case
+    // =========================================================================
+    // 4. NEW: Tighten the filter using Edge Cross Products (SAT)
+    // =========================================================================
+    // There are 9 combinations of edges (3 from A x 3 from B).
+    // We project both triangles onto each axis. If their projections don't overlap, 
+    // they don't intersect.
+    
+    cuBQL::vec3f edgesA[3] = {e0A, e1A, e2A};
+    cuBQL::vec3f edgesB[3] = {e0B, e1B, e2B};
+    cuBQL::vec3f vertsA[3] = {A.a, A.b, A.c};
+    cuBQL::vec3f vertsB[3] = {B.a, B.b, B.c};
+
+    #pragma unroll
+    for (int i = 0; i < 3; ++i) {
+        #pragma unroll
+        for (int j = 0; j < 3; ++j) {
+            cuBQL::vec3f axis = crossProduct(edgesA[i], edgesB[j]);
+            
+            // Skip degenerate axes (if edges are parallel)
+            if (dotProduct(axis, axis) < 1e-6f) continue;
+
+            // Project Triangle A
+            float pA0 = dotProduct(axis, vertsA[0]);
+            float pA1 = dotProduct(axis, vertsA[1]);
+            float pA2 = dotProduct(axis, vertsA[2]);
+            float minA = fminf(pA0, fminf(pA1, pA2));
+            float maxA = fmaxf(pA0, fmaxf(pA1, pA2));
+
+            // Project Triangle B
+            float pB0 = dotProduct(axis, vertsB[0]);
+            float pB1 = dotProduct(axis, vertsB[1]);
+            float pB2 = dotProduct(axis, vertsB[2]);
+            float minB = fminf(pB0, fminf(pB1, pB2));
+            float maxB = fmaxf(pB0, fmaxf(pB1, pB2));
+
+            // Test for separation along this axis
+            if (maxA < minB - 1e-5f || maxB < minA - 1e-5f) {
+                return false; // Found a separating axis! Definitely no intersection.
+            }
+        }
+    }
+
+    // If it survives all 2 face-planes and 9 edge-cross-product axes, 
+    // the triangles are either intersecting or coplanar-overlapping.
     return true;
 }
 
