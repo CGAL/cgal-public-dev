@@ -15,6 +15,11 @@
 #include <CGAL/intersections.h>
 #include <CGAL/Real_timer.h>
 
+// --- TBB INCLUDES ----
+#include <tbb/global_control.h>
+#include <tbb/parallel_for.h>
+#include <tbb/concurrent_vector.h>
+
 // Types for Pure CGAL Pipeline
 typedef CGAL::Exact_predicates_inexact_constructions_kernel Kernel;
 typedef CGAL::Surface_mesh<Kernel::Point_3> Mesh;
@@ -187,45 +192,52 @@ CompleteMetrics run_comparative_test(const std::string& fileA, const std::string
     auto& coords1 = m1.points();
     auto& coords2 = m2.points();
 
-    std::vector<IntersectionPair> exactPairs;
-    exactPairs.reserve(hPairs.size());
+    // Use a concurrent vector to allow safe parallel push_backs
+    tbb::concurrent_vector<IntersectionPair> exactPairs_concurrent;
 
-    for (const auto& pair : hPairs) {
-        face_descriptor fA = facesA[pair.idA];
-        face_descriptor fB = facesB[pair.idB];
+    tbb::parallel_for(tbb::blocked_range<size_t>(0, hPairs.size()), [&](const tbb::blocked_range<size_t>& r) {
+        for (size_t i = r.begin(); i != r.end(); ++i) {
+            const auto& pair = hPairs[i];
+            
+            face_descriptor fA = facesA[pair.idA];
+            face_descriptor fB = facesB[pair.idB];
 
-        auto halfedgeA = m1.halfedge(fA);
-        auto vA0 = m1.target(halfedgeA);
-        auto vA1 = m1.target(m1.next(halfedgeA));
-        auto vA2 = m1.target(m1.next(m1.next(halfedgeA)));
-        Triangle3 triA(coords1[vA0], coords1[vA1], coords1[vA2]);
+            auto halfedgeA = m1.halfedge(fA);
+            auto vA0 = m1.target(halfedgeA);
+            auto vA1 = m1.target(m1.next(halfedgeA));
+            auto vA2 = m1.target(m1.next(m1.next(halfedgeA)));
+            Triangle3 triA(coords1[vA0], coords1[vA1], coords1[vA2]);
 
-        auto halfedgeB = m2.halfedge(fB);
-        auto vB0 = m2.target(halfedgeB);
-        auto vB1 = m2.target(m2.next(halfedgeB));
-        auto vB2 = m2.target(m2.next(m2.next(halfedgeB)));
-        Triangle3 triB(coords2[vB0], coords2[vB1], coords2[vB2]);
+            auto halfedgeB = m2.halfedge(fB);
+            auto vB0 = m2.target(halfedgeB);
+            auto vB1 = m2.target(m2.next(halfedgeB));
+            auto vB2 = m2.target(m2.next(m2.next(halfedgeB)));
+            Triangle3 triB(coords2[vB0], coords2[vB1], coords2[vB2]);
 
-        if (CGAL::do_intersect(triA, triB)) {
-            exactPairs.push_back(pair);
+            if (CGAL::do_intersect(triA, triB)) {
+                exactPairs_concurrent.push_back(pair);
+            }
         }
-    }
-    
+    });
+
+    //  std::vector<IntersectionPair> exactPairs(exactPairs_concurrent.begin(), exactPairs_concurrent.end());
     double filter_end = cuBQL::getCurrentTime();
     
     metric.hybrid_filter_time = filter_end - filter_start;
-    metric.hybrid_overlaps    = (double)exactPairs.size();
+    // Read the size directly from the concurrent vector (this is thread-safe and fast)
+    metric.hybrid_overlaps    = (double)exactPairs_concurrent.size();
     
     metric.hybrid_total_routine_time = (cuBQL::getCurrentTime() - hybrid_routine_start) + metric.hybrid_read_time;
     
     metric.valid = true;
     return metric;
+   
 }
 
 int main(int argc, char** argv) {
-    if (argc < 6) {
-        std::cerr << "Usage: " << argv[0] << " <basePath/> <output.csv> <K_categories> <pairCount> <speedUp (1/0)>\n";
-        std::cerr << "Example: " << argv[0] << " /path/Data/ results.csv 11 20 1\n";
+    if (argc < 7) { // Bumped from 6 to 7
+        std::cerr << "Usage: " << argv[0] << " <basePath/> <output.csv> <K_categories> <pairCount> <speedUp (1/0)> <numThreads>\n";
+        std::cerr << "Example: " << argv[0] << " /path/Data/ results.csv 11 20 1 30\n";
         return 1;
     }
 
@@ -233,10 +245,21 @@ int main(int argc, char** argv) {
     std::string outCsvName = argv[2];
     int maxCategories = std::stoi(argv[3]);
     int pairCount = std::stoi(argv[4]);
-    
-    // Parse integer configuration flag down to boolean logic mapping
     bool doMoreWork = (std::stoi(argv[5]) != 0);
+    int numThreads = std::stoi(argv[6]); // Parse thread count
 
+    // Limit TBB's global thread pool to your specific allocation (e.g., 30)
+    tbb::global_control global_limit(
+        tbb::global_control::max_allowed_parallelism, numThreads
+    );
+
+    std::cout << "======================================================================\n";
+    std::cout << "Starting Automated Batch Evaluation Task (Unified & Streamlined)\n";
+    std::cout << " GPU Extra Work Parameter : " << (doMoreWork ? "TRUE" : "FALSE") << "\n";
+    std::cout << " TBB Thread Worker Limit  : " << numThreads << "\n";
+    std::cout << "======================================================================\n";
+    
+    // ... rest of your main loop remains exactly the same ...
     if (!basePath.empty() && basePath.back() != '/') {
         basePath += '/';
     }
