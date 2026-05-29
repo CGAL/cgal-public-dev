@@ -21,6 +21,7 @@ typedef Kernel::Point_3 Point;
 typedef Kernel::Vector_3 Vector_3;
 typedef std::pair<Point, Vector_3> Pwn;
 typedef CGAL::Surface_mesh<Point> Polyhedron;
+typedef Kernel::FT FT;
 
 // ------------------------------------------------------------
 // Read points + normals from file
@@ -145,14 +146,21 @@ int main(int argc, char* argv[]) {
 
   Polyhedron output_mesh;
 
-  if (CGAL::splat_surface_reconstruction(points, normals, output_mesh, average_spacing)) {
-    std::string fname = std::filesystem::path(filename).stem().string() + ".off";
-    CGAL::IO::write_polygon_mesh(fname, output_mesh);
-  }
+  // Build the grid and insert points + normals.
+  CGAL::Box_grid<Kernel> grid{FT(average_spacing)}; // initialize grid with cell size equal to average spacing and bounding box [-1,1]^3
+  grid.build(points, normals); // insert points and normals into the grid
+  
+  std::vector<Vector_3> block_normals = grid.compute_block_normals(); // compute block normals by averaging point normals in each cell
+  std::cout<<"Computed " << block_normals.size() << " block normals." << std::endl;
 
-  else {
-    return EXIT_FAILURE;
-  }
+  // if (CGAL::splat_surface_reconstruction(points, normals, output_mesh, average_spacing)) {
+  //   std::string fname = std::filesystem::path(filename).stem().string() + ".off";
+  //   CGAL::IO::write_polygon_mesh(fname, output_mesh);
+  // }
+
+  // else {
+  //   return EXIT_FAILURE;
+  // }
 
   return EXIT_SUCCESS;
 }
