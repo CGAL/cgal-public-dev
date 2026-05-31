@@ -85,12 +85,17 @@ namespace CGAL {
     };
 
     Box_grid(FT box_size,
-             FT min_coord = FT(-1.0),
-             FT max_coord = FT(1.0)) {
+             FT min_x, FT max_x,
+             FT min_y, FT max_y,
+             FT min_z, FT max_z) {
       
       box_size_ = box_size;
-      min_coord_ = min_coord;
-      max_coord_ = max_coord;
+      min_x_ = min_x;
+      max_x_ = max_x;
+      min_y_ = min_y;
+      max_y_ = max_y;
+      min_z_ = min_z;
+      max_z_ = max_z;
       initialize_grid();
     }
 
@@ -153,10 +158,14 @@ namespace CGAL {
 
     void initialize_grid() {
       const double h = CGAL::to_double(box_size_);
-      const double extent = CGAL::to_double(max_coord_ - min_coord_);
-      const std::size_t num_boxes = static_cast<std::size_t>(std::ceil(extent / h));
+      const double extent_x = CGAL::to_double(max_x_ - min_x_);
+      const double extent_y = CGAL::to_double(max_y_ - min_y_);
+      const double extent_z = CGAL::to_double(max_z_ - min_z_);
+      
+      nx_ = std::max<std::size_t>(1, static_cast<std::size_t>(std::ceil(extent_x / h)));
+      ny_ = std::max<std::size_t>(1, static_cast<std::size_t>(std::ceil(extent_y / h)));
+      nz_ = std::max<std::size_t>(1, static_cast<std::size_t>(std::ceil(extent_z / h)));
 
-      nx_ = ny_ = nz_ = std::max<std::size_t>(1, num_boxes);
       cells_.clear();
       cells_.resize(nx_ * ny_ * nz_);
     }
@@ -176,18 +185,22 @@ namespace CGAL {
       const double y = CGAL::to_double(p.y());
       const double z = CGAL::to_double(p.z());
 
-      const double minv = CGAL::to_double(min_coord_);
-      const double maxv = CGAL::to_double(max_coord_);
+      const double minx = CGAL::to_double(min_x_);
+      const double miny = CGAL::to_double(min_y_);
+      const double minz = CGAL::to_double(min_z_);
+      const double maxx = CGAL::to_double(max_x_);
+      const double maxy = CGAL::to_double(max_y_);
+      const double maxz = CGAL::to_double(max_z_);
 
-      if (x < minv || x > maxv ||
-          y < minv || y > maxv ||
-          z < minv || z > maxv) {
+      if (x < minx || x > maxx ||
+          y < miny || y > maxy ||
+          z < minz || z > maxz) {
         return false;
       }
 
-      ix = static_cast<int>(std::floor((x - minv) / h));
-      iy = static_cast<int>(std::floor((y - minv) / h));
-      iz = static_cast<int>(std::floor((z - minv) / h));
+      ix = static_cast<int>(std::floor((x - minx) / h));
+      iy = static_cast<int>(std::floor((y - miny) / h));
+      iz = static_cast<int>(std::floor((z - minz) / h));
 
       ix = std::min(ix, static_cast<int>(nx_) - 1);
       iy = std::min(iy, static_cast<int>(ny_) - 1);
@@ -214,8 +227,9 @@ namespace CGAL {
 
     private:
     FT box_size_;
-    FT min_coord_;
-    FT max_coord_;
+    FT min_x_ = 0, max_x_ = 0;
+    FT min_y_ = 0, max_y_ = 0;
+    FT min_z_ = 0, max_z_ = 0;
 
     std::size_t nx_ = 0;
     std::size_t ny_ = 0;

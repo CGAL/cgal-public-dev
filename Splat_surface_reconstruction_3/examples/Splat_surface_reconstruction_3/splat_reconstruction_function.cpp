@@ -145,9 +145,13 @@ int main(int argc, char* argv[]) {
   double average_spacing = CGAL::compute_average_spacing<CGAL::Parallel_if_available_tag>(points, 6);
 
   Polyhedron output_mesh;
+  const auto bbox = CGAL::bounding_box(points.begin(), points.end()); // recompute bbox after centering and scaling
 
   // Build the grid and insert points + normals.
-  CGAL::Box_grid<Kernel> grid{FT(average_spacing)}; // initialize grid with cell size equal to average spacing and bounding box [-1,1]^3
+  CGAL::Box_grid<Kernel> grid{FT(average_spacing), 
+                              FT(bbox.xmin()), FT(bbox.xmax()), 
+                              FT(bbox.ymin()), FT(bbox.ymax()), 
+                              FT(bbox.zmin()), FT(bbox.zmax())}; // initialize grid with cell size equal to average spacing and bounding box [-1,1]^3
   grid.build(points, normals); // insert points and normals into the grid
   
   std::vector<Vector_3> block_normals = grid.compute_block_normals(); // compute block normals by averaging point normals in each cell
