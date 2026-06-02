@@ -81,8 +81,8 @@ public:
     const Point_2 p1 { seg_length, dist_oracle(target) };
 
     // return recursive_dichotomic_search(p0, p1, output_pt);
-	return sphere_tracing_old(s, t, output_pt);
-	// return sphere_tracing(s, t, output_pt);
+	// return sphere_tracing_old(s, t, output_pt);
+	return sphere_tracing(s, t, output_pt);
 	// return relaxed_sphere_tracing(s, t, output_pt);
   }
 
@@ -259,6 +259,51 @@ private:
         return false;
 
       current_dist = dist_oracle(current_pt) - offset;
+    }
+
+    return false;
+  }
+
+  bool sphere_tracing(const Point_3& s,
+					   const Point_3& t,
+					   Point_3& output_pt)
+  {
+#ifdef CGAL_AW3_DEBUG_SPHERE_MARCHING
+    std::cout << "Sphere march between " << s << " and " << t << std::endl;
+#endif
+
+    CGAL_precondition(s != t);
+
+	Point_3 current_pt = s;
+    FT current_dist;
+
+    const FT sq_seg_length = squared_distance(s, t);
+    const FT seg_length = approximate_sqrt(sq_seg_length);
+    if(is_zero(seg_length))
+    {
+      current_dist = dist_oracle(current_pt) - offset;
+      output_pt = t;
+      return (CGAL::abs(current_dist) < precision);
+    }
+
+    const Vector_3 direction = (t - s) / seg_length;
+
+    while(squared_distance(s, current_pt) <= sq_seg_length)
+    {
+#ifdef CGAL_AW3_DEBUG_SPHERE_MARCHING
+      std::cout << "current point " << current_pt << std::endl;
+      std::cout << "current dist " << current_dist << std::endl;
+#endif
+
+	  current_dist = dist_oracle(current_pt) - offset;
+
+      if(CGAL::abs(current_dist) < precision)
+      {
+        output_pt = current_pt;
+        return true;
+      }
+
+      current_pt = current_pt + (current_dist * direction);
     }
 
     return false;
