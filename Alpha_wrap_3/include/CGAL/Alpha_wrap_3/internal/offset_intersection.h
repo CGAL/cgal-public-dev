@@ -80,7 +80,10 @@ public:
     const Point_2 p0 { 0, dist_oracle(source) };
     const Point_2 p1 { seg_length, dist_oracle(target) };
 
-    return recursive_dichotomic_search(p0, p1, output_pt);
+    // return recursive_dichotomic_search(p0, p1, output_pt);
+	return sphere_tracing_old(s, t, output_pt);
+	// return sphere_tracing(s, t, output_pt);
+	// return relaxed_sphere_tracing(s, t, output_pt);
   }
 
 private:
@@ -212,7 +215,7 @@ private:
     }
   }
 
-  bool sphere_marching_search(const Point_3& s,
+  bool sphere_tracing_old(const Point_3& s,
                               const Point_3& t,
                               Point_3& output_pt)
   {
@@ -223,15 +226,13 @@ private:
     CGAL_precondition(s != t);
 
     Point_3 current_pt = s;
-    Point_3 closest_point = dist_oracle.tree.closest_point(current_pt);
-    FT current_dist = approximate_sqrt(squared_distance(current_pt, closest_point)) - offset;
+    FT current_dist = dist_oracle(current_pt) - offset;
 
     const FT sq_seg_length = squared_distance(s, t);
     const FT seg_length = approximate_sqrt(sq_seg_length);
     if(is_zero(seg_length))
     {
-      closest_point = dist_oracle.tree.closest_point(t);
-      current_dist = approximate_sqrt(squared_distance(t, closest_point)) - offset;
+      current_dist = dist_oracle(current_pt) - offset;
       output_pt = t;
       return (CGAL::abs(current_dist) < precision);
     }
@@ -257,8 +258,12 @@ private:
       if(squared_distance(s, current_pt) > sq_seg_length)
         return false;
 
-      closest_point = dist_oracle.tree.closest_point(current_pt, closest_point /*hint*/);
-      current_dist = approximate_sqrt(squared_distance(current_pt, closest_point)) - offset;
+      current_dist = dist_oracle(current_pt) - offset;
+    }
+
+    return false;
+  }
+
     }
 
     return false;
