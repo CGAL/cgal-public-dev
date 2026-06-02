@@ -9,6 +9,14 @@
 //
 // Author(s)     : Pranav Jain
 
+/**
+ * @file splat_surface_reconstruction.h
+ * @brief Splat surface reconstruction for point clouds with normals.
+ *
+ * This header provides the public reconstruction entry point together with
+ * an internal dense box-grid acceleration structure used for preprocessing,
+ * local normal estimation, and splat-size estimation.
+ */
 #ifndef CGAL_SPLAT_SURFACE_RECONSTRUCTION_H
 #define CGAL_SPLAT_SURFACE_RECONSTRUCTION_H
 
@@ -44,6 +52,25 @@ namespace CGAL {
     \param spacing size parameter.
     \return `true` if reconstruction succeeded, `false` otherwise.
   */
+
+  /**
+   * @brief Runs splat surface reconstruction on a point cloud with normals.
+   *
+   * The function takes a range of input points, a matching range of normals,
+   * and reconstructs a polygon mesh using the splat-surface reconstruction
+   * pipeline.
+   *
+   * @tparam PointRange  Model of Range whose value type is a CGAL point type.
+   * @tparam NormalRange Model of Range whose value type is a CGAL vector type.
+   * @tparam PolygonMesh Model of MutableFaceGraph with an internal point map.
+   *
+   * @param points       Input point range.
+   * @param normals      Input normal range.
+   * @param output_mesh  Output polygon mesh storing the reconstruction.
+   * @param spacing      Global spacing parameter used by the algorithm.
+   *
+   * @return `true` if reconstruction succeeds, otherwise `false`.
+   */
   template <typename PointRange,typename NormalRange, typename PolygonMesh>
   bool splat_surface_reconstruction(const PointRange& points,
                                const NormalRange& normals,
@@ -57,6 +84,15 @@ namespace CGAL {
     return true;
   }
 
+  /**
+   * @brief Dense axis-aligned box grid over a fixed 3D domain.
+   *
+   * The grid stores points and accumulated normals per cell. It is used as a
+   * local acceleration structure for neighborhood queries, cell-normal
+   * estimation, and adaptive splat-size estimation.
+   *
+   * @tparam Kernel_ CGAL kernel type used for points, vectors, and scalars.
+   */
   template <typename Kernel_>
   class Box_grid {
   
@@ -69,12 +105,24 @@ namespace CGAL {
     using Index    = std::size_t;
 
     public:
+    /**
+     * @brief A single grid cell.
+     *
+     * Each cell stores the indices of the points that fall inside it together
+     * with the sum of their normals and the number of contributing normals.
+     */
     struct Cell
     {
       std::vector<Index> point_ids;
       Vector_3 normal_sum = CGAL::NULL_VECTOR;
       std::size_t normal_count = 0;
 
+      /**
+       * @brief Adds one point and its normal contribution to the cell.
+       *
+       * @param pid Point index in the input cloud.
+       * @param n   Normal associated with the point.
+       */
       void add_point(Index pid, const Vector_3& n)
       {
         point_ids.push_back(pid);
@@ -85,6 +133,16 @@ namespace CGAL {
       }
     };
 
+    /**
+     * @brief Returns the cell at integer grid coordinates.
+     *
+     * @param ix Cell index along x.
+     * @param iy Cell index along y.
+     * @param iz Cell index along z.
+     *
+     * @return Pointer to the requested cell, or `nullptr` if the coordinates
+     *         are outside the grid.
+     */
     const Cell* cell(int ix, int iy, int iz) const {
       if (!valid_coords(ix, iy, iz)) {
         return nullptr;
@@ -92,6 +150,19 @@ namespace CGAL {
       return &cells_[flat_index(ix, iy, iz)];
     }
 
+    /**
+     * @brief Constructs a box grid with explicit bounds.
+     *
+     * The same cell size is used along all axes, so each cell is cubic.
+     *
+     * @param box_size Grid cell side length.
+     * @param min_x    Minimum x bound.
+     * @param max_x    Maximum x bound.
+     * @param min_y    Minimum y bound.
+     * @param max_y    Maximum y bound.
+     * @param min_z    Minimum z bound.
+     * @param max_z    Maximum z bound.
+     */
     Box_grid(FT box_size,
              FT min_x, FT max_x,
              FT min_y, FT max_y,
@@ -107,6 +178,15 @@ namespace CGAL {
       initialize_grid();
     }
 
+    /**
+     * @brief Builds the grid from input points and normals.
+     *
+     * Points are inserted into the cell containing their coordinates and each
+     * cell accumulates the normals of the points it contains.
+     *
+     * @param points  Input 3D point cloud.
+     * @param normals Input normals, one per point.
+     */
     void build(const std::vector<Point_3>& points,
               const std::vector<Vector_3>& normals) {
       
@@ -125,6 +205,13 @@ namespace CGAL {
       }
     }
 
+    /**
+     * @brief Computes one averaged unit normal per grid cell.
+     *
+     * Empty cells receive `CGAL::NULL_VECTOR`.
+     *
+     * @return A vector of block normals in grid order.
+     */
     std::vector<Vector_3> compute_block_normals() const {
       
       std::vector<Vector_3> block_normals;
@@ -155,6 +242,19 @@ namespace CGAL {
       return block_normals;
     }
 
+    /**
+     * @brief Estimates one splat size per point using local 2D triangulation.
+     *
+     * For each point, the method:
+     * - finds the point's cell,
+     * - projects neighbors to the tangent plane,
+     * - builds a local Delaunay triangulation in 2D,
+     * - measures the farthest circumcenter distance.
+     *
+     * @param global_spacing Default splat size used as fallback.
+     *
+     * @return A vector of per-point splat radii.
+     */
     std::vector<FT> estimate_individual_splat_sizes(FT global_spacing) const {
       std::vector<FT> splat_sizes(points_.size(), global_spacing);
 
@@ -215,6 +315,13 @@ namespace CGAL {
     }
 
   private:
+    /**
+     * @brief Computes an orthonormal tangent frame at a point.
+     *
+     * @param n Input normal.
+     *
+     * @return Two orthonormal tangent directions spanning the tangent plane.
+     */
     std::vector<Vector_3> compute_local_tangent_frame(const Point_3& p, const Vector_3& n) const {
       // Find a vector that is not parallel to n to construct the tangent frame.
       Vector_3 temp;
@@ -235,7 +342,9 @@ namespace CGAL {
       return {u, v};
     }
 
-
+    /**
+     * @brief Clears all per-cell accumulators.
+     */
     void clear() {
       for (Cell& c : cells_) {
         c.point_ids.clear();
@@ -244,6 +353,9 @@ namespace CGAL {
       }
     }
 
+    /**
+     * @brief Allocates the 3D cell array from the current bounds and box size.
+     */
     void initialize_grid() {
       const double h = CGAL::to_double(box_size_);
       const double extent_x = CGAL::to_double(max_x_ - min_x_);
@@ -258,6 +370,15 @@ namespace CGAL {
       cells_.resize(nx_ * ny_ * nz_);
     }
 
+    /**
+     * @brief Checks whether integer grid coordinates are valid.
+     *
+     * @param ix Cell index along x.
+     * @param iy Cell index along y.
+     * @param iz Cell index along z.
+     *
+     * @return `true` if the coordinates lie inside the grid.
+     */
     bool valid_coords(int ix, int iy, int iz) const {
       return ix >= 0 && iy >= 0 && iz >= 0 &&
             static_cast<std::size_t>(ix) < nx_ &&
@@ -265,6 +386,16 @@ namespace CGAL {
             static_cast<std::size_t>(iz) < nz_;
     }
 
+    /**
+     * @brief Maps a 3D point to integer grid coordinates.
+     *
+     * @param p   Input point.
+     * @param ix  Output cell index along x.
+     * @param iy  Output cell index along y.
+     * @param iz  Output cell index along z.
+     *
+     * @return `true` if the point is inside the grid bounds.
+     */
     bool to_grid_coords(const Point_3& p, int& ix, int& iy, int& iz) const {
 
       const double h = CGAL::to_double(box_size_);
@@ -297,12 +428,28 @@ namespace CGAL {
       return valid_coords(ix, iy, iz);
     }
 
+    /**
+     * @brief Converts 3D grid coordinates into a flat array index.
+     *
+     * @param ix Cell index along x.
+     * @param iy Cell index along y.
+     * @param iz Cell index along z.
+     *
+     * @return Linearized index into the cell array.
+     */
     std::size_t flat_index(int ix, int iy, int iz) const {
       return (static_cast<std::size_t>(ix) * ny_
             + static_cast<std::size_t>(iy)) * nz_
             + static_cast<std::size_t>(iz);
     }
 
+    /**
+     * @brief Inserts a single point and its normal into the grid.
+     *
+     * @param point_id Index of the point in the input cloud.
+     * @param p        Point position.
+     * @param n        Point normal.
+     */
     void insert(Index point_id, const Point_3& p, const Vector_3& n) {
       int ix, iy, iz;
       if (!to_grid_coords(p, ix, iy, iz)) {
@@ -332,6 +479,13 @@ namespace CGAL {
     //////////////////// DEBUG /////////////////////
     */
     public:
+    /**
+     * @brief Writes the input point cloud and normals to a PLY file.
+     *
+     * @param filename Output PLY filename.
+     *
+     * @return `true` if the file was written successfully.
+     */
     bool write_point_cloud_ply(const std::string& filename) const
     {
       std::ofstream out(filename);
@@ -367,6 +521,13 @@ namespace CGAL {
       return true;
     }
 
+    /**
+     * @brief Writes all grid vertices to a PLY file for visualization.
+     *
+     * @param filename Output PLY filename.
+     *
+     * @return `true` if the file was written successfully.
+     */
     bool write_grid_vertices_ply(const std::string& filename) const
     {
       std::ofstream out(filename);
@@ -407,6 +568,14 @@ namespace CGAL {
       return true;
     }
 
+    /**
+     * @brief Writes occupied cell centers and their averaged normals to a PLY file.
+     *
+     * @param filename Output PLY filename.
+     * @param normal_scale Scale factor for visualizing the normal direction.
+     *
+     * @return `true` if the file was written successfully.
+     */
     bool write_cell_centers_and_normals_ply(const std::string& filename,
                                             double normal_scale = 0.25) const
     {
@@ -511,6 +680,6 @@ namespace CGAL {
     }
   };
 
-}
+} // namespace CGAL
 
 #endif // CGAL_SPLAT_SURFACE_RECONSTRUCTION_H

@@ -1,0 +1,12 @@
+digraph "/home/pranav/cgal-public-dev/Splat_surface_reconstruction_3" {
+  compound=true
+  node [ fontsize="10", fontname="Helvetica"];
+  edge [ labelfontsize="10", labelfontname="Helvetica"];
+  subgraph clusterdir_ed9080a733b53d008dbf9c29c6a920ae {
+    graph [ bgcolor="#eeeeff", pencolor="black", label="" URL="dir_ed9080a733b53d008dbf9c29c6a920ae.html"];
+    dir_ed9080a733b53d008dbf9c29c6a920ae [shape=plaintext label="Splat_surface_reconstruction_3"];
+  dir_3f4aa59af4547f28fb3f4df2060da796 [shape=box label="examples" fillcolor="white" style="filled" color="red" URL="dir_3f4aa59af4547f28fb3f4df2060da796.html"];
+  dir_44b95e9bc81a0f72d3d5dc24552a5442 [shape=box label="include" fillcolor="white" style="filled" color="red" URL="dir_44b95e9bc81a0f72d3d5dc24552a5442.html"];
+  }
+  dir_3f4aa59af4547f28fb3f4df2060da796->dir_44b95e9bc81a0f72d3d5dc24552a5442 [headlabel="1", labeldistance=1.5 headhref="dir_000001_000003.html"];
+}
