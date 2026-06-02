@@ -157,6 +157,13 @@ int main(int argc, char* argv[]) {
   std::vector<Vector_3> block_normals = grid.compute_block_normals(); // compute block normals by averaging point normals in each cell
   std::cout<<"Computed " << block_normals.size() << " block normals." << std::endl;
 
+  std::vector<FT> splat_sizes = grid.estimate_individual_splat_sizes(FT(average_spacing)/2.0); // estimate individual splat sizes based on local point distribution
+  std::cout<<"Estimated individual splat sizes for " << splat_sizes.size() << " points." << std::endl;
+
+  grid.write_point_cloud_ply("debug_points.ply");
+  grid.write_grid_vertices_ply("debug_grid_vertices.ply");
+  grid.write_cell_centers_and_normals_ply("debug_cell_normals.ply", 0.2);
+
   // if (CGAL::splat_surface_reconstruction(points, normals, output_mesh, average_spacing)) {
   //   std::string fname = std::filesystem::path(filename).stem().string() + ".off";
   //   CGAL::IO::write_polygon_mesh(fname, output_mesh);

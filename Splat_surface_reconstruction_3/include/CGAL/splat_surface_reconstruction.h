@@ -14,8 +14,8 @@
 
 #include <CGAL/license/Splat_surface_reconstruction_3.h>
 #include <CGAL/property_map.h>
-// #include <CGAL/Splat_surface_reconstruction_3/internal/Box_grid.h>
 #include <CGAL/Kernel_traits.h>
+#include <CGAL/Delaunay_triangulation_2.h>
 #include <vector>
 #include <iostream>
 #include <cmath>
@@ -64,6 +64,7 @@ namespace CGAL {
     using Kernel   = Kernel_;
     using FT       = typename Kernel::FT;
     using Point_3  = typename Kernel::Point_3;
+    using Point_2  = typename Kernel::Point_2;
     using Vector_3 = typename Kernel::Vector_3;
     using Index    = std::size_t;
 
@@ -83,6 +84,13 @@ namespace CGAL {
         }
       }
     };
+
+    const Cell* cell(int ix, int iy, int iz) const {
+      if (!valid_coords(ix, iy, iz)) {
+        return nullptr;
+      }
+      return &cells_[flat_index(ix, iy, iz)];
+    }
 
     Box_grid(FT box_size,
              FT min_x, FT max_x,
@@ -147,7 +155,87 @@ namespace CGAL {
       return block_normals;
     }
 
+    std::vector<FT> estimate_individual_splat_sizes(FT global_spacing) const {
+      std::vector<FT> splat_sizes(points_.size(), global_spacing);
+
+      for (Index i = 0; i < points_.size(); ++i) {
+        int cx, cy, cz;
+        if (!to_grid_coords(points_[i], cx, cy, cz)) {
+          std::cerr << "Warning: point " << i << " is out of grid bounds, skipping splat size estimation.\n";
+          continue;
+        }
+
+        // Collect all points in the same box as p_i.
+        std::vector<Index> local_ids;
+        const Cell* c = cell(cx, cy, cz);
+        if (c == nullptr || c->point_ids.empty()) {
+          std::cerr << "Warning: no points found in the same cell for point " << i << ", skipping splat size estimation.\n";
+          continue;
+        }
+        local_ids = c->point_ids;
+
+        // Need at least a few neighbors to define a local triangulation.
+        if (local_ids.size() < 3) {
+          std::cerr << "Warning: not enough neighbors for point " << i << ", skipping splat size estimation.\n";
+          splat_sizes[i] = global_spacing;
+          continue;
+        }
+
+        // Build a local tangent frame at p_i from its normal.
+        std::vector<Vector_3> local_frame = compute_local_tangent_frame(points_[i], normals_[i]);
+        Vector_3 u = local_frame[0];
+        Vector_3 v = local_frame[1];
+
+        // Project local neighbors onto the tangent plane and compute their 2D coordinates
+        // Also input in the Delaunay Triangulation Kernel
+        CGAL::Delaunay_triangulation_2<Kernel> DT;
+        DT.insert(Point_2(0, 0)); // insert the center point itself at the origin of the local frame
+        for (Index neighbor_id : local_ids) {
+          if (neighbor_id == i) continue; // skip the center point
+          Vector_3 vec = points_[neighbor_id] - points_[i];
+          double x = CGAL::to_double(vec * u);
+          double y = CGAL::to_double(vec * v);
+          Point_2 point_2d(x, y);
+
+          DT.insert(point_2d);
+        }
+
+        //Find the circumcenter of each triangle in Delaunay triangulation
+        std::vector<FT> circumcenter_distances;
+        for (auto face = DT.finite_faces_begin(); face != DT.finite_faces_end(); ++face) {
+          Point_2 c = CGAL::circumcenter(face->vertex(0)->point(), face->vertex(1)->point(), face->vertex(2)->point());
+          double dist = std::sqrt(CGAL::to_double(c.x()*c.x() + c.y()*c.y())); // distance from circumcenter to the origin (which is the projection of p_i)
+          circumcenter_distances.push_back(FT(dist));
+        }
+
+        splat_sizes[i] = *std::max_element(circumcenter_distances.begin(), circumcenter_distances.end());
+      }
+
+      return splat_sizes;
+    }
+
   private:
+    std::vector<Vector_3> compute_local_tangent_frame(const Point_3& p, const Vector_3& n) const {
+      // Find a vector that is not parallel to n to construct the tangent frame.
+      Vector_3 temp;
+      if (std::abs(CGAL::to_double(n.x())) < 0.9)
+        temp = Vector_3(1,0,0);
+      else
+        temp = Vector_3(0,1,0);
+
+      Vector_3 u = CGAL::cross_product(n, temp);
+      Vector_3 v = CGAL::cross_product(n, u);
+
+      // Normalize u and v to have unit length.
+      const double len_u = std::sqrt(CGAL::to_double(u.squared_length()));
+      const double len_v = std::sqrt(CGAL::to_double(v.squared_length()));
+      if (len_u > 0) u = u / len_u;
+      if (len_v > 0) v = v / len_v;
+
+      return {u, v};
+    }
+
+
     void clear() {
       for (Cell& c : cells_) {
         c.point_ids.clear();
@@ -238,6 +326,189 @@ namespace CGAL {
     std::vector<Cell> cells_;
     std::vector<Point_3> points_;
     std::vector<Vector_3> normals_;
+
+
+    /*
+    //////////////////// DEBUG /////////////////////
+    */
+    public:
+    bool write_point_cloud_ply(const std::string& filename) const
+    {
+      std::ofstream out(filename);
+      if (!out) {
+        std::cerr << "Error: cannot open " << filename << " for writing.\n";
+        return false;
+      }
+
+      out << "ply\n";
+      out << "format ascii 1.0\n";
+      out << "element vertex " << points_.size() << "\n";
+      out << "property float x\n";
+      out << "property float y\n";
+      out << "property float z\n";
+      out << "property float nx\n";
+      out << "property float ny\n";
+      out << "property float nz\n";
+      out << "end_header\n";
+
+      for (std::size_t i = 0; i < points_.size(); ++i) {
+        const Point_3& p = points_[i];
+        const Vector_3 n = (i < normals_.size()) ? normals_[i] : CGAL::NULL_VECTOR;
+
+        out << std::setprecision(17)
+            << CGAL::to_double(p.x()) << ' '
+            << CGAL::to_double(p.y()) << ' '
+            << CGAL::to_double(p.z()) << ' '
+            << CGAL::to_double(n.x()) << ' '
+            << CGAL::to_double(n.y()) << ' '
+            << CGAL::to_double(n.z()) << '\n';
+      }
+
+      return true;
+    }
+
+    bool write_grid_vertices_ply(const std::string& filename) const
+    {
+      std::ofstream out(filename);
+      if (!out) {
+        std::cerr << "Error: cannot open " << filename << " for writing.\n";
+        return false;
+      }
+
+      std::vector<Point_3> vertices;
+      vertices.reserve((nx_ + 1) * (ny_ + 1) * (nz_ + 1));
+
+      for (std::size_t ix = 0; ix <= nx_; ++ix) {
+        for (std::size_t iy = 0; iy <= ny_; ++iy) {
+          for (std::size_t iz = 0; iz <= nz_; ++iz) {
+            const FT x = min_x_ + FT(ix) * box_size_;
+            const FT y = min_y_ + FT(iy) * box_size_;
+            const FT z = min_z_ + FT(iz) * box_size_;
+            vertices.emplace_back(x, y, z);
+          }
+        }
+      }
+
+      out << "ply\n";
+      out << "format ascii 1.0\n";
+      out << "element vertex " << vertices.size() << "\n";
+      out << "property float x\n";
+      out << "property float y\n";
+      out << "property float z\n";
+      out << "end_header\n";
+
+      for (const Point_3& p : vertices) {
+        out << std::setprecision(17)
+            << CGAL::to_double(p.x()) << ' '
+            << CGAL::to_double(p.y()) << ' '
+            << CGAL::to_double(p.z()) << '\n';
+      }
+
+      return true;
+    }
+
+    bool write_cell_centers_and_normals_ply(const std::string& filename,
+                                            double normal_scale = 0.25) const
+    {
+      std::ofstream out(filename);
+      if (!out) {
+        std::cerr << "Error: cannot open " << filename << " for writing.\n";
+        return false;
+      }
+
+      std::vector<Point_3> centers;
+      std::vector<Vector_3> normals;
+      centers.reserve(cells_.size());
+      normals.reserve(cells_.size());
+
+      for (std::size_t ix = 0; ix < nx_; ++ix) {
+        for (std::size_t iy = 0; iy < ny_; ++iy) {
+          for (std::size_t iz = 0; iz < nz_; ++iz) {
+            const Cell& c = cells_[flat_index(static_cast<int>(ix),
+                                              static_cast<int>(iy),
+                                              static_cast<int>(iz))];
+
+            if (c.point_ids.empty()) {
+              continue;
+            }
+
+            centers.push_back(cell_center(static_cast<int>(ix),
+                                          static_cast<int>(iy),
+                                          static_cast<int>(iz)));
+            normals.push_back(compute_cell_normal(static_cast<int>(ix),
+                                                  static_cast<int>(iy),
+                                                  static_cast<int>(iz)));
+          }
+        }
+      }
+
+      out << "ply\n";
+      out << "format ascii 1.0\n";
+      out << "element vertex " << centers.size() * 2 << "\n";
+      out << "property float x\n";
+      out << "property float y\n";
+      out << "property float z\n";
+      out << "element edge " << centers.size() << "\n";
+      out << "property int vertex1\n";
+      out << "property int vertex2\n";
+      out << "end_header\n";
+
+      for (std::size_t i = 0; i < centers.size(); ++i) {
+        const Point_3& c = centers[i];
+        const Vector_3 n = normals[i];
+
+        const Point_3 tip(
+          c.x() + FT(normal_scale) * n.x(),
+          c.y() + FT(normal_scale) * n.y(),
+          c.z() + FT(normal_scale) * n.z()
+        );
+
+        out << std::setprecision(17)
+            << CGAL::to_double(c.x()) << ' '
+            << CGAL::to_double(c.y()) << ' '
+            << CGAL::to_double(c.z()) << '\n';
+
+        out << std::setprecision(17)
+            << CGAL::to_double(tip.x()) << ' '
+            << CGAL::to_double(tip.y()) << ' '
+            << CGAL::to_double(tip.z()) << '\n';
+      }
+
+      for (std::size_t i = 0; i < centers.size(); ++i) {
+        const int v0 = static_cast<int>(2 * i);
+        const int v1 = static_cast<int>(2 * i + 1);
+        out << v0 << ' ' << v1 << '\n';
+      }
+
+      return true;
+    }
+    
+    private:
+    Point_3 cell_center(int ix, int iy, int iz) const
+    {
+      const FT x = min_x_ + (FT(ix) + FT(0.5)) * box_size_;
+      const FT y = min_y_ + (FT(iy) + FT(0.5)) * box_size_;
+      const FT z = min_z_ + (FT(iz) + FT(0.5)) * box_size_;
+      return Point_3(x, y, z);
+    }
+
+    Vector_3 compute_cell_normal(int ix, int iy, int iz) const
+    {
+      const Cell& c = cells_[flat_index(ix, iy, iz)];
+      if (c.normal_count == 0) {
+        return CGAL::NULL_VECTOR;
+      }
+
+      const FT inv = FT(1) / FT(c.normal_count);
+      Vector_3 n = c.normal_sum * inv;
+
+      const double len2 = CGAL::to_double(n.squared_length());
+      if (len2 <= 0.0) {
+        return CGAL::NULL_VECTOR;
+      }
+
+      return n * (1.0 / std::sqrt(len2));
+    }
   };
 
 }
