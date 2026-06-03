@@ -81,9 +81,9 @@ public:
     const Point_2 p1 { seg_length, dist_oracle(target) };
 
     // return recursive_dichotomic_search(p0, p1, output_pt);
-	// return sphere_tracing_old(s, t, output_pt);
-	// return sphere_tracing(s, t, output_pt);
-	return relaxed_sphere_tracing(s, t, output_pt);
+    // return sphere_tracing_old(s, t, output_pt);
+    // return sphere_tracing(s, t, output_pt);
+    return relaxed_sphere_tracing(s, t, output_pt);
   }
 
 private:
@@ -216,8 +216,8 @@ private:
   }
 
   bool sphere_tracing_old(const Point_3& s,
-                              const Point_3& t,
-                              Point_3& output_pt)
+                          const Point_3& t,
+                          Point_3& output_pt)
   {
 #ifdef CGAL_AW3_DEBUG_SPHERE_MARCHING
     std::cout << "Sphere march between " << s << " and " << t << std::endl;
@@ -265,8 +265,8 @@ private:
   }
 
   bool sphere_tracing(const Point_3& s,
-					   const Point_3& t,
-					   Point_3& output_pt)
+                      const Point_3& t,
+                      Point_3& output_pt)
   {
 #ifdef CGAL_AW3_DEBUG_SPHERE_MARCHING
     std::cout << "Sphere march between " << s << " and " << t << std::endl;
@@ -274,7 +274,7 @@ private:
 
     CGAL_precondition(s != t);
 
-	Point_3 current_pt = s;
+    Point_3 current_pt = s;
     FT current_dist;
 
     const FT sq_seg_length = squared_distance(s, t);
@@ -295,7 +295,7 @@ private:
       std::cout << "current dist " << current_dist << std::endl;
 #endif
 
-	  current_dist = dist_oracle(current_pt) - offset;
+      current_dist = dist_oracle(current_pt) - offset;
 
       if(CGAL::abs(current_dist) < precision)
       {
@@ -310,8 +310,8 @@ private:
   }
 
   bool relaxed_sphere_tracing(const Point_3& s,
-							  const Point_3& t,
-							  Point_3& output_pt)
+                              const Point_3& t,
+                              Point_3& output_pt)
   {
 #ifdef CGAL_AW3_DEBUG_SPHERE_MARCHING
     std::cout << "Sphere march between " << s << " and " << t << std::endl;
@@ -319,9 +319,9 @@ private:
 
     CGAL_precondition(s != t);
 
-	Point_3 current_pt = s;
+    Point_3 current_pt = s;
     FT current_dist;
-	FT omega = 1.6;
+    FT omega = 1.6;
 
     const FT sq_seg_length = squared_distance(s, t);
     const FT seg_length = approximate_sqrt(sq_seg_length);
@@ -334,12 +334,12 @@ private:
 
     const Vector_3 direction = (t - s) / seg_length;
 
-	FT current_step;
-	FT previous_dist = 0;
-	bool sorFail = false;
+    FT current_step;
+    FT previous_dist = 0;
+    bool sorFail = false;
 
-	current_dist = dist_oracle(current_pt) - offset;
-	current_step = current_dist;
+    current_dist = dist_oracle(current_pt) - offset;
+    current_step = current_dist;
 
     while(squared_distance(s, current_pt) <= sq_seg_length || sorFail)
     {
@@ -348,14 +348,14 @@ private:
       std::cout << "current dist " << current_dist << std::endl;
 #endif
 
-	  sorFail = omega > 1 &&
-		(CGAL::abs(current_dist) + CGAL::abs(previous_dist)) < current_step;
-	  if (sorFail) {
-		current_step -= omega * current_step;
-		omega = 1;
-	  } else {
-		current_step = current_dist * omega;
-	  }
+      sorFail = omega > 1 &&
+        (CGAL::abs(current_dist) + CGAL::abs(previous_dist)) < current_step;
+      if (sorFail) {
+        current_step -= omega * current_step;
+        omega = 1;
+      } else {
+        current_step = current_dist * omega;
+      }
 
       if(CGAL::abs(current_dist) < precision && !sorFail)
       {
@@ -365,8 +365,8 @@ private:
 
       current_pt = current_pt + (current_step * direction);
 
-	  previous_dist = current_dist;
-	  current_dist = dist_oracle(current_pt) - offset;
+      previous_dist = current_dist;
+      current_dist = dist_oracle(current_pt) - offset;
     }
 
     return false;
