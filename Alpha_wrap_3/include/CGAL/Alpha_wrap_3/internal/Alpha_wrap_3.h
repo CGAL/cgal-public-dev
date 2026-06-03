@@ -1034,6 +1034,10 @@ private:
     Tetrahedron_with_outside_info<Geom_traits> tet(neighbor, geom_traits());
     if(m_oracle.do_intersect(tet))
     {
+#ifdef CGAL_AW3_PROFILING
+    m_R2_timer.stop();
+#endif
+
       // steiner point is the closest point on input from cell centroid with offset
       const Point_3 closest_pt = m_oracle.closest_point(neighbor_cc);
 #ifdef CGAL_AW3_DEBUG_STEINER_COMPUTATION
@@ -1051,10 +1055,6 @@ private:
 #ifdef CGAL_AW3_DEBUG_STEINER_COMPUTATION
       std::cout << "Direction: " << unit << std::endl;
       std::cout << "Steiner: " << steiner_point << std::endl;
-#endif
-
-#ifdef CGAL_AW3_PROFILING
-    m_R2_timer.stop();
 #endif
 
       return Steiner_status::RULE_2;
