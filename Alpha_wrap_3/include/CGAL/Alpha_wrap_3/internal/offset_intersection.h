@@ -45,7 +45,7 @@ struct AABB_distance_oracle
     return approximate_sqrt(AABB_helper::squared_distance(p, tree));
   }
 
-private:
+public:
   const AABBTree& tree;
 };
 
@@ -219,20 +219,24 @@ private:
                           const Point_3& t,
                           Point_3& output_pt)
   {
-#ifdef CGAL_AW3_DEBUG_SPHERE_MARCHING
-    std::cout << "Sphere march between " << s << " and " << t << std::endl;
+#if 1//def CGAL_AW3_DEBUG_SPHERE_MARCHING
+    static int calls = -1;
+    ++calls;
+    std::cout << "Sphere march between " << s << " and " << t << " (#" << calls << ")" << std::endl;
 #endif
 
     CGAL_precondition(s != t);
 
     Point_3 current_pt = s;
-    FT current_dist = dist_oracle(current_pt) - offset;
+    Point_3 closest_point = dist_oracle.tree.closest_point(current_pt, t);
+    FT current_dist = approximate_sqrt(squared_distance(current_pt, closest_point)) - offset;
 
     const FT sq_seg_length = squared_distance(s, t);
     const FT seg_length = approximate_sqrt(sq_seg_length);
     if(is_zero(seg_length))
     {
-      current_dist = dist_oracle(current_pt) - offset;
+      closest_point = dist_oracle.tree.closest_point(t);
+      current_dist = approximate_sqrt(squared_distance(t, closest_point)) - offset;
       output_pt = t;
       return (CGAL::abs(current_dist) < precision);
     }
@@ -252,13 +256,14 @@ private:
         return true;
       }
 
-      // use the previous closest point as a hint: it's an upper bound
       current_pt = current_pt + (current_dist * seg_unit_v);
 
       if(squared_distance(s, current_pt) > sq_seg_length)
         return false;
 
-      current_dist = dist_oracle(current_pt) - offset;
+      // previous closest point is a good hint for the next closest point
+      closest_point = dist_oracle.tree.closest_point(current_pt, closest_point);
+      current_dist = approximate_sqrt(squared_distance(current_pt, closest_point)) - offset;
     }
 
     return false;
