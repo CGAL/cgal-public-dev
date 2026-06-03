@@ -95,7 +95,7 @@ namespace CGAL {
    */
   template <typename Kernel_>
   class Box_grid {
-  
+
     public:
     using Kernel   = Kernel_;
     using FT       = typename Kernel::FT;
@@ -166,15 +166,11 @@ namespace CGAL {
     Box_grid(FT box_size,
              FT min_x, FT max_x,
              FT min_y, FT max_y,
-             FT min_z, FT max_z) {
-      
-      box_size_ = box_size;
-      min_x_ = min_x;
-      max_x_ = max_x;
-      min_y_ = min_y;
-      max_y_ = max_y;
-      min_z_ = min_z;
-      max_z_ = max_z;
+             FT min_z, FT max_z)
+     : box_size_(box_size),
+       min_x_(min_x), max_x_(max_x), min_y_(min_y),
+       max_y_(max_y), min_z_(min_z), max_z_(max_z)
+    {
       initialize_grid();
     }
 
@@ -189,7 +185,7 @@ namespace CGAL {
      */
     void build(const std::vector<Point_3>& points,
               const std::vector<Vector_3>& normals) {
-      
+
       clear();
 
       points_ = points;
@@ -213,7 +209,7 @@ namespace CGAL {
      * @return A vector of block normals in grid order.
      */
     std::vector<Vector_3> compute_block_normals() const {
-      
+
       std::vector<Vector_3> block_normals;
       block_normals.reserve(cells_.size());
 
@@ -361,7 +357,7 @@ namespace CGAL {
       const double extent_x = CGAL::to_double(max_x_ - min_x_);
       const double extent_y = CGAL::to_double(max_y_ - min_y_);
       const double extent_z = CGAL::to_double(max_z_ - min_z_);
-      
+
       nx_ = std::max<std::size_t>(1, static_cast<std::size_t>(std::ceil(extent_x / h)));
       ny_ = std::max<std::size_t>(1, static_cast<std::size_t>(std::ceil(extent_y / h)));
       nz_ = std::max<std::size_t>(1, static_cast<std::size_t>(std::ceil(extent_z / h)));
@@ -421,9 +417,9 @@ namespace CGAL {
       iy = static_cast<int>(std::floor((y - miny) / h));
       iz = static_cast<int>(std::floor((z - minz) / h));
 
-      ix = std::min(ix, static_cast<int>(nx_) - 1);
-      iy = std::min(iy, static_cast<int>(ny_) - 1);
-      iz = std::min(iz, static_cast<int>(nz_) - 1);
+      ix = (std::min)(ix, static_cast<int>(nx_) - 1);
+      iy = (std::min)(iy, static_cast<int>(ny_) - 1);
+      iz = (std::min)(iz, static_cast<int>(nz_) - 1);
 
       return valid_coords(ix, iy, iz);
     }
@@ -651,7 +647,7 @@ namespace CGAL {
 
       return true;
     }
-    
+
     private:
     Point_3 cell_center(int ix, int iy, int iz) const
     {

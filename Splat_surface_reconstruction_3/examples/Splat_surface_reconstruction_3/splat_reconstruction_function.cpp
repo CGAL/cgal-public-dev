@@ -73,7 +73,7 @@ void center_and_scale_point_cloud(std::vector<Point>& points) {
   const double extent_y = bbox.ymax() - bbox.ymin();
   const double extent_z = bbox.zmax() - bbox.zmin();
 
-  const double max_extent = std::max({extent_x, extent_y, extent_z});
+  const double max_extent = (std::max)({extent_x, extent_y, extent_z});
   if (max_extent <= 0.0) {
     return;
   }
@@ -148,12 +148,12 @@ int main(int argc, char* argv[]) {
   const auto bbox = CGAL::bounding_box(points.begin(), points.end()); // recompute bbox after centering and scaling
 
   // Build the grid and insert points + normals.
-  CGAL::Box_grid<Kernel> grid{FT(average_spacing), 
-                              FT(bbox.xmin()), FT(bbox.xmax()), 
-                              FT(bbox.ymin()), FT(bbox.ymax()), 
+  CGAL::Box_grid<Kernel> grid{FT(average_spacing),
+                              FT(bbox.xmin()), FT(bbox.xmax()),
+                              FT(bbox.ymin()), FT(bbox.ymax()),
                               FT(bbox.zmin()), FT(bbox.zmax())}; // initialize grid with cell size equal to average spacing and bounding box [-1,1]^3
   grid.build(points, normals); // insert points and normals into the grid
-  
+
   std::vector<Vector_3> block_normals = grid.compute_block_normals(); // compute block normals by averaging point normals in each cell
   std::cout<<"Computed " << block_normals.size() << " block normals." << std::endl;
 
