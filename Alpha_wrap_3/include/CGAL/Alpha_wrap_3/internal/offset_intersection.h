@@ -349,7 +349,7 @@ private:
 #endif
 
 	  sorFail = omega > 1 &&
-		(current_dist + previous_dist) < current_step;
+		(CGAL::abs(current_dist) + CGAL::abs(previous_dist)) < current_step;
 	  if (sorFail) {
 		current_step -= omega * current_step;
 		omega = 1;
