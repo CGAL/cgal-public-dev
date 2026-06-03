@@ -964,7 +964,10 @@ private:
 
     const Point_3& neighbor_cc = circumcenter(neighbor);
     const Ball_3 neighbor_cc_offset_ball = ball(neighbor_cc, m_sq_offset);
+#define CGAL_AW3_TRUE_FIRST_INTERSECTION
+#ifndef CGAL_AW3_TRUE_FIRST_INTERSECTION
     const bool is_neighbor_cc_in_offset = m_oracle.do_intersect(neighbor_cc_offset_ball);
+#endif
 
 #ifdef CGAL_AW3_DEBUG_STEINER_COMPUTATION
     std::cout << "Compute_steiner_point(" << &*ch << ", " << &*neighbor << ")" << std::endl;
@@ -985,7 +988,9 @@ private:
     std::cout << "\t" << neighbor->vertex(3)->point() << std::endl;
     std::cout << "ncc: " << neighbor_cc << std::endl;
     std::cout << "NC Distance to input: " << CGAL::squared_distance(neighbor_cc, m_oracle.closest_point(neighbor_cc)) << std::endl;
+#ifndef CGAL_AW3_TRUE_FIRST_INTERSECTION
     std::cout << "is_neighbor_cc_in_offset = " << is_neighbor_cc_in_offset << std::endl;
+#endif
 
     std::cout << "squared offset " << m_sq_offset << std::endl;
 #endif
@@ -995,7 +1000,11 @@ private:
     CGAL_assertion_code(const Ball_3 ch_cc_offset_ball = ball(ch_cc, m_sq_offset);)
     CGAL_assertion(!m_oracle.do_intersect(ch_cc_offset_ball));
 
+#ifndef CGAL_AW3_TRUE_FIRST_INTERSECTION
+    // Only seeking intersections when the neighbor circumcenter is in the offset can
+    // result in skipping some Steiner points
     if(is_neighbor_cc_in_offset)
+#endif
     {
 #ifdef CGAL_AW3_PROFILING
       ++m_R1_actual_calls;
