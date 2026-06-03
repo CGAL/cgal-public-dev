@@ -1,19 +1,24 @@
-cmake_minimum_required(VERSION 3.18...3.31) # Bumped to 3.18 for sm_120 architecture support
+cmake_minimum_required(VERSION 3.18...3.31) 
 project(meshIntersectionRegistration LANGUAGES CXX CUDA)
 
 # 1. Locate the CGAL build configuration from your parent build directory
 find_package(CGAL REQUIRED PATHS "${CMAKE_CURRENT_SOURCE_DIR}/../../cgal-build" NO_DEFAULT_PATH)
 
+# ====================================================================
+# NEW: Locate the modern CUDA Toolkit wrapper to populate CUDA:: targets
+# ====================================================================
+find_package(CUDAToolkit REQUIRED)
+
 # 2. Define path variables for cuBQL and CUDA context
 set(CUBQL_ROOT "/home/yury/Projects/CPPProj/Cubql" CACHE PATH "Path to cuBQL source root")
 set(CUBQL_BUILD "${CUBQL_ROOT}/build")
 
-# 3. Find threading dependencies (Threads for general use, TBB for CGAL parallelization)
+# 3. Find threading dependencies
 find_package(Threads REQUIRED)
 find_package(TBB REQUIRED)
 
 # ====================================================================
-# TARGET 1: Your Original Project (main.cpp)
+# TARGET 1: Your Original Project (PRISTINE: main.cpp + kernels.cu)
 # ====================================================================
 add_executable(meshIntersectionRegistration main.cpp kernels.cu)
 
@@ -24,16 +29,23 @@ set_target_properties(meshIntersectionRegistration PROPERTIES
     CUDA_STANDARD_REQUIRED ON
     CUDA_ARCHITECTURES "120"
     CUDA_SEPARABLE_COMPILATION ON
+    BUILD_WITH_INSTALL_RPATH TRUE
+    INSTALL_RPATH "${CUBQL_BUILD}"
 )
 
 # Enable CGAL parallel features via TBB macro
 target_compile_definitions(meshIntersectionRegistration PRIVATE CGAL_LINKED_WITH_TBB)
 
+target_compile_options(meshIntersectionRegistration PRIVATE 
+    $<$<COMPILE_LANGUAGE:CXX>:-O3 -march=native -DNDEBUG>
+    $<$<COMPILE_LANGUAGE:CUDA>:-O3 -DNDEBUG --use_fast_math>
+)
+
 target_include_directories(meshIntersectionRegistration PRIVATE
     include
     ${CUBQL_ROOT}
     ${CUBQL_ROOT}/samples/common
-    ${CUDA_TOOLKIT_ROOT_DIR}/include
+    ${CUDAToolkit_INCLUDE_DIRS}
 )
 
 target_link_libraries(meshIntersectionRegistration PRIVATE
@@ -48,7 +60,7 @@ target_link_libraries(meshIntersectionRegistration PRIVATE
 
 
 # ====================================================================
-# TARGET 2: Your New Massive Test Runner (main_massive.cpp)
+# TARGET 2: Massive Test Runner Variant 
 # ====================================================================
 add_executable(meshIntersectionBatch main_massive.cpp kernels.cu)
 
@@ -60,13 +72,11 @@ set_target_properties(meshIntersectionBatch PROPERTIES
     CUDA_ARCHITECTURES "120"
     CUDA_SEPARABLE_COMPILATION ON
     BUILD_WITH_INSTALL_RPATH TRUE
-    INSTALL_RPATH "${CUBQL_BUILD}" # Automatically fixes dynamic .so loading at runtime
+    INSTALL_RPATH "${CUBQL_BUILD}"
 )
 
-# Enable CGAL parallel features via TBB macro
 target_compile_definitions(meshIntersectionBatch PRIVATE CGAL_LINKED_WITH_TBB)
 
-# Force high-performance release flags specifically for this target's files
 target_compile_options(meshIntersectionBatch PRIVATE 
     $<$<COMPILE_LANGUAGE:CXX>:-O3 -march=native -DNDEBUG>
     $<$<COMPILE_LANGUAGE:CUDA>:-O3 -DNDEBUG --use_fast_math>
@@ -77,13 +87,13 @@ target_include_directories(meshIntersectionBatch PRIVATE
     include
     ${CUBQL_ROOT}
     ${CUBQL_ROOT}/samples/common
-    ${CUDA_TOOLKIT_ROOT_DIR}/include
+    ${CUDAToolkit_INCLUDE_DIRS}
 )
 
 target_link_libraries(meshIntersectionBatch PRIVATE
     CGAL::CGAL
-    gmp         # FIXED: Using lowercase system fallback
-    mpfr        # FIXED: Using lowercase system fallback
+    gmp         
+    mpfr        
     Threads::Threads
     TBB::tbb
     "${CUBQL_BUILD}/libcuBQL_cuda_float2.so"
@@ -100,9 +110,50 @@ set_target_properties(pairCheck PROPERTIES
     CXX_STANDARD_REQUIRED ON
 )
 
-# Link only against CGAL and its dependency core libraries
 target_link_libraries(pairCheck PRIVATE
     CGAL::CGAL
     gmp
     mpfr
+)
+
+# ====================================================================
+# TARGET 4: New Partitioned Dual-List Pipeline Sandbox (mainV2.cpp + kernelsV2.cu)
+# ====================================================================
+add_executable(meshIntersectionCustom mainV2.cpp kernelsV2.cu)
+
+set_target_properties(meshIntersectionCustom PROPERTIES
+    CXX_STANDARD 17
+    CXX_STANDARD_REQUIRED ON
+    CUDA_STANDARD 17
+    CUDA_STANDARD_REQUIRED ON
+    CUDA_ARCHITECTURES "120"
+    CUDA_SEPARABLE_COMPILATION ON
+    BUILD_WITH_INSTALL_RPATH TRUE
+    INSTALL_RPATH "${CUBQL_BUILD}"
+)
+
+target_compile_definitions(meshIntersectionCustom PRIVATE CGAL_LINKED_WITH_TBB)
+
+# REMOVED --use_fast_math HERE TO PRESERVE STRICT IEEE-754 DIRECTED ROUNDING FOR INTERVALS
+target_compile_options(meshIntersectionCustom PRIVATE 
+    $<$<COMPILE_LANGUAGE:CXX>:-O3 -march=native -DNDEBUG>
+    $<$<COMPILE_LANGUAGE:CUDA>:-O3 -DNDEBUG>
+)
+
+target_include_directories(meshIntersectionCustom PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    include
+    ${CUBQL_ROOT}
+    ${CUBQL_ROOT}/samples/common
+)
+
+target_link_libraries(meshIntersectionCustom PRIVATE
+    CGAL::CGAL
+    CUDA::cudart
+    gmp         
+    mpfr        
+    Threads::Threads
+    TBB::tbb
+    "${CUBQL_BUILD}/libcuBQL_cuda_float2.so"
+    "${CUBQL_BUILD}/libcuBQL_cuda_float3.so"
 )
