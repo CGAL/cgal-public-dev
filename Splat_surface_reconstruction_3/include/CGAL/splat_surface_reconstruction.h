@@ -92,12 +92,17 @@ namespace CGAL {
 
       set_halfedge(nv, fnh, mesh);
 
-      // todo:
-      // if v0 nv and v1 perform a left turn in the plane defined by the normals of the three points,
-      // then we orient the face (v0, nv, v1) counterclockwise, otherwise we orient it clockwise
-      if(true){
+      // if candidate.first ,  nv ,  and candidate.second  perform a left turn in the plane defined by the normals of the three points,
+      // then we orient the face counterclockwise, otherwise we orient it clockwise
+
+      if(CGAL::orientation(get(points_pm, candidate.first),
+                           get(points_pm, nv),
+                           get(points_pm, candidate.second),
+                           get(points_pm, nv) + candidate.normal) == CGAL::LEFT_TURN) {
         set_next(fnh, nsh, mesh);
         set_next(opposite(nsh,mesh), opposite(fnh, mesh), mesh);
+      }else{
+        // todo
       }
 
       if(halfedge(candidate.first, mesh) == boost::graph_traits<PolygonMesh>::null_halfedge())
