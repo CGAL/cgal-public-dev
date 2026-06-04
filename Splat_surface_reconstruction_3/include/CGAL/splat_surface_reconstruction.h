@@ -30,6 +30,96 @@
 #include <algorithm>
 
 namespace CGAL {
+
+  template <typename PointRange, typename NormalRange, typename PolygonMesh>
+  class Splat_surface_reconstruction_3
+  {
+    public:
+    using Point_3 = typename PointRange::value_type;
+    using Kernel = typename Kernel_traits<Point_3>::Kernel;
+    using Vector_3 = typename Kernel::Vector_3;
+    using vertex_descriptor = typename boost::graph_traits<PolygonMesh>::vertex_descriptor;
+    using edge_descriptor = typename boost::graph_traits<PolygonMesh>::edge_descriptor;
+    using halfedge_descriptor = typename boost::graph_traits<PolygonMesh>::halfedge_descriptor;
+
+    struct Candidate {
+      Point_3 position;
+      Vector_3 normal;
+      vertex_descriptor first, second;
+
+      Candidate(const Point_3& position, const Vector_3& normal, vertex_descriptor first, vertex_descriptor second)
+        : position(position), normal(normal), first(first), second(second)
+        {}
+    };
+
+    Splat_surface_reconstruction_3(const PointRange& points,
+                                   const NormalRange& normals,
+                                   PolygonMesh& output_mesh,
+                                   double spacing)
+    : mesh(output_mesh), points_pm(get_property_map(boost::vertex_point, mesh))
+    {
+      bool created;
+      std::tie(normals_pm, created) = mesh.add_property_map<vertex_descriptor, Vector_3>("v:normal", CGAL::NULL_VECTOR);
+      if(created) {
+        std::cout << "Created vertex normal property map." << std::endl;
+      }
+      // Assume that the first two points are the ones the algorithm starts with
+      vertex_descriptor v0 = add_vertex(mesh);
+      put(points_pm, v0, points[0]);
+      put(normals_pm, v0, normals[0]);
+
+      vertex_descriptor v1 = add_vertex(mesh);
+      put(points_pm, v1, points[1]);
+      put(normals_pm, v1, normals[1]);
+
+
+
+      Candidate candidate(points[2], normals[2], v0, v1);
+
+      vertex_descriptor nv = add_vertex(mesh);
+      put(points_pm, nv, candidate.position);
+      put(normals_pm, nv, candidate.normal);
+
+      edge_descriptor fne = add_edge(mesh);
+      halfedge_descriptor fnh = halfedge(fne, mesh);
+      set_target(fnh, nv, mesh);
+      set_target(opposite(fnh, mesh), v0, mesh);
+
+      edge_descriptor nse = add_edge(mesh);
+      halfedge_descriptor nsh = halfedge(nse, mesh);
+      set_target(nsh, v1, mesh);
+      set_target(opposite(nsh, mesh), nv, mesh);
+
+      set_halfedge(nv, fnh, mesh);
+
+      // todo:
+      // if v0 nv and v1 perform a left turn in the plane defined by the normals of the three points,
+      // then we orient the face (v0, nv, v1) counterclockwise, otherwise we orient it clockwise
+      if(true){
+        set_next(fnh, nsh, mesh);
+        set_next(opposite(nsh,mesh), opposite(fnh, mesh), mesh);
+      }
+
+      if(halfedge(candidate.first, mesh) == boost::graph_traits<PolygonMesh>::null_halfedge())
+      {
+        // the first edge becomes a circular list of two  halfedges
+        set_halfedge(candidate.first, opposite(fnh,mesh), mesh);
+        set_next(opposite(fnh, mesh), fnh, mesh);
+      } else {
+        // we add the new halfedge to the circular list of halfedges around candidate.first
+        // Note that the edges have no particular order. We have to order them geometrically
+        // around the vertex candidate.first to ensure the correct orientation of the faces.
+        set_next(opposite(fnh, mesh), halfedge(candidate.first, mesh), mesh);
+      }
+    }
+
+
+    PolygonMesh& mesh;
+    typename PolygonMesh:: template Property_map<vertex_descriptor,Point_3> points_pm;
+    typename PolygonMesh:: template Property_map<vertex_descriptor,Vector_3> normals_pm;
+  };
+
+
   /*!
     \ingroup PkgSplatSurfaceReconstruction3Ref
 

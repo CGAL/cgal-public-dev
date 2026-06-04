@@ -23,6 +23,7 @@ typedef std::pair<Point, Vector_3> Pwn;
 typedef CGAL::Surface_mesh<Point> Polyhedron;
 typedef Kernel::FT FT;
 
+typedef CGAL::Splat_surface_reconstruction_3<std::vector<Point>, std::vector<Vector_3>, Polyhedron> Splat_surface_reconstruction;
 // ------------------------------------------------------------
 // Read points + normals from file
 // ------------------------------------------------------------
@@ -163,6 +164,8 @@ int main(int argc, char* argv[]) {
   grid.write_point_cloud_ply("debug_points.ply");
   grid.write_grid_vertices_ply("debug_grid_vertices.ply");
   grid.write_cell_centers_and_normals_ply("debug_cell_normals.ply", 0.2);
+
+  Splat_surface_reconstruction(points, normals, output_mesh, average_spacing);
 
   // if (CGAL::splat_surface_reconstruction(points, normals, output_mesh, average_spacing)) {
   //   std::string fname = std::filesystem::path(filename).stem().string() + ".off";
