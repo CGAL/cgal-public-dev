@@ -86,6 +86,8 @@ public:
     return relaxed_sphere_tracing(s, t, output_pt);
   }
 
+#define CGAL_AW3_DEBUG_SPHERE_MARCHING
+
 private:
   Point_3 source;
   Point_3 target;
@@ -219,7 +221,7 @@ private:
                           const Point_3& t,
                           Point_3& output_pt)
   {
-#if 1//def CGAL_AW3_DEBUG_SPHERE_MARCHING
+#ifdef CGAL_AW3_DEBUG_SPHERE_MARCHING
     static int calls = -1;
     ++calls;
     std::cout << "Sphere march between " << s << " and " << t << " (#" << calls << ")" << std::endl;
@@ -252,6 +254,9 @@ private:
 
       if(CGAL::abs(current_dist) < precision)
       {
+#ifdef CGAL_AW3_DEBUG_SPHERE_MARCHING
+        std::cout << "Intersection point " << current_pt << std::endl;
+#endif
         output_pt = current_pt;
         return true;
       }
@@ -259,8 +264,12 @@ private:
       current_pt = current_pt + (current_dist * seg_unit_v);
 
       if(squared_distance(s, current_pt) > sq_seg_length)
-        return false;
-
+      {
+#ifdef CGAL_AW3_DEBUG_SPHERE_MARCHING
+    std::cout << "No intersection " << std::endl;
+#endif
+         return false;
+      }
       // previous closest point is a good hint for the next closest point
       closest_point = dist_oracle.tree.closest_point(current_pt, closest_point);
       current_dist = approximate_sqrt(squared_distance(current_pt, closest_point)) - offset;
@@ -274,7 +283,9 @@ private:
                       Point_3& output_pt)
   {
 #ifdef CGAL_AW3_DEBUG_SPHERE_MARCHING
-    std::cout << "Sphere march between " << s << " and " << t << std::endl;
+    static int calls = -1;
+    ++calls;
+    std::cout << "Sphere march between " << s << " and " << t << " (#" << calls << ")" << std::endl;
 #endif
 
     CGAL_precondition(s != t);
@@ -295,15 +306,18 @@ private:
 
     while(squared_distance(s, current_pt) <= sq_seg_length)
     {
+      current_dist = dist_oracle(current_pt) - offset;
+
 #ifdef CGAL_AW3_DEBUG_SPHERE_MARCHING
       std::cout << "current point " << current_pt << std::endl;
       std::cout << "current dist " << current_dist << std::endl;
 #endif
 
-      current_dist = dist_oracle(current_pt) - offset;
-
       if(CGAL::abs(current_dist) < precision)
       {
+#ifdef CGAL_AW3_DEBUG_SPHERE_MARCHING
+      std::cout << "Intersection point " << current_pt << std::endl;
+#endif
         output_pt = current_pt;
         return true;
       }
@@ -311,6 +325,9 @@ private:
       current_pt = current_pt + (current_dist * direction);
     }
 
+#ifdef CGAL_AW3_DEBUG_SPHERE_MARCHING
+    std::cout << "No intersection " << std::endl;
+#endif
     return false;
   }
 
@@ -319,7 +336,9 @@ private:
                               Point_3& output_pt)
   {
 #ifdef CGAL_AW3_DEBUG_SPHERE_MARCHING
-    std::cout << "Sphere march between " << s << " and " << t << std::endl;
+    static int calls = -1;
+    ++calls;
+    std::cout << "Sphere march between " << s << " and " << t << " (#" << calls << ")" << std::endl;
 #endif
 
     CGAL_precondition(s != t);
@@ -356,6 +375,9 @@ private:
       sorFail = omega > 1 &&
         (CGAL::abs(current_dist) + CGAL::abs(previous_dist)) < current_step;
       if (sorFail) {
+#ifdef CGAL_AW3_DEBUG_SPHERE_MARCHING
+        std::cout << "Overstepped " << current_pt << std::endl;
+#endif
         current_step -= omega * current_step;
         omega = 1;
       } else {
@@ -364,6 +386,9 @@ private:
 
       if(CGAL::abs(current_dist) < precision && !sorFail)
       {
+#ifdef CGAL_AW3_DEBUG_SPHERE_MARCHING
+        std::cout << "Intersection point " << current_pt << std::endl;
+#endif
         output_pt = current_pt;
         return true;
       }
@@ -374,6 +399,9 @@ private:
       current_dist = dist_oracle(current_pt) - offset;
     }
 
+#ifdef CGAL_AW3_DEBUG_SPHERE_MARCHING
+    std::cout << "No intersection " << std::endl;
+#endif
     return false;
   }
 };
