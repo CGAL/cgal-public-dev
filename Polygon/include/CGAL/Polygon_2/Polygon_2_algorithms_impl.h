@@ -513,6 +513,8 @@ Orientation orientation_2_no_precondition(ForwardIterator first,
                                           ForwardIterator last,
                                           const Traits& traits)
 {
+  if (first == last) return COLLINEAR;
+
   ForwardIterator i = left_vertex_2(first, last, traits);
 
   ForwardIterator prev = (i == first) ? last : i;
