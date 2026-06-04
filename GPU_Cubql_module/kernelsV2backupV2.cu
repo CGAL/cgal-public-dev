@@ -14,13 +14,20 @@ struct IntersectionPair {
     int idB;
 };
 
+// Layout for the single-flight monolithic download channel
+struct TaggedIntersectionPair {
+    int idA;
+    int idB;
+    int status; // 1 = GREEN, 2 = YELLOW
+};
+
 struct GPUTimingBreakdown {
     double uploadTime = 0.0;
     double executionTime = 0.0; // BVH Build + Query Passes
     double downloadTime = 0.0;
 };
 
-// Vector math utilities from your pristine kernel configuration
+// Vector math utilities
 __device__ inline cuBQL::vec3f crossProduct(const cuBQL::vec3f &u, const cuBQL::vec3f &v) {
     return cuBQL::vec3f(u.y * v.z - u.z * v.y, u.z * v.x - u.x * v.z, u.x * v.y - u.y * v.x);
 }
@@ -52,9 +59,7 @@ __device__ inline GPUInterval interval_sub(GPUInterval a, GPUInterval b) {
     return { __fsub_rd(a.lo, b.hi), __fsub_ru(a.hi, b.lo) };
 }
 
-__device__ inline GPUInterval interval_mul(
-    GPUInterval a,
-    GPUInterval b)
+__device__ inline GPUInterval interval_mul(GPUInterval a, GPUInterval b)
 {
     float lo1 = __fmul_rd(a.lo,b.lo);
     float lo2 = __fmul_rd(a.lo,b.hi);
@@ -76,51 +81,10 @@ __device__ inline GPUInterval interval_add(GPUInterval a, GPUInterval b) {
     return { __fadd_rd(a.lo, b.lo), __fadd_ru(a.hi, b.hi) };
 }
 
-// ====================================================================
-// ROBUST INTERVAL ORIENT3D GEOMETRIC PREDICATE
-// ====================================================================
-// ====================================================================
-// ROBUST FIXED INTERVAL ORIENT3D GEOMETRIC PREDICATE
-// ====================================================================
-// __device__ int orient3d_interval(
-//     const cuBQL::vec3f& p, const cuBQL::vec3f& q, 
-//     const cuBQL::vec3f& r, const cuBQL::vec3f& s,
-//     const float eps = 1e-6f) // Added conservative tolerance parameter
-// {
-//     GPUInterval pdx = interval_sub(p.x, s.x);
-//     GPUInterval pdy = interval_sub(p.y, s.y);
-//     GPUInterval pdz = interval_sub(p.z, s.z);
-
-//     GPUInterval qdx = interval_sub(q.x, s.x);
-//     GPUInterval qdy = interval_sub(q.y, s.y);
-//     GPUInterval qdz = interval_sub(q.z, s.z);
-
-//     GPUInterval rdx = interval_sub(r.x, s.x);
-//     GPUInterval rdy = interval_sub(r.y, s.y);
-//     GPUInterval rdz = interval_sub(r.z, s.z);
-
-//     // Formally aligned with standard 3x3 matrix determinant rules
-//     GPUInterval det = interval_add(
-//         interval_add(
-//             interval_mul(pdx, interval_sub(interval_mul(qdy, rdz), interval_mul(qdz, rdy))),
-//             interval_mul(pdy, interval_sub(interval_mul(qdz, rdx), interval_mul(qdx, rdz)))
-//         ),
-//         interval_mul(pdz, interval_sub(interval_mul(qdx, rdy), interval_mul(qdy, rdx)))
-//     );
-
-//     // More conservative evaluation: 
-//     // The bounds must clear the safety epsilon threshold, not just 0.0f
-//     if (det.lo > eps) return 1;
-//     if (det.hi < -eps) return -1;
-    
-//     // Spans across the [-eps, eps] window -> safely flag as uncertain/degenerate
-//     return 0; 
-// }
-
 __device__ int orient3d_interval(
     const cuBQL::vec3f& p, const cuBQL::vec3f& q, 
     const cuBQL::vec3f& r, const cuBQL::vec3f& s,
-    float eps) // Passed from top-level classifyPair
+    float eps)
 {
     GPUInterval pdx = interval_sub(p.x, s.x);
     GPUInterval pdy = interval_sub(p.y, s.y);
@@ -134,7 +98,6 @@ __device__ int orient3d_interval(
     GPUInterval rdy = interval_sub(r.y, s.y);
     GPUInterval rdz = interval_sub(r.z, s.z);
 
-    // Formally aligned with standard 3x3 matrix determinant rules
     GPUInterval det = interval_add(
         interval_add(
             interval_mul(pdx, interval_sub(interval_mul(qdy, rdz), interval_mul(qdz, rdy))),
@@ -143,77 +106,43 @@ __device__ int orient3d_interval(
         interval_mul(pdz, interval_sub(interval_mul(qdx, rdy), interval_mul(qdy, rdx)))
     );
 
-    // Safe conservative containment evaluation against the pre-calculated threshold
     if (det.lo > eps) return 1;
     if (det.hi < -eps) return -1;
     
     return 0; 
 }
 
-// Highly-tight conservative Triangle-Triangle intersection filter running on candidate lists
-__device__ bool triangleIntersectsSAT(const cuBQL::Triangle &A, const cuBQL::Triangle &B) {
-    // Ground Truth AABB Pre-Filter check
-    if (!A.bounds().overlaps(B.bounds())) return false;
-
-
-    //! Debugging
-    return true;
-
-}
-
-
 __device__ inline int edgeTriInterval(
     const cuBQL::vec3f &a, const cuBQL::vec3f &b,
     const cuBQL::vec3f &p, const cuBQL::vec3f &q, const cuBQL::vec3f &r,
-    float eps) // Forwarding parameter
+    float eps)
 {
-    // Step 1: plane crossing
     int s0 = orient3d_interval(p, q, r, a, eps);
     int s1 = orient3d_interval(p, q, r, b, eps);
 
-    if (s0 == 0 || s1 == 0)
-        return PAIR_YELLOW;
+    if (s0 == 0 || s1 == 0) return PAIR_YELLOW;
+    if ((s0 > 0 && s1 > 0) || (s0 < 0 && s1 < 0)) return PAIR_NO;
 
-    if ((s0 > 0 && s1 > 0) || (s0 < 0 && s1 < 0))
-        return PAIR_NO;
-
-    // Step 2: inside-triangle test using edge orientation
     int e0 = orient3d_interval(a, b, p, q, eps);
     int e1 = orient3d_interval(a, b, q, r, eps);
     int e2 = orient3d_interval(a, b, r, p, eps);
 
-    if (e0 == 0 || e1 == 0 || e2 == 0)
-        return PAIR_YELLOW;
+    if (e0 == 0 || e1 == 0 || e2 == 0) return PAIR_YELLOW;
 
-    if ((e0 >= 0 && e1 >= 0 && e2 >= 0) ||
-        (e0 <= 0 && e1 <= 0 && e2 <= 0))
+    if ((e0 >= 0 && e1 >= 0 && e2 >= 0) || (e0 <= 0 && e1 <= 0 && e2 <= 0))
         return PAIR_GREEN;
 
     return PAIR_NO;
 }
 
-// ====================================================================
-// ROBUST GEOMETRIC TRIANGLE-TRIANGLE INTERSECTION CLASSIFIER
-// ====================================================================
-// ====================================================================
-// ROBUST GEOMETRIC TRIANGLE-TRIANGLE INTERSECTION CLASSIFIER
-// ====================================================================
-
-// Ensure your types are defined. Assuming cuBQL::vec3f is a 3-float struct
-// and PairStatus is an enum or typedef.
 __device__ inline PairStatus classifyPair(const cuBQL::Triangle& A, const cuBQL::Triangle& B)
 {
-    // 1. AABB overlap check
     if (!A.bounds().overlaps(B.bounds()))
         return PAIR_NO;
 
     const cuBQL::vec3f A0 = A.a, A1 = A.b, A2 = A.c;
     const cuBQL::vec3f B0 = B.a, B1 = B.b, B2 = B.c;
 
-    // -----------------------------------------------------------------
-    // CALCULATE EPSILON ONCE PER PAIR
-    // -----------------------------------------------------------------
-    // Find max component across all 6 unique points involved in this comparison
     float max_A = fmaxf(fmaxf(fabsf(A0.x), fabsf(A0.y)), fmaxf(fabsf(A0.z), fmaxf(fabsf(A1.x), fmaxf(fabsf(A1.y), fabsf(A1.z)))));
     max_A = fmaxf(max_A, fmaxf(fabsf(A2.x), fmaxf(fabsf(A2.y), fabsf(A2.z))));
     
@@ -221,16 +150,11 @@ __device__ inline PairStatus classifyPair(const cuBQL::Triangle& A, const cuBQL:
     max_B = fmaxf(max_B, fmaxf(fabsf(B2.x), fmaxf(fabsf(B2.y), fabsf(B2.z))));
     
     float max_coord = fmaxf(max_A, max_B);
-
-    float float_grid_resolution = max_coord * 1.1920929e-7f; // FLT_EPSILON
+    float float_grid_resolution = max_coord * 1.1920929e-7f; 
     float eps = 8.0f * (float_grid_resolution * float_grid_resolution * float_grid_resolution);
     
-    if (eps < 1e-7f) {
-        eps = 1e-7f;
-    }
-    // -----------------------------------------------------------------
+    if (eps < 1e-7f) eps = 1e-7f;
 
-    // 2. FAST PLANE SEPARATION (Pass the single eps parameter)
     int ob0 = orient3d_interval(A0, A1, A2, B0, eps);
     int ob1 = orient3d_interval(A0, A1, A2, B1, eps);
     int ob2 = orient3d_interval(A0, A1, A2, B2, eps);
@@ -249,7 +173,6 @@ __device__ inline PairStatus classifyPair(const cuBQL::Triangle& A, const cuBQL:
             return PAIR_NO;
     }
 
-    // 3. EDGE TEST (Pass the single eps parameter)
     int r;
     r = edgeTriInterval(A0, A1, B0, B1, B2, eps); if (r == PAIR_GREEN) return PAIR_GREEN; if (r == PAIR_YELLOW) return PAIR_YELLOW;
     r = edgeTriInterval(A1, A2, B0, B1, B2, eps); if (r == PAIR_GREEN) return PAIR_GREEN; if (r == PAIR_YELLOW) return PAIR_YELLOW;
@@ -261,15 +184,7 @@ __device__ inline PairStatus classifyPair(const cuBQL::Triangle& A, const cuBQL:
 
     return PAIR_NO;
 }
-// You can safely leave this as a basic bounds overlap wrapper or let classifyPair handle it.
-//__device__ bool triangleIntersectsSAT(const cuBQL::Triangle &A, const cuBQL::Triangle &B) {
- //   return A.bounds().overlaps(B.bounds());
-//}
 
-
-// ====================================================================
-// STEP 1: PARALLEL PAIR GENERATION KERNELS
-// ====================================================================
 __global__ void generateBoxes(cuBQL::box3f *boxes, const cuBQL::Triangle *tris, int N) {
     int i = threadIdx.x + blockIdx.x * blockDim.x;
     if (i < N) boxes[i] = tris[i].bounds();
@@ -329,43 +244,26 @@ __global__ void fillPairsKernel(
 }
 
 // ====================================================================
-// STEP 2: DIVERGENCE-FREE INTERSECTION FILTER KERNEL
+// NEW: ULTRA-FAST INTERNAL MEMORY CONSOLIDATION KERNELS (D2D)
 // ====================================================================
-__global__ void evaluatePairsKernel(
-    int *statusArray, const int2 *candidatePairs, 
-    const cuBQL::Triangle *triA, const cuBQL::Triangle *triB, int numPairs) 
-{
-    int tid = threadIdx.x + blockIdx.x * blockDim.x;
-    if (tid >= numPairs) return;
-
-    int2 pair = candidatePairs[tid];
-    cuBQL::Triangle ta = triA[pair.x];
-    cuBQL::Triangle tb = triB[pair.y];
-
-    statusArray[tid] = (int)classifyPair(ta,tb);
+__global__ void mergeGreenToUnifiedKernel(TaggedIntersectionPair* dest, const IntersectionPair* src, int N) {
+    int idx = threadIdx.x + blockIdx.x * blockDim.x;
+    if (idx < N) {
+        dest[idx] = { src[idx].idA, src[idx].idB, 1 }; // Status 1 = Green
+    }
 }
 
-struct IsGreen
-{
-    __device__ bool operator()(const int x)
-    {
-        return x == PAIR_GREEN;
+__global__ void mergeYellowToUnifiedKernel(TaggedIntersectionPair* dest, const IntersectionPair* src, int N) {
+    int idx = threadIdx.x + blockIdx.x * blockDim.x;
+    if (idx < N) {
+        dest[idx] = { src[idx].idA, src[idx].idB, 2 }; // Status 2 = Yellow
     }
-};
-
-struct IsYellow
-{
-    __device__ bool operator()(const int x)
-    {
-        return x == PAIR_YELLOW;
-    }
-};
+}
 
 extern "C" void runPartitionedMeshIntersection(
     const cuBQL::Triangle* hA, int NA, 
     const cuBQL::Triangle* hB, int NB, 
-    std::vector<IntersectionPair>& hGreenPairs,
-    std::vector<IntersectionPair>& hYellowPairs,
+    std::vector<TaggedIntersectionPair>& hUnifiedPairs, // Unified Host Array Receiver
     GPUTimingBreakdown& outTimings) 
 {
     double t0, t_exec;
@@ -387,7 +285,6 @@ extern "C" void runPartitionedMeshIntersection(
     cuBQL::gpuBuilder(bvh, dBoxes, NA, cuBQL::BuildConfig());
     CUBQL_CUDA_CALL(Free(dBoxes));
 
-    // Allocate discrete tracking streams for Green and Yellow candidates
     int *dGreenCounts, *dGreenOffsets;
     int *dYellowCounts, *dYellowOffsets;
     CUBQL_CUDA_CALL(Malloc(&dGreenCounts, NB * sizeof(int)));
@@ -405,7 +302,6 @@ extern "C" void runPartitionedMeshIntersection(
     thrust::device_ptr<int> dev_yOffsets(dYellowOffsets);
     thrust::exclusive_scan(dev_yCounts, dev_yCounts + NB, dev_yOffsets);
 
-    // Read back total sizes safely
     int totalGreen = 0, lastGreen = 0;
     int totalYellow = 0, lastYellow = 0;
     CUBQL_CUDA_CALL(Memcpy(&totalGreen, dGreenOffsets + NB - 1, sizeof(int), cudaMemcpyDeviceToHost));
@@ -419,12 +315,8 @@ extern "C" void runPartitionedMeshIntersection(
     IntersectionPair *dGreenPairs = nullptr;
     IntersectionPair *dYellowPairs = nullptr;
 
-    if (totalGreen > 0) {
-        CUBQL_CUDA_CALL(Malloc(&dGreenPairs, totalGreen * sizeof(IntersectionPair)));
-    }
-    if (totalYellow > 0) {
-        CUBQL_CUDA_CALL(Malloc(&dYellowPairs, totalYellow * sizeof(IntersectionPair)));
-    }
+    if (totalGreen > 0) CUBQL_CUDA_CALL(Malloc(&dGreenPairs, totalGreen * sizeof(IntersectionPair)));
+    if (totalYellow > 0) CUBQL_CUDA_CALL(Malloc(&dYellowPairs, totalYellow * sizeof(IntersectionPair)));
 
     if (totalGreen > 0 || totalYellow > 0) {
         fillPairsKernel<<<cuBQL::divRoundUp(NB, 128), 128>>>(
@@ -433,17 +325,38 @@ extern "C" void runPartitionedMeshIntersection(
             bvh, dA, dB, NB
         );
     }
+    CUBQL_CUDA_SYNC_CHECK();
     outTimings.executionTime = cuBQL::getCurrentTime() - t_exec;
 
+    // ====================================================================
+    // THE FIX: CONSOLIDATE ON THE GPU AND STREAM IN A SINGLE PCIe FLIGHT
+    // ====================================================================
     t0 = cuBQL::getCurrentTime();
-    if (totalGreen > 0) {
-        hGreenPairs.resize(totalGreen);
-        CUBQL_CUDA_CALL(Memcpy(hGreenPairs.data(), dGreenPairs, totalGreen * sizeof(IntersectionPair), cudaMemcpyDefault));
+    
+    int totalElements = totalGreen + totalYellow;
+    if (totalElements > 0) {
+        hUnifiedPairs.resize(totalElements);
+
+        TaggedIntersectionPair* dUnifiedStaging = nullptr;
+        CUBQL_CUDA_CALL(Malloc(&dUnifiedStaging, totalElements * sizeof(TaggedIntersectionPair)));
+
+        int block = 256;
+        if (totalGreen > 0) {
+            int gridGreen = cuBQL::divRoundUp(totalGreen, block);
+            mergeGreenToUnifiedKernel<<<gridGreen, block>>>(dUnifiedStaging, dGreenPairs, totalGreen);
+        }
+        if (totalYellow > 0) {
+            int gridYellow = cuBQL::divRoundUp(totalYellow, block);
+            mergeYellowToUnifiedKernel<<<gridYellow, block>>>(dUnifiedStaging + totalGreen, dYellowPairs, totalYellow);
+        }
+        CUBQL_CUDA_SYNC_CHECK();
+
+        // One contiguous PCIe transaction burst
+        CUBQL_CUDA_CALL(Memcpy(hUnifiedPairs.data(), dUnifiedStaging, totalElements * sizeof(TaggedIntersectionPair), cudaMemcpyDefault));
+        
+        CUBQL_CUDA_CALL(Free(dUnifiedStaging));
     }
-    if (totalYellow > 0) {
-        hYellowPairs.resize(totalYellow);
-        CUBQL_CUDA_CALL(Memcpy(hYellowPairs.data(), dYellowPairs, totalYellow * sizeof(IntersectionPair), cudaMemcpyDefault));
-    }
+    CUBQL_CUDA_SYNC_CHECK();
     outTimings.downloadTime = cuBQL::getCurrentTime() - t0;
 
     // Cleanup
