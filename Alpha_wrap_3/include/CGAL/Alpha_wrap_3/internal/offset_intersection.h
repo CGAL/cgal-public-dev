@@ -373,7 +373,7 @@ private:
 #endif
 
       sorFail = omega > 1 &&
-        (CGAL::abs(current_dist) + CGAL::abs(previous_dist)) < current_step;
+        (CGAL::abs(current_dist) + CGAL::abs(previous_dist)) <= current_step;
       if (sorFail) {
 #ifdef CGAL_AW3_DEBUG_SPHERE_MARCHING
         std::cout << "Overstepped " << current_pt << std::endl;
