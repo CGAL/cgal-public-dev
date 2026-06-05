@@ -964,7 +964,7 @@ private:
 
     const Point_3& neighbor_cc = circumcenter(neighbor);
     const Ball_3 neighbor_cc_offset_ball = ball(neighbor_cc, m_sq_offset);
-#define CGAL_AW3_TRUE_FIRST_INTERSECTION
+// #define CGAL_AW3_TRUE_FIRST_INTERSECTION
 #ifndef CGAL_AW3_TRUE_FIRST_INTERSECTION
     const bool is_neighbor_cc_in_offset = m_oracle.do_intersect(neighbor_cc_offset_ball);
 #endif
