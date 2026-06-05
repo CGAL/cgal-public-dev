@@ -80,13 +80,24 @@ public:
     const Point_2 p0 { 0, dist_oracle(source) };
     const Point_2 p1 { seg_length, dist_oracle(target) };
 
-    // return recursive_dichotomic_search(p0, p1, output_pt);
-    // return sphere_tracing_old(s, t, output_pt);
-    // return sphere_tracing(s, t, output_pt);
+#define CGAL_AW3_DEBUG_SPHERE_MARCHING
+#ifdef CGAL_AW3_DEBUG_SPHERE_MARCHING
+    std::cout << "--------------------" << std::endl;
+    std::cout << "Running recursive. " << std::endl;
+    recursive_dichotomic_search(p0, p1, output_pt);
+    std::cout << "Result of recursive: " << output_pt << std::endl;
+    std::cout << "Running old. " << std::endl;
+    sphere_tracing_old(s, t, output_pt);
+    std::cout << "Result of old: " << output_pt << std::endl;
+    std::cout << "Running sphere tracing. " << std::endl;
+    sphere_tracing(s, t, output_pt);
+    std::cout << "Result of sphere tracing: " << output_pt << std::endl;
+#endif
+
+    std::cout << "Running relaxed. " << std::endl;
     return relaxed_sphere_tracing(s, t, output_pt);
   }
 
-#define CGAL_AW3_DEBUG_SPHERE_MARCHING
 
 private:
   Point_3 source;
@@ -345,7 +356,7 @@ private:
 
     Point_3 current_pt = s;
     FT current_dist;
-    FT omega = 1.6;
+    FT omega = 1.1;
 
     const FT sq_seg_length = squared_distance(s, t);
     const FT seg_length = approximate_sqrt(sq_seg_length);
@@ -365,7 +376,7 @@ private:
     current_dist = dist_oracle(current_pt) - offset;
     current_step = current_dist;
 
-    while(squared_distance(s, current_pt) <= sq_seg_length || sorFail)
+    while(squared_distance(s, current_pt) <= sq_seg_length * omega * omega || sorFail)
     {
 #ifdef CGAL_AW3_DEBUG_SPHERE_MARCHING
       std::cout << "current point " << current_pt << std::endl;
@@ -373,10 +384,10 @@ private:
 #endif
 
       sorFail = omega > 1 &&
-        (CGAL::abs(current_dist) + CGAL::abs(previous_dist)) <= current_step;
+        (CGAL::abs(current_dist) + CGAL::abs(previous_dist)) < current_step;
       if (sorFail) {
 #ifdef CGAL_AW3_DEBUG_SPHERE_MARCHING
-        std::cout << "Overstepped " << current_pt << std::endl;
+        std::cout << "Overstepped abs(" << current_dist << ") + abs(" << previous_dist << ") < " << current_step << std::endl;
 #endif
         current_step -= omega * current_step;
         omega = 1;
@@ -400,7 +411,8 @@ private:
     }
 
 #ifdef CGAL_AW3_DEBUG_SPHERE_MARCHING
-    std::cout << "No intersection " << std::endl;
+    std::cout << "No intersection. Current point " << current_pt << " with " << squared_distance(s, current_pt) << " <= " << sq_seg_length << " * " << omega << std::endl;
+
 #endif
     return false;
   }
