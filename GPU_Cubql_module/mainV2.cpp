@@ -32,11 +32,14 @@ struct IntersectionPair
   int idB;
 };
 
+// Updated struct matching our kernel version parameters
 struct GPUTimingBreakdown
 {
   double uploadTime = 0.0;
   double executionTime = 0.0;
   double downloadTime = 0.0;
+  double bvhBuildTime = 0.0;  // Added tracking parameter
+  double queryTime = 0.0;     // Added tracking parameter
 };
 
 // Updated signature pointing to our newly compiled partition routine inside kernelsV2
@@ -205,11 +208,13 @@ int main(int ac, char** av) {
 
   // OUTPUT DETAILED BREAKDOWNS
   std::cout << "----------------------------------------------------\n";
-  std::cout << "[Step 6] GPU Pipeline Profiler Breakdown:\n";
+  std::cout << "[Step 6s] GPU Pipeline Profiler Breakdown:\n";
   std::cout << "  |---> Control Variant Mode Parameter: " << pipelineMode << "\n";
   std::cout << "  |---> Active TBB Worker Limit:        " << numThreads << "\n";
   std::cout << "  |---> Host->Device Upload Time:       " << cuBQL::prettyDouble(gpuTimings.uploadTime) << "s\n";
-  std::cout << "  |---> BVH Build & Execution Time:     " << cuBQL::prettyDouble(gpuTimings.executionTime) << "s\n";
+  std::cout << "  |---> Total Combined Execution Time:  " << cuBQL::prettyDouble(gpuTimings.executionTime) << "s\n";
+  std::cout << "  |        |---> BVH Build Stage Time:  " << cuBQL::prettyDouble(gpuTimings.bvhBuildTime) << "s\n"; // New print
+  std::cout << "  |        |---> Query & Evaluation:    " << cuBQL::prettyDouble(gpuTimings.queryTime) << "s\n";    // New print
   std::cout << "  |---> Device->Host Download Time:     " << cuBQL::prettyDouble(gpuTimings.downloadTime) << "s\n";
   std::cout << "  |---> Definite Intersections (Green): " << confirmedIntersections.size() << "\n";
   std::cout << "  |---> Uncertain Candidates (Yellow):  " << ambiguousPairs.size() << "\n";

@@ -15,10 +15,13 @@ struct IntersectionPair {
     int idB;
 };
 
+// Updated struct to include internal pipeline breakdowns
 struct GPUTimingBreakdown {
     double uploadTime = 0.0;
     double executionTime = 0.0; 
     double downloadTime = 0.0;
+    double bvhBuildTime = 0.0;  // Added parameter
+    double queryTime = 0.0;     // Added parameter
 };
 
 // Hardware Interval Arithmetic Primitives
@@ -213,43 +216,40 @@ extern "C" void runPartitionedMeshIntersection(
     int pipelineMode,
     int batchSize = 256000) 
 {
-    // ----------------------------------------------------
-    // DEBUG LAYER 1: Function Entrance Diagnostics
-    // ----------------------------------------------------
-    //std::cerr << "\n[DEBUG LOG] === Entering runPartitionedMeshIntersection ===" << std::endl;
-   // std::cerr << "[DEBUG LOG] NA (Mesh A Count): " << NA << std::endl;
-  //  std::cerr << "[DEBUG LOG] NB (Mesh B Count): " << NB << std::endl;
-  //  std::cerr << "[DEBUG LOG] batchSize Parameter value: " << batchSize << std::endl;
-
     double t0, t_exec;
 
-    // FIX 1: Immediately bind current device context before any allocator execution
+    // Fix: Bind current device context before any allocator execution
     int currentDevice = 0;
     if (cudaGetDevice(&currentDevice) == cudaSuccess) {
-   //     std::cerr << "[DEBUG LOG] Initial active device ordinal reported: " << currentDevice << std::endl;
-        cudaError_t setDeviceErr = cudaSetDevice(currentDevice);
-  //      std::cerr << "[DEBUG LOG] cudaSetDevice code status: " << cudaGetErrorString(setDeviceErr) << std::endl;
-    } else {
-  //      std::cerr << "[DEBUG LOG] CRITICAL: cudaGetDevice failed to read ordinal!" << std::endl;
+        cudaSetDevice(currentDevice);
     }
 
-    // 1. Upload full Mesh A and build the static BVH
+    // 1. Upload full Mesh A
     t0 = cuBQL::getCurrentTime();
     cuBQL::Triangle *dA;
-   // std::cerr << "[DEBUG LOG] Allocating dA memory block..." << std::endl;
     CUBQL_CUDA_CALL(Malloc(&dA, NA * sizeof(cuBQL::Triangle)));
     CUBQL_CUDA_CALL(Memcpy(dA, hA, NA * sizeof(cuBQL::Triangle), cudaMemcpyDefault));
     outTimings.uploadTime = cuBQL::getCurrentTime() - t0;
 
+    // --- Start Total Execution Timing ---
     t_exec = cuBQL::getCurrentTime();
+    
+    // ==========================================
+    // PHASE A: BVH Build
+    // ==========================================
+    double t_bvh_start = cuBQL::getCurrentTime();
+
     cuBQL::box3f *dBoxes;
     CUBQL_CUDA_CALL(Malloc(&dBoxes, NA * sizeof(cuBQL::box3f)));
     generateBoxes<<<cuBQL::divRoundUp(NA, 256), 256>>>(dBoxes, dA, NA);
+    cudaDeviceSynchronize(); 
     
-  //  std::cerr << "[DEBUG LOG] Invoking cuBQL GPU builder pass..." << std::endl;
     cuBQL::bvh3f bvh;
     cuBQL::gpuBuilder(bvh, dBoxes, NA, cuBQL::BuildConfig());
     CUBQL_CUDA_CALL(Free(dBoxes));
+    cudaDeviceSynchronize(); 
+
+    outTimings.bvhBuildTime = cuBQL::getCurrentTime() - t_bvh_start;
 
     // Clear host output arrays before starting batch processing
     hGreenPairs.clear();
@@ -257,7 +257,6 @@ extern "C" void runPartitionedMeshIntersection(
     
     // Allocate scratch space scaled ONLY to the size of ONE batch chunk
     int *dPairCounts, *dOffsets;
-   // std::cerr << "[DEBUG LOG] Allocating batch counters using batchSize tracking context..." << std::endl;
     CUBQL_CUDA_CALL(Malloc(&dPairCounts, batchSize * sizeof(int)));
     CUBQL_CUDA_CALL(Malloc(&dOffsets, batchSize * sizeof(int)));
 
@@ -265,12 +264,14 @@ extern "C" void runPartitionedMeshIntersection(
     cuBQL::Triangle *dB_batch;
     CUBQL_CUDA_CALL(Malloc(&dB_batch, batchSize * sizeof(cuBQL::Triangle)));
 
-    // 3. Batch Loop over Mesh B
-   // std::cerr << "[DEBUG LOG] Launching main pipeline macro batch loops..." << std::endl;
+    // ==========================================
+    // PHASE B: Query & Evaluation Loop
+    // ==========================================
+    double t_query_start = cuBQL::getCurrentTime();
+
+    // Batch Loop over Mesh B
     for (int bStart = 0; bStart < NB; bStart += batchSize) {
         int currentBatchSize = std::min(batchSize, NB - bStart);
-  //      std::cerr << "[DEBUG LOG] ---> Current Batch Step: bStart = " << bStart 
-   //               << " | currentBatchSize = " << currentBatchSize << std::endl;
 
         // Upload only the current chunk of B
         CUBQL_CUDA_CALL(Memcpy(dB_batch, hB + bStart, currentBatchSize * sizeof(cuBQL::Triangle), cudaMemcpyDefault));
@@ -284,21 +285,12 @@ extern "C" void runPartitionedMeshIntersection(
         thrust::device_ptr<int> dev_counts(dPairCounts);
         thrust::device_ptr<int> dev_offsets(dOffsets);
         
-        // ----------------------------------------------------
-        // DEBUG LAYER 2: Direct Tracking on the Suspect Line
-        // ----------------------------------------------------
-     //   std::cerr << "[DEBUG LOG] ---> Attempting thrust::exclusive_scan execution pass..." << std::endl;
-        
         thrust::exclusive_scan(thrust::device, dev_counts, dev_counts + currentBatchSize, dev_offsets);
         
-       // std::cerr << "[DEBUG LOG] ---> thrust::exclusive_scan completed successfully without aborting!" << std::endl;
-
         int totalBatchPairs = 0, lastCount = 0;
         CUBQL_CUDA_CALL(Memcpy(&totalBatchPairs, dOffsets + currentBatchSize - 1, sizeof(int), cudaMemcpyDeviceToHost));
         CUBQL_CUDA_CALL(Memcpy(&lastCount, dPairCounts + currentBatchSize - 1, sizeof(int), cudaMemcpyDeviceToHost));
         totalBatchPairs += lastCount;
-
-    //    std::cerr << "[DEBUG LOG] ---> totalBatchPairs resolved for current iteration: " << totalBatchPairs << std::endl;
 
         // If this batch has zero work, bypass everything else and move to next batch
         if (totalBatchPairs == 0) continue;
@@ -332,16 +324,12 @@ extern "C" void runPartitionedMeshIntersection(
         thrust::device_ptr<IntersectionPair> dev_green_out(thrust::raw_pointer_cast(dev_green.data()));
         thrust::device_ptr<IntersectionPair> dev_yellow_out(thrust::raw_pointer_cast(dev_yellow.data()));
 
-      //  std::cerr << "[DEBUG LOG] ---> Running compaction step via thrust::copy_if..." << std::endl;
-        
-        // FIX 3: Explicitly bind matched target execution models to prevent stack drops
+        // Explicitly bind matched target execution models to prevent stack drops
         auto green_end = thrust::copy_if(thrust::device, dev_evaluated, dev_evaluated + totalBatchPairs, dev_statuses, dev_green_out, IsTargetPairStatus{(int)PAIR_GREEN});
         auto yellow_end = thrust::copy_if(thrust::device, dev_evaluated, dev_evaluated + totalBatchPairs, dev_statuses, dev_yellow_out, IsTargetPairStatus{(int)PAIR_YELLOW});
 
         int totalGreen = green_end - dev_green_out;
         int totalYellow = yellow_end - dev_yellow_out;
-
-       // std::cerr << "[DEBUG LOG] ---> Compaction outcomes parsed: Green = " << totalGreen << " | Yellow = " << totalYellow << std::endl;
 
         // Append this batch's results directly to the global host tracking vectors
         if (totalGreen > 0) {
@@ -367,17 +355,18 @@ extern "C" void runPartitionedMeshIntersection(
         CUBQL_CUDA_CALL(Free(dEvaluatedPairs));
         CUBQL_CUDA_CALL(Free(dPairStatuses));
     }
+    cudaDeviceSynchronize(); 
 
+    outTimings.queryTime = cuBQL::getCurrentTime() - t_query_start;
+
+    // --- End Total Execution Timing ---
     outTimings.executionTime = cuBQL::getCurrentTime() - t_exec;
     outTimings.downloadTime = 0.0; 
 
     // 4. Global Structural Clean-up
- //   std::cerr << "[DEBUG LOG] Finalizing global device cleanup blocks..." << std::endl;
     CUBQL_CUDA_CALL(Free(dA));
     CUBQL_CUDA_CALL(Free(dB_batch));
     CUBQL_CUDA_CALL(Free(dPairCounts));
     CUBQL_CUDA_CALL(Free(dOffsets));
     cuBQL::cuda::free(bvh);
-    
-  //  std::cerr << "[DEBUG LOG] === Exiting runPartitionedMeshIntersection cleanly ===\n" << std::endl;
 }
