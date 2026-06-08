@@ -32,14 +32,17 @@ struct IntersectionPair
   int idB;
 };
 
-// Updated struct matching our kernel version parameters
+// Updated struct matching our kernel version parameters with fine-grained timers
 struct GPUTimingBreakdown
 {
   double uploadTime = 0.0;
   double executionTime = 0.0;
   double downloadTime = 0.0;
-  double bvhBuildTime = 0.0;  // Added tracking parameter
-  double queryTime = 0.0;     // Added tracking parameter
+  double bvhBuildTime = 0.0;  
+  double queryTime = 0.0;     
+  double countAABBTime = 0.0;         // Added: Tracks countAABBOverlapsKernel total
+  double fillAABBTime = 0.0;          // Added: Tracks fillAABBOverlapsKernel total
+  double evaluateGeometricTime = 0.0;  // Added: Tracks evaluateGeometricPairsKernel total
 };
 
 // Updated signature pointing to our newly compiled partition routine inside kernelsV2
@@ -50,8 +53,8 @@ extern "C" void runPartitionedMeshIntersection(const cuBQL::Triangle* hA,
                                                std::vector<IntersectionPair>& hGreenPairs,
                                                std::vector<IntersectionPair>& hYellowPairs,
                                                GPUTimingBreakdown& outTimings,
-                                               int pipelineMode, // Added explicitly
-                                               int batchSize);   // Added explicitly
+                                               int pipelineMode, 
+                                               int batchSize);   
 
 cuBQL::Triangle convertCgalFaceToCuBQL(const Mesh& mesh, face_descriptor face) {
   auto conn = mesh.vertices_around_face(mesh.halfedge(face));
@@ -143,7 +146,6 @@ int main(int ac, char** av) {
   GPUTimingBreakdown gpuTimings;
 
   // Call our newly partitioned pipeline logic mapping dynamic configuration profile tokens
-  // Explicitly pass both parameters down to the routine
   runPartitionedMeshIntersection(hA.data(), NA, hB.data(), NB, confirmedIntersections, ambiguousPairs, gpuTimings,
                                  pipelineMode,
                                  256000 // Explicit batch size allocation limit
@@ -213,8 +215,11 @@ int main(int ac, char** av) {
   std::cout << "  |---> Active TBB Worker Limit:        " << numThreads << "\n";
   std::cout << "  |---> Host->Device Upload Time:       " << cuBQL::prettyDouble(gpuTimings.uploadTime) << "s\n";
   std::cout << "  |---> Total Combined Execution Time:  " << cuBQL::prettyDouble(gpuTimings.executionTime) << "s\n";
-  std::cout << "  |        |---> BVH Build Stage Time:  " << cuBQL::prettyDouble(gpuTimings.bvhBuildTime) << "s\n"; // New print
-  std::cout << "  |        |---> Query & Evaluation:    " << cuBQL::prettyDouble(gpuTimings.queryTime) << "s\n";    // New print
+  std::cout << "  |        |---> BVH Build Stage Time:  " << cuBQL::prettyDouble(gpuTimings.bvhBuildTime) << "s\n"; 
+  std::cout << "  |        |---> Query & Evaluation:    " << cuBQL::prettyDouble(gpuTimings.queryTime) << "s\n";    
+  std::cout << "  |        |      |---> AABB Count Pass:" << cuBQL::prettyDouble(gpuTimings.countAABBTime) << "s\n";   // New deep print
+  std::cout << "  |        |      |---> AABB Fill Pass: " << cuBQL::prettyDouble(gpuTimings.fillAABBTime) << "s\n";    // New deep print
+  std::cout << "  |        |      |---> Geom Eval Pass: " << cuBQL::prettyDouble(gpuTimings.evaluateGeometricTime) << "s\n"; // New deep print
   std::cout << "  |---> Device->Host Download Time:     " << cuBQL::prettyDouble(gpuTimings.downloadTime) << "s\n";
   std::cout << "  |---> Definite Intersections (Green): " << confirmedIntersections.size() << "\n";
   std::cout << "  |---> Uncertain Candidates (Yellow):  " << ambiguousPairs.size() << "\n";

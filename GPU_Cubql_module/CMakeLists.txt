@@ -157,3 +157,70 @@ target_link_libraries(meshIntersectionCustom PRIVATE
     "${CUBQL_BUILD}/libcuBQL_cuda_float2.so"
     "${CUBQL_BUILD}/libcuBQL_cuda_float3.so"
 )
+
+# ====================================================================
+# TARGET 5: Dual-Pass Voxel Space Partitioning Engine (mainVoxel.cpp + kernelsVoxel.cu)
+# ====================================================================
+add_executable(meshVoxelizer mainVoxel.cpp kernelsVoxel.cu)
+
+set_target_properties(meshVoxelizer PROPERTIES
+    CXX_STANDARD 17
+    CXX_STANDARD_REQUIRED ON
+    CUDA_STANDARD 17
+    CUDA_STANDARD_REQUIRED ON
+    CUDA_ARCHITECTURES "120"
+    CUDA_SEPARABLE_COMPILATION ON
+    BUILD_WITH_INSTALL_RPATH TRUE
+    INSTALL_RPATH "${CUBQL_BUILD}"
+)
+
+target_compile_definitions(meshVoxelizer PRIVATE CGAL_LINKED_WITH_TBB)
+
+target_compile_options(meshVoxelizer PRIVATE 
+    $<$<COMPILE_LANGUAGE:CXX>:-O3 -march=native -DNDEBUG>
+    $<$<COMPILE_LANGUAGE:CUDA>:-O3 -DNDEBUG --use_fast_math>
+)
+
+target_include_directories(meshVoxelizer PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    include
+    ${CUBQL_ROOT}
+    ${CUBQL_ROOT}/samples/common
+)
+
+target_link_libraries(meshVoxelizer PRIVATE
+    CGAL::CGAL
+    CUDA::cudart
+    gmp         
+    mpfr        
+    Threads::Threads
+    TBB::tbb
+    "${CUBQL_BUILD}/libcuBQL_cuda_float2.so"
+    "${CUBQL_BUILD}/libcuBQL_cuda_float3.so"
+)
+
+# ====================================================================
+# TARGET 6: TBB CPU-Only Spatial Voxelization SandBox (mainCPUVoxel.cpp)
+# ====================================================================
+add_executable(meshVoxelizerCPU mainCPUVoxel.cpp)
+
+set_target_properties(meshVoxelizerCPU PROPERTIES
+    CXX_STANDARD 17
+    CXX_STANDARD_REQUIRED ON
+)
+
+target_compile_options(meshVoxelizerCPU PRIVATE 
+    -O3 
+    -march=native 
+    -DNDEBUG
+)
+
+target_include_directories(meshVoxelizerCPU PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    include
+)
+
+target_link_libraries(meshVoxelizerCPU PRIVATE
+    Threads::Threads
+    TBB::tbb
+)

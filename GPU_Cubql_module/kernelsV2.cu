@@ -15,13 +15,16 @@ struct IntersectionPair {
     int idB;
 };
 
-// Updated struct to include internal pipeline breakdowns
+// Updated struct to include fine-grained internal kernel timings
 struct GPUTimingBreakdown {
     double uploadTime = 0.0;
     double executionTime = 0.0; 
     double downloadTime = 0.0;
-    double bvhBuildTime = 0.0;  // Added parameter
-    double queryTime = 0.0;     // Added parameter
+    double bvhBuildTime = 0.0;  
+    double queryTime = 0.0;     
+    double countAABBTime = 0.0;        // New: Tracks countAABBOverlapsKernel total
+    double fillAABBTime = 0.0;         // New: Tracks fillAABBOverlapsKernel total
+    double evaluateGeometricTime = 0.0; // New: Tracks evaluateGeometricPairsKernel total
 };
 
 // Hardware Interval Arithmetic Primitives
@@ -224,6 +227,19 @@ extern "C" void runPartitionedMeshIntersection(
         cudaSetDevice(currentDevice);
     }
 
+    // Initialize new timing accumulators
+    outTimings.countAABBTime = 0.0;
+    outTimings.fillAABBTime = 0.0;
+    outTimings.evaluateGeometricTime = 0.0;
+
+    // Allocate CUDA events to monitor kernels inside the loop
+    cudaEvent_t startCount, stopCount;
+    cudaEvent_t startFill, stopFill;
+    cudaEvent_t startEval, stopEval;
+    cudaEventCreate(&startCount); cudaEventCreate(&stopCount);
+    cudaEventCreate(&startFill);  cudaEventCreate(&stopFill);
+    cudaEventCreate(&startEval);  cudaEventCreate(&stopEval);
+
     // 1. Upload full Mesh A
     t0 = cuBQL::getCurrentTime();
     cuBQL::Triangle *dA;
@@ -276,10 +292,12 @@ extern "C" void runPartitionedMeshIntersection(
         // Upload only the current chunk of B
         CUBQL_CUDA_CALL(Memcpy(dB_batch, hB + bStart, currentBatchSize * sizeof(cuBQL::Triangle), cudaMemcpyDefault));
 
-        // Count intersections for this batch
+        // Time countAABBOverlapsKernel
+        cudaEventRecord(startCount, 0);
         countAABBOverlapsKernel<<<cuBQL::divRoundUp(currentBatchSize, 128), 128>>>(
             dPairCounts, bvh, dA, dB_batch, currentBatchSize
         );
+        cudaEventRecord(stopCount, 0);
         
         // Wrap pointers cleanly
         thrust::device_ptr<int> dev_counts(dPairCounts);
@@ -292,6 +310,12 @@ extern "C" void runPartitionedMeshIntersection(
         CUBQL_CUDA_CALL(Memcpy(&lastCount, dPairCounts + currentBatchSize - 1, sizeof(int), cudaMemcpyDeviceToHost));
         totalBatchPairs += lastCount;
 
+        // Process event timing for Count stage even if continuing
+        cudaEventSynchronize(stopCount);
+        float millisecondsCount = 0;
+        cudaEventElapsedTime(&millisecondsCount, startCount, stopCount);
+        outTimings.countAABBTime += (double)millisecondsCount / 1000.0;
+
         // If this batch has zero work, bypass everything else and move to next batch
         if (totalBatchPairs == 0) continue;
 
@@ -303,15 +327,30 @@ extern "C" void runPartitionedMeshIntersection(
         CUBQL_CUDA_CALL(Malloc(&dEvaluatedPairs, totalBatchPairs * sizeof(IntersectionPair)));
         CUBQL_CUDA_CALL(Malloc(&dPairStatuses, totalBatchPairs * sizeof(int)));
 
-        // Extract intermediate raw overlaps
+        // Time fillAABBOverlapsKernel
+        cudaEventRecord(startFill, 0);
         fillAABBOverlapsKernel<<<cuBQL::divRoundUp(currentBatchSize, 128), 128>>>(
             dCandidatePairs, dOffsets, bvh, dA, dB_batch, currentBatchSize
         );
+        cudaEventRecord(stopFill, 0);
 
-        // Run hardware rounded interval intersection predicates
+        // Time evaluateGeometricPairsKernel
+        cudaEventRecord(startEval, 0);
         evaluateGeometricPairsKernel<<<cuBQL::divRoundUp(totalBatchPairs, 256), 256>>>(
             dEvaluatedPairs, dPairStatuses, dCandidatePairs, dA, dB_batch, totalBatchPairs
         );
+        cudaEventRecord(stopEval, 0);
+
+        // Sync and add loop iteration times for Fill and Eval
+        cudaEventSynchronize(stopFill);
+        cudaEventSynchronize(stopEval);
+        
+        float millisecondsFill = 0, millisecondsEval = 0;
+        cudaEventElapsedTime(&millisecondsFill, startFill, stopFill);
+        cudaEventElapsedTime(&millisecondsEval, startEval, stopEval);
+        
+        outTimings.fillAABBTime += (double)millisecondsFill / 1000.0;
+        outTimings.evaluateGeometricTime += (double)millisecondsEval / 1000.0;
 
         // Wrap device pointers for compaction phase
         thrust::device_ptr<IntersectionPair> dev_evaluated(dEvaluatedPairs);
@@ -363,7 +402,11 @@ extern "C" void runPartitionedMeshIntersection(
     outTimings.executionTime = cuBQL::getCurrentTime() - t_exec;
     outTimings.downloadTime = 0.0; 
 
-    // 4. Global Structural Clean-up
+    // Global Structural Clean-up & Event destruction
+    cudaEventDestroy(startCount); cudaEventDestroy(stopCount);
+    cudaEventDestroy(startFill);  cudaEventDestroy(stopFill);
+    cudaEventDestroy(startEval);  cudaEventDestroy(stopEval);
+
     CUBQL_CUDA_CALL(Free(dA));
     CUBQL_CUDA_CALL(Free(dB_batch));
     CUBQL_CUDA_CALL(Free(dPairCounts));
