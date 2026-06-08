@@ -114,26 +114,42 @@ int main(int ac, char** av) {
   std::cout << "[Step 1] Load Meshes from Disk via CGAL: " << cuBQL::prettyDouble(cuBQL::getCurrentTime() - t0)
             << "s\n";
 
-  // 2. DATA TRANSLATION
+// 2. DATA TRANSLATION
   double t_conv_start = cuBQL::getCurrentTime();
 
-  std::vector<cuBQL::Triangle> hA;
-  hA.reserve(num_faces(m1));
+  // --- PARALLEL TRANSLATION FOR MESH 1 ---
+  size_t numFacesA = num_faces(m1);
   std::vector<face_descriptor> facesA;
-  facesA.reserve(num_faces(m1));
+  facesA.reserve(numFacesA);
+  
+  // Quick sequential harvest of descriptors (negligible overhead)
   for(auto f : m1.faces()) {
-    hA.push_back(convertCgalFaceToCuBQL(m1, f));
     facesA.push_back(f);
   }
 
-  std::vector<cuBQL::Triangle> hB;
-  hB.reserve(num_faces(m2));
+  std::vector<cuBQL::Triangle> hA(numFacesA); // Allocate up front so threads can write concurrently
+  tbb::parallel_for(tbb::blocked_range<size_t>(0, numFacesA), [&](const tbb::blocked_range<size_t>& r) {
+    for(size_t i = r.begin(); i != r.end(); ++i) {
+      hA[i] = convertCgalFaceToCuBQL(m1, facesA[i]);
+    }
+  });
+
+
+  // --- PARALLEL TRANSLATION FOR MESH 2 ---
+  size_t numFacesB = num_faces(m2);
   std::vector<face_descriptor> facesB;
-  facesB.reserve(num_faces(m2));
+  facesB.reserve(numFacesB);
+  
   for(auto f : m2.faces()) {
-    hB.push_back(convertCgalFaceToCuBQL(m2, f));
     facesB.push_back(f);
   }
+
+  std::vector<cuBQL::Triangle> hB(numFacesB); // Allocate up front
+  tbb::parallel_for(tbb::blocked_range<size_t>(0, numFacesB), [&](const tbb::blocked_range<size_t>& r) {
+    for(size_t i = r.begin(); i != r.end(); ++i) {
+      hB[i] = convertCgalFaceToCuBQL(m2, facesB[i]);
+    }
+  });
 
   int NA = hA.size();
   int NB = hB.size();
