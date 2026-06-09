@@ -389,7 +389,7 @@ namespace CGAL {
         return ids;
       }
 
-      const int r = std::max(
+      const int r = (std::max)(
         1,
         static_cast<int>(
           std::ceil(CGAL::to_double(radius) / CGAL::to_double(box_size_))
@@ -1014,7 +1014,7 @@ namespace CGAL {
         (pa.z() + pb.z()) / FT(2));
 
       FT search_radius = sphere_r + grid_.get_max_splat_radius();
-      search_radius = std::min(search_radius, grid_.get_box_size()); // WARNING: HACK
+      search_radius = (std::min)(search_radius, grid_.get_box_size()); // WARNING: HACK
 
       std::vector<Index> nearby = grid_.nearby_point_ids(mid, search_radius);
 
