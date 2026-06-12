@@ -1,1 +1,0 @@
-/home/yury/Projects/CPPProj/GSOC/cgal-public-dev/STL_Extension/include/CGAL/Triangulation_simplex_base_with_time_stamp.h

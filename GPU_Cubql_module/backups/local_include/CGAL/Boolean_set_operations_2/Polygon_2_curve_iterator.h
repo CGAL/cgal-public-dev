@@ -1,1 +1,0 @@
-/home/yury/Projects/CPPProj/GSOC/cgal-public-dev/Boolean_set_operations_2/include/CGAL/Boolean_set_operations_2/Polygon_2_curve_iterator.h

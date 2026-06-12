@@ -1,1 +1,0 @@
-/home/yury/Projects/CPPProj/GSOC/cgal-public-dev/BGL/include/CGAL/boost/graph/graph_traits_inheritance_macros.h

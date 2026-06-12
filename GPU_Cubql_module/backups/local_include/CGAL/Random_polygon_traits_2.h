@@ -1,1 +1,0 @@
-/home/yury/Projects/CPPProj/GSOC/cgal-public-dev/Generator/include/CGAL/Random_polygon_traits_2.h

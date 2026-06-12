@@ -1,1 +1,0 @@
-/home/yury/Projects/CPPProj/GSOC/cgal-public-dev/Alpha_wrap_3/include/CGAL/Alpha_wrap_3/internal/geometry_utils.h

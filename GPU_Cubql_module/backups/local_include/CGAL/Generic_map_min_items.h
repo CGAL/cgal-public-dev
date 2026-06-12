@@ -1,1 +1,0 @@
-/home/yury/Projects/CPPProj/GSOC/cgal-public-dev/Combinatorial_map/include/CGAL/Generic_map_min_items.h

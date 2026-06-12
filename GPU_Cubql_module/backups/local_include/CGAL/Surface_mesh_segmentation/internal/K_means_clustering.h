@@ -1,1 +1,0 @@
-/home/yury/Projects/CPPProj/GSOC/cgal-public-dev/Surface_mesh_segmentation/include/CGAL/Surface_mesh_segmentation/internal/K_means_clustering.h

@@ -1,1 +1,0 @@
-/home/yury/Projects/CPPProj/GSOC/cgal-public-dev/Three/include/CGAL/Three/CGAL_Lab_io_plugin_interface.h

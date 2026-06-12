@@ -1,1 +1,0 @@
-/home/yury/Projects/CPPProj/GSOC/cgal-public-dev/Surface_mesh_topology/include/CGAL/draw_face_graph_with_paths.h

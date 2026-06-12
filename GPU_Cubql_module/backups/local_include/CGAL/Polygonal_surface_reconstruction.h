@@ -1,1 +1,0 @@
-/home/yury/Projects/CPPProj/GSOC/cgal-public-dev/Polygonal_surface_reconstruction/include/CGAL/Polygonal_surface_reconstruction.h

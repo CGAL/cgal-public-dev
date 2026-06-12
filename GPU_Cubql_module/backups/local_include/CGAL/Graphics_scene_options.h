@@ -1,1 +1,0 @@
-/home/yury/Projects/CPPProj/GSOC/cgal-public-dev/Basic_viewer/include/CGAL/Graphics_scene_options.h

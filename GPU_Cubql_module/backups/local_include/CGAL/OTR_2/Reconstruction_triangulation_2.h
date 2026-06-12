@@ -1,1 +1,0 @@
-/home/yury/Projects/CPPProj/GSOC/cgal-public-dev/Optimal_transportation_reconstruction_2/include/CGAL/OTR_2/Reconstruction_triangulation_2.h

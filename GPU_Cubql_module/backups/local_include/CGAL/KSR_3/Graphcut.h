@@ -1,1 +1,0 @@
-/home/yury/Projects/CPPProj/GSOC/cgal-public-dev/Kinetic_surface_reconstruction/include/CGAL/KSR_3/Graphcut.h

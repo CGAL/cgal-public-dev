@@ -1,1 +1,0 @@
-/home/yury/Projects/CPPProj/GSOC/cgal-public-dev/NewKernel_d/include/CGAL/NewKernel_d/Wrapper/Weighted_point_d.h

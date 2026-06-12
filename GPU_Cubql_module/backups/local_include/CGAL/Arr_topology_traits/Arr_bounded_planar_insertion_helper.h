@@ -1,1 +1,0 @@
-/home/yury/Projects/CPPProj/GSOC/cgal-public-dev/Arrangement_on_surface_2/include/CGAL/Arr_topology_traits/Arr_bounded_planar_insertion_helper.h

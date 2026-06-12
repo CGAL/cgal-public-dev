@@ -1,1 +1,0 @@
-/home/yury/Projects/CPPProj/GSOC/cgal-public-dev/Triangulation_3/include/CGAL/Regular_triangulation_euclidean_traits_3.h

@@ -1,1 +1,0 @@
-/home/yury/Projects/CPPProj/GSOC/cgal-public-dev/Circular_kernel_2/include/CGAL/Filtered_bbox_circular_kernel_2/bbox_filtered_predicates.h

@@ -1,1 +1,0 @@
-/home/yury/Projects/CPPProj/GSOC/cgal-public-dev/PMP_Remeshing/include/CGAL/Polygon_mesh_processing/Uniform_sizing_field.h

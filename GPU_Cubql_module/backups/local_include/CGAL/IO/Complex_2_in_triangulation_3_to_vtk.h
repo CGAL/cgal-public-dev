@@ -1,1 +1,0 @@
-/home/yury/Projects/CPPProj/GSOC/cgal-public-dev/Surface_mesher/include/CGAL/IO/Complex_2_in_triangulation_3_to_vtk.h

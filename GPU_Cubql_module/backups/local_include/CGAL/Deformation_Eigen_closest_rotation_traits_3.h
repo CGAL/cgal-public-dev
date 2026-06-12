@@ -1,1 +1,0 @@
-/home/yury/Projects/CPPProj/GSOC/cgal-public-dev/Surface_mesh_deformation/include/CGAL/Deformation_Eigen_closest_rotation_traits_3.h

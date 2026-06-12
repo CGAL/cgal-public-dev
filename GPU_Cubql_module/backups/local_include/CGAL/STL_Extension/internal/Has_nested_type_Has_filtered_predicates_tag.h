@@ -1,1 +1,0 @@
-/home/yury/Projects/CPPProj/GSOC/cgal-public-dev/STL_Extension/include/CGAL/STL_Extension/internal/Has_nested_type_Has_filtered_predicates_tag.h

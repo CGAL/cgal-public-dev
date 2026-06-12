@@ -1,1 +1,0 @@
-/home/yury/Projects/CPPProj/GSOC/cgal-public-dev/Voronoi_diagram_2/include/CGAL/Delaunay_triangulation_on_sphere_adaptation_policies_2.h

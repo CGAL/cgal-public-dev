@@ -1,1 +1,0 @@
-/home/yury/Projects/CPPProj/GSOC/cgal-public-dev/CGAL_ImageIO/include/CGAL/Image_3_vtk_interface.h

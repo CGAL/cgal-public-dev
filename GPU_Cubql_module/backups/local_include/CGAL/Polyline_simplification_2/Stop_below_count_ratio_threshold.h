@@ -1,1 +1,0 @@
-/home/yury/Projects/CPPProj/GSOC/cgal-public-dev/Polyline_simplification_2/include/CGAL/Polyline_simplification_2/Stop_below_count_ratio_threshold.h

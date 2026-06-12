@@ -1,1 +1,0 @@
-/home/yury/Projects/CPPProj/GSOC/cgal-public-dev/BGL/include/CGAL/boost/graph/kruskal_min_spanning_tree.h

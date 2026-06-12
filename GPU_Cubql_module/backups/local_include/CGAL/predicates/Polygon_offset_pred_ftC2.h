@@ -1,1 +1,0 @@
-/home/yury/Projects/CPPProj/GSOC/cgal-public-dev/Straight_skeleton_2/include/CGAL/predicates/Polygon_offset_pred_ftC2.h

@@ -1,1 +1,0 @@
-/home/yury/Projects/CPPProj/GSOC/cgal-public-dev/Kernel_23/include/CGAL/Exact_predicates_exact_constructions_kernel_with_kth_root.h

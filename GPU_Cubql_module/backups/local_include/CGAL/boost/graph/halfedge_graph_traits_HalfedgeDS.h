@@ -1,1 +1,0 @@
-/home/yury/Projects/CPPProj/GSOC/cgal-public-dev/HalfedgeDS/include/CGAL/boost/graph/halfedge_graph_traits_HalfedgeDS.h

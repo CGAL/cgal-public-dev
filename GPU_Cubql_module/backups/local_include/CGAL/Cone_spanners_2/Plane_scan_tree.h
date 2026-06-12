@@ -1,1 +1,0 @@
-/home/yury/Projects/CPPProj/GSOC/cgal-public-dev/Cone_spanners_2/include/CGAL/Cone_spanners_2/Plane_scan_tree.h

@@ -1,1 +1,0 @@
-/home/yury/Projects/CPPProj/GSOC/cgal-public-dev/Triangulation_on_sphere_2/include/CGAL/Projection_on_sphere_traits_3.h

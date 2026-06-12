@@ -1,1 +1,0 @@
-/home/yury/Projects/CPPProj/GSOC/cgal-public-dev/NewKernel_d/include/CGAL/Epick_d.h

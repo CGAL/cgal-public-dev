@@ -1,1 +1,0 @@
-/home/yury/Projects/CPPProj/GSOC/cgal-public-dev/Algebraic_kernel_d/include/CGAL/Algebraic_kernel_d/Event_line_builder.h

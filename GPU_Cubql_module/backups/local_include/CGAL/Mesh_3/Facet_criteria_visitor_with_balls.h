@@ -1,1 +1,0 @@
-/home/yury/Projects/CPPProj/GSOC/cgal-public-dev/Mesh_3/include/CGAL/Mesh_3/Facet_criteria_visitor_with_balls.h

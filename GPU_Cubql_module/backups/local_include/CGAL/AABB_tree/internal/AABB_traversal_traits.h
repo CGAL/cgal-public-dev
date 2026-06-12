@@ -1,1 +1,0 @@
-/home/yury/Projects/CPPProj/GSOC/cgal-public-dev/AABB_tree/include/CGAL/AABB_tree/internal/AABB_traversal_traits.h

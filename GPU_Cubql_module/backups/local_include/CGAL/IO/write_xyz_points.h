@@ -1,1 +1,0 @@
-/home/yury/Projects/CPPProj/GSOC/cgal-public-dev/Stream_support/include/CGAL/IO/write_xyz_points.h

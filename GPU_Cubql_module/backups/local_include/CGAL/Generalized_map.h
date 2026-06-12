@@ -1,1 +1,0 @@
-/home/yury/Projects/CPPProj/GSOC/cgal-public-dev/Generalized_map/include/CGAL/Generalized_map.h

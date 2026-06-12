@@ -1,1 +1,0 @@
-/home/yury/Projects/CPPProj/GSOC/cgal-public-dev/Kernel_d/include/CGAL/Filtered_kernel_d.h

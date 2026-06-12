@@ -1,1 +1,0 @@
-/home/yury/Projects/CPPProj/GSOC/cgal-public-dev/Alpha_wrap_2/include/CGAL/Alpha_wrap_2/internal/Segment_soup_oracle.h

@@ -1,1 +1,0 @@
-/home/yury/Projects/CPPProj/GSOC/cgal-public-dev/Three/include/CGAL/Three/Scene_item_with_properties.h

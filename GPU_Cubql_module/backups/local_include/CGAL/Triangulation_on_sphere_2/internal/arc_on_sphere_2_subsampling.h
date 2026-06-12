@@ -1,1 +1,0 @@
-/home/yury/Projects/CPPProj/GSOC/cgal-public-dev/Triangulation_on_sphere_2/include/CGAL/Triangulation_on_sphere_2/internal/arc_on_sphere_2_subsampling.h

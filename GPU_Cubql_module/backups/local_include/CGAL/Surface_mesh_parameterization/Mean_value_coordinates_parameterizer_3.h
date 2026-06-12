@@ -1,1 +1,0 @@
-/home/yury/Projects/CPPProj/GSOC/cgal-public-dev/Surface_mesh_parameterization/include/CGAL/Surface_mesh_parameterization/Mean_value_coordinates_parameterizer_3.h

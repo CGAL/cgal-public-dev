@@ -1,1 +1,0 @@
-/home/yury/Projects/CPPProj/GSOC/cgal-public-dev/Homogeneous_kernel/include/CGAL/Homogeneous/DirectionH3.h

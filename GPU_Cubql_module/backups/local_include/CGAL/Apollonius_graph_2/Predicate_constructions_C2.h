@@ -1,1 +1,0 @@
-/home/yury/Projects/CPPProj/GSOC/cgal-public-dev/Apollonius_graph_2/include/CGAL/Apollonius_graph_2/Predicate_constructions_C2.h

@@ -1,1 +1,0 @@
-/home/yury/Projects/CPPProj/GSOC/cgal-public-dev/Snap_rounding_2/include/CGAL/Snap_rounding_kd_2.h

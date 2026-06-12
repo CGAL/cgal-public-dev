@@ -1,1 +1,0 @@
-/home/yury/Projects/CPPProj/GSOC/cgal-public-dev/Interpolation/include/CGAL/predicates/predicates_for_voronoi_intersection_cartesian_2_3.h

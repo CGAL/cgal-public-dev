@@ -1,1 +1,0 @@
-/home/yury/Projects/CPPProj/GSOC/cgal-public-dev/QP_solver/include/CGAL/QP_solver/QP_basis_inverse.h

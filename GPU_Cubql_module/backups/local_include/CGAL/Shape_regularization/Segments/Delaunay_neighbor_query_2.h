@@ -1,1 +1,0 @@
-/home/yury/Projects/CPPProj/GSOC/cgal-public-dev/Shape_regularization/include/CGAL/Shape_regularization/Segments/Delaunay_neighbor_query_2.h

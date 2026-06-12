@@ -1,1 +1,0 @@
-/home/yury/Projects/CPPProj/GSOC/cgal-public-dev/Intersections_3/include/CGAL/Intersections_3/Segment_3_Tetrahedron_3.h

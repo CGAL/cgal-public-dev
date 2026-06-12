@@ -1,1 +1,0 @@
-/home/yury/Projects/CPPProj/GSOC/cgal-public-dev/Number_types/include/CGAL/Sqrt_extension/Algebraic_extension_traits.h

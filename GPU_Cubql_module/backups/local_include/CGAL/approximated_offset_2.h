@@ -1,1 +1,0 @@
-/home/yury/Projects/CPPProj/GSOC/cgal-public-dev/Minkowski_sum_2/include/CGAL/approximated_offset_2.h

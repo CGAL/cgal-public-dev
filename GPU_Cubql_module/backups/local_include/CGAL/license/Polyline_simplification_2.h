@@ -1,1 +1,0 @@
-/home/yury/Projects/CPPProj/GSOC/cgal-public-dev/Installation/include/CGAL/license/Polyline_simplification_2.h

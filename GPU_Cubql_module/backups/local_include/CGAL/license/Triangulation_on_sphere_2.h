@@ -1,1 +1,0 @@
-/home/yury/Projects/CPPProj/GSOC/cgal-public-dev/Installation/include/CGAL/license/Triangulation_on_sphere_2.h

@@ -1,1 +1,0 @@
-/home/yury/Projects/CPPProj/GSOC/cgal-public-dev/Matrix_search/include/CGAL/Sorted_matrix_search_traits_adaptor.h

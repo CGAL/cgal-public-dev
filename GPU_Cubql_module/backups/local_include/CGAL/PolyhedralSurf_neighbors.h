@@ -1,1 +1,0 @@
-/home/yury/Projects/CPPProj/GSOC/cgal-public-dev/Ridges_3/include/CGAL/PolyhedralSurf_neighbors.h

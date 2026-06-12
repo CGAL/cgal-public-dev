@@ -1,1 +1,0 @@
-/home/yury/Projects/CPPProj/GSOC/cgal-public-dev/Combinatorial_map/include/CGAL/Combinatorial_map/internal/Combinatorial_map_internal_functors.h

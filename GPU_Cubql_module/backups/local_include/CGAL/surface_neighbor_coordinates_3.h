@@ -1,1 +1,0 @@
-/home/yury/Projects/CPPProj/GSOC/cgal-public-dev/Interpolation/include/CGAL/surface_neighbor_coordinates_3.h

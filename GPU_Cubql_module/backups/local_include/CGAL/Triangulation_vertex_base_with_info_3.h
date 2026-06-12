@@ -1,1 +1,0 @@
-/home/yury/Projects/CPPProj/GSOC/cgal-public-dev/Triangulation_3/include/CGAL/Triangulation_vertex_base_with_info_3.h

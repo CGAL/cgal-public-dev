@@ -1,1 +1,0 @@
-/home/yury/Projects/CPPProj/GSOC/cgal-public-dev/Kernel_23/include/CGAL/Kernel_23/internal/Projection_traits_base_3.h

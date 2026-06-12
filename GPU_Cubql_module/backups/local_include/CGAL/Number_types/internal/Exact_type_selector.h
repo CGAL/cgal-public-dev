@@ -1,1 +1,0 @@
-/home/yury/Projects/CPPProj/GSOC/cgal-public-dev/Number_types/include/CGAL/Number_types/internal/Exact_type_selector.h

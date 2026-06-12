@@ -1,1 +1,0 @@
-/home/yury/Projects/CPPProj/GSOC/cgal-public-dev/Arithmetic_kernel/include/CGAL/GMP_arithmetic_kernel.h

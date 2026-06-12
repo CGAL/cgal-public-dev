@@ -1,1 +1,0 @@
-/home/yury/Projects/CPPProj/GSOC/cgal-public-dev/Polynomial/include/CGAL/Polynomial/Algebraic_structure_traits.h

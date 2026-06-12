@@ -1,1 +1,0 @@
-/home/yury/Projects/CPPProj/GSOC/cgal-public-dev/NewKernel_d/include/CGAL/NewKernel_d/Vector/determinant_of_iterator_to_points_from_iterator_to_vectors.h

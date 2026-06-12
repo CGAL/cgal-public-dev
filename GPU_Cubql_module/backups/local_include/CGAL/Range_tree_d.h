@@ -1,1 +1,0 @@
-/home/yury/Projects/CPPProj/GSOC/cgal-public-dev/SearchStructures/include/CGAL/Range_tree_d.h

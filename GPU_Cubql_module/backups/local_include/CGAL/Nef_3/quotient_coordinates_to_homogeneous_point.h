@@ -1,1 +1,0 @@
-/home/yury/Projects/CPPProj/GSOC/cgal-public-dev/Nef_3/include/CGAL/Nef_3/quotient_coordinates_to_homogeneous_point.h

@@ -1,1 +1,0 @@
-/home/yury/Projects/CPPProj/GSOC/cgal-public-dev/Polygon_mesh_processing/include/CGAL/Polygon_mesh_processing/internal/mesh_to_point_set_hausdorff_distance.h

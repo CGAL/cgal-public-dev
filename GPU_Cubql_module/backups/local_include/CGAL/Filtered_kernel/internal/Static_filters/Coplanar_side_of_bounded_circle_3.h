@@ -1,1 +1,0 @@
-/home/yury/Projects/CPPProj/GSOC/cgal-public-dev/Filtered_kernel/include/CGAL/Filtered_kernel/internal/Static_filters/Coplanar_side_of_bounded_circle_3.h

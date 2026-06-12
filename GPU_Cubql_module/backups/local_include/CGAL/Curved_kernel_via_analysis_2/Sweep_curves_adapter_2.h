@@ -1,1 +1,0 @@
-/home/yury/Projects/CPPProj/GSOC/cgal-public-dev/Arrangement_on_surface_2/include/CGAL/Curved_kernel_via_analysis_2/Sweep_curves_adapter_2.h

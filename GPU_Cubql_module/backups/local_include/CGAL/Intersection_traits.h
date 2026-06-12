@@ -1,1 +1,0 @@
-/home/yury/Projects/CPPProj/GSOC/cgal-public-dev/Intersections_2/include/CGAL/Intersection_traits.h
