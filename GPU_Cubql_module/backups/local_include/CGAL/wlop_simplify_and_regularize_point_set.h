@@ -1,0 +1,1 @@
+/home/yury/Projects/CPPProj/GSOC/cgal-public-dev/Point_set_processing_3/include/CGAL/wlop_simplify_and_regularize_point_set.h

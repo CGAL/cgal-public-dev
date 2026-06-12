@@ -1,0 +1,1 @@
+/home/yury/Projects/CPPProj/GSOC/cgal-public-dev/Installation/include/CGAL/Installation/internal/disable_deprecation_warnings_and_errors.h

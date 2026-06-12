@@ -1,0 +1,1 @@
+/home/yury/Projects/CPPProj/GSOC/cgal-public-dev/Polygon_mesh_processing/include/CGAL/Rigid_triangle_mesh_collision_detection.h

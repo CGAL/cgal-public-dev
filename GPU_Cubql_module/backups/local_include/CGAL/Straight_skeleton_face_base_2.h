@@ -1,0 +1,1 @@
+/home/yury/Projects/CPPProj/GSOC/cgal-public-dev/Straight_skeleton_2/include/CGAL/Straight_skeleton_face_base_2.h

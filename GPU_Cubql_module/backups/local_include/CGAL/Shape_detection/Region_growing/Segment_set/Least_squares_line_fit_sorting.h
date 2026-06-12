@@ -1,0 +1,1 @@
+/home/yury/Projects/CPPProj/GSOC/cgal-public-dev/Shape_detection/include/CGAL/Shape_detection/Region_growing/Segment_set/Least_squares_line_fit_sorting.h

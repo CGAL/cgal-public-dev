@@ -1,0 +1,1 @@
+/home/yury/Projects/CPPProj/GSOC/cgal-public-dev/Visibility_2/include/CGAL/Simple_polygon_visibility_2.h

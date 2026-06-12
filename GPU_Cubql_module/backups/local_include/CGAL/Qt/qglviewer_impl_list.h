@@ -1,0 +1,1 @@
+/home/yury/Projects/CPPProj/GSOC/cgal-public-dev/GraphicsView/include/CGAL/Qt/qglviewer_impl_list.h

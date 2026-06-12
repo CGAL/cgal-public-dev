@@ -1,0 +1,1 @@
+/home/yury/Projects/CPPProj/GSOC/cgal-public-dev/Surface_mesh_approximation/include/CGAL/Surface_mesh_approximation/approximate_triangle_mesh.h

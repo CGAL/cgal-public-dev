@@ -1,0 +1,1 @@
+/home/yury/Projects/CPPProj/GSOC/cgal-public-dev/Voronoi_diagram_2/include/CGAL/Voronoi_diagram_2/Adaptation_traits_base_2.h

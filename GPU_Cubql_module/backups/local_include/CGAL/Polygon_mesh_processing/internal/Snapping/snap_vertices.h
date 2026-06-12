@@ -1,0 +1,1 @@
+/home/yury/Projects/CPPProj/GSOC/cgal-public-dev/PMP_Mesh_repair/include/CGAL/Polygon_mesh_processing/internal/Snapping/snap_vertices.h

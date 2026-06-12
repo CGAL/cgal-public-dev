@@ -1,0 +1,1 @@
+/home/yury/Projects/CPPProj/GSOC/cgal-public-dev/Generalized_map/include/CGAL/Generalized_map/internal/Generalized_map_group_functors.h

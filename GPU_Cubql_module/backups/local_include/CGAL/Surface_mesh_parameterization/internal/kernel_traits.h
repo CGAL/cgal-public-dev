@@ -1,0 +1,1 @@
+/home/yury/Projects/CPPProj/GSOC/cgal-public-dev/Surface_mesh_parameterization/include/CGAL/Surface_mesh_parameterization/internal/kernel_traits.h

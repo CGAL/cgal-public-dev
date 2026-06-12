@@ -1,0 +1,1 @@
+/home/yury/Projects/CPPProj/GSOC/cgal-public-dev/Shape_regularization/include/CGAL/Shape_regularization/Contours/Multiple_directions_2.h

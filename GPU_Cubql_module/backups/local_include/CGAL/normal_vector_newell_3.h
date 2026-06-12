@@ -1,0 +1,1 @@
+/home/yury/Projects/CPPProj/GSOC/cgal-public-dev/Nef_3/include/CGAL/normal_vector_newell_3.h

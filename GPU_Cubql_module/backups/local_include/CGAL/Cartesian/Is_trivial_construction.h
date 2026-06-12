@@ -1,0 +1,1 @@
+/home/yury/Projects/CPPProj/GSOC/cgal-public-dev/Cartesian_kernel/include/CGAL/Cartesian/Is_trivial_construction.h

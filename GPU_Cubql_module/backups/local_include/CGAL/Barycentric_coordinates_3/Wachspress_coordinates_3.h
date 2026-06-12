@@ -1,0 +1,1 @@
+/home/yury/Projects/CPPProj/GSOC/cgal-public-dev/Barycentric_coordinates_3/include/CGAL/Barycentric_coordinates_3/Wachspress_coordinates_3.h

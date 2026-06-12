@@ -1,0 +1,1 @@
+/home/yury/Projects/CPPProj/GSOC/cgal-public-dev/Periodic_3_triangulation_3/include/CGAL/Periodic_3_triangulation_3/internal/Static_filters/Periodic_3_power_side_of_oriented_power_sphere_3.h

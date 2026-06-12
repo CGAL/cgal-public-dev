@@ -1,0 +1,1 @@
+/home/yury/Projects/CPPProj/GSOC/cgal-public-dev/QP_solver/include/CGAL/QP_solver/QP_full_filtered_pricing.h

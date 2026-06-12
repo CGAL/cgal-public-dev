@@ -1,0 +1,1 @@
+/home/yury/Projects/CPPProj/GSOC/cgal-public-dev/Minkowski_sum_2/include/CGAL/Minkowski_sum_2/Minkowski_sum_conv_2.h

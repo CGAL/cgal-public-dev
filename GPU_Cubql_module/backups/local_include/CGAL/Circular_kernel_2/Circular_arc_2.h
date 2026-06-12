@@ -1,0 +1,1 @@
+/home/yury/Projects/CPPProj/GSOC/cgal-public-dev/Circular_kernel_2/include/CGAL/Circular_kernel_2/Circular_arc_2.h
