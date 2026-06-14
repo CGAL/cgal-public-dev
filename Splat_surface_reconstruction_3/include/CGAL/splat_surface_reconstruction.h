@@ -281,71 +281,85 @@ namespace CGAL {
      * @return A vector of per-point splat radii.
      */
     std::vector<FT> estimate_individual_splat_sizes() {
-      splat_sizes_.resize(points_.size(), 2*box_size_);
+    FT global_spacing = 2*box_size_;
+    splat_sizes_.resize(points_.size(), global_spacing);
 
-      for (Index i = 0; i < points_.size(); ++i) {
-        int cx, cy, cz;
-        if (!to_grid_coords(points_[i], cx, cy, cz)) {
-          std::cerr << "Warning: point " << i << " is out of grid bounds, skipping splat size estimation.\n";
-          continue;
-        }
+    for (Index i = 0; i < points_.size(); ++i) {
+      int cx, cy, cz;
+      if (!to_grid_coords(points_[i], cx, cy, cz)) {
+        std::cerr << "Warning: point " << i << " is out of grid bounds, skipping splat size estimation.\n";
+        continue;
+      }
 
-        // Collect all points in the same box as p_i.
-        std::vector<Index> local_ids;
-        const Cell* c = cell(cx, cy, cz);
-        if (c == nullptr || c->point_ids.empty()) {
-          std::cerr << "Warning: no points found in the same cell for point " << i << ", skipping splat size estimation.\n";
-          continue;
-        }
-        local_ids = c->point_ids;
+      // Collect all points in the same box as p_i.
+      std::vector<Index> local_ids;
+      const Cell* c = cell(cx, cy, cz);
+      if (c == nullptr || c->point_ids.empty()) {
+        std::cerr << "Warning: no points found in the same cell for point " << i << ", skipping splat size estimation.\n";
+        continue;
+      }
+      local_ids = c->point_ids;
 
-        // Need at least a few neighbors to define a local triangulation.
-        if (local_ids.size() < 3) {
-          std::cerr << "Warning: not enough neighbors for point " << i << ", skipping splat size estimation.\n";
-          continue;
-        }
+      // Need at least a few neighbors to define a local triangulation.
+      if (local_ids.size() < 3) {
+        std::cerr << "Warning: not enough neighbors for point " << i << ", skipping splat size estimation.\n";
+        continue;
+      }
 
-        // Build a local tangent frame at p_i from its normal.
-        std::vector<Vector_3> local_frame = compute_local_tangent_frame(normals_[i]);
-        Vector_3 u = local_frame[0];
-        Vector_3 v = local_frame[1];
+      // Build a local tangent frame at p_i from its normal.
+      std::vector<Vector_3> local_frame = compute_local_tangent_frame(normals_[i]);
+      Vector_3 u = local_frame[0];
+      Vector_3 v = local_frame[1];
 
         // Project local neighbors onto the tangent plane and compute their 2D coordinates
         // Also input in the Delaunay Triangulation Kernel
-        CGAL::Delaunay_triangulation_2<Kernel> DT;
-        DT.insert(Point_2(0, 0)); // insert the center point itself at the origin of the local frame
-        for (Index neighbor_id : local_ids) {
-          if (neighbor_id == i) continue; // skip the center point
-          Vector_3 vec = points_[neighbor_id] - points_[i];
-          double x = CGAL::to_double(vec * u);
-          double y = CGAL::to_double(vec * v);
-          Point_2 point_2d(x, y);
+      CGAL::Delaunay_triangulation_2<Kernel> DT;
+      auto center_vh = DT.insert(Point_2(0, 0)); // keep the handle
 
-          DT.insert(point_2d);
-        }
+      for (Index neighbor_id : local_ids) {
+        if (neighbor_id == i) continue;
 
-        //Find the circumcenter of each triangle in Delaunay triangulation
-        std::vector<FT> circumcenter_distances;
-        for (auto face = DT.finite_faces_begin(); face != DT.finite_faces_end(); ++face) {
-          Point_2 c = CGAL::circumcenter(face->vertex(0)->point(), face->vertex(1)->point(), face->vertex(2)->point());
-          double dist = std::sqrt(CGAL::to_double(c.x()*c.x() + c.y()*c.y())); // distance from circumcenter to the origin (which is the projection of p_i)
-          circumcenter_distances.push_back(FT(dist));
-        }
-
-        splat_sizes_[i] = *std::max_element(circumcenter_distances.begin(), circumcenter_distances.end());
+        Vector_3 vec = points_[neighbor_id] - points_[i];
+        double x = CGAL::to_double(vec * u);
+        double y = CGAL::to_double(vec * v);
+        DT.insert(Point_2(x, y));
       }
 
-      // //// WARNING: HACK to prevent large splats 
-      // for (Index i = 0; i < splat_sizes_.size(); ++i) {
-      //   if (splat_sizes_[i] > FT(0.9)) {
-      //     splat_sizes_[i] = 2*global_spacing;
-      //   }
-      // }
+      // Find the circumcenter of faces incident to the center vertex only.
+      std::vector<FT> circumcenter_distances;
+      FT max_r2 = FT(0);
 
-      max_splat_radius_ = *std::max_element(splat_sizes_.begin(), splat_sizes_.end());
-      std::cout<<"Box size: " << box_size_ << " Max splat radius: " << max_splat_radius_ << std::endl;
-      return splat_sizes_;
+      auto fc = DT.incident_faces(center_vh);
+      if (fc != 0) {
+        auto done = fc;
+
+        do {
+          if (!DT.is_infinite(fc)) {
+            Point_2 a = fc->vertex(0)->point();
+            Point_2 b = fc->vertex(1)->point();
+            Point_2 cpt = fc->vertex(2)->point();
+
+            Point_2 cc = CGAL::circumcenter(a, b, cpt);
+            const FT r2 = cc.x() * cc.x() + cc.y() * cc.y();
+
+            if (r2 > max_r2) {
+              max_r2 = r2;
+            }
+          }
+          ++fc;
+        } while (fc != done);
+      }
+
+      if (max_r2 > FT(0)) {
+        splat_sizes_[i] = CGAL::sqrt(max_r2);
+        splat_sizes_[i] = std::min(splat_sizes_[i], global_spacing); // Clamp to global spacing to avoid outliers.
+      }
     }
+
+    max_splat_radius_ = *std::max_element(splat_sizes_.begin(), splat_sizes_.end());
+    std::cout<<"Box size: " << box_size_ << " Max splat radius: " << max_splat_radius_ << std::endl;
+    return splat_sizes_;
+  }
 
     /**
      * @brief Returns a seed pair on the first splat whose radius exceeds box size.
@@ -419,69 +433,119 @@ namespace CGAL {
     }
 
     /**
-     * @brief Intersects a sphere with one splat disk.
+     * @brief Intersects a circle with a splat.
      *
-     * @param sphere_center Sphere center.
-     * @param sphere_radius Sphere radius.
+     * @param parent_a First parent point.
+     * @param parent_b Second parent point.
      * @param splat_center Splat center.
      * @param splat_normal Splat normal.
-     * @param splat_radius Splat disk radius.
+     * @param splat_radius Splat radius.
      *
-     * @return Up to two intersection points on the splat disk.
-     */
-    std::vector<Point_3> intersect_sphere_with_splat(const Point_3& sphere_center,
-                                                    FT sphere_radius,
+     * @return Vector of intersection points.
+    */
+    std::vector<Point_3> intersect_circle_with_splat(const Point_3& parent_a,
+                                                    const Point_3& parent_b,
                                                     const Point_3& splat_center,
                                                     const Vector_3& splat_normal,
                                                     FT splat_radius) const {
       std::vector<Point_3> result;
-      Vector_3 n = splat_normal;
 
-      const double nlen2 = CGAL::to_double(n.squared_length());
-      if (nlen2 <= 0.0) {
-        return result;
-      }
-      n = n * (1.0 / std::sqrt(nlen2));
-
-      const Vector_3 diff = sphere_center - splat_center;
-      const FT signed_dist = diff * n;
-
-      if (std::abs(CGAL::to_double(signed_dist)) > CGAL::to_double(sphere_radius)) {
+      const Vector_3 ab = parent_b - parent_a;
+      const FT d2 = ab.squared_length();
+      if (d2 <= FT(0)) {
         return result;
       }
 
-      const FT circle_r2 = sphere_radius * sphere_radius - signed_dist * signed_dist;
+      // Circle radius from the two-parent construction.
+      const FT circle_r2 = box_size_ * box_size_ - d2 / FT(4);
       if (circle_r2 <= FT(0)) {
         return result;
       }
 
       const FT circle_r = CGAL::sqrt(circle_r2);
 
-      const Point_3 circle_center = sphere_center - signed_dist * n;
+      // Circle center = midpoint of the two parents.
+      const Point_3 mid(
+        (parent_a.x() + parent_b.x()) / FT(2),
+        (parent_a.y() + parent_b.y()) / FT(2),
+        (parent_a.z() + parent_b.z()) / FT(2)
+      );
 
-      Vector_3 dir = splat_center - circle_center;
-      dir = dir - (dir * n) * n;
+      // Normal of the circle plane: along the parent-parent direction.
+      const double ab_len2 = CGAL::to_double(d2);
+      if (ab_len2 <= 0.0) {
+        return result;
+      }
+      Vector_3 circle_normal = ab * (1.0 / std::sqrt(ab_len2));
 
-      double dir_len2 = CGAL::to_double(dir.squared_length());
-      if (dir_len2 <= 1e-18) {
-        auto frame = compute_local_tangent_frame(splat_normal);
-        dir = frame[0];
-        dir_len2 = CGAL::to_double(dir.squared_length());
-        if (dir_len2 <= 0.0) {
-          return result;
-        }
+      // Build an orthonormal basis (u, v) for the circle plane.
+      std::vector<Vector_3> frame = compute_local_tangent_frame(circle_normal);
+      const Vector_3& u = frame[0];
+      const Vector_3& v = frame[1];
+
+      // Normalize the splat normal.
+      Vector_3 ns = splat_normal;
+      const double ns_len2 = CGAL::to_double(ns.squared_length());
+      if (ns_len2 <= 0.0) {
+        return result;
+      }
+      ns = ns * (1.0 / std::sqrt(ns_len2));
+
+      // Circle points are:
+      //   x(t) = mid + circle_r * (cos(t) * u + sin(t) * v)
+      //
+      // Splat plane equation:
+      //   dot(ns, x - splat_center) = 0
+      //
+      // This becomes:
+      //   A cos(t) + B sin(t) = C
+      const FT A = circle_r * (u * ns);
+      const FT B = circle_r * (v * ns);
+      const FT C = (splat_center - mid) * ns;
+
+      const FT R2 = A * A + B * B;
+      if (R2 <= FT(0)) {
+        // Circle plane is parallel to splat plane.
+        return result;
       }
 
-      const Vector_3 u = dir * (1.0 / std::sqrt(dir_len2));
+      const FT R = CGAL::sqrt(R2);
 
-      const Point_3 p1 = circle_center + u * circle_r;
-      const Point_3 p2 = circle_center - u * circle_r;
+      if (std::abs(CGAL::to_double(C)) > CGAL::to_double(R)) {
+        // No intersection between circle and splat plane.
+        return result;
+      }
 
-      const FT r2 = splat_radius * splat_radius;
-      if (CGAL::squared_distance(p1, splat_center) <= r2) {
+      const FT phi = std::atan2(CGAL::to_double(B), CGAL::to_double(A));
+      const FT delta = std::acos(CGAL::to_double(C / R));
+
+      const FT t1 = phi + delta;
+      const FT t2 = phi - delta;
+
+      const auto make_point = [&](FT t) -> Point_3 {
+        const FT ct = std::cos(CGAL::to_double(t));
+        const FT st = std::sin(CGAL::to_double(t));
+        return Point_3(
+          mid.x() + circle_r * (ct * u.x() + st * v.x()),
+          mid.y() + circle_r * (ct * u.y() + st * v.y()),
+          mid.z() + circle_r * (ct * u.z() + st * v.z())
+        );
+      };
+
+      const FT splat_r2 = splat_radius * splat_radius;
+
+      Point_3 p1 = make_point(t1);
+      Point_3 p2 = make_point(t2);
+
+      // Keep only points that lie inside the splat disk.
+      if (CGAL::squared_distance(p1, splat_center) <= splat_r2) {
         result.push_back(p1);
       }
-      if (CGAL::squared_distance(p2, splat_center) <= r2) {
+
+      // Avoid duplicate if the two solutions coincide numerically.
+      if (CGAL::squared_distance(p2, splat_center) <= splat_r2 &&
+          CGAL::squared_distance(p2, p1) > FT(1e-12))
+      {
         result.push_back(p2);
       }
 
@@ -924,9 +988,9 @@ namespace CGAL {
         std::cout << "Initial seed vertices created. Starting mesh growth...\n";
       }
 
-      while (!candidate_queue_.empty()) {
-        Candidate cand = candidate_queue_.front();
-        candidate_queue_.pop();
+      while (!candidate_stack_.empty()) {
+        Candidate cand = candidate_stack_.back();
+        candidate_stack_.pop_back();
 
         if (has_vertex_near(cand.position)) {
           continue;
@@ -938,12 +1002,12 @@ namespace CGAL {
 
         (void)connect_vertices(cand.first, nv);
         (void)connect_vertices(cand.second, nv);
-        // Create the triangle (parent_a, parent_b, new vertex).
-        auto f = mesh_.add_face(cand.first, cand.second, nv);
-        if (f == boost::graph_traits<PolygonMesh>::null_face()) {
-          // Try reversed orientation if needed.
-          f = mesh_.add_face(cand.second, cand.first, nv);
-        }
+        // // Create the triangle (parent_a, parent_b, new vertex).
+        // auto f = mesh_.add_face(cand.first, cand.second, nv);
+        // if (f == boost::graph_traits<PolygonMesh>::null_face()) {
+        //   // Try reversed orientation if needed.
+        //   f = mesh_.add_face(cand.second, cand.first, nv);
+        // }
 
 
         push_candidates_from_parents(nv, cand.first);
@@ -983,7 +1047,7 @@ namespace CGAL {
       std::vector<Candidate> candidates = generate_candidates_from_parents(parent_a, parent_b);
       std::cout << "Generated " << candidates.size() << " candidate points." << std::endl;
       for (const Candidate& c : candidates) {
-        candidate_queue_.push(c);
+        candidate_stack_.push_back(c);
       }
     }
 
@@ -997,24 +1061,15 @@ namespace CGAL {
       const FT d = grid_.get_box_size();
       const FT d2 = CGAL::squared_distance(pa, pb);
 
-      if (d2 >= FT(4) * d * d) {
-        return candidates;
-      }
+      // Circle radius from the two-parent construction.
+      const FT circle_r = CGAL::sqrt((d * d) - (d2 / FT(4)));
 
-      const FT sphere_r2 = d * d - d2 / FT(4);
-      if (sphere_r2 <= FT(0)) {
-        return candidates;
-      }
+      FT search_radius = circle_r + grid_.get_max_splat_radius();
 
-      const FT sphere_r = CGAL::sqrt(sphere_r2);
-
-      const Point_3 mid(
+      const Point_3 mid = Point_3(
         (pa.x() + pb.x()) / FT(2),
         (pa.y() + pb.y()) / FT(2),
         (pa.z() + pb.z()) / FT(2));
-
-      FT search_radius = sphere_r + grid_.get_max_splat_radius();
-      search_radius = std::min(search_radius, grid_.get_box_size()); // WARNING: HACK
 
       std::vector<Index> nearby = grid_.nearby_point_ids(mid, search_radius);
 
@@ -1027,21 +1082,10 @@ namespace CGAL {
           continue;
         }
 
-        const FT splat_radius = (sid < splat_sizes.size() && splat_sizes[sid] > FT(0))
-                              ? splat_sizes[sid]
-                              : 2*grid_.get_box_size();
-
-        const FT broad_r = sphere_r + splat_radius;
-        if (CGAL::squared_distance(mid, points[sid]) > broad_r * broad_r) {
-          continue;
-        }
+        const FT splat_radius = splat_sizes[sid];
 
         const std::vector<Point_3> hits =
-          grid_.intersect_sphere_with_splat(mid,
-                                            sphere_r,
-                                            points[sid],
-                                            normals[sid],
-                                            splat_radius);
+          grid_.intersect_circle_with_splat(pa, pb, points[sid], normals[sid], splat_radius);
 
         for (const Point_3& p : hits) {
           candidates.push_back(Candidate(p, normals[sid], sid, parent_a, parent_b));
@@ -1053,7 +1097,7 @@ namespace CGAL {
 
     bool has_vertex_near(const Point_3& p) const
     {
-      const FT tol = grid_.get_box_size() * FT(0.8); // WARNING: HACK
+      const FT tol = grid_.get_box_size() * FT(0.9); // WARNING: HACK
       const FT tol2 = tol * tol;
 
       for (auto vd : vertices(mesh_)) {
@@ -1081,7 +1125,7 @@ namespace CGAL {
     typename PolygonMesh:: template Property_map<vertex_descriptor,Point_3> points_pm_;
     typename PolygonMesh:: template Property_map<vertex_descriptor,Vector_3> normals_pm_;
 
-    std::queue<Candidate> candidate_queue_;
+    std::vector<Candidate> candidate_stack_;
 
     vertex_descriptor v0_{boost::graph_traits<PolygonMesh>::null_vertex()};
     vertex_descriptor v1_{boost::graph_traits<PolygonMesh>::null_vertex()};
