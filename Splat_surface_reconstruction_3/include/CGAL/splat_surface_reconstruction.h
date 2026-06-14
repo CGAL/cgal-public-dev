@@ -403,7 +403,7 @@ namespace CGAL {
         return ids;
       }
 
-      const int r = std::max(
+      const int r = (std::max)(
         1,
         static_cast<int>(
           std::ceil(CGAL::to_double(radius) / CGAL::to_double(box_size_))
