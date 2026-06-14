@@ -104,7 +104,7 @@ namespace cuBQL {
                       uint32_t       thresholdX,
                       uint32_t      *globalMarkedCounter,
                       uint32_t      *tempMarkedIndices,
-                      uint32_t      *tempMarkedCounts)
+                      uint32_t      *d_nodeDescendantCounts) // Changed to a global flat map array
     {
 #if 1
       __shared__ int l_newNodeOfs;
@@ -142,13 +142,15 @@ namespace cuBQL {
         auto in = nodes[nodeID].openBranch;
         parentWasMarked = (in.alreadyMarked != 0);
 
+        // Universally map every active branch node to its total primitive count directly
+        d_nodeDescendantCounts[nodeID] = in.count;
+
         // Check if this node drops below threshold X for the first time
         if (in.count < thresholdX && !parentWasMarked) {
           currentMarkedFlag = true;
           // Capture details out to temporary arrays safely using atomics
           uint32_t slot = atomicAdd(globalMarkedCounter, 1);
           tempMarkedIndices[slot] = nodeID;
-          tempMarkedCounts[slot]  = in.count;
         }
 
         if (in.count <= buildConfig.makeLeafThreshold) {
@@ -377,7 +379,7 @@ namespace cuBQL {
                BuildConfig        buildConfig,
                uint32_t           thresholdX,               // Extra parameter input
                uint32_t          *d_markedNodeIndices,      // Extra device array output
-               uint32_t          *d_markedNodeDescendantCounts, // Extra device array output
+               uint32_t          *d_nodeDescendantCounts,   // Swapped name to indicate complete tracking map
                uint32_t          *h_outMarkedCount,         // Host parameter output return total marked
                cudaStream_t       s,
                GpuMemoryResource &memResource)
@@ -400,6 +402,8 @@ namespace cuBQL {
       _ALLOC(buildState,1,s,memResource);
       _ALLOC(d_globalMarkedCounter,1,s,memResource);
 
+      // Initialize the entire global map slice to 0 up to max possible nodes
+      CUBQL_CUDA_CALL(MemsetAsync(d_nodeDescendantCounts, 0, 2 * numPrims * sizeof(uint32_t), s));
       CUBQL_CUDA_CALL(MemsetAsync(d_globalMarkedCounter, 0, sizeof(uint32_t), s));
 
       initState<<<1,1,0,s>>>(buildState,
@@ -451,7 +455,7 @@ namespace cuBQL {
            thresholdX,
            d_globalMarkedCounter,
            d_markedNodeIndices,
-           d_markedNodeDescendantCounts);
+           d_nodeDescendantCounts); // Swapped tracking mapping here
 #if CUBQL_PROFILE
         t_nodePass[pass].sync_stop();
         t_primPass[pass].sync_start();

@@ -181,7 +181,7 @@ target_link_libraries(meshVoxelizerCPU PRIVATE Threads::Threads TBB::tbb)
 # ====================================================================
 # TARGET 7: Single-Mesh BVH Tree Layout Diagnostic Tester
 # ====================================================================
-add_executable(testBVH apps/mainTestBVH.cpp src/testBVH/kernelsTestBVH.cu)
+add_executable(testBVH apps/mainTestBVH.cpp src/testBVH/kernelsTestBVH.cu src/testBVH/rapidDescendKernel.cu)
 
 set_target_properties(testBVH PROPERTIES
     CXX_STANDARD 17
