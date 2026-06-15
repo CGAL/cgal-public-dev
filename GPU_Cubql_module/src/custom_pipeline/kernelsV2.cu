@@ -25,6 +25,8 @@ struct GPUTimingBreakdown {
     double countAABBTime = 0.0;        
     double fillAABBTime = 0.0;         
     double evaluateGeometricTime = 0.0; 
+
+    long long totalCandidatePairs = 0;
 };
 
 struct GPUInterval {
@@ -229,6 +231,8 @@ extern "C" void runPartitionedMeshIntersection(
     outTimings.fillAABBTime = 0.0;
     outTimings.evaluateGeometricTime = 0.0;
 
+    outTimings.totalCandidatePairs = 0;
+
     cudaEvent_t startCount, stopCount;
     cudaEvent_t startFill, stopFill;
     cudaEvent_t startEval, stopEval;
@@ -304,6 +308,8 @@ extern "C" void runPartitionedMeshIntersection(
         CUBQL_CUDA_CALL(Memcpy(&totalBatchPairs, dOffsets + currentBatchSize - 1, sizeof(int), cudaMemcpyDeviceToHost));
         CUBQL_CUDA_CALL(Memcpy(&lastCount, dPairCounts + currentBatchSize - 1, sizeof(int), cudaMemcpyDeviceToHost));
         totalBatchPairs += lastCount;
+
+        outTimings.totalCandidatePairs += totalBatchPairs;
 
         cudaEventSynchronize(stopCount);
         float millisecondsCount = 0;

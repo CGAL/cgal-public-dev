@@ -56,6 +56,8 @@ struct GPUTimingBreakdown
   double countAABBTime = 0.0;         // Added: Tracks countAABBOverlapsKernel total
   double fillAABBTime = 0.0;          // Added: Tracks fillAABBOverlapsKernel total
   double evaluateGeometricTime = 0.0;  // Added: Tracks evaluateGeometricPairsKernel total
+
+  long long totalCandidatePairs = 0;
 };
 
 // Updated signature pointing to our newly compiled partition routine inside kernelsV2
@@ -290,6 +292,7 @@ int main(int ac, char** av) {
   std::cout << "====================================================\n";
   std::cout << "Macro Statistics Summary:\n";
   std::cout << "  |-- Total Process Runtime:      " << cuBQL::prettyDouble(cuBQL::getCurrentTime() - t_start) << " s\n";
+  std::cout << "  |-- GPU intersection candidates: " << gpuTimings.totalCandidatePairs << "\n";
   std::cout << "  |-- GPU Definite/Uncertain Track: " << (confirmedIntersections.size() + ambiguousPairs.size())
             << "\n";
   std::cout << "  |-- Total Confirmed Intersects:  " << finalExactPairs.size()

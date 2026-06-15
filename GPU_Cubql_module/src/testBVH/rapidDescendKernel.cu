@@ -140,6 +140,7 @@ extern "C" void executeRapidDescentBFS(
   FrontierElement* p_inBuffer = thrust::raw_pointer_cast(d_frontierA.data());
   FrontierElement* p_outBuffer = thrust::raw_pointer_cast(d_frontierB.data());
 
+  
   // STEP 3: LEVEL-BY-LEVEL BFS DESCENT LOOP
   while (currentFrontierSize > 0) {
     uint32_t zeroReset = 0;

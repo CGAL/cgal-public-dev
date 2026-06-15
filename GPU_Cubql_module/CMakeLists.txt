@@ -178,10 +178,18 @@ target_compile_options(meshVoxelizerCPU PRIVATE -O3 -march=native -DNDEBUG)
 target_include_directories(meshVoxelizerCPU PRIVATE ${CMAKE_CURRENT_SOURCE_DIR} include)
 target_link_libraries(meshVoxelizerCPU PRIVATE Threads::Threads TBB::tbb)
 
+
 # ====================================================================
 # TARGET 7: Single-Mesh BVH Tree Layout Diagnostic Tester
 # ====================================================================
-add_executable(testBVH apps/mainTestBVH.cpp src/testBVH/kernelsTestBVH.cu src/testBVH/rapidDescendKernel.cu)
+add_executable(testBVH 
+    apps/mainTestBVH.cpp 
+    src/testBVH/kernelsTestBVH.cu 
+    src/testBVH/rapidDescendKernel.cu
+    src/testBVH/crossCheck.cu
+    src/testBVH/volumeSanityCheck.cu
+    src/testBVH/batchedCrossIntersection.cu       
+)
 
 set_target_properties(testBVH PROPERTIES
     CXX_STANDARD 17

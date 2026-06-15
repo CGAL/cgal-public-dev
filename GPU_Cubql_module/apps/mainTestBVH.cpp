@@ -21,8 +21,10 @@ typedef boost::graph_traits<Mesh>::face_descriptor face_descriptor;
 typedef Kernel::Point_3 Point3;
 
 // --- EXTERNAL C LINKAGE FOR YOUR UPGRADED TEST KERNEL ---
-extern "C" void kernelsTestBVH(const cuBQL::Triangle* hMeshA, int numTrianglesA, int maxCellSizeA,
-                               const cuBQL::Triangle* hMeshB, int numTrianglesB, int maxCellSizeB);
+//extern "C" void kernelsTestBVH(const cuBQL::Triangle* hMeshA, int numTrianglesA, int maxCellSizeA,
+ //                              const cuBQL::Triangle* hMeshB, int numTrianglesB, int maxCellSizeB);
+ extern "C" void kernelsTestBVH(const cuBQL::Triangle* hMeshA, int numTrianglesA, int maxCellSizeA,
+                               const cuBQL::Triangle* hMeshB, int numTrianglesB, int maxCellSizeB, int batchMultiplier);
 
 // Helper function to translate geometry from CGAL storage to raw floats
 cuBQL::Triangle convertCgalFaceToCuBQL(const Mesh& mesh, face_descriptor face) {
@@ -59,8 +61,8 @@ std::vector<cuBQL::Triangle> processMeshLayout(const Mesh& mesh) {
 }
 
 int main(int ac, char** av) {
-    if (ac < 5) {
-        std::cout << "Usage: " << av[0] << " <meshA.off> <maxCellSizeA> <meshB.off> <maxCellSizeB>\n";
+    if (ac < 6) {
+        std::cout << "Usage: " << av[0] << " <meshA.off> <maxCellSizeA> <meshB.off> <maxCellSizeB><batchmultiplier)\n";
         return 1;
     }
 
@@ -68,6 +70,7 @@ int main(int ac, char** av) {
     int maxCellSizeA    = std::stoi(av[2]);
     std::string meshPathB = av[3];
     int maxCellSizeB    = std::stoi(av[4]);
+    int batchmultipl = std::stoi(av[5]); 
     
     // Default to a sane baseline for thread pooling during parsing
     tbb::global_control global_limit(tbb::global_control::max_allowed_parallelism, 8);
@@ -112,7 +115,7 @@ int main(int ac, char** av) {
     std::cout << "[Step 3] Launching Dual-Mesh GPU Pipeline...\n";
     kernelsTestBVH(
         hMeshLayoutA.data(), static_cast<int>(hMeshLayoutA.size()), maxCellSizeA,
-        hMeshLayoutB.data(), static_cast<int>(hMeshLayoutB.size()), maxCellSizeB
+        hMeshLayoutB.data(), static_cast<int>(hMeshLayoutB.size()), maxCellSizeB, batchmultipl
     );
 
     std::cout << "Total Diagnostic App Execution Time: " 
