@@ -36,6 +36,52 @@ struct GetBatchSizeFunctor {
     }
 };
 
+__global__ void buildBobKernel(
+    uint64_t* d_bob,
+    const uint32_t* d_outPairsA,
+    const uint32_t* d_outPairsB,
+    const uint32_t* d_markedNodeIndicesA,
+    const uint32_t* d_outOffsetsB,
+    uint32_t totalBatches,
+    uint32_t totalPrimsFlatBSize)
+{
+    int i = blockIdx.x * blockDim.x + threadIdx.x;
+    if (i >= totalBatches) return;
+
+    // 1. Get the value to fill
+    uint32_t pairAIdx = d_outPairsA[i];
+    uint64_t valueToFill = (uint64_t)d_markedNodeIndicesA[pairAIdx];
+
+    // 2. Get the range [start, end)
+    uint32_t start = d_outOffsetsB[i];
+    uint32_t end = (i + 1 < totalBatches) ? d_outOffsetsB[i + 1] : totalPrimsFlatBSize;
+
+    // 3. Perform the fill for this batch's range
+    for (uint32_t idx = start; idx < end; ++idx) {
+        d_bob[idx] = valueToFill;
+    }
+}
+
+
+// thrust::device_vector<uint64_t> d_bob(d_outPrimsFlatB.size());
+
+// // 2. Launch once
+// int blockSize = 256;
+// int gridSize = (totalBatches + blockSize - 1) / blockSize;
+
+// buildBobKernel<<<gridSize, blockSize>>>(
+//     d_bob.data().get(),
+//     d_outPairsA.data().get(),
+//     d_outPairsB.data().get(),
+//     d_markedNodeIndicesA.data().get(),
+//     d_outOffsetsB.data().get(),
+//     totalBatches,
+//     d_outPrimsFlatB.size()
+// );
+
+// // 3. Sync and use
+// cudaDeviceSynchronize();
+
 // --------------------------------------------------------------------
 // KERNEL DEFINITIONS
 // --------------------------------------------------------------------
@@ -47,12 +93,13 @@ __global__ void countAABBOverlapsKernel_Indirected(
     const uint32_t* d_outPrimsFlatB, 
     uint32_t startOffsetB, 
     int numPrimsB, 
-    uint64_t startNodeIdxA) 
+    const uint64_t* startNodeIdxAs) 
 {
     int tid = threadIdx.x + blockIdx.x * blockDim.x;
     if (tid >= numPrimsB) return;
 
     uint32_t actualPrimIdB = d_outPrimsFlatB[startOffsetB + tid];
+    uint64_t startNodeIdxA = startNodeIdxAs[startOffsetB + tid]; 
     cuBQL::Triangle b = triB[actualPrimIdB];
     cuBQL::box3f query = b.bounds();
     
@@ -76,13 +123,14 @@ __global__ void fillAABBOverlapsKernel_Indirected(
     const uint32_t* d_outPrimsFlatB, 
     uint32_t startOffsetB, 
     int numPrimsB, 
-    uint64_t startNodeIdxA) 
+    const uint64_t* startNodeIdxAs) 
 {
     int tid = threadIdx.x + blockIdx.x * blockDim.x;
     if (tid >= numPrimsB) return;
 
     int wPos = offsets[tid];
     uint32_t actualPrimIdB = d_outPrimsFlatB[startOffsetB + tid];
+    uint64_t startNodeIdxA = startNodeIdxAs[startOffsetB + tid]; 
     cuBQL::Triangle b = triB[actualPrimIdB];
     cuBQL::box3f query = b.bounds();
     
@@ -105,9 +153,10 @@ uint64_t executeBatchedCrossIntersectionLoop(
     const thrust::device_vector<uint32_t>& d_outPairsA,
     const thrust::device_vector<uint32_t>& d_outPairsB,
     const thrust::device_vector<uint32_t>& d_markedNodeIndicesA,
+    const thrust::device_vector<uint32_t>& d_markedNodeIndicesB,
     const thrust::device_vector<uint32_t>& d_outOffsetsB,
     const thrust::device_vector<uint32_t>& d_outPrimsFlatB,
-    const thrust::device_vector<uint32_t>& d_nodeDescendantCountsB, // <--- Put this back!
+    const thrust::device_vector<uint32_t>& d_nodeDescendantCountsB, 
     uint32_t h_outMarkedCountB,
     const cuBQL::bvh3f& bvhA,
     const cuBQL::Triangle* dMeshA,
@@ -123,7 +172,11 @@ uint64_t executeBatchedCrossIntersectionLoop(
     const uint32_t* ptr_outOffsetsB         = thrust::raw_pointer_cast(d_outOffsetsB.data());
     const uint32_t* ptr_outPrimsFlatB       = thrust::raw_pointer_cast(d_outPrimsFlatB.data());
 
-    // 2. FIXED & VERIFIED: Find maximum primitive count using outOffsetsB directly
+    // Allocate the unified long flat root array matching d_outPrimsFlatB length 1-to-1
+    thrust::device_vector<uint64_t> d_flatNodeRootsA(d_outPrimsFlatB.size());
+    uint64_t* ptr_flatNodeRootsA = thrust::raw_pointer_cast(d_flatNodeRootsA.data());
+
+    // 2. Find maximum primitive count using outOffsetsB directly
     int maxPrimsInBatch = 0;
     if (totalBatches > 0) {
         auto batchSizeTransformIterator = thrust::make_transform_iterator(
@@ -169,8 +222,15 @@ uint64_t executeBatchedCrossIntersectionLoop(
         int numPrims = endOffset - startOffset;
         if (numPrims == 0) continue;
 
-        uint32_t startNodeIdxA;
-        CUBQL_CUDA_CALL(Memcpy(&startNodeIdxA, ptr_markedNodeIndicesA + pairAVal, sizeof(uint32_t), cudaMemcpyDeviceToHost));
+        // Fetch the source root index value exactly like the original code
+        uint32_t startNodeIdxA_32;
+        CUBQL_CUDA_CALL(Memcpy(&startNodeIdxA_32, ptr_markedNodeIndicesA + pairAVal, sizeof(uint32_t), cudaMemcpyDeviceToHost));
+        uint64_t startNodeIdxA = (uint64_t)startNodeIdxA_32;
+
+        // FIXED: Dynamically write the scalar root index across this exact primitive window range 
+        // inside the pre-allocated flat tracking array. This perfectly preserves the precise logic 
+        // of your original version.
+        thrust::fill_n(thrust::device, d_flatNodeRootsA.begin() + startOffset, numPrims, startNodeIdxA);
 
         // --- PHASE 1: Execution Count ---
         int blockSize = 128;
@@ -178,7 +238,7 @@ uint64_t executeBatchedCrossIntersectionLoop(
 
         countAABBOverlapsKernel_Indirected<<<gridScale, blockSize>>>(
             d_pairCounts, bvhA, const_cast<cuBQL::Triangle*>(dMeshA), const_cast<cuBQL::Triangle*>(dMeshB), 
-            ptr_outPrimsFlatB, startOffset, numPrims, startNodeIdxA
+            ptr_outPrimsFlatB, startOffset, numPrims, ptr_flatNodeRootsA
         );
 
         // --- PHASE 2: Reusable Device Inclusive/Exclusive Scan ---
@@ -203,7 +263,7 @@ uint64_t executeBatchedCrossIntersectionLoop(
 
         fillAABBOverlapsKernel_Indirected<<<gridScale, blockSize>>>(
             d_candidatePairs, d_offsets, bvhA, const_cast<cuBQL::Triangle*>(dMeshA), const_cast<cuBQL::Triangle*>(dMeshB), 
-            ptr_outPrimsFlatB, startOffset, numPrims, startNodeIdxA
+            ptr_outPrimsFlatB, startOffset, numPrims, ptr_flatNodeRootsA
         );
 
         cudaDeviceSynchronize();

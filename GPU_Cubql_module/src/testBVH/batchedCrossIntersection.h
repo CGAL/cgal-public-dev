@@ -16,6 +16,7 @@ uint64_t executeBatchedCrossIntersectionLoop(
     const thrust::device_vector<uint32_t>& d_outPairsA,
     const thrust::device_vector<uint32_t>& d_outPairsB,
     const thrust::device_vector<uint32_t>& d_markedNodeIndicesA,
+    const thrust::device_vector<uint32_t>& d_markedNodeIndicesB,
     const thrust::device_vector<uint32_t>& d_outOffsetsB,
     const thrust::device_vector<uint32_t>& d_outPrimsFlatB,
     const thrust::device_vector<uint32_t>& d_nodeDescendantCountsB, // <-- ADD THIS PARAMETER

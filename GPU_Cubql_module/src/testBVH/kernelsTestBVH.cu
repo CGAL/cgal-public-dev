@@ -161,6 +161,55 @@ extern "C" void kernelsTestBVH(const cuBQL::Triangle* hMeshA, int numTrianglesA,
   );
   double tGpuBfsEnd = cuBQL::getCurrentTime();
 
+ // ====================================================================
+  // SANITY CHECK: Verify Offset Mapping against Descendant Counts
+  // ====================================================================
+  std::cout << "Verifying d_outOffsetsB mapping against d_outPairsB..." << std::endl;
+
+  // 1. Ensure we have the pairs on the host
+  thrust::host_vector<uint32_t> h_outPairsB = d_outPairsB;
+  thrust::host_vector<uint32_t> h_outOffsetsB = d_outOffsetsB;
+  thrust::host_vector<uint32_t> h_markedNodeIndicesB = d_markedNodeIndicesB;
+  thrust::host_vector<uint32_t> h_nodeDescendantCountsB = d_nodeDescendantCountsB;
+
+  uint32_t totalBatchez = (uint32_t)h_outPairsB.size();
+  bool offsetError = false;
+
+  // 2. Validate consistency
+  for (uint32_t i = 0; i < totalBatchez; ++i) {
+      uint32_t batchBId = h_outPairsB[i];
+      
+      if (batchBId >= h_outMarkedCountB) {
+          std::cerr << "OUT OF BOUNDS: batchBId " << batchBId 
+                    << " exceeds h_outMarkedCountB (" << h_outMarkedCountB << ")" << std::endl;
+          offsetError = true;
+          break;
+      }
+
+      uint32_t nodeIdx = h_markedNodeIndicesB[batchBId];
+      uint32_t expectedCount = h_nodeDescendantCountsB[nodeIdx];
+      uint32_t actualCount = h_outOffsetsB[batchBId + 1] - h_outOffsetsB[batchBId];
+
+      if (actualCount != expectedCount) {
+          std::cerr << "OFFSET ERROR at pair index " << i 
+                    << ": Batch " << batchBId 
+                    << " (Node " << nodeIdx << ")"
+                    << " expected " << expectedCount << " primitives, "
+                    << " but offset range reserved " << actualCount << "!" << std::endl;
+          offsetError = true;
+          break; 
+      }
+  }
+
+  // 3. Final feedback based on validation result
+  if (offsetError) {
+      std::cerr << "CRITICAL: Offset structure validation FAILED." << std::endl;
+      // Depending on your project requirements, you might want to throw an exception:
+      // throw std::runtime_error("Offset validation failed!");
+  } else {
+      std::cout << "SUCCESS: d_outOffsetsB is perfectly aligned with descendant counts." << std::endl;
+  }
+
   // ====================================================================
   // GEOMETRIC EVALUATION & VOLUMETRIC SANITY CHECK FOR MESH B
   // ====================================================================
@@ -180,6 +229,7 @@ extern "C" void kernelsTestBVH(const cuBQL::Triangle* hMeshA, int numTrianglesA,
       d_outPairsA,
       d_outPairsB,
       d_markedNodeIndicesA,
+      d_markedNodeIndicesB,
       d_outOffsetsB,
       d_outPrimsFlatB,
       d_nodeDescendantCountsB,
