@@ -40,7 +40,7 @@ struct GetChunkSizeFunctor {
 
     __host__ __device__
     int operator()(const int chunkIdx) const {
-        int i = chunkIdx * batchMultiplier; 
+        int i = chunkIdx * batchMultiplier; // Map chunk sequence index to the true batch array index
         if (i >= totalBatches) return 0;
 
         int activeBatchesInChunk = (i + batchMultiplier <= totalBatches) ? batchMultiplier : (totalBatches - i);
@@ -56,78 +56,9 @@ struct GetChunkSizeFunctor {
     }
 };
 
-// Functor matching your batch mapping strategy to quickly populate single batch sizes directly on GPU
-struct BatchSizeInChunkFunctor {
-    const uint32_t* outPairsB;
-    const uint32_t* outOffsetsB;
-    uint32_t outMarkedCountB;
-    uint32_t totalPrimsB;
-    int chunkStartBatchIdx;
-    int activeBatchesInChunk;
-
-    __host__ __device__
-    BatchSizeInChunkFunctor(const uint32_t* _pairsB, const uint32_t* _offsetsB,
-                            uint32_t _markedCount, uint32_t _totalPrims,
-                            int _chunkStartBatchIdx, int _activeBatchesInChunk)
-        : outPairsB(_pairsB), outOffsetsB(_offsetsB), outMarkedCountB(_markedCount),
-          totalPrimsB(_totalPrims), chunkStartBatchIdx(_chunkStartBatchIdx),
-          activeBatchesInChunk(_activeBatchesInChunk) {}
-
-    __host__ __device__
-    int operator()(const int b) const {
-        if (b >= activeBatchesInChunk) return 0;
-        uint32_t bIdx = outPairsB[chunkStartBatchIdx + b];
-        uint32_t startOffset = outOffsetsB[bIdx];
-        uint32_t endOffset = (bIdx + 1 < outMarkedCountB) ? outOffsetsB[bIdx + 1] : totalPrimsB;
-        return (int)(endOffset - startOffset);
-    }
-};
-
 // --------------------------------------------------------------------
 // KERNEL DEFINITIONS
 // --------------------------------------------------------------------
-
-// Upgraded Parallel Batch-centric Assembly Kernel (Zero Binary Search)
-__global__ void assembleChunkBuffersByBatchKernel(
-    uint32_t* d_BIter,
-    uint64_t* d_AIter,
-    const uint32_t* outPairsA,
-    const uint32_t* outPairsB,
-    const uint32_t* markedNodeIndicesA,
-    const uint32_t* outOffsetsB,
-    const uint32_t* outPrimsFlatB,
-    uint32_t outMarkedCountB,
-    uint32_t totalPrimsB,
-    int chunkStartBatchIdx,
-    int activeBatchesInChunk,
-    const int* d_chunkBatchOffsets // Computed layout map via GPU exclusive prefix scan
-) {
-    int b = threadIdx.x + blockIdx.x * blockDim.x;
-    if (b >= activeBatchesInChunk) return;
-
-    int currentBatchArrayIdx = chunkStartBatchIdx + b;
-    
-    uint32_t bIdx = outPairsB[currentBatchArrayIdx];
-    uint32_t startOffsetB = outOffsetsB[bIdx];
-    uint32_t endOffsetB = (bIdx + 1 < outMarkedCountB) ? outOffsetsB[bIdx + 1] : totalPrimsB;
-    int numPrims = (int)(endOffsetB - startOffsetB);
-    
-    if (numPrims <= 0) return;
-
-    // Pinpoint where this specific batch block begins writing inside the global chunk sandbox
-    int writeSandboxOffset = d_chunkBatchOffsets[b];
-
-    uint32_t pairAVal = outPairsA[currentBatchArrayIdx];
-    uint64_t startNodeIdxA = (uint64_t)(markedNodeIndicesA[pairAVal]);
-
-    // Tight sequential streaming window expansion loop over this batch's domain
-    for (int p = 0; p < numPrims; ++p) {
-        int targetWriteIdx = writeSandboxOffset + p;
-        d_BIter[targetWriteIdx] = outPrimsFlatB[startOffsetB + p];
-        d_AIter[targetWriteIdx] = startNodeIdxA;
-    }
-}
-
 __global__ void countAABBOverlapsKernel_Indirected(
     int *pairCounts, 
     cuBQL::bvh3f bvhA, 
@@ -218,6 +149,7 @@ uint64_t executeBatchedCrossIntersectionLoop(
     const uint32_t* ptr_outOffsetsB         = thrust::raw_pointer_cast(d_outOffsetsB.data());
     const uint32_t* ptr_outPrimsFlatB       = thrust::raw_pointer_cast(d_outPrimsFlatB.data());
 
+    // Defensive Clamping Optimization: Protect against huge multiplier values causing integer shifts/overflows
     if (totalBatches > 0) {
         batchMultiplier = std::min(batchMultiplier, totalBatches);
     } else {
@@ -249,19 +181,16 @@ uint64_t executeBatchedCrossIntersectionLoop(
     uint64_t* d_AIter = nullptr;
     int* d_pairCounts = nullptr;
     int* d_offsets    = nullptr;
-    int* d_chunkBatchSizes   = nullptr;
-    int* d_chunkBatchOffsets = nullptr;
 
     if (maxChunkPrims > 0) {
         CUBQL_CUDA_CALL(Malloc(&d_BIter, maxChunkPrims * sizeof(uint32_t)));
         CUBQL_CUDA_CALL(Malloc(&d_AIter, maxChunkPrims * sizeof(uint64_t)));
         CUBQL_CUDA_CALL(Malloc(&d_pairCounts, maxChunkPrims * sizeof(int)));
         CUBQL_CUDA_CALL(Malloc(&d_offsets, maxChunkPrims * sizeof(int)));
-        CUBQL_CUDA_CALL(Malloc(&d_chunkBatchSizes, batchMultiplier * sizeof(int)));
-        CUBQL_CUDA_CALL(Malloc(&d_chunkBatchOffsets, batchMultiplier * sizeof(int)));
     }
     tracker.preallocateTimeMs = (cuBQL::getCurrentTime() - tAllocStart) * 1000.0;
 
+    // Initialize CUDA events for microsecond-accurate hardware runtime tracking
     cudaEvent_t evComputeStart, evComputeEnd;
     CUBQL_CUDA_CALL(EventCreate(&evComputeStart));
     CUBQL_CUDA_CALL(EventCreate(&evComputeEnd));
@@ -273,53 +202,64 @@ uint64_t executeBatchedCrossIntersectionLoop(
         double tAssemblyStart = cuBQL::getCurrentTime();
 
         int activeBatchesInChunk = std::min(batchMultiplier, totalBatches - i);
+        int totalChunkPrims = 0;
 
-        // Compute sizes of each batch in this chunk in parallel on the device
-        auto localBatchIdxIterator = thrust::make_counting_iterator(0);
-        auto batchSizeTransformIterator = thrust::make_transform_iterator(
-            localBatchIdxIterator,
-            BatchSizeInChunkFunctor(ptr_outPairsB, ptr_outOffsetsB, h_outMarkedCountB, d_outPrimsFlatB.size(), i, activeBatchesInChunk)
-        );
+        // Assembly Step: Pack B primitives and build A search roots across the current batch chunk
+        for (int b = 0; b < activeBatchesInChunk; ++b) {
+            uint32_t bIdx;
+            CUBQL_CUDA_CALL(Memcpy(&bIdx, ptr_outPairsB + i + b, sizeof(uint32_t), cudaMemcpyDeviceToHost));
 
-        // Fill size layout buffer on the device
-        thrust::device_ptr<int> dev_batchSizes(d_chunkBatchSizes);
-        thrust::copy_n(thrust::device, batchSizeTransformIterator, activeBatchesInChunk, dev_batchSizes);
+            uint32_t startOffset;
+            CUBQL_CUDA_CALL(Memcpy(&startOffset, ptr_outOffsetsB + bIdx, sizeof(uint32_t), cudaMemcpyDeviceToHost));
 
-        // Exclusive prefix scan to find exactly where each batch's write segment starts
-        thrust::device_ptr<int> dev_batchOffsets(d_chunkBatchOffsets);
-        thrust::exclusive_scan(
-            thrust::device, 
-            dev_batchSizes, 
-            dev_batchSizes + activeBatchesInChunk, 
-            dev_batchOffsets
-        );
+            uint32_t endOffset;
+            if (bIdx + 1 < h_outMarkedCountB) {
+                CUBQL_CUDA_CALL(Memcpy(&endOffset, ptr_outOffsetsB + bIdx + 1, sizeof(uint32_t), cudaMemcpyDeviceToHost));
+            } else {
+                endOffset = d_outPrimsFlatB.size();
+            }
 
-        // Read total primitives in this chunk from the end of the scan window completely on GPU
-        int lastBatchSize = 0;
-        int lastBatchOffset = 0;
-        CUBQL_CUDA_CALL(MemcpyAsync(&lastBatchSize, d_chunkBatchSizes + activeBatchesInChunk - 1, sizeof(int), cudaMemcpyDeviceToHost));
-        CUBQL_CUDA_CALL(Memcpy(&lastBatchOffset, d_chunkBatchOffsets + activeBatchesInChunk - 1, sizeof(int), cudaMemcpyDeviceToHost));
-        int totalChunkPrims = lastBatchSize + lastBatchOffset;
+            int numPrims = (int)(endOffset - startOffset);
+            if (numPrims <= 0) continue;
 
-        if (totalChunkPrims == 0) continue;
+            // Gather B Primitives into the Sandbox via continuous Device-to-Device transfer
+            CUBQL_CUDA_CALL(MemcpyAsync(
+                d_BIter + totalChunkPrims,
+                ptr_outPrimsFlatB + startOffset,
+                numPrims * sizeof(uint32_t),
+                cudaMemcpyDeviceToDevice
+            ));
 
-        // Launch the specialized batch assembly kernel (1 thread per active batch)
-        int assembleBlockSize = 64; // Smaller block size fits light batch numbers beautifully
-        int assembleGridSize  = (activeBatchesInChunk + assembleBlockSize - 1) / assembleBlockSize;
+            // Fetch matched Node Root A values for the entire primitive range
+            uint32_t pairAVal;
+            CUBQL_CUDA_CALL(Memcpy(&pairAVal, ptr_outPairsA + i + b, sizeof(uint32_t), cudaMemcpyDeviceToHost));
+            
+            uint32_t startNodeIdxA_32;
+            CUBQL_CUDA_CALL(Memcpy(&startNodeIdxA_32, ptr_markedNodeIndicesA + pairAVal, sizeof(uint32_t), cudaMemcpyDeviceToHost));
+            uint64_t startNodeIdxA = (uint64_t)startNodeIdxA_32;
 
-        assembleChunkBuffersByBatchKernel<<<assembleGridSize, assembleBlockSize>>>(
-            d_BIter, d_AIter, ptr_outPairsA, ptr_outPairsB, ptr_markedNodeIndicesA,
-            ptr_outOffsetsB, ptr_outPrimsFlatB, h_outMarkedCountB, d_outPrimsFlatB.size(),
-            i, activeBatchesInChunk, d_chunkBatchOffsets
-        );
+            // Broadcast Node Root A straight across the chunk-local window
+            thrust::device_ptr<uint64_t> thrust_AIter(d_AIter);
+            thrust::fill_n(
+                thrust::device,
+                thrust_AIter + totalChunkPrims, 
+                numPrims,
+                startNodeIdxA
+            );
+
+            totalChunkPrims += numPrims;
+        }
 
         tracker.assemblyPhaseMs += (cuBQL::getCurrentTime() - tAssemblyStart) * 1000.0;
         // --- ASSEMBLY TIMING END ---
 
+        // If the entire grouped chunk contains zero elements, pass immediately
+        if (totalChunkPrims == 0) continue;
+
         // --- CUDA EXECUTION TIMING START ---
         CUBQL_CUDA_CALL(EventRecord(evComputeStart, 0));
 
-        // --- PHASE 1: Execution Count ---
+        // --- PHASE 1: Execution Count (Clean 0 Offset Baseline) ---
         int kernelBlockSize = 128;
         int kernelGridSize  = (totalChunkPrims + kernelBlockSize - 1) / kernelBlockSize;
 
@@ -367,6 +307,7 @@ uint64_t executeBatchedCrossIntersectionLoop(
         CUBQL_CUDA_CALL(EventElapsedTime(&chunkComputeMs, evComputeStart, evComputeEnd));
         tracker.executionPhaseMs += chunkComputeMs;
 
+        // Free allocation inside this step
         CUBQL_CUDA_CALL(Free(d_candidatePairs));
         // --- CUDA EXECUTION TIMING END ---
     }
@@ -377,12 +318,11 @@ uint64_t executeBatchedCrossIntersectionLoop(
     CUBQL_CUDA_CALL(EventDestroy(evComputeStart));
     CUBQL_CUDA_CALL(EventDestroy(evComputeEnd));
 
-    if (d_BIter)              CUBQL_CUDA_CALL(Free(d_BIter));
-    if (d_AIter)              CUBQL_CUDA_CALL(Free(d_AIter));
-    if (d_pairCounts)         CUBQL_CUDA_CALL(Free(d_pairCounts));
-    if (d_offsets)            CUBQL_CUDA_CALL(Free(d_offsets));
-    if (d_chunkBatchSizes)    CUBQL_CUDA_CALL(Free(d_chunkBatchSizes));
-    if (d_chunkBatchOffsets)  CUBQL_CUDA_CALL(Free(d_chunkBatchOffsets));
+    // Final Cleanup of reusable chunk sandbox allocations
+    if (d_BIter)      CUBQL_CUDA_CALL(Free(d_BIter));
+    if (d_AIter)      CUBQL_CUDA_CALL(Free(d_AIter));
+    if (d_pairCounts) CUBQL_CUDA_CALL(Free(d_pairCounts));
+    if (d_offsets)    CUBQL_CUDA_CALL(Free(d_offsets));
 
     tracker.cleanupTimeMs = (cuBQL::getCurrentTime() - tCleanupStart) * 1000.0;
     // --- CLEANUP TIMING END ---

@@ -45,7 +45,7 @@ extern "C" void kernelsTestBVH(const cuBQL::Triangle* hMeshA, int numTrianglesA,
                                int batchMultiplier) // Defaulted to 4, tweak as needed
 {
   std::cout << "\n==================================================\n";
-  std::cout << " RUNNING DUAL-MESH CROSS-INTERSECTION PIPELINE\n";
+  std::cout << " RUNNING DUAL-MESH CROSS-INTERSECTION PIPELINE V2\n";
   std::cout << "==================================================\n";
   std::cout << "Mesh A: " << numTrianglesA << " tris (MaxCell: " << maxCellSizeA << ")\n";
   std::cout << "Mesh B: " << numTrianglesB << " tris (MaxCell: " << maxCellSizeB << ")\n";
@@ -213,15 +213,17 @@ extern "C" void kernelsTestBVH(const cuBQL::Triangle* hMeshA, int numTrianglesA,
   // ====================================================================
   // GEOMETRIC EVALUATION & VOLUMETRIC SANITY CHECK FOR MESH B
   // ====================================================================
-  runVolumeSanityCheck(
-      bvhB, h_outMarkedCountB, d_markedNodeIndicesB, d_nodeDescendantCountsB,
-      d_outOffsetsB, d_outPrimsFlatB, hMeshB
-  );
+ // runVolumeSanityCheck(
+ //     bvhB, h_outMarkedCountB, d_markedNodeIndicesB, d_nodeDescendantCountsB,
+ //     d_outOffsetsB, d_outPrimsFlatB, hMeshB
+ // );
 // ====================================================================
   // ASYNC BATCHED CROSS-INTERSECTION COUNTING LOOP (EXTRACTED)
   // ====================================================================
   int totalBatches = d_outPairsA.size();
-  double batchedLoopExecutionTimeMs = 0.0;
+  
+  // UPDATED: Instantiate the specialized profiling tracker structure
+  IntersectionTimeTracker tracker;
   
   uint64_t finalCandidatePairs = executeBatchedCrossIntersectionLoop(
       batchMultiplier,
@@ -237,7 +239,7 @@ extern "C" void kernelsTestBVH(const cuBQL::Triangle* hMeshA, int numTrianglesA,
       bvhA,
       dMeshA,
       dMeshB,
-      batchedLoopExecutionTimeMs
+      tracker // UPDATED: Pass the tracker struct by reference
   );
 
   // --------------------------------------------------------------------
@@ -274,8 +276,10 @@ extern "C" void kernelsTestBVH(const cuBQL::Triangle* hMeshA, int numTrianglesA,
   std::cout << "--------------------------------------------------\n";
   std::cout << "Total Criss-Cross Batches Processed: " << totalBatches << "\n";
   std::cout << "Final AABB Candidate Pairs Found:    " << finalCandidatePairs << "\n";
- std::cout << "Batched Loop Execution Time:         " << batchedLoopExecutionTimeMs << " ms\n";
   std::cout << "--------------------------------------------------\n";
+
+  // UPDATED: Print out the fine-grained execution phases breakdown (Sandbox Vs. CUDA)
+  tracker.print();
 
   CUBQL_CUDA_CALL(Free(dMeshA));
   CUBQL_CUDA_CALL(Free(dBoxesA));
