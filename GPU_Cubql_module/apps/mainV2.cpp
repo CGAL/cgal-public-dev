@@ -22,6 +22,9 @@
 #include <tbb/parallel_for.h>
 #include <tbb/concurrent_vector.h>
 
+#include "../src/custom_pipeline/kernelsV2.h"
+//#include "../src/custom_pipeline/GPUPredicatesCheck.h"
+
 
 // Cartesin includes 
 
@@ -39,37 +42,17 @@ typedef boost::graph_traits<Mesh>::face_descriptor face_descriptor;
 typedef Kernel::Point_3 Point3;
 typedef Kernel::Triangle_3 Triangle3;
 
-struct IntersectionPair
-{
-  int idA;
-  int idB;
-};
-
-// Updated struct matching our kernel version parameters with fine-grained timers
-struct GPUTimingBreakdown
-{
-  double uploadTime = 0.0;
-  double executionTime = 0.0;
-  double downloadTime = 0.0;
-  double bvhBuildTime = 0.0;  
-  double queryTime = 0.0;     
-  double countAABBTime = 0.0;         // Added: Tracks countAABBOverlapsKernel total
-  double fillAABBTime = 0.0;          // Added: Tracks fillAABBOverlapsKernel total
-  double evaluateGeometricTime = 0.0;  // Added: Tracks evaluateGeometricPairsKernel total
-
-  long long totalCandidatePairs = 0;
-};
 
 // Updated signature pointing to our newly compiled partition routine inside kernelsV2
-extern "C" void runPartitionedMeshIntersection(const cuBQL::Triangle* hA,
-                                               int NA,
-                                               const cuBQL::Triangle* hB,
-                                               int NB,
-                                               std::vector<IntersectionPair>& hGreenPairs,
-                                               std::vector<IntersectionPair>& hYellowPairs,
-                                               GPUTimingBreakdown& outTimings,
-                                               int pipelineMode, 
-                                               int batchSize);   
+// extern "C" void runPartitionedMeshIntersection(const cuBQL::Triangle* hA,
+//                                                int NA,
+//                                                const cuBQL::Triangle* hB,
+//                                                int NB,
+//                                                std::vector<IntersectionPair>& hGreenPairs,
+//                                                std::vector<IntersectionPair>& hYellowPairs,
+//                                                GPUTimingBreakdown& outTimings,
+//                                                int pipelineMode, 
+//                                                int batchSize);   
 
 cuBQL::Triangle convertCgalFaceToCuBQL(const Mesh& mesh, face_descriptor face) {
   auto conn = mesh.vertices_around_face(mesh.halfedge(face));

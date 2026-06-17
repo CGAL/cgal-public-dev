@@ -213,18 +213,23 @@ extern "C" void kernelsTestBVH(const cuBQL::Triangle* hMeshA, int numTrianglesA,
   // ====================================================================
   // GEOMETRIC EVALUATION & VOLUMETRIC SANITY CHECK FOR MESH B
   // ====================================================================
- // runVolumeSanityCheck(
- //     bvhB, h_outMarkedCountB, d_markedNodeIndicesB, d_nodeDescendantCountsB,
- //     d_outOffsetsB, d_outPrimsFlatB, hMeshB
- // );
-// ====================================================================
+  // runVolumeSanityCheck(
+  //     bvhB, h_outMarkedCountB, d_markedNodeIndicesB, d_nodeDescendantCountsB,
+  //     d_outOffsetsB, d_outPrimsFlatB, hMeshB
+  // );
+
+  // ====================================================================
   // ASYNC BATCHED CROSS-INTERSECTION COUNTING LOOP (EXTRACTED)
   // ====================================================================
   int totalBatches = d_outPairsA.size();
   
-  // UPDATED: Instantiate the specialized profiling tracker structure
+  // Instantiate the specialized profiling tracker structure
   IntersectionTimeTracker tracker;
   
+  // Allocation of host side collections to capture exact fine-evaluation pairs
+  std::vector<int2> hGreenPairs;
+  std::vector<int2> hYellowPairs;
+
   uint64_t finalCandidatePairs = executeBatchedCrossIntersectionLoop(
       batchMultiplier,
       totalBatches,
@@ -239,7 +244,9 @@ extern "C" void kernelsTestBVH(const cuBQL::Triangle* hMeshA, int numTrianglesA,
       bvhA,
       dMeshA,
       dMeshB,
-      tracker // UPDATED: Pass the tracker struct by reference
+      hGreenPairs,   // Pass the green pairs collection by reference
+      hYellowPairs,  // Pass the yellow pairs collection by reference
+      tracker        // Pass the tracker struct by reference
   );
 
   // --------------------------------------------------------------------
@@ -269,16 +276,18 @@ extern "C" void kernelsTestBVH(const cuBQL::Triangle* hMeshA, int numTrianglesA,
   std::cout << "--------------------------------------------------\n";
 
   // --------------------------------------------------------------------
-  // DUAL-TREE BATCHING METRICS
+  // DUAL-TREE BATCHING & GEOMETRIC PREDICATE METRICS
   // --------------------------------------------------------------------
   std::cout << "--------------------------------------------------\n";
-  std::cout << " DUAL-TREE DESCENT BATCHING METRICS\n";
+  std::cout << " DUAL-TREE DESCENT & FINE EVALUATION METRICS\n";
   std::cout << "--------------------------------------------------\n";
   std::cout << "Total Criss-Cross Batches Processed: " << totalBatches << "\n";
   std::cout << "Final AABB Candidate Pairs Found:    " << finalCandidatePairs << "\n";
+  std::cout << "Confirmed Green Pairs (Intersecting):" << hGreenPairs.size() << "\n";
+  std::cout << "Confirmed Yellow Pairs (Coplanar):   " << hYellowPairs.size() << "\n";
   std::cout << "--------------------------------------------------\n";
 
-  // UPDATED: Print out the fine-grained execution phases breakdown (Sandbox Vs. CUDA)
+  // Print out the fine-grained execution phases breakdown (Sandbox Vs. CUDA Vs. Predicates)
   tracker.print();
 
   CUBQL_CUDA_CALL(Free(dMeshA));

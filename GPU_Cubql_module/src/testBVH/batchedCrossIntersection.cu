@@ -8,6 +8,8 @@
 #include <iostream>
 #include <vector>
 #include <algorithm>
+#include "batchedCrossIntersection.h"
+#include "../custom_pipeline/GPUPredicatesCheck.h"
 
 // Helper macro matching your project's naming convention
 #ifndef CUBQL_CUDA_CALL
@@ -204,6 +206,8 @@ uint64_t executeBatchedCrossIntersectionLoop(
     const cuBQL::bvh3f& bvhA,
     const cuBQL::Triangle* dMeshA,
     const cuBQL::Triangle* dMeshB,
+    std::vector<int2>& hGreenPairs,
+    std::vector<int2>& hYellowPairs,
     IntersectionTimeTracker& tracker 
 ) {
     double tTotalStart = cuBQL::getCurrentTime();
@@ -224,7 +228,7 @@ uint64_t executeBatchedCrossIntersectionLoop(
         batchMultiplier = 1; 
     }
 
-    // 2. Compute Exact Maximum Chunk Space Bounds via Parallel Device Window Reduction
+    // 2. Compute Exact Maximum Chunk Space Bounds
     int maxChunkPrims = 0;
     if (totalBatches > 0) {
         int numChunks = (totalBatches + batchMultiplier - 1) / batchMultiplier;
@@ -244,7 +248,7 @@ uint64_t executeBatchedCrossIntersectionLoop(
         );
     }
 
-    // 3. Preallocate Memory Sandboxes tightly scaled to peak structural limits
+    // 3. Preallocate Memory Sandboxes
     uint32_t* d_BIter = nullptr;
     uint64_t* d_AIter = nullptr;
     int* d_pairCounts = nullptr;
@@ -271,30 +275,20 @@ uint64_t executeBatchedCrossIntersectionLoop(
         
         // --- ASSEMBLY TIMING START ---
         double tAssemblyStart = cuBQL::getCurrentTime();
-
         int activeBatchesInChunk = std::min(batchMultiplier, totalBatches - i);
 
-        // Compute sizes of each batch in this chunk in parallel on the device
         auto localBatchIdxIterator = thrust::make_counting_iterator(0);
         auto batchSizeTransformIterator = thrust::make_transform_iterator(
             localBatchIdxIterator,
             BatchSizeInChunkFunctor(ptr_outPairsB, ptr_outOffsetsB, h_outMarkedCountB, d_outPrimsFlatB.size(), i, activeBatchesInChunk)
         );
 
-        // Fill size layout buffer on the device
         thrust::device_ptr<int> dev_batchSizes(d_chunkBatchSizes);
         thrust::copy_n(thrust::device, batchSizeTransformIterator, activeBatchesInChunk, dev_batchSizes);
 
-        // Exclusive prefix scan to find exactly where each batch's write segment starts
         thrust::device_ptr<int> dev_batchOffsets(d_chunkBatchOffsets);
-        thrust::exclusive_scan(
-            thrust::device, 
-            dev_batchSizes, 
-            dev_batchSizes + activeBatchesInChunk, 
-            dev_batchOffsets
-        );
+        thrust::exclusive_scan(thrust::device, dev_batchSizes, dev_batchSizes + activeBatchesInChunk, dev_batchOffsets);
 
-        // Read total primitives in this chunk from the end of the scan window completely on GPU
         int lastBatchSize = 0;
         int lastBatchOffset = 0;
         CUBQL_CUDA_CALL(MemcpyAsync(&lastBatchSize, d_chunkBatchSizes + activeBatchesInChunk - 1, sizeof(int), cudaMemcpyDeviceToHost));
@@ -303,8 +297,7 @@ uint64_t executeBatchedCrossIntersectionLoop(
 
         if (totalChunkPrims == 0) continue;
 
-        // Launch the specialized batch assembly kernel (1 thread per active batch)
-        int assembleBlockSize = 64; // Smaller block size fits light batch numbers beautifully
+        int assembleBlockSize = 64;
         int assembleGridSize  = (activeBatchesInChunk + assembleBlockSize - 1) / assembleBlockSize;
 
         assembleChunkBuffersByBatchKernel<<<assembleGridSize, assembleBlockSize>>>(
@@ -319,7 +312,6 @@ uint64_t executeBatchedCrossIntersectionLoop(
         // --- CUDA EXECUTION TIMING START ---
         CUBQL_CUDA_CALL(EventRecord(evComputeStart, 0));
 
-        // --- PHASE 1: Execution Count ---
         int kernelBlockSize = 128;
         int kernelGridSize  = (totalChunkPrims + kernelBlockSize - 1) / kernelBlockSize;
 
@@ -328,12 +320,10 @@ uint64_t executeBatchedCrossIntersectionLoop(
             d_BIter, 0, totalChunkPrims, d_AIter
         );
 
-        // --- PHASE 2: Reusable Device Exclusive Prefix Scan ---
         thrust::device_ptr<int> dev_counts(d_pairCounts);
         thrust::device_ptr<int> dev_offsets(d_offsets);
         thrust::exclusive_scan(thrust::device, dev_counts, dev_counts + totalChunkPrims, dev_offsets);
 
-        // --- PHASE 3: Read Combined Output Window Bounds ---
         int lastCount = 0;
         int lastOffset = 0;
         CUBQL_CUDA_CALL(Memcpy(&lastCount, d_pairCounts + totalChunkPrims - 1, sizeof(int), cudaMemcpyDeviceToHost));
@@ -351,7 +341,6 @@ uint64_t executeBatchedCrossIntersectionLoop(
         
         finalCandidatePairs += totalChunkPairs;
 
-        // --- PHASE 4: Local Write out and Sync ---
         int2* d_candidatePairs = nullptr;
         CUBQL_CUDA_CALL(Malloc(&d_candidatePairs, totalChunkPairs * sizeof(int2)));
 
@@ -366,9 +355,64 @@ uint64_t executeBatchedCrossIntersectionLoop(
         float chunkComputeMs = 0.0f;
         CUBQL_CUDA_CALL(EventElapsedTime(&chunkComputeMs, evComputeStart, evComputeEnd));
         tracker.executionPhaseMs += chunkComputeMs;
+        // --- CUDA EXECUTION TIMING END ---
+
+        // ====================================================================
+        // NEW GEOMETRIC EVALUATION & TRUST COMPACTION PHASE
+        // ====================================================================
+        double tEvalStart = cuBQL::getCurrentTime();
+
+        int* d_pairStatuses = nullptr;
+        CUBQL_CUDA_CALL(Malloc(&d_pairStatuses, totalChunkPairs * sizeof(int)));
+
+        // Pass the global dMeshB array since d_candidatePairs contains absolute indices
+        double internalPredicateTimeDummy = 0.0;
+        evaluateAndCompactPairs(
+            d_candidatePairs, 
+            d_pairStatuses, 
+            dMeshA, 
+            dMeshB, 
+            totalChunkPairs, 
+            internalPredicateTimeDummy
+        );
+
+        tracker.fineEvaluationPhaseMs += (cuBQL::getCurrentTime() - tEvalStart) * 1000.0;
+
+        double tEvalStartTwo = cuBQL::getCurrentTime();
+
+        // Treat int2 directly for compaction mapping
+        thrust::device_ptr<int2> dev_evaluated(d_candidatePairs);
+        thrust::device_ptr<int> dev_statuses(d_pairStatuses);
+
+        thrust::device_vector<int2> dev_green(totalChunkPairs);
+        thrust::device_vector<int2> dev_yellow(totalChunkPairs);
+
+        thrust::device_ptr<int2> dev_green_out(thrust::raw_pointer_cast(dev_green.data()));
+        thrust::device_ptr<int2> dev_yellow_out(thrust::raw_pointer_cast(dev_yellow.data()));
+
+        auto green_end = thrust::copy_if(thrust::device, dev_evaluated, dev_evaluated + totalChunkPairs, dev_statuses, dev_green_out, IsTargetPairStatus{(int)PAIR_GREEN});
+        auto yellow_end = thrust::copy_if(thrust::device, dev_evaluated, dev_evaluated + totalChunkPairs, dev_statuses, dev_yellow_out, IsTargetPairStatus{(int)PAIR_YELLOW});
+
+        int totalGreen = green_end - dev_green_out;
+        int totalYellow = yellow_end - dev_yellow_out;
+
+        if (totalGreen > 0) {
+            size_t oldSize = hGreenPairs.size();
+            hGreenPairs.resize(oldSize + totalGreen);
+            CUBQL_CUDA_CALL(Memcpy(hGreenPairs.data() + oldSize, thrust::raw_pointer_cast(dev_green.data()), totalGreen * sizeof(int2), cudaMemcpyDeviceToHost));
+        }
+        if (totalYellow > 0) {
+            size_t oldSize = hYellowPairs.size();
+            hYellowPairs.resize(oldSize + totalYellow);
+            CUBQL_CUDA_CALL(Memcpy(hYellowPairs.data() + oldSize, thrust::raw_pointer_cast(dev_yellow.data()), totalYellow * sizeof(int2), cudaMemcpyDeviceToHost));
+        }
 
         CUBQL_CUDA_CALL(Free(d_candidatePairs));
-        // --- CUDA EXECUTION TIMING END ---
+        CUBQL_CUDA_CALL(Free(d_pairStatuses));
+
+        tracker.DownloadAndClean += (cuBQL::getCurrentTime() - tEvalStartTwo ) * 1000.0;
+
+        
     }
 
     // --- CLEANUP TIMING START ---
@@ -385,10 +429,8 @@ uint64_t executeBatchedCrossIntersectionLoop(
     if (d_chunkBatchOffsets)  CUBQL_CUDA_CALL(Free(d_chunkBatchOffsets));
 
     tracker.cleanupTimeMs = (cuBQL::getCurrentTime() - tCleanupStart) * 1000.0;
-    // --- CLEANUP TIMING END ---
-
     tracker.totalLoopTimeMs = (cuBQL::getCurrentTime() - tTotalStart) * 1000.0;
-    std::cout << "--------------------------------------------------\n\n";
 
+    std::cout << "--------------------------------------------------\n\n";
     return finalCandidatePairs;
 }

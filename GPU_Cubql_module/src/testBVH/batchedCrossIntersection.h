@@ -3,20 +3,19 @@
 
 #include "cuBQL/bvh.h"
 #include <thrust/device_vector.h>
-#include <iostream> // CRITICAL: Required for std::cout and std::endl inside the print() method
-
+#include <vector_types.h>
+#include <iostream>
+#include <vector>
 #include "samples/common/loadOBJ.h"
 
-/**
- * Executes the multi-stream batched bounding box cross-intersection loop.
- * Returns the final total number of AABB candidate pairs found.
- */
 struct IntersectionTimeTracker {
-    double totalLoopTimeMs   = 0.0; // Overall duration of the host execution function
-    double preallocateTimeMs = 0.0; // Time spent on initial maximum bounds reduction and memory allocations
-    double assemblyPhaseMs   = 0.0; // Total time spent stalling on host memory reads & filling sandbox buffers
-    double executionPhaseMs  = 0.0; // Total time spent executing overlap counts, scans, and candidate writes on GPU
-    double cleanupTimeMs     = 0.0; // Time taken to deallocate scratch allocations
+    double totalLoopTimeMs      = 0.0; 
+    double preallocateTimeMs    = 0.0; 
+    double assemblyPhaseMs      = 0.0; 
+    double executionPhaseMs     = 0.0; 
+    double fineEvaluationPhaseMs = 0.0; // Added tracker for the exact geometric predicates + compaction
+    double cleanupTimeMs        = 0.0; 
+    double DownloadAndClean = 0.0;
 
     void print() const {
         std::cout << "\n==================================================\n";
@@ -25,10 +24,20 @@ struct IntersectionTimeTracker {
         std::cout << " Preallocation Space Discovery : " << preallocateTimeMs << " ms\n";
         std::cout << " Sandbox Assembly & Host Reads : " << assemblyPhaseMs   << " ms\n";
         std::cout << " CUDA Kernels & Scan Compute   : " << executionPhaseMs  << " ms\n";
+        std::cout << " Fine Geometric Evaluation     : " << fineEvaluationPhaseMs << " ms\n";
+        std::cout << " Upload and clean up           : " << DownloadAndClean << " ms\n";
         std::cout << " Sandbox Cleanup & Free Cycles : " << cleanupTimeMs     << " ms\n";
         std::cout << "--------------------------------------------------\n";
         std::cout << " Total Tracked Pipeline Time   : " << totalLoopTimeMs   << " ms\n";
         std::cout << "==================================================\n\n";
+    }
+};
+
+// Simple functor definition required for Thrust compaction filtering
+struct IsTargetPairStatus {
+    int target;
+    __host__ __device__ bool operator()(const int status) const {
+        return status == target;
     }
 };
 
@@ -46,6 +55,8 @@ uint64_t executeBatchedCrossIntersectionLoop(
     const cuBQL::bvh3f& bvhA,
     const cuBQL::Triangle* dMeshA,
     const cuBQL::Triangle* dMeshB,
+    std::vector<int2>& hGreenPairs,  // Output target for confirmed intersections
+    std::vector<int2>& hYellowPairs, // Output target for coplanar / boundary elements
     IntersectionTimeTracker& outLoopTime
 );
 

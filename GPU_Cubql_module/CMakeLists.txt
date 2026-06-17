@@ -106,7 +106,7 @@ target_link_libraries(pairCheck PRIVATE CGAL::CGAL gmp mpfr)
 # ====================================================================
 # TARGET 4: New Partitioned Dual-List Pipeline Sandbox (YOUR MAIN PROJECT)
 # ====================================================================
-add_executable(meshIntersectionCustom apps/mainV2.cpp src/custom_pipeline/kernelsV2.cu)
+add_executable(meshIntersectionCustom apps/mainV2.cpp src/custom_pipeline/kernelsV2.cu src/custom_pipeline/GPUPredicatesCheck.cu)
 
 set_target_properties(meshIntersectionCustom PROPERTIES
     CXX_STANDARD 17
@@ -188,7 +188,8 @@ add_executable(testBVH
     src/testBVH/rapidDescendKernel.cu
     src/testBVH/crossCheck.cu
     src/testBVH/volumeSanityCheck.cu
-    src/testBVH/batchedCrossIntersection.cu       
+    src/testBVH/batchedCrossIntersection.cu
+    src/custom_pipeline/GPUPredicatesCheck.cu
 )
 
 set_target_properties(testBVH PROPERTIES
