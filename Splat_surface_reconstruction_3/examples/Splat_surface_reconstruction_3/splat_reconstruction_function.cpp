@@ -213,8 +213,8 @@ bool write_mesh_graph_ply(const Mesh& mesh, const std::string& filename)
 }
 
 int main(int argc, char* argv[]) {
-  // const std::string filename = (argc > 1) ? argv[1] : CGAL::data_file_path("points_3/kitten.xyz");
-  const std::string filename = (argc > 1) ? argv[1] : CGAL::data_file_path("meshes/knot.off");
+  const std::string filename = (argc > 1) ? argv[1] : CGAL::data_file_path("points_3/kitten.xyz");
+  // const std::string filename = (argc > 1) ? argv[1] : CGAL::data_file_path("meshes/plane.off");
 
   std::vector<Point> points;
   std::vector<Vector_3> normals;
@@ -246,7 +246,7 @@ int main(int argc, char* argv[]) {
   compute_normals_if_missing(points, normals, 6);
 
   // Average spacing should be computed in the normalized coordinate system.
-  double average_spacing = 0.7*CGAL::compute_average_spacing<CGAL::Parallel_if_available_tag>(points, 6);
+  double average_spacing = 1.0 * CGAL::compute_average_spacing<CGAL::Parallel_if_available_tag>(points, 6);
 
   Polyhedron output_mesh;
   const auto bbox = CGAL::bounding_box(points.begin(), points.end()); // recompute bbox after centering and scaling

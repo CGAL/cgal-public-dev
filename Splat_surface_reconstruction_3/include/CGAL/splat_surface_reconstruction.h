@@ -552,35 +552,44 @@ namespace CGAL {
       return result;
     }
 
+      /**
+       * @brief Computes an orthonormal tangent frame at a point.
+       *
+       * @param n Input normal.
+       *
+       * @return Two orthonormal tangent directions spanning the tangent plane.
+       */
+      std::vector<Vector_3> compute_local_tangent_frame(const Vector_3& n) const {
+        // Find a vector that is not parallel to n to construct the tangent frame.
+        Vector_3 temp;
+        if (std::abs(CGAL::to_double(n.x())) < 0.9)
+          temp = Vector_3(1,0,0);
+        else
+          temp = Vector_3(0,1,0);
+
+        Vector_3 u = CGAL::cross_product(n, temp);
+        Vector_3 v = CGAL::cross_product(n, u);
+
+        // Normalize u and v to have unit length.
+        const double len_u = std::sqrt(CGAL::to_double(u.squared_length()));
+        const double len_v = std::sqrt(CGAL::to_double(v.squared_length()));
+        if (len_u > 0) u = u / len_u;
+        if (len_v > 0) v = v / len_v;
+
+        return {u, v};
+      }
+
+      Vector_3 box_normal(const Point_3& p) const {
+        int ix, iy, iz;
+
+        if (!to_grid_coords(p, ix, iy, iz)) {
+          return CGAL::NULL_VECTOR;
+        }
+
+        return compute_cell_normal(ix, iy, iz);
+      }
 
     private:
-    /**
-     * @brief Computes an orthonormal tangent frame at a point.
-     *
-     * @param n Input normal.
-     *
-     * @return Two orthonormal tangent directions spanning the tangent plane.
-     */
-    std::vector<Vector_3> compute_local_tangent_frame(const Vector_3& n) const {
-      // Find a vector that is not parallel to n to construct the tangent frame.
-      Vector_3 temp;
-      if (std::abs(CGAL::to_double(n.x())) < 0.9)
-        temp = Vector_3(1,0,0);
-      else
-        temp = Vector_3(0,1,0);
-
-      Vector_3 u = CGAL::cross_product(n, temp);
-      Vector_3 v = CGAL::cross_product(n, u);
-
-      // Normalize u and v to have unit length.
-      const double len_u = std::sqrt(CGAL::to_double(u.squared_length()));
-      const double len_v = std::sqrt(CGAL::to_double(v.squared_length()));
-      if (len_u > 0) u = u / len_u;
-      if (len_v > 0) v = v / len_v;
-
-      return {u, v};
-    }
-
     /**
      * @brief Clears all per-cell accumulators.
      */
@@ -933,203 +942,311 @@ namespace CGAL {
   template <typename PointRange, typename NormalRange, typename PolygonMesh>
   class Splat_surface_reconstruction_3 {
     public:
-    using Point_3 = typename PointRange::value_type;
-    using Kernel = typename Kernel_traits<Point_3>::Kernel;
-    using Vector_3 = typename Kernel::Vector_3;
-    using FT = typename Kernel::FT;
-    using Grid = Box_grid<Kernel>;
-    using Index = typename Grid::Index;
+      using Point_3 = typename PointRange::value_type;
+      using Kernel = typename Kernel_traits<Point_3>::Kernel;
+      using Vector_3 = typename Kernel::Vector_3;
+      using Vector_2 = typename Kernel::Vector_2;
+      using Point_2  = typename Kernel::Point_2;
+      using FT = typename Kernel::FT;
+      using Grid = Box_grid<Kernel>;
+      using Index = typename Grid::Index;
 
-    using vertex_descriptor = typename boost::graph_traits<PolygonMesh>::vertex_descriptor;
-    using edge_descriptor = typename boost::graph_traits<PolygonMesh>::edge_descriptor;
-    using halfedge_descriptor = typename boost::graph_traits<PolygonMesh>::halfedge_descriptor;
+      using vertex_descriptor = typename boost::graph_traits<PolygonMesh>::vertex_descriptor;
+      using edge_descriptor = typename boost::graph_traits<PolygonMesh>::edge_descriptor;
+      using halfedge_descriptor = typename boost::graph_traits<PolygonMesh>::halfedge_descriptor;
 
-    struct Candidate {
-    Point_3 position;
-    Vector_3 normal;
-    Index splat_id;
-    vertex_descriptor first;
-    vertex_descriptor second;
+      struct Candidate {
+      Point_3 position;
+      Vector_3 normal;
+      Index splat_id;
+      vertex_descriptor first;
+      vertex_descriptor second;
 
-    Candidate(const Point_3& position,
-              const Vector_3& normal,
-              Index splat_id,
-              vertex_descriptor first,
-              vertex_descriptor second)
-      : position(position),
-        normal(normal),
-        splat_id(splat_id),
-        first(first),
-        second(second)
-    {}
-  };
+      Candidate(const Point_3& position,
+                const Vector_3& normal,
+                Index splat_id,
+                vertex_descriptor first,
+                vertex_descriptor second)
+        : position(position),
+          normal(normal),
+          splat_id(splat_id),
+          first(first),
+          second(second)
+        {}
+      };
 
-    Splat_surface_reconstruction_3(const Grid& grid, PolygonMesh& output_mesh)
-    : grid_(grid),
-      mesh_(output_mesh),
-      points_pm_(get(CGAL::vertex_point, mesh_)) {
+      Splat_surface_reconstruction_3(const Grid& grid, PolygonMesh& output_mesh)
+      : grid_(grid),
+        mesh_(output_mesh),
+        points_pm_(get(CGAL::vertex_point, mesh_)) {
 
-      bool created = false;
-      std::tie(normals_pm_, created) = mesh_.template add_property_map<vertex_descriptor, Vector_3>("v:normal", CGAL::NULL_VECTOR);
+        bool created = false;
+        std::tie(normals_pm_, created) = mesh_.template add_property_map<vertex_descriptor, Vector_3>("v:normal", CGAL::NULL_VECTOR);
 
-      if (created) {
-        std::cout << "Created vertex normal property map." << std::endl;
-      }
-
-      seed_from_grid();
-    }
-
-    void run() {
-      if (!seeded_) {
-        std::cerr << "No initial seed was found. Mesh growth did not start.\n";
-        return;
-      }
-      else {
-        std::cout << "Initial seed vertices created. Starting mesh growth...\n";
-      }
-
-      while (!candidate_stack_.empty()) {
-        Candidate cand = candidate_stack_.back();
-        candidate_stack_.pop_back();
-
-        if (has_vertex_near(cand.position)) {
-          continue;
+        if (created) {
+          std::cout << "Created vertex normal property map." << std::endl;
         }
 
-        vertex_descriptor nv = mesh_.add_vertex(cand.position);
-        put(points_pm_, nv, cand.position);
-        put(normals_pm_, nv, cand.normal);
-
-        (void)connect_vertices(cand.first, nv);
-        (void)connect_vertices(cand.second, nv);
-        // // Create the triangle (parent_a, parent_b, new vertex).
-        // auto f = mesh_.add_face(cand.first, cand.second, nv);
-        // if (f == boost::graph_traits<PolygonMesh>::null_face()) {
-        //   // Try reversed orientation if needed.
-        //   f = mesh_.add_face(cand.second, cand.first, nv);
-        // }
-
-
-        push_candidates_from_parents(nv, cand.first);
-        push_candidates_from_parents(nv, cand.second);
-
-        std::cout << "Current mesh size: " << num_vertices(mesh_) << " vertices, " << num_edges(mesh_) << " edges,\n";
+        seed_from_grid();
       }
-    }
+
+      void run() {
+        if (!seeded_) {
+          std::cerr << "No initial seed was found. Mesh growth did not start.\n";
+          return;
+        }
+        else {
+          std::cout << "Initial seed vertices created. Starting mesh growth...\n";
+        }
+
+        while (!candidate_stack_.empty()) {
+          Candidate cand = candidate_stack_.back();
+          candidate_stack_.pop_back();
+
+          if (has_vertex_near(cand.position)) {
+            continue;
+          }
+
+          if (!projection_check(cand)) {
+            continue;
+          }
+
+          vertex_descriptor nv = mesh_.add_vertex(cand.position);
+          put(points_pm_, nv, cand.position);
+          put(normals_pm_, nv, cand.normal);
+
+          (void)connect_vertices(cand.first, nv);
+          (void)connect_vertices(cand.second, nv);
+          // // Create the triangle (parent_a, parent_b, new vertex).
+          // auto f = mesh_.add_face(cand.first, cand.second, nv);
+          // if (f == boost::graph_traits<PolygonMesh>::null_face()) {
+          //   // Try reversed orientation if needed.
+          //   f = mesh_.add_face(cand.second, cand.first, nv);
+          // }
+
+          push_candidates_from_vertex(nv);
+
+          std::cout << "Current mesh size: " << num_vertices(mesh_) << " vertices, " << num_edges(mesh_) << " edges,\n";
+        }
+      }
 
     private:
-    void seed_from_grid() {
-      std::optional<typename Grid::Initial_seed> seed = grid_.get_initial_seed();
-      if (!seed) {
-        std::cerr << "No initial splat seed found.\n";
-        return;
-      }
-
-      std::cout << "Adding initial seed vertices to mesh...\n";
-      // v0_ = mesh_.add_vertex(seed->first);
-      vertex_descriptor v0_ = add_vertex(mesh_);
-      put(points_pm_, v0_, seed->first);
-      put(normals_pm_, v0_, grid_.normals()[seed->splat_id]);
-
-      vertex_descriptor v1_ = add_vertex(mesh_);
-      put(points_pm_, v1_, seed->second);
-      put(normals_pm_, v1_, grid_.normals()[seed->splat_id]);
-
-      (void)connect_vertices(v0_, v1_);
-
-      seeded_ = true;
-      std::cout << "Mesh seeded with initial vertices. Starting growth...\n";
-      push_candidates_from_parents(v0_, v1_);
-    }
-
-    void push_candidates_from_parents(vertex_descriptor parent_a,
-                                      vertex_descriptor parent_b) {
-      std::vector<Candidate> candidates = generate_candidates_from_parents(parent_a, parent_b);
-      std::cout << "Generated " << candidates.size() << " candidate points." << std::endl;
-      for (const Candidate& c : candidates) {
-        candidate_stack_.push_back(c);
-      }
-    }
-
-    std::vector<Candidate> generate_candidates_from_parents(vertex_descriptor parent_a,
-                                                            vertex_descriptor parent_b) const {
-      std::vector<Candidate> candidates;
-
-      const Point_3 pa = get(points_pm_, parent_a);
-      const Point_3 pb = get(points_pm_, parent_b);
-
-      const FT d = grid_.get_box_size();
-      const FT d2 = CGAL::squared_distance(pa, pb);
-
-      // Circle radius from the two-parent construction.
-      const FT circle_r = CGAL::sqrt((d * d) - (d2 / FT(4)));
-
-      FT search_radius = circle_r + grid_.get_max_splat_radius();
-
-      const Point_3 mid = Point_3(
-        (pa.x() + pb.x()) / FT(2),
-        (pa.y() + pb.y()) / FT(2),
-        (pa.z() + pb.z()) / FT(2));
-
-      std::vector<Index> nearby = grid_.nearby_point_ids(mid, search_radius);
-
-      const std::vector<Point_3>& points = grid_.points();
-      const std::vector<Vector_3>& normals = grid_.normals();
-      const std::vector<FT>& splat_sizes = grid_.splat_sizes();
-
-      for (Index sid : nearby) {
-        if (sid >= points.size() || sid >= normals.size()) {
-          continue;
+      void seed_from_grid() {
+        std::optional<typename Grid::Initial_seed> seed = grid_.get_initial_seed();
+        if (!seed) {
+          std::cerr << "No initial splat seed found.\n";
+          return;
         }
 
-        const FT splat_radius = splat_sizes[sid];
+        std::cout << "Adding initial seed vertices to mesh...\n";
+        // v0_ = mesh_.add_vertex(seed->first);
+        vertex_descriptor v0_ = add_vertex(mesh_);
+        put(points_pm_, v0_, seed->first);
+        put(normals_pm_, v0_, grid_.normals()[seed->splat_id]);
 
-        const std::vector<Point_3> hits =
-          grid_.intersect_circle_with_splat(pa, pb, points[sid], normals[sid], splat_radius);
+        vertex_descriptor v1_ = add_vertex(mesh_);
+        put(points_pm_, v1_, seed->second);
+        put(normals_pm_, v1_, grid_.normals()[seed->splat_id]);
 
-        for (const Point_3& p : hits) {
-          candidates.push_back(Candidate(p, normals[sid], sid, parent_a, parent_b));
+        (void)connect_vertices(v0_, v1_);
+
+        seeded_ = true;
+        std::cout << "Mesh seeded with initial vertices. Starting growth...\n";
+        // push_candidates_from_parents(v0_, v1_);
+        push_candidates_from_vertex(v0_);
+        push_candidates_from_vertex(v1_);
+      }
+
+      void push_candidates_from_vertex(vertex_descriptor nv) {
+        const Point_3 p = get(points_pm_, nv);
+
+        std::vector<Index> nearby_ids =
+            grid_.nearby_point_ids(p, FT(2.0) * grid_.get_box_size());
+
+        for (auto other_v : vertices(mesh_)) {
+          if (other_v == nv) {
+            continue;
+          }
+
+          const Point_3 q = get(points_pm_, other_v);
+
+          const FT d2 = CGAL::squared_distance(p, q);
+
+          if (d2 > FT(4) * grid_.get_box_size() * grid_.get_box_size()) {
+            continue;
+          }
+
+          std::vector<Candidate> candidates =
+              generate_candidates_from_parents(nv, other_v);
+
+          for (const Candidate& c : candidates) {
+            candidate_stack_.push_back(c);
+          }
         }
       }
 
-      return candidates;
-    }
+      std::vector<Candidate> generate_candidates_from_parents(vertex_descriptor parent_a,
+                                                              vertex_descriptor parent_b) const {
+        std::vector<Candidate> candidates;
 
-    bool has_vertex_near(const Point_3& p) const
-    {
-      const FT tol = grid_.get_box_size() * FT(0.9); // WARNING: HACK
-      const FT tol2 = tol * tol;
+        const Point_3 pa = get(points_pm_, parent_a);
+        const Point_3 pb = get(points_pm_, parent_b);
 
-      for (auto vd : vertices(mesh_)) {
-        if (CGAL::squared_distance(get(points_pm_, vd), p) <= tol2) {
-          return true;
+        const FT d = grid_.get_box_size();
+        const FT d2 = CGAL::squared_distance(pa, pb);
+
+        // Circle radius from the two-parent construction.
+        const FT circle_r = CGAL::sqrt((d * d) - (d2 / FT(4)));
+
+        FT search_radius = circle_r + grid_.get_max_splat_radius();
+
+        const Point_3 mid = Point_3(
+          (pa.x() + pb.x()) / FT(2),
+          (pa.y() + pb.y()) / FT(2),
+          (pa.z() + pb.z()) / FT(2));
+
+        std::vector<Index> nearby = grid_.nearby_point_ids(mid, search_radius);
+
+        const std::vector<Point_3>& points = grid_.points();
+        const std::vector<Vector_3>& normals = grid_.normals();
+        const std::vector<FT>& splat_sizes = grid_.splat_sizes();
+
+        for (Index sid : nearby) {
+          if (sid >= points.size() || sid >= normals.size()) {
+            continue;
+          }
+
+          const FT splat_radius = splat_sizes[sid];
+
+          const std::vector<Point_3> hits =
+            grid_.intersect_circle_with_splat(pa, pb, points[sid], normals[sid], splat_radius);
+
+          for (const Point_3& p : hits) {
+            candidates.push_back(Candidate(p, normals[sid], sid, parent_a, parent_b));
+          }
         }
+
+        return candidates;
       }
-      return false;
-    }
 
-    edge_descriptor connect_vertices(vertex_descriptor a, vertex_descriptor b) {
-      edge_descriptor e = add_edge(mesh_);
-      halfedge_descriptor h = halfedge(e, mesh_);
+      bool has_vertex_near(const Point_3& p) const
+      {
+        const FT tol = grid_.get_box_size();
+        const FT tol2 = tol * tol;
 
-      set_target(h, b, mesh_);
-      set_target(opposite(h, mesh_), a, mesh_);
+        for (auto vd : vertices(mesh_)) {
+          if (CGAL::squared_distance(get(points_pm_, vd), p) < tol2) {
+            return true;
+          }
+        }
+        return false;
+      }
 
-      return e;
-    }
+      edge_descriptor connect_vertices(vertex_descriptor a, vertex_descriptor b) {
+        edge_descriptor e = add_edge(mesh_);
+        halfedge_descriptor h = halfedge(e, mesh_);
 
-  private:
-    const Grid& grid_;
-    PolygonMesh& mesh_;
+        set_target(h, b, mesh_);
+        set_target(opposite(h, mesh_), a, mesh_);
 
-    typename PolygonMesh:: template Property_map<vertex_descriptor,Point_3> points_pm_;
-    typename PolygonMesh:: template Property_map<vertex_descriptor,Vector_3> normals_pm_;
+        return e;
+      }
 
-    std::vector<Candidate> candidate_stack_;
+      bool projection_check(const Candidate& cand) const {
+        const Point_3 pa = get(points_pm_, cand.first);
+        const Point_3 pb = get(points_pm_, cand.second);
+        const Point_3 pc = cand.position;
 
-    vertex_descriptor v0_{boost::graph_traits<PolygonMesh>::null_vertex()};
-    vertex_descriptor v1_{boost::graph_traits<PolygonMesh>::null_vertex()};
-    bool seeded_ = false;
+        // Use the box normal at the candidate position as the projection direction.
+        Vector_3 n = grid_.box_normal(cand.position);
+
+        auto local_frame = grid_.compute_local_tangent_frame(n);
+        Vector_3 u = local_frame[0];
+        Vector_3 v = local_frame[1];
+
+        auto project = [&](const Point_3& p, const Point_3& origin) -> Point_2 {
+          const Vector_3 d = p - origin;
+          return Point_2(d * u, d * v);
+        };
+
+        const Point_2 A = project(pa, pc);
+        const Point_2 B = project(pb, pc);
+        const Point_2 C = project(pc, pc);
+
+        // New projected edges created if this candidate is accepted.
+        const Point_2 new_e1_s = A;
+        const Point_2 new_e1_t = C;
+        const Point_2 new_e2_s = B;
+        const Point_2 new_e2_t = C;
+
+        for (auto e : edges(mesh_)) {
+          halfedge_descriptor h = halfedge(e, mesh_);
+          vertex_descriptor s = source(h, mesh_);
+          vertex_descriptor t = target(h, mesh_);
+
+          // Ignore edges incident to the candidate's parents.
+          if (s == cand.first || s == cand.second ||
+              t == cand.first || t == cand.second) {
+            continue;
+          }
+
+          const Point_3 q0 = get(points_pm_, s);
+          const Point_3 q1 = get(points_pm_, t);
+
+          if (CGAL::squared_distance(q0, pc) >= grid_.get_box_size()*grid_.get_box_size() ||
+              CGAL::squared_distance(q1, pc) >= grid_.get_box_size()*grid_.get_box_size()) {
+            continue;
+          }
+
+          const Point_2 E0 = project(q0, pc);
+          const Point_2 E1 = project(q1, pc);
+
+          if (E0 == E1) {
+            continue;
+          }
+
+          if (segments_strictly_intersect_2d(new_e1_s, new_e1_t, E0, E1)) {
+            return false;
+          }
+          if (segments_strictly_intersect_2d(new_e2_s, new_e2_t, E0, E1)) {
+            return false;
+          }
+        }
+
+        return true;
+      }
+
+      bool segments_strictly_intersect_2d(const Point_2& a,
+                                          const Point_2& b,
+                                          const Point_2& c,
+                                          const Point_2& d) const {
+        const auto o1 = CGAL::orientation(a, b, c);
+        const auto o2 = CGAL::orientation(a, b, d);
+        const auto o3 = CGAL::orientation(c, d, a);
+        const auto o4 = CGAL::orientation(c, d, b);
+
+        if (o1 == CGAL::COLLINEAR ||
+            o2 == CGAL::COLLINEAR ||
+            o3 == CGAL::COLLINEAR ||
+            o4 == CGAL::COLLINEAR) {
+          return false;
+        }
+
+        return (o1 != o2) && (o3 != o4);
+      }
+
+    private:
+      const Grid& grid_;
+      PolygonMesh& mesh_;
+
+      typename PolygonMesh:: template Property_map<vertex_descriptor,Point_3> points_pm_;
+      typename PolygonMesh:: template Property_map<vertex_descriptor,Vector_3> normals_pm_;
+
+      std::vector<Candidate> candidate_stack_;
+
+      vertex_descriptor v0_{boost::graph_traits<PolygonMesh>::null_vertex()};
+      vertex_descriptor v1_{boost::graph_traits<PolygonMesh>::null_vertex()};
+      bool seeded_ = false;
   };
 
 } // namespace CGAL
