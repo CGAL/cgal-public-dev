@@ -1063,10 +1063,10 @@ namespace CGAL {
             continue;
           }
 
-          // if (!projection_check(cand)) {
-          //   rejected_proj++;
-          //   continue;
-          // }
+          if (!projection_check(cand)) {
+            rejected_proj++;
+            continue;
+          }
 
           accepted++;
           vertex_descriptor nv = mesh_.add_vertex(cand.position);
