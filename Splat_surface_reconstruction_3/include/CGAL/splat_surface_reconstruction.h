@@ -24,6 +24,8 @@
 #include <CGAL/property_map.h>
 #include <CGAL/Kernel_traits.h>
 #include <CGAL/Delaunay_triangulation_2.h>
+#include <CGAL/Exact_predicates_exact_constructions_kernel.h>
+#include <CGAL/intersections.h>
 #include <vector>
 #include <iostream>
 #include <cmath>
@@ -222,7 +224,7 @@ namespace CGAL {
 
       if (normals_.size() != points_.size()) {
         std::cerr << "Warning: normals size does not match points size.\n";
-        std::exit(0);
+        std::exit(EXIT_FAILURE);
       }
 
       for (Index i = 0; i < points_.size(); ++i) {
@@ -238,7 +240,6 @@ namespace CGAL {
      * @return A vector of block normals in grid order.
      */
     std::vector<Vector_3> compute_block_normals() const {
-
       std::vector<Vector_3> block_normals;
       block_normals.reserve(cells_.size());
 
@@ -247,19 +248,44 @@ namespace CGAL {
           for (std::size_t iz = 0; iz < nz_; ++iz) {
             const Cell& c = cells_[flat_index(ix, iy, iz)];
 
-            // If no points contributed to this cell, we leave the normal as NULL_VECTOR.
             if (c.normal_count == 0) {
+              // zero vector indicates empty cell, no normal information
+              block_normals.push_back(Vector_3(0,0,0));
+              continue;
+            }
+
+            const FT inv = FT(1) / FT(c.normal_count);
+            Vector_3 n = c.normal_sum * inv;
+
+            const double len2 = CGAL::to_double(n.squared_length());
+            if (len2 <= 0.0) {
               block_normals.push_back(CGAL::NULL_VECTOR);
               continue;
             }
 
-            // Average the normals of points in this cell to get the block normal.
-            const FT inv = FT(1) / FT(c.normal_count);
-            Vector_3 n = c.normal_sum * inv;
+            Vector_3 block_normal = n * (1.0 / std::sqrt(len2));
 
-            // Normalize the block normal to have unit length.
-            const double len2 = CGAL::to_double(n.squared_length());
-            block_normals.push_back(n * (1.0 / std::sqrt(len2)));
+            // Check consistency with every point normal in this cell.
+            for (Index pid : c.point_ids) {
+              if (pid >= normals_.size()) {
+                continue;
+              }
+
+              const Vector_3& point_normal = normals_[pid];
+              if (point_normal == CGAL::NULL_VECTOR) {
+                continue;
+              }
+
+              if (CGAL::to_double(block_normal * point_normal) < 1e-12) {
+                std::cout<<CGAL::to_double(block_normal * point_normal) << " at cell (" << ix << "," << iy << "," << iz << ") with point index " << pid << std::endl;
+                std::cerr
+                  << "Warning: block normal has negative dot product with a point normal.\n"
+                  << "box_size is likely too large. Aborting.\n";
+                std::exit(EXIT_FAILURE);
+              }
+            }
+
+            block_normals.push_back(block_normal);
           }
         }
       }
@@ -288,21 +314,19 @@ namespace CGAL {
       int cx, cy, cz;
       if (!to_grid_coords(points_[i], cx, cy, cz)) {
         std::cerr << "Warning: point " << i << " is out of grid bounds, skipping splat size estimation.\n";
-        continue;
+        std::exit(EXIT_FAILURE);
       }
 
       // Collect all points in the same box as p_i.
       std::vector<Index> local_ids;
       const Cell* c = cell(cx, cy, cz);
       if (c == nullptr || c->point_ids.empty()) {
-        std::cerr << "Warning: no points found in the same cell for point " << i << ", skipping splat size estimation.\n";
         continue;
       }
       local_ids = c->point_ids;
 
       // Need at least a few neighbors to define a local triangulation.
       if (local_ids.size() < 3) {
-        std::cerr << "Warning: not enough neighbors for point " << i << ", skipping splat size estimation.\n";
         continue;
       }
 
@@ -311,8 +335,8 @@ namespace CGAL {
       Vector_3 u = local_frame[0];
       Vector_3 v = local_frame[1];
 
-        // Project local neighbors onto the tangent plane and compute their 2D coordinates
-        // Also input in the Delaunay Triangulation Kernel
+      // Project local neighbors onto the tangent plane and compute their 2D coordinates
+      // Also input in the Delaunay Triangulation Kernel
       CGAL::Delaunay_triangulation_2<Kernel> DT;
       auto center_vh = DT.insert(Point_2(0, 0)); // keep the handle
 
@@ -369,13 +393,39 @@ namespace CGAL {
     std::optional<Initial_seed> get_initial_seed() const {
       std::cout<<"Searching for initial seed with splat size larger than box size..." << std::endl;
       for (Index i = 0; i < splat_sizes_.size(); ++i) {
-        if (splat_sizes_[i] > box_size_ && i < normals_.size() && normals_[i] != CGAL::NULL_VECTOR)
-        {
+        if (splat_sizes_[i] > box_size_ && i < normals_.size() && normals_[i] != CGAL::NULL_VECTOR) {
+          // Define a central region: keep points that are at least 10% away from each face.
+          const FT margin_x = FT(0.1) * (max_x_ - min_x_);
+          const FT margin_y = FT(0.1) * (max_y_ - min_y_);
+          const FT margin_z = FT(0.1) * (max_z_ - min_z_);
+          const FT mid_min_x = min_x_ + margin_x;
+          const FT mid_max_x = max_x_ - margin_x;
+          const FT mid_min_y = min_y_ + margin_y;
+          const FT mid_max_y = max_y_ - margin_y;
+          const FT mid_min_z = min_z_ + margin_z;
+          const FT mid_max_z = max_z_ - margin_z;
+
+          auto is_in_middle = [&](const Point_3& p) -> bool {
+            return (p.x() >= mid_min_x && p.x() <= mid_max_x &&
+                    p.y() >= mid_min_y && p.y() <= mid_max_y &&
+                    p.z() >= mid_min_z && p.z() <= mid_max_z);
+          };
+
+          // Require the seed point to be somewhere in the middle of the cloud.
+          if (!is_in_middle(points_[i])) {
+            continue;
+          }
+
           auto frame = compute_local_tangent_frame(normals_[i]);
           const Vector_3& u = frame[0];
 
           const Point_3 seed1 = points_[i] + FT(0.5) * box_size_ * u;
           const Point_3 seed2 = points_[i] - FT(0.5) * box_size_ * u;
+
+          // Make sure the two initial vertices are also not near the boundary.
+          if (!is_in_middle(seed1) || !is_in_middle(seed2)) {
+            continue;
+          }
 
           std::cout<<"Found initial seed at point index " << i << " with splat size " << splat_sizes_[i] << "." << std::endl;
           return Initial_seed{seed1, seed2, i};
@@ -383,7 +433,7 @@ namespace CGAL {
       }
 
       std::cerr << "Warning: no suitable initial seed found with splat size larger than box size.\n";
-      exit(1);
+      std::exit(EXIT_FAILURE);
       return std::nullopt;
     }
 
@@ -999,18 +1049,26 @@ namespace CGAL {
           std::cout << "Initial seed vertices created. Starting mesh growth...\n";
         }
 
+        std::size_t rejected_near = 0;
+        std::size_t rejected_proj = 0;
+        std::size_t accepted = 0;
+
+        std::cout<< "Processing candidate stack with " << candidate_stack_.size() << " initial candidates...\n";
         while (!candidate_stack_.empty()) {
           Candidate cand = candidate_stack_.back();
           candidate_stack_.pop_back();
 
           if (has_vertex_near(cand.position)) {
+            rejected_near++;
             continue;
           }
 
-          if (!projection_check(cand)) {
-            continue;
-          }
+          // if (!projection_check(cand)) {
+          //   rejected_proj++;
+          //   continue;
+          // }
 
+          accepted++;
           vertex_descriptor nv = mesh_.add_vertex(cand.position);
           put(points_pm_, nv, cand.position);
           put(normals_pm_, nv, cand.normal);
@@ -1025,9 +1083,10 @@ namespace CGAL {
           // }
 
           push_candidates_from_vertex(nv);
-
-          std::cout << "Current mesh size: " << num_vertices(mesh_) << " vertices, " << num_edges(mesh_) << " edges,\n";
         }
+
+        std::cout << "Final mesh size: " << num_vertices(mesh_) << " vertices, " << num_edges(mesh_) << " edges,\n";
+        std::cout << "  Accepted: " << accepted << ", Rejected (near): " << rejected_near << ", Rejected (proj): " << rejected_proj << "\n";
       }
 
     private:
@@ -1060,8 +1119,7 @@ namespace CGAL {
       void push_candidates_from_vertex(vertex_descriptor nv) {
         const Point_3 p = get(points_pm_, nv);
 
-        std::vector<Index> nearby_ids =
-            grid_.nearby_point_ids(p, FT(2.0) * grid_.get_box_size());
+        std::vector<Index> nearby_ids = grid_.nearby_point_ids(p, FT(2.0) * grid_.get_box_size());
 
         for (auto other_v : vertices(mesh_)) {
           if (other_v == nv) {
@@ -1131,7 +1189,7 @@ namespace CGAL {
 
       bool has_vertex_near(const Point_3& p) const
       {
-        const FT tol = grid_.get_box_size();
+        const FT tol = grid_.get_box_size() * FT(0.8);
         const FT tol2 = tol * tol;
 
         for (auto vd : vertices(mesh_)) {
@@ -1201,38 +1259,44 @@ namespace CGAL {
           const Point_2 E0 = project(q0, pc);
           const Point_2 E1 = project(q1, pc);
 
-          if (E0 == E1) {
-            continue;
-          }
+          const CGAL::Segment_2<Kernel> s1(new_e1_s, new_e1_t);
+          const CGAL::Segment_2<Kernel> s2(E0, E1);
 
-          if (segments_strictly_intersect_2d(new_e1_s, new_e1_t, E0, E1)) {
+          auto strictly_intersect_2d = [&](const Point_2& a,
+                                          const Point_2& b,
+                                          const Point_2& c,
+                                          const Point_2& d) -> bool {
+            const CGAL::Segment_2<Kernel> s1(a, b);
+            const CGAL::Segment_2<Kernel> s2(c, d);
+
+            if (!CGAL::do_intersect(s1, s2)) {
+              return false;
+            }
+
+            auto inter = CGAL::intersection(s1, s2);
+            if (!inter) {
+              return false;
+            }
+
+            Point_2 ip;
+            if (CGAL::assign(ip, *inter)) {
+              // Allow touching at endpoints.
+              return !(ip == a || ip == b || ip == c || ip == d);
+            }
+
+            // If the intersection is not a point, it is an overlapping segment.
+            return true;
+          };
+
+          if (strictly_intersect_2d(new_e1_s, new_e1_t, E0, E1)) {
             return false;
           }
-          if (segments_strictly_intersect_2d(new_e2_s, new_e2_t, E0, E1)) {
+          if (strictly_intersect_2d(new_e2_s, new_e2_t, E0, E1)) {
             return false;
           }
         }
 
         return true;
-      }
-
-      bool segments_strictly_intersect_2d(const Point_2& a,
-                                          const Point_2& b,
-                                          const Point_2& c,
-                                          const Point_2& d) const {
-        const auto o1 = CGAL::orientation(a, b, c);
-        const auto o2 = CGAL::orientation(a, b, d);
-        const auto o3 = CGAL::orientation(c, d, a);
-        const auto o4 = CGAL::orientation(c, d, b);
-
-        if (o1 == CGAL::COLLINEAR ||
-            o2 == CGAL::COLLINEAR ||
-            o3 == CGAL::COLLINEAR ||
-            o4 == CGAL::COLLINEAR) {
-          return false;
-        }
-
-        return (o1 != o2) && (o3 != o4);
       }
 
     private:
