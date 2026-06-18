@@ -17,17 +17,16 @@
 #include <thrust/system/cuda/execution_policy.h>
 
 #include <vector>
-#include <iostream>
 #include <algorithm>
-#include <iomanip>
 #include "samples/common/loadOBJ.h"
 
 // Include modular execution targets
 #include "crossCheck.h"
 #include "rapidDescendKernel.h"
-#include "volumeSanityCheck.h" 
 #include "batchedCrossIntersection.h"
 
+// Include the updated header matching this implementation
+#include "kernelsTestBVH.h"
 
 // --------------------------------------------------------------------
 // EXISTING KERNELS & HELPERS
@@ -42,20 +41,18 @@ __global__ void generateBoxes(cuBQL::box3f* boxes, const cuBQL::Triangle* tris, 
 // --------------------------------------------------------------------
 extern "C" void kernelsTestBVH(const cuBQL::Triangle* hMeshA, int numTrianglesA, int maxCellSizeA,
                                const cuBQL::Triangle* hMeshB, int numTrianglesB, int maxCellSizeB,
-                               int batchMultiplier) // Defaulted to 4, tweak as needed
+                               int batchMultiplier,
+                               ExecutionStats& stats, 
+                               std::vector<int2>& hGreenPairs,  
+                               std::vector<int2>& hYellowPairs)
 {
-  std::cout << "\n==================================================\n";
-  std::cout << " RUNNING DUAL-MESH CROSS-INTERSECTION PIPELINE V2\n";
-  std::cout << "==================================================\n";
-  std::cout << "Mesh A: " << numTrianglesA << " tris (MaxCell: " << maxCellSizeA << ")\n";
-  std::cout << "Mesh B: " << numTrianglesB << " tris (MaxCell: " << maxCellSizeB << ")\n";
-
   if(numTrianglesA <= 0 || numTrianglesB <= 0) {
-    std::cerr << "Error: One or both input meshes contain no triangles.\n";
     return;
   }
 
-  double tUploadStart = cuBQL::getCurrentTime();
+  // Start tracking the comprehensive GPU workflow time
+  double tPipelineStart = cuBQL::getCurrentTime();
+
   cudaStream_t stream = 0;
   cuBQL::DeviceMemoryResource memResource;
   cuBQL::BuildConfig buildConfig;
@@ -131,24 +128,6 @@ extern "C" void kernelsTestBVH(const cuBQL::Triangle* hMeshA, int numTrianglesA,
   double intersectionPercentage = totalPossiblePairs > 0 ? ((double)totalIntersections / totalPossiblePairs) * 100.0 : 0.0;
 
   // --------------------------------------------------------------------
-  // DEBUG: INSPECT PAIRING FRONTIER
-  // --------------------------------------------------------------------
-  thrust::host_vector<uint32_t> h_debugPairsA = d_outPairsA;
-  thrust::host_vector<uint32_t> h_debugPairsB = d_outPairsB;
-  
-  std::cout << "\n--- CRISS-CROSS PAIRING FRONTIER DEBUG ---" << std::endl;
-  std::cout << "Total Pairs Generated: " << h_debugPairsA.size() << std::endl;
-  
-  // Print the first 20 pairs to check for logical redundancy
-  int limit = std::min((int)h_debugPairsA.size(), 20);
-  for(int i = 0; i < limit; ++i) {
-      std::cout << "Pair [" << i << "]: MeshA NodeIdx[" << h_debugPairsA[i] 
-                << "] <-> MeshB NodeIdx[" << h_debugPairsB[i] << "]" << std::endl;
-  }
-  if (h_debugPairsA.size() > 20) std::cout << "... (truncated)" << std::endl;
-  std::cout << "------------------------------------------\n" << std::endl;
-
-  // --------------------------------------------------------------------
   // RAPID DESCENT: EXECUTED FOR MESH B ONLY
   // --------------------------------------------------------------------
   double tGpuBfsStart = cuBQL::getCurrentTime();
@@ -161,74 +140,12 @@ extern "C" void kernelsTestBVH(const cuBQL::Triangle* hMeshA, int numTrianglesA,
   );
   double tGpuBfsEnd = cuBQL::getCurrentTime();
 
- // ====================================================================
-  // SANITY CHECK: Verify Offset Mapping against Descendant Counts
   // ====================================================================
-  std::cout << "Verifying d_outOffsetsB mapping against d_outPairsB..." << std::endl;
-
-  // 1. Ensure we have the pairs on the host
-  thrust::host_vector<uint32_t> h_outPairsB = d_outPairsB;
-  thrust::host_vector<uint32_t> h_outOffsetsB = d_outOffsetsB;
-  thrust::host_vector<uint32_t> h_markedNodeIndicesB = d_markedNodeIndicesB;
-  thrust::host_vector<uint32_t> h_nodeDescendantCountsB = d_nodeDescendantCountsB;
-
-  uint32_t totalBatchez = (uint32_t)h_outPairsB.size();
-  bool offsetError = false;
-
-  // 2. Validate consistency
-  for (uint32_t i = 0; i < totalBatchez; ++i) {
-      uint32_t batchBId = h_outPairsB[i];
-      
-      if (batchBId >= h_outMarkedCountB) {
-          std::cerr << "OUT OF BOUNDS: batchBId " << batchBId 
-                    << " exceeds h_outMarkedCountB (" << h_outMarkedCountB << ")" << std::endl;
-          offsetError = true;
-          break;
-      }
-
-      uint32_t nodeIdx = h_markedNodeIndicesB[batchBId];
-      uint32_t expectedCount = h_nodeDescendantCountsB[nodeIdx];
-      uint32_t actualCount = h_outOffsetsB[batchBId + 1] - h_outOffsetsB[batchBId];
-
-      if (actualCount != expectedCount) {
-          std::cerr << "OFFSET ERROR at pair index " << i 
-                    << ": Batch " << batchBId 
-                    << " (Node " << nodeIdx << ")"
-                    << " expected " << expectedCount << " primitives, "
-                    << " but offset range reserved " << actualCount << "!" << std::endl;
-          offsetError = true;
-          break; 
-      }
-  }
-
-  // 3. Final feedback based on validation result
-  if (offsetError) {
-      std::cerr << "CRITICAL: Offset structure validation FAILED." << std::endl;
-      // Depending on your project requirements, you might want to throw an exception:
-      // throw std::runtime_error("Offset validation failed!");
-  } else {
-      std::cout << "SUCCESS: d_outOffsetsB is perfectly aligned with descendant counts." << std::endl;
-  }
-
-  // ====================================================================
-  // GEOMETRIC EVALUATION & VOLUMETRIC SANITY CHECK FOR MESH B
-  // ====================================================================
-  // runVolumeSanityCheck(
-  //     bvhB, h_outMarkedCountB, d_markedNodeIndicesB, d_nodeDescendantCountsB,
-  //     d_outOffsetsB, d_outPrimsFlatB, hMeshB
-  // );
-
-  // ====================================================================
-  // ASYNC BATCHED CROSS-INTERSECTION COUNTING LOOP (EXTRACTED)
+  // ASYNC BATCHED CROSS-INTERSECTION COUNTING LOOP
   // ====================================================================
   int totalBatches = d_outPairsA.size();
   
-  // Instantiate the specialized profiling tracker structure
   IntersectionTimeTracker tracker;
-  
-  // Allocation of host side collections to capture exact fine-evaluation pairs
-  std::vector<int2> hGreenPairs;
-  std::vector<int2> hYellowPairs;
 
   uint64_t finalCandidatePairs = executeBatchedCrossIntersectionLoop(
       batchMultiplier,
@@ -244,56 +161,46 @@ extern "C" void kernelsTestBVH(const cuBQL::Triangle* hMeshA, int numTrianglesA,
       bvhA,
       dMeshA,
       dMeshB,
-      hGreenPairs,   // Pass the green pairs collection by reference
-      hYellowPairs,  // Pass the yellow pairs collection by reference
-      tracker        // Pass the tracker struct by reference
+      hGreenPairs,   // Directly passing the parameter references
+      hYellowPairs,  // Directly passing the parameter references
+      tracker        
   );
 
   // --------------------------------------------------------------------
-  // PERFORMANCE OUTPUT
+  // MEMORY CLEANUP
   // --------------------------------------------------------------------
-  std::cout << "--------------------------------------------------\n";
-  std::cout << " STRUCTURE SUMMARY & PROPORTIONS\n";
-  std::cout << "--------------------------------------------------\n";
-  std::cout << "Mesh A Total Generated Nodes: " << bvhA.numNodes << "\n";
-  std::cout << "Mesh A Extracted Targets (<" << maxCellSizeA << "): " << h_outMarkedCountA << "\n";
-  std::cout << "Mesh B Total Generated Nodes: " << bvhB.numNodes << "\n";
-  std::cout << "Mesh B Extracted Targets (<" << maxCellSizeB << "): " << h_outMarkedCountB << "\n\n";
-
-  std::cout << "--------------------------------------------------\n";
-  std::cout << " CRISS-CROSS BOUNDING BOX CROSS-CHECK\n";
-  std::cout << "--------------------------------------------------\n";
-  std::cout << "Intersection found: " << totalIntersections << " / " << totalPossiblePairs << "\n";
-  std::cout << "Intersection Ratio: " << std::fixed << std::setprecision(4) << intersectionPercentage << "%\n\n";
-
-  std::cout << "--------------------------------------------------\n";
-  std::cout << " TIMING METRICS OVERVIEW\n";
-  std::cout << "--------------------------------------------------\n";
-  std::cout << "  |- Build + Refit (Mesh A):  " << (tBuildAEnd - tBuildAStart) * 1000.0 << " ms\n";
-  std::cout << "  |- Build + Refit (Mesh B):  " << (tBuildBEnd - tBuildBStart) * 1000.0 << " ms\n";
-  std::cout << "  |- GPU Cross-Check Engine:  " << (tCrossEnd - tCrossStart) * 1000.0 << " ms\n";
-  std::cout << "  |- Parallel DFS Descent (B): " << (tGpuBfsEnd - tGpuBfsStart) * 1000.0 << " ms\n";
-  std::cout << "--------------------------------------------------\n";
-
-  // --------------------------------------------------------------------
-  // DUAL-TREE BATCHING & GEOMETRIC PREDICATE METRICS
-  // --------------------------------------------------------------------
-  std::cout << "--------------------------------------------------\n";
-  std::cout << " DUAL-TREE DESCENT & FINE EVALUATION METRICS\n";
-  std::cout << "--------------------------------------------------\n";
-  std::cout << "Total Criss-Cross Batches Processed: " << totalBatches << "\n";
-  std::cout << "Final AABB Candidate Pairs Found:    " << finalCandidatePairs << "\n";
-  std::cout << "Confirmed Green Pairs (Intersecting):" << hGreenPairs.size() << "\n";
-  std::cout << "Confirmed Yellow Pairs (Coplanar):   " << hYellowPairs.size() << "\n";
-  std::cout << "--------------------------------------------------\n";
-
-  // Print out the fine-grained execution phases breakdown (Sandbox Vs. CUDA Vs. Predicates)
-  tracker.print();
-
   CUBQL_CUDA_CALL(Free(dMeshA));
   CUBQL_CUDA_CALL(Free(dBoxesA));
   CUBQL_CUDA_CALL(Free(dMeshB));
   CUBQL_CUDA_CALL(Free(dBoxesB));
   cuBQL::cuda::free(bvhA, stream, memResource);
   cuBQL::cuda::free(bvhB, stream, memResource);
+
+  double tPipelineEnd = cuBQL::getCurrentTime();
+
+  // ====================================================================
+  // EXPORT METRICS TO EXECUTIONSTATS
+  // ====================================================================
+  stats.meshATotalNodes         = bvhA.numNodes;
+  stats.meshAExtractedTargets   = h_outMarkedCountA;
+  stats.meshBTotalNodes         = bvhB.numNodes;
+  stats.meshBExtractedTargets   = h_outMarkedCountB;
+
+  stats.totalIntersections     = totalIntersections;
+  stats.totalPossiblePairs     = totalPossiblePairs;
+  stats.intersectionPercentage = intersectionPercentage;
+
+  stats.buildRefitMeshAMs     = (tBuildAEnd - tBuildAStart) * 1000.0;
+  stats.buildRefitMeshBMs     = (tBuildBEnd - tBuildBStart) * 1000.0;
+  stats.gpuCrossCheckEngineMs = (tCrossEnd - tCrossStart) * 1000.0;
+  stats.parallelDfsDescentBMs = (tGpuBfsEnd - tGpuBfsStart) * 1000.0;
+  
+  stats.GPUTotalTime          = (tPipelineEnd - tPipelineStart) * 1000.0;
+
+  stats.totalCrissCrossBatches  = totalBatches;
+  stats.finalAabbCandidatePairs = finalCandidatePairs;
+  stats.confirmedGreenPairs     = hGreenPairs.size();
+  stats.confirmedYellowPairs    = hYellowPairs.size();
+
+  stats.loopTracker             = tracker;
 }
