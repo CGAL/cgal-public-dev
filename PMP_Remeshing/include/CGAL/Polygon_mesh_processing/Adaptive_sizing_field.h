@@ -207,10 +207,10 @@ private:
   FT sqlength(const vertex_descriptor va,
               const vertex_descriptor vb) const
   {
-    return FT(CGAL::squared_distance(get(m_vpmap, va), get(m_vpmap, vb)));
+    return CGAL::squared_distance(get(m_vpmap, va), get(m_vpmap, vb));
   }
 
-  FT sqlength(const halfedge_descriptor& h, const PolygonMesh& pmesh) const
+  FT sqlength(const halfedge_descriptor h, const PolygonMesh& pmesh) const
   {
     return sqlength(target(h, pmesh), source(h, pmesh));
   }
@@ -218,7 +218,7 @@ private:
 public:
   FT at(const vertex_descriptor v, const PolygonMesh& /* pmesh */) const
   {
-    CGAL_assertion(get(m_vertex_sizing_map, v));
+    CGAL_assertion(get(m_vertex_sizing_map, v) > 0);
     return get(m_vertex_sizing_map, v);
   }
 
@@ -227,8 +227,8 @@ public:
     const FT sqlen = sqlength(va, vb);
     FT sqtarg_len = CGAL::square(4./3. * (CGAL::min)(get(m_vertex_sizing_map, va),
                                                      get(m_vertex_sizing_map, vb)));
-    CGAL_assertion(get(m_vertex_sizing_map, va));
-    CGAL_assertion(get(m_vertex_sizing_map, vb));
+    CGAL_assertion(get(m_vertex_sizing_map, va) > 0);
+    CGAL_assertion(get(m_vertex_sizing_map, vb) > 0);
     if (sqlen > sqtarg_len)
       return sqlen / sqtarg_len;
     else
@@ -240,8 +240,8 @@ public:
     const FT sqlen = sqlength(h, pmesh);
     FT sqtarg_len = CGAL::square(4./5. * (CGAL::min)(get(m_vertex_sizing_map, source(h, pmesh)),
                                                      get(m_vertex_sizing_map, target(h, pmesh))));
-    CGAL_assertion(get(m_vertex_sizing_map, source(h, pmesh)));
-    CGAL_assertion(get(m_vertex_sizing_map, target(h, pmesh)));
+    CGAL_assertion(get(m_vertex_sizing_map, source(h, pmesh)) > 0);
+    CGAL_assertion(get(m_vertex_sizing_map, target(h, pmesh)) > 0);
     if (sqlen < sqtarg_len)
       return sqlen / sqtarg_len;
     else
@@ -259,14 +259,12 @@ public:
     // calculating it as the average of two vertices on other ends
     // of halfedges as updating is done during an edge split
     FT vertex_size = 0;
-    const int nb_incident_halfedges =
-      static_cast<int>(CGAL::halfedges_around_target(v, pmesh).size());
-    CGAL_assertion(nb_incident_halfedges == 2);
+    CGAL_assertion(CGAL::halfedges_around_target(v, pmesh).size() == 2);
     for (halfedge_descriptor ha: CGAL::halfedges_around_target(v, pmesh))
     {
       vertex_size += get(m_vertex_sizing_map, source(ha, pmesh));
     }
-    vertex_size /= nb_incident_halfedges;
+    vertex_size /= FT(CGAL::halfedges_around_target(v, pmesh).size());
 
     put(m_vertex_sizing_map, v, vertex_size);
   }
