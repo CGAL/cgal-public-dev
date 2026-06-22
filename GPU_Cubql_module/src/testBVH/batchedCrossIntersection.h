@@ -8,30 +8,7 @@
 #include <vector>
 #include "samples/common/loadOBJ.h"
 
-struct IntersectionTimeTracker {
-    double totalLoopTimeMs      = 0.0; 
-    double preallocateTimeMs    = 0.0; 
-    double assemblyPhaseMs      = 0.0; 
-    double executionPhaseMs     = 0.0; 
-    double fineEvaluationPhaseMs = 0.0; // Added tracker for the exact geometric predicates + compaction
-    double cleanupTimeMs        = 0.0; 
-    double DownloadAndClean = 0.0;
-
-    void print() const {
-        std::cout << "\n==================================================\n";
-        std::cout << "          CROSS INTERSECTION TIME PROFILING       \n";
-        std::cout << "==================================================\n";
-        std::cout << " Preallocation Space Discovery : " << preallocateTimeMs << " ms\n";
-        std::cout << " Sandbox Assembly & Host Reads : " << assemblyPhaseMs   << " ms\n";
-        std::cout << " CUDA Kernels & Scan Compute   : " << executionPhaseMs  << " ms\n";
-        std::cout << " Fine Geometric Evaluation     : " << fineEvaluationPhaseMs << " ms\n";
-        std::cout << " Upload and clean up           : " << DownloadAndClean << " ms\n";
-        std::cout << " Sandbox Cleanup & Free Cycles : " << cleanupTimeMs     << " ms\n";
-        std::cout << "--------------------------------------------------\n";
-        std::cout << " Total Tracked Pipeline Time   : " << totalLoopTimeMs   << " ms\n";
-        std::cout << "==================================================\n\n";
-    }
-};
+#include "IntersectionTimeTracker.h"
 
 // Simple functor definition required for Thrust compaction filtering
 struct IsTargetPairStatus {

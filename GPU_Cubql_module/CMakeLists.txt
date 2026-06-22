@@ -222,3 +222,47 @@ target_include_directories(testBVH PRIVATE
 )
 
 target_link_libraries(testBVH PRIVATE CUDA::cudart ${SHARED_LINK_LIBS})
+
+
+
+# ====================================================================
+# TARGET 8: Partitioned Dual-Tree Traversal Pipeline
+# ====================================================================
+add_executable(dualTreeExecution 
+    apps/mainDualTreeTestLauncher.cpp 
+    src/testBVH/crossCheck.cu
+    src/custom_pipeline/GPUPredicatesCheck.cu
+    src/DualTreeTraversal/DualTreeLauncher.cu
+    src/DualTreeTraversal/DualTreeMeshIntersection.cu
+)
+
+# !!! CHANGED ALL OF THESE FROM testBVH TO dualTreeExecution !!!
+set_target_properties(dualTreeExecution PROPERTIES
+    CXX_STANDARD 17
+    CXX_STANDARD_REQUIRED ON
+    CUDA_STANDARD 17
+    CUDA_STANDARD_REQUIRED ON
+    CUDA_ARCHITECTURES "120"
+    CUDA_SEPARABLE_COMPILATION ON
+    BUILD_WITH_INSTALL_RPATH TRUE
+    INSTALL_RPATH "${CUBQL_BUILD}"
+)
+
+target_compile_definitions(dualTreeExecution PRIVATE CGAL_LINKED_WITH_TBB)
+
+target_compile_options(dualTreeExecution PRIVATE 
+    $<$<COMPILE_LANGUAGE:CXX>:-O3 -march=native -DNDEBUG>
+    $<$<COMPILE_LANGUAGE:CUDA>:-O3 -DNDEBUG --use_fast_math>
+)
+
+target_include_directories(dualTreeExecution PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/GPU_Cubql_module          
+    ${CMAKE_CURRENT_SOURCE_DIR}/GPU_Cubql_module/include  
+    include
+    ${CUBQL_ROOT}
+    ${CUBQL_ROOT}/samples/common
+    ${CUDAToolkit_INCLUDE_DIRS}
+)
+
+target_link_libraries(dualTreeExecution PRIVATE CUDA::cudart ${SHARED_LINK_LIBS})

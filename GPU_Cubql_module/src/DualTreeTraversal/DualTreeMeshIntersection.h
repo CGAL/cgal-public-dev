@@ -7,9 +7,16 @@
 #include <iostream>
 #include <vector>
 #include "samples/common/loadOBJ.h"
-#include "../testBVH/batchedCrossIntersection.h"
+#include "../testBVH/IntersectionTimeTracker.h"
+//#include "../testBVH/batchedCrossIntersection.h"
 
-
+// Simple functor definition required for Thrust compaction filtering
+// struct IsTargetPairStatusTwo {
+//     int target;
+//     __host__ __device__ bool operator()(const int status) const {
+//         return status == target;
+//     }
+// };
 
 uint64_t executeDualTreeTraversal(
     int batchMultiplier,
