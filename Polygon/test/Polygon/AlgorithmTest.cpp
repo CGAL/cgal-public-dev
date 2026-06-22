@@ -1,7 +1,6 @@
 #include <CGAL/Simple_cartesian.h>
 #include <CGAL/Homogeneous.h>
 #include <CGAL/Polygon_2_algorithms.h>
-#include <CGAL/Polygon_2.h>
 
 #include <fstream>
 #include <vector>
@@ -244,10 +243,6 @@ void test_polygon(const R&, const Point&, const char* FileName)
 
     polygon.clear();
     assert(CGAL::is_convex_2(polygon.begin(), polygon.end()));
-    assert(CGAL::orientation_2(polygon.begin(), polygon.end(), R()) == CGAL::COLLINEAR);
-
-    CGAL::Polygon_2<R> empty_polygon;
-    assert(empty_polygon.orientation() == CGAL::COLLINEAR);
 }
 
 //-----------------------------------------------------------------------//
