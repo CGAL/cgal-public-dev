@@ -10,6 +10,7 @@
 #include <algorithm>
 #include "batchedCrossIntersection.h"
 #include "../custom_pipeline/GPUPredicatesCheck.h"
+#include "TargetStatus.h"
 
 // Helper macro matching your project's naming convention
 #ifndef CUBQL_CUDA_CALL

@@ -1,7 +1,6 @@
-#ifndef BATCHED_CROSS_INTERSECTION_H
-#define BATCHED_CROSS_INTERSECTION_H
+#ifndef BRUTE_BATCHED_CROSS_INTERSECTION_H
+#define BRUTE_BATCHED_CROSS_INTERSECTION_H
 
-#include "cuBQL/bvh.h"
 #include <thrust/device_vector.h>
 #include <vector_types.h>
 #include <iostream>
@@ -10,7 +9,7 @@
 
 #include "IntersectionTimeTracker.h"
 
-// Simple functor definition required for Thrust compaction filtering
+
 
 uint64_t executeBatchedCrossIntersectionLoop(
     int batchMultiplier,
@@ -22,13 +21,16 @@ uint64_t executeBatchedCrossIntersectionLoop(
     const thrust::device_vector<uint32_t>& d_outOffsetsB,
     const thrust::device_vector<uint32_t>& d_outPrimsFlatB,
     const thrust::device_vector<uint32_t>& d_nodeDescendantCountsB, 
+    const thrust::device_vector<uint32_t>& d_outOffsetsA,
+    const thrust::device_vector<uint32_t>& d_outPrimsFlatA,
+    const thrust::device_vector<uint32_t>& d_nodeDescendantCountsA, 
+    uint32_t h_outMarkedCountA,
     uint32_t h_outMarkedCountB,
-    const cuBQL::bvh3f& bvhA,
     const cuBQL::Triangle* dMeshA,
     const cuBQL::Triangle* dMeshB,
-    std::vector<int2>& hGreenPairs,  // Output target for confirmed intersections
-    std::vector<int2>& hYellowPairs, // Output target for coplanar / boundary elements
-    IntersectionTimeTracker& outLoopTime
+    std::vector<int2>& hGreenPairs,
+    std::vector<int2>& hYellowPairs,
+    IntersectionTimeTracker& tracker 
 );
 
 #endif // BATCHED_CROSS_INTERSECTION_H

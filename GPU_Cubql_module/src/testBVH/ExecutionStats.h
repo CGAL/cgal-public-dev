@@ -22,14 +22,17 @@ struct ExecutionStats {
     double   intersectionPercentage = 0.0;
 
     // Timing Metrics Overview (in Milliseconds)
-    double buildRefitMeshAMs   = 0.0;
-    double buildRefitMeshBMs   = 0.0;
+    double buildRefitMeshAMs     = 0.0;
+    double buildRefitMeshBMs     = 0.0;
     double gpuCrossCheckEngineMs = 0.0;
     double parallelDfsDescentBMs = 0.0;
 
-    // New 
-
-    double GPUTotalTime = 0.0; // need to implement this
+    // Detailed Allocation & Framework Overhead Tracks
+    double initialAllocAndCopyMs = 0.0; // Captures initial raw cudaMalloc + cudaMemcpy
+    double thrustInitOverheadMs  = 0.0; // Captures Thrust vector allocation + filling overhead
+    double finalCleanupSyncMs    = 0.0; // Captures cudaFrees and destructor sync delays at the end
+    
+    double GPUTotalTime          = 0.0; // Comprehensive GPU Pipeline Time
 
     // Dual-Tree Descent & Fine Evaluation Metrics
     int      totalCrissCrossBatches  = 0;
@@ -41,4 +44,4 @@ struct ExecutionStats {
     IntersectionTimeTracker loopTracker;
 };
 
-#endif 
+#endif
