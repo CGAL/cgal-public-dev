@@ -1073,14 +1073,9 @@ namespace CGAL {
           put(points_pm_, nv, cand.position);
           put(normals_pm_, nv, cand.normal);
 
-          (void)connect_vertices(cand.first, nv);
-          (void)connect_vertices(cand.second, nv);
-          // // Create the triangle (parent_a, parent_b, new vertex).
-          // auto f = mesh_.add_face(cand.first, cand.second, nv);
-          // if (f == boost::graph_traits<PolygonMesh>::null_face()) {
-          //   // Try reversed orientation if needed.
-          //   f = mesh_.add_face(cand.second, cand.first, nv);
-          // }
+          if (!add_triangle(cand.first, cand.second, nv, cand.normal)) {
+            continue;
+          }
 
           push_candidates_from_vertex(nv);
         }
@@ -1107,11 +1102,19 @@ namespace CGAL {
         put(points_pm_, v1_, seed->second);
         put(normals_pm_, v1_, grid_.normals()[seed->splat_id]);
 
-        (void)connect_vertices(v0_, v1_);
+        // Create the base edge between the two seed vertices.
+        edge_descriptor e = add_edge(mesh_);
+        halfedge_descriptor h = halfedge(e, mesh_);
+        halfedge_descriptor ho = opposite(h, mesh_);
+        
+        set_target(h,  v1_, mesh_); // v0 -> v1
+        set_target(ho, v0_, mesh_); // v1 -> v0
+        set_halfedge(v0_, h, mesh_);
+        set_halfedge(v1_, ho, mesh_);
 
         seeded_ = true;
         std::cout << "Mesh seeded with initial vertices. Starting growth...\n";
-        // push_candidates_from_parents(v0_, v1_);
+
         push_candidates_from_vertex(v0_);
         push_candidates_from_vertex(v1_);
       }
@@ -1119,7 +1122,7 @@ namespace CGAL {
       void push_candidates_from_vertex(vertex_descriptor nv) {
         const Point_3 p = get(points_pm_, nv);
 
-        std::vector<Index> nearby_ids = grid_.nearby_point_ids(p, FT(2.0) * grid_.get_box_size());
+        // std::vector<Index> nearby_ids = grid_.nearby_point_ids(p, FT(2.0) * grid_.get_box_size());
 
         for (auto other_v : vertices(mesh_)) {
           if (other_v == nv) {
@@ -1200,14 +1203,74 @@ namespace CGAL {
         return false;
       }
 
-      edge_descriptor connect_vertices(vertex_descriptor a, vertex_descriptor b) {
-        edge_descriptor e = add_edge(mesh_);
-        halfedge_descriptor h = halfedge(e, mesh_);
+      bool add_triangle(const vertex_descriptor v0, const vertex_descriptor v1, const vertex_descriptor nv, const Vector_3& normal) {
+        const Point_3 p0 = get(points_pm_, v0);
+        const Point_3 p1 = get(points_pm_, v1);
+        const Point_3 p2 = get(points_pm_, nv);
 
-        set_target(h, b, mesh_);
-        set_target(opposite(h, mesh_), a, mesh_);
+        // We need the base edge v0-v1 to already exist.
+        halfedge_descriptor h01 = halfedge(v0, mesh_);
+        if (h01 == boost::graph_traits<PolygonMesh>::null_halfedge()) {
+          return false;
+        }
 
-        return e;
+        if (target(h01, mesh_) != v1) {
+          h01 = opposite(h01, mesh_);
+        }
+
+        const halfedge_descriptor h10 = opposite(h01, mesh_);
+
+        // Create edge v0 - nv.
+        edge_descriptor e0 = add_edge(mesh_);
+        halfedge_descriptor h0 = halfedge(e0, mesh_);
+        halfedge_descriptor h0o = opposite(h0, mesh_);
+
+        set_target(h0, nv, mesh_);   // v0 -> nv
+        set_target(h0o, v0, mesh_);  // nv -> v0
+
+        // Create edge nv - v1.
+        edge_descriptor e1 = add_edge(mesh_);
+        halfedge_descriptor h1 = halfedge(e1, mesh_);
+        halfedge_descriptor h1o = opposite(h1, mesh_);
+
+        set_target(h1, v1, mesh_);   // nv -> v1
+        set_target(h1o, nv, mesh_);  // v1 -> nv
+
+        // Attach one representative halfedge to the new vertex.
+        if (halfedge(nv, mesh_) == boost::graph_traits<PolygonMesh>::null_halfedge()) {
+          set_halfedge(nv, h0, mesh_);
+        }
+
+        // Orient the triangle using the supplied normal.
+        Vector_3 tri_normal = CGAL::cross_product(p1 - p0, p2 - p0);
+
+        if (normal == CGAL::NULL_VECTOR || tri_normal * normal >= FT(0)) {
+          // Face cycle: v0 -> nv -> v1 -> v0
+          set_next(h0,  h1,  mesh_);
+          set_next(h1,  h10, mesh_);
+          set_next(h10, h0,  mesh_);
+
+          // if (halfedge(v0, mesh_) == boost::graph_traits<PolygonMesh>::null_halfedge()) {
+          //   set_halfedge(v0, h10, mesh_);
+          // }
+          // if (halfedge(v1, mesh_) == boost::graph_traits<PolygonMesh>::null_halfedge()) {
+          //   set_halfedge(v1, h1o, mesh_);
+          // }
+        } else {
+          // Face cycle: v0 -> v1 -> nv -> v0
+          set_next(h01, h1,  mesh_);
+          set_next(h1,  h0o, mesh_);
+          set_next(h0o, h01, mesh_);
+
+          // if (halfedge(v0, mesh_) == boost::graph_traits<PolygonMesh>::null_halfedge()) {
+          //   set_halfedge(v0, h01, mesh_);
+          // }
+          // if (halfedge(v1, mesh_) == boost::graph_traits<PolygonMesh>::null_halfedge()) {
+          //   set_halfedge(v1, h10, mesh_);
+          // }
+        }
+        
+        return true;
       }
 
       bool projection_check(const Candidate& cand) const {
@@ -1251,8 +1314,8 @@ namespace CGAL {
           const Point_3 q0 = get(points_pm_, s);
           const Point_3 q1 = get(points_pm_, t);
 
-          if (CGAL::squared_distance(q0, pc) >= grid_.get_box_size()*grid_.get_box_size() ||
-              CGAL::squared_distance(q1, pc) >= grid_.get_box_size()*grid_.get_box_size()) {
+          if (CGAL::squared_distance(q0, pc) >= 4*grid_.get_box_size()*grid_.get_box_size() ||
+              CGAL::squared_distance(q1, pc) >= 4*grid_.get_box_size()*grid_.get_box_size()) {
             continue;
           }
 
