@@ -25,54 +25,21 @@
 }
 #endif
 
-// Functor to calculate the total primitive size of a grouped CHUNK starting at index chunkIdx
-struct GetChunkSizeFunctor {
-    const uint32_t* outPairsB;
-    const uint32_t* outOffsetsB;
-    uint32_t outMarkedCountB;
-    uint32_t totalPrimsB;
-    int totalBatches;
-    int batchMultiplier;
-
-    __host__ __device__
-    GetChunkSizeFunctor(const uint32_t* _pairsB, const uint32_t* _offsetsB, 
-                        uint32_t _markedCount, uint32_t _totalPrims, 
-                        int _totalBatches, int _batchMultiplier) 
-        : outPairsB(_pairsB), outOffsetsB(_offsetsB), outMarkedCountB(_markedCount), 
-          totalPrimsB(_totalPrims), totalBatches(_totalBatches), batchMultiplier(_batchMultiplier) {}
-
-    __host__ __device__
-    int operator()(const int chunkIdx) const {
-        int i = chunkIdx * batchMultiplier; 
-        if (i >= totalBatches) return 0;
-
-        int activeBatchesInChunk = (i + batchMultiplier <= totalBatches) ? batchMultiplier : (totalBatches - i);
-        int chunkTotal = 0;
-
-        for (int b = 0; b < activeBatchesInChunk; ++b) {
-            uint32_t bIdx = outPairsB[i + b];
-            uint32_t startOffset = outOffsetsB[bIdx];
-            uint32_t endOffset = (bIdx + 1 < outMarkedCountB) ? outOffsetsB[bIdx + 1] : totalPrimsB;
-            chunkTotal += (int)(endOffset - startOffset);
-        }
-        return chunkTotal;
-    }
-};
-
 // Functor matching your batch mapping strategy to quickly populate single batch sizes directly on GPU
 struct BatchSizeInChunkFunctor {
     const uint32_t* outPairsB;
     const uint32_t* outOffsetsB;
+    const uint32_t* reverseMapB;
     uint32_t outMarkedCountB;
     uint32_t totalPrimsB;
     int chunkStartBatchIdx;
     int activeBatchesInChunk;
 
     __host__ __device__
-    BatchSizeInChunkFunctor(const uint32_t* _pairsB, const uint32_t* _offsetsB,
+    BatchSizeInChunkFunctor(const uint32_t* _pairsB, const uint32_t* _offsetsB, const uint32_t* _reverseMapB,
                             uint32_t _markedCount, uint32_t _totalPrims,
                             int _chunkStartBatchIdx, int _activeBatchesInChunk)
-        : outPairsB(_pairsB), outOffsetsB(_offsetsB), outMarkedCountB(_markedCount),
+        : outPairsB(_pairsB), outOffsetsB(_offsetsB), reverseMapB(_reverseMapB), outMarkedCountB(_markedCount),
           totalPrimsB(_totalPrims), chunkStartBatchIdx(_chunkStartBatchIdx),
           activeBatchesInChunk(_activeBatchesInChunk) {}
 
@@ -80,8 +47,9 @@ struct BatchSizeInChunkFunctor {
     int operator()(const int b) const {
         if (b >= activeBatchesInChunk) return 0;
         uint32_t bIdx = outPairsB[chunkStartBatchIdx + b];
-        uint32_t startOffset = outOffsetsB[bIdx];
-        uint32_t endOffset = (bIdx + 1 < outMarkedCountB) ? outOffsetsB[bIdx + 1] : totalPrimsB;
+        uint32_t markedIdxB = reverseMapB[bIdx];
+        uint32_t startOffset = outOffsetsB[markedIdxB];
+        uint32_t endOffset = (markedIdxB + 1 < outMarkedCountB) ? outOffsetsB[markedIdxB + 1] : totalPrimsB;
         return (int)(endOffset - startOffset);
     }
 };
@@ -90,20 +58,72 @@ struct BatchSizeInChunkFunctor {
 // KERNEL DEFINITIONS
 // --------------------------------------------------------------------
 
+// Coalesced parallel maximum chunk space calculator 
+__global__ void computeMaxChunkSizeKernel(
+    const uint32_t* outPairsB,
+    const uint32_t* outOffsetsB,
+    const uint32_t* reverseMapB,
+    uint32_t outMarkedCountB,
+    uint32_t totalPrimsB,
+    int totalBatches,
+    int batchMultiplier,
+    int numChunks,
+    int* d_globalMax
+) {
+    // Each block manages exactly one chunk
+    int chunkIdx = blockIdx.x;
+    if (chunkIdx >= numChunks) return;
+
+    int startBatch = chunkIdx * batchMultiplier;
+    int activeBatchesInChunk = (startBatch + batchMultiplier <= totalBatches) 
+                               ? batchMultiplier 
+                               : (totalBatches - startBatch);
+
+    int threadSum = 0;
+
+    // Grid-stride loop within the block for continuous, coalesced memory reads
+    for (int b = threadIdx.x; b < activeBatchesInChunk; b += blockDim.x) {
+        uint32_t bIdx = outPairsB[startBatch + b];
+        uint32_t markedIdxB = reverseMapB[bIdx];
+        uint32_t startOffset = outOffsetsB[markedIdxB];
+        uint32_t endOffset = (markedIdxB + 1 < outMarkedCountB) ? outOffsetsB[markedIdxB + 1] : totalPrimsB;
+        threadSum += (int)(endOffset - startOffset);
+    }
+
+    // Shared memory reduction allocation dynamically passed from the host
+    extern __shared__ int sdata[];
+    int tid = threadIdx.x;
+    sdata[tid] = threadSum;
+    __syncthreads();
+
+    // Perform intra-block tree reduction
+    for (int s = blockDim.x / 2; s > 0; s >>= 1) {
+        if (tid < s) {
+            sdata[tid] += sdata[tid + s];
+        }
+        __syncthreads();
+    }
+
+    // Accumulate the block total into the final maximum bounds using atomics
+    if (tid == 0) {
+        atomicMax(d_globalMax, sdata[0]);
+    }
+}
+
 // Upgraded Parallel Batch-centric Assembly Kernel (Zero Binary Search)
 __global__ void assembleChunkBuffersByBatchKernel(
     uint32_t* d_BIter,
     uint64_t* d_AIter,
     const uint32_t* outPairsA,
     const uint32_t* outPairsB,
-    const uint32_t* markedNodeIndicesA,
+    const uint32_t* reverseMapB,
     const uint32_t* outOffsetsB,
     const uint32_t* outPrimsFlatB,
     uint32_t outMarkedCountB,
     uint32_t totalPrimsB,
     int chunkStartBatchIdx,
     int activeBatchesInChunk,
-    const int* d_chunkBatchOffsets // Computed layout map via GPU exclusive prefix scan
+    const int* d_chunkBatchOffsets 
 ) {
     int b = threadIdx.x + blockIdx.x * blockDim.x;
     if (b >= activeBatchesInChunk) return;
@@ -111,19 +131,19 @@ __global__ void assembleChunkBuffersByBatchKernel(
     int currentBatchArrayIdx = chunkStartBatchIdx + b;
     
     uint32_t bIdx = outPairsB[currentBatchArrayIdx];
-    uint32_t startOffsetB = outOffsetsB[bIdx];
-    uint32_t endOffsetB = (bIdx + 1 < outMarkedCountB) ? outOffsetsB[bIdx + 1] : totalPrimsB;
+    uint32_t markedIdxB = reverseMapB[bIdx];
+    
+    uint32_t startOffsetB = outOffsetsB[markedIdxB];
+    uint32_t endOffsetB = (markedIdxB + 1 < outMarkedCountB) ? outOffsetsB[markedIdxB + 1] : totalPrimsB;
     int numPrims = (int)(endOffsetB - startOffsetB);
     
     if (numPrims <= 0) return;
 
-    // Pinpoint where this specific batch block begins writing inside the global chunk sandbox
     int writeSandboxOffset = d_chunkBatchOffsets[b];
 
-    uint32_t pairAVal = outPairsA[currentBatchArrayIdx];
-    uint64_t startNodeIdxA = (uint64_t)(markedNodeIndicesA[pairAVal]);
+    // Mesh A bypasses secondary lookup tables and reads directly from outPairsA
+    uint64_t startNodeIdxA = (uint64_t)(outPairsA[currentBatchArrayIdx]);
 
-    // Tight sequential streaming window expansion loop over this batch's domain
     for (int p = 0; p < numPrims; ++p) {
         int targetWriteIdx = writeSandboxOffset + p;
         d_BIter[targetWriteIdx] = outPrimsFlatB[startOffsetB + p];
@@ -198,8 +218,8 @@ uint64_t executeBatchedCrossIntersectionLoop(
     int totalBatches,
     const thrust::device_vector<uint32_t>& d_outPairsA,
     const thrust::device_vector<uint32_t>& d_outPairsB,
-    const thrust::device_vector<uint32_t>& d_markedNodeIndicesA,
-    const thrust::device_vector<uint32_t>& d_markedNodeIndicesB,
+    const thrust::device_vector<uint32_t>& d_reverseMapB,
+    const thrust::device_vector<uint32_t>& d_markedNodeIndicesB, 
     const thrust::device_vector<uint32_t>& d_outOffsetsB,
     const thrust::device_vector<uint32_t>& d_outPrimsFlatB,
     const thrust::device_vector<uint32_t>& d_nodeDescendantCountsB, 
@@ -219,7 +239,7 @@ uint64_t executeBatchedCrossIntersectionLoop(
     // 1. Unpack Raw Resource Pointers
     const uint32_t* ptr_outPairsA           = thrust::raw_pointer_cast(d_outPairsA.data());
     const uint32_t* ptr_outPairsB           = thrust::raw_pointer_cast(d_outPairsB.data());
-    const uint32_t* ptr_markedNodeIndicesA  = thrust::raw_pointer_cast(d_markedNodeIndicesA.data());
+    const uint32_t* ptr_reverseMapB         = thrust::raw_pointer_cast(d_reverseMapB.data());
     const uint32_t* ptr_outOffsetsB         = thrust::raw_pointer_cast(d_outOffsetsB.data());
     const uint32_t* ptr_outPrimsFlatB       = thrust::raw_pointer_cast(d_outPrimsFlatB.data());
 
@@ -229,24 +249,28 @@ uint64_t executeBatchedCrossIntersectionLoop(
         batchMultiplier = 1; 
     }
 
-    // 2. Compute Exact Maximum Chunk Space Bounds
+    // 2. Compute Exact Maximum Chunk Space Bounds (Upgraded Parallel Pass)
     int maxChunkPrims = 0;
     if (totalBatches > 0) {
         int numChunks = (totalBatches + batchMultiplier - 1) / batchMultiplier;
         
-        auto chunkIdxIterator = thrust::make_counting_iterator(0);
-        auto chunkSizeTransformIterator = thrust::make_transform_iterator(
-            chunkIdxIterator,
-            GetChunkSizeFunctor(ptr_outPairsB, ptr_outOffsetsB, h_outMarkedCountB, d_outPrimsFlatB.size(), totalBatches, batchMultiplier)
+        int* d_globalMax = nullptr;
+        CUBQL_CUDA_CALL(Malloc(&d_globalMax, sizeof(int)));
+        CUBQL_CUDA_CALL(Memset(d_globalMax, 0, sizeof(int)));
+
+        int blockSize = 256; 
+        int gridSize = numChunks;
+        size_t sharedMemSize = blockSize * sizeof(int);
+
+        // Executes cooperatively with total GPU parallelism over wide chunks
+        computeMaxChunkSizeKernel<<<gridSize, blockSize, sharedMemSize>>>(
+            ptr_outPairsB, ptr_outOffsetsB, ptr_reverseMapB, 
+            h_outMarkedCountB, d_outPrimsFlatB.size(), 
+            totalBatches, batchMultiplier, numChunks, d_globalMax
         );
 
-        maxChunkPrims = thrust::reduce(
-            thrust::device,
-            chunkSizeTransformIterator,
-            chunkSizeTransformIterator + numChunks,
-            0,
-            thrust::maximum<int>()
-        );
+        CUBQL_CUDA_CALL(Memcpy(&maxChunkPrims, d_globalMax, sizeof(int), cudaMemcpyDeviceToHost));
+        CUBQL_CUDA_CALL(Free(d_globalMax));
     }
 
     // 3. Preallocate Memory Sandboxes
@@ -281,7 +305,7 @@ uint64_t executeBatchedCrossIntersectionLoop(
         auto localBatchIdxIterator = thrust::make_counting_iterator(0);
         auto batchSizeTransformIterator = thrust::make_transform_iterator(
             localBatchIdxIterator,
-            BatchSizeInChunkFunctor(ptr_outPairsB, ptr_outOffsetsB, h_outMarkedCountB, d_outPrimsFlatB.size(), i, activeBatchesInChunk)
+            BatchSizeInChunkFunctor(ptr_outPairsB, ptr_outOffsetsB, ptr_reverseMapB, h_outMarkedCountB, d_outPrimsFlatB.size(), i, activeBatchesInChunk)
         );
 
         thrust::device_ptr<int> dev_batchSizes(d_chunkBatchSizes);
@@ -302,7 +326,7 @@ uint64_t executeBatchedCrossIntersectionLoop(
         int assembleGridSize  = (activeBatchesInChunk + assembleBlockSize - 1) / assembleBlockSize;
 
         assembleChunkBuffersByBatchKernel<<<assembleGridSize, assembleBlockSize>>>(
-            d_BIter, d_AIter, ptr_outPairsA, ptr_outPairsB, ptr_markedNodeIndicesA,
+            d_BIter, d_AIter, ptr_outPairsA, ptr_outPairsB, ptr_reverseMapB,
             ptr_outOffsetsB, ptr_outPrimsFlatB, h_outMarkedCountB, d_outPrimsFlatB.size(),
             i, activeBatchesInChunk, d_chunkBatchOffsets
         );
@@ -366,7 +390,6 @@ uint64_t executeBatchedCrossIntersectionLoop(
         int* d_pairStatuses = nullptr;
         CUBQL_CUDA_CALL(Malloc(&d_pairStatuses, totalChunkPairs * sizeof(int)));
 
-        // Pass the global dMeshB array since d_candidatePairs contains absolute indices
         double internalPredicateTimeDummy = 0.0;
         evaluateAndCompactPairs(
             d_candidatePairs, 
@@ -381,7 +404,6 @@ uint64_t executeBatchedCrossIntersectionLoop(
 
         double tEvalStartTwo = cuBQL::getCurrentTime();
 
-        // Treat int2 directly for compaction mapping
         thrust::device_ptr<int2> dev_evaluated(d_candidatePairs);
         thrust::device_ptr<int> dev_statuses(d_pairStatuses);
 
@@ -412,8 +434,6 @@ uint64_t executeBatchedCrossIntersectionLoop(
         CUBQL_CUDA_CALL(Free(d_pairStatuses));
 
         tracker.DownloadAndClean += (cuBQL::getCurrentTime() - tEvalStartTwo ) * 1000.0;
-
-        
     }
 
     // --- CLEANUP TIMING START ---

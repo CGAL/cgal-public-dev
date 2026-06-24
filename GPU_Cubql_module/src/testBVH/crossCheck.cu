@@ -8,7 +8,7 @@ __device__ inline bool boxBoxesIntersect(const cuBQL::box3f& a, const cuBQL::box
          (a.lower[2] <= b.upper[2] && a.upper[2] >= b.lower[2]);
 }
 
-// Pass 1: Count intersections mapped per thread context
+// Pass 1: Count intersections mapped per thread context (Kept identical)
 __global__ void countTargetNodesIntersections(
     const BvhNodeT* d_nodesA, const uint32_t* d_indicesA, uint32_t countA,
     const BvhNodeT* d_nodesB, const uint32_t* d_indicesB, uint32_t countB,
@@ -31,7 +31,7 @@ __global__ void countTargetNodesIntersections(
   d_perThreadCounts[idxA] = localIntersections;
 }
 
-// Pass 2: Fill parallel compact allocations completely collision-free
+// Pass 2: Fill parallel compact allocations directly with literal BVH node indices
 __global__ void fillTargetNodesIntersections(
     const BvhNodeT* d_nodesA, const uint32_t* d_indicesA, uint32_t countA,
     const BvhNodeT* d_nodesB, const uint32_t* d_indicesB, uint32_t countB,
@@ -41,7 +41,6 @@ __global__ void fillTargetNodesIntersections(
   uint32_t idxA = threadIdx.x + blockIdx.x * blockDim.x;
   if (idxA >= countA) return;
 
-  // We still need nodeIDA to fetch the bounding box for intersection testing
   uint32_t nodeIDA = d_indicesA[idxA];
   cuBQL::box3f boxA = d_nodesA[nodeIDA].bounds;
   uint32_t writePos = d_offsets[idxA];
@@ -51,9 +50,9 @@ __global__ void fillTargetNodesIntersections(
     cuBQL::box3f boxB = d_nodesB[nodeIDB].bounds;
     
     if (boxBoxesIntersect(boxA, boxB)) { 
-      // Write the index of the marked node array, NOT the BVH Node ID
-      d_outPairsA[writePos] = idxA;
-      d_outPairsB[writePos] = idxB;
+      // REFACTORED: Write the actual BVH node indices directly!
+      d_outPairsA[writePos] = nodeIDA;
+      d_outPairsB[writePos] = nodeIDB;
       writePos++;
     }
   }

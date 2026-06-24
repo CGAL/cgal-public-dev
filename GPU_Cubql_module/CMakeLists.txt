@@ -190,6 +190,7 @@ add_executable(testBVH
     src/testBVH/volumeSanityCheck.cu
     src/testBVH/batchedCrossIntersection.cu
     src/testBVH/batchedCrossIntersectionBrute.cu
+    src/testBVH/DualTreeStep.cu
     src/custom_pipeline/GPUPredicatesCheck.cu
 )
 

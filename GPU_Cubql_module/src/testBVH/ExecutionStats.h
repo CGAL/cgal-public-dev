@@ -25,6 +25,7 @@ struct ExecutionStats {
     double buildRefitMeshAMs     = 0.0;
     double buildRefitMeshBMs     = 0.0;
     double gpuCrossCheckEngineMs = 0.0;
+    double dualTreeStepMs        = 0.0; // <-- Added to track the down-level expansion step
     double parallelDfsDescentBMs = 0.0;
 
     // Detailed Allocation & Framework Overhead Tracks

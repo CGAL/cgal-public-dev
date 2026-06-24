@@ -22,6 +22,7 @@
 
 // Include modular execution targets
 #include "crossCheck.h"
+#include "DualTreeStep.h" // <-- Added Dual Tree header inclusion
 #include "rapidDescendKernel.h"
 #include "batchedCrossIntersection.h"
 
@@ -38,13 +39,22 @@ __global__ void generateBoxes(cuBQL::box3f* boxes, const cuBQL::Triangle* tris, 
   if(i < N) { boxes[i] = tris[i].bounds(); }
 }
 
+// Ultra-fast GPU scattered writes to reverse map node indexing bounds
+__global__ void populateReverseMapBKernel(uint32_t* d_reverseMapB, const uint32_t* d_markedNodeIndicesB, uint32_t h_outMarkedCountB) {
+  int idx = threadIdx.x + blockIdx.x * blockDim.x;
+  if (idx < h_outMarkedCountB) {
+    uint32_t directBvhNodeId = d_markedNodeIndicesB[idx];
+    d_reverseMapB[directBvhNodeId] = idx;
+  }
+}
+
 // --------------------------------------------------------------------
 // MAIN ENTRY TESTING PIPELINE
 // --------------------------------------------------------------------
 extern "C" void kernelsTestBVH(const cuBQL::Triangle* hMeshA, int numTrianglesA, int maxCellSizeA,
                                const cuBQL::Triangle* hMeshB, int numTrianglesB, int maxCellSizeB,
                                int batchMultiplier,
-                               int mode, // <-- Added mode parameter
+                               int mode, 
                                ExecutionStats& stats, 
                                std::vector<int2>& hGreenPairs,  
                                std::vector<int2>& hYellowPairs)
@@ -86,11 +96,13 @@ extern "C" void kernelsTestBVH(const cuBQL::Triangle* hMeshA, int numTrianglesA,
   uint32_t maxPossibleNodesA = 2 * numTrianglesA;
   uint32_t maxPossibleNodesB = 2 * numTrianglesB;
 
-  // Explicit scopes or instant instantiations invoke heavy driver loads
   thrust::device_vector<uint32_t> d_markedNodeIndicesA(maxPossibleNodesA, 0);
   thrust::device_vector<uint32_t> d_nodeDescendantCountsA(maxPossibleNodesA, 0); 
   thrust::device_vector<uint32_t> d_markedNodeIndicesB(maxPossibleNodesB, 0);
   thrust::device_vector<uint32_t> d_nodeDescendantCountsB(maxPossibleNodesB, 0); 
+
+  // Initialize reverse mapping array for B matching the full size bounds
+  thrust::device_vector<uint32_t> d_reverseMapB(maxPossibleNodesB, 0);
 
   thrust::device_vector<uint32_t> d_outPairsA;
   thrust::device_vector<uint32_t> d_outPairsB;
@@ -154,11 +166,40 @@ extern "C" void kernelsTestBVH(const cuBQL::Triangle* hMeshA, int numTrianglesA,
       d_outPairsA, d_outPairsB
   );
 
-  cudaDeviceSynchronize(); // Ensure engine operations finish before timestamp
+  cudaDeviceSynchronize(); 
   double tCrossEnd = cuBQL::getCurrentTime();
 
   uint64_t totalPossiblePairs = (uint64_t)h_outMarkedCountA * h_outMarkedCountB;
   double intersectionPercentage = totalPossiblePairs > 0 ? ((double)totalIntersections / totalPossiblePairs) * 100.0 : 0.0;
+
+  // --------------------------------------------------------------------
+  // DUAL-TREE TRAVERSAL STEP OVERHEAD PHASE (Guarded by mode > 0)
+  // --------------------------------------------------------------------
+  double tDualStepStart = cuBQL::getCurrentTime();
+  
+  if (mode > 0) {
+    executeDualTreeStep(
+        mode, // Uses mode parameter directly as the total depth step iteration limit
+        maxCellSizeA,
+        maxCellSizeB,
+        d_outPairsA,
+        d_outPairsB,
+        d_markedNodeIndicesA,
+        d_markedNodeIndicesB,
+        d_nodeDescendantCountsA,
+        d_nodeDescendantCountsB,
+        h_outMarkedCountA, // In-place dynamic tracking update bounds
+        h_outMarkedCountB, // In-place dynamic tracking update bounds
+        bvhA,
+        bvhB,
+        dMeshA,
+        dMeshB
+    );
+    cudaDeviceSynchronize();
+  }
+  
+  double tDualStepEnd = cuBQL::getCurrentTime();
+  stats.dualTreeStepMs = (mode > 0) ? (tDualStepEnd - tDualStepStart) * 1000.0 : 0.0;
 
   int totalBatches = d_outPairsA.size();
   IntersectionTimeTracker tracker;
@@ -170,24 +211,33 @@ extern "C" void kernelsTestBVH(const cuBQL::Triangle* hMeshA, int numTrianglesA,
   double tGpuBfsStart = cuBQL::getCurrentTime();
   double tGpuBfsEnd = tGpuBfsStart;
 
-  if (mode == 0) {
-    // --------------------------------------------------------------------
-    // MODE 0: RAPID DESCENT FOR MESH B ONLY & STANDARD INTERSECTION LOOP
-    // --------------------------------------------------------------------
+    // 1. Run Rapid descent on B using latest updated layout configurations
     executeRapidDescentBFS(
         bvhB, numTrianglesB, d_markedNodeIndicesB, d_nodeDescendantCountsB, 
         h_outMarkedCountB, d_outOffsetsB, d_outPrimsFlatB
     );
+
+    // 2. Generate the reverse map for B instantly on the GPU
+    if (h_outMarkedCountB > 0) {
+      int blockSize = 256;
+      int gridSize = (h_outMarkedCountB + blockSize - 1) / blockSize;
+      populateReverseMapBKernel<<<gridSize, blockSize, 0, stream>>>(
+          thrust::raw_pointer_cast(d_reverseMapB.data()),
+          thrust::raw_pointer_cast(d_markedNodeIndicesB.data()),
+          h_outMarkedCountB
+      );
+    }
     
     cudaDeviceSynchronize();
     tGpuBfsEnd = cuBQL::getCurrentTime();
 
+    // 3. Dispatch execution using the exact signature you updated
     finalCandidatePairs = executeBatchedCrossIntersectionLoop(
         batchMultiplier,
         totalBatches,
         d_outPairsA,
         d_outPairsB,
-        d_markedNodeIndicesA,
+        d_reverseMapB,             
         d_markedNodeIndicesB,
         d_outOffsetsB,
         d_outPrimsFlatB,
@@ -200,48 +250,6 @@ extern "C" void kernelsTestBVH(const cuBQL::Triangle* hMeshA, int numTrianglesA,
         hYellowPairs,  
         tracker        
     );
-  } 
-  else {
-    // --------------------------------------------------------------------
-    // MODE 1: RAPID DESCENT FOR MESH B AND MESH A & SYMMETRIC INTERSECTION LOOP
-    // --------------------------------------------------------------------
-    // Rapid Descent on Mesh B
-    executeRapidDescentBFS(
-        bvhB, numTrianglesB, d_markedNodeIndicesB, d_nodeDescendantCountsB, 
-        h_outMarkedCountB, d_outOffsetsB, d_outPrimsFlatB
-    );
-
-    // Rapid Descent on Mesh A
-    executeRapidDescentBFS(
-        bvhA, numTrianglesA, d_markedNodeIndicesA, d_nodeDescendantCountsA, 
-        h_outMarkedCountA, d_outOffsetsA, d_outPrimsFlatA
-    );
-    
-    cudaDeviceSynchronize();
-    tGpuBfsEnd = cuBQL::getCurrentTime();
-
-    finalCandidatePairs = executeBatchedCrossIntersectionLoop(
-        batchMultiplier,
-        totalBatches,
-        d_outPairsA,
-        d_outPairsB,
-        d_markedNodeIndicesA,
-        d_markedNodeIndicesB,
-        d_outOffsetsB,
-        d_outPrimsFlatB,
-        d_nodeDescendantCountsB, 
-        d_outOffsetsA,
-        d_outPrimsFlatA,
-        d_nodeDescendantCountsA, 
-        h_outMarkedCountA,
-        h_outMarkedCountB,
-        dMeshA,
-        dMeshB,
-        hGreenPairs,
-        hYellowPairs,
-        tracker 
-    );
-  }
 
   // --------------------------------------------------------------------
   // EXPLICIT CLEANUP & RECOVERY METRIC TRACKING
@@ -255,11 +263,11 @@ extern "C" void kernelsTestBVH(const cuBQL::Triangle* hMeshA, int numTrianglesA,
   cuBQL::cuda::free(bvhA, stream, memResource);
   cuBQL::cuda::free(bvhB, stream, memResource);
 
-  // Manually forcing Thrust vectors to deallocate before pipeline stop
   d_markedNodeIndicesA.shrink_to_fit();
   d_nodeDescendantCountsA.shrink_to_fit();
   d_markedNodeIndicesB.shrink_to_fit();
   d_nodeDescendantCountsB.shrink_to_fit();
+  d_reverseMapB.shrink_to_fit(); 
   d_outPairsA.shrink_to_fit();
   d_outPairsB.shrink_to_fit();
   d_outOffsetsB.shrink_to_fit();
@@ -288,7 +296,7 @@ extern "C" void kernelsTestBVH(const cuBQL::Triangle* hMeshA, int numTrianglesA,
   stats.buildRefitMeshAMs     = (tBuildAEnd - tBuildAStart) * 1000.0;
   stats.buildRefitMeshBMs     = (tBuildBEnd - tBuildBStart) * 1000.0;
   stats.gpuCrossCheckEngineMs = (tCrossEnd - tCrossStart) * 1000.0;
-  stats.parallelDfsDescentBMs = (tGpuBfsEnd - tGpuBfsStart) * 1000.0; // Tracks combined BFS execution time
+  stats.parallelDfsDescentBMs = (tGpuBfsEnd - tGpuBfsStart) * 1000.0; 
   
   stats.GPUTotalTime          = (tPipelineEnd - tPipelineStart) * 1000.0;
 
