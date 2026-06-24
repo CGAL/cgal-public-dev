@@ -1011,6 +1011,7 @@ namespace CGAL {
       Index splat_id;
       vertex_descriptor first;
       vertex_descriptor second;
+      int priority = 0;
 
       Candidate(const Point_3& position,
                 const Vector_3& normal,
@@ -1053,10 +1054,11 @@ namespace CGAL {
         std::size_t rejected_proj = 0;
         std::size_t accepted = 0;
 
-        std::cout<< "Processing candidate stack with " << candidate_stack_.size() << " initial candidates...\n";
-        while (!candidate_stack_.empty()) {
-          Candidate cand = candidate_stack_.back();
-          candidate_stack_.pop_back();
+        while (!candidate_queues_empty()) {
+          Candidate cand(Point_3(0,0,0), CGAL::NULL_VECTOR, 0, vertex_descriptor(), vertex_descriptor()); // Dummy initialization
+          if (!pop_candidate_from_queue(cand)) {
+            break;
+          }
 
           if (has_vertex_near(cand.position)) {
             rejected_near++;
@@ -1085,6 +1087,35 @@ namespace CGAL {
       }
 
     private:
+      void push_candidate_in_queue(Candidate cand) {
+        cand.priority =
+          (std::max)(0,
+          (std::min)(cand.priority, NUM_PRIORITIES - 1));
+
+        candidate_queues_[cand.priority].push_back(cand);
+      }
+
+      bool pop_candidate_from_queue(Candidate& cand) {
+        for (int p = NUM_PRIORITIES - 1; p >= 0; --p) {
+          if (!candidate_queues_[p].empty()) {
+            cand = candidate_queues_[p].front();
+            candidate_queues_[p].pop_front();
+            return true;
+          }
+        }
+
+        return false;
+      }
+
+      bool candidate_queues_empty() const {
+        for (const auto& q : candidate_queues_) {
+          if (!q.empty())
+            return false;
+        }
+
+        return true;
+      }
+
       void seed_from_grid() {
         std::optional<typename Grid::Initial_seed> seed = grid_.get_initial_seed();
         if (!seed) {
@@ -1137,11 +1168,10 @@ namespace CGAL {
             continue;
           }
 
-          std::vector<Candidate> candidates =
-              generate_candidates_from_parents(nv, other_v);
+          std::vector<Candidate> candidates = generate_candidates_from_parents(nv, other_v);
 
           for (const Candidate& c : candidates) {
-            candidate_stack_.push_back(c);
+            push_candidate_in_queue(c);
           }
         }
       }
@@ -1183,7 +1213,9 @@ namespace CGAL {
             grid_.intersect_circle_with_splat(pa, pb, points[sid], normals[sid], splat_radius);
 
           for (const Point_3& p : hits) {
-            candidates.push_back(Candidate(p, normals[sid], sid, parent_a, parent_b));
+            Candidate c(p, normals[sid], sid, parent_a, parent_b);
+            c.priority = compute_priority(c);
+            candidates.push_back(c);
           }
         }
 
@@ -1250,24 +1282,11 @@ namespace CGAL {
           set_next(h1,  h10, mesh_);
           set_next(h10, h0,  mesh_);
 
-          // if (halfedge(v0, mesh_) == boost::graph_traits<PolygonMesh>::null_halfedge()) {
-          //   set_halfedge(v0, h10, mesh_);
-          // }
-          // if (halfedge(v1, mesh_) == boost::graph_traits<PolygonMesh>::null_halfedge()) {
-          //   set_halfedge(v1, h1o, mesh_);
-          // }
         } else {
           // Face cycle: v0 -> v1 -> nv -> v0
           set_next(h01, h1,  mesh_);
           set_next(h1,  h0o, mesh_);
           set_next(h0o, h01, mesh_);
-
-          // if (halfedge(v0, mesh_) == boost::graph_traits<PolygonMesh>::null_halfedge()) {
-          //   set_halfedge(v0, h01, mesh_);
-          // }
-          // if (halfedge(v1, mesh_) == boost::graph_traits<PolygonMesh>::null_halfedge()) {
-          //   set_halfedge(v1, h10, mesh_);
-          // }
         }
         
         return true;
@@ -1362,6 +1381,73 @@ namespace CGAL {
         return true;
       }
 
+      std::size_t incident_vertex_degree(vertex_descriptor v) const {
+        std::size_t deg = 0;
+
+        for (auto e : edges(mesh_)) {
+          halfedge_descriptor h = halfedge(e, mesh_);
+          const vertex_descriptor t = target(h, mesh_);
+
+          if (t == v) {
+            ++deg;
+          }
+        }
+
+        return deg;
+      }
+
+      bool walk_finds_other_parent_from_vertex(vertex_descriptor start_v,
+                                               vertex_descriptor target_v) const {
+
+        halfedge_descriptor h0 = halfedge(start_v, mesh_);
+        if (h0 == boost::graph_traits<PolygonMesh>::null_halfedge()) {
+          return false;
+        }
+
+        halfedge_descriptor h = h0;
+        for (std::size_t i = 0; i < window_size_; ++i) {
+          const vertex_descriptor s = source(h, mesh_);
+          const vertex_descriptor t = target(h, mesh_);
+
+          if (s == target_v || t == target_v) {
+            return true;
+          }
+
+          const halfedge_descriptor o = opposite(h, mesh_);
+          if (o == boost::graph_traits<PolygonMesh>::null_halfedge()) {
+            return false;
+          }
+
+          const halfedge_descriptor n = next(o, mesh_);
+          if (n == boost::graph_traits<PolygonMesh>::null_halfedge()) {
+            return false;
+          }
+
+          h = n;
+        }
+
+        return false;
+      }
+
+      bool joins_two_borders(const Candidate& cand) const {
+        const bool a_finds_b = walk_finds_other_parent_from_vertex(cand.first, cand.second);
+        const bool b_finds_a = walk_finds_other_parent_from_vertex(cand.second, cand.first);
+
+        return !a_finds_b && !b_finds_a;
+      }
+
+      int compute_priority(const Candidate& cand) const {
+        if (incident_vertex_degree(cand.first) == 1 || incident_vertex_degree(cand.second) == 1) {
+          return 2; // highest priority
+        }
+
+        else if (joins_two_borders(cand)) {
+          return 1; // medium priority
+        }
+
+        return 0;   // default for now
+      }
+
     private:
       const Grid& grid_;
       PolygonMesh& mesh_;
@@ -1369,11 +1455,14 @@ namespace CGAL {
       typename PolygonMesh:: template Property_map<vertex_descriptor,Point_3> points_pm_;
       typename PolygonMesh:: template Property_map<vertex_descriptor,Vector_3> normals_pm_;
 
-      std::vector<Candidate> candidate_stack_;
-
       vertex_descriptor v0_{boost::graph_traits<PolygonMesh>::null_vertex()};
       vertex_descriptor v1_{boost::graph_traits<PolygonMesh>::null_vertex()};
       bool seeded_ = false;
+
+      static constexpr int NUM_PRIORITIES = 3; // 0 is lowest, NUM_PRIORITIES-1 is highest
+      std::array<std::deque<Candidate>, NUM_PRIORITIES> candidate_queues_; // candidate_queues_[p] contains all candidates with priority p
+
+      const std::size_t window_size_ = 8;
   };
 
 } // namespace CGAL
