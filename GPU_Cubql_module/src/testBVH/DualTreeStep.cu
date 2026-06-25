@@ -141,6 +141,9 @@ __global__ void finalUnpackKernel(
 // --------------------------------------------------------------------
 // PIPELINE ORCHESTRATOR
 // --------------------------------------------------------------------
+// --------------------------------------------------------------------
+// PIPELINE ORCHESTRATOR (Optimized Memory Management)
+// --------------------------------------------------------------------
 uint64_t executeDualTreeStep(
     int numSteps,
     uint32_t maxDescendantsA,      
@@ -162,29 +165,31 @@ uint64_t executeDualTreeStep(
 
     uint32_t currentFrontierSize = d_outPairsA.size();
 
-    uint64_t geometricMultiplier = 1ULL << (2 * numSteps); 
-    uint64_t maxCapacity = (uint64_t)currentFrontierSize * geometricMultiplier;
-    uint32_t safetyCapacity = std::max((uint32_t)4000000, (uint32_t)std::min((uint64_t)64000000, maxCapacity));
+    // Start with a reasonable initial capacity instead of maximum possible
+    uint32_t currentCapacity = std::max((uint32_t)1000000, currentFrontierSize * 2);
     
-    thrust::device_vector<DualFrontierPair> frontierBuffer1(safetyCapacity);
-    thrust::device_vector<DualFrontierPair> frontierBuffer2(safetyCapacity);
+    thrust::device_vector<DualFrontierPair> frontierBuffer1(currentCapacity);
+    thrust::device_vector<DualFrontierPair> frontierBuffer2(currentCapacity);
+    thrust::device_vector<int> d_childCounts(currentCapacity);
+    thrust::device_vector<int> d_offsets(currentCapacity);
 
-    DualFrontierPair* d_frontierCurrent = thrust::raw_pointer_cast(frontierBuffer1.data());
-    DualFrontierPair* d_frontierNext    = thrust::raw_pointer_cast(frontierBuffer2.data());
+    // Track which vector is currently active
+    thrust::device_vector<DualFrontierPair>* currentBuffer = &frontierBuffer1;
+    thrust::device_vector<DualFrontierPair>* nextBuffer    = &frontierBuffer2;
 
     auto inputZipBegin = thrust::make_zip_iterator(thrust::make_tuple(d_outPairsA.begin(), d_outPairsB.begin()));
     auto inputZipEnd   = inputZipBegin + currentFrontierSize;
     
-    thrust::transform(thrust::device, inputZipBegin, inputZipEnd, frontierBuffer1.begin(), ZipToPairFunctor());
-
-    thrust::device_vector<int> d_childCounts(safetyCapacity);
-    thrust::device_vector<int> d_offsets(safetyCapacity);
+    thrust::transform(thrust::device, inputZipBegin, inputZipEnd, currentBuffer->begin(), ZipToPairFunctor());
 
     for (int step = 0; step < numSteps; ++step) {
         if (currentFrontierSize == 0) break;
 
         uint32_t threads = 256;
         uint32_t blocks  = (currentFrontierSize + threads - 1) / threads;
+
+        // ALWAYS grab a fresh raw pointer before kernel launch
+        DualFrontierPair* d_frontierCurrent = thrust::raw_pointer_cast(currentBuffer->data());
 
         countExpansionsKernel<<<blocks, threads>>>(
             d_frontierCurrent, currentFrontierSize, 
@@ -209,9 +214,21 @@ uint64_t executeDualTreeStep(
             break;
         }
 
-        if (nextFrontierSize > safetyCapacity) {
-            nextFrontierSize = safetyCapacity;
+        // --- DYNAMIC RESIZING LOGIC ---
+        if (nextFrontierSize > currentCapacity) {
+            // Grow by 1.5x to amortize allocation costs
+            currentCapacity = std::max((uint32_t)(currentCapacity * 1.5), nextFrontierSize);
+            
+            currentBuffer->resize(currentCapacity);
+            nextBuffer->resize(currentCapacity);
+            d_childCounts.resize(currentCapacity);
+            d_offsets.resize(currentCapacity);
+
+            // Re-acquire pointer because resize() invalidated the old one
+            d_frontierCurrent = thrust::raw_pointer_cast(currentBuffer->data());
         }
+
+        DualFrontierPair* d_frontierNext = thrust::raw_pointer_cast(nextBuffer->data());
 
         populateFrontierKernel<<<blocks, threads>>>(
             d_frontierCurrent, currentFrontierSize, 
@@ -221,7 +238,8 @@ uint64_t executeDualTreeStep(
         );
         cudaDeviceSynchronize();
 
-        std::swap(d_frontierCurrent, d_frontierNext);
+        // Swap the vector references for the next iteration
+        std::swap(currentBuffer, nextBuffer);
         currentFrontierSize = nextFrontierSize;
     }
 
@@ -232,8 +250,10 @@ uint64_t executeDualTreeStep(
         uint32_t threads = 256;
         uint32_t blocks  = (currentFrontierSize + threads - 1) / threads;
 
+        DualFrontierPair* d_finalFrontier = thrust::raw_pointer_cast(currentBuffer->data());
+
         finalUnpackKernel<<<blocks, threads>>>(
-            d_frontierCurrent, currentFrontierSize,
+            d_finalFrontier, currentFrontierSize,
             thrust::raw_pointer_cast(d_outPairsA.data()),
             thrust::raw_pointer_cast(d_outPairsB.data())
         );
