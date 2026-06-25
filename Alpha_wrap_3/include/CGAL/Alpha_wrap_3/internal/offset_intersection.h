@@ -80,7 +80,7 @@ public:
     const Point_2 p0 { 0, dist_oracle(source) };
     const Point_2 p1 { seg_length, dist_oracle(target) };
 
-#define CGAL_AW3_DEBUG_SPHERE_MARCHING
+// #define CGAL_AW3_DEBUG_SPHERE_MARCHING
 #ifdef CGAL_AW3_DEBUG_SPHERE_MARCHING
     std::cout << "--------------------" << std::endl;
     std::cout << "Running recursive. " << std::endl;
@@ -92,10 +92,35 @@ public:
     std::cout << "Running sphere tracing. " << std::endl;
     sphere_tracing(s, t, output_pt);
     std::cout << "Result of sphere tracing: " << output_pt << std::endl;
+    std::cout << "Running relaxed. " << std::endl;
 #endif
 
-    std::cout << "Running relaxed. " << std::endl;
-    return relaxed_sphere_tracing(s, t, output_pt);
+	std::ofstream out_source("source.xyz", std::ios_base::app);
+	out_source.precision(17);
+	out_source << s.x() << " " << s.y() << " " << s.z() << "\n";
+	out_source.close();
+
+	std::ofstream out_target("target.xyz", std::ios_base::app);
+	out_target.precision(17);
+	out_target << t.x() << " " << t.y() << " " << t.z() << "\n";
+	out_target.close();
+
+	std::ofstream out_segment("segment.poly", std::ios_base::app);
+	out_segment.precision(17);
+	out_segment << "2 " << s.x() << " " << s.y() << " " << s.z()
+				<< " "  << t.x() << " " << t.y() << " " << t.z() << "\n";
+	out_segment.close();
+
+	bool output = relaxed_sphere_tracing(s, t, output_pt);
+
+	std::ofstream out_intersection("intersection.xyz", std::ios_base::app);
+	out_intersection.precision(17);
+	out_intersection << output_pt.x() << " "
+					 << output_pt.y() << " "
+					 << output_pt.z() << "\n";
+	out_intersection.close();
+
+	return output;
   }
 
 
@@ -356,7 +381,7 @@ private:
 
     Point_3 current_pt = s;
     FT current_dist;
-    FT omega = 1.1;
+    FT omega = 1.4;
 
     const FT sq_seg_length = squared_distance(s, t);
     const FT seg_length = approximate_sqrt(sq_seg_length);
@@ -391,8 +416,31 @@ private:
 #endif
         current_step -= omega * current_step;
         omega = 1;
+
+        std::ofstream out_overstep("overstep.xyz", std::ios_base::app);
+        out_overstep.precision(17);
+        out_overstep << current_pt.x() << " "
+                 << current_pt.y() << " "
+                 << current_pt.z() << "\n";
+        out_overstep.close();
       } else {
         current_step = current_dist * omega;
+
+        if (omega > 1) {
+            std::ofstream out_relaxed_step("relaxed_step.xyz", std::ios_base::app);
+            out_relaxed_step.precision(17);
+            out_relaxed_step << current_pt.x() << " "
+                     << current_pt.y() << " "
+                     << current_pt.z() << "\n";
+            out_relaxed_step.close();
+		} else {
+			std::ofstream out_step("step.xyz", std::ios_base::app);
+			out_step.precision(17);
+			out_step << current_pt.x() << " "
+					 << current_pt.y() << " "
+					 << current_pt.z() << "\n";
+			out_step.close();
+		}
       }
 
       if(CGAL::abs(current_dist) < precision && !sorFail)
