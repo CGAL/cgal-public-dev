@@ -376,7 +376,7 @@ namespace CGAL {
 
       if (max_r2 > FT(0)) {
         splat_sizes_[i] = CGAL::sqrt(max_r2);
-        splat_sizes_[i] = std::min(splat_sizes_[i], global_spacing); // Clamp to global spacing to avoid outliers.
+        splat_sizes_[i] = (std::min)(splat_sizes_[i], global_spacing); // Clamp to global spacing to avoid outliers.
       }
     }
 
@@ -1082,6 +1082,7 @@ namespace CGAL {
           push_candidates_from_vertex(nv);
         }
 
+        fill();
         std::cout << "Final mesh size: " << num_vertices(mesh_) << " vertices, " << num_edges(mesh_) << " edges,\n";
         std::cout << "  Accepted: " << accepted << ", Rejected (near): " << rejected_near << ", Rejected (proj): " << rejected_proj << "\n";
       }
@@ -1137,12 +1138,14 @@ namespace CGAL {
         edge_descriptor e = add_edge(mesh_);
         halfedge_descriptor h = halfedge(e, mesh_);
         halfedge_descriptor ho = opposite(h, mesh_);
-        
+
         set_target(h,  v1_, mesh_); // v0 -> v1
         set_target(ho, v0_, mesh_); // v1 -> v0
-        set_halfedge(v0_, h, mesh_);
-        set_halfedge(v1_, ho, mesh_);
+        set_halfedge(v0_, ho, mesh_);
+        set_halfedge(v1_, h, mesh_);
 
+        CGAL_assertion(is_valid_vertex_descriptor(v0_, mesh_));
+        CGAL_assertion(is_valid_vertex_descriptor(v1_, mesh_));
         seeded_ = true;
         std::cout << "Mesh seeded with initial vertices. Starting growth...\n";
 
@@ -1245,7 +1248,7 @@ namespace CGAL {
         if (h01 == boost::graph_traits<PolygonMesh>::null_halfedge()) {
           return false;
         }
-
+        CGAL_assertion(target(h01, mesh_) == v0); // so the next test makes no sense
         if (target(h01, mesh_) != v1) {
           h01 = opposite(h01, mesh_);
         }
@@ -1270,7 +1273,7 @@ namespace CGAL {
 
         // Attach one representative halfedge to the new vertex.
         if (halfedge(nv, mesh_) == boost::graph_traits<PolygonMesh>::null_halfedge()) {
-          set_halfedge(nv, h0, mesh_);
+          set_halfedge(nv, h1o, mesh_);
         }
 
         // Orient the triangle using the supplied normal.
@@ -1288,7 +1291,10 @@ namespace CGAL {
           set_next(h1,  h0o, mesh_);
           set_next(h0o, h01, mesh_);
         }
-        
+
+        CGAL_assertion(is_valid_vertex_descriptor(v0, mesh_));
+        CGAL_assertion(is_valid_vertex_descriptor(v1, mesh_));
+        CGAL_assertion(is_valid_vertex_descriptor(nv, mesh_));
         return true;
       }
 
@@ -1446,6 +1452,19 @@ namespace CGAL {
         }
 
         return 0;   // default for now
+      }
+
+      void fill()
+      {
+        for(halfedge_descriptor h : halfedges(mesh_)){
+          std::vector<vertex_descriptor> vertices;
+          for(vertex_descriptor v : vertices_around_face(h, mesh_)){
+            vertices.push_back(v);
+          }
+          if(vertices.size() == 3){
+            Euler::add_face(vertices, mesh_);
+          }
+        }
       }
 
     private:
