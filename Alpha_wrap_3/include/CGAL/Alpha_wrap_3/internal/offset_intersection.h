@@ -80,6 +80,7 @@ public:
     const Point_2 p0 { 0, dist_oracle(source) };
     const Point_2 p1 { seg_length, dist_oracle(target) };
 
+#define CGAL_AW3_OUTPUT_SPHERE_MARCHING_STEPS
 // #define CGAL_AW3_DEBUG_SPHERE_MARCHING
 #ifdef CGAL_AW3_DEBUG_SPHERE_MARCHING
     std::cout << "--------------------" << std::endl;
@@ -95,6 +96,9 @@ public:
     std::cout << "Running relaxed. " << std::endl;
 #endif
 
+	bool output = relaxed_sphere_tracing(s, t, output_pt);
+
+#ifdef CGAL_AW3_OUTPUT_SPHERE_MARCHING_STEPS
 	std::ofstream out_source("source.xyz", std::ios_base::app);
 	out_source.precision(17);
 	out_source << s.x() << " " << s.y() << " " << s.z() << "\n";
@@ -111,14 +115,13 @@ public:
 				<< " "  << t.x() << " " << t.y() << " " << t.z() << "\n";
 	out_segment.close();
 
-	bool output = relaxed_sphere_tracing(s, t, output_pt);
-
 	std::ofstream out_intersection("intersection.xyz", std::ios_base::app);
 	out_intersection.precision(17);
 	out_intersection << output_pt.x() << " "
 					 << output_pt.y() << " "
 					 << output_pt.z() << "\n";
 	out_intersection.close();
+#endif
 
 	return output;
   }
@@ -381,7 +384,7 @@ private:
 
     Point_3 current_pt = s;
     FT current_dist;
-    FT omega = 1.4;
+    FT omega = 1.2;
 
     const FT sq_seg_length = squared_distance(s, t);
     const FT seg_length = approximate_sqrt(sq_seg_length);
@@ -401,6 +404,8 @@ private:
     current_dist = dist_oracle(current_pt) - offset;
     current_step = current_dist;
 
+    int steps = 0;
+
     while(squared_distance(s, current_pt) <= sq_seg_length * omega * omega || sorFail)
     {
 #ifdef CGAL_AW3_DEBUG_SPHERE_MARCHING
@@ -414,33 +419,38 @@ private:
 #ifdef CGAL_AW3_DEBUG_SPHERE_MARCHING
         std::cout << "Overstepped abs(" << current_dist << ") + abs(" << previous_dist << ") < " << current_step << std::endl;
 #endif
+
         current_step -= omega * current_step;
         omega = 1;
 
+#ifdef CGAL_AW3_OUTPUT_SPHERE_MARCHING_STEPS
         std::ofstream out_overstep("overstep.xyz", std::ios_base::app);
         out_overstep.precision(17);
         out_overstep << current_pt.x() << " "
                  << current_pt.y() << " "
                  << current_pt.z() << "\n";
         out_overstep.close();
+#endif
       } else {
         current_step = current_dist * omega;
 
-        if (omega > 1) {
+#ifdef CGAL_AW3_OUTPUT_SPHERE_MARCHING_STEPS
+        if (omega > 1 && steps > 0) {
             std::ofstream out_relaxed_step("relaxed_step.xyz", std::ios_base::app);
             out_relaxed_step.precision(17);
             out_relaxed_step << current_pt.x() << " "
                      << current_pt.y() << " "
                      << current_pt.z() << "\n";
             out_relaxed_step.close();
-		} else {
-			std::ofstream out_step("step.xyz", std::ios_base::app);
-			out_step.precision(17);
-			out_step << current_pt.x() << " "
-					 << current_pt.y() << " "
-					 << current_pt.z() << "\n";
-			out_step.close();
-		}
+        } else {
+            std::ofstream out_step("step.xyz", std::ios_base::app);
+            out_step.precision(17);
+            out_step << current_pt.x() << " "
+                     << current_pt.y() << " "
+                     << current_pt.z() << "\n";
+            out_step.close();
+        }
+#endif
       }
 
       if(CGAL::abs(current_dist) < precision && !sorFail)
@@ -456,6 +466,7 @@ private:
 
       previous_dist = current_dist;
       current_dist = dist_oracle(current_pt) - offset;
+      steps++;
     }
 
 #ifdef CGAL_AW3_DEBUG_SPHERE_MARCHING
