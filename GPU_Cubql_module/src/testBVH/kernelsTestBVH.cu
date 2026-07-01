@@ -29,6 +29,7 @@
 #include "DualTreeStep.h" 
 #include "rapidDescendKernel.h"
 #include "batchedCrossIntersection.h"
+#include "crossCheckNew.h"
 
 // Include the updated header matching this implementation
 #include "kernelsTestBVH.h"
@@ -72,26 +73,40 @@ void testFastBVH(const cuBQL::box_t<T,D>* d_boxesA, int numPrimsA, int maxCellSi
                  cuBQL::box_t<T,D> globalBoxA, cuBQL::box_t<T,D> globalBoxB,
                  cudaStream_t s, cuBQL::DeviceMemoryResource& memResource)
 {
-  std::cout << "[HOST DBUG] => Entering testFastBVH..." << std::endl;
+  std::cout << "\n==================================================" << std::endl;
+  std::cout << " [DEEP DEBUG] => Entering testFastBVH..." << std::endl;
+  std::cout << "==================================================" << std::endl;
+
+  // Check raw pointers and parameters right away
+  std::cout << " -> Device Pointer A : " << d_boxesA << " | Prims: " << numPrimsA << " | MaxCell: " << maxCellSizeA << std::endl;
+  std::cout << " -> Device Pointer B : " << d_boxesB << " | Prims: " << numPrimsB << " | MaxCell: " << maxCellSizeB << std::endl;
+  
+  if (d_boxesA == d_boxesB) {
+      std::cout << " [CRITICAL WARNING] d_boxesA and d_boxesB point to the EXACT SAME memory address!" << std::endl;
+  } else {
+      std::cout << " [OK] Input pointers A and B are distinct memory blocks." << std::endl;
+  }
 
   if (maxCellSizeA > 20 || maxCellSizeB > 20) {
       std::cerr << "[CRITICAL ERROR] numIterations is too high! Aborting testFastBVH." << std::endl;
       return;
   }
 
-  // Start timing the execution
   double tStart = cuBQL::getCurrentTime();
 
   // --- MESH A RUN ---
   size_t countA = std::max((size_t)(1 << maxCellSizeA) * 4, (size_t)2 * numPrimsA);
-  
   uint32_t* d_dummyCountsA = nullptr;
   _ALLOC(d_dummyCountsA, countA, s, memResource);
 
-  cuBQL::gpuBuilder_v3::TempNode<T,D>* outTempNodesA = nullptr;
+  cuBQL::gpuBuilder_v3::FinalNormalNode<T,D>* outTempNodesA = nullptr;
   cuBQL::gpuBuilder_v3::PrimState* outPrimStatesA = nullptr;
   uint32_t outTotalAllocatedNodesA = 0;
   uint32_t outFirstActiveNodeIDA = 0;
+
+  // Profile Mesh A Initialization
+  CUBQL_CUDA_CALL(StreamSynchronize(s));
+  double tInitAStart = cuBQL::getCurrentTime();
 
   cuBQL::gpuBuilder_v3::test_speedrun_initialization(
       d_boxesA, numPrimsA, (uint32_t)maxCellSizeA, globalBoxA, d_dummyCountsA,
@@ -99,17 +114,21 @@ void testFastBVH(const cuBQL::box_t<T,D>* d_boxesA, int numPrimsA, int maxCellSi
       s, memResource
   );
   CUBQL_CUDA_CALL(StreamSynchronize(s));
+  double tInitAMs = (cuBQL::getCurrentTime() - tInitAStart) * 1000.0;
 
   // --- MESH B RUN ---
   size_t countB = std::max((size_t)(1 << maxCellSizeB) * 4, (size_t)2 * numPrimsB);
-  
   uint32_t* d_dummyCountsB = nullptr;
   _ALLOC(d_dummyCountsB, countB, s, memResource);
 
-  cuBQL::gpuBuilder_v3::TempNode<T,D>* outTempNodesB = nullptr;
+  cuBQL::gpuBuilder_v3::FinalNormalNode<T,D>* outTempNodesB = nullptr;
   cuBQL::gpuBuilder_v3::PrimState* outPrimStatesB = nullptr;
   uint32_t outTotalAllocatedNodesB = 0;
   uint32_t outFirstActiveNodeIDB = 0;
+
+  // Profile Mesh B Initialization
+  CUBQL_CUDA_CALL(StreamSynchronize(s));
+  double tInitBStart = cuBQL::getCurrentTime();
 
   cuBQL::gpuBuilder_v3::test_speedrun_initialization(
       d_boxesB, numPrimsB, (uint32_t)maxCellSizeB, globalBoxB, d_dummyCountsB,
@@ -117,65 +136,134 @@ void testFastBVH(const cuBQL::box_t<T,D>* d_boxesA, int numPrimsA, int maxCellSi
       s, memResource
   );
   CUBQL_CUDA_CALL(StreamSynchronize(s));
+  double tInitBMs = (cuBQL::getCurrentTime() - tInitBStart) * 1000.0;
 
-  // Calculate elapsed time (since both steps are already synchronized)
   double tEnd = cuBQL::getCurrentTime();
   double elapsedMs = (tEnd - tStart) * 1000.0;
 
   // --------------------------------------------------------------------
-  // EXTENSIVE NODE-BY-NODE BREAKDOWN READBACK
+  // VERIFY BUILDING METRICS READBACK
   // --------------------------------------------------------------------
-  std::vector<cuBQL::gpuBuilder_v3::TempNode<T,D>> h_nodesA(outTotalAllocatedNodesA);
-  std::vector<cuBQL::gpuBuilder_v3::TempNode<T,D>> h_nodesB(outTotalAllocatedNodesB);
-
-  CUBQL_CUDA_CALL(Memcpy(h_nodesA.data(), outTempNodesA, outTotalAllocatedNodesA * sizeof(cuBQL::gpuBuilder_v3::TempNode<T,D>), cudaMemcpyDeviceToHost));
-  CUBQL_CUDA_CALL(Memcpy(h_nodesB.data(), outTempNodesB, outTotalAllocatedNodesB * sizeof(cuBQL::gpuBuilder_v3::TempNode<T,D>), cudaMemcpyDeviceToHost));
-
-  uint32_t sumPrimsA = 0;
-  std::cout << "\n==================================================" << std::endl;
-  std::cout << "          TREE A DETAILED NODE BREAKDOWN          " << std::endl;
-  std::cout << "==================================================" << std::endl;
-  for (uint32_t i = outFirstActiveNodeIDA; i < outTotalAllocatedNodesA; ++i) {
-      auto& node = h_nodesA[i].openBranch;
-      std::cout << "Node ID: " << i 
-                << " | Cell Slot: " << (i - outFirstActiveNodeIDA)
-                << " | Prims: " << node.count << std::endl;
-      
-      if (node.count > 0) {
-          // Solved: Print using cuBQL built-in stream operators for spatial vectors
-          std::cout << "   -> Centroid Bounds Min: " << node.centBounds.lower << std::endl;
-          std::cout << "   -> Centroid Bounds Max: " << node.centBounds.upper << std::endl;
-      }
-      sumPrimsA += node.count;
-  }
-
-  uint32_t sumPrimsB = 0;
-  std::cout << "\n==================================================" << std::endl;
-  std::cout << "          TREE B DETAILED NODE BREAKDOWN          " << std::endl;
-  std::cout << "==================================================" << std::endl;
-  for (uint32_t i = outFirstActiveNodeIDB; i < outTotalAllocatedNodesB; ++i) {
-      auto& node = h_nodesB[i].openBranch;
-      std::cout << "Node ID: " << i 
-                << " | Cell Slot: " << (i - outFirstActiveNodeIDB)
-                << " | Prims: " << node.count << std::endl;
-      
-      if (node.count > 0) {
-          // Solved: Print using cuBQL built-in stream operators for spatial vectors
-          std::cout << "   -> Centroid Bounds Min: " << node.centBounds.lower << std::endl;
-          std::cout << "   -> Centroid Bounds Max: " << node.centBounds.upper << std::endl;
-      }
-      sumPrimsB += node.count;
-  }
-
-  // --- PRINT SIMPLE SUMMARY ---
   std::cout << "\n--------------------------------------------------" << std::endl;
-  std::cout << " [testFastBVH] Time Taken: " << elapsedMs << " ms" << std::endl;
-  std::cout << " [testFastBVH] Tree A Allocated Nodes: " << outTotalAllocatedNodesA << std::endl;
-  std::cout << " [testFastBVH] Tree B Allocated Nodes: " << outTotalAllocatedNodesB << std::endl;
-  std::cout << " [testFastBVH] Total Prims in Tree A: " << sumPrimsA << std::endl;
-  std::cout << " [testFastBVH] Total Prims in Tree B: " << sumPrimsB << std::endl;
-  std::cout << " [testFastBVH] COMBINED SUM (A + B): " << (sumPrimsA + sumPrimsB) << " primitives" << std::endl;
+  std::cout << " [INITIALIZATION METRICS OVERVIEW]" << std::endl;
+  std::cout << " -> Tree A: Total Allocated Nodes = " << outTotalAllocatedNodesA << " | First Active ID = " << outFirstActiveNodeIDA << std::endl;
+  std::cout << " -> Tree B: Total Allocated Nodes = " << outTotalAllocatedNodesB << " | First Active ID = " << outFirstActiveNodeIDB << std::endl;
+  
+  uint32_t activeCountA = outTotalAllocatedNodesA - outFirstActiveNodeIDA;
+  uint32_t activeCountB = outTotalAllocatedNodesB - outFirstActiveNodeIDB;
+  std::cout << " -> Active Traversal Ranges: Tree A = " << activeCountA << " nodes | Tree B = " << activeCountB << " nodes" << std::endl;
+  std::cout << "--------------------------------------------------" << std::endl;
+
+  std::vector<cuBQL::gpuBuilder_v3::FinalNormalNode<T,D>> h_nodesA(outTotalAllocatedNodesA);
+  std::vector<cuBQL::gpuBuilder_v3::FinalNormalNode<T,D>> h_nodesB(outTotalAllocatedNodesB);
+
+  CUBQL_CUDA_CALL(Memcpy(h_nodesA.data(), outTempNodesA, outTotalAllocatedNodesA * sizeof(cuBQL::gpuBuilder_v3::FinalNormalNode<T,D>), cudaMemcpyDeviceToHost));
+  CUBQL_CUDA_CALL(Memcpy(h_nodesB.data(), outTempNodesB, outTotalAllocatedNodesB * sizeof(cuBQL::gpuBuilder_v3::FinalNormalNode<T,D>), cudaMemcpyDeviceToHost));
+
+  // --------------------------------------------------------------------
+  // DETAILED NODE-BY-NODE METRICS PRINTING
+  // --------------------------------------------------------------------
+  std::cout << "\n==================================================" << std::endl;
+  std::cout << "          TREE A SPATIAL NODE DETAIL MAP          " << std::endl;
+  std::cout << "==================================================" << std::endl;
+  uint32_t sumPrimsA = 0;
+  uint32_t validNodesA = 0;
+  for (uint32_t i = outFirstActiveNodeIDA; i < outTotalAllocatedNodesA; ++i) {
+      auto& openBranch = h_nodesA[i].openBranch;
+      if (openBranch.count > 0) {
+          validNodesA++;
+          sumPrimsA += openBranch.count;
+       //   std::cout << " Node [#" << i << "] -> Prims: " << openBranch.count << "\n";
+      //    std::cout << "   Bounds Min: [";
+      //    for(int d=0; d<D; ++d) std::cout << openBranch.bounds.get_lower(d) << (d < D-1 ? ", " : "");
+      //    std::cout << "]\n   Bounds Max: [";
+       //   for(int d=0; d<D; ++d) std::cout << openBranch.bounds.get_upper(d) << (d < D-1 ? ", " : "");
+       //   std::cout << "]\n" << std::endl;
+      }
+  }
+
+  std::cout << "==================================================" << std::endl;
+  std::cout << "          TREE B SPATIAL NODE DETAIL MAP          " << std::endl;
+  std::cout << "==================================================" << std::endl;
+  uint32_t sumPrimsB = 0;
+  uint32_t validNodesB = 0;
+  for (uint32_t i = outFirstActiveNodeIDB; i < outTotalAllocatedNodesB; ++i) {
+      auto& openBranch = h_nodesB[i].openBranch;
+      if (openBranch.count > 0) {
+          validNodesB++;
+          sumPrimsB += openBranch.count;
+       //   std::cout << " Node [#" << i << "] -> Prims: " << openBranch.count << "\n";
+       //   std::cout << "   Bounds Min: [";
+        //  for(int d=0; d<D; ++d) std::cout << openBranch.bounds.get_lower(d) << (d < D-1 ? ", " : "");
+        //  std::cout << "]\n   Bounds Max: [";
+        //  for(int d=0; d<D; ++d) std::cout << openBranch.bounds.get_upper(d) << (d < D-1 ? ", " : "");
+        //  std::cout << "]\n" << std::endl;
+      }
+  }
+
+  std::cout << "--------------------------------------------------" << std::endl;
+  std::cout << " [POPULATED CELLS CHECK SUMMARY]" << std::endl;
+  std::cout << " -> Tree A Populated Nodes: " << validNodesA << " / " << activeCountA << " | Total Prims = " << sumPrimsA << std::endl;
+  std::cout << " -> Tree B Populated Nodes: " << validNodesB << " / " << activeCountB << " | Total Prims = " << sumPrimsB << std::endl;
   std::cout << "--------------------------------------------------\n" << std::endl;
+
+  if (outTotalAllocatedNodesA == outTotalAllocatedNodesB && sumPrimsA == sumPrimsB) {
+      std::cout << " [DIAGNOSTIC WARNING] Tree structural signatures are identical! Checking specific node boundaries..." << std::endl;
+      
+      if (activeCountA > 0 && activeCountB > 0) {
+          auto& boxA = h_nodesA[outFirstActiveNodeIDA].openBranch.bounds;
+          auto& boxB = h_nodesB[outFirstActiveNodeIDB].openBranch.bounds;
+          bool boundsIdentical = true;
+          for(int d=0; d<D; ++d) {
+              if (boxA.get_lower(d) != boxB.get_lower(d) || boxA.get_upper(d) != boxB.get_upper(d)) {
+                  boundsIdentical = false;
+              }
+          }
+          if(boundsIdentical) {
+              std::cout << " -> [ALERT] The first active layout nodes share EXACT structural bounding boxes!" << std::endl;
+          } else {
+              std::cout << " -> [OK] Structural footprints are distinct despite matching allocation lengths." << std::endl;
+          }
+      }
+  }
+
+  // --------------------------------------------------------------------
+  // PARALLEL TEMP NODE CROSS CHECK & PERFORMANCE BENCHMARK
+  // --------------------------------------------------------------------
+  std::cout << "\n==================================================" << std::endl;
+  std::cout << "          LAUNCHING CROSS-CHECK KERNELS           " << std::endl;
+  std::cout << "==================================================" << std::endl;
+
+  thrust::device_vector<uint32_t> d_intersectPairsA;
+  thrust::device_vector<uint32_t> d_intersectPairsB;
+
+  double crossCheckStart = cuBQL::getCurrentTime();
+
+  uint32_t totalIntersections = executeNormalNodeCrossCheck<T,D>(
+      outTempNodesA, outFirstActiveNodeIDA, outTotalAllocatedNodesA,
+      outTempNodesB, outFirstActiveNodeIDB, outTotalAllocatedNodesB,
+      d_intersectPairsA, d_intersectPairsB, s
+  );
+  CUBQL_CUDA_CALL(StreamSynchronize(s));
+
+  double crossCheckEnd = cuBQL::getCurrentTime();
+  double crossCheckMs = (crossCheckEnd - crossCheckStart) * 1000.0;
+
+  uint64_t totalValidActivePairs = (uint64_t)validNodesA * validNodesB;
+
+  double overlapPercentage = 0.0;
+  if (totalValidActivePairs > 0) {
+      overlapPercentage = (double)totalIntersections / (double)totalValidActivePairs * 100.0;
+  }
+
+  // Added initialization metrics outputs cleanly mapped alongside cross-check tracking
+  std::cout << " -> Mesh A Speedrun Init Speed : " << tInitAMs << " ms" << std::endl;
+  std::cout << " -> Mesh B Speedrun Init Speed : " << tInitBMs << " ms" << std::endl;
+  std::cout << " -> Cross-Check Execution Speed : " << crossCheckMs << " ms" << std::endl;
+  std::cout << " -> Intersecting Nodes Detected : " << totalIntersections << " pairs" << std::endl;
+  std::cout << " -> True Active Matrix Evaluated: " << totalValidActivePairs << " pairings" << std::endl;
+  std::cout << " -> Percentage of Node Overlaps : " << overlapPercentage << "%" << std::endl;
+  std::cout << "==================================================\n" << std::endl;
 
   // --- CLEANUP ---
   if (outTempNodesA)  _FREE(outTempNodesA, s, memResource);

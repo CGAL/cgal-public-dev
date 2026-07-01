@@ -67,8 +67,8 @@ std::vector<cuBQL::Triangle> processMeshLayout(const Mesh& mesh, std::vector<fac
 }
 
 int main(int ac, char** av) {
-    if (ac < 7) { // Updated to check for 7 arguments (Program name + 6 inputs)
-        std::cout << "Usage: " << av[0] << " <meshA.off> <maxCellSizeA> <meshB.off> <maxCellSizeB> <batchmultiplier> <mode>\n";
+    if (ac < 8) { // Updated to check for 8 arguments (Program name + 7 inputs)
+        std::cout << "Usage: " << av[0] << " <meshA.off> <maxCellSizeA> <meshB.off> <maxCellSizeB> <batchmultiplier> <NumberOfDualTreeSteps> <tbb_workers>\n";
         return 1;
     }
 
@@ -77,10 +77,11 @@ int main(int ac, char** av) {
     std::string meshPathB = av[3];
     int maxCellSizeB    = std::stoi(av[4]);
     int batchmultipl    = std::stoi(av[5]); 
-    int mode            = std::stoi(av[6]); // <-- Parsed mode argument
+    int mode            = std::stoi(av[6]); 
+    int tbbWorkers      = std::stoi(av[7]); // <-- Parsed TBB worker limit argument
     
-    // Default to a solid baseline configuration for thread pooling
-    tbb::global_control global_limit(tbb::global_control::max_allowed_parallelism, 8);
+    // Dynamic configuration for thread pooling based on user input
+    tbb::global_control global_limit(tbb::global_control::max_allowed_parallelism, tbbWorkers);
 
     double tStartTotal = cuBQL::getCurrentTime();
 
@@ -123,7 +124,7 @@ int main(int ac, char** av) {
     // --------------------------------------------------------------------
     // EXECUTE SPATIAL CROSS-INTERSECTION PIPELINE
     // --------------------------------------------------------------------
-    std::cout << "[Step 3] Launching Dual-Mesh GPU Pipeline in Mode " << mode << "...\n";
+    std::cout << "[Step 3] Launching Dual-Mesh GPU Pipeline in Mode " << mode << " using " << tbbWorkers << " TBB Workers...\n";
     
     ExecutionStats stats;
     std::vector<int2> hGreenPairs;
@@ -132,7 +133,7 @@ int main(int ac, char** av) {
     kernelsTestBVH(
         hMeshLayoutA.data(), static_cast<int>(hMeshLayoutA.size()), maxCellSizeA,
         hMeshLayoutB.data(), static_cast<int>(hMeshLayoutB.size()), maxCellSizeB, 
-        batchmultipl, mode, stats, hGreenPairs, hYellowPairs // <-- Passed mode here
+        batchmultipl, mode, stats, hGreenPairs, hYellowPairs 
     );
 
     // --------------------------------------------------------------------
@@ -185,6 +186,7 @@ int main(int ac, char** av) {
     std::cout << "==================================================\n";
     std::cout << "STRUCTURE SUMMARY & PROPORTIONS:\n";
     std::cout << "  |- Pipeline Execution Mode:        " << mode << "\n";
+    std::cout << "  |- TBB Max Parallelism Limit:      " << tbbWorkers << "\n";
     std::cout << "  |- Mesh A Total Generated Nodes:   " << stats.meshATotalNodes << "\n";
     std::cout << "  |- Mesh A Extracted Targets (<" << maxCellSizeA << "): " << stats.meshAExtractedTargets << "\n";
     std::cout << "  |- Mesh B Total Generated Nodes:   " << stats.meshBTotalNodes << "\n";
@@ -201,7 +203,7 @@ int main(int ac, char** av) {
     std::cout << "  |- Build + Refit (Mesh B):         " << stats.buildRefitMeshBMs << " ms\n";
     std::cout << "  |- GPU Cross-Check Engine:         " << stats.gpuCrossCheckEngineMs << " ms\n";
     std::cout << "  |- Parallel DFS Descent (A & B):   " << stats.parallelDfsDescentBMs << " ms\n"; 
-    std::cout << "  |- Dual Tree Expansion Step:       " << stats.dualTreeStepMs << " ms\n"; // <-- Inserted Execution Tracker Line
+    std::cout << "  |- Dual Tree Expansion Step:       " << stats.dualTreeStepMs << " ms\n"; 
     std::cout << "  |- Explicit Device Cleanup Sync:   " << stats.finalCleanupSyncMs << " ms\n";
     std::cout << "  |- Comprehensive GPU Pipeline Time: " << stats.GPUTotalTime << " ms\n\n";
 
