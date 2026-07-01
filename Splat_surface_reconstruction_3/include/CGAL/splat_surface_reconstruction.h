@@ -26,6 +26,8 @@
 #include <CGAL/Delaunay_triangulation_2.h>
 #include <CGAL/Exact_predicates_exact_constructions_kernel.h>
 #include <CGAL/intersections.h>
+#include <CGAL/Polygon_mesh_processing/triangulate_faces.h>
+#include <CGAL/boost/graph/dijkstra_shortest_path.h>
 #include <vector>
 #include <iostream>
 #include <cmath>
@@ -307,7 +309,7 @@ namespace CGAL {
      * @return A vector of per-point splat radii.
      */
     std::vector<FT> estimate_individual_splat_sizes() {
-    FT global_spacing = 2*box_size_;
+    FT global_spacing = 1.05*box_size_;
     splat_sizes_.resize(points_.size(), global_spacing);
 
     for (Index i = 0; i < points_.size(); ++i) {
@@ -1004,6 +1006,7 @@ namespace CGAL {
       using vertex_descriptor = typename boost::graph_traits<PolygonMesh>::vertex_descriptor;
       using edge_descriptor = typename boost::graph_traits<PolygonMesh>::edge_descriptor;
       using halfedge_descriptor = typename boost::graph_traits<PolygonMesh>::halfedge_descriptor;
+      using face_descriptor = typename boost::graph_traits<PolygonMesh>::face_descriptor;
 
       struct Candidate {
       Point_3 position;
@@ -1033,6 +1036,9 @@ namespace CGAL {
 
         bool created = false;
         std::tie(normals_pm_, created) = mesh_.template add_property_map<vertex_descriptor, Vector_3>("v:normal", CGAL::NULL_VECTOR);
+
+        bool created_w = false;
+        std::tie(edge_weight_pm_, created_w) = mesh_.template add_property_map<edge_descriptor, FT>("e:weight", FT(1));
 
         if (created) {
           std::cout << "Created vertex normal property map." << std::endl;
@@ -1070,19 +1076,27 @@ namespace CGAL {
             continue;
           }
 
+          int new_priority = compute_priority(cand);
+          if (new_priority != cand.priority) {
+            cand.priority = new_priority;
+            push_candidate_in_queue(cand);
+            continue;
+          }
+
           accepted++;
           vertex_descriptor nv = mesh_.add_vertex(cand.position);
           put(points_pm_, nv, cand.position);
           put(normals_pm_, nv, cand.normal);
 
-          if (!add_triangle(cand.first, cand.second, nv, cand.normal)) {
+          if (!build_graph(cand.first, cand.second, nv, cand.normal)) {
             continue;
           }
 
           push_candidates_from_vertex(nv);
         }
 
-        fill();
+        // CGAL::Polygon_mesh_processing::triangulate_faces(mesh_);
+
         std::cout << "Final mesh size: " << num_vertices(mesh_) << " vertices, " << num_edges(mesh_) << " edges,\n";
         std::cout << "  Accepted: " << accepted << ", Rejected (near): " << rejected_near << ", Rejected (proj): " << rejected_proj << "\n";
       }
@@ -1227,7 +1241,7 @@ namespace CGAL {
 
       bool has_vertex_near(const Point_3& p) const
       {
-        const FT tol = grid_.get_box_size() * FT(0.8);
+        const FT tol = grid_.get_box_size() * FT(0.5);
         const FT tol2 = tol * tol;
 
         for (auto vd : vertices(mesh_)) {
@@ -1238,63 +1252,123 @@ namespace CGAL {
         return false;
       }
 
-      bool add_triangle(const vertex_descriptor v0, const vertex_descriptor v1, const vertex_descriptor nv, const Vector_3& normal) {
+      halfedge_descriptor create_edge_between(vertex_descriptor a,
+                                              vertex_descriptor b) {
+        edge_descriptor e = add_edge(mesh_);
+        halfedge_descriptor h  = halfedge(e, mesh_);
+        halfedge_descriptor ho = opposite(h, mesh_);
+
+        set_target(h,  b, mesh_);   // a -> b
+        set_target(ho, a, mesh_);   // b -> a
+
+        if (halfedge(a, mesh_) == boost::graph_traits<PolygonMesh>::null_halfedge()) {
+          set_halfedge(a, h, mesh_);
+        }
+        if (halfedge(b, mesh_) == boost::graph_traits<PolygonMesh>::null_halfedge()) {
+          set_halfedge(b, ho, mesh_);
+        }
+
+        return h;
+      }
+
+      halfedge_descriptor ensure_halfedge(vertex_descriptor from,
+                                          vertex_descriptor to) {
+
+        halfedge_descriptor h = find_halfedge(from, to);
+        if (h != boost::graph_traits<PolygonMesh>::null_halfedge()) {
+          return h;
+        }
+
+        edge_descriptor e = add_edge(mesh_);
+        halfedge_descriptor h0 = halfedge(e, mesh_);
+        halfedge_descriptor h1 = opposite(h0, mesh_);
+
+        // h0 : from -> to
+        set_target(h0, to, mesh_);
+        set_target(h1, from, mesh_);
+
+        if (halfedge(from, mesh_) == boost::graph_traits<PolygonMesh>::null_halfedge()) {
+          set_halfedge(from, h0, mesh_);
+        }
+        if (halfedge(to, mesh_) == boost::graph_traits<PolygonMesh>::null_halfedge()) {
+          set_halfedge(to, h1, mesh_);
+        }
+
+        return h0;
+      }
+
+      halfedge_descriptor find_halfedge(vertex_descriptor from,
+                                        vertex_descriptor to) const {
+        for (halfedge_descriptor h : halfedges(mesh_)) {
+          if (source(h, mesh_) == from &&
+              target(h, mesh_) == to)
+          {
+            return h;
+          }
+        }
+
+        return boost::graph_traits<PolygonMesh>::null_halfedge();
+      }
+
+      bool build_graph(const vertex_descriptor v0,
+                        const vertex_descriptor v1,
+                        const vertex_descriptor nv,
+                        const Vector_3& normal) {
+
         const Point_3 p0 = get(points_pm_, v0);
         const Point_3 p1 = get(points_pm_, v1);
         const Point_3 p2 = get(points_pm_, nv);
 
-        // We need the base edge v0-v1 to already exist.
-        halfedge_descriptor h01 = halfedge(v0, mesh_);
-        if (h01 == boost::graph_traits<PolygonMesh>::null_halfedge()) {
-          return false;
+        // Create or reuse v0-nv
+        halfedge_descriptor h0 = ensure_halfedge(v0, nv);   // v0 -> nv
+        halfedge_descriptor h0o = opposite(h0, mesh_);      // nv -> v0
+
+        // Create or reuse nv-v1
+        halfedge_descriptor h1o = ensure_halfedge(v1, nv);   // v1 -> nv
+        halfedge_descriptor h1  = opposite(h1o, mesh_);      // nv -> v1
+
+        // Make sure nv has a representative halfedge.
+        if (halfedge(nv, mesh_) == boost::graph_traits<PolygonMesh>::null_halfedge()) {
+          set_halfedge(nv, h0o, mesh_);
         }
-        CGAL_assertion(target(h01, mesh_) == v0); // so the next test makes no sense
-        if (target(h01, mesh_) != v1) {
-          h01 = opposite(h01, mesh_);
+
+        // Find directed edge v0 -> v1
+        halfedge_descriptor h01 = find_halfedge(v0, v1);
+        if (h01 == boost::graph_traits<PolygonMesh>::null_halfedge()) {
+          // No base edge, so no face cycle yet.
+          return true;
         }
 
         const halfedge_descriptor h10 = opposite(h01, mesh_);
+        const Vector_3 tri_normal = CGAL::cross_product(p0 - p2, p1 - p2);
 
-        // Create edge v0 - nv.
-        edge_descriptor e0 = add_edge(mesh_);
-        halfedge_descriptor h0 = halfedge(e0, mesh_);
-        halfedge_descriptor h0o = opposite(h0, mesh_);
-
-        set_target(h0, nv, mesh_);   // v0 -> nv
-        set_target(h0o, v0, mesh_);  // nv -> v0
-
-        // Create edge nv - v1.
-        edge_descriptor e1 = add_edge(mesh_);
-        halfedge_descriptor h1 = halfedge(e1, mesh_);
-        halfedge_descriptor h1o = opposite(h1, mesh_);
-
-        set_target(h1, v1, mesh_);   // nv -> v1
-        set_target(h1o, nv, mesh_);  // v1 -> nv
-
-        // Attach one representative halfedge to the new vertex.
-        if (halfedge(nv, mesh_) == boost::graph_traits<PolygonMesh>::null_halfedge()) {
-          set_halfedge(nv, h1o, mesh_);
+        auto f = add_face(mesh_);
+        if (f == boost::graph_traits<PolygonMesh>::null_face()) {
+          return false;
         }
 
-        // Orient the triangle using the supplied normal.
-        Vector_3 tri_normal = CGAL::cross_product(p1 - p0, p2 - p0);
-
         if (normal == CGAL::NULL_VECTOR || tri_normal * normal >= FT(0)) {
-          // Face cycle: v0 -> nv -> v1 -> v0
+          // v0 -> nv -> v1 -> v0
           set_next(h0,  h1,  mesh_);
           set_next(h1,  h10, mesh_);
           set_next(h10, h0,  mesh_);
 
+          set_face(h0,  f, mesh_);
+          set_face(h1,  f, mesh_);
+          set_face(h10, f, mesh_);
+          set_halfedge(f, h0, mesh_);
         } else {
-          // Face cycle: v0 -> v1 -> nv -> v0
-          set_next(h01, h1,  mesh_);
-          set_next(h1,  h0o, mesh_);
+          // v0 -> v1 -> nv -> v0
+          set_next(h01, h1o, mesh_);
+          set_next(h1o, h0o, mesh_);
           set_next(h0o, h01, mesh_);
+
+          set_face(h01, f, mesh_);
+          set_face(h1o, f, mesh_);
+          set_face(h0o, f, mesh_);
+          set_halfedge(f, h01, mesh_);
         }
 
-        CGAL_assertion(is_valid_vertex_descriptor(v0, mesh_));
-        CGAL_assertion(is_valid_vertex_descriptor(v1, mesh_));
-        CGAL_assertion(is_valid_vertex_descriptor(nv, mesh_));
         return true;
       }
 
@@ -1454,25 +1528,14 @@ namespace CGAL {
         return 0;   // default for now
       }
 
-      void fill()
-      {
-        for(halfedge_descriptor h : halfedges(mesh_)){
-          std::vector<vertex_descriptor> vertices;
-          for(vertex_descriptor v : vertices_around_face(h, mesh_)){
-            vertices.push_back(v);
-          }
-          if(vertices.size() == 3){
-            Euler::add_face(vertices, mesh_);
-          }
-        }
-      }
-
     private:
       const Grid& grid_;
       PolygonMesh& mesh_;
 
       typename PolygonMesh:: template Property_map<vertex_descriptor,Point_3> points_pm_;
       typename PolygonMesh:: template Property_map<vertex_descriptor,Vector_3> normals_pm_;
+
+      typename PolygonMesh::template Property_map<edge_descriptor, FT> edge_weight_pm_;
 
       vertex_descriptor v0_{boost::graph_traits<PolygonMesh>::null_vertex()};
       vertex_descriptor v1_{boost::graph_traits<PolygonMesh>::null_vertex()};
@@ -1482,6 +1545,7 @@ namespace CGAL {
       std::array<std::deque<Candidate>, NUM_PRIORITIES> candidate_queues_; // candidate_queues_[p] contains all candidates with priority p
 
       const std::size_t window_size_ = 8;
+      // in the class members
   };
 
 } // namespace CGAL
