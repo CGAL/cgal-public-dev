@@ -39,7 +39,8 @@
 
 #include "batchedCrossIntersectionBruteV2.h"
 
-
+#include <thrust/sort.h>
+#include <thrust/unique.h>
 
 
 // --------------------------------------------------------------------
@@ -76,7 +77,7 @@ template<typename T, int D>
 void testFastBVH(const cuBQL::box_t<T,D>* d_boxesA, int numPrimsA, int maxCellSizeA,
                  const cuBQL::box_t<T,D>* d_boxesB, int numPrimsB, int maxCellSizeB,
                  cuBQL::box_t<T,D> globalBoxA, cuBQL::box_t<T,D> globalBoxB,
-                 cudaStream_t s, cuBQL::DeviceMemoryResource& memResource, int batchMultiplier , int userleafThreshold)
+                 cudaStream_t s, cuBQL::DeviceMemoryResource& memResource, int batchMultiplier, int userleafThreshold)
 {
   std::cout << "\n==================================================" << std::endl;
   std::cout << " [DEEP DEBUG] => Entering ZIMBLIFIED testFastBVH..." << std::endl;
@@ -191,6 +192,37 @@ void testFastBVH(const cuBQL::box_t<T,D>* d_boxesA, int numPrimsA, int maxCellSi
   double crossCheckMs = (crossCheckEnd - crossCheckStart) * 1000.0;
   
   // --------------------------------------------------------------------
+  // FUTURE DENSITY ANALYSIS: CALCULATE UNIQUE PARTICIPATING CELLS
+  // --------------------------------------------------------------------
+  uint32_t uniqueIntersectingCellsA = 0;
+  uint32_t uniqueIntersectingCellsB = 0;
+  double activeCellRatioA = 0.0;
+  double activeCellRatioB = 0.0;
+
+  if (totalIntersections > 0) {
+      // Create temporary working copies to keep original layout intact
+      thrust::device_vector<uint32_t> d_tempA = d_intersectPairsA;
+      thrust::device_vector<uint32_t> d_tempB = d_intersectPairsB;
+
+      // Sort and drop duplicates using stream-isolated execution policies
+      thrust::sort(thrust::cuda::par.on(s), d_tempA.begin(), d_tempA.end());
+      thrust::sort(thrust::cuda::par.on(s), d_tempB.begin(), d_tempB.end());
+
+      auto endA = thrust::unique(thrust::cuda::par.on(s), d_tempA.begin(), d_tempA.end());
+      auto endB = thrust::unique(thrust::cuda::par.on(s), d_tempB.begin(), d_tempB.end());
+
+      uniqueIntersectingCellsA = thrust::distance(d_tempA.begin(), endA);
+      uniqueIntersectingCellsB = thrust::distance(d_tempB.begin(), endB);
+
+      if (outTotalActiveCellsA > 0) {
+          activeCellRatioA = ((double)uniqueIntersectingCellsA / (double)outTotalActiveCellsA) * 100.0;
+      }
+      if (outTotalActiveCellsB > 0) {
+          activeCellRatioB = ((double)uniqueIntersectingCellsB / (double)outTotalActiveCellsB) * 100.0;
+      }
+  }
+
+  // --------------------------------------------------------------------
   // NEW: GPU BUILDER V4 FOREST EXPANSION & PERFORMANCE BENCHMARK
   // --------------------------------------------------------------------
   std::cout << " [FOREST EXPANSION] => Launching Level-by-Level Parallel Sub-Tree Compilation..." << std::endl;
@@ -253,9 +285,12 @@ void testFastBVH(const cuBQL::box_t<T,D>* d_boxesA, int numPrimsA, int maxCellSi
   std::cout << " -> Mesh A Forest BVH Expansion     : " << forestAMs << " ms | Nodes: " << bvhA.numNodes << std::endl;
   std::cout << " -> Mesh B Forest BVH Expansion     : " << forestBMs << " ms | Nodes: " << bvhB.numNodes << std::endl;
   std::cout << " ------------------------------------------------" << std::endl;
-  std::cout << " -> Intersecting Nodes Detected     : " << totalIntersections << " pairs" << std::endl;
+  std::cout << " -> Intersecting Pairs Detected     : " << totalIntersections << " pairs" << std::endl;
   std::cout << " -> True Active Matrix Evaluated    : " << totalValidActivePairs << " pairings" << std::endl;
-  std::cout << " -> Percentage of Node Overlaps     : " << overlapPercentage << "%" << std::endl;
+  std::cout << " -> Percentage of Total Overlaps    : " << overlapPercentage << "%" << std::endl;
+  std::cout << " ------------------------------------------------" << std::endl;
+  std::cout << " -> Mesh A Overlapping Cells Count  : " << uniqueIntersectingCellsA << " / " << outTotalActiveCellsA << " (" << activeCellRatioA << "%)" << std::endl;
+  std::cout << " -> Mesh B Overlapping Cells Count  : " << uniqueIntersectingCellsB << " / " << outTotalActiveCellsB << " (" << activeCellRatioB << "%)" << std::endl;
   std::cout << "==================================================\n" << std::endl;
 
   if (outNodeBoxesA)     _FREE(outNodeBoxesA, s, memResource);
@@ -369,17 +404,17 @@ extern "C" void kernelsTestBVH(const cuBQL::Triangle* hMeshA, int numTrianglesA,
   // --------------------------------------------------------------------
   // DISPATCH EXPERIMENTAL INJECTED V3 WORKFLOW TEST (FIXED)
   // --------------------------------------------------------------------
-//   cuBQL::box3f hostBoxA, hostBoxB;
-//   CUBQL_CUDA_CALL(Memcpy(&hostBoxA, &(bvhA.nodes[0].bounds), sizeof(cuBQL::box3f), cudaMemcpyDeviceToHost));
-//   CUBQL_CUDA_CALL(Memcpy(&hostBoxB, &(bvhB.nodes[0].bounds), sizeof(cuBQL::box3f), cudaMemcpyDeviceToHost));
-//   cudaDeviceSynchronize();
+  cuBQL::box3f hostBoxA, hostBoxB;
+  CUBQL_CUDA_CALL(Memcpy(&hostBoxA, &(bvhA.nodes[0].bounds), sizeof(cuBQL::box3f), cudaMemcpyDeviceToHost));
+  CUBQL_CUDA_CALL(Memcpy(&hostBoxB, &(bvhB.nodes[0].bounds), sizeof(cuBQL::box3f), cudaMemcpyDeviceToHost));
+  cudaDeviceSynchronize();
 
-//   testFastBVH<float, 3>(
-//       dBoxesA, numTrianglesA, maxCellSizeA,
-//       dBoxesB, numTrianglesB, maxCellSizeB,
-//       hostBoxA, hostBoxB,
-//       stream, memResource, batchMultiplier, leafThreshold
-//   );
+  testFastBVH<float, 3>(
+      dBoxesA, numTrianglesA, maxCellSizeA,
+      dBoxesB, numTrianglesB, maxCellSizeB,
+      hostBoxA, hostBoxB,
+      stream, memResource, batchMultiplier, leafThreshold
+  );
 
   // --------------------------------------------------------------------
   // EXTRACTED GPU PARALLEL CRISS-CROSS INTERSECTION MODULE
