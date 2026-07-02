@@ -1,13 +1,16 @@
+// SPDX-FileCopyrightText: Copyright (c) 2026
+// SPDX-License-Identifier: Apache-2.0
+
 #pragma once
 
 #include <thrust/device_vector.h>
 #include <thrust/scan.h>
 #include <thrust/execution_policy.h>
-#include "include/third-party/cubql/sm_builder_v3.h"
+#include "cuBQL/builder/cuda/builder_common.h" // Keeping native box types
 
-// 1. Reverted to standard, high-performance float box intersection helper
+// 1. Sleek box intersection helper (unchanged, still a classic)
 template<typename T, int D>
-__device__ inline bool normalBoxesIntersect(
+__device__ inline bool boxesIntersect(
     const cuBQL::box_t<T,D>& a, 
     const cuBQL::box_t<T,D>& b) 
 {
@@ -19,101 +22,77 @@ __device__ inline bool normalBoxesIntersect(
     return true;
 }
 
-// 2. Pass 1: Count Intersections using FinalNormalNode
+// 2. Pass 1: Count Intersections (Now with 100% less struct digging!)
 template<typename T, int D>
-__global__ void countNormalNodeIntersections(
-    const cuBQL::gpuBuilder_v3::FinalNormalNode<T,D>* d_nodesA, uint32_t startA, uint32_t endA,
-    const cuBQL::gpuBuilder_v3::FinalNormalNode<T,D>* d_nodesB, uint32_t startB, uint32_t endB,
+__global__ void countBoxIntersections(
+    const cuBQL::box_t<T,D>* d_boxesA, uint32_t numA,
+    const cuBQL::box_t<T,D>* d_boxesB, uint32_t numB,
     uint32_t* d_perThreadCounts) 
 {
-    uint32_t threadIdxGlobal = threadIdx.x + blockIdx.x * blockDim.x;
-    uint32_t totalActiveA = endA - startA;
-    if (threadIdxGlobal >= totalActiveA) return;
+    uint32_t idxA = threadIdx.x + blockIdx.x * blockDim.x;
+    if (idxA >= numA) return;
 
-    uint32_t nodeIDA = startA + threadIdxGlobal;
-    auto& openBranchA = d_nodesA[nodeIDA].openBranch;
-    
-    if (openBranchA.count == 0) {
-        d_perThreadCounts[threadIdxGlobal] = 0;
-        return;
-    }
-
-    // Directly access the clean, native float box layout
-    const auto& boxA = openBranchA.bounds; 
+    // Direct memory loading, cache hits go BRRRRR
+    const auto boxA = d_boxesA[idxA]; 
     uint32_t localIntersections = 0;
 
-    for (uint32_t nodeIDB = startB; nodeIDB < endB; ++nodeIDB) {
-        auto& openBranchB = d_nodesB[nodeIDB].openBranch;
-        if (openBranchB.count == 0) continue;
-
-        const auto& boxB = openBranchB.bounds;
-        if (normalBoxesIntersect<T,D>(boxA, boxB)) { 
+    for (uint32_t idxB = 0; idxB < numB; ++idxB) {
+        if (boxesIntersect<T,D>(boxA, d_boxesB[idxB])) { 
             localIntersections++; 
         }
     }
-    d_perThreadCounts[threadIdxGlobal] = localIntersections;
+    d_perThreadCounts[idxA] = localIntersections;
 }
 
-// 3. Pass 2: Fill Intersections directly into pair arrays using FinalNormalNode
+// 3. Pass 2: Fill Intersections (The ultra-clean scatter)
 template<typename T, int D>
-__global__ void fillNormalNodeIntersections(
-    const cuBQL::gpuBuilder_v3::FinalNormalNode<T,D>* d_nodesA, uint32_t startA, uint32_t endA,
-    const cuBQL::gpuBuilder_v3::FinalNormalNode<T,D>* d_nodesB, uint32_t startB, uint32_t endB,
+__global__ void fillBoxIntersections(
+    const cuBQL::box_t<T,D>* d_boxesA, uint32_t numA,
+    const cuBQL::box_t<T,D>* d_boxesB, uint32_t numB,
     const uint32_t* d_offsets,
     uint32_t* d_outPairsA, uint32_t* d_outPairsB) 
 {
-    uint32_t threadIdxGlobal = threadIdx.x + blockIdx.x * blockDim.x;
-    uint32_t totalActiveA = endA - startA;
-    if (threadIdxGlobal >= totalActiveA) return;
+    uint32_t idxA = threadIdx.x + blockIdx.x * blockDim.x;
+    if (idxA >= numA) return;
 
-    uint32_t nodeIDA = startA + threadIdxGlobal;
-    auto& openBranchA = d_nodesA[nodeIDA].openBranch;
-    if (openBranchA.count == 0) return;
+    const auto boxA = d_boxesA[idxA];
+    uint32_t writePos = d_offsets[idxA];
 
-    const auto& boxA = openBranchA.bounds;
-    uint32_t writePos = d_offsets[threadIdxGlobal];
-
-    for (uint32_t nodeIDB = startB; nodeIDB < endB; ++nodeIDB) {
-        auto& openBranchB = d_nodesB[nodeIDB].openBranch;
-        if (openBranchB.count == 0) continue;
-
-        const auto& boxB = openBranchB.bounds;
-        if (normalBoxesIntersect<T,D>(boxA, boxB)) { 
-            d_outPairsA[writePos] = nodeIDA;
-            d_outPairsB[writePos] = nodeIDB;
+    for (uint32_t idxB = 0; idxB < numB; ++idxB) {
+        if (boxesIntersect<T,D>(boxA, d_boxesB[idxB])) { 
+            d_outPairsA[writePos] = idxA;
+            d_outPairsB[writePos] = idxB;
             writePos++;
         }
     }
 }
 
-// 4. Upgraded Orchestrator function mapping clean pointer streams
+// 4. The Grand Orchestrator (Zimblified Edition)
 template<typename T, int D>
-uint32_t executeNormalNodeCrossCheck(
-    const cuBQL::gpuBuilder_v3::FinalNormalNode<T,D>* d_nodesA, uint32_t startA, uint32_t endA,
-    const cuBQL::gpuBuilder_v3::FinalNormalNode<T,D>* d_nodesB, uint32_t startB, uint32_t endB,
+uint32_t executeBoxCrossCheck(
+    const cuBQL::box_t<T,D>* d_boxesA, uint32_t numA,
+    const cuBQL::box_t<T,D>* d_boxesB, uint32_t numB,
     thrust::device_vector<uint32_t>& d_outPairsA,
     thrust::device_vector<uint32_t>& d_outPairsB,
     cudaStream_t s)
 {
-    uint32_t totalActiveA = endA - startA;
-    uint32_t totalActiveB = endB - startB;
-    if (totalActiveA == 0 || totalActiveB == 0) return 0;
+    if (numA == 0 || numB == 0) return 0;
 
     uint32_t threadsCross = 256;
-    uint32_t blocksCross = (totalActiveA + threadsCross - 1) / threadsCross;
+    uint32_t blocksCross = (numA + threadsCross - 1) / threadsCross;
 
     auto exec_policy = thrust::cuda::par.on(s);
 
-    // Pass 1: Count
-    thrust::device_vector<uint32_t> d_perThreadCounts(totalActiveA, 0);
-    countNormalNodeIntersections<T,D><<<blocksCross, threadsCross, 0, s>>>(
-        d_nodesA, startA, endA,
-        d_nodesB, startB, endB,
+    // Pass 1: Count those overlaps!
+    thrust::device_vector<uint32_t> d_perThreadCounts(numA, 0);
+    countBoxIntersections<T,D><<<blocksCross, threadsCross, 0, s>>>(
+        d_boxesA, numA,
+        d_boxesB, numB,
         thrust::raw_pointer_cast(d_perThreadCounts.data())
     );
 
-    // Prefix Scan on stream
-    thrust::device_vector<uint32_t> d_offsets(totalActiveA, 0);
+    // Prefix Scan magic
+    thrust::device_vector<uint32_t> d_offsets(numA, 0);
     thrust::exclusive_scan(exec_policy, d_perThreadCounts.begin(), d_perThreadCounts.end(), d_offsets.begin());
     
     uint32_t lastCount = d_perThreadCounts.back();
@@ -124,10 +103,10 @@ uint32_t executeNormalNodeCrossCheck(
         d_outPairsA.resize(totalIntersections);
         d_outPairsB.resize(totalIntersections);
 
-        // Pass 2: Fill
-        fillNormalNodeIntersections<T,D><<<blocksCross, threadsCross, 0, s>>>(
-            d_nodesA, startA, endA,
-            d_nodesB, startB, endB,
+        // Pass 2: Fill those pair vectors!
+        fillBoxIntersections<T,D><<<blocksCross, threadsCross, 0, s>>>(
+            d_boxesA, numA,
+            d_boxesB, numB,
             thrust::raw_pointer_cast(d_offsets.data()),
             thrust::raw_pointer_cast(d_outPairsA.data()),
             thrust::raw_pointer_cast(d_outPairsB.data())

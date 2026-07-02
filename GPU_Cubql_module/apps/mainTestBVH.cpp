@@ -67,8 +67,8 @@ std::vector<cuBQL::Triangle> processMeshLayout(const Mesh& mesh, std::vector<fac
 }
 
 int main(int ac, char** av) {
-    if (ac < 8) { // Updated to check for 8 arguments (Program name + 7 inputs)
-        std::cout << "Usage: " << av[0] << " <meshA.off> <maxCellSizeA> <meshB.off> <maxCellSizeB> <batchmultiplier> <NumberOfDualTreeSteps> <tbb_workers>\n";
+    if (ac < 9) { // Updated to check for 8 arguments (Program name + 7 inputs)
+        std::cout << "Usage: " << av[0] << " <meshA.off> <maxCellSizeA> <meshB.off> <maxCellSizeB> <batchmultiplier> <NumberOfDualTreeSteps> <Leaf Threshold> <tbb_workers>\n";
         return 1;
     }
 
@@ -77,8 +77,9 @@ int main(int ac, char** av) {
     std::string meshPathB = av[3];
     int maxCellSizeB    = std::stoi(av[4]);
     int batchmultipl    = std::stoi(av[5]); 
-    int mode            = std::stoi(av[6]); 
-    int tbbWorkers      = std::stoi(av[7]); // <-- Parsed TBB worker limit argument
+    int mode            = std::stoi(av[6]);
+    int leafThreshhold = std::stoi(av[7]); 
+    int tbbWorkers      = std::stoi(av[8]); // <-- Parsed TBB worker limit argument
     
     // Dynamic configuration for thread pooling based on user input
     tbb::global_control global_limit(tbb::global_control::max_allowed_parallelism, tbbWorkers);
@@ -133,7 +134,7 @@ int main(int ac, char** av) {
     kernelsTestBVH(
         hMeshLayoutA.data(), static_cast<int>(hMeshLayoutA.size()), maxCellSizeA,
         hMeshLayoutB.data(), static_cast<int>(hMeshLayoutB.size()), maxCellSizeB, 
-        batchmultipl, mode, stats, hGreenPairs, hYellowPairs 
+        batchmultipl, mode, leafThreshhold, stats, hGreenPairs, hYellowPairs 
     );
 
     // --------------------------------------------------------------------
