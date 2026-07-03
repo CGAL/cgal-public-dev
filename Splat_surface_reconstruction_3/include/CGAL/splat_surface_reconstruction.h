@@ -1158,6 +1158,9 @@ namespace CGAL {
         set_halfedge(v0_, ho, mesh_);
         set_halfedge(v1_, h, mesh_);
 
+        set_next(h, ho, mesh_);
+        set_next(ho, h, mesh_);
+
         CGAL_assertion(is_valid_vertex_descriptor(v0_, mesh_));
         CGAL_assertion(is_valid_vertex_descriptor(v1_, mesh_));
         seeded_ = true;
@@ -1251,7 +1254,7 @@ namespace CGAL {
         }
         return false;
       }
-
+/*
       halfedge_descriptor create_edge_between(vertex_descriptor a,
                                               vertex_descriptor b) {
         edge_descriptor e = add_edge(mesh_);
@@ -1270,104 +1273,164 @@ namespace CGAL {
 
         return h;
       }
+*/
+      halfedge_descriptor ensure_halfedge(vertex_descriptor va,
+                                          vertex_descriptor vb) {
 
-      halfedge_descriptor ensure_halfedge(vertex_descriptor from,
-                                          vertex_descriptor to) {
-
-        halfedge_descriptor h = find_halfedge(from, to);
-        if (h != boost::graph_traits<PolygonMesh>::null_halfedge()) {
+        auto [h, found] = halfedge(va, vb, mesh_);
+        if (found) {
           return h;
         }
 
         edge_descriptor e = add_edge(mesh_);
-        halfedge_descriptor h0 = halfedge(e, mesh_);
-        halfedge_descriptor h1 = opposite(h0, mesh_);
+        halfedge_descriptor h_vavb = halfedge(e, mesh_);
+        halfedge_descriptor h_vbva = opposite(h_vavb, mesh_);
 
         // h0 : from -> to
-        set_target(h0, to, mesh_);
-        set_target(h1, from, mesh_);
+        set_target(h_vavb, vb, mesh_);
+        set_target(h_vbva, va, mesh_);
 
-        if (halfedge(from, mesh_) == boost::graph_traits<PolygonMesh>::null_halfedge()) {
-          set_halfedge(from, h0, mesh_);
+        if (halfedge(va, mesh_) == boost::graph_traits<PolygonMesh>::null_halfedge()) {
+          set_halfedge(va, h_vbva, mesh_);
         }
-        if (halfedge(to, mesh_) == boost::graph_traits<PolygonMesh>::null_halfedge()) {
-          set_halfedge(to, h1, mesh_);
+        if (halfedge(vb, mesh_) == boost::graph_traits<PolygonMesh>::null_halfedge()) {
+          set_halfedge(vb, h_vavb, mesh_);
         }
 
-        return h0;
+        return h_vavb;
       }
 
-      halfedge_descriptor find_halfedge(vertex_descriptor from,
-                                        vertex_descriptor to) const {
-        for (halfedge_descriptor h : halfedges(mesh_)) {
-          if (source(h, mesh_) == from &&
-              target(h, mesh_) == to)
+      // try to find a patch from va to vb
+      template <class H_cycles>
+      void find_cycles(vertex_descriptor va, vertex_descriptor vb, H_cycles& h_cycles)
+      {
+        std::cout << "inside find_cycle\n";
+
+        // collect all halfedges having va as source
+        std::vector<halfedge_descriptor> candidates;
+
+        halfedge_descriptor hfa = opposite(halfedge(va, mesh_), mesh_);
+        CGAL_assertion(source(hfa,mesh_)==va);
+        
+        if (prev(hfa, mesh_) != opposite(hfa, mesh_))
+        {
+          for(halfedge_descriptor hh : halfedges_around_source(va, mesh_))
           {
-            return h;
+            CGAL_assertion(source(hh,mesh_)==va);
+            candidates.push_back(hh);
           }
         }
+        else
+          candidates.push_back(hfa);
 
-        return boost::graph_traits<PolygonMesh>::null_halfedge();
+        for (halfedge_descriptor h : candidates)
+        {
+          CGAL_assertion(source(h,mesh_)==va);
+          if (face(h, mesh_)!=boost::graph_traits<PolygonMesh>::null_face())
+            continue;
+
+          if (target(h, mesh_) == vb)
+          {
+            h_cycles.emplace_back(h, h);
+            continue;
+          } 
+
+          halfedge_descriptor start = h, hcycle=h;
+
+          do
+          {
+            halfedge_descriptor nh = next(hcycle, mesh_);
+            if (nh == opposite(hcycle, mesh_)) break;
+            if (target(nh, mesh_)==vb){
+              h_cycles.emplace_back(start, nh);
+              break;
+            }
+            hcycle = nh;
+          }
+          while (hcycle!=start);
+        }
+        std::cout << "DONE\n";
       }
 
-      bool build_graph(const vertex_descriptor v0,
-                        const vertex_descriptor v1,
-                        const vertex_descriptor nv,
-                        const Vector_3& normal) {
+      void check_valid_next_pointers()
+      {
+        for (auto h : halfedges(mesh_))
+        {
+          CGAL_assertion(next(h, mesh_)!= boost::graph_traits<PolygonMesh>::null_halfedge());
+          CGAL_assertion(prev(h, mesh_)!= boost::graph_traits<PolygonMesh>::null_halfedge());
+        } 
+      }
 
-        const Point_3 p0 = get(points_pm_, v0);
-        const Point_3 p1 = get(points_pm_, v1);
-        const Point_3 p2 = get(points_pm_, nv);
+
+
+      bool build_graph( vertex_descriptor v0,
+                        vertex_descriptor v1,
+                        const vertex_descriptor nv,
+                        const Vector_3& normal) 
+      {
+        check_valid_next_pointers();
+
+        // check if v0 and v1 are on a cycle of halfedges
+        std::vector<std::pair<halfedge_descriptor, halfedge_descriptor>> h_cycles;
+       
+        find_cycles(v0, v1, h_cycles);
+        find_cycles(v1, v0, h_cycles);
+
+        if (h_cycles.empty()) 
+          return false;
+
+
+        CGAL_assertion(h_cycles.size()<=2);
+
+        std::pair<halfedge_descriptor,halfedge_descriptor> h_cycle = h_cycles.back();
+        if (h_cycles.size()==2)
+        {
+          // TODO: add the geometric test here to select the right cycle
+          //(normal == CGAL::NULL_VECTOR || tri_normal * normal >= FT(0))
+          //const Point_3 p0 = get(points_pm_, v0);
+          //const Point_3 p1 = get(points_pm_, v1);
+          //const Point_3 p2 = get(points_pm_, nv);
+          //h_cycle =
+        }
+
+        CGAL_assertion( 
+          (v0==source(h_cycle.first, mesh_) && v1==target(h_cycle.second, mesh_)) ||
+          (v1==source(h_cycle.first, mesh_) && v0==target(h_cycle.second, mesh_))
+        );
+      
+        if (source(h_cycle.first, mesh_)!=v0) {
+          std::swap(v0,v1);
+        }
+          
+        CGAL_assertion(source(h_cycle.first,mesh_)==v0);
+        CGAL_assertion(target(h_cycle.second,mesh_)==v1);
+
 
         // Create or reuse v0-nv
-        halfedge_descriptor h0 = ensure_halfedge(v0, nv);   // v0 -> nv
-        halfedge_descriptor h0o = opposite(h0, mesh_);      // nv -> v0
+        halfedge_descriptor h_v0vn = ensure_halfedge(v0, nv);   // v0 -> nv
+        halfedge_descriptor h_vnv0 = opposite(h_v0vn, mesh_);      // nv -> v0
 
         // Create or reuse nv-v1
-        halfedge_descriptor h1o = ensure_halfedge(v1, nv);   // v1 -> nv
-        halfedge_descriptor h1  = opposite(h1o, mesh_);      // nv -> v1
-
-        // Make sure nv has a representative halfedge.
-        if (halfedge(nv, mesh_) == boost::graph_traits<PolygonMesh>::null_halfedge()) {
-          set_halfedge(nv, h0o, mesh_);
-        }
-
-        // Find directed edge v0 -> v1
-        halfedge_descriptor h01 = find_halfedge(v0, v1);
-        if (h01 == boost::graph_traits<PolygonMesh>::null_halfedge()) {
-          // No base edge, so no face cycle yet.
-          return true;
-        }
-
-        const halfedge_descriptor h10 = opposite(h01, mesh_);
-        const Vector_3 tri_normal = CGAL::cross_product(p0 - p2, p1 - p2);
+        halfedge_descriptor h_v1vn = ensure_halfedge(v1, nv);   // v1 -> nv
+        halfedge_descriptor h_vnv1  = opposite(h_v1vn, mesh_);      // nv -> v1
 
         auto f = add_face(mesh_);
-        if (f == boost::graph_traits<PolygonMesh>::null_face()) {
-          return false;
-        }
 
-        if (normal == CGAL::NULL_VECTOR || tri_normal * normal >= FT(0)) {
-          // v0 -> nv -> v1 -> v0
-          set_next(h0,  h1,  mesh_);
-          set_next(h1,  h10, mesh_);
-          set_next(h10, h0,  mesh_);
+        halfedge_descriptor hp = prev(h_cycle.first, mesh_);
+        halfedge_descriptor hn = next(h_cycle.second, mesh_);
 
-          set_face(h0,  f, mesh_);
-          set_face(h1,  f, mesh_);
-          set_face(h10, f, mesh_);
-          set_halfedge(f, h0, mesh_);
-        } else {
-          // v0 -> v1 -> nv -> v0
-          set_next(h01, h1o, mesh_);
-          set_next(h1o, h0o, mesh_);
-          set_next(h0o, h01, mesh_);
+        set_next(h_v1vn, h_vnv0, mesh_);
+        set_next(h_vnv0, h_cycle.first, mesh_);
+        set_next(h_cycle.second, h_v1vn, mesh_);
+        for (halfedge_descriptor hl : halfedges_around_face(h_vnv0, mesh_))
+          set_face(hl, f, mesh_);
+        set_halfedge(f, h_cycle.first, mesh_);
+        // close the opposite
+        set_next(hp, h_v0vn, mesh_);
+        set_next(h_vnv1, hn, mesh_);
+        set_next(h_v0vn, h_vnv1, mesh_);
 
-          set_face(h01, f, mesh_);
-          set_face(h1o, f, mesh_);
-          set_face(h0o, f, mesh_);
-          set_halfedge(f, h01, mesh_);
-        }
+        check_valid_next_pointers();
 
         return true;
       }
