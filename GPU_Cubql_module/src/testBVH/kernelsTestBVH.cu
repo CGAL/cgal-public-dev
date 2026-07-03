@@ -42,6 +42,8 @@
 #include <thrust/sort.h>
 #include <thrust/unique.h>
 
+#include "prune_pipeline.h"
+
 
 // --------------------------------------------------------------------
 // LOCAL STREAM-SAFE REPLACEMENTS FOR INTERNAL CUBQL ALLOCATORS
@@ -110,8 +112,9 @@ void testFastBVH(const cuBQL::box_t<T,D>* d_boxesA, int numPrimsA, int maxCellSi
   CUBQL_CUDA_CALL(StreamSynchronize(s));
   double tInitAStart = cuBQL::getCurrentTime();
 
+  // globalBoxA
   cuBQL::gpuBuilder_v3::test_speedrun_initialization_linear(
-      d_boxesA, numPrimsA, (uint32_t)maxCellSizeA, globalBoxA,
+      d_boxesA, numPrimsA, (uint32_t)maxCellSizeA,globalBoxA,
       outNodeBoxesA, outSortedPrimIDsA, outNodeOffsetsA, outTotalActiveCellsA,
       s, memResource
   );
@@ -128,8 +131,9 @@ void testFastBVH(const cuBQL::box_t<T,D>* d_boxesA, int numPrimsA, int maxCellSi
   CUBQL_CUDA_CALL(StreamSynchronize(s));
   double tInitBStart = cuBQL::getCurrentTime();
 
+  // globalBoxB
   cuBQL::gpuBuilder_v3::test_speedrun_initialization_linear(
-      d_boxesB, numPrimsB, (uint32_t)maxCellSizeB, globalBoxB,
+      d_boxesB, numPrimsB, (uint32_t)maxCellSizeB,globalBoxB,
       outNodeBoxesB, outSortedPrimIDsB, outNodeOffsetsB, outTotalActiveCellsB,
       s, memResource
   );
@@ -190,40 +194,44 @@ void testFastBVH(const cuBQL::box_t<T,D>* d_boxesA, int numPrimsA, int maxCellSi
 
   double crossCheckEnd = cuBQL::getCurrentTime();
   double crossCheckMs = (crossCheckEnd - crossCheckStart) * 1000.0;
-  
-  // --------------------------------------------------------------------
-  // FUTURE DENSITY ANALYSIS: CALCULATE UNIQUE PARTICIPATING CELLS
-  // --------------------------------------------------------------------
-  uint32_t uniqueIntersectingCellsA = 0;
-  uint32_t uniqueIntersectingCellsB = 0;
-  double activeCellRatioA = 0.0;
-  double activeCellRatioB = 0.0;
 
-  if (totalIntersections > 0) {
-      // Create temporary working copies to keep original layout intact
-      thrust::device_vector<uint32_t> d_tempA = d_intersectPairsA;
-      thrust::device_vector<uint32_t> d_tempB = d_intersectPairsB;
+  // Save historical metrics prior to post-build pruning actions
+  uint32_t initialCellsA = outTotalActiveCellsA;
+  uint32_t initialPrimsA = sumPrimsA;
+  uint32_t initialCellsB = outTotalActiveCellsB;
+  uint32_t initialPrimsB = sumPrimsB;
 
-      // Sort and drop duplicates using stream-isolated execution policies
-      thrust::sort(thrust::cuda::par.on(s), d_tempA.begin(), d_tempA.end());
-      thrust::sort(thrust::cuda::par.on(s), d_tempB.begin(), d_tempB.end());
-
-      auto endA = thrust::unique(thrust::cuda::par.on(s), d_tempA.begin(), d_tempA.end());
-      auto endB = thrust::unique(thrust::cuda::par.on(s), d_tempB.begin(), d_tempB.end());
-
-      uniqueIntersectingCellsA = thrust::distance(d_tempA.begin(), endA);
-      uniqueIntersectingCellsB = thrust::distance(d_tempB.begin(), endB);
-
-      if (outTotalActiveCellsA > 0) {
-          activeCellRatioA = ((double)uniqueIntersectingCellsA / (double)outTotalActiveCellsA) * 100.0;
-      }
-      if (outTotalActiveCellsB > 0) {
-          activeCellRatioB = ((double)uniqueIntersectingCellsB / (double)outTotalActiveCellsB) * 100.0;
-      }
-  }
+  int currentPrimsNumA = (int)sumPrimsA;
+  int currentPrimsNumB = (int)sumPrimsB;
 
   // --------------------------------------------------------------------
-  // NEW: GPU BUILDER V4 FOREST EXPANSION & PERFORMANCE BENCHMARK
+  // PARALLEL STREAM COMPACTION & PRUNING ALGORITHM (EXECUTION DEFERRED TO POST-BUILD)
+  // --------------------------------------------------------------------
+  std::cout << " [PIPELINE PRUNING] => Dispatched grid streaming parallel re-index compaction (POST-BUILD)..." << std::endl;
+
+  // Track and execute Compaction Pipeline for Mesh A
+  CUBQL_CUDA_CALL(StreamSynchronize(s));
+  double pruneStartA = cuBQL::getCurrentTime();
+  parallelPruneAndReindexAll(
+      thrust::raw_pointer_cast(d_intersectPairsA.data()), totalIntersections,
+      outSortedPrimIDsA, outNodeOffsetsA, outTotalActiveCellsA, currentPrimsNumA,
+      s, memResource
+  );
+  CUBQL_CUDA_CALL(StreamSynchronize(s));
+  double pruneMsA = (cuBQL::getCurrentTime() - pruneStartA) * 1000.0;
+
+  // Track and execute Compaction Pipeline for Mesh B
+  double pruneStartB = cuBQL::getCurrentTime();
+  parallelPruneAndReindexAll(
+      thrust::raw_pointer_cast(d_intersectPairsB.data()), totalIntersections,
+      outSortedPrimIDsB, outNodeOffsetsB, outTotalActiveCellsB, currentPrimsNumB,
+      s, memResource
+  );
+  CUBQL_CUDA_CALL(StreamSynchronize(s));
+  double pruneMsB = (cuBQL::getCurrentTime() - pruneStartB) * 1000.0;
+
+  // --------------------------------------------------------------------
+  // GPU BUILDER V4 FOREST EXPANSION (RUNNING FIRST ON ORIGINAL SCENE LAYOUT)
   // --------------------------------------------------------------------
   std::cout << " [FOREST EXPANSION] => Launching Level-by-Level Parallel Sub-Tree Compilation..." << std::endl;
 
@@ -269,7 +277,7 @@ void testFastBVH(const cuBQL::box_t<T,D>* d_boxesA, int numPrimsA, int maxCellSi
   // --------------------------------------------------------------------
   // FINAL PERFORMANCE & RESULTS READOUT
   // --------------------------------------------------------------------
-  uint64_t totalValidActivePairs = (uint64_t)outTotalActiveCellsA * outTotalActiveCellsB;
+  uint64_t totalValidActivePairs = (uint64_t)initialCellsA * initialCellsB;
   double overlapPercentage = 0.0;
   if (totalValidActivePairs > 0) {
       overlapPercentage = (double)totalIntersections / (double)totalValidActivePairs * 100.0;
@@ -285,14 +293,56 @@ void testFastBVH(const cuBQL::box_t<T,D>* d_boxesA, int numPrimsA, int maxCellSi
   std::cout << " -> Mesh A Forest BVH Expansion     : " << forestAMs << " ms | Nodes: " << bvhA.numNodes << std::endl;
   std::cout << " -> Mesh B Forest BVH Expansion     : " << forestBMs << " ms | Nodes: " << bvhB.numNodes << std::endl;
   std::cout << " ------------------------------------------------" << std::endl;
+  std::cout << " -> Mesh A Structural Pruning (Post)  : " << pruneMsA << " ms" << std::endl;
+  std::cout << "    * Active Cells Surviving: " << initialCellsA << " -> " << outTotalActiveCellsA << " (Dropped: " << (initialCellsA - outTotalActiveCellsA) << ")" << std::endl;
+  std::cout << "    * Pack Prim Elements Size: " << initialPrimsA << " -> " << currentPrimsNumA << std::endl;
+  std::cout << " ------------------------------------------------" << std::endl;
+  std::cout << " -> Mesh B Structural Pruning (Post)  : " << pruneMsB << " ms" << std::endl;
+  std::cout << "    * Active Cells Surviving: " << initialCellsB << " -> " << outTotalActiveCellsB << " (Dropped: " << (initialCellsB - outTotalActiveCellsB) << ")" << std::endl;
+  std::cout << "    * Pack Prim Elements Size: " << initialPrimsB << " -> " << currentPrimsNumB << std::endl;
+  std::cout << " ------------------------------------------------" << std::endl;
   std::cout << " -> Intersecting Pairs Detected     : " << totalIntersections << " pairs" << std::endl;
   std::cout << " -> True Active Matrix Evaluated    : " << totalValidActivePairs << " pairings" << std::endl;
   std::cout << " -> Percentage of Total Overlaps    : " << overlapPercentage << "%" << std::endl;
-  std::cout << " ------------------------------------------------" << std::endl;
-  std::cout << " -> Mesh A Overlapping Cells Count  : " << uniqueIntersectingCellsA << " / " << outTotalActiveCellsA << " (" << activeCellRatioA << "%)" << std::endl;
-  std::cout << " -> Mesh B Overlapping Cells Count  : " << uniqueIntersectingCellsB << " / " << outTotalActiveCellsB << " (" << activeCellRatioB << "%)" << std::endl;
   std::cout << "==================================================\n" << std::endl;
 
+// // --------------------------------------------------------------------
+//   // PRIMITIVE BOX CROSS INTERSECTION CHECK (BRUTEFORCE CHECK PROFILE)
+//   // --------------------------------------------------------------------
+//   std::cout << "==================================================" << std::endl;
+//   std::cout << "    EXECUTING PRIMITIVE CROSS-INTERSECTION CHECK  " << std::endl;
+//   std::cout << "==================================================" << std::endl;
+
+//   // Ensure any previous work on the stream is done before capturing start time
+//   CUBQL_CUDA_CALL(StreamSynchronize(s));
+//   double bruteForceStart = cuBQL::getCurrentTime();
+
+//   uint64_t totalPrimitiveIntersections = executePrimitiveBoxCrossIntersectionCheck<T, D>(
+//       batchMultiplier,
+//       d_intersectPairsA,
+//       d_intersectPairsB,
+//       outSortedPrimIDsA, outNodeOffsetsA, d_boxesA,
+//       outSortedPrimIDsB, outNodeOffsetsB, d_boxesB,
+//       s
+//   );
+  
+//   // Synchronize to ensure the GPU finishes the check before capturing end time
+//   CUBQL_CUDA_CALL(StreamSynchronize(s));
+//   double bruteForceEnd = cuBQL::getCurrentTime();
+//   double bruteForceMs = (bruteForceEnd - bruteForceStart) * 1000.0;
+
+//   std::cout << " -> Bruteforce Check Execution Time : " << bruteForceMs << " ms" << std::endl;
+//   std::cout << " -> Total Primitive Overlaps Found  : " << totalPrimitiveIntersections << std::endl;
+//   std::cout << " -> Cell-Level Overlaps Baseline    : " << totalIntersections << std::endl;
+
+//   if (totalPrimitiveIntersections > 0) {
+//       std::cout << " -> [OK] Primitive intersection test produced active pairings." << std::endl;
+//   } else {
+//       std::cout << " -> [WARNING] Zero primitive-level overlaps found. Verify if dataset is actually disjoint!" << std::endl;
+//   }
+//   std::cout << "==================================================\n" << std::endl;
+
+  // Memory Cleanup Phase
   if (outNodeBoxesA)     _FREE(outNodeBoxesA, s, memResource);
   if (outSortedPrimIDsA) _FREE(outSortedPrimIDsA, s, memResource);
   if (outNodeOffsetsA)   _FREE(outNodeOffsetsA, s, memResource);

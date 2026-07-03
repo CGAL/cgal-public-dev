@@ -191,7 +191,9 @@ add_executable(testBVH
     src/testBVH/batchedCrossIntersection.cu
     src/testBVH/batchedCrossIntersectionBruteV2.cu
     src/testBVH/DualTreeStep.cu
+    src/testBVH/prune_pipeline.cu
     src/custom_pipeline/GPUPredicatesCheck.cu
+    
 )
 
 set_target_properties(testBVH PROPERTIES
@@ -268,3 +270,47 @@ target_include_directories(dualTreeExecution PRIVATE
 )
 
 target_link_libraries(dualTreeExecution PRIVATE CUDA::cudart ${SHARED_LINK_LIBS})
+
+# ====================================================================
+# TARGET 9: Single-Mesh BVH Tree Layout Diagnostic Tester V2
+# ====================================================================
+add_executable(testBVHV2 
+    apps/mainTestBVHV2.cpp 
+    src/testBVH/kernelsTestBVHAlternative.cu 
+    src/testBVH/rapidDescendKernel.cu
+    src/testBVH/batchedCrossIntersection.cu
+    src/testBVH/DualTreeStep.cu
+    src/testBVH/prune_pipeline.cu
+    src/custom_pipeline/GPUPredicatesCheck.cu
+)
+
+set_target_properties(testBVHV2 PROPERTIES
+    CXX_STANDARD 17
+    CXX_STANDARD_REQUIRED ON
+    CUDA_STANDARD 17
+    CUDA_STANDARD_REQUIRED ON
+    CUDA_ARCHITECTURES "120"
+    CUDA_SEPARABLE_COMPILATION ON
+    BUILD_WITH_INSTALL_RPATH TRUE
+    INSTALL_RPATH "${CUBQL_BUILD}"
+)
+
+target_compile_definitions(testBVHV2 PRIVATE CGAL_LINKED_WITH_TBB)
+
+# Kept --use_fast_math enabled here since we aren't using floating-point interval arithmetic 
+target_compile_options(testBVHV2 PRIVATE 
+    $<$<COMPILE_LANGUAGE:CXX>:-O3 -march=native -DNDEBUG>
+    $<$<COMPILE_LANGUAGE:CUDA>:-O3 -DNDEBUG --use_fast_math>
+)
+
+target_include_directories(testBVHV2 PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/GPU_Cubql_module          # Path tracking to your root module
+    ${CMAKE_CURRENT_SOURCE_DIR}/GPU_Cubql_module/include  # Path tracking to where sm_builder_v2.h sits
+    include
+    ${CUBQL_ROOT}
+    ${CUBQL_ROOT}/samples/common
+    ${CUDAToolkit_INCLUDE_DIRS}
+)
+
+target_link_libraries(testBVHV2 PRIVATE CUDA::cudart ${SHARED_LINK_LIBS})
