@@ -1089,6 +1089,7 @@ namespace CGAL {
           put(normals_pm_, nv, cand.normal);
 
           if (!build_graph(cand.first, cand.second, nv, cand.normal)) {
+            remove_vertex(nv, mesh_); // TODO: try the addition in
             continue;
           }
 
@@ -1254,34 +1255,10 @@ namespace CGAL {
         }
         return false;
       }
-/*
-      halfedge_descriptor create_edge_between(vertex_descriptor a,
-                                              vertex_descriptor b) {
-        edge_descriptor e = add_edge(mesh_);
-        halfedge_descriptor h  = halfedge(e, mesh_);
-        halfedge_descriptor ho = opposite(h, mesh_);
 
-        set_target(h,  b, mesh_);   // a -> b
-        set_target(ho, a, mesh_);   // b -> a
-
-        if (halfedge(a, mesh_) == boost::graph_traits<PolygonMesh>::null_halfedge()) {
-          set_halfedge(a, h, mesh_);
-        }
-        if (halfedge(b, mesh_) == boost::graph_traits<PolygonMesh>::null_halfedge()) {
-          set_halfedge(b, ho, mesh_);
-        }
-
-        return h;
-      }
-*/
-      halfedge_descriptor ensure_halfedge(vertex_descriptor va,
-                                          vertex_descriptor vb) {
-
-        auto [h, found] = halfedge(va, vb, mesh_);
-        if (found) {
-          return h;
-        }
-
+      halfedge_descriptor create_halfedge(vertex_descriptor va,
+                                          vertex_descriptor vb)
+      {
         edge_descriptor e = add_edge(mesh_);
         halfedge_descriptor h_vavb = halfedge(e, mesh_);
         halfedge_descriptor h_vbva = opposite(h_vavb, mesh_);
@@ -1304,14 +1281,12 @@ namespace CGAL {
       template <class H_cycles>
       void find_cycles(vertex_descriptor va, vertex_descriptor vb, H_cycles& h_cycles)
       {
-        std::cout << "inside find_cycle\n";
-
         // collect all halfedges having va as source
         std::vector<halfedge_descriptor> candidates;
 
         halfedge_descriptor hfa = opposite(halfedge(va, mesh_), mesh_);
         CGAL_assertion(source(hfa,mesh_)==va);
-        
+
         if (prev(hfa, mesh_) != opposite(hfa, mesh_))
         {
           for(halfedge_descriptor hh : halfedges_around_source(va, mesh_))
@@ -1333,7 +1308,7 @@ namespace CGAL {
           {
             h_cycles.emplace_back(h, h);
             continue;
-          } 
+          }
 
           halfedge_descriptor start = h, hcycle=h;
 
@@ -1349,7 +1324,6 @@ namespace CGAL {
           }
           while (hcycle!=start);
         }
-        std::cout << "DONE\n";
       }
 
       void check_valid_next_pointers()
@@ -1393,25 +1367,28 @@ namespace CGAL {
           //h_cycle =
         }
 
-        CGAL_assertion( 
+        CGAL_assertion(
           (v0==source(h_cycle.first, mesh_) && v1==target(h_cycle.second, mesh_)) ||
           (v1==source(h_cycle.first, mesh_) && v0==target(h_cycle.second, mesh_))
         );
-      
+
         if (source(h_cycle.first, mesh_)!=v0) {
           std::swap(v0,v1);
         }
-          
+
         CGAL_assertion(source(h_cycle.first,mesh_)==v0);
         CGAL_assertion(target(h_cycle.second,mesh_)==v1);
 
 
         // Create or reuse v0-nv
-        halfedge_descriptor h_v0vn = ensure_halfedge(v0, nv);   // v0 -> nv
+        auto [h0, found0] = halfedge(v0, nv, mesh_);
+        auto [h1, found1] = halfedge(v1, nv, mesh_);
+
+        halfedge_descriptor h_v0vn = found0 ? h0 : create_halfedge(v0, nv);   // v0 -> nv
         halfedge_descriptor h_vnv0 = opposite(h_v0vn, mesh_);      // nv -> v0
 
         // Create or reuse nv-v1
-        halfedge_descriptor h_v1vn = ensure_halfedge(v1, nv);   // v1 -> nv
+        halfedge_descriptor h_v1vn = found1 ? h1 : create_halfedge(v1, nv);   // v1 -> nv
         halfedge_descriptor h_vnv1  = opposite(h_v1vn, mesh_);      // nv -> v1
 
         auto f = add_face(mesh_);
