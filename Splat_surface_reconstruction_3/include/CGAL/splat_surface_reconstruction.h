@@ -1280,53 +1280,23 @@ namespace CGAL {
         return h_vavb;
       }
 
-      // try to find a patch from va to vb
-      template <class H_cycles>
-      void find_cycles(vertex_descriptor va, vertex_descriptor vb, H_cycles& h_cycles)
+      // returns halfedge in the cycle of h pointing onto v, as well as the number of halfedge traversed
+      std::pair<halfedge_descriptor, int>
+      hedge_distance(halfedge_descriptor h, vertex_descriptor v)
       {
-        // collect all halfedges having va as source
-        std::vector<halfedge_descriptor> candidates;
-
-        halfedge_descriptor hfa = opposite(halfedge(va, mesh_), mesh_);
-        CGAL_assertion(source(hfa,mesh_)==va);
-
-        if (prev(hfa, mesh_) != opposite(hfa, mesh_))
+        halfedge_descriptor start=h;
+        int n=0;
+        do
         {
-          for(halfedge_descriptor hh : halfedges_around_source(va, mesh_))
+          ++n;
+          h=next(h, mesh_);
+          if(target(h, mesh_)==v)
           {
-            CGAL_assertion(source(hh,mesh_)==va);
-            candidates.push_back(hh);
+            return {h, n};
           }
         }
-        else
-          candidates.push_back(hfa);
-
-        for (halfedge_descriptor h : candidates)
-        {
-          CGAL_assertion(source(h,mesh_)==va);
-          if (face(h, mesh_)!=boost::graph_traits<PolygonMesh>::null_face())
-            continue;
-
-          if (target(h, mesh_) == vb)
-          {
-            h_cycles.emplace_back(h, h);
-            continue;
-          }
-
-          halfedge_descriptor start = h, hcycle=h;
-
-          do
-          {
-            halfedge_descriptor nh = next(hcycle, mesh_);
-            if (nh == opposite(hcycle, mesh_)) break;
-            if (target(nh, mesh_)==vb){
-              h_cycles.emplace_back(start, nh);
-              break;
-            }
-            hcycle = nh;
-          }
-          while (hcycle!=start);
-        }
+        while(start!=h);
+        return {boost::graph_traits<PolygonMesh>::null_halfedge(), -1};
       }
 
       bool build_graph( vertex_descriptor v0,
@@ -1334,44 +1304,75 @@ namespace CGAL {
                         const vertex_descriptor nv,
                         const Vector_3& normal)
       {
-
-
-
-
-
-
-
-
-
-
-
-        std::cout << "calling build_graph " << v0 << " " << v1 << " " << nv << "\n";
-
-        // check if v0 and v1 are on a cycle of halfedges
-        std::vector<std::pair<halfedge_descriptor, halfedge_descriptor>> h_cycles;
-
-        find_cycles(v0, v1, h_cycles);
-        find_cycles(v1, v0, h_cycles);
-
-        if (h_cycles.empty())
+        std::pair<halfedge_descriptor,halfedge_descriptor> h_cycle;
+        auto [h, found] = halfedge(v0, v1, mesh_);
+        if (!found)
         {
-          std::cout << "  failed (1)!\n";
-          return false;
+          std::vector<std::pair<halfedge_descriptor, halfedge_descriptor>> h_cycles;
+          // extract boundary cycles containing v0
+          for (halfedge_descriptor h : halfedges_around_target(v0, mesh_))
+          {
+            if (face(h, mesh_)==boost::graph_traits<PolygonMesh>::null_face())
+            {
+              // check if v1 is in the cycle, and if it's the case return the smallest path (TODO: use distance instead of #edges?)
+              auto [hv1, n1] = hedge_distance(h, v1);
+              if (n1!=-1)
+              {
+                auto [hv0, n0] = hedge_distance(hv1, v0);
+                if (n0<n1)
+                  h_cycles.emplace_back(next(hv1,mesh_), hv0);
+                else
+                  h_cycles.emplace_back(next(hv0,mesh_), hv1);
+              }
+            }
+          }
+
+          if (h_cycles.empty())
+          {
+            return false;
+          }
+
+          h_cycle = h_cycles.back();
+          if (h_cycles.size()!=1)
+          {
+            // TODO: add the geometric test here to select the right cycle
+            //(normal == CGAL::NULL_VECTOR || tri_normal * normal >= FT(0))
+            //const Point_3 p0 = get(points_pm_, v0);
+            //const Point_3 p1 = get(points_pm_, v1);
+            //const Point_3 p2 = get(points_pm_, nv);
+            //h_cycle =
+          }
+        }
+        else
+        {
+          halfedge_descriptor oh=opposite(h, mesh_);
+          if (face(h, mesh_)==boost::graph_traits<PolygonMesh>::null_face())
+          {
+            if (face(oh, mesh_)==boost::graph_traits<PolygonMesh>::null_face())
+            {
+              const Point_3 p0 = get(points_pm_, v0);
+              const Point_3 p1 = get(points_pm_, v1);
+              const Point_3 p2 = get(points_pm_, nv);
+              const Vector_3 tri_normal = CGAL::cross_product(p0 - p2, p1 - p2);
+              if (normal == CGAL::NULL_VECTOR || tri_normal * normal >= FT(0))
+                h_cycle = {h, h};
+              else
+                h_cycle = {oh, oh};
+            }
+            else
+            {
+              h_cycle = {h, h};
+            }
+          }
+          else
+            if (face(opposite(h, mesh_), mesh_)==boost::graph_traits<PolygonMesh>::null_face())
+            {
+              h_cycle = {oh, oh};
+            }
+            else
+              return false;
         }
 
-
-        CGAL_assertion(h_cycles.size()<=2);
-
-        std::pair<halfedge_descriptor,halfedge_descriptor> h_cycle = h_cycles.back();
-        if (h_cycles.size()==2)
-        {
-          // TODO: add the geometric test here to select the right cycle
-          //(normal == CGAL::NULL_VECTOR || tri_normal * normal >= FT(0))
-          //const Point_3 p0 = get(points_pm_, v0);
-          //const Point_3 p1 = get(points_pm_, v1);
-          //const Point_3 p2 = get(points_pm_, nv);
-          //h_cycle =
-        }
 
         CGAL_assertion(
           (v0==source(h_cycle.first, mesh_) && v1==target(h_cycle.second, mesh_)) ||
@@ -1412,18 +1413,6 @@ namespace CGAL {
         set_next(hp, h_v0vn, mesh_);
         set_next(h_vnv1, hn, mesh_);
         set_next(h_v0vn, h_vnv1, mesh_);
-
-
-
-
-
-
-
-
-
-
-
-        std::cout << "  OK!\n";
 
         return true;
       }
