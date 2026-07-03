@@ -1169,6 +1169,9 @@ namespace CGAL {
 
         push_candidates_from_vertex(v0_);
         push_candidates_from_vertex(v1_);
+
+        std::cout << "seed_from_grid " << e << " added between " << v0_ << "  and " << v1_ << "\n";
+
       }
 
       void push_candidates_from_vertex(vertex_descriptor nv) {
@@ -1326,32 +1329,35 @@ namespace CGAL {
         }
       }
 
-      void check_valid_next_pointers()
-      {
-        for (auto h : halfedges(mesh_))
-        {
-          CGAL_assertion(next(h, mesh_)!= boost::graph_traits<PolygonMesh>::null_halfedge());
-          CGAL_assertion(prev(h, mesh_)!= boost::graph_traits<PolygonMesh>::null_halfedge());
-        } 
-      }
-
-
-
       bool build_graph( vertex_descriptor v0,
                         vertex_descriptor v1,
                         const vertex_descriptor nv,
-                        const Vector_3& normal) 
+                        const Vector_3& normal)
       {
-        check_valid_next_pointers();
+
+
+
+
+
+
+
+
+
+
+
+        std::cout << "calling build_graph " << v0 << " " << v1 << " " << nv << "\n";
 
         // check if v0 and v1 are on a cycle of halfedges
         std::vector<std::pair<halfedge_descriptor, halfedge_descriptor>> h_cycles;
-       
+
         find_cycles(v0, v1, h_cycles);
         find_cycles(v1, v0, h_cycles);
 
-        if (h_cycles.empty()) 
+        if (h_cycles.empty())
+        {
+          std::cout << "  failed (1)!\n";
           return false;
+        }
 
 
         CGAL_assertion(h_cycles.size()<=2);
@@ -1407,7 +1413,17 @@ namespace CGAL {
         set_next(h_vnv1, hn, mesh_);
         set_next(h_v0vn, h_vnv1, mesh_);
 
-        check_valid_next_pointers();
+
+
+
+
+
+
+
+
+
+
+        std::cout << "  OK!\n";
 
         return true;
       }
