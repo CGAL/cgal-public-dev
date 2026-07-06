@@ -8,7 +8,7 @@
 #include "include/third-party/cubql/sm_builder_v3.h"
 #include "include/third-party/cubql/sm_builder_v4.h"
 
-// Custom traversal 
+// Custom traversal
 #include "include/third-party/cubql/fixedBoxQueryv2.h"
 
 #include <thrust/device_vector.h>
@@ -22,49 +22,56 @@
 
 #include <vector>
 #include <algorithm>
-#include <iostream>  // For deep debug printings
+#include <iostream> // For deep debug printings
 #include "samples/common/loadOBJ.h"
 
 // Include modular execution targets
-#include "DualTreeStep.h" 
+#include "DualTreeStep.h"
 #include "rapidDescendKernel.h"
 #include "batchedCrossIntersection.h"
 #include "crossCheckNew.h"
 #include "kernelsTestBVHAlternative.h"
 #include "prune_pipeline.h"
 
+#include "global_box.h"
+
 #ifndef _ALLOC
-#define _ALLOC(ptr, count, stream, memResource) \
-    CUBQL_CUDA_CALL(MallocAsync((void**)&(ptr), (size_t)(count) * sizeof(*(ptr)), stream))
+#define _ALLOC(ptr, count, stream, memResource)                                                                        \
+  CUBQL_CUDA_CALL(MallocAsync((void**)&(ptr), (size_t)(count) * sizeof(*(ptr)), stream))
 #endif
 
 #ifndef _FREE
-#define _FREE(ptr, stream, memResource) \
-    CUBQL_CUDA_CALL(FreeAsync((ptr), stream))
+#define _FREE(ptr, stream, memResource) CUBQL_CUDA_CALL(FreeAsync((ptr), stream))
 #endif
 
 __global__ void generateBoxes(cuBQL::box3f* boxes, const cuBQL::Triangle* tris, int N) {
   int i = threadIdx.x + blockIdx.x * blockDim.x;
-  if(i < N) { boxes[i] = tris[i].bounds(); }
+  if(i < N) {
+    boxes[i] = tris[i].bounds();
+  }
 }
 
-__global__ void populateReverseMapBKernel(uint32_t* d_reverseMapB, const uint32_t* d_markedNodeIndicesB, uint32_t h_outMarkedCountB) {
+__global__ void
+populateReverseMapBKernel(uint32_t* d_reverseMapB, const uint32_t* d_markedNodeIndicesB, uint32_t h_outMarkedCountB) {
   int idx = threadIdx.x + blockIdx.x * blockDim.x;
-  if (idx < h_outMarkedCountB) {
+  if(idx < h_outMarkedCountB) {
     uint32_t directBvhNodeId = d_markedNodeIndicesB[idx];
     d_reverseMapB[directBvhNodeId] = idx;
   }
 }
 
-extern "C" void kernelsTestBVHV2(const cuBQL::Triangle* hMeshA, int numTrianglesA, int maxCellSizeA,
-                               const cuBQL::Triangle* hMeshB, int numTrianglesB, int maxCellSizeB,
-                               int batchMultiplier,
-                               int mode, 
-                               int leafThreshold,
-                               ExecutionStats& stats, 
-                               std::vector<int2>& hGreenPairs,  
-                               std::vector<int2>& hYellowPairs)
-{
+extern "C" void kernelsTestBVHV2(const cuBQL::Triangle* hMeshA,
+                                 int numTrianglesA,
+                                 int maxCellSizeA,
+                                 const cuBQL::Triangle* hMeshB,
+                                 int numTrianglesB,
+                                 int maxCellSizeB,
+                                 int batchMultiplier,
+                                 int mode,
+                                 int leafThreshold,
+                                 ExecutionStats& stats,
+                                 std::vector<int2>& hGreenPairs,
+                                 std::vector<int2>& hYellowPairs) {
   if(numTrianglesA <= 0 || numTrianglesB <= 0) {
     return;
   }
@@ -104,8 +111,8 @@ extern "C" void kernelsTestBVHV2(const cuBQL::Triangle* hMeshA, int numTriangles
   double tAllocEnd = cuBQL::getCurrentTime();
   stats.initialAllocAndCopyMs = (tAllocEnd - tAllocStart) * 1000.0;
 
-  cuBQL::box3f globalBoxA; 
-  cuBQL::box3f globalBoxB; 
+  cuBQL::box3f globalBoxA;
+  cuBQL::box3f globalBoxB;
 
   // --------------------------------------------------------------------
   // THRUST DEVICE ALLOCATION / INITIALIZATION OVERHEAD TRACKING
@@ -114,10 +121,10 @@ extern "C" void kernelsTestBVHV2(const cuBQL::Triangle* hMeshA, int numTriangles
 
   thrust::device_vector<uint32_t> d_outPairsA;
   thrust::device_vector<uint32_t> d_outPairsB;
-  
-  thrust::device_vector<uint32_t> d_outOffsetsB;   
+
+  thrust::device_vector<uint32_t> d_outOffsetsB;
   thrust::device_vector<uint32_t> d_outPrimsFlatB;
-  thrust::device_vector<uint32_t> d_outOffsetsA;   
+  thrust::device_vector<uint32_t> d_outOffsetsA;
   thrust::device_vector<uint32_t> d_outPrimsFlatA;
 
   cudaDeviceSynchronize();
@@ -130,16 +137,17 @@ extern "C" void kernelsTestBVHV2(const cuBQL::Triangle* hMeshA, int numTriangles
   CUBQL_CUDA_CALL(StreamSynchronize(stream));
   double tInitAStart = cuBQL::getCurrentTime();
 
+  // Compute global bounding box for Mesh A
+  cuBQL::utils::computeGlobalBoxParallel<float, 3>(globalBoxA, dBoxesA, numTrianglesA, stream, memResource);
+
   cuBQL::box3f* outNodeBoxesA = nullptr;
   uint32_t* outSortedPrimIDsA = nullptr;
   uint32_t* outNodeOffsetsA = nullptr;
   uint32_t outTotalActiveCellsA = 0;
 
-  cuBQL::gpuBuilder_v3::test_speedrun_initialization_linear(
-      dBoxesA, numTrianglesA, (uint32_t)maxCellSizeA, globalBoxA,
-      outNodeBoxesA, outSortedPrimIDsA, outNodeOffsetsA, outTotalActiveCellsA,
-      stream, memResource
-  );
+  cuBQL::gpuBuilder_v3::test_speedrun_initialization_linear(dBoxesA, numTrianglesA, (uint32_t)maxCellSizeA, globalBoxA,
+                                                            outNodeBoxesA, outSortedPrimIDsA, outNodeOffsetsA,
+                                                            outTotalActiveCellsA, stream, memResource);
   CUBQL_CUDA_CALL(StreamSynchronize(stream));
   stats.buildRefitMeshAMs = (cuBQL::getCurrentTime() - tInitAStart) * 1000.0;
 
@@ -149,16 +157,17 @@ extern "C" void kernelsTestBVHV2(const cuBQL::Triangle* hMeshA, int numTriangles
   CUBQL_CUDA_CALL(StreamSynchronize(stream));
   double tInitBStart = cuBQL::getCurrentTime();
 
+  // Compute global bounding box for Mesh B
+  cuBQL::utils::computeGlobalBoxParallel<float, 3>(globalBoxB, dBoxesB, numTrianglesB, stream, memResource);
+
   cuBQL::box3f* outNodeBoxesB = nullptr;
   uint32_t* outSortedPrimIDsB = nullptr;
   uint32_t* outNodeOffsetsB = nullptr;
   uint32_t outTotalActiveCellsB = 0;
 
-  cuBQL::gpuBuilder_v3::test_speedrun_initialization_linear(
-      dBoxesB, numTrianglesB, (uint32_t)maxCellSizeB, globalBoxB,
-      outNodeBoxesB, outSortedPrimIDsB, outNodeOffsetsB, outTotalActiveCellsB,
-      stream, memResource
-  );
+  cuBQL::gpuBuilder_v3::test_speedrun_initialization_linear(dBoxesB, numTrianglesB, (uint32_t)maxCellSizeB, globalBoxB,
+                                                            outNodeBoxesB, outSortedPrimIDsB, outNodeOffsetsB,
+                                                            outTotalActiveCellsB, stream, memResource);
   CUBQL_CUDA_CALL(StreamSynchronize(stream));
   stats.buildRefitMeshBMs = (cuBQL::getCurrentTime() - tInitBStart) * 1000.0;
 
@@ -177,18 +186,16 @@ extern "C" void kernelsTestBVHV2(const cuBQL::Triangle* hMeshA, int numTriangles
   // --------------------------------------------------------------------
   double tCrossStart = cuBQL::getCurrentTime();
 
-  uint32_t totalIntersections = executeBoxCrossCheck<float, 3>(
-      outNodeBoxesA, h_outMarkedCountA,
-      outNodeBoxesB, h_outMarkedCountB,
-      d_outPairsA, d_outPairsB, stream
-  );
+  uint32_t totalIntersections = executeBoxCrossCheck<float, 3>(outNodeBoxesA, h_outMarkedCountA, outNodeBoxesB,
+                                                               h_outMarkedCountB, d_outPairsA, d_outPairsB, stream);
   CUBQL_CUDA_CALL(StreamSynchronize(stream));
 
   double tCrossEnd = cuBQL::getCurrentTime();
   stats.gpuCrossCheckEngineMs = (tCrossEnd - tCrossStart) * 1000.0;
 
   uint64_t totalPossiblePairs = (uint64_t)h_outMarkedCountA * h_outMarkedCountB;
-  double intersectionPercentage = totalPossiblePairs > 0 ? ((double)totalIntersections / totalPossiblePairs) * 100.0 : 0.0;
+  double intersectionPercentage =
+      totalPossiblePairs > 0 ? ((double)totalIntersections / totalPossiblePairs) * 100.0 : 0.0;
 
   std::cout << "\n==================================================" << std::endl;
   std::cout << "          LAUNCHING CROSS-CHECK KERNELS           " << std::endl;
@@ -206,26 +213,55 @@ extern "C" void kernelsTestBVHV2(const cuBQL::Triangle* hMeshA, int numTriangles
   // --------------------------------------------------------------------
   uint32_t firstOffsetA = 0, lastOffsetA = 0;
   CUBQL_CUDA_CALL(MemcpyAsync(&firstOffsetA, outNodeOffsetsA, sizeof(uint32_t), cudaMemcpyDeviceToHost, stream));
-  CUBQL_CUDA_CALL(MemcpyAsync(&lastOffsetA, outNodeOffsetsA + h_outMarkedCountA, sizeof(uint32_t), cudaMemcpyDeviceToHost, stream));
+  CUBQL_CUDA_CALL(
+      MemcpyAsync(&lastOffsetA, outNodeOffsetsA + h_outMarkedCountA, sizeof(uint32_t), cudaMemcpyDeviceToHost, stream));
 
   uint32_t firstOffsetB = 0, lastOffsetB = 0;
   CUBQL_CUDA_CALL(MemcpyAsync(&firstOffsetB, outNodeOffsetsB, sizeof(uint32_t), cudaMemcpyDeviceToHost, stream));
-  CUBQL_CUDA_CALL(MemcpyAsync(&lastOffsetB, outNodeOffsetsB + h_outMarkedCountB, sizeof(uint32_t), cudaMemcpyDeviceToHost, stream));
+  CUBQL_CUDA_CALL(
+      MemcpyAsync(&lastOffsetB, outNodeOffsetsB + h_outMarkedCountB, sizeof(uint32_t), cudaMemcpyDeviceToHost, stream));
   CUBQL_CUDA_CALL(StreamSynchronize(stream));
 
   int currentPrimsNumA = (int)(lastOffsetA - firstOffsetA);
   int currentPrimsNumB = (int)(lastOffsetB - firstOffsetB);
 
   std::cout << " [POPULATED CELLS CHECK SUMMARY]" << std::endl;
-  std::cout << " -> Tree A Active Nodes: " << initialCellsA << " | Total Verified Prims = " << currentPrimsNumA << std::endl;
-  std::cout << " -> Tree B Active Nodes: " << initialCellsB << " | Total Verified Prims = " << currentPrimsNumB << std::endl;
+  std::cout << " -> Tree A Active Nodes: " << initialCellsA << " | Total Verified Prims = " << currentPrimsNumA
+            << std::endl;
+  std::cout << " -> Tree B Active Nodes: " << initialCellsB << " | Total Verified Prims = " << currentPrimsNumB
+            << std::endl;
   std::cout << "--------------------------------------------------\n" << std::endl;
 
   // --------------------------------------------------------------------
-  // GPU BUILDER V4 FOREST EXPANSION (CRITICAL FIX: RUNNING BEFORE PRUNING)
+  // PARALLEL STREAM COMPACTION & PRUNING ALGORITHM (POST-BUILD)
+  // --------------------------------------------------------------------
+  std::cout << " \n[PIPELINE PRUNING] => Dispatched grid streaming parallel re-index compaction (POST-BUILD)..."
+            << std::endl;
+
+  double pruneStartA = cuBQL::getCurrentTime();
+  parallelPruneAndReindexAll(thrust::raw_pointer_cast(d_outPairsA.data()), totalIntersections, outSortedPrimIDsA,
+                             outNodeOffsetsA, outTotalActiveCellsA, currentPrimsNumA, stream, memResource);
+  CUBQL_CUDA_CALL(StreamSynchronize(stream));
+  double pruneMsA = (cuBQL::getCurrentTime() - pruneStartA) * 1000.0;
+  std::cout << " -> Mesh A Structural Pruning (Post)  : " << pruneMsA << " ms" << std::endl;
+  std::cout << "    * Active Cells Surviving: " << initialCellsA << " -> " << outTotalActiveCellsA << std::endl;
+
+  double pruneStartB = cuBQL::getCurrentTime();
+  parallelPruneAndReindexAll(thrust::raw_pointer_cast(d_outPairsB.data()), totalIntersections, outSortedPrimIDsB,
+                             outNodeOffsetsB, outTotalActiveCellsB, currentPrimsNumB, stream, memResource);
+  CUBQL_CUDA_CALL(StreamSynchronize(stream));
+  double pruneMsB = (cuBQL::getCurrentTime() - pruneStartB) * 1000.0;
+  std::cout << " -> Mesh B Structural Pruning (Post)  : " << pruneMsB << " ms" << std::endl;
+  std::cout << "    * Active Cells Surviving: " << initialCellsB << " -> " << outTotalActiveCellsB << std::endl;
+
+
+  // --------------------------------------------------------------------
+  // GPU BUILDER V4 FOREST EXPANSION
   // --------------------------------------------------------------------
   std::cout << " [FOREST EXPANSION] => Launching Level-by-Level Parallel Sub-Tree Compilation..." << std::endl;
 
+  // FIX: Calculate allocation sizes using the UNPRUNED base configurations (h_outMarkedCountA / B)
+  // so they structurally match the parameters inside build_forest.
   const uint32_t numInitA = h_outMarkedCountA + (h_outMarkedCountA & 1u);
   const uint32_t maxNodesA = 2u * (uint32_t)numTrianglesA + numInitA + 2u;
   const uint32_t numInitB = h_outMarkedCountB + (h_outMarkedCountB & 1u);
@@ -238,9 +274,8 @@ extern "C" void kernelsTestBVHV2(const cuBQL::Triangle* hMeshA, int numTriangles
   double tForestAStart = cuBQL::getCurrentTime();
   cuBQL::BinaryBVH<float, 3> bvhA;
   cuBQL::gpuBuilder_v4::build_forest<float, 3>(
-      bvhA, dBoxesA, numTrianglesA, h_outMarkedCountA,
-      outSortedPrimIDsA, outNodeOffsetsA, buildConfig, thrust::raw_pointer_cast(d_nodeDescendantCountsA.data()), stream, memResource
-  );
+      bvhA, dBoxesA, currentPrimsNumA, numTrianglesA, h_outMarkedCountA, outSortedPrimIDsA, outNodeOffsetsA,
+      buildConfig, thrust::raw_pointer_cast(d_nodeDescendantCountsA.data()), stream, memResource);
   CUBQL_CUDA_CALL(StreamSynchronize(stream));
   double forestAMs = (cuBQL::getCurrentTime() - tForestAStart) * 1000.0;
   stats.buildRefitMeshAMs += forestAMs;
@@ -250,55 +285,28 @@ extern "C" void kernelsTestBVHV2(const cuBQL::Triangle* hMeshA, int numTriangles
   double tForestBStart = cuBQL::getCurrentTime();
   cuBQL::BinaryBVH<float, 3> bvhB;
   cuBQL::gpuBuilder_v4::build_forest<float, 3>(
-      bvhB, dBoxesB, numTrianglesB, h_outMarkedCountB,
-      outSortedPrimIDsB, outNodeOffsetsB, buildConfig, thrust::raw_pointer_cast(d_nodeDescendantCountsB.data()), stream, memResource
-  );
+      bvhB, dBoxesB, currentPrimsNumB, numTrianglesB, h_outMarkedCountB, outSortedPrimIDsB, outNodeOffsetsB,
+      buildConfig, thrust::raw_pointer_cast(d_nodeDescendantCountsB.data()), stream, memResource);
   CUBQL_CUDA_CALL(StreamSynchronize(stream));
   double forestBMs = (cuBQL::getCurrentTime() - tForestBStart) * 1000.0;
   stats.buildRefitMeshBMs += forestBMs;
   std::cout << " -> Mesh B Forest BVH Expansion     : " << forestBMs << " ms | Nodes: " << bvhB.numNodes << std::endl;
 
-  // --------------------------------------------------------------------
-  // PARALLEL STREAM COMPACTION & PRUNING ALGORITHM (POST-BUILD)
-  // --------------------------------------------------------------------
-  std::cout << " \n[PIPELINE PRUNING] => Dispatched grid streaming parallel re-index compaction (POST-BUILD)..." << std::endl;
-
-  double pruneStartA = cuBQL::getCurrentTime();
-  parallelPruneAndReindexAll(
-      thrust::raw_pointer_cast(d_outPairsA.data()), totalIntersections,
-      outSortedPrimIDsA, outNodeOffsetsA, outTotalActiveCellsA, currentPrimsNumA,
-      stream, memResource
-  );
-  CUBQL_CUDA_CALL(StreamSynchronize(stream));
-  double pruneMsA = (cuBQL::getCurrentTime() - pruneStartA) * 1000.0;
-  std::cout << " -> Mesh A Structural Pruning (Post)  : " << pruneMsA << " ms" << std::endl;
-  std::cout << "    * Active Cells Surviving: " << initialCellsA << " -> " << outTotalActiveCellsA << std::endl;
-
-  double pruneStartB = cuBQL::getCurrentTime();
-  parallelPruneAndReindexAll(
-      thrust::raw_pointer_cast(d_outPairsB.data()), totalIntersections,
-      outSortedPrimIDsB, outNodeOffsetsB, outTotalActiveCellsB, currentPrimsNumB,
-      stream, memResource
-  );
-  CUBQL_CUDA_CALL(StreamSynchronize(stream));
-  double pruneMsB = (cuBQL::getCurrentTime() - pruneStartB) * 1000.0;
-  std::cout << " -> Mesh B Structural Pruning (Post)  : " << pruneMsB << " ms" << std::endl;
-  std::cout << "    * Active Cells Surviving: " << initialCellsB << " -> " << outTotalActiveCellsB << " (Dropped: " << (initialCellsB - outTotalActiveCellsB) << ")" << std::endl;
 
   // --------------------------------------------------------------------
-  // PREPARE DOWNSTREAM MAPPINGS USING TRACKED BASES
+  // PREPARE DOWNSTREAM MAPPINGS USING COMPACTED SURVIVAL COUNTS
   // --------------------------------------------------------------------
-  // Reset marked counts back to base configurations for downstream tree logic mapping
-  h_outMarkedCountA = initialCellsA;
-  h_outMarkedCountB = initialCellsB;
+  // FIX: Downstream indexing must track the actual valid remaining partitions (outTotalActiveCells)
+  uint32_t finalActiveCellsA = outTotalActiveCellsA;
+  uint32_t finalActiveCellsB = outTotalActiveCellsB;
 
-  thrust::device_vector<uint32_t> d_markedNodeIndicesA(h_outMarkedCountA);
+  thrust::device_vector<uint32_t> d_markedNodeIndicesA(finalActiveCellsA);
   thrust::sequence(thrust::device.on(stream), d_markedNodeIndicesA.begin(), d_markedNodeIndicesA.end());
-  
-  thrust::device_vector<uint32_t> d_markedNodeIndicesB(h_outMarkedCountB);
+
+  thrust::device_vector<uint32_t> d_markedNodeIndicesB(finalActiveCellsB);
   thrust::sequence(thrust::device.on(stream), d_markedNodeIndicesB.begin(), d_markedNodeIndicesB.end());
 
-  uint32_t maxPossibleNodesB = 2 * numTrianglesB;
+  uint32_t maxPossibleNodesB = bvhB.numNodes;
   thrust::device_vector<uint32_t> d_reverseMapB(maxPossibleNodesB, 0);
 
   std::cout << " [OK] Sequences initialization complete. Proceeding to Dual Tree Step..." << std::endl;
@@ -308,16 +316,14 @@ extern "C" void kernelsTestBVHV2(const cuBQL::Triangle* hMeshA, int numTriangles
   // DUAL-TREE TRAVERSAL STEP OVERHEAD PHASE
   // --------------------------------------------------------------------
   double tDualStepStart = cuBQL::getCurrentTime();
-  
-  if (mode > 0) {
-    executeDualTreeStep(
-        mode, maxCellSizeA, maxCellSizeB, d_outPairsA, d_outPairsB,
-        d_markedNodeIndicesA, d_markedNodeIndicesB, d_nodeDescendantCountsA, d_nodeDescendantCountsB,
-        h_outMarkedCountA, h_outMarkedCountB, bvhA, bvhB, dMeshA, dMeshB
-    );
+
+  if(mode > 0) {
+    executeDualTreeStep(mode, maxCellSizeA, maxCellSizeB, d_outPairsA, d_outPairsB, d_markedNodeIndicesA,
+                        d_markedNodeIndicesB, d_nodeDescendantCountsA, d_nodeDescendantCountsB, finalActiveCellsA,
+                        finalActiveCellsB, bvhA, bvhB, dMeshA, dMeshB);
     cudaDeviceSynchronize();
   }
-  
+
   double tDualStepEnd = cuBQL::getCurrentTime();
   stats.dualTreeStepMs = (mode > 0) ? (tDualStepEnd - tDualStepStart) * 1000.0 : 0.0;
 
@@ -329,25 +335,26 @@ extern "C" void kernelsTestBVHV2(const cuBQL::Triangle* hMeshA, int numTriangles
   // CONDITIONAL PIPELINE EXECUTION BASED ON MODE
   // --------------------------------------------------------------------
   double tGpuBfsStart = cuBQL::getCurrentTime();
-  executeRapidDescentBFS(bvhB, numTrianglesB, d_markedNodeIndicesB, d_nodeDescendantCountsB, h_outMarkedCountB, d_outOffsetsB, d_outPrimsFlatB);
 
-  if (h_outMarkedCountB > 0) {
+  // FIX: Pass the compacted cell count so BFS execution matches valid data zones
+  executeRapidDescentBFS(bvhB, numTrianglesB, d_markedNodeIndicesB, d_nodeDescendantCountsB, finalActiveCellsB,
+                         d_outOffsetsB, d_outPrimsFlatB);
+
+  if(finalActiveCellsB > 0) {
     int blockSize = 256;
-    int gridSize = (h_outMarkedCountB + blockSize - 1) / blockSize;
-    populateReverseMapBKernel<<<gridSize, blockSize, 0, stream>>>(
-        thrust::raw_pointer_cast(d_reverseMapB.data()), thrust::raw_pointer_cast(d_markedNodeIndicesB.data()), h_outMarkedCountB
-    );
+    int gridSize = (finalActiveCellsB + blockSize - 1) / blockSize;
+    populateReverseMapBKernel<<<gridSize, blockSize, 0, stream>>>(thrust::raw_pointer_cast(d_reverseMapB.data()),
+                                                                  thrust::raw_pointer_cast(d_markedNodeIndicesB.data()),
+                                                                  finalActiveCellsB);
   }
-  
+
   cudaDeviceSynchronize();
   double tGpuBfsEnd = cuBQL::getCurrentTime();
 
-  finalCandidatePairs = executeBatchedCrossIntersectionLoop(
-      batchMultiplier, totalBatches, d_outPairsA, d_outPairsB, d_reverseMapB,             
-      d_markedNodeIndicesB, d_outOffsetsB, d_outPrimsFlatB, d_nodeDescendantCountsB,
-      h_outMarkedCountB, bvhA, dMeshA, dMeshB, hGreenPairs, hYellowPairs, tracker        
-  );
-
+  finalCandidatePairs =
+      executeBatchedCrossIntersectionLoop(batchMultiplier, totalBatches, d_outPairsA, d_outPairsB, d_reverseMapB,
+                                          d_markedNodeIndicesB, d_outOffsetsB, d_outPrimsFlatB, d_nodeDescendantCountsB,
+                                          finalActiveCellsB, bvhA, dMeshA, dMeshB, hGreenPairs, hYellowPairs, tracker);
   // --------------------------------------------------------------------
   // EXPLICIT CLEANUP & RECOVERY METRIC TRACKING
   // --------------------------------------------------------------------
@@ -358,12 +365,18 @@ extern "C" void kernelsTestBVHV2(const cuBQL::Triangle* hMeshA, int numTriangles
   CUBQL_CUDA_CALL(Free(dMeshB));
   CUBQL_CUDA_CALL(Free(dBoxesB));
 
-  if (outNodeBoxesA)     _FREE(outNodeBoxesA, stream, memResource);
-  if (outSortedPrimIDsA) _FREE(outSortedPrimIDsA, stream, memResource);
-  if (outNodeOffsetsA)   _FREE(outNodeOffsetsA, stream, memResource);
-  if (outNodeBoxesB)     _FREE(outNodeBoxesB, stream, memResource);
-  if (outSortedPrimIDsB) _FREE(outSortedPrimIDsB, stream, memResource);
-  if (outNodeOffsetsB)   _FREE(outNodeOffsetsB, stream, memResource);
+  if(outNodeBoxesA)
+    _FREE(outNodeBoxesA, stream, memResource);
+  if(outSortedPrimIDsA)
+    _FREE(outSortedPrimIDsA, stream, memResource);
+  if(outNodeOffsetsA)
+    _FREE(outNodeOffsetsA, stream, memResource);
+  if(outNodeBoxesB)
+    _FREE(outNodeBoxesB, stream, memResource);
+  if(outSortedPrimIDsB)
+    _FREE(outSortedPrimIDsB, stream, memResource);
+  if(outNodeOffsetsB)
+    _FREE(outNodeOffsetsB, stream, memResource);
 
   cuBQL::cuda::free(bvhA, stream, memResource);
   cuBQL::cuda::free(bvhB, stream, memResource);
@@ -372,7 +385,7 @@ extern "C" void kernelsTestBVHV2(const cuBQL::Triangle* hMeshA, int numTriangles
   d_nodeDescendantCountsA.shrink_to_fit();
   d_markedNodeIndicesB.shrink_to_fit();
   d_nodeDescendantCountsB.shrink_to_fit();
-  d_reverseMapB.shrink_to_fit(); 
+  d_reverseMapB.shrink_to_fit();
   d_outPairsA.shrink_to_fit();
   d_outPairsB.shrink_to_fit();
   d_outOffsetsB.shrink_to_fit();
@@ -386,19 +399,19 @@ extern "C" void kernelsTestBVHV2(const cuBQL::Triangle* hMeshA, int numTriangles
 
   double tPipelineEnd = cuBQL::getCurrentTime();
 
-  stats.meshATotalNodes         = bvhA.numNodes;
-  stats.meshAExtractedTargets   = h_outMarkedCountA;
-  stats.meshBTotalNodes         = bvhB.numNodes;
-  stats.meshBExtractedTargets   = h_outMarkedCountB;
-  stats.totalIntersections     = totalIntersections;
-  stats.totalPossiblePairs     = totalPossiblePairs;
+  stats.meshATotalNodes = bvhA.numNodes;
+  stats.meshAExtractedTargets = h_outMarkedCountA;
+  stats.meshBTotalNodes = bvhB.numNodes;
+  stats.meshBExtractedTargets = h_outMarkedCountB;
+  stats.totalIntersections = totalIntersections;
+  stats.totalPossiblePairs = totalPossiblePairs;
   stats.intersectionPercentage = intersectionPercentage;
-  stats.gpuCrossCheckEngineMs   = (tCrossEnd - tCrossStart) * 1000.0;
-  stats.parallelDfsDescentBMs   = (tGpuBfsEnd - tGpuBfsStart) * 1000.0; 
-  stats.GPUTotalTime            = (tPipelineEnd - tPipelineStart) * 1000.0;
-  stats.totalCrissCrossBatches  = totalBatches;
+  stats.gpuCrossCheckEngineMs = (tCrossEnd - tCrossStart) * 1000.0;
+  stats.parallelDfsDescentBMs = (tGpuBfsEnd - tGpuBfsStart) * 1000.0;
+  stats.GPUTotalTime = (tPipelineEnd - tPipelineStart) * 1000.0;
+  stats.totalCrissCrossBatches = totalBatches;
   stats.finalAabbCandidatePairs = finalCandidatePairs;
-  stats.confirmedGreenPairs     = hGreenPairs.size();
-  stats.confirmedYellowPairs    = hYellowPairs.size();
-  stats.loopTracker             = tracker;
+  stats.confirmedGreenPairs = hGreenPairs.size();
+  stats.confirmedYellowPairs = hYellowPairs.size();
+  stats.loopTracker = tracker;
 }

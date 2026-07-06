@@ -1,6 +1,4 @@
-// SPDX-FileCopyrightText: Copyright (c) 2026
 // SPDX-License-Identifier: Apache-2.0
-
 #pragma once
 
 #include "cuBQL/builder/cuda/builder_common.h"
@@ -48,7 +46,14 @@ namespace cuBQL {
       };
     };
     
-    // Initializes roots and adds an extra DONE_NODE pad slot if odd to preserve even alignment invariants
+    __global__ void clearPrimStates(PrimState *primStates, int totalAllocationPrims) {
+      const int primID = threadIdx.x + blockIdx.x * blockDim.x;
+      if (primID >= totalAllocationPrims) return;
+      primStates[primID].nodeID = (uint32_t)-1;
+      primStates[primID].done   = true;
+      primStates[primID].primID = primID;
+    }
+
     template<typename T, int D>
     __global__
     void initForestState(BuildState      *buildState,
@@ -76,7 +81,6 @@ namespace cuBQL {
       }
     }
 
-    // High-performance cooperative grid-stride processing (One block per cell)
     template<typename T, int D>
     __global__ void initForestPrims(TempNode<T,D>    *nodes,
                                     PrimState        *primState,
@@ -143,7 +147,6 @@ namespace cuBQL {
         if (nodeID >= numNodes)
           break;
         
-        // SAFE GUARDRAIL: Verify node read boundaries
         if (nodeID >= maxNodes) {
           if (atomicCAS(d_errorFlag, 0, 1) == 0) {
             printf("[DEVICE ERROR] selectSplits: Attempted read nodeID %d >= maxNodes %u\n", nodeID, maxNodes);
@@ -169,7 +172,6 @@ namespace cuBQL {
 
         d_nodeDescendantCounts[nodeID] = in.count;
 
-        // HARD GUARDRAIL 1: Force leaf creation if there are 1 or 0 primitives, or threshold met
         if (in.count <= 1 || in.count <= buildConfig.makeLeafThreshold) {
           auto &done  = nodes[nodeID].doneNode;
           done.count  = in.count;
@@ -195,7 +197,6 @@ namespace cuBQL {
             widestCtr = ctr;
           }
           
-          // HARD GUARDRAIL 2: Convert to leaf if bounds are degenerate (overlapping centers)
           if (widestDim < 0 || widestCtr == widestLo || widestCtr == widestHi) {
             auto &done  = nodes[nodeID].doneNode;
             done.count  = in.count;
@@ -224,17 +225,10 @@ namespace cuBQL {
           for (int side=0;side<2;side++) {
             const int childID = openOffset+side;
             
-            // SAFE GUARDRAIL: Trap dynamic sizing explosions before memory writes execute
             if (childID >= maxNodes) {
               if (atomicCAS(d_errorFlag, 0, 1) == 0) {
-                const int parentID = (threadIdx.x+blockIdx.x*blockDim.x);
                 printf("\n!!! [CRITICAL TRAP] !!!\n"
-                       "[DEVICE ERROR] selectSplits: Exploded childID %d >= maxNodes %u!\n"
-                       "Parent NodeID      : %d\n"
-                       "Parent Depth Level : %u\n"
-                       "Parent Prim Count  : %u\n"
-                       "-------------------------------------\n", 
-                       childID, maxNodes, parentID, currentLevel, nodes[parentID].openBranch.count);
+                       "[DEVICE ERROR] selectSplits: Exploded childID %d >= maxNodes %u!\n", childID, maxNodes);
               }
               break;
             }
@@ -249,12 +243,34 @@ namespace cuBQL {
     }
 
     template<typename T, int D>
+    __global__ void propagateDescendantCounts(uint32_t numNodes,
+                                              const NodeState* nodeStates,
+                                              const TempNode<T,D>* nodes, 
+                                              uint32_t* d_nodeDescendantCounts)
+    {
+      int nodeID = numNodes - 1 - (threadIdx.x + blockIdx.x * blockDim.x);
+      if (nodeID < 0) return;
+
+      if (nodeStates[nodeID] == DONE_NODE) {
+        auto &doneNode = nodes[nodeID].doneNode;
+        if (doneNode.offset != (uint32_t)-1) { 
+          uint32_t leftChild = doneNode.offset;
+          uint32_t rightChild = leftChild + 1;
+          
+          if (leftChild < numNodes) {
+            d_nodeDescendantCounts[nodeID] = d_nodeDescendantCounts[leftChild] + d_nodeDescendantCounts[rightChild];
+          }
+        }
+      }
+    }
+
+    template<typename T, int D>
     __global__ void updatePrims_shm(
                          NodeState         *nodeStates,
                          TempNode<T,D>     *nodes,
                          PrimState         *primStates,
                          const box_t<T,D>  *primBoxes,
-                         int numPrims,
+                         int totalAllocationPrims,
                          int nodeBegin,
                          int numPasses,
                          uint32_t maxNodes,
@@ -272,7 +288,7 @@ namespace cuBQL {
       for (int pass=0;pass<numPasses;pass++) {
         while (true) {
           const int primID = threadIdx.x+pass*blockDim.x + numPasses*blockIdx.x*blockDim.x;
-          if (primID >= numPrims) break; 
+          if (primID >= totalAllocationPrims) break; 
         
           const auto me = primStates[primID];
           if (me.done) break;
@@ -345,12 +361,12 @@ namespace cuBQL {
                      TempNode<T,D> *nodes,
                      PrimState       *primStates,
                      const box_t<T,D>     *primBoxes,
-                     int numPrims,
+                     int totalAllocationPrims,
                      uint32_t maxNodes,
                      uint32_t *d_errorFlag)
     {
       const int primID = threadIdx.x+blockIdx.x*blockDim.x;
-      if (primID >= numPrims) return;
+      if (primID >= totalAllocationPrims) return;
 
       const auto me = primStates[primID];
       if (me.done) return;
@@ -400,12 +416,12 @@ namespace cuBQL {
                                   TempNode<T,D> *nodes,
                                   uint32_t        *bvhItemList,
                                   PrimState       *primStates,
-                                  int               numPrims,
+                                  int               totalAllocationPrims,
                                   uint32_t          maxNodes,
                                   uint32_t         *d_errorFlag)
     {
       const int offset = threadIdx.x+blockIdx.x*blockDim.x;
-      if (offset >= numPrims) return;
+      if (offset >= totalAllocationPrims) return;
 
       auto &ps = primStates[offset];
       bvhItemList[offset] = ps.primID;
@@ -448,7 +464,8 @@ namespace cuBQL {
     template<typename T, int D>
     void build_forest(BinaryBVH<T,D>    &bvh,
                       const box_t<T,D>  *boxes,
-                      int                numPrims,
+                      int                numPrims,           
+                      int                originalMaxPrims,   
                       uint32_t           numCells,
                       const uint32_t    *d_outSortedPrimIDs,
                       const uint32_t    *d_outNodeOffsets,
@@ -460,7 +477,7 @@ namespace cuBQL {
       assert(sizeof(PrimState) == sizeof(uint64_t));
       
       const uint32_t numInit  = numCells + (numCells & 1u);
-      const uint32_t maxNodes = 2u * (uint32_t)numPrims + numInit + 2u;
+      const uint32_t maxNodes = 2u * (uint32_t)originalMaxPrims + numInit + 2u;
 
       TempNode<T,D> *tempNodes = 0;
       NodeState     *nodeStates = 0;
@@ -470,12 +487,14 @@ namespace cuBQL {
 
       _ALLOC(tempNodes, maxNodes, s, memResource);
       _ALLOC(nodeStates, maxNodes, s, memResource);
-      _ALLOC(primStates, numPrims, s, memResource);
+      _ALLOC(primStates, originalMaxPrims, s, memResource); 
       _ALLOC(buildState, 1, s, memResource);
       _ALLOC(d_errorFlag, 1, s, memResource);
 
       CUBQL_CUDA_CALL(MemsetAsync(d_nodeDescendantCounts, 0, maxNodes * sizeof(uint32_t), s));
       CUBQL_CUDA_CALL(MemsetAsync(d_errorFlag, 0, sizeof(uint32_t), s));
+
+      clearPrimStates<<<divRoundUp((uint32_t)originalMaxPrims, 1024U), 1024, 0, s>>>(primStates, originalMaxPrims);
 
       initForestState<<<divRoundUp(numInit, 1024U), 1024, 0, s>>>(buildState, nodeStates, tempNodes, numCells, numInit);
       
@@ -485,13 +504,10 @@ namespace cuBQL {
 
       int numDone = 0;
       int numNodes = 0; 
-      int hostIteration = 0;
       uint32_t hostErrorFlag = 0;
 
       cudaEvent_t stateDownloadedEvent;
       CUBQL_CUDA_CALL(EventCreate(&stateDownloadedEvent));
-      
-     // std::cout << "\n--- [FOREST EXPANSION DIAGNOSTICS START] ---" << std::endl;
 
       while (true) {
         CUBQL_CUDA_CALL(MemcpyAsync(&numNodes, &buildState->numNodes, sizeof(numNodes), cudaMemcpyDeviceToHost, s));
@@ -500,23 +516,9 @@ namespace cuBQL {
         CUBQL_CUDA_CALL(EventRecord(stateDownloadedEvent, s));
         CUBQL_CUDA_CALL(EventSynchronize(stateDownloadedEvent));
 
-        // std::cout << "[HOST LOOP] Iteration: " << hostIteration++ 
-        //           << " | GPU reported numNodes: " << numNodes 
-        //           << " | Current numDone: " << numDone 
-        //           << " | Max Allocated Nodes Limit: " << maxNodes 
-        //           << " | Config Max Leaf Threshold: " << buildConfig.makeLeafThreshold << std::endl;
-
-        if (hostErrorFlag > 0) {
-          std::cerr << "\n[CRITICAL HOST ABORT] Device error flag tripped! Halting pipeline execution immediately to prevent console spam.\n" << std::endl;
+        if (hostErrorFlag > 0 || numNodes >= (int)maxNodes || numNodes == numDone) {
           break;
         }
-
-        if (numNodes >= (int)maxNodes) {
-          std::cerr << "CRITICAL EXCEPTION: Tree size exploded past maxNodes reservation threshold! Forcing loop crash avoidance." << std::endl;
-          break;
-        }
-
-        if (numNodes == numDone) break;
 
         selectSplits<<<divRoundUp((uint32_t)numNodes, 1024U), 1024, 0, s>>>(
            buildState, nodeStates, tempNodes, numNodes, buildConfig, d_nodeDescendantCounts, maxNodes, d_errorFlag
@@ -525,16 +527,14 @@ namespace cuBQL {
         numDone = numNodes;
 
         if (sizeof(T)*D <= sizeof(float3)) {
-          updatePrims_shm<<<divRoundUp((uint32_t)numPrims, 512U), 512, 0, s>>>(nodeStates, tempNodes, primStates, boxes, numPrims, numDone, 8, maxNodes, d_errorFlag);
+          updatePrims_shm<<<divRoundUp((uint32_t)originalMaxPrims, 512U), 512, 0, s>>>(nodeStates, tempNodes, primStates, boxes, originalMaxPrims, numDone, 8, maxNodes, d_errorFlag);
         } else {
-          updatePrims<<<divRoundUp((uint32_t)numPrims, 1024U), 1024, 0, s>>>(nodeStates, tempNodes, primStates, boxes, numPrims, maxNodes, d_errorFlag);
+          updatePrims<<<divRoundUp((uint32_t)originalMaxPrims, 1024U), 1024, 0, s>>>(nodeStates, tempNodes, primStates, boxes, originalMaxPrims, maxNodes, d_errorFlag);
         }
         
         CUBQL_CUDA_CALL(StreamSynchronize(s)); 
       }
       CUBQL_CUDA_CALL(EventDestroy(stateDownloadedEvent));
-      
-      //std::cout << "--- [FOREST EXPANSION DIAGNOSTICS END] ---\n" << std::endl;
 
       if (hostErrorFlag > 0 || numNodes >= (int)maxNodes) {
          _FREE(tempNodes, s, memResource);
@@ -545,19 +545,25 @@ namespace cuBQL {
          return; 
       }
 
+      if (numNodes > 0) {
+        uint32_t tpb = 256;
+        uint32_t blocks = (numNodes + tpb - 1) / tpb;
+        propagateDescendantCounts<<<blocks, tpb, 0, s>>>(numNodes, nodeStates, tempNodes, d_nodeDescendantCounts);
+      }
+
       uint8_t   *d_temp_storage     = NULL;
       size_t     temp_storage_bytes = 0;
       PrimState *sortedPrimStates   = 0;
       
-      _ALLOC(sortedPrimStates, numPrims, s, memResource);
-      cub::DeviceRadixSort::SortKeys((void*&)d_temp_storage, temp_storage_bytes, (uint64_t*)primStates, (uint64_t*)sortedPrimStates, numPrims, 32, 64, s);
+      _ALLOC(sortedPrimStates, originalMaxPrims, s, memResource);
+      cub::DeviceRadixSort::SortKeys((void*&)d_temp_storage, temp_storage_bytes, (uint64_t*)primStates, (uint64_t*)sortedPrimStates, originalMaxPrims, 32, 64, s);
       _ALLOC(d_temp_storage, temp_storage_bytes, s, memResource);
-      cub::DeviceRadixSort::SortKeys((void*&)d_temp_storage, temp_storage_bytes, (uint64_t*)primStates, (uint64_t*)sortedPrimStates, numPrims, 32, 64, s);
+      cub::DeviceRadixSort::SortKeys((void*&)d_temp_storage, temp_storage_bytes, (uint64_t*)primStates, (uint64_t*)sortedPrimStates, originalMaxPrims, 32, 64, s);
       _FREE(d_temp_storage, s, memResource);
 
-      bvh.numPrims = numPrims;
-      _ALLOC(bvh.primIDs, numPrims, s, memResource);
-      writePrimsAndLeafOffsets<<<divRoundUp((uint32_t)numPrims, 1024U), 1024, 0, s>>>(tempNodes, bvh.primIDs, sortedPrimStates, numPrims, maxNodes, d_errorFlag);
+      bvh.numPrims = originalMaxPrims;
+      _ALLOC(bvh.primIDs, originalMaxPrims, s, memResource);
+      writePrimsAndLeafOffsets<<<divRoundUp((uint32_t)originalMaxPrims, 1024U), 1024, 0, s>>>(tempNodes, bvh.primIDs, sortedPrimStates, originalMaxPrims, maxNodes, d_errorFlag);
 
       bvh.numNodes = numNodes;
       _ALLOC(bvh.nodes, numNodes, s, memResource);

@@ -4,157 +4,116 @@
 #pragma once
 
 #include "cuBQL/builder/cuda/builder_common.h"
-#include <cooperative_groups.h>
+#include "cubql_allocators.h"
+#include <cstdio>
 
 namespace cuBQL {
 namespace utils {
-
 namespace impl {
 
-// Float/Double safe atomic Min loop using CAS
-template <typename T>
-__device__ inline void atomicMinGeneric(T* address, T val) {
-    if constexpr (sizeof(T) == 4) {
-        int* address_as_int = (int*)address;
-        int old = *address_as_int, assumed;
-        while (val < __int_as_float(old)) {
-            assumed = old;
-            old = atomicCAS(address_as_int, assumed, __float_as_int(val));
-            if (assumed == old) break;
-        }
-    } else if constexpr (sizeof(T) == 8) {
-        unsigned long long extern* address_as_ull = (unsigned long long extern*)address;
-        unsigned long long old = *address_as_ull, assumed;
-        while (val < __longlong_as_double(old)) {
-            assumed = old;
-            old = atomicCAS(address_as_ull, assumed, __double_as_longlong(val));
-            if (assumed == old) break;
-        }
+using cuBQL::gpuBuilder_impl::AtomicBox;
+using cuBQL::gpuBuilder_impl::atomic_grow;
+
+// 1. Initializer kernel using the native .set_empty() API
+template<typename T, int D>
+__global__ void initGlobalBoxKernel(AtomicBox<box_t<T,D>> *globalBox)
+{
+    globalBox->set_empty();
+}
+
+// 2. Elemental kernel: Each thread processes one box and grows the global box atomically
+template<typename T, int D>
+__global__ void computeGlobalBoxKernel(AtomicBox<box_t<T,D>> *globalBox,
+                                       const box_t<T,D>      *primBoxes,
+                                       uint32_t                numPrims)
+{
+    const int primID = threadIdx.x + blockIdx.x * blockDim.x;
+    if (primID >= numPrims) return;
+
+    const box_t<T,D> box = primBoxes[primID];
+    
+    if (box.get_lower(0) <= box.get_upper(0)) {
+        atomic_grow(*globalBox, box);
     }
 }
 
-// Float/Double safe atomic Max loop using CAS
-template <typename T>
-__device__ inline void atomicMaxGeneric(T* address, T val) {
-    if constexpr (sizeof(T) == 4) {
-        int* address_as_int = (int*)address;
-        int old = *address_as_int, assumed;
-        while (val > __int_as_float(old)) {
-            assumed = old;
-            old = atomicCAS(address_as_int, assumed, __float_as_int(val));
-            if (assumed == old) break;
-        }
-    } else if constexpr (sizeof(T) == 8) {
-        unsigned long long extern* address_as_ull = (unsigned long long extern*)address;
-        unsigned long long old = *address_as_ull, assumed;
-        while (val > __longlong_as_double(old)) {
-            assumed = old;
-            old = atomicCAS(address_as_ull, assumed, __double_as_longlong(val));
-            if (assumed == old) break;
-        }
-    }
-}
-
-// Parallel reduction kernel using dynamic shared memory allocation
-template <typename T, int D>
-__global__ void globalBoxReductionKernel(const cuBQL::box_t<T, D>* d_boxes, 
-                                         uint32_t numPrims, 
-                                         cuBQL::box_t<T, D>* d_result) {
-    // 1. Initialize thread-local bounding box to inversion boundaries
-    cuBQL::box_t<T, D> localBox;
+// 3. Resolution kernel: Decodes the internal atomic/integer representation back to true floats
+template<typename T, int D>
+__global__ void resolveGlobalBoxKernel(box_t<T,D> *resolvedBox, const AtomicBox<box_t<T,D>> *globalBox)
+{
     for (int d = 0; d < D; ++d) {
-        localBox.lower[d] = cuBQL::gpuBuilder_impl::empty_box_lower<T>();
-        localBox.upper[d] = cuBQL::gpuBuilder_impl::empty_box_upper<T>();
-    }
-
-    uint32_t tid = threadIdx.x + blockIdx.x * blockDim.x;
-    uint32_t stride = blockDim.x * gridDim.x;
-
-    // 2. Grid-stride loop processing for maximum coalesced reads
-    for (uint32_t i = tid; i < numPrims; i += stride) {
-        cuBQL::box_t<T, D> b = d_boxes[i];
-        if (b.get_lower(0) <= b.get_upper(0)) { // Skip invalid/empty source boxes
-            for (int d = 0; d < D; ++d) {
-                localBox.lower[d] = min(localBox.lower[d], b.lower[d]);
-                localBox.upper[d] = max(localBox.upper[d], b.upper[d]);
-            }
-        }
-    }
-
-    // 3. Layout dynamic shared memory safely for dimensions
-    extern __shared__ char sharedMemLayout[];
-    T* s_min = (T*)sharedMemLayout;
-    T* s_max = (T*)(sharedMemLayout + (D * blockDim.x * sizeof(T)));
-
-    for (int d = 0; d < D; ++d) {
-        s_min[d * blockDim.x + threadIdx.x] = localBox.lower[d];
-        s_max[d * blockDim.x + threadIdx.x] = localBox.upper[d];
-    }
-    __syncthreads();
-
-    // 4. Parallel block-level reduction loop
-    for (int s = blockDim.x / 2; s > 0; s >>= 1) {
-        if (threadIdx.x < s) {
-            for (int d = 0; d < D; ++d) {
-                uint32_t baseIdx = d * blockDim.x + threadIdx.x;
-                s_min[baseIdx] = min(s_min[baseIdx], s_min[baseIdx + s]);
-                s_max[baseIdx] = max(s_max[baseIdx], s_max[baseIdx + s]);
-            }
-        }
-        __syncthreads();
-    }
-
-    // 5. Block leader flushes the block results to global memory atomically
-    if (threadIdx.x == 0) {
-        for (int d = 0; d < D; ++d) {
-            atomicMinGeneric<T>(&d_result->lower[d], s_min[d * blockDim.x]);
-            atomicMaxGeneric<T>(&d_result->upper[d], s_max[d * blockDim.x]);
-        }
+        resolvedBox->lower[d] = globalBox->get_lower(d);
+        resolvedBox->upper[d] = globalBox->get_upper(d);
     }
 }
 
 } // namespace impl
 
 /**
- * @brief High-performance GPU-parallel global bounding box calculation.
- * @return cuBQL::box_t<T, D> The final tightly computed bounding box.
+ * @brief High-performance GPU-parallel global geometric object bounding box calculation.
+ * Safely decodes internal atomic representations before host synchronization.
  */
 template <typename T, int D>
-inline cuBQL::box_t<T, D> computeGlobalBoxParallel(const cuBQL::box_t<T, D>* d_boxesA, 
-                                                   int numPrims, 
-                                                   cudaStream_t s, 
-                                                   cuBQL::DeviceMemoryResource& memResource) {
-    // Standard initialization structure
-    cuBQL::box_t<T, D> h_globalBox;
-    for (int d = 0; d < D; ++d) {
-        h_globalBox.lower[d] = cuBQL::gpuBuilder_impl::empty_box_lower<T>();
-        h_globalBox.upper[d] = cuBQL::gpuBuilder_impl::empty_box_upper<T>();
+inline void computeGlobalBoxParallel(cuBQL::box_t<T, D>& out_globalBox,
+                                     const cuBQL::box_t<T, D>* d_boxesA, 
+                                     int numPrims, 
+                                     cudaStream_t s, 
+                                     cuBQL::DeviceMemoryResource& memResource) {
+    
+    printf("[TRACKING-HOST] -> Entered computeGlobalBoxParallel (Object Strategy). Prims: %d\n", numPrims);
+    fflush(stdout);
+
+    if (numPrims <= 0) {
+        printf("[TRACKING-HOST] -> Early exit: numPrims <= 0\n");
+        fflush(stdout);
+        return;
     }
 
-    if (numPrims <= 0) return h_globalBox;
-
-    // Allocate temporary device structure workspace
-    cuBQL::box_t<T, D>* d_globalBox = nullptr;
+    // Allocate workspace for the atomic collector wrapper
+    gpuBuilder_impl::AtomicBox<box_t<T, D>>* d_globalBox = nullptr;
     _ALLOC(d_globalBox, 1, s, memResource);
-    CUBQL_CUDA_CALL(MemcpyAsync(d_globalBox, &h_globalBox, sizeof(cuBQL::box_t<T, D>), cudaMemcpyHostToDevice, s));
 
-    // Calculate grid performance metrics
-    int blockSize = 256; 
-    int numBlocks = std::min(256, (int)((numPrims + blockSize - 1) / blockSize));
-    size_t sharedMemSize = 2 * D * blockSize * sizeof(T);
+    // Allocate workspace for a standard layout box to handle safe host resolution
+    box_t<T, D>* d_resolvedBox = nullptr;
+    _ALLOC(d_resolvedBox, 1, s, memResource);
 
-    // Launch reduction pass
-    impl::globalBoxReductionKernel<T, D><<<numBlocks, blockSize, sharedMemSize, s>>>(d_boxesA, numPrims, d_globalBox);
+    if (!d_globalBox || !d_resolvedBox) {
+        printf("[CRITICAL-HOST] -> Workspace allocation failed!\n");
+        fflush(stdout);
+        return;
+    }
 
-    // Synchronize stream and pull layout structures cleanly back to host
-    cuBQL::box_t<T, D> globalBoxA;
-    CUBQL_CUDA_CALL(MemcpyAsync(&globalBoxA, d_globalBox, sizeof(cuBQL::box_t<T, D>), cudaMemcpyDeviceToHost, s));
-    CUBQL_CUDA_CALL(StreamSynchronize(s));
+    // Initialize to empty on the device
+    impl::initGlobalBoxKernel<T, D><<<1, 1, 0, s>>>(d_globalBox);
+
+    // Compute bounds globally across all primitives
+    int blockSize = 1024;
+    int numBlocks = (numPrims + blockSize - 1) / blockSize;
+    impl::computeGlobalBoxKernel<T, D><<<numBlocks, blockSize, 0, s>>>(d_globalBox, d_boxesA, numPrims);
+
+    // Decode the atomic box into a standard box structure on the device
+    printf("[TRACKING-HOST] -> Resolving internal atomic representation to standard float primitives...\n");
+    fflush(stdout);
+    impl::resolveGlobalBoxKernel<T, D><<<1, 1, 0, s>>>(d_resolvedBox, d_globalBox);
+
+    // Enqueue standard box memory back to the host destination variable
+    printf("[TRACKING-HOST] -> Enqueuing DeviceToHost MemcpyAsync...\n");
+    fflush(stdout);
+    CUBQL_CUDA_CALL(MemcpyAsync(&out_globalBox, d_resolvedBox, sizeof(box_t<T, D>), cudaMemcpyDeviceToHost, s));
+
+    // Wait cleanly for stream execution to finalize
+    printf("[TRACKING-HOST] -> Awaiting Stream Synchronize...\n");
+    fflush(stdout);
+    cudaError_t errSync = cudaStreamSynchronize(s);
+    
+    if (errSync != cudaSuccess) {
+        printf("[CRITICAL-GPU RUNTIME ERROR] -> Stream synchronization failed: %s\n", cudaGetErrorString(errSync));
+    }
+    fflush(stdout);
 
     // Free device allocations
     _FREE(d_globalBox, s, memResource);
-
-    return globalBoxA;
+    _FREE(d_resolvedBox, s, memResource);
 }
 
 } // namespace utils
