@@ -7,6 +7,7 @@
 // Your custom experimental builder layout
 #include "include/third-party/cubql/sm_builder_v3.h"
 #include "include/third-party/cubql/sm_builder_v4.h"
+#include "include/third-party/cubql/refit_forest.h"
 
 // Custom traversal
 #include "include/third-party/cubql/fixedBoxQueryv2.h"
@@ -260,12 +261,8 @@ extern "C" void kernelsTestBVHV2(const cuBQL::Triangle* hMeshA,
   // --------------------------------------------------------------------
   std::cout << " [FOREST EXPANSION] => Launching Level-by-Level Parallel Sub-Tree Compilation..." << std::endl;
 
-  // FIX: Calculate allocation sizes using the UNPRUNED base configurations (h_outMarkedCountA / B)
-  // so they structurally match the parameters inside build_forest.
-  const uint32_t numInitA = h_outMarkedCountA + (h_outMarkedCountA & 1u);
-  const uint32_t maxNodesA = 2u * (uint32_t)numTrianglesA + numInitA + 2u;
-  const uint32_t numInitB = h_outMarkedCountB + (h_outMarkedCountB & 1u);
-  const uint32_t maxNodesB = 2u * (uint32_t)numTrianglesB + numInitB + 2u;
+  const uint32_t maxNodesA = 2u * (uint32_t)numTrianglesA  + (outTotalActiveCellsA + (outTotalActiveCellsA & 1u)) + 2u;
+  const uint32_t maxNodesB = 2u * (uint32_t)numTrianglesB+ (outTotalActiveCellsB + (outTotalActiveCellsB & 1u)) + 2u;
 
   thrust::device_vector<uint32_t> d_nodeDescendantCountsA(maxNodesA, 0);
   thrust::device_vector<uint32_t> d_nodeDescendantCountsB(maxNodesB, 0);
@@ -273,9 +270,12 @@ extern "C" void kernelsTestBVHV2(const cuBQL::Triangle* hMeshA,
   // --- BUILD FOREST MESH A ---
   double tForestAStart = cuBQL::getCurrentTime();
   cuBQL::BinaryBVH<float, 3> bvhA;
+  // FIX: Passed outTotalActiveCellsA instead of h_outMarkedCountA to map the pruned domain perfectly
   cuBQL::gpuBuilder_v4::build_forest<float, 3>(
-      bvhA, dBoxesA, currentPrimsNumA, numTrianglesA, h_outMarkedCountA, outSortedPrimIDsA, outNodeOffsetsA,
+      bvhA, dBoxesA, currentPrimsNumA, numTrianglesA, outTotalActiveCellsA, outSortedPrimIDsA, outNodeOffsetsA,
       buildConfig, thrust::raw_pointer_cast(d_nodeDescendantCountsA.data()), stream, memResource);
+  
+  cuBQL::cuda_forest::refit_forest<float, 3>(bvhA, dBoxesA, outTotalActiveCellsA, stream, memResource);
   CUBQL_CUDA_CALL(StreamSynchronize(stream));
   double forestAMs = (cuBQL::getCurrentTime() - tForestAStart) * 1000.0;
   stats.buildRefitMeshAMs += forestAMs;
@@ -284,9 +284,11 @@ extern "C" void kernelsTestBVHV2(const cuBQL::Triangle* hMeshA,
   // --- BUILD FOREST MESH B ---
   double tForestBStart = cuBQL::getCurrentTime();
   cuBQL::BinaryBVH<float, 3> bvhB;
+  // FIX: Passed outTotalActiveCellsB instead of h_outMarkedCountB to map the pruned domain perfectly
   cuBQL::gpuBuilder_v4::build_forest<float, 3>(
-      bvhB, dBoxesB, currentPrimsNumB, numTrianglesB, h_outMarkedCountB, outSortedPrimIDsB, outNodeOffsetsB,
+      bvhB, dBoxesB, currentPrimsNumB, numTrianglesB, outTotalActiveCellsB, outSortedPrimIDsB, outNodeOffsetsB,
       buildConfig, thrust::raw_pointer_cast(d_nodeDescendantCountsB.data()), stream, memResource);
+  cuBQL::cuda_forest::refit_forest<float, 3>(bvhB, dBoxesB, outTotalActiveCellsB, stream, memResource);
   CUBQL_CUDA_CALL(StreamSynchronize(stream));
   double forestBMs = (cuBQL::getCurrentTime() - tForestBStart) * 1000.0;
   stats.buildRefitMeshBMs += forestBMs;
@@ -296,7 +298,6 @@ extern "C" void kernelsTestBVHV2(const cuBQL::Triangle* hMeshA,
   // --------------------------------------------------------------------
   // PREPARE DOWNSTREAM MAPPINGS USING COMPACTED SURVIVAL COUNTS
   // --------------------------------------------------------------------
-  // FIX: Downstream indexing must track the actual valid remaining partitions (outTotalActiveCells)
   uint32_t finalActiveCellsA = outTotalActiveCellsA;
   uint32_t finalActiveCellsB = outTotalActiveCellsB;
 
@@ -336,8 +337,8 @@ extern "C" void kernelsTestBVHV2(const cuBQL::Triangle* hMeshA,
   // --------------------------------------------------------------------
   double tGpuBfsStart = cuBQL::getCurrentTime();
 
-  // FIX: Pass the compacted cell count so BFS execution matches valid data zones
-  executeRapidDescentBFS(bvhB, numTrianglesB, d_markedNodeIndicesB, d_nodeDescendantCountsB, finalActiveCellsB,
+  // FIX: Swapped numTrianglesB for currentPrimsNumB to pass surviving elements
+  executeRapidDescentBFS(bvhB, currentPrimsNumB, d_markedNodeIndicesB, d_nodeDescendantCountsB, finalActiveCellsB,
                          d_outOffsetsB, d_outPrimsFlatB);
 
   if(finalActiveCellsB > 0) {
