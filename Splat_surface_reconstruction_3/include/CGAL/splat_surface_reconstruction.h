@@ -1098,9 +1098,11 @@ namespace CGAL {
 
         std::cout<<"Setting Faces..." << std::endl;
         fill_faces_from_next_cycles();
-        // CGAL::Polygon_mesh_processing::triangulate_faces(mesh_);
 
-        std::cout << "Final mesh size: " << num_vertices(mesh_) << " vertices, " << num_edges(mesh_) << " edges,\n";
+        std::cout<<"Triangulating faces..." << std::endl;
+        CGAL::Polygon_mesh_processing::triangulate_faces(mesh_);
+
+        std::cout << "Final mesh size: " << num_vertices(mesh_) << " vertices, " << num_edges(mesh_) << " edges, " << num_faces(mesh_) << " faces.\n";
         std::cout << "  Accepted: " << accepted << ", Rejected (near): " << rejected_near << ", Rejected (proj): " << rejected_proj << "\n";
       }
 
@@ -1329,7 +1331,7 @@ namespace CGAL {
           }
 
           if (h_cycles.empty()) {
-            std::cout << "No boundary cycle found for vertices " << v0 << " and " << v1 << ".\n";
+            std::cout << "No boundary cycle found between vertices " << v0 << " and " << v1 << ".\n";
             return false;
           }
 
@@ -1417,31 +1419,23 @@ namespace CGAL {
         return true;
       }
 
-      void fill_faces_from_next_cycles()
-      {
+      void fill_faces_from_next_cycles() {
         const auto null_h = boost::graph_traits<PolygonMesh>::null_halfedge();
         const auto null_f = boost::graph_traits<PolygonMesh>::null_face();
 
-        std::vector<halfedge_descriptor> done;
-        done.reserve(num_halfedges(mesh_));
-
-        auto already_done = [&](halfedge_descriptor h) -> bool {
-          return std::find(done.begin(), done.end(), h) != done.end();
-        };
+        std::unordered_map<halfedge_descriptor, bool> visited;
+        visited.reserve(num_halfedges(mesh_));
 
         for (halfedge_descriptor start : halfedges(mesh_))
         {
-          if (start == null_h) {
+          if (start == null_h)
             continue;
-          }
 
-          if (face(start, mesh_) != null_f) {
-            continue; // already belongs to a face
-          }
-
-          if (already_done(start)) {
+          if (face(start, mesh_) != null_f)
             continue;
-          }
+
+          if (visited[start])
+            continue;
 
           std::vector<halfedge_descriptor> cycle;
           cycle.reserve(16);
@@ -1452,48 +1446,41 @@ namespace CGAL {
 
           for (std::size_t i = 0; i < max_steps; ++i)
           {
-            if (h == null_h) {
+            if (h == null_h)
               break;
-            }
 
-            if (face(h, mesh_) != null_f) {
-              break; // this loop is not a pure unassigned cycle
-            }
-
-            if (already_done(h)) {
+            if (face(h, mesh_) != null_f)
               break;
-            }
 
+            if (visited[h])
+              break;
+
+            visited[h] = true;
             cycle.push_back(h);
 
             h = next(h, mesh_);
-            if (h == null_h) {
-              break;
-            }
 
-            if (h == start) {
+            if (h == null_h)
+              break;
+
+            if (h == start)
+            {
               closed = true;
               break;
             }
           }
 
-          // Need a closed cycle of at least 3 halfedges.
-          if (!closed || cycle.size() < 3) {
-            done.insert(done.end(), cycle.begin(), cycle.end());
+          if (!closed || cycle.size() < 3)
             continue;
-          }
 
           face_descriptor f = add_face(mesh_);
-          if (f == null_f) {
+          if (f == null_f)
             continue;
-          }
 
           set_halfedge(f, start, mesh_);
 
-          for (halfedge_descriptor ch : cycle) {
+          for (halfedge_descriptor ch : cycle)
             set_face(ch, f, mesh_);
-            done.push_back(ch);
-          }
         }
       }
 
