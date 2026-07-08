@@ -3,10 +3,10 @@
 #include <fstream>
 #include <string>
 #include <iomanip>
-#include <algorithm>
+#include <utility>
 
 // --- CUDA VECTOR TYPES INCLUDE ---
-#include <vector_types.h> // Pulls in int2 definition cleanly for the host compiler
+#include <vector_types.h> 
 
 // --- cuBQL INCLUDES ---
 #include "include/loadOFFCGAL.h"
@@ -23,7 +23,6 @@
 #include <tbb/concurrent_vector.h>
 
 // --- PIPELINE HEADER INCLUDE ---
-// Relative path to resolve your source tree layout pointing to kernelsTestBVH.h
 #include "../src/testBVH/kernelsTestBVHAlternative.h"
 
 typedef CGAL::Exact_predicates_inexact_constructions_kernel Kernel;
@@ -33,41 +32,45 @@ typedef Kernel::Point_3 Point3;
 typedef Kernel::Triangle_3 Triangle3;
 
 // Helper function to translate geometry from CGAL storage to raw floats
-cuBQL::Triangle convertCgalFaceToCuBQL(const Mesh& mesh, face_descriptor face) {
-    auto conn = mesh.vertices_around_face(mesh.halfedge(face));
-    auto it = conn.begin();
+// Direct, non-allocating conversion bypasses proxy iterators
+inline cuBQL::Triangle convertCgalFaceToCuBQL(const Mesh& mesh, face_descriptor face) {
+    // Manually unroll the halfedge triangle cycle to avoid iterator tracking overhead
+    auto h0 = mesh.halfedge(face);
+    auto h1 = mesh.next(h0);
+    auto h2 = mesh.next(h1);
 
-    Point3 pA = mesh.point(*it++);
-    Point3 pB = mesh.point(*it++);
-    Point3 pC = mesh.point(*it);
+    const Point3& pA = mesh.point(mesh.target(h0));
+    const Point3& pB = mesh.point(mesh.target(h1));
+    const Point3& pC = mesh.point(mesh.target(h2));
 
     cuBQL::Triangle tri;
-    tri.a = {(float)pA.x(), (float)pA.y(), (float)pA.z()};
-    tri.b = {(float)pB.x(), (float)pB.y(), (float)pB.z()};
-    tri.c = {(float)pC.x(), (float)pC.y(), (float)pC.z()};
+    tri.a = {static_cast<float>(pA.x()), static_cast<float>(pA.y()), static_cast<float>(pA.z())};
+    tri.b = {static_cast<float>(pB.x()), static_cast<float>(pB.y()), static_cast<float>(pB.z())};
+    tri.c = {static_cast<float>(pC.x()), static_cast<float>(pC.y()), static_cast<float>(pC.z())};
     return tri;
 }
 
-// Reusable translation pipeline helper
-std::vector<cuBQL::Triangle> processMeshLayout(const Mesh& mesh, std::vector<face_descriptor>& outFaces) {
+// Fully parallelized pipeline helper (Zero sequential bottlenecks)
+void processMeshLayoutTimed(const Mesh& mesh, std::vector<face_descriptor>& outFaces, std::vector<cuBQL::Triangle>& outLayout) {
     size_t numFaces = num_faces(mesh);
-    outFaces.clear();
-    outFaces.reserve(numFaces);
-    for (auto f : mesh.faces()) {
-        outFaces.push_back(f);
-    }
+    
+    // Allocate up front to eliminate sequential push_back/reallocation locks
+    outFaces.resize(numFaces);
+    outLayout.resize(numFaces);
 
-    std::vector<cuBQL::Triangle> hMeshLayout(numFaces);
+    // If your mesh contains deleted faces, use CGAL::Index_property_map instead.
+    // For standard contiguous OFF loads, we can map indices directly in parallel.
     tbb::parallel_for(tbb::blocked_range<size_t>(0, numFaces), [&](const tbb::blocked_range<size_t>& r) {
         for (size_t i = r.begin(); i != r.end(); ++i) {
-            hMeshLayout[i] = convertCgalFaceToCuBQL(mesh, outFaces[i]);
+            // Reconstruct the face descriptor directly from the linear index
+            face_descriptor f(static_cast<Mesh::size_type>(i));
+            outFaces[i] = f;
+            outLayout[i] = convertCgalFaceToCuBQL(mesh, f);
         }
     });
-    return hMeshLayout;
 }
-
 int main(int ac, char** av) {
-    if (ac < 9) { // Updated to check for 8 arguments (Program name + 7 inputs)
+    if (ac < 9) { 
         std::cout << "Usage: " << av[0] << " <meshA.off> <maxCellSizeA> <meshB.off> <maxCellSizeB> <batchmultiplier> <NumberOfDualTreeSteps> <Leaf Threshold> <tbb_workers>\n";
         return 1;
     }
@@ -78,22 +81,22 @@ int main(int ac, char** av) {
     int maxCellSizeB    = std::stoi(av[4]);
     int batchmultipl    = std::stoi(av[5]); 
     int mode            = std::stoi(av[6]);
-    int leafThreshhold = std::stoi(av[7]); 
-    int tbbWorkers      = std::stoi(av[8]); // <-- Parsed TBB worker limit argument
+    int leafThreshhold  = std::stoi(av[7]); 
+    int tbbWorkers      = std::stoi(av[8]); 
     
-    // Dynamic configuration for thread pooling based on user input
     tbb::global_control global_limit(tbb::global_control::max_allowed_parallelism, tbbWorkers);
 
     double tStartTotal = cuBQL::getCurrentTime();
 
-    // Arrays to store face descriptors for indexing down into standard narrow-phase intersections
     std::vector<face_descriptor> facesA;
     std::vector<face_descriptor> facesB;
+    std::vector<cuBQL::Triangle> hMeshLayoutA;
+    std::vector<cuBQL::Triangle> hMeshLayoutB;
 
     // --------------------------------------------------------------------
     // LOAD AND TRANSLATE MESH A
     // --------------------------------------------------------------------
-    double tMeshAStart = cuBQL::getCurrentTime();
+    double tMeshAFileLoadStart = cuBQL::getCurrentTime();
     Mesh meshA;
     std::ifstream inFileA(meshPathA);
     if (!(inFileA >> meshA)) {
@@ -101,15 +104,17 @@ int main(int ac, char** av) {
         return 1;
     }
     inFileA.close();
+    double tMeshAFileLoadTime = cuBQL::getCurrentTime() - tMeshAFileLoadStart;
     
-    std::vector<cuBQL::Triangle> hMeshLayoutA = processMeshLayout(meshA, facesA);
-    std::cout << "[Step 1] Loaded and Processed Mesh A (" << hMeshLayoutA.size() << " tris): " 
-              << cuBQL::prettyDouble(cuBQL::getCurrentTime() - tMeshAStart) << "s\n";
+    // Timer moved outside to precisely profile the full function duration
+    double tMeshATranslationStart = cuBQL::getCurrentTime();
+    processMeshLayoutTimed(meshA, facesA, hMeshLayoutA);
+    double tMeshATranslationTime = cuBQL::getCurrentTime() - tMeshATranslationStart;
 
     // --------------------------------------------------------------------
     // LOAD AND TRANSLATE MESH B
     // --------------------------------------------------------------------
-    double tMeshBStart = cuBQL::getCurrentTime();
+    double tMeshBFileLoadStart = cuBQL::getCurrentTime();
     Mesh meshB;
     std::ifstream inFileB(meshPathB);
     if (!(inFileB >> meshB)) {
@@ -117,15 +122,17 @@ int main(int ac, char** av) {
         return 1;
     }
     inFileB.close();
+    double tMeshBFileLoadTime = cuBQL::getCurrentTime() - tMeshBFileLoadStart;
 
-    std::vector<cuBQL::Triangle> hMeshLayoutB = processMeshLayout(meshB, facesB);
-    std::cout << "[Step 2] Loaded and Processed Mesh B (" << hMeshLayoutB.size() << " tris): " 
-              << cuBQL::prettyDouble(cuBQL::getCurrentTime() - tMeshBStart) << "s\n";
+    // Timer moved outside to precisely profile the full function duration
+    double tMeshBTranslationStart = cuBQL::getCurrentTime();
+    processMeshLayoutTimed(meshB, facesB, hMeshLayoutB);
+    double tMeshBTranslationTime = cuBQL::getCurrentTime() - tMeshBTranslationStart;
 
     // --------------------------------------------------------------------
     // EXECUTE SPATIAL CROSS-INTERSECTION PIPELINE
     // --------------------------------------------------------------------
-    std::cout << "[Step 3] Launching Dual-Mesh GPU Pipeline in Mode " << mode << " using " << tbbWorkers << " TBB Workers...\n";
+    std::cout << "[Pipeline] Running Dual-Mesh GPU pipeline execution...\n";
     
     ExecutionStats stats;
     std::vector<int2> hGreenPairs;
@@ -140,13 +147,11 @@ int main(int ac, char** av) {
     // --------------------------------------------------------------------
     // HYBRID NARROW-PHASE FILTERING LOOP (Processes Only Yellow List via TBB)
     // --------------------------------------------------------------------
-    std::cout << "[Step 4] Launching Parallel CGAL Narrow-Phase Filter over Yellow Candidates...\n";
     double t_inter_start = cuBQL::getCurrentTime();
 
     auto& coords1 = meshA.points();
     auto& coords2 = meshB.points();
 
-    // Populate the thread-safe collection starting with your definite green hits
     tbb::concurrent_vector<int2> finalExactPairs(hGreenPairs.begin(), hGreenPairs.end());
 
     if (!hYellowPairs.empty()) {
@@ -154,7 +159,6 @@ int main(int ac, char** av) {
             for (size_t i = r.begin(); i != r.end(); ++i) {
                 const auto& pair = hYellowPairs[i];
 
-                // .x maps to Mesh A identifier, .y maps to Mesh B identifier
                 face_descriptor fA = facesA[pair.x];
                 face_descriptor fB = facesB[pair.y];
 
@@ -170,7 +174,6 @@ int main(int ac, char** av) {
                 auto vB2 = meshB.target(meshB.next(meshB.next(halfedgeB)));
                 Triangle3 triB(coords2[vB0], coords2[vB1], coords2[vB2]);
 
-                // True strict mathematical intersection evaluation pass
                 if (CGAL::do_intersect(triA, triB)) {
                     finalExactPairs.push_back(pair);
                 }
@@ -192,6 +195,12 @@ int main(int ac, char** av) {
     std::cout << "  |- Mesh A Extracted Targets (<" << maxCellSizeA << "): " << stats.meshAExtractedTargets << "\n";
     std::cout << "  |- Mesh B Total Generated Nodes:   " << stats.meshBTotalNodes << "\n";
     std::cout << "  |- Mesh B Extracted Targets (<" << maxCellSizeB << "): " << stats.meshBExtractedTargets << "\n\n";
+
+    std::cout << "HOST-SIDE INGESTION & TRANSLATION BREAKDOWN:\n";
+    std::cout << "  |- Mesh A Disk Ingest (OFF Read):  " << std::fixed << std::setprecision(4) << tMeshAFileLoadTime << " s\n";
+    std::cout << "  |- Mesh A Complete Host Translate: " << tMeshATranslationTime << " s\n";
+    std::cout << "  |- Mesh B Disk Ingest (OFF Read):  " << tMeshBFileLoadTime << " s\n";
+    std::cout << "  |- Mesh B Complete Host Translate: " << tMeshBTranslationTime << " s\n\n";
 
     std::cout << "CRISS-CROSS BOUNDING BOX CROSS-CHECK:\n";
     std::cout << "  |- Intersections found:            " << stats.totalIntersections << " / " << stats.totalPossiblePairs << "\n";

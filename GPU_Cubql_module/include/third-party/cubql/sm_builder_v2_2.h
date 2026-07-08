@@ -133,8 +133,11 @@ namespace cuBQL {
 
         d_nodeDescendantCounts[nodeID] = in.count;
 
-        // If this specific node matches our target level profiling frontier, record it
-        if (currentLevel == targetLevel) {
+        // FIXED: Mark the node if it hits target depth OR if it turns into a leaf prematurely above it
+        bool shouldMark = (currentLevel == targetLevel) || 
+                          (currentLevel < targetLevel && in.count <= buildConfig.makeLeafThreshold);
+
+        if (shouldMark) {
           uint32_t slot = atomicAdd(globalMarkedCounter, 1);
           tempMarkedIndices[slot] = nodeID;
         }
