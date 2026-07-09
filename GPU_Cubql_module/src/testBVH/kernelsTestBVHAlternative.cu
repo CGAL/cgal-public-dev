@@ -45,6 +45,25 @@
 #define _FREE(ptr, stream, memResource) CUBQL_CUDA_CALL(FreeAsync((ptr), stream))
 #endif
 
+
+// GPU Assembly Kernel: Instantly builds cuBQL::Triangle components from indexed layout on device
+__global__ void assembleTrianglesKernel(cuBQL::Triangle* dMesh, const float3* dVerts, const uint3* dIndices, int numTriangles) {
+  int idx = threadIdx.x + blockIdx.x * blockDim.x;
+  if (idx >= numTriangles) return;
+
+  uint3 triIdx = dIndices[idx];
+  
+  // Fetch raw float3 vertex data from device memory
+  float3 p0 = dVerts[triIdx.x];
+  float3 p1 = dVerts[triIdx.y];
+  float3 p2 = dVerts[triIdx.z];
+
+  // Map components directly into cuBQL's named 'a', 'b', and 'c' vector fields
+  dMesh[idx].a.x = p0.x; dMesh[idx].a.y = p0.y; dMesh[idx].a.z = p0.z;
+  dMesh[idx].b.x = p1.x; dMesh[idx].b.y = p1.y; dMesh[idx].b.z = p1.z;
+  dMesh[idx].c.x = p2.x; dMesh[idx].c.y = p2.y; dMesh[idx].c.z = p2.z;
+}
+
 __global__ void generateBoxes(cuBQL::box3f* boxes, const cuBQL::Triangle* tris, int N) {
   int i = threadIdx.x + blockIdx.x * blockDim.x;
   if(i < N) {
@@ -61,11 +80,15 @@ populateReverseMapBKernel(uint32_t* d_reverseMapB, const uint32_t* d_markedNodeI
   }
 }
 
-extern "C" void kernelsTestBVHV2(const cuBQL::Triangle* hMeshA,
-                                 int numTrianglesA,
+extern "C" void kernelsTestBVHV2(const float3* hVertsA, 
+                                 int numVertsA, 
+                                 const uint3* hIndicesA, 
+                                 int numTrianglesA, 
                                  int maxCellSizeA,
-                                 const cuBQL::Triangle* hMeshB,
-                                 int numTrianglesB,
+                                 const float3* hVertsB, 
+                                 int numVertsB, 
+                                 const uint3* hIndicesB, 
+                                 int numTrianglesB, 
                                  int maxCellSizeB,
                                  int batchMultiplier,
                                  int mode,
@@ -92,21 +115,40 @@ extern "C" void kernelsTestBVHV2(const cuBQL::Triangle* hMeshA,
   // --------------------------------------------------------------------
   double tAllocStart = cuBQL::getCurrentTime();
 
+  // Allocate and stream indexed buffers for Mesh A
+  float3* dVertsA = nullptr;
+  uint3*  dIndicesA = nullptr;
+  CUBQL_CUDA_CALL(Malloc(&dVertsA, numVertsA * sizeof(float3)));
+  CUBQL_CUDA_CALL(Memcpy(dVertsA, hVertsA, numVertsA * sizeof(float3), cudaMemcpyHostToDevice));
+  CUBQL_CUDA_CALL(Malloc(&dIndicesA, numTrianglesA * sizeof(uint3)));
+  CUBQL_CUDA_CALL(Memcpy(dIndicesA, hIndicesA, numTrianglesA * sizeof(uint3), cudaMemcpyHostToDevice));
+
+  // Allocate and stream indexed buffers for Mesh B
+  float3* dVertsB = nullptr;
+  uint3*  dIndicesB = nullptr;
+  CUBQL_CUDA_CALL(Malloc(&dVertsB, numVertsB * sizeof(float3)));
+  CUBQL_CUDA_CALL(Memcpy(dVertsB, hVertsB, numVertsB * sizeof(float3), cudaMemcpyHostToDevice));
+  CUBQL_CUDA_CALL(Malloc(&dIndicesB, numTrianglesB * sizeof(uint3)));
+  CUBQL_CUDA_CALL(Memcpy(dIndicesB, hIndicesB, numTrianglesB * sizeof(uint3), cudaMemcpyHostToDevice));
+
+  // Instantiate standard unrolled triangle buffers on device
   cuBQL::Triangle* dMeshA;
   CUBQL_CUDA_CALL(Malloc(&dMeshA, numTrianglesA * sizeof(cuBQL::Triangle)));
-  CUBQL_CUDA_CALL(Memcpy(dMeshA, hMeshA, numTrianglesA * sizeof(cuBQL::Triangle), cudaMemcpyDefault));
 
   cuBQL::Triangle* dMeshB;
   CUBQL_CUDA_CALL(Malloc(&dMeshB, numTrianglesB * sizeof(cuBQL::Triangle)));
-  CUBQL_CUDA_CALL(Memcpy(dMeshB, hMeshB, numTrianglesB * sizeof(cuBQL::Triangle), cudaMemcpyDefault));
+
+  // Run the unpacking assembly kernels
+  assembleTrianglesKernel<<<cuBQL::divRoundUp(numTrianglesA, 256), 256, 0, stream>>>(dMeshA, dVertsA, dIndicesA, numTrianglesA);
+  assembleTrianglesKernel<<<cuBQL::divRoundUp(numTrianglesB, 256), 256, 0, stream>>>(dMeshB, dVertsB, dIndicesB, numTrianglesB);
 
   cuBQL::box3f* dBoxesA;
   CUBQL_CUDA_CALL(Malloc(&dBoxesA, numTrianglesA * sizeof(cuBQL::box3f)));
-  generateBoxes<<<cuBQL::divRoundUp(numTrianglesA, 256), 256>>>(dBoxesA, dMeshA, numTrianglesA);
+  generateBoxes<<<cuBQL::divRoundUp(numTrianglesA, 256), 256, 0, stream>>>(dBoxesA, dMeshA, numTrianglesA);
 
   cuBQL::box3f* dBoxesB;
   CUBQL_CUDA_CALL(Malloc(&dBoxesB, numTrianglesB * sizeof(cuBQL::box3f)));
-  generateBoxes<<<cuBQL::divRoundUp(numTrianglesB, 256), 256>>>(dBoxesB, dMeshB, numTrianglesB);
+  generateBoxes<<<cuBQL::divRoundUp(numTrianglesB, 256), 256, 0, stream>>>(dBoxesB, dMeshB, numTrianglesB);
 
   cudaDeviceSynchronize();
   double tAllocEnd = cuBQL::getCurrentTime();
@@ -270,7 +312,6 @@ extern "C" void kernelsTestBVHV2(const cuBQL::Triangle* hMeshA,
   // --- BUILD FOREST MESH A ---
   double tForestAStart = cuBQL::getCurrentTime();
   cuBQL::BinaryBVH<float, 3> bvhA;
-  // FIX: Passed outTotalActiveCellsA instead of h_outMarkedCountA to map the pruned domain perfectly
   cuBQL::gpuBuilder_v4::build_forest<float, 3>(
       bvhA, dBoxesA, currentPrimsNumA, numTrianglesA, outTotalActiveCellsA, outSortedPrimIDsA, outNodeOffsetsA,
       buildConfig, thrust::raw_pointer_cast(d_nodeDescendantCountsA.data()), stream, memResource);
@@ -284,7 +325,6 @@ extern "C" void kernelsTestBVHV2(const cuBQL::Triangle* hMeshA,
   // --- BUILD FOREST MESH B ---
   double tForestBStart = cuBQL::getCurrentTime();
   cuBQL::BinaryBVH<float, 3> bvhB;
-  // FIX: Passed outTotalActiveCellsB instead of h_outMarkedCountB to map the pruned domain perfectly
   cuBQL::gpuBuilder_v4::build_forest<float, 3>(
       bvhB, dBoxesB, currentPrimsNumB, numTrianglesB, outTotalActiveCellsB, outSortedPrimIDsB, outNodeOffsetsB,
       buildConfig, thrust::raw_pointer_cast(d_nodeDescendantCountsB.data()), stream, memResource);
@@ -337,7 +377,6 @@ extern "C" void kernelsTestBVHV2(const cuBQL::Triangle* hMeshA,
   // --------------------------------------------------------------------
   double tGpuBfsStart = cuBQL::getCurrentTime();
 
-  // FIX: Swapped numTrianglesB for currentPrimsNumB to pass surviving elements
   executeRapidDescentBFS(bvhB, currentPrimsNumB, d_markedNodeIndicesB, d_nodeDescendantCountsB, finalActiveCellsB,
                          d_outOffsetsB, d_outPrimsFlatB);
 
@@ -365,6 +404,12 @@ extern "C" void kernelsTestBVHV2(const cuBQL::Triangle* hMeshA,
   CUBQL_CUDA_CALL(Free(dBoxesA));
   CUBQL_CUDA_CALL(Free(dMeshB));
   CUBQL_CUDA_CALL(Free(dBoxesB));
+
+  // Release the intermediate indexed topology allocations
+  CUBQL_CUDA_CALL(Free(dVertsA));
+  CUBQL_CUDA_CALL(Free(dIndicesA));
+  CUBQL_CUDA_CALL(Free(dVertsB));
+  CUBQL_CUDA_CALL(Free(dIndicesB));
 
   if(outNodeBoxesA)
     _FREE(outNodeBoxesA, stream, memResource);

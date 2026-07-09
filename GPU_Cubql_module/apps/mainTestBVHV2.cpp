@@ -31,44 +31,43 @@ typedef boost::graph_traits<Mesh>::face_descriptor face_descriptor;
 typedef Kernel::Point_3 Point3;
 typedef Kernel::Triangle_3 Triangle3;
 
-// Helper function to translate geometry from CGAL storage to raw floats
-// Direct, non-allocating conversion bypasses proxy iterators
-inline cuBQL::Triangle convertCgalFaceToCuBQL(const Mesh& mesh, face_descriptor face) {
-    // Manually unroll the halfedge triangle cycle to avoid iterator tracking overhead
-    auto h0 = mesh.halfedge(face);
-    auto h1 = mesh.next(h0);
-    auto h2 = mesh.next(h1);
-
-    const Point3& pA = mesh.point(mesh.target(h0));
-    const Point3& pB = mesh.point(mesh.target(h1));
-    const Point3& pC = mesh.point(mesh.target(h2));
-
-    cuBQL::Triangle tri;
-    tri.a = {static_cast<float>(pA.x()), static_cast<float>(pA.y()), static_cast<float>(pA.z())};
-    tri.b = {static_cast<float>(pB.x()), static_cast<float>(pB.y()), static_cast<float>(pB.z())};
-    tri.c = {static_cast<float>(pC.x()), static_cast<float>(pC.y()), static_cast<float>(pC.z())};
-    return tri;
-}
-
-// Fully parallelized pipeline helper (Zero sequential bottlenecks)
-void processMeshLayoutTimed(const Mesh& mesh, std::vector<face_descriptor>& outFaces, std::vector<cuBQL::Triangle>& outLayout) {
+// NEW OPTIMIZED TRANSLATION: Extracts indexed geometry structure.
+// Bypasses triangle duplicating completely, saving massive CPU execution & cache overhead.
+void extractMeshTopology(const Mesh& mesh, std::vector<float3>& outVerts, std::vector<uint3>& outIndices) {
+    size_t numVerts = num_vertices(mesh);
     size_t numFaces = num_faces(mesh);
-    
-    // Allocate up front to eliminate sequential push_back/reallocation locks
-    outFaces.resize(numFaces);
-    outLayout.resize(numFaces);
 
-    // If your mesh contains deleted faces, use CGAL::Index_property_map instead.
-    // For standard contiguous OFF loads, we can map indices directly in parallel.
+    outVerts.resize(numVerts);
+    outIndices.resize(numFaces);
+
+    auto coords = mesh.points();
+    
+    // Pass 1: Downcast unique vertex positions to float (1 cast per vertex instead of 6)
+    tbb::parallel_for(tbb::blocked_range<size_t>(0, numVerts), [&](const tbb::blocked_range<size_t>& r) {
+        for (size_t i = r.begin(); i != r.end(); ++i) {
+            typename Mesh::Vertex_index v(static_cast<Mesh::size_type>(i));
+            const auto& p = coords[v];
+            outVerts[i] = {static_cast<float>(p.x()), static_cast<float>(p.y()), static_cast<float>(p.z())};
+        }
+    });
+
+    // Pass 2: Extract pure integer topology connections
     tbb::parallel_for(tbb::blocked_range<size_t>(0, numFaces), [&](const tbb::blocked_range<size_t>& r) {
         for (size_t i = r.begin(); i != r.end(); ++i) {
-            // Reconstruct the face descriptor directly from the linear index
-            face_descriptor f(static_cast<Mesh::size_type>(i));
-            outFaces[i] = f;
-            outLayout[i] = convertCgalFaceToCuBQL(mesh, f);
+            typename Mesh::Face_index f(static_cast<Mesh::size_type>(i));
+            auto h0 = mesh.halfedge(f);
+            auto h1 = mesh.next(h0);
+            auto h2 = mesh.next(h1);
+
+            outIndices[i] = {
+                static_cast<unsigned int>(mesh.target(h0)),
+                static_cast<unsigned int>(mesh.target(h1)),
+                static_cast<unsigned int>(mesh.target(h2))
+            };
         }
     });
 }
+
 int main(int ac, char** av) {
     if (ac < 9) { 
         std::cout << "Usage: " << av[0] << " <meshA.off> <maxCellSizeA> <meshB.off> <maxCellSizeB> <batchmultiplier> <NumberOfDualTreeSteps> <Leaf Threshold> <tbb_workers>\n";
@@ -88,10 +87,11 @@ int main(int ac, char** av) {
 
     double tStartTotal = cuBQL::getCurrentTime();
 
-    std::vector<face_descriptor> facesA;
-    std::vector<face_descriptor> facesB;
-    std::vector<cuBQL::Triangle> hMeshLayoutA;
-    std::vector<cuBQL::Triangle> hMeshLayoutB;
+    // Replaced layout arrays with compact Vertex/Index structures
+    std::vector<float3> hVertsA;
+    std::vector<uint3>  hIndicesA;
+    std::vector<float3> hVertsB;
+    std::vector<uint3>  hIndicesB;
 
     // --------------------------------------------------------------------
     // LOAD AND TRANSLATE MESH A
@@ -106,9 +106,8 @@ int main(int ac, char** av) {
     inFileA.close();
     double tMeshAFileLoadTime = cuBQL::getCurrentTime() - tMeshAFileLoadStart;
     
-    // Timer moved outside to precisely profile the full function duration
     double tMeshATranslationStart = cuBQL::getCurrentTime();
-    processMeshLayoutTimed(meshA, facesA, hMeshLayoutA);
+    extractMeshTopology(meshA, hVertsA, hIndicesA);
     double tMeshATranslationTime = cuBQL::getCurrentTime() - tMeshATranslationStart;
 
     // --------------------------------------------------------------------
@@ -124,9 +123,8 @@ int main(int ac, char** av) {
     inFileB.close();
     double tMeshBFileLoadTime = cuBQL::getCurrentTime() - tMeshBFileLoadStart;
 
-    // Timer moved outside to precisely profile the full function duration
     double tMeshBTranslationStart = cuBQL::getCurrentTime();
-    processMeshLayoutTimed(meshB, facesB, hMeshLayoutB);
+    extractMeshTopology(meshB, hVertsB, hIndicesB);
     double tMeshBTranslationTime = cuBQL::getCurrentTime() - tMeshBTranslationStart;
 
     // --------------------------------------------------------------------
@@ -138,9 +136,10 @@ int main(int ac, char** av) {
     std::vector<int2> hGreenPairs;
     std::vector<int2> hYellowPairs;
 
+    // Updated Signature: Pass Vertex and Index buffer components explicitly to the GPU layout manager
     kernelsTestBVHV2(
-        hMeshLayoutA.data(), static_cast<int>(hMeshLayoutA.size()), maxCellSizeA,
-        hMeshLayoutB.data(), static_cast<int>(hMeshLayoutB.size()), maxCellSizeB, 
+        hVertsA.data(), static_cast<int>(hVertsA.size()), hIndicesA.data(), static_cast<int>(hIndicesA.size()), maxCellSizeA,
+        hVertsB.data(), static_cast<int>(hVertsB.size()), hIndicesB.data(), static_cast<int>(hIndicesB.size()), maxCellSizeB, 
         batchmultipl, mode, leafThreshhold, stats, hGreenPairs, hYellowPairs 
     );
 
@@ -159,8 +158,9 @@ int main(int ac, char** av) {
             for (size_t i = r.begin(); i != r.end(); ++i) {
                 const auto& pair = hYellowPairs[i];
 
-                face_descriptor fA = facesA[pair.x];
-                face_descriptor fB = facesB[pair.y];
+                // Bypassed facesA/facesB state vectors. We construct descriptors instantly on-the-fly.
+                face_descriptor fA(static_cast<typename Mesh::size_type>(pair.x));
+                face_descriptor fB(static_cast<typename Mesh::size_type>(pair.y));
 
                 auto halfedgeA = meshA.halfedge(fA);
                 auto vA0 = meshA.target(halfedgeA);

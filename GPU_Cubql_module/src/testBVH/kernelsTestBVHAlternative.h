@@ -11,14 +11,11 @@
 // --------------------------------------------------------------------
 // MAIN ENTRY TESTING PIPELINE INTERFACE
 // --------------------------------------------------------------------
-extern "C" {
-
-    void kernelsTestBVHV2(
-        const cuBQL::Triangle* hMeshA, int numTrianglesA, int maxCellSizeA,
-        const cuBQL::Triangle* hMeshB, int numTrianglesB, int maxCellSizeB,
-        int batchMultiplier,int mode, int leafThreshold,
-        ExecutionStats& stats, std::vector<int2>& hGreenPairs,  // Output target for confirmed intersections
-         std::vector<int2>& hYellowPairs // Output target for coplanar / boundary elements
-    );
-
-}
+extern "C" void kernelsTestBVHV2(
+    const float3* hVertsA, int numVertsA, const uint3* hIndicesA, int numTrianglesA, int maxCellSizeA,
+    const float3* hVertsB, int numVertsB, const uint3* hIndicesB, int numTrianglesB, int maxCellSizeB,
+    int batchMultiplier, int mode, int leafThreshold,
+    ExecutionStats& stats,
+    std::vector<int2>& hGreenPairs,
+    std::vector<int2>& hYellowPairs
+);
