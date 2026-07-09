@@ -3,7 +3,7 @@
 
 
 template <typename FaceGraph, typename OutputIterator>
-typename boost::graph_traits<FaceGraph>::vertex_descriptor vertex_descriptor;
+typedef boost::graph_traits<FaceGraph>::vertex_descriptor vertex_descriptor;
 void min_length_homotopy_basis(const FaceGraph& mesh,
 												vertex_descriptor basepoint,
 												OutputIterator basis_out) {
