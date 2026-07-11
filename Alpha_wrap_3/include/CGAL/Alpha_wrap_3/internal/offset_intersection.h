@@ -75,55 +75,48 @@ public:
   {
     source = s;
     target = t;
-    seg_length = approximate_sqrt(squared_distance(s, t));
-    seg_unit_v = (t - s) / seg_length;
-    const Point_2 p0 { 0, dist_oracle(source) };
-    const Point_2 p1 { seg_length, dist_oracle(target) };
 
 #define CGAL_AW3_OUTPUT_SPHERE_MARCHING_STEPS
-// #define CGAL_AW3_DEBUG_SPHERE_MARCHING
-#ifdef CGAL_AW3_DEBUG_SPHERE_MARCHING
-    std::cout << "--------------------" << std::endl;
-    std::cout << "Running recursive. " << std::endl;
-    recursive_dichotomic_search(p0, p1, output_pt);
-    std::cout << "Result of recursive: " << output_pt << std::endl;
-    std::cout << "Running old. " << std::endl;
-    sphere_tracing_old(s, t, output_pt);
-    std::cout << "Result of old: " << output_pt << std::endl;
-    std::cout << "Running sphere tracing. " << std::endl;
-    sphere_tracing(s, t, output_pt);
-    std::cout << "Result of sphere tracing: " << output_pt << std::endl;
-    std::cout << "Running relaxed. " << std::endl;
+#ifdef CGAL_AW3_OUTPUT_SPHERE_MARCHING_STEPS
+    if (ray == 0) {
+      std::remove(output_file.c_str());
+      output_header();
+    }
+    output_step(s, "source", ray, "init");
+    output_step(t, "target", ray, "init");
 #endif
 
-	bool output = relaxed_sphere_tracing(s, t, output_pt);
+    bool output;
+
+    std::array<std::string, 4> vars = {
+      "DICHOTOMY", "SPHERE_MARCHING_OLD", "SPHERE_MARCHING", "RELAXED"
+    };
+    std::array<int,4> vals;
+    transform(vars.begin(), vars.end(), vals.begin(), getenv);
+    int max = *std::max_element(vals.begin(), vals.end());
+
+    if (max == 0) {
+      // default
+      output = trace("SPHERE_MARCHING", s, t, output_pt);
+    } else {
+      // Run the algos with positive environnment variables.
+      // Run the algo with highest value last, so that its output gets used.
+      for (int i = 1; i <= max; i++) {
+        for (const std::string& var : vars) {
+          if (i == getenv(var)) {
+            std::cout << "Tracing:" << var << std::endl;
+            output = trace(var, s, t, output_pt);
+          }
+        }
+      }
+    }
 
 #ifdef CGAL_AW3_OUTPUT_SPHERE_MARCHING_STEPS
-	std::ofstream out_source("source.xyz", std::ios_base::app);
-	out_source.precision(17);
-	out_source << s.x() << " " << s.y() << " " << s.z() << "\n";
-	out_source.close();
-
-	std::ofstream out_target("target.xyz", std::ios_base::app);
-	out_target.precision(17);
-	out_target << t.x() << " " << t.y() << " " << t.z() << "\n";
-	out_target.close();
-
-	std::ofstream out_segment("segment.poly", std::ios_base::app);
-	out_segment.precision(17);
-	out_segment << "2 " << s.x() << " " << s.y() << " " << s.z()
-				<< " "  << t.x() << " " << t.y() << " " << t.z() << "\n";
-	out_segment.close();
-
-	std::ofstream out_intersection("intersection.xyz", std::ios_base::app);
-	out_intersection.precision(17);
-	out_intersection << output_pt.x() << " "
-					 << output_pt.y() << " "
-					 << output_pt.z() << "\n";
-	out_intersection.close();
+    output_step(output_pt, "intersection", ray, "init");
+    ray++;
 #endif
 
-	return output;
+    return output;
   }
 
 
@@ -136,11 +129,79 @@ private:
   FT offset;
   FT precision;
   FT lipschitz;
+#ifdef CGAL_AW3_OUTPUT_SPHERE_MARCHING_STEPS
+  inline static int ray = 0;
+  std::string output_file = "steps.csv";
+#endif
+
+  static int getenv(std::string var) {
+    char* val = std::getenv(var.c_str());
+    if (val) {
+      return std::atoi(val);
+    } else {
+      return 0;
+    }
+  }
+
+  bool trace(std::string algo,
+             const Point_3& s,
+             const Point_3& t,
+             Point_3& output_pt) {
+    if (algo == "DICHOTOMY") {
+      return dichotomy(s, t, output_pt);
+    } else if (algo == "SPHERE_MARCHING_OLD") {
+      return sphere_tracing_old(s, t, output_pt);
+    } else if (algo == "SPHERE_MARCHING") {
+      return sphere_tracing(s, t, output_pt);
+    } else if (algo == "RELAXED") {
+      return relaxed_sphere_tracing(s, t, output_pt);
+    }
+  }
+
+#ifdef CGAL_AW3_OUTPUT_SPHERE_MARCHING_STEPS
+  void output_header() {
+    std::ofstream stream(output_file, std::ios_base::app);
+    stream.precision(17);
+    stream << "ray" << ","
+             << "algo" << ","
+             << "type" << ","
+             << "x" << ","
+             << "y" << ","
+             << "z" << "\n";
+    stream.close();
+  }
+
+  void output_step(Point_3 point, std::string type, int ray, std::string algo) {
+    std::ofstream stream(output_file, std::ios_base::app);
+    stream.precision(17);
+    stream << ray << ","
+             << algo << ","
+             << type << ","
+             << point.x() << ","
+             << point.y() << ","
+             << point.z() << "\n";
+    stream.close();
+  }
+#endif
+
+  bool dichotomy (const Point_3& s, const Point_3& t, Point_3& output_pt) {
+    seg_length = approximate_sqrt(squared_distance(s, t));
+    seg_unit_v = (t - s) / seg_length;
+    const Point_2 p0 { 0, dist_oracle(source) };
+    const Point_2 p1 { seg_length, dist_oracle(target) };
+    return recursive_dichotomic_search(p0, p1, output_pt);
+  }
 
   template <class Point>
   bool recursive_dichotomic_search(const Point_2& s, const Point_2& t,
                                    Point& output_pt)
   {
+
+#ifdef CGAL_AW3_OUTPUT_SPHERE_MARCHING_STEPS
+    const Point_3 segment_data { s.x(), s.y(), t.y() };
+    output_step(segment_data, "segment", ray, "dichotomy");
+#endif
+
     if(CGAL::abs(s.x() - t.x()) < precision)
     {
       if(CGAL::abs(s.y() - offset) < precision)
@@ -302,6 +363,10 @@ private:
 
       current_pt = current_pt + (current_dist * seg_unit_v);
 
+#ifdef CGAL_AW3_OUTPUT_SPHERE_MARCHING_STEPS
+      output_step(current_pt, "step", ray, "sphere-marching-old");
+#endif
+
       if(squared_distance(s, current_pt) > sq_seg_length)
       {
 #ifdef CGAL_AW3_DEBUG_SPHERE_MARCHING
@@ -362,6 +427,10 @@ private:
       }
 
       current_pt = current_pt + (current_dist * direction);
+
+#ifdef CGAL_AW3_OUTPUT_SPHERE_MARCHING_STEPS
+      output_step(current_pt, "step", ray, "sphere-marching");
+#endif
     }
 
 #ifdef CGAL_AW3_DEBUG_SPHERE_MARCHING
@@ -424,31 +493,18 @@ private:
         omega = 1;
 
 #ifdef CGAL_AW3_OUTPUT_SPHERE_MARCHING_STEPS
-        std::ofstream out_overstep("overstep.xyz", std::ios_base::app);
-        out_overstep.precision(17);
-        out_overstep << current_pt.x() << " "
-                 << current_pt.y() << " "
-                 << current_pt.z() << "\n";
-        out_overstep.close();
+        output_step(current_pt, "overstep", ray, "relaxed");
 #endif
       } else {
         current_step = current_dist * omega;
 
 #ifdef CGAL_AW3_OUTPUT_SPHERE_MARCHING_STEPS
-        if (omega > 1 && steps > 0) {
-            std::ofstream out_relaxed_step("relaxed_step.xyz", std::ios_base::app);
-            out_relaxed_step.precision(17);
-            out_relaxed_step << current_pt.x() << " "
-                     << current_pt.y() << " "
-                     << current_pt.z() << "\n";
-            out_relaxed_step.close();
-        } else {
-            std::ofstream out_step("step.xyz", std::ios_base::app);
-            out_step.precision(17);
-            out_step << current_pt.x() << " "
-                     << current_pt.y() << " "
-                     << current_pt.z() << "\n";
-            out_step.close();
+        if (steps > 0) {
+          if (omega > 1) {
+            output_step(current_pt, "relaxed", ray, "relaxed");
+          } else {
+            output_step(current_pt, "step", ray, "relaxed");
+          }
         }
 #endif
       }
