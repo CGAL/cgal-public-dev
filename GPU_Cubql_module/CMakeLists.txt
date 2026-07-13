@@ -278,10 +278,10 @@ add_executable(testBVHV2
     apps/mainTestBVHV2.cpp 
     src/testBVH/kernelsTestBVHAlternative.cu 
     src/testBVH/rapidDescendKernel.cu
-    src/testBVH/batchedCrossIntersection.cu
+    src/testBVH/batchedCrossIntersectionV2.cu
     src/testBVH/DualTreeStep.cu
     src/testBVH/prune_pipeline.cu
-    src/custom_pipeline/GPUPredicatesCheck.cu
+    src/custom_pipeline/GPUPredicatesCheckV2.cu
 )
 
 set_target_properties(testBVHV2 PROPERTIES

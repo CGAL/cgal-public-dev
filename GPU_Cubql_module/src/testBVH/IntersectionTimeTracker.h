@@ -11,6 +11,7 @@ struct IntersectionTimeTracker {
     double fineEvaluationPhaseMs = 0.0; // Added tracker for the exact geometric predicates + compaction
     double cleanupTimeMs        = 0.0; 
     double DownloadAndClean = 0.0;
+    int numberOfBatchLoops = 0;
 
     void print() const {
         std::cout << "\n==================================================\n";
@@ -22,6 +23,7 @@ struct IntersectionTimeTracker {
         std::cout << " Fine Geometric Evaluation     : " << fineEvaluationPhaseMs << " ms\n";
         std::cout << " Upload and clean up           : " << DownloadAndClean << " ms\n";
         std::cout << " Sandbox Cleanup & Free Cycles : " << cleanupTimeMs     << " ms\n";
+        std::cout << "Number of loops in batch: " << numberOfBatchLoops  << "\n";
         std::cout << "--------------------------------------------------\n";
         std::cout << " Total Tracked Pipeline Time   : " << totalLoopTimeMs   << " ms\n";
         std::cout << "==================================================\n\n";

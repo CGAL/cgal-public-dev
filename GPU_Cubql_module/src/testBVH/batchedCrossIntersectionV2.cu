@@ -1,4 +1,3 @@
-#include "batchedCrossIntersection.h"
 #include "include/third-party/cubql/fixedBoxQueryv2.h"
 #include <thrust/device_ptr.h>
 #include <thrust/scan.h>
@@ -8,8 +7,8 @@
 #include <iostream>
 #include <vector>
 #include <algorithm>
-#include "batchedCrossIntersection.h"
-#include "../custom_pipeline/GPUPredicatesCheck.h"
+#include "batchedCrossIntersectionV2.h"
+#include "../custom_pipeline/GPUPredicatesCheckV2.h"
 #include "TargetStatus.h"
 
 // Helper macro matching your project's naming convention
@@ -213,7 +212,7 @@ __global__ void fillAABBOverlapsKernel_Indirected(
 // --------------------------------------------------------------------
 // HOST EXECUTABLE REGION
 // --------------------------------------------------------------------
-uint64_t executeBatchedCrossIntersectionLoop(
+uint64_t executeBatchedCrossIntersectionLoopV2(
     int batchMultiplier,
     int totalBatches,
     const thrust::device_vector<uint32_t>& d_outPairsA,
@@ -227,6 +226,8 @@ uint64_t executeBatchedCrossIntersectionLoop(
     const cuBQL::bvh3f& bvhA,
     const cuBQL::Triangle* dMeshA,
     const cuBQL::Triangle* dMeshB,
+    const float2 *triAMetrics,
+    const float2 *triBMetrics,
     std::vector<int2>& hGreenPairs,
     std::vector<int2>& hYellowPairs,
     IntersectionTimeTracker& tracker 
@@ -392,11 +393,13 @@ uint64_t executeBatchedCrossIntersectionLoop(
         CUBQL_CUDA_CALL(Malloc(&d_pairStatuses, totalChunkPairs * sizeof(int)));
 
         double internalPredicateTimeDummy = 0.0;
-        evaluateAndCompactPairs(
+        evaluateAndCompactPairsV2(
             d_candidatePairs, 
             d_pairStatuses, 
             dMeshA, 
             dMeshB, 
+            triAMetrics,
+            triBMetrics,
             totalChunkPairs, 
             internalPredicateTimeDummy
         );

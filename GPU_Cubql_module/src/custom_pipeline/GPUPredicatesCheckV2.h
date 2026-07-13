@@ -1,5 +1,5 @@
-#ifndef GPU_PREDICATES_CHECK_H
-#define GPU_PREDICATES_CHECK_H
+#ifndef GPU_PREDICATES_CHECK_V2_H
+#define GPU_PREDICATES_CHECK_V2_H
 
 #include <vector>
 #include "cuBQL/bvh.h" // Needed for cuBQL::Triangle reference
@@ -18,11 +18,13 @@
  * and appends the resulting green and yellow pairs directly into the host output vectors.
  * * This function also cleans up the provided dCandidatePairs, dEvaluatedPairs, and dPairStatuses device memory.
  */
-void evaluateAndCompactPairs(
+void evaluateAndCompactPairsV2(
     int2* dCandidatePairs,
     int* dPairStatuses,
     const cuBQL::Triangle* dA,
     const cuBQL::Triangle* dB_batch,
+    const float2 *triAMetrics,
+    const float2 *triBMetrics,
     int totalBatchPairs,
     double& outEvaluateGeometricTime);
 

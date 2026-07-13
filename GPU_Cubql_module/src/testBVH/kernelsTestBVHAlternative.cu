@@ -29,7 +29,8 @@
 // Include modular execution targets
 #include "DualTreeStep.h"
 #include "rapidDescendKernel.h"
-#include "batchedCrossIntersection.h"
+//#include "batchedCrossIntersection.h"
+#include "batchedCrossIntersectionV2.h"
 #include "crossCheckNew.h"
 #include "kernelsTestBVHAlternative.h"
 #include "prune_pipeline.h"
@@ -46,22 +47,58 @@
 #endif
 
 
-// GPU Assembly Kernel: Instantly builds cuBQL::Triangle components from indexed layout on device
-__global__ void assembleTrianglesKernel(cuBQL::Triangle* dMesh, const float3* dVerts, const uint3* dIndices, int numTriangles) {
+// UPGRADED: Instantly builds triangles AND evaluates tight precision error bounds
+__global__ void assembleTrianglesKernel(cuBQL::Triangle* dMesh,
+                                        float2* dMetrics, // NEW: Stores packed companion metrics (.x = L, .y = E^2)
+                                        const float3* dVerts,
+                                        const float* dVertErrors, // NEW: Host-computed double-to-float downcast errors
+                                        const uint3* dIndices,
+                                        int numTriangles) {
   int idx = threadIdx.x + blockIdx.x * blockDim.x;
-  if (idx >= numTriangles) return;
+  if(idx >= numTriangles)
+    return;
 
   uint3 triIdx = dIndices[idx];
-  
-  // Fetch raw float3 vertex data from device memory
+
   float3 p0 = dVerts[triIdx.x];
   float3 p1 = dVerts[triIdx.y];
   float3 p2 = dVerts[triIdx.z];
 
-  // Map components directly into cuBQL's named 'a', 'b', and 'c' vector fields
-  dMesh[idx].a.x = p0.x; dMesh[idx].a.y = p0.y; dMesh[idx].a.z = p0.z;
-  dMesh[idx].b.x = p1.x; dMesh[idx].b.y = p1.y; dMesh[idx].b.z = p1.z;
-  dMesh[idx].c.x = p2.x; dMesh[idx].c.y = p2.y; dMesh[idx].c.z = p2.z;
+  // 1. Map components directly into cuBQL fields
+  dMesh[idx].a.x = p0.x;
+  dMesh[idx].a.y = p0.y;
+  dMesh[idx].a.z = p0.z;
+  dMesh[idx].b.x = p1.x;
+  dMesh[idx].b.y = p1.y;
+  dMesh[idx].b.z = p1.z;
+  dMesh[idx].c.x = p2.x;
+  dMesh[idx].c.y = p2.y;
+  dMesh[idx].c.z = p2.z;
+
+  // 2. Compute L (Absolute Spatial Scale)
+  float l0 = fmaxf(fmaxf(fabsf(p0.x), fabsf(p0.y)), fabsf(p0.z));
+  float l1 = fmaxf(fmaxf(fabsf(p1.x), fabsf(p1.y)), fabsf(p1.z));
+  float l2 = fmaxf(fmaxf(fabsf(p2.x), fabsf(p2.y)), fabsf(p2.z));
+  float L = fmaxf(fmaxf(l0, l1), l2);
+
+  // 3. Compute E (Maximum Edge Axis Extent)
+  float ex = fmaxf(fmaxf(fabsf(p0.x - p1.x), fabsf(p1.x - p2.x)), fabsf(p2.x - p0.x));
+  float ey = fmaxf(fmaxf(fabsf(p0.y - p1.y), fabsf(p1.y - p2.y)), fabsf(p2.y - p0.y));
+  float ez = fmaxf(fmaxf(fabsf(p0.z - p1.z), fabsf(p1.z - p2.z)), fabsf(p2.z - p0.z));
+  float E = fmaxf(fmaxf(ex, ey), ez);
+
+  // 4. Absorb Host-Generated Rounding Error Bounds
+  float e0 = dVertErrors[triIdx.x];
+  float e1 = dVertErrors[triIdx.y];
+  float e2 = dVertErrors[triIdx.z];
+  float maxVertexError = fmaxf(fmaxf(e0, e1), e2);
+
+  // Pad spatial parameters conservatively to encompass downcast drift
+  L += maxVertexError;
+  E += (2.0f * maxVertexError);
+
+  // 5. Write out packed parameters to companion buffer
+  dMetrics[idx] = make_float2(L, E * E);
 }
 
 __global__ void generateBoxes(cuBQL::box3f* boxes, const cuBQL::Triangle* tris, int N) {
@@ -80,15 +117,17 @@ populateReverseMapBKernel(uint32_t* d_reverseMapB, const uint32_t* d_markedNodeI
   }
 }
 
-extern "C" void kernelsTestBVHV2(const float3* hVertsA, 
-                                 int numVertsA, 
-                                 const uint3* hIndicesA, 
-                                 int numTrianglesA, 
+extern "C" void kernelsTestBVHV2(const float3* hVertsA,
+                                 int numVertsA,
+                                 const uint3* hIndicesA,
+                                 const float* hVertErrorsA,
+                                 int numTrianglesA,
                                  int maxCellSizeA,
-                                 const float3* hVertsB, 
-                                 int numVertsB, 
-                                 const uint3* hIndicesB, 
-                                 int numTrianglesB, 
+                                 const float3* hVertsB,
+                                 int numVertsB,
+                                 const uint3* hIndicesB,
+                                 const float* hVertErrorsB,
+                                 int numTrianglesB,
                                  int maxCellSizeB,
                                  int batchMultiplier,
                                  int mode,
@@ -117,7 +156,7 @@ extern "C" void kernelsTestBVHV2(const float3* hVertsA,
 
   // Allocate and stream indexed buffers for Mesh A
   float3* dVertsA = nullptr;
-  uint3*  dIndicesA = nullptr;
+  uint3* dIndicesA = nullptr;
   CUBQL_CUDA_CALL(Malloc(&dVertsA, numVertsA * sizeof(float3)));
   CUBQL_CUDA_CALL(Memcpy(dVertsA, hVertsA, numVertsA * sizeof(float3), cudaMemcpyHostToDevice));
   CUBQL_CUDA_CALL(Malloc(&dIndicesA, numTrianglesA * sizeof(uint3)));
@@ -125,11 +164,12 @@ extern "C" void kernelsTestBVHV2(const float3* hVertsA,
 
   // Allocate and stream indexed buffers for Mesh B
   float3* dVertsB = nullptr;
-  uint3*  dIndicesB = nullptr;
+  uint3* dIndicesB = nullptr;
   CUBQL_CUDA_CALL(Malloc(&dVertsB, numVertsB * sizeof(float3)));
   CUBQL_CUDA_CALL(Memcpy(dVertsB, hVertsB, numVertsB * sizeof(float3), cudaMemcpyHostToDevice));
   CUBQL_CUDA_CALL(Malloc(&dIndicesB, numTrianglesB * sizeof(uint3)));
   CUBQL_CUDA_CALL(Memcpy(dIndicesB, hIndicesB, numTrianglesB * sizeof(uint3), cudaMemcpyHostToDevice));
+
 
   // Instantiate standard unrolled triangle buffers on device
   cuBQL::Triangle* dMeshA;
@@ -138,9 +178,25 @@ extern "C" void kernelsTestBVHV2(const float3* hVertsA,
   cuBQL::Triangle* dMeshB;
   CUBQL_CUDA_CALL(Malloc(&dMeshB, numTrianglesB * sizeof(cuBQL::Triangle)));
 
-  // Run the unpacking assembly kernels
-  assembleTrianglesKernel<<<cuBQL::divRoundUp(numTrianglesA, 256), 256, 0, stream>>>(dMeshA, dVertsA, dIndicesA, numTrianglesA);
-  assembleTrianglesKernel<<<cuBQL::divRoundUp(numTrianglesB, 256), 256, 0, stream>>>(dMeshB, dVertsB, dIndicesB, numTrianglesB);
+  float* dVertErrorsA = nullptr;
+  CUBQL_CUDA_CALL(Malloc(&dVertErrorsA, numVertsA * sizeof(float)));
+  CUBQL_CUDA_CALL(Memcpy(dVertErrorsA, hVertErrorsA, numVertsA * sizeof(float), cudaMemcpyHostToDevice));
+
+  float* dVertErrorsB = nullptr;
+  CUBQL_CUDA_CALL(Malloc(&dVertErrorsB, numVertsB * sizeof(float)));
+  CUBQL_CUDA_CALL(Memcpy(dVertErrorsB, hVertErrorsB, numVertsB * sizeof(float), cudaMemcpyHostToDevice));
+
+  // 2. Allocate the Triangle Metrics Companion Buffers
+  float2* dMeshMetricsA = nullptr;
+  CUBQL_CUDA_CALL(Malloc(&dMeshMetricsA, numTrianglesA * sizeof(float2)));
+
+  float2* dMeshMetricsB = nullptr;
+  CUBQL_CUDA_CALL(Malloc(&dMeshMetricsB, numTrianglesB * sizeof(float2)));
+
+  assembleTrianglesKernel<<<cuBQL::divRoundUp(numTrianglesA, 256), 256, 0, stream>>>(
+      dMeshA, dMeshMetricsA, dVertsA, dVertErrorsA, dIndicesA, numTrianglesA);
+  assembleTrianglesKernel<<<cuBQL::divRoundUp(numTrianglesB, 256), 256, 0, stream>>>(
+      dMeshB, dMeshMetricsB, dVertsB, dVertErrorsB, dIndicesB, numTrianglesB);
 
   cuBQL::box3f* dBoxesA;
   CUBQL_CUDA_CALL(Malloc(&dBoxesA, numTrianglesA * sizeof(cuBQL::box3f)));
@@ -303,8 +359,8 @@ extern "C" void kernelsTestBVHV2(const float3* hVertsA,
   // --------------------------------------------------------------------
   std::cout << " [FOREST EXPANSION] => Launching Level-by-Level Parallel Sub-Tree Compilation..." << std::endl;
 
-  const uint32_t maxNodesA = 2u * (uint32_t)numTrianglesA  + (outTotalActiveCellsA + (outTotalActiveCellsA & 1u)) + 2u;
-  const uint32_t maxNodesB = 2u * (uint32_t)numTrianglesB+ (outTotalActiveCellsB + (outTotalActiveCellsB & 1u)) + 2u;
+  const uint32_t maxNodesA = 2u * (uint32_t)numTrianglesA + (outTotalActiveCellsA + (outTotalActiveCellsA & 1u)) + 2u;
+  const uint32_t maxNodesB = 2u * (uint32_t)numTrianglesB + (outTotalActiveCellsB + (outTotalActiveCellsB & 1u)) + 2u;
 
   thrust::device_vector<uint32_t> d_nodeDescendantCountsA(maxNodesA, 0);
   thrust::device_vector<uint32_t> d_nodeDescendantCountsB(maxNodesB, 0);
@@ -315,7 +371,7 @@ extern "C" void kernelsTestBVHV2(const float3* hVertsA,
   cuBQL::gpuBuilder_v4::build_forest<float, 3>(
       bvhA, dBoxesA, currentPrimsNumA, numTrianglesA, outTotalActiveCellsA, outSortedPrimIDsA, outNodeOffsetsA,
       buildConfig, thrust::raw_pointer_cast(d_nodeDescendantCountsA.data()), stream, memResource);
-  
+
   cuBQL::cuda_forest::refit_forest<float, 3>(bvhA, dBoxesA, outTotalActiveCellsA, stream, memResource);
   CUBQL_CUDA_CALL(StreamSynchronize(stream));
   double forestAMs = (cuBQL::getCurrentTime() - tForestAStart) * 1000.0;
@@ -392,12 +448,15 @@ extern "C" void kernelsTestBVHV2(const float3* hVertsA,
   double tGpuBfsEnd = cuBQL::getCurrentTime();
 
   finalCandidatePairs =
-      executeBatchedCrossIntersectionLoop(batchMultiplier, totalBatches, d_outPairsA, d_outPairsB, d_reverseMapB,
+      executeBatchedCrossIntersectionLoopV2(batchMultiplier, totalBatches, d_outPairsA, d_outPairsB, d_reverseMapB,
                                           d_markedNodeIndicesB, d_outOffsetsB, d_outPrimsFlatB, d_nodeDescendantCountsB,
-                                          finalActiveCellsB, bvhA, dMeshA, dMeshB, hGreenPairs, hYellowPairs, tracker);
+                                          finalActiveCellsB, bvhA, dMeshA, dMeshB,dMeshMetricsA,dMeshMetricsB, hGreenPairs, hYellowPairs, tracker);
   // --------------------------------------------------------------------
   // EXPLICIT CLEANUP & RECOVERY METRIC TRACKING
   // --------------------------------------------------------------------
+
+  std::cout << "Starting to clean up" << std::endl;
+
   double tCleanupStart = cuBQL::getCurrentTime();
 
   CUBQL_CUDA_CALL(Free(dMeshA));

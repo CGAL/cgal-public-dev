@@ -13,6 +13,7 @@
 
 #include "GPUPredicatesCheck.h"
 #include "kernelsV2.h"
+#include "PairStatus.h"
 
 // struct GPUTimingBreakdown {
 //     double uploadTime = 0.0;

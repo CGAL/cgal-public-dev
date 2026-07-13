@@ -1,4 +1,4 @@
-#include "GPUPredicatesCheck.h"
+#include "GPUPredicatesCheckV2.h"
 #include <cuda_runtime.h>
 #include <thrust/device_ptr.h>
 #include <thrust/copy.h>
@@ -72,43 +72,27 @@ __device__ inline int edgeTriInterval(
     return PAIR_NO;
 }
 
-__device__ inline PairStatus classifyPair(const cuBQL::Triangle& A, const cuBQL::Triangle& B) {
-    // FIX 1: Removed the hardcoded 'return PAIR_YELLOW;' that was blocking execution
-    
+__device__ inline PairStatus classifyPair(
+    const cuBQL::Triangle& A, 
+    const cuBQL::Triangle& B,
+    const float2 metricsA, // Packed: .x = LA, .y = E2A
+    const float2 metricsB) // Packed: .x = LB, .y = E2B
+{    
     if (!A.bounds().overlaps(B.bounds())) return PAIR_NO;
 
+    // Fetch coordinates directly for interval evaluations
     const cuBQL::vec3f A0 = A.a, A1 = A.b, A2 = A.c;
     const cuBQL::vec3f B0 = B.a, B1 = B.b, B2 = B.c;
 
-    // FIX 2: Compute L (Absolute spatial position scale) for BOTH triangles
-    float LA = fmaxf(fmaxf(fabsf(A0.x), fabsf(A0.y)), fabsf(A0.z));
-    LA = fmaxf(LA, fmaxf(fmaxf(fabsf(A1.x), fabsf(A1.y)), fabsf(A1.z)));
-    LA = fmaxf(LA, fmaxf(fmaxf(fabsf(A2.x), fabsf(A2.y)), fabsf(A2.z)));
+    // O(1) Vector-optimized Scale Bounds Extraction
+    float L = fmaxf(metricsA.x, metricsB.x);
+    float E2 = fmaxf(metricsA.y, metricsB.y); // max(EA, EB)^2 is equivalent to max(EA^2, EB^2)
 
-    float LB = fmaxf(fmaxf(fabsf(B0.x), fabsf(B0.y)), fabsf(B0.z));
-    LB = fmaxf(LB, fmaxf(fmaxf(fabsf(B1.x), fabsf(B1.y)), fabsf(B1.z)));
-    LB = fmaxf(LB, fmaxf(fmaxf(fabsf(B2.x), fabsf(B2.y)), fabsf(B2.z)));
-
-    float L = fmaxf(LA, LB);
-
-    // FIX 3: Compute E (Local edge extent component) for BOTH triangles
-    float exA = fmaxf(fabsf(A0.x - A1.x), fmaxf(fabsf(A1.x - A2.x), fabsf(A2.x - A0.x)));
-    float eyA = fmaxf(fabsf(A0.y - A1.y), fmaxf(fabsf(A1.y - A2.y), fabsf(A2.y - A0.y)));
-    float ezA = fmaxf(fabsf(A0.z - A1.z), fmaxf(fabsf(A1.z - A2.z), fabsf(A2.z - A0.z)));
-    float EA = fmaxf(exA, fmaxf(eyA, ezA));
-
-    float exB = fmaxf(fabsf(B0.x - B1.x), fmaxf(fabsf(B1.x - B2.x), fabsf(B2.x - B0.x)));
-    float eyB = fmaxf(fabsf(B0.y - B1.y), fmaxf(fabsf(B1.y - B2.y), fabsf(B2.y - B0.y)));
-    float ezB = fmaxf(fabsf(B0.z - B1.z), fmaxf(fabsf(B1.z - B2.z), fabsf(B2.z - B0.z)));
-    float EB = fmaxf(exB, fmaxf(eyB, ezB));
-
-    float E = fmaxf(EA, EB);
-
-    // 3. TIGHT VOLUMETRIC BOUND: Scales with L * E^2
+    // Compute identical tight volumetric error bound instantly
     const float float_machine_epsilon = 1.1920929e-7f; 
-    float eps = 48.0f * L * (E * E) * float_machine_epsilon;
+    float eps = 48.0f * L * E2 * float_machine_epsilon;
 
-    // --- Geometrical Predicate Evaluation Passes ---
+    // --- Geometrical Predicate Evaluation Passes (Unchanged) ---
     int ob0 = orient3d_interval(A0, A1, A2, B0, eps);
     int ob1 = orient3d_interval(A0, A1, A2, B1, eps);
     int ob2 = orient3d_interval(A0, A1, A2, B2, eps);
@@ -134,7 +118,6 @@ __device__ inline PairStatus classifyPair(const cuBQL::Triangle& A, const cuBQL:
 
     return PAIR_NO;
 }
-
 // --------------------------------------------------------------------
 // CORE INTERSECTION KERNEL
 // --------------------------------------------------------------------
@@ -143,15 +126,23 @@ __global__ void evaluateGeometricPairsKernel(
     const int2 *candidatePairs, 
     const cuBQL::Triangle *triA, 
     const cuBQL::Triangle *triB, 
+    const float2 *triAMetrics, // NEW: Companion metrics array 
+    const float2 *triBMetrics, // NEW: Companion metrics array
     int numPairs) 
 {
     int tid = threadIdx.x + blockIdx.x * blockDim.x;
     if (tid >= numPairs) return;
 
     int2 pair = candidatePairs[tid];
-    PairStatus status = classifyPair(triA[pair.x], triB[pair.y]);
+    
+    // Low-overhead evaluation execution
+    PairStatus status = classifyPair(
+        triA[pair.x], 
+        triB[pair.y], 
+        triAMetrics[pair.x], 
+        triBMetrics[pair.y]
+    );
 
-    // ONLY write out the status! No redundant pair copying.
     outStatuses[tid] = (int)status;
 }
 
@@ -168,11 +159,13 @@ struct IsTargetPairStatus {
 // --------------------------------------------------------------------
 // EXPORTED PIPELINE WRAPPER STAGE
 // --------------------------------------------------------------------
-void evaluateAndCompactPairs(
+void evaluateAndCompactPairsV2(
     int2* dCandidatePairs,
     int* dPairStatuses,
     const cuBQL::Triangle* dA,
     const cuBQL::Triangle* dB_batch,
+    const float2 *triAMetrics,
+    const float2 *triBMetrics,
     int totalBatchPairs,
     double& outEvaluateGeometricTime)
 {
@@ -185,7 +178,7 @@ void evaluateAndCompactPairs(
     int blocksPerGrid = (totalBatchPairs + threadsPerBlock - 1) / threadsPerBlock;
     
     evaluateGeometricPairsKernel<<<blocksPerGrid, threadsPerBlock>>>(
-         dPairStatuses, dCandidatePairs, dA, dB_batch, totalBatchPairs
+         dPairStatuses, dCandidatePairs, dA, dB_batch, triAMetrics, triBMetrics, totalBatchPairs
     );
     cudaEventRecord(stopEval, 0);
     cudaEventSynchronize(stopEval);
