@@ -85,12 +85,14 @@ __device__ inline PairStatus classifyPair(
     const cuBQL::vec3f B0 = B.a, B1 = B.b, B2 = B.c;
 
     // O(1) Vector-optimized Scale Bounds Extraction
+    //float L = fmaxf(metricsA.x, metricsB.x);
     float L = fmaxf(metricsA.x, metricsB.x);
-    float E2 = fmaxf(metricsA.y, metricsB.y); // max(EA, EB)^2 is equivalent to max(EA^2, EB^2)
-
+    //float E2 = fmaxf(metricsA.y, metricsB.y); // max(EA, EB)^2 is equivalent to max(EA^2, EB^2)
+    float E2 = fmaxf(metricsA.y, metricsB.y);
     // Compute identical tight volumetric error bound instantly
     const float float_machine_epsilon = 1.1920929e-7f; 
-    float eps = 48.0f * L * E2 * float_machine_epsilon;
+    //float eps = 48.0f * L * E2 * float_machine_epsilon;
+    float eps = 8.0f * L * E2 * float_machine_epsilon;
 
     // --- Geometrical Predicate Evaluation Passes (Unchanged) ---
     int ob0 = orient3d_interval(A0, A1, A2, B0, eps);
