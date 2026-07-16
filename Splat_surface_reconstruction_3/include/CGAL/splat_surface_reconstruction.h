@@ -1060,6 +1060,7 @@ namespace CGAL {
         std::size_t rejected_proj = 0;
         std::size_t accepted = 0;
 
+        int ctr = 0;
         while (!candidate_queues_empty()) {
           Candidate cand(Point_3(0,0,0), CGAL::NULL_VECTOR, 0, vertex_descriptor(), vertex_descriptor()); // Dummy initialization
           if (!pop_candidate_from_queue(cand)) {
@@ -1092,13 +1093,16 @@ namespace CGAL {
             remove_vertex(nv, mesh_);
             continue;
           }
-
+          
           push_candidates_from_vertex(nv);
+          ctr++;
         }
 
         std::cout<<"Setting Faces..." << std::endl;
         fill_faces_from_next_cycles();
-        // CGAL::Polygon_mesh_processing::triangulate_faces(mesh_);
+
+        std::cout << "Triangulating faces..." << std::endl;
+        CGAL::Polygon_mesh_processing::triangulate_faces(mesh_);
 
         std::cout << "Final mesh size: " << num_vertices(mesh_) << " vertices, " << num_edges(mesh_) << " edges, " << num_faces(mesh_) << " faces.\n";
         std::cout << "  Accepted: " << accepted << ", Rejected (near): " << rejected_near << ", Rejected (proj): " << rejected_proj << "\n";
@@ -1418,26 +1422,10 @@ namespace CGAL {
       //   return true;
       // }
 
-      // returns halfedge in the cycle of h pointing onto v, as well as the number of halfedge traversed
-      bool path_exists(halfedge_descriptor h, vertex_descriptor v)
-      {
-        halfedge_descriptor start=h;
-        do
-        {
-          h=next(h, mesh_);
-          if(target(h, mesh_)==v)
-          {
-            return true;
-          }
-        }
-        while(start!=h);
-        return false;
-      }
-
       bool build_graph(vertex_descriptor v0,
-                      vertex_descriptor v1,
-                      vertex_descriptor nv,
-                      const Vector_3& normal)
+                        vertex_descriptor v1,
+                        vertex_descriptor nv,
+                        const Vector_3& normal)
       {
         const auto null_h = boost::graph_traits<PolygonMesh>::null_halfedge();
         const auto null_f = boost::graph_traits<PolygonMesh>::null_face();
@@ -1447,68 +1435,40 @@ namespace CGAL {
         const Point_3 p1 = get(points_pm_, v1);
         const Point_3 pn = get(points_pm_, nv);
 
-        // Tangent plane normal = average of parent box normals.
         Vector_3 plane_normal = grid_.box_normal(p0) + grid_.box_normal(p1);
-        if (plane_normal == CGAL::NULL_VECTOR) {
-          plane_normal = normal;
-        }
-        if (plane_normal == CGAL::NULL_VECTOR) {
-          return false;
-        }
+        if (plane_normal == CGAL::NULL_VECTOR) plane_normal = normal;
+        if (plane_normal == CGAL::NULL_VECTOR) return false;
 
         const double pn2 = CGAL::to_double(plane_normal.squared_length());
-        if (pn2 <= 0.0) {
-          return false;
-        }
+        if (pn2 <= 0.0) return false;
         plane_normal = plane_normal / std::sqrt(pn2);
-
-        // Keep the tangent frame oriented consistently with the candidate normal.
-        if (normal != CGAL::NULL_VECTOR && (plane_normal * normal) < FT(0)) {
-          plane_normal = -plane_normal;
-        }
 
         const std::vector<Vector_3> frame = grid_.compute_local_tangent_frame(plane_normal);
         const Vector_3 u = frame[0];
-        const Vector_3 w = frame[1];
-
-        if (u == CGAL::NULL_VECTOR || w == CGAL::NULL_VECTOR) {
-          return false;
-        }
+        Vector_3 w = frame[1];
+        if (CGAL::cross_product(u, w) * plane_normal < FT(0)) w = -w;
+        if (u == CGAL::NULL_VECTOR || w == CGAL::NULL_VECTOR) return false;
 
         auto angle_of = [&](const Point_3& origin, const Point_3& q) -> double {
           const Vector_3 d = q - origin;
           double a = std::atan2(CGAL::to_double(d * w), CGAL::to_double(d * u));
-          if (a < 0.0) {
-            a += two_pi;
-          }
+          if (a < 0.0) a += two_pi;
           return a;
         };
 
-        // Scan all halfedges and keep only border halfedges incident to v.
         auto sorted_border_halfedges_around_vertex =
           [&](vertex_descriptor v) -> std::vector<std::pair<double, halfedge_descriptor>>
         {
           std::vector<std::pair<double, halfedge_descriptor>> out;
           const Point_3 pv = get(points_pm_, v);
-
           for (halfedge_descriptor h : halfedges(mesh_)) {
-            if (source(h, mesh_) != v) {
-              continue;
-            }
-
+            if (source(h, mesh_) != v) continue;
             const vertex_descriptor t = target(h, mesh_);
-            if (t == v) {
-              continue;
-            }
-
+            if (t == v) continue;
             out.emplace_back(angle_of(pv, get(points_pm_, t)), h);
           }
-
           std::sort(out.begin(), out.end(),
-                    [](const auto& a, const auto& b) {
-                      return a.first < b.first;
-                    });
-
+                    [](const auto& a, const auto& b) { return a.first < b.first; });
           return out;
         };
 
@@ -1517,21 +1477,10 @@ namespace CGAL {
             -> std::pair<halfedge_descriptor, halfedge_descriptor>
         {
           const Point_3 pv = get(points_pm_, v);
-          const Vector_3 new_vec = new_point - pv;
           const double theta_new = angle_of(pv, new_point);
-
           std::vector<std::pair<double, halfedge_descriptor>> sorted =
             sorted_border_halfedges_around_vertex(v);
-
-          if (sorted.empty()) {
-            std::cout << "No border halfedges found around vertex " << v << ".\n";
-            return {null_h, null_h};
-          }
-
-          if (sorted.size() == 1) {
-            std::cout << "Only one border halfedge found around vertex " << v << ".\n";
-            return {sorted.front().second, sorted.front().second};
-          }
+          if (sorted.empty()) return {null_h, null_h};
 
           auto it = std::lower_bound(
             sorted.begin(), sorted.end(), theta_new,
@@ -1539,74 +1488,39 @@ namespace CGAL {
               return a.first < theta;
             });
 
-          const auto& cw  = (it == sorted.begin()) ? sorted.back() : *(it - 1);
           const auto& ccw = (it == sorted.end())   ? sorted.front() : *it;
-
-          auto score = [&](halfedge_descriptor h) -> FT {
-            // vector from v to the other endpoint of h
-            const vertex_descriptor s = source(h, mesh_);
-            const vertex_descriptor t = target(h, mesh_);
-            const Point_3 q = (s == v) ? get(points_pm_, t) : get(points_pm_, s);
-
-            const Vector_3 cand_vec = q - pv;
-            return CGAL::cross_product(cand_vec, new_vec) * plane_normal;
-          };
-
-          const FT scw  = score(cw.second);
-          const FT sccw = score(ccw.second);
-
-          // The CCW one is the one with positive signed area.
-          if (sccw >= scw) {
-            return {ccw.second, cw.second};
-          } else {
-            return {cw.second, ccw.second};
-          }
+          const auto& cw  = (it == sorted.begin()) ? sorted.back()  : *(it - 1);
+          return {cw.second, ccw.second};
         };
 
-        // At each parent, pick the closest edge that gives a CCW turn.
-        // h1/g1 are the selected CCW edges; h2/g2 are the other close edge.
         auto [h1, h2] = choose_closest_ccw_halfedges(v0, pn);
-        auto [g1, g2] = choose_closest_ccw_halfedges(v1, pn);
+        auto [g2, g1] = choose_closest_ccw_halfedges(v1, pn);
 
         if (h1 == null_h || h2 == null_h || g1 == null_h || g2 == null_h) {
-          std::cout<< "Found a null edge" << std::endl;
+          std::cout << "Found a null edge" << std::endl;
           return false;
         }
 
-        if (target(h1, mesh_) != v0) {
-          h1 = opposite(h1, mesh_);
-        }
-        if (target(h2, mesh_) != v0) {
-          h2 = opposite(h2, mesh_);
-        }
+        if (target(h1, mesh_) != v0) h1 = opposite(h1, mesh_);
+        if (target(h2, mesh_) != v0) h2 = opposite(h2, mesh_);
+        if (target(g1, mesh_) != v1) g1 = opposite(g1, mesh_);
+        if (target(g2, mesh_) != v1) g2 = opposite(g2, mesh_);
 
-        if (target(g1, mesh_) != v1) {
-          g1 = opposite(g1, mesh_);
-        }
-        if (target(g2, mesh_) != v1) {
-          g2 = opposite(g2, mesh_);
-        }
+        halfedge_descriptor og1 = opposite(g1, mesh_); // leaves v1
+        halfedge_descriptor og2 = opposite(g2, mesh_); // leaves v1
 
-        halfedge_descriptor h_v0nv = create_halfedge(v0, nv); // v0 -> nv
-        halfedge_descriptor h_nvv0  = opposite(h_v0nv, mesh_); // nv -> v0
+        halfedge_descriptor h_v0nv = create_halfedge(v0, nv);
+        halfedge_descriptor h_nvv0 = opposite(h_v0nv, mesh_);
+        halfedge_descriptor h_v1nv = create_halfedge(v1, nv);
+        halfedge_descriptor h_nvv1 = opposite(h_v1nv, mesh_);
 
-        halfedge_descriptor h_v1nv = create_halfedge(v1, nv); // v1 -> nv
-        halfedge_descriptor h_nvv1  = opposite(h_v1nv, mesh_); // nv -> v1
-
-        // not sure if this is correct.
-        g1 = prev(opposite(g2, mesh_), mesh_);
-        h2 = next(h1, mesh_);
-
-        // Local wiring:
-        //   h1 -> v0->nv -> nv->v1 -> opposite(g2)
-        //   g1 -> v1->nv -> nv->v0 -> h2
         set_next(h1,     h_v0nv, mesh_);
         set_next(h_v0nv, h_nvv1, mesh_);
-        set_next(h_nvv1, opposite(g2, mesh_),     mesh_);
+        set_next(h_nvv1, opposite(g1, mesh_), mesh_);
 
-        set_next(g1,     h_v1nv, mesh_);
+        set_next(g2,     h_v1nv, mesh_);
         set_next(h_v1nv, h_nvv0, mesh_);
-        set_next(h_nvv0, h2, mesh_);
+        set_next(h_nvv0, opposite(h2, mesh_), mesh_);
 
         return true;
       }
@@ -1623,6 +1537,56 @@ namespace CGAL {
           return std::find(done.begin(), done.end(), h) != done.end();
         };
 
+        // Newell's method for a robust oriented normal of a polygon cycle.
+        auto compute_cycle_normal =
+          [&](const std::vector<halfedge_descriptor>& cycle) -> Vector_3
+        {
+          double nx = 0.0, ny = 0.0, nz = 0.0;
+
+          for (halfedge_descriptor h : cycle)
+          {
+            const Point_3 p = get(points_pm_, source(h, mesh_));
+            const Point_3 q = get(points_pm_, target(h, mesh_));
+
+            const double px = CGAL::to_double(p.x());
+            const double py = CGAL::to_double(p.y());
+            const double pz = CGAL::to_double(p.z());
+
+            const double qx = CGAL::to_double(q.x());
+            const double qy = CGAL::to_double(q.y());
+            const double qz = CGAL::to_double(q.z());
+
+            nx += (py - qy) * (pz + qz);
+            ny += (pz - qz) * (px + qx);
+            nz += (px - qx) * (py + qy);
+          }
+
+          return Vector_3(FT(nx), FT(ny), FT(nz));
+        };
+
+        // Average of vertex normals on the cycle, if available.
+        auto compute_reference_normal =
+          [&](const std::vector<halfedge_descriptor>& cycle) -> Vector_3
+        {
+          Vector_3 sum = CGAL::NULL_VECTOR;
+          std::size_t count = 0;
+
+          for (halfedge_descriptor h : cycle)
+          {
+            const Vector_3 n = get(normals_pm_, source(h, mesh_));
+            if (n != CGAL::NULL_VECTOR)
+            {
+              sum = sum + n;
+              ++count;
+            }
+          }
+
+          return (count > 0) ? sum : CGAL::NULL_VECTOR;
+        };
+
+        // Set this to false if you want the opposite orientation.
+        const bool want_same_orientation_as_reference = false;
+
         for (halfedge_descriptor start : halfedges(mesh_))
         {
           if (start == null_h) {
@@ -1630,7 +1594,7 @@ namespace CGAL {
           }
 
           if (face(start, mesh_) != null_f) {
-            continue; // already belongs to a face
+            continue;
           }
 
           if (already_done(start)) {
@@ -1651,7 +1615,7 @@ namespace CGAL {
             }
 
             if (face(h, mesh_) != null_f) {
-              break; // this loop is not a pure unassigned cycle
+              break;
             }
 
             if (already_done(h)) {
@@ -1671,8 +1635,30 @@ namespace CGAL {
             }
           }
 
-          // Need a closed cycle of at least 3 halfedges.
-          if (!closed || cycle.size() < 3) {
+          if (!closed || cycle.size() < 3)
+          {
+            done.insert(done.end(), cycle.begin(), cycle.end());
+            continue;
+          }
+
+          const Vector_3 cycle_normal = compute_cycle_normal(cycle);
+          const Vector_3 ref_normal = compute_reference_normal(cycle);
+
+          bool keep_cycle = true;
+
+          if (cycle_normal != CGAL::NULL_VECTOR && ref_normal != CGAL::NULL_VECTOR)
+          {
+            const FT dot = cycle_normal * ref_normal;
+
+            if (want_same_orientation_as_reference) {
+              keep_cycle = (dot > FT(0));
+            } else {
+              keep_cycle = (dot < FT(0));
+            }
+          }
+
+          if (!keep_cycle)
+          {
             done.insert(done.end(), cycle.begin(), cycle.end());
             continue;
           }
@@ -1683,8 +1669,8 @@ namespace CGAL {
           }
 
           set_halfedge(f, start, mesh_);
-
-          for (halfedge_descriptor ch : cycle) {
+          for (halfedge_descriptor ch : cycle)
+          {
             set_face(ch, f, mesh_);
             done.push_back(ch);
           }
