@@ -95,6 +95,34 @@ public:
   std::vector<typename WeightFunctor::Weight_t>
   compute_root_spanning_tree(Original_dart_const_descriptor root_vertex)
   { return compute_root_spanning_tree(root_vertex, WeightFunctor()); }
+
+protected:
+  // Disjoint-set (union-find) over face indices, used by the Kruskal-style
+  // weighted cotree selection: two faces are in the same set iff they are
+  // already connected through edges already assigned to the cotree.
+  // No path compression / union by rank for now -- kept as simple as possible.
+  struct Union_find
+  {
+    explicit Union_find(std::size_t n) : parent(n)
+    { for (std::size_t i=0; i<n; ++i) parent[i]=static_cast<int>(i); }
+
+    int find(int x)
+    {
+      while (parent[x]!=x) x=parent[x];
+      return x;
+    }
+
+    // Returns true iff a and b were in different sets (and have now been merged).
+    bool union_sets(int a, int b)
+    {
+      a=find(a); b=find(b);
+      if (a==b) return false;
+      parent[b]=a;
+      return true;
+    }
+
+    std::vector<int> parent;
+  };
 };
 
 } // namespace internal
