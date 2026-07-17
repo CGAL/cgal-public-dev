@@ -18,6 +18,7 @@
 #include <CGAL/Surface_mesh_topology/internal/Edge_weight_functor.h>
 
 #include <vector>
+#include <unordered_map>
 
 namespace CGAL {
 namespace Surface_mesh_topology {
@@ -123,6 +124,39 @@ protected:
 
     std::vector<int> parent;
   };
+
+  // Assigns an integer id (0-based) to every face of the local map, and
+  // fills face_id so that every dart of a given face maps to that face's
+  // id. Assumes the input mesh is closed (no boundary, so close<2>() added
+  // no artificial faces) -- see the class-level documented limitation.
+  // Returns the number of faces.
+  int compute_face_ids(std::unordered_map<Dart_descriptor, int>& face_id)
+  {
+    face_id.clear();
+    int nb_faces=0;
+    size_type face_seen=this->get_local_map().get_new_mark();
+    for (auto it=this->get_local_map().darts().begin(),
+              itend=this->get_local_map().darts().end(); it!=itend; ++it)
+    {
+      if (!this->get_local_map().is_marked(it, face_seen))
+      {
+        int id=nb_faces++;
+        // NOTE: darts_of_cell_basic<2>'s internal marking of visited darts
+        // was empirically found to not reliably persist for later
+        // is_marked() checks (verified experimentally), so we mark each
+        // dart ourselves here -- same pattern as Facewidth.h.
+        for (auto itf=this->get_local_map().template darts_of_cell_basic<2>(it, face_seen).begin(),
+                  itfend=this->get_local_map().template darts_of_cell_basic<2>(it, face_seen).end();
+             itf!=itfend; ++itf)
+        {
+          this->get_local_map().mark(itf, face_seen);
+          face_id[itf]=id;
+        }
+      }
+    }
+    this->get_local_map().free_mark(face_seen);
+    return nb_faces;
+  }
 };
 
 } // namespace internal
