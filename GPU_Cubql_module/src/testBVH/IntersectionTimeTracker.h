@@ -11,7 +11,10 @@ struct IntersectionTimeTracker {
     double fineEvaluationPhaseMs = 0.0; // Added tracker for the exact geometric predicates + compaction
     double cleanupTimeMs        = 0.0; 
     double DownloadAndClean = 0.0;
+    double CPUPredicates = 0.0;
     int numberOfBatchLoops = 0;
+    int confirmedGreenPairs = 0;
+    int confirmedYellowPairs = 0;
 
     void print() const {
         std::cout << "\n==================================================\n";

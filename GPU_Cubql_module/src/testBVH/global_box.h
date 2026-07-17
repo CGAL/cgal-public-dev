@@ -60,7 +60,7 @@ inline void computeGlobalBoxParallel(cuBQL::box_t<T, D>& out_globalBox,
                                      cudaStream_t s, 
                                      cuBQL::DeviceMemoryResource& memResource) {
     
-    printf("[TRACKING-HOST] -> Entered computeGlobalBoxParallel (Object Strategy). Prims: %d\n", numPrims);
+   // printf("[TRACKING-HOST] -> Entered computeGlobalBoxParallel (Object Strategy). Prims: %d\n", numPrims);
     fflush(stdout);
 
     if (numPrims <= 0) {
@@ -92,17 +92,17 @@ inline void computeGlobalBoxParallel(cuBQL::box_t<T, D>& out_globalBox,
     impl::computeGlobalBoxKernel<T, D><<<numBlocks, blockSize, 0, s>>>(d_globalBox, d_boxesA, numPrims);
 
     // Decode the atomic box into a standard box structure on the device
-    printf("[TRACKING-HOST] -> Resolving internal atomic representation to standard float primitives...\n");
+   // printf("[TRACKING-HOST] -> Resolving internal atomic representation to standard float primitives...\n");
     fflush(stdout);
     impl::resolveGlobalBoxKernel<T, D><<<1, 1, 0, s>>>(d_resolvedBox, d_globalBox);
 
     // Enqueue standard box memory back to the host destination variable
-    printf("[TRACKING-HOST] -> Enqueuing DeviceToHost MemcpyAsync...\n");
+  //  printf("[TRACKING-HOST] -> Enqueuing DeviceToHost MemcpyAsync...\n");
     fflush(stdout);
     CUBQL_CUDA_CALL(MemcpyAsync(&out_globalBox, d_resolvedBox, sizeof(box_t<T, D>), cudaMemcpyDeviceToHost, s));
 
     // Wait cleanly for stream execution to finalize
-    printf("[TRACKING-HOST] -> Awaiting Stream Synchronize...\n");
+   // printf("[TRACKING-HOST] -> Awaiting Stream Synchronize...\n");
     fflush(stdout);
     cudaError_t errSync = cudaStreamSynchronize(s);
     

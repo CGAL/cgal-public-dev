@@ -8,11 +8,14 @@
 #include <vector>
 #include "samples/common/loadOBJ.h"
 
+#include <tbb/concurrent_vector.h>
+
 #include "IntersectionTimeTracker.h"
+#include "../src/CPU/CgalDefinitions.h"
 
 // Simple functor definition required for Thrust compaction filtering
 
-uint64_t executeBatchedCrossIntersectionLoopV2(
+uint64_t executeBatchedCrossIntersectionLoopV2(Mesh & meshAcpu, Mesh & MeshBcpu,
     int batchMultiplier,
     int totalBatches,
     const thrust::device_vector<uint32_t>& d_outPairsA,
@@ -28,9 +31,11 @@ uint64_t executeBatchedCrossIntersectionLoopV2(
     const cuBQL::Triangle* dMeshB,
     const float2 *triAMetrics,
     const float2 *triBMetrics,
-    std::vector<int2>& hGreenPairs,
-    std::vector<int2>& hYellowPairs,
+    tbb::concurrent_vector<int2> & finalExactPairs,
     IntersectionTimeTracker& tracker 
 );
+
+//std::vector<int2>& hGreenPairs,
+//    std::vector<int2>& hYellowPairs,
 
 #endif // BATCHED_CROSS_INTERSECTION_H

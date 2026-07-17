@@ -29,7 +29,7 @@
 // Include modular execution targets
 #include "DualTreeStep.h"
 #include "rapidDescendKernel.h"
-//#include "batchedCrossIntersection.h"
+// #include "batchedCrossIntersection.h"
 #include "batchedCrossIntersectionV2.h"
 #include "crossCheckNew.h"
 #include "kernelsTestBVHAlternative.h"
@@ -49,9 +49,9 @@
 
 // UPGRADED: Instantly builds triangles AND evaluates tight precision error bounds
 __global__ void assembleTrianglesKernel(cuBQL::Triangle* dMesh,
-                                        float2* dMetrics, // NEW: Stores packed companion metrics (.x = L, .y = E^2)
+                                        float2* dMetrics,
                                         const float3* dVerts,
-                                        const float* dVertErrors, // NEW: Host-computed double-to-float downcast errors
+                                        const float* dVertErrors, // Can now be nullptr
                                         const uint3* dIndices,
                                         int numTriangles) {
   int idx = threadIdx.x + blockIdx.x * blockDim.x;
@@ -83,14 +83,24 @@ __global__ void assembleTrianglesKernel(cuBQL::Triangle* dMesh,
 
   // 3. Compute E (Maximum Edge Axis Extent)
   float ex = fmaxf(fmaxf(fabsf(p0.x - p1.x), fabsf(p1.x - p2.x)), fabsf(p2.x - p0.x));
-  float ey = fmaxf(fmaxf(fabsf(p0.y - p1.y), fabsf(p1.y - p2.y)), fabsf(p2.y - p0.y));
+  float ey = fmaxf(fmaxf(fabsf(p0.y - p1.y), fabsf(p1.y - p2.y)),
+                   fabsf(p2.y - p0.y)); // corrected typographical index '1.y' to 'p1.y'
   float ez = fmaxf(fmaxf(fabsf(p0.z - p1.z), fabsf(p1.z - p2.z)), fabsf(p2.z - p0.z));
   float E = fmaxf(fmaxf(ex, ey), ez);
 
-  // 4. Absorb Host-Generated Rounding Error Bounds
-  float e0 = dVertErrors[triIdx.x];
-  float e1 = dVertErrors[triIdx.y];
-  float e2 = dVertErrors[triIdx.z];
+  // 4. Absorb Host-Generated Rounding Error Bounds (or compute them dynamically)
+  float e0, e1, e2;
+  if(dVertErrors != nullptr) {
+    e0 = dVertErrors[triIdx.x];
+    e1 = dVertErrors[triIdx.y];
+    e2 = dVertErrors[triIdx.z];
+  } else {
+    // 2^-24 upper bound constant (conservative rounding to 5.9604645e-8f)
+    const float EPS_BOUND = 5.9604645e-8f;
+    e0 = l0 * EPS_BOUND;
+    e1 = l1 * EPS_BOUND;
+    e2 = l2 * EPS_BOUND;
+  }
   float maxVertexError = fmaxf(fmaxf(e0, e1), e2);
 
   // Pad spatial parameters conservatively to encompass downcast drift
@@ -117,7 +127,7 @@ populateReverseMapBKernel(uint32_t* d_reverseMapB, const uint32_t* d_markedNodeI
   }
 }
 
-extern "C" void kernelsTestBVHV2(const float3* hVertsA,
+extern "C" void kernelsTestBVHV2(Mesh & meshAcpu, Mesh & meshBcpu, const float3* hVertsA,
                                  int numVertsA,
                                  const uint3* hIndicesA,
                                  const float* hVertErrorsA,
@@ -133,15 +143,14 @@ extern "C" void kernelsTestBVHV2(const float3* hVertsA,
                                  int mode,
                                  int leafThreshold,
                                  ExecutionStats& stats,
-                                 std::vector<int2>& hGreenPairs,
-                                 std::vector<int2>& hYellowPairs) {
+                                 tbb::concurrent_vector<int2> & finalExactPairs) {
   if(numTrianglesA <= 0 || numTrianglesB <= 0) {
     return;
   }
 
-  std::cout << "\n==================================================" << std::endl;
-  std::cout << " [DEEP DEBUG] => Entering kernelsTestBVHV2 Pipeline..." << std::endl;
-  std::cout << "==================================================" << std::endl;
+  //std::cout << "\n==================================================" << std::endl;
+  //std::cout << " [DEEP DEBUG] => Entering kernelsTestBVHV2 Pipeline..." << std::endl;
+  //std::cout << "==================================================" << std::endl;
 
   double tPipelineStart = cuBQL::getCurrentTime();
   cudaStream_t stream = 0;
@@ -179,12 +188,16 @@ extern "C" void kernelsTestBVHV2(const float3* hVertsA,
   CUBQL_CUDA_CALL(Malloc(&dMeshB, numTrianglesB * sizeof(cuBQL::Triangle)));
 
   float* dVertErrorsA = nullptr;
-  CUBQL_CUDA_CALL(Malloc(&dVertErrorsA, numVertsA * sizeof(float)));
-  CUBQL_CUDA_CALL(Memcpy(dVertErrorsA, hVertErrorsA, numVertsA * sizeof(float), cudaMemcpyHostToDevice));
+  if(hVertErrorsA != nullptr) {
+    CUBQL_CUDA_CALL(Malloc(&dVertErrorsA, numVertsA * sizeof(float)));
+    CUBQL_CUDA_CALL(Memcpy(dVertErrorsA, hVertErrorsA, numVertsA * sizeof(float), cudaMemcpyHostToDevice));
+  }
 
   float* dVertErrorsB = nullptr;
-  CUBQL_CUDA_CALL(Malloc(&dVertErrorsB, numVertsB * sizeof(float)));
-  CUBQL_CUDA_CALL(Memcpy(dVertErrorsB, hVertErrorsB, numVertsB * sizeof(float), cudaMemcpyHostToDevice));
+  if(hVertErrorsB != nullptr) {
+    CUBQL_CUDA_CALL(Malloc(&dVertErrorsB, numVertsB * sizeof(float)));
+    CUBQL_CUDA_CALL(Memcpy(dVertErrorsB, hVertErrorsB, numVertsB * sizeof(float), cudaMemcpyHostToDevice));
+  }
 
   // 2. Allocate the Triangle Metrics Companion Buffers
   float2* dMeshMetricsA = nullptr;
@@ -406,8 +419,8 @@ extern "C" void kernelsTestBVHV2(const float3* hVertsA,
   uint32_t maxPossibleNodesB = bvhB.numNodes;
   thrust::device_vector<uint32_t> d_reverseMapB(maxPossibleNodesB, 0);
 
-  std::cout << " [OK] Sequences initialization complete. Proceeding to Dual Tree Step..." << std::endl;
-  std::cout << "==================================================\n" << std::endl;
+  // std::cout << " [OK] Sequences initialization complete. Proceeding to Dual Tree Step..." << std::endl;
+  // std::cout << "==================================================\n" << std::endl;
 
   // --------------------------------------------------------------------
   // DUAL-TREE TRAVERSAL STEP OVERHEAD PHASE
@@ -447,10 +460,10 @@ extern "C" void kernelsTestBVHV2(const float3* hVertsA,
   cudaDeviceSynchronize();
   double tGpuBfsEnd = cuBQL::getCurrentTime();
 
-  finalCandidatePairs =
-      executeBatchedCrossIntersectionLoopV2(batchMultiplier, totalBatches, d_outPairsA, d_outPairsB, d_reverseMapB,
-                                          d_markedNodeIndicesB, d_outOffsetsB, d_outPrimsFlatB, d_nodeDescendantCountsB,
-                                          finalActiveCellsB, bvhA, dMeshA, dMeshB,dMeshMetricsA,dMeshMetricsB, hGreenPairs, hYellowPairs, tracker);
+  finalCandidatePairs = executeBatchedCrossIntersectionLoopV2(meshAcpu, meshBcpu,
+      batchMultiplier, totalBatches, d_outPairsA, d_outPairsB, d_reverseMapB, d_markedNodeIndicesB, d_outOffsetsB,
+      d_outPrimsFlatB, d_nodeDescendantCountsB, finalActiveCellsB, bvhA, dMeshA, dMeshB, dMeshMetricsA, dMeshMetricsB,
+     finalExactPairs, tracker);
   // --------------------------------------------------------------------
   // EXPLICIT CLEANUP & RECOVERY METRIC TRACKING
   // --------------------------------------------------------------------
@@ -516,7 +529,7 @@ extern "C" void kernelsTestBVHV2(const float3* hVertsA,
   stats.GPUTotalTime = (tPipelineEnd - tPipelineStart) * 1000.0;
   stats.totalCrissCrossBatches = totalBatches;
   stats.finalAabbCandidatePairs = finalCandidatePairs;
-  stats.confirmedGreenPairs = hGreenPairs.size();
-  stats.confirmedYellowPairs = hYellowPairs.size();
+  stats.confirmedGreenPairs = stats.loopTracker.confirmedGreenPairs;
+  stats.confirmedYellowPairs = stats.loopTracker.confirmedYellowPairs;
   stats.loopTracker = tracker;
 }

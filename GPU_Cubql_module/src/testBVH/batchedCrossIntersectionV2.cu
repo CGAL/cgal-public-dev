@@ -10,6 +10,7 @@
 #include "batchedCrossIntersectionV2.h"
 #include "../custom_pipeline/GPUPredicatesCheckV2.h"
 #include "TargetStatus.h"
+#include "../src/CPU/YellowFilter.h"
 
 // Helper macro matching your project's naming convention
 #ifndef CUBQL_CUDA_CALL
@@ -213,6 +214,7 @@ __global__ void fillAABBOverlapsKernel_Indirected(
 // HOST EXECUTABLE REGION
 // --------------------------------------------------------------------
 uint64_t executeBatchedCrossIntersectionLoopV2(
+    Mesh & meshAcpu, Mesh & meshBcpu,
     int batchMultiplier,
     int totalBatches,
     const thrust::device_vector<uint32_t>& d_outPairsA,
@@ -228,8 +230,7 @@ uint64_t executeBatchedCrossIntersectionLoopV2(
     const cuBQL::Triangle* dMeshB,
     const float2 *triAMetrics,
     const float2 *triBMetrics,
-    std::vector<int2>& hGreenPairs,
-    std::vector<int2>& hYellowPairs,
+    tbb::concurrent_vector<int2> & finalExactPairs,
     IntersectionTimeTracker& tracker 
 ) {
     double tTotalStart = cuBQL::getCurrentTime();
@@ -295,6 +296,10 @@ uint64_t executeBatchedCrossIntersectionLoopV2(
     cudaEvent_t evComputeStart, evComputeEnd;
     CUBQL_CUDA_CALL(EventCreate(&evComputeStart));
     CUBQL_CUDA_CALL(EventCreate(&evComputeEnd));
+
+
+    std::vector<int2> hGreenPairs;
+    std::vector<int2> hYellowPairs;
 
     // 4. Coarse-Grained Execution Chunk Loop
     for (int i = 0; i < totalBatches; i += batchMultiplier) {
@@ -439,6 +444,13 @@ uint64_t executeBatchedCrossIntersectionLoopV2(
 
         tracker.DownloadAndClean += (cuBQL::getCurrentTime() - tEvalStartTwo ) * 1000.0;
     }
+    double tCPUPredciates= cuBQL::getCurrentTime();
+    finalExactPairs = tbb::concurrent_vector<int2>(hGreenPairs.begin(), hGreenPairs.end());
+    filterYellowPairsTBB(meshAcpu, meshBcpu, hYellowPairs.data(), hYellowPairs.size(), finalExactPairs);
+
+
+    tracker.CPUPredicates = (cuBQL::getCurrentTime() - tCPUPredciates) * 1000.0;
+
 
     // --- CLEANUP TIMING START ---
     double tCleanupStart = cuBQL::getCurrentTime();

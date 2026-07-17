@@ -6,6 +6,9 @@
 
 #include "batchedCrossIntersection.h"
 #include "ExecutionStats.h"
+#include "../src/CPU/CgalDefinitions.h"
+#include <tbb/concurrent_vector.h>
+
 
 
 // --------------------------------------------------------------------
@@ -21,7 +24,7 @@
 // );
 
 
-extern "C" void kernelsTestBVHV2(const float3* hVertsA,
+extern "C" void kernelsTestBVHV2(Mesh & meshAcpu, Mesh & meshBcpu, const float3* hVertsA,
                                  int numVertsA,
                                  const uint3* hIndicesA,
                                  const float* hVertErrorsA,
@@ -37,5 +40,4 @@ extern "C" void kernelsTestBVHV2(const float3* hVertsA,
                                  int mode,
                                  int leafThreshold,
                                  ExecutionStats& stats,
-                                 std::vector<int2>& hGreenPairs,
-                                 std::vector<int2>& hYellowPairs) ;
+                                 tbb::concurrent_vector<int2> & finalExactPairs) ;
