@@ -1093,7 +1093,7 @@ namespace CGAL {
             remove_vertex(nv, mesh_);
             continue;
           }
-          
+
           push_candidates_from_vertex(nv);
           ctr++;
         }
@@ -1505,6 +1505,15 @@ namespace CGAL {
         if (target(h2, mesh_) != v0) h2 = opposite(h2, mesh_);
         if (target(g1, mesh_) != v1) g1 = opposite(g1, mesh_);
         if (target(g2, mesh_) != v1) g2 = opposite(g2, mesh_);
+
+        CGAL_assertion(target(h1, mesh_) == v0);
+        CGAL_assertion(target(h2, mesh_) == v0);
+        CGAL_assertion(opposite(next(h1,mesh_),mesh_) == h2);
+
+        CGAL_assertion(target(g1, mesh_) == v1);
+        CGAL_assertion(target(g2, mesh_) == v1);
+        CGAL_assertion(opposite(next(g1,mesh_),mesh_) == g2);
+
 
         halfedge_descriptor og1 = opposite(g1, mesh_); // leaves v1
         halfedge_descriptor og2 = opposite(g2, mesh_); // leaves v1
