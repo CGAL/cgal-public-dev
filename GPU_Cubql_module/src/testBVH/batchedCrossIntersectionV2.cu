@@ -231,7 +231,7 @@ uint64_t executeBatchedCrossIntersectionLoopV2(
     const float2 *triAMetrics,
     const float2 *triBMetrics,
     tbb::concurrent_vector<int2> & finalExactPairs,
-    IntersectionTimeTracker& tracker 
+    IntersectionTimeTracker& tracker, cudaStream_t stream 
 ) {
     double tTotalStart = cuBQL::getCurrentTime();
     double tAllocStart = tTotalStart;
@@ -257,22 +257,23 @@ uint64_t executeBatchedCrossIntersectionLoopV2(
         int numChunks = (totalBatches + batchMultiplier - 1) / batchMultiplier;
         
         int* d_globalMax = nullptr;
-        CUBQL_CUDA_CALL(Malloc(&d_globalMax, sizeof(int)));
-        CUBQL_CUDA_CALL(Memset(d_globalMax, 0, sizeof(int)));
+        CUBQL_CUDA_CALL(MallocAsync(&d_globalMax, sizeof(int), stream));
+        CUBQL_CUDA_CALL(MemsetAsync(d_globalMax, 0, sizeof(int), stream));
 
         int blockSize = 256; 
         int gridSize = numChunks;
         size_t sharedMemSize = blockSize * sizeof(int);
 
         // Executes cooperatively with total GPU parallelism over wide chunks
-        computeMaxChunkSizeKernel<<<gridSize, blockSize, sharedMemSize>>>(
+        computeMaxChunkSizeKernel<<<gridSize, blockSize, sharedMemSize, stream>>>(
             ptr_outPairsB, ptr_outOffsetsB, ptr_reverseMapB, 
             h_outMarkedCountB, d_outPrimsFlatB.size(), 
             totalBatches, batchMultiplier, numChunks, d_globalMax
         );
 
-        CUBQL_CUDA_CALL(Memcpy(&maxChunkPrims, d_globalMax, sizeof(int), cudaMemcpyDeviceToHost));
-        CUBQL_CUDA_CALL(Free(d_globalMax));
+        CUBQL_CUDA_CALL(MemcpyAsync(&maxChunkPrims, d_globalMax, sizeof(int), cudaMemcpyDeviceToHost, stream));
+        CUBQL_CUDA_CALL(StreamSynchronize(stream));
+        CUBQL_CUDA_CALL(FreeAsync(d_globalMax, stream));
     }
 
     // 3. Preallocate Memory Sandboxes
@@ -284,19 +285,18 @@ uint64_t executeBatchedCrossIntersectionLoopV2(
     int* d_chunkBatchOffsets = nullptr;
 
     if (maxChunkPrims > 0) {
-        CUBQL_CUDA_CALL(Malloc(&d_BIter, maxChunkPrims * sizeof(uint32_t)));
-        CUBQL_CUDA_CALL(Malloc(&d_AIter, maxChunkPrims * sizeof(uint64_t)));
-        CUBQL_CUDA_CALL(Malloc(&d_pairCounts, maxChunkPrims * sizeof(int)));
-        CUBQL_CUDA_CALL(Malloc(&d_offsets, maxChunkPrims * sizeof(int)));
-        CUBQL_CUDA_CALL(Malloc(&d_chunkBatchSizes, batchMultiplier * sizeof(int)));
-        CUBQL_CUDA_CALL(Malloc(&d_chunkBatchOffsets, batchMultiplier * sizeof(int)));
+        CUBQL_CUDA_CALL(MallocAsync(&d_BIter, maxChunkPrims * sizeof(uint32_t), stream));
+        CUBQL_CUDA_CALL(MallocAsync(&d_AIter, maxChunkPrims * sizeof(uint64_t), stream));
+        CUBQL_CUDA_CALL(MallocAsync(&d_pairCounts, maxChunkPrims * sizeof(int), stream));
+        CUBQL_CUDA_CALL(MallocAsync(&d_offsets, maxChunkPrims * sizeof(int), stream));
+        CUBQL_CUDA_CALL(MallocAsync(&d_chunkBatchSizes, batchMultiplier * sizeof(int), stream));
+        CUBQL_CUDA_CALL(MallocAsync(&d_chunkBatchOffsets, batchMultiplier * sizeof(int), stream));
     }
     tracker.preallocateTimeMs = (cuBQL::getCurrentTime() - tAllocStart) * 1000.0;
 
     cudaEvent_t evComputeStart, evComputeEnd;
     CUBQL_CUDA_CALL(EventCreate(&evComputeStart));
     CUBQL_CUDA_CALL(EventCreate(&evComputeEnd));
-
 
     std::vector<int2> hGreenPairs;
     std::vector<int2> hYellowPairs;
@@ -316,15 +316,17 @@ uint64_t executeBatchedCrossIntersectionLoopV2(
         );
 
         thrust::device_ptr<int> dev_batchSizes(d_chunkBatchSizes);
-        thrust::copy_n(thrust::device, batchSizeTransformIterator, activeBatchesInChunk, dev_batchSizes);
+        thrust::copy_n(thrust::cuda::par.on(stream), batchSizeTransformIterator, activeBatchesInChunk, dev_batchSizes);
 
         thrust::device_ptr<int> dev_batchOffsets(d_chunkBatchOffsets);
-        thrust::exclusive_scan(thrust::device, dev_batchSizes, dev_batchSizes + activeBatchesInChunk, dev_batchOffsets);
+        thrust::exclusive_scan(thrust::cuda::par.on(stream), dev_batchSizes, dev_batchSizes + activeBatchesInChunk, dev_batchOffsets);
 
         int lastBatchSize = 0;
         int lastBatchOffset = 0;
-        CUBQL_CUDA_CALL(MemcpyAsync(&lastBatchSize, d_chunkBatchSizes + activeBatchesInChunk - 1, sizeof(int), cudaMemcpyDeviceToHost));
-        CUBQL_CUDA_CALL(Memcpy(&lastBatchOffset, d_chunkBatchOffsets + activeBatchesInChunk - 1, sizeof(int), cudaMemcpyDeviceToHost));
+        CUBQL_CUDA_CALL(MemcpyAsync(&lastBatchSize, d_chunkBatchSizes + activeBatchesInChunk - 1, sizeof(int), cudaMemcpyDeviceToHost, stream));
+        CUBQL_CUDA_CALL(MemcpyAsync(&lastBatchOffset, d_chunkBatchOffsets + activeBatchesInChunk - 1, sizeof(int), cudaMemcpyDeviceToHost, stream));
+        CUBQL_CUDA_CALL(StreamSynchronize(stream));
+        
         int totalChunkPrims = lastBatchSize + lastBatchOffset;
 
         if (totalChunkPrims == 0) continue;
@@ -332,7 +334,7 @@ uint64_t executeBatchedCrossIntersectionLoopV2(
         int assembleBlockSize = 64;
         int assembleGridSize  = (activeBatchesInChunk + assembleBlockSize - 1) / assembleBlockSize;
 
-        assembleChunkBuffersByBatchKernel<<<assembleGridSize, assembleBlockSize>>>(
+        assembleChunkBuffersByBatchKernel<<<assembleGridSize, assembleBlockSize, 0, stream>>>(
             d_BIter, d_AIter, ptr_outPairsA, ptr_outPairsB, ptr_reverseMapB,
             ptr_outOffsetsB, ptr_outPrimsFlatB, h_outMarkedCountB, d_outPrimsFlatB.size(),
             i, activeBatchesInChunk, d_chunkBatchOffsets
@@ -342,28 +344,30 @@ uint64_t executeBatchedCrossIntersectionLoopV2(
         // --- ASSEMBLY TIMING END ---
 
         // --- CUDA EXECUTION TIMING START ---
-        CUBQL_CUDA_CALL(EventRecord(evComputeStart, 0));
+        CUBQL_CUDA_CALL(EventRecord(evComputeStart, stream));
 
         int kernelBlockSize = 128;
         int kernelGridSize  = (totalChunkPrims + kernelBlockSize - 1) / kernelBlockSize;
 
-        countAABBOverlapsKernel_Indirected<<<kernelGridSize, kernelBlockSize>>>(
+        countAABBOverlapsKernel_Indirected<<<kernelGridSize, kernelBlockSize, 0, stream>>>(
             d_pairCounts, bvhA, const_cast<cuBQL::Triangle*>(dMeshA), const_cast<cuBQL::Triangle*>(dMeshB), 
             d_BIter, 0, totalChunkPrims, d_AIter
         );
 
         thrust::device_ptr<int> dev_counts(d_pairCounts);
         thrust::device_ptr<int> dev_offsets(d_offsets);
-        thrust::exclusive_scan(thrust::device, dev_counts, dev_counts + totalChunkPrims, dev_offsets);
+        thrust::exclusive_scan(thrust::cuda::par.on(stream), dev_counts, dev_counts + totalChunkPrims, dev_offsets);
 
         int lastCount = 0;
         int lastOffset = 0;
-        CUBQL_CUDA_CALL(Memcpy(&lastCount, d_pairCounts + totalChunkPrims - 1, sizeof(int), cudaMemcpyDeviceToHost));
-        CUBQL_CUDA_CALL(Memcpy(&lastOffset, d_offsets + totalChunkPrims - 1, sizeof(int), cudaMemcpyDeviceToHost));
+        CUBQL_CUDA_CALL(MemcpyAsync(&lastCount, d_pairCounts + totalChunkPrims - 1, sizeof(int), cudaMemcpyDeviceToHost, stream));
+        CUBQL_CUDA_CALL(MemcpyAsync(&lastOffset, d_offsets + totalChunkPrims - 1, sizeof(int), cudaMemcpyDeviceToHost, stream));
+        CUBQL_CUDA_CALL(StreamSynchronize(stream));
+        
         int totalChunkPairs = lastCount + lastOffset;
 
         if (totalChunkPairs == 0) {
-            CUBQL_CUDA_CALL(EventRecord(evComputeEnd, 0));
+            CUBQL_CUDA_CALL(EventRecord(evComputeEnd, stream));
             CUBQL_CUDA_CALL(EventSynchronize(evComputeEnd));
             float elapsedMs = 0.0f;
             CUBQL_CUDA_CALL(EventElapsedTime(&elapsedMs, evComputeStart, evComputeEnd));
@@ -374,14 +378,14 @@ uint64_t executeBatchedCrossIntersectionLoopV2(
         finalCandidatePairs += totalChunkPairs;
 
         int2* d_candidatePairs = nullptr;
-        CUBQL_CUDA_CALL(Malloc(&d_candidatePairs, totalChunkPairs * sizeof(int2)));
+        CUBQL_CUDA_CALL(MallocAsync(&d_candidatePairs, totalChunkPairs * sizeof(int2), stream));
 
-        fillAABBOverlapsKernel_Indirected<<<kernelGridSize, kernelBlockSize>>>(
+        fillAABBOverlapsKernel_Indirected<<<kernelGridSize, kernelBlockSize, 0, stream>>>(
             d_candidatePairs, d_offsets, bvhA, const_cast<cuBQL::Triangle*>(dMeshA), const_cast<cuBQL::Triangle*>(dMeshB), 
             d_BIter, 0, totalChunkPrims, d_AIter
         );
 
-        CUBQL_CUDA_CALL(EventRecord(evComputeEnd, 0));
+        CUBQL_CUDA_CALL(EventRecord(evComputeEnd, stream));
         CUBQL_CUDA_CALL(EventSynchronize(evComputeEnd));
         
         float chunkComputeMs = 0.0f;
@@ -395,9 +399,8 @@ uint64_t executeBatchedCrossIntersectionLoopV2(
         double tEvalStart = cuBQL::getCurrentTime();
 
         int* d_pairStatuses = nullptr;
-        CUBQL_CUDA_CALL(Malloc(&d_pairStatuses, totalChunkPairs * sizeof(int)));
+        CUBQL_CUDA_CALL(MallocAsync(&d_pairStatuses, totalChunkPairs * sizeof(int), stream));
 
-        double internalPredicateTimeDummy = 0.0;
         evaluateAndCompactPairsV2(
             d_candidatePairs, 
             d_pairStatuses, 
@@ -406,7 +409,7 @@ uint64_t executeBatchedCrossIntersectionLoopV2(
             triAMetrics,
             triBMetrics,
             totalChunkPairs, 
-            internalPredicateTimeDummy
+            stream
         );
 
         tracker.fineEvaluationPhaseMs += (cuBQL::getCurrentTime() - tEvalStart) * 1000.0;
@@ -422,8 +425,8 @@ uint64_t executeBatchedCrossIntersectionLoopV2(
         thrust::device_ptr<int2> dev_green_out(thrust::raw_pointer_cast(dev_green.data()));
         thrust::device_ptr<int2> dev_yellow_out(thrust::raw_pointer_cast(dev_yellow.data()));
 
-        auto green_end = thrust::copy_if(thrust::device, dev_evaluated, dev_evaluated + totalChunkPairs, dev_statuses, dev_green_out, IsTargetPairStatus{(int)PAIR_GREEN});
-        auto yellow_end = thrust::copy_if(thrust::device, dev_evaluated, dev_evaluated + totalChunkPairs, dev_statuses, dev_yellow_out, IsTargetPairStatus{(int)PAIR_YELLOW});
+        auto green_end = thrust::copy_if(thrust::cuda::par.on(stream), dev_evaluated, dev_evaluated + totalChunkPairs, dev_statuses, dev_green_out, IsTargetPairStatus{(int)PAIR_GREEN});
+        auto yellow_end = thrust::copy_if(thrust::cuda::par.on(stream), dev_evaluated, dev_evaluated + totalChunkPairs, dev_statuses, dev_yellow_out, IsTargetPairStatus{(int)PAIR_YELLOW});
 
         int totalGreen = green_end - dev_green_out;
         int totalYellow = yellow_end - dev_yellow_out;
@@ -431,26 +434,30 @@ uint64_t executeBatchedCrossIntersectionLoopV2(
         if (totalGreen > 0) {
             size_t oldSize = hGreenPairs.size();
             hGreenPairs.resize(oldSize + totalGreen);
-            CUBQL_CUDA_CALL(Memcpy(hGreenPairs.data() + oldSize, thrust::raw_pointer_cast(dev_green.data()), totalGreen * sizeof(int2), cudaMemcpyDeviceToHost));
+            CUBQL_CUDA_CALL(MemcpyAsync(hGreenPairs.data() + oldSize, thrust::raw_pointer_cast(dev_green.data()), totalGreen * sizeof(int2), cudaMemcpyDeviceToHost, stream));
         }
         if (totalYellow > 0) {
             size_t oldSize = hYellowPairs.size();
             hYellowPairs.resize(oldSize + totalYellow);
-            CUBQL_CUDA_CALL(Memcpy(hYellowPairs.data() + oldSize, thrust::raw_pointer_cast(dev_yellow.data()), totalYellow * sizeof(int2), cudaMemcpyDeviceToHost));
+            CUBQL_CUDA_CALL(MemcpyAsync(hYellowPairs.data() + oldSize, thrust::raw_pointer_cast(dev_yellow.data()), totalYellow * sizeof(int2), cudaMemcpyDeviceToHost, stream));
         }
 
-        CUBQL_CUDA_CALL(Free(d_candidatePairs));
-        CUBQL_CUDA_CALL(Free(d_pairStatuses));
+        CUBQL_CUDA_CALL(StreamSynchronize(stream));
+
+        CUBQL_CUDA_CALL(FreeAsync(d_candidatePairs, stream));
+        CUBQL_CUDA_CALL(FreeAsync(d_pairStatuses, stream));
 
         tracker.DownloadAndClean += (cuBQL::getCurrentTime() - tEvalStartTwo ) * 1000.0;
     }
     double tCPUPredciates= cuBQL::getCurrentTime();
+
+    tracker.confirmedGreenPairs = hGreenPairs.size();
+    tracker.confirmedYellowPairs = hYellowPairs.size();
+
     finalExactPairs = tbb::concurrent_vector<int2>(hGreenPairs.begin(), hGreenPairs.end());
     filterYellowPairsTBB(meshAcpu, meshBcpu, hYellowPairs.data(), hYellowPairs.size(), finalExactPairs);
 
-
     tracker.CPUPredicates = (cuBQL::getCurrentTime() - tCPUPredciates) * 1000.0;
-
 
     // --- CLEANUP TIMING START ---
     double tCleanupStart = cuBQL::getCurrentTime();
@@ -458,13 +465,16 @@ uint64_t executeBatchedCrossIntersectionLoopV2(
     CUBQL_CUDA_CALL(EventDestroy(evComputeStart));
     CUBQL_CUDA_CALL(EventDestroy(evComputeEnd));
 
-    if (d_BIter)              CUBQL_CUDA_CALL(Free(d_BIter));
-    if (d_AIter)              CUBQL_CUDA_CALL(Free(d_AIter));
-    if (d_pairCounts)         CUBQL_CUDA_CALL(Free(d_pairCounts));
-    if (d_offsets)            CUBQL_CUDA_CALL(Free(d_offsets));
-    if (d_chunkBatchSizes)    CUBQL_CUDA_CALL(Free(d_chunkBatchSizes));
-    if (d_chunkBatchOffsets)  CUBQL_CUDA_CALL(Free(d_chunkBatchOffsets));
+    if (d_BIter)              CUBQL_CUDA_CALL(FreeAsync(d_BIter, stream));
+    if (d_AIter)              CUBQL_CUDA_CALL(FreeAsync(d_AIter, stream));
+    if (d_pairCounts)         CUBQL_CUDA_CALL(FreeAsync(d_pairCounts, stream));
+    if (d_offsets)            CUBQL_CUDA_CALL(FreeAsync(d_offsets, stream));
+    if (d_chunkBatchSizes)    CUBQL_CUDA_CALL(FreeAsync(d_chunkBatchSizes, stream));
+    if (d_chunkBatchOffsets)  CUBQL_CUDA_CALL(FreeAsync(d_chunkBatchOffsets, stream));
 
+    CUBQL_CUDA_CALL(StreamSynchronize(stream));
+
+    
     tracker.cleanupTimeMs = (cuBQL::getCurrentTime() - tCleanupStart) * 1000.0;
     tracker.totalLoopTimeMs = (cuBQL::getCurrentTime() - tTotalStart) * 1000.0;
 

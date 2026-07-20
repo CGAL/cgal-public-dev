@@ -168,29 +168,16 @@ void evaluateAndCompactPairsV2(
     const cuBQL::Triangle* dB_batch,
     const float2 *triAMetrics,
     const float2 *triBMetrics,
-    int totalBatchPairs,
-    double& outEvaluateGeometricTime)
+    int totalBatchPairs,cudaStream_t stream 
+    )
 {
-    cudaEvent_t startEval, stopEval;
-    cudaEventCreate(&startEval); cudaEventCreate(&stopEval);
-
-    // Time evaluateGeometricPairsKernel Execution
-    cudaEventRecord(startEval, 0);
+  
     int threadsPerBlock = 256;
     int blocksPerGrid = (totalBatchPairs + threadsPerBlock - 1) / threadsPerBlock;
     
-    evaluateGeometricPairsKernel<<<blocksPerGrid, threadsPerBlock>>>(
+    evaluateGeometricPairsKernel<<<blocksPerGrid, threadsPerBlock, 0, stream>>>(
          dPairStatuses, dCandidatePairs, dA, dB_batch, triAMetrics, triBMetrics, totalBatchPairs
     );
-    cudaEventRecord(stopEval, 0);
-    cudaEventSynchronize(stopEval);
-
-    float millisecondsEval = 0;
-    cudaEventElapsedTime(&millisecondsEval, startEval, stopEval);
-    outEvaluateGeometricTime += (double)millisecondsEval / 1000.0;
-
-    // Allocation Cleanup Operations
-    cudaEventDestroy(startEval);
-    cudaEventDestroy(stopEval);
+   
 
 }

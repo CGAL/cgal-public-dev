@@ -39,5 +39,6 @@ extern "C" void kernelsTestBVHV2(Mesh & meshAcpu, Mesh & meshBcpu, const float3*
                                  int batchMultiplier,
                                  int mode,
                                  int leafThreshold,
+                                 int activateAsyncDownload,
                                  ExecutionStats& stats,
                                  tbb::concurrent_vector<int2> & finalExactPairs) ;

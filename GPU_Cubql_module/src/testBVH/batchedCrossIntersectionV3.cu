@@ -26,6 +26,9 @@
   }
 #endif
 
+
+
+
 // --------------------------------------------------------------------
 // WARP-AGGREGATED COMPACTION KERNEL
 // --------------------------------------------------------------------
@@ -135,7 +138,7 @@ struct MicrobatchSlot
 // EXISTING ASSEMBLY & TRAVERSAL KERNELS
 // --------------------------------------------------------------------
 
-__global__ void assembleChunkBuffersByBatchKernel(uint32_t* d_BIter,
+__global__ void assembleChunkBuffersByBatchKernel_V3(uint32_t* d_BIter,
                                                   uint64_t* d_AIter,
                                                   const uint32_t* outPairsA,
                                                   const uint32_t* outPairsB,
@@ -172,7 +175,7 @@ __global__ void assembleChunkBuffersByBatchKernel(uint32_t* d_BIter,
   }
 }
 
-__global__ void countAABBOverlapsKernel_Indirected(int* pairCounts,
+__global__ void countAABBOverlapsKernel_Indirected_V3(int* pairCounts,
                                                    cuBQL::bvh3f bvhA,
                                                    const cuBQL::Triangle* triA,
                                                    const cuBQL::Triangle* triB,
@@ -203,7 +206,7 @@ __global__ void countAABBOverlapsKernel_Indirected(int* pairCounts,
   pairCounts[tid] = count;
 }
 
-__global__ void fillAABBOverlapsKernel_Indirected(int2* candidatePairs,
+__global__ void fillAABBOverlapsKernel_Indirected_V3(int2* candidatePairs,
                                                   const int* offsets,
                                                   cuBQL::bvh3f bvhA,
                                                   const cuBQL::Triangle* triA,
@@ -236,9 +239,9 @@ __global__ void fillAABBOverlapsKernel_Indirected(int2* candidatePairs,
 
 // --------------------------------------------------------------------
 // MAIN EXECUTABLE LOOP WITH INTERNAL MICROBATCHING
-// --------------------------------------------------------------------
+// ----------------------------------------------------------------fillAABBOverlapsKernel----
 
-uint64_t executeBatchedCrossIntersectionLoopV2(Mesh& meshAcpu,
+uint64_t executeBatchedCrossIntersectionLoopV3(Mesh& meshAcpu,
                                                Mesh& meshBcpu,
                                                int batchMultiplier,
                                                int totalBatches,
@@ -396,7 +399,7 @@ uint64_t executeBatchedCrossIntersectionLoopV2(Mesh& meshAcpu,
     CUBQL_CUDA_CALL(MemcpyAsync(d_chunkBatchOffsets, h_chunkBatchOffsets.data(), activeBatchesInChunk * sizeof(int),
                                 cudaMemcpyHostToDevice, mainStream));
     int assembleGridSize = (activeBatchesInChunk + 63) / 64;
-    assembleChunkBuffersByBatchKernel<<<assembleGridSize, 64, 0, mainStream>>>(
+    assembleChunkBuffersByBatchKernel_V3<<<assembleGridSize, 64, 0, mainStream>>>(
         d_BIter, d_AIter, ptr_outPairsA, ptr_outPairsB, ptr_reverseMapB, ptr_outOffsetsB, ptr_outPrimsFlatB,
         h_outMarkedCountB, totalPrimsB, i, activeBatchesInChunk, d_chunkBatchOffsets);
 
@@ -406,7 +409,7 @@ uint64_t executeBatchedCrossIntersectionLoopV2(Mesh& meshAcpu,
     CUBQL_CUDA_CALL(EventRecord(evCountStart, mainStream));
 
     int kernelGridSize = (totalChunkPrims + 127) / 128;
-    countAABBOverlapsKernel_Indirected<<<kernelGridSize, 128, 0, mainStream>>>(
+    countAABBOverlapsKernel_Indirected_V3<<<kernelGridSize, 128, 0, mainStream>>>(
         d_pairCounts, bvhA, const_cast<cuBQL::Triangle*>(dMeshA), const_cast<cuBQL::Triangle*>(dMeshB), d_BIter, 0,
         totalChunkPrims, d_AIter);
 
@@ -453,7 +456,7 @@ uint64_t executeBatchedCrossIntersectionLoopV2(Mesh& meshAcpu,
     // --- OVERLAP FILLING PHASE (mainStream) ---
     CUBQL_CUDA_CALL(EventRecord(evFillStart, mainStream));
 
-    fillAABBOverlapsKernel_Indirected<<<kernelGridSize, 128, 0, mainStream>>>(
+    fillAABBOverlapsKernel_Indirected_V3<<<kernelGridSize, 128, 0, mainStream>>>(
         d_candidatePairs, d_offsets, bvhA, const_cast<cuBQL::Triangle*>(dMeshA), const_cast<cuBQL::Triangle*>(dMeshB),
         d_BIter, 0, totalChunkPrims, d_AIter);
 
@@ -524,6 +527,7 @@ uint64_t executeBatchedCrossIntersectionLoopV2(Mesh& meshAcpu,
       sEv.recorded = true;
 
       // 3. Offload to TBB with precise host wall-time measurement
+      // Inside the microbatch loop:
       struct CallbackCtx
       {
         MicrobatchSlot* slot;
@@ -545,24 +549,36 @@ uint64_t executeBatchedCrossIntersectionLoopV2(Mesh& meshAcpu,
             auto* c = static_cast<CallbackCtx*>(userData);
             MicrobatchSlot* s = c->slot;
 
-            c->tg->run([c, s]() {
-              int greenCount = *s->hGreenCountPinned;
-              int yellowCount = *s->hYellowCountPinned;
+            // Extract values while inside stream order (guaranteed stream sync)
+            int greenCount = *s->hGreenCountPinned;
+            int yellowCount = *s->hYellowCountPinned;
 
+            // Fast-path: If no items, unlock slot immediately & exit
+            if(greenCount == 0 && yellowCount == 0) {
+              s->busy.store(false, std::memory_order_release);
+              delete c;
+              return;
+            }
+
+            // Offload actual computational work to TBB
+            c->tg->run([c, s, greenCount, yellowCount]() {
               if(greenCount > 0) {
                 c->out->grow_by(s->hGreenPinned, s->hGreenPinned + greenCount);
                 c->greenPairs->fetch_add(greenCount, std::memory_order_relaxed);
               }
+
               if(yellowCount > 0) {
                 auto tbbStart = std::chrono::high_resolution_clock::now();
-                filterYellowPairsTBB(*c->meshA, *c->meshB, s->hYellowPinned, (size_t)yellowCount, *c->out);
-                auto tbbEnd = std::chrono::high_resolution_clock::now();
 
+                filterYellowPairsTBB(*c->meshA, *c->meshB, s->hYellowPinned, (size_t)yellowCount, *c->out);
+
+                auto tbbEnd = std::chrono::high_resolution_clock::now();
                 uint64_t durUs = std::chrono::duration_cast<std::chrono::microseconds>(tbbEnd - tbbStart).count();
                 c->cpuTimeUs->fetch_add(durUs, std::memory_order_relaxed);
                 c->yellowPairs->fetch_add(yellowCount, std::memory_order_relaxed);
               }
 
+              // CRITICAL FIX: Only mark slot free AFTER TBB finishes processing memory!
               s->busy.store(false, std::memory_order_release);
               delete c;
             });
@@ -574,6 +590,7 @@ uint64_t executeBatchedCrossIntersectionLoopV2(Mesh& meshAcpu,
   // --- CLEANUP & FINAL SYNCHRONIZATION ---
   double tCleanupStart = cuBQL::getCurrentTime();
 
+  // 1. Ensure the main stream is done with all assembly/overlap tasks
   CUBQL_CUDA_CALL(StreamSynchronize(mainStream));
   if(hasPendingFillEvent) {
     float fillMs = 0.0f;
@@ -581,6 +598,7 @@ uint64_t executeBatchedCrossIntersectionLoopV2(Mesh& meshAcpu,
     tracker.executionPhaseMs += fillMs;
   }
 
+  // 2. Wait for GPU microbatch streams to finish enqueuing/executing their work
   for(int s = 0; s < NUM_SLOTS; ++s) {
     CUBQL_CUDA_CALL(StreamSynchronize(slots[s].stream));
     if(slotEvents[s].recorded) {
@@ -591,15 +609,20 @@ uint64_t executeBatchedCrossIntersectionLoopV2(Mesh& meshAcpu,
       tracker.DownloadAndClean += d2hMs;
       slotEvents[s].recorded = false;
     }
+  }
+
+  // 3. Wait for ALL TBB tasks to finish processing host pinned buffers!
+  // This is the critical gate that prevents segmentation faults.
+  cpuTaskGroup.wait();
+
+  // 4. Now it is 100% safe to destroy events and free the slot resources
+  for(int s = 0; s < NUM_SLOTS; ++s) {
     CUBQL_CUDA_CALL(EventDestroy(slotEvents[s].evEvalStart));
     CUBQL_CUDA_CALL(EventDestroy(slotEvents[s].evEvalEnd));
     CUBQL_CUDA_CALL(EventDestroy(slotEvents[s].evD2HStart));
     CUBQL_CUDA_CALL(EventDestroy(slotEvents[s].evD2HEnd));
-    slots[s].destroy();
+    slots[s].destroy(); // Free pinned memory buffers
   }
-
-  // Wait for all TBB filtering tasks to complete
-  cpuTaskGroup.wait();
 
   // Store total CPU predicate evaluation time in milliseconds
   tracker.CPUPredicates = atomicCpuTimeUs.load() / 1000.0;

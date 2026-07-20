@@ -26,6 +26,6 @@ void evaluateAndCompactPairsV2(
     const float2 *triAMetrics,
     const float2 *triBMetrics,
     int totalBatchPairs,
-    double& outEvaluateGeometricTime);
+    cudaStream_t stream);
 
 #endif // GPU_PREDICATES_CHECK_H

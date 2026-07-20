@@ -175,10 +175,10 @@ void extractMeshTopologyNormalized(const Mesh& mesh,
   });
 }
 int main(int ac, char** av) {
-  if(ac < 10) {
+  if(ac < 11) {
     std::cout << "Usage: " << av[0]
               << " <meshA.off> <maxCellSizeA> <meshB.off> <maxCellSizeB> <batchmultiplier> <NumberOfDualTreeSteps> "
-                 "<Leaf Threshold> <tbb_workers> <usePreciseBounds>\n";
+                 "<Leaf Threshold> <tbb_workers> <usePreciseBounds><AsyncDownload>\n";
     return 1;
   }
 
@@ -191,6 +191,7 @@ int main(int ac, char** av) {
   int leafThreshhold = std::stoi(av[7]);
   int tbbWorkers = std::stoi(av[8]);
   bool usePreciseBounds = (std::stoi(av[9]) != 0);
+  int AsyncDownload = std::stoi(av[10]);
 
   tbb::global_control global_limit(tbb::global_control::max_allowed_parallelism, tbbWorkers);
 
@@ -254,7 +255,7 @@ tbb::concurrent_vector<int2>  finalExactPairs;
                    (usePreciseBounds ? outVertexErrorsA.data() : nullptr), static_cast<int>(hIndicesA.size()),
                    maxCellSizeA, hVertsB.data(), static_cast<int>(hVertsB.size()), hIndicesB.data(),
                    (usePreciseBounds ? outVertexErrorsB.data() : nullptr), static_cast<int>(hIndicesB.size()),
-                   maxCellSizeB, batchmultipl, mode, leafThreshhold, stats, finalExactPairs);
+                   maxCellSizeB, batchmultipl, mode, leafThreshhold, AsyncDownload, stats, finalExactPairs);
 
   // --------------------------------------------------------------------
   // HYBRID NARROW-PHASE FILTERING
@@ -313,8 +314,8 @@ tbb::concurrent_vector<int2>  finalExactPairs;
   std::cout << "DUAL-TREE DESCENT & FINE EVALUATION METRICS:\n";
   std::cout << "  |- Total Criss-Cross Batches:      " << stats.totalCrissCrossBatches << "\n";
   std::cout << "  |- Final AABB Candidate Pairs:     " << stats.finalAabbCandidatePairs << "\n";
-  std::cout << "  |- Confirmed Green (Intersecting): " << stats.confirmedGreenPairs << "\n";
-  std::cout << "  |- Confirmed Yellow (Coplanar):    " << stats.confirmedYellowPairs << "\n";
+  std::cout << "  |- Confirmed Green (Intersecting): " << stats.loopTracker.confirmedGreenPairs << "\n";
+  std::cout << "  |- Confirmed Yellow (Coplanar):    " << stats.loopTracker.confirmedYellowPairs << "\n";
 
   std::cout << "FINE-GRAINED INTERSECTION LOOP BREAKDOWN:\n";
   std::cout << "  |- Total Loop Execution Time:      " << stats.loopTracker.totalLoopTimeMs << " ms\n";
@@ -328,7 +329,7 @@ tbb::concurrent_vector<int2>  finalExactPairs;
 
   std::cout << "NARROW-PHASE HYBRID FILTER REPORT:\n";
   std::cout << "  |- CPU Narrow-Phase Compute Time:  " << stats.loopTracker.CPUPredicates << " s\n";
-  std::cout << "  |- Ambiguous Yellows Evaluated:    " << stats.confirmedYellowPairs << "\n";
+  std::cout << "  |- Ambiguous Yellows Evaluated:    " << stats.loopTracker.confirmedYellowPairs << "\n";
   std::cout << "  |- Total Final Intersecting Pairs: " << finalExactPairs.size()
             << " (Green Hit Count + Validated Yellows)\n";
   std::cout << "==================================================\n";

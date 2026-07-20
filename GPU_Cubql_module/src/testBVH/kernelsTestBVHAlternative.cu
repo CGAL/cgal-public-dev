@@ -31,6 +31,7 @@
 #include "rapidDescendKernel.h"
 // #include "batchedCrossIntersection.h"
 #include "batchedCrossIntersectionV2.h"
+#include "batchedCrossIntersectionV3.h"
 #include "crossCheckNew.h"
 #include "kernelsTestBVHAlternative.h"
 #include "prune_pipeline.h"
@@ -127,7 +128,9 @@ populateReverseMapBKernel(uint32_t* d_reverseMapB, const uint32_t* d_markedNodeI
   }
 }
 
-extern "C" void kernelsTestBVHV2(Mesh & meshAcpu, Mesh & meshBcpu, const float3* hVertsA,
+extern "C" void kernelsTestBVHV2(Mesh& meshAcpu,
+                                 Mesh& meshBcpu,
+                                 const float3* hVertsA,
                                  int numVertsA,
                                  const uint3* hIndicesA,
                                  const float* hVertErrorsA,
@@ -142,15 +145,16 @@ extern "C" void kernelsTestBVHV2(Mesh & meshAcpu, Mesh & meshBcpu, const float3*
                                  int batchMultiplier,
                                  int mode,
                                  int leafThreshold,
+                                 int activateAsyncDownload,
                                  ExecutionStats& stats,
-                                 tbb::concurrent_vector<int2> & finalExactPairs) {
+                                 tbb::concurrent_vector<int2>& finalExactPairs) {
   if(numTrianglesA <= 0 || numTrianglesB <= 0) {
     return;
   }
 
-  //std::cout << "\n==================================================" << std::endl;
-  //std::cout << " [DEEP DEBUG] => Entering kernelsTestBVHV2 Pipeline..." << std::endl;
-  //std::cout << "==================================================" << std::endl;
+  // std::cout << "\n==================================================" << std::endl;
+  // std::cout << " [DEEP DEBUG] => Entering kernelsTestBVHV2 Pipeline..." << std::endl;
+  // std::cout << "==================================================" << std::endl;
 
   double tPipelineStart = cuBQL::getCurrentTime();
   cudaStream_t stream = 0;
@@ -460,10 +464,19 @@ extern "C" void kernelsTestBVHV2(Mesh & meshAcpu, Mesh & meshBcpu, const float3*
   cudaDeviceSynchronize();
   double tGpuBfsEnd = cuBQL::getCurrentTime();
 
-  finalCandidatePairs = executeBatchedCrossIntersectionLoopV2(meshAcpu, meshBcpu,
-      batchMultiplier, totalBatches, d_outPairsA, d_outPairsB, d_reverseMapB, d_markedNodeIndicesB, d_outOffsetsB,
-      d_outPrimsFlatB, d_nodeDescendantCountsB, finalActiveCellsB, bvhA, dMeshA, dMeshB, dMeshMetricsA, dMeshMetricsB,
-     finalExactPairs, tracker);
+  if(activateAsyncDownload == 0) {
+
+    finalCandidatePairs = executeBatchedCrossIntersectionLoopV2(
+        meshAcpu, meshBcpu, batchMultiplier, totalBatches, d_outPairsA, d_outPairsB, d_reverseMapB,
+        d_markedNodeIndicesB, d_outOffsetsB, d_outPrimsFlatB, d_nodeDescendantCountsB, finalActiveCellsB, bvhA, dMeshA,
+        dMeshB, dMeshMetricsA, dMeshMetricsB, finalExactPairs, tracker, stream);
+
+  } else {
+    finalCandidatePairs = executeBatchedCrossIntersectionLoopV3(
+        meshAcpu, meshBcpu, batchMultiplier, totalBatches, d_outPairsA, d_outPairsB, d_reverseMapB,
+        d_markedNodeIndicesB, d_outOffsetsB, d_outPrimsFlatB, d_nodeDescendantCountsB, finalActiveCellsB, bvhA, dMeshA,
+        dMeshB, dMeshMetricsA, dMeshMetricsB, finalExactPairs, tracker, stream);
+  }
   // --------------------------------------------------------------------
   // EXPLICIT CLEANUP & RECOVERY METRIC TRACKING
   // --------------------------------------------------------------------

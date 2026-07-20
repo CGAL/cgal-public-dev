@@ -279,6 +279,7 @@ add_executable(testBVHV2
     src/testBVH/kernelsTestBVHAlternative.cu 
     src/testBVH/rapidDescendKernel.cu
     src/testBVH/batchedCrossIntersectionV2.cu
+    src/testBVH/batchedCrossIntersectionV3.cu
     src/testBVH/DualTreeStep.cu
     src/testBVH/prune_pipeline.cu
     src/custom_pipeline/GPUPredicatesCheckV2.cu

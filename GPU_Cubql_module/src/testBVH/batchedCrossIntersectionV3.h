@@ -1,5 +1,5 @@
-#ifndef BATCHED_CROSS_INTERSECTION_V2_H
-#define BATCHED_CROSS_INTERSECTION_V2_H
+#ifndef BATCHED_CROSS_INTERSECTION_V3_H
+#define BATCHED_CROSS_INTERSECTION_V3_H
 
 #include "cuBQL/bvh.h"
 #include <thrust/device_vector.h>
@@ -15,7 +15,7 @@
 
 // Simple functor definition required for Thrust compaction filtering
 
-uint64_t executeBatchedCrossIntersectionLoopV2(Mesh & meshAcpu, Mesh & MeshBcpu,
+uint64_t executeBatchedCrossIntersectionLoopV3(Mesh & meshAcpu, Mesh & MeshBcpu,
     int batchMultiplier,
     int totalBatches,
     const thrust::device_vector<uint32_t>& d_outPairsA,
