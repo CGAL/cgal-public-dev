@@ -2,6 +2,9 @@
 #include <thrust/device_ptr.h>
 #include <thrust/scan.h>
 #include <thrust/execution_policy.h>
+#include <thrust/iterator/counting_iterator.h>
+#include <thrust/iterator/transform_iterator.h>
+#include <thrust/copy.h>
 #include <iostream>
 #include <vector>
 #include <algorithm>
@@ -10,7 +13,7 @@
 #include <tbb/task_group.h>
 #include <tbb/concurrent_vector.h>
 
-#include "batchedCrossIntersectionV2.h"
+#include "batchedCrossIntersectionV3.h"
 #include "../custom_pipeline/GPUPredicatesCheckV2.h"
 #include "TargetStatus.h"
 #include "../src/CPU/YellowFilter.h"
@@ -26,8 +29,82 @@
   }
 #endif
 
+// --------------------------------------------------------------------
+// GPU HELPERS & FUNCTORS (FROM V2 - NO CPU TABLE DOWNLOADS REQUIRED)
+// --------------------------------------------------------------------
 
+struct BatchSizeInChunkFunctor {
+    const uint32_t* outPairsB;
+    const uint32_t* outOffsetsB;
+    const uint32_t* reverseMapB;
+    uint32_t outMarkedCountB;
+    uint32_t totalPrimsB;
+    int chunkStartBatchIdx;
+    int activeBatchesInChunk;
 
+    __host__ __device__
+    BatchSizeInChunkFunctor(const uint32_t* _pairsB, const uint32_t* _offsetsB, const uint32_t* _reverseMapB,
+                            uint32_t _markedCount, uint32_t _totalPrims,
+                            int _chunkStartBatchIdx, int _activeBatchesInChunk)
+        : outPairsB(_pairsB), outOffsetsB(_offsetsB), reverseMapB(_reverseMapB), outMarkedCountB(_markedCount),
+          totalPrimsB(_totalPrims), chunkStartBatchIdx(_chunkStartBatchIdx),
+          activeBatchesInChunk(_activeBatchesInChunk) {}
+
+    __host__ __device__
+    int operator()(const int b) const {
+        if (b >= activeBatchesInChunk) return 0;
+        uint32_t bIdx = outPairsB[chunkStartBatchIdx + b];
+        uint32_t markedIdxB = reverseMapB[bIdx];
+        uint32_t startOffset = outOffsetsB[markedIdxB];
+        uint32_t endOffset = (markedIdxB + 1 < outMarkedCountB) ? outOffsetsB[markedIdxB + 1] : totalPrimsB;
+        return (int)(endOffset - startOffset);
+    }
+};
+
+__global__ void computeMaxChunkSizeKernel_V3(
+    const uint32_t* outPairsB,
+    const uint32_t* outOffsetsB,
+    const uint32_t* reverseMapB,
+    uint32_t outMarkedCountB,
+    uint32_t totalPrimsB,
+    int totalBatches,
+    int batchMultiplier,
+    int numChunks,
+    int* d_globalMax
+) {
+    int chunkIdx = blockIdx.x;
+    if (chunkIdx >= numChunks) return;
+
+    int startBatch = chunkIdx * batchMultiplier;
+    int activeBatchesInChunk = (startBatch + batchMultiplier <= totalBatches) 
+                               ? batchMultiplier 
+                               : (totalBatches - startBatch);
+
+    int threadSum = 0;
+    for (int b = threadIdx.x; b < activeBatchesInChunk; b += blockDim.x) {
+        uint32_t bIdx = outPairsB[startBatch + b];
+        uint32_t markedIdxB = reverseMapB[bIdx];
+        uint32_t startOffset = outOffsetsB[markedIdxB];
+        uint32_t endOffset = (markedIdxB + 1 < outMarkedCountB) ? outOffsetsB[markedIdxB + 1] : totalPrimsB;
+        threadSum += (int)(endOffset - startOffset);
+    }
+
+    extern __shared__ int sdata[];
+    int tid = threadIdx.x;
+    sdata[tid] = threadSum;
+    __syncthreads();
+
+    for (int s = blockDim.x / 2; s > 0; s >>= 1) {
+        if (tid < s) {
+            sdata[tid] += sdata[tid + s];
+        }
+        __syncthreads();
+    }
+
+    if (tid == 0) {
+        atomicMax(d_globalMax, sdata[0]);
+    }
+}
 
 // --------------------------------------------------------------------
 // WARP-AGGREGATED COMPACTION KERNEL
@@ -82,20 +159,20 @@ __global__ void compactGreenYellowKernel(const int2* __restrict__ candidatePairs
 // PRE-ALLOCATED MICROBATCH PIPELINE SLOT
 // --------------------------------------------------------------------
 
-constexpr int MICROBATCH_SIZE = 65536; // Size of each internal microbatch
+constexpr int MICROBATCH_SIZE = 65536;
+
+//constexpr int MICROBATCH_SIZE = 32768;
 
 struct MicrobatchSlot
 {
   cudaStream_t stream = nullptr;
 
-  // Fixed-size Device Buffers for MICROBATCH_SIZE
   int* d_pairStatuses = nullptr;
   int2* d_green = nullptr;
   int2* d_yellow = nullptr;
   int* d_greenCount = nullptr;
   int* d_yellowCount = nullptr;
 
-  // Fixed-size Pinned Host Buffers
   int2* hGreenPinned = nullptr;
   int2* hYellowPinned = nullptr;
   int* hGreenCountPinned = nullptr;
@@ -139,17 +216,17 @@ struct MicrobatchSlot
 // --------------------------------------------------------------------
 
 __global__ void assembleChunkBuffersByBatchKernel_V3(uint32_t* d_BIter,
-                                                  uint64_t* d_AIter,
-                                                  const uint32_t* outPairsA,
-                                                  const uint32_t* outPairsB,
-                                                  const uint32_t* reverseMapB,
-                                                  const uint32_t* outOffsetsB,
-                                                  const uint32_t* outPrimsFlatB,
-                                                  uint32_t outMarkedCountB,
-                                                  uint32_t totalPrimsB,
-                                                  int chunkStartBatchIdx,
-                                                  int activeBatchesInChunk,
-                                                  const int* d_chunkBatchOffsets) {
+                                                     uint64_t* d_AIter,
+                                                     const uint32_t* outPairsA,
+                                                     const uint32_t* outPairsB,
+                                                     const uint32_t* reverseMapB,
+                                                     const uint32_t* outOffsetsB,
+                                                     const uint32_t* outPrimsFlatB,
+                                                     uint32_t outMarkedCountB,
+                                                     uint32_t totalPrimsB,
+                                                     int chunkStartBatchIdx,
+                                                     int activeBatchesInChunk,
+                                                     const int* d_chunkBatchOffsets) {
   int b = threadIdx.x + blockIdx.x * blockDim.x;
   if(b >= activeBatchesInChunk)
     return;
@@ -176,13 +253,13 @@ __global__ void assembleChunkBuffersByBatchKernel_V3(uint32_t* d_BIter,
 }
 
 __global__ void countAABBOverlapsKernel_Indirected_V3(int* pairCounts,
-                                                   cuBQL::bvh3f bvhA,
-                                                   const cuBQL::Triangle* triA,
-                                                   const cuBQL::Triangle* triB,
-                                                   const uint32_t* d_BIter,
-                                                   uint32_t startOffsetB,
-                                                   int numPrimsB,
-                                                   const uint64_t* d_AIter) {
+                                                      cuBQL::bvh3f bvhA,
+                                                      const cuBQL::Triangle* triA,
+                                                      const cuBQL::Triangle* triB,
+                                                      const uint32_t* d_BIter,
+                                                      uint32_t startOffsetB,
+                                                      int numPrimsB,
+                                                      const uint64_t* d_AIter) {
   int tid = threadIdx.x + blockIdx.x * blockDim.x;
   if(tid >= numPrimsB)
     return;
@@ -207,14 +284,14 @@ __global__ void countAABBOverlapsKernel_Indirected_V3(int* pairCounts,
 }
 
 __global__ void fillAABBOverlapsKernel_Indirected_V3(int2* candidatePairs,
-                                                  const int* offsets,
-                                                  cuBQL::bvh3f bvhA,
-                                                  const cuBQL::Triangle* triA,
-                                                  const cuBQL::Triangle* triB,
-                                                  const uint32_t* d_BIter,
-                                                  uint32_t startOffsetB,
-                                                  int numPrimsB,
-                                                  const uint64_t* d_AIter) {
+                                                     const int* offsets,
+                                                     cuBQL::bvh3f bvhA,
+                                                     const cuBQL::Triangle* triA,
+                                                     const cuBQL::Triangle* triB,
+                                                     const uint32_t* d_BIter,
+                                                     uint32_t startOffsetB,
+                                                     int numPrimsB,
+                                                     const uint64_t* d_AIter) {
   int tid = threadIdx.x + blockIdx.x * blockDim.x;
   if(tid >= numPrimsB)
     return;
@@ -238,8 +315,8 @@ __global__ void fillAABBOverlapsKernel_Indirected_V3(int2* candidatePairs,
 }
 
 // --------------------------------------------------------------------
-// MAIN EXECUTABLE LOOP WITH INTERNAL MICROBATCHING
-// ----------------------------------------------------------------fillAABBOverlapsKernel----
+// MAIN EXECUTABLE LOOP (OPTIMIZED WITH V2 GPU-SIDE SIZING)
+// --------------------------------------------------------------------
 
 uint64_t executeBatchedCrossIntersectionLoopV3(Mesh& meshAcpu,
                                                Mesh& meshBcpu,
@@ -270,58 +347,55 @@ uint64_t executeBatchedCrossIntersectionLoopV3(Mesh& meshAcpu,
   uint64_t finalCandidatePairs = 0;
   batchMultiplier = std::min(batchMultiplier, totalBatches);
 
-  // 1. Download Lookup Tables to Host ONCE
-  std::vector<uint32_t> h_outPairsA(d_outPairsA.size());
-  std::vector<uint32_t> h_outPairsB(d_outPairsB.size());
-  std::vector<uint32_t> h_reverseMapB(d_reverseMapB.size());
-  std::vector<uint32_t> h_outOffsetsB(d_outOffsetsB.size());
+  // Unpack GPU Device Pointers
+  const uint32_t* ptr_outPairsA     = thrust::raw_pointer_cast(d_outPairsA.data());
+  const uint32_t* ptr_outPairsB     = thrust::raw_pointer_cast(d_outPairsB.data());
+  const uint32_t* ptr_reverseMapB   = thrust::raw_pointer_cast(d_reverseMapB.data());
+  const uint32_t* ptr_outOffsetsB   = thrust::raw_pointer_cast(d_outOffsetsB.data());
+  const uint32_t* ptr_outPrimsFlatB = thrust::raw_pointer_cast(d_outPrimsFlatB.data());
+  uint32_t totalPrimsB              = (uint32_t)d_outPrimsFlatB.size();
 
-  CUBQL_CUDA_CALL(MemcpyAsync(h_outPairsA.data(), thrust::raw_pointer_cast(d_outPairsA.data()),
-                              d_outPairsA.size() * sizeof(uint32_t), cudaMemcpyDeviceToHost, mainStream));
-  CUBQL_CUDA_CALL(MemcpyAsync(h_outPairsB.data(), thrust::raw_pointer_cast(d_outPairsB.data()),
-                              d_outPairsB.size() * sizeof(uint32_t), cudaMemcpyDeviceToHost, mainStream));
-  CUBQL_CUDA_CALL(MemcpyAsync(h_reverseMapB.data(), thrust::raw_pointer_cast(d_reverseMapB.data()),
-                              d_reverseMapB.size() * sizeof(uint32_t), cudaMemcpyDeviceToHost, mainStream));
-  CUBQL_CUDA_CALL(MemcpyAsync(h_outOffsetsB.data(), thrust::raw_pointer_cast(d_outOffsetsB.data()),
-                              d_outOffsetsB.size() * sizeof(uint32_t), cudaMemcpyDeviceToHost, mainStream));
-  CUBQL_CUDA_CALL(StreamSynchronize(mainStream));
-
-  // 2. Pre-Calculate Maximum Primitives Bounds
+  // 1. Compute Exact Maximum Chunk Bounds using V2 Parallel GPU Pass (ZERO Host Vector Downloads!)
   int maxChunkPrims = 0;
   int numChunks = (totalBatches + batchMultiplier - 1) / batchMultiplier;
-  uint32_t totalPrimsB = (uint32_t)d_outPrimsFlatB.size();
 
-  for(int c = 0; c < numChunks; ++c) {
-    int startBatch = c * batchMultiplier;
-    int activeInChunk = std::min(batchMultiplier, totalBatches - startBatch);
-    int chunkPrims = 0;
-    for(int b = 0; b < activeInChunk; ++b) {
-      uint32_t bIdx = h_outPairsB[startBatch + b];
-      uint32_t markedIdxB = h_reverseMapB[bIdx];
-      uint32_t startOffset = h_outOffsetsB[markedIdxB];
-      uint32_t endOffset = (markedIdxB + 1 < h_outMarkedCountB) ? h_outOffsetsB[markedIdxB + 1] : totalPrimsB;
-      chunkPrims += (int)(endOffset - startOffset);
-    }
-    maxChunkPrims = std::max(maxChunkPrims, chunkPrims);
-  }
+  int* d_globalMax = nullptr;
+  CUBQL_CUDA_CALL(MallocAsync(&d_globalMax, sizeof(int), mainStream));
+  CUBQL_CUDA_CALL(MemsetAsync(d_globalMax, 0, sizeof(int), mainStream));
+
+  int blockSize = 256; 
+  int gridSize = numChunks;
+  size_t sharedMemSize = blockSize * sizeof(int);
+
+  computeMaxChunkSizeKernel_V3<<<gridSize, blockSize, sharedMemSize, mainStream>>>(
+      ptr_outPairsB, ptr_outOffsetsB, ptr_reverseMapB, 
+      h_outMarkedCountB, totalPrimsB, 
+      totalBatches, batchMultiplier, numChunks, d_globalMax
+  );
+
+  CUBQL_CUDA_CALL(MemcpyAsync(&maxChunkPrims, d_globalMax, sizeof(int), cudaMemcpyDeviceToHost, mainStream));
+  CUBQL_CUDA_CALL(StreamSynchronize(mainStream));
+  CUBQL_CUDA_CALL(FreeAsync(d_globalMax, mainStream));
 
   if(maxChunkPrims == 0)
     return 0;
 
-  // 3. Pre-Allocate Static Sandboxes
+  // 2. Pre-Allocate Device Sandboxes
   uint32_t* d_BIter = nullptr;
   uint64_t* d_AIter = nullptr;
   int* d_pairCounts = nullptr;
   int* d_offsets = nullptr;
+  int* d_chunkBatchSizes = nullptr;
   int* d_chunkBatchOffsets = nullptr;
 
   CUBQL_CUDA_CALL(Malloc(&d_BIter, maxChunkPrims * sizeof(uint32_t)));
   CUBQL_CUDA_CALL(Malloc(&d_AIter, maxChunkPrims * sizeof(uint64_t)));
   CUBQL_CUDA_CALL(Malloc(&d_pairCounts, maxChunkPrims * sizeof(int)));
   CUBQL_CUDA_CALL(Malloc(&d_offsets, maxChunkPrims * sizeof(int)));
+  CUBQL_CUDA_CALL(Malloc(&d_chunkBatchSizes, batchMultiplier * sizeof(int)));
   CUBQL_CUDA_CALL(Malloc(&d_chunkBatchOffsets, batchMultiplier * sizeof(int)));
 
-  // Pre-allocate 3 Microbatch Slots
+  // Pre-allocate 3 Microbatch Pipeline Slots
   constexpr int NUM_SLOTS = 3;
   MicrobatchSlot slots[NUM_SLOTS];
 
@@ -341,7 +415,7 @@ uint64_t executeBatchedCrossIntersectionLoopV3(Mesh& meshAcpu,
     CUBQL_CUDA_CALL(EventCreate(&slotEvents[s].evD2HEnd));
   }
 
-  // mainStream Broad Phase Events
+  // Broadphase Main Stream Events
   cudaEvent_t evAssemblyStart, evAssemblyEnd;
   cudaEvent_t evCountStart, evCountEnd;
   cudaEvent_t evFillStart, evFillEnd;
@@ -359,14 +433,6 @@ uint64_t executeBatchedCrossIntersectionLoopV3(Mesh& meshAcpu,
   std::atomic<int> atomicGreenPairs{0};
   std::atomic<int> atomicYellowPairs{0};
 
-  const uint32_t* ptr_outPairsA = thrust::raw_pointer_cast(d_outPairsA.data());
-  const uint32_t* ptr_outPairsB = thrust::raw_pointer_cast(d_outPairsB.data());
-  const uint32_t* ptr_reverseMapB = thrust::raw_pointer_cast(d_reverseMapB.data());
-  const uint32_t* ptr_outOffsetsB = thrust::raw_pointer_cast(d_outOffsetsB.data());
-  const uint32_t* ptr_outPrimsFlatB = thrust::raw_pointer_cast(d_outPrimsFlatB.data());
-
-  std::vector<int> h_chunkBatchOffsets(batchMultiplier);
-
   int2* d_candidatePairs = nullptr;
   size_t candidateCapacity = 0;
 
@@ -375,29 +441,36 @@ uint64_t executeBatchedCrossIntersectionLoopV3(Mesh& meshAcpu,
 
   tracker.preallocateTimeMs = (cuBQL::getCurrentTime() - tAllocStart) * 1000.0;
 
-  // 4. Main Chunk Loop
+  // 3. Main Chunk Loop
   for(int i = 0; i < totalBatches; i += batchMultiplier) {
     tracker.numberOfBatchLoops++;
     int activeBatchesInChunk = std::min(batchMultiplier, totalBatches - i);
 
-    int totalChunkPrims = 0;
-    for(int b = 0; b < activeBatchesInChunk; ++b) {
-      h_chunkBatchOffsets[b] = totalChunkPrims;
-      uint32_t bIdx = h_outPairsB[i + b];
-      uint32_t markedIdxB = h_reverseMapB[bIdx];
-      uint32_t startOffset = h_outOffsetsB[markedIdxB];
-      uint32_t endOffset = (markedIdxB + 1 < h_outMarkedCountB) ? h_outOffsetsB[markedIdxB + 1] : totalPrimsB;
-      totalChunkPrims += (int)(endOffset - startOffset);
-    }
+    // --- ASSEMBLY PHASE (GPU TRANSFORM & SCAN - ZERO HOST MEMCPYS) ---
+    CUBQL_CUDA_CALL(EventRecord(evAssemblyStart, mainStream));
+
+    auto localBatchIdxIterator = thrust::make_counting_iterator(0);
+    auto batchSizeTransformIterator = thrust::make_transform_iterator(
+        localBatchIdxIterator,
+        BatchSizeInChunkFunctor(ptr_outPairsB, ptr_outOffsetsB, ptr_reverseMapB, h_outMarkedCountB, totalPrimsB, i, activeBatchesInChunk)
+    );
+
+    thrust::device_ptr<int> dev_batchSizes(d_chunkBatchSizes);
+    thrust::copy_n(thrust::cuda::par.on(mainStream), batchSizeTransformIterator, activeBatchesInChunk, dev_batchSizes);
+
+    thrust::device_ptr<int> dev_batchOffsets(d_chunkBatchOffsets);
+    thrust::exclusive_scan(thrust::cuda::par.on(mainStream), dev_batchSizes, dev_batchSizes + activeBatchesInChunk, dev_batchOffsets);
+
+    int lastBatchSize = 0, lastBatchOffset = 0;
+    CUBQL_CUDA_CALL(MemcpyAsync(&lastBatchSize, d_chunkBatchSizes + activeBatchesInChunk - 1, sizeof(int), cudaMemcpyDeviceToHost, mainStream));
+    CUBQL_CUDA_CALL(MemcpyAsync(&lastBatchOffset, d_chunkBatchOffsets + activeBatchesInChunk - 1, sizeof(int), cudaMemcpyDeviceToHost, mainStream));
+    CUBQL_CUDA_CALL(StreamSynchronize(mainStream));
+
+    int totalChunkPrims = lastBatchSize + lastBatchOffset;
 
     if(totalChunkPrims == 0)
       continue;
 
-    // --- ASSEMBLY PHASE (mainStream) ---
-    CUBQL_CUDA_CALL(EventRecord(evAssemblyStart, mainStream));
-
-    CUBQL_CUDA_CALL(MemcpyAsync(d_chunkBatchOffsets, h_chunkBatchOffsets.data(), activeBatchesInChunk * sizeof(int),
-                                cudaMemcpyHostToDevice, mainStream));
     int assembleGridSize = (activeBatchesInChunk + 63) / 64;
     assembleChunkBuffersByBatchKernel_V3<<<assembleGridSize, 64, 0, mainStream>>>(
         d_BIter, d_AIter, ptr_outPairsA, ptr_outPairsB, ptr_reverseMapB, ptr_outOffsetsB, ptr_outPrimsFlatB,
@@ -424,7 +497,6 @@ uint64_t executeBatchedCrossIntersectionLoopV3(Mesh& meshAcpu,
         MemcpyAsync(&lastOffset, d_offsets + totalChunkPrims - 1, sizeof(int), cudaMemcpyDeviceToHost, mainStream));
 
     CUBQL_CUDA_CALL(EventRecord(evCountEnd, mainStream));
-
     CUBQL_CUDA_CALL(StreamSynchronize(mainStream));
 
     float assemblyMs = 0.0f, countMs = 0.0f;
@@ -465,6 +537,7 @@ uint64_t executeBatchedCrossIntersectionLoopV3(Mesh& meshAcpu,
 
     CUBQL_CUDA_CALL(EventRecord(candidateReadyEvent, mainStream));
 
+    // --- FINE EVALUATION MICROBATCH PIPELINE ---
     int numMicrobatches = (totalChunkPairs + MICROBATCH_SIZE - 1) / MICROBATCH_SIZE;
 
     for(int m = 0; m < numMicrobatches; ++m) {
@@ -511,13 +584,11 @@ uint64_t executeBatchedCrossIntersectionLoopV3(Mesh& meshAcpu,
       // 2. Exact Stream Transfers
       CUBQL_CUDA_CALL(EventRecord(sEv.evD2HStart, slot.stream));
 
-      // Transfer counts first
       CUBQL_CUDA_CALL(
           MemcpyAsync(slot.hGreenCountPinned, slot.d_greenCount, sizeof(int), cudaMemcpyDeviceToHost, slot.stream));
       CUBQL_CUDA_CALL(
           MemcpyAsync(slot.hYellowCountPinned, slot.d_yellowCount, sizeof(int), cudaMemcpyDeviceToHost, slot.stream));
 
-      // Transfer pair data asynchronously
       CUBQL_CUDA_CALL(
           MemcpyAsync(slot.hGreenPinned, slot.d_green, uSize * sizeof(int2), cudaMemcpyDeviceToHost, slot.stream));
       CUBQL_CUDA_CALL(
@@ -526,8 +597,7 @@ uint64_t executeBatchedCrossIntersectionLoopV3(Mesh& meshAcpu,
       CUBQL_CUDA_CALL(EventRecord(sEv.evD2HEnd, slot.stream));
       sEv.recorded = true;
 
-      // 3. Offload to TBB with precise host wall-time measurement
-      // Inside the microbatch loop:
+      // 3. Offload to TBB
       struct CallbackCtx
       {
         MicrobatchSlot* slot;
@@ -549,18 +619,15 @@ uint64_t executeBatchedCrossIntersectionLoopV3(Mesh& meshAcpu,
             auto* c = static_cast<CallbackCtx*>(userData);
             MicrobatchSlot* s = c->slot;
 
-            // Extract values while inside stream order (guaranteed stream sync)
             int greenCount = *s->hGreenCountPinned;
             int yellowCount = *s->hYellowCountPinned;
 
-            // Fast-path: If no items, unlock slot immediately & exit
             if(greenCount == 0 && yellowCount == 0) {
               s->busy.store(false, std::memory_order_release);
               delete c;
               return;
             }
 
-            // Offload actual computational work to TBB
             c->tg->run([c, s, greenCount, yellowCount]() {
               if(greenCount > 0) {
                 c->out->grow_by(s->hGreenPinned, s->hGreenPinned + greenCount);
@@ -578,7 +645,6 @@ uint64_t executeBatchedCrossIntersectionLoopV3(Mesh& meshAcpu,
                 c->yellowPairs->fetch_add(yellowCount, std::memory_order_relaxed);
               }
 
-              // CRITICAL FIX: Only mark slot free AFTER TBB finishes processing memory!
               s->busy.store(false, std::memory_order_release);
               delete c;
             });
@@ -590,7 +656,6 @@ uint64_t executeBatchedCrossIntersectionLoopV3(Mesh& meshAcpu,
   // --- CLEANUP & FINAL SYNCHRONIZATION ---
   double tCleanupStart = cuBQL::getCurrentTime();
 
-  // 1. Ensure the main stream is done with all assembly/overlap tasks
   CUBQL_CUDA_CALL(StreamSynchronize(mainStream));
   if(hasPendingFillEvent) {
     float fillMs = 0.0f;
@@ -598,7 +663,6 @@ uint64_t executeBatchedCrossIntersectionLoopV3(Mesh& meshAcpu,
     tracker.executionPhaseMs += fillMs;
   }
 
-  // 2. Wait for GPU microbatch streams to finish enqueuing/executing their work
   for(int s = 0; s < NUM_SLOTS; ++s) {
     CUBQL_CUDA_CALL(StreamSynchronize(slots[s].stream));
     if(slotEvents[s].recorded) {
@@ -611,20 +675,16 @@ uint64_t executeBatchedCrossIntersectionLoopV3(Mesh& meshAcpu,
     }
   }
 
-  // 3. Wait for ALL TBB tasks to finish processing host pinned buffers!
-  // This is the critical gate that prevents segmentation faults.
   cpuTaskGroup.wait();
 
-  // 4. Now it is 100% safe to destroy events and free the slot resources
   for(int s = 0; s < NUM_SLOTS; ++s) {
     CUBQL_CUDA_CALL(EventDestroy(slotEvents[s].evEvalStart));
     CUBQL_CUDA_CALL(EventDestroy(slotEvents[s].evEvalEnd));
     CUBQL_CUDA_CALL(EventDestroy(slotEvents[s].evD2HStart));
     CUBQL_CUDA_CALL(EventDestroy(slotEvents[s].evD2HEnd));
-    slots[s].destroy(); // Free pinned memory buffers
+    slots[s].destroy();
   }
 
-  // Store total CPU predicate evaluation time in milliseconds
   tracker.CPUPredicates = atomicCpuTimeUs.load() / 1000.0;
   tracker.confirmedGreenPairs = atomicGreenPairs.load();
   tracker.confirmedYellowPairs = atomicYellowPairs.load();
@@ -644,6 +704,7 @@ uint64_t executeBatchedCrossIntersectionLoopV3(Mesh& meshAcpu,
   CUBQL_CUDA_CALL(Free(d_AIter));
   CUBQL_CUDA_CALL(Free(d_pairCounts));
   CUBQL_CUDA_CALL(Free(d_offsets));
+  CUBQL_CUDA_CALL(Free(d_chunkBatchSizes));
   CUBQL_CUDA_CALL(Free(d_chunkBatchOffsets));
 
   tracker.cleanupTimeMs = (cuBQL::getCurrentTime() - tCleanupStart) * 1000.0;
