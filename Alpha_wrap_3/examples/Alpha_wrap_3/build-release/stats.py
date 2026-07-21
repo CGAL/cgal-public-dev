@@ -1,129 +1,120 @@
-import matplotlib.pyplot as plt
-import numpy as np
-import os
+import csv
 from collections import defaultdict
-from functools import partial
-import subprocess
-import json
-import multiprocessing
-from itertools import cycle, permutations
+import numpy as np
 
-root = "results"
+experiment_keys = ("model", "alpha", "offset", "rays")
+ray_keys = ("i", "source", "target", "intersection", "algos")
+algo_keys = ("name", "parameter", "time", "steps")
+step_keys = ("type", "point")
 
-def lines(file):
-    proc = subprocess.run(["wc", "-l", file], encoding="utf-8", stdout=subprocess.PIPE)
-    return int(proc.stdout.split()[0])
+raw_step_keys = ("ray", "algo", "type", "x", "y", "z")
 
-def no_ext(file):
-    return os.path.splitext(os.path.basename(file))[0]
+def convert(k,v):
+    match k:
+        case "ray":
+            return int(v)
+        case "x" | "y" | "z":
+            return float(v)
+        case _:
+            return v
 
-def expe_path(dirname, *args):
-    os.path.join(root, dirname, *args)
+def row_point(row_data):
+    return np.array((row_data["x"], row_data["y"], row_data["z"]))
 
-def write_cache(data, path):
-    dirname = os.path.dirname(path)
-    if not os.path.exists(dirname):
-        os.makedirs(dirname)
-    with open(path, "w") as f:
-        f.write(json.dumps(data, indent=4))
+def row_step(row_data):
+    return {"type": row_data["type"],
+            "point": row_point(row_data)}
+
+def algo_with_parameter(algo):
+    match algo["name"].split("-"):
+        case ("relaxed", omega):
+            algo["name"] = "relaxed"
+            algo["parameter"] = float(omega)
+        case _:
+            algo["parameter"] = ""
+    return algo
+
+def make_ray(i):
+    return {"i" : 0, "algos" : []}
+
+def make_algo(name):
+    return {"name" : name, "steps" : []}
+
+def read_steps(file_path):
+    rays = []
+    with open(file_path, newline='') as csvfile:
+        reader = csv.reader(csvfile, delimiter=',')
+        next(reader)
+        ray = make_ray(0)
+        algo = make_algo("")
+        for row in reader:
+            row_data = {k:convert(k,v) for k,v in zip(raw_step_keys, row)}
+            # new ray
+            if row_data["ray"] != ray["i"]:
+                rays.append(ray)
+                ray = make_ray(row_data["ray"])
+            # new algo
+            if row_data["algo"] != algo["name"]:
+                if algo["name"] and algo["name"] != "tracer":
+                    ray["algos"].append(algo_with_parameter(algo))
+                algo = make_algo(row_data["algo"])
+            match row_data:
+                # ray data
+                # source
+                case {"algo": "tracer", "type": "source", **rest}:
+                    ray["source"] = row_point(row_data)
+                # target
+                case {"algo": "tracer", "type": "target", **rest}:
+                    ray["target"] = row_point(row_data)
+                # intersection
+                case {"algo": "tracer", "type": "intersection", **rest}:
+                    ray["intersection"] = row_point(row_data)
+                # algo data
+                # time
+                case {"type": "time", **rest}:
+                    algo["time"] = row_data["x"]
+                # step data
+                case _:
+                    algo["steps"].append(row_step(row_data))
+    return rays
+                    
+rays = read_steps("results/bones_80_80/steps.csv")
+
+def number_of_steps(algo):
+    return len(algo["steps"])
+
+def time_per_step(algo):
+    return algo["time"] / number_of_steps(algo)
+
+def ray_performence(ray):
+    return [(algo["name"], algo["parameter"], number_of_steps(algo), time_per_step(algo))
+            for algo in ray["algos"]]
     
-def read_cache(path):
-    with open(path, "r") as f:
-        return json.load(f)
-    
-def expe_counts(dirname):
-    data_dir = os.path.join(root, dirname, "data")
-    cache = os.path.join(root, dirname, "cache", "counts")
-    if os.path.exists(cache):
-        return read_cache(cache)
-    else:
-        files = map(partial(os.path.join, root, dirname, "data"), os.listdir(data_dir))
-        data = filter(lambda file: os.path.splitext(os.path.basename(file))[1] != ".off", files)
-        output = {no_ext(file) + "s": lines(file) for file in data}
-        write_cache(output, cache)
-        output = defaultdict(int)
-        return output
+def relaxed_trace(algo):
+    relaxed_steps = []
+    normal_steps = []
+    overshot = False
+    for step in algo["steps"]:
+        if step["type"] == "overstep":
+            overshot = step["point"]
+        if overshot is False:
+            relaxed_steps.append(step["point"])
+        else:
+            normal_steps.append(step["point"])
+    return (relaxed_steps, overshot, normal_steps)
 
-def expe_inputs(dirname):
-    split = dirname.split("_")
-    split2 = split[-1].split("-")
-    return {"mesh" : split[0],
-            "alpha" : int(split[1]),
-            "offset" : int(split2[0]),
-            "omega" : float(split2[1])}
+def relaxed_coherence(algo, start):
+    relaxed, overshot, normal = relaxed_trace(algo)
+    if not overshot is False:
+        if relaxed:
+            last = relaxed[0]
+        else:
+            last = start
+        return np.linalg.norm(start - normal[0])
 
-def expe_data(dirname):
-    return expe_inputs(dirname) | expe_counts(dirname)
+ray = rays[0]
+start = ray["source"]
+for algo in ray["algos"]:
+    if algo["name"] == "relaxed":
+        print(relaxed_coherence(algo, start))
 
-def is_expe_path(dirname):
-    is_dir = os.path.isdir(os.path.join(root, dirname))
-    split = dirname.split("_")
-    split2 = split[-1].split("-")
-    split3 = split2[-1].split(".")
-    has_format = split[1].isdigit() and split2[0].isdigit() and split3[0].isdigit() and split3[1].isdigit()
-    return is_dir and has_format
-
-def expe_stats(expe):
-    rays = expe["segments"]
-    relaxed_gain = expe.get("relaxed_steps", 0) * (expe["omega"] - 1)
-    relaxed_loss = expe["oversteps"]
-    relaxed_net = relaxed_gain - relaxed_loss
-    return {
-        "rays" : rays,
-        "relaxed_gain" : relaxed_gain,
-        "relaxed_gain/ray" : relaxed_gain / rays,
-        "relaxed_loss" : relaxed_loss,
-        "relaxed_loss/ray" : relaxed_loss / rays,
-        "relaxed_net" : relaxed_net,
-        "relaxed_net/ray" : relaxed_net / rays
-    }
-
-pool = multiprocessing.Pool()
-expe = list(map(lambda e: e | expe_stats(e),
-                pool.map(expe_data, filter(is_expe_path, os.listdir(root)))))
-
-dd = defaultdict(list)
-
-for ex in expe:
-    mesh = ex["mesh"]
-    dd[mesh].append((ex, ex.pop("mesh"))[0])
-
-# print(dd)
-
-def plot(constant_name, variable, value):
-    constants = list(map(lambda e : e[constant_name], filter(lambda e : e[variable] == 300, dd["triceratops.off"])))
-
-    fig, axs = plt.subplots(len(constants), 1)
-    # A4 format
-    fig.set_size_inches(8.27,11.69)
-
-    colors = cycle(plt.get_cmap('tab20').colors)
-
-    for i, constant in enumerate(constants):
-        for mesh in dd:
-            data = list(filter(lambda e : e[constant_name] == constant, dd[mesh]))
-            x = np.array([e[variable] for e in data])
-            y = np.array([e[value] for e in data])
-            axs[i].plot(x, y, label=mesh, color=next(colors))
-        axs[i].set_title(f'{constant_name}={constant}')
-
-    for ax in axs.flat:
-        ax.set(xlabel=variable, ylabel=value)
-        # Hide x labels and tick labels for top plots and y ticks for right plots.
-        ax.label_outer()
-
-    fig.tight_layout()
-
-    # Make space for the legend
-    for ax in axs.flat:
-        box = ax.get_position()
-        ax.set_position([box.x0, box.y0, box.width * 0.7, box.height])
-    # Add the legend
-    handles, labels = axs.flat[0].get_legend_handles_labels()
-    fig.legend(handles, labels, loc="center right", bbox_to_anchor=(1, 0.5))
-
-    plt.savefig(f"{value.replace('/', '')}-given-{variable}.png")
-
-for value in ["relaxed_gain/ray", "relaxed_loss/ray", "relaxed_net/ray"]:
-    for variable, constant in permutations(["offset", "alpha"]):
-        plot(constant, variable, value)
