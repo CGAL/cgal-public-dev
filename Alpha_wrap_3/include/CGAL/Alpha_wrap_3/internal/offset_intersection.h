@@ -22,6 +22,8 @@
 
 #include <boost/algorithm/clamp.hpp>
 
+#include <CGAL/Real_timer.h>
+
 namespace CGAL {
 namespace Alpha_wraps_3 {
 namespace internal {
@@ -82,12 +84,13 @@ public:
       std::remove(output_file.c_str());
       output_header();
     }
-    output_step(s, "source", ray, "init");
-    output_step(t, "target", ray, "init");
+    output_step(s, "source", ray, "tracer");
+    output_step(t, "target", ray, "tracer");
 #endif
 
     bool output;
 
+	// Dispatch tracing algorithms according to environment variables
     std::array<std::string, 4> vars = {
       "DICHOTOMY", "SPHERE_MARCHING_OLD", "SPHERE_MARCHING", "RELAXED"
     };
@@ -96,7 +99,7 @@ public:
     int max = *std::max_element(vals.begin(), vals.end());
 
     if (max == 0) {
-      // default
+      // default algo
       output = trace("SPHERE_MARCHING", s, t, output_pt);
     } else {
       // Run the algos with positive environnment variables.
@@ -104,7 +107,7 @@ public:
       for (int i = 1; i <= max; i++) {
         for (const std::string& var : vars) {
           if (i == getenv(var)) {
-            std::cout << "Tracing:" << var << std::endl;
+            std::cout << "Tracing: " << var << std::endl;
             output = trace(var, s, t, output_pt);
           }
         }
@@ -112,7 +115,7 @@ public:
     }
 
 #ifdef CGAL_AW3_OUTPUT_SPHERE_MARCHING_STEPS
-    output_step(output_pt, "intersection", ray, "init");
+    output_step(output_pt, "intersection", ray, "tracer");
     ray++;
 #endif
 
@@ -132,6 +135,7 @@ private:
 #ifdef CGAL_AW3_OUTPUT_SPHERE_MARCHING_STEPS
   inline static int ray = 0;
   std::string output_file = "steps.csv";
+  CGAL::Real_timer timer;
 #endif
 
   static int getenv(std::string var) {
@@ -143,18 +147,62 @@ private:
     }
   }
 
+  static float getenvf(std::string var) {
+    char* val = std::getenv(var.c_str());
+    if (val) {
+      return std::atof(val);
+    } else {
+      return 0;
+    }
+  }
+
+  void timer_start() {
+	timer.start();
+  }
+
+  void timer_stop_and_output(std::string algo) {
+	timer.stop();
+	output_step({timer.time(), 0, 0}, "time", ray, algo);
+  }
+
+  
+  // Dispatcher for ray-tracing algorithms
   bool trace(std::string algo,
              const Point_3& s,
              const Point_3& t,
              Point_3& output_pt) {
+	bool output;
     if (algo == "DICHOTOMY") {
-      return dichotomy(s, t, output_pt);
+	  timer_start();	  
+	  output = dichotomy(s, t, output_pt);
+	  timer_stop_and_output("dichotomy");
+	  return output;
     } else if (algo == "SPHERE_MARCHING_OLD") {
-      return sphere_tracing_old(s, t, output_pt);
+	  timer_start();
+      output = sphere_tracing_old(s, t, output_pt);
+	  timer_stop_and_output("sphere-marching-old");
+	  return output;
     } else if (algo == "SPHERE_MARCHING") {
-      return sphere_tracing(s, t, output_pt);
+	  timer_start();
+      output = sphere_tracing(s, t, output_pt);
+	  timer_stop_and_output("sphere-marching");
+	  return output;
     } else if (algo == "RELAXED") {
-      return relaxed_sphere_tracing(s, t, output_pt);
+	  if (float omega = getenvf("RELAXED_OMEGA")) {
+		timer_start();
+		output = relaxed_sphere_tracing(s, t, omega, output_pt);
+		timer_stop_and_output("relaxed-" + std::to_string(omega));
+		return output;
+	  }
+	  else {
+		for (float omega = 1.1; omega < 2; omega += 0.1) {
+		  std::cout << "omega: " << omega << std::endl;
+		  timer_start();
+		  output = relaxed_sphere_tracing(s, t, omega, output_pt);
+		  timer_stop_and_output("relaxed-" + std::to_string(omega));
+		}
+		return output;
+	  }
     }
   }
 
@@ -171,7 +219,10 @@ private:
     stream.close();
   }
 
-  void output_step(Point_3 point, std::string type, int ray, std::string algo) {
+  void output_step(Point_3 point,
+				   std::string type,
+				   int ray,
+				   std::string algo) {
     std::ofstream stream(output_file, std::ios_base::app);
     stream.precision(17);
     stream << ray << ","
@@ -198,8 +249,14 @@ private:
   {
 
 #ifdef CGAL_AW3_OUTPUT_SPHERE_MARCHING_STEPS
-    const Point_3 segment_data { s.x(), s.y(), t.y() };
-    output_step(segment_data, "segment", ray, "dichotomy");
+	const FT x_clamp = boost::algorithm::clamp<FT>(s.x(), FT{0}, seg_length);
+	const Point_3 segment_first_pt = source + (seg_unit_v * x_clamp);
+	// skip first step
+	static int current_ray = -1;
+	if (current_ray == ray) {
+	  output_step(segment_first_pt, "step", ray, "dichotomy");
+	}
+	current_ray = ray;
 #endif
 
     if(CGAL::abs(s.x() - t.x()) < precision)
@@ -321,12 +378,6 @@ private:
                           const Point_3& t,
                           Point_3& output_pt)
   {
-#ifdef CGAL_AW3_DEBUG_SPHERE_MARCHING
-    static int calls = -1;
-    ++calls;
-    std::cout << "Sphere march between " << s << " and " << t << " (#" << calls << ")" << std::endl;
-#endif
-
     CGAL_precondition(s != t);
 
     Point_3 current_pt = s;
@@ -347,16 +398,8 @@ private:
 
     for(;;)
     {
-#ifdef CGAL_AW3_DEBUG_SPHERE_MARCHING
-      std::cout << "current point " << current_pt << std::endl;
-      std::cout << "current dist " << current_dist << std::endl;
-#endif
-
       if(CGAL::abs(current_dist) < precision)
       {
-#ifdef CGAL_AW3_DEBUG_SPHERE_MARCHING
-        std::cout << "Intersection point " << current_pt << std::endl;
-#endif
         output_pt = current_pt;
         return true;
       }
@@ -369,9 +412,6 @@ private:
 
       if(squared_distance(s, current_pt) > sq_seg_length)
       {
-#ifdef CGAL_AW3_DEBUG_SPHERE_MARCHING
-    std::cout << "No intersection " << std::endl;
-#endif
          return false;
       }
       // previous closest point is a good hint for the next closest point
@@ -386,12 +426,6 @@ private:
                       const Point_3& t,
                       Point_3& output_pt)
   {
-#ifdef CGAL_AW3_DEBUG_SPHERE_MARCHING
-    static int calls = -1;
-    ++calls;
-    std::cout << "Sphere march between " << s << " and " << t << " (#" << calls << ")" << std::endl;
-#endif
-
     CGAL_precondition(s != t);
 
     Point_3 current_pt = s;
@@ -412,16 +446,8 @@ private:
     {
       current_dist = dist_oracle(current_pt) - offset;
 
-#ifdef CGAL_AW3_DEBUG_SPHERE_MARCHING
-      std::cout << "current point " << current_pt << std::endl;
-      std::cout << "current dist " << current_dist << std::endl;
-#endif
-
       if(CGAL::abs(current_dist) < precision)
       {
-#ifdef CGAL_AW3_DEBUG_SPHERE_MARCHING
-      std::cout << "Intersection point " << current_pt << std::endl;
-#endif
         output_pt = current_pt;
         return true;
       }
@@ -432,28 +458,18 @@ private:
       output_step(current_pt, "step", ray, "sphere-marching");
 #endif
     }
-
-#ifdef CGAL_AW3_DEBUG_SPHERE_MARCHING
-    std::cout << "No intersection " << std::endl;
-#endif
     return false;
   }
 
   bool relaxed_sphere_tracing(const Point_3& s,
                               const Point_3& t,
+							  FT omega,
                               Point_3& output_pt)
   {
-#ifdef CGAL_AW3_DEBUG_SPHERE_MARCHING
-    static int calls = -1;
-    ++calls;
-    std::cout << "Sphere march between " << s << " and " << t << " (#" << calls << ")" << std::endl;
-#endif
-
     CGAL_precondition(s != t);
 
     Point_3 current_pt = s;
     FT current_dist;
-    FT omega = 1.2;
 
     const FT sq_seg_length = squared_distance(s, t);
     const FT seg_length = approximate_sqrt(sq_seg_length);
@@ -474,26 +490,17 @@ private:
     current_step = current_dist;
 
     int steps = 0;
+	std::string algo_name = "relaxed-" + std::to_string(omega);
 
     while(squared_distance(s, current_pt) <= sq_seg_length * omega * omega || sorFail)
     {
-#ifdef CGAL_AW3_DEBUG_SPHERE_MARCHING
-      std::cout << "current point " << current_pt << std::endl;
-      std::cout << "current dist " << current_dist << std::endl;
-#endif
-
       sorFail = omega > 1 &&
         (CGAL::abs(current_dist) + CGAL::abs(previous_dist)) < current_step;
-      if (sorFail) {
-#ifdef CGAL_AW3_DEBUG_SPHERE_MARCHING
-        std::cout << "Overstepped abs(" << current_dist << ") + abs(" << previous_dist << ") < " << current_step << std::endl;
-#endif
-
+      if (sorFail) {		
         current_step -= omega * current_step;
         omega = 1;
-
 #ifdef CGAL_AW3_OUTPUT_SPHERE_MARCHING_STEPS
-        output_step(current_pt, "overstep", ray, "relaxed");
+        output_step(current_pt, "overstep", ray, algo_name);
 #endif
       } else {
         current_step = current_dist * omega;
@@ -501,9 +508,9 @@ private:
 #ifdef CGAL_AW3_OUTPUT_SPHERE_MARCHING_STEPS
         if (steps > 0) {
           if (omega > 1) {
-            output_step(current_pt, "relaxed", ray, "relaxed");
+            output_step(current_pt, "relaxed", ray, algo_name);
           } else {
-            output_step(current_pt, "step", ray, "relaxed");
+            output_step(current_pt, "step", ray, algo_name);
           }
         }
 #endif
@@ -511,9 +518,6 @@ private:
 
       if(CGAL::abs(current_dist) < precision && !sorFail)
       {
-#ifdef CGAL_AW3_DEBUG_SPHERE_MARCHING
-        std::cout << "Intersection point " << current_pt << std::endl;
-#endif
         output_pt = current_pt;
         return true;
       }
