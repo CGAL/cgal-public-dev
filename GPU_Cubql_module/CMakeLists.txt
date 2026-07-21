@@ -282,6 +282,7 @@ add_executable(testBVHV2
     src/testBVH/batchedCrossIntersectionV3.cu
     src/testBVH/DualTreeStep.cu
     src/testBVH/prune_pipeline.cu
+    src/Warmup/cuda_warmup.cu
     src/custom_pipeline/GPUPredicatesCheckV2.cu
 )
 

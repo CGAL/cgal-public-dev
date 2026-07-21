@@ -159,7 +159,7 @@ __global__ void compactGreenYellowKernel(const int2* __restrict__ candidatePairs
 // PRE-ALLOCATED MICROBATCH PIPELINE SLOT
 // --------------------------------------------------------------------
 
-constexpr int MICROBATCH_SIZE = 65536;
+//constexpr int MICROBATCH_SIZE = 65536;
 
 //constexpr int MICROBATCH_SIZE = 32768;
 
@@ -180,7 +180,7 @@ struct MicrobatchSlot
 
   std::atomic<bool> busy{false};
 
-  void allocate() {
+  void allocate(int MICROBATCH_SIZE) {
     CUBQL_CUDA_CALL(StreamCreateWithFlags(&stream, cudaStreamNonBlocking));
 
     CUBQL_CUDA_CALL(Malloc(&d_pairStatuses, MICROBATCH_SIZE * sizeof(int)));
@@ -337,7 +337,7 @@ uint64_t executeBatchedCrossIntersectionLoopV3(Mesh& meshAcpu,
                                                const float2* triBMetrics,
                                                tbb::concurrent_vector<int2>& finalExactPairs,
                                                IntersectionTimeTracker& tracker,
-                                               cudaStream_t mainStream) {
+                                               cudaStream_t mainStream, int MICROBATCH_SIZE) {
   double tTotalStart = cuBQL::getCurrentTime();
   double tAllocStart = tTotalStart;
 
@@ -408,7 +408,7 @@ uint64_t executeBatchedCrossIntersectionLoopV3(Mesh& meshAcpu,
   SlotEvents slotEvents[NUM_SLOTS];
 
   for(int s = 0; s < NUM_SLOTS; ++s) {
-    slots[s].allocate();
+    slots[s].allocate(MICROBATCH_SIZE);
     CUBQL_CUDA_CALL(EventCreate(&slotEvents[s].evEvalStart));
     CUBQL_CUDA_CALL(EventCreate(&slotEvents[s].evEvalEnd));
     CUBQL_CUDA_CALL(EventCreate(&slotEvents[s].evD2HStart));

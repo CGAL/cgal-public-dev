@@ -475,7 +475,7 @@ extern "C" void kernelsTestBVHV2(Mesh& meshAcpu,
     finalCandidatePairs = executeBatchedCrossIntersectionLoopV3(
         meshAcpu, meshBcpu, batchMultiplier, totalBatches, d_outPairsA, d_outPairsB, d_reverseMapB,
         d_markedNodeIndicesB, d_outOffsetsB, d_outPrimsFlatB, d_nodeDescendantCountsB, finalActiveCellsB, bvhA, dMeshA,
-        dMeshB, dMeshMetricsA, dMeshMetricsB, finalExactPairs, tracker, stream);
+        dMeshB, dMeshMetricsA, dMeshMetricsB, finalExactPairs, tracker, stream, activateAsyncDownload);
   }
   // --------------------------------------------------------------------
   // EXPLICIT CLEANUP & RECOVERY METRIC TRACKING

@@ -30,6 +30,9 @@
 #include "../src/CPU/YellowFilter.h"
 #include "../src/CPU/CgalDefinitions.h"
 
+
+#include "../src/Warmup/cuda_warmup.h"
+
 // typedef CGAL::Exact_predicates_inexact_constructions_kernel Kernel;
 // typedef CGAL::Surface_mesh<Kernel::Point_3> Mesh;
 // typedef boost::graph_traits<Mesh>::face_descriptor face_descriptor;
@@ -182,6 +185,8 @@ int main(int ac, char** av) {
     return 1;
   }
 
+  warmupCUDA();
+
   std::string meshPathA = av[1];
   int maxCellSizeA = std::stoi(av[2]);
   std::string meshPathB = av[3];
@@ -227,7 +232,9 @@ int main(int ac, char** av) {
   double tMeshBFileLoadTime = cuBQL::getCurrentTime() - tMeshBFileLoadStart;
 
   // --- TBB NORMALIZATION ---
-  double tNormalizationStart = cuBQL::getCurrentTime();
+
+  double tNormalizationStart0 = cuBQL::getCurrentTime();
+
   DoubleBox combinedBox = computeMeshBoundsTBB(meshA);
   combinedBox.grow(computeMeshBoundsTBB(meshB));
 
@@ -235,6 +242,9 @@ int main(int ac, char** av) {
   double centerY = 0.5 * (combinedBox.min_y + combinedBox.max_y);
   double centerZ = 0.5 * (combinedBox.min_z + combinedBox.max_z);
 
+    double tCentralizationTime = cuBQL::getCurrentTime() - tNormalizationStart0;
+
+    double tNormalizationStart = cuBQL::getCurrentTime();
   extractMeshTopologyNormalized(meshA, centerX, centerY, centerZ, hVertsA, outVertexErrorsA, hIndicesA,
                                 usePreciseBounds);
   extractMeshTopologyNormalized(meshB, centerX, centerY, centerZ, hVertsB, outVertexErrorsB, hIndicesB,
@@ -292,6 +302,7 @@ tbb::concurrent_vector<int2>  finalExactPairs;
             << " s\n";
   std::cout << "  |- Mesh B Disk Ingest (OFF Read):  " << tMeshBFileLoadTime << " s\n";
   std::cout << "  |- TBB Double Bounds & Normalize:  " << tNormalizationTime << " s\n\n";
+  std::cout << "  |- Centralization time:            " << tCentralizationTime << " s\n";
 
   std::cout << "CRISS-CROSS BOUNDING BOX CROSS-CHECK:\n";
   std::cout << "  |- Intersections found:            " << stats.totalIntersections << " / " << stats.totalPossiblePairs

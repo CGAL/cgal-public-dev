@@ -32,7 +32,7 @@ uint64_t executeBatchedCrossIntersectionLoopV3(Mesh & meshAcpu, Mesh & MeshBcpu,
     const float2 *triAMetrics,
     const float2 *triBMetrics,
     tbb::concurrent_vector<int2> & finalExactPairs,
-    IntersectionTimeTracker& tracker,cudaStream_t stream 
+    IntersectionTimeTracker& tracker,cudaStream_t stream,int MICROBATCH_SIZE
 );
 
 //std::vector<int2>& hGreenPairs,
