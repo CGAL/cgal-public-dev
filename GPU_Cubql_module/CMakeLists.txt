@@ -284,6 +284,7 @@ add_executable(testBVHV2
     src/testBVH/prune_pipeline.cu
     src/Warmup/cuda_warmup.cu
     src/custom_pipeline/GPUPredicatesCheckV2.cu
+    src/testBVH/utils.cu
 )
 
 set_target_properties(testBVHV2 PROPERTIES
@@ -316,3 +317,51 @@ target_include_directories(testBVHV2 PRIVATE
 )
 
 target_link_libraries(testBVHV2 PRIVATE CUDA::cudart ${SHARED_LINK_LIBS})
+
+# ====================================================================
+# TARGET 10: Main Application (KernelBVHController Launcher)
+# ====================================================================
+
+set_source_files_properties(apps/mainApplication.cpp PROPERTIES LANGUAGE CUDA)
+
+add_executable(MainApp 
+    apps/mainApplication.cpp 
+    src/GPUIntersector/KenelBVHController.cu
+    src/testBVH/crossCheck.cu
+    src/testBVH/rapidDescendKernel.cu
+    src/testBVH/batchedCrossIntersectionV2.cu
+    src/testBVH/DualTreeStep.cu
+    src/Warmup/cuda_warmup.cu
+    src/custom_pipeline/GPUPredicatesCheckV2.cu
+    src/testBVH/utils.cu
+)
+
+set_target_properties(MainApp PROPERTIES
+    CXX_STANDARD 17
+    CXX_STANDARD_REQUIRED ON
+    CUDA_STANDARD 17
+    CUDA_STANDARD_REQUIRED ON
+    CUDA_ARCHITECTURES "120"
+    CUDA_SEPARABLE_COMPILATION ON
+    BUILD_WITH_INSTALL_RPATH TRUE
+    INSTALL_RPATH "${CUBQL_BUILD}"
+)
+
+target_compile_definitions(MainApp PRIVATE CGAL_LINKED_WITH_TBB)
+
+target_compile_options(MainApp PRIVATE 
+    $<$<COMPILE_LANGUAGE:CXX>:-O3 -march=native -DNDEBUG>
+    $<$<COMPILE_LANGUAGE:CUDA>:-O3 -DNDEBUG --use_fast_math>
+)
+
+target_include_directories(MainApp PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/GPU_Cubql_module          # Path tracking to your root module
+    ${CMAKE_CURRENT_SOURCE_DIR}/GPU_Cubql_module/include  # Path tracking to where sm_builder_v2.h sits
+    include
+    ${CUBQL_ROOT}
+    ${CUBQL_ROOT}/samples/common
+    ${CUDAToolkit_INCLUDE_DIRS}
+)
+
+target_link_libraries(MainApp PRIVATE CUDA::cudart ${SHARED_LINK_LIBS})
