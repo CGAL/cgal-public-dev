@@ -230,6 +230,7 @@ namespace CGAL {
       }
 
       for (Index i = 0; i < points_.size(); ++i) {
+        double len2 = CGAL::to_double(normals_[i].squared_length());
         insert(i, points_[i], normals_[i]);
       }
     }
@@ -242,17 +243,20 @@ namespace CGAL {
      * @return A vector of block normals in grid order.
      */
     std::vector<Vector_3> compute_block_normals() const {
-      std::vector<Vector_3> block_normals;
-      block_normals.reserve(cells_.size());
+      std::vector<Vector_3> block_normals(cells_.size(), CGAL::NULL_VECTOR);
 
+      // ------------------------------------------------------------
+      // Pass 1: compute one averaged unit normal per non-empty cell.
+      // ------------------------------------------------------------
       for (std::size_t ix = 0; ix < nx_; ++ix) {
         for (std::size_t iy = 0; iy < ny_; ++iy) {
           for (std::size_t iz = 0; iz < nz_; ++iz) {
-            const Cell& c = cells_[flat_index(ix, iy, iz)];
+            const std::size_t idx = flat_index(static_cast<int>(ix),
+                                              static_cast<int>(iy),
+                                              static_cast<int>(iz));
+            const Cell& c = cells_[idx];
 
             if (c.normal_count == 0) {
-              // zero vector indicates empty cell, no normal information
-              block_normals.push_back(Vector_3(0,0,0));
               continue;
             }
 
@@ -261,13 +265,12 @@ namespace CGAL {
 
             const double len2 = CGAL::to_double(n.squared_length());
             if (len2 <= 0.0) {
-              block_normals.push_back(CGAL::NULL_VECTOR);
               continue;
             }
 
-            Vector_3 block_normal = n * (1.0 / std::sqrt(len2));
+            n = n * (1.0 / std::sqrt(len2));
 
-            // Check consistency with every point normal in this cell.
+            // Optional consistency check against all input normals in this cell.
             for (Index pid : c.point_ids) {
               if (pid >= normals_.size()) {
                 continue;
@@ -278,8 +281,10 @@ namespace CGAL {
                 continue;
               }
 
-              if (CGAL::to_double(block_normal * point_normal) < 1e-12) {
-                std::cout<<CGAL::to_double(block_normal * point_normal) << " at cell (" << ix << "," << iy << "," << iz << ") with point index " << pid << std::endl;
+              if (CGAL::to_double(n * point_normal) < 1e-12) {
+                std::cout << CGAL::to_double(n * point_normal)
+                          << " at cell (" << ix << "," << iy << "," << iz
+                          << ") with point index " << pid << std::endl;
                 std::cerr
                   << "Warning: block normal has negative dot product with a point normal.\n"
                   << "box_size is likely too large. Aborting.\n";
@@ -287,10 +292,83 @@ namespace CGAL {
               }
             }
 
-            block_normals.push_back(block_normal);
+            block_normals[idx] = n;
           }
         }
       }
+
+      // // ------------------------------------------------------------
+      // // Pass 2: fill empty cells from neighboring block normals.
+      // // Repeat a few times so gaps can propagate outward.
+      // // ------------------------------------------------------------
+      // const std::size_t max_iters = 10;
+
+      // for (std::size_t iter = 0; iter < max_iters; ++iter) {
+      //   std::vector<Vector_3> next_normals = block_normals;
+      //   bool changed = false;
+
+      //   for (std::size_t ix = 0; ix < nx_; ++ix) {
+      //     for (std::size_t iy = 0; iy < ny_; ++iy) {
+      //       for (std::size_t iz = 0; iz < nz_; ++iz) {
+      //         const std::size_t idx = flat_index(static_cast<int>(ix),
+      //                                           static_cast<int>(iy),
+      //                                           static_cast<int>(iz));
+
+      //         if (block_normals[idx] != CGAL::NULL_VECTOR) {
+      //           continue; // already has a normal
+      //         }
+
+      //         Vector_3 sum = CGAL::NULL_VECTOR;
+      //         std::size_t count = 0;
+
+      //         for (int dx = -1; dx <= 1; ++dx) {
+      //           for (int dy = -1; dy <= 1; ++dy) {
+      //             for (int dz = -1; dz <= 1; ++dz) {
+      //               if (dx == 0 && dy == 0 && dz == 0) {
+      //                 continue;
+      //               }
+
+      //               const int nx = static_cast<int>(ix) + dx;
+      //               const int ny = static_cast<int>(iy) + dy;
+      //               const int nz = static_cast<int>(iz) + dz;
+
+      //               if (!valid_coords(nx, ny, nz)) {
+      //                 continue;
+      //               }
+
+      //               const Vector_3& n = block_normals[flat_index(nx, ny, nz)];
+      //               if (n == CGAL::NULL_VECTOR) {
+      //                 continue;
+      //               }
+
+      //               sum = sum + n;
+      //               ++count;
+      //             }
+      //           }
+      //         }
+
+      //         if (count == 0) {
+      //           continue;
+      //         }
+
+      //         sum = sum * (FT(1) / FT(count));
+      //         const double len2 = CGAL::to_double(sum.squared_length());
+      //         if (len2 <= 0.0) {
+      //           continue;
+      //         }
+
+      //         next_normals[idx] = sum * (1.0 / std::sqrt(len2));
+      //         changed = true;
+      //       }
+      //     }
+      //   }
+
+      //   block_normals.swap(next_normals);
+
+      //   if (!changed) {
+      //     break;
+      //   }
+      // }
 
       return block_normals;
     }
@@ -641,52 +719,7 @@ namespace CGAL {
         return compute_cell_normal(ix, iy, iz);
       }
 
-    private:
-    /**
-     * @brief Clears all per-cell accumulators.
-     */
-    void clear() {
-      for (Cell& c : cells_) {
-        c.point_ids.clear();
-        c.normal_sum = CGAL::NULL_VECTOR;
-        c.normal_count = 0;
-      }
-    }
-
-    /**
-     * @brief Allocates the 3D cell array from the current bounds and box size.
-     */
-    void initialize_grid() {
-      const double h = CGAL::to_double(box_size_);
-      const double extent_x = CGAL::to_double(max_x_ - min_x_);
-      const double extent_y = CGAL::to_double(max_y_ - min_y_);
-      const double extent_z = CGAL::to_double(max_z_ - min_z_);
-
-      nx_ = std::max<std::size_t>(1, static_cast<std::size_t>(std::ceil(extent_x / h)));
-      ny_ = std::max<std::size_t>(1, static_cast<std::size_t>(std::ceil(extent_y / h)));
-      nz_ = std::max<std::size_t>(1, static_cast<std::size_t>(std::ceil(extent_z / h)));
-
-      cells_.clear();
-      cells_.resize(nx_ * ny_ * nz_);
-    }
-
-    /**
-     * @brief Checks whether integer grid coordinates are valid.
-     *
-     * @param ix Cell index along x.
-     * @param iy Cell index along y.
-     * @param iz Cell index along z.
-     *
-     * @return `true` if the coordinates lie inside the grid.
-     */
-    bool valid_coords(int ix, int iy, int iz) const {
-      return ix >= 0 && iy >= 0 && iz >= 0 &&
-            static_cast<std::size_t>(ix) < nx_ &&
-            static_cast<std::size_t>(iy) < ny_ &&
-            static_cast<std::size_t>(iz) < nz_;
-    }
-
-    /**
+      /**
      * @brief Maps a 3D point to integer grid coordinates.
      *
      * @param p   Input point.
@@ -741,6 +774,55 @@ namespace CGAL {
       return (static_cast<std::size_t>(ix) * ny_
             + static_cast<std::size_t>(iy)) * nz_
             + static_cast<std::size_t>(iz);
+    }
+
+    /**
+     * @brief Checks whether integer grid coordinates are valid.
+     *
+     * @param ix Cell index along x.
+     * @param iy Cell index along y.
+     * @param iz Cell index along z.
+     *
+     * @return `true` if the coordinates lie inside the grid.
+     */
+    bool valid_coords(int ix, int iy, int iz) const {
+      return ix >= 0 && iy >= 0 && iz >= 0 &&
+            static_cast<std::size_t>(ix) < nx_ &&
+            static_cast<std::size_t>(iy) < ny_ &&
+            static_cast<std::size_t>(iz) < nz_;
+    }
+
+    std::size_t number_of_cells() const {
+      return cells_.size();
+    }
+
+    private:
+    /**
+     * @brief Clears all per-cell accumulators.
+     */
+    void clear() {
+      for (Cell& c : cells_) {
+        c.point_ids.clear();
+        c.normal_sum = CGAL::NULL_VECTOR;
+        c.normal_count = 0;
+      }
+    }
+
+    /**
+     * @brief Allocates the 3D cell array from the current bounds and box size.
+     */
+    void initialize_grid() {
+      const double h = CGAL::to_double(box_size_);
+      const double extent_x = CGAL::to_double(max_x_ - min_x_);
+      const double extent_y = CGAL::to_double(max_y_ - min_y_);
+      const double extent_z = CGAL::to_double(max_z_ - min_z_);
+
+      nx_ = std::max<std::size_t>(1, static_cast<std::size_t>(std::ceil(extent_x / h)));
+      ny_ = std::max<std::size_t>(1, static_cast<std::size_t>(std::ceil(extent_y / h)));
+      nz_ = std::max<std::size_t>(1, static_cast<std::size_t>(std::ceil(extent_z / h)));
+
+      cells_.clear();
+      cells_.resize(nx_ * ny_ * nz_);
     }
 
     /**
@@ -804,7 +886,6 @@ namespace CGAL {
     std::vector<Vector_3> normals_;
     std::vector<FT> splat_sizes_;
     FT max_splat_radius_ = 0;
-
 
     /*
     //////////////////// DEBUG /////////////////////
@@ -1044,8 +1125,20 @@ namespace CGAL {
           std::cout << "Created vertex normal property map." << std::endl;
         }
 
+        mesh_vertices_per_cell_.resize(grid_.number_of_cells());
+
         seed_from_grid();
       }
+
+      struct Debug_candidate
+      {
+          Point_3 p;
+          int reason; // near, projection, graph, etc.
+          vertex_descriptor parent0;
+          vertex_descriptor parent1;
+      };
+
+      std::vector<Debug_candidate> rejected_candidates_;
 
       void run() {
         if (!seeded_) {
@@ -1069,33 +1162,53 @@ namespace CGAL {
 
           if (has_vertex_near(cand.position)) {
             rejected_near++;
+
+            // rejected_candidates_.push_back({
+            //     cand.position,
+            //     1, // rejected by projection
+            //     cand.first,
+            //     cand.second
+            // });
+
             continue;
           }
 
           if (!projection_check(cand)) {
             rejected_proj++;
+
+            // rejected_candidates_.push_back({
+            //     cand.position,
+            //     1, // rejected by projection
+            //     cand.first,
+            //     cand.second
+            // });
+
             continue;
           }
+
+          vertex_descriptor nv = mesh_.add_vertex(cand.position);
+          put(points_pm_, nv, cand.position);
+          put(normals_pm_, nv, cand.normal);
 
           int new_priority = compute_priority(cand);
           if (new_priority != cand.priority) {
             cand.priority = new_priority;
             push_candidate_in_queue(cand);
+            remove_vertex(nv, mesh_);
             continue;
           }
 
           accepted++;
-          vertex_descriptor nv = mesh_.add_vertex(cand.position);
-          put(points_pm_, nv, cand.position);
-          put(normals_pm_, nv, cand.normal);
-
           if (!build_graph(cand.first, cand.second, nv, cand.normal)) {
             remove_vertex(nv, mesh_);
             continue;
           }
+
+          insert_mesh_vertex(nv);
           
           push_candidates_from_vertex(nv);
           ctr++;
+          std::cout << num_vertices(mesh_) << " vertices in mesh." << "\n";
         }
 
         std::cout<<"Setting Faces..." << std::endl;
@@ -1109,6 +1222,43 @@ namespace CGAL {
       }
 
     private:
+      void insert_mesh_vertex(vertex_descriptor vd) {
+        int ix, iy, iz;
+
+        const Point_3& p = get(points_pm_, vd);
+
+        if (!grid_.to_grid_coords(p, ix, iy, iz))
+            return;
+
+        mesh_vertices_per_cell_[grid_.flat_index(ix, iy, iz)].push_back(vd);
+      }
+
+      std::vector<vertex_descriptor> nearby_mesh_vertices(const Point_3& p, FT radius) const {
+        std::vector<vertex_descriptor> out;
+
+        int cx, cy, cz;
+
+        if (!grid_.to_grid_coords(p, cx, cy, cz))
+          return out;
+
+        const int r = std::max(
+          1,
+          static_cast<int>(std::ceil(CGAL::to_double(radius) / CGAL::to_double(grid_.get_box_size()))));
+
+        for (int dx = -r; dx <= r; ++dx)
+          for (int dy = -r; dy <= r; ++dy)
+            for (int dz = -r; dz <= r; ++dz) {
+              if (!grid_.valid_coords(cx + dx, cy + dy, cz + dz))
+                continue;
+
+              const auto& cell = mesh_vertices_per_cell_[grid_.flat_index(cx + dx, cy + dy, cz + dz)];
+
+              out.insert(out.end(), cell.begin(), cell.end());
+            }
+
+        return out;
+      }
+
       void push_candidate_in_queue(Candidate cand) {
         cand.priority =
           (std::max)(0,
@@ -1173,6 +1323,9 @@ namespace CGAL {
         seeded_ = true;
         std::cout << "Mesh seeded with initial vertices. Starting growth...\n";
 
+        insert_mesh_vertex(v0_);
+        insert_mesh_vertex(v1_);
+
         push_candidates_from_vertex(v0_);
         push_candidates_from_vertex(v1_);
 
@@ -1183,21 +1336,9 @@ namespace CGAL {
       void push_candidates_from_vertex(vertex_descriptor nv) {
         const Point_3 p = get(points_pm_, nv);
 
-        // std::vector<Index> nearby_ids = grid_.nearby_point_ids(p, FT(2.0) * grid_.get_box_size());
+        auto nearby = nearby_mesh_vertices(p, FT(8.0) * grid_.get_box_size());
 
-        for (auto other_v : vertices(mesh_)) {
-          if (other_v == nv) {
-            continue;
-          }
-
-          const Point_3 q = get(points_pm_, other_v);
-
-          const FT d2 = CGAL::squared_distance(p, q);
-
-          if (d2 > FT(4) * grid_.get_box_size() * grid_.get_box_size()) {
-            continue;
-          }
-
+        for (vertex_descriptor other_v : nearby) {
           std::vector<Candidate> candidates = generate_candidates_from_parents(nv, other_v);
 
           for (const Candidate& c : candidates) {
@@ -1215,6 +1356,10 @@ namespace CGAL {
 
         const FT d = grid_.get_box_size();
         const FT d2 = CGAL::squared_distance(pa, pb);
+
+        if (d2 == FT(0)) {
+          return candidates;
+        }
 
         // Circle radius from the two-parent construction.
         const FT circle_r = CGAL::sqrt((d * d) - (d2 / FT(4)));
@@ -1252,12 +1397,12 @@ namespace CGAL {
         return candidates;
       }
 
-      bool has_vertex_near(const Point_3& p) const
-      {
+      bool has_vertex_near(const Point_3& p) const {
         const FT tol = grid_.get_box_size() * FT(0.8);
         const FT tol2 = tol * tol;
 
-        for (auto vd : vertices(mesh_)) {
+        auto nearby = nearby_mesh_vertices(p, FT(2.0) * grid_.get_box_size());
+        for (vertex_descriptor vd : nearby) {
           if (CGAL::squared_distance(get(points_pm_, vd), p) < tol2) {
             return true;
           }
@@ -1286,142 +1431,6 @@ namespace CGAL {
         return h_vavb;
       }
 
-      // // returns halfedge in the cycle of h pointing onto v, as well as the number of halfedge traversed
-      // std::pair<halfedge_descriptor, int>
-      // hedge_distance(halfedge_descriptor h, vertex_descriptor v)
-      // {
-      //   halfedge_descriptor start=h;
-      //   int n=0;
-      //   do
-      //   {
-      //     ++n;
-      //     h=next(h, mesh_);
-      //     if(target(h, mesh_)==v)
-      //     {
-      //       return {h, n};
-      //     }
-      //   }
-      //   while(start!=h);
-      //   return {boost::graph_traits<PolygonMesh>::null_halfedge(), -1};
-      // }
-
-      // bool build_graph( vertex_descriptor v0,
-      //                   vertex_descriptor v1,
-      //                   const vertex_descriptor nv,
-      //                   const Vector_3& normal)
-      // {
-      //   std::pair<halfedge_descriptor,halfedge_descriptor> h_cycle;
-      //   auto [h, found] = halfedge(v0, v1, mesh_);
-      //   if (!found)
-      //   {
-      //     std::vector<std::pair<halfedge_descriptor, halfedge_descriptor>> h_cycles;
-      //     // extract boundary cycles containing v0
-      //     for (halfedge_descriptor h : halfedges_around_target(v0, mesh_))
-      //     {
-      //       if (face(h, mesh_)==boost::graph_traits<PolygonMesh>::null_face())
-      //       {
-      //         // check if v1 is in the cycle, and if it's the case return the smallest path
-      //         auto [hv1, n1] = hedge_distance(h, v1);
-      //         if (n1!=-1) {
-      //           auto [hv0, n0] = hedge_distance(hv1, v0);
-      //           if (n0<n1)
-      //             h_cycles.emplace_back(next(hv1,mesh_), hv0);
-      //           else
-      //             h_cycles.emplace_back(next(hv0,mesh_), hv1);
-      //         }
-      //       }
-      //     }
-
-      //     if (h_cycles.empty()) {
-      //       std::cout << "No boundary cycle found for vertices " << v0 << " and " << v1 << ".\n";
-      //       return false;
-      //     }
-
-      //     CGAL_assertion(h_cycles.size() <= 2);
-      //     h_cycle = h_cycles.back();
-
-      //     Vector_3 patch_normal = CGAL::NULL_VECTOR;
-      //     halfedge_descriptor hcur = h_cycle.first;
-      //     const Point_3 p2 = get(points_pm_, nv);
-      //     do {
-      //         const Point_3 a = get(points_pm_, source(hcur, mesh_));
-      //         const Point_3 b = get(points_pm_, target(hcur, mesh_));
-
-      //         patch_normal += CGAL::cross_product(a - p2, b - p2);
-
-      //         if (hcur == h_cycle.second)
-      //             break;
-
-      //         hcur = next(hcur, mesh_);
-
-      //     } while (true);
-
-      //     if (patch_normal * normal < FT(0))
-      //     {
-      //         h_cycle = {
-      //             opposite(h_cycle.second, mesh_),
-      //             opposite(h_cycle.first, mesh_)
-      //         };
-      //     }
-
-      //   }
-      //   else {
-      //     halfedge_descriptor oh=opposite(h, mesh_);
-
-      //     const Point_3 p0 = get(points_pm_, v0);
-      //     const Point_3 p1 = get(points_pm_, v1);
-      //     const Point_3 p2 = get(points_pm_, nv);
-      //     const Vector_3 tri_normal = CGAL::cross_product(p0 - p2, p1 - p2);
-
-      //     if (tri_normal * normal > FT(0))
-      //       h_cycle = {h, h};
-      //     else {
-      //       h_cycle = {oh, oh};
-      //     }
-      //   }
-
-      //   CGAL_assertion(
-      //     (v0==source(h_cycle.first, mesh_) && v1==target(h_cycle.second, mesh_)) ||
-      //     (v1==source(h_cycle.first, mesh_) && v0==target(h_cycle.second, mesh_))
-      //   );
-
-      //   if (source(h_cycle.first, mesh_)!=v0) {
-      //     std::swap(v0,v1);
-      //   }
-
-      //   CGAL_assertion(source(h_cycle.first,mesh_)==v0);
-      //   CGAL_assertion(target(h_cycle.second,mesh_)==v1);
-
-      //   // Create or reuse v0-nv
-      //   auto [h0, found0] = halfedge(v0, nv, mesh_);
-      //   auto [h1, found1] = halfedge(v1, nv, mesh_);
-
-      //   halfedge_descriptor h_v0vn = found0 ? h0 : create_halfedge(v0, nv);   // v0 -> nv
-      //   halfedge_descriptor h_vnv0 = opposite(h_v0vn, mesh_);      // nv -> v0
-
-      //   // Create or reuse nv-v1
-      //   halfedge_descriptor h_v1vn = found1 ? h1 : create_halfedge(v1, nv);   // v1 -> nv
-      //   halfedge_descriptor h_vnv1  = opposite(h_v1vn, mesh_);      // nv -> v1
-
-      //   // auto f = add_face(mesh_);
-
-      //   halfedge_descriptor hp = prev(h_cycle.first, mesh_);
-      //   halfedge_descriptor hn = next(h_cycle.second, mesh_);
-
-      //   set_next(h_v1vn, h_vnv0, mesh_);
-      //   set_next(h_vnv0, h_cycle.first, mesh_);
-      //   set_next(h_cycle.second, h_v1vn, mesh_);
-      //   // for (halfedge_descriptor hl : halfedges_around_face(h_vnv0, mesh_))
-      //   //   set_face(hl, f, mesh_);
-      //   // set_halfedge(f, h_cycle.first, mesh_);
-      //   // close the opposite
-      //   set_next(hp, h_v0vn, mesh_);
-      //   set_next(h_vnv1, hn, mesh_);
-      //   set_next(h_v0vn, h_vnv1, mesh_);
-
-      //   return true;
-      // }
-
       bool build_graph(vertex_descriptor v0,
                         vertex_descriptor v1,
                         vertex_descriptor nv,
@@ -1436,8 +1445,8 @@ namespace CGAL {
         const Point_3 pn = get(points_pm_, nv);
 
         Vector_3 plane_normal = grid_.box_normal(p0) + grid_.box_normal(p1);
-        if (plane_normal == CGAL::NULL_VECTOR) plane_normal = normal;
-        if (plane_normal == CGAL::NULL_VECTOR) return false;
+        if (plane_normal == CGAL::NULL_VECTOR) 
+          plane_normal = normal;
 
         const double pn2 = CGAL::to_double(plane_normal.squared_length());
         if (pn2 <= 0.0) return false;
@@ -1461,8 +1470,8 @@ namespace CGAL {
         {
           std::vector<std::pair<double, halfedge_descriptor>> out;
           const Point_3 pv = get(points_pm_, v);
-          for (halfedge_descriptor h : halfedges(mesh_)) {
-            if (source(h, mesh_) != v) continue;
+          for (halfedge_descriptor h : halfedges_around_source(v, mesh_)) {
+            CGAL_assertion(source(h, mesh_) == v);
             const vertex_descriptor t = target(h, mesh_);
             if (t == v) continue;
             out.emplace_back(angle_of(pv, get(points_pm_, t)), h);
@@ -1506,21 +1515,31 @@ namespace CGAL {
         if (target(g1, mesh_) != v1) g1 = opposite(g1, mesh_);
         if (target(g2, mesh_) != v1) g2 = opposite(g2, mesh_);
 
-        halfedge_descriptor og1 = opposite(g1, mesh_); // leaves v1
-        halfedge_descriptor og2 = opposite(g2, mesh_); // leaves v1
+        CGAL_assertion(next(g1, mesh_) == opposite(g2, mesh_) || next(g2, mesh_) == opposite(g1, mesh_));
+        CGAL_assertion(next(h1, mesh_) == opposite(h2, mesh_) || next(h2, mesh_) == opposite(h1, mesh_));
 
         halfedge_descriptor h_v0nv = create_halfedge(v0, nv);
         halfedge_descriptor h_nvv0 = opposite(h_v0nv, mesh_);
         halfedge_descriptor h_v1nv = create_halfedge(v1, nv);
         halfedge_descriptor h_nvv1 = opposite(h_v1nv, mesh_);
 
-        set_next(h1,     h_v0nv, mesh_);
-        set_next(h_v0nv, h_nvv1, mesh_);
-        set_next(h_nvv1, opposite(g1, mesh_), mesh_);
+        // set_next(h1,     h_v0nv, mesh_);
+        // set_next(h_v0nv, h_nvv1, mesh_);
+        // set_next(h_nvv1, opposite(g1, mesh_), mesh_);
 
-        set_next(g2,     h_v1nv, mesh_);
+        // set_next(g2,     h_v1nv, mesh_);
+        // set_next(h_v1nv, h_nvv0, mesh_);
+        // set_next(h_nvv0, opposite(h2, mesh_), mesh_);
+
+        set_next(g1, h_v1nv, mesh_);
         set_next(h_v1nv, h_nvv0, mesh_);
-        set_next(h_nvv0, opposite(h2, mesh_), mesh_);
+        set_next(h_nvv0, opposite(h1, mesh_), mesh_);
+
+        set_next(h2, h_v0nv, mesh_);
+        set_next(h_v0nv, h_nvv1, mesh_);
+        set_next(h_nvv1, opposite(g2, mesh_), mesh_);
+
+        CGAL_assertion(mesh_.is_valid(true));
 
         return true;
       }
@@ -1585,13 +1604,10 @@ namespace CGAL {
         };
 
         // Set this to false if you want the opposite orientation.
-        const bool want_same_orientation_as_reference = false;
+        const bool want_same_orientation_as_reference = true;
 
-        for (halfedge_descriptor start : halfedges(mesh_))
-        {
-          if (start == null_h) {
-            continue;
-          }
+        for (halfedge_descriptor start : halfedges(mesh_)) {
+          CGAL_assertion(start != null_h);
 
           if (face(start, mesh_) != null_f) {
             continue;
@@ -1606,13 +1622,13 @@ namespace CGAL {
 
           halfedge_descriptor h = start;
           const std::size_t max_steps = num_halfedges(mesh_) + 1;
+          // const std::size_t max_steps = 50; // If cycle is too long, it is considered a hole.
           bool closed = false;
+
 
           for (std::size_t i = 0; i < max_steps; ++i)
           {
-            if (h == null_h) {
-              break;
-            }
+            CGAL_assertion(h != null_h);
 
             if (face(h, mesh_) != null_f) {
               break;
@@ -1625,9 +1641,7 @@ namespace CGAL {
             cycle.push_back(h);
 
             h = next(h, mesh_);
-            if (h == null_h) {
-              break;
-            }
+            CGAL_assertion(h != null_h);
 
             if (h == start) {
               closed = true;
@@ -1684,6 +1698,19 @@ namespace CGAL {
 
         // Use the box normal at the candidate position as the projection direction.
         Vector_3 n = grid_.box_normal(cand.position);
+        // double len2 = CGAL::to_double(n.squared_length());
+        // if (len2 <= 0.0) {
+        //   n = cand.normal;
+        //   n = n / CGAL::sqrt(n.squared_length());
+        // }
+        // if (n == CGAL::NULL_VECTOR) {
+        //   Vector_3 n1 = get(normals_pm_, cand.first);
+        //   Vector_3 n2 = get(normals_pm_, cand.second);
+        //   n = (n1 + n2) / FT(2);
+        //   n = n / CGAL::sqrt(n.squared_length());
+        // }
+
+        // CGAL_assertion(n != CGAL::NULL_VECTOR);
 
         auto local_frame = grid_.compute_local_tangent_frame(n);
         Vector_3 u = local_frame[0];
@@ -1704,58 +1731,51 @@ namespace CGAL {
         const Point_2 new_e2_s = B;
         const Point_2 new_e2_t = C;
 
-        for (auto h : halfedges(mesh_)) {
-          vertex_descriptor s = source(h, mesh_);
-          vertex_descriptor t = target(h, mesh_);
+        auto nearby = nearby_mesh_vertices(pc, FT(4.0) * grid_.get_box_size());
+        for (auto v : nearby) {
+          for (halfedge_descriptor h : halfedges_around_target(v, mesh_)) {
+            vertex_descriptor s = source(h, mesh_);
+            vertex_descriptor t = target(h, mesh_);
 
-          // Ignore edges incident to the candidate's parents.
-          // if (s == cand.first || s == cand.second ||
-          //     t == cand.first || t == cand.second) {
-          //   continue;
-          // }
+            const Point_3 q0 = get(points_pm_, s);
+            const Point_3 q1 = get(points_pm_, t);
 
-          const Point_3 q0 = get(points_pm_, s);
-          const Point_3 q1 = get(points_pm_, t);
+            if (CGAL::squared_distance(q0, pc) >= 4*grid_.get_box_size()*grid_.get_box_size() ||
+                CGAL::squared_distance(q1, pc) >= 4*grid_.get_box_size()*grid_.get_box_size()) {
+              continue;
+            }
 
-          if (CGAL::squared_distance(q0, pc) >= 4*grid_.get_box_size()*grid_.get_box_size() ||
-              CGAL::squared_distance(q1, pc) >= 4*grid_.get_box_size()*grid_.get_box_size()) {
-            continue;
-          }
+            const Point_2 E0 = project(q0, pc);
+            const Point_2 E1 = project(q1, pc);
 
-          const Point_2 E0 = project(q0, pc);
-          const Point_2 E1 = project(q1, pc);
+            auto strictly_intersect_2d = [&](const Point_2& a,
+                                            const Point_2& b,
+                                            const Point_2& c,
+                                            const Point_2& d) -> bool {
+              const CGAL::Segment_2<Kernel> s1(a, b);
+              const CGAL::Segment_2<Kernel> s2(c, d);
 
-          auto strictly_intersect_2d = [&](const Point_2& a,
-                                          const Point_2& b,
-                                          const Point_2& c,
-                                          const Point_2& d) -> bool {
-            const CGAL::Segment_2<Kernel> s1(a, b);
-            const CGAL::Segment_2<Kernel> s2(c, d);
+              auto inter = CGAL::intersection(s1, s2);
+              if (!inter) {
+                return false;
+              }
 
-            if (!CGAL::do_intersect(s1, s2)) {
+              Point_2 ip;
+              if (CGAL::assign(ip, *inter)) {
+                // Allow touching at endpoints.
+                return !(ip == a || ip == b || ip == c || ip == d);
+              }
+
+              // If the intersection is not a point, it is an overlapping segment.
+              return true;
+            };
+
+            if (strictly_intersect_2d(new_e1_s, new_e1_t, E0, E1)) {
               return false;
             }
-
-            auto inter = CGAL::intersection(s1, s2);
-            if (!inter) {
+            if (strictly_intersect_2d(new_e2_s, new_e2_t, E0, E1)) {
               return false;
             }
-
-            Point_2 ip;
-            if (CGAL::assign(ip, *inter)) {
-              // Allow touching at endpoints.
-              return !(ip == a || ip == b || ip == c || ip == d);
-            }
-
-            // If the intersection is not a point, it is an overlapping segment.
-            return true;
-          };
-
-          if (strictly_intersect_2d(new_e1_s, new_e1_t, E0, E1)) {
-            return false;
-          }
-          if (strictly_intersect_2d(new_e2_s, new_e2_t, E0, E1)) {
-            return false;
           }
         }
 
@@ -1763,48 +1783,34 @@ namespace CGAL {
       }
 
       std::size_t incident_vertex_degree(vertex_descriptor v) const {
-        std::size_t deg = 0;
-
-        for (auto e : edges(mesh_)) {
-          halfedge_descriptor h = halfedge(e, mesh_);
-          const vertex_descriptor t = target(h, mesh_);
-
-          if (t == v) {
-            ++deg;
-          }
-        }
-
+        std::size_t deg = halfedges_around_source(v, mesh_).size();
         return deg;
       }
 
       bool walk_finds_other_parent_from_vertex(vertex_descriptor start_v,
                                                vertex_descriptor target_v) const {
 
-        halfedge_descriptor h0 = halfedge(start_v, mesh_);
-        if (h0 == boost::graph_traits<PolygonMesh>::null_halfedge()) {
-          return false;
-        }
-
-        halfedge_descriptor h = h0;
-        for (std::size_t i = 0; i < window_size_; ++i) {
-          const vertex_descriptor s = source(h, mesh_);
-          const vertex_descriptor t = target(h, mesh_);
-
-          if (s == target_v || t == target_v) {
-            return true;
-          }
-
-          const halfedge_descriptor o = opposite(h, mesh_);
-          if (o == boost::graph_traits<PolygonMesh>::null_halfedge()) {
+        for (halfedge_descriptor h0 : halfedges_around_source(start_v, mesh_)) {
+          if (h0 == boost::graph_traits<PolygonMesh>::null_halfedge()) {
             return false;
           }
 
-          const halfedge_descriptor n = next(o, mesh_);
-          if (n == boost::graph_traits<PolygonMesh>::null_halfedge()) {
-            return false;
-          }
+          halfedge_descriptor h = h0;
+          for (std::size_t i = 0; i < window_size_; ++i) {
+            const vertex_descriptor s = source(h, mesh_);
+            const vertex_descriptor t = target(h, mesh_);
 
-          h = n;
+            if (s == target_v || t == target_v) {
+              return true;
+            }
+
+            const halfedge_descriptor n = next(h, mesh_);
+            if (n == boost::graph_traits<PolygonMesh>::null_halfedge()) {
+              return false;
+            }
+
+            h = n;
+          }
         }
 
         return false;
@@ -1818,11 +1824,12 @@ namespace CGAL {
       }
 
       int compute_priority(const Candidate& cand) const {
+        
         if (incident_vertex_degree(cand.first) == 1 || incident_vertex_degree(cand.second) == 1) {
           return 2; // highest priority
         }
 
-        else if (joins_two_borders(cand)) {
+        if (joins_two_borders(cand)) {
           return 1; // medium priority
         }
 
@@ -1846,7 +1853,8 @@ namespace CGAL {
       std::array<std::deque<Candidate>, NUM_PRIORITIES> candidate_queues_; // candidate_queues_[p] contains all candidates with priority p
 
       const std::size_t window_size_ = 8;
-      // in the class members
+
+      std::vector<std::vector<vertex_descriptor>> mesh_vertices_per_cell_;
   };
 
 } // namespace CGAL
