@@ -322,12 +322,16 @@ target_link_libraries(testBVHV2 PRIVATE CUDA::cudart ${SHARED_LINK_LIBS})
 # TARGET 10: Main Application (KernelBVHController Launcher)
 # ====================================================================
 
+# 1. Find Readline library installed on system (Fedora)
+find_package(PkgConfig REQUIRED)
+pkg_check_modules(READLINE REQUIRED readline)
+
 set_source_files_properties(apps/mainApplication.cpp PROPERTIES LANGUAGE CUDA)
 
 add_executable(MainApp 
     apps/mainApplication.cpp 
     src/GPUIntersector/KenelBVHController.cu
-    src/testBVH/crossCheck.cu
+    src/GPUIntersector/crossCheckFlexible.cu
     src/testBVH/rapidDescendKernel.cu
     src/testBVH/batchedCrossIntersectionV2.cu
     src/testBVH/DualTreeStep.cu
@@ -362,6 +366,12 @@ target_include_directories(MainApp PRIVATE
     ${CUBQL_ROOT}
     ${CUBQL_ROOT}/samples/common
     ${CUDAToolkit_INCLUDE_DIRS}
+    ${READLINE_INCLUDE_DIRS}                               # Readline headers path
 )
 
-target_link_libraries(MainApp PRIVATE CUDA::cudart ${SHARED_LINK_LIBS})
+# 2. Append readline (or ${READLINE_LIBRARIES}) to target_link_libraries
+target_link_libraries(MainApp PRIVATE 
+    CUDA::cudart 
+    ${SHARED_LINK_LIBS}
+    ${READLINE_LIBRARIES}                                   # Links libreadline
+)

@@ -68,6 +68,7 @@ std::vector<cuBQL::Triangle> processMeshLayout(const Mesh& mesh, std::vector<fac
     return hMeshLayout;
 }
 
+
 int main(int ac, char** av) {
     if (ac < 7) {
         std::cout << "Usage: " << av[0] << " <meshA.off> <maxCellSizeA> <meshB.off> <maxCellSizeB> <batchmultiplier> <intersectionRatio>\n";

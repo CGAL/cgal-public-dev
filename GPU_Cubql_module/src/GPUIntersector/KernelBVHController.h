@@ -10,6 +10,7 @@
 #include "../CPU/CgalDefinitions.h"
 #include "../testBVH/ExecutionStats.h"
 
+
 class KernelBVHController {
 public:
     KernelBVHController();
@@ -34,6 +35,9 @@ public:
     // 3. Deallocates all GPU resources safely
     void cleanup();
 
+    // Updates translation relative to original position recorded at construct()
+    void setTranslation(float xB, float yB, float zB);
+
 private:
     // Configuration Parameters
     int m_leafThreshold = 0;
@@ -43,6 +47,11 @@ private:
     int m_numTrianglesB = 0;
     int m_numVertsA = 0;
     int m_numVertsB = 0;
+
+    // Stores total applied translation offset relative to original mesh state
+    float shiftX = 0.0f;
+    float shiftY = 0.0f;
+    float shiftZ = 0.0f;
 
     Mesh* m_meshAcpu = nullptr;
     Mesh* m_meshBcpu = nullptr;
@@ -59,6 +68,15 @@ private:
     cuBQL::Triangle* m_dMeshB = nullptr;
     float2*          m_dMeshMetricsB = nullptr;
     cuBQL::box3f*    m_dBoxesB = nullptr;
+
+    // Persistent Raw GPU Buffers for Vertex-Level Shifting & Re-Assembly
+    float3*          m_dVertsB = nullptr;       // Active transformed vertices
+    float3*          m_dVertsBOrig = nullptr;   // Pristine baseline vertices (shift target)
+    uint3*           m_dIndicesB = nullptr;     // Triangle vertex indices
+    float*           m_dVertErrorsB = nullptr;  // Downcast/drift precision error bounds
+
+    // Pristine baseline CGAL host points (for zero-accumulation CPU translations)
+    std::vector<Point3> m_origPointsB;
 
     // BVH Structures (cuBQL v2_2 format)
     cuBQL::bvh3f m_bvhA;
