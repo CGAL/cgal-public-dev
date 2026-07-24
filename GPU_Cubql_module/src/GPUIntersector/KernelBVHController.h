@@ -82,14 +82,20 @@ private:
     cuBQL::bvh3f m_bvhA;
     cuBQL::bvh3f m_bvhB;
 
+    uint32_t m_hOutMarkedCountA_Full = 0;
+    uint32_t m_hOutMarkedCountB_Full = 0;
+    thrust::device_vector<uint32_t> m_dMarkedNodeIndicesA_Full;
+    thrust::device_vector<uint32_t> m_dMarkedNodeIndicesB_Full;
+
     // Persistent Target & Extraction Counts
-    uint32_t m_hOutMarkedCountA = 0;
-    uint32_t m_hOutMarkedCountB = 0;
+    //uint32_t m_hOutMarkedCountA = 0;
+   // uint32_t m_hOutMarkedCountB = 0;
+
 
     // Persistent Thrust Vectors
-    thrust::device_vector<uint32_t> m_dMarkedNodeIndicesA;
+   // thrust::device_vector<uint32_t> m_dMarkedNodeIndicesA;
     thrust::device_vector<uint32_t> m_dNodeDescendantCountsA;
-    thrust::device_vector<uint32_t> m_dMarkedNodeIndicesB;
+   // thrust::device_vector<uint32_t> m_dMarkedNodeIndicesB;
     thrust::device_vector<uint32_t> m_dNodeDescendantCountsB;
 
     thrust::device_vector<uint32_t> m_dReverseMapB;

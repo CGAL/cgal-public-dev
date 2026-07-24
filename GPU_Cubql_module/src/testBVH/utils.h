@@ -16,6 +16,14 @@ __global__ void assembleTrianglesKernel(cuBQL::Triangle* dMesh,
                                         const uint3* dIndices,
                                         int numTriangles);
 
+__global__ void assembleTrianglesKernelTranslated(cuBQL::Triangle* dMesh,
+                                                  float2* dMetrics,
+                                                  const float3* dVerts,
+                                                  const float* dVertErrors,
+                                                  const uint3* dIndices,
+                                                  int numTriangles, 
+                                                  bool isTranslated);
+
 __global__ void generateBoxes(cuBQL::box3f* boxes, 
                               const cuBQL::Triangle* tris, 
                               int N);
@@ -25,7 +33,7 @@ __global__ void populateReverseMapBKernel(uint32_t* d_reverseMapB,
                                            uint32_t h_outMarkedCountB);
 
 // -----------------------------------------------------------------------------
-// Helper Launch Wrappers (Optional, for cleaner host code)
+// Helper Launch Wrappers
 // -----------------------------------------------------------------------------
 
 void launchAssembleTriangles(cuBQL::Triangle* dMesh,

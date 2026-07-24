@@ -86,85 +86,72 @@ __global__ void translateMeshAndBoxesKernel(
 }
 
 __global__ void translateVerticesKernel(
-    float3* dVertsOut, 
-    const float3* dVertsOrig, 
-    int numVerts, 
-    float targetX, float targetY, float targetZ) 
-{
-    int idx = threadIdx.x + blockIdx.x * blockDim.x;
-    if (idx >= numVerts) return;
+    float3* dVertsOut, const float3* dVertsOrig, int numVerts, float targetX, float targetY, float targetZ) {
+  int idx = threadIdx.x + blockIdx.x * blockDim.x;
+  if(idx >= numVerts)
+    return;
 
-    float3 v = dVertsOrig[idx];
-    dVertsOut[idx] = make_float3(v.x + targetX, v.y + targetY, v.z + targetZ);
+  float3 v = dVertsOrig[idx];
+  dVertsOut[idx] = make_float3(v.x + targetX, v.y + targetY, v.z + targetZ);
 }
 
-void translateCgalMeshB(Mesh* mesh, float dx, float dy, float dz) {
-  if (!mesh) return;
+void translateCgalMeshB(Mesh* mesh, const std::vector<Point3>& origPoints, float xB, float yB, float zB) {
+  if(!mesh || origPoints.empty())
+    return;
 
-  // Extract underlying point property map
   auto pmap = mesh->points();
   const size_t numPoints = mesh->num_vertices();
 
   tbb::parallel_for(tbb::blocked_range<size_t>(0, numPoints),
-    [mesh, &pmap, dx, dy, dz](const tbb::blocked_range<size_t>& range) {
-      for (size_t i = range.begin(); i != range.end(); ++i) {
-        Mesh::Vertex_index vd(static_cast<uint32_t>(i));
-        if (!mesh->is_removed(vd)) {
-          const auto& p = pmap[vd];
-          pmap[vd] = Point3(p.x() + dx, p.y() + dy, p.z() + dz);
-        }
-      }
-    });
+                    [mesh, &pmap, &origPoints, xB, yB, zB](const tbb::blocked_range<size_t>& range) {
+                      for(size_t i = range.begin(); i != range.end(); ++i) {
+                        Mesh::Vertex_index vd(static_cast<uint32_t>(i));
+                        if(!mesh->is_removed(vd)) {
+                          // Compute absolute offset directly from pristine baseline point
+                          const Point3& pOrig = origPoints[i];
+                          pmap[vd] = Point3(pOrig.x() + xB, pOrig.y() + yB, pOrig.z() + zB);
+                        }
+                      }
+                    });
 }
 
 void KernelBVHController::setTranslation(float xB, float yB, float zB) {
-  // 1. Quick exit if offset hasn't changed
-  if (xB == shiftX && yB == shiftY && zB == shiftZ) return;
+  // 1. Quick exit if target translation hasn't changed
+  if(xB == shiftX && yB == shiftY && zB == shiftZ)
+    return;
 
   bool gpuWorkQueued = false;
 
-  // 2. LAUNCH GPU PIPELINE (Asynchronous on m_stream)
-  if (m_numVertsB > 0 && m_dVertsB && m_dVertsBOrig) {
+  // 2. GPU PIPELINE (Absolute shift from m_dVertsBOrig)
+  if(m_numVertsB > 0 && m_dVertsB && m_dVertsBOrig) {
     int block = 256;
 
-    // Step A: Shift raw vertices directly from pristine baseline
     int gridVerts = cuBQL::divRoundUp(m_numVertsB, block);
-    translateVerticesKernel<<<gridVerts, block, 0, m_stream>>>(
-        m_dVertsB, m_dVertsBOrig, m_numVertsB, xB, yB, zB);
+    translateVerticesKernel<<<gridVerts, block, 0, m_stream>>>(m_dVertsB, m_dVertsBOrig, m_numVertsB, xB, yB, zB);
 
-    // Step B: Re-run assembly & metric recalculation on updated vertices
     int gridTris = cuBQL::divRoundUp(m_numTrianglesB, block);
-    assembleTrianglesKernel<<<gridTris, block, 0, m_stream>>>(
-        m_dMeshB, m_dMeshMetricsB, m_dVertsB, m_dVertErrorsB, m_dIndicesB, m_numTrianglesB);
+    assembleTrianglesKernelTranslated<<<gridTris, block, 0, m_stream>>>(
+        m_dMeshB, m_dMeshMetricsB, m_dVertsB, m_dVertErrorsB, m_dIndicesB, m_numTrianglesB, true);
 
-    // Step C: Re-generate AABBs from assembled triangles
-    generateBoxes<<<gridTris, block, 0, m_stream>>>(
-        m_dBoxesB, m_dMeshB, m_numTrianglesB);
+    generateBoxes<<<gridTris, block, 0, m_stream>>>(m_dBoxesB, m_dMeshB, m_numTrianglesB);
 
-    // Step D: Refit BVH tree
     cuBQL::cuda::refit(m_bvhB, m_dBoxesB, m_stream);
 
     gpuWorkQueued = true;
   }
 
-  // 3. CPU CGAL SHIFT (Runs concurrently on CPU using TBB)
-  if (m_meshBcpu) {
-    float dx = xB - shiftX;
-    float dy = yB - shiftY;
-    float dz = zB - shiftZ;
-    translateCgalMeshB(m_meshBcpu, dx, dy, dz);
+  // 3. CPU CGAL SHIFT (Absolute shift from m_origPointsB)
+  if(m_meshBcpu) {
+    translateCgalMeshB(m_meshBcpu, m_origPointsB, xB, yB, zB);
   }
 
-  // 4. SYNCHRONIZE GPU WORK
-  // FIX: Always sync m_stream if GPU kernels were queued, regardless of m_numVertsB checks,
-  // guaranteeing the BVH refit is complete before any downstream CPU/GPU intersection call.
-  if (gpuWorkQueued) {
+  // 4. SYNCHRONIZE GPU
+  if(gpuWorkQueued) {
     CUBQL_CUDA_CALL(StreamSynchronize(m_stream));
   }
 
-  // Update tracked shift coordinates only after successful execution
-  shiftX = xB; 
-  shiftY = yB; 
+  shiftX = xB;
+  shiftY = yB;
   shiftZ = zB;
 }
 
@@ -187,7 +174,7 @@ void KernelBVHController::construct(Mesh& meshAcpu,
   if(numTrianglesA <= 0 || numTrianglesB <= 0)
     return;
 
-  // IMPORTANT: Clean up any old allocations if construct() is called again
+  // Cleanup old allocations if reconstruct is called
   cleanup();
 
   m_meshAcpu = &meshAcpu;
@@ -200,7 +187,6 @@ void KernelBVHController::construct(Mesh& meshAcpu,
   m_levelB = levelB;
   m_leafThreshold = leafThreshold;
 
-  // Reset shift trackers for newly constructed mesh pair
   shiftX = 0.0f;
   shiftY = 0.0f;
   shiftZ = 0.0f;
@@ -209,15 +195,29 @@ void KernelBVHController::construct(Mesh& meshAcpu,
   buildConfig.makeLeafThreshold = m_leafThreshold;
 
   // --------------------------------------------------------------------
-  // 1. ALLOCATION AND MESH ASSEMBLY (DEVICE STAGING)
+  // CUDA TIMING EVENTS (Non-blocking GPU timing)
   // --------------------------------------------------------------------
-  double tAllocStart = cuBQL::getCurrentTime();
+  cudaEvent_t evAllocStart, evAllocStop;
+  cudaEvent_t evBuildAStart, evBuildAStop;
+  cudaEvent_t evBuildBStart, evBuildBStop;
 
-  // Mesh A: Temporary staging buffers
+  CUBQL_CUDA_CALL(EventCreate(&evAllocStart));
+  CUBQL_CUDA_CALL(EventCreate(&evAllocStop));
+  CUBQL_CUDA_CALL(EventCreate(&evBuildAStart));
+  CUBQL_CUDA_CALL(EventCreate(&evBuildAStop));
+  CUBQL_CUDA_CALL(EventCreate(&evBuildBStart));
+  CUBQL_CUDA_CALL(EventCreate(&evBuildBStop));
+
+  CUBQL_CUDA_CALL(EventRecord(evAllocStart, m_stream));
+
+  // --------------------------------------------------------------------
+  // 1. ASYNCHRONOUS DEVICE ALLOCATION & STAGING (GPU QUEUE)
+  // --------------------------------------------------------------------
   float3* dVertsA = nullptr;
   uint3* dIndicesA = nullptr;
   float* dVertErrorsA = nullptr;
 
+  // Mesh A Staging
   CUBQL_CUDA_CALL(MallocAsync((void**)&dVertsA, m_numVertsA * sizeof(float3), m_stream));
   CUBQL_CUDA_CALL(MemcpyAsync(dVertsA, hVertsA, m_numVertsA * sizeof(float3), cudaMemcpyHostToDevice, m_stream));
 
@@ -230,18 +230,17 @@ void KernelBVHController::construct(Mesh& meshAcpu,
         MemcpyAsync(dVertErrorsA, hVertErrorsA, m_numVertsA * sizeof(float), cudaMemcpyHostToDevice, m_stream));
   }
 
-  // Mesh B: Persistent member buffers
+  // Mesh B Persistent Buffers
   CUBQL_CUDA_CALL(MallocAsync((void**)&m_dVertsB, m_numVertsB * sizeof(float3), m_stream));
   CUBQL_CUDA_CALL(MemcpyAsync(m_dVertsB, hVertsB, m_numVertsB * sizeof(float3), cudaMemcpyHostToDevice, m_stream));
 
-  // Store pristine baseline vertices
   CUBQL_CUDA_CALL(MallocAsync((void**)&m_dVertsBOrig, m_numVertsB * sizeof(float3), m_stream));
   CUBQL_CUDA_CALL(MemcpyAsync(m_dVertsBOrig, hVertsB, m_numVertsB * sizeof(float3), cudaMemcpyHostToDevice, m_stream));
 
   CUBQL_CUDA_CALL(MallocAsync((void**)&m_dIndicesB, m_numTrianglesB * sizeof(uint3), m_stream));
-  CUBQL_CUDA_CALL(MemcpyAsync(m_dIndicesB, hIndicesB, m_numTrianglesB * sizeof(uint3), cudaMemcpyHostToDevice, m_stream));
+  CUBQL_CUDA_CALL(
+      MemcpyAsync(m_dIndicesB, hIndicesB, m_numTrianglesB * sizeof(uint3), cudaMemcpyHostToDevice, m_stream));
 
-  // FIX 1: Nullify persistent pointer before conditional allocation!
   m_dVertErrorsB = nullptr;
   if(hVertErrorsB) {
     CUBQL_CUDA_CALL(MallocAsync((void**)&m_dVertErrorsB, m_numVertsB * sizeof(float), m_stream));
@@ -249,7 +248,7 @@ void KernelBVHController::construct(Mesh& meshAcpu,
         MemcpyAsync(m_dVertErrorsB, hVertErrorsB, m_numVertsB * sizeof(float), cudaMemcpyHostToDevice, m_stream));
   }
 
-  // Allocate persistent triangle & box buffers
+  // Mesh Primitive & Metric Buffers
   CUBQL_CUDA_CALL(MallocAsync((void**)&m_dMeshA, m_numTrianglesA * sizeof(cuBQL::Triangle), m_stream));
   CUBQL_CUDA_CALL(MallocAsync((void**)&m_dMeshMetricsA, m_numTrianglesA * sizeof(float2), m_stream));
   CUBQL_CUDA_CALL(MallocAsync((void**)&m_dBoxesA, m_numTrianglesA * sizeof(cuBQL::box3f), m_stream));
@@ -258,7 +257,7 @@ void KernelBVHController::construct(Mesh& meshAcpu,
   CUBQL_CUDA_CALL(MallocAsync((void**)&m_dMeshMetricsB, m_numTrianglesB * sizeof(float2), m_stream));
   CUBQL_CUDA_CALL(MallocAsync((void**)&m_dBoxesB, m_numTrianglesB * sizeof(cuBQL::box3f), m_stream));
 
-  // Initial Assembly
+  // Launch Assembly Kernels
   assembleTrianglesKernel<<<cuBQL::divRoundUp(m_numTrianglesA, 256), 256, 0, m_stream>>>(
       m_dMeshA, m_dMeshMetricsA, dVertsA, dVertErrorsA, dIndicesA, m_numTrianglesA);
   generateBoxes<<<cuBQL::divRoundUp(m_numTrianglesA, 256), 256, 0, m_stream>>>(m_dBoxesA, m_dMeshA, m_numTrianglesA);
@@ -267,60 +266,91 @@ void KernelBVHController::construct(Mesh& meshAcpu,
       m_dMeshB, m_dMeshMetricsB, m_dVertsB, m_dVertErrorsB, m_dIndicesB, m_numTrianglesB);
   generateBoxes<<<cuBQL::divRoundUp(m_numTrianglesB, 256), 256, 0, m_stream>>>(m_dBoxesB, m_dMeshB, m_numTrianglesB);
 
-  CUBQL_CUDA_CALL(StreamSynchronize(m_stream));
-  stats.initialAllocAndCopyMs = (cuBQL::getCurrentTime() - tAllocStart) * 1000.0;
-
-  // Free Mesh A's temporary staging buffers
+  // Free staging memory asynchronously on stream
   CUBQL_CUDA_CALL(FreeAsync(dVertsA, m_stream));
   CUBQL_CUDA_CALL(FreeAsync(dIndicesA, m_stream));
   if(dVertErrorsA) {
     CUBQL_CUDA_CALL(FreeAsync(dVertErrorsA, m_stream));
   }
 
+  CUBQL_CUDA_CALL(EventRecord(evAllocStop, m_stream));
+
   // --------------------------------------------------------------------
-  // 2. THRUST DEVICE VECTOR INITIALIZATION
+  // 2. PARALLEL CPU TASK (OVERLAPPED WITH GPU QUEUE EXECUTION)
+  // --------------------------------------------------------------------
+  // While the GPU runs allocations and triangle assembly in m_stream,
+  // the CPU concurrently extracts pristine CGAL points using TBB threads.
+  if(m_meshBcpu) {
+    size_t numVerts = m_meshBcpu->num_vertices();
+    m_origPointsB.resize(numVerts);
+    auto pmap = m_meshBcpu->points();
+
+    tbb::parallel_for(tbb::blocked_range<size_t>(0, numVerts), [&pmap, this](const tbb::blocked_range<size_t>& range) {
+      for(size_t i = range.begin(); i != range.end(); ++i) {
+        Mesh::Vertex_index vd(static_cast<uint32_t>(i));
+        m_origPointsB[i] = pmap[vd];
+      }
+    });
+  }
+
+  // --------------------------------------------------------------------
+  // 3. THRUST DEVICE VECTOR INITIALIZATION
   // --------------------------------------------------------------------
   double tThrustInitStart = cuBQL::getCurrentTime();
 
   uint32_t maxPossibleNodesA = 2 * m_numTrianglesA;
   uint32_t maxPossibleNodesB = 2 * m_numTrianglesB;
 
-  m_dMarkedNodeIndicesA.resize(maxPossibleNodesA, 0);
+  m_dMarkedNodeIndicesA_Full.resize(maxPossibleNodesA, 0);
   m_dNodeDescendantCountsA.resize(maxPossibleNodesA, 0);
-  m_dMarkedNodeIndicesB.resize(maxPossibleNodesB, 0);
+  m_dMarkedNodeIndicesB_Full.resize(maxPossibleNodesB, 0);
   m_dNodeDescendantCountsB.resize(maxPossibleNodesB, 0);
   m_dReverseMapB.resize(maxPossibleNodesB, 0);
 
-  // FIX 2: Ensure stream synchronization when Thrust resizes memory under the default stream/policy
-  CUBQL_CUDA_CALL(StreamSynchronize(m_stream));
   stats.thrustInitOverheadMs = (cuBQL::getCurrentTime() - tThrustInitStart) * 1000.0;
 
   // --------------------------------------------------------------------
-  // 3. BUILD & REFIT BVHs
+  // 4. BUILD & REFIT BVHs (ASYNCHRONOUS)
   // --------------------------------------------------------------------
-  double tInitAStart = cuBQL::getCurrentTime();
-
+  CUBQL_CUDA_CALL(EventRecord(evBuildAStart, m_stream));
   cuBQL::gpuBuilder_v2_2::build_custom(m_bvhA, m_dBoxesA, m_numTrianglesA, buildConfig, (uint32_t)m_levelA,
-                                       thrust::raw_pointer_cast(m_dMarkedNodeIndicesA.data()),
-                                       thrust::raw_pointer_cast(m_dNodeDescendantCountsA.data()), &m_hOutMarkedCountA,
+                                       thrust::raw_pointer_cast(m_dMarkedNodeIndicesA_Full.data()),
+                                       thrust::raw_pointer_cast(m_dNodeDescendantCountsA.data()), &m_hOutMarkedCountA_Full,
                                        m_stream, m_memResource);
-
   cuBQL::cuda::refit(m_bvhA, m_dBoxesA, m_stream);
+  CUBQL_CUDA_CALL(EventRecord(evBuildAStop, m_stream));
 
-  CUBQL_CUDA_CALL(StreamSynchronize(m_stream));
-  stats.buildRefitMeshAMs = (cuBQL::getCurrentTime() - tInitAStart) * 1000.0;
-
-  double tInitBStart = cuBQL::getCurrentTime();
-
+  CUBQL_CUDA_CALL(EventRecord(evBuildBStart, m_stream));
   cuBQL::gpuBuilder_v2_2::build_custom(m_bvhB, m_dBoxesB, m_numTrianglesB, buildConfig, (uint32_t)m_levelB,
-                                       thrust::raw_pointer_cast(m_dMarkedNodeIndicesB.data()),
-                                       thrust::raw_pointer_cast(m_dNodeDescendantCountsB.data()), &m_hOutMarkedCountB,
+                                       thrust::raw_pointer_cast(m_dMarkedNodeIndicesB_Full.data()),
+                                       thrust::raw_pointer_cast(m_dNodeDescendantCountsB.data()), &m_hOutMarkedCountB_Full,
                                        m_stream, m_memResource);
-
   cuBQL::cuda::refit(m_bvhB, m_dBoxesB, m_stream);
+  CUBQL_CUDA_CALL(EventRecord(evBuildBStop, m_stream));
 
+  // --------------------------------------------------------------------
+  // 5. SINGLE FINAL SYNCHRONIZATION & METRIC CALCULATION
+  // --------------------------------------------------------------------
   CUBQL_CUDA_CALL(StreamSynchronize(m_stream));
-  stats.buildRefitMeshBMs = (cuBQL::getCurrentTime() - tInitBStart) * 1000.0;
+
+  
+
+  float msAlloc = 0.0f, msBuildA = 0.0f, msBuildB = 0.0f;
+  CUBQL_CUDA_CALL(EventElapsedTime(&msAlloc, evAllocStart, evAllocStop));
+  CUBQL_CUDA_CALL(EventElapsedTime(&msBuildA, evBuildAStart, evBuildAStop));
+  CUBQL_CUDA_CALL(EventElapsedTime(&msBuildB, evBuildBStart, evBuildBStop));
+
+  stats.initialAllocAndCopyMs = static_cast<double>(msAlloc);
+  stats.buildRefitMeshAMs = static_cast<double>(msBuildA);
+  stats.buildRefitMeshBMs = static_cast<double>(msBuildB);
+
+  // Clean up timing events
+  CUBQL_CUDA_CALL(EventDestroy(evAllocStart));
+  CUBQL_CUDA_CALL(EventDestroy(evAllocStop));
+  CUBQL_CUDA_CALL(EventDestroy(evBuildAStart));
+  CUBQL_CUDA_CALL(EventDestroy(evBuildAStop));
+  CUBQL_CUDA_CALL(EventDestroy(evBuildBStart));
+  CUBQL_CUDA_CALL(EventDestroy(evBuildBStop));
 }
 
 void KernelBVHController::runIntersectionPipeline(int batchMultiplier,
@@ -332,6 +362,12 @@ void KernelBVHController::runIntersectionPipeline(int batchMultiplier,
   // RESET STALE RUN DATA FOR MULTIPLE RUN SAFETY
   m_dOutPairsA.clear();
   m_dOutPairsB.clear();
+
+  uint32_t m_hOutMarkedCountA = m_hOutMarkedCountA_Full;
+  uint32_t m_hOutMarkedCountB = m_hOutMarkedCountB_Full;
+  thrust::device_vector<uint32_t> m_dMarkedNodeIndicesA = m_dMarkedNodeIndicesA_Full;
+  thrust::device_vector<uint32_t> m_dMarkedNodeIndicesB = m_dMarkedNodeIndicesB_Full;
+
 
   // --------------------------------------------------------------------
   // 1. CRISS-CROSS INTERSECTION
@@ -475,9 +511,9 @@ void KernelBVHController::cleanup() {
   cuBQL::cuda::free(m_bvhB, m_stream, m_memResource);
 
   // Reclaim thrust memory correctly
-  m_dMarkedNodeIndicesA = thrust::device_vector<uint32_t>();
+  m_dMarkedNodeIndicesA_Full = thrust::device_vector<uint32_t>();
   m_dNodeDescendantCountsA = thrust::device_vector<uint32_t>();
-  m_dMarkedNodeIndicesB = thrust::device_vector<uint32_t>();
+  m_dMarkedNodeIndicesB_Full = thrust::device_vector<uint32_t>();
   m_dNodeDescendantCountsB = thrust::device_vector<uint32_t>();
 
   m_dReverseMapB = thrust::device_vector<uint32_t>();
@@ -487,6 +523,9 @@ void KernelBVHController::cleanup() {
   m_dOutPrimsFlatB = thrust::device_vector<uint32_t>();
   m_dOutOffsetsA = thrust::device_vector<uint32_t>();
   m_dOutPrimsFlatA = thrust::device_vector<uint32_t>();
+
+  m_origPointsB.clear();
+  m_origPointsB.shrink_to_fit();
 
   shiftX = 0.0f;
   shiftY = 0.0f;

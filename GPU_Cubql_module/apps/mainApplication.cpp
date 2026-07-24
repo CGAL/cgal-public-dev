@@ -5,6 +5,11 @@
 #include <sstream>
 #include <chrono>
 #include <iomanip>
+#include <thread>
+#include <mutex>
+#include <queue>
+#include <atomic>
+#include <condition_variable>
 
 // GNU Readline headers for Fedora terminal arrow key & history support
 #include <readline/readline.h>
@@ -26,6 +31,7 @@
 // Custom Controller and Helpers
 #include "../src/GPUIntersector/KernelBVHController.h"
 #include "../src/CPU/CgalDefinitions.h"
+#include "../src/CPU/PolyscopeBridge.h"
 #include "../src/Warmup/cuda_warmup.h"
 
 // --- Minimal Double Box for Mesh Bounds ---
@@ -84,10 +90,8 @@ bool exportCgalMeshToOff(const Mesh& mesh, const std::string& filepath) {
     return false;
   }
 
-  // Set max double precision (17 digits) so floating point values export losslessly
   outFile << std::setprecision(17);
 
-  // Direct CGAL Surface_mesh OFF stream operator export
   if (!(outFile << mesh)) {
     std::cerr << "Error: Failed writing CGAL mesh data to: " << filepath << "\n";
     return false;
@@ -171,21 +175,103 @@ void printHelp() {
 
 std::string parseArgument(std::istringstream& iss) {
   std::string arg;
-  iss >> std::ws; // Consume leading whitespace
+  iss >> std::ws;
   if(iss.peek() == '"' || iss.peek() == '\'') {
-    char quote = iss.get();        // Read the opening quote
-    std::getline(iss, arg, quote); // Read until the matching closing quote
+    char quote = iss.get();
+    std::getline(iss, arg, quote);
   } else {
-    iss >> arg; // Normal word parsing if no quotes
+    iss >> arg;
   }
   return arg;
+}
+
+// ---------------------------------------------------------------------------
+// Thread-safe command queue shared between the input thread and main thread
+// ---------------------------------------------------------------------------
+static std::mutex g_cmdMutex;
+static std::condition_variable g_cmdCV;
+static std::queue<std::string> g_cmdQueue;
+static std::atomic<bool> g_running{true};
+static bool g_readyForInput{true};
+
+// Runs entirely on its own thread. Only touches the queue + readline/history,
+// never anything from PolyscopeBridge or KernelBVHController.
+// void inputThreadFunc() {
+//   char* rawInput = nullptr;
+//   while(g_running && (rawInput = readline("> ")) != nullptr) {
+//     std::string line(rawInput);
+//     if(!line.empty()) {
+//       add_history(rawInput);
+//     }
+//     free(rawInput);
+
+//     {
+//       std::lock_guard<std::mutex> lock(g_cmdMutex);
+//       g_cmdQueue.push(line);
+//     }
+
+//     // Peek at whether this was a quit command so we can stop reading input
+//     std::istringstream iss(line);
+//     std::string cmd;
+//     iss >> cmd;
+//     if(cmd == "quit" || cmd == "exit") {
+//       g_running = false;
+//       break;
+//     }
+//   }
+//   // EOF (Ctrl-D) on stdin also ends the app
+//   g_running = false;
+// }
+void inputThreadFunc() {
+  char* rawInput = nullptr;
+  while(g_running) {
+    // Wait until the main thread has finished executing and printing command outputs
+    {
+      std::unique_lock<std::mutex> lock(g_cmdMutex);
+      g_cmdCV.wait(lock, [] { return g_readyForInput || !g_running; });
+      if(!g_running) break;
+    }
+
+    // Now it is safe to show the prompt!
+    rawInput = readline("> ");
+    if(!rawInput) {
+      g_running = false;
+      break;
+    }
+
+    std::string line(rawInput);
+    if(!line.empty()) {
+      add_history(rawInput);
+    }
+    free(rawInput);
+
+    {
+      std::lock_guard<std::mutex> lock(g_cmdMutex);
+      g_cmdQueue.push(line);
+      g_readyForInput = false; // Block input thread until main loop processes this line
+    }
+
+    std::istringstream iss(line);
+    std::string cmd;
+    iss >> cmd;
+    if(cmd == "quit" || cmd == "exit") {
+      g_running = false;
+      break;
+    }
+  }
+  g_running = false;
 }
 
 int main(int argc, char** argv) {
   // 1. Initial Warmup
   std::cout << "Initializing CUDA environment...\n";
   warmupCUDA();
-  std::cout << "Initialization complete. Type 'help' for commands.\n";
+  std::cout << "Initialization complete.\n";
+
+  // 2. Initialize Polyscope GUI Window
+  std::cout << "Initializing Polyscope GUI...\n";
+  PolyscopeBridge::init();
+  std::cout << "Type 'help' for commands.\n";
 
   // Global TBB Worker Control
   std::unique_ptr<tbb::global_control> tbbControl;
@@ -201,205 +287,261 @@ int main(int argc, char** argv) {
 
   bool isLoaded = false;
 
-  // Readline CLI Loop
-  char* rawInput = nullptr;
-  while((rawInput = readline("> ")) != nullptr) {
-    std::string line(rawInput);
+  // Start the input thread; it ONLY reads stdin and pushes lines to the queue.
+  std::thread inputThread(inputThreadFunc);
 
-    // Add non-empty lines to history so UP/DOWN arrow navigation works
-    if(!line.empty()) {
-      add_history(rawInput);
+  // Main thread owns the GL/Polyscope context and runs continuously so the
+  // window stays responsive whether or not a command is pending.
+  while(g_running) {
+    std::string line;
+    bool haveLine = false;
+    {
+      std::lock_guard<std::mutex> lock(g_cmdMutex);
+      if(!g_cmdQueue.empty()) {
+        line = g_cmdQueue.front();
+        g_cmdQueue.pop();
+        haveLine = true;
+      }
     }
-    free(rawInput); // Free memory allocated by readline
 
-    std::istringstream iss(line);
-    std::string cmd;
-    if(!(iss >> cmd))
-      continue;
+    if(haveLine) {
+      std::istringstream iss(line);
+      std::string cmd;
+      if(!(iss >> cmd)) {
+        // empty line, nothing to do
+      } else if(cmd == "quit" || cmd == "exit") {
+        g_running = false;
+      } else if(cmd == "help") {
+        printHelp();
+      } else if(cmd == "tbb") {
+        int numThreads = 0;
+        if(iss >> numThreads && numThreads > 0) {
+          tbbControl = std::make_unique<tbb::global_control>(tbb::global_control::max_allowed_parallelism, numThreads);
+          std::cout << "TBB maximum worker limit updated to: " << numThreads << "\n";
+        } else {
+          std::cout << "Usage: tbb <num_threads> (must be > 0)\n";
+        }
+      } else if(cmd == "load") {
+        std::string arg1 = parseArgument(iss);
+        std::string arg2 = parseArgument(iss);
 
-    if(cmd == "quit" || cmd == "exit") {
-      break;
-    } else if(cmd == "help") {
-      printHelp();
-    } else if(cmd == "tbb") {
-      int numThreads = 0;
-      if(iss >> numThreads && numThreads > 0) {
-        tbbControl = std::make_unique<tbb::global_control>(tbb::global_control::max_allowed_parallelism, numThreads);
-        std::cout << "TBB maximum worker limit updated to: " << numThreads << "\n";
-      } else {
-        std::cout << "Usage: tbb <num_threads> (must be > 0)\n";
+        int maxCellA = 1, maxCellB = 1, leafThresh = 4, usePreciseInt = 1;
+
+        if(arg1.empty()) {
+          std::cout << "Usage: load <meshA> [meshB] [maxCellA] [maxCellB] [leafThresh] [usePrecise(0/1)]\n";
+        } else {
+          std::string pathA, pathB;
+
+          // Check if arg2 was omitted or if it was actually a numeric parameter (e.g. maxCellA)
+          bool singleMeshMode = false;
+          if(arg2.empty()) {
+            singleMeshMode = true;
+          } else {
+            std::istringstream checkNum(arg2);
+            int val;
+            if(checkNum >> val) {
+              singleMeshMode = true;
+              maxCellA = val;
+            }
+          }
+
+          if(singleMeshMode) {
+            pathA = arg1;
+            pathB = arg1;
+            iss >> maxCellB >> leafThresh >> usePreciseInt;
+          } else {
+            pathA = arg1;
+            pathB = arg2;
+            iss >> maxCellA >> maxCellB >> leafThresh >> usePreciseInt;
+          }
+
+          bool usePreciseBounds = (usePreciseInt != 0);
+
+          controller.cleanup();
+          meshA = Mesh();
+          meshB = Mesh();
+          isLoaded = false;
+
+          std::cout << "Loading mesh(es)...\n";
+
+          auto tIoStart = std::chrono::high_resolution_clock::now();
+
+          bool loadedSuccessfully = false;
+
+          if(singleMeshMode) {
+            std::ifstream inFileA(pathA);
+            if(inFileA.is_open() && (inFileA >> meshA)) {
+              meshB = meshA; // In-memory topology copy
+              loadedSuccessfully = true;
+            } else {
+              std::cerr << "Error: Could not open/read Mesh file: " << pathA << "\n";
+            }
+          } else {
+            std::ifstream inFileA(pathA), inFileB(pathB);
+            if(!inFileA.is_open() || !inFileB.is_open() || !(inFileA >> meshA) || !(inFileB >> meshB)) {
+              std::cerr << "Error: Failed to load OFF input files from provided paths.\n";
+              if(!inFileA.is_open()) std::cerr << "  -> Could not open Mesh A: " << pathA << "\n";
+              if(!inFileB.is_open()) std::cerr << "  -> Could not open Mesh B: " << pathB << "\n";
+            } else {
+              loadedSuccessfully = true;
+            }
+          }
+
+          if(loadedSuccessfully) {
+            auto tIoEnd = std::chrono::high_resolution_clock::now();
+            double ioMs = std::chrono::duration<double, std::milli>(tIoEnd - tIoStart).count();
+
+            auto tPrepStart = std::chrono::high_resolution_clock::now();
+
+            DoubleBox box = computeMeshBoundsTBB(meshA);
+            box.grow(computeMeshBoundsTBB(meshB));
+            double cx = 0.5 * (box.min_x + box.max_x);
+            double cy = 0.5 * (box.min_y + box.max_y);
+            double cz = 0.5 * (box.min_z + box.max_z);
+
+            extractMeshTopologyNormalized(meshA, cx, cy, cz, hVertsA, hErrorsA, hIndicesA, usePreciseBounds);
+            extractMeshTopologyNormalized(meshB, cx, cy, cz, hVertsB, hErrorsB, hIndicesB, usePreciseBounds);
+
+            auto tPrepEnd = std::chrono::high_resolution_clock::now();
+            double prepMs = std::chrono::duration<double, std::milli>(tPrepEnd - tPrepStart).count();
+
+            auto tStart = std::chrono::high_resolution_clock::now();
+
+            controller.construct(meshA, meshB, hVertsA.data(), static_cast<int>(hVertsA.size()), hIndicesA.data(),
+                                 (usePreciseBounds ? hErrorsA.data() : nullptr), static_cast<int>(hIndicesA.size()), maxCellA,
+                                 hVertsB.data(), static_cast<int>(hVertsB.size()), hIndicesB.data(),
+                                 (usePreciseBounds ? hErrorsB.data() : nullptr), static_cast<int>(hIndicesB.size()), maxCellB,
+                                 leafThresh, stats);
+
+            auto tEnd = std::chrono::high_resolution_clock::now();
+            double ms = std::chrono::duration<double, std::milli>(tEnd - tStart).count();
+
+            PolyscopeBridge::reset(meshA, meshB);
+
+            std::cout << "\n--- Load & Construction Performance Breakdown ---\n";
+            std::cout << "  1. Disk -> CPU Load:       " << std::fixed << std::setprecision(2) << ioMs << " ms\n";
+            std::cout << "  2. Topology/Layout Prep:   " << std::fixed << std::setprecision(2) << prepMs << " ms\n";
+            std::cout << "  3. BVH Construction:       " << std::fixed << std::setprecision(2) << ms << " ms\n";
+            std::cout << "  -----------------------------------------------\n";
+            std::cout << "  Total Preparation Time:    " << std::fixed << std::setprecision(2) << (ioMs + prepMs + ms)
+                      << " ms\n\n";
+
+            isLoaded = true;
+          }
+        }
       }
-    } else if(cmd == "load") {
-      // Use our helper function to safely strip single or double quotes
-      std::string pathA = parseArgument(iss);
-      std::string pathB = parseArgument(iss);
+      else if(cmd == "translate") {
+        float x, y, z;
+        if(iss >> x >> y >> z) {
+          auto tStart = std::chrono::high_resolution_clock::now();
 
-      int maxCellA = 1, maxCellB = 1, leafThresh = 4, usePreciseInt = 1;
+          controller.setTranslation(x, y, z);
+          PolyscopeBridge::translateMeshB(x, y, z);
 
-      if(pathA.empty() || pathB.empty()) {
-        std::cout << "Usage: load <meshA> <meshB> [maxCellA] [maxCellB] [leafThresh] [usePrecise(0/1)]\n";
-        continue;
+          auto tEnd = std::chrono::high_resolution_clock::now();
+          double elapsedMs = std::chrono::duration<double, std::milli>(tEnd - tStart).count();
+
+          std::cout << "Translation applied: (" << x << ", " << y << ", " << z << ") "
+                    << "in " << elapsedMs << " ms\n";
+        } else {
+          std::cout << "Usage: translate <x> <y> <z>\n";
+        }
+      }
+      else if(cmd == "compute") {
+        if(!isLoaded) {
+          std::cout << "Error: You must 'load' meshes before computing.\n";
+        } else {
+          int batchMultiplier = 1;
+          int mode = 0;
+
+          iss >> batchMultiplier >> mode;
+
+          tbb::concurrent_vector<int2> finalExactPairs;
+
+          auto tStart = std::chrono::high_resolution_clock::now();
+
+          controller.runIntersectionPipeline(batchMultiplier, mode, finalExactPairs, stats);
+
+          auto tEnd = std::chrono::high_resolution_clock::now();
+          double ms = std::chrono::duration<double, std::milli>(tEnd - tStart).count();
+
+          std::vector<int2> stdPairs(finalExactPairs.begin(), finalExactPairs.end());
+          PolyscopeBridge::highlightIntersections(stdPairs, num_faces(meshA), num_faces(meshB));
+
+          std::cout << "Query completed in time: " << std::fixed << std::setprecision(2) << ms << " ms. "
+                    << "We got " << finalExactPairs.size() << " intersections.\n";
+        }
+      }
+      else if(cmd == "export") {
+        if(!isLoaded) {
+          std::cout << "Error: You must 'load' meshes before exporting.\n";
+        } else {
+          std::string meshTag = parseArgument(iss);
+          std::string outPath = parseArgument(iss);
+
+          if(meshTag.empty() || outPath.empty()) {
+            std::cout << "Usage: export <A/B> <output.off>\n";
+          } else {
+            const Mesh* targetMesh = nullptr;
+            if(meshTag == "A" || meshTag == "a") {
+              targetMesh = &meshA;
+            } else if(meshTag == "B" || meshTag == "b") {
+              targetMesh = &meshB;
+            } else {
+              std::cout << "Error: Invalid mesh target '" << meshTag << "'. Choose 'A' or 'B'.\n";
+            }
+
+            if(targetMesh) {
+              auto tStart = std::chrono::high_resolution_clock::now();
+
+              if(exportCgalMeshToOff(*targetMesh, outPath)) {
+                auto tEnd = std::chrono::high_resolution_clock::now();
+                double ms = std::chrono::duration<double, std::milli>(tEnd - tStart).count();
+
+                std::cout << "Successfully exported Mesh " << meshTag << " ("
+                          << num_vertices(*targetMesh) << " verts, "
+                          << num_faces(*targetMesh) << " faces) with 17-digit precision to '"
+                          << outPath << "' in " << std::fixed << std::setprecision(2) << ms << " ms.\n";
+              }
+            }
+          }
+        }
+      }
+      else {
+        std::cout << "Unknown command: '" << cmd << "'. Type 'help' for a list of commands.\n";
       }
 
-      // Read optional remaining integer arguments
-      iss >> maxCellA >> maxCellB >> leafThresh >> usePreciseInt;
-      bool usePreciseBounds = (usePreciseInt != 0);
-
-      // Clean up previous allocations & state
-      controller.cleanup();
-      meshA = Mesh();
-      meshB = Mesh();
-      isLoaded = false;
-
-      std::cout << "Loading meshes...\n";
-
-      // ---------------------------------------------------------------------
-      // PHASE 1: Disk -> CPU Load Time
-      // ---------------------------------------------------------------------
-      auto tIoStart = std::chrono::high_resolution_clock::now();
-
-      std::ifstream inFileA(pathA), inFileB(pathB);
-      if(!inFileA.is_open() || !inFileB.is_open() || !(inFileA >> meshA) || !(inFileB >> meshB)) {
-        std::cerr << "Error: Failed to load OFF input files from provided paths.\n";
-        if(!inFileA.is_open())
-          std::cerr << "  -> Could not open Mesh A: " << pathA << "\n";
-        if(!inFileB.is_open())
-          std::cerr << "  -> Could not open Mesh B: " << pathB << "\n";
-        continue;
+      {
+        std::lock_guard<std::mutex> lock(g_cmdMutex);
+        g_readyForInput = true;
       }
+      g_cmdCV.notify_one();
+    }
 
-      auto tIoEnd = std::chrono::high_resolution_clock::now();
-      double ioMs = std::chrono::duration<double, std::milli>(tIoEnd - tIoStart).count();
+    // Always pump the GL/Polyscope event loop, whether or not a command ran.
+    PolyscopeBridge::drawFrame();
 
-      // ---------------------------------------------------------------------
-      // PHASE 2: Layout Conversion & Normalization Time
-      // ---------------------------------------------------------------------
-      auto tPrepStart = std::chrono::high_resolution_clock::now();
-
-      DoubleBox box = computeMeshBoundsTBB(meshA);
-      box.grow(computeMeshBoundsTBB(meshB));
-      double cx = 0.5 * (box.min_x + box.max_x);
-      double cy = 0.5 * (box.min_y + box.max_y);
-      double cz = 0.5 * (box.min_z + box.max_z);
-
-      extractMeshTopologyNormalized(meshA, cx, cy, cz, hVertsA, hErrorsA, hIndicesA, usePreciseBounds);
-      extractMeshTopologyNormalized(meshB, cx, cy, cz, hVertsB, hErrorsB, hIndicesB, usePreciseBounds);
-
-      auto tPrepEnd = std::chrono::high_resolution_clock::now();
-      double prepMs = std::chrono::duration<double, std::milli>(tPrepEnd - tPrepStart).count();
-
-      // ---------------------------------------------------------------------
-      // PHASE 3: BVH Construction Time (Original Block Unchanged)
-      // ---------------------------------------------------------------------
-      auto tStart = std::chrono::high_resolution_clock::now();
-
-      controller.construct(meshA, meshB, hVertsA.data(), static_cast<int>(hVertsA.size()), hIndicesA.data(),
-                           (usePreciseBounds ? hErrorsA.data() : nullptr), static_cast<int>(hIndicesA.size()), maxCellA,
-                           hVertsB.data(), static_cast<int>(hVertsB.size()), hIndicesB.data(),
-                           (usePreciseBounds ? hErrorsB.data() : nullptr), static_cast<int>(hIndicesB.size()), maxCellB,
-                           leafThresh, stats);
-
-      auto tEnd = std::chrono::high_resolution_clock::now();
-      double ms = std::chrono::duration<double, std::milli>(tEnd - tStart).count();
-
-      // ---------------------------------------------------------------------
-      // Print Timings Breakdown
-      // ---------------------------------------------------------------------
-      std::cout << "\n--- Load & Construction Performance Breakdown ---\n";
-      std::cout << "  1. Disk -> CPU Load:       " << std::fixed << std::setprecision(2) << ioMs << " ms\n";
-      std::cout << "  2. Topology/Layout Prep:   " << std::fixed << std::setprecision(2) << prepMs << " ms\n";
-      std::cout << "  3. BVH Construction:       " << std::fixed << std::setprecision(2) << ms << " ms\n";
-      std::cout << "  -----------------------------------------------\n";
-      std::cout << "  Total Preparation Time:    " << std::fixed << std::setprecision(2) << (ioMs + prepMs + ms)
-                << " ms\n\n";
-
-      isLoaded = true;
-    
+    // Avoid pegging a core while idle; drawFrame() usually vsyncs, but this
+    // is a cheap safety net in case vsync is off.
+    std::this_thread::sleep_for(std::chrono::milliseconds(1));
   }
-  else if(cmd == "translate") {
-    float x, y, z;
-    if(iss >> x >> y >> z) {
-      auto tStart = std::chrono::high_resolution_clock::now();
-      
-      controller.setTranslation(x, y, z);
-      
-      auto tEnd = std::chrono::high_resolution_clock::now();
-      double elapsedMs = std::chrono::duration<double, std::milli>(tEnd - tStart).count();
 
-      std::cout << "Translation applied: (" << x << ", " << y << ", " << z << ") "
-                << "in " << elapsedMs << " ms\n";
+  std::cout << "Cleaning up and exiting...\n";
+
+  // If we're exiting for a reason other than "quit"/"exit" (e.g. Ctrl-D
+  // in the terminal), make sure readline's blocking call gets released too.
+  // POSIX readline has no clean async-cancel; simplest robust approach is
+  // to just let the process exit — inputThread is detached in that case.
+  if(inputThread.joinable()) {
+    if(g_running == false) {
+      // Best effort: give the input thread a moment; if it's still blocked
+      // on readline waiting for the next keypress, detach instead of hanging.
+      inputThread.detach();
     } else {
-      std::cout << "Usage: translate <x> <y> <z>\n";
-    }
-  }
-  else if(cmd == "compute") {
-    if(!isLoaded) {
-      std::cout << "Error: You must 'load' meshes before computing.\n";
-      continue;
-    }
-
-    int batchMultiplier = 1;
-    int mode = 0; // Default execution mode
-
-    // Read optional configuration
-    iss >> batchMultiplier >> mode;
-
-    tbb::concurrent_vector<int2> finalExactPairs;
-
-    // Execute Pipeline and measure time
-    auto tStart = std::chrono::high_resolution_clock::now();
-
-    controller.runIntersectionPipeline(batchMultiplier, mode, finalExactPairs, stats);
-
-    auto tEnd = std::chrono::high_resolution_clock::now();
-    double ms = std::chrono::duration<double, std::milli>(tEnd - tStart).count();
-
-    std::cout << "Query completed in time: " << std::fixed << std::setprecision(2) << ms << " ms. "
-              << "We got " << finalExactPairs.size() << " intersections.\n";
-  }
-  else if(cmd == "export") {
-    if(!isLoaded) {
-      std::cout << "Error: You must 'load' meshes before exporting.\n";
-      continue;
-    }
-
-    std::string meshTag = parseArgument(iss);
-    std::string outPath = parseArgument(iss);
-
-    if(meshTag.empty() || outPath.empty()) {
-      std::cout << "Usage: export <A/B> <output.off>\n";
-      continue;
-    }
-
-    const Mesh* targetMesh = nullptr;
-    if(meshTag == "A" || meshTag == "a") {
-      targetMesh = &meshA;
-    } else if(meshTag == "B" || meshTag == "b") {
-      targetMesh = &meshB;
-    } else {
-      std::cout << "Error: Invalid mesh target '" << meshTag << "'. Choose 'A' or 'B'.\n";
-      continue;
-    }
-
-    auto tStart = std::chrono::high_resolution_clock::now();
-
-    if(exportCgalMeshToOff(*targetMesh, outPath)) {
-      auto tEnd = std::chrono::high_resolution_clock::now();
-      double ms = std::chrono::duration<double, std::milli>(tEnd - tStart).count();
-
-      std::cout << "Successfully exported Mesh " << meshTag << " (" 
-                << num_vertices(*targetMesh) << " verts, " 
-                << num_faces(*targetMesh) << " faces) with 17-digit precision to '" 
-                << outPath << "' in " << std::fixed << std::setprecision(2) << ms << " ms.\n";
+      inputThread.join();
     }
   }
 
-  else {
-    std::cout << "Unknown command: '" << cmd << "'. Type 'help' for a list of commands.\n";
-  }
-}
-
-std::cout << "Cleaning up and exiting...\n";
-controller.cleanup();
-return 0;
+  controller.cleanup();
+  return 0;
 }

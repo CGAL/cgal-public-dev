@@ -5,6 +5,9 @@ project(meshIntersectionRegistration LANGUAGES CXX CUDA)
 # DEPENDENCIES & PACKAGE LOCATIONS
 # ====================================================================
 
+# Automatically generate compile_commands.json for VS Code IntelliSense
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON CACHE BOOL "Export compile commands for IDEs" FORCE)
+
 # 1. Locate the CGAL build configuration from your parent build directory
 find_package(CGAL REQUIRED PATHS "${CMAKE_CURRENT_SOURCE_DIR}/../../cgal-build" NO_DEFAULT_PATH)
 
@@ -319,6 +322,17 @@ target_include_directories(testBVHV2 PRIVATE
 target_link_libraries(testBVHV2 PRIVATE CUDA::cudart ${SHARED_LINK_LIBS})
 
 # ====================================================================
+# FETCH DEPENDENCIES
+# ====================================================================
+include(FetchContent)
+FetchContent_Declare(
+    polyscope
+    GIT_REPOSITORY https://github.com/nmwsharp/polyscope.git
+    GIT_TAG        master
+)
+FetchContent_MakeAvailable(polyscope)
+
+# ====================================================================
 # TARGET 10: Main Application (KernelBVHController Launcher)
 # ====================================================================
 
@@ -369,9 +383,10 @@ target_include_directories(MainApp PRIVATE
     ${READLINE_INCLUDE_DIRS}                               # Readline headers path
 )
 
-# 2. Append readline (or ${READLINE_LIBRARIES}) to target_link_libraries
+# 2. Append readline and polyscope to target_link_libraries
 target_link_libraries(MainApp PRIVATE 
     CUDA::cudart 
     ${SHARED_LINK_LIBS}
     ${READLINE_LIBRARIES}                                   # Links libreadline
+    polyscope                                               # <--- Added Polyscope target here
 )
