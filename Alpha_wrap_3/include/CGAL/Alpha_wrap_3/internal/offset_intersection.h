@@ -497,7 +497,7 @@ private:
       sorFail = omega > 1 &&
         (CGAL::abs(current_dist) + CGAL::abs(previous_dist)) < current_step;
       if (sorFail) {		
-        current_step -= omega * current_step;
+        current_step = (1 - omega) * previous_dist;
         omega = 1;
 #ifdef CGAL_AW3_OUTPUT_SPHERE_MARCHING_STEPS
         output_step(current_pt, "overstep", ray, algo_name);
