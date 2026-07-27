@@ -10,17 +10,24 @@
 #include "../CPU/CgalDefinitions.h"
 #include "../testBVH/ExecutionStats.h"
 
-
 class KernelBVHController {
 public:
     KernelBVHController();
     ~KernelBVHController();
 
-    // Prevent accidental copying (CUDA resources / thrust vectors shouldn't be shallow-copied)
+    // Prevent accidental copying
     KernelBVHController(const KernelBVHController&) = delete;
     KernelBVHController& operator=(const KernelBVHController&) = delete;
 
-    // 1. Setup & Construction (Run Once)
+    // 1. Setup & Construction (With Centroids)
+    void construct(
+        Mesh& meshAcpu, Mesh& meshBcpu,
+        const Point3& centerA, const Point3& centerB,
+        const float3* hVertsA, int numVertsA, const uint3* hIndicesA, const float* hVertErrorsA, int numTrianglesA, int levelA,
+        const float3* hVertsB, int numVertsB, const uint3* hIndicesB, const float* hVertErrorsB, int numTrianglesB, int levelB,
+        int leafThreshold, ExecutionStats& stats);
+
+    // Backward-Compatible Construction Overload (Defaults Centroids to Origin)
     void construct(
         Mesh& meshAcpu, Mesh& meshBcpu,
         const float3* hVertsA, int numVertsA, const uint3* hIndicesA, const float* hVertErrorsA, int numTrianglesA, int levelA,
@@ -29,14 +36,22 @@ public:
 
     // 2. Execution Pipeline (Safe to run multiple times)
     void runIntersectionPipeline(
-        int batchMultiplier, int mode, 
+        int batchMultiplier, int mode, int activateAsyncDownload,
         tbb::concurrent_vector<int2>& finalExactPairs, ExecutionStats& stats);
 
     // 3. Deallocates all GPU resources safely
     void cleanup();
 
-    // Updates translation relative to original position recorded at construct()
+    // Dynamic Dual Point Cloud Transformation (Rotation in degrees around centroids + Translation)
+    void setTransformBoth(float3 rotDegA, float3 transA, float3 rotDegB, float3 transB);
+
+    // Legacy Translation Interfaces (Maintained for Backward Compatibility)
     void setTranslation(float xB, float yB, float zB);
+    void setTranslationCPUHostUpload(float xB, float yB, float zB);
+
+    // Centroid Getters
+    Point3 getCenterA() const { return m_centerA; }
+    Point3 getCenterB() const { return m_centerB; }
 
 private:
     // Configuration Parameters
@@ -48,7 +63,17 @@ private:
     int m_numVertsA = 0;
     int m_numVertsB = 0;
 
-    // Stores total applied translation offset relative to original mesh state
+    // Pre-computed Mesh Centroids
+    Point3 m_centerA{0, 0, 0};
+    Point3 m_centerB{0, 0, 0};
+
+    // Active transformations relative to pristine baseline states
+    float3 m_rotA{0.0f, 0.0f, 0.0f};
+    float3 m_transA{0.0f, 0.0f, 0.0f};
+    float3 m_rotB{0.0f, 0.0f, 0.0f};
+    float3 m_transB{0.0f, 0.0f, 0.0f};
+
+    // Legacy shift markers
     float shiftX = 0.0f;
     float shiftY = 0.0f;
     float shiftZ = 0.0f;
@@ -69,14 +94,19 @@ private:
     float2*          m_dMeshMetricsB = nullptr;
     cuBQL::box3f*    m_dBoxesB = nullptr;
 
-    // Persistent Raw GPU Buffers for Vertex-Level Shifting & Re-Assembly
-    float3*          m_dVertsB = nullptr;       // Active transformed vertices
-    float3*          m_dVertsBOrig = nullptr;   // Pristine baseline vertices (shift target)
-    uint3*           m_dIndicesB = nullptr;     // Triangle vertex indices
-    float*           m_dVertErrorsB = nullptr;  // Downcast/drift precision error bounds
+    // Persistent Raw GPU & CPU Buffers for Mesh A
+    float3*             m_dVertsA = nullptr;       // Active transformed vertices
+    float3*             m_dVertsAOrig = nullptr;   // Pristine baseline vertices
+    uint3*              m_dIndicesA = nullptr;     // Triangle vertex indices
+    float*              m_dVertErrorsA = nullptr;  // Precision error bounds
+    std::vector<Point3> m_origPointsA;             // Baseline CGAL host points
 
-    // Pristine baseline CGAL host points (for zero-accumulation CPU translations)
-    std::vector<Point3> m_origPointsB;
+    // Persistent Raw GPU & CPU Buffers for Mesh B
+    float3*             m_dVertsB = nullptr;       // Active transformed vertices
+    float3*             m_dVertsBOrig = nullptr;   // Pristine baseline vertices
+    uint3*              m_dIndicesB = nullptr;     // Triangle vertex indices
+    float*              m_dVertErrorsB = nullptr;  // Precision error bounds
+    std::vector<Point3> m_origPointsB;             // Baseline CGAL host points
 
     // BVH Structures (cuBQL v2_2 format)
     cuBQL::bvh3f m_bvhA;
@@ -87,15 +117,8 @@ private:
     thrust::device_vector<uint32_t> m_dMarkedNodeIndicesA_Full;
     thrust::device_vector<uint32_t> m_dMarkedNodeIndicesB_Full;
 
-    // Persistent Target & Extraction Counts
-    //uint32_t m_hOutMarkedCountA = 0;
-   // uint32_t m_hOutMarkedCountB = 0;
-
-
     // Persistent Thrust Vectors
-   // thrust::device_vector<uint32_t> m_dMarkedNodeIndicesA;
     thrust::device_vector<uint32_t> m_dNodeDescendantCountsA;
-   // thrust::device_vector<uint32_t> m_dMarkedNodeIndicesB;
     thrust::device_vector<uint32_t> m_dNodeDescendantCountsB;
 
     thrust::device_vector<uint32_t> m_dReverseMapB;

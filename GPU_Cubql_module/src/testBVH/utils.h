@@ -16,13 +16,14 @@ __global__ void assembleTrianglesKernel(cuBQL::Triangle* dMesh,
                                         const uint3* dIndices,
                                         int numTriangles);
 
-__global__ void assembleTrianglesKernelTranslated(cuBQL::Triangle* dMesh,
-                                                  float2* dMetrics,
-                                                  const float3* dVerts,
-                                                  const float* dVertErrors,
-                                                  const uint3* dIndices,
-                                                  int numTriangles, 
-                                                  bool isTranslated);
+__global__ void assembleTrianglesKernelTransformed(cuBQL::Triangle* dMesh,
+                                                   float2* dMetrics,
+                                                   const float3* dVerts,
+                                                   const float* dVertErrors,
+                                                   const uint3* dIndices,
+                                                   int numTriangles, 
+                                                   bool isTranslated,
+                                                   bool isRotated);
 
 __global__ void generateBoxes(cuBQL::box3f* boxes, 
                               const cuBQL::Triangle* tris, 
@@ -43,6 +44,16 @@ void launchAssembleTriangles(cuBQL::Triangle* dMesh,
                             const uint3* dIndices,
                             int numTriangles,
                             cudaStream_t stream = 0);
+
+void launchAssembleTrianglesTransformed(cuBQL::Triangle* dMesh,
+                                         float2* dMetrics,
+                                         const float3* dVerts,
+                                         const float* dVertErrors,
+                                         const uint3* dIndices,
+                                         int numTriangles,
+                                         bool isTranslated,
+                                         bool isRotated,
+                                         cudaStream_t stream = 0);
 
 void launchGenerateBoxes(cuBQL::box3f* dBoxes,
                          const cuBQL::Triangle* dTris,

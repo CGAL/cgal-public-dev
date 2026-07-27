@@ -20,6 +20,29 @@ namespace PolyscopeBridge {
 // Global cumulative offset tracker for Mesh B
 inline glm::vec3 g_currentTranslationB(0.0f, 0.0f, 0.0f);
 
+// Helper: Convert CUDA float3 to GLM vec3
+inline glm::vec3 toGlm(float3 v) {
+  return glm::vec3(v.x, v.y, v.z);
+}
+
+// Helper: Build 4x4 matrix with rotation around pivot center + translation
+inline glm::mat4 buildTransformMatrix(glm::vec3 rotDeg, glm::vec3 trans, glm::vec3 center = glm::vec3(0.0f)) {
+  glm::mat4 mat(1.0f);
+  
+  // 1. Apply translation and shift back from center
+  mat = glm::translate(mat, trans + center);
+  
+  // 2. Apply rotations (R = Rz * Ry * Rx)
+  mat = glm::rotate(mat, glm::radians(rotDeg.z), glm::vec3(0.0f, 0.0f, 1.0f));
+  mat = glm::rotate(mat, glm::radians(rotDeg.y), glm::vec3(0.0f, 1.0f, 0.0f));
+  mat = glm::rotate(mat, glm::radians(rotDeg.x), glm::vec3(1.0f, 0.0f, 0.0f));
+  
+  // 3. Shift to origin before rotation
+  mat = glm::translate(mat, -center);
+  
+  return mat;
+}
+
 // 1. Multi-threaded CGAL Surface_mesh conversion via TBB with custom base color
 inline void registerCgalMesh(const std::string& name, const Mesh& cgalMesh, glm::vec3 color = glm::vec3(0.8f, 0.8f, 0.8f)) {
   size_t nVerts = num_vertices(cgalMesh);
@@ -97,7 +120,7 @@ inline void reset(const Mesh& meshA, const Mesh& meshB) {
   polyscope::view::resetCameraToHomeView();
 }
 
-// 4. Apply relative translation to Mesh B in Polyscope
+// 4. Apply relative translation to Mesh B in Polyscope (PRESERVED FOR BACKWARD COMPATIBILITY)
 inline void translateMeshB(float x, float y, float z) {
   g_currentTranslationB = glm::vec3(x, y, z);
 
@@ -106,6 +129,37 @@ inline void translateMeshB(float x, float y, float z) {
     glm::mat4 xf = glm::translate(glm::mat4(1.0f), g_currentTranslationB);
     meshB->setTransform(xf);
   }
+}
+
+// 4b. NEW: Apply rotation + translation to Mesh A (glm::vec3 parameters)
+inline void transformMeshA(glm::vec3 rotDeg, glm::vec3 trans, glm::vec3 center = glm::vec3(0.0f)) {
+  if (auto* meshA = polyscope::getSurfaceMesh("Mesh A")) {
+    meshA->setTransform(buildTransformMatrix(rotDeg, trans, center));
+  }
+}
+
+// 4c. NEW: Apply rotation + translation to Mesh B (glm::vec3 parameters)
+inline void transformMeshB(glm::vec3 rotDeg, glm::vec3 trans, glm::vec3 center = glm::vec3(0.0f)) {
+  g_currentTranslationB = trans;
+  if (auto* meshB = polyscope::getSurfaceMesh("Mesh B")) {
+    meshB->setTransform(buildTransformMatrix(rotDeg, trans, center));
+  }
+}
+
+// 4d. NEW: CUDA float3 Overloads for transform
+inline void transformMeshA(float3 rotDeg, float3 trans, float3 center = make_float3(0,0,0)) {
+  transformMeshA(toGlm(rotDeg), toGlm(trans), toGlm(center));
+}
+
+inline void transformMeshB(float3 rotDeg, float3 trans, float3 center = make_float3(0,0,0)) {
+  transformMeshB(toGlm(rotDeg), toGlm(trans), toGlm(center));
+}
+
+// 4e. NEW: Set transforms for both meshes simultaneously (matches KernelBVHController workflow)
+inline void transformBoth(float3 rotDegA, float3 transA, float3 centerA,
+                          float3 rotDegB, float3 transB, float3 centerB) {
+  transformMeshA(rotDegA, transA, centerA);
+  transformMeshB(rotDegB, transB, centerB);
 }
 
 // 5. Highlight intersecting faces using explicit RGB values

@@ -348,6 +348,7 @@ add_executable(MainApp
     src/GPUIntersector/crossCheckFlexible.cu
     src/testBVH/rapidDescendKernel.cu
     src/testBVH/batchedCrossIntersectionV2.cu
+    src/testBVH/batchedCrossIntersectionV3.cu
     src/testBVH/DualTreeStep.cu
     src/Warmup/cuda_warmup.cu
     src/custom_pipeline/GPUPredicatesCheckV2.cu

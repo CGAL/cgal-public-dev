@@ -10,7 +10,8 @@ __device__ __forceinline__ void assembleTrianglesDeviceImpl(cuBQL::Triangle* dMe
                                                              const float* dVertErrors,
                                                              const uint3* dIndices,
                                                              int numTriangles,
-                                                             bool isTranslated) {
+                                                             bool isTranslated,
+                                                             bool isRotated) {
   int idx = threadIdx.x + blockIdx.x * blockDim.x;
   if(idx >= numTriangles)
     return;
@@ -58,10 +59,14 @@ __device__ __forceinline__ void assembleTrianglesDeviceImpl(cuBQL::Triangle* dMe
   }
   float maxVertexError = fmaxf(fmaxf(e0, e1), e2);
 
-  // 5. Add rounding error incurred by shift if translated
+  // 5. Add rounding error incurred by rigid body transformations
+  const float eps_mach = 1.1920929e-7f;
   if(isTranslated) {
-    float eps_mach = 1.1920929e-7f;
     maxVertexError += (L * eps_mach);
+  }
+  if(isRotated) {
+    // 3x3 Matrix multiplication error bound: ~3.0 * eps_mach * L
+    maxVertexError += (3.0f * eps_mach * L);
   }
 
   L += maxVertexError;
@@ -80,17 +85,18 @@ __global__ void assembleTrianglesKernel(cuBQL::Triangle* dMesh,
                                         const float* dVertErrors,
                                         const uint3* dIndices,
                                         int numTriangles) {
-  assembleTrianglesDeviceImpl(dMesh, dMetrics, dVerts, dVertErrors, dIndices, numTriangles, false);
+  assembleTrianglesDeviceImpl(dMesh, dMetrics, dVerts, dVertErrors, dIndices, numTriangles, false, false);
 }
 
-__global__ void assembleTrianglesKernelTranslated(cuBQL::Triangle* dMesh,
-                                                  float2* dMetrics,
-                                                  const float3* dVerts,
-                                                  const float* dVertErrors,
-                                                  const uint3* dIndices,
-                                                  int numTriangles,
-                                                  bool isTranslated) {
-  assembleTrianglesDeviceImpl(dMesh, dMetrics, dVerts, dVertErrors, dIndices, numTriangles, isTranslated);
+__global__ void assembleTrianglesKernelTransformed(cuBQL::Triangle* dMesh,
+                                                   float2* dMetrics,
+                                                   const float3* dVerts,
+                                                   const float* dVertErrors,
+                                                   const uint3* dIndices,
+                                                   int numTriangles,
+                                                   bool isTranslated,
+                                                   bool isRotated) {
+  assembleTrianglesDeviceImpl(dMesh, dMetrics, dVerts, dVertErrors, dIndices, numTriangles, isTranslated, isRotated);
 }
 
 __global__ void generateBoxes(cuBQL::box3f* boxes, const cuBQL::Triangle* tris, int N) {
@@ -124,6 +130,21 @@ void launchAssembleTriangles(cuBQL::Triangle* dMesh,
   int gridSize = (numTriangles + blockSize - 1) / blockSize;
   assembleTrianglesKernel<<<gridSize, blockSize, 0, stream>>>(dMesh, dMetrics, dVerts, dVertErrors, dIndices,
                                                               numTriangles);
+}
+
+void launchAssembleTrianglesTransformed(cuBQL::Triangle* dMesh,
+                                         float2* dMetrics,
+                                         const float3* dVerts,
+                                         const float* dVertErrors,
+                                         const uint3* dIndices,
+                                         int numTriangles,
+                                         bool isTranslated,
+                                         bool isRotated,
+                                         cudaStream_t stream) {
+  int blockSize = 256;
+  int gridSize = (numTriangles + blockSize - 1) / blockSize;
+  assembleTrianglesKernelTransformed<<<gridSize, blockSize, 0, stream>>>(
+      dMesh, dMetrics, dVerts, dVertErrors, dIndices, numTriangles, isTranslated, isRotated);
 }
 
 void launchGenerateBoxes(cuBQL::box3f* dBoxes, const cuBQL::Triangle* dTris, int numTriangles, cudaStream_t stream) {
