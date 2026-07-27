@@ -16,9 +16,11 @@
 
 #include <CGAL/Surface_mesh_topology/internal/Shortest_noncontractible_cycle.h>
 #include <CGAL/Surface_mesh_topology/internal/Edge_weight_functor.h>
+#include <CGAL/Union_find.h>
 
 #include <vector>
 #include <unordered_map>
+#include <algorithm>
 
 namespace CGAL {
 namespace Surface_mesh_topology {
@@ -98,33 +100,6 @@ public:
   { return compute_root_spanning_tree(root_vertex, WeightFunctor()); }
 
 protected:
-  // Disjoint-set (union-find) over face indices, used by the Kruskal-style
-  // weighted cotree selection: two faces are in the same set iff they are
-  // already connected through edges already assigned to the cotree.
-  // No path compression / union by rank for now -- kept as simple as possible.
-  struct Union_find
-  {
-    explicit Union_find(std::size_t n) : parent(n)
-    { for (std::size_t i=0; i<n; ++i) parent[i]=static_cast<int>(i); }
-
-    int find(int x)
-    {
-      while (parent[x]!=x) x=parent[x];
-      return x;
-    }
-
-    // Returns true iff a and b were in different sets (and have now been merged).
-    bool union_sets(int a, int b)
-    {
-      a=find(a); b=find(b);
-      if (a==b) return false;
-      parent[b]=a;
-      return true;
-    }
-
-    std::vector<int> parent;
-  };
-
   // Assigns an integer id (0-based) to every face of the local map, and
   // fills face_id so that every dart of a given face maps to that face's
   // id. Assumes the input mesh is closed (no boundary, so close<2>() added
@@ -165,6 +140,12 @@ protected:
   {
     typename WeightFunctor::Weight_t weight;
     Dart_descriptor dart;
+
+    // Descending order by weight: a plain std::sort(candidates.begin(),
+    // candidates.end()) then already gives Kruskal the candidates from
+    // longest to shortest candidate loop (see compute_generators).
+    bool operator<(const Candidate& other) const
+    { return weight>other.weight; }
   };
 
   // Lists every edge *not* in the spanning tree, together with the weight
@@ -203,6 +184,45 @@ protected:
 
     this->get_local_map().free_mark(in_tree);
     return candidates;
+  }
+
+  // Kruskal's algorithm for a MAXIMUM spanning tree of the dual graph
+  // (faces = nodes, candidate edges = dual edges): processing candidates
+  // from longest to shortest candidate loop (Candidate::operator<) means
+  // the longest ones get absorbed into the cotree first, leaving the
+  // shortest ones as generators -- this is what gives the basis its
+  // "minimal length" property.
+  // Returns the darts that end up as generators (neither tree nor cotree).
+  template <class WeightFunctor>
+  Dart_container compute_generators(
+      const std::vector<typename WeightFunctor::Weight_t>& distance_from_root,
+      const WeightFunctor& wf)
+  {
+    std::vector<Candidate<WeightFunctor>> candidates=
+      compute_candidate_edges(distance_from_root, wf);
+    std::sort(candidates.begin(), candidates.end());
+
+    std::unordered_map<Dart_descriptor, int> face_id;
+    int nb_faces=compute_face_ids(face_id);
+
+    CGAL::Union_find<int> uf;
+    std::vector<typename CGAL::Union_find<int>::handle> handles;
+    handles.reserve(nb_faces);
+    for (int i=0; i<nb_faces; ++i)
+    { handles.push_back(uf.make_set(i)); }
+
+    Dart_container generators;
+    for (const auto& c : candidates)
+    {
+      Dart_descriptor opp=this->get_local_map().opposite2(c.dart);
+      int fa=face_id.at(c.dart), fb=face_id.at(opp);
+      if (uf.same_set(handles[fa], handles[fb]))
+      { generators.push_back(c.dart); }
+      else
+      { uf.unify_sets(handles[fa], handles[fb]); }
+    }
+
+    return generators;
   }
 };
 
