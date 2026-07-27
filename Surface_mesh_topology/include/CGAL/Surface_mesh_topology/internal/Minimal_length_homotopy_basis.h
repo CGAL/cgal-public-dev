@@ -57,7 +57,8 @@ public:
   using Base::get_local_map;
 
   Minimal_length_homotopy_basis(const Mesh& amesh) :
-    Base(amesh)
+    Base(amesh),
+    m_original_mesh(amesh)
   {}
 
   // Step 1 of the algorithm: build the shortest-path spanning tree of the
@@ -98,6 +99,48 @@ public:
   std::vector<typename WeightFunctor::Weight_t>
   compute_root_spanning_tree(Original_dart_const_descriptor root_vertex)
   { return compute_root_spanning_tree(root_vertex, WeightFunctor()); }
+
+  // Computes the minimal length homotopy basis rooted at root_vertex: runs
+  // the spanning tree (step 1) and the weighted generator selection (steps
+  // 2-5), then builds one closed loop per generator by walking the tree
+  // from each of its two endpoints back to the root -- the same trace-back
+  // logic already used by Base::compute_cycle for a single generator,
+  // applied here once per generator instead.
+  template <class WeightFunctor>
+  std::vector<Path> compute_basis(Original_dart_const_descriptor root_vertex,
+                                  const WeightFunctor& wf)
+  {
+    std::vector<typename WeightFunctor::Weight_t> distance_from_root=
+      compute_root_spanning_tree(root_vertex, wf);
+    Dart_container generators=compute_generators(distance_from_root, wf);
+
+    std::vector<Path> basis;
+    basis.reserve(generators.size());
+    for (Dart_descriptor dh : generators)
+    {
+      Dart_descriptor a=dh, b=this->get_local_map().next(dh);
+      int index_a=this->vertex_info(a), index_b=this->vertex_info(b);
+
+      Path loop(m_original_mesh);
+      // Trace back the path from `a` to root
+      for (int ind=index_a-1; ind!=-1; ind=this->m_trace_index[ind])
+      { this->add_to_cycle(this->m_spanning_tree[ind], loop, true); }
+      loop.reverse();                    // now root -> a
+      this->add_to_cycle(dh, loop, false); // the generator edge itself
+      // Trace back the path from `b` to root
+      for (int ind=index_b-1; ind!=-1; ind=this->m_trace_index[ind])
+      { this->add_to_cycle(this->m_spanning_tree[ind], loop, true); }
+
+      loop.update_is_closed();
+      basis.push_back(std::move(loop));
+    }
+
+    return basis;
+  }
+
+  template <class WeightFunctor=Unit_weight_functor>
+  std::vector<Path> compute_basis(Original_dart_const_descriptor root_vertex)
+  { return compute_basis(root_vertex, WeightFunctor()); }
 
 protected:
   // Assigns an integer id (0-based) to every face of the local map, and
@@ -224,6 +267,8 @@ protected:
 
     return generators;
   }
+
+  const Mesh& m_original_mesh;
 };
 
 } // namespace internal
