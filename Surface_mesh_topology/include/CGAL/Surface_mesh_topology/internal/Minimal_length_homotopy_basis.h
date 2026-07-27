@@ -157,6 +157,53 @@ protected:
     this->get_local_map().free_mark(face_seen);
     return nb_faces;
   }
+
+  // One non-tree edge, with the length of the loop it would form if kept
+  // as a basis generator (see compute_candidate_edges).
+  template <class WeightFunctor>
+  struct Candidate
+  {
+    typename WeightFunctor::Weight_t weight;
+    Dart_descriptor dart;
+  };
+
+  // Lists every edge *not* in the spanning tree, together with the weight
+  // Kruskal will sort on: length(edge) + distance_from_root[v0] +
+  // distance_from_root[v1] -- i.e. the length of the loop this edge would
+  // close if it ends up being kept as a generator instead of absorbed into
+  // the cotree. distance_from_root must come from a prior call to
+  // compute_root_spanning_tree() with the same WeightFunctor.
+  template <class WeightFunctor>
+  std::vector<Candidate<WeightFunctor>> compute_candidate_edges(
+      const std::vector<typename WeightFunctor::Weight_t>& distance_from_root,
+      const WeightFunctor& wf)
+  {
+    size_type in_tree=this->get_local_map().get_new_mark();
+    for (Dart_descriptor dh : this->m_spanning_tree)
+    {
+      if (!this->get_local_map().is_marked(dh, in_tree))
+      { this->get_local_map().template mark_cell<1>(dh, in_tree); }
+    }
+
+    std::vector<Candidate<WeightFunctor>> candidates;
+    for (auto it=this->get_local_map().darts().begin(),
+              itend=this->get_local_map().darts().end(); it!=itend; ++it)
+    {
+      Dart_descriptor opp=this->get_local_map().opposite2(it);
+      if (it<opp && !this->get_local_map().is_marked(it, in_tree))
+      {
+        Dart_descriptor a=it, b=this->get_local_map().next(it);
+        int ia=this->vertex_info(a), ib=this->vertex_info(b);
+        typename WeightFunctor::Weight_t w=
+          distance_from_root[ia]+distance_from_root[ib]
+          +wf(Get_original_dart<Base, Copy>::run(this, this->nonhole_dart_of_same_edge(it)));
+        candidates.push_back(Candidate<WeightFunctor>{w, it});
+      }
+    }
+
+    this->get_local_map().free_mark(in_tree);
+    return candidates;
+  }
 };
 
 } // namespace internal
