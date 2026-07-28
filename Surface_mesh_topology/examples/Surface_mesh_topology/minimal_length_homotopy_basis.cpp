@@ -8,6 +8,7 @@
 #include <CGAL/IO/polygon_mesh_io.h>
 
 #include <iostream>
+#include <fstream>
 #include <cstdlib>
 
 using Mesh            = CGAL::Surface_mesh<CGAL::Simple_cartesian<double>::Point_3>;
@@ -35,14 +36,47 @@ void display_cycle_info(const Mesh& mesh, const Path_on_surface& cycle, std::siz
   }
 }
 
+void write_polylines_file(const Mesh& mesh, const std::vector<Path_on_surface>& basis,
+                          const std::string& filename)
+{ // Export every loop of the basis as a polyline, in the CGAL .polylines.txt
+  // format (one line per loop: "n x1 y1 z1 x2 y2 z2 ... xn yn zn"), so the
+  // basis can be opened directly in CGALlab alongside the mesh.
+  // Uses get_ith_real_dart(i), not cycle[i], since the latter ignores the
+  // path's internal flip bit and can give points in the wrong order.
+  std::ofstream out(filename);
+  if (!out)
+  {
+    std::cerr<<"Cannot open '"<<filename<<"' for writing. Skipping polylines export."<<std::endl;
+  }
+  else
+  {
+    for (const Path_on_surface& cycle : basis)
+    {
+      std::size_t n=cycle.length();
+      out<<(n+1); // +1: repeat the first point to close the loop visually
+      for (std::size_t i=0; i<n; ++i)
+      {
+        auto p=mesh.point(CGAL::source(cycle.get_ith_real_dart(i), mesh));
+        out<<" "<<p.x()<<" "<<p.y()<<" "<<p.z();
+      }
+      auto p0=mesh.point(CGAL::source(cycle.get_ith_real_dart(0), mesh));
+      out<<" "<<p0.x()<<" "<<p0.y()<<" "<<p0.z()<<"\n";
+    }
+    std::cout<<"Wrote "<<basis.size()<<" polylines to "<<filename<<std::endl;
+  }
+}
+
 int main(int argc, char* argv[])
 {
   std::string filename=CGAL::data_file_path("meshes/3torus.off");
   bool draw=false;
+  std::string dump_filename;
   for (int i=1; i<argc; ++i)
   {
     if (std::string(argv[i])=="-draw")
     { draw=true; }
+    else if (std::string(argv[i])=="-dump" && i+1<argc)
+    { dump_filename=argv[++i]; }
     else
     { filename=argv[i]; }
   }
@@ -64,6 +98,9 @@ int main(int argc, char* argv[])
   std::cout<<"Basis has "<<basis.size()<<" loop(s)."<<std::endl;
   for (std::size_t i=0; i<basis.size(); ++i)
   { display_cycle_info(sm, basis[i], i); }
+
+  if (!dump_filename.empty())
+  { write_polylines_file(sm, basis, dump_filename); }
 
   if (draw)
   { CGAL::draw(sm, basis); }
