@@ -32,7 +32,8 @@
 
 // Custom modules
 #include "../testBVH/utils.h"
-#include "crossCheckFlexible.h"
+//#include "crossCheckFlexible.h"
+#include "../testBVH/crossCheck.h"
 #include "../testBVH/DualTreeStep.h"
 #include "../testBVH/rapidDescendKernel.h"
 #include "../testBVH/batchedCrossIntersection.h"
@@ -595,8 +596,8 @@ void KernelBVHController::runIntersectionPipeline(int batchMultiplier,
   double tCrossStart = cuBQL::getCurrentTime();
 
   uint32_t totalIntersections =
-      executeCrossIntersectionFlexible(m_bvhA, m_dMarkedNodeIndicesA, m_hOutMarkedCountA, m_bvhB, m_dMarkedNodeIndicesB,
-                                       m_hOutMarkedCountB, m_dOutPairsA, m_dOutPairsB, 0, 0, 0);
+      executeCrissCrossIntersection(m_bvhA, m_dMarkedNodeIndicesA, m_hOutMarkedCountA, m_bvhB, m_dMarkedNodeIndicesB,
+                                       m_hOutMarkedCountB, m_dOutPairsA, m_dOutPairsB);
 
   CUBQL_CUDA_CALL(StreamSynchronize(m_stream));
   double tCrossEnd = cuBQL::getCurrentTime();

@@ -335,6 +335,7 @@ FetchContent_MakeAvailable(polyscope)
 # ====================================================================
 # TARGET 10: Main Application (KernelBVHController Launcher)
 # ====================================================================
+# src/GPUIntersector/crossCheckFlexible.cu
 
 # 1. Find Readline library installed on system (Fedora)
 find_package(PkgConfig REQUIRED)
@@ -345,7 +346,7 @@ set_source_files_properties(apps/mainApplication.cpp PROPERTIES LANGUAGE CUDA)
 add_executable(MainApp 
     apps/mainApplication.cpp 
     src/GPUIntersector/KenelBVHController.cu
-    src/GPUIntersector/crossCheckFlexible.cu
+    src/testBVH/crossCheck.cu
     src/testBVH/rapidDescendKernel.cu
     src/testBVH/batchedCrossIntersectionV2.cu
     src/testBVH/batchedCrossIntersectionV3.cu
