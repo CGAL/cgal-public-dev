@@ -1,17 +1,22 @@
 #include "utils.h"
 #include "cuBQL/math/vec.h"
+#include <cmath>
+
+// =============================================================================
+// Internal Device Workhorse Functions
+// =============================================================================
 
 // -----------------------------------------------------------------------------
-// Internal Device Workhorse Function
+// 1. float3 Device Implementation (Legacy / Float Pipeline)
 // -----------------------------------------------------------------------------
 __device__ __forceinline__ void assembleTrianglesDeviceImpl(cuBQL::Triangle* dMesh,
-                                                             float2* dMetrics,
-                                                             const float3* dVerts,
-                                                             const float* dVertErrors,
-                                                             const uint3* dIndices,
-                                                             int numTriangles,
-                                                             bool isTranslated,
-                                                             bool isRotated) {
+                                                            float2* dMetrics,
+                                                            const float3* dVerts,
+                                                            const float* dVertErrors,
+                                                            const uint3* dIndices,
+                                                            int numTriangles,
+                                                            bool isTranslated,
+                                                            bool isRotated) {
   int idx = threadIdx.x + blockIdx.x * blockDim.x;
   if(idx >= numTriangles)
     return;
@@ -77,8 +82,125 @@ __device__ __forceinline__ void assembleTrianglesDeviceImpl(cuBQL::Triangle* dMe
 }
 
 // -----------------------------------------------------------------------------
-// Global Entry-Point Kernels
+// 2. double3 Device Implementation (Double -> Float Downcast Pipeline)
 // -----------------------------------------------------------------------------
+// -----------------------------------------------------------------------------
+// 2. double3 Device Implementation (Exact Downcast Drift & Metrics)
+// -----------------------------------------------------------------------------
+// __device__ __forceinline__ void assembleTrianglesDeviceImpl(
+//     cuBQL::Triangle* dMesh, float2* dMetrics, const double3* dVerts, const uint3* dIndices, int numTriangles) {
+//   int idx = threadIdx.x + blockIdx.x * blockDim.x;
+//   if(idx >= numTriangles)
+//     return;
+
+//   uint3 triIdx = dIndices[idx];
+
+//   double3 p0 = dVerts[triIdx.x];
+//   double3 p1 = dVerts[triIdx.y];
+//   double3 p2 = dVerts[triIdx.z];
+
+//   // 1. Quantize double3 -> float components
+//   float3 a = make_float3(static_cast<float>(p0.x), static_cast<float>(p0.y), static_cast<float>(p0.z));
+//   float3 b = make_float3(static_cast<float>(p1.x), static_cast<float>(p1.y), static_cast<float>(p1.z));
+//   float3 c = make_float3(static_cast<float>(p2.x), static_cast<float>(p2.y), static_cast<float>(p2.z));
+
+//   // CORRECT
+//   dMesh[idx].a.x = a.x;
+//   dMesh[idx].a.y = a.y;
+//   dMesh[idx].a.z = a.z;
+//   dMesh[idx].b.x = b.x;
+//   dMesh[idx].b.y = b.y;
+//   dMesh[idx].b.z = b.z; // Fixed a.z -> b.z
+//   dMesh[idx].c.x = c.x;
+//   dMesh[idx].c.y = c.y;
+//   dMesh[idx].c.z = c.z;
+
+//   // 2. Compute L (Absolute Spatial Scale) and E (Max Edge Axis Extent) in double precision
+//   double l0 = fmax(fmax(fabs(p0.x), fabs(p0.y)), fabs(p0.z));
+//   double l1 = fmax(fmax(fabs(p1.x), fabs(p1.y)), fabs(p1.z));
+//   double l2 = fmax(fmax(fabs(p2.x), fabs(p2.y)), fabs(p2.z));
+//   float L = static_cast<float>(fmax(fmax(l0, l1), l2));
+
+//   double ex = fmax(fmax(fabs(p0.x - p1.x), fabs(p1.x - p2.x)), fabs(p2.x - p0.x));
+//   double ey = fmax(fmax(fabs(p0.y - p1.y), fabs(p1.y - p2.y)), fabs(p2.y - p0.y));
+//   double ez = fmax(fmax(fabs(p0.z - p1.z), fabs(p1.z - p2.z)), fabs(p2.z - p0.z));
+//   float E = static_cast<float>(fmax(fmax(ex, ey), ez));
+
+//   // 3. Compute EXACT Quantization Drift per vertex: max(|double_pos - float_pos|)
+//   double err0 = fmax(fmax(fabs(p0.x - static_cast<double>(a.x)), fabs(p0.y - static_cast<double>(a.y))),
+//                      fabs(p0.z - static_cast<double>(a.z)));
+
+//   double err1 = fmax(fmax(fabs(p1.x - static_cast<double>(b.x)), fabs(p1.y - static_cast<double>(b.y))),
+//                      fabs(p1.z - static_cast<double>(b.z)));
+
+//   double err2 = fmax(fmax(fabs(p2.x - static_cast<double>(c.x)), fabs(p2.y - static_cast<double>(c.y))),
+//                      fabs(p2.z - static_cast<double>(c.z)));
+
+//   float maxVertexError = static_cast<float>(fmax(fmax(err0, err1), err2));
+
+//   // 5. Expand scale and edge metrics strictly by the exact error bound
+//   L += maxVertexError;
+//   E += (2.0f * maxVertexError);
+
+//   // 6. Write out packed parameters
+//   dMetrics[idx] = make_float2(L, E * E);
+// }
+
+__device__ __forceinline__ void assembleTrianglesDeviceImpl(
+    cuBQL::Triangle* dMesh, float2* dMetrics, const double3* dVerts, const uint3* dIndices, int numTriangles) {
+  int idx = threadIdx.x + blockIdx.x * blockDim.x;
+  if(idx >= numTriangles)
+    return;
+
+  uint3 triIdx = dIndices[idx];
+
+  double3 p0 = dVerts[triIdx.x];
+  double3 p1 = dVerts[triIdx.y];
+  double3 p2 = dVerts[triIdx.z];
+
+  // 1. Quantize double3 -> float components
+  float3 a = make_float3(static_cast<float>(p0.x), static_cast<float>(p0.y), static_cast<float>(p0.z));
+  float3 b = make_float3(static_cast<float>(p1.x), static_cast<float>(p1.y), static_cast<float>(p1.z));
+  float3 c = make_float3(static_cast<float>(p2.x), static_cast<float>(p2.y), static_cast<float>(p2.z));
+
+  dMesh[idx].a.x = a.x; dMesh[idx].a.y = a.y; dMesh[idx].a.z = a.z;
+  dMesh[idx].b.x = b.x; dMesh[idx].b.y = b.y; dMesh[idx].b.z = b.z;
+  dMesh[idx].c.x = c.x; dMesh[idx].c.y = c.y; dMesh[idx].c.z = c.z;
+
+  // 2. Compute L and E in double precision
+  double l0 = fmax(fmax(fabs(p0.x), fabs(p0.y)), fabs(p0.z));
+  double l1 = fmax(fmax(fabs(p1.x), fabs(p1.y)), fabs(p1.z));
+  double l2 = fmax(fmax(fabs(p2.x), fabs(p2.y)), fabs(p2.z));
+  double L = fmax(fmax(l0, l1), l2);
+
+  double ex = fmax(fmax(fabs(p0.x - p1.x), fabs(p1.x - p2.x)), fabs(p2.x - p0.x));
+  double ey = fmax(fmax(fabs(p0.y - p1.y), fabs(p1.y - p2.y)), fabs(p2.y - p0.y));
+  double ez = fmax(fmax(fabs(p0.z - p1.z), fabs(p1.z - p2.z)), fabs(p2.z - p0.z));
+  double E = fmax(fmax(ex, ey), ez);
+
+  // 3. Compute EXACT Quantization Drift per vertex
+  double err0 = fmax(fmax(fabs(p0.x - static_cast<double>(a.x)), fabs(p0.y - static_cast<double>(a.y))),
+                     fabs(p0.z - static_cast<double>(a.z)));
+  double err1 = fmax(fmax(fabs(p1.x - static_cast<double>(b.x)), fabs(p1.y - static_cast<double>(b.y))),
+                     fabs(p1.z - static_cast<double>(b.z)));
+  double err2 = fmax(fmax(fabs(p2.x - static_cast<double>(c.x)), fabs(p2.y - static_cast<double>(c.y))),
+                     fabs(p2.z - static_cast<double>(c.z)));
+
+  float maxVertexError = static_cast<float>(fmax(fmax(err0, err1), err2));
+
+  // 4. Incorporate exact quantization drift into effective L
+  //    (0.75 / 1.1920929e-7f) converts maxVertexError into physical determinant drift in classifyPair
+  const float scaleNoiseToL = 0.75f / 1.1920929e-7f;
+  float L_eff = static_cast<float>(L) + (maxVertexError * scaleNoiseToL);
+
+  // 5. Pack effective L and exact E^2 (without double-counting padding)
+  dMetrics[idx] = make_float2(L_eff, static_cast<float>(E * E));
+}
+// =============================================================================
+// Global Entry-Point Kernels
+// =============================================================================
+
+// --- float3 Kernels ---
 __global__ void assembleTrianglesKernel(cuBQL::Triangle* dMesh,
                                         float2* dMetrics,
                                         const float3* dVerts,
@@ -99,6 +221,14 @@ __global__ void assembleTrianglesKernelTransformed(cuBQL::Triangle* dMesh,
   assembleTrianglesDeviceImpl(dMesh, dMetrics, dVerts, dVertErrors, dIndices, numTriangles, isTranslated, isRotated);
 }
 
+// --- double3 Kernels ---
+__global__ void assembleTrianglesKernel(
+    cuBQL::Triangle* dMesh, float2* dMetrics, const double3* dVerts, const uint3* dIndices, int numTriangles) {
+  assembleTrianglesDeviceImpl(dMesh, dMetrics, dVerts, dIndices, numTriangles);
+}
+
+
+// --- General Utility Kernels ---
 __global__ void generateBoxes(cuBQL::box3f* boxes, const cuBQL::Triangle* tris, int N) {
   int i = threadIdx.x + blockIdx.x * blockDim.x;
   if(i < N) {
@@ -106,9 +236,8 @@ __global__ void generateBoxes(cuBQL::box3f* boxes, const cuBQL::Triangle* tris, 
   }
 }
 
-__global__ void populateReverseMapBKernel(uint32_t* d_reverseMapB, 
-                                           const uint32_t* d_markedNodeIndicesB, 
-                                           uint32_t h_outMarkedCountB) {
+__global__ void
+populateReverseMapBKernel(uint32_t* d_reverseMapB, const uint32_t* d_markedNodeIndicesB, uint32_t h_outMarkedCountB) {
   int idx = threadIdx.x + blockIdx.x * blockDim.x;
   if(idx < h_outMarkedCountB) {
     uint32_t directBvhNodeId = d_markedNodeIndicesB[idx];
@@ -116,9 +245,11 @@ __global__ void populateReverseMapBKernel(uint32_t* d_reverseMapB,
   }
 }
 
-// -----------------------------------------------------------------------------
+// =============================================================================
 // Host Launch Wrappers
-// -----------------------------------------------------------------------------
+// =============================================================================
+
+// --- float3 Launch Wrappers ---
 void launchAssembleTriangles(cuBQL::Triangle* dMesh,
                              float2* dMetrics,
                              const float3* dVerts,
@@ -133,19 +264,33 @@ void launchAssembleTriangles(cuBQL::Triangle* dMesh,
 }
 
 void launchAssembleTrianglesTransformed(cuBQL::Triangle* dMesh,
-                                         float2* dMetrics,
-                                         const float3* dVerts,
-                                         const float* dVertErrors,
-                                         const uint3* dIndices,
-                                         int numTriangles,
-                                         bool isTranslated,
-                                         bool isRotated,
-                                         cudaStream_t stream) {
+                                        float2* dMetrics,
+                                        const float3* dVerts,
+                                        const float* dVertErrors,
+                                        const uint3* dIndices,
+                                        int numTriangles,
+                                        bool isTranslated,
+                                        bool isRotated,
+                                        cudaStream_t stream) {
   int blockSize = 256;
   int gridSize = (numTriangles + blockSize - 1) / blockSize;
-  assembleTrianglesKernelTransformed<<<gridSize, blockSize, 0, stream>>>(
-      dMesh, dMetrics, dVerts, dVertErrors, dIndices, numTriangles, isTranslated, isRotated);
+  // FIXED: Removed trailing extra 'stream' from inside kernel arguments (...)
+  assembleTrianglesKernelTransformed<<<gridSize, blockSize, 0, stream>>>(dMesh, dMetrics, dVerts, dVertErrors, dIndices,
+                                                                         numTriangles, isTranslated, isRotated);
 }
+
+// --- double3 Launch Wrappers ---
+void launchAssembleTriangles(cuBQL::Triangle* dMesh,
+                             float2* dMetrics,
+                             const double3* dVerts,
+                             const uint3* dIndices,
+                             int numTriangles,
+                             cudaStream_t stream) {
+  int blockSize = 256;
+  int gridSize = (numTriangles + blockSize - 1) / blockSize;
+  assembleTrianglesKernel<<<gridSize, blockSize, 0, stream>>>(dMesh, dMetrics, dVerts, dIndices, numTriangles);
+}
+
 
 void launchGenerateBoxes(cuBQL::box3f* dBoxes, const cuBQL::Triangle* dTris, int numTriangles, cudaStream_t stream) {
   int blockSize = 256;

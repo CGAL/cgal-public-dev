@@ -32,7 +32,6 @@
 
 // Custom modules
 #include "../testBVH/utils.h"
-//#include "crossCheckFlexible.h"
 #include "../testBVH/crossCheck.h"
 #include "../testBVH/DualTreeStep.h"
 #include "../testBVH/rapidDescendKernel.h"
@@ -50,22 +49,22 @@
 #endif
 
 // -----------------------------------------------------------------------------
-// Helper 3x3 Matrix Structure & Rigid Body Device Transformations
+// Helper 3x3 Matrix Structure & Rigid Body Device Transformations (Double Precision)
 // -----------------------------------------------------------------------------
 struct Mat3x3
 {
-  float m[3][3];
+  double m[3][3];
 };
 
-inline Mat3x3 makeRotationMatrixDeg(float rxDeg, float ryDeg, float rzDeg) {
-  const float DEG_TO_RAD = 3.14159265358979323846f / 180.0f;
-  float radX = rxDeg * DEG_TO_RAD;
-  float radY = ryDeg * DEG_TO_RAD;
-  float radZ = rzDeg * DEG_TO_RAD;
+inline Mat3x3 makeRotationMatrixDeg(double rxDeg, double ryDeg, double rzDeg) {
+  const double DEG_TO_RAD = 3.14159265358979323846 / 180.0;
+  double radX = rxDeg * DEG_TO_RAD;
+  double radY = ryDeg * DEG_TO_RAD;
+  double radZ = rzDeg * DEG_TO_RAD;
 
-  float cx = cosf(radX), sx = sinf(radX);
-  float cy = cosf(radY), sy = sinf(radY);
-  float cz = cosf(radZ), sz = sinf(radZ);
+  double cx = cos(radX), sx = sin(radX);
+  double cy = cos(radY), sy = sin(radY);
+  double cz = cos(radZ), sz = sin(radZ);
 
   Mat3x3 R;
   // Composite Rotation: R = Rz * Ry * Rx
@@ -84,20 +83,20 @@ inline Mat3x3 makeRotationMatrixDeg(float rxDeg, float ryDeg, float rzDeg) {
   return R;
 }
 
-__device__ inline float3 transformPoint(const float3& p, const Mat3x3& R, float3 center, float3 trans) {
-  float x = p.x - center.x;
-  float y = p.y - center.y;
-  float z = p.z - center.z;
+__device__ inline double3 transformPoint(const double3& p, const Mat3x3& R, double3 center, double3 trans) {
+  double x = p.x - center.x;
+  double y = p.y - center.y;
+  double z = p.z - center.z;
 
-  float rx = R.m[0][0] * x + R.m[0][1] * y + R.m[0][2] * z;
-  float ry = R.m[1][0] * x + R.m[1][1] * y + R.m[1][2] * z;
-  float rz = R.m[2][0] * x + R.m[2][1] * y + R.m[2][2] * z;
+  double rx = R.m[0][0] * x + R.m[0][1] * y + R.m[0][2] * z;
+  double ry = R.m[1][0] * x + R.m[1][1] * y + R.m[1][2] * z;
+  double rz = R.m[2][0] * x + R.m[2][1] * y + R.m[2][2] * z;
 
-  return make_float3(rx + center.x + trans.x, ry + center.y + trans.y, rz + center.z + trans.z);
+  return make_double3(rx + center.x + trans.x, ry + center.y + trans.y, rz + center.z + trans.z);
 }
 
 __global__ void transformVerticesKernel(
-    float3* dVertsOut, const float3* dVertsOrig, int numVerts, Mat3x3 R, float3 center, float3 trans) {
+    double3* dVertsOut, const double3* dVertsOrig, int numVerts, Mat3x3 R, double3 center, double3 trans) {
   int idx = threadIdx.x + blockIdx.x * blockDim.x;
   if(idx >= numVerts)
     return;
@@ -109,7 +108,7 @@ __global__ void transformVerticesKernel(
 // Parallel TBB CPU CGAL Transformations & Extraction Helpers
 // -----------------------------------------------------------------------------
 static void
-transformCgalMesh(Mesh* mesh, const std::vector<Point3>& origPoints, Point3 center, float3 rotDeg, float3 trans) {
+transformCgalMesh(Mesh* mesh, const std::vector<Point3>& origPoints, Point3 center, double3 rotDeg, double3 trans) {
   if(!mesh || origPoints.empty())
     return;
 
@@ -117,9 +116,9 @@ transformCgalMesh(Mesh* mesh, const std::vector<Point3>& origPoints, Point3 cent
   const size_t numPoints = mesh->num_vertices();
 
   const double DEG_TO_RAD = 3.14159265358979323846 / 180.0;
-  double radX = static_cast<double>(rotDeg.x) * DEG_TO_RAD;
-  double radY = static_cast<double>(rotDeg.y) * DEG_TO_RAD;
-  double radZ = static_cast<double>(rotDeg.z) * DEG_TO_RAD;
+  double radX = rotDeg.x * DEG_TO_RAD;
+  double radY = rotDeg.y * DEG_TO_RAD;
+  double radZ = rotDeg.z * DEG_TO_RAD;
 
   double cx = cos(radX), sx = sin(radX);
   double cy = cos(radY), sy = sin(radY);
@@ -130,9 +129,9 @@ transformCgalMesh(Mesh* mesh, const std::vector<Point3>& origPoints, Point3 cent
   double r20 = -sy, r21 = sx * cy, r22 = cx * cy;
 
   double cx_p = center.x(), cy_p = center.y(), cz_p = center.z();
-  double tx = static_cast<double>(trans.x);
-  double ty = static_cast<double>(trans.y);
-  double tz = static_cast<double>(trans.z);
+  double tx = trans.x;
+  double ty = trans.y;
+  double tz = trans.z;
 
   tbb::parallel_for(tbb::blocked_range<size_t>(0, numPoints),
                     [mesh, &pmap, &origPoints, r00, r01, r02, r10, r11, r12, r20, r21, r22, cx_p, cy_p, cz_p, tx, ty,
@@ -155,8 +154,8 @@ transformCgalMesh(Mesh* mesh, const std::vector<Point3>& origPoints, Point3 cent
                     });
 }
 
-static void translateCgalAndExtractFloat3(
-    Mesh* mesh, const std::vector<Point3>& origPoints, float3* hOutVerts, float xB, float yB, float zB) {
+static void translateCgalAndExtractDouble3(
+    Mesh* mesh, const std::vector<Point3>& origPoints, double3* hOutVerts, double xB, double yB, double zB) {
   if(!mesh || origPoints.empty() || !hOutVerts)
     return;
 
@@ -170,15 +169,13 @@ static void translateCgalAndExtractFloat3(
       if(!mesh->is_removed(vd)) {
         // 1. High-precision double translation from pristine baseline
         const Point3& pOrig = origPoints[i];
-        Point3 pTranslated(pOrig.x() + static_cast<double>(xB), pOrig.y() + static_cast<double>(yB),
-                           pOrig.z() + static_cast<double>(zB));
+        Point3 pTranslated(pOrig.x() + xB, pOrig.y() + yB, pOrig.z() + zB);
 
         // Update CGAL host mesh
         pmap[vd] = pTranslated;
 
-        // 2. Quantize double -> float3 for GPU upload
-        hOutVerts[i] = make_float3(static_cast<float>(pTranslated.x()), static_cast<float>(pTranslated.y()),
-                                   static_cast<float>(pTranslated.z()));
+        // 2. Extract double3 for GPU upload
+        hOutVerts[i] = make_double3(pTranslated.x(), pTranslated.y(), pTranslated.z());
       }
     }
   });
@@ -202,7 +199,7 @@ KernelBVHController::~KernelBVHController() {
 // -----------------------------------------------------------------------------
 // Dynamic Rigid Body Transformation Engine
 // -----------------------------------------------------------------------------
-void KernelBVHController::setTransformBoth(float3 rotDegA, float3 transA, float3 rotDegB, float3 transB) {
+void KernelBVHController::setTransformBoth(double3 rotDegA, double3 transA, double3 rotDegB, double3 transB) {
   // 1. Change detection per mesh
   bool movedA = (rotDegA.x != m_rotA.x || rotDegA.y != m_rotA.y || rotDegA.z != m_rotA.z || transA.x != m_transA.x ||
                  transA.y != m_transA.y || transA.z != m_transA.z);
@@ -221,19 +218,18 @@ void KernelBVHController::setTransformBoth(float3 rotDegA, float3 transA, float3
   // STEP 1: QUEUE ALL GPU WORK FIRST (NON-BLOCKING COMMAND DISPATCH)
   // ---------------------------------------------------------------------------
   if(movedA && m_numVertsA > 0 && m_dVertsA && m_dVertsAOrig) {
-    bool isTransA = (transA.x != 0.0f || transA.y != 0.0f || transA.z != 0.0f);
-    bool isRotA = (rotDegA.x != 0.0f || rotDegA.y != 0.0f || rotDegA.z != 0.0f);
+    bool isTransA = (transA.x != 0.0 || transA.y != 0.0 || transA.z != 0.0);
+    bool isRotA = (rotDegA.x != 0.0 || rotDegA.y != 0.0 || rotDegA.z != 0.0);
 
     Mat3x3 RA = makeRotationMatrixDeg(rotDegA.x, rotDegA.y, rotDegA.z);
-    float3 cA = make_float3(static_cast<float>(m_centerA.x()), static_cast<float>(m_centerA.y()),
-                            static_cast<float>(m_centerA.z()));
+    double3 cA = make_double3(m_centerA.x(), m_centerA.y(), m_centerA.z());
 
     int gridVertsA = cuBQL::divRoundUp(m_numVertsA, block);
     transformVerticesKernel<<<gridVertsA, block, 0, m_stream>>>(m_dVertsA, m_dVertsAOrig, m_numVertsA, RA, cA, transA);
 
     int gridTrisA = cuBQL::divRoundUp(m_numTrianglesA, block);
-    assembleTrianglesKernelTransformed<<<gridTrisA, block, 0, m_stream>>>(
-        m_dMeshA, m_dMeshMetricsA, m_dVertsA, m_dVertErrorsA, m_dIndicesA, m_numTrianglesA, isTransA, isRotA);
+    assembleTrianglesKernel<<<gridTrisA, block, 0, m_stream>>>(
+        m_dMeshA, m_dMeshMetricsA, m_dVertsA, m_dIndicesA, m_numTrianglesA);
 
     generateBoxes<<<gridTrisA, block, 0, m_stream>>>(m_dBoxesA, m_dMeshA, m_numTrianglesA);
     cuBQL::cuda::refit(m_bvhA, m_dBoxesA, m_stream);
@@ -242,19 +238,18 @@ void KernelBVHController::setTransformBoth(float3 rotDegA, float3 transA, float3
   }
 
   if(movedB && m_numVertsB > 0 && m_dVertsB && m_dVertsBOrig) {
-    bool isTransB = (transB.x != 0.0f || transB.y != 0.0f || transB.z != 0.0f);
-    bool isRotB = (rotDegB.x != 0.0f || rotDegB.y != 0.0f || rotDegB.z != 0.0f);
+    bool isTransB = (transB.x != 0.0 || transB.y != 0.0 || transB.z != 0.0);
+    bool isRotB = (rotDegB.x != 0.0 || rotDegB.y != 0.0 || rotDegB.z != 0.0);
 
     Mat3x3 RB = makeRotationMatrixDeg(rotDegB.x, rotDegB.y, rotDegB.z);
-    float3 cB = make_float3(static_cast<float>(m_centerB.x()), static_cast<float>(m_centerB.y()),
-                            static_cast<float>(m_centerB.z()));
+    double3 cB = make_double3(m_centerB.x(), m_centerB.y(), m_centerB.z());
 
     int gridVertsB = cuBQL::divRoundUp(m_numVertsB, block);
     transformVerticesKernel<<<gridVertsB, block, 0, m_stream>>>(m_dVertsB, m_dVertsBOrig, m_numVertsB, RB, cB, transB);
 
     int gridTrisB = cuBQL::divRoundUp(m_numTrianglesB, block);
-    assembleTrianglesKernelTransformed<<<gridTrisB, block, 0, m_stream>>>(
-        m_dMeshB, m_dMeshMetricsB, m_dVertsB, m_dVertErrorsB, m_dIndicesB, m_numTrianglesB, isTransB, isRotB);
+    assembleTrianglesKernel<<<gridTrisB, block, 0, m_stream>>>(
+        m_dMeshB, m_dMeshMetricsB, m_dVertsB, m_dIndicesB, m_numTrianglesB);
 
     generateBoxes<<<gridTrisB, block, 0, m_stream>>>(m_dBoxesB, m_dMeshB, m_numTrianglesB);
     cuBQL::cuda::refit(m_bvhB, m_dBoxesB, m_stream);
@@ -297,12 +292,13 @@ void KernelBVHController::setTransformBoth(float3 rotDegA, float3 transA, float3
     CUBQL_CUDA_CALL(StreamSynchronize(m_stream));
   }
 }
+
 // Legacy Translation Handlers
-void KernelBVHController::setTranslation(float xB, float yB, float zB) {
-  setTransformBoth(m_rotA, m_transA, m_rotB, make_float3(xB, yB, zB));
+void KernelBVHController::setTranslation(double xB, double yB, double zB) {
+  setTransformBoth(m_rotA, m_transA, m_rotB, make_double3(xB, yB, zB));
 }
 
-void KernelBVHController::setTranslationCPUHostUpload(float xB, float yB, float zB) {
+void KernelBVHController::setTranslationCPUHostUpload(double xB, double yB, double zB) {
   // 1. Exit if translation target hasn't changed
   if(xB == shiftX && yB == shiftY && zB == shiftZ)
     return;
@@ -310,22 +306,22 @@ void KernelBVHController::setTranslationCPUHostUpload(float xB, float yB, float 
   if(!m_meshBcpu || m_origPointsB.empty() || m_numVertsB <= 0)
     return;
 
-  // 2. CPU: Update CGAL Mesh in double precision & prepare host float3 array
-  std::vector<float3> h_vertsBUpdated(m_numVertsB);
-  translateCgalAndExtractFloat3(m_meshBcpu, m_origPointsB, h_vertsBUpdated.data(), xB, yB, zB);
+  // 2. CPU: Update CGAL Mesh in double precision & prepare host double3 array
+  std::vector<double3> h_vertsBUpdated(m_numVertsB);
+  translateCgalAndExtractDouble3(m_meshBcpu, m_origPointsB, h_vertsBUpdated.data(), xB, yB, zB);
 
-  // 3. GPU: Async upload updated float3 vertices to device memory (m_dVertsB)
+  // 3. GPU: Async upload updated double3 vertices to device memory (m_dVertsB)
   CUBQL_CUDA_CALL(
-      MemcpyAsync(m_dVertsB, h_vertsBUpdated.data(), m_numVertsB * sizeof(float3), cudaMemcpyHostToDevice, m_stream));
+      MemcpyAsync(m_dVertsB, h_vertsBUpdated.data(), m_numVertsB * sizeof(double3), cudaMemcpyHostToDevice, m_stream));
 
   // 4. GPU: Triangle Assembly with Transformation Drift Flags
   int block = 256;
   int gridTris = cuBQL::divRoundUp(m_numTrianglesB, block);
-  bool isTransB = (xB != 0.0f || yB != 0.0f || zB != 0.0f);
-  bool isRotB = (m_rotB.x != 0.0f || m_rotB.y != 0.0f || m_rotB.z != 0.0f);
+  bool isTransB = (xB != 0.0 || yB != 0.0 || zB != 0.0);
+  bool isRotB = (m_rotB.x != 0.0 || m_rotB.y != 0.0 || m_rotB.z != 0.0);
 
-  assembleTrianglesKernelTransformed<<<gridTris, block, 0, m_stream>>>(
-      m_dMeshB, m_dMeshMetricsB, m_dVertsB, m_dVertErrorsB, m_dIndicesB, m_numTrianglesB, isTransB, isRotB);
+  assembleTrianglesKernel<<<gridTris, block, 0, m_stream>>>(
+      m_dMeshB, m_dMeshMetricsB, m_dVertsB, m_dIndicesB, m_numTrianglesB);
 
   // 5. GPU: Generate tight AABBs and refit BVH B
   generateBoxes<<<gridTris, block, 0, m_stream>>>(m_dBoxesB, m_dMeshB, m_numTrianglesB);
@@ -338,7 +334,7 @@ void KernelBVHController::setTranslationCPUHostUpload(float xB, float yB, float 
   shiftX = xB;
   shiftY = yB;
   shiftZ = zB;
-  m_transB = make_float3(xB, yB, zB);
+  m_transB = make_double3(xB, yB, zB);
 }
 
 // -----------------------------------------------------------------------------
@@ -346,22 +342,20 @@ void KernelBVHController::setTranslationCPUHostUpload(float xB, float yB, float 
 // -----------------------------------------------------------------------------
 void KernelBVHController::construct(Mesh& meshAcpu,
                                     Mesh& meshBcpu,
-                                    const float3* hVertsA,
+                                    const double3* hVertsA,
                                     int numVertsA,
                                     const uint3* hIndicesA,
-                                    const float* hVertErrorsA,
                                     int numTrianglesA,
                                     int levelA,
-                                    const float3* hVertsB,
+                                    const double3* hVertsB,
                                     int numVertsB,
                                     const uint3* hIndicesB,
-                                    const float* hVertErrorsB,
                                     int numTrianglesB,
                                     int levelB,
                                     int leafThreshold,
                                     ExecutionStats& stats) {
-  construct(meshAcpu, meshBcpu, Point3(0, 0, 0), Point3(0, 0, 0), hVertsA, numVertsA, hIndicesA, hVertErrorsA,
-            numTrianglesA, levelA, hVertsB, numVertsB, hIndicesB, hVertErrorsB, numTrianglesB, levelB, leafThreshold,
+  construct(meshAcpu, meshBcpu, Point3(0, 0, 0), Point3(0, 0, 0), hVertsA, numVertsA, hIndicesA,
+            numTrianglesA, levelA, hVertsB, numVertsB, hIndicesB, numTrianglesB, levelB, leafThreshold,
             stats);
 }
 
@@ -369,16 +363,14 @@ void KernelBVHController::construct(Mesh& meshAcpu,
                                     Mesh& meshBcpu,
                                     const Point3& centerA,
                                     const Point3& centerB,
-                                    const float3* hVertsA,
+                                    const double3* hVertsA,
                                     int numVertsA,
                                     const uint3* hIndicesA,
-                                    const float* hVertErrorsA,
                                     int numTrianglesA,
                                     int levelA,
-                                    const float3* hVertsB,
+                                    const double3* hVertsB,
                                     int numVertsB,
                                     const uint3* hIndicesB,
-                                    const float* hVertErrorsB,
                                     int numTrianglesB,
                                     int levelB,
                                     int leafThreshold,
@@ -401,13 +393,13 @@ void KernelBVHController::construct(Mesh& meshAcpu,
   m_centerA = centerA;
   m_centerB = centerB;
 
-  m_rotA = make_float3(0.0f, 0.0f, 0.0f);
-  m_transA = make_float3(0.0f, 0.0f, 0.0f);
-  m_rotB = make_float3(0.0f, 0.0f, 0.0f);
-  m_transB = make_float3(0.0f, 0.0f, 0.0f);
-  shiftX = 0.0f;
-  shiftY = 0.0f;
-  shiftZ = 0.0f;
+  m_rotA = make_double3(0.0, 0.0, 0.0);
+  m_transA = make_double3(0.0, 0.0, 0.0);
+  m_rotB = make_double3(0.0, 0.0, 0.0);
+  m_transB = make_double3(0.0, 0.0, 0.0);
+  shiftX = 0.0;
+  shiftY = 0.0;
+  shiftZ = 0.0;
 
   cuBQL::BuildConfig buildConfig;
   buildConfig.makeLeafThreshold = m_leafThreshold;
@@ -426,45 +418,35 @@ void KernelBVHController::construct(Mesh& meshAcpu,
   CUBQL_CUDA_CALL(EventRecord(evAllocStart, m_stream));
 
   // --------------------------------------------------------------------
-  // 1. ASYNCHRONOUS PERSISTENT DEVICE ALLOCATION
+  // 1. ASYNCHRONOUS PERSISTENT DEVICE ALLOCATION (double3 Vertices)
   // --------------------------------------------------------------------
   // Mesh A Buffers
-  CUBQL_CUDA_CALL(MallocAsync((void**)&m_dVertsA, m_numVertsA * sizeof(float3), m_stream));
-  CUBQL_CUDA_CALL(MemcpyAsync(m_dVertsA, hVertsA, m_numVertsA * sizeof(float3), cudaMemcpyHostToDevice, m_stream));
+  CUBQL_CUDA_CALL(MallocAsync((void**)&m_dVertsA, m_numVertsA * sizeof(double3), m_stream));
+  CUBQL_CUDA_CALL(MemcpyAsync(m_dVertsA, hVertsA, m_numVertsA * sizeof(double3), cudaMemcpyHostToDevice, m_stream));
 
-  CUBQL_CUDA_CALL(MallocAsync((void**)&m_dVertsAOrig, m_numVertsA * sizeof(float3), m_stream));
-  CUBQL_CUDA_CALL(MemcpyAsync(m_dVertsAOrig, hVertsA, m_numVertsA * sizeof(float3), cudaMemcpyHostToDevice, m_stream));
+  CUBQL_CUDA_CALL(MallocAsync((void**)&m_dVertsAOrig, m_numVertsA * sizeof(double3), m_stream));
+  CUBQL_CUDA_CALL(MemcpyAsync(m_dVertsAOrig, hVertsA, m_numVertsA * sizeof(double3), cudaMemcpyHostToDevice, m_stream));
 
   CUBQL_CUDA_CALL(MallocAsync((void**)&m_dIndicesA, m_numTrianglesA * sizeof(uint3), m_stream));
   CUBQL_CUDA_CALL(
       MemcpyAsync(m_dIndicesA, hIndicesA, m_numTrianglesA * sizeof(uint3), cudaMemcpyHostToDevice, m_stream));
 
   m_dVertErrorsA = nullptr;
-  if(hVertErrorsA) {
-    CUBQL_CUDA_CALL(MallocAsync((void**)&m_dVertErrorsA, m_numVertsA * sizeof(float), m_stream));
-    CUBQL_CUDA_CALL(
-        MemcpyAsync(m_dVertErrorsA, hVertErrorsA, m_numVertsA * sizeof(float), cudaMemcpyHostToDevice, m_stream));
-  }
 
   // Mesh B Buffers
-  CUBQL_CUDA_CALL(MallocAsync((void**)&m_dVertsB, m_numVertsB * sizeof(float3), m_stream));
-  CUBQL_CUDA_CALL(MemcpyAsync(m_dVertsB, hVertsB, m_numVertsB * sizeof(float3), cudaMemcpyHostToDevice, m_stream));
+  CUBQL_CUDA_CALL(MallocAsync((void**)&m_dVertsB, m_numVertsB * sizeof(double3), m_stream));
+  CUBQL_CUDA_CALL(MemcpyAsync(m_dVertsB, hVertsB, m_numVertsB * sizeof(double3), cudaMemcpyHostToDevice, m_stream));
 
-  CUBQL_CUDA_CALL(MallocAsync((void**)&m_dVertsBOrig, m_numVertsB * sizeof(float3), m_stream));
-  CUBQL_CUDA_CALL(MemcpyAsync(m_dVertsBOrig, hVertsB, m_numVertsB * sizeof(float3), cudaMemcpyHostToDevice, m_stream));
+  CUBQL_CUDA_CALL(MallocAsync((void**)&m_dVertsBOrig, m_numVertsB * sizeof(double3), m_stream));
+  CUBQL_CUDA_CALL(MemcpyAsync(m_dVertsBOrig, hVertsB, m_numVertsB * sizeof(double3), cudaMemcpyHostToDevice, m_stream));
 
   CUBQL_CUDA_CALL(MallocAsync((void**)&m_dIndicesB, m_numTrianglesB * sizeof(uint3), m_stream));
   CUBQL_CUDA_CALL(
       MemcpyAsync(m_dIndicesB, hIndicesB, m_numTrianglesB * sizeof(uint3), cudaMemcpyHostToDevice, m_stream));
 
   m_dVertErrorsB = nullptr;
-  if(hVertErrorsB) {
-    CUBQL_CUDA_CALL(MallocAsync((void**)&m_dVertErrorsB, m_numVertsB * sizeof(float), m_stream));
-    CUBQL_CUDA_CALL(
-        MemcpyAsync(m_dVertErrorsB, hVertErrorsB, m_numVertsB * sizeof(float), cudaMemcpyHostToDevice, m_stream));
-  }
 
-  // Primitive & BVH Bounding Box Allocation
+  // Primitive & BVH Bounding Box Allocation (Single-Precision Float)
   CUBQL_CUDA_CALL(MallocAsync((void**)&m_dMeshA, m_numTrianglesA * sizeof(cuBQL::Triangle), m_stream));
   CUBQL_CUDA_CALL(MallocAsync((void**)&m_dMeshMetricsA, m_numTrianglesA * sizeof(float2), m_stream));
   CUBQL_CUDA_CALL(MallocAsync((void**)&m_dBoxesA, m_numTrianglesA * sizeof(cuBQL::box3f), m_stream));
@@ -473,13 +455,13 @@ void KernelBVHController::construct(Mesh& meshAcpu,
   CUBQL_CUDA_CALL(MallocAsync((void**)&m_dMeshMetricsB, m_numTrianglesB * sizeof(float2), m_stream));
   CUBQL_CUDA_CALL(MallocAsync((void**)&m_dBoxesB, m_numTrianglesB * sizeof(cuBQL::box3f), m_stream));
 
-  // Initial GPU Triangle Assembly & Box Generation
+  // Initial GPU Triangle Assembly & Box Generation (Casts double3 -> float cuBQL::Triangle)
   assembleTrianglesKernel<<<cuBQL::divRoundUp(m_numTrianglesA, 256), 256, 0, m_stream>>>(
-      m_dMeshA, m_dMeshMetricsA, m_dVertsA, m_dVertErrorsA, m_dIndicesA, m_numTrianglesA);
+      m_dMeshA, m_dMeshMetricsA, m_dVertsA, m_dIndicesA, m_numTrianglesA);
   generateBoxes<<<cuBQL::divRoundUp(m_numTrianglesA, 256), 256, 0, m_stream>>>(m_dBoxesA, m_dMeshA, m_numTrianglesA);
 
   assembleTrianglesKernel<<<cuBQL::divRoundUp(m_numTrianglesB, 256), 256, 0, m_stream>>>(
-      m_dMeshB, m_dMeshMetricsB, m_dVertsB, m_dVertErrorsB, m_dIndicesB, m_numTrianglesB);
+      m_dMeshB, m_dMeshMetricsB, m_dVertsB, m_dIndicesB, m_numTrianglesB);
   generateBoxes<<<cuBQL::divRoundUp(m_numTrianglesB, 256), 256, 0, m_stream>>>(m_dBoxesB, m_dMeshB, m_numTrianglesB);
 
   CUBQL_CUDA_CALL(EventRecord(evAllocStop, m_stream));
@@ -534,7 +516,7 @@ void KernelBVHController::construct(Mesh& meshAcpu,
   stats.thrustInitOverheadMs = (cuBQL::getCurrentTime() - tThrustInitStart) * 1000.0;
 
   // --------------------------------------------------------------------
-  // 4. BUILD & REFIT BVHs
+  // 4. BUILD & REFIT BVHs (cuBQL bvh3f)
   // --------------------------------------------------------------------
   CUBQL_CUDA_CALL(EventRecord(evBuildAStart, m_stream));
   cuBQL::gpuBuilder_v2_2::build_custom(m_bvhA, m_dBoxesA, m_numTrianglesA, buildConfig, (uint32_t)m_levelA,
@@ -767,13 +749,13 @@ void KernelBVHController::cleanup() {
 
   m_centerA = Point3(0, 0, 0);
   m_centerB = Point3(0, 0, 0);
-  m_rotA = make_float3(0.0f, 0.0f, 0.0f);
-  m_transA = make_float3(0.0f, 0.0f, 0.0f);
-  m_rotB = make_float3(0.0f, 0.0f, 0.0f);
-  m_transB = make_float3(0.0f, 0.0f, 0.0f);
-  shiftX = 0.0f;
-  shiftY = 0.0f;
-  shiftZ = 0.0f;
+  m_rotA = make_double3(0.0, 0.0, 0.0);
+  m_transA = make_double3(0.0, 0.0, 0.0);
+  m_rotB = make_double3(0.0, 0.0, 0.0);
+  m_transB = make_double3(0.0, 0.0, 0.0);
+  shiftX = 0.0;
+  shiftY = 0.0;
+  shiftZ = 0.0;
 
   if(m_stream)
     CUBQL_CUDA_CALL(StreamSynchronize(m_stream));

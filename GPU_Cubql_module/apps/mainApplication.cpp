@@ -123,40 +123,17 @@ bool exportCgalMeshToOff(const Mesh& mesh, const std::string& filepath) {
   return true;
 }
 
-// Synchronizes normalized CGAL vertices to GPU float3 buffers & computes precision error bounds once.
-void syncNormalizedVertsAndErrorsTBB(const Mesh& mesh,
-                                     std::vector<float3>& outVerts,
-                                     std::vector<float>& outVertexErrors,
-                                     bool usePreciseBounds) {
+// Synchronizes normalized CGAL vertices directly to GPU double3 buffers without floating-point downcasting.
+void syncNormalizedVertsTBB(const Mesh& mesh, std::vector<double3>& outVerts) {
   size_t numVerts = num_vertices(mesh);
-
   outVerts.resize(numVerts);
-  if(usePreciseBounds)
-    outVertexErrors.resize(numVerts);
-  else
-    outVertexErrors.clear();
-
   auto coords = mesh.points();
 
   tbb::parallel_for(tbb::blocked_range<size_t>(0, numVerts), [&](const tbb::blocked_range<size_t>& r) {
     for(size_t i = r.begin(); i != r.end(); ++i) {
       typename Mesh::Vertex_index v(static_cast<Mesh::size_type>(i));
       const auto& p = coords[v];
-
-      float fx = static_cast<float>(p.x());
-      float fy = static_cast<float>(p.y());
-      float fz = static_cast<float>(p.z());
-
-      outVerts[i] = {fx, fy, fz};
-
-      if(usePreciseBounds) {
-        double err_x = std::abs(p.x() - static_cast<double>(fx));
-        double err_y = std::abs(p.y() - static_cast<double>(fy));
-        double err_z = std::abs(p.z() - static_cast<double>(fz));
-        double max_err = std::max({err_x, err_y, err_z});
-        float max_mag = std::max({std::abs(fx), std::abs(fy), std::abs(fz)});
-        outVertexErrors[i] = static_cast<float>(max_err) + max_mag * std::numeric_limits<float>::epsilon();
-      }
+      outVerts[i] = make_double3(p.x(), p.y(), p.z());
     }
   });
 }
@@ -164,7 +141,7 @@ void syncNormalizedVertsAndErrorsTBB(const Mesh& mesh,
 // Old sequential CGAL loading method via standard std::ifstream and halfedge topology traversal
 bool loadOffOldCGAL(const std::string& filepath,
                     Mesh& mesh,
-                    std::vector<float3>& outVerts,
+                    std::vector<double3>& outVerts,
                     std::vector<uint3>& outIndices) {
   std::ifstream inFile(filepath);
   if(!inFile.is_open()) {
@@ -177,14 +154,14 @@ bool loadOffOldCGAL(const std::string& filepath,
     return false;
   }
 
-  // Extract initial vertex coordinates
+  // Extract initial double3 vertex coordinates
   size_t numVerts = num_vertices(mesh);
   outVerts.resize(numVerts);
   auto coords = mesh.points();
   for(size_t i = 0; i < numVerts; ++i) {
     typename Mesh::Vertex_index v(static_cast<Mesh::size_type>(i));
     const auto& p = coords[v];
-    outVerts[i] = make_float3(static_cast<float>(p.x()), static_cast<float>(p.y()), static_cast<float>(p.z()));
+    outVerts[i] = make_double3(p.x(), p.y(), p.z());
   }
 
   // Extract face indices via CGAL halfedge navigation
@@ -206,10 +183,10 @@ bool loadOffOldCGAL(const std::string& filepath,
 void printHelp() {
   std::cout << "\nAvailable Commands:\n";
   std::cout
-      << "  load <meshA.off> [meshB.off] [maxCellA] [maxCellB] [leafThresh] [usePrecise(0/1)] [scaleToUnit(0/1)]\n";
+      << "  load <meshA.off> [meshB.off] [maxCellA] [maxCellB] [leafThresh] [scaleToUnit(0/1)]\n";
   std::cout << "      - Loads meshes via fast parallel IO, normalizes CGAL & GPU in-place, and constructs BVHs.\n";
   std::cout
-      << "  loadOld <meshA.off> [meshB.off] [maxCellA] [maxCellB] [leafThresh] [usePrecise(0/1)] [scaleToUnit(0/1)]\n";
+      << "  loadOld <meshA.off> [meshB.off] [maxCellA] [maxCellB] [leafThresh] [scaleToUnit(0/1)]\n";
   std::cout << "      - Loads meshes via standard CGAL stream loader (sequential std::ifstream).\n";
   std::cout << "  scale\n";
   std::cout << "      - Prints current scale factor, scene center, and individual mesh centroids.\n";
@@ -308,9 +285,8 @@ int main(int argc, char** argv) {
   ExecutionStats stats;
 
   Mesh meshA, meshB;
-  std::vector<float3> hVertsA, hVertsB;
+  std::vector<double3> hVertsA, hVertsB;
   std::vector<uint3> hIndicesA, hIndicesB;
-  std::vector<float> hErrorsA, hErrorsB;
 
   bool isLoaded = false;
 
@@ -342,9 +318,13 @@ int main(int argc, char** argv) {
     std::cout << "  Mesh B Rot: (" << rotB.x << ", " << rotB.y << ", " << rotB.z << ") | Trans: (" << transB.x << ", "
               << transB.y << ", " << transB.z << ")\n";
 
-    // 1. Dispatch rotation and translation to GPU controller
+    // 1. Dispatch rotation and translation to double3 GPU controller
     auto tStart = std::chrono::high_resolution_clock::now();
-    controller.setTransformBoth(rotA, transA, rotB, transB);
+    controller.setTransformBoth(
+        make_double3(rotA.x, rotA.y, rotA.z),
+        make_double3(transA.x, transA.y, transA.z),
+        make_double3(rotB.x, rotB.y, rotB.z),
+        make_double3(transB.x, transB.y, transB.z));
 
     // 2. Execute GPU pipeline
     tbb::concurrent_vector<int2> finalExactPairs;
@@ -429,12 +409,11 @@ int main(int argc, char** argv) {
         std::string arg1 = parseArgument(iss);
         std::string arg2 = parseArgument(iss);
 
-        int maxCellA = 1, maxCellB = 1, leafThresh = 4, usePreciseInt = 1, scaleToUnitInt = 0;
+        int maxCellA = 1, maxCellB = 1, leafThresh = 4, scaleToUnitInt = 0;
 
         if(arg1.empty()) {
           std::cout << "Usage: " << cmd
-                    << " <meshA> [meshB] [maxCellA] [maxCellB] [leafThresh] [usePrecise(0/1)] "
-                       "[scaleToUnit(0/1)]\n";
+                    << " <meshA> [meshB] [maxCellA] [maxCellB] [leafThresh] [scaleToUnit(0/1)]\n";
         } else {
           std::string pathA, pathB;
 
@@ -453,14 +432,13 @@ int main(int argc, char** argv) {
           if(singleMeshMode) {
             pathA = arg1;
             pathB = arg1;
-            iss >> maxCellB >> leafThresh >> usePreciseInt >> scaleToUnitInt;
+            iss >> maxCellB >> leafThresh >> scaleToUnitInt;
           } else {
             pathA = arg1;
             pathB = arg2;
-            iss >> maxCellA >> maxCellB >> leafThresh >> usePreciseInt >> scaleToUnitInt;
+            iss >> maxCellA >> maxCellB >> leafThresh >> scaleToUnitInt;
           }
 
-          bool usePreciseBounds = (usePreciseInt != 0);
           bool scaleToUnit = (scaleToUnitInt != 0);
 
           controller.cleanup();
@@ -468,10 +446,8 @@ int main(int argc, char** argv) {
           meshB = Mesh();
           hVertsA.clear();
           hIndicesA.clear();
-          hErrorsA.clear();
           hVertsB.clear();
           hIndicesB.clear();
-          hErrorsB.clear();
           isLoaded = false;
 
           std::cout << "Loading mesh(es) using "
@@ -564,9 +540,9 @@ int main(int argc, char** argv) {
             normCenterB = make_float3(static_cast<float>(cB_norm.x), static_cast<float>(cB_norm.y),
                                       static_cast<float>(cB_norm.z));
 
-            // Sync normalized float3 vertex coordinates and compute precision bounds once
-            syncNormalizedVertsAndErrorsTBB(meshA, hVertsA, hErrorsA, usePreciseBounds);
-            syncNormalizedVertsAndErrorsTBB(meshB, hVertsB, hErrorsB, usePreciseBounds);
+            // Sync normalized double3 vertex coordinates directly
+            syncNormalizedVertsTBB(meshA, hVertsA);
+            syncNormalizedVertsTBB(meshB, hVertsB);
 
             auto tPrepEnd = std::chrono::high_resolution_clock::now();
             double prepMs = std::chrono::duration<double, std::milli>(tPrepEnd - tPrepStart).count();
@@ -576,13 +552,15 @@ int main(int argc, char** argv) {
             Point3 cA_cgal(cA_norm.x, cA_norm.y, cA_norm.z);
             Point3 cB_cgal(cB_norm.x, cB_norm.y, cB_norm.z);
 
-            // 2. Call the 18-parameter construct overload passing cA_cgal and cB_cgal as arguments 3 & 4
-            controller.construct(meshA, meshB, cA_cgal, cB_cgal, hVertsA.data(), static_cast<int>(hVertsA.size()),
-                                 hIndicesA.data(), (usePreciseBounds ? hErrorsA.data() : nullptr),
-                                 static_cast<int>(hIndicesA.size()), maxCellA, hVertsB.data(),
-                                 static_cast<int>(hVertsB.size()), hIndicesB.data(),
-                                 (usePreciseBounds ? hErrorsB.data() : nullptr), static_cast<int>(hIndicesB.size()),
-                                 maxCellB, leafThresh, stats);
+            // Execute double-precision BVH construction overload
+            controller.construct(
+                meshA, meshB,
+                cA_cgal, cB_cgal,
+                hVertsA.data(), static_cast<int>(hVertsA.size()),
+                hIndicesA.data(), static_cast<int>(hIndicesA.size()), maxCellA,
+                hVertsB.data(), static_cast<int>(hVertsB.size()),
+                hIndicesB.data(), static_cast<int>(hIndicesB.size()), maxCellB,
+                leafThresh, stats);
 
             auto tEnd = std::chrono::high_resolution_clock::now();
             double ms = std::chrono::duration<double, std::milli>(tEnd - tStart).count();
@@ -612,21 +590,26 @@ int main(int argc, char** argv) {
         if(!isLoaded) {
           std::cout << "Error: You must 'load' meshes before transforming.\n";
         } else {
-          float rotAx, rotAy, rotAz;
-          float rotBx, rotBy, rotBz;
-          float transBx, transBy, transBz;
+          double rotAx, rotAy, rotAz;
+          double rotBx, rotBy, rotBz;
+          double transBx, transBy, transBz;
 
           if(iss >> rotAx >> rotAy >> rotAz >> rotBx >> rotBy >> rotBz >> transBx >> transBy >> transBz) {
-            float3 rotA = make_float3(rotAx, rotAy, rotAz);
-            float3 transA = make_float3(0.0f, 0.0f, 0.0f);
-            float3 rotB = make_float3(rotBx, rotBy, rotBz);
-            float3 transB = make_float3(transBx, transBy, transBz);
+            double3 rotA = make_double3(rotAx, rotAy, rotAz);
+            double3 transA = make_double3(0.0, 0.0, 0.0);
+            double3 rotB = make_double3(rotBx, rotBy, rotBz);
+            double3 transB = make_double3(transBx, transBy, transBz);
 
             auto tStart = std::chrono::high_resolution_clock::now();
 
             controller.setTransformBoth(rotA, transA, rotB, transB);
 
-            PolyscopeBridge::transformBoth(rotA, transA, normCenterA, rotB, transB, normCenterB);
+            float3 fRotA = make_float3(static_cast<float>(rotAx), static_cast<float>(rotAy), static_cast<float>(rotAz));
+            float3 fTransA = make_float3(0.0f, 0.0f, 0.0f);
+            float3 fRotB = make_float3(static_cast<float>(rotBx), static_cast<float>(rotBy), static_cast<float>(rotBz));
+            float3 fTransB = make_float3(static_cast<float>(transBx), static_cast<float>(transBy), static_cast<float>(transBz));
+
+            PolyscopeBridge::transformBoth(fRotA, fTransA, normCenterA, fRotB, fTransB, normCenterB);
 
             auto tEnd = std::chrono::high_resolution_clock::now();
             double ms = std::chrono::duration<double, std::milli>(tEnd - tStart).count();
@@ -641,12 +624,12 @@ int main(int argc, char** argv) {
           }
         }
       } else if(cmd == "translate") {
-        float x, y, z;
+        double x, y, z;
         if(iss >> x >> y >> z) {
           auto tStart = std::chrono::high_resolution_clock::now();
 
           controller.setTranslation(x, y, z);
-          PolyscopeBridge::translateMeshB(x, y, z);
+          PolyscopeBridge::translateMeshB(static_cast<float>(x), static_cast<float>(y), static_cast<float>(z));
 
           auto tEnd = std::chrono::high_resolution_clock::now();
           double elapsedMs = std::chrono::duration<double, std::milli>(tEnd - tStart).count();
@@ -657,12 +640,12 @@ int main(int argc, char** argv) {
           std::cout << "Usage: translate <x> <y> <z>\n";
         }
       } else if(cmd == "translateCPU") {
-        float x, y, z;
+        double x, y, z;
         if(iss >> x >> y >> z) {
           auto tStart = std::chrono::high_resolution_clock::now();
 
           controller.setTranslationCPUHostUpload(x, y, z);
-          PolyscopeBridge::translateMeshB(x, y, z);
+          PolyscopeBridge::translateMeshB(static_cast<float>(x), static_cast<float>(y), static_cast<float>(z));
 
           auto tEnd = std::chrono::high_resolution_clock::now();
           double elapsedMs = std::chrono::duration<double, std::milli>(tEnd - tStart).count();

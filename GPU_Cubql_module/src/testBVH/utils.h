@@ -6,7 +6,7 @@
 #include "cuBQL/bvh.h"
 
 // -----------------------------------------------------------------------------
-// Kernel Declarations
+// Kernel Declarations (float3 - Legacy / Float Pipeline)
 // -----------------------------------------------------------------------------
 
 __global__ void assembleTrianglesKernel(cuBQL::Triangle* dMesh,
@@ -25,6 +25,20 @@ __global__ void assembleTrianglesKernelTransformed(cuBQL::Triangle* dMesh,
                                                    bool isTranslated,
                                                    bool isRotated);
 
+// -----------------------------------------------------------------------------
+// Kernel Declarations (double3 Overloads - Double Pipeline)
+// -----------------------------------------------------------------------------
+
+__global__ void assembleTrianglesKernel(cuBQL::Triangle* dMesh,
+                                        float2* dMetrics,
+                                        const double3* dVerts,
+                                        const uint3* dIndices,
+                                        int numTriangles);
+
+// -----------------------------------------------------------------------------
+// General Utility Kernels
+// -----------------------------------------------------------------------------
+
 __global__ void generateBoxes(cuBQL::box3f* boxes, 
                               const cuBQL::Triangle* tris, 
                               int N);
@@ -34,16 +48,16 @@ __global__ void populateReverseMapBKernel(uint32_t* d_reverseMapB,
                                            uint32_t h_outMarkedCountB);
 
 // -----------------------------------------------------------------------------
-// Helper Launch Wrappers
+// Helper Launch Wrappers (float3 Overloads)
 // -----------------------------------------------------------------------------
 
 void launchAssembleTriangles(cuBQL::Triangle* dMesh,
-                            float2* dMetrics,
-                            const float3* dVerts,
-                            const float* dVertErrors,
-                            const uint3* dIndices,
-                            int numTriangles,
-                            cudaStream_t stream = 0);
+                             float2* dMetrics,
+                             const float3* dVerts,
+                             const float* dVertErrors,
+                             const uint3* dIndices,
+                             int numTriangles,
+                             cudaStream_t stream = 0);
 
 void launchAssembleTrianglesTransformed(cuBQL::Triangle* dMesh,
                                          float2* dMetrics,
@@ -54,6 +68,19 @@ void launchAssembleTrianglesTransformed(cuBQL::Triangle* dMesh,
                                          bool isTranslated,
                                          bool isRotated,
                                          cudaStream_t stream = 0);
+
+// -----------------------------------------------------------------------------
+// Helper Launch Wrappers (double3 Overloads)
+// -----------------------------------------------------------------------------
+
+void launchAssembleTriangles(cuBQL::Triangle* dMesh,
+                             float2* dMetrics,
+                             const double3* dVerts,
+                             const uint3* dIndices,
+                             int numTriangles,
+                             cudaStream_t stream = 0);
+
+
 
 void launchGenerateBoxes(cuBQL::box3f* dBoxes,
                          const cuBQL::Triangle* dTris,

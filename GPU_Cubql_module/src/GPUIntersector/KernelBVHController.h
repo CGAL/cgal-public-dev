@@ -19,19 +19,19 @@ public:
     KernelBVHController(const KernelBVHController&) = delete;
     KernelBVHController& operator=(const KernelBVHController&) = delete;
 
-    // 1. Setup & Construction (With Centroids)
+    // 1. Setup & Construction (With Centroids) - Double Precision
     void construct(
         Mesh& meshAcpu, Mesh& meshBcpu,
         const Point3& centerA, const Point3& centerB,
-        const float3* hVertsA, int numVertsA, const uint3* hIndicesA, const float* hVertErrorsA, int numTrianglesA, int levelA,
-        const float3* hVertsB, int numVertsB, const uint3* hIndicesB, const float* hVertErrorsB, int numTrianglesB, int levelB,
+        const double3* hVertsA, int numVertsA, const uint3* hIndicesA, int numTrianglesA, int levelA,
+        const double3* hVertsB, int numVertsB, const uint3* hIndicesB, int numTrianglesB, int levelB,
         int leafThreshold, ExecutionStats& stats);
 
     // Backward-Compatible Construction Overload (Defaults Centroids to Origin)
     void construct(
         Mesh& meshAcpu, Mesh& meshBcpu,
-        const float3* hVertsA, int numVertsA, const uint3* hIndicesA, const float* hVertErrorsA, int numTrianglesA, int levelA,
-        const float3* hVertsB, int numVertsB, const uint3* hIndicesB, const float* hVertErrorsB, int numTrianglesB, int levelB,
+        const double3* hVertsA, int numVertsA, const uint3* hIndicesA, int numTrianglesA, int levelA,
+        const double3* hVertsB, int numVertsB, const uint3* hIndicesB, int numTrianglesB, int levelB,
         int leafThreshold, ExecutionStats& stats);
 
     // 2. Execution Pipeline (Safe to run multiple times)
@@ -43,11 +43,11 @@ public:
     void cleanup();
 
     // Dynamic Dual Point Cloud Transformation (Rotation in degrees around centroids + Translation)
-    void setTransformBoth(float3 rotDegA, float3 transA, float3 rotDegB, float3 transB);
+    void setTransformBoth(double3 rotDegA, double3 transA, double3 rotDegB, double3 transB);
 
     // Legacy Translation Interfaces (Maintained for Backward Compatibility)
-    void setTranslation(float xB, float yB, float zB);
-    void setTranslationCPUHostUpload(float xB, float yB, float zB);
+    void setTranslation(double xB, double yB, double zB);
+    void setTranslationCPUHostUpload(double xB, double yB, double zB);
 
     // Centroid Getters
     Point3 getCenterA() const { return m_centerA; }
@@ -68,15 +68,15 @@ private:
     Point3 m_centerB{0, 0, 0};
 
     // Active transformations relative to pristine baseline states
-    float3 m_rotA{0.0f, 0.0f, 0.0f};
-    float3 m_transA{0.0f, 0.0f, 0.0f};
-    float3 m_rotB{0.0f, 0.0f, 0.0f};
-    float3 m_transB{0.0f, 0.0f, 0.0f};
+    double3 m_rotA{0.0, 0.0, 0.0};
+    double3 m_transA{0.0, 0.0, 0.0};
+    double3 m_rotB{0.0, 0.0, 0.0};
+    double3 m_transB{0.0, 0.0, 0.0};
 
     // Legacy shift markers
-    float shiftX = 0.0f;
-    float shiftY = 0.0f;
-    float shiftZ = 0.0f;
+    double shiftX = 0.0f;
+    double shiftY = 0.0f;
+    double shiftZ = 0.0f;
 
     Mesh* m_meshAcpu = nullptr;
     Mesh* m_meshBcpu = nullptr;
@@ -95,15 +95,15 @@ private:
     cuBQL::box3f*    m_dBoxesB = nullptr;
 
     // Persistent Raw GPU & CPU Buffers for Mesh A
-    float3*             m_dVertsA = nullptr;       // Active transformed vertices
-    float3*             m_dVertsAOrig = nullptr;   // Pristine baseline vertices
+    double3*             m_dVertsA = nullptr;       // Active transformed vertices
+    double3*             m_dVertsAOrig = nullptr;   // Pristine baseline vertices
     uint3*              m_dIndicesA = nullptr;     // Triangle vertex indices
     float*              m_dVertErrorsA = nullptr;  // Precision error bounds
     std::vector<Point3> m_origPointsA;             // Baseline CGAL host points
 
     // Persistent Raw GPU & CPU Buffers for Mesh B
-    float3*             m_dVertsB = nullptr;       // Active transformed vertices
-    float3*             m_dVertsBOrig = nullptr;   // Pristine baseline vertices
+    double3*              m_dVertsB = nullptr;       // Active transformed vertices
+    double3*              m_dVertsBOrig = nullptr;   // Pristine baseline vertices
     uint3*              m_dIndicesB = nullptr;     // Triangle vertex indices
     float*              m_dVertErrorsB = nullptr;  // Precision error bounds
     std::vector<Point3> m_origPointsB;             // Baseline CGAL host points
