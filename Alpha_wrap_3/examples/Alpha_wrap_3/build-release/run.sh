@@ -1,6 +1,4 @@
 # Cleanup
-rm *off
-rm steps.csv
 rm -r results
 mkdir results
 root=$(pwd)
