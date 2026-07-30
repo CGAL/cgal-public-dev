@@ -283,6 +283,7 @@ add_executable(testBVHV2
     src/testBVH/rapidDescendKernel.cu
     src/testBVH/batchedCrossIntersectionV2.cu
     src/testBVH/batchedCrossIntersectionV3.cu
+    src/testBVH/batchedCrossIntersectionCommon.cu
     src/testBVH/DualTreeStep.cu
     src/testBVH/prune_pipeline.cu
     src/Warmup/cuda_warmup.cu
@@ -348,11 +349,14 @@ add_executable(MainApp
     src/GPUIntersector/KenelBVHController.cu
     src/testBVH/crossCheck.cu
     src/testBVH/rapidDescendKernel.cu
+    src/testBVH/batchedCrossIntersectionCommon.cu
     src/testBVH/batchedCrossIntersectionV2.cu
+    src/testBVH/batchedCrossIntersectionDouble.cu
     src/testBVH/batchedCrossIntersectionV3.cu
     src/testBVH/DualTreeStep.cu
     src/Warmup/cuda_warmup.cu
     src/custom_pipeline/GPUPredicatesCheckV2.cu
+    src/custom_pipeline/GPUPredicatesCheckDouble.cu
     src/testBVH/utils.cu
 )
 

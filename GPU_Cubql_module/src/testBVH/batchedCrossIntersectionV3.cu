@@ -1,4 +1,3 @@
-#include "include/third-party/cubql/fixedBoxQueryv2.h"
 #include <thrust/device_ptr.h>
 #include <thrust/scan.h>
 #include <thrust/execution_policy.h>
@@ -14,100 +13,13 @@
 #include <tbb/concurrent_vector.h>
 
 #include "batchedCrossIntersectionV3.h"
+#include "batchedCrossIntersectionCommon.h"
 #include "../custom_pipeline/GPUPredicatesCheckV2.h"
 #include "TargetStatus.h"
 #include "../src/CPU/YellowFilter.h"
 
-#ifndef CUBQL_CUDA_CALL
-#define CUBQL_CUDA_CALL(call)                                                                                          \
-  {                                                                                                                    \
-    cudaError_t err = cuda##call;                                                                                      \
-    if(cudaSuccess != err) {                                                                                           \
-      fprintf(stderr, "CUDA error in file '%s' in line %i : %s.\n", __FILE__, __LINE__, cudaGetErrorString(err));      \
-      exit(EXIT_FAILURE);                                                                                              \
-    }                                                                                                                  \
-  }
-#endif
-
 // --------------------------------------------------------------------
-// GPU HELPERS & FUNCTORS (FROM V2 - NO CPU TABLE DOWNLOADS REQUIRED)
-// --------------------------------------------------------------------
-
-struct BatchSizeInChunkFunctor {
-    const uint32_t* outPairsB;
-    const uint32_t* outOffsetsB;
-    const uint32_t* reverseMapB;
-    uint32_t outMarkedCountB;
-    uint32_t totalPrimsB;
-    int chunkStartBatchIdx;
-    int activeBatchesInChunk;
-
-    __host__ __device__
-    BatchSizeInChunkFunctor(const uint32_t* _pairsB, const uint32_t* _offsetsB, const uint32_t* _reverseMapB,
-                            uint32_t _markedCount, uint32_t _totalPrims,
-                            int _chunkStartBatchIdx, int _activeBatchesInChunk)
-        : outPairsB(_pairsB), outOffsetsB(_offsetsB), reverseMapB(_reverseMapB), outMarkedCountB(_markedCount),
-          totalPrimsB(_totalPrims), chunkStartBatchIdx(_chunkStartBatchIdx),
-          activeBatchesInChunk(_activeBatchesInChunk) {}
-
-    __host__ __device__
-    int operator()(const int b) const {
-        if (b >= activeBatchesInChunk) return 0;
-        uint32_t bIdx = outPairsB[chunkStartBatchIdx + b];
-        uint32_t markedIdxB = reverseMapB[bIdx];
-        uint32_t startOffset = outOffsetsB[markedIdxB];
-        uint32_t endOffset = (markedIdxB + 1 < outMarkedCountB) ? outOffsetsB[markedIdxB + 1] : totalPrimsB;
-        return (int)(endOffset - startOffset);
-    }
-};
-
-__global__ void computeMaxChunkSizeKernel_V3(
-    const uint32_t* outPairsB,
-    const uint32_t* outOffsetsB,
-    const uint32_t* reverseMapB,
-    uint32_t outMarkedCountB,
-    uint32_t totalPrimsB,
-    int totalBatches,
-    int batchMultiplier,
-    int numChunks,
-    int* d_globalMax
-) {
-    int chunkIdx = blockIdx.x;
-    if (chunkIdx >= numChunks) return;
-
-    int startBatch = chunkIdx * batchMultiplier;
-    int activeBatchesInChunk = (startBatch + batchMultiplier <= totalBatches) 
-                               ? batchMultiplier 
-                               : (totalBatches - startBatch);
-
-    int threadSum = 0;
-    for (int b = threadIdx.x; b < activeBatchesInChunk; b += blockDim.x) {
-        uint32_t bIdx = outPairsB[startBatch + b];
-        uint32_t markedIdxB = reverseMapB[bIdx];
-        uint32_t startOffset = outOffsetsB[markedIdxB];
-        uint32_t endOffset = (markedIdxB + 1 < outMarkedCountB) ? outOffsetsB[markedIdxB + 1] : totalPrimsB;
-        threadSum += (int)(endOffset - startOffset);
-    }
-
-    extern __shared__ int sdata[];
-    int tid = threadIdx.x;
-    sdata[tid] = threadSum;
-    __syncthreads();
-
-    for (int s = blockDim.x / 2; s > 0; s >>= 1) {
-        if (tid < s) {
-            sdata[tid] += sdata[tid + s];
-        }
-        __syncthreads();
-    }
-
-    if (tid == 0) {
-        atomicMax(d_globalMax, sdata[0]);
-    }
-}
-
-// --------------------------------------------------------------------
-// WARP-AGGREGATED COMPACTION KERNEL
+// V3 PIPELINE SPECIFIC WARP-AGGREGATED COMPACTION KERNEL
 // --------------------------------------------------------------------
 
 __global__ void compactGreenYellowKernel(const int2* __restrict__ candidatePairs,
@@ -159,10 +71,6 @@ __global__ void compactGreenYellowKernel(const int2* __restrict__ candidatePairs
 // PRE-ALLOCATED MICROBATCH PIPELINE SLOT
 // --------------------------------------------------------------------
 
-//constexpr int MICROBATCH_SIZE = 65536;
-
-//constexpr int MICROBATCH_SIZE = 32768;
-
 struct MicrobatchSlot
 {
   cudaStream_t stream = nullptr;
@@ -212,110 +120,7 @@ struct MicrobatchSlot
 };
 
 // --------------------------------------------------------------------
-// EXISTING ASSEMBLY & TRAVERSAL KERNELS
-// --------------------------------------------------------------------
-
-__global__ void assembleChunkBuffersByBatchKernel_V3(uint32_t* d_BIter,
-                                                     uint64_t* d_AIter,
-                                                     const uint32_t* outPairsA,
-                                                     const uint32_t* outPairsB,
-                                                     const uint32_t* reverseMapB,
-                                                     const uint32_t* outOffsetsB,
-                                                     const uint32_t* outPrimsFlatB,
-                                                     uint32_t outMarkedCountB,
-                                                     uint32_t totalPrimsB,
-                                                     int chunkStartBatchIdx,
-                                                     int activeBatchesInChunk,
-                                                     const int* d_chunkBatchOffsets) {
-  int b = threadIdx.x + blockIdx.x * blockDim.x;
-  if(b >= activeBatchesInChunk)
-    return;
-
-  int currentBatchArrayIdx = chunkStartBatchIdx + b;
-  uint32_t bIdx = outPairsB[currentBatchArrayIdx];
-  uint32_t markedIdxB = reverseMapB[bIdx];
-
-  uint32_t startOffsetB = outOffsetsB[markedIdxB];
-  uint32_t endOffsetB = (markedIdxB + 1 < outMarkedCountB) ? outOffsetsB[markedIdxB + 1] : totalPrimsB;
-  int numPrims = (int)(endOffsetB - startOffsetB);
-
-  if(numPrims <= 0)
-    return;
-
-  int writeSandboxOffset = d_chunkBatchOffsets[b];
-  uint64_t startNodeIdxA = (uint64_t)(outPairsA[currentBatchArrayIdx]);
-
-  for(int p = 0; p < numPrims; ++p) {
-    int targetWriteIdx = writeSandboxOffset + p;
-    d_BIter[targetWriteIdx] = outPrimsFlatB[startOffsetB + p];
-    d_AIter[targetWriteIdx] = startNodeIdxA;
-  }
-}
-
-__global__ void countAABBOverlapsKernel_Indirected_V3(int* pairCounts,
-                                                      cuBQL::bvh3f bvhA,
-                                                      const cuBQL::Triangle* triA,
-                                                      const cuBQL::Triangle* triB,
-                                                      const uint32_t* d_BIter,
-                                                      uint32_t startOffsetB,
-                                                      int numPrimsB,
-                                                      const uint64_t* d_AIter) {
-  int tid = threadIdx.x + blockIdx.x * blockDim.x;
-  if(tid >= numPrimsB)
-    return;
-
-  uint32_t actualPrimIdB = d_BIter[startOffsetB + tid];
-  uint64_t startNodeIdxA = d_AIter[startOffsetB + tid];
-  cuBQL::Triangle b = triB[actualPrimIdB];
-  cuBQL::box3f query = b.bounds();
-
-  int count = 0;
-  cuBQL::fixedBoxQueryv2::forEachLeaf(
-      [&](const uint32_t* ids, uint32_t num) {
-        for(uint32_t i = 0; i < num; i++) {
-          if(triA[ids[i]].bounds().overlaps(query))
-            count++;
-        }
-        return CUBQL_CONTINUE_TRAVERSAL;
-      },
-      bvhA, query, startNodeIdxA);
-
-  pairCounts[tid] = count;
-}
-
-__global__ void fillAABBOverlapsKernel_Indirected_V3(int2* candidatePairs,
-                                                     const int* offsets,
-                                                     cuBQL::bvh3f bvhA,
-                                                     const cuBQL::Triangle* triA,
-                                                     const cuBQL::Triangle* triB,
-                                                     const uint32_t* d_BIter,
-                                                     uint32_t startOffsetB,
-                                                     int numPrimsB,
-                                                     const uint64_t* d_AIter) {
-  int tid = threadIdx.x + blockIdx.x * blockDim.x;
-  if(tid >= numPrimsB)
-    return;
-
-  int wPos = offsets[tid];
-  uint32_t actualPrimIdB = d_BIter[startOffsetB + tid];
-  uint64_t startNodeIdxA = d_AIter[startOffsetB + tid];
-  cuBQL::Triangle b = triB[actualPrimIdB];
-  cuBQL::box3f query = b.bounds();
-
-  cuBQL::fixedBoxQueryv2::forEachLeaf(
-      [&](const uint32_t* ids, uint32_t num) {
-        for(uint32_t i = 0; i < num; i++) {
-          if(triA[ids[i]].bounds().overlaps(query)) {
-            candidatePairs[wPos++] = make_int2((int)ids[i], (int)actualPrimIdB);
-          }
-        }
-        return CUBQL_CONTINUE_TRAVERSAL;
-      },
-      bvhA, query, startNodeIdxA);
-}
-
-// --------------------------------------------------------------------
-// MAIN EXECUTABLE LOOP (OPTIMIZED WITH V2 GPU-SIDE SIZING)
+// MAIN EXECUTABLE LOOP (V3 PIPELINE)
 // --------------------------------------------------------------------
 
 uint64_t executeBatchedCrossIntersectionLoopV3(Mesh& meshAcpu,
@@ -355,7 +160,7 @@ uint64_t executeBatchedCrossIntersectionLoopV3(Mesh& meshAcpu,
   const uint32_t* ptr_outPrimsFlatB = thrust::raw_pointer_cast(d_outPrimsFlatB.data());
   uint32_t totalPrimsB              = (uint32_t)d_outPrimsFlatB.size();
 
-  // 1. Compute Exact Maximum Chunk Bounds using V2 Parallel GPU Pass (ZERO Host Vector Downloads!)
+  // 1. Compute Exact Maximum Chunk Bounds using Unified Kernel
   int maxChunkPrims = 0;
   int numChunks = (totalBatches + batchMultiplier - 1) / batchMultiplier;
 
@@ -367,7 +172,7 @@ uint64_t executeBatchedCrossIntersectionLoopV3(Mesh& meshAcpu,
   int gridSize = numChunks;
   size_t sharedMemSize = blockSize * sizeof(int);
 
-  computeMaxChunkSizeKernel_V3<<<gridSize, blockSize, sharedMemSize, mainStream>>>(
+  computeMaxChunkSizeKernel<<<gridSize, blockSize, sharedMemSize, mainStream>>>(
       ptr_outPairsB, ptr_outOffsetsB, ptr_reverseMapB, 
       h_outMarkedCountB, totalPrimsB, 
       totalBatches, batchMultiplier, numChunks, d_globalMax
@@ -446,7 +251,7 @@ uint64_t executeBatchedCrossIntersectionLoopV3(Mesh& meshAcpu,
     tracker.numberOfBatchLoops++;
     int activeBatchesInChunk = std::min(batchMultiplier, totalBatches - i);
 
-    // --- ASSEMBLY PHASE (GPU TRANSFORM & SCAN - ZERO HOST MEMCPYS) ---
+    // --- ASSEMBLY PHASE ---
     CUBQL_CUDA_CALL(EventRecord(evAssemblyStart, mainStream));
 
     auto localBatchIdxIterator = thrust::make_counting_iterator(0);
@@ -472,17 +277,17 @@ uint64_t executeBatchedCrossIntersectionLoopV3(Mesh& meshAcpu,
       continue;
 
     int assembleGridSize = (activeBatchesInChunk + 63) / 64;
-    assembleChunkBuffersByBatchKernel_V3<<<assembleGridSize, 64, 0, mainStream>>>(
+    assembleChunkBuffersByBatchKernel<<<assembleGridSize, 64, 0, mainStream>>>(
         d_BIter, d_AIter, ptr_outPairsA, ptr_outPairsB, ptr_reverseMapB, ptr_outOffsetsB, ptr_outPrimsFlatB,
         h_outMarkedCountB, totalPrimsB, i, activeBatchesInChunk, d_chunkBatchOffsets);
 
     CUBQL_CUDA_CALL(EventRecord(evAssemblyEnd, mainStream));
 
-    // --- OVERLAP COUNTING PHASE (mainStream) ---
+    // --- OVERLAP COUNTING PHASE ---
     CUBQL_CUDA_CALL(EventRecord(evCountStart, mainStream));
 
     int kernelGridSize = (totalChunkPrims + 127) / 128;
-    countAABBOverlapsKernel_Indirected_V3<<<kernelGridSize, 128, 0, mainStream>>>(
+    countAABBOverlapsKernel_Indirected<<<kernelGridSize, 128, 0, mainStream>>>(
         d_pairCounts, bvhA, const_cast<cuBQL::Triangle*>(dMeshA), const_cast<cuBQL::Triangle*>(dMeshB), d_BIter, 0,
         totalChunkPrims, d_AIter);
 
@@ -525,10 +330,10 @@ uint64_t executeBatchedCrossIntersectionLoopV3(Mesh& meshAcpu,
       CUBQL_CUDA_CALL(Malloc(&d_candidatePairs, candidateCapacity * sizeof(int2)));
     }
 
-    // --- OVERLAP FILLING PHASE (mainStream) ---
+    // --- OVERLAP FILLING PHASE ---
     CUBQL_CUDA_CALL(EventRecord(evFillStart, mainStream));
 
-    fillAABBOverlapsKernel_Indirected_V3<<<kernelGridSize, 128, 0, mainStream>>>(
+    fillAABBOverlapsKernel_Indirected<<<kernelGridSize, 128, 0, mainStream>>>(
         d_candidatePairs, d_offsets, bvhA, const_cast<cuBQL::Triangle*>(dMeshA), const_cast<cuBQL::Triangle*>(dMeshB),
         d_BIter, 0, totalChunkPrims, d_AIter);
 

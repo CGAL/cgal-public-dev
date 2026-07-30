@@ -10,6 +10,9 @@
 #include "../CPU/CgalDefinitions.h"
 #include "../testBVH/ExecutionStats.h"
 
+#include "../custom_pipeline/TriangleDouble.h"
+
+
 class KernelBVHController {
 public:
     KernelBVHController();
@@ -25,19 +28,21 @@ public:
         const Point3& centerA, const Point3& centerB,
         const double3* hVertsA, int numVertsA, const uint3* hIndicesA, int numTrianglesA, int levelA,
         const double3* hVertsB, int numVertsB, const uint3* hIndicesB, int numTrianglesB, int levelB,
-        int leafThreshold, ExecutionStats& stats);
+        int leafThreshold, ExecutionStats& stats,
+        bool storeDoubleTriangles = true); // <--- 2. ADD PARAMETER
 
-    // Backward-Compatible Construction Overload (Defaults Centroids to Origin)
     void construct(
         Mesh& meshAcpu, Mesh& meshBcpu,
         const double3* hVertsA, int numVertsA, const uint3* hIndicesA, int numTrianglesA, int levelA,
         const double3* hVertsB, int numVertsB, const uint3* hIndicesB, int numTrianglesB, int levelB,
-        int leafThreshold, ExecutionStats& stats);
+        int leafThreshold, ExecutionStats& stats,
+        bool storeDoubleTriangles = true); // <--- 2. ADD PARAMETER
 
-    // 2. Execution Pipeline (Safe to run multiple times)
+    // 2. Execution Pipeline (With optional useDoubleMesh flag)
     void runIntersectionPipeline(
         int batchMultiplier, int mode, int activateAsyncDownload,
-        tbb::concurrent_vector<int2>& finalExactPairs, ExecutionStats& stats);
+        tbb::concurrent_vector<int2>& finalExactPairs, ExecutionStats& stats,
+        bool useDoubleMesh = true); // <--- 3. ADD PARAMETER
 
     // 3. Deallocates all GPU resources safely
     void cleanup();
@@ -87,10 +92,12 @@ private:
 
     // Core Geometry & Topology Persistent Device Buffers
     cuBQL::Triangle* m_dMeshA = nullptr;
+    TriangleDouble*  m_dMeshDoubleA = nullptr;
     float2*          m_dMeshMetricsA = nullptr;
     cuBQL::box3f*    m_dBoxesA = nullptr;
 
     cuBQL::Triangle* m_dMeshB = nullptr;
+    TriangleDouble*  m_dMeshDoubleB = nullptr;
     float2*          m_dMeshMetricsB = nullptr;
     cuBQL::box3f*    m_dBoxesB = nullptr;
 

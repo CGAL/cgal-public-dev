@@ -182,11 +182,9 @@ bool loadOffOldCGAL(const std::string& filepath,
 
 void printHelp() {
   std::cout << "\nAvailable Commands:\n";
-  std::cout
-      << "  load <meshA.off> [meshB.off] [maxCellA] [maxCellB] [leafThresh] [scaleToUnit(0/1)]\n";
+  std::cout << "  load <meshA.off> [meshB.off] [maxCellA] [maxCellB] [leafThresh] [scaleToUnit(0/1)] [useDoublePreds(0/1)]\n";
   std::cout << "      - Loads meshes via fast parallel IO, normalizes CGAL & GPU in-place, and constructs BVHs.\n";
-  std::cout
-      << "  loadOld <meshA.off> [meshB.off] [maxCellA] [maxCellB] [leafThresh] [scaleToUnit(0/1)]\n";
+  std::cout << "  loadOld <meshA.off> [meshB.off] [maxCellA] [maxCellB] [leafThresh] [scaleToUnit(0/1)] [useDoublePreds(0/1)]\n";
   std::cout << "      - Loads meshes via standard CGAL stream loader (sequential std::ifstream).\n";
   std::cout << "  scale\n";
   std::cout << "      - Prints current scale factor, scene center, and individual mesh centroids.\n";
@@ -200,9 +198,9 @@ void printHelp() {
   std::cout << "      - Sets translation for Mesh B via double-precision CPU recalculation & GPU upload.\n";
   std::cout << "  export <mesh_tag(A/B)> <out_filename.off>\n";
   std::cout << "      - Exports current Mesh A or B in full 17-digit precision to OFF format.\n";
-  std::cout << "  compute [batchMultiplier] [DualTreeSteps] [0 or size of batch for async computation]\n";
+  std::cout << "  compute [batchMultiplier] [DualTreeSteps] [async] [useDoublePreds(0/1)]\n";
   std::cout << "      - Runs intersection pipeline using explicit set transforms.\n";
-  std::cout << "  fire [batchMultiplier] [DualTreeSteps] [async]\n";
+  std::cout << "  fire [batchMultiplier] [DualTreeSteps] [async] [useDoublePreds(0/1)]\n";
   std::cout << "      - FireNow / Fire command: Syncs current viewport gizmo transforms directly to GPU & computes.\n";
   std::cout << "  tbb <num_threads>\n";
   std::cout << "      - Sets the active CPU thread limit for TBB worker operations.\n";
@@ -299,8 +297,10 @@ int main(int argc, char** argv) {
   float3 normCenterA{0.0f, 0.0f, 0.0f}, normCenterB{0.0f, 0.0f, 0.0f};
 
   // Helper lambda to run the pipeline with current drag-and-drop / gizmo positions
+  // Helper lambda to run the pipeline with current drag-and-drop / gizmo positions
   auto executeFireNow = [&](int batchMultiplier = std::numeric_limits<int>::max(), int mode = 0,
-                            int activateAsyncDownload = 0) {
+                            int activateAsyncDownload = 0,
+                            bool useDoublePreds = false) { // <--- Added parameter
     if(!isLoaded) {
       std::cout << "Error: You must 'load' meshes before computing.\n";
       return;
@@ -320,16 +320,14 @@ int main(int argc, char** argv) {
 
     // 1. Dispatch rotation and translation to double3 GPU controller
     auto tStart = std::chrono::high_resolution_clock::now();
-    controller.setTransformBoth(
-        make_double3(rotA.x, rotA.y, rotA.z),
-        make_double3(transA.x, transA.y, transA.z),
-        make_double3(rotB.x, rotB.y, rotB.z),
-        make_double3(transB.x, transB.y, transB.z));
+    controller.setTransformBoth(make_double3(rotA.x, rotA.y, rotA.z), make_double3(transA.x, transA.y, transA.z),
+                                make_double3(rotB.x, rotB.y, rotB.z), make_double3(transB.x, transB.y, transB.z));
 
-    // 2. Execute GPU pipeline
+    // 2. Execute GPU pipeline with double predicate flag
     tbb::concurrent_vector<int2> finalExactPairs;
 
-    controller.runIntersectionPipeline(batchMultiplier, mode, activateAsyncDownload, finalExactPairs, stats);
+    controller.runIntersectionPipeline(batchMultiplier, mode, activateAsyncDownload, finalExactPairs, stats,
+                                       useDoublePreds); // <--- Passed flag
 
     auto tEnd = std::chrono::high_resolution_clock::now();
     double ms = std::chrono::duration<double, std::milli>(tEnd - tStart).count();
@@ -342,7 +340,8 @@ int main(int argc, char** argv) {
               << "We got " << finalExactPairs.size() << " intersections.\n";
     std::cout << "AABB Hits: " << stats.finalAabbCandidatePairs
               << " | Greenlist : " << stats.loopTracker.confirmedGreenPairs
-              << " | Yellowlist: " << stats.loopTracker.confirmedYellowPairs << std::endl;
+              << " | Yellowlist: " << stats.loopTracker.confirmedYellowPairs
+              << " | Orangelist: " << stats.loopTracker.confirmedOrangePairs << std::endl;
   };
 
   // Connect GUI Button callback in Polyscope window to FireNow logic
@@ -409,11 +408,12 @@ int main(int argc, char** argv) {
         std::string arg1 = parseArgument(iss);
         std::string arg2 = parseArgument(iss);
 
-        int maxCellA = 1, maxCellB = 1, leafThresh = 4, scaleToUnitInt = 0;
+        int maxCellA = 1, maxCellB = 1, leafThresh = 4, scaleToUnitInt = 0,
+            useDoublePredsInt = 0; // <--- ADDED useDoublePredsInt
 
         if(arg1.empty()) {
           std::cout << "Usage: " << cmd
-                    << " <meshA> [meshB] [maxCellA] [maxCellB] [leafThresh] [scaleToUnit(0/1)]\n";
+                    << " <meshA> [meshB] [maxCellA] [maxCellB] [leafThresh] [scaleToUnit(0/1)] [useDoublePreds(0/1)]\n";
         } else {
           std::string pathA, pathB;
 
@@ -432,14 +432,15 @@ int main(int argc, char** argv) {
           if(singleMeshMode) {
             pathA = arg1;
             pathB = arg1;
-            iss >> maxCellB >> leafThresh >> scaleToUnitInt;
+            iss >> maxCellB >> leafThresh >> scaleToUnitInt >> useDoublePredsInt; // <--- Read flag
           } else {
             pathA = arg1;
             pathB = arg2;
-            iss >> maxCellA >> maxCellB >> leafThresh >> scaleToUnitInt;
+            iss >> maxCellA >> maxCellB >> leafThresh >> scaleToUnitInt >> useDoublePredsInt; // <--- Read flag
           }
 
           bool scaleToUnit = (scaleToUnitInt != 0);
+          bool useDoublePreds = (useDoublePredsInt != 0); // <--- Bool toggle
 
           controller.cleanup();
           meshA = Mesh();
@@ -553,14 +554,10 @@ int main(int argc, char** argv) {
             Point3 cB_cgal(cB_norm.x, cB_norm.y, cB_norm.z);
 
             // Execute double-precision BVH construction overload
-            controller.construct(
-                meshA, meshB,
-                cA_cgal, cB_cgal,
-                hVertsA.data(), static_cast<int>(hVertsA.size()),
-                hIndicesA.data(), static_cast<int>(hIndicesA.size()), maxCellA,
-                hVertsB.data(), static_cast<int>(hVertsB.size()),
-                hIndicesB.data(), static_cast<int>(hIndicesB.size()), maxCellB,
-                leafThresh, stats);
+            controller.construct(meshA, meshB, cA_cgal, cB_cgal, hVertsA.data(), static_cast<int>(hVertsA.size()),
+                                 hIndicesA.data(), static_cast<int>(hIndicesA.size()), maxCellA, hVertsB.data(),
+                                 static_cast<int>(hVertsB.size()), hIndicesB.data(), static_cast<int>(hIndicesB.size()),
+                                 maxCellB, leafThresh, stats, useDoublePreds);
 
             auto tEnd = std::chrono::high_resolution_clock::now();
             double ms = std::chrono::duration<double, std::milli>(tEnd - tStart).count();
@@ -607,7 +604,8 @@ int main(int argc, char** argv) {
             float3 fRotA = make_float3(static_cast<float>(rotAx), static_cast<float>(rotAy), static_cast<float>(rotAz));
             float3 fTransA = make_float3(0.0f, 0.0f, 0.0f);
             float3 fRotB = make_float3(static_cast<float>(rotBx), static_cast<float>(rotBy), static_cast<float>(rotBz));
-            float3 fTransB = make_float3(static_cast<float>(transBx), static_cast<float>(transBy), static_cast<float>(transBz));
+            float3 fTransB =
+                make_float3(static_cast<float>(transBx), static_cast<float>(transBy), static_cast<float>(transBz));
 
             PolyscopeBridge::transformBoth(fRotA, fTransA, normCenterA, fRotB, fTransB, normCenterB);
 
@@ -662,14 +660,16 @@ int main(int argc, char** argv) {
           int batchMultiplier = std::numeric_limits<int>::max();
           int mode = 0;
           int activateAsyncDownload = 0;
+          int useDoublePredsInt = 0; // <--- ADDED
 
-          iss >> batchMultiplier >> mode >> activateAsyncDownload;
+          iss >> batchMultiplier >> mode >> activateAsyncDownload >> useDoublePredsInt; // <--- READ FLAG
 
           tbb::concurrent_vector<int2> finalExactPairs;
 
           auto tStart = std::chrono::high_resolution_clock::now();
 
-          controller.runIntersectionPipeline(batchMultiplier, mode, activateAsyncDownload, finalExactPairs, stats);
+          controller.runIntersectionPipeline(batchMultiplier, mode, activateAsyncDownload, finalExactPairs, stats,
+                                             (useDoublePredsInt != 0)); // <--- PASSED FLAG
 
           auto tEnd = std::chrono::high_resolution_clock::now();
           double ms = std::chrono::duration<double, std::milli>(tEnd - tStart).count();
@@ -681,15 +681,18 @@ int main(int argc, char** argv) {
                     << "We got " << finalExactPairs.size() << " intersections.\n";
           std::cout << "AABB Hits: " << stats.finalAabbCandidatePairs
                     << " | Greenlist : " << stats.loopTracker.confirmedGreenPairs
-                    << " | Yellowlist: " << stats.loopTracker.confirmedYellowPairs << std::endl;
+                    << " | Yellowlist: " << stats.loopTracker.confirmedYellowPairs 
+                    << " | Orangelist: " << stats.loopTracker.confirmedOrangePairs 
+                    << std::endl;
         }
       } else if(cmd == "fire" || cmd == "FireNow") {
         int batchMultiplier = std::numeric_limits<int>::max();
         int mode = 0;
         int activateAsyncDownload = 0;
+        int useDoublePredsInt = 0; // <--- ADDED
 
-        iss >> batchMultiplier >> mode >> activateAsyncDownload;
-        executeFireNow(batchMultiplier, mode, activateAsyncDownload);
+        iss >> batchMultiplier >> mode >> activateAsyncDownload >> useDoublePredsInt;           // <--- READ FLAG
+        executeFireNow(batchMultiplier, mode, activateAsyncDownload, (useDoublePredsInt != 0)); // <--- PASSED FLAG
       } else if(cmd == "export") {
         if(!isLoaded) {
           std::cout << "Error: You must 'load' meshes before exporting.\n";

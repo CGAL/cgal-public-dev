@@ -35,9 +35,12 @@
 #include "../testBVH/crossCheck.h"
 #include "../testBVH/DualTreeStep.h"
 #include "../testBVH/rapidDescendKernel.h"
-#include "../testBVH/batchedCrossIntersection.h"
+// #include "../testBVH/batchedCrossIntersection.h"
 #include "../testBVH/batchedCrossIntersectionV2.h"
+#include "../testBVH/batchedCrossIntersectionDouble.h"
 #include "../testBVH/batchedCrossIntersectionV3.h"
+#include "../custom_pipeline/TriangleDouble.h"
+
 
 #ifndef _ALLOC
 #define _ALLOC(ptr, count, stream, memResource)                                                                        \
@@ -162,23 +165,23 @@ static void translateCgalAndExtractDouble3(
   auto pmap = mesh->points();
   const size_t numPoints = mesh->num_vertices();
 
-  tbb::parallel_for(tbb::blocked_range<size_t>(0, numPoints), [mesh, &pmap, &origPoints, hOutVerts, xB, yB,
-                                                               zB](const tbb::blocked_range<size_t>& range) {
-    for(size_t i = range.begin(); i != range.end(); ++i) {
-      Mesh::Vertex_index vd(static_cast<uint32_t>(i));
-      if(!mesh->is_removed(vd)) {
-        // 1. High-precision double translation from pristine baseline
-        const Point3& pOrig = origPoints[i];
-        Point3 pTranslated(pOrig.x() + xB, pOrig.y() + yB, pOrig.z() + zB);
+  tbb::parallel_for(tbb::blocked_range<size_t>(0, numPoints),
+                    [mesh, &pmap, &origPoints, hOutVerts, xB, yB, zB](const tbb::blocked_range<size_t>& range) {
+                      for(size_t i = range.begin(); i != range.end(); ++i) {
+                        Mesh::Vertex_index vd(static_cast<uint32_t>(i));
+                        if(!mesh->is_removed(vd)) {
+                          // 1. High-precision double translation from pristine baseline
+                          const Point3& pOrig = origPoints[i];
+                          Point3 pTranslated(pOrig.x() + xB, pOrig.y() + yB, pOrig.z() + zB);
 
-        // Update CGAL host mesh
-        pmap[vd] = pTranslated;
+                          // Update CGAL host mesh
+                          pmap[vd] = pTranslated;
 
-        // 2. Extract double3 for GPU upload
-        hOutVerts[i] = make_double3(pTranslated.x(), pTranslated.y(), pTranslated.z());
-      }
-    }
-  });
+                          // 2. Extract double3 for GPU upload
+                          hOutVerts[i] = make_double3(pTranslated.x(), pTranslated.y(), pTranslated.z());
+                        }
+                      }
+                    });
 }
 
 // -----------------------------------------------------------------------------
@@ -218,24 +221,21 @@ void KernelBVHController::setTransformBoth(double3 rotDegA, double3 transA, doub
   // STEP 1: QUEUE ALL GPU WORK FIRST (NON-BLOCKING COMMAND DISPATCH)
   // ---------------------------------------------------------------------------
   if(movedA && m_numVertsA > 0 && m_dVertsA && m_dVertsAOrig) {
-    bool isTransA = (transA.x != 0.0 || transA.y != 0.0 || transA.z != 0.0);
-    bool isRotA = (rotDegA.x != 0.0 || rotDegA.y != 0.0 || rotDegA.z != 0.0);
-
     Mat3x3 RA = makeRotationMatrixDeg(rotDegA.x, rotDegA.y, rotDegA.z);
     double3 cA = make_double3(m_centerA.x(), m_centerA.y(), m_centerA.z());
 
+    // ADD THIS LINE:
     int gridVertsA = cuBQL::divRoundUp(m_numVertsA, block);
     transformVerticesKernel<<<gridVertsA, block, 0, m_stream>>>(m_dVertsA, m_dVertsAOrig, m_numVertsA, RA, cA, transA);
 
     int gridTrisA = cuBQL::divRoundUp(m_numTrianglesA, block);
-    assembleTrianglesKernel<<<gridTrisA, block, 0, m_stream>>>(
-        m_dMeshA, m_dMeshMetricsA, m_dVertsA, m_dIndicesA, m_numTrianglesA);
+    assembleTrianglesKernel<<<gridTrisA, block, 0, m_stream>>>(m_dMeshDoubleA, m_dMeshA, m_dMeshMetricsA, m_dVertsA,
+                                                               m_dIndicesA, m_numTrianglesA);
 
     generateBoxes<<<gridTrisA, block, 0, m_stream>>>(m_dBoxesA, m_dMeshA, m_numTrianglesA);
     cuBQL::cuda::refit(m_bvhA, m_dBoxesA, m_stream);
-
     gpuWorkQueued = true;
-  }
+}
 
   if(movedB && m_numVertsB > 0 && m_dVertsB && m_dVertsBOrig) {
     bool isTransB = (transB.x != 0.0 || transB.y != 0.0 || transB.z != 0.0);
@@ -248,12 +248,11 @@ void KernelBVHController::setTransformBoth(double3 rotDegA, double3 transA, doub
     transformVerticesKernel<<<gridVertsB, block, 0, m_stream>>>(m_dVertsB, m_dVertsBOrig, m_numVertsB, RB, cB, transB);
 
     int gridTrisB = cuBQL::divRoundUp(m_numTrianglesB, block);
-    assembleTrianglesKernel<<<gridTrisB, block, 0, m_stream>>>(
-        m_dMeshB, m_dMeshMetricsB, m_dVertsB, m_dIndicesB, m_numTrianglesB);
+    assembleTrianglesKernel<<<gridTrisB, block, 0, m_stream>>>(m_dMeshDoubleB, m_dMeshB, m_dMeshMetricsB, m_dVertsB,
+                                                               m_dIndicesB, m_numTrianglesB);
 
     generateBoxes<<<gridTrisB, block, 0, m_stream>>>(m_dBoxesB, m_dMeshB, m_numTrianglesB);
     cuBQL::cuda::refit(m_bvhB, m_dBoxesB, m_stream);
-
     gpuWorkQueued = true;
   }
 
@@ -317,17 +316,13 @@ void KernelBVHController::setTranslationCPUHostUpload(double xB, double yB, doub
   // 4. GPU: Triangle Assembly with Transformation Drift Flags
   int block = 256;
   int gridTris = cuBQL::divRoundUp(m_numTrianglesB, block);
-  bool isTransB = (xB != 0.0 || yB != 0.0 || zB != 0.0);
-  bool isRotB = (m_rotB.x != 0.0 || m_rotB.y != 0.0 || m_rotB.z != 0.0);
 
-  assembleTrianglesKernel<<<gridTris, block, 0, m_stream>>>(
-      m_dMeshB, m_dMeshMetricsB, m_dVertsB, m_dIndicesB, m_numTrianglesB);
+  assembleTrianglesKernel<<<gridTris, block, 0, m_stream>>>(m_dMeshDoubleB, m_dMeshB, m_dMeshMetricsB, m_dVertsB,
+                                                            m_dIndicesB, m_numTrianglesB);
 
-  // 5. GPU: Generate tight AABBs and refit BVH B
   generateBoxes<<<gridTris, block, 0, m_stream>>>(m_dBoxesB, m_dMeshB, m_numTrianglesB);
   cuBQL::cuda::refit(m_bvhB, m_dBoxesB, m_stream);
 
-  // 6. Synchronize GPU stream
   CUBQL_CUDA_CALL(StreamSynchronize(m_stream));
 
   // Update persistent translation markers
@@ -353,10 +348,10 @@ void KernelBVHController::construct(Mesh& meshAcpu,
                                     int numTrianglesB,
                                     int levelB,
                                     int leafThreshold,
-                                    ExecutionStats& stats) {
-  construct(meshAcpu, meshBcpu, Point3(0, 0, 0), Point3(0, 0, 0), hVertsA, numVertsA, hIndicesA,
-            numTrianglesA, levelA, hVertsB, numVertsB, hIndicesB, numTrianglesB, levelB, leafThreshold,
-            stats);
+                                    ExecutionStats& stats,
+                                    bool storeDoubleTriangles) {
+  construct(meshAcpu, meshBcpu, Point3(0, 0, 0), Point3(0, 0, 0), hVertsA, numVertsA, hIndicesA, numTrianglesA, levelA,
+            hVertsB, numVertsB, hIndicesB, numTrianglesB, levelB, leafThreshold, stats, storeDoubleTriangles);
 }
 
 void KernelBVHController::construct(Mesh& meshAcpu,
@@ -374,7 +369,8 @@ void KernelBVHController::construct(Mesh& meshAcpu,
                                     int numTrianglesB,
                                     int levelB,
                                     int leafThreshold,
-                                    ExecutionStats& stats) {
+                                    ExecutionStats& stats,
+                                    bool storeDoubleTriangles) {
   if(numTrianglesA <= 0 || numTrianglesB <= 0)
     return;
 
@@ -446,7 +442,7 @@ void KernelBVHController::construct(Mesh& meshAcpu,
 
   m_dVertErrorsB = nullptr;
 
-  // Primitive & BVH Bounding Box Allocation (Single-Precision Float)
+  // Mesh Primitive & Metric Buffers Allocation
   CUBQL_CUDA_CALL(MallocAsync((void**)&m_dMeshA, m_numTrianglesA * sizeof(cuBQL::Triangle), m_stream));
   CUBQL_CUDA_CALL(MallocAsync((void**)&m_dMeshMetricsA, m_numTrianglesA * sizeof(float2), m_stream));
   CUBQL_CUDA_CALL(MallocAsync((void**)&m_dBoxesA, m_numTrianglesA * sizeof(cuBQL::box3f), m_stream));
@@ -455,13 +451,22 @@ void KernelBVHController::construct(Mesh& meshAcpu,
   CUBQL_CUDA_CALL(MallocAsync((void**)&m_dMeshMetricsB, m_numTrianglesB * sizeof(float2), m_stream));
   CUBQL_CUDA_CALL(MallocAsync((void**)&m_dBoxesB, m_numTrianglesB * sizeof(cuBQL::box3f), m_stream));
 
-  // Initial GPU Triangle Assembly & Box Generation (Casts double3 -> float cuBQL::Triangle)
+  // OPTIONAL: Allocate TriangleDouble buffers if requested
+  if(storeDoubleTriangles) {
+    CUBQL_CUDA_CALL(MallocAsync((void**)&m_dMeshDoubleA, m_numTrianglesA * sizeof(TriangleDouble), m_stream));
+    CUBQL_CUDA_CALL(MallocAsync((void**)&m_dMeshDoubleB, m_numTrianglesB * sizeof(TriangleDouble), m_stream));
+  } else {
+    m_dMeshDoubleA = nullptr;
+    m_dMeshDoubleB = nullptr;
+  }
+
+  // Initial GPU Triangle Assembly & Box Generation using the dual assemble kernel
   assembleTrianglesKernel<<<cuBQL::divRoundUp(m_numTrianglesA, 256), 256, 0, m_stream>>>(
-      m_dMeshA, m_dMeshMetricsA, m_dVertsA, m_dIndicesA, m_numTrianglesA);
+      m_dMeshDoubleA, m_dMeshA, m_dMeshMetricsA, m_dVertsA, m_dIndicesA, m_numTrianglesA);
   generateBoxes<<<cuBQL::divRoundUp(m_numTrianglesA, 256), 256, 0, m_stream>>>(m_dBoxesA, m_dMeshA, m_numTrianglesA);
 
   assembleTrianglesKernel<<<cuBQL::divRoundUp(m_numTrianglesB, 256), 256, 0, m_stream>>>(
-      m_dMeshB, m_dMeshMetricsB, m_dVertsB, m_dIndicesB, m_numTrianglesB);
+      m_dMeshDoubleB, m_dMeshB, m_dMeshMetricsB, m_dVertsB, m_dIndicesB, m_numTrianglesB);
   generateBoxes<<<cuBQL::divRoundUp(m_numTrianglesB, 256), 256, 0, m_stream>>>(m_dBoxesB, m_dMeshB, m_numTrianglesB);
 
   CUBQL_CUDA_CALL(EventRecord(evAllocStop, m_stream));
@@ -563,7 +568,8 @@ void KernelBVHController::runIntersectionPipeline(int batchMultiplier,
                                                   int mode,
                                                   int activateAsyncDownload,
                                                   tbb::concurrent_vector<int2>& finalExactPairs,
-                                                  ExecutionStats& stats) {
+                                                  ExecutionStats& stats,
+                                                  bool useDoubleMesh) {
   double tPipelineStart = cuBQL::getCurrentTime();
 
   m_dOutPairsA.clear();
@@ -579,7 +585,7 @@ void KernelBVHController::runIntersectionPipeline(int batchMultiplier,
 
   uint32_t totalIntersections =
       executeCrissCrossIntersection(m_bvhA, m_dMarkedNodeIndicesA, m_hOutMarkedCountA, m_bvhB, m_dMarkedNodeIndicesB,
-                                       m_hOutMarkedCountB, m_dOutPairsA, m_dOutPairsB);
+                                    m_hOutMarkedCountB, m_dOutPairsA, m_dOutPairsB);
 
   CUBQL_CUDA_CALL(StreamSynchronize(m_stream));
   double tCrossEnd = cuBQL::getCurrentTime();
@@ -625,7 +631,17 @@ void KernelBVHController::runIntersectionPipeline(int batchMultiplier,
 
   // 4. BATCHED CROSS INTERSECTION LOOP
   if(m_meshAcpu && m_meshBcpu) {
-    if(activateAsyncDownload == 0) {
+    if(useDoubleMesh) {
+      // Pass stored TriangleDouble pointers (or nullptr if m_dMeshDouble pointers were not allocated)
+      TriangleDouble* dMeshADouble = useDoubleMesh ? m_dMeshDoubleA : nullptr;
+      TriangleDouble* dMeshBDouble = useDoubleMesh ? m_dMeshDoubleB : nullptr;
+
+      finalCandidatePairs = executeBatchedCrossIntersectionLoopDouble(
+          *m_meshAcpu, *m_meshBcpu, batchMultiplier, totalBatches, m_dOutPairsA, m_dOutPairsB, m_dReverseMapB,
+          m_dMarkedNodeIndicesB, m_dOutOffsetsB, m_dOutPrimsFlatB, m_dNodeDescendantCountsB, m_hOutMarkedCountB, m_bvhA,
+          m_dMeshA, m_dMeshB, m_dMeshMetricsA, m_dMeshMetricsB, finalExactPairs, tracker, m_stream, dMeshADouble,
+          dMeshBDouble);
+    } else if(activateAsyncDownload == 0) {
       finalCandidatePairs = executeBatchedCrossIntersectionLoopV2(
           *m_meshAcpu, *m_meshBcpu, batchMultiplier, totalBatches, m_dOutPairsA, m_dOutPairsB, m_dReverseMapB,
           m_dMarkedNodeIndicesB, m_dOutOffsetsB, m_dOutPrimsFlatB, m_dNodeDescendantCountsB, m_hOutMarkedCountB, m_bvhA,
@@ -669,6 +685,10 @@ void KernelBVHController::cleanup() {
     CUBQL_CUDA_CALL(FreeAsync(m_dMeshA, m_stream));
     m_dMeshA = nullptr;
   }
+  if(m_dMeshDoubleA) { // <--- FREE DOUBLE MESH A
+    CUBQL_CUDA_CALL(FreeAsync(m_dMeshDoubleA, m_stream));
+    m_dMeshDoubleA = nullptr;
+  }
   if(m_dMeshMetricsA) {
     CUBQL_CUDA_CALL(FreeAsync(m_dMeshMetricsA, m_stream));
     m_dMeshMetricsA = nullptr;
@@ -698,6 +718,10 @@ void KernelBVHController::cleanup() {
   if(m_dMeshB) {
     CUBQL_CUDA_CALL(FreeAsync(m_dMeshB, m_stream));
     m_dMeshB = nullptr;
+  }
+  if(m_dMeshDoubleB) { // <--- FREE DOUBLE MESH B
+    CUBQL_CUDA_CALL(FreeAsync(m_dMeshDoubleB, m_stream));
+    m_dMeshDoubleB = nullptr;
   }
   if(m_dMeshMetricsB) {
     CUBQL_CUDA_CALL(FreeAsync(m_dMeshMetricsB, m_stream));

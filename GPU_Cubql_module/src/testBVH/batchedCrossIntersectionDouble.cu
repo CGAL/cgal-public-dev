@@ -2,21 +2,19 @@
 #include <thrust/scan.h>
 #include <thrust/execution_policy.h>
 #include <thrust/fill.h>
+#include <thrust/copy.h>
 #include <thrust/iterator/counting_iterator.h>
 #include <iostream>
 #include <vector>
 #include <algorithm>
 
-#include "batchedCrossIntersectionV2.h"
+#include "batchedCrossIntersectionDouble.h"
 #include "batchedCrossIntersectionCommon.h"
 #include "../custom_pipeline/GPUPredicatesCheckV2.h"
 #include "TargetStatus.h"
 #include "../src/CPU/YellowFilter.h"
 
-// --------------------------------------------------------------------
-// HOST EXECUTABLE REGION
-// --------------------------------------------------------------------
-uint64_t executeBatchedCrossIntersectionLoopV2(
+uint64_t executeBatchedCrossIntersectionLoopDouble(
     Mesh & meshAcpu, Mesh & meshBcpu,
     int batchMultiplier,
     int totalBatches,
@@ -34,19 +32,23 @@ uint64_t executeBatchedCrossIntersectionLoopV2(
     const float2 *triAMetrics,
     const float2 *triBMetrics,
     tbb::concurrent_vector<int2> & finalExactPairs,
-    IntersectionTimeTracker& tracker, cudaStream_t stream 
+    IntersectionTimeTracker& tracker,
+    cudaStream_t stream,
+    const TriangleDouble* dMeshADouble,
+    const TriangleDouble* dMeshBDouble
 ) {
     double tTotalStart = cuBQL::getCurrentTime();
     double tAllocStart = tTotalStart;
 
     uint64_t finalCandidatePairs = 0;
+    bool useDoublePass = (dMeshADouble != nullptr && dMeshBDouble != nullptr);
 
     // 1. Unpack Raw Resource Pointers
-    const uint32_t* ptr_outPairsA           = thrust::raw_pointer_cast(d_outPairsA.data());
-    const uint32_t* ptr_outPairsB           = thrust::raw_pointer_cast(d_outPairsB.data());
-    const uint32_t* ptr_reverseMapB         = thrust::raw_pointer_cast(d_reverseMapB.data());
-    const uint32_t* ptr_outOffsetsB         = thrust::raw_pointer_cast(d_outOffsetsB.data());
-    const uint32_t* ptr_outPrimsFlatB       = thrust::raw_pointer_cast(d_outPrimsFlatB.data());
+    const uint32_t* ptr_outPairsA     = thrust::raw_pointer_cast(d_outPairsA.data());
+    const uint32_t* ptr_outPairsB     = thrust::raw_pointer_cast(d_outPairsB.data());
+    const uint32_t* ptr_reverseMapB   = thrust::raw_pointer_cast(d_reverseMapB.data());
+    const uint32_t* ptr_outOffsetsB   = thrust::raw_pointer_cast(d_outOffsetsB.data());
+    const uint32_t* ptr_outPrimsFlatB = thrust::raw_pointer_cast(d_outPrimsFlatB.data());
 
     if (totalBatches > 0) {
         batchMultiplier = std::min(batchMultiplier, totalBatches);
@@ -101,7 +103,8 @@ uint64_t executeBatchedCrossIntersectionLoopV2(
     CUBQL_CUDA_CALL(EventCreate(&evComputeEnd));
 
     std::vector<int2> hGreenPairs;
-    std::vector<int2> hYellowPairs;
+    std::vector<int2> hOrangePairs; // Pairs that remained unresolved after GPU passes
+    int totalFloatYellowCount = 0;
 
     // 4. Coarse-Grained Execution Chunk Loop
     for (int i = 0; i < totalBatches; i += batchMultiplier) {
@@ -129,7 +132,6 @@ uint64_t executeBatchedCrossIntersectionLoopV2(
         CUBQL_CUDA_CALL(StreamSynchronize(stream));
         
         int totalChunkPrims = lastBatchSize + lastBatchOffset;
-
         if (totalChunkPrims == 0) continue;
 
         int assembleBlockSize = 64;
@@ -191,6 +193,9 @@ uint64_t executeBatchedCrossIntersectionLoopV2(
         CUBQL_CUDA_CALL(EventElapsedTime(&chunkComputeMs, evComputeStart, evComputeEnd));
         tracker.executionPhaseMs += chunkComputeMs;
 
+        // ----------------------------------------------------------------
+        // STAGE A: GPU FLOAT PREDICATES EVALUATION
+        // ----------------------------------------------------------------
         double tEvalStart = cuBQL::getCurrentTime();
 
         int* d_pairStatuses = nullptr;
@@ -225,16 +230,67 @@ uint64_t executeBatchedCrossIntersectionLoopV2(
 
         int totalGreen = green_end - dev_green_out;
         int totalYellow = yellow_end - dev_yellow_out;
+        totalFloatYellowCount += totalYellow;
 
         if (totalGreen > 0) {
             size_t oldSize = hGreenPairs.size();
             hGreenPairs.resize(oldSize + totalGreen);
             CUBQL_CUDA_CALL(MemcpyAsync(hGreenPairs.data() + oldSize, thrust::raw_pointer_cast(dev_green.data()), totalGreen * sizeof(int2), cudaMemcpyDeviceToHost, stream));
         }
-        if (totalYellow > 0) {
-            size_t oldSize = hYellowPairs.size();
-            hYellowPairs.resize(oldSize + totalYellow);
-            CUBQL_CUDA_CALL(MemcpyAsync(hYellowPairs.data() + oldSize, thrust::raw_pointer_cast(dev_yellow.data()), totalYellow * sizeof(int2), cudaMemcpyDeviceToHost, stream));
+
+        // ----------------------------------------------------------------
+        // STAGE B: GPU DOUBLE PREDICATES EVALUATION (OPTIONAL PASS)
+        // ----------------------------------------------------------------
+        if (useDoublePass && totalYellow > 0) {
+            double tDoubleStart = cuBQL::getCurrentTime();
+
+            int* d_yellowStatuses = nullptr;
+            CUBQL_CUDA_CALL(MallocAsync(&d_yellowStatuses, totalYellow * sizeof(int), stream));
+
+            // Launch 64-bit interval evaluation on yellow candidates
+            evaluateAndCompactPairsDouble(
+                thrust::raw_pointer_cast(dev_yellow.data()),
+                d_yellowStatuses,
+                dMeshADouble,
+                dMeshBDouble,
+                totalYellow,
+                stream
+            );
+
+            thrust::device_ptr<int2> dev_yellow_in(thrust::raw_pointer_cast(dev_yellow.data()));
+            thrust::device_ptr<int> dev_dbl_statuses(d_yellowStatuses);
+
+            thrust::device_vector<int2> dev_double_green(totalYellow);
+            thrust::device_vector<int2> dev_orange(totalYellow);
+
+            thrust::device_ptr<int2> dev_dbl_green_out(thrust::raw_pointer_cast(dev_double_green.data()));
+            thrust::device_ptr<int2> dev_orange_out(thrust::raw_pointer_cast(dev_orange.data()));
+
+            auto dbl_green_end = thrust::copy_if(thrust::cuda::par.on(stream), dev_yellow_in, dev_yellow_in + totalYellow, dev_dbl_statuses, dev_dbl_green_out, IsTargetPairStatus{(int)PAIR_GREEN});
+            auto orange_end    = thrust::copy_if(thrust::cuda::par.on(stream), dev_yellow_in, dev_yellow_in + totalYellow, dev_dbl_statuses, dev_orange_out, IsTargetPairStatus{(int)PAIR_YELLOW});
+
+            int totalDblGreen = dbl_green_end - dev_dbl_green_out;
+            int totalOrange   = orange_end - dev_orange_out;
+
+            if (totalDblGreen > 0) {
+                size_t oldSize = hGreenPairs.size();
+                hGreenPairs.resize(oldSize + totalDblGreen);
+                CUBQL_CUDA_CALL(MemcpyAsync(hGreenPairs.data() + oldSize, thrust::raw_pointer_cast(dev_double_green.data()), totalDblGreen * sizeof(int2), cudaMemcpyDeviceToHost, stream));
+            }
+            if (totalOrange > 0) {
+                size_t oldSize = hOrangePairs.size();
+                hOrangePairs.resize(oldSize + totalOrange);
+                CUBQL_CUDA_CALL(MemcpyAsync(hOrangePairs.data() + oldSize, thrust::raw_pointer_cast(dev_orange.data()), totalOrange * sizeof(int2), cudaMemcpyDeviceToHost, stream));
+            }
+
+            CUBQL_CUDA_CALL(FreeAsync(d_yellowStatuses, stream));
+            tracker.gpuDoublePredicatesMs += (cuBQL::getCurrentTime() - tDoubleStart) * 1000.0;
+        } 
+        else if (!useDoublePass && totalYellow > 0) {
+            // No double array passed: Float yellow pairs directly become orange pairs for CPU fallback
+            size_t oldSize = hOrangePairs.size();
+            hOrangePairs.resize(oldSize + totalYellow);
+            CUBQL_CUDA_CALL(MemcpyAsync(hOrangePairs.data() + oldSize, thrust::raw_pointer_cast(dev_yellow.data()), totalYellow * sizeof(int2), cudaMemcpyDeviceToHost, stream));
         }
 
         CUBQL_CUDA_CALL(StreamSynchronize(stream));
@@ -242,17 +298,24 @@ uint64_t executeBatchedCrossIntersectionLoopV2(
         CUBQL_CUDA_CALL(FreeAsync(d_candidatePairs, stream));
         CUBQL_CUDA_CALL(FreeAsync(d_pairStatuses, stream));
 
-        tracker.DownloadAndClean += (cuBQL::getCurrentTime() - tEvalStartTwo ) * 1000.0;
+        tracker.DownloadAndClean += (cuBQL::getCurrentTime() - tEvalStartTwo) * 1000.0;
     }
-    double tCPUPredciates= cuBQL::getCurrentTime();
+
+    // --------------------------------------------------------------------
+    // STAGE C: CPU EXACT PREDICATES PASS (ORANGE LIST FILTERING)
+    // --------------------------------------------------------------------
+    double tCPUPredicates = cuBQL::getCurrentTime();
 
     tracker.confirmedGreenPairs = hGreenPairs.size();
-    tracker.confirmedYellowPairs = hYellowPairs.size();
+    tracker.confirmedYellowPairs = totalFloatYellowCount;
+    tracker.confirmedOrangePairs = hOrangePairs.size();
 
     finalExactPairs = tbb::concurrent_vector<int2>(hGreenPairs.begin(), hGreenPairs.end());
-    filterYellowPairsTBB(meshAcpu, meshBcpu, hYellowPairs.data(), hYellowPairs.size(), finalExactPairs);
+    
+    // CGAL TBB Filter executes strictly on remaining Orange pairs
+    filterYellowPairsTBB(meshAcpu, meshBcpu, hOrangePairs.data(), hOrangePairs.size(), finalExactPairs);
 
-    tracker.CPUPredicates = (cuBQL::getCurrentTime() - tCPUPredciates) * 1000.0;
+    tracker.CPUPredicates = (cuBQL::getCurrentTime() - tCPUPredicates) * 1000.0;
 
     double tCleanupStart = cuBQL::getCurrentTime();
 
