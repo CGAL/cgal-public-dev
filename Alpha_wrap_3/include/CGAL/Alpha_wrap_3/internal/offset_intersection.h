@@ -107,7 +107,7 @@ public:
       for (int i = 1; i <= max; i++) {
         for (const std::string& var : vars) {
           if (i == getenv(var)) {
-            std::cout << "Tracing: " << var << std::endl;
+            // std::cout << "Tracing: " << var << std::endl;
             output = trace(var, s, t, output_pt);
           }
         }
@@ -196,7 +196,6 @@ private:
 	  }
 	  else {
 		for (float omega = 1.1; omega < 2; omega += 0.1) {
-		  std::cout << "omega: " << omega << std::endl;
 		  timer_start();
 		  output = relaxed_sphere_tracing(s, t, omega, output_pt);
 		  timer_stop_and_output("relaxed-" + std::to_string(omega));
@@ -522,7 +521,7 @@ private:
         return true;
       }
 
-      current_pt = current_pt + (current_step * direction);
+      current_pt += current_step * direction;
 
       previous_dist = current_dist;
       current_dist = dist_oracle(current_pt) - offset;
