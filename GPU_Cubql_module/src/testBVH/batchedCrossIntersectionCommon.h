@@ -85,6 +85,10 @@ __global__ void assembleChunkBuffersByBatchKernel(
     const int* d_chunkBatchOffsets 
 );
 
+// --------------------------------------------------------------------
+// TRIANGLE-BASED OVERLAP KERNELS (Legacy / Triangle Fallback)
+// --------------------------------------------------------------------
+
 __global__ void countAABBOverlapsKernel_Indirected(
     int *pairCounts, 
     cuBQL::bvh3f bvhA, 
@@ -102,6 +106,33 @@ __global__ void fillAABBOverlapsKernel_Indirected(
     cuBQL::bvh3f bvhA, 
     const cuBQL::Triangle *triA, 
     const cuBQL::Triangle *triB, 
+    const uint32_t* d_BIter,       
+    uint32_t startOffsetB,         
+    int numPrimsB, 
+    const uint64_t* d_AIter
+);
+
+// --------------------------------------------------------------------
+// PRECOMPUTED AABB-BASED OVERLAP KERNELS (Direct cuBQL::box3f reads)
+// --------------------------------------------------------------------
+
+__global__ void countAABBOverlapsKernel_Indirected_boxes(
+    int *pairCounts, 
+    cuBQL::bvh3f bvhA, 
+    const cuBQL::box3f *d_boxesA, 
+    const cuBQL::box3f *d_boxesB, 
+    const uint32_t* d_BIter,       
+    uint32_t startOffsetB,         
+    int numPrimsB, 
+    const uint64_t* d_AIter
+);
+
+__global__ void fillAABBOverlapsKernel_Indirected_Boxes(
+    int2 *candidatePairs, 
+    const int *offsets, 
+    cuBQL::bvh3f bvhA, 
+    const cuBQL::box3f *d_boxesA, 
+    const cuBQL::box3f *d_boxesB, 
     const uint32_t* d_BIter,       
     uint32_t startOffsetB,         
     int numPrimsB, 

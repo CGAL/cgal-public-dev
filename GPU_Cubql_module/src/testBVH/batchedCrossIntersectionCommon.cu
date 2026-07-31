@@ -113,6 +113,39 @@ __global__ void countAABBOverlapsKernel_Indirected(
     pairCounts[tid] = count;
 }
 
+__global__ void countAABBOverlapsKernel_Indirected_boxes(
+    int *pairCounts, 
+    cuBQL::bvh3f bvhA, 
+    const cuBQL::box3f *d_boxesA, 
+    const cuBQL::box3f *d_boxesB, 
+    const uint32_t* d_BIter,       
+    uint32_t startOffsetB,         
+    int numPrimsB, 
+    const uint64_t* d_AIter)       
+{
+    int tid = threadIdx.x + blockIdx.x * blockDim.x;
+    if (tid >= numPrimsB) return;
+
+    uint32_t actualPrimIdB = d_BIter[startOffsetB + tid];
+    uint64_t startNodeIdxA = d_AIter[startOffsetB + tid]; 
+
+    // Direct 24-byte read of the query box
+    cuBQL::box3f query = d_boxesB[actualPrimIdB];
+    
+    int count = 0;
+    cuBQL::fixedBoxQueryv2::forEachLeaf([&](const uint32_t *ids, uint32_t num) {
+        for (uint32_t i = 0; i < num; i++) {
+            // Direct AABB overlap check on target box array
+            if (d_boxesA[ids[i]].overlaps(query)) { 
+                count++; 
+            }
+        }
+        return CUBQL_CONTINUE_TRAVERSAL;
+    }, bvhA, query, startNodeIdxA);
+    
+    pairCounts[tid] = count;
+}
+
 __global__ void fillAABBOverlapsKernel_Indirected(
     int2 *candidatePairs, 
     const int *offsets, 
@@ -137,6 +170,38 @@ __global__ void fillAABBOverlapsKernel_Indirected(
         for (uint32_t i = 0; i < num; i++) {
             if (triA[ids[i]].bounds().overlaps(query)) { 
                 candidatePairs[wPos++] = make_int2((int)ids[i], (int)actualPrimIdB); 
+            }
+        }
+        return CUBQL_CONTINUE_TRAVERSAL;
+    }, bvhA, query, startNodeIdxA);
+}
+
+__global__ void fillAABBOverlapsKernel_Indirected_Boxes(
+    int2 *candidatePairs, 
+    const int *offsets, 
+    cuBQL::bvh3f bvhA, 
+    const cuBQL::box3f *d_boxesA, 
+    const cuBQL::box3f *d_boxesB, 
+    const uint32_t* d_BIter,       
+    uint32_t startOffsetB,         
+    int numPrimsB, 
+    const uint64_t* d_AIter)       
+{
+    int tid = threadIdx.x + blockIdx.x * blockDim.x;
+    if (tid >= numPrimsB) return;
+
+    int wPos = offsets[tid];
+    uint32_t actualPrimIdB = d_BIter[startOffsetB + tid];
+    uint64_t startNodeIdxA = d_AIter[startOffsetB + tid]; 
+
+    // Fetch bounding box directly for query
+    cuBQL::box3f query = d_boxesB[actualPrimIdB];
+    
+    cuBQL::fixedBoxQueryv2::forEachLeaf([&](const uint32_t *ids, uint32_t num) {
+        for (uint32_t i = 0; i < num; i++) {
+            // Direct AABB-AABB overlap test against d_boxesA
+            if (d_boxesA[ids[i]].overlaps(query)) { 
+                candidatePairs[wPos++] = make_int2(static_cast<int>(ids[i]), static_cast<int>(actualPrimIdB)); 
             }
         }
         return CUBQL_CONTINUE_TRAVERSAL;

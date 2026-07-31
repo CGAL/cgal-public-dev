@@ -10,8 +10,7 @@
 #include "../CPU/CgalDefinitions.h"
 #include "../testBVH/ExecutionStats.h"
 
-#include "../custom_pipeline/TriangleDouble.h"
-
+// REMOVED: #include "../custom_pipeline/TriangleDouble.h"
 
 class KernelBVHController {
 public:
@@ -22,37 +21,39 @@ public:
     KernelBVHController(const KernelBVHController&) = delete;
     KernelBVHController& operator=(const KernelBVHController&) = delete;
 
-    // 1. Setup & Construction (With Centroids) - Double Precision
+    // 1. Setup & Construction - Double Precision Only
     void construct(
         Mesh& meshAcpu, Mesh& meshBcpu,
         const Point3& centerA, const Point3& centerB,
         const double3* hVertsA, int numVertsA, const uint3* hIndicesA, int numTrianglesA, int levelA,
         const double3* hVertsB, int numVertsB, const uint3* hIndicesB, int numTrianglesB, int levelB,
-        int leafThreshold, ExecutionStats& stats,
-        bool storeDoubleTriangles = true); // <--- 2. ADD PARAMETER
+        int leafThreshold, ExecutionStats& stats);
 
     void construct(
         Mesh& meshAcpu, Mesh& meshBcpu,
         const double3* hVertsA, int numVertsA, const uint3* hIndicesA, int numTrianglesA, int levelA,
         const double3* hVertsB, int numVertsB, const uint3* hIndicesB, int numTrianglesB, int levelB,
-        int leafThreshold, ExecutionStats& stats,
-        bool storeDoubleTriangles = true); // <--- 2. ADD PARAMETER
+        int leafThreshold, ExecutionStats& stats);
 
-    // 2. Execution Pipeline (With optional useDoubleMesh flag)
+    // 2. Execution Pipeline - Double Precision Only
     void runIntersectionPipeline(
         int batchMultiplier, int mode, int activateAsyncDownload,
-        tbb::concurrent_vector<int2>& finalExactPairs, ExecutionStats& stats,
-        bool useDoubleMesh = true); // <--- 3. ADD PARAMETER
+        tbb::concurrent_vector<int2>& finalExactPairs, ExecutionStats& stats);
 
     // 3. Deallocates all GPU resources safely
     void cleanup();
 
-    // Dynamic Dual Point Cloud Transformation (Rotation in degrees around centroids + Translation)
-    void setTransformBoth(double3 rotDegA, double3 transA, double3 rotDegB, double3 transB);
+    // Dynamic Dual Point Cloud Transformation
+    void setTransformBoth(double3 rotDegA, double3 transA, 
+                          double3 rotDegB, double3 transB,
+                          float& timeGPU, float& timeCPU,
+                          float& timeTransformVerts, 
+                          float& timeAssembleTris, 
+                          float& timeGenBoxes);
 
-    // Legacy Translation Interfaces (Maintained for Backward Compatibility)
+    // Legacy Translation Interfaces
     void setTranslation(double xB, double yB, double zB);
-    void setTranslationCPUHostUpload(double xB, double yB, double zB);
+   // void setTranslationCPUHostUpload(double xB, double yB, double zB);
 
     // Centroid Getters
     Point3 getCenterA() const { return m_centerA; }
@@ -92,14 +93,15 @@ private:
 
     // Core Geometry & Topology Persistent Device Buffers
     cuBQL::Triangle* m_dMeshA = nullptr;
-    TriangleDouble*  m_dMeshDoubleA = nullptr;
     float2*          m_dMeshMetricsA = nullptr;
     cuBQL::box3f*    m_dBoxesA = nullptr;
 
     cuBQL::Triangle* m_dMeshB = nullptr;
-    TriangleDouble*  m_dMeshDoubleB = nullptr;
     float2*          m_dMeshMetricsB = nullptr;
     cuBQL::box3f*    m_dBoxesB = nullptr;
+
+    // REMOVED: TriangleDouble* m_dMeshDoubleA
+    // REMOVED: TriangleDouble* m_dMeshDoubleB
 
     // Persistent Raw GPU & CPU Buffers for Mesh A
     double3*             m_dVertsA = nullptr;       // Active transformed vertices

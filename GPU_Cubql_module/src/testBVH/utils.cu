@@ -182,32 +182,32 @@ __device__ __forceinline__ void assembleTrianglesDeviceImpl(TriangleDouble* dMes
   dMesh[idx].c.z = c.z;
 
   // 3. Compute scale (L) and edge extent (E) in double precision
-  double l0 = fmax(fmax(fabs(p0.x), fabs(p0.y)), fabs(p0.z));
-  double l1 = fmax(fmax(fabs(p1.x), fabs(p1.y)), fabs(p1.z));
-  double l2 = fmax(fmax(fabs(p2.x), fabs(p2.y)), fabs(p2.z));
-  double L = fmax(fmax(l0, l1), l2);
+  // double l0 = fmax(fmax(fabs(p0.x), fabs(p0.y)), fabs(p0.z));
+  // double l1 = fmax(fmax(fabs(p1.x), fabs(p1.y)), fabs(p1.z));
+  // double l2 = fmax(fmax(fabs(p2.x), fabs(p2.y)), fabs(p2.z));
+  // double L = fmax(fmax(l0, l1), l2);
 
-  double ex = fmax(fmax(fabs(p0.x - p1.x), fabs(p1.x - p2.x)), fabs(p2.x - p0.x));
-  double ey = fmax(fmax(fabs(p0.y - p1.y), fabs(p1.y - p2.y)), fabs(p2.y - p0.y));
-  double ez = fmax(fmax(fabs(p0.z - p1.z), fabs(p1.z - p2.z)), fabs(p2.z - p0.z));
-  double E = fmax(fmax(ex, ey), ez);
+  // double ex = fmax(fmax(fabs(p0.x - p1.x), fabs(p1.x - p2.x)), fabs(p2.x - p0.x));
+  // double ey = fmax(fmax(fabs(p0.y - p1.y), fabs(p1.y - p2.y)), fabs(p2.y - p0.y));
+  // double ez = fmax(fmax(fabs(p0.z - p1.z), fabs(p1.z - p2.z)), fabs(p2.z - p0.z));
+  // double E = fmax(fmax(ex, ey), ez);
 
-  // 4. Compute exact quantization drift per vertex
-  double err0 = fmax(fmax(fabs(p0.x - static_cast<double>(a.x)), fabs(p0.y - static_cast<double>(a.y))),
-                     fabs(p0.z - static_cast<double>(a.z)));
-  double err1 = fmax(fmax(fabs(p1.x - static_cast<double>(b.x)), fabs(p1.y - static_cast<double>(b.y))),
-                     fabs(p1.z - static_cast<double>(b.z)));
-  double err2 = fmax(fmax(fabs(p2.x - static_cast<double>(c.x)), fabs(p2.y - static_cast<double>(c.y))),
-                     fabs(p2.z - static_cast<double>(c.z)));
+  // // 4. Compute exact quantization drift per vertex
+  // double err0 = fmax(fmax(fabs(p0.x - static_cast<double>(a.x)), fabs(p0.y - static_cast<double>(a.y))),
+  //                    fabs(p0.z - static_cast<double>(a.z)));
+  // double err1 = fmax(fmax(fabs(p1.x - static_cast<double>(b.x)), fabs(p1.y - static_cast<double>(b.y))),
+  //                    fabs(p1.z - static_cast<double>(b.z)));
+  // double err2 = fmax(fmax(fabs(p2.x - static_cast<double>(c.x)), fabs(p2.y - static_cast<double>(c.y))),
+  //                    fabs(p2.z - static_cast<double>(c.z)));
 
-  float maxVertexError = static_cast<float>(fmax(fmax(err0, err1), err2));
+  // float maxVertexError = static_cast<float>(fmax(fmax(err0, err1), err2));
 
-  // 5. Convert maxVertexError into effective spatial scale L_eff
-  // FIX: Add maxVertexError directly to L to bound physical coordinate expansion
-  float L_eff = static_cast<float>(L) + maxVertexError;
+  // // 5. Convert maxVertexError into effective spatial scale L_eff
+  // // FIX: Add maxVertexError directly to L to bound physical coordinate expansion
+  // float L_eff = static_cast<float>(L) + maxVertexError;
 
-  // 6. Write out packed metrics
-  dMetrics[idx] = make_float2(L_eff, static_cast<float>(E * E));
+  // // 6. Write out packed metrics
+  // dMetrics[idx] = make_float2(L_eff, static_cast<float>(E * E));
 }
 
 // =============================================================================

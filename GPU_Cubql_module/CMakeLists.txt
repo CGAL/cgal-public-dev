@@ -357,6 +357,7 @@ add_executable(MainApp
     src/Warmup/cuda_warmup.cu
     src/custom_pipeline/GPUPredicatesCheckV2.cu
     src/custom_pipeline/GPUPredicatesCheckDouble.cu
+    src/custom_pipeline/GPUPredicatesCheckDoubleAssisted.cu
     src/testBVH/utils.cu
 )
 

@@ -93,12 +93,9 @@ __device__ inline int edgeTriIntervalDouble(
 }
 
 __device__ inline PairStatus classifyPairDouble(
-    const TriangleDouble& A, 
-    const TriangleDouble& B) 
+    const double3& A0, const double3& A1, const double3& A2,
+    const double3& B0, const double3& B1, const double3& B2) 
 {    
-    const double3 A0 = A.a, A1 = A.b, A2 = A.c;
-    const double3 B0 = B.a, B1 = B.b, B2 = B.c;
-
     // Reject early if vertices are strictly separated by plane orientation
     int ob0 = orient3d_interval_double(A0, A1, A2, B0);
     int ob1 = orient3d_interval_double(A0, A1, A2, B1);
@@ -133,21 +130,32 @@ __device__ inline PairStatus classifyPairDouble(
 __global__ void evaluateGeometricPairsKernelDouble(
     int *outStatuses, 
     const int2 *candidatePairs, 
-    const TriangleDouble *triA, 
-    const TriangleDouble *triB, 
+    const double3 *vertsA,
+    const uint3 *indicesA,
+    const double3 *vertsB,
+    const uint3 *indicesB,
     int numPairs) 
 {
     int tid = threadIdx.x + blockIdx.x * blockDim.x;
     if (tid >= numPairs) return;
 
     int2 pair = candidatePairs[tid];
-    
-    PairStatus status = classifyPairDouble(
-        triA[pair.x], 
-        triB[pair.y]
-    );
 
-    outStatuses[tid] = (int)status;
+    // Read triangle A indices and vertices directly
+    uint3 idxA = indicesA[pair.x];
+    double3 A0 = vertsA[idxA.x];
+    double3 A1 = vertsA[idxA.y];
+    double3 A2 = vertsA[idxA.z];
+
+    // Read triangle B indices and vertices directly
+    uint3 idxB = indicesB[pair.y];
+    double3 B0 = vertsB[idxB.x];
+    double3 B1 = vertsB[idxB.y];
+    double3 B2 = vertsB[idxB.z];
+
+    PairStatus status = classifyPairDouble(A0, A1, A2, B0, B1, B2);
+
+    outStatuses[tid] = static_cast<int>(status);
 }
 
 // --------------------------------------------------------------------
@@ -156,8 +164,10 @@ __global__ void evaluateGeometricPairsKernelDouble(
 void evaluateAndCompactPairsDouble(
     int2* dCandidatePairs,
     int* dPairStatuses,
-    const TriangleDouble* dA,
-    const TriangleDouble* dB_batch,
+    const double3* dVertsA,
+    const uint3* dIndicesA,
+    const double3* dVertsB,
+    const uint3* dIndicesB,
     int totalBatchPairs,
     cudaStream_t stream)
 {
@@ -167,6 +177,12 @@ void evaluateAndCompactPairsDouble(
     int blocksPerGrid = (totalBatchPairs + threadsPerBlock - 1) / threadsPerBlock;
     
     evaluateGeometricPairsKernelDouble<<<blocksPerGrid, threadsPerBlock, 0, stream>>>(
-         dPairStatuses, dCandidatePairs, dA, dB_batch, totalBatchPairs
+         dPairStatuses, 
+         dCandidatePairs, 
+         dVertsA, 
+         dIndicesA, 
+         dVertsB, 
+         dIndicesB, 
+         totalBatchPairs
     );
 }
