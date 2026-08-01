@@ -35,6 +35,7 @@ uint64_t executeBatchedCrossIntersectionLoopDouble(
     const uint3* d_indicesB,
     tbb::concurrent_vector<int2> & finalExactPairs,
     IntersectionTimeTracker& tracker,
+    Point3 m_centerA, Point3 m_centerB, double3 m_rotA, double3 m_transA, double3 m_rotB, double3 m_transB,
     cudaStream_t stream
 ) {
     double tTotalStart = cuBQL::getCurrentTime();
@@ -97,9 +98,12 @@ uint64_t executeBatchedCrossIntersectionLoopDouble(
     }
     tracker.preallocateTimeMs = (cuBQL::getCurrentTime() - tAllocStart) * 1000.0;
 
-    cudaEvent_t evComputeStart, evComputeEnd;
-    CUBQL_CUDA_CALL(EventCreate(&evComputeStart));
-    CUBQL_CUDA_CALL(EventCreate(&evComputeEnd));
+    // Use multiple distinct events to track sub-phases purely asynchronously
+    cudaEvent_t evAabbStart, evAabbEnd, evEvalStart, evEvalEnd;
+    CUBQL_CUDA_CALL(EventCreate(&evAabbStart));
+    CUBQL_CUDA_CALL(EventCreate(&evAabbEnd));
+    CUBQL_CUDA_CALL(EventCreate(&evEvalStart));
+    CUBQL_CUDA_CALL(EventCreate(&evEvalEnd));
 
     std::vector<int2> hGreenPairs;
     std::vector<int2> hYellowPairs;
@@ -127,6 +131,8 @@ uint64_t executeBatchedCrossIntersectionLoopDouble(
         int lastBatchOffset = 0;
         CUBQL_CUDA_CALL(MemcpyAsync(&lastBatchSize, d_chunkBatchSizes + activeBatchesInChunk - 1, sizeof(int), cudaMemcpyDeviceToHost, stream));
         CUBQL_CUDA_CALL(MemcpyAsync(&lastBatchOffset, d_chunkBatchOffsets + activeBatchesInChunk - 1, sizeof(int), cudaMemcpyDeviceToHost, stream));
+        
+        // Required sync to get sizes for the chunk
         CUBQL_CUDA_CALL(StreamSynchronize(stream));
         
         int totalChunkPrims = lastBatchSize + lastBatchOffset;
@@ -143,12 +149,10 @@ uint64_t executeBatchedCrossIntersectionLoopDouble(
 
         tracker.assemblyPhaseMs += (cuBQL::getCurrentTime() - tAssemblyStart) * 1000.0;
 
-        CUBQL_CUDA_CALL(EventRecord(evComputeStart, stream));
-
         int kernelBlockSize = 128;
         int kernelGridSize  = (totalChunkPrims + kernelBlockSize - 1) / kernelBlockSize;
 
-        // Direct precomputed AABB overlap count using d_boxesA and d_boxesB
+        // Count Overlaps
         countAABBOverlapsKernel_Indirected_boxes<<<kernelGridSize, kernelBlockSize, 0, stream>>>(
             d_pairCounts, bvhA, d_boxesA, d_boxesB, 
             d_BIter, 0, totalChunkPrims, d_AIter
@@ -162,46 +166,35 @@ uint64_t executeBatchedCrossIntersectionLoopDouble(
         int lastOffset = 0;
         CUBQL_CUDA_CALL(MemcpyAsync(&lastCount, d_pairCounts + totalChunkPrims - 1, sizeof(int), cudaMemcpyDeviceToHost, stream));
         CUBQL_CUDA_CALL(MemcpyAsync(&lastOffset, d_offsets + totalChunkPrims - 1, sizeof(int), cudaMemcpyDeviceToHost, stream));
+        
+        // Required sync to allocate the candidate array size
         CUBQL_CUDA_CALL(StreamSynchronize(stream));
         
         int totalChunkPairs = lastCount + lastOffset;
-
-        if (totalChunkPairs == 0) {
-            CUBQL_CUDA_CALL(EventRecord(evComputeEnd, stream));
-            CUBQL_CUDA_CALL(EventSynchronize(evComputeEnd));
-            float elapsedMs = 0.0f;
-            CUBQL_CUDA_CALL(EventElapsedTime(&elapsedMs, evComputeStart, evComputeEnd));
-            tracker.executionPhaseMs += elapsedMs;
-            continue;
-        }
+        if (totalChunkPairs == 0) continue;
         
         finalCandidatePairs += totalChunkPairs;
 
+        // ----------------------------------------------------------------
+        // AABB CANDIDATE GENERATION
+        // ----------------------------------------------------------------
         int2* d_candidatePairs = nullptr;
         CUBQL_CUDA_CALL(MallocAsync(&d_candidatePairs, totalChunkPairs * sizeof(int2), stream));
 
-        // Direct precomputed AABB candidate pair fill using d_boxesA and d_boxesB
+        CUBQL_CUDA_CALL(EventRecord(evAabbStart, stream));
         fillAABBOverlapsKernel_Indirected_Boxes<<<kernelGridSize, kernelBlockSize, 0, stream>>>(
             d_candidatePairs, d_offsets, bvhA, d_boxesA, d_boxesB, 
             d_BIter, 0, totalChunkPrims, d_AIter
         );
-
-        CUBQL_CUDA_CALL(EventRecord(evComputeEnd, stream));
-        CUBQL_CUDA_CALL(EventSynchronize(evComputeEnd));
-        
-        float chunkComputeMs = 0.0f;
-        CUBQL_CUDA_CALL(EventElapsedTime(&chunkComputeMs, evComputeStart, evComputeEnd));
-        tracker.executionPhaseMs += chunkComputeMs;
+        CUBQL_CUDA_CALL(EventRecord(evAabbEnd, stream)); // NO SYNC HERE
 
         // ----------------------------------------------------------------
         // DIRECT DOUBLE-PRECISION GPU PREDICATES EVALUATION
         // ----------------------------------------------------------------
-        double tEvalStart = cuBQL::getCurrentTime();
-
         int* d_pairStatuses = nullptr;
         CUBQL_CUDA_CALL(MallocAsync(&d_pairStatuses, totalChunkPairs * sizeof(int), stream));
 
-        // Execute directly on double3 + uint3 arrays without branching or packing
+        CUBQL_CUDA_CALL(EventRecord(evEvalStart, stream));
         evaluateAndCompactPairsDoubleAssisted(
             d_candidatePairs,
             d_pairStatuses,
@@ -212,8 +205,7 @@ uint64_t executeBatchedCrossIntersectionLoopDouble(
             totalChunkPairs,
             stream
         );
-
-        tracker.fineEvaluationPhaseMs += (cuBQL::getCurrentTime() - tEvalStart) * 1000.0;
+        CUBQL_CUDA_CALL(EventRecord(evEvalEnd, stream)); // NO SYNC HERE
 
         // ----------------------------------------------------------------
         // PAIR COMPACTION PASS (GREEN -> FINAL, YELLOW -> CPU CGAL)
@@ -223,11 +215,14 @@ uint64_t executeBatchedCrossIntersectionLoopDouble(
         thrust::device_ptr<int2> dev_evaluated(d_candidatePairs);
         thrust::device_ptr<int> dev_statuses(d_pairStatuses);
 
-        thrust::device_vector<int2> dev_green(totalChunkPairs);
-        thrust::device_vector<int2> dev_yellow(totalChunkPairs);
+        // MallocAsync avoids device-wide driver stalls
+        int2* d_green_raw = nullptr;
+        int2* d_yellow_raw = nullptr;
+        CUBQL_CUDA_CALL(MallocAsync(&d_green_raw, totalChunkPairs * sizeof(int2), stream));
+        CUBQL_CUDA_CALL(MallocAsync(&d_yellow_raw, totalChunkPairs * sizeof(int2), stream));
 
-        thrust::device_ptr<int2> dev_green_out(thrust::raw_pointer_cast(dev_green.data()));
-        thrust::device_ptr<int2> dev_yellow_out(thrust::raw_pointer_cast(dev_yellow.data()));
+        thrust::device_ptr<int2> dev_green_out(d_green_raw);
+        thrust::device_ptr<int2> dev_yellow_out(d_yellow_raw);
 
         auto green_end  = thrust::copy_if(thrust::cuda::par.on(stream), dev_evaluated, dev_evaluated + totalChunkPairs, dev_statuses, dev_green_out,  IsTargetPairStatus{(int)PAIR_GREEN});
         auto yellow_end = thrust::copy_if(thrust::cuda::par.on(stream), dev_evaluated, dev_evaluated + totalChunkPairs, dev_statuses, dev_yellow_out, IsTargetPairStatus{(int)PAIR_YELLOW});
@@ -238,19 +233,32 @@ uint64_t executeBatchedCrossIntersectionLoopDouble(
         if (totalGreen > 0) {
             size_t oldSize = hGreenPairs.size();
             hGreenPairs.resize(oldSize + totalGreen);
-            CUBQL_CUDA_CALL(MemcpyAsync(hGreenPairs.data() + oldSize, thrust::raw_pointer_cast(dev_green.data()), totalGreen * sizeof(int2), cudaMemcpyDeviceToHost, stream));
+            CUBQL_CUDA_CALL(MemcpyAsync(hGreenPairs.data() + oldSize, d_green_raw, totalGreen * sizeof(int2), cudaMemcpyDeviceToHost, stream));
         }
 
         if (totalYellow > 0) {
             size_t oldSize = hYellowPairs.size();
             hYellowPairs.resize(oldSize + totalYellow);
-            CUBQL_CUDA_CALL(MemcpyAsync(hYellowPairs.data() + oldSize, thrust::raw_pointer_cast(dev_yellow.data()), totalYellow * sizeof(int2), cudaMemcpyDeviceToHost, stream));
+            CUBQL_CUDA_CALL(MemcpyAsync(hYellowPairs.data() + oldSize, d_yellow_raw, totalYellow * sizeof(int2), cudaMemcpyDeviceToHost, stream));
         }
 
-        CUBQL_CUDA_CALL(StreamSynchronize(stream));
+        // ----------------------------------------------------------------
+        // FINALIZE CHUNK, SYNC, AND RECORD EXACT TIMERS
+        // ----------------------------------------------------------------
+        CUBQL_CUDA_CALL(StreamSynchronize(stream)); // Only ONE sync per chunk for the entire execution
+
+        float aabbMs = 0.0f;
+        float evalMs = 0.0f;
+        CUBQL_CUDA_CALL(EventElapsedTime(&aabbMs, evAabbStart, evAabbEnd));
+        CUBQL_CUDA_CALL(EventElapsedTime(&evalMs, evEvalStart, evEvalEnd));
+        
+        tracker.executionPhaseMs += aabbMs;
+        tracker.fineEvaluationPhaseMs += evalMs;
 
         CUBQL_CUDA_CALL(FreeAsync(d_candidatePairs, stream));
         CUBQL_CUDA_CALL(FreeAsync(d_pairStatuses, stream));
+        CUBQL_CUDA_CALL(FreeAsync(d_green_raw, stream));
+        CUBQL_CUDA_CALL(FreeAsync(d_yellow_raw, stream));
 
         tracker.DownloadAndClean += (cuBQL::getCurrentTime() - tEvalStartTwo) * 1000.0;
     }
@@ -266,14 +274,16 @@ uint64_t executeBatchedCrossIntersectionLoopDouble(
     finalExactPairs = tbb::concurrent_vector<int2>(hGreenPairs.begin(), hGreenPairs.end());
     
     // CGAL TBB Filter executes directly on all Yellow pairs
-    filterYellowPairsTBB(meshAcpu, meshBcpu, hYellowPairs.data(), hYellowPairs.size(), finalExactPairs);
+    filterYellowPairsTBB(meshAcpu, meshBcpu, hYellowPairs.data(), hYellowPairs.size(), finalExactPairs, m_centerA, m_rotA, m_transA, m_centerB, m_rotB, m_transB);
 
     tracker.CPUPredicates = (cuBQL::getCurrentTime() - tCPUPredicates) * 1000.0;
 
     double tCleanupStart = cuBQL::getCurrentTime();
 
-    CUBQL_CUDA_CALL(EventDestroy(evComputeStart));
-    CUBQL_CUDA_CALL(EventDestroy(evComputeEnd));
+    CUBQL_CUDA_CALL(EventDestroy(evAabbStart));
+    CUBQL_CUDA_CALL(EventDestroy(evAabbEnd));
+    CUBQL_CUDA_CALL(EventDestroy(evEvalStart));
+    CUBQL_CUDA_CALL(EventDestroy(evEvalEnd));
 
     if (d_BIter)              CUBQL_CUDA_CALL(FreeAsync(d_BIter, stream));
     if (d_AIter)              CUBQL_CUDA_CALL(FreeAsync(d_AIter, stream));

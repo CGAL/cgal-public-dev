@@ -368,22 +368,24 @@ void KernelBVHController::setTransformBoth(double3 rotDegA,
   }
 
   // --- STEP 2: CONCURRENT CPU CGAL TRANSFORMS ---
-  auto cpuStart = std::chrono::high_resolution_clock::now();
+  // auto cpuStart = std::chrono::high_resolution_clock::now();
 
-  tbb::parallel_invoke(
-      [this, movedA, rotDegA, transA]() {
-        if(movedA && m_meshAcpu) {
-          transformCgalMesh(m_meshAcpu, m_origPointsA, m_centerA, rotDegA, transA);
-        }
-      },
-      [this, movedB, rotDegB, transB]() {
-        if(movedB && m_meshBcpu) {
-          transformCgalMesh(m_meshBcpu, m_origPointsB, m_centerB, rotDegB, transB);
-        }
-      });
+  // tbb::parallel_invoke(
+  //     [this, movedA, rotDegA, transA]() {
+  //       if(movedA && m_meshAcpu) {
+  //         transformCgalMesh(m_meshAcpu, m_origPointsA, m_centerA, rotDegA, transA);
+  //       }
+  //     },
+  //     [this, movedB, rotDegB, transB]() {
+  //       if(movedB && m_meshBcpu) {
+  //         transformCgalMesh(m_meshBcpu, m_origPointsB, m_centerB, rotDegB, transB);
+  //       }
+  //     });
 
-  auto cpuEnd = std::chrono::high_resolution_clock::now();
-  timeCPU = std::chrono::duration<float, std::milli>(cpuEnd - cpuStart).count();
+  // auto cpuEnd = std::chrono::high_resolution_clock::now();
+  // timeCPU = std::chrono::duration<float, std::milli>(cpuEnd - cpuStart).count();
+
+  timeCPU = 0;
 
   if(movedA) {
     m_rotA = rotDegA;
@@ -538,36 +540,36 @@ void KernelBVHController::construct(Mesh& meshAcpu,
 
   CUBQL_CUDA_CALL(EventRecord(evAllocStop, m_stream));
 
-  // --- CONCURRENT CPU CGAL BASELINE EXTRACTION ---
-  tbb::parallel_invoke(
-      [this]() {
-        if(m_meshAcpu) {
-          size_t numVerts = m_meshAcpu->num_vertices();
-          m_origPointsA.resize(numVerts);
-          auto pmap = m_meshAcpu->points();
-          tbb::parallel_for(tbb::blocked_range<size_t>(0, numVerts),
-                            [&pmap, this](const tbb::blocked_range<size_t>& range) {
-                              for(size_t i = range.begin(); i != range.end(); ++i) {
-                                Mesh::Vertex_index vd(static_cast<uint32_t>(i));
-                                m_origPointsA[i] = pmap[vd];
-                              }
-                            });
-        }
-      },
-      [this]() {
-        if(m_meshBcpu) {
-          size_t numVerts = m_meshBcpu->num_vertices();
-          m_origPointsB.resize(numVerts);
-          auto pmap = m_meshBcpu->points();
-          tbb::parallel_for(tbb::blocked_range<size_t>(0, numVerts),
-                            [&pmap, this](const tbb::blocked_range<size_t>& range) {
-                              for(size_t i = range.begin(); i != range.end(); ++i) {
-                                Mesh::Vertex_index vd(static_cast<uint32_t>(i));
-                                m_origPointsB[i] = pmap[vd];
-                              }
-                            });
-        }
-      });
+  // // --- CONCURRENT CPU CGAL BASELINE EXTRACTION ---
+  // tbb::parallel_invoke(
+  //     [this]() {
+  //       if(m_meshAcpu) {
+  //         size_t numVerts = m_meshAcpu->num_vertices();
+  //         m_origPointsA.resize(numVerts);
+  //         auto pmap = m_meshAcpu->points();
+  //         tbb::parallel_for(tbb::blocked_range<size_t>(0, numVerts),
+  //                           [&pmap, this](const tbb::blocked_range<size_t>& range) {
+  //                             for(size_t i = range.begin(); i != range.end(); ++i) {
+  //                               Mesh::Vertex_index vd(static_cast<uint32_t>(i));
+  //                               m_origPointsA[i] = pmap[vd];
+  //                             }
+  //                           });
+  //       }
+  //     },
+  //     [this]() {
+  //       if(m_meshBcpu) {
+  //         size_t numVerts = m_meshBcpu->num_vertices();
+  //         m_origPointsB.resize(numVerts);
+  //         auto pmap = m_meshBcpu->points();
+  //         tbb::parallel_for(tbb::blocked_range<size_t>(0, numVerts),
+  //                           [&pmap, this](const tbb::blocked_range<size_t>& range) {
+  //                             for(size_t i = range.begin(); i != range.end(); ++i) {
+  //                               Mesh::Vertex_index vd(static_cast<uint32_t>(i));
+  //                               m_origPointsB[i] = pmap[vd];
+  //                             }
+  //                           });
+  //       }
+  //     });
 
   // --- THRUST DEVICE VECTOR INITIALIZATION ---
   double tThrustInitStart = cuBQL::getCurrentTime();
@@ -708,7 +710,7 @@ void KernelBVHController::runIntersectionPipeline(int batchMultiplier,
         m_dVertsB, 
         m_dIndicesB,
         finalExactPairs, 
-        tracker, 
+        tracker, m_centerA,m_centerB,m_rotA,m_transA,m_rotB,m_transB,
         m_stream
     );
 }
