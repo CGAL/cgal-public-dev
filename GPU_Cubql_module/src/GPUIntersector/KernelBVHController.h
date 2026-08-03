@@ -42,6 +42,8 @@ public:
 
     // 3. Deallocates all GPU resources safely
     void cleanup();
+    void clearGPU();
+    void reconstructGPU(ExecutionStats& stats);
 
     // Dynamic Dual Point Cloud Transformation
     void setTransformBoth(double3 rotDegA, double3 transA, 
@@ -58,6 +60,10 @@ public:
     // Centroid Getters
     Point3 getCenterA() const { return m_centerA; }
     Point3 getCenterB() const { return m_centerB; }
+
+    bool isGPUAllocated() const { 
+    return (m_dVertsA != nullptr && m_dVertsB != nullptr); 
+}
 
 private:
     // Configuration Parameters
@@ -103,6 +109,12 @@ private:
     // REMOVED: TriangleDouble* m_dMeshDoubleA
     // REMOVED: TriangleDouble* m_dMeshDoubleB
 
+        // ADD: Cached host data needed for GPU reconstruction
+    const double3* m_hVertsA = nullptr;
+    const uint3*   m_hIndicesA = nullptr;
+    const double3* m_hVertsB = nullptr;
+    const uint3*   m_hIndicesB = nullptr;
+
     // Persistent Raw GPU & CPU Buffers for Mesh A
     double3*             m_dVertsA = nullptr;       // Active transformed vertices
     double3*             m_dVertsAOrig = nullptr;   // Pristine baseline vertices
@@ -138,4 +150,7 @@ private:
     thrust::device_vector<uint32_t> m_dOutPrimsFlatA;
     thrust::device_vector<uint32_t> m_dOutOffsetsB;
     thrust::device_vector<uint32_t> m_dOutPrimsFlatB;
+
+
+
 };

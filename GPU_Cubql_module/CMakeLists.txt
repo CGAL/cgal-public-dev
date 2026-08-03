@@ -359,6 +359,8 @@ add_executable(MainApp
     src/custom_pipeline/GPUPredicatesCheckDouble.cu
     src/custom_pipeline/GPUPredicatesCheckDoubleAssisted.cu
     src/testBVH/utils.cu
+    src/testBVH/prune_pipeline.cu
+    src/testBVH/kernelsTestBVHAlternative.cu 
 )
 
 set_target_properties(MainApp PROPERTIES

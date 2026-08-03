@@ -37,10 +37,17 @@
 #include "../src/CPU/ParallelCgalOffLoader.h"
 #include "../src/Warmup/cuda_warmup.h"
 
+#include "../src/CPU/RotationTools.h"
+#include "../src/CPU/MeshTriangleDegeneracyVisualizer.h"
+
+#include "../src/testBVH/kernelsTestBVHAlternative.h"
+
+
 // --------------------------------------------------------------------
 // TBB ACCUMULATOR STRUCT FOR MESH STATS
 // --------------------------------------------------------------------
-struct MeshStatsAccumulator {
+struct MeshStatsAccumulator
+{
   double minArea = std::numeric_limits<double>::infinity();
   double maxArea = -1.0;
   double totalArea = 0.0;
@@ -71,7 +78,7 @@ void printMeshStatisticsTBB(const Mesh& mesh, const std::string& name) {
   size_t nFaces = num_faces(mesh);
   size_t nVerts = num_vertices(mesh);
 
-  if (nFaces == 0) {
+  if(nFaces == 0) {
     std::cout << "Mesh " << name << " is empty or has no valid face topology.\n";
     return;
   }
@@ -81,12 +88,12 @@ void printMeshStatisticsTBB(const Mesh& mesh, const std::string& name) {
   auto tStart = std::chrono::high_resolution_clock::now();
 
   MeshStatsAccumulator stats = tbb::parallel_reduce(
-      tbb::blocked_range<size_t>(0, nFaces),
-      MeshStatsAccumulator(),
+      tbb::blocked_range<size_t>(0, nFaces), MeshStatsAccumulator(),
       [&](const tbb::blocked_range<size_t>& r, MeshStatsAccumulator local) {
-        for (size_t i = r.begin(); i != r.end(); ++i) {
+        for(size_t i = r.begin(); i != r.end(); ++i) {
           typename Mesh::Face_index f(static_cast<typename Mesh::size_type>(i));
-          if (mesh.is_removed(f)) continue;
+          if(mesh.is_removed(f))
+            continue;
 
           auto h = mesh.halfedge(f);
           auto p0 = coords[mesh.source(h)];
@@ -134,7 +141,8 @@ void printMeshStatisticsTBB(const Mesh& mesh, const std::string& name) {
   auto tEnd = std::chrono::high_resolution_clock::now();
   double ms = std::chrono::duration<double, std::milli>(tEnd - tStart).count();
 
-  if (stats.validFaces == 0) return;
+  if(stats.validFaces == 0)
+    return;
 
   double avgArea = stats.totalArea / static_cast<double>(stats.validFaces);
   double avgEdge = stats.totalEdge / static_cast<double>(stats.totalEdgesCount);
@@ -157,13 +165,15 @@ void printMeshStatisticsTBB(const Mesh& mesh, const std::string& name) {
   std::cout << "  Avg Edge Length      : " << avgEdge << "\n";
   std::cout << "  -----------------------------------------------------\n";
   std::cout << "  Min/Max Edge Ratio   : " << (stats.maxEdge > 0.0 ? stats.minEdge / stats.maxEdge : 0.0) << "\n";
-  std::cout << "  Aspect Ratio Flag    : " << (stats.minEdge / stats.maxEdge < 1e-6 ? "CRITICAL (Micro-geometry detected!)" : "OK") << "\n";
+  std::cout << "  Aspect Ratio Flag    : "
+            << (stats.minEdge / stats.maxEdge < 1e-6 ? "CRITICAL (Micro-geometry detected!)" : "OK") << "\n";
   std::cout << std::defaultfloat;
   std::cout << "=======================================================\n\n";
 }
 
 // --- Minimal Double Box for Mesh Bounds ---
-struct DoubleBox {
+struct DoubleBox
+{
   double min_x = std::numeric_limits<double>::infinity();
   double min_y = std::numeric_limits<double>::infinity();
   double min_z = std::numeric_limits<double>::infinity();
@@ -201,7 +211,7 @@ DoubleBox computeMeshBoundsTBB(const Mesh& mesh) {
   return tbb::parallel_reduce(
       tbb::blocked_range<size_t>(0, numVerts), DoubleBox(),
       [&](const tbb::blocked_range<size_t>& r, DoubleBox box) {
-        for (size_t i = r.begin(); i != r.end(); ++i) {
+        for(size_t i = r.begin(); i != r.end(); ++i) {
           typename Mesh::Vertex_index v(static_cast<Mesh::size_type>(i));
           const auto& p = coords[v];
           box.grow(p.x(), p.y(), p.z());
@@ -219,7 +229,7 @@ void normalizeCgalMeshTBB(Mesh& mesh, double cx, double cy, double cz, double sc
   auto coords = mesh.points();
 
   tbb::parallel_for(tbb::blocked_range<size_t>(0, numVerts), [&](const tbb::blocked_range<size_t>& r) {
-    for (size_t i = r.begin(); i != r.end(); ++i) {
+    for(size_t i = r.begin(); i != r.end(); ++i) {
       typename Mesh::Vertex_index v(static_cast<Mesh::size_type>(i));
       const auto& p = coords[v];
       double nx = (p.x() - cx) * scaleFactor;
@@ -232,14 +242,14 @@ void normalizeCgalMeshTBB(Mesh& mesh, double cx, double cy, double cz, double sc
 
 bool exportCgalMeshToOff(const Mesh& mesh, const std::string& filepath) {
   std::ofstream outFile(filepath);
-  if (!outFile.is_open()) {
+  if(!outFile.is_open()) {
     std::cerr << "Error: Could not open file for writing: " << filepath << "\n";
     return false;
   }
 
   outFile << std::setprecision(17);
 
-  if (!(outFile << mesh)) {
+  if(!(outFile << mesh)) {
     std::cerr << "Error: Failed writing CGAL mesh data to: " << filepath << "\n";
     return false;
   }
@@ -254,7 +264,7 @@ void syncNormalizedVertsTBB(const Mesh& mesh, std::vector<double3>& outVerts) {
   auto coords = mesh.points();
 
   tbb::parallel_for(tbb::blocked_range<size_t>(0, numVerts), [&](const tbb::blocked_range<size_t>& r) {
-    for (size_t i = r.begin(); i != r.end(); ++i) {
+    for(size_t i = r.begin(); i != r.end(); ++i) {
       typename Mesh::Vertex_index v(static_cast<Mesh::size_type>(i));
       const auto& p = coords[v];
       outVerts[i] = make_double3(p.x(), p.y(), p.z());
@@ -268,12 +278,12 @@ bool loadOffOldCGAL(const std::string& filepath,
                     std::vector<double3>& outVerts,
                     std::vector<uint3>& outIndices) {
   std::ifstream inFile(filepath);
-  if (!inFile.is_open()) {
+  if(!inFile.is_open()) {
     std::cerr << "Error: Could not open file: " << filepath << "\n";
     return false;
   }
 
-  if (!(inFile >> mesh)) {
+  if(!(inFile >> mesh)) {
     std::cerr << "Error: Failed reading CGAL mesh stream from: " << filepath << "\n";
     return false;
   }
@@ -282,7 +292,7 @@ bool loadOffOldCGAL(const std::string& filepath,
   size_t numVerts = num_vertices(mesh);
   outVerts.resize(numVerts);
   auto coords = mesh.points();
-  for (size_t i = 0; i < numVerts; ++i) {
+  for(size_t i = 0; i < numVerts; ++i) {
     typename Mesh::Vertex_index v(static_cast<Mesh::size_type>(i));
     const auto& p = coords[v];
     outVerts[i] = make_double3(p.x(), p.y(), p.z());
@@ -292,7 +302,7 @@ bool loadOffOldCGAL(const std::string& filepath,
   size_t numFaces = num_faces(mesh);
   outIndices.resize(numFaces);
   size_t fIdx = 0;
-  for (auto f : mesh.faces()) {
+  for(auto f : mesh.faces()) {
     auto h = mesh.halfedge(f);
     uint3 tri;
     tri.x = static_cast<uint32_t>(mesh.source(h));
@@ -310,22 +320,28 @@ void printHelp() {
   std::cout << "      - Loads meshes via fast parallel IO, normalizes CGAL & GPU in-place, and constructs BVHs.\n";
   std::cout << "  loadOld <meshA.off> [meshB.off] [maxCellA] [maxCellB] [leafThresh] [scaleToUnit(0/1)]\n";
   std::cout << "      - Loads meshes via standard CGAL stream loader (sequential std::ifstream).\n";
+  std::cout << "  clear\n";
+  std::cout << "      - Frees GPU memory buffers and cuBQL structures without wiping CPU mesh data.\n";
+  std::cout << "  reconstruct / rebuild\n";
+  std::cout << "      - Re-allocates GPU buffers and rebuilds BVHs using cached CPU data.\n";
   std::cout << "  stats\n";
-  std::cout << "      - Displays high-precision geometric statistics (min/max/avg area & edge length) for both meshes.\n";
+  std::cout << "      - Displays high-precision geometric statistics for both meshes.\n";
   std::cout << "  scale\n";
   std::cout << "      - Prints current scale factor, scene center, and individual mesh centroids.\n";
   std::cout << "  gizmo <show(0/1)> [showB(0/1)]\n";
-  std::cout << "      - Shows or hides 3D drag gizmos in the viewport (e.g., 'gizmo 0' hides both).\n";
+  std::cout << "      - Shows or hides 3D drag gizmos in the viewport.\n";
   std::cout << "  transform <rotAx> <rotAy> <rotAz> <rotBx> <rotBy> <rotBz> <transBx> <transBy> <transBz>\n";
-  std::cout << "      - Sets transformations in the viewport for Mesh A (rotations) and Mesh B (rotations + translation).\n";
+  std::cout << "      - Sets transformations for Mesh A and Mesh B.\n";
   std::cout << "  translate <x> <y> <z>\n";
   std::cout << "      - Sets translation for Mesh B using GPU kernel shifting.\n";
   std::cout << "  export <mesh_tag(A/B)> <out_filename.off>\n";
   std::cout << "      - Exports current Mesh A or B in full 17-digit precision to OFF format.\n";
   std::cout << "  compute [batchMultiplier] [DualTreeSteps] [async]\n";
-  std::cout << "      - Automatically syncs active viewport/gizmo transforms to GPU and executes intersection pipeline.\n";
+  std::cout << "      - Automatically syncs active viewport/gizmo transforms to GPU and executes pipeline.\n";
   std::cout << "  tbb <num_threads>\n";
   std::cout << "      - Sets the active CPU thread limit for TBB worker operations.\n";
+  std::cout << "  testbvh [maxCellA] [maxCellB] [batchMultiplier] [NumDualTreeSteps] [leafThresh] [asyncDownload]\n";
+   std::cout << "      - Transforms mesh copies using rotation tools and executes kernelsTestBVHV2.\n";
   std::cout << "  help\n";
   std::cout << "      - Displays this message.\n";
   std::cout << "  quit / exit\n";
@@ -335,7 +351,7 @@ void printHelp() {
 std::string parseArgument(std::istringstream& iss) {
   std::string arg;
   iss >> std::ws;
-  if (iss.peek() == '"' || iss.peek() == '\'') {
+  if(iss.peek() == '"' || iss.peek() == '\'') {
     char quote = iss.get();
     std::getline(iss, arg, quote);
   } else {
@@ -353,22 +369,22 @@ static bool g_readyForInput{true};
 
 void inputThreadFunc() {
   char* rawInput = nullptr;
-  while (g_running) {
+  while(g_running) {
     {
       std::unique_lock<std::mutex> lock(g_cmdMutex);
       g_cmdCV.wait(lock, [] { return g_readyForInput || !g_running; });
-      if (!g_running)
+      if(!g_running)
         break;
     }
 
     rawInput = readline("> ");
-    if (!rawInput) {
+    if(!rawInput) {
       g_running = false;
       break;
     }
 
     std::string line(rawInput);
-    if (!line.empty()) {
+    if(!line.empty()) {
       add_history(rawInput);
     }
     free(rawInput);
@@ -382,7 +398,7 @@ void inputThreadFunc() {
     std::istringstream iss(line);
     std::string cmd;
     iss >> cmd;
-    if (cmd == "quit" || cmd == "exit") {
+    if(cmd == "quit" || cmd == "exit") {
       g_running = false;
       break;
     }
@@ -398,6 +414,9 @@ int main(int argc, char** argv) {
   std::cout << "Initializing Polyscope GUI...\n";
   PolyscopeBridge::init();
   std::cout << "Type 'help' for commands.\n";
+
+  MeshTriangleDegeneracyVisualizer edgeVisualizer;
+  edgeVisualizer.init();
 
   std::unique_ptr<tbb::global_control> tbbControl;
 
@@ -421,18 +440,21 @@ int main(int argc, char** argv) {
   // --------------------------------------------------------------------
   // UNIFIED COMPUTE LOGIC (Single Source of Truth for GPU Computation)
   // --------------------------------------------------------------------
-  auto runCompute = [&](int batchMultiplier = std::numeric_limits<int>::max(),
-                        int mode = 0,
-                        int activateAsyncDownload = 0) 
-  {
-    if (!isLoaded) {
+  auto runCompute = [&](int batchMultiplier = std::numeric_limits<int>::max(), int mode = 0,
+                        int activateAsyncDownload = 0) {
+    if(!isLoaded) {
       std::cout << "Error: You must 'load' meshes before computing.\n";
       return;
     }
 
+    if(!controller.isGPUAllocated()) {
+      std::cout << "[runCompute] GPU memory is cleared/empty. Automatically reconstructing...\n";
+      controller.reconstructGPU(stats);
+    }
+
     // 1. Fetch current matrices from Polyscope (Gizmos OR CLI 'transform')
     float3 rotA, transA, rotB, transB;
-    if (!PolyscopeBridge::getCurrentTransforms(rotA, transA, rotB, transB)) {
+    if(!PolyscopeBridge::getCurrentTransforms(rotA, transA, rotB, transB)) {
       std::cout << "Error: Failed to fetch transform matrices from Polyscope.\n";
       return;
     }
@@ -440,18 +462,15 @@ int main(int argc, char** argv) {
     // 2. Dispatch transformations to GPU controller
     float tGPU, tCPU, tTV, tAT, tGB;
 
-    controller.setTransformBoth(
-        make_double3(rotA.x, rotA.y, rotA.z), make_double3(transA.x, transA.y, transA.z),
-        make_double3(rotB.x, rotB.y, rotB.z), make_double3(transB.x, transB.y, transB.z), 
-        tGPU, tCPU, tTV, tAT, tGB
-    );
+    controller.setTransformBoth(make_double3(rotA.x, rotA.y, rotA.z), make_double3(transA.x, transA.y, transA.z),
+                                make_double3(rotB.x, rotB.y, rotB.z), make_double3(transB.x, transB.y, transB.z), tGPU,
+                                tCPU, tTV, tAT, tGB);
 
     // 3. Execute GPU intersection pipeline
     auto tStart = std::chrono::high_resolution_clock::now();
     tbb::concurrent_vector<int2> finalExactPairs;
 
-    controller.runIntersectionPipeline(batchMultiplier, mode, activateAsyncDownload,
-                                       finalExactPairs, stats);
+    controller.runIntersectionPipeline(batchMultiplier, mode, activateAsyncDownload, finalExactPairs, stats);
 
     auto tEnd = std::chrono::high_resolution_clock::now();
     double ms = std::chrono::duration<double, std::milli>(tEnd - tStart).count();
@@ -463,14 +482,14 @@ int main(int argc, char** argv) {
     // 5. Output Stats
     std::cout << "\n[Compute] Query completed in: " << std::fixed << std::setprecision(2) << ms << " ms. "
               << "Found " << finalExactPairs.size() << " intersections.\n";
-    std::cout << "AABB Hits: " << stats.finalAabbCandidatePairs
-              << " | Green: " << stats.loopTracker.confirmedGreenPairs
+    std::cout << "AABB Hits: " << stats.finalAabbCandidatePairs << " | Green: " << stats.loopTracker.confirmedGreenPairs
               << " | Yellow: " << stats.loopTracker.confirmedYellowPairs
               << " | Orange: " << stats.loopTracker.confirmedOrangePairs << std::endl;
     std::cout << "Time GPU Predicates: " << stats.loopTracker.fineEvaluationPhaseMs
               << " ms | Time CPU Predicates: " << stats.loopTracker.CPUPredicates << " ms\n";
-    std::cout << "Time setup GPU: " << tGPU << " ms | Time setup CPU: " << tCPU << " ms" << std::endl; 
-    std::cout << "RotateTransformVerts: " << tTV << " timeAssembleTris: " << tAT << " timeGenBoxes: " << tGB << std::endl;
+    std::cout << "Time setup GPU: " << tGPU << " ms | Time setup CPU: " << tCPU << " ms" << std::endl;
+    std::cout << "RotateTransformVerts: " << tTV << " timeAssembleTris: " << tAT << " timeGenBoxes: " << tGB
+              << std::endl;
   };
 
   // Connect GUI Button callback in Polyscope window directly to unified compute logic
@@ -478,29 +497,29 @@ int main(int argc, char** argv) {
 
   std::thread inputThread(inputThreadFunc);
 
-  while (g_running) {
+  while(g_running) {
     std::string line;
     bool haveLine = false;
     {
       std::lock_guard<std::mutex> lock(g_cmdMutex);
-      if (!g_cmdQueue.empty()) {
+      if(!g_cmdQueue.empty()) {
         line = g_cmdQueue.front();
         g_cmdQueue.pop();
         haveLine = true;
       }
     }
 
-    if (haveLine) {
+    if(haveLine) {
       std::istringstream iss(line);
       std::string cmd;
-      if (!(iss >> cmd)) {
+      if(!(iss >> cmd)) {
         // empty line
-      } else if (cmd == "quit" || cmd == "exit") {
+      } else if(cmd == "quit" || cmd == "exit") {
         g_running = false;
-      } else if (cmd == "help") {
+      } else if(cmd == "help") {
         printHelp();
-      } else if (cmd == "scale") {
-        if (!isLoaded) {
+      } else if(cmd == "scale") {
+        if(!isLoaded) {
           std::cout << "Error: No meshes loaded. Run 'load' first.\n";
         } else {
           std::cout << "\n=======================================================\n";
@@ -523,15 +542,15 @@ int main(int argc, char** argv) {
                     << ")\n";
           std::cout << "=======================================================\n\n";
         }
-      } else if (cmd == "tbb") {
+      } else if(cmd == "tbb") {
         int numThreads = 0;
-        if (iss >> numThreads && numThreads > 0) {
+        if(iss >> numThreads && numThreads > 0) {
           tbbControl = std::make_unique<tbb::global_control>(tbb::global_control::max_allowed_parallelism, numThreads);
           std::cout << "TBB maximum worker limit updated to: " << numThreads << "\n";
         } else {
           std::cout << "Usage: tbb <num_threads> (must be > 0)\n";
         }
-      } else if (cmd == "load" || cmd == "loadOld" || cmd == "loadold" || cmd == "LoadOld") {
+      } else if(cmd == "load" || cmd == "loadOld" || cmd == "loadold" || cmd == "LoadOld") {
         bool useOldLoader = (cmd == "loadOld" || cmd == "loadold" || cmd == "LoadOld");
 
         std::string arg1 = parseArgument(iss);
@@ -539,25 +558,24 @@ int main(int argc, char** argv) {
 
         int maxCellA = 1, maxCellB = 1, leafThresh = 4, scaleToUnitInt = 0;
 
-        if (arg1.empty()) {
-          std::cout << "Usage: " << cmd
-                    << " <meshA> [meshB] [maxCellA] [maxCellB] [leafThresh] [scaleToUnit(0/1)]\n";
+        if(arg1.empty()) {
+          std::cout << "Usage: " << cmd << " <meshA> [meshB] [maxCellA] [maxCellB] [leafThresh] [scaleToUnit(0/1)]\n";
         } else {
           std::string pathA, pathB;
 
           bool singleMeshMode = false;
-          if (arg2.empty()) {
+          if(arg2.empty()) {
             singleMeshMode = true;
           } else {
             std::istringstream checkNum(arg2);
             int val;
-            if (checkNum >> val) {
+            if(checkNum >> val) {
               singleMeshMode = true;
               maxCellA = val;
             }
           }
 
-          if (singleMeshMode) {
+          if(singleMeshMode) {
             pathA = arg1;
             pathB = arg1;
             iss >> maxCellB >> leafThresh >> scaleToUnitInt;
@@ -584,22 +602,22 @@ int main(int argc, char** argv) {
           auto tIoStart = std::chrono::high_resolution_clock::now();
           bool loadedSuccessfully = false;
 
-          if (useOldLoader) {
-            if (singleMeshMode) {
-              if (loadOffOldCGAL(pathA, meshA, hVertsA, hIndicesA)) {
+          if(useOldLoader) {
+            if(singleMeshMode) {
+              if(loadOffOldCGAL(pathA, meshA, hVertsA, hIndicesA)) {
                 meshB = meshA;
                 hVertsB = hVertsA;
                 hIndicesB = hIndicesA;
                 loadedSuccessfully = true;
               }
             } else {
-              if (loadOffOldCGAL(pathA, meshA, hVertsA, hIndicesA) && loadOffOldCGAL(pathB, meshB, hVertsB, hIndicesB)) {
+              if(loadOffOldCGAL(pathA, meshA, hVertsA, hIndicesA) && loadOffOldCGAL(pathB, meshB, hVertsB, hIndicesB)) {
                 loadedSuccessfully = true;
               }
             }
           } else {
-            if (singleMeshMode) {
-              if (ParallelIO::loadOffToCgalMesh<Mesh, Point3>(pathA, meshA, hIndicesA)) {
+            if(singleMeshMode) {
+              if(ParallelIO::loadOffToCgalMesh<Mesh, Point3>(pathA, meshA, hIndicesA)) {
                 meshB = meshA;
                 hIndicesB = hIndicesA;
                 loadedSuccessfully = true;
@@ -607,8 +625,8 @@ int main(int argc, char** argv) {
                 std::cerr << "Error: Could not open/read Mesh file: " << pathA << "\n";
               }
             } else {
-              if (ParallelIO::loadOffToCgalMesh<Mesh, Point3>(pathA, meshA, hIndicesA) &&
-                  ParallelIO::loadOffToCgalMesh<Mesh, Point3>(pathB, meshB, hIndicesB))
+              if(ParallelIO::loadOffToCgalMesh<Mesh, Point3>(pathA, meshA, hIndicesA) &&
+                 ParallelIO::loadOffToCgalMesh<Mesh, Point3>(pathB, meshB, hIndicesB))
               {
                 loadedSuccessfully = true;
               } else {
@@ -617,7 +635,7 @@ int main(int argc, char** argv) {
             }
           }
 
-          if (loadedSuccessfully) {
+          if(loadedSuccessfully) {
             auto tIoEnd = std::chrono::high_resolution_clock::now();
             double ioMs = std::chrono::duration<double, std::milli>(tIoEnd - tIoStart).count();
 
@@ -641,7 +659,7 @@ int main(int argc, char** argv) {
             double maxSpan = std::max({spanX, spanY, spanZ});
 
             double scaleFactor = 1.0;
-            if (scaleToUnit && maxSpan > 0.0) {
+            if(scaleToUnit && maxSpan > 0.0) {
               scaleFactor = 2.0 / maxSpan;
             }
 
@@ -708,19 +726,20 @@ int main(int argc, char** argv) {
             isLoaded = true;
           }
         }
-      } else if (cmd == "transform") {
-        if (!isLoaded) {
+      } else if(cmd == "transform") {
+        if(!isLoaded) {
           std::cout << "Error: You must 'load' meshes before transforming.\n";
         } else {
           double rotAx, rotAy, rotAz;
           double rotBx, rotBy, rotBz;
           double transBx, transBy, transBz;
 
-          if (iss >> rotAx >> rotAy >> rotAz >> rotBx >> rotBy >> rotBz >> transBx >> transBy >> transBz) {
+          if(iss >> rotAx >> rotAy >> rotAz >> rotBx >> rotBy >> rotBz >> transBx >> transBy >> transBz) {
             float3 fRotA = make_float3(static_cast<float>(rotAx), static_cast<float>(rotAy), static_cast<float>(rotAz));
             float3 fTransA = make_float3(0.0f, 0.0f, 0.0f);
             float3 fRotB = make_float3(static_cast<float>(rotBx), static_cast<float>(rotBy), static_cast<float>(rotBz));
-            float3 fTransB = make_float3(static_cast<float>(transBx), static_cast<float>(transBy), static_cast<float>(transBz));
+            float3 fTransB =
+                make_float3(static_cast<float>(transBx), static_cast<float>(transBy), static_cast<float>(transBz));
 
             // Set visual transforms in Polyscope (automatically picked up by next 'compute')
             PolyscopeBridge::transformBoth(fRotA, fTransA, normCenterA, fRotB, fTransB, normCenterB);
@@ -730,12 +749,13 @@ int main(int argc, char** argv) {
             std::cout << "  Mesh B Rot: (" << rotBx << ", " << rotBy << ", " << rotBz << ") | Trans: (" << transBx
                       << ", " << transBy << ", " << transBz << ")\n";
           } else {
-            std::cout << "Usage: transform <rotAx> <rotAy> <rotAz> <rotBx> <rotBy> <rotBz> <transBx> <transBy> <transBz>\n";
+            std::cout
+                << "Usage: transform <rotAx> <rotAy> <rotAz> <rotBx> <rotBy> <rotBz> <transBx> <transBy> <transBz>\n";
           }
         }
-      } else if (cmd == "translate") {
+      } else if(cmd == "translate") {
         double x, y, z;
-        if (iss >> x >> y >> z) {
+        if(iss >> x >> y >> z) {
           auto tStart = std::chrono::high_resolution_clock::now();
 
           controller.setTranslation(x, y, z);
@@ -749,7 +769,29 @@ int main(int argc, char** argv) {
         } else {
           std::cout << "Usage: translate <x> <y> <z>\n";
         }
-      } else if (cmd == "compute") {
+      } else if(cmd == "clear") {
+        if(!isLoaded) {
+          std::cout << "Warning: No meshes loaded, but clearing GPU memory allocations...\n";
+        }
+        controller.clearGPU();
+        std::cout << "GPU memory buffers and cuBQL BVH acceleration structures cleared.\n";
+
+      } else if(cmd == "reconstruct" || cmd == "rebuild") {
+        if(!isLoaded) {
+          std::cout << "Error: No mesh loaded on CPU. Use 'load' first before reconstructing.\n";
+        } else {
+          std::cout << "Reconstructing GPU resources and rebuilding cuBQL BVHs...\n";
+          auto tStart = std::chrono::high_resolution_clock::now();
+
+          controller.reconstructGPU(stats);
+
+          auto tEnd = std::chrono::high_resolution_clock::now();
+          double ms = std::chrono::duration<double, std::milli>(tEnd - tStart).count();
+
+          std::cout << "GPU reconstruction and BVH rebuilding complete in " << std::fixed << std::setprecision(2) << ms
+                    << " ms.\n";
+        }
+      } else if(cmd == "compute") {
         int batchMultiplier = std::numeric_limits<int>::max();
         int mode = 0;
         int activateAsyncDownload = 0;
@@ -758,29 +800,29 @@ int main(int argc, char** argv) {
 
         // Triggers unified viewport sync and GPU execution
         runCompute(batchMultiplier, mode, activateAsyncDownload);
-      } else if (cmd == "export") {
-        if (!isLoaded) {
+      } else if(cmd == "export") {
+        if(!isLoaded) {
           std::cout << "Error: You must 'load' meshes before exporting.\n";
         } else {
           std::string meshTag = parseArgument(iss);
           std::string outPath = parseArgument(iss);
 
-          if (meshTag.empty() || outPath.empty()) {
+          if(meshTag.empty() || outPath.empty()) {
             std::cout << "Usage: export <A/B> <output.off>\n";
           } else {
             const Mesh* targetMesh = nullptr;
-            if (meshTag == "A" || meshTag == "a") {
+            if(meshTag == "A" || meshTag == "a") {
               targetMesh = &meshA;
-            } else if (meshTag == "B" || meshTag == "b") {
+            } else if(meshTag == "B" || meshTag == "b") {
               targetMesh = &meshB;
             } else {
               std::cout << "Error: Invalid mesh target '" << meshTag << "'. Choose 'A' or 'B'.\n";
             }
 
-            if (targetMesh) {
+            if(targetMesh) {
               auto tStart = std::chrono::high_resolution_clock::now();
 
-              if (exportCgalMeshToOff(*targetMesh, outPath)) {
+              if(exportCgalMeshToOff(*targetMesh, outPath)) {
                 auto tEnd = std::chrono::high_resolution_clock::now();
                 double ms = std::chrono::duration<double, std::milli>(tEnd - tStart).count();
 
@@ -791,10 +833,10 @@ int main(int argc, char** argv) {
             }
           }
         }
-      } else if (cmd == "gizmo") {
+      } else if(cmd == "gizmo") {
         int showA = 0, showB = -1;
-        if (iss >> showA) {
-          if (!(iss >> showB)) {
+        if(iss >> showA) {
+          if(!(iss >> showB)) {
             showB = showA;
           }
           PolyscopeBridge::setGizmosEnabled(showA != 0, showB != 0);
@@ -803,12 +845,104 @@ int main(int argc, char** argv) {
         } else {
           std::cout << "Usage: gizmo <show(0/1)> [showB(0/1)]  (e.g., 'gizmo 0' hides both)\n";
         }
-      } else if (cmd == "stats") {
-        if (!isLoaded) {
+      } else if(cmd == "testbvh" || cmd == "testBVH") {
+        if(!isLoaded) {
+          std::cout << "Error: You must 'load' meshes first.\n";
+        } else {
+          // 1. Read input command-line parameters (or default if omitted)
+          int maxCellSizeA = 1;
+          int maxCellSizeB = 1;
+          int batchMultiplier = std::numeric_limits<int>::max();
+          int mode = 0;
+          int leafThreshold = 4;
+          int activateAsyncDownload = 0;
+
+          iss >> maxCellSizeA >> maxCellSizeB >> batchMultiplier >> mode >> leafThreshold >> activateAsyncDownload;
+
+          // 2. Fetch current rotation/translation from Polyscope viewport
+          float3 rotA, transA, rotB, transB;
+          if(!PolyscopeBridge::getCurrentTransforms(rotA, transA, rotB, transB)) {
+            std::cout << "Error: Failed to fetch transform matrices from Polyscope.\n";
+          } else {
+            // 3. Create transformed CPU mesh copies using rotation tools
+            Mesh meshA_rotated, meshB_rotated;
+            transformCgalMesh(meshA, meshA_rotated, Point3(normCenterA.x, normCenterA.y, normCenterA.z),
+                              make_double3(rotA.x, rotA.y, rotA.z), make_double3(transA.x, transA.y, transA.z));
+            transformCgalMesh(meshB, meshB_rotated, Point3(normCenterB.x, normCenterB.y, normCenterB.z),
+                              make_double3(rotB.x, rotB.y, rotB.z), make_double3(transB.x, transB.y, transB.z));
+
+            // 4. Create and transform float3 vertex buffers
+            std::vector<double3> hVertsA_rotDouble(hVertsA.size());
+            std::vector<double3> hVertsB_rotDouble(hVertsB.size());
+
+            transformVerticesCPU(hVertsA_rotDouble.data(), hVertsA.data(), static_cast<int>(hVertsA.size()),
+                                 make_double3(rotA.x, rotA.y, rotA.z),
+                                 make_double3(normCenterA.x, normCenterA.y, normCenterA.z),
+                                 make_double3(transA.x, transA.y, transA.z));
+
+            transformVerticesCPU(hVertsB_rotDouble.data(), hVertsB.data(), static_cast<int>(hVertsB.size()),
+                                 make_double3(rotB.x, rotB.y, rotB.z),
+                                 make_double3(normCenterB.x, normCenterB.y, normCenterB.z),
+                                 make_double3(transB.x, transB.y, transB.z));
+
+            std::vector<float3> hVertsA_rotFloat = convertDouble3ToFloat3(hVertsA_rotDouble);
+            std::vector<float3> hVertsB_rotFloat = convertDouble3ToFloat3(hVertsB_rotDouble);
+
+            // 5. Fire kernel routine with null vertex error pointers
+            tbb::concurrent_vector<int2> finalExactPairs;
+            ExecutionStats testStats;
+            const float* hVertErrorsA = nullptr;
+            const float* hVertErrorsB = nullptr;
+
+            auto tStart = std::chrono::high_resolution_clock::now();
+
+            kernelsTestBVHV2(meshA_rotated, meshB_rotated, hVertsA_rotFloat.data(),
+                             static_cast<int>(hVertsA_rotFloat.size()), hIndicesA.data(), hVertErrorsA,
+                             static_cast<int>(hIndicesA.size()), maxCellSizeA, hVertsB_rotFloat.data(),
+                             static_cast<int>(hVertsB_rotFloat.size()), hIndicesB.data(), hVertErrorsB,
+                             static_cast<int>(hIndicesB.size()), maxCellSizeB, batchMultiplier, mode, leafThreshold,
+                             activateAsyncDownload, testStats, finalExactPairs);
+
+            auto tEnd = std::chrono::high_resolution_clock::now();
+            double ms = std::chrono::duration<double, std::milli>(tEnd - tStart).count();
+
+            // 6. Highlight intersections in viewport (yellow list) & display statistics
+            std::vector<int2> stdPairs(finalExactPairs.begin(), finalExactPairs.end());
+            PolyscopeBridge::highlightIntersections(stdPairs, num_faces(meshA), num_faces(meshB));
+
+            std::cout << "\n=======================================================\n";
+            std::cout << "        ALTERNATIVE BVH TEST PIPELINE STATS           \n";
+            std::cout << "=======================================================\n";
+            std::cout << "  Execution Time        : " << std::fixed << std::setprecision(2) << ms << " ms\n";
+            std::cout << "  Exact Intersections   : " << finalExactPairs.size() << "\n";
+            std::cout << "  AABB Candidate Pairs  : " << testStats.finalAabbCandidatePairs << "\n";
+            std::cout << "  Green / Yellow / Org  : " << testStats.loopTracker.confirmedGreenPairs << " / "
+                      << testStats.loopTracker.confirmedYellowPairs << " / "
+                      << testStats.loopTracker.confirmedOrangePairs << "\n";
+            std::cout << "  GPU Predicates Time   : " << testStats.loopTracker.fineEvaluationPhaseMs << " ms\n";
+            std::cout << "  CPU Predicates Time   : " << testStats.loopTracker.CPUPredicates << " ms\n";
+            std::cout << "=======================================================\n\n";
+          }
+        }
+      }
+      // } else if(cmd == "stats") {
+      //   if(!isLoaded) {
+      //     std::cout << "Error: No meshes loaded. Run 'load' first.\n";
+      //   } else {
+      //     printMeshStatisticsTBB(meshA, "Mesh A");
+      //     printMeshStatisticsTBB(meshB, "Mesh B");
+      //   }
+      // }
+      else if(cmd == "stats")
+      {
+        if(!isLoaded) {
           std::cout << "Error: No meshes loaded. Run 'load' first.\n";
         } else {
           printMeshStatisticsTBB(meshA, "Mesh A");
           printMeshStatisticsTBB(meshB, "Mesh B");
+
+          // Opens the ImGui popup window inside the active Polyscope frame
+          edgeVisualizer.computeAndShow(meshA, meshB);
         }
       } else {
         std::cout << "Unknown command: '" << cmd << "'. Type 'help' for a list of commands.\n";
@@ -827,8 +961,8 @@ int main(int argc, char** argv) {
 
   std::cout << "Cleaning up and exiting...\n";
 
-  if (inputThread.joinable()) {
-    if (g_running == false) {
+  if(inputThread.joinable()) {
+    if(g_running == false) {
       inputThread.detach();
     } else {
       inputThread.join();

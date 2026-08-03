@@ -477,6 +477,11 @@ void KernelBVHController::construct(Mesh& meshAcpu,
   m_levelB = levelB;
   m_leafThreshold = leafThreshold;
 
+  m_hVertsA = hVertsA;
+  m_hIndicesA = hIndicesA;
+  m_hVertsB = hVertsB;
+  m_hIndicesB = hIndicesB;
+
   m_centerA = centerA;
   m_centerB = centerB;
 
@@ -737,91 +742,18 @@ void KernelBVHController::runIntersectionPipeline(int batchMultiplier,
 // Cleanup Method
 // -----------------------------------------------------------------------------
 void KernelBVHController::cleanup() {
-  if(m_stream)
-    CUBQL_CUDA_CALL(StreamSynchronize(m_stream));
+  clearGPU();
 
-  // Mesh A GPU Buffers
-  if(m_dMeshA) {
-    CUBQL_CUDA_CALL(FreeAsync(m_dMeshA, m_stream));
-    m_dMeshA = nullptr;
-  }
-  if(m_dMeshMetricsA) {
-    CUBQL_CUDA_CALL(FreeAsync(m_dMeshMetricsA, m_stream));
-    m_dMeshMetricsA = nullptr;
-  }
-  if(m_dBoxesA) {
-    CUBQL_CUDA_CALL(FreeAsync(m_dBoxesA, m_stream));
-    m_dBoxesA = nullptr;
-  }
-  if(m_dVertsA) {
-    CUBQL_CUDA_CALL(FreeAsync(m_dVertsA, m_stream));
-    m_dVertsA = nullptr;
-  }
-  if(m_dVertsAOrig) {
-    CUBQL_CUDA_CALL(FreeAsync(m_dVertsAOrig, m_stream));
-    m_dVertsAOrig = nullptr;
-  }
-  if(m_dIndicesA) {
-    CUBQL_CUDA_CALL(FreeAsync(m_dIndicesA, m_stream));
-    m_dIndicesA = nullptr;
-  }
-  if(m_dVertErrorsA) {
-    CUBQL_CUDA_CALL(FreeAsync(m_dVertErrorsA, m_stream));
-    m_dVertErrorsA = nullptr;
-  }
+  m_hVertsA = nullptr;
+  m_hIndicesA = nullptr;
+  m_hVertsB = nullptr;
+  m_hIndicesB = nullptr;
 
-  // Mesh B GPU Buffers
-  if(m_dMeshB) {
-    CUBQL_CUDA_CALL(FreeAsync(m_dMeshB, m_stream));
-    m_dMeshB = nullptr;
-  }
-  if(m_dMeshMetricsB) {
-    CUBQL_CUDA_CALL(FreeAsync(m_dMeshMetricsB, m_stream));
-    m_dMeshMetricsB = nullptr;
-  }
-  if(m_dBoxesB) {
-    CUBQL_CUDA_CALL(FreeAsync(m_dBoxesB, m_stream));
-    m_dBoxesB = nullptr;
-  }
-  if(m_dVertsB) {
-    CUBQL_CUDA_CALL(FreeAsync(m_dVertsB, m_stream));
-    m_dVertsB = nullptr;
-  }
-  if(m_dVertsBOrig) {
-    CUBQL_CUDA_CALL(FreeAsync(m_dVertsBOrig, m_stream));
-    m_dVertsBOrig = nullptr;
-  }
-  if(m_dIndicesB) {
-    CUBQL_CUDA_CALL(FreeAsync(m_dIndicesB, m_stream));
-    m_dIndicesB = nullptr;
-  }
-  if(m_dVertErrorsB) {
-    CUBQL_CUDA_CALL(FreeAsync(m_dVertErrorsB, m_stream));
-    m_dVertErrorsB = nullptr;
-  }
+  m_meshAcpu = nullptr;
+  m_meshBcpu = nullptr;
 
-  // BVH Acceleration Structures
-  cuBQL::cuda::free(m_bvhA, m_stream, m_memResource);
-  cuBQL::cuda::free(m_bvhB, m_stream, m_memResource);
-
-  // Thrust Vector Reset
-  m_dMarkedNodeIndicesA_Full = thrust::device_vector<uint32_t>();
-  m_dNodeDescendantCountsA = thrust::device_vector<uint32_t>();
-  m_dMarkedNodeIndicesB_Full = thrust::device_vector<uint32_t>();
-  m_dNodeDescendantCountsB = thrust::device_vector<uint32_t>();
-
-  m_dReverseMapB = thrust::device_vector<uint32_t>();
-  m_dOutPairsA = thrust::device_vector<uint32_t>();
-  m_dOutPairsB = thrust::device_vector<uint32_t>();
-  m_dOutOffsetsB = thrust::device_vector<uint32_t>();
-  m_dOutPrimsFlatB = thrust::device_vector<uint32_t>();
-  m_dOutOffsetsA = thrust::device_vector<uint32_t>();
-  m_dOutPrimsFlatA = thrust::device_vector<uint32_t>();
-
-  m_origPointsA.clear();
-  m_origPointsA.shrink_to_fit();
-  m_origPointsB.clear();
-  m_origPointsB.shrink_to_fit();
+  m_origPointsA.clear(); m_origPointsA.shrink_to_fit();
+  m_origPointsB.clear(); m_origPointsB.shrink_to_fit();
 
   m_centerA = Point3(0, 0, 0);
   m_centerB = Point3(0, 0, 0);
@@ -832,7 +764,133 @@ void KernelBVHController::cleanup() {
   shiftX = 0.0;
   shiftY = 0.0;
   shiftZ = 0.0;
+}
+void KernelBVHController::clearGPU() {
+  if (m_stream) {
+    CUBQL_CUDA_CALL(StreamSynchronize(m_stream)); // Removed 'cuda'
+  }
 
-  if(m_stream)
-    CUBQL_CUDA_CALL(StreamSynchronize(m_stream));
+  // Mesh A GPU Buffers
+  if (m_dMeshA)        { CUBQL_CUDA_CALL(FreeAsync(m_dMeshA, m_stream)); m_dMeshA = nullptr; } // Removed 'cuda'
+  if (m_dMeshMetricsA){ CUBQL_CUDA_CALL(FreeAsync(m_dMeshMetricsA, m_stream)); m_dMeshMetricsA = nullptr; }
+  if (m_dBoxesA)      { CUBQL_CUDA_CALL(FreeAsync(m_dBoxesA, m_stream)); m_dBoxesA = nullptr; }
+  if (m_dVertsA)      { CUBQL_CUDA_CALL(FreeAsync(m_dVertsA, m_stream)); m_dVertsA = nullptr; }
+  if (m_dVertsAOrig)  { CUBQL_CUDA_CALL(FreeAsync(m_dVertsAOrig, m_stream)); m_dVertsAOrig = nullptr; }
+  if (m_dIndicesA)    { CUBQL_CUDA_CALL(FreeAsync(m_dIndicesA, m_stream)); m_dIndicesA = nullptr; }
+  if (m_dVertErrorsA) { CUBQL_CUDA_CALL(FreeAsync(m_dVertErrorsA, m_stream)); m_dVertErrorsA = nullptr; }
+
+  // Mesh B GPU Buffers
+  if (m_dMeshB)        { CUBQL_CUDA_CALL(FreeAsync(m_dMeshB, m_stream)); m_dMeshB = nullptr; }
+  if (m_dMeshMetricsB){ CUBQL_CUDA_CALL(FreeAsync(m_dMeshMetricsB, m_stream)); m_dMeshMetricsB = nullptr; }
+  if (m_dBoxesB)      { CUBQL_CUDA_CALL(FreeAsync(m_dBoxesB, m_stream)); m_dBoxesB = nullptr; }
+  if (m_dVertsB)      { CUBQL_CUDA_CALL(FreeAsync(m_dVertsB, m_stream)); m_dVertsB = nullptr; }
+  if (m_dVertsBOrig)  { CUBQL_CUDA_CALL(FreeAsync(m_dVertsBOrig, m_stream)); m_dVertsBOrig = nullptr; }
+  if (m_dIndicesB)    { CUBQL_CUDA_CALL(FreeAsync(m_dIndicesB, m_stream)); m_dIndicesB = nullptr; }
+  if (m_dVertErrorsB) { CUBQL_CUDA_CALL(FreeAsync(m_dVertErrorsB, m_stream)); m_dVertErrorsB = nullptr; }
+
+  // cuBQL Acceleration Structures
+  cuBQL::cuda::free(m_bvhA, m_stream, m_memResource);
+  cuBQL::cuda::free(m_bvhB, m_stream, m_memResource);
+
+  // Clear Thrust Device Vectors
+  m_dMarkedNodeIndicesA_Full.clear(); m_dMarkedNodeIndicesA_Full.shrink_to_fit();
+  m_dNodeDescendantCountsA.clear();   m_dNodeDescendantCountsA.shrink_to_fit();
+  m_dMarkedNodeIndicesB_Full.clear(); m_dMarkedNodeIndicesB_Full.shrink_to_fit();
+  m_dNodeDescendantCountsB.clear();   m_dNodeDescendantCountsB.shrink_to_fit();
+
+  m_dReverseMapB.clear();   m_dReverseMapB.shrink_to_fit();
+  m_dOutPairsA.clear();     m_dOutPairsA.shrink_to_fit();
+  m_dOutPairsB.clear();     m_dOutPairsB.shrink_to_fit();
+  m_dOutOffsetsB.clear();   m_dOutOffsetsB.shrink_to_fit();
+  m_dOutPrimsFlatB.clear(); m_dOutPrimsFlatB.shrink_to_fit();
+  m_dOutOffsetsA.clear();   m_dOutOffsetsA.shrink_to_fit();
+  m_dOutPrimsFlatA.clear(); m_dOutPrimsFlatA.shrink_to_fit();
+
+  if (m_stream) {
+    CUBQL_CUDA_CALL(StreamSynchronize(m_stream)); // Removed 'cuda'
+  }
+}
+
+void KernelBVHController::reconstructGPU(ExecutionStats& stats) {
+  if (!m_hVertsA || !m_hIndicesA || !m_hVertsB || !m_hIndicesB ||
+      m_numTrianglesA <= 0 || m_numTrianglesB <= 0) {
+    std::cerr << "[KernelBVHController] Error: Cannot reconstruct GPU resources. Host pointers missing.\n";
+    return;
+  }
+
+  // Clear existing GPU allocations safely
+  clearGPU();
+
+  cuBQL::BuildConfig buildConfig;
+  buildConfig.makeLeafThreshold = m_leafThreshold;
+
+  double tReconstructStart = cuBQL::getCurrentTime();
+
+  // 1. Re-allocate & copy Mesh A
+  CUBQL_CUDA_CALL(MallocAsync((void**)&m_dVertsA, m_numVertsA * sizeof(double3), m_stream));
+  CUBQL_CUDA_CALL(MemcpyAsync(m_dVertsA, m_hVertsA, m_numVertsA * sizeof(double3), cudaMemcpyHostToDevice, m_stream));
+
+  CUBQL_CUDA_CALL(MallocAsync((void**)&m_dVertsAOrig, m_numVertsA * sizeof(double3), m_stream));
+  CUBQL_CUDA_CALL(MemcpyAsync(m_dVertsAOrig, m_hVertsA, m_numVertsA * sizeof(double3), cudaMemcpyHostToDevice, m_stream));
+
+  CUBQL_CUDA_CALL(MallocAsync((void**)&m_dIndicesA, m_numTrianglesA * sizeof(uint3), m_stream));
+  CUBQL_CUDA_CALL(MemcpyAsync(m_dIndicesA, m_hIndicesA, m_numTrianglesA * sizeof(uint3), cudaMemcpyHostToDevice, m_stream));
+
+  // 2. Re-allocate & copy Mesh B
+  CUBQL_CUDA_CALL(MallocAsync((void**)&m_dVertsB, m_numVertsB * sizeof(double3), m_stream));
+  CUBQL_CUDA_CALL(MemcpyAsync(m_dVertsB, m_hVertsB, m_numVertsB * sizeof(double3), cudaMemcpyHostToDevice, m_stream));
+
+  CUBQL_CUDA_CALL(MallocAsync((void**)&m_dVertsBOrig, m_numVertsB * sizeof(double3), m_stream));
+  CUBQL_CUDA_CALL(MemcpyAsync(m_dVertsBOrig, m_hVertsB, m_numVertsB * sizeof(double3), cudaMemcpyHostToDevice, m_stream));
+
+  CUBQL_CUDA_CALL(MallocAsync((void**)&m_dIndicesB, m_numTrianglesB * sizeof(uint3), m_stream));
+  CUBQL_CUDA_CALL(MemcpyAsync(m_dIndicesB, m_hIndicesB, m_numTrianglesB * sizeof(uint3), cudaMemcpyHostToDevice, m_stream));
+
+  // 3. Alloc & Compute Bounding Boxes
+  CUBQL_CUDA_CALL(MallocAsync((void**)&m_dBoxesA, m_numTrianglesA * sizeof(cuBQL::box3f), m_stream));
+  CUBQL_CUDA_CALL(MallocAsync((void**)&m_dBoxesB, m_numTrianglesB * sizeof(cuBQL::box3f), m_stream));
+
+  generateBoxesTrisKernel<<<cuBQL::divRoundUp(m_numTrianglesA, 256), 256, 0, m_stream>>>(
+      m_dBoxesA, m_dVertsA, m_dIndicesA, m_numTrianglesA);
+  generateBoxesTrisKernel<<<cuBQL::divRoundUp(m_numTrianglesB, 256), 256, 0, m_stream>>>(
+      m_dBoxesB, m_dVertsB, m_dIndicesB, m_numTrianglesB);
+
+  // 4. Re-initialize Thrust Vectors
+  uint32_t maxPossibleNodesA = 2 * m_numTrianglesA;
+  uint32_t maxPossibleNodesB = 2 * m_numTrianglesB;
+
+  m_dMarkedNodeIndicesA_Full.resize(maxPossibleNodesA, 0);
+  m_dNodeDescendantCountsA.resize(maxPossibleNodesA, 0);
+  m_dMarkedNodeIndicesB_Full.resize(maxPossibleNodesB, 0);
+  m_dNodeDescendantCountsB.resize(maxPossibleNodesB, 0);
+  m_dReverseMapB.resize(maxPossibleNodesB, 0);
+
+  // 5. Build and Refit BVHs
+  cuBQL::gpuBuilder_v2_2::build_custom(m_bvhA, m_dBoxesA, m_numTrianglesA, buildConfig, (uint32_t)m_levelA,
+                                       thrust::raw_pointer_cast(m_dMarkedNodeIndicesA_Full.data()),
+                                       thrust::raw_pointer_cast(m_dNodeDescendantCountsA.data()),
+                                       &m_hOutMarkedCountA_Full, m_stream, m_memResource);
+  cuBQL::cuda::refit(m_bvhA, m_dBoxesA, m_stream);
+
+  cuBQL::gpuBuilder_v2_2::build_custom(m_bvhB, m_dBoxesB, m_numTrianglesB, buildConfig, (uint32_t)m_levelB,
+                                       thrust::raw_pointer_cast(m_dMarkedNodeIndicesB_Full.data()),
+                                       thrust::raw_pointer_cast(m_dNodeDescendantCountsB.data()),
+                                       &m_hOutMarkedCountB_Full, m_stream, m_memResource);
+  cuBQL::cuda::refit(m_bvhB, m_dBoxesB, m_stream);
+
+  CUBQL_CUDA_CALL(StreamSynchronize(m_stream));
+
+  // Re-apply transformations if any were previously active
+  if (m_rotA.x != 0.0 || m_rotA.y != 0.0 || m_rotA.z != 0.0 || m_transA.x != 0.0 || m_transA.y != 0.0 || m_transA.z != 0.0 ||
+      m_rotB.x != 0.0 || m_rotB.y != 0.0 || m_rotB.z != 0.0 || m_transB.x != 0.0 || m_transB.y != 0.0 || m_transB.z != 0.0) {
+    float tGPU, tCPU, tTV, tAT, tGB;
+    double3 currentRotA = m_rotA, currentTransA = m_transA;
+    double3 currentRotB = m_rotB, currentTransB = m_transB;
+    
+    // Reset internal tracker to force re-evaluation
+    m_rotA = m_transA = m_rotB = m_transB = make_double3(0, 0, 0);
+    setTransformBoth(currentRotA, currentTransA, currentRotB, currentTransB, tGPU, tCPU, tTV, tAT, tGB);
+  }
+
+  stats.initialAllocAndCopyMs = (cuBQL::getCurrentTime() - tReconstructStart) * 1000.0;
 }
