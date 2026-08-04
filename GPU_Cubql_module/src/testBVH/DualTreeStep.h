@@ -21,9 +21,7 @@ uint64_t executeDualTreeStep(
     uint32_t& h_outMarkedCountA,                                 // Changed to non-const reference
     uint32_t& h_outMarkedCountB,                                 // Changed to non-const reference
     const cuBQL::bvh3f& bvhA,
-    const cuBQL::bvh3f& bvhB,
-    const void* dMeshA,                                          // Matches implementation's void*
-    const void* dMeshB                                           // Matches implementation's void*
+    const cuBQL::bvh3f& bvhB                                       // Matches implementation's void*
 );
 
 #endif // DUAL_TREE_STEP_H

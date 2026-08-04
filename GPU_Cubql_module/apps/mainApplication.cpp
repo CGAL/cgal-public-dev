@@ -40,7 +40,9 @@
 #include "../src/CPU/RotationTools.h"
 #include "../src/CPU/MeshTriangleDegeneracyVisualizer.h"
 
-#include "../src/testBVH/kernelsTestBVHAlternative.h"
+// #include "../src/testBVH/kernelsTestBVHAlternative.h"
+
+#include "../src/testBVH/kernelsTestBVHV3.h"
 
 
 // --------------------------------------------------------------------
@@ -469,16 +471,17 @@ int main(int argc, char** argv) {
     // 3. Execute GPU intersection pipeline
     auto tStart = std::chrono::high_resolution_clock::now();
 
-    int2* outFinalExactPairs = nullptr;  
+    int2* outFinalExactPairs = nullptr;
     size_t outFinalCount = 0;
 
-    controller.runIntersectionPipeline(batchMultiplier, mode, activateAsyncDownload, outFinalExactPairs, outFinalCount, stats);
+    controller.runIntersectionPipeline(batchMultiplier, mode, activateAsyncDownload, outFinalExactPairs, outFinalCount,
+                                       stats);
 
     auto tEnd = std::chrono::high_resolution_clock::now();
     double ms = std::chrono::duration<double, std::milli>(tEnd - tStart).count();
 
     // 4. Highlight intersections in viewport (Construct vector from raw pointer range)
-    if (outFinalExactPairs && outFinalCount > 0) {
+    if(outFinalExactPairs && outFinalCount > 0) {
       std::vector<int2> stdPairs(outFinalExactPairs, outFinalExactPairs + outFinalCount);
       PolyscopeBridge::highlightIntersections(stdPairs, num_faces(meshA), num_faces(meshB));
     } else {
@@ -498,7 +501,7 @@ int main(int argc, char** argv) {
               << std::endl;
 
     // 6. Free raw host memory allocated by std::realloc/malloc in the pipeline
-    if (outFinalExactPairs) {
+    if(outFinalExactPairs) {
       std::free(outFinalExactPairs);
       outFinalExactPairs = nullptr;
     }
@@ -902,39 +905,46 @@ int main(int argc, char** argv) {
             std::vector<float3> hVertsB_rotFloat = convertDouble3ToFloat3(hVertsB_rotDouble);
 
             // 5. Fire kernel routine with null vertex error pointers
-            tbb::concurrent_vector<int2> finalExactPairs;
+            //  tbb::concurrent_vector<int2> finalExactPairs;
+
+
             ExecutionStats testStats;
             const float* hVertErrorsA = nullptr;
             const float* hVertErrorsB = nullptr;
 
             auto tStart = std::chrono::high_resolution_clock::now();
 
-            kernelsTestBVHV2(meshA_rotated, meshB_rotated, hVertsA_rotFloat.data(),
-                             static_cast<int>(hVertsA_rotFloat.size()), hIndicesA.data(), hVertErrorsA,
-                             static_cast<int>(hIndicesA.size()), maxCellSizeA, hVertsB_rotFloat.data(),
-                             static_cast<int>(hVertsB_rotFloat.size()), hIndicesB.data(), hVertErrorsB,
-                             static_cast<int>(hIndicesB.size()), maxCellSizeB, batchMultiplier, mode, leafThreshold,
-                             activateAsyncDownload, testStats, finalExactPairs);
+            int2* outFinalExactPairs;
+            size_t outFinalCount;
+            kernelsTestBVHV3(
+                meshA_rotated, meshB_rotated, hVertsA_rotDouble.data(), static_cast<int>(hVertsA_rotFloat.size()),
+                hIndicesA.data(), static_cast<int>(hIndicesA.size()), maxCellSizeA, hVertsA_rotDouble.data(),
+                static_cast<int>(hVertsB_rotFloat.size()), hIndicesB.data(), static_cast<int>(hIndicesB.size()),
+                maxCellSizeB, batchMultiplier, mode, leafThreshold, testStats, outFinalExactPairs, outFinalCount);
 
             auto tEnd = std::chrono::high_resolution_clock::now();
             double ms = std::chrono::duration<double, std::milli>(tEnd - tStart).count();
 
             // 6. Highlight intersections in viewport (yellow list) & display statistics
-            std::vector<int2> stdPairs(finalExactPairs.begin(), finalExactPairs.end());
-            PolyscopeBridge::highlightIntersections(stdPairs, num_faces(meshA), num_faces(meshB));
+            if(outFinalExactPairs && outFinalCount > 0) {
+              std::vector<int2> stdPairs(outFinalExactPairs, outFinalExactPairs + outFinalCount);
+              PolyscopeBridge::highlightIntersections(stdPairs, num_faces(meshA), num_faces(meshB));
+            } else {
+              PolyscopeBridge::highlightIntersections({}, num_faces(meshA), num_faces(meshB));
+            }
 
             std::cout << "\n=======================================================\n";
             std::cout << "        ALTERNATIVE BVH TEST PIPELINE STATS           \n";
             std::cout << "=======================================================\n";
             std::cout << "  Execution Time        : " << std::fixed << std::setprecision(2) << ms << " ms\n";
-            std::cout << "  Exact Intersections   : " << finalExactPairs.size() << "\n";
+            std::cout << "  Exact Intersections   : " << outFinalCount << "\n";
 
             std::cout << "  |- Mesh A Total Generated Nodes:   " << testStats.meshATotalNodes << "\n";
             std::cout << "  |- Mesh A Extracted Targets (<" << maxCellSizeA << "): " << testStats.meshAExtractedTargets
                       << "\n";
             std::cout << "  |- Mesh B Total Generated Nodes:   " << testStats.meshBTotalNodes << "\n";
             std::cout << "  |- Mesh B Extracted Targets (<" << maxCellSizeB << "): " << testStats.meshBExtractedTargets
-                      << "\n\n";      
+                      << "\n\n";
 
             std::cout << "CROSS BOUNDING BOX CROSS-CHECK:\n";
             std::cout << "  |- Intersections found:            " << testStats.totalIntersections << " / "
@@ -965,7 +975,8 @@ int main(int argc, char** argv) {
             std::cout << "  |- Preallocation Phase Time:       " << testStats.loopTracker.preallocateTimeMs << " ms\n";
             std::cout << "  |- Assembly Phase Time:            " << testStats.loopTracker.assemblyPhaseMs << " ms\n";
             std::cout << "  |- Execution Phase Time:           " << testStats.loopTracker.executionPhaseMs << " ms\n";
-            std::cout << "  |- Fine Evaluation Phase Time:     " << testStats.loopTracker.fineEvaluationPhaseMs << " ms\n";
+            std::cout << "  |- Fine Evaluation Phase Time:     " << testStats.loopTracker.fineEvaluationPhaseMs
+                      << " ms\n";
             std::cout << "  |- Device Cleanup Time:            " << testStats.loopTracker.cleanupTimeMs << " ms\n";
             std::cout << "  |- Host Download & Sync Time:      " << testStats.loopTracker.DownloadAndClean << " ms\n\n";
             std::cout << "  |- Number of batches:              " << testStats.loopTracker.numberOfBatchLoops << "\n";

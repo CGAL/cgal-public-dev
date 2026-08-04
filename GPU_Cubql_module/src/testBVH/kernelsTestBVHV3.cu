@@ -30,11 +30,11 @@
 #include "DualTreeStep.h"
 #include "rapidDescendKernel.h"
 // #include "batchedCrossIntersection.h"
-#include "batchedCrossIntersectionV2.h"
-#include "batchedCrossIntersectionV3.h"
+
 #include "crossCheckNew.h"
 #include "kernelsTestBVHAlternative.h"
 #include "prune_pipeline.h"
+#include "batchedCrossIntersectionDouble.h"
 
 #include "global_box.h"
 #include "utils.h"
@@ -51,106 +51,27 @@
 #endif
 
 
-// // UPGRADED: Instantly builds triangles AND evaluates tight precision error bounds
-// __global__ void assembleTrianglesKernel(cuBQL::Triangle* dMesh,
-//                                         float2* dMetrics,
-//                                         const float3* dVerts,
-//                                         const float* dVertErrors, // Can now be nullptr
-//                                         const uint3* dIndices,
-//                                         int numTriangles) {
-//   int idx = threadIdx.x + blockIdx.x * blockDim.x;
-//   if(idx >= numTriangles)
-//     return;
 
-//   uint3 triIdx = dIndices[idx];
 
-//   float3 p0 = dVerts[triIdx.x];
-//   float3 p1 = dVerts[triIdx.y];
-//   float3 p2 = dVerts[triIdx.z];
 
-//   // 1. Map components directly into cuBQL fields
-//   dMesh[idx].a.x = p0.x;
-//   dMesh[idx].a.y = p0.y;
-//   dMesh[idx].a.z = p0.z;
-//   dMesh[idx].b.x = p1.x;
-//   dMesh[idx].b.y = p1.y;
-//   dMesh[idx].b.z = p1.z;
-//   dMesh[idx].c.x = p2.x;
-//   dMesh[idx].c.y = p2.y;
-//   dMesh[idx].c.z = p2.z;
-
-//   // 2. Compute L (Absolute Spatial Scale)
-//   float l0 = fmaxf(fmaxf(fabsf(p0.x), fabsf(p0.y)), fabsf(p0.z));
-//   float l1 = fmaxf(fmaxf(fabsf(p1.x), fabsf(p1.y)), fabsf(p1.z));
-//   float l2 = fmaxf(fmaxf(fabsf(p2.x), fabsf(p2.y)), fabsf(p2.z));
-//   float L = fmaxf(fmaxf(l0, l1), l2);
-
-//   // 3. Compute E (Maximum Edge Axis Extent)
-//   float ex = fmaxf(fmaxf(fabsf(p0.x - p1.x), fabsf(p1.x - p2.x)), fabsf(p2.x - p0.x));
-//   float ey = fmaxf(fmaxf(fabsf(p0.y - p1.y), fabsf(p1.y - p2.y)),
-//                    fabsf(p2.y - p0.y)); // corrected typographical index '1.y' to 'p1.y'
-//   float ez = fmaxf(fmaxf(fabsf(p0.z - p1.z), fabsf(p1.z - p2.z)), fabsf(p2.z - p0.z));
-//   float E = fmaxf(fmaxf(ex, ey), ez);
-
-//   // 4. Absorb Host-Generated Rounding Error Bounds (or compute them dynamically)
-//   float e0, e1, e2;
-//   if(dVertErrors != nullptr) {
-//     e0 = dVertErrors[triIdx.x];
-//     e1 = dVertErrors[triIdx.y];
-//     e2 = dVertErrors[triIdx.z];
-//   } else {
-//     // 2^-24 upper bound constant (conservative rounding to 5.9604645e-8f)
-//     const float EPS_BOUND = 5.9604645e-8f;
-//     e0 = l0 * EPS_BOUND;
-//     e1 = l1 * EPS_BOUND;
-//     e2 = l2 * EPS_BOUND;
-//   }
-//   float maxVertexError = fmaxf(fmaxf(e0, e1), e2);
-
-//   // Pad spatial parameters conservatively to encompass downcast drift
-//   L += maxVertexError;
-//   E += (2.0f * maxVertexError);
-
-//   // 5. Write out packed parameters to companion buffer
-//   dMetrics[idx] = make_float2(L, E * E);
-// }
-
-// __global__ void generateBoxes(cuBQL::box3f* boxes, const cuBQL::Triangle* tris, int N) {
-//   int i = threadIdx.x + blockIdx.x * blockDim.x;
-//   if(i < N) {
-//     boxes[i] = tris[i].bounds();
-//   }
-// }
-
-// __global__ void
-// populateReverseMapBKernel(uint32_t* d_reverseMapB, const uint32_t* d_markedNodeIndicesB, uint32_t h_outMarkedCountB) {
-//   int idx = threadIdx.x + blockIdx.x * blockDim.x;
-//   if(idx < h_outMarkedCountB) {
-//     uint32_t directBvhNodeId = d_markedNodeIndicesB[idx];
-//     d_reverseMapB[directBvhNodeId] = idx;
-//   }
-// }
-
-extern "C" void kernelsTestBVHV2(Mesh& meshAcpu,
+extern "C" void kernelsTestBVHV3(Mesh& meshAcpu,
                                  Mesh& meshBcpu,
-                                 const float3* hVertsA,
+                                 const double3* hVertsA,
                                  int numVertsA,
                                  const uint3* hIndicesA,
-                                 const float* hVertErrorsA,
                                  int numTrianglesA,
                                  int maxCellSizeA,
-                                 const float3* hVertsB,
+                                 const double3* hVertsB,
                                  int numVertsB,
                                  const uint3* hIndicesB,
-                                 const float* hVertErrorsB,
                                  int numTrianglesB,
                                  int maxCellSizeB,
                                  int batchMultiplier,
                                  int mode,
                                  int leafThreshold,
-                                 int activateAsyncDownload,
                                  ExecutionStats& stats,
-                                 tbb::concurrent_vector<int2>& finalExactPairs) {
+                                 int2*& outFinalExactPairs,      
+    size_t& outFinalCount) {
   if(numTrianglesA <= 0 || numTrianglesB <= 0) {
     return;
   }
@@ -171,7 +92,7 @@ extern "C" void kernelsTestBVHV2(Mesh& meshAcpu,
   double tAllocStart = cuBQL::getCurrentTime();
 
   // Allocate and stream indexed buffers for Mesh A
-  float3* dVertsA = nullptr;
+  double3* dVertsA = nullptr;
   uint3* dIndicesA = nullptr;
   CUBQL_CUDA_CALL(Malloc(&dVertsA, numVertsA * sizeof(float3)));
   CUBQL_CUDA_CALL(Memcpy(dVertsA, hVertsA, numVertsA * sizeof(float3), cudaMemcpyHostToDevice));
@@ -179,7 +100,7 @@ extern "C" void kernelsTestBVHV2(Mesh& meshAcpu,
   CUBQL_CUDA_CALL(Memcpy(dIndicesA, hIndicesA, numTrianglesA * sizeof(uint3), cudaMemcpyHostToDevice));
 
   // Allocate and stream indexed buffers for Mesh B
-  float3* dVertsB = nullptr;
+  double3* dVertsB = nullptr;
   uint3* dIndicesB = nullptr;
   CUBQL_CUDA_CALL(Malloc(&dVertsB, numVertsB * sizeof(float3)));
   CUBQL_CUDA_CALL(Memcpy(dVertsB, hVertsB, numVertsB * sizeof(float3), cudaMemcpyHostToDevice));
@@ -187,44 +108,21 @@ extern "C" void kernelsTestBVHV2(Mesh& meshAcpu,
   CUBQL_CUDA_CALL(Memcpy(dIndicesB, hIndicesB, numTrianglesB * sizeof(uint3), cudaMemcpyHostToDevice));
 
 
-  // Instantiate standard unrolled triangle buffers on device
-  cuBQL::Triangle* dMeshA;
-  CUBQL_CUDA_CALL(Malloc(&dMeshA, numTrianglesA * sizeof(cuBQL::Triangle)));
 
-  cuBQL::Triangle* dMeshB;
-  CUBQL_CUDA_CALL(Malloc(&dMeshB, numTrianglesB * sizeof(cuBQL::Triangle)));
+cuBQL::box3f* dBoxesA;
+cuBQL::box3f* dBoxesB;
+  // BVH Bounding Box Buffers
+  CUBQL_CUDA_CALL(MallocAsync((void**)&dBoxesA, numTrianglesA * sizeof(cuBQL::box3f), stream));
+  CUBQL_CUDA_CALL(MallocAsync((void**)&dBoxesB, numTrianglesB * sizeof(cuBQL::box3f), stream));
 
-  float* dVertErrorsA = nullptr;
-  if(hVertErrorsA != nullptr) {
-    CUBQL_CUDA_CALL(Malloc(&dVertErrorsA, numVertsA * sizeof(float)));
-    CUBQL_CUDA_CALL(Memcpy(dVertErrorsA, hVertErrorsA, numVertsA * sizeof(float), cudaMemcpyHostToDevice));
-  }
+  // Generate initial bounding boxes directly from vertices and indices
+  generateBoxesTrisKernel<<<cuBQL::divRoundUp(numTrianglesA, 256), 256, 0, stream>>>(dBoxesA, dVertsA,
+                                                                                         dIndicesA, numTrianglesA);
 
-  float* dVertErrorsB = nullptr;
-  if(hVertErrorsB != nullptr) {
-    CUBQL_CUDA_CALL(Malloc(&dVertErrorsB, numVertsB * sizeof(float)));
-    CUBQL_CUDA_CALL(Memcpy(dVertErrorsB, hVertErrorsB, numVertsB * sizeof(float), cudaMemcpyHostToDevice));
-  }
+  generateBoxesTrisKernel<<<cuBQL::divRoundUp(numTrianglesB, 256), 256, 0, stream>>>(dBoxesB, dVertsB,
+                                                                                         dIndicesB, numTrianglesB);
 
-  // 2. Allocate the Triangle Metrics Companion Buffers
-  float2* dMeshMetricsA = nullptr;
-  CUBQL_CUDA_CALL(Malloc(&dMeshMetricsA, numTrianglesA * sizeof(float2)));
 
-  float2* dMeshMetricsB = nullptr;
-  CUBQL_CUDA_CALL(Malloc(&dMeshMetricsB, numTrianglesB * sizeof(float2)));
-
-  assembleTrianglesKernel<<<cuBQL::divRoundUp(numTrianglesA, 256), 256, 0, stream>>>(
-      dMeshA, dMeshMetricsA, dVertsA, dVertErrorsA, dIndicesA, numTrianglesA);
-  assembleTrianglesKernel<<<cuBQL::divRoundUp(numTrianglesB, 256), 256, 0, stream>>>(
-      dMeshB, dMeshMetricsB, dVertsB, dVertErrorsB, dIndicesB, numTrianglesB);
-
-  cuBQL::box3f* dBoxesA;
-  CUBQL_CUDA_CALL(Malloc(&dBoxesA, numTrianglesA * sizeof(cuBQL::box3f)));
-  generateBoxes<<<cuBQL::divRoundUp(numTrianglesA, 256), 256, 0, stream>>>(dBoxesA, dMeshA, numTrianglesA);
-
-  cuBQL::box3f* dBoxesB;
-  CUBQL_CUDA_CALL(Malloc(&dBoxesB, numTrianglesB * sizeof(cuBQL::box3f)));
-  generateBoxes<<<cuBQL::divRoundUp(numTrianglesB, 256), 256, 0, stream>>>(dBoxesB, dMeshB, numTrianglesB);
 
   cudaDeviceSynchronize();
   double tAllocEnd = cuBQL::getCurrentTime();
@@ -243,8 +141,7 @@ extern "C" void kernelsTestBVHV2(Mesh& meshAcpu,
 
   thrust::device_vector<uint32_t> d_outOffsetsB;
   thrust::device_vector<uint32_t> d_outPrimsFlatB;
-  thrust::device_vector<uint32_t> d_outOffsetsA;
-  thrust::device_vector<uint32_t> d_outPrimsFlatA;
+
 
   cudaDeviceSynchronize();
   double tThrustInitEnd = cuBQL::getCurrentTime();
@@ -467,19 +364,36 @@ extern "C" void kernelsTestBVHV2(Mesh& meshAcpu,
   cudaDeviceSynchronize();
   double tGpuBfsEnd = cuBQL::getCurrentTime();
 
-  if(activateAsyncDownload == 0) {
+    Point3 m_centerA = Point3{0.0, 0.0, 0.0};
+    Point3 m_centerB = Point3{0.0, 0.0, 0.0};
+    double3 m_rotA    = double3{0.0, 0.0, 0.0};
+    double3 m_transA  = double3{0.0, 0.0, 0.0};
+    double3 m_rotB    = double3{0.0, 0.0, 0.0};
+    double3 m_transB  = double3{0.0, 0.0, 0.0};
 
-    finalCandidatePairs = executeBatchedCrossIntersectionLoopV2(
+  finalCandidatePairs = executeBatchedCrossIntersectionLoopDouble(
         meshAcpu, meshBcpu, batchMultiplier, totalBatches, d_outPairsA, d_outPairsB, d_reverseMapB,
-        d_markedNodeIndicesB, d_outOffsetsB, d_outPrimsFlatB, d_nodeDescendantCountsB, finalActiveCellsB, bvhA, dMeshA,
-        dMeshB, dMeshMetricsA, dMeshMetricsB, finalExactPairs, tracker, stream);
+        d_markedNodeIndicesB, d_outOffsetsB, d_outPrimsFlatB, d_nodeDescendantCountsB, finalActiveCellsB, bvhA,
+        dBoxesA, // <-- ADDED: Precomputed boxes for Mesh A
+        dBoxesB, // <-- ADDED: Precomputed boxes for Mesh B
+        dVertsA, dIndicesA, dVertsB, dIndicesB, outFinalExactPairs, outFinalCount, tracker, m_centerA,
+        m_centerB, m_rotA, m_transA, m_rotB, m_transB, stream);
 
-  } else {
-    finalCandidatePairs = executeBatchedCrossIntersectionLoopV3(
-        meshAcpu, meshBcpu, batchMultiplier, totalBatches, d_outPairsA, d_outPairsB, d_reverseMapB,
-        d_markedNodeIndicesB, d_outOffsetsB, d_outPrimsFlatB, d_nodeDescendantCountsB, finalActiveCellsB, bvhA, dMeshA,
-        dMeshB, dMeshMetricsA, dMeshMetricsB, finalExactPairs, tracker, stream, activateAsyncDownload);
-  }
+
+
+//   if(activateAsyncDownload == 0) {
+
+//     finalCandidatePairs = executeBatchedCrossIntersectionLoopV2(
+//         meshAcpu, meshBcpu, batchMultiplier, totalBatches, d_outPairsA, d_outPairsB, d_reverseMapB,
+//         d_markedNodeIndicesB, d_outOffsetsB, d_outPrimsFlatB, d_nodeDescendantCountsB, finalActiveCellsB, bvhA, dMeshA,
+//         dMeshB, dMeshMetricsA, dMeshMetricsB, finalExactPairs, tracker, stream);
+
+//   } else {
+//     finalCandidatePairs = executeBatchedCrossIntersectionLoopV3(
+//         meshAcpu, meshBcpu, batchMultiplier, totalBatches, d_outPairsA, d_outPairsB, d_reverseMapB,
+//         d_markedNodeIndicesB, d_outOffsetsB, d_outPrimsFlatB, d_nodeDescendantCountsB, finalActiveCellsB, bvhA, dMeshA,
+//         dMeshB, dMeshMetricsA, dMeshMetricsB, finalExactPairs, tracker, stream, activateAsyncDownload);
+//   }
   // --------------------------------------------------------------------
   // EXPLICIT CLEANUP & RECOVERY METRIC TRACKING
   // --------------------------------------------------------------------
@@ -488,9 +402,9 @@ extern "C" void kernelsTestBVHV2(Mesh& meshAcpu,
 
   double tCleanupStart = cuBQL::getCurrentTime();
 
-  CUBQL_CUDA_CALL(Free(dMeshA));
+  //CUBQL_CUDA_CALL(Free(dMeshA));
   CUBQL_CUDA_CALL(Free(dBoxesA));
-  CUBQL_CUDA_CALL(Free(dMeshB));
+  //CUBQL_CUDA_CALL(Free(dMeshB));
   CUBQL_CUDA_CALL(Free(dBoxesB));
 
   // Release the intermediate indexed topology allocations
@@ -524,8 +438,6 @@ extern "C" void kernelsTestBVHV2(Mesh& meshAcpu,
   d_outPairsB.shrink_to_fit();
   d_outOffsetsB.shrink_to_fit();
   d_outPrimsFlatB.shrink_to_fit();
-  d_outOffsetsA.shrink_to_fit();
-  d_outPrimsFlatA.shrink_to_fit();
 
   cudaDeviceSynchronize();
   double tCleanupEnd = cuBQL::getCurrentTime();

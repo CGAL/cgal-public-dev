@@ -157,9 +157,7 @@ uint64_t executeDualTreeStep(
     uint32_t& h_outMarkedCountA,                                
     uint32_t& h_outMarkedCountB,                                
     const cuBQL::bvh3f& bvhA,
-    const cuBQL::bvh3f& bvhB,
-    const void* dMeshA, 
-    const void* dMeshB
+    const cuBQL::bvh3f& bvhB
 )  {
     if (d_outPairsA.empty()) return 0;
 

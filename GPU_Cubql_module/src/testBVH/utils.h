@@ -58,8 +58,18 @@ __global__ void populateReverseMapBKernel(uint32_t* d_reverseMapB,
                                           uint32_t h_outMarkedCountB);
 
 // =============================================================================
+// Box Generation Kernels
+// =============================================================================
+
+__global__ void generateBoxesTrisKernel(cuBQL::box3f* __restrict__ dBoxes,
+                                        const double3* __restrict__ dVerts,
+                                        const uint3* __restrict__ dIndices,
+                                        int numTriangles);
+
+// =============================================================================
 // Host Launch Wrappers
 // =============================================================================
+
 
 void launchAssembleTriangles(cuBQL::Triangle* dMesh,
                              float2* dMetrics,
@@ -99,5 +109,11 @@ void launchGenerateBoxes(cuBQL::box3f* dBoxes,
                          const cuBQL::Triangle* dTris,
                          int numTriangles,
                          cudaStream_t stream = 0);
+
+void launchGenerateBoxesTris(cuBQL::box3f* dBoxes,
+                             const double3* dVerts,
+                             const uint3* dIndices, // Or const uint3* depending on your types
+                             int numTriangles,
+                             cudaStream_t stream = 0);
 
 #endif // UTILS_H

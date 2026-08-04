@@ -214,6 +214,43 @@ __device__ __forceinline__ void assembleTrianglesDeviceImpl(TriangleDouble* dMes
 // Global Entry-Point Kernels
 // =============================================================================
 
+__global__ void generateBoxesTrisKernel(cuBQL::box3f* __restrict__ dBoxes,
+                                        const double3* __restrict__ dVerts,
+                                        const uint3* __restrict__ dIndices,
+                                        int numTriangles) {
+  int idx = threadIdx.x + blockIdx.x * blockDim.x;
+  if (idx >= numTriangles) return;
+
+  uint3 triIdx = dIndices[idx];
+
+  // Direct read: nvcc automatically uses read-only cache via const __restrict__
+  double3 p0 = dVerts[triIdx.x];
+  double3 p1 = dVerts[triIdx.y];
+  double3 p2 = dVerts[triIdx.z];
+
+  // Downcast to float for BVH bounding box
+  float3 a = make_float3(static_cast<float>(p0.x), static_cast<float>(p0.y), static_cast<float>(p0.z));
+  float3 b = make_float3(static_cast<float>(p1.x), static_cast<float>(p1.y), static_cast<float>(p1.z));
+  float3 c = make_float3(static_cast<float>(p2.x), static_cast<float>(p2.y), static_cast<float>(p2.z));
+
+  // Compute AABB
+  cuBQL::box3f box;
+  box.lower = cuBQL::vec3f(fminf(fminf(a.x, b.x), c.x),
+                           fminf(fminf(a.y, b.y), c.y),
+                           fminf(fminf(a.z, b.z), c.z));
+
+  box.upper = cuBQL::vec3f(fmaxf(fmaxf(a.x, b.x), c.x),
+                           fmaxf(fmaxf(a.y, b.y), c.y),
+                           fmaxf(fmaxf(a.z, b.z), c.z));
+
+  dBoxes[idx] = box;
+}
+
+
+// =============================================================================
+// Global Entry-Point Kernels
+// =============================================================================
+
 // --- float3 Kernels ---
 __global__ void assembleTrianglesKernel(cuBQL::Triangle* dMesh,
                                         float2* dMetrics,
@@ -327,4 +364,20 @@ void launchGenerateBoxes(cuBQL::box3f* dBoxes, const cuBQL::Triangle* dTris, int
   int blockSize = 256;
   int gridSize = (numTriangles + blockSize - 1) / blockSize;
   generateBoxes<<<gridSize, blockSize, 0, stream>>>(dBoxes, dTris, numTriangles);
+}
+
+
+// =============================================================================
+// Host Launch Wrappers
+// =============================================================================
+
+void launchGenerateBoxesTris(cuBQL::box3f* dBoxes,
+                             const double3* dVerts,
+                             const uint3* dIndices,
+                             int numTriangles,
+                             cudaStream_t stream) {
+  if (numTriangles <= 0) return;
+  int blockSize = 256;
+  int gridSize = (numTriangles + blockSize - 1) / blockSize;
+  generateBoxesTrisKernel<<<gridSize, blockSize, 0, stream>>>(dBoxes, dVerts, dIndices, numTriangles);
 }
