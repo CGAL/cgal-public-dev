@@ -38,7 +38,8 @@ public:
     // 2. Execution Pipeline - Double Precision Only
     void runIntersectionPipeline(
         int batchMultiplier, int mode, int activateAsyncDownload,
-        tbb::concurrent_vector<int2>& finalExactPairs, ExecutionStats& stats);
+        int2*& outFinalExactPairs,       // Fast raw pointer return
+    size_t& outFinalCount,  ExecutionStats& stats);
 
     // 3. Deallocates all GPU resources safely
     void cleanup();

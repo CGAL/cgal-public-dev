@@ -36,7 +36,8 @@ uint64_t executeBatchedCrossIntersectionLoopDouble(
     const uint3* d_indicesA,
     const double3* d_vertsB,
     const uint3* d_indicesB,
-    tbb::concurrent_vector<int2> & finalExactPairs,
+    int2*& outFinalExactPairs,       // Fast raw pointer return
+    size_t& outFinalCount, 
     IntersectionTimeTracker& tracker, Point3 m_centerA, Point3 m_centerB, double3 m_rotA, double3 m_transA, double3 m_rotB, double3 m_transB,
     cudaStream_t stream = 0
 );

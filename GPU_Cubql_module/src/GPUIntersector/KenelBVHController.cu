@@ -631,7 +631,8 @@ void KernelBVHController::construct(Mesh& meshAcpu,
 void KernelBVHController::runIntersectionPipeline(int batchMultiplier,
                                                   int mode,
                                                   int activateAsyncDownload,
-                                                  tbb::concurrent_vector<int2>& finalExactPairs,
+                                                  int2*& outFinalExactPairs,       // Fast raw pointer return
+                                            size_t& outFinalCount, 
                                                   ExecutionStats& stats) {
   double tPipelineStart = cuBQL::getCurrentTime();
 
@@ -714,7 +715,7 @@ void KernelBVHController::runIntersectionPipeline(int batchMultiplier,
         m_dIndicesA, 
         m_dVertsB, 
         m_dIndicesB,
-        finalExactPairs, 
+        outFinalExactPairs,outFinalCount,   
         tracker, m_centerA,m_centerB,m_rotA,m_transA,m_rotB,m_transB,
         m_stream
     );

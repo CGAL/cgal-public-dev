@@ -341,7 +341,7 @@ void printHelp() {
   std::cout << "  tbb <num_threads>\n";
   std::cout << "      - Sets the active CPU thread limit for TBB worker operations.\n";
   std::cout << "  testbvh [maxCellA] [maxCellB] [batchMultiplier] [NumDualTreeSteps] [leafThresh] [asyncDownload]\n";
-   std::cout << "      - Transforms mesh copies using rotation tools and executes kernelsTestBVHV2.\n";
+  std::cout << "      - Transforms mesh copies using rotation tools and executes kernelsTestBVHV2.\n";
   std::cout << "  help\n";
   std::cout << "      - Displays this message.\n";
   std::cout << "  quit / exit\n";
@@ -468,20 +468,26 @@ int main(int argc, char** argv) {
 
     // 3. Execute GPU intersection pipeline
     auto tStart = std::chrono::high_resolution_clock::now();
-    tbb::concurrent_vector<int2> finalExactPairs;
 
-    controller.runIntersectionPipeline(batchMultiplier, mode, activateAsyncDownload, finalExactPairs, stats);
+    int2* outFinalExactPairs = nullptr;  
+    size_t outFinalCount = 0;
+
+    controller.runIntersectionPipeline(batchMultiplier, mode, activateAsyncDownload, outFinalExactPairs, outFinalCount, stats);
 
     auto tEnd = std::chrono::high_resolution_clock::now();
     double ms = std::chrono::duration<double, std::milli>(tEnd - tStart).count();
 
-    // 4. Highlight intersections in viewport
-    std::vector<int2> stdPairs(finalExactPairs.begin(), finalExactPairs.end());
-    PolyscopeBridge::highlightIntersections(stdPairs, num_faces(meshA), num_faces(meshB));
+    // 4. Highlight intersections in viewport (Construct vector from raw pointer range)
+    if (outFinalExactPairs && outFinalCount > 0) {
+      std::vector<int2> stdPairs(outFinalExactPairs, outFinalExactPairs + outFinalCount);
+      PolyscopeBridge::highlightIntersections(stdPairs, num_faces(meshA), num_faces(meshB));
+    } else {
+      PolyscopeBridge::highlightIntersections({}, num_faces(meshA), num_faces(meshB));
+    }
 
     // 5. Output Stats
     std::cout << "\n[Compute] Query completed in: " << std::fixed << std::setprecision(2) << ms << " ms. "
-              << "Found " << finalExactPairs.size() << " intersections.\n";
+              << "Found " << outFinalCount << " intersections.\n";
     std::cout << "AABB Hits: " << stats.finalAabbCandidatePairs << " | Green: " << stats.loopTracker.confirmedGreenPairs
               << " | Yellow: " << stats.loopTracker.confirmedYellowPairs
               << " | Orange: " << stats.loopTracker.confirmedOrangePairs << std::endl;
@@ -490,6 +496,12 @@ int main(int argc, char** argv) {
     std::cout << "Time setup GPU: " << tGPU << " ms | Time setup CPU: " << tCPU << " ms" << std::endl;
     std::cout << "RotateTransformVerts: " << tTV << " timeAssembleTris: " << tAT << " timeGenBoxes: " << tGB
               << std::endl;
+
+    // 6. Free raw host memory allocated by std::realloc/malloc in the pipeline
+    if (outFinalExactPairs) {
+      std::free(outFinalExactPairs);
+      outFinalExactPairs = nullptr;
+    }
   };
 
   // Connect GUI Button callback in Polyscope window directly to unified compute logic
@@ -850,14 +862,15 @@ int main(int argc, char** argv) {
           std::cout << "Error: You must 'load' meshes first.\n";
         } else {
           // 1. Read input command-line parameters (or default if omitted)
-          int maxCellSizeA = 1;
-          int maxCellSizeB = 1;
+          int maxCellSizeA = 12;
+          int maxCellSizeB = 12;
           int batchMultiplier = std::numeric_limits<int>::max();
           int mode = 0;
           int leafThreshold = 4;
           int activateAsyncDownload = 0;
 
           iss >> maxCellSizeA >> maxCellSizeB >> batchMultiplier >> mode >> leafThreshold >> activateAsyncDownload;
+
 
           // 2. Fetch current rotation/translation from Polyscope viewport
           float3 rotA, transA, rotB, transB;
@@ -915,12 +928,51 @@ int main(int argc, char** argv) {
             std::cout << "=======================================================\n";
             std::cout << "  Execution Time        : " << std::fixed << std::setprecision(2) << ms << " ms\n";
             std::cout << "  Exact Intersections   : " << finalExactPairs.size() << "\n";
-            std::cout << "  AABB Candidate Pairs  : " << testStats.finalAabbCandidatePairs << "\n";
-            std::cout << "  Green / Yellow / Org  : " << testStats.loopTracker.confirmedGreenPairs << " / "
-                      << testStats.loopTracker.confirmedYellowPairs << " / "
-                      << testStats.loopTracker.confirmedOrangePairs << "\n";
-            std::cout << "  GPU Predicates Time   : " << testStats.loopTracker.fineEvaluationPhaseMs << " ms\n";
-            std::cout << "  CPU Predicates Time   : " << testStats.loopTracker.CPUPredicates << " ms\n";
+
+            std::cout << "  |- Mesh A Total Generated Nodes:   " << testStats.meshATotalNodes << "\n";
+            std::cout << "  |- Mesh A Extracted Targets (<" << maxCellSizeA << "): " << testStats.meshAExtractedTargets
+                      << "\n";
+            std::cout << "  |- Mesh B Total Generated Nodes:   " << testStats.meshBTotalNodes << "\n";
+            std::cout << "  |- Mesh B Extracted Targets (<" << maxCellSizeB << "): " << testStats.meshBExtractedTargets
+                      << "\n\n";      
+
+            std::cout << "CROSS BOUNDING BOX CROSS-CHECK:\n";
+            std::cout << "  |- Intersections found:            " << testStats.totalIntersections << " / "
+                      << testStats.totalPossiblePairs << "\n";
+            std::cout << "  |- Intersection Ratio:             " << std::fixed << std::setprecision(4)
+                      << testStats.intersectionPercentage << "%\n\n";
+
+            std::cout << "TIMING METRICS OVERVIEW:\n";
+            std::cout << "  |- Initial Alloc & Mesh Copy:      " << std::fixed << std::setprecision(4)
+                      << testStats.initialAllocAndCopyMs << " ms\n";
+            std::cout << "  |- Thrust Framework Init/Fill:     " << testStats.thrustInitOverheadMs << " ms\n";
+            std::cout << "  |- Build + Refit (Mesh A):         " << testStats.buildRefitMeshAMs << " ms\n";
+            std::cout << "  |- Build + Refit (Mesh B):         " << testStats.buildRefitMeshBMs << " ms\n";
+            std::cout << "  |- GPU Cross-Check Engine:         " << testStats.gpuCrossCheckEngineMs << " ms\n";
+            std::cout << "  |- Parallel DFS Descent (A & B):   " << testStats.parallelDfsDescentBMs << " ms\n";
+            std::cout << "  |- Dual Tree Expansion Step:       " << testStats.dualTreeStepMs << " ms\n";
+            std::cout << "  |- Explicit Device Cleanup Sync:   " << testStats.finalCleanupSyncMs << " ms\n";
+            std::cout << "  |- Comprehensive GPU Pipeline Time: " << testStats.GPUTotalTime << " ms\n\n";
+
+            std::cout << "DUAL-TREE DESCENT & FINE EVALUATION METRICS:\n";
+            std::cout << "  |- Total Criss-Cross Batches:      " << testStats.totalCrissCrossBatches << "\n";
+            std::cout << "  |- Final AABB Candidate Pairs:     " << testStats.finalAabbCandidatePairs << "\n";
+            std::cout << "  |- Confirmed Green (Intersecting): " << testStats.loopTracker.confirmedGreenPairs << "\n";
+            std::cout << "  |- Confirmed Yellow (Coplanar):    " << testStats.loopTracker.confirmedYellowPairs << "\n";
+
+            std::cout << "FINE-GRAINED INTERSECTION LOOP BREAKDOWN:\n";
+            std::cout << "  |- Total Loop Execution Time:      " << testStats.loopTracker.totalLoopTimeMs << " ms\n";
+            std::cout << "  |- Preallocation Phase Time:       " << testStats.loopTracker.preallocateTimeMs << " ms\n";
+            std::cout << "  |- Assembly Phase Time:            " << testStats.loopTracker.assemblyPhaseMs << " ms\n";
+            std::cout << "  |- Execution Phase Time:           " << testStats.loopTracker.executionPhaseMs << " ms\n";
+            std::cout << "  |- Fine Evaluation Phase Time:     " << testStats.loopTracker.fineEvaluationPhaseMs << " ms\n";
+            std::cout << "  |- Device Cleanup Time:            " << testStats.loopTracker.cleanupTimeMs << " ms\n";
+            std::cout << "  |- Host Download & Sync Time:      " << testStats.loopTracker.DownloadAndClean << " ms\n\n";
+            std::cout << "  |- Number of batches:              " << testStats.loopTracker.numberOfBatchLoops << "\n";
+
+            std::cout << "NARROW-PHASE HYBRID FILTER REPORT:\n";
+            std::cout << "  |- CPU Narrow-Phase Compute Time:  " << testStats.loopTracker.CPUPredicates << " s\n";
+            std::cout << "  |- Ambiguous Yellows Evaluated:    " << testStats.loopTracker.confirmedYellowPairs << "\n";
             std::cout << "=======================================================\n\n";
           }
         }

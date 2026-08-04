@@ -290,11 +290,11 @@ extern "C" void kernelsTestBVHV2(Mesh& meshAcpu,
   CUBQL_CUDA_CALL(StreamSynchronize(stream));
   stats.buildRefitMeshBMs = (cuBQL::getCurrentTime() - tInitBStart) * 1000.0;
 
-  std::cout << "\n--------------------------------------------------" << std::endl;
-  std::cout << " [LINEAR INITIALIZATION METRICS OVERVIEW]" << std::endl;
-  std::cout << " -> Tree A: Total Compounded Active Cells = " << outTotalActiveCellsA << std::endl;
-  std::cout << " -> Tree B: Total Compounded Active Cells = " << outTotalActiveCellsB << std::endl;
-  std::cout << "--------------------------------------------------" << std::endl;
+  // std::cout << "\n--------------------------------------------------" << std::endl;
+  // std::cout << " [LINEAR INITIALIZATION METRICS OVERVIEW]" << std::endl;
+  // std::cout << " -> Tree A: Total Compounded Active Cells = " << outTotalActiveCellsA << std::endl;
+  // std::cout << " -> Tree B: Total Compounded Active Cells = " << outTotalActiveCellsB << std::endl;
+  // std::cout << "--------------------------------------------------" << std::endl;
 
   // Map to historical baseline counts expected by downstream processing before modification
   uint32_t h_outMarkedCountA = outTotalActiveCellsA;
@@ -316,12 +316,12 @@ extern "C" void kernelsTestBVHV2(Mesh& meshAcpu,
   double intersectionPercentage =
       totalPossiblePairs > 0 ? ((double)totalIntersections / totalPossiblePairs) * 100.0 : 0.0;
 
-  std::cout << "\n==================================================" << std::endl;
-  std::cout << "          LAUNCHING CROSS-CHECK KERNELS           " << std::endl;
-  std::cout << "==================================================" << std::endl;
-  std::cout << " -> Intersecting Pairs Detected     : " << totalIntersections << " pairs" << std::endl;
-  std::cout << " -> True Active Matrix Evaluated    : " << totalPossiblePairs << " pairings" << std::endl;
-  std::cout << " -> Percentage of Total Overlaps    : " << intersectionPercentage << "%" << std::endl;
+  // std::cout << "\n==================================================" << std::endl;
+  // std::cout << "          LAUNCHING CROSS-CHECK KERNELS           " << std::endl;
+  // std::cout << "==================================================" << std::endl;
+  // std::cout << " -> Intersecting Pairs Detected     : " << totalIntersections << " pairs" << std::endl;
+  // std::cout << " -> True Active Matrix Evaluated    : " << totalPossiblePairs << " pairings" << std::endl;
+  // std::cout << " -> Percentage of Total Overlaps    : " << intersectionPercentage << "%" << std::endl;
 
   // Save layout baselines prior to pruning
   uint32_t initialCellsA = outTotalActiveCellsA;
@@ -344,40 +344,40 @@ extern "C" void kernelsTestBVHV2(Mesh& meshAcpu,
   int currentPrimsNumA = (int)(lastOffsetA - firstOffsetA);
   int currentPrimsNumB = (int)(lastOffsetB - firstOffsetB);
 
-  std::cout << " [POPULATED CELLS CHECK SUMMARY]" << std::endl;
-  std::cout << " -> Tree A Active Nodes: " << initialCellsA << " | Total Verified Prims = " << currentPrimsNumA
-            << std::endl;
-  std::cout << " -> Tree B Active Nodes: " << initialCellsB << " | Total Verified Prims = " << currentPrimsNumB
-            << std::endl;
-  std::cout << "--------------------------------------------------\n" << std::endl;
+  // std::cout << " [POPULATED CELLS CHECK SUMMARY]" << std::endl;
+  // std::cout << " -> Tree A Active Nodes: " << initialCellsA << " | Total Verified Prims = " << currentPrimsNumA
+  //           << std::endl;
+  // std::cout << " -> Tree B Active Nodes: " << initialCellsB << " | Total Verified Prims = " << currentPrimsNumB
+  //           << std::endl;
+  // std::cout << "--------------------------------------------------\n" << std::endl;
 
   // --------------------------------------------------------------------
   // PARALLEL STREAM COMPACTION & PRUNING ALGORITHM (POST-BUILD)
   // --------------------------------------------------------------------
-  std::cout << " \n[PIPELINE PRUNING] => Dispatched grid streaming parallel re-index compaction (POST-BUILD)..."
-            << std::endl;
+  // std::cout << " \n[PIPELINE PRUNING] => Dispatched grid streaming parallel re-index compaction (POST-BUILD)..."
+  //           << std::endl;
 
   double pruneStartA = cuBQL::getCurrentTime();
   parallelPruneAndReindexAll(thrust::raw_pointer_cast(d_outPairsA.data()), totalIntersections, outSortedPrimIDsA,
                              outNodeOffsetsA, outTotalActiveCellsA, currentPrimsNumA, stream, memResource);
   CUBQL_CUDA_CALL(StreamSynchronize(stream));
   double pruneMsA = (cuBQL::getCurrentTime() - pruneStartA) * 1000.0;
-  std::cout << " -> Mesh A Structural Pruning (Post)  : " << pruneMsA << " ms" << std::endl;
-  std::cout << "    * Active Cells Surviving: " << initialCellsA << " -> " << outTotalActiveCellsA << std::endl;
+  // std::cout << " -> Mesh A Structural Pruning (Post)  : " << pruneMsA << " ms" << std::endl;
+  // std::cout << "    * Active Cells Surviving: " << initialCellsA << " -> " << outTotalActiveCellsA << std::endl;
 
   double pruneStartB = cuBQL::getCurrentTime();
   parallelPruneAndReindexAll(thrust::raw_pointer_cast(d_outPairsB.data()), totalIntersections, outSortedPrimIDsB,
                              outNodeOffsetsB, outTotalActiveCellsB, currentPrimsNumB, stream, memResource);
   CUBQL_CUDA_CALL(StreamSynchronize(stream));
   double pruneMsB = (cuBQL::getCurrentTime() - pruneStartB) * 1000.0;
-  std::cout << " -> Mesh B Structural Pruning (Post)  : " << pruneMsB << " ms" << std::endl;
-  std::cout << "    * Active Cells Surviving: " << initialCellsB << " -> " << outTotalActiveCellsB << std::endl;
+  // std::cout << " -> Mesh B Structural Pruning (Post)  : " << pruneMsB << " ms" << std::endl;
+  // std::cout << "    * Active Cells Surviving: " << initialCellsB << " -> " << outTotalActiveCellsB << std::endl;
 
 
   // --------------------------------------------------------------------
   // GPU BUILDER V4 FOREST EXPANSION
   // --------------------------------------------------------------------
-  std::cout << " [FOREST EXPANSION] => Launching Level-by-Level Parallel Sub-Tree Compilation..." << std::endl;
+  // std::cout << " [FOREST EXPANSION] => Launching Level-by-Level Parallel Sub-Tree Compilation..." << std::endl;
 
   const uint32_t maxNodesA = 2u * (uint32_t)numTrianglesA + (outTotalActiveCellsA + (outTotalActiveCellsA & 1u)) + 2u;
   const uint32_t maxNodesB = 2u * (uint32_t)numTrianglesB + (outTotalActiveCellsB + (outTotalActiveCellsB & 1u)) + 2u;
@@ -396,7 +396,7 @@ extern "C" void kernelsTestBVHV2(Mesh& meshAcpu,
   CUBQL_CUDA_CALL(StreamSynchronize(stream));
   double forestAMs = (cuBQL::getCurrentTime() - tForestAStart) * 1000.0;
   stats.buildRefitMeshAMs += forestAMs;
-  std::cout << " -> Mesh A Forest BVH Expansion     : " << forestAMs << " ms | Nodes: " << bvhA.numNodes << std::endl;
+  // std::cout << " -> Mesh A Forest BVH Expansion     : " << forestAMs << " ms | Nodes: " << bvhA.numNodes << std::endl;
 
   // --- BUILD FOREST MESH B ---
   double tForestBStart = cuBQL::getCurrentTime();
@@ -408,7 +408,7 @@ extern "C" void kernelsTestBVHV2(Mesh& meshAcpu,
   CUBQL_CUDA_CALL(StreamSynchronize(stream));
   double forestBMs = (cuBQL::getCurrentTime() - tForestBStart) * 1000.0;
   stats.buildRefitMeshBMs += forestBMs;
-  std::cout << " -> Mesh B Forest BVH Expansion     : " << forestBMs << " ms | Nodes: " << bvhB.numNodes << std::endl;
+  // std::cout << " -> Mesh B Forest BVH Expansion     : " << forestBMs << " ms | Nodes: " << bvhB.numNodes << std::endl;
 
 
   // --------------------------------------------------------------------
@@ -484,7 +484,7 @@ extern "C" void kernelsTestBVHV2(Mesh& meshAcpu,
   // EXPLICIT CLEANUP & RECOVERY METRIC TRACKING
   // --------------------------------------------------------------------
 
-  std::cout << "Starting to clean up" << std::endl;
+  //std::cout << "Starting to clean up" << std::endl;
 
   double tCleanupStart = cuBQL::getCurrentTime();
 
