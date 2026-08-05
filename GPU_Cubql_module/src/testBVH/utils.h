@@ -10,6 +10,59 @@
 // Kernel Declarations (float3 - Legacy / Float Pipeline)
 // =============================================================================
 
+// -----------------------------------------------------------------------------
+// Helper 3x3 Matrix Structure & Rigid Body Transformations
+// -----------------------------------------------------------------------------
+struct Mat3x3
+{
+  double m[3][3];
+};
+
+inline Mat3x3 makeRotationMatrixDeg(double rxDeg, double ryDeg, double rzDeg) {
+  const double DEG_TO_RAD = 3.14159265358979323846 / 180.0;
+  double radX = rxDeg * DEG_TO_RAD;
+  double radY = ryDeg * DEG_TO_RAD;
+  double radZ = rzDeg * DEG_TO_RAD;
+
+  double cx = cos(radX), sx = sin(radX);
+  double cy = cos(radY), sy = sin(radY);
+  double cz = cos(radZ), sz = sin(radZ);
+
+  Mat3x3 R;
+  R.m[0][0] = cy * cz;
+  R.m[0][1] = sx * sy * cz - cx * sz;
+  R.m[0][2] = cx * sy * cz + sx * sz;
+
+  R.m[1][0] = cy * sz;
+  R.m[1][1] = sx * sy * sz + cx * cz;
+  R.m[1][2] = cx * sy * sz - sx * cz;
+
+  R.m[2][0] = -sy;
+  R.m[2][1] = sx * cy;
+  R.m[2][2] = cx * cy;
+
+  return R;
+}
+
+// =============================================================================
+// Vertex Transformation Kernels & Host Launchers
+// =============================================================================
+
+__global__ void transformVerticesKernel(double3* dVertsOut, 
+                                        const double3* dVertsOrig, 
+                                        int numVerts, 
+                                        Mat3x3 R, 
+                                        double3 center, 
+                                        double3 trans);
+
+void launchTransformVertices(double3* dVertsOut,
+                             const double3* dVertsOrig,
+                             int numVerts,
+                             Mat3x3 R,
+                             double3 center,
+                             double3 trans,
+                             cudaStream_t stream = 0);
+
 __global__ void assembleTrianglesKernel(cuBQL::Triangle* dMesh,
                                         float2* dMetrics,
                                         const float3* dVerts,

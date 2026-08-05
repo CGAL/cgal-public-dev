@@ -864,7 +864,7 @@ int main(int argc, char** argv) {
         if(!isLoaded) {
           std::cout << "Error: You must 'load' meshes first.\n";
         } else {
-          // 1. Read input command-line parameters (or default if omitted)
+          // 1. Read command-line parameters
           int maxCellSizeA = 12;
           int maxCellSizeB = 12;
           int batchMultiplier = std::numeric_limits<int>::max();
@@ -874,58 +874,38 @@ int main(int argc, char** argv) {
 
           iss >> maxCellSizeA >> maxCellSizeB >> batchMultiplier >> mode >> leafThreshold >> activateAsyncDownload;
 
-
-          // 2. Fetch current rotation/translation from Polyscope viewport
+          // 2. Fetch active rotation and translation from Polyscope GUI
           float3 rotA, transA, rotB, transB;
           if(!PolyscopeBridge::getCurrentTransforms(rotA, transA, rotB, transB)) {
             std::cout << "Error: Failed to fetch transform matrices from Polyscope.\n";
           } else {
-            // 3. Create transformed CPU mesh copies using rotation tools
-            Mesh meshA_rotated, meshB_rotated;
-            transformCgalMesh(meshA, meshA_rotated, Point3(normCenterA.x, normCenterA.y, normCenterA.z),
-                              make_double3(rotA.x, rotA.y, rotA.z), make_double3(transA.x, transA.y, transA.z));
-            transformCgalMesh(meshB, meshB_rotated, Point3(normCenterB.x, normCenterB.y, normCenterB.z),
-                              make_double3(rotB.x, rotB.y, rotB.z), make_double3(transB.x, transB.y, transB.z));
-
-            // 4. Create and transform float3 vertex buffers
-            std::vector<double3> hVertsA_rotDouble(hVertsA.size());
-            std::vector<double3> hVertsB_rotDouble(hVertsB.size());
-
-            transformVerticesCPU(hVertsA_rotDouble.data(), hVertsA.data(), static_cast<int>(hVertsA.size()),
-                                 make_double3(rotA.x, rotA.y, rotA.z),
-                                 make_double3(normCenterA.x, normCenterA.y, normCenterA.z),
-                                 make_double3(transA.x, transA.y, transA.z));
-
-            transformVerticesCPU(hVertsB_rotDouble.data(), hVertsB.data(), static_cast<int>(hVertsB.size()),
-                                 make_double3(rotB.x, rotB.y, rotB.z),
-                                 make_double3(normCenterB.x, normCenterB.y, normCenterB.z),
-                                 make_double3(transB.x, transB.y, transB.z));
-
-            std::vector<float3> hVertsA_rotFloat = convertDouble3ToFloat3(hVertsA_rotDouble);
-            std::vector<float3> hVertsB_rotFloat = convertDouble3ToFloat3(hVertsB_rotDouble);
-
-            // 5. Fire kernel routine with null vertex error pointers
-            //  tbb::concurrent_vector<int2> finalExactPairs;
-
+            Point3 centerA(normCenterA.x, normCenterA.y, normCenterA.z);
+            Point3 centerB(normCenterB.x, normCenterB.y, normCenterB.z);
 
             ExecutionStats testStats;
-            const float* hVertErrorsA = nullptr;
-            const float* hVertErrorsB = nullptr;
+            int2* outFinalExactPairs = nullptr;
+            size_t outFinalCount = 0;
 
             auto tStart = std::chrono::high_resolution_clock::now();
 
-            int2* outFinalExactPairs;
-            size_t outFinalCount;
+            // 3. Dispatch to kernelsTestBVHV3 with all 24 parameters
             kernelsTestBVHV3(
-                meshA_rotated, meshB_rotated, hVertsA_rotDouble.data(), static_cast<int>(hVertsA_rotFloat.size()),
-                hIndicesA.data(), static_cast<int>(hIndicesA.size()), maxCellSizeA, hVertsA_rotDouble.data(),
-                static_cast<int>(hVertsB_rotFloat.size()), hIndicesB.data(), static_cast<int>(hIndicesB.size()),
-                maxCellSizeB, batchMultiplier, mode, leafThreshold, testStats, outFinalExactPairs, outFinalCount);
+                meshA, meshB,
+                hVertsA.data(), static_cast<int>(hVertsA.size()),
+                hIndicesA.data(), static_cast<int>(hIndicesA.size()), maxCellSizeA,
+                hVertsB.data(), static_cast<int>(hVertsB.size()),
+                hIndicesB.data(), static_cast<int>(hIndicesB.size()), maxCellSizeB,
+                batchMultiplier, mode, leafThreshold, testStats, outFinalExactPairs, outFinalCount,
+                centerA, centerB,
+                make_double3(rotA.x, rotA.y, rotA.z),
+                make_double3(transA.x, transA.y, transA.z),
+                make_double3(rotB.x, rotB.y, rotB.z),
+                make_double3(transB.x, transB.y, transB.z));
 
             auto tEnd = std::chrono::high_resolution_clock::now();
             double ms = std::chrono::duration<double, std::milli>(tEnd - tStart).count();
 
-            // 6. Highlight intersections in viewport (yellow list) & display statistics
+            // 4. Highlight intersections in Polyscope viewport
             if(outFinalExactPairs && outFinalCount > 0) {
               std::vector<int2> stdPairs(outFinalExactPairs, outFinalExactPairs + outFinalCount);
               PolyscopeBridge::highlightIntersections(stdPairs, num_faces(meshA), num_faces(meshB));
@@ -933,6 +913,13 @@ int main(int argc, char** argv) {
               PolyscopeBridge::highlightIntersections({}, num_faces(meshA), num_faces(meshB));
             }
 
+            // Free dynamic pair buffer allocated on host
+            if(outFinalExactPairs) {
+              std::free(outFinalExactPairs);
+              outFinalExactPairs = nullptr;
+            }
+
+            // 5. Output pipeline telemetry
             std::cout << "\n=======================================================\n";
             std::cout << "        ALTERNATIVE BVH TEST PIPELINE STATS           \n";
             std::cout << "=======================================================\n";
@@ -988,6 +975,7 @@ int main(int argc, char** argv) {
           }
         }
       }
+    
       // } else if(cmd == "stats") {
       //   if(!isLoaded) {
       //     std::cout << "Error: No meshes loaded. Run 'load' first.\n";

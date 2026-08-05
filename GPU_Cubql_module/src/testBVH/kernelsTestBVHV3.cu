@@ -40,7 +40,6 @@
 #include "utils.h"
 
 
-
 #ifndef _ALLOC
 #define _ALLOC(ptr, count, stream, memResource)                                                                        \
   CUBQL_CUDA_CALL(MallocAsync((void**)&(ptr), (size_t)(count) * sizeof(*(ptr)), stream))
@@ -49,9 +48,6 @@
 #ifndef _FREE
 #define _FREE(ptr, stream, memResource) CUBQL_CUDA_CALL(FreeAsync((ptr), stream))
 #endif
-
-
-
 
 
 extern "C" void kernelsTestBVHV3(Mesh& meshAcpu,
@@ -70,8 +66,14 @@ extern "C" void kernelsTestBVHV3(Mesh& meshAcpu,
                                  int mode,
                                  int leafThreshold,
                                  ExecutionStats& stats,
-                                 int2*& outFinalExactPairs,      
-    size_t& outFinalCount) {
+                                 int2*& outFinalExactPairs,
+                                 size_t& outFinalCount,
+                                 Point3 m_centerA,
+                                 Point3 m_centerB,
+                                 double3 m_rotA,
+                                 double3 m_transA,
+                                 double3 m_rotB,
+                                 double3 m_transB) {
   if(numTrianglesA <= 0 || numTrianglesB <= 0) {
     return;
   }
@@ -94,34 +96,44 @@ extern "C" void kernelsTestBVHV3(Mesh& meshAcpu,
   // Allocate and stream indexed buffers for Mesh A
   double3* dVertsA = nullptr;
   uint3* dIndicesA = nullptr;
-  CUBQL_CUDA_CALL(Malloc(&dVertsA, numVertsA * sizeof(float3)));
-  CUBQL_CUDA_CALL(Memcpy(dVertsA, hVertsA, numVertsA * sizeof(float3), cudaMemcpyHostToDevice));
-  CUBQL_CUDA_CALL(Malloc(&dIndicesA, numTrianglesA * sizeof(uint3)));
-  CUBQL_CUDA_CALL(Memcpy(dIndicesA, hIndicesA, numTrianglesA * sizeof(uint3), cudaMemcpyHostToDevice));
+  CUBQL_CUDA_CALL(MallocAsync((void**)&dVertsA, numVertsA * sizeof(double3), stream));
+  CUBQL_CUDA_CALL(MemcpyAsync(dVertsA, hVertsA, numVertsA * sizeof(double3), cudaMemcpyHostToDevice, stream));
+  CUBQL_CUDA_CALL(MallocAsync((void**)&dIndicesA, numTrianglesA * sizeof(uint3), stream));
+  CUBQL_CUDA_CALL(MemcpyAsync(dIndicesA, hIndicesA, numTrianglesA * sizeof(uint3), cudaMemcpyHostToDevice, stream));
 
   // Allocate and stream indexed buffers for Mesh B
   double3* dVertsB = nullptr;
   uint3* dIndicesB = nullptr;
-  CUBQL_CUDA_CALL(Malloc(&dVertsB, numVertsB * sizeof(float3)));
-  CUBQL_CUDA_CALL(Memcpy(dVertsB, hVertsB, numVertsB * sizeof(float3), cudaMemcpyHostToDevice));
-  CUBQL_CUDA_CALL(Malloc(&dIndicesB, numTrianglesB * sizeof(uint3)));
-  CUBQL_CUDA_CALL(Memcpy(dIndicesB, hIndicesB, numTrianglesB * sizeof(uint3), cudaMemcpyHostToDevice));
+  CUBQL_CUDA_CALL(MallocAsync((void**)&dVertsB, numVertsB * sizeof(double3), stream));
+  CUBQL_CUDA_CALL(MemcpyAsync(dVertsB, hVertsB, numVertsB * sizeof(double3), cudaMemcpyHostToDevice, stream));
+  CUBQL_CUDA_CALL(MallocAsync((void**)&dIndicesB, numTrianglesB * sizeof(uint3), stream));
+  CUBQL_CUDA_CALL(MemcpyAsync(dIndicesB, hIndicesB, numTrianglesB * sizeof(uint3), cudaMemcpyHostToDevice, stream));
 
+  // --------------------------------------------------------------------
+  // TRANSFORM VERTICES IN-PLACE (WORLD SPACE ALIGNMENT)
+  // --------------------------------------------------------------------
+  Mat3x3 RA = makeRotationMatrixDeg(m_rotA.x, m_rotA.y, m_rotA.z);
+  double3 cA = make_double3(m_centerA.x(), m_centerA.y(), m_centerA.z());
+  launchTransformVertices(dVertsA, dVertsA, numVertsA, RA, cA, m_transA, stream);
 
+  Mat3x3 RB = makeRotationMatrixDeg(m_rotB.x, m_rotB.y, m_rotB.z);
+  double3 cB = make_double3(m_centerB.x(), m_centerB.y(), m_centerB.z());
+  launchTransformVertices(dVertsB, dVertsB, numVertsB, RB, cB, m_transB, stream);
 
-cuBQL::box3f* dBoxesA;
-cuBQL::box3f* dBoxesB;
-  // BVH Bounding Box Buffers
+  // --------------------------------------------------------------------
+  // BVH BOUNDING BOX GENERATION
+  // --------------------------------------------------------------------
+  cuBQL::box3f* dBoxesA;
+  cuBQL::box3f* dBoxesB;
   CUBQL_CUDA_CALL(MallocAsync((void**)&dBoxesA, numTrianglesA * sizeof(cuBQL::box3f), stream));
   CUBQL_CUDA_CALL(MallocAsync((void**)&dBoxesB, numTrianglesB * sizeof(cuBQL::box3f), stream));
 
-  // Generate initial bounding boxes directly from vertices and indices
-  generateBoxesTrisKernel<<<cuBQL::divRoundUp(numTrianglesA, 256), 256, 0, stream>>>(dBoxesA, dVertsA,
-                                                                                         dIndicesA, numTrianglesA);
+  // Generate initial bounding boxes directly from transformed vertices and indices
+  generateBoxesTrisKernel<<<cuBQL::divRoundUp(numTrianglesA, 256), 256, 0, stream>>>(dBoxesA, dVertsA, dIndicesA,
+                                                                                     numTrianglesA);
 
-  generateBoxesTrisKernel<<<cuBQL::divRoundUp(numTrianglesB, 256), 256, 0, stream>>>(dBoxesB, dVertsB,
-                                                                                         dIndicesB, numTrianglesB);
-
+  generateBoxesTrisKernel<<<cuBQL::divRoundUp(numTrianglesB, 256), 256, 0, stream>>>(dBoxesB, dVertsB, dIndicesB,
+                                                                                     numTrianglesB);
 
 
   cudaDeviceSynchronize();
@@ -293,7 +305,8 @@ cuBQL::box3f* dBoxesB;
   CUBQL_CUDA_CALL(StreamSynchronize(stream));
   double forestAMs = (cuBQL::getCurrentTime() - tForestAStart) * 1000.0;
   stats.buildRefitMeshAMs += forestAMs;
-  // std::cout << " -> Mesh A Forest BVH Expansion     : " << forestAMs << " ms | Nodes: " << bvhA.numNodes << std::endl;
+  // std::cout << " -> Mesh A Forest BVH Expansion     : " << forestAMs << " ms | Nodes: " << bvhA.numNodes <<
+  // std::endl;
 
   // --- BUILD FOREST MESH B ---
   double tForestBStart = cuBQL::getCurrentTime();
@@ -305,7 +318,8 @@ cuBQL::box3f* dBoxesB;
   CUBQL_CUDA_CALL(StreamSynchronize(stream));
   double forestBMs = (cuBQL::getCurrentTime() - tForestBStart) * 1000.0;
   stats.buildRefitMeshBMs += forestBMs;
-  // std::cout << " -> Mesh B Forest BVH Expansion     : " << forestBMs << " ms | Nodes: " << bvhB.numNodes << std::endl;
+  // std::cout << " -> Mesh B Forest BVH Expansion     : " << forestBMs << " ms | Nodes: " << bvhB.numNodes <<
+  // std::endl;
 
 
   // --------------------------------------------------------------------
@@ -364,48 +378,46 @@ cuBQL::box3f* dBoxesB;
   cudaDeviceSynchronize();
   double tGpuBfsEnd = cuBQL::getCurrentTime();
 
-    Point3 m_centerA = Point3{0.0, 0.0, 0.0};
-    Point3 m_centerB = Point3{0.0, 0.0, 0.0};
-    double3 m_rotA    = double3{0.0, 0.0, 0.0};
-    double3 m_transA  = double3{0.0, 0.0, 0.0};
-    double3 m_rotB    = double3{0.0, 0.0, 0.0};
-    double3 m_transB  = double3{0.0, 0.0, 0.0};
+  // Point3 m_centerA = Point3{0.0, 0.0, 0.0};
+  // Point3 m_centerB = Point3{0.0, 0.0, 0.0};
+  // double3 m_rotA    = double3{0.0, 0.0, 0.0};
+  // double3 m_transA  = double3{0.0, 0.0, 0.0};
+  // double3 m_rotB    = double3{0.0, 0.0, 0.0};
+  // double3 m_transB  = double3{0.0, 0.0, 0.0};
 
   finalCandidatePairs = executeBatchedCrossIntersectionLoopDouble(
-        meshAcpu, meshBcpu, batchMultiplier, totalBatches, d_outPairsA, d_outPairsB, d_reverseMapB,
-        d_markedNodeIndicesB, d_outOffsetsB, d_outPrimsFlatB, d_nodeDescendantCountsB, finalActiveCellsB, bvhA,
-        dBoxesA, // <-- ADDED: Precomputed boxes for Mesh A
-        dBoxesB, // <-- ADDED: Precomputed boxes for Mesh B
-        dVertsA, dIndicesA, dVertsB, dIndicesB, outFinalExactPairs, outFinalCount, tracker, m_centerA,
-        m_centerB, m_rotA, m_transA, m_rotB, m_transB, stream);
+      meshAcpu, meshBcpu, batchMultiplier, totalBatches, d_outPairsA, d_outPairsB, d_reverseMapB, d_markedNodeIndicesB,
+      d_outOffsetsB, d_outPrimsFlatB, d_nodeDescendantCountsB, finalActiveCellsB, bvhA,
+      dBoxesA, // <-- ADDED: Precomputed boxes for Mesh A
+      dBoxesB, // <-- ADDED: Precomputed boxes for Mesh B
+      dVertsA, dIndicesA, dVertsB, dIndicesB, outFinalExactPairs, outFinalCount, tracker, m_centerA, m_centerB, m_rotA,
+      m_transA, m_rotB, m_transB, stream);
 
 
+  //   if(activateAsyncDownload == 0) {
 
-//   if(activateAsyncDownload == 0) {
+  //     finalCandidatePairs = executeBatchedCrossIntersectionLoopV2(
+  //         meshAcpu, meshBcpu, batchMultiplier, totalBatches, d_outPairsA, d_outPairsB, d_reverseMapB,
+  //         d_markedNodeIndicesB, d_outOffsetsB, d_outPrimsFlatB, d_nodeDescendantCountsB, finalActiveCellsB, bvhA,
+  //         dMeshA, dMeshB, dMeshMetricsA, dMeshMetricsB, finalExactPairs, tracker, stream);
 
-//     finalCandidatePairs = executeBatchedCrossIntersectionLoopV2(
-//         meshAcpu, meshBcpu, batchMultiplier, totalBatches, d_outPairsA, d_outPairsB, d_reverseMapB,
-//         d_markedNodeIndicesB, d_outOffsetsB, d_outPrimsFlatB, d_nodeDescendantCountsB, finalActiveCellsB, bvhA, dMeshA,
-//         dMeshB, dMeshMetricsA, dMeshMetricsB, finalExactPairs, tracker, stream);
-
-//   } else {
-//     finalCandidatePairs = executeBatchedCrossIntersectionLoopV3(
-//         meshAcpu, meshBcpu, batchMultiplier, totalBatches, d_outPairsA, d_outPairsB, d_reverseMapB,
-//         d_markedNodeIndicesB, d_outOffsetsB, d_outPrimsFlatB, d_nodeDescendantCountsB, finalActiveCellsB, bvhA, dMeshA,
-//         dMeshB, dMeshMetricsA, dMeshMetricsB, finalExactPairs, tracker, stream, activateAsyncDownload);
-//   }
+  //   } else {
+  //     finalCandidatePairs = executeBatchedCrossIntersectionLoopV3(
+  //         meshAcpu, meshBcpu, batchMultiplier, totalBatches, d_outPairsA, d_outPairsB, d_reverseMapB,
+  //         d_markedNodeIndicesB, d_outOffsetsB, d_outPrimsFlatB, d_nodeDescendantCountsB, finalActiveCellsB, bvhA,
+  //         dMeshA, dMeshB, dMeshMetricsA, dMeshMetricsB, finalExactPairs, tracker, stream, activateAsyncDownload);
+  //   }
   // --------------------------------------------------------------------
   // EXPLICIT CLEANUP & RECOVERY METRIC TRACKING
   // --------------------------------------------------------------------
 
-  //std::cout << "Starting to clean up" << std::endl;
+  // std::cout << "Starting to clean up" << std::endl;
 
   double tCleanupStart = cuBQL::getCurrentTime();
 
-  //CUBQL_CUDA_CALL(Free(dMeshA));
-  CUBQL_CUDA_CALL(Free(dBoxesA));
-  //CUBQL_CUDA_CALL(Free(dMeshB));
-  CUBQL_CUDA_CALL(Free(dBoxesB));
+  // CUBQL_CUDA_CALL(Free(dMeshA));
+  CUBQL_CUDA_CALL(FreeAsync(dBoxesA, stream));
+  CUBQL_CUDA_CALL(FreeAsync(dBoxesB, stream));
 
   // Release the intermediate indexed topology allocations
   CUBQL_CUDA_CALL(Free(dVertsA));

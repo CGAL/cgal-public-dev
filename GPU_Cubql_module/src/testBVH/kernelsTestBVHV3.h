@@ -37,4 +37,4 @@ extern "C" void kernelsTestBVHV3(Mesh & meshAcpu, Mesh & meshBcpu, const double3
                                  int leafThreshold,
                                  ExecutionStats& stats,
                                  int2*& outFinalExactPairs,      
-                                size_t& outFinalCount) ;
+                                size_t& outFinalCount, Point3 m_centerA, Point3 m_centerB, double3 m_rotA, double3 m_transA, double3 m_rotB, double3 m_transB) ;

@@ -381,3 +381,41 @@ void launchGenerateBoxesTris(cuBQL::box3f* dBoxes,
   int gridSize = (numTriangles + blockSize - 1) / blockSize;
   generateBoxesTrisKernel<<<gridSize, blockSize, 0, stream>>>(dBoxes, dVerts, dIndices, numTriangles);
 }
+
+// -----------------------------------------------------------------------------
+// Rigid Body Transformation Device Helpers & Kernels
+// -----------------------------------------------------------------------------
+
+__device__ inline double3 transformPoint(const double3& p, const Mat3x3& R, double3 center, double3 trans) {
+  double x = p.x - center.x;
+  double y = p.y - center.y;
+  double z = p.z - center.z;
+
+  double rx = R.m[0][0] * x + R.m[0][1] * y + R.m[0][2] * z;
+  double ry = R.m[1][0] * x + R.m[1][1] * y + R.m[1][2] * z;
+  double rz = R.m[2][0] * x + R.m[2][1] * y + R.m[2][2] * z;
+
+  return make_double3(rx + center.x + trans.x, ry + center.y + trans.y, rz + center.z + trans.z);
+}
+
+__global__ void transformVerticesKernel(
+    double3* dVertsOut, const double3* dVertsOrig, int numVerts, Mat3x3 R, double3 center, double3 trans) {
+  int idx = threadIdx.x + blockIdx.x * blockDim.x;
+  if(idx >= numVerts)
+    return;
+
+  dVertsOut[idx] = transformPoint(dVertsOrig[idx], R, center, trans);
+}
+
+void launchTransformVertices(double3* dVertsOut,
+                             const double3* dVertsOrig,
+                             int numVerts,
+                             Mat3x3 R,
+                             double3 center,
+                             double3 trans,
+                             cudaStream_t stream) {
+  if (numVerts <= 0) return;
+  int blockSize = 256;
+  int gridSize = (numVerts + blockSize - 1) / blockSize;
+  transformVerticesKernel<<<gridSize, blockSize, 0, stream>>>(dVertsOut, dVertsOrig, numVerts, R, center, trans);
+}

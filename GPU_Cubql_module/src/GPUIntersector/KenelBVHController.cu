@@ -55,58 +55,58 @@
 // -----------------------------------------------------------------------------
 // Helper 3x3 Matrix Structure & Rigid Body Device Transformations (Double Precision)
 // -----------------------------------------------------------------------------
-struct Mat3x3
-{
-  double m[3][3];
-};
+// struct Mat3x3
+// {
+//   double m[3][3];
+// };
 
-inline Mat3x3 makeRotationMatrixDeg(double rxDeg, double ryDeg, double rzDeg) {
-  const double DEG_TO_RAD = 3.14159265358979323846 / 180.0;
-  double radX = rxDeg * DEG_TO_RAD;
-  double radY = ryDeg * DEG_TO_RAD;
-  double radZ = rzDeg * DEG_TO_RAD;
+// inline Mat3x3 makeRotationMatrixDeg(double rxDeg, double ryDeg, double rzDeg) {
+//   const double DEG_TO_RAD = 3.14159265358979323846 / 180.0;
+//   double radX = rxDeg * DEG_TO_RAD;
+//   double radY = ryDeg * DEG_TO_RAD;
+//   double radZ = rzDeg * DEG_TO_RAD;
 
-  double cx = cos(radX), sx = sin(radX);
-  double cy = cos(radY), sy = sin(radY);
-  double cz = cos(radZ), sz = sin(radZ);
+//   double cx = cos(radX), sx = sin(radX);
+//   double cy = cos(radY), sy = sin(radY);
+//   double cz = cos(radZ), sz = sin(radZ);
 
-  Mat3x3 R;
-  // Composite Rotation: R = Rz * Ry * Rx
-  R.m[0][0] = cy * cz;
-  R.m[0][1] = sx * sy * cz - cx * sz;
-  R.m[0][2] = cx * sy * cz + sx * sz;
+//   Mat3x3 R;
+//   // Composite Rotation: R = Rz * Ry * Rx
+//   R.m[0][0] = cy * cz;
+//   R.m[0][1] = sx * sy * cz - cx * sz;
+//   R.m[0][2] = cx * sy * cz + sx * sz;
 
-  R.m[1][0] = cy * sz;
-  R.m[1][1] = sx * sy * sz + cx * cz;
-  R.m[1][2] = cx * sy * sz - sx * cz;
+//   R.m[1][0] = cy * sz;
+//   R.m[1][1] = sx * sy * sz + cx * cz;
+//   R.m[1][2] = cx * sy * sz - sx * cz;
 
-  R.m[2][0] = -sy;
-  R.m[2][1] = sx * cy;
-  R.m[2][2] = cx * cy;
+//   R.m[2][0] = -sy;
+//   R.m[2][1] = sx * cy;
+//   R.m[2][2] = cx * cy;
 
-  return R;
-}
+//   return R;
+// }
 
-__device__ inline double3 transformPoint(const double3& p, const Mat3x3& R, double3 center, double3 trans) {
-  double x = p.x - center.x;
-  double y = p.y - center.y;
-  double z = p.z - center.z;
+// __device__ inline double3 transformPoint(const double3& p, const Mat3x3& R, double3 center, double3 trans) {
+//   double x = p.x - center.x;
+//   double y = p.y - center.y;
+//   double z = p.z - center.z;
 
-  double rx = R.m[0][0] * x + R.m[0][1] * y + R.m[0][2] * z;
-  double ry = R.m[1][0] * x + R.m[1][1] * y + R.m[1][2] * z;
-  double rz = R.m[2][0] * x + R.m[2][1] * y + R.m[2][2] * z;
+//   double rx = R.m[0][0] * x + R.m[0][1] * y + R.m[0][2] * z;
+//   double ry = R.m[1][0] * x + R.m[1][1] * y + R.m[1][2] * z;
+//   double rz = R.m[2][0] * x + R.m[2][1] * y + R.m[2][2] * z;
 
-  return make_double3(rx + center.x + trans.x, ry + center.y + trans.y, rz + center.z + trans.z);
-}
+//   return make_double3(rx + center.x + trans.x, ry + center.y + trans.y, rz + center.z + trans.z);
+// }
 
-__global__ void transformVerticesKernel(
-    double3* dVertsOut, const double3* dVertsOrig, int numVerts, Mat3x3 R, double3 center, double3 trans) {
-  int idx = threadIdx.x + blockIdx.x * blockDim.x;
-  if(idx >= numVerts)
-    return;
+// __global__ void transformVerticesKernel(
+//     double3* dVertsOut, const double3* dVertsOrig, int numVerts, Mat3x3 R, double3 center, double3 trans) {
+//   int idx = threadIdx.x + blockIdx.x * blockDim.x;
+//   if(idx >= numVerts)
+//     return;
 
-  dVertsOut[idx] = transformPoint(dVertsOrig[idx], R, center, trans);
-}
+//   dVertsOut[idx] = transformPoint(dVertsOrig[idx], R, center, trans);
+// }
 
 // __global__ void generateBoxesTrisKernel(cuBQL::box3f* __restrict__ dBoxes,
 //                                      const double3* __restrict__ dVerts,
@@ -328,16 +328,12 @@ void KernelBVHController::setTransformBoth(double3 rotDegA,
     if(runA) {
       Mat3x3 RA = makeRotationMatrixDeg(rotDegA.x, rotDegA.y, rotDegA.z);
       double3 cA = make_double3(m_centerA.x(), m_centerA.y(), m_centerA.z());
-      int gridVertsA = cuBQL::divRoundUp(m_numVertsA, block);
-      transformVerticesKernel<<<gridVertsA, block, 0, m_stream>>>(m_dVertsA, m_dVertsAOrig, m_numVertsA, RA, cA,
-                                                                  transA);
+      launchTransformVertices(m_dVertsA, m_dVertsAOrig, m_numVertsA, RA, cA, transA, m_stream);
     }
     if(runB) {
       Mat3x3 RB = makeRotationMatrixDeg(rotDegB.x, rotDegB.y, rotDegB.z);
       double3 cB = make_double3(m_centerB.x(), m_centerB.y(), m_centerB.z());
-      int gridVertsB = cuBQL::divRoundUp(m_numVertsB, block);
-      transformVerticesKernel<<<gridVertsB, block, 0, m_stream>>>(m_dVertsB, m_dVertsBOrig, m_numVertsB, RB, cB,
-                                                                  transB);
+      launchTransformVertices(m_dVertsB, m_dVertsBOrig, m_numVertsB, RB, cB, transB, m_stream);
     }
     cudaEventRecord(evStopTV, m_stream);
 
