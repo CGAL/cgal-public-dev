@@ -1,5 +1,5 @@
-#ifndef BATCHED_CROSS_INTERSECTION_DOUBLE_H
-#define BATCHED_CROSS_INTERSECTION_DOUBLE_H
+#ifndef BATCHED_CROSS_INTERSECTION_DOUBLE_OLD_H
+#define BATCHED_CROSS_INTERSECTION_DOUBLE_OLD_H
 
 #include "cuBQL/bvh.h"
 #include <thrust/device_vector.h>
@@ -13,11 +13,7 @@
 #include "../src/CPU/CgalDefinitions.h"
 #include "samples/common/loadOBJ.h"
 
-/**
- * Batched Cross-Intersection Loop using direct precomputed cuBQL::box3f arrays
- * for coarse AABB overlap checks, and double3 vertex & uint3 index buffers for exact GPU predicates.
- */
-uint64_t executeBatchedCrossIntersectionLoopDouble(
+uint64_t executeBatchedCrossIntersectionLoopDoubleOld(
     Mesh & meshAcpu, Mesh & meshBcpu,
     int batchMultiplier,
     int totalBatches,
@@ -36,11 +32,10 @@ uint64_t executeBatchedCrossIntersectionLoopDouble(
     const uint3* d_indicesA,
     const double3* d_vertsB,
     const uint3* d_indicesB,
-    int2*& outFinalExactPairs,       // Fast raw pointer return
+    int2*& outFinalExactPairs,       
     size_t& outFinalCount, 
     IntersectionTimeTracker& tracker, Point3 m_centerA, Point3 m_centerB, double3 m_rotA, double3 m_transA, double3 m_rotB, double3 m_transB,
-    bool enableGpuDouble = true,
     cudaStream_t stream = 0
 );
 
-#endif // BATCHED_CROSS_INTERSECTION_DOUBLE_H
+#endif // BATCHED_CROSS_INTERSECTION_DOUBLE_OLD_H

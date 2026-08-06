@@ -5,19 +5,17 @@
 #include <vector_types.h>
 #include "PairStatus.h"
 
-/**
- * Executes double-precision geometric interval evaluation on overlapping candidate pairs.
- * Fetches triangle vertices directly on GPU using vertex (double3) and index (uint3) buffers.
- * Pairs containing 0 in their determinant intervals return PAIR_YELLOW for CPU exact fallback.
- */
+// Executes a double-single (two-float) precision evaluation on the yellow list.
+// Outputs PAIR_GREEN, PAIR_NO, or PAIR_YELLOW (for the final exact CPU fallback).
 void evaluateAndCompactPairsDouble(
-    int2* dCandidatePairs,
+    const int2* dYellowCandidatePairs,
     int* dPairStatuses,
     const double3* dVertsA,
     const uint3* dIndicesA,
     const double3* dVertsB,
     const uint3* dIndicesB,
-    int totalBatchPairs,
-    cudaStream_t stream = 0);
+    int numYellowPairs,
+    cudaStream_t stream = 0
+);
 
 #endif // GPU_PREDICATES_CHECK_DOUBLE_H

@@ -342,17 +342,20 @@ FetchContent_MakeAvailable(polyscope)
 find_package(PkgConfig REQUIRED)
 pkg_check_modules(READLINE REQUIRED readline)
 
-set_source_files_properties(apps/mainApplication.cpp PROPERTIES LANGUAGE CUDA)
+#set_source_files_properties(apps/mainApplication.cpp PROPERTIES LANGUAGE CUDA)
+set_source_files_properties(apps/mainApplicationRefactored.cpp PROPERTIES LANGUAGE CUDA)
+
+# src/testBVH/batchedCrossIntersectionDoubleOld.cu
+# src/testBVH/batchedCrossIntersectionV2.cu
+# src/testBVH/batchedCrossIntersectionV3.cu
 
 add_executable(MainApp 
-    apps/mainApplication.cpp 
+    apps/mainApplicationRefactored.cpp 
     src/GPUIntersector/KenelBVHController.cu
     src/testBVH/crossCheck.cu
     src/testBVH/rapidDescendKernel.cu
     src/testBVH/batchedCrossIntersectionCommon.cu
-    src/testBVH/batchedCrossIntersectionV2.cu
     src/testBVH/batchedCrossIntersectionDouble.cu
-    src/testBVH/batchedCrossIntersectionV3.cu
     src/testBVH/DualTreeStep.cu
     src/Warmup/cuda_warmup.cu
     src/custom_pipeline/GPUPredicatesCheckV2.cu

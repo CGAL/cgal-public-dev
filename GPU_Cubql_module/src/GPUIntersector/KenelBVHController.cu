@@ -37,9 +37,10 @@
 #include "../testBVH/DualTreeStep.h"
 #include "../testBVH/rapidDescendKernel.h"
 // #include "../testBVH/batchedCrossIntersection.h"
-#include "../testBVH/batchedCrossIntersectionV2.h"
+//#include "../testBVH/batchedCrossIntersectionV2.h"
 #include "../testBVH/batchedCrossIntersectionDouble.h"
-#include "../testBVH/batchedCrossIntersectionV3.h"
+//#include "../testBVH/batchedCrossIntersectionDoubleOld.h"
+//#include "../testBVH/batchedCrossIntersectionV3.h"
 #include "../custom_pipeline/TriangleDouble.h"
 
 
@@ -630,7 +631,7 @@ void KernelBVHController::runIntersectionPipeline(int batchMultiplier,
                                                   int activateAsyncDownload,
                                                   int2*& outFinalExactPairs, // Fast raw pointer return
                                                   size_t& outFinalCount,
-                                                  ExecutionStats& stats) {
+                                                  ExecutionStats& stats, bool gpuDouble) {
   double tPipelineStart = cuBQL::getCurrentTime();
 
   m_dOutPairsA.clear();
@@ -698,7 +699,24 @@ void KernelBVHController::runIntersectionPipeline(int batchMultiplier,
         m_dBoxesA, // <-- ADDED: Precomputed boxes for Mesh A
         m_dBoxesB, // <-- ADDED: Precomputed boxes for Mesh B
         m_dVertsA, m_dIndicesA, m_dVertsB, m_dIndicesB, outFinalExactPairs, outFinalCount, tracker, m_centerA,
-        m_centerB, m_rotA, m_transA, m_rotB, m_transB, m_stream);
+        m_centerB, m_rotA, m_transA, m_rotB, m_transB, gpuDouble, m_stream);
+
+    // if (gpuDouble)
+    // {
+    
+    // }
+    // else
+    // {
+    //   finalCandidatePairs = executeBatchedCrossIntersectionLoopDoubleOld(
+    //     *m_meshAcpu, *m_meshBcpu, batchMultiplier, totalBatches, m_dOutPairsA, m_dOutPairsB, m_dReverseMapB,
+    //     m_dMarkedNodeIndicesB, m_dOutOffsetsB, m_dOutPrimsFlatB, m_dNodeDescendantCountsB, m_hOutMarkedCountB, m_bvhA,
+    //     m_dBoxesA, // <-- ADDED: Precomputed boxes for Mesh A
+    //     m_dBoxesB, // <-- ADDED: Precomputed boxes for Mesh B
+    //     m_dVertsA, m_dIndicesA, m_dVertsB, m_dIndicesB, outFinalExactPairs, outFinalCount, tracker, m_centerA,
+    //     m_centerB, m_rotA, m_transA, m_rotB, m_transB, m_stream);
+
+
+    // }
   }
 
   double tPipelineEnd = cuBQL::getCurrentTime();
