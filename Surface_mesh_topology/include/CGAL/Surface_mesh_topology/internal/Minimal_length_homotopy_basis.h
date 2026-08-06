@@ -124,8 +124,9 @@ public:
       Path loop(m_original_mesh);
       // Trace back the path from `a` to root
       for (int ind=index_a-1; ind!=-1; ind=this->m_trace_index[ind])
-      { this->add_to_cycle(this->m_spanning_tree[ind], loop, true); }
-      loop.reverse();                    // now root -> a
+      { this->add_to_cycle(this->m_spanning_tree[ind], loop, true); } 
+      loop.reverse(); 
+      // w root -> a
       this->add_to_cycle(dh, loop, false); // the generator edge itself
       // Trace back the path from `b` to root
       for (int ind=index_b-1; ind!=-1; ind=this->m_trace_index[ind])
