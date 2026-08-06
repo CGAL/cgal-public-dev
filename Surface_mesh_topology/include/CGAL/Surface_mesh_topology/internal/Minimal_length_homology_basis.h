@@ -9,8 +9,8 @@
 //
 // Author(s)     : Raphael Costil
 //
-#ifndef CGAL_MINIMAL_HOMOLOGY_BASIS_H
-#define CGAL_MINIMAL_HOMOLOGY_BASIS_H
+#ifndef CGAL_MINIMAL_LENGTH_HOMOLOGY_BASIS_H
+#define CGAL_MINIMAL_LENGTH_HOMOLOGY_BASIS_H
 
 #include <CGAL/license/Surface_mesh_topology.h>
 
@@ -18,6 +18,7 @@
 
 #include <unordered_map>
 #include <queue>
+#include <boost/dynamic_bitset.hpp>
 
 namespace CGAL {
 namespace Surface_mesh_topology {
@@ -39,11 +40,11 @@ namespace internal {
 // Same precondition as Minimal_length_homotopy_basis: the input mesh is
 // assumed closed (no boundary).
 template <class Mesh_, bool Copy=true>
-class Minimal_homology_basis : private Minimal_length_homotopy_basis<Mesh_, Copy>
+class Minimal_length_homology_basis : private Minimal_length_homotopy_basis<Mesh_, Copy>
 {
 public:
   using Base = Minimal_length_homotopy_basis<Mesh_, Copy>;
-  using Self = Minimal_homology_basis<Mesh_, Copy>;
+  using Self = Minimal_length_homology_basis<Mesh_, Copy>;
   using Mesh = Mesh_;
 
   using Original_dart_const_descriptor = typename Base::Original_dart_const_descriptor;
@@ -55,7 +56,7 @@ public:
 
   using Base::get_local_map;
 
-  Minimal_homology_basis(const Mesh& amesh) : Base(amesh) {}
+  Minimal_length_homology_basis(const Mesh& amesh) : Base(amesh) {}
 
 protected:
   // Face id of every dart, and the number of faces -- filled by
@@ -67,16 +68,27 @@ protected:
   // through as function parameters.
   std::unordered_map<Dart_descriptor, int> m_face_id;
   int m_nb_faces;
+  int m_genus;
+
+  // Filled by compute_dual_BFS_tree() (Phase 1), reused directly by
+  // compute_annotations() (Phase 2) instead of being threaded through as
+  // parameters -- same idea as m_face_id/m_nb_faces. m_h_parent[f] is a
+  // dart belonging to face f, sitting at the edge shared with f's parent
+  // in the dual tree C (indexed like m_face_id). m_X holds the 2*genus
+  // generator-candidate darts (neither in T nor C).
+  Dart_container m_h_parent;
+  Dart_container m_X;
 
   // Computes the genus of the surface from Euler's formula
   // 2-(V-E+F) = 2*genus (valid for closed orientable input, the class'
-  // precondition), and fills m_face_id/m_nb_faces. V and E come from the
-  // generic BGL free functions num_vertices/num_edges on the *original*
-  // mesh (found by ADL, so this works unchanged for every Mesh_ the
-  // package supports -- Surface_mesh, Polyhedron_3, LCC_for_CMap_2,
-  // LCC_for_GMap_2). F comes from the inherited compute_face_ids instead
-  // of the BGL equivalent, since it numbers the faces as a byproduct of
-  // counting them, and that numbering is needed again in Phase 1.
+  // precondition), and fills m_face_id/m_nb_faces/m_genus. V and E come
+  // from the generic BGL free functions num_vertices/num_edges on the
+  // *original* mesh (found by ADL, so this works unchanged for every
+  // Mesh_ the package supports -- Surface_mesh, Polyhedron_3,
+  // LCC_for_CMap_2, LCC_for_GMap_2). F comes from the inherited
+  // compute_face_ids instead of the BGL equivalent, since it numbers the
+  // faces as a byproduct of counting them, and that numbering is needed
+  // again in Phase 1.
   int compute_genus()
   {
     m_nb_faces=this->compute_face_ids(m_face_id);
@@ -85,8 +97,9 @@ protected:
     int nb_edges=static_cast<int>(num_edges(this->m_original_mesh));
 
     int euler_characteristic=nb_vertices-nb_edges+m_nb_faces;
+    m_genus=(2-euler_characteristic)/2;
 
-    return (2-euler_characteristic)/2;
+    return m_genus;
   }
 
   // Builds a spanning tree C of the dual graph (faces as nodes), restricted
@@ -104,7 +117,7 @@ protected:
   // in C become X, the 2*genus generator-candidate edges (a byproduct of
   // the same traversal, same idea as
   // compute_candidate_edges/compute_generators in the sibling class).
-  void compute_dual_BFS_tree(Dart_container& h_parent, Dart_container& X)
+  void compute_dual_BFS_tree()
   {
     size_type in_tree=this->get_local_map().get_new_mark();
     for (Dart_descriptor dh : this->m_spanning_tree)
@@ -113,8 +126,8 @@ protected:
     size_type in_cotree=this->get_local_map().get_new_mark();
     size_type face_visited=this->get_local_map().get_new_mark();
 
-    h_parent.assign(m_nb_faces, Dart_descriptor());
-    X.clear();
+    m_h_parent.assign(m_nb_faces, Dart_descriptor());
+    m_X.clear();
 
     Dart_descriptor root_face_dart=this->get_local_map().darts().begin();
     int root_id=0;
@@ -129,7 +142,7 @@ protected:
 
       Dart_descriptor start;
       if (f_index==root_id) { start=root_face_dart; }
-      else { start=h_parent[f_index]; }
+      else { start=m_h_parent[f_index]; }
 
       for (auto it=this->get_local_map().template darts_of_cell_basic<2>(start).begin(),
                 itend=this->get_local_map().template darts_of_cell_basic<2>(start).end();
@@ -142,13 +155,13 @@ protected:
           int g_index=m_face_id.at(opp);
           if (!this->get_local_map().is_marked(opp, face_visited))
           {
-            h_parent[g_index]=opp;
+            m_h_parent[g_index]=opp;
             this->get_local_map().template mark_cell<1>(it, in_cotree);
             this->get_local_map().template mark_cell<2>(opp, face_visited);
             q.push(g_index);
           }
           else if (it<opp)
-          { X.push_back(it); }
+          { m_X.push_back(it); }
         }
       }
     }
@@ -166,12 +179,12 @@ protected:
   // early version of what the eventual public compute_basis(wf) will do;
   // used here so Phase 1 can be exercised end-to-end on an actual
   // instance.
-  int compute_tree_cotree(Dart_container& h_parent, Dart_container& X)
+  int compute_tree_cotree()
   {
     int genus=this->compute_genus();
     auto root=*(halfedges(this->m_original_mesh).begin());
     this->compute_root_spanning_tree(root);
-    this->compute_dual_BFS_tree(h_parent, X);
+    this->compute_dual_BFS_tree();
     return genus;
   }
 };
@@ -180,4 +193,4 @@ protected:
 } // namespace Surface_mesh_topology
 } // namespace CGAL
 
-#endif // CGAL_MINIMAL_HOMOLOGY_BASIS_H
+#endif // CGAL_MINIMAL_LENGTH_HOMOLOGY_BASIS_H
