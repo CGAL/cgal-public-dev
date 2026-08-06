@@ -144,6 +144,16 @@ public:
   { return compute_basis(root_vertex, WeightFunctor()); }
 
 protected:
+  // Re-exposed for further subclasses (e.g. Minimal_homology_basis): since
+  // this class privately inherits Shortest_noncontractible_cycle,
+  // m_spanning_tree is otherwise only visible to this class' own methods,
+  // not to anything deriving from it -- private inheritance does not
+  // forward access beyond the immediate derived class. Same idea as the
+  // already-public `using Base::get_local_map;` above, just protected
+  // instead of public since this is an implementation detail, not part of
+  // the public API.
+  using Base::m_spanning_tree;
+
   // Assigns an integer id (0-based) to every face of the local map, and
   // fills face_id so that every dart of a given face maps to that face's
   // id. Assumes the input mesh is closed (no boundary, so close<2>() added
