@@ -171,20 +171,89 @@ protected:
     this->get_local_map().free_mark(in_tree);
   }
 
-  // Wires Phase 0 and Phase 1 together: computes the genus (compute_genus,
-  // also filling m_face_id/m_nb_faces), builds the primal tree T from an
-  // arbitrary root (compute_root_spanning_tree, unweighted -- Phase 1 is
-  // purely structural, so any spanning tree works), then the dual tree C
-  // and the generator-candidate set X (compute_dual_BFS_tree). A partial,
-  // early version of what the eventual public compute_basis(wf) will do;
-  // used here so Phase 1 can be exercised end-to-end on an actual
-  // instance.
+  // Filled by compute_annotations() (Phase 2): the F_2^{2*genus}
+  // annotation of every dart, the same value for both darts of an edge.
+  std::unordered_map<Dart_descriptor, boost::dynamic_bitset<>> m_annotation;
+
+  // Computes the F_2^{2*genus} annotation of every edge (Phase 2): a
+  // bitvector of size 2*genus per dart, such that XOR-ing the annotations
+  // along any cycle gives its class in this basis of H_1(M; F_2). T-edges
+  // get the zero vector; X-edges get the 2*genus unit vectors of the
+  // basis, one each, in the order they were collected in m_X. C-edges are
+  // solved for by requiring the XOR around every face's contour to be
+  // zero: propagated recursively over the dual tree C, children before
+  // their parent (built from m_h_parent), so a face's parent edge is
+  // always the only unknown annotation left on its contour when that face
+  // is processed.
+  void compute_annotations()
+  {
+    m_annotation.clear();
+
+    boost::dynamic_bitset<> zero(2*m_genus);
+    for (Dart_descriptor dh : this->m_spanning_tree)
+    {
+      m_annotation[dh]=zero;
+      m_annotation[this->get_local_map().opposite2(dh)]=zero;
+    }
+
+    for (std::size_t i=0; i<m_X.size(); ++i)
+    {
+      boost::dynamic_bitset<> unit(2*m_genus);
+      unit[i]=true;
+      m_annotation[m_X[i]]=unit;
+      m_annotation[this->get_local_map().opposite2(m_X[i])]=unit;
+    }
+
+    std::vector<std::vector<int>> children(m_nb_faces);
+    for (int f=0; f<m_nb_faces; ++f)
+    {
+      if (f!=0)
+      {
+        int parent=m_face_id.at(this->get_local_map().opposite2(m_h_parent[f]));
+        children[parent].push_back(f);
+      }
+    }
+
+    propagate_annotation(0, children);
+  }
+
+  // Recursive helper for compute_annotations(): processes every child of
+  // f_index first, then (unless f_index is the root, face 0) walks the
+  // rest of f_index's own contour -- every dart from next(entry) back
+  // around to entry, i.e. every edge except the parent edge itself --
+  // XOR-ing their annotations, and assigns the result to that parent
+  // edge.
+  void propagate_annotation(int f_index, const std::vector<std::vector<int>>& children)
+  {
+    for (int child : children[f_index]) { propagate_annotation(child, children); }
+
+    if (f_index!=0)
+    {
+      Dart_descriptor entry=m_h_parent[f_index];
+      boost::dynamic_bitset<> value(2*m_genus);
+      for (Dart_descriptor it=this->get_local_map().next(entry); it!=entry;
+           it=this->get_local_map().next(it))
+      { value^=m_annotation.at(it); }
+      m_annotation[entry]=value;
+      m_annotation[this->get_local_map().opposite2(entry)]=value;
+    }
+  }
+
+  // Wires Phases 0-2 together: genus/face numbering (compute_genus), the
+  // primal tree T from an arbitrary root (compute_root_spanning_tree,
+  // unweighted -- Phases 1-2 are purely structural, so any spanning tree
+  // works), the dual tree C and generator set X (compute_dual_BFS_tree),
+  // then the F_2^{2*genus} edge annotations (compute_annotations). A
+  // partial, early version of what the eventual public compute_basis(wf)
+  // will do; used here so Phases 0-2 can be exercised end-to-end on an
+  // actual instance.
   int compute_tree_cotree()
   {
     int genus=this->compute_genus();
     auto root=*(halfedges(this->m_original_mesh).begin());
     this->compute_root_spanning_tree(root);
     this->compute_dual_BFS_tree();
+    this->compute_annotations();
     return genus;
   }
 };
