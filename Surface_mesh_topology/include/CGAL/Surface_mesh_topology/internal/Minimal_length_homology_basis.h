@@ -239,6 +239,130 @@ protected:
     }
   }
 
+  // One non-tree (relative to T_y) edge, with the length and F_2^{2*genus}
+  // vector of the candidate cycle it would close if kept as a basis
+  // generator rooted at y (see compute_candidates, not yet written).
+  // Sorted ascending by length, ready for Phase 4's greedy (unlike the
+  // sibling's Candidate<WeightFunctor>, which sorts descending for its
+  // Kruskal maximum-cotree).
+  template <class WeightFunctor>
+  struct Candidate
+  {
+    typename WeightFunctor::Weight_t weight;
+    boost::dynamic_bitset<> vector;
+    Dart_descriptor root; // y
+    Dart_descriptor edge; // e
+
+    bool operator<(const Candidate& other) const
+    { return weight<other.weight; }
+  };
+
+  // The array index of v_index's parent in the current T_y. m_trace_index
+  // already stores parent_vertex_index-1 (that's exactly why compute_basis
+  // in the sibling class treats -1 as "the root"): adding 1 back always
+  // recovers the correct 0-based vertex index, root included (-1+1=0), no
+  // special case needed.
+  int parent_index(int v_index)
+  { return this->m_trace_index[v_index-1]+1; }
+
+  // Walk-to-root-with-memoization: returns A_y[v] (XOR of edge annotations
+  // along T_y from y to the vertex with vertex_info()==v_index). value[idx]
+  // holds A_y[idx] for every vertex already computed so far, computed[idx]
+  // says whether that entry is filled in yet; both are meant to be created
+  // once per root y and passed back into this function for every candidate
+  // edge of that y (see compute_candidates, not yet written), so a vertex
+  // already computed for one candidate is an instant lookup for the next.
+  // Computes v_index's own entry, if not already known, by following
+  // parent_index up from v_index until an already-known vertex is found
+  // (path ends up ordered from v_index towards that ancestor), then
+  // filling in every visited vertex in the opposite order (ancestor-side
+  // first), since a vertex's own entry needs its parent's to already be
+  // known. i counts down from path.size() to 1 (not path.size()-1 to 0)
+  // so it stays a valid size_t the whole time -- decrementing an unsigned
+  // 0 would wrap around instead of going negative.
+  boost::dynamic_bitset<> get_annotation_to_root(
+      int v_index, std::vector<bool>& computed, std::vector<boost::dynamic_bitset<>>& value)
+  {
+    std::vector<int> path;
+    int idx=v_index;
+    while (!computed[idx])
+    {
+      path.push_back(idx);
+      idx=parent_index(idx);
+    }
+
+    for (std::size_t i=path.size(); i>0; --i)
+    {
+      int cur=path[i-1];
+      value[cur]=value[parent_index(cur)]^this->m_annotation.at(this->m_spanning_tree[cur-1]);
+      computed[cur]=true;
+    }
+
+    return value[v_index];
+  }
+
+  // Phase 3: for every vertex y of the local map, reruns
+  // compute_root_spanning_tree(y, wf) -- a fresh Dijkstra/BFS tree T_y,
+  // unrelated to the primal tree T built once in Phase 1 -- and lists
+  // every edge outside T_y whose candidate-loop homology class (via
+  // get_annotation_to_root) is non-zero. Iterates over every dart of the
+  // local map, not attributes<1>(), because this map type has no edge
+  // attribute defined at all (checked: Items_for_shortest_noncontractible_
+  // cycle's Dart_wrapper only declares a vertex attribute,
+  // attributes<1>() does not even compile) -- same reason the sibling's
+  // compute_candidate_edges does the same thing, canonicalizing each edge
+  // via it<opp so it's only considered once.
+  template <class WeightFunctor>
+  std::vector<Candidate<WeightFunctor>> compute_candidates(const WeightFunctor& wf)
+  {
+    std::vector<Candidate<WeightFunctor>> candidates;
+
+    for (auto ity=this->get_local_map().template attributes<0>().begin(),
+              itYend=this->get_local_map().template attributes<0>().end();
+         ity!=itYend; ++ity)
+    {
+      Dart_descriptor y=this->get_local_map().template dart_of_attribute<0>(ity);
+      Original_dart_const_descriptor original_y=this->m_copy_to_origin.at(y);
+      std::vector<typename WeightFunctor::Weight_t> distance_from_root=
+        this->compute_root_spanning_tree(original_y, wf);
+
+      std::vector<bool> computed(distance_from_root.size(), false);
+      std::vector<boost::dynamic_bitset<>> annotation_from_y(
+          distance_from_root.size(), boost::dynamic_bitset<>(2*m_genus));
+      computed[0]=true;
+
+      size_type in_tree_y=this->get_local_map().get_new_mark();
+      for (Dart_descriptor dh : this->m_spanning_tree)
+      { if (!this->get_local_map().is_marked(dh, in_tree_y)) { this->get_local_map().template mark_cell<1>(dh, in_tree_y); } }
+
+      for (auto it=this->get_local_map().darts().begin(),
+                itend=this->get_local_map().darts().end(); it!=itend; ++it)
+      {
+        Dart_descriptor opp=this->get_local_map().opposite2(it);
+        if (it<opp && !this->get_local_map().is_marked(it, in_tree_y))
+        {
+          Dart_descriptor a=it, b=this->get_local_map().next(it);
+          int ia=this->vertex_info(a), ib=this->vertex_info(b);
+
+          boost::dynamic_bitset<> Aa=get_annotation_to_root(ia, computed, annotation_from_y);
+          boost::dynamic_bitset<> Ab=get_annotation_to_root(ib, computed, annotation_from_y);
+          boost::dynamic_bitset<> vec=Aa^this->m_annotation.at(it)^Ab;
+
+          if (vec.any())
+          {
+            typename WeightFunctor::Weight_t len=
+              distance_from_root[ia]+distance_from_root[ib]+wf(this->m_copy_to_origin.at(it));
+            candidates.push_back(Candidate<WeightFunctor>{len, vec, y, it});
+          }
+        }
+      }
+
+      this->get_local_map().free_mark(in_tree_y);
+    }
+
+    return candidates;
+  }
+
   // Wires Phases 0-2 together: genus/face numbering (compute_genus), the
   // primal tree T from an arbitrary root (compute_root_spanning_tree,
   // unweighted -- Phases 1-2 are purely structural, so any spanning tree
