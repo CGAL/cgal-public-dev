@@ -92,9 +92,9 @@ bool read_off_file(const std::string& filename,
 // Center and scale into [-1,1]^3
 // ------------------------------------------------------------
 
-void center_and_scale_point_cloud(std::vector<Point>& points) {
+double center_and_scale_point_cloud(std::vector<Point>& points) {
   if (points.empty()) {
-    return;
+    return 1.0;
   }
 
   const auto bbox = CGAL::bounding_box(points.begin(), points.end());
@@ -109,7 +109,7 @@ void center_and_scale_point_cloud(std::vector<Point>& points) {
 
   const double max_extent = (std::max)({extent_x, extent_y, extent_z});
   if (max_extent <= 0.0) {
-    return;
+    return 1.0;
   }
 
   // Scale so the largest side fits exactly in [-1,1].
@@ -121,6 +121,7 @@ void center_and_scale_point_cloud(std::vector<Point>& points) {
     const double z = (CGAL::to_double(p.z()) - center_z) * scale;
     p = Point(x, y, z);
   }
+  return scale;
 }
 
 // ------------------------------------------------------------
@@ -138,6 +139,13 @@ void compute_normals_if_missing(std::vector<Point>& points,
 
   if (has_normals) {
     std::cout<<"Input file already contains normals, skipping normal estimation." << std::endl;
+
+    for (std::size_t i = 0; i < normals.size(); ++i) {
+      CGAL_assertion(normals[i] != CGAL::NULL_VECTOR);
+      const double len2 = CGAL::to_double(normals[i].squared_length());
+      CGAL_assertion(len2 > 0.0);
+      normals[i] = normals[i] / std::sqrt(len2);
+    }
     return;
   }
 
@@ -242,7 +250,7 @@ int main(int argc, char* argv[]) {
 
   // Normalize geometry first.
   std::cout<<"Centering and scaling point cloud between [-1,1]^3 ..." << std::endl;
-  center_and_scale_point_cloud(points);
+  double sc = center_and_scale_point_cloud(points);
 
   // Then compute normals if the file did not provide them.
   compute_normals_if_missing(points, normals, 6);
@@ -251,14 +259,18 @@ int main(int argc, char* argv[]) {
   double scale = (argc > 2) ? std::stod(argv[2]) : 1.0;
   double average_spacing = scale * CGAL::compute_average_spacing<CGAL::Parallel_if_available_tag>(points, 2);
 
+  // double average_spacing = sc * std::stod(argv[2]);
+
   Polyhedron output_mesh;
   const auto bbox = CGAL::bounding_box(points.begin(), points.end()); // recompute bbox after centering and scaling
 
+  const FT padding = FT(1.1) * average_spacing;
+  // const FT padding = 1e-8;
   // Build the grid and insert points + normals.
   CGAL::Box_grid<Kernel> grid{FT(average_spacing),
-                              FT(bbox.xmin()-1e-8), FT(bbox.xmax()+1e-8),
-                              FT(bbox.ymin()-1e-8), FT(bbox.ymax()+1e-8),
-                              FT(bbox.zmin()-1e-8), FT(bbox.zmax()+1e-8)}; // initialize grid with cell size equal to average spacing and bounding box [-1,1]^3
+                              FT(bbox.xmin()-padding), FT(bbox.xmax()+padding),
+                              FT(bbox.ymin()-padding), FT(bbox.ymax()+padding),
+                              FT(bbox.zmin()-padding), FT(bbox.zmax()+padding)}; // initialize grid with cell size equal to average spacing and bounding box [-1,1]^3
   grid.build(points, normals); // insert points and normals into the grid
 
   std::vector<Vector_3> block_normals = grid.compute_block_normals(); // compute block normals by averaging point normals in each cell
@@ -266,6 +278,8 @@ int main(int argc, char* argv[]) {
 
   std::vector<FT> splat_sizes = grid.estimate_individual_splat_sizes(); // estimate individual splat sizes based on local point distribution
   std::cout<<"Estimated individual splat sizes for " << splat_sizes.size() << " points." << std::endl;
+
+  grid.fill_empty_block_normals_from_large_splats();
 
   grid.write_point_cloud_ply("debug_points.ply");
   grid.write_grid_vertices_ply("debug_grid_vertices.ply");
@@ -278,6 +292,45 @@ int main(int argc, char* argv[]) {
   write_mesh_graph_ply(output_mesh, "graph.ply");
   std::cout << "Mesh graph written to graph.ply" << std::endl;
 
+  std::ofstream out("rejected_candidates.ply");
+  if (!out) {
+    std::cerr << "Error: cannot open output file!" << std::endl;
+    return EXIT_FAILURE;
+  }
+  out << "ply\n";
+  out << "format ascii 1.0\n";
+  out << "element vertex " << reconstruction.rejected_candidates_.size() + vertices(output_mesh).size() << "\n";
+  out << "property float x\n";
+  out << "property float y\n";
+  out << "property float z\n";
+  out << "element edge " << 2*reconstruction.rejected_candidates_.size() << "\n";
+  out << "property int vertex1\n";
+  out << "property int vertex2\n";
+  out << "end_header\n";
+
+  for(const auto& vd : vertices(output_mesh))
+  {
+    const auto& p = get(CGAL::vertex_point, output_mesh, vd);
+      out << p.x() << " "
+          << p.y() << " "
+          << p.z() << "\n";
+  }
+  for (const auto& cand : reconstruction.rejected_candidates_)
+  {
+    const auto& p = cand.p;
+      out << p.x() << " "
+          << p.y() << " "
+          << p.z() << "\n";
+  }
+  // Write edges connecting rejected candidates to their parents
+  for(int i = 0; i < reconstruction.rejected_candidates_.size(); ++i)
+  {
+    // omit the v in the output, just write the index of the vertex
+    out << reconstruction.rejected_candidates_[i].parent0 << " " << i + vertices(output_mesh).size() << "\n";
+    out << reconstruction.rejected_candidates_[i].parent1 << " " << i + vertices(output_mesh).size() << "\n";
+    // out << reconstruction.rejected_candidates_[i].parent1 << " " << reconstruction.rejected_candidates_[i].parent0 << "\n";
+  }
+  
   CGAL::IO::write_polygon_mesh("mesh.ply", output_mesh);
   std::cout << "Reconstructed mesh written to mesh.ply" << std::endl;
 
