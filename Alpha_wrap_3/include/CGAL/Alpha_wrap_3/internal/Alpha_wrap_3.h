@@ -928,6 +928,12 @@ public:
   }
 
 private:
+  FT field(Point_3 point) const {
+	FT x = point.x();
+	FT alpha = (- x + 6) / 10;
+	return alpha;
+  }
+
   bool is_traversable(const Facet& f) const
   {
 	Cell_handle c = f.first;
@@ -939,8 +945,7 @@ private:
 	  sp = c->vertex(0)->point();
 	}
 
-	FT x = sp.x();
-	FT alpha = (- x + 6) / 10;
+	FT alpha = field(sp);
 	FT sq_alpha = alpha * alpha;
 	return less_squared_radius_of_min_empty_sphere(sq_alpha, f, m_tr);
   }
