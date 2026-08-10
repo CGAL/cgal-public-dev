@@ -928,13 +928,14 @@ public:
   }
 
 private:
-  FT field(Point_3 point) const {
+  static FT xaxis(Point_3 point)
+  {
 	FT x = point.x();
 	FT alpha = (- x + 6) / 10;
 	return alpha;
   }
 
-  bool is_traversable(const Facet& f) const
+  bool is_traversable(const Facet& f, std::function<FT(Point_3)> a_field) const
   {
 	Cell_handle c = f.first;
 	Point_3 sp;
@@ -945,7 +946,7 @@ private:
 	  sp = c->vertex(0)->point();
 	}
 
-	FT alpha = field(sp);
+	FT alpha = a_field(sp);
 	FT sq_alpha = alpha * alpha;
 	return less_squared_radius_of_min_empty_sphere(sq_alpha, f, m_tr);
   }
@@ -1178,7 +1179,7 @@ public:
     }
 
     // skip if f min empty sphere radius is smaller than alpha
-    if(is_traversable(f))
+    if(is_traversable(f, xaxis))
     {
 #ifdef CGAL_AW3_DEBUG_FACET_STATUS
       std::cout << "traversable" << std::endl;
