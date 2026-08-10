@@ -212,21 +212,33 @@ protected:
       children[parent].push_back(f);
     }
 
-    propagate_annotation(0, children);
-  }
-
-  // Recursive helper for compute_annotations(): processes every child of
-  // f_index first, then (unless f_index is the root, face 0) walks the
-  // rest of f_index's own contour -- every dart from next(entry) back
-  // around to entry, i.e. every edge except the parent edge itself --
-  // XOR-ing their annotations, and assigns the result to that parent
-  // edge.
-  void propagate_annotation(int f_index, const std::vector<std::vector<int>>& children)
-  {
-    for (int child : children[f_index]) { propagate_annotation(child, children); }
-
-    if (f_index!=0)
+    // First pass: discover every face starting from the root via an
+    // explicit stack (not the call stack). This always discovers a face
+    // strictly before its own children -- pushing a node's children onto
+    // the stack only queues them for later, it does not wait for them to
+    // finish first. discovery_order ends up in that same "ancestor before
+    // descendants" order -- in particular, discovery_order[0] is always
+    // the root (face 0), the very first thing pushed and popped.
+    std::vector<int> discovery_order;
+    std::vector<int> stack;
+    stack.push_back(0);
+    while (!stack.empty())
     {
+      int f_index=stack.back();
+      stack.pop_back();
+      discovery_order.push_back(f_index);
+      for (int child : children[f_index]) { stack.push_back(child); }
+    }
+
+    // Second pass: process discovery_order in reverse, which flips it to
+    // "descendants before ancestors" -- exactly the order propagation
+    // needs, since a face's own contour includes the edges to its
+    // children, whose annotations must already be known. Stops at i>1
+    // (not i>0) to skip discovery_order[0], the root, which has no parent
+    // edge to compute -- no need for an if(f_index!=0) check inside.
+    for (std::size_t i=discovery_order.size(); i>1; --i)
+    {
+      int f_index=discovery_order[i-1];
       Dart_descriptor entry=m_h_parent[f_index];
       boost::dynamic_bitset<> value(2*m_genus);
       for (Dart_descriptor it=this->get_local_map().next(entry); it!=entry;
