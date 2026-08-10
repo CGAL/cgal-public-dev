@@ -11,10 +11,14 @@
 
 #include "../custom_pipeline/GPUPredicatesCheckDoubleAssisted.h"
 #include "../custom_pipeline/GPUPredicatesCheckDouble.h" 
+#include "../custom_pipeline/GPUPredicatesCheckShewchukFloat.h" 
+#include "../custom_pipeline/GPUPredicatesCheckBigInteger.h" 
+#include "../custom_pipeline/GPUPredicatesTwoLap.h"
 #include "batchedCrossIntersectionCommon.h"
 #include "TargetStatus.h"
 #include "../src/CPU/YellowFilter.h"
 #include "batchedCrossIntersectionDouble.h"
+
 
 uint64_t executeBatchedCrossIntersectionLoopDouble(Mesh& meshAcpu,
                                                    Mesh& meshBcpu,
@@ -44,7 +48,7 @@ uint64_t executeBatchedCrossIntersectionLoopDouble(Mesh& meshAcpu,
                                                    double3 m_transA,
                                                    double3 m_rotB,
                                                    double3 m_transB,
-                                                   bool enableGpuDouble,
+                                                   int exactPredicateComputeMode,
                                                    cudaStream_t stream) {
   double tTotalStart = cuBQL::getCurrentTime();
   double tAllocStart = tTotalStart;
@@ -272,14 +276,36 @@ CUBQL_CUDA_CALL(EventCreate(&evCompact2End));
     std::vector<int2> hChunkOrange;
 
     if(totalYellow > 0) {
-      if(enableGpuDouble) {
+      if(exactPredicateComputeMode > 0) {
         CUBQL_CUDA_CALL(MallocAsync(&d_double_statuses, totalYellow * sizeof(int), stream));
         CUBQL_CUDA_CALL(MallocAsync(&d_double_green_raw, totalYellow * sizeof(int2), stream));
         CUBQL_CUDA_CALL(MallocAsync(&d_orange_raw, totalYellow * sizeof(int2), stream));
 
         CUBQL_CUDA_CALL(EventRecord(evDoubleStart, stream));
-        evaluateAndCompactPairsDouble(d_yellow_raw, d_double_statuses, d_vertsA, d_indicesA, d_vertsB, d_indicesB,
+        if (exactPredicateComputeMode == 1)
+        {
+          evaluateAndCompactPairsDouble(d_yellow_raw, d_double_statuses, d_vertsA, d_indicesA, d_vertsB, d_indicesB,
                                       totalYellow, stream);
+        }
+        else if (exactPredicateComputeMode == 2)
+        {
+          evaluateGeometricPairsKernelBigInt(d_yellow_raw, d_double_statuses, d_vertsA, d_indicesA, d_vertsB, d_indicesB,
+                                      totalYellow, stream);
+
+        }
+        else if (exactPredicateComputeMode == 3)
+        {
+
+          evaluateAndCompactPairsShewchukFloat(d_yellow_raw, d_double_statuses, d_vertsA, d_indicesA, d_vertsB, d_indicesB,
+                                      totalYellow, stream);
+
+        }
+        else
+        {
+          evaluateTwoLapPairs(d_yellow_raw, d_double_statuses, d_vertsA, d_indicesA, d_vertsB, d_indicesB,
+                                      totalYellow, stream);
+
+        }
         CUBQL_CUDA_CALL(EventRecord(evDoubleEnd, stream));
 
         // PAIR COMPACTION PASS 2: DOUBLE PREDICATES -> GREEN & ORANGE
@@ -348,7 +374,7 @@ CUBQL_CUDA_CALL(EventCreate(&evCompact2End));
     CUBQL_CUDA_CALL(EventElapsedTime(&evalMs, evEvalStart, evEvalEnd));
     CUBQL_CUDA_CALL(EventElapsedTime(&compact1Ms, evCompact1Start, evCompact1End));
 
-    if(totalYellow > 0 && enableGpuDouble) {
+    if(totalYellow > 0 && exactPredicateComputeMode > 0) {
       CUBQL_CUDA_CALL(EventElapsedTime(&doubleMs, evDoubleStart, evDoubleEnd));
       CUBQL_CUDA_CALL(EventElapsedTime(&compact2Ms, evCompact2Start, evCompact2End));
     }
@@ -368,7 +394,7 @@ CUBQL_CUDA_CALL(EventCreate(&evCompact2End));
     CUBQL_CUDA_CALL(FreeAsync(d_green_raw, stream));
     CUBQL_CUDA_CALL(FreeAsync(d_yellow_raw, stream));
 
-    if(totalYellow > 0 && enableGpuDouble) {
+    if(totalYellow > 0 && exactPredicateComputeMode > 0) {
       CUBQL_CUDA_CALL(FreeAsync(d_double_statuses, stream));
       CUBQL_CUDA_CALL(FreeAsync(d_double_green_raw, stream));
       CUBQL_CUDA_CALL(FreeAsync(d_orange_raw, stream));

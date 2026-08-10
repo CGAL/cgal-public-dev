@@ -391,7 +391,7 @@ extern "C" void kernelsTestBVHV3(Mesh& meshAcpu,
       dBoxesA, // <-- ADDED: Precomputed boxes for Mesh A
       dBoxesB, // <-- ADDED: Precomputed boxes for Mesh B
       dVertsA, dIndicesA, dVertsB, dIndicesB, outFinalExactPairs, outFinalCount, tracker, m_centerA, m_centerB, m_rotA,
-      m_transA, m_rotB, m_transB, stream);
+      m_transA, m_rotB, m_transB, 1 ,stream);
 
 
   //   if(activateAsyncDownload == 0) {

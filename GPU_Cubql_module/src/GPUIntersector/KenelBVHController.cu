@@ -631,7 +631,7 @@ void KernelBVHController::runIntersectionPipeline(int batchMultiplier,
                                                   int activateAsyncDownload,
                                                   int2*& outFinalExactPairs, // Fast raw pointer return
                                                   size_t& outFinalCount,
-                                                  ExecutionStats& stats, bool gpuDouble) {
+                                                  ExecutionStats& stats, int gpuDouble) {
   double tPipelineStart = cuBQL::getCurrentTime();
 
   m_dOutPairsA.clear();

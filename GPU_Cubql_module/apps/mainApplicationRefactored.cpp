@@ -281,7 +281,7 @@ struct ApplicationState
 void runComputeLogic(ApplicationState& app,
                      int batchMultiplier = std::numeric_limits<int>::max(),
                      int mode = 0,
-                     int activateAsyncDownload = 0, bool gpuDouble = true) {
+                     int activateAsyncDownload = 0, int gpuDouble = 1) {
   if(!app.isLoaded) {
     std::cout << "Error: You must 'load' meshes before computing.\n";
     return;
@@ -745,7 +745,7 @@ int main(int argc, char** argv) {
                      "Loads meshes via standard sequential CGAL stream loader.",
                      [&](std::istringstream& iss) { cmdLoad(app, iss, true); });
 
-ui.registerCommand("compute", "[batchMultiplier] [DualTreeSteps] [async] [gpuDouble(0/1)]",
+ui.registerCommand("compute", "[batchMultiplier] [DualTreeSteps] [async] [gpuSecondRound(0/1/2)]",
                      "Syncs active viewport/gizmo transforms to GPU and executes intersection pipeline.",
                      [&](std::istringstream& iss) {
                        int batchMultiplier = std::numeric_limits<int>::max();
@@ -756,7 +756,9 @@ ui.registerCommand("compute", "[batchMultiplier] [DualTreeSteps] [async] [gpuDou
                        // Stream extraction automatically leaves gpuDoubleInt as 1 if not provided
                        iss >> batchMultiplier >> mode >> activateAsyncDownload >> gpuDoubleInt;
 
-                       bool gpuDouble = (gpuDoubleInt != 0);
+                       int gpuDouble = gpuDoubleInt;
+
+                      // bool gpuDouble = (gpuDoubleInt != 0);
 
                        runComputeLogic(app, batchMultiplier, mode, activateAsyncDownload, gpuDouble);
                      });
