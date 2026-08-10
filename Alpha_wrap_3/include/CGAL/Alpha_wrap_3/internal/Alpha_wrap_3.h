@@ -931,14 +931,15 @@ private:
   bool is_traversable(const Facet& f) const
   {
 	Cell_handle c = f.first;
-	Point_3 p0 = c->vertex(0)->point();
-	// Point_3 p1 = c->vertex(1)->point();
-	// Point_3 p2 = c->vertex(2)->point();
-	// Point_3 center = (p0 + p1 + p2) / 3;
-	// Point_3 center = p0;
-	// Point_3 origin = {0,0,0};
-	// FT sq_alpha = squared_distance(center, origin) / 50;
-	FT x = p0.x();
+	Point_3 sp;
+	const int s = f.second;
+    const Cell_handle nh = c->neighbor(s);
+	Steiner_status ss = compute_steiner_point(c, nh, sp);
+	if (ss == Steiner_status::NO_STEINER_POINT) {
+	  sp = c->vertex(0)->point();
+	}
+
+	FT x = sp.x();
 	FT alpha = (- x + 6) / 10;
 	FT sq_alpha = alpha * alpha;
 	return less_squared_radius_of_min_empty_sphere(sq_alpha, f, m_tr);
