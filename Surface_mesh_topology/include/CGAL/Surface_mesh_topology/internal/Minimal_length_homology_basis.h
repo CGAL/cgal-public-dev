@@ -18,6 +18,7 @@
 
 #include <unordered_map>
 #include <queue>
+#include <algorithm>
 #include <boost/dynamic_bitset.hpp>
 
 namespace CGAL {
@@ -361,6 +362,50 @@ protected:
     }
 
     return candidates;
+  }
+
+  // Phase 4: incremental Gauss elimination over GF(2) ("XOR basis"/"linear
+  // basis" -- see the design discussion, no reusable implementation found
+  // in CGAL or Boost). Sorts candidates by ascending length, then keeps a
+  // persistent pivot[] array (row-echelon, not reduced -- see the design
+  // discussion) reduced against every candidate in turn: pivot[i] starts
+  // "empty" (default-constructed dynamic_bitset, size 0 -- distinct from
+  // a same-size all-zero bitset, which is what an *assigned* pivot could
+  // never be, since it's only ever assigned when its own bit i is set).
+  // Full bit-scan for now (find_first()/find_next() optimization
+  // deferred, see the design discussion). Stops once 2*genus candidates
+  // are accepted.
+  template <class WeightFunctor>
+  std::vector<Candidate<WeightFunctor>> matroid_greedy(std::vector<Candidate<WeightFunctor>> candidates)
+  {
+    std::sort(candidates.begin(), candidates.end());
+
+    std::vector<boost::dynamic_bitset<>> pivot(2*m_genus);
+    std::vector<Candidate<WeightFunctor>> basis;
+
+    for (std::size_t c=0; c<candidates.size() && basis.size()<pivot.size(); ++c)
+    {
+      boost::dynamic_bitset<> vec=candidates[c].vector;
+      bool accepted=false;
+      for (std::size_t i=0; i<vec.size(); ++i)
+      {
+        if (vec[i] && !accepted)
+        {
+          if (pivot[i].empty())
+          {
+            pivot[i]=vec;
+            accepted=true;
+          }
+          else
+          {
+            vec^=pivot[i];
+          }
+        }
+      }
+      if (accepted) { basis.push_back(candidates[c]); }
+    }
+
+    return basis;
   }
 
   // Wires Phases 0-2 together: genus/face numbering (compute_genus), the
