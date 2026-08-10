@@ -935,12 +935,19 @@ private:
 	return alpha;
   }
 
+  static FT dist_to_origin(Point_3 point)
+  {
+	Point_3 origin = {0,0,0};
+	FT alpha = (squared_distance(point, origin) + 0.5) / 10;
+	return alpha;
+  }
+
   bool is_traversable(const Facet& f, std::function<FT(Point_3)> a_field) const
   {
 	Cell_handle c = f.first;
 	Point_3 sp;
 	const int s = f.second;
-    const Cell_handle nh = c->neighbor(s);
+	const Cell_handle nh = c->neighbor(s);
 	Steiner_status ss = compute_steiner_point(c, nh, sp);
 	if (ss == Steiner_status::NO_STEINER_POINT) {
 	  sp = c->vertex(0)->point();
@@ -1179,7 +1186,7 @@ public:
     }
 
     // skip if f min empty sphere radius is smaller than alpha
-    if(is_traversable(f, xaxis))
+    if(is_traversable(f, dist_to_origin))
     {
 #ifdef CGAL_AW3_DEBUG_FACET_STATUS
       std::cout << "traversable" << std::endl;
