@@ -206,13 +206,10 @@ protected:
     }
 
     std::vector<std::vector<int>> children(m_nb_faces);
-    for (int f=0; f<m_nb_faces; ++f)
+    for (int f=1; f<m_nb_faces; ++f)
     {
-      if (f!=0)
-      {
-        int parent=m_face_id.at(this->get_local_map().opposite2(m_h_parent[f]));
-        children[parent].push_back(f);
-      }
+      int parent=m_face_id.at(this->get_local_map().opposite2(m_h_parent[f]));
+      children[parent].push_back(f);
     }
 
     propagate_annotation(0, children);
