@@ -13,6 +13,7 @@ set(SOURCE_FILES
   edgewidth_surface_mesh.cpp
   facewidth.cpp
   map_2_constructor.cpp
+  minimal_length_homology_basis.cpp
   minimal_length_homotopy_basis.cpp
   open_path_homotopy.cpp
   path_homotopy.cpp
@@ -36,6 +37,7 @@ if(CGAL_Qt6_FOUND)
   target_link_libraries(edgewidth_lcc PRIVATE CGAL::CGAL_Basic_viewer)
   target_link_libraries(edgewidth_surface_mesh PRIVATE CGAL::CGAL_Basic_viewer)
   target_link_libraries(facewidth PRIVATE CGAL::CGAL_Basic_viewer)
+  target_link_libraries(minimal_length_homology_basis PRIVATE CGAL::CGAL_Basic_viewer)
   target_link_libraries(minimal_length_homotopy_basis PRIVATE CGAL::CGAL_Basic_viewer)
   target_link_libraries(open_path_homotopy PRIVATE CGAL::CGAL_Basic_viewer)
   target_link_libraries(path_homotopy PRIVATE CGAL::CGAL_Basic_viewer)
