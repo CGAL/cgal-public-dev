@@ -13,6 +13,7 @@
 #include "../custom_pipeline/GPUPredicatesCheckDouble.h" 
 #include "../custom_pipeline/GPUPredicatesCheckShewchukFloat.h" 
 #include "../custom_pipeline/GPUPredicatesCheckBigInteger.h" 
+#include "../custom_pipeline/GPUPredicatesCheckBigIntegerV2.h" 
 #include "../custom_pipeline/GPUPredicatesTwoLap.h"
 #include "batchedCrossIntersectionCommon.h"
 #include "TargetStatus.h"
@@ -302,7 +303,7 @@ CUBQL_CUDA_CALL(EventCreate(&evCompact2End));
         }
         else
         {
-          evaluateTwoLapPairs(d_yellow_raw, d_double_statuses, d_vertsA, d_indicesA, d_vertsB, d_indicesB,
+           evaluateGeometricPairsKernelBigIntV2(d_yellow_raw, d_double_statuses, d_vertsA, d_indicesA, d_vertsB, d_indicesB,
                                       totalYellow, stream);
 
         }

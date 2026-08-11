@@ -361,6 +361,7 @@ add_executable(MainApp
     src/custom_pipeline/GPUPredicatesCheckV2.cu
     src/custom_pipeline/GPUPredicatesCheckDouble.cu
     src/custom_pipeline/GPUPredicatesCheckBigInteger.cu
+    src/custom_pipeline/GPUPredicatesCheckBigIntegerV2.cu
     src/custom_pipeline/GPUPredicatesCheckDoubleAssisted.cu
     src/custom_pipeline/GPUPredicatesCheckShewchukFloat.cu
     src/custom_pipeline/GPUPredicatesTwoLap.cu
