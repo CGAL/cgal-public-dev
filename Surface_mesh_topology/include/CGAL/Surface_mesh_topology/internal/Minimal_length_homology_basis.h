@@ -77,7 +77,8 @@ public:
     int genus=this->compute_genus();
     if (genus==0) { return std::vector<Path>(); }
 
-    auto root=*(halfedges(this->m_original_mesh).begin());
+    Dart_descriptor root_local=this->get_local_map().darts().begin();
+    Original_dart_const_descriptor root=this->m_copy_to_origin.at(root_local);
     this->compute_root_spanning_tree(root, Unit_weight_functor());
     this->compute_dual_BFS_tree();
     this->compute_annotations();
@@ -114,19 +115,22 @@ protected:
   // Computes the genus of the surface from Euler's formula
   // 2-(V-E+F) = 2*genus (valid for closed orientable input, the class'
   // precondition), and fills m_face_id/m_nb_faces/m_genus. V and E come
-  // from the generic BGL free functions num_vertices/num_edges on the
-  // *original* mesh (found by ADL, so this works unchanged for every
-  // Mesh_ the package supports -- Surface_mesh, Polyhedron_3,
-  // LCC_for_CMap_2, LCC_for_GMap_2). F comes from the inherited
-  // compute_face_ids instead of the BGL equivalent, since it numbers the
-  // faces as a byproduct of counting them, and that numbering is needed
-  // again in Phase 1.
+  // from the *local map* (attributes<0>().size(), number_of_darts()/2),
+  // not BGL free functions on the original mesh: checked directly,
+  // Polygonal_schema_with_combinatorial_map (unlike Surface_mesh,
+  // Polyhedron_3, LCC_for_CMap_2/GMap_2) has no BGL adaptor at all, so
+  // num_vertices/num_edges don't even compile for it. The local map, by
+  // contrast, is always a Combinatorial_map/Generalized_map regardless of
+  // Mesh_ -- exactly why the rest of this class (and the sibling) only
+  // ever reads it, never the original mesh's own API. F comes from the
+  // inherited compute_face_ids, which numbers the faces as a byproduct of
+  // counting them, and that numbering is needed again in Phase 1.
   int compute_genus()
   {
     m_nb_faces=this->compute_face_ids(m_face_id);
 
-    int nb_vertices=static_cast<int>(num_vertices(this->m_original_mesh));
-    int nb_edges=static_cast<int>(num_edges(this->m_original_mesh));
+    int nb_vertices=static_cast<int>(this->get_local_map().template attributes<0>().size());
+    int nb_edges=static_cast<int>(this->get_local_map().number_of_darts())/2;
 
     int euler_characteristic=nb_vertices-nb_edges+m_nb_faces;
     m_genus=(2-euler_characteristic)/2;
