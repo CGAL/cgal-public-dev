@@ -59,6 +59,37 @@ public:
 
   Minimal_length_homology_basis(const Mesh& amesh) : Base(amesh) {}
 
+  // Computes a minimum-weight basis of H_1(M; F_2): genus/early-out
+  // (Phase 0), the primal tree T from an arbitrary root and the dual
+  // tree C / generator set X (Phase 1), the F_2^{2*genus} edge
+  // annotations (Phase 2), every candidate cycle's length and homology
+  // class (Phase 3), the matroid greedy selection (Phase 4), then the
+  // actual closed loops (Phase 5). No basepoint parameter, unlike the
+  // sibling's compute_basis -- Phase 3 already considers every vertex of
+  // the mesh as a candidate root, not just one fixed one. T itself (Phase
+  // 1) is built unweighted regardless of wf, since it is only used
+  // structurally (deciding which edges get zero annotation vs. which
+  // become generators) -- wf only matters starting at Phase 3, for the
+  // actual candidate lengths.
+  template <class WeightFunctor>
+  std::vector<Path> compute_basis(const WeightFunctor& wf)
+  {
+    int genus=this->compute_genus();
+    if (genus==0) { return std::vector<Path>(); }
+
+    auto root=*(halfedges(this->m_original_mesh).begin());
+    this->compute_root_spanning_tree(root, Unit_weight_functor());
+    this->compute_dual_BFS_tree();
+    this->compute_annotations();
+
+    auto candidates=this->compute_candidates(wf);
+    auto selected=this->matroid_greedy(candidates);
+    return this->reconstruct_basis(selected, wf);
+  }
+
+  std::vector<Path> compute_basis()
+  { return compute_basis(Unit_weight_functor()); }
+
 protected:
   // Face id of every dart, and the number of faces -- filled by
   // compute_genus(), reused as-is by Phase 1 (compute_dual_BFS_tree) to
