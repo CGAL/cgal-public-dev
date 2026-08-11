@@ -8,6 +8,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later OR LicenseRef-Commercial
 //
 // Author(s) : Shihao Wu, Clement Jamin, Pierre Alliez
+//            Utkarsh Khajuria   <utkarshkhajuria55@gmail.com>
 
 #ifndef CGAL_BILATERAL_SMOOTH_POINT_SET_H
 #define CGAL_BILATERAL_SMOOTH_POINT_SET_H
@@ -283,7 +284,7 @@ bilateral_smooth_point_set(
   typedef typename Kernel::FT FT;
 
   double sharpness_angle = choose_parameter(get_parameter(np, internal_np::sharpness_angle), 30.);
-  const std::function<bool(double)>& callback = choose_parameter<std::function<bool(double)>>(get_parameter(np, internal_np::callback));
+  const std::function<bool(double)> callback = choose_parameter<std::function<bool(double)>>(get_parameter(np, internal_np::callback));
 
   CGAL_precondition(points.begin() != points.end());
   CGAL_precondition(k > 1);

@@ -8,6 +8,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later OR LicenseRef-Commercial
 //
 // Author(s) : Laurent Saboret and Nader Salman and Pierre Alliez
+//            Utkarsh Khajuria   <utkarshkhajuria55@gmail.com>
 
 #ifndef CGAL_REMOVE_OUTLIERS_H
 #define CGAL_REMOVE_OUTLIERS_H
@@ -191,7 +192,7 @@ remove_outliers(
                                                          typename Kernel::FT(0));
   double threshold_percent = choose_parameter(get_parameter(np, internal_np::threshold_percent), 10.);
   double threshold_distance = choose_parameter(get_parameter(np, internal_np::threshold_distance), 0.);
-  const std::function<bool(double)>& callback = choose_parameter<std::function<bool(double)>>(get_parameter(np, internal_np::callback));
+  const std::function<bool(double)> callback = choose_parameter<std::function<bool(double)>>(get_parameter(np, internal_np::callback));
 
   typedef typename Kernel::FT FT;
 

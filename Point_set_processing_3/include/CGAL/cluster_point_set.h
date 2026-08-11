@@ -8,6 +8,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later OR LicenseRef-Commercial
 //
 // Author(s)     : Simon Giraudot
+//            Utkarsh Khajuria   <utkarshkhajuria55@gmail.com>
 
 #ifndef CGAL_CLUSTER_POINT_SET_H
 #define CGAL_CLUSTER_POINT_SET_H
@@ -155,7 +156,7 @@ std::size_t cluster_point_set (PointRange& points,
   typename Kernel::FT factor = choose_parameter(get_parameter(np, internal_np::attraction_factor),
                                                 typename Kernel::FT(2));
 
-  const std::function<bool(double)>& callback = choose_parameter<std::function<bool(double)>>(get_parameter(np, internal_np::callback));
+  const std::function<bool(double)> callback = choose_parameter<std::function<bool(double)>>(get_parameter(np, internal_np::callback));
 
   double callback_factor = 1.;
   if (!std::is_same<Adjacencies,

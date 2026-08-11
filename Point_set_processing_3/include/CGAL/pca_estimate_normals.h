@@ -8,6 +8,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later OR LicenseRef-Commercial
 //
 // Author(s) : Pierre Alliez and Laurent Saboret
+//            Utkarsh Khajuria   <utkarshkhajuria55@gmail.com>
 
 #ifndef CGAL_PCA_ESTIMATE_NORMALS_H
 #define CGAL_PCA_ESTIMATE_NORMALS_H
@@ -173,7 +174,7 @@ pca_estimate_normals(
   PointMap point_map = NP_helper::get_point_map(points, np);
   NormalMap normal_map = NP_helper::get_normal_map(points, np);
   FT neighbor_radius = choose_parameter(get_parameter(np, internal_np::neighbor_radius), FT(0));
-  const std::function<bool(double)>& callback = choose_parameter<std::function<bool(double)>>(get_parameter(np, internal_np::callback));
+  const std::function<bool(double)> callback = choose_parameter<std::function<bool(double)>>(get_parameter(np, internal_np::callback));
 
   // Input points types
   typedef typename PointRange::iterator iterator;

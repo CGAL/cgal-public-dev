@@ -8,6 +8,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later OR LicenseRef-Commercial
 //
 // Author(s) : Pierre Alliez and Laurent Saboret and Marc Pouget and Frederic Cazals
+//            Utkarsh Khajuria   <utkarshkhajuria55@gmail.com>
 
 #ifndef CGAL_JET_ESTIMATE_NORMALS_H
 #define CGAL_JET_ESTIMATE_NORMALS_H
@@ -206,7 +207,7 @@ jet_estimate_normals(
   unsigned int degree_fitting = choose_parameter(get_parameter(np, internal_np::degree_fitting), 2);
   FT neighbor_radius = choose_parameter(get_parameter(np, internal_np::neighbor_radius), FT(0));
 
-  const std::function<bool(double)>& callback = choose_parameter<std::function<bool(double)>>(get_parameter(np, internal_np::callback));
+  const std::function<bool(double)> callback = choose_parameter<std::function<bool(double)>>(get_parameter(np, internal_np::callback));
 
   // types for K nearest neighbors search structure
   typedef Point_set_processing_3::internal::Neighbor_query<Kernel, PointRange&, PointMap> Neighbor_query;
