@@ -117,24 +117,7 @@ public:
     std::vector<Path> basis;
     basis.reserve(generators.size());
     for (Dart_descriptor dh : generators)
-    {
-      Dart_descriptor a=dh, b=this->get_local_map().next(dh);
-      int index_a=this->vertex_info(a), index_b=this->vertex_info(b);
-
-      Path loop(m_original_mesh);
-      // Trace back the path from `a` to root
-      for (int ind=index_a-1; ind!=-1; ind=this->m_trace_index[ind])
-      { this->add_to_cycle(this->m_spanning_tree[ind], loop, true); } 
-      loop.reverse(); 
-      // w root -> a
-      this->add_to_cycle(dh, loop, false); // the generator edge itself
-      // Trace back the path from `b` to root
-      for (int ind=index_b-1; ind!=-1; ind=this->m_trace_index[ind])
-      { this->add_to_cycle(this->m_spanning_tree[ind], loop, true); }
-
-      loop.update_is_closed();
-      basis.push_back(std::move(loop));
-    }
+    { basis.push_back(build_loop(dh)); }
 
     return basis;
   }
@@ -156,6 +139,33 @@ protected:
   using Base::m_trace_index;
   using Base::m_copy_to_origin;
   using Base::vertex_info;
+  using Base::add_to_cycle;
+
+  // Builds the closed loop for generator edge dh, given the *current*
+  // spanning tree (m_spanning_tree/m_trace_index/vertex_info, as left by
+  // the most recent compute_root_spanning_tree call): walks from dh's
+  // first endpoint back to the root (flip=true), reverses that half so it
+  // reads root-to-endpoint, adds dh itself (flip=false), then dh's other
+  // endpoint back to the root (flip=true). Shared by this class'
+  // compute_basis and by Minimal_length_homology_basis's own
+  // reconstruction (Phase 5), which needs exactly the same trace-back
+  // logic for a different selection of generator edges.
+  Path build_loop(Dart_descriptor dh)
+  {
+    Dart_descriptor a=dh, b=this->get_local_map().next(dh);
+    int index_a=this->vertex_info(a), index_b=this->vertex_info(b);
+
+    Path loop(m_original_mesh);
+    for (int ind=index_a-1; ind!=-1; ind=this->m_trace_index[ind])
+    { this->add_to_cycle(this->m_spanning_tree[ind], loop, true); }
+    loop.reverse();
+    this->add_to_cycle(dh, loop, false);
+    for (int ind=index_b-1; ind!=-1; ind=this->m_trace_index[ind])
+    { this->add_to_cycle(this->m_spanning_tree[ind], loop, true); }
+    loop.update_is_closed();
+
+    return loop;
+  }
 
   // Assigns an integer id (0-based) to every face of the local map, and
   // fills face_id so that every dart of a given face maps to that face's

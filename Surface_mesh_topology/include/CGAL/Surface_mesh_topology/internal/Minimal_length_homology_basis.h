@@ -417,6 +417,40 @@ protected:
     return basis;
   }
 
+  // Phase 5: reconstructs one closed Path per selected candidate, in the
+  // same order as `selected` (indices, not edges, are grouped by root --
+  // see below -- so basis[i] is always the reconstruction of
+  // selected[i], letting a caller directly compare basis[i] against
+  // selected[i]'s stored length/vector). Groups by root first (a
+  // candidate's T_y is not kept around after Phase 3 -- O(n^2) memory
+  // otherwise -- so it has to be rebuilt), reruns
+  // compute_root_spanning_tree once per distinct root (not once per
+  // candidate), then reuses the sibling's build_loop for the actual
+  // trace-back (same logic its own compute_basis uses, for a different
+  // selection of generator edges).
+  template <class WeightFunctor>
+  std::vector<Path> reconstruct_basis(const std::vector<Candidate<WeightFunctor>>& selected,
+                                       const WeightFunctor& wf)
+  {
+    std::unordered_map<Dart_descriptor, std::vector<std::size_t>> indices_by_root;
+    for (std::size_t i=0; i<selected.size(); ++i)
+    { indices_by_root[selected[i].root].push_back(i); }
+
+    std::vector<Path> basis(selected.size(), Path(this->m_original_mesh));
+
+    for (const auto& group : indices_by_root)
+    {
+      Dart_descriptor y=group.first;
+      Original_dart_const_descriptor original_y=this->m_copy_to_origin.at(y);
+      this->compute_root_spanning_tree(original_y, wf);
+
+      for (std::size_t i : group.second)
+      { basis[i]=this->build_loop(selected[i].edge); }
+    }
+
+    return basis;
+  }
+
   // Wires Phases 0-2 together: genus/face numbering (compute_genus), the
   // primal tree T from an arbitrary root (compute_root_spanning_tree,
   // unweighted -- Phases 1-2 are purely structural, so any spanning tree
