@@ -17,6 +17,7 @@
 #include <CGAL/Surface_mesh_topology/internal/Minimal_quadrangulation.h>
 #include <CGAL/Surface_mesh_topology/internal/Shortest_noncontractible_cycle.h>
 #include <CGAL/Surface_mesh_topology/internal/Minimal_length_homotopy_basis.h>
+#include <CGAL/Surface_mesh_topology/internal/Minimal_length_homology_basis.h>
 #include <CGAL/Surface_mesh_topology/internal/Facewidth.h>
 #include <CGAL/Face_graph_wrapper.h>
 #include <memory>
@@ -35,6 +36,7 @@ public:
   // Types for shortest noncontractible cycle
   using Shortest_noncontractible_cycle=typename internal::Shortest_noncontractible_cycle<Mesh, true>;
   using Minimal_length_homotopy_basis =typename internal::Minimal_length_homotopy_basis<Mesh, true>;
+  using Minimal_length_homology_basis =typename internal::Minimal_length_homology_basis<Mesh, true>;
   using Facewidth                     =typename internal::Facewidth<Mesh>;
   using Dart_const_descriptor             =typename Shortest_noncontractible_cycle::Original_dart_const_descriptor;
   using halfedge_descriptor           =Dart_const_descriptor ; // To be compatible with BGL
@@ -45,6 +47,7 @@ public:
     m_minimal_quadrangulation(nullptr),
     m_shortest_noncontractible_cycle(nullptr),
     m_minimal_length_homotopy_basis(nullptr),
+    m_minimal_length_homology_basis(nullptr),
     m_facewidth(nullptr),
     m_is_verbose(false)
   {}
@@ -201,6 +204,34 @@ public:
   }
 
 //================================================================================
+// Minimal homology basis
+
+  bool is_minimal_length_homology_basis_representation_computed() const
+  { return m_minimal_length_homology_basis!=nullptr; }
+
+  void compute_minimal_length_homology_basis_representation() const
+  {
+    if (m_minimal_length_homology_basis==nullptr)
+    {
+      m_minimal_length_homology_basis=std::make_unique
+        <Minimal_length_homology_basis>(m_original_mesh);
+    }
+  }
+
+  template <class WeightFunctor>
+  std::vector<Path_on_surface<Mesh>> compute_minimal_homology_basis(const WeightFunctor& wf) const
+  {
+    compute_minimal_length_homology_basis_representation();
+    return m_minimal_length_homology_basis->compute_basis(wf);
+  }
+
+  std::vector<Path_on_surface<Mesh>> compute_minimal_homology_basis() const
+  {
+    compute_minimal_length_homology_basis_representation();
+    return m_minimal_length_homology_basis->compute_basis();
+  }
+
+//================================================================================
 // Test whether a path is homotopic to a simple cycle
 
   bool is_homotopic_to_simple_cycle(const Path_on_surface<Mesh>& p,
@@ -225,6 +256,7 @@ protected:
   mutable std::unique_ptr<Minimal_quadrangulation>        m_minimal_quadrangulation;
   mutable std::unique_ptr<Shortest_noncontractible_cycle> m_shortest_noncontractible_cycle;
   mutable std::unique_ptr<Minimal_length_homotopy_basis>  m_minimal_length_homotopy_basis;
+  mutable std::unique_ptr<Minimal_length_homology_basis>  m_minimal_length_homology_basis;
   mutable std::unique_ptr<Facewidth>                      m_facewidth;
   bool                                                    m_is_verbose;
 };
