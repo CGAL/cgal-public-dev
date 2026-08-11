@@ -942,6 +942,11 @@ private:
 	return alpha;
   }
 
+  bool is_traversable(const Facet& f) const
+  {
+	return less_squared_radius_of_min_empty_sphere(m_sq_alpha, f, m_tr);
+  }
+
   bool is_traversable(const Facet& f, std::function<FT(Point_3)> a_field) const
   {
 	Cell_handle c = f.first;
