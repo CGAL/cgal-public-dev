@@ -7,18 +7,18 @@
 // --------------------------------------------------------------------
 // MEMORY HELPER 
 // --------------------------------------------------------------------
-__device__ inline double3 load_double3_V2(const double3* ptr) {
+__device__ inline double3 load_double3(const double3* ptr) {
     return make_double3(__ldg(&(ptr->x)), __ldg(&(ptr->y)), __ldg(&(ptr->z)));
 }
 
 // --------------------------------------------------------------------
 // 128-BIT EXACT INTEGER PREDICATES
 // --------------------------------------------------------------------
-struct int3_128_V2 {
+struct int3_128 {
     int64_t x, y, z;
 };
 
-__device__ inline int orient2d_exact_V2(
+__device__ inline int orient2d_exact(
     int64_t ax, int64_t ay, 
     int64_t bx, int64_t by, 
     int64_t cx, int64_t cy) 
@@ -34,9 +34,9 @@ __device__ inline int orient2d_exact_V2(
     return 0;
 }
 
-__device__ inline int orient3d_exact_V2(
-    const int3_128_V2& a, const int3_128_V2& b, 
-    const int3_128_V2& c, const int3_128_V2& d) 
+__device__ inline int orient3d_exact(
+    const int3_128& a, const int3_128& b, 
+    const int3_128& c, const int3_128& d) 
 {
     int64_t adx = a.x - d.x; int64_t ady = a.y - d.y; int64_t adz = a.z - d.z;
     int64_t bdx = b.x - d.x; int64_t bdy = b.y - d.y; int64_t bdz = b.z - d.z;
@@ -62,7 +62,7 @@ __device__ inline __int128_t abs128_V2(__int128_t v) {
 // --------------------------------------------------------------------
 // FULL 2D SAT COPLANAR INTERSECTION (winding-independent)
 // --------------------------------------------------------------------
-__device__ inline bool all_outside_edge_V2(
+__device__ inline bool all_outside_edge(
     const int64_t Eu[3], const int64_t Ev[3],
     const int64_t Ou[3], const int64_t Ov[3],
     int i, int j, int k)
@@ -81,7 +81,7 @@ __device__ inline bool all_outside_edge_V2(
     return out0 && out1 && out2;
 }
 
-__device__ inline PairStatus coplanar_tri_tri_exact_V2(
+__device__ inline PairStatus coplanar_tri_tri_exact(
     const int3_128_V2& Aa, const int3_128_V2& Ab, const int3_128_V2& Ac,
     const int3_128_V2& Ba, const int3_128_V2& Bb, const int3_128_V2& Bc) 
 {
@@ -122,7 +122,7 @@ __device__ inline PairStatus coplanar_tri_tri_exact_V2(
 // --------------------------------------------------------------------
 // COPLANAR SEGMENT-VS-TRIANGLE (exact 2D)
 // --------------------------------------------------------------------
-__device__ inline bool point_in_or_on_tri_2d_V2(
+__device__ inline bool point_in_or_on_tri_2d(
     int64_t px, int64_t py,
     const int64_t Tu[3], const int64_t Tv[3])
 {
@@ -138,7 +138,7 @@ __device__ inline bool point_in_or_on_tri_2d_V2(
     return true;
 }
 
-__device__ inline bool on_segment_collinear_V2(
+__device__ inline bool on_segment_collinear(
     int64_t px, int64_t py, int64_t qx, int64_t qy,
     int64_t rx, int64_t ry)
 {
@@ -147,7 +147,7 @@ __device__ inline bool on_segment_collinear_V2(
     return (rx >= minx && rx <= maxx && ry >= miny && ry <= maxy);
 }
 
-__device__ inline bool segments_intersect_2d_V2(
+__device__ inline bool segments_intersect_2d(
     int64_t ax, int64_t ay, int64_t bx, int64_t by,
     int64_t cx, int64_t cy, int64_t dx, int64_t dy)
 {
@@ -167,7 +167,7 @@ __device__ inline bool segments_intersect_2d_V2(
     return false;
 }
 
-__device__ inline PairStatus edgeTri_coplanar_exact_V2(
+__device__ inline PairStatus edgeTri_coplanar_exact(
     const int3_128_V2 &a, const int3_128_V2 &b,
     const int3_128_V2 &p, const int3_128_V2 &q, const int3_128_V2 &r)
 {
@@ -205,7 +205,7 @@ __device__ inline PairStatus edgeTri_coplanar_exact_V2(
 // --------------------------------------------------------------------
 // 3D EDGE-TRIANGLE EXACT PREDICATE
 // --------------------------------------------------------------------
-__device__ inline int edgeTri_exact_V2(
+__device__ inline int edgeTri_exact(
     const int3_128_V2 &a, const int3_128_V2 &b,
     const int3_128_V2 &p, const int3_128_V2 &q, const int3_128_V2 &r) 
 {
@@ -230,7 +230,7 @@ __device__ inline int edgeTri_exact_V2(
 // --------------------------------------------------------------------
 // EXACT INTEGER CLASSIFICATION V2
 // --------------------------------------------------------------------
-__device__ inline PairStatus classifyPairBigIntV2(
+__device__ inline PairStatus classifyPairBigInt(
     const double3& Aa, const double3& Ab, const double3& Ac,
     const double3& Ba, const double3& Bb, const double3& Bc) 
 {    
@@ -367,7 +367,7 @@ __device__ inline PairStatus classifyPairBigIntV2(
 // --------------------------------------------------------------------
 // KERNEL IMPLEMENTATION
 // --------------------------------------------------------------------
-__global__ void evaluateGeometricPairsKernelBigInt_KernelV2(
+__global__ void evaluateGeometricPairsKernelBigInt_Kernel(
     const int2* dYellowCandidatePairs, 
     int* dPairStatuses, 
     const double3* dVertsA,
@@ -398,7 +398,7 @@ __global__ void evaluateGeometricPairsKernelBigInt_KernelV2(
 // --------------------------------------------------------------------
 // HOST LAUNCHER (C LINKAGE)
 // --------------------------------------------------------------------
-extern "C" void evaluateGeometricPairsKernelBigIntV2(
+extern "C" void evaluateGeometricPairsKernelBigInt(
     const int2* dYellowCandidatePairs,
     int* dPairStatuses,
     const double3* dVertsA,
@@ -413,7 +413,7 @@ extern "C" void evaluateGeometricPairsKernelBigIntV2(
     int blockSize = 256;
     int gridSize = (numYellowPairs + blockSize - 1) / blockSize;
 
-    evaluateGeometricPairsKernelBigInt_KernelV2<<<gridSize, blockSize, 0, stream>>>(
+    evaluateGeometricPairsKernelBigInt_Kernel<<<gridSize, blockSize, 0, stream>>>(
         dYellowCandidatePairs, 
         dPairStatuses, 
         dVertsA, 
