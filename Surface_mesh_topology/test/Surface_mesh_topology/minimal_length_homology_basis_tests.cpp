@@ -3,6 +3,7 @@
 #include <CGAL/Curves_on_surface_topology.h>
 #include <CGAL/Path_on_surface.h>
 #include <CGAL/squared_distance_3.h>
+#include <CGAL/Polygonal_schema.h>
 #include <iostream>
 #include <fstream>
 #include <cstdlib>
@@ -152,9 +153,62 @@ bool test_weighted_column_grid()
   return true;
 }
 
+// Double torus (genus 2, 2g=4) built from an explicit octagon
+// identification word, on a Mesh_ type other than Surface_mesh -- this is
+// the exact fixture that caught the BGL-compatibility bug
+// (num_vertices/num_edges/halfedges don't compile for
+// Polygonal_schema_with_combinatorial_map, unlike Surface_mesh); kept as
+// an official test so that specific regression can't come back silently.
+bool test_bitorus_polygonal_schema()
+{
+  const std::string label="bitorus (Polygonal_schema)";
+  using PS=CGAL::Surface_mesh_topology::Polygonal_schema_with_combinatorial_map<>;
+  PS ps;
+  ps.add_facet("a b -a -b c d -c -d");
+
+  CGAL::Surface_mesh_topology::Curves_on_surface_topology<PS> cst(ps);
+  auto basis=cst.compute_minimal_homology_basis();
+
+  if (basis.size()!=4)
+  {
+    std::cerr<<"Fail "<<label<<": basis has "<<basis.size()<<" loop(s), expected 4\n";
+    return false;
+  }
+
+  for (std::size_t i=0; i<basis.size(); ++i)
+  {
+    if (!basis[i].is_closed())
+    {
+      std::cerr<<"Fail "<<label<<": loop "<<i<<" is not closed\n";
+      return false;
+    }
+    if (cst.is_contractible(basis[i]))
+    {
+      std::cerr<<"Fail "<<label<<": loop "<<i<<" is contractible (should not be)\n";
+      return false;
+    }
+  }
+
+  for (std::size_t i=0; i<basis.size(); ++i)
+  {
+    for (std::size_t j=i+1; j<basis.size(); ++j)
+    {
+      if (cst.are_freely_homotopic(basis[i], basis[j]))
+      {
+        std::cerr<<"Fail "<<label<<": loops "<<i<<" and "<<j<<" are freely homotopic "
+                 <<"(should be independent)\n";
+        return false;
+      }
+    }
+  }
+
+  return true;
+}
+
 int main()
 {
   bool res=test_weighted_column_grid();
+  res=test_bitorus_polygonal_schema() && res;
 
   std::ifstream list_file("data/minimal_length_homology_basis_meshes.txt");
   if (!list_file)
