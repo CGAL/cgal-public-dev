@@ -15,6 +15,7 @@ set(SOURCE_FILES
   homotopy_double_torus_with_holes.cpp
   homotopy_rond_point_saucisse.cpp
   homotopy_small_cylinder.cpp
+  minimal_length_homology_basis_tests.cpp
   minimal_length_homotopy_basis_tests.cpp
   path_tests.cpp
   path_with_rle_deformation_tests.cpp
