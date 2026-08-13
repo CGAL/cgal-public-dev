@@ -1153,16 +1153,6 @@ namespace CGAL {
         seed_from_grid();
       }
 
-      struct Debug_candidate
-      {
-          Point_3 p;
-          int reason; // near, projection, graph, etc.
-          vertex_descriptor parent0;
-          vertex_descriptor parent1;
-      };
-
-      std::vector<Debug_candidate> rejected_candidates_;
-
       void run() {
         if (!seeded_) {
           std::cerr << "No initial seed was found. Mesh growth did not start.\n";
@@ -1187,16 +1177,10 @@ namespace CGAL {
             continue;
           }
 
-          if (!projection_check(cand)) {
+          if (!projection_check(cand, grid_.box_normal(get(points_pm_, cand.first)))
+           || !projection_check(cand, grid_.box_normal(get(points_pm_, cand.second))) 
+           || !projection_check(cand, grid_.box_normal(cand.position)) ) {
             rejected_proj++;
-
-            // rejected_candidates_.push_back({
-            //     cand.position,
-            //     1, // rejected by projection
-            //     cand.first,
-            //     cand.second
-            // });
-
             continue;
           }
 
@@ -1214,18 +1198,6 @@ namespace CGAL {
           accepted++;
           if (!build_graph(cand.first, cand.second, nv, cand.normal)) {
             remove_vertex(nv, mesh_);
-
-            // if (!mesh_.is_valid()) {
-            //   rejected_candidates_.push_back({
-            //       cand.position,
-            //       1, // rejected by projection
-            //       cand.first,
-            //       cand.second
-            //   });
-            //   std::cerr << "Mesh is invalid after adding vertex " << nv << ".\n";
-            //   break;
-            // }
-
             continue;
           }
 
@@ -1238,14 +1210,8 @@ namespace CGAL {
         std::cout<<"Setting Faces..." << std::endl;
         fill_faces_from_next_cycles();
 
-        // std::cout << "Triangulating faces..." << std::endl;
-        // CGAL::Polygon_mesh_processing::triangulate_faces(mesh_);
-
         std::cout << "Final mesh size: " << num_vertices(mesh_) << " vertices, " << num_edges(mesh_) << " edges, " << num_faces(mesh_) << " faces.\n";
         std::cout << "  Accepted: " << accepted << ", Rejected (near): " << rejected_near << ", Rejected (proj): " << rejected_proj << "\n";
-
-        // print_duplicate_edges();
-        // print_duplicate_faces();
       }
 
     private:
@@ -1580,7 +1546,14 @@ namespace CGAL {
 
         // Use each parent's own box normal for ordering.
         auto [h1, h2] = choose_closest_ccw_halfedges(v0, pn, n0);
+        auto [h1_temp, h2_temp] = choose_closest_ccw_halfedges(v0, pn, n1);
+
         auto [g2, g1] = choose_closest_ccw_halfedges(v1, pn, n1);
+        auto [g2_temp, g1_temp] = choose_closest_ccw_halfedges(v1, pn, n0);
+
+        if (g1 != g1_temp || g2 != g2_temp || h1 != h1_temp || h2 != h2_temp) {
+          return false;
+        }
 
         if (h1 == null_h || h2 == null_h || g1 == null_h || g2 == null_h) {
           std::cout << "Found a null edge" << std::endl;
@@ -1599,10 +1572,9 @@ namespace CGAL {
         if (target(g2, mesh_) != v1) g2 = opposite(g2, mesh_);
         CGAL_assertion(target(g2, mesh_) == v1);
 
-        // Keep your current topology check.
+        // Topology check.
         if (next(g1, mesh_) != opposite(g2, mesh_) ||
-            next(h2, mesh_) != opposite(h1, mesh_))
-        {
+            next(h2, mesh_) != opposite(h1, mesh_)) {
           return false;
         }
 
@@ -1627,63 +1599,6 @@ namespace CGAL {
         const auto null_h = boost::graph_traits<PolygonMesh>::null_halfedge();
         const auto null_f = boost::graph_traits<PolygonMesh>::null_face();
 
-          // std::vector<halfedge_descriptor> done;
-          // done.reserve(num_halfedges(mesh_));
-
-          // auto already_done = [&](halfedge_descriptor h) -> bool {
-          //   return std::find(done.begin(), done.end(), h) != done.end();
-          // };
-
-        // // Newell's method for a robust oriented normal of a polygon cycle.
-        // auto compute_cycle_normal =
-        //   [&](const std::vector<halfedge_descriptor>& cycle) -> Vector_3
-        // {
-        //   double nx = 0.0, ny = 0.0, nz = 0.0;
-
-        //   for (halfedge_descriptor h : cycle)
-        //   {
-        //     const Point_3 p = get(points_pm_, source(h, mesh_));
-        //     const Point_3 q = get(points_pm_, target(h, mesh_));
-
-        //     const double px = CGAL::to_double(p.x());
-        //     const double py = CGAL::to_double(p.y());
-        //     const double pz = CGAL::to_double(p.z());
-
-        //     const double qx = CGAL::to_double(q.x());
-        //     const double qy = CGAL::to_double(q.y());
-        //     const double qz = CGAL::to_double(q.z());
-
-        //     nx += (py - qy) * (pz + qz);
-        //     ny += (pz - qz) * (px + qx);
-        //     nz += (px - qx) * (py + qy);
-        //   }
-
-        //   return Vector_3(FT(nx), FT(ny), FT(nz));
-        // };
-
-        // // Average of vertex normals on the cycle, if available.
-        // auto compute_reference_normal =
-        //   [&](const std::vector<halfedge_descriptor>& cycle) -> Vector_3
-        // {
-        //   Vector_3 sum = CGAL::NULL_VECTOR;
-        //   std::size_t count = 0;
-
-        //   for (halfedge_descriptor h : cycle)
-        //   {
-        //     const Vector_3 n = get(normals_pm_, source(h, mesh_));
-        //     if (n != CGAL::NULL_VECTOR)
-        //     {
-        //       sum = sum + n;
-        //       ++count;
-        //     }
-        //   }
-
-        //   return (count > 0) ? sum : CGAL::NULL_VECTOR;
-        // };
-
-        // Set this to false if you want the opposite orientation.
-        // const bool want_same_orientation_as_reference = true;
-
         for (halfedge_descriptor start : halfedges(mesh_)) {
           CGAL_assertion(start != null_h);
 
@@ -1691,15 +1606,11 @@ namespace CGAL {
             continue;
           }
 
-          // if (already_done(start)) {
-          //   continue;
-          // }
-
           std::vector<halfedge_descriptor> cycle;
           cycle.reserve(16);
 
           halfedge_descriptor h = start;
-          const std::size_t max_steps = 40; // If cycle is too long, it is considered a hole.
+          const std::size_t max_steps = std::min((std::size_t)num_halfedges(mesh_), std::size_t(1000)); // If cycle is too long, it is considered a hole.
           bool closed = false;
 
 
@@ -1710,10 +1621,6 @@ namespace CGAL {
             if (face(h, mesh_) != null_f) {
               break;
             }
-
-            // if (already_done(h)) {
-            //   break;
-            // }
 
             cycle.push_back(h);
 
@@ -1731,40 +1638,6 @@ namespace CGAL {
             // done.insert(done.end(), cycle.begin(), cycle.end());
             continue;
           }
-
-          // const Vector_3 cycle_normal = compute_cycle_normal(cycle);
-          // const Vector_3 ref_normal = compute_reference_normal(cycle);
-
-          // bool keep_cycle = true;
-
-          // if (cycle_normal != CGAL::NULL_VECTOR && ref_normal != CGAL::NULL_VECTOR)
-          // {
-          //   const FT dot = cycle_normal * ref_normal;
-
-          //   if (want_same_orientation_as_reference) {
-          //     keep_cycle = (dot > FT(0));
-          //   } else {
-          //     keep_cycle = (dot < FT(0));
-          //   }
-          // }
-
-          // if (!keep_cycle)
-          // {
-          //   done.insert(done.end(), cycle.begin(), cycle.end());
-          //   continue;
-          // }
-
-          // if (!ear_clip_and_add_faces(cycle)) {
-          //   face_descriptor f = add_face(mesh_);
-          //   if (f == null_f) {
-          //     continue;
-          //   }
-          //   set_halfedge(f, cycle[0], mesh_);
-          //   for (halfedge_descriptor ch : cycle)
-          //   {
-          //     set_face(ch, f, mesh_);
-          //   }
-          // }
 
           ear_clip_and_add_faces(cycle);
         }
@@ -1817,7 +1690,7 @@ namespace CGAL {
             return 0.0;
 
           double cs = dot / (nu * nv);
-          cs = (std::max)(-1.0, (std::min)(1.0, cs));
+          // cs = (std::max)(-1.0, (std::min)(1.0, cs));
           return std::acos(cs);
         };
 
@@ -1835,34 +1708,48 @@ namespace CGAL {
           return n;
         };
 
+        std::vector<vertex_descriptor> verts;
+        verts.reserve(cycle.size());
+        for (halfedge_descriptor h : cycle)
+          verts.push_back(source(h, mesh_));
+
+        auto tmp = verts;
+        std::sort(tmp.begin(), tmp.end());
+        if (std::unique(tmp.begin(), tmp.end()) != tmp.end()) {
+          std::cerr << "Warning: Ear clipping failed: cycle contains repeated vertices. Will result in  holes.\n";
+          return;
+        }
+
+        Vector_3 n = compute_cycle_normal(verts);
+
+        // Project the polygon onto a local tangent plane.
+        std::vector<Vector_3> frame = grid_.compute_local_tangent_frame(n);
+        Vector_3 u = frame[0];
+        Vector_3 v = frame[1];
+        CGAL_assertion(u != CGAL::NULL_VECTOR && v != CGAL::NULL_VECTOR);
+        if (CGAL::cross_product(u, v) * n < FT(0))
+          v = -v;
+        const Point_3 origin = get(points_pm_, verts[0]);
+
+        std::vector<Point_2> P;
+        P.reserve(verts.size());
+
+        // Project a 3D point onto the local tangent plane.
+        auto project = [&](const Point_3& p, const Point_3& origin) -> Point_2 {
+          const Vector_3 d = p - origin;
+          return Point_2(d * u, d * v);
+        };
+
         // --------------------------------------------------------------------------
         // Iteratively remove one ear until only one triangle remains.
         // --------------------------------------------------------------------------
         while (cycle.size() > 3) {
-          // Build the current polygon vertex sequence from the boundary halfedges.
-          std::vector<vertex_descriptor> verts;
+          verts.clear();
+          P.clear();
+
           verts.reserve(cycle.size());
           for (halfedge_descriptor h : cycle)
             verts.push_back(source(h, mesh_));
-
-          Vector_3 n = compute_cycle_normal(verts);
-
-          // Project the polygon onto a local tangent plane.
-          std::vector<Vector_3> frame = grid_.compute_local_tangent_frame(n);
-          Vector_3 u = frame[0];
-          Vector_3 v = frame[1];
-          CGAL_assertion(u != CGAL::NULL_VECTOR && v != CGAL::NULL_VECTOR);
-          if (CGAL::cross_product(u, v) * n < FT(0))
-            v = -v;
-
-          const Point_3 origin = get(points_pm_, verts[0]);
-          std::vector<Point_2> P;
-          P.reserve(verts.size());
-
-          auto project = [&](const Point_3& p, const Point_3& origin) -> Point_2 {
-            const Vector_3 d = p - origin;
-            return Point_2(d * u, d * v);
-          };
 
           for (vertex_descriptor vd : verts)
           {
@@ -1874,8 +1761,6 @@ namespace CGAL {
           std::iota(idx.begin(), idx.end(), 0);
 
           bool found_ear = false;
-          double best_angle = std::numeric_limits<double>::infinity();
-          std::size_t best_pos = std::size_t(-1);
 
           // ----------------------------------------------------------------------
           // Find every valid ear.
@@ -1896,42 +1781,31 @@ namespace CGAL {
             if (orient2(a, b, c) != CGAL::LEFT_TURN)
               continue;
 
-            // Ear must not contain any other polygon vertex.
-            bool any_inside = false;
-            for (std::size_t j = 0; j < idx.size(); ++j)
-            {
-              const std::size_t k = idx[j];
-              if (k == i0 || k == i1 || k == i2)
-                continue;
-
-              if (point_in_triangle(P[k], a, b, c))
-              {
-                any_inside = true;
-                break;
-              }
-            }
-
-            if (any_inside)
+            if (CGAL::cross_product(get(points_pm_, verts[i2]) - get(points_pm_, verts[i1]),
+                                    get(points_pm_, verts[i0]) - get(points_pm_, verts[i1])) * n < FT(0))
               continue;
 
-            // bool intersecting = false;
-            // for (std::size_t j = 0; j < verts.size(); ++j) {
-            //   for (halfedge_descriptor h : halfedges_around_source(verts[j], mesh_)) {
-            //     vertex_descriptor t = target(h, mesh_);
-            //     auto x = project(get(points_pm_, verts[j]), origin);
-            //     auto y = project(get(points_pm_, t), origin);
+            bool intersecting = false;
+            for (std::size_t j = 0; j < verts.size(); ++j) {
+              for (halfedge_descriptor h : halfedges_around_source(verts[j], mesh_)) {
+                vertex_descriptor t = target(h, mesh_);
+                if (verts[j] == verts[i0] || verts[j] == verts[i2] ||
+                    t == verts[i0] || t == verts[i2])
+                  continue;
+                auto x = project(get(points_pm_, verts[j]), origin);
+                auto y = project(get(points_pm_, t), origin);
 
-            //     if (intersect_2d(a, c, x, y, true)) {
-            //       intersecting = true;
-            //       break;
-            //     }
-            //   }
-            //   if (intersecting)
-            //     break;
-            // }
+                if (intersect_2d(a, c, x, y, false)) {
+                  intersecting = true;
+                  break;
+                }
+              }
+              if (intersecting)
+                break;
+            }
 
-            // if (intersecting)
-            //   continue;
+            if (intersecting)
+              continue;
 
             const double ang = triangle_angle(a, b, c);
             found_ear = true;
@@ -1959,14 +1833,10 @@ namespace CGAL {
             }
           }
           if (!ear_committed) {
-            std::cerr << "Ear clipping failed: could not commit any ear.\n";
-            for (std::size_t i = 0; i < verts.size(); ++i) {
-              rejected_candidates_.push_back({
-                get(points_pm_, verts[i]),
-                2, // rejected by ear clipping
-                verts[(i-1)%verts.size()],
-                verts[(i+1)%verts.size()]
-              });
+            if (cycle.size() == 4) {
+              for (std::size_t i = 0; i < cycle.size(); ++i) {
+                commit_ear_step(cycle, i);
+              }
             }
             return;
           }
@@ -2052,10 +1922,6 @@ namespace CGAL {
         // Check if the diagonal (a, c) already exists.
         halfedge_descriptor temp = find_halfedge(a, c);
         if (temp != null_h) {
-          // for (halfedge_descriptor h : cycle) {
-          //   std::cout << "halfedge " << h << " goes from " << source(h, mesh_) << " -> " << target(h, mesh_) << std::endl;
-          //   }
-          // std::cout << temp << " already exists between " << a << " and " << c << std::endl;
           return false;
         }
 
@@ -2144,13 +2010,12 @@ namespace CGAL {
         return false;
       };
 
-      bool projection_check(const Candidate& cand) const {
+      bool projection_check(const Candidate& cand, const Vector_3 n) const {
+        CGAL_assertion(n != CGAL::NULL_VECTOR);
+
         const Point_3 pa = get(points_pm_, cand.first);
         const Point_3 pb = get(points_pm_, cand.second);
         const Point_3 pc = cand.position;
-
-        // Use the box normal at the candidate position as the projection direction.
-        Vector_3 n = grid_.box_normal(cand.position);
 
         auto local_frame = grid_.compute_local_tangent_frame(n);
         Vector_3 u = local_frame[0];
@@ -2171,7 +2036,7 @@ namespace CGAL {
         const Point_2 new_e2_s = B;
         const Point_2 new_e2_t = C;
 
-        auto nearby = nearby_mesh_vertices(pc, FT(3.0) * grid_.get_box_size());
+        auto nearby = nearby_mesh_vertices(pc, FT(4.0) * grid_.get_box_size());
         for (auto v : nearby) {
           for (halfedge_descriptor h : halfedges_around_target(v, mesh_)) {
             vertex_descriptor s = source(h, mesh_);

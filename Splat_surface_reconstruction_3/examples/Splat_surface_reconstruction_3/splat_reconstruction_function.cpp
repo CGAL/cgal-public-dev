@@ -285,65 +285,50 @@ int main(int argc, char* argv[]) {
   grid.write_grid_vertices_ply("debug_grid_vertices.ply");
   grid.write_cell_centers_and_normals_ply("debug_cell_normals.ply", 0.2);
 
-
   CGAL::Splat_surface_reconstruction_3<std::vector<Point>, std::vector<Vector_3>, Polyhedron> reconstruction(grid, output_mesh);
   reconstruction.run();
-
-  write_mesh_graph_ply(output_mesh, "graph.ply");
-  std::cout << "Mesh graph written to graph.ply" << std::endl;
-
-  std::ofstream out("rejected_candidates.ply");
-  if (!out) {
-    std::cerr << "Error: cannot open output file!" << std::endl;
-    return EXIT_FAILURE;
-  }
-  out << "ply\n";
-  out << "format ascii 1.0\n";
-  out << "element vertex " << reconstruction.rejected_candidates_.size() + vertices(output_mesh).size() << "\n";
-  out << "property float x\n";
-  out << "property float y\n";
-  out << "property float z\n";
-  out << "element edge " << 2*reconstruction.rejected_candidates_.size() << "\n";
-  out << "property int vertex1\n";
-  out << "property int vertex2\n";
-  out << "end_header\n";
-
-  for(const auto& vd : vertices(output_mesh))
-  {
-    const auto& p = get(CGAL::vertex_point, output_mesh, vd);
-      out << p.x() << " "
-          << p.y() << " "
-          << p.z() << "\n";
-  }
-  for (const auto& cand : reconstruction.rejected_candidates_)
-  {
-    const auto& p = cand.p;
-      out << p.x() << " "
-          << p.y() << " "
-          << p.z() << "\n";
-  }
-  // Write edges connecting rejected candidates to their parents
-  for(int i = 0; i < reconstruction.rejected_candidates_.size(); ++i)
-  {
-    // omit the v in the output, just write the index of the vertex
-    out << reconstruction.rejected_candidates_[i].parent0 << " " << i + vertices(output_mesh).size() << "\n";
-    out << reconstruction.rejected_candidates_[i].parent1 << " " << i + vertices(output_mesh).size() << "\n";
-    // out << reconstruction.rejected_candidates_[i].parent1 << " " << reconstruction.rejected_candidates_[i].parent0 << "\n";
-  }
   
   CGAL::IO::write_polygon_mesh("mesh.ply", output_mesh);
   std::cout << "Reconstructed mesh written to mesh.ply" << std::endl;
 
-  // Splat_surface_reconstruction(points, normals, output_mesh, average_spacing);
-
-  // if (CGAL::splat_surface_reconstruction(points, normals, output_mesh, average_spacing)) {
-  //   std::string fname = std::filesystem::path(filename).stem().string() + ".off";
-  //   CGAL::IO::write_polygon_mesh(fname, output_mesh);
-  // }
-
-  // else {
+  // std::ofstream out("rejected_candidates.ply");
+  // if (!out) {
+  //   std::cerr << "Error: cannot open output file!" << std::endl;
   //   return EXIT_FAILURE;
   // }
+  // out << "ply\n";
+  // out << "format ascii 1.0\n";
+  // out << "element vertex " << reconstruction.rejected_candidates_.size() << "\n";
+  // out << "property float x\n";
+  // out << "property float y\n";
+  // out << "property float z\n";
+  // // out << "element edge " << 2*reconstruction.rejected_candidates_.size() << "\n";
+  // // out << "property int vertex1\n";
+  // // out << "property int vertex2\n";
+  // out << "end_header\n";
+
+  // // for(const auto& vd : vertices(output_mesh))
+  // // {
+  // //   const auto& p = get(CGAL::vertex_point, output_mesh, vd);
+  // //     out << p.x() << " "
+  // //         << p.y() << " "
+  // //         << p.z() << "\n";
+  // // }
+  // for (const auto& cand : reconstruction.rejected_candidates_)
+  // {
+  //   const auto& p = cand.p;
+  //     out << p.x() << " "
+  //         << p.y() << " "
+  //         << p.z() << "\n";
+  // }
+  // // Write edges connecting rejected candidates to their parents
+  // // for(int i = 0; i < reconstruction.rejected_candidates_.size(); ++i)
+  // // {
+  // //   // omit the v in the output, just write the index of the vertex
+  // //   out << reconstruction.rejected_candidates_[i].parent0 << " " << i + vertices(output_mesh).size() << "\n";
+  // //   out << reconstruction.rejected_candidates_[i].parent1 << " " << i + vertices(output_mesh).size() << "\n";
+  // //   // out << reconstruction.rejected_candidates_[i].parent1 << " " << reconstruction.rejected_candidates_[i].parent0 << "\n";
+  // // }
 
   return EXIT_SUCCESS;
 }
