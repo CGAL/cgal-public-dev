@@ -281,7 +281,7 @@ struct ApplicationState
 void runComputeLogic(ApplicationState& app,
                      int batchMultiplier = std::numeric_limits<int>::max(),
                      int mode = 0,
-                     int activateAsyncDownload = 0, int gpuDouble = 1) {
+                     int gpuDouble = 1) {
   if(!app.isLoaded) {
     std::cout << "Error: You must 'load' meshes before computing.\n";
     return;
@@ -307,10 +307,11 @@ void runComputeLogic(ApplicationState& app,
   int2* outFinalExactPairs = nullptr;
   size_t outFinalCount = 0;
 
-  app.controller.runIntersectionPipeline(batchMultiplier, mode, activateAsyncDownload, outFinalExactPairs,
+  // Hardcode async download parameter to 0 here to maintain compatibility with the controller
+  app.controller.runIntersectionPipeline(batchMultiplier, mode, 0, outFinalExactPairs,
                                          outFinalCount, app.stats, gpuDouble);
 
-app.timingVisualizer.updateAndShow(app.stats);
+  app.timingVisualizer.updateAndShowCompute(app.stats);
 
   auto tEnd = std::chrono::high_resolution_clock::now();
   double ms = std::chrono::duration<double, std::milli>(tEnd - tStart).count();
@@ -338,7 +339,6 @@ app.timingVisualizer.updateAndShow(app.stats);
     std::free(outFinalExactPairs);
   }
 }
-
 void cmdScale(ApplicationState& app, std::istringstream&) {
   if(!app.isLoaded) {
     std::cout << "Error: No meshes loaded. Run 'load' first.\n";
@@ -379,11 +379,11 @@ void cmdLoad(ApplicationState& app, std::istringstream& iss, bool useOldLoader) 
   std::string arg1 = parseArgument(iss);
   std::string arg2 = parseArgument(iss);
 
-  int maxCellA = 1, maxCellB = 1, leafThresh = 4, scaleToUnitInt = 0;
+  int LevelNDescendQuery = 1, LevelNDescendRefrence = 1, leafThresh = 4, scaleToUnitInt = 0;
 
   if(arg1.empty()) {
     std::cout << "Usage: load" << (useOldLoader ? "Old" : "")
-              << " <meshA> [meshB] [maxCellA] [maxCellB] [leafThresh] [scaleToUnit(0/1)]\n";
+              << " <meshA> [meshB] [LevelNDescendQuery] [LevelNDescendRefrence] [leafThresh] [scaleToUnit(0/1)]\n";
     return;
   }
 
@@ -397,18 +397,18 @@ void cmdLoad(ApplicationState& app, std::istringstream& iss, bool useOldLoader) 
     int val;
     if(checkNum >> val) {
       singleMeshMode = true;
-      maxCellA = val;
+      LevelNDescendQuery = val;
     }
   }
 
   if(singleMeshMode) {
     pathA = arg1;
     pathB = arg1;
-    iss >> maxCellB >> leafThresh >> scaleToUnitInt;
+    iss >> LevelNDescendRefrence >> leafThresh >> scaleToUnitInt;
   } else {
     pathA = arg1;
     pathB = arg2;
-    iss >> maxCellA >> maxCellB >> leafThresh >> scaleToUnitInt;
+    iss >> LevelNDescendQuery >> LevelNDescendRefrence >> leafThresh >> scaleToUnitInt;
   }
 
   bool scaleToUnit = (scaleToUnitInt != 0);
@@ -521,9 +521,9 @@ void cmdLoad(ApplicationState& app, std::istringstream& iss, bool useOldLoader) 
 
     app.controller.construct(app.meshA, app.meshB, cA_cgal, cB_cgal, app.hVertsA.data(),
                              static_cast<int>(app.hVertsA.size()), app.hIndicesA.data(),
-                             static_cast<int>(app.hIndicesA.size()), maxCellA, app.hVertsB.data(),
+                             static_cast<int>(app.hIndicesA.size()), LevelNDescendQuery, app.hVertsB.data(),
                              static_cast<int>(app.hVertsB.size()), app.hIndicesB.data(),
-                             static_cast<int>(app.hIndicesB.size()), maxCellB, leafThresh, app.stats);
+                             static_cast<int>(app.hIndicesB.size()), LevelNDescendRefrence, leafThresh, app.stats);
 
     auto tEnd = std::chrono::high_resolution_clock::now();
     double ms = std::chrono::duration<double, std::milli>(tEnd - tStart).count();
@@ -555,21 +555,24 @@ void cmdTransform(ApplicationState& app, std::istringstream& iss) {
     std::cout << "Error: You must 'load' meshes before transforming.\n";
     return;
   }
-  double rotAx, rotAy, rotAz, rotBx, rotBy, rotBz, transBx, transBy, transBz;
-  if(iss >> rotAx >> rotAy >> rotAz >> rotBx >> rotBy >> rotBz >> transBx >> transBy >> transBz) {
+  // Added transAx, transAy, transAz
+  double rotAx, rotAy, rotAz, transAx, transAy, transAz, rotBx, rotBy, rotBz, transBx, transBy, transBz;
+  
+  if(iss >> rotAx >> rotAy >> rotAz >> transAx >> transAy >> transAz >> rotBx >> rotBy >> rotBz >> transBx >> transBy >> transBz) {
     float3 fRotA = make_float3(static_cast<float>(rotAx), static_cast<float>(rotAy), static_cast<float>(rotAz));
-    float3 fTransA = make_float3(0.0f, 0.0f, 0.0f);
+    // Populating fTransA instead of keeping it hardcoded to 0.0f
+    float3 fTransA = make_float3(static_cast<float>(transAx), static_cast<float>(transAy), static_cast<float>(transAz)); 
     float3 fRotB = make_float3(static_cast<float>(rotBx), static_cast<float>(rotBy), static_cast<float>(rotBz));
     float3 fTransB = make_float3(static_cast<float>(transBx), static_cast<float>(transBy), static_cast<float>(transBz));
 
     PolyscopeBridge::transformBoth(fRotA, fTransA, app.normCenterA, fRotB, fTransB, app.normCenterB);
 
     std::cout << "Transformations applied to viewport:\n";
-    std::cout << "  Mesh A Rot: (" << rotAx << ", " << rotAy << ", " << rotAz << ")\n";
+    std::cout << "  Mesh A Rot: (" << rotAx << ", " << rotAy << ", " << rotAz << ") | Trans: (" << transAx << ", " << transAy << ", " << transAz << ")\n";
     std::cout << "  Mesh B Rot: (" << rotBx << ", " << rotBy << ", " << rotBz << ") | Trans: (" << transBx << ", "
               << transBy << ", " << transBz << ")\n";
   } else {
-    std::cout << "Usage: transform <rotAx> <rotAy> <rotAz> <rotBx> <rotBy> <rotBz> <transBx> <transBy> <transBz>\n";
+    std::cout << "Usage: transform <rotAx> <rotAy> <rotAz> <transAx> <transAy> <transAz> <rotBx> <rotBy> <rotBz> <transBx> <transBy> <transBz>\n";
   }
 }
 
@@ -661,9 +664,21 @@ void cmdTestBVH(ApplicationState& app, std::istringstream& iss) {
     std::cout << "Error: You must 'load' meshes first.\n";
     return;
   }
-  int maxCellSizeA = 12, maxCellSizeB = 12, batchMultiplier = std::numeric_limits<int>::max(), mode = 0,
-      leafThreshold = 4, activateAsyncDownload = 0;
-  iss >> maxCellSizeA >> maxCellSizeB >> batchMultiplier >> mode >> leafThreshold >> activateAsyncDownload;
+  int LevelNDescendQuery = 12, LevelNDescendRefrence = 12, mode = 0,
+      leafThreshold = 4, predicateDoubleMode = 0;
+  int batchMultiplier = std::numeric_limits<int>::max();
+  std::string batchStr;
+
+  iss >> LevelNDescendQuery >> LevelNDescendRefrence;
+  
+  if (iss >> batchStr) {
+    if (batchStr == "INF" || batchStr == "inf") {
+      batchMultiplier = std::numeric_limits<int>::max();
+    } else {
+      batchMultiplier = std::stoi(batchStr);
+    }
+    iss >> mode >> leafThreshold >> predicateDoubleMode;
+  }
 
   float3 rotA, transA, rotB, transB;
   if(!PolyscopeBridge::getCurrentTransforms(rotA, transA, rotB, transB)) {
@@ -679,9 +694,9 @@ void cmdTestBVH(ApplicationState& app, std::istringstream& iss) {
 
   auto tStart = std::chrono::high_resolution_clock::now();
   kernelsTestBVHV3(app.meshA, app.meshB, app.hVertsA.data(), static_cast<int>(app.hVertsA.size()), app.hIndicesA.data(),
-                   static_cast<int>(app.hIndicesA.size()), maxCellSizeA, app.hVertsB.data(),
+                   static_cast<int>(app.hIndicesA.size()), LevelNDescendQuery, app.hVertsB.data(),
                    static_cast<int>(app.hVertsB.size()), app.hIndicesB.data(), static_cast<int>(app.hIndicesB.size()),
-                   maxCellSizeB, batchMultiplier, mode, leafThreshold, testStats, outFinalExactPairs, outFinalCount,
+                   LevelNDescendRefrence, batchMultiplier, mode, predicateDoubleMode, leafThreshold, testStats, outFinalExactPairs, outFinalCount,
                    centerA, centerB, make_double3(rotA.x, rotA.y, rotA.z), make_double3(transA.x, transA.y, transA.z),
                    make_double3(rotB.x, rotB.y, rotB.z), make_double3(transB.x, transB.y, transB.z));
 
@@ -696,12 +711,35 @@ void cmdTestBVH(ApplicationState& app, std::istringstream& iss) {
     PolyscopeBridge::highlightIntersections({}, num_faces(app.meshA), num_faces(app.meshB));
   }
 
+  // Trigger dedicated testBVH visualizer window
+  app.timingVisualizer.updateAndShowTestBVH(testStats);
+
+  // Print dedicated terminal breakdown for testBVH
   std::cout << "\n=======================================================\n";
   std::cout << "        ALTERNATIVE BVH TEST PIPELINE STATS           \n";
   std::cout << "=======================================================\n";
-  std::cout << "  Execution Time        : " << std::fixed << std::setprecision(2) << ms << " ms\n";
-  std::cout << "  Exact Intersections   : " << outFinalCount << "\n";
-  // ... [Console Outputs Truncated for Brevity] ...
+  std::cout << "  Wall Clock Time        : " << std::fixed << std::setprecision(2) << ms << " ms\n";
+  std::cout << "  GPU Pipeline Total     : " << std::fixed << std::setprecision(2) << testStats.GPUTotalTime << " ms\n";
+  std::cout << "  -----------------------------------------------------\n";
+  std::cout << "  [ALLOCATIONS & TRANSFERS]\n";
+  std::cout << "  - Raw Alloc & Copy     : " << testStats.initialAllocAndCopyMs << " ms\n";
+  std::cout << "  - Thrust Init Overhead : " << testStats.thrustInitOverheadMs << " ms\n";
+  std::cout << "  [TREE BUILD & REFIT]\n";
+  std::cout << "  - Mesh A Tree Build    : " << testStats.buildRefitMeshAMs << " ms\n";
+  std::cout << "  - Mesh B Tree Build    : " << testStats.buildRefitMeshBMs << " ms\n";
+  std::cout << "  [PIPELINE SEARCH & PREDICTS]\n";
+  std::cout << "  - Cross-Check Engine   : " << testStats.gpuCrossCheckEngineMs << " ms\n";
+  std::cout << "  - Dual-Tree Step      : " << testStats.dualTreeStepMs << " ms\n";
+  std::cout << "  - Parallel DFS Descent : " << testStats.parallelDfsDescentBMs << " ms\n";
+  std::cout << "  - Batched Loop Phases  : " 
+            << (testStats.loopTracker.assemblyPhaseMs + testStats.loopTracker.executionPhaseMs + 
+                testStats.loopTracker.fineEvaluationPhaseMs + testStats.loopTracker.gpuDoublePredicatesMs +
+                testStats.loopTracker.DownloadAndClean + testStats.loopTracker.CPUPredicates) 
+            << " ms\n";
+  std::cout << "  - Cleanup & Sync       : " << testStats.finalCleanupSyncMs << " ms\n";
+  std::cout << "  -----------------------------------------------------\n";
+  std::cout << "  Exact Intersections    : " << outFinalCount << "\n";
+  std::cout << "  AABB Candidate Pairs   : " << testStats.finalAabbCandidatePairs << "\n";
   std::cout << "=======================================================\n\n";
 }
 
@@ -737,33 +775,35 @@ int main(int argc, char** argv) {
   // Register UI Commands
   CommandDispatcher ui;
 
-  ui.registerCommand("load", "<meshA.off> [meshB.off] [maxCellA] [maxCellB] [leafThresh] [scaleToUnit(0/1)]",
+  ui.registerCommand("load", "<meshA.off> [meshB.off] [LevelNDescendQuery] [LevelNDescendRefrence] [leafThresh] [scaleToUnit(0/1)]",
                      "Loads meshes via fast parallel IO, normalizes CGAL & GPU in-place, and constructs BVHs.",
                      [&](std::istringstream& iss) { cmdLoad(app, iss, false); });
 
-  ui.registerCommand("loadOld", "<meshA.off> [meshB.off] [maxCellA] [maxCellB] [leafThresh] [scaleToUnit(0/1)]",
+  ui.registerCommand("loadOld", "<meshA.off> [meshB.off] [LevelNDescendQuery] [LevelNDescendRefrence] [leafThresh] [scaleToUnit(0/1)]",
                      "Loads meshes via standard sequential CGAL stream loader.",
                      [&](std::istringstream& iss) { cmdLoad(app, iss, true); });
 
-ui.registerCommand("compute", "[batchMultiplier] [DualTreeSteps] [async] [gpuSecondRound(0/1/2)]",
+ui.registerCommand("compute", "[batchMultiplier] [DualTreeSteps] [GpuPredicates mode]",
                      "Syncs active viewport/gizmo transforms to GPU and executes intersection pipeline.",
                      [&](std::istringstream& iss) {
                        int batchMultiplier = std::numeric_limits<int>::max();
                        int mode = 0;
-                       int activateAsyncDownload = 0;
                        int gpuDoubleInt = 1; // Default to 1 (true)
 
-                       // Stream extraction automatically leaves gpuDoubleInt as 1 if not provided
-                       iss >> batchMultiplier >> mode >> activateAsyncDownload >> gpuDoubleInt;
+                       std::string batchStr;
+                       if(iss >> batchStr) {
+                           if(batchStr == "INF" || batchStr == "inf") {
+                               batchMultiplier = std::numeric_limits<int>::max();
+                           } else {
+                               batchMultiplier = std::stoi(batchStr);
+                           }
+                           iss >> mode >> gpuDoubleInt;
+                       }
 
-                       int gpuDouble = gpuDoubleInt;
-
-                      // bool gpuDouble = (gpuDoubleInt != 0);
-
-                       runComputeLogic(app, batchMultiplier, mode, activateAsyncDownload, gpuDouble);
+                       runComputeLogic(app, batchMultiplier, mode, gpuDoubleInt);
                      });
 
-  ui.registerCommand("transform", "<rotAx> <rotAy> <rotAz> <rotBx> <rotBy> <rotBz> <transBx> <transBy> <transBz>",
+ ui.registerCommand("transform", "<rotAx> <rotAy> <rotAz> <transAx> <transAy> <transAz> <rotBx> <rotBy> <rotBz> <transBx> <transBy> <transBz>",
                      "Sets transformation matrices for Mesh A and Mesh B.",
                      [&](std::istringstream& iss) { cmdTransform(app, iss); });
 
@@ -774,7 +814,7 @@ ui.registerCommand("compute", "[batchMultiplier] [DualTreeSteps] [async] [gpuSec
                      [&](std::istringstream& iss) { cmdGizmo(app, iss); });
 
   ui.registerCommand("testBVH",
-                     "[maxCellA] [maxCellB] [batchMultiplier] [NumDualTreeSteps] [leafThresh] [asyncDownload]",
+                     "[LevelNDescendQuery] [LevelNDescendRefrence] [batchMultiplier] [NumDualTreeSteps] [leafThresh] [GpuPredicates mode]",
                      "Executes alternative test pipeline using rotation tools and kernelsTestBVHV3.",
                      [&](std::istringstream& iss) { cmdTestBVH(app, iss); });
 

@@ -34,6 +34,7 @@ extern "C" void kernelsTestBVHV3(Mesh & meshAcpu, Mesh & meshBcpu, const double3
                                  int maxCellSizeB,
                                  int batchMultiplier,
                                  int mode,
+                                 int gpuPredicateMode,
                                  int leafThreshold,
                                  ExecutionStats& stats,
                                  int2*& outFinalExactPairs,      

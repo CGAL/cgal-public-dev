@@ -64,6 +64,7 @@ extern "C" void kernelsTestBVHV3(Mesh& meshAcpu,
                                  int maxCellSizeB,
                                  int batchMultiplier,
                                  int mode,
+                                 int gpuPredicateMode,
                                  int leafThreshold,
                                  ExecutionStats& stats,
                                  int2*& outFinalExactPairs,
@@ -391,7 +392,7 @@ extern "C" void kernelsTestBVHV3(Mesh& meshAcpu,
       dBoxesA, // <-- ADDED: Precomputed boxes for Mesh A
       dBoxesB, // <-- ADDED: Precomputed boxes for Mesh B
       dVertsA, dIndicesA, dVertsB, dIndicesB, outFinalExactPairs, outFinalCount, tracker, m_centerA, m_centerB, m_rotA,
-      m_transA, m_rotB, m_transB, 1 ,stream);
+      m_transA, m_rotB, m_transB, gpuPredicateMode ,stream);
 
 
   //   if(activateAsyncDownload == 0) {

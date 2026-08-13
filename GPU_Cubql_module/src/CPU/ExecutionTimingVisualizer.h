@@ -27,15 +27,14 @@ public:
 
 private:
     bool m_isVisible = false;
+    std::string m_windowTitle = "Pipeline Execution Profiler";
     double m_totalTimeMs = 0.0;
     std::vector<TimingSegment> m_segments;
 
 public:
     ExecutionTimingVisualizer() = default;
 
-    // Registers user callback hook into Polyscope
     void init() {
-        // Appends or sets polyscope callback loop
         auto existingCallback = polyscope::state::userCallback;
         polyscope::state::userCallback = [this, existingCallback]() {
             if (existingCallback) existingCallback();
@@ -43,47 +42,71 @@ public:
         };
     }
 
-    // Call this inside runComputeLogic or cmdTestBVH to update data and display window
-    void updateAndShow(const ExecutionStats& stats) {
+    // --------------------------------------------------------------------
+    // 1. DEDICATED BREAKDOWN FOR 'COMPUTE' (Runtime Traversal & Predicates)
+    // --------------------------------------------------------------------
+    void updateAndShowCompute(const ExecutionStats& stats) {
         m_segments.clear();
+        m_windowTitle = "Pipeline Profiler: COMPUTE (Query Only)";
         m_totalTimeMs = stats.GPUTotalTime;
 
-        // 1. Pipeline Outer Setup Phase
-        addSegment("GPU Cross-Check Engine",     stats.gpuCrossCheckEngineMs,            ImVec4(0.2f, 0.5f, 0.85f, 1.0f), "Initial BVH criss-cross intersection pass");
-        addSegment("Dual Tree Expansion",       stats.dualTreeStepMs,                   ImVec4(0.1f, 0.8f, 0.6f,  1.0f), "Dual-tree traversal depth step");
-        addSegment("Parallel DFS Descent (A&B)", stats.parallelDfsDescentBMs,            ImVec4(0.2f, 0.7f, 0.75f, 1.0f), "BFS/DFS primitive descent and reverse map creation");
+        // Query & Traversal Setup
+        addSegment("GPU Cross-Check Engine",     stats.gpuCrossCheckEngineMs,            ImVec4(0.20f, 0.50f, 0.85f, 1.0f), "Initial BVH criss-cross intersection pass");
+        addSegment("Dual Tree Expansion",       stats.dualTreeStepMs,                   ImVec4(0.10f, 0.80f, 0.60f, 1.0f), "Dual-tree traversal depth step");
+        addSegment("Parallel DFS Descent (A&B)", stats.parallelDfsDescentBMs,            ImVec4(0.20f, 0.70f, 0.75f, 1.0f), "BFS/DFS primitive descent and reverse map creation");
         
-        // 2. Loop Initialization
-        addSegment("Preallocation Phase",        stats.loopTracker.preallocateTimeMs,    ImVec4(0.6f, 0.4f, 0.85f, 1.0f), "Batch chunk workspace allocation");
-        
-        // 3. Batched Chunk Loop Phases (In order of per-chunk execution)
-        addSegment("Assembly Phase",            stats.loopTracker.assemblyPhaseMs,       ImVec4(0.9f, 0.55f, 0.2f, 1.0f), "Chunk buffer staging and batch index kernel");
-        addSegment("AABB Candidate Execution",  stats.loopTracker.executionPhaseMs,      ImVec4(0.85f, 0.85f, 0.2f, 1.0f), "Fine AABB overlap counting and candidate generation");
-        addSegment("GPU Float Predicates",      stats.loopTracker.fineEvaluationPhaseMs, ImVec4(0.3f, 0.85f, 0.3f, 1.0f), "GPU float-assisted exact predicates evaluation");
-        addSegment("GPU Double Predicates",     stats.loopTracker.gpuDoublePredicatesMs, ImVec4(0.1f, 0.6f, 0.35f, 1.0f), "GPU double-precision predicates pass (Yellow)");
-        addSegment("Thrust Compaction & D2H",   stats.loopTracker.DownloadAndClean,      ImVec4(0.7f, 0.4f, 0.7f, 1.0f), "Thrust copy_if compaction, D2H transfers & chunk frees");
-        addSegment("CPU Narrow-Phase Compute",   stats.loopTracker.CPUPredicates,         ImVec4(0.85f, 0.3f, 0.55f, 1.0f), "Exact CPU CGAL TBB filtering (Orange)");
+        // Chunk Processing Loop
+        addSegment("Preallocation Phase",        stats.loopTracker.preallocateTimeMs,    ImVec4(0.60f, 0.40f, 0.85f, 1.0f), "Batch chunk workspace allocation");
+        addSegment("Assembly Phase",            stats.loopTracker.assemblyPhaseMs,       ImVec4(0.90f, 0.55f, 0.20f, 1.0f), "Chunk buffer staging and batch index kernel");
+        addSegment("AABB Candidate Execution",  stats.loopTracker.executionPhaseMs,      ImVec4(0.85f, 0.85f, 0.20f, 1.0f), "Fine AABB overlap counting and candidate generation");
+        addSegment("GPU Float Predicates",      stats.loopTracker.fineEvaluationPhaseMs, ImVec4(0.30f, 0.85f, 0.30f, 1.0f), "GPU float-assisted exact predicates evaluation");
+        addSegment("GPU Double Predicates",     stats.loopTracker.gpuDoublePredicatesMs, ImVec4(0.10f, 0.60f, 0.35f, 1.0f), "GPU double-precision predicates pass (Yellow)");
+        addSegment("Thrust Compaction & D2H",   stats.loopTracker.DownloadAndClean,      ImVec4(0.70f, 0.40f, 0.70f, 1.0f), "Thrust copy_if compaction, D2H transfers & chunk frees");
+        addSegment("CPU Narrow-Phase Compute",   stats.loopTracker.CPUPredicates,         ImVec4(0.85f, 0.30f, 0.55f, 1.0f), "Exact CPU CGAL TBB filtering (Orange)");
 
-        // 4. Pipeline Finalization & Teardown
-        addSegment("Loop Workspace Cleanup",    stats.loopTracker.cleanupTimeMs,         ImVec4(0.5f, 0.3f, 0.3f, 1.0f), "End-of-loop workspace deallocation and stream sync");
+        // Finalization
+        addSegment("Loop Workspace Cleanup",    stats.loopTracker.cleanupTimeMs,         ImVec4(0.50f, 0.30f, 0.30f, 1.0f), "End-of-loop workspace deallocation and stream sync");
         addSegment("Explicit Cleanup Sync",      stats.finalCleanupSyncMs,               ImVec4(0.85f, 0.35f, 0.35f, 1.0f), "Device memory synchronization and driver teardown");
 
-        // 5. Compute residual unaccounted time ("Grey Area")
-        double trackedSum = 0.0;
-        for (const auto& seg : m_segments) {
-            trackedSum += seg.ms;
-        }
+        computeUnaccountedOverhead();
+        m_isVisible = true;
+    }
 
-        double unaccountedMs = std::max(0.0, m_totalTimeMs - trackedSum);
-        if (unaccountedMs > 0.001) {
-            m_segments.push_back({
-                "Unaccounted Overhead (Grey Area)",
-                unaccountedMs,
-                ImVec4(0.5f, 0.5f, 0.5f, 1.0f), // Neutral Grey
-                "Unmeasured driver overhead, device vector allocations, stream syncs, or kernel launch latencies"
-            });
-        }
+    // --------------------------------------------------------------------
+    // 2. DEDICATED BREAKDOWN FOR 'TESTBVH' (Allocations + Trees + Compute)
+    // --------------------------------------------------------------------
+    void updateAndShowTestBVH(const ExecutionStats& stats) {
+        m_segments.clear();
+        m_windowTitle = "Pipeline Profiler: TESTBVH (End-To-End)";
+        m_totalTimeMs = stats.GPUTotalTime;
 
+        // Phase 1: Allocations & Transfers
+        addSegment("1. Raw Copy & Box Gen",      stats.initialAllocAndCopyMs,           ImVec4(0.95f, 0.40f, 0.20f, 1.0f), "Host-to-Device buffer copies and box generation");
+        addSegment("2. Thrust Workspaces Init",  stats.thrustInitOverheadMs,            ImVec4(0.85f, 0.50f, 0.30f, 1.0f), "Thrust device vector allocations");
+
+        // Phase 2: BVH Construction
+        addSegment("3. Build/Refit Tree Mesh A", stats.buildRefitMeshAMs,               ImVec4(0.35f, 0.65f, 0.95f, 1.0f), "Linear init, Forest BVH expansion & refitting (Mesh A)");
+        addSegment("4. Build/Refit Tree Mesh B", stats.buildRefitMeshBMs,               ImVec4(0.25f, 0.75f, 0.85f, 1.0f), "Linear init, Forest BVH expansion & refitting (Mesh B)");
+
+        // Phase 3: Traversal & Cross Check
+        addSegment("5. GPU Cross-Check Engine",  stats.gpuCrossCheckEngineMs,            ImVec4(0.20f, 0.50f, 0.85f, 1.0f), "Initial BVH criss-cross intersection pass");
+        addSegment("6. Dual Tree Expansion",    stats.dualTreeStepMs,                   ImVec4(0.10f, 0.80f, 0.60f, 1.0f), "Dual-tree traversal depth step");
+        addSegment("7. Parallel DFS Descent",   stats.parallelDfsDescentBMs,            ImVec4(0.20f, 0.70f, 0.75f, 1.0f), "BFS/DFS primitive descent and reverse map creation");
+
+        // Phase 4: Chunk Execution Loop
+        addSegment("8. Preallocation Phase",     stats.loopTracker.preallocateTimeMs,    ImVec4(0.60f, 0.40f, 0.85f, 1.0f), "Batch chunk workspace allocation");
+        addSegment("9. Assembly Phase",         stats.loopTracker.assemblyPhaseMs,       ImVec4(0.90f, 0.55f, 0.20f, 1.0f), "Chunk buffer staging and batch index kernel");
+        addSegment("10. AABB Candidate Exec",   stats.loopTracker.executionPhaseMs,      ImVec4(0.85f, 0.85f, 0.20f, 1.0f), "Fine AABB overlap counting and candidate generation");
+        addSegment("11. GPU Float Predicates",   stats.loopTracker.fineEvaluationPhaseMs, ImVec4(0.30f, 0.85f, 0.30f, 1.0f), "GPU float-assisted exact predicates evaluation");
+        addSegment("12. GPU Double Predicates",  stats.loopTracker.gpuDoublePredicatesMs, ImVec4(0.10f, 0.60f, 0.35f, 1.0f), "GPU double-precision predicates pass (Yellow)");
+        addSegment("13. Thrust Compaction & D2H",stats.loopTracker.DownloadAndClean,      ImVec4(0.70f, 0.40f, 0.70f, 1.0f), "Thrust copy_if compaction, D2H transfers & chunk frees");
+        addSegment("14. CPU Narrow-Phase",       stats.loopTracker.CPUPredicates,         ImVec4(0.85f, 0.30f, 0.55f, 1.0f), "Exact CPU CGAL TBB filtering (Orange)");
+
+        // Phase 5: Cleanup
+        addSegment("15. Loop Workspace Cleanup", stats.loopTracker.cleanupTimeMs,         ImVec4(0.50f, 0.30f, 0.30f, 1.0f), "End-of-loop workspace deallocation and stream sync");
+        addSegment("16. Explicit Cleanup Sync",  stats.finalCleanupSyncMs,               ImVec4(0.85f, 0.35f, 0.35f, 1.0f), "Device memory synchronization and driver teardown");
+
+        computeUnaccountedOverhead();
         m_isVisible = true;
     }
 
@@ -98,34 +121,45 @@ private:
         }
     }
 
+    void computeUnaccountedOverhead() {
+        double trackedSum = 0.0;
+        for (const auto& seg : m_segments) {
+            trackedSum += seg.ms;
+        }
+
+        double unaccountedMs = std::max(0.0, m_totalTimeMs - trackedSum);
+        if (unaccountedMs > 0.001) {
+            m_segments.push_back({
+                "Unaccounted Overhead (Grey Area)",
+                unaccountedMs,
+                ImVec4(0.5f, 0.5f, 0.5f, 1.0f),
+                "Unmeasured driver overhead, memory allocations, or launch latencies"
+            });
+        }
+    }
+
     void renderUI() {
         if (!m_isVisible) return;
 
-        ImGui::SetNextWindowSize(ImVec2(680, 420), ImGuiCond_FirstUseEver);
+        ImGui::SetNextWindowSize(ImVec2(700, 440), ImGuiCond_FirstUseEver);
 
-        if (ImGui::Begin("Pipeline Execution Profiler", &m_isVisible, ImGuiWindowFlags_NoCollapse)) {
-            
-            // Pipeline Summary Header
+        if (ImGui::Begin(m_windowTitle.c_str(), &m_isVisible, ImGuiWindowFlags_NoCollapse)) {
             ImGui::TextColored(ImVec4(0.4f, 0.8f, 1.0f, 1.0f), "Pipeline Timeline Overview");
             ImGui::Text("Total Execution Time (GPUTotalTime): %.3f ms", m_totalTimeMs);
             ImGui::Separator();
 
             if (m_totalTimeMs <= 0.0 || m_segments.empty()) {
-                ImGui::TextDisabled("No timing profile data available. Execute 'compute' or 'testBVH' first.");
+                ImGui::TextDisabled("No timing profile data available.");
                 ImGui::End();
                 return;
             }
 
-            // ----------------------------------------------------------------
-            // 1. STACKED HORIZONTAL BAR CHART
-            // ----------------------------------------------------------------
+            // Stacked Bar
             ImGui::Text("Sub-Phase Distribution Bar:");
             ImVec2 canvasPos = ImGui::GetCursorScreenPos();
             ImVec2 canvasSize(ImGui::GetContentRegionAvail().x, 35.0f);
-
             ImDrawList* drawList = ImGui::GetWindowDrawList();
 
-            // Background frame bounding rect
             drawList->AddRectFilled(canvasPos, ImVec2(canvasPos.x + canvasSize.x, canvasPos.y + canvasSize.y),
                                     IM_COL32(30, 30, 30, 255), 4.0f);
 
@@ -135,16 +169,15 @@ private:
 
             for (const auto& seg : m_segments) {
                 float segWidth = static_cast<float>((seg.ms / m_totalTimeMs) * canvasSize.x);
-                if (segWidth < 1.0f) segWidth = 1.0f; // Minimum 1px visual visibility
+                if (segWidth < 1.0f) segWidth = 1.0f;
 
                 ImVec2 pMin(currentX, canvasPos.y);
                 ImVec2 pMax(std::min(currentX + segWidth, canvasPos.x + canvasSize.x), canvasPos.y + canvasSize.y);
 
                 ImU32 col32 = ImGui::ColorConvertFloat4ToU32(seg.color);
                 drawList->AddRectFilled(pMin, pMax, col32, 0.0f);
-                drawList->AddRect(pMin, pMax, IM_COL32(20, 20, 20, 180), 0.0f); // Border line
+                drawList->AddRect(pMin, pMax, IM_COL32(20, 20, 20, 180), 0.0f);
 
-                // Check mouse hover for tooltip
                 if (mousePos.x >= pMin.x && mousePos.x <= pMax.x &&
                     mousePos.y >= pMin.y && mousePos.y <= pMax.y) {
                     hoveredSeg = &seg;
@@ -154,10 +187,8 @@ private:
                 if (currentX >= canvasPos.x + canvasSize.x) break;
             }
 
-            // Dummy item to reserve space in ImGui layout
             ImGui::Dummy(canvasSize);
 
-            // Render Hover Tooltip
             if (hoveredSeg) {
                 double pct = (hoveredSeg->ms / m_totalTimeMs) * 100.0;
                 ImGui::BeginTooltip();
@@ -172,11 +203,8 @@ private:
             ImGui::Spacing();
             ImGui::Separator();
 
-            // ----------------------------------------------------------------
-            // 2. DETAILED BREAKDOWN TABLE & LEGEND
-            // ----------------------------------------------------------------
+            // Table Breakdown
             ImGui::Text("Detailed Timing Breakdown:");
-
             static ImGuiTableFlags flags = ImGuiTableFlags_Resizable | ImGuiTableFlags_RowBg | 
                                            ImGuiTableFlags_BordersOuter | ImGuiTableFlags_BordersV;
 
@@ -191,24 +219,19 @@ private:
                     double pct = (seg.ms / m_totalTimeMs) * 100.0;
 
                     ImGui::TableNextRow();
-                    
-                    // Column 0: Color Box
                     ImGui::TableSetColumnIndex(0);
                     ImGui::ColorButton(("##col_" + seg.name).c_str(), seg.color, 
                                         ImGuiColorEditFlags_NoTooltip, ImVec2(30, 15));
 
-                    // Column 1: Name + Tooltip
                     ImGui::TableSetColumnIndex(1);
                     ImGui::Text("%s", seg.name.c_str());
                     if (ImGui::IsItemHovered()) {
                         ImGui::SetTooltip("%s", seg.description.c_str());
                     }
 
-                    // Column 2: Milliseconds
                     ImGui::TableSetColumnIndex(2);
                     ImGui::Text("%.3f ms", seg.ms);
 
-                    // Column 3: Percentage
                     ImGui::TableSetColumnIndex(3);
                     ImGui::Text("%.2f%%", pct);
                 }
