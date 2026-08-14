@@ -1,1 +1,0 @@
-/home/yury/Projects/CPPProj/GSOC/cgal-public-dev/Surface_sweep_2/include/CGAL/Sweep_line_2_algorithms.h

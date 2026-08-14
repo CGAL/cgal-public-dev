@@ -1,1 +1,0 @@
-/home/yury/Projects/CPPProj/GSOC/cgal-public-dev/CGAL_ImageIO/include/CGAL/ImageIO/Attic/reech4x4_impl.h

@@ -1,1 +1,0 @@
-/home/yury/Projects/CPPProj/GSOC/cgal-public-dev/Distance_3/include/CGAL/Distance_3/Segment_3_Segment_3.h

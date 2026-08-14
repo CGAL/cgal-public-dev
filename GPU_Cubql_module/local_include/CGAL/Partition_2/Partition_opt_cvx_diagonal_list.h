@@ -1,1 +1,0 @@
-/home/yury/Projects/CPPProj/GSOC/cgal-public-dev/Partition_2/include/CGAL/Partition_2/Partition_opt_cvx_diagonal_list.h

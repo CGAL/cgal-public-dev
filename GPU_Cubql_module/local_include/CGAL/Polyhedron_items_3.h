@@ -1,1 +1,0 @@
-/home/yury/Projects/CPPProj/GSOC/cgal-public-dev/HalfedgeDS/include/CGAL/Polyhedron_items_3.h

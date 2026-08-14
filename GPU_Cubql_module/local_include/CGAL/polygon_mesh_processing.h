@@ -1,1 +1,0 @@
-/home/yury/Projects/CPPProj/GSOC/cgal-public-dev/Polygon_mesh_processing/include/CGAL/polygon_mesh_processing.h

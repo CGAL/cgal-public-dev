@@ -1,1 +1,0 @@
-/home/yury/Projects/CPPProj/GSOC/cgal-public-dev/Installation/include/CGAL/license/Barycentric_coordinates_2.h

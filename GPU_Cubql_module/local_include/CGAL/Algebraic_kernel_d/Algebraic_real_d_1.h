@@ -1,1 +1,0 @@
-/home/yury/Projects/CPPProj/GSOC/cgal-public-dev/Algebraic_kernel_d/include/CGAL/Algebraic_kernel_d/Algebraic_real_d_1.h

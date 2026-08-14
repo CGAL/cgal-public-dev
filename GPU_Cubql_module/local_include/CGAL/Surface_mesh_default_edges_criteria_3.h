@@ -1,1 +1,0 @@
-/home/yury/Projects/CPPProj/GSOC/cgal-public-dev/Surface_mesher/include/CGAL/Surface_mesh_default_edges_criteria_3.h

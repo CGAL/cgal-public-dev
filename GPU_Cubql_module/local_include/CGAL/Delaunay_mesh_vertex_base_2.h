@@ -1,1 +1,0 @@
-/home/yury/Projects/CPPProj/GSOC/cgal-public-dev/Triangulation_2/include/CGAL/Delaunay_mesh_vertex_base_2.h

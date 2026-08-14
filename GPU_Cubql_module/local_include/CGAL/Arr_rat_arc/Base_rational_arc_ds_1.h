@@ -1,1 +1,0 @@
-/home/yury/Projects/CPPProj/GSOC/cgal-public-dev/Arrangement_on_surface_2/include/CGAL/Arr_rat_arc/Base_rational_arc_ds_1.h

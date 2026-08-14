@@ -1,1 +1,0 @@
-/home/yury/Projects/CPPProj/GSOC/cgal-public-dev/Point_set_3/include/CGAL/Point_set_3/IO/XYZ.h

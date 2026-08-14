@@ -1,1 +1,0 @@
-/home/yury/Projects/CPPProj/GSOC/cgal-public-dev/Polygon_mesh_processing/include/CGAL/Surface_mesh_simplification/Policies/Edge_collapse/Polyhedral_envelope_filter.h

@@ -1,1 +1,0 @@
-/home/yury/Projects/CPPProj/GSOC/cgal-public-dev/Circular_kernel_3/include/CGAL/global_functions_spherical_kernel_3.h

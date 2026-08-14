@@ -1,1 +1,0 @@
-/home/yury/Projects/CPPProj/GSOC/cgal-public-dev/Combinatorial_map/include/CGAL/Info_for_cell_attribute.h

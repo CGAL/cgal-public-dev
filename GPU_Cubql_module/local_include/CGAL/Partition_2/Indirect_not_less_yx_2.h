@@ -1,1 +1,0 @@
-/home/yury/Projects/CPPProj/GSOC/cgal-public-dev/Partition_2/include/CGAL/Partition_2/Indirect_not_less_yx_2.h

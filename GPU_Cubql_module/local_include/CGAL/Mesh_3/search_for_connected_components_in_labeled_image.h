@@ -1,1 +1,0 @@
-/home/yury/Projects/CPPProj/GSOC/cgal-public-dev/Mesh_3/include/CGAL/Mesh_3/search_for_connected_components_in_labeled_image.h

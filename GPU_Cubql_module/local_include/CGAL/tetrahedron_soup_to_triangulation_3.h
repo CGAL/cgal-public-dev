@@ -1,1 +1,0 @@
-/home/yury/Projects/CPPProj/GSOC/cgal-public-dev/SMDS_3/include/CGAL/tetrahedron_soup_to_triangulation_3.h

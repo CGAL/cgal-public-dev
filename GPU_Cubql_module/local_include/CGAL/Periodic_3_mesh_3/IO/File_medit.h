@@ -1,1 +1,0 @@
-/home/yury/Projects/CPPProj/GSOC/cgal-public-dev/Periodic_3_mesh_3/include/CGAL/Periodic_3_mesh_3/IO/File_medit.h

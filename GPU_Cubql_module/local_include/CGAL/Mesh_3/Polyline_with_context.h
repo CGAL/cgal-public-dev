@@ -1,1 +1,0 @@
-/home/yury/Projects/CPPProj/GSOC/cgal-public-dev/Mesh_3/include/CGAL/Mesh_3/Polyline_with_context.h

@@ -1,1 +1,0 @@
-/home/yury/Projects/CPPProj/GSOC/cgal-public-dev/Interval_support/include/CGAL/convert_to_bfi.h

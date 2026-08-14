@@ -1,1 +1,0 @@
-/home/yury/Projects/CPPProj/GSOC/cgal-public-dev/Bounding_volumes/include/CGAL/Min_ellipse_2/Min_ellipse_2_adapterC2.h

@@ -1,1 +1,0 @@
-/home/yury/Projects/CPPProj/GSOC/cgal-public-dev/Envelope_3/include/CGAL/Env_surface_data_traits_3.h

@@ -1,1 +1,0 @@
-/home/yury/Projects/CPPProj/GSOC/cgal-public-dev/Hyperbolic_triangulation_2/include/CGAL/Hyperbolic_Delaunay_triangulation_CK_traits_2.h

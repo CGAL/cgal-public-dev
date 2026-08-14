@@ -1,1 +1,0 @@
-/home/yury/Projects/CPPProj/GSOC/cgal-public-dev/Envelope_3/include/CGAL/Envelope_3/Envelope_element_visitor_3.h

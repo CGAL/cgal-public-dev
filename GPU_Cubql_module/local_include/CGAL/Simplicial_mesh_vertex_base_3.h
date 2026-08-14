@@ -1,1 +1,0 @@
-/home/yury/Projects/CPPProj/GSOC/cgal-public-dev/SMDS_3/include/CGAL/Simplicial_mesh_vertex_base_3.h

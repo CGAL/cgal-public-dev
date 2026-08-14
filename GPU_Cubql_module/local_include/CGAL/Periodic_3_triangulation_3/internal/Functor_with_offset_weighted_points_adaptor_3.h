@@ -1,1 +1,0 @@
-/home/yury/Projects/CPPProj/GSOC/cgal-public-dev/Periodic_3_triangulation_3/include/CGAL/Periodic_3_triangulation_3/internal/Functor_with_offset_weighted_points_adaptor_3.h

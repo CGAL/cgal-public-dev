@@ -1,1 +1,0 @@
-/home/yury/Projects/CPPProj/GSOC/cgal-public-dev/Triangulation_2/include/CGAL/Triangulation_data_structure_using_list_2.h

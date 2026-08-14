@@ -1,1 +1,0 @@
-/home/yury/Projects/CPPProj/GSOC/cgal-public-dev/Boolean_set_operations_2/include/CGAL/IO/Dxf_bsop_reader.h

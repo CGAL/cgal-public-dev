@@ -1,1 +1,0 @@
-/home/yury/Projects/CPPProj/GSOC/cgal-public-dev/Shape_detection/include/CGAL/Polygon_mesh_processing/region_growing.h

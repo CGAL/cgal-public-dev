@@ -1,1 +1,0 @@
-/home/yury/Projects/CPPProj/GSOC/cgal-public-dev/Barycentric_coordinates_2/include/CGAL/Barycentric_coordinates_2/barycentric_enum_2.h

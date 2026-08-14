@@ -1,1 +1,0 @@
-/home/yury/Projects/CPPProj/GSOC/cgal-public-dev/Voronoi_diagram_2/include/CGAL/Voronoi_diagram_2/Regular_triangulation_nearest_site_2.h

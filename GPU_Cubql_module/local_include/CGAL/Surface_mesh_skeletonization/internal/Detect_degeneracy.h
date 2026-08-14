@@ -1,1 +1,0 @@
-/home/yury/Projects/CPPProj/GSOC/cgal-public-dev/Surface_mesh_skeletonization/include/CGAL/Surface_mesh_skeletonization/internal/Detect_degeneracy.h

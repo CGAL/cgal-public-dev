@@ -1,1 +1,0 @@
-/home/yury/Projects/CPPProj/GSOC/cgal-public-dev/Triangulation_on_sphere_2/include/CGAL/Geographical_coordinates_traits_2.h

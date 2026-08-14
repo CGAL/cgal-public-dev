@@ -1,1 +1,0 @@
-/home/yury/Projects/CPPProj/GSOC/cgal-public-dev/Alpha_shapes_2/include/CGAL/Alpha_shapes_2/internal/Lazy_alpha_nt_2.h

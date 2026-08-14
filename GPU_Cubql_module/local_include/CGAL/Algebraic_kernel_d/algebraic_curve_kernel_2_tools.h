@@ -1,1 +1,0 @@
-/home/yury/Projects/CPPProj/GSOC/cgal-public-dev/Algebraic_kernel_d/include/CGAL/Algebraic_kernel_d/algebraic_curve_kernel_2_tools.h

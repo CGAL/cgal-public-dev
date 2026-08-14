@@ -1,1 +1,0 @@
-/home/yury/Projects/CPPProj/GSOC/cgal-public-dev/Triangulation_on_sphere_2/include/CGAL/Delaunay_triangulation_on_sphere_2.h

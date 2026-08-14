@@ -1,1 +1,0 @@
-/home/yury/Projects/CPPProj/GSOC/cgal-public-dev/Installation/include/CGAL/license/Straight_skeleton_extrusion_2.h

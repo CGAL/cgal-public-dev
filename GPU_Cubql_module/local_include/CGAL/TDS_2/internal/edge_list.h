@@ -1,1 +1,0 @@
-/home/yury/Projects/CPPProj/GSOC/cgal-public-dev/TDS_2/include/CGAL/TDS_2/internal/edge_list.h

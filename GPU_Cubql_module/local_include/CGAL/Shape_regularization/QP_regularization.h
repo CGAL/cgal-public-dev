@@ -1,1 +1,0 @@
-/home/yury/Projects/CPPProj/GSOC/cgal-public-dev/Shape_regularization/include/CGAL/Shape_regularization/QP_regularization.h

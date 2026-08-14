@@ -1,1 +1,0 @@
-/home/yury/Projects/CPPProj/GSOC/cgal-public-dev/Triangulation_on_hyperbolic_surface_2/include/CGAL/Hyperbolic_surface_traits_2.h

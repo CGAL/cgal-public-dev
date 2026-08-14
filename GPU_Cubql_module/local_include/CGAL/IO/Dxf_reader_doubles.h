@@ -1,1 +1,0 @@
-/home/yury/Projects/CPPProj/GSOC/cgal-public-dev/Circular_kernel_2/include/CGAL/IO/Dxf_reader_doubles.h

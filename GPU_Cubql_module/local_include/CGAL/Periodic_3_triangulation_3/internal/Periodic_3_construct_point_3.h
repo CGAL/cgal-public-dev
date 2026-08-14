@@ -1,1 +1,0 @@
-/home/yury/Projects/CPPProj/GSOC/cgal-public-dev/Periodic_3_triangulation_3/include/CGAL/Periodic_3_triangulation_3/internal/Periodic_3_construct_point_3.h

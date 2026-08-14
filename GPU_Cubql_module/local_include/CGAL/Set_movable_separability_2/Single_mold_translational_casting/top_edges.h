@@ -1,1 +1,0 @@
-/home/yury/Projects/CPPProj/GSOC/cgal-public-dev/Set_movable_separability_2/include/CGAL/Set_movable_separability_2/Single_mold_translational_casting/top_edges.h

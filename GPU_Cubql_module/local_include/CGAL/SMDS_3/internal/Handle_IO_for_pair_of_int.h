@@ -1,1 +1,0 @@
-/home/yury/Projects/CPPProj/GSOC/cgal-public-dev/SMDS_3/include/CGAL/SMDS_3/internal/Handle_IO_for_pair_of_int.h

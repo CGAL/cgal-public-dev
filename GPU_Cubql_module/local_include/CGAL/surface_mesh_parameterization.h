@@ -1,1 +1,0 @@
-/home/yury/Projects/CPPProj/GSOC/cgal-public-dev/Surface_mesh_parameterization/include/CGAL/surface_mesh_parameterization.h

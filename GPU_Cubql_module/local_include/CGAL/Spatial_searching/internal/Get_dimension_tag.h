@@ -1,1 +1,0 @@
-/home/yury/Projects/CPPProj/GSOC/cgal-public-dev/Spatial_searching/include/CGAL/Spatial_searching/internal/Get_dimension_tag.h

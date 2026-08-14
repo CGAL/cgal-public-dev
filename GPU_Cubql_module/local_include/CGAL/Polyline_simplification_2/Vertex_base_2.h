@@ -1,1 +1,0 @@
-/home/yury/Projects/CPPProj/GSOC/cgal-public-dev/Polyline_simplification_2/include/CGAL/Polyline_simplification_2/Vertex_base_2.h

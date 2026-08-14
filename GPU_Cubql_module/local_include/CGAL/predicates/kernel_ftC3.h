@@ -1,1 +1,0 @@
-/home/yury/Projects/CPPProj/GSOC/cgal-public-dev/Cartesian_kernel/include/CGAL/predicates/kernel_ftC3.h

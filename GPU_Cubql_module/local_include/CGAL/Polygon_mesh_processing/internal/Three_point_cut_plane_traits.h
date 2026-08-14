@@ -1,1 +1,0 @@
-/home/yury/Projects/CPPProj/GSOC/cgal-public-dev/Polygon_mesh_processing/include/CGAL/Polygon_mesh_processing/internal/Three_point_cut_plane_traits.h

@@ -1,1 +1,0 @@
-/home/yury/Projects/CPPProj/GSOC/cgal-public-dev/SMDS_3/include/CGAL/IO/File_binary_mesh_3.h

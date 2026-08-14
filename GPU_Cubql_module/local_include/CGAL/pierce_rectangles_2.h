@@ -1,1 +1,0 @@
-/home/yury/Projects/CPPProj/GSOC/cgal-public-dev/Bounding_volumes/include/CGAL/pierce_rectangles_2.h

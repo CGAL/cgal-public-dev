@@ -1,1 +1,0 @@
-/home/yury/Projects/CPPProj/GSOC/cgal-public-dev/Triangulation_2/include/CGAL/boost/graph/properties_Triangulation_hierarchy_2.h

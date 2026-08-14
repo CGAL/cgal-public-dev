@@ -1,1 +1,0 @@
-/home/yury/Projects/CPPProj/GSOC/cgal-public-dev/Testsuite/include/CGAL/Testsuite/Triangulation_23/test_move_semantic.h

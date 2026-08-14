@@ -1,1 +1,0 @@
-/home/yury/Projects/CPPProj/GSOC/cgal-public-dev/Envelope_2/include/CGAL/Envelope_diagram_1.h

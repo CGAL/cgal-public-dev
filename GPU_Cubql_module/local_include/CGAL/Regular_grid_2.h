@@ -1,1 +1,0 @@
-/home/yury/Projects/CPPProj/GSOC/cgal-public-dev/Stream_lines_2/include/CGAL/Regular_grid_2.h

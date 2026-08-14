@@ -1,1 +1,0 @@
-/home/yury/Projects/CPPProj/GSOC/cgal-public-dev/Triangulation_3/include/CGAL/Triangulation_3/internal/Triangulation_segment_traverser_3_impl.h

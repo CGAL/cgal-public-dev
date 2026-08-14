@@ -1,1 +1,0 @@
-/home/yury/Projects/CPPProj/GSOC/cgal-public-dev/Kernel_d/include/CGAL/Kernel_d/Ray_d.h

@@ -1,1 +1,0 @@
-/home/yury/Projects/CPPProj/GSOC/cgal-public-dev/Triangulation/include/CGAL/TDS_full_cell_default_storage_policy.h

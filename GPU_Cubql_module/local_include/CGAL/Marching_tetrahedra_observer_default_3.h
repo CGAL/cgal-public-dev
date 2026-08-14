@@ -1,1 +1,0 @@
-/home/yury/Projects/CPPProj/GSOC/cgal-public-dev/Skin_surface_3/include/CGAL/Marching_tetrahedra_observer_default_3.h

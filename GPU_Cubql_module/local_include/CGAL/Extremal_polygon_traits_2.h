@@ -1,1 +1,0 @@
-/home/yury/Projects/CPPProj/GSOC/cgal-public-dev/Inscribed_areas/include/CGAL/Extremal_polygon_traits_2.h

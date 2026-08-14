@@ -1,1 +1,0 @@
-/home/yury/Projects/CPPProj/GSOC/cgal-public-dev/Algebraic_foundations/include/CGAL/Algebraic_extension_traits.h

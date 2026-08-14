@@ -1,1 +1,0 @@
-/home/yury/Projects/CPPProj/GSOC/cgal-public-dev/Surface_mesh_topology/include/CGAL/Surface_mesh_topology/internal/Minimal_quadrangulation.h

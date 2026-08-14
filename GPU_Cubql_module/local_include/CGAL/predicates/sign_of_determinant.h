@@ -1,1 +1,0 @@
-/home/yury/Projects/CPPProj/GSOC/cgal-public-dev/Kernel_23/include/CGAL/predicates/sign_of_determinant.h

@@ -1,1 +1,0 @@
-/home/yury/Projects/CPPProj/GSOC/cgal-public-dev/Intersections_2/include/CGAL/Intersections_2/Iso_rectangle_2_Point_2.h

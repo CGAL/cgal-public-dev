@@ -1,1 +1,0 @@
-/home/yury/Projects/CPPProj/GSOC/cgal-public-dev/Convex_hull_2/include/CGAL/Convex_hull_2/convexity_check_2_impl.h

@@ -1,1 +1,0 @@
-/home/yury/Projects/CPPProj/GSOC/cgal-public-dev/Barycentric_coordinates_2/include/CGAL/Barycentric_coordinates_2/Mean_value_coordinates_2.h

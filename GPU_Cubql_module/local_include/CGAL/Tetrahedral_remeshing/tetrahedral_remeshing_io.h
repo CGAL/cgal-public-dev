@@ -1,1 +1,0 @@
-/home/yury/Projects/CPPProj/GSOC/cgal-public-dev/Tetrahedral_remeshing/include/CGAL/Tetrahedral_remeshing/tetrahedral_remeshing_io.h

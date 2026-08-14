@@ -1,1 +1,0 @@
-/home/yury/Projects/CPPProj/GSOC/cgal-public-dev/CGAL_ImageIO/include/CGAL/IO/read_vtk_image_data.h

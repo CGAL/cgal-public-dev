@@ -1,1 +1,0 @@
-/home/yury/Projects/CPPProj/GSOC/cgal-public-dev/Triangulation_2/include/CGAL/IO/Triangulation_ps_stream.h

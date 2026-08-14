@@ -1,1 +1,0 @@
-/home/yury/Projects/CPPProj/GSOC/cgal-public-dev/Arrangement_on_surface_2/include/CGAL/Draw_aos/Arr_render_context.h

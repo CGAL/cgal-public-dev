@@ -1,1 +1,0 @@
-/home/yury/Projects/CPPProj/GSOC/cgal-public-dev/SMDS_3/include/CGAL/SMDS_3/tet_soup_to_c3t3.h

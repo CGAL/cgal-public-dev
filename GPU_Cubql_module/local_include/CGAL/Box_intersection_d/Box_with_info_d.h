@@ -1,1 +1,0 @@
-/home/yury/Projects/CPPProj/GSOC/cgal-public-dev/Box_intersection_d/include/CGAL/Box_intersection_d/Box_with_info_d.h

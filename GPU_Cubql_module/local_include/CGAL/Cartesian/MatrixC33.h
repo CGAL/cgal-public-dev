@@ -1,1 +1,0 @@
-/home/yury/Projects/CPPProj/GSOC/cgal-public-dev/Surface_mesh_simplification/include/CGAL/Cartesian/MatrixC33.h

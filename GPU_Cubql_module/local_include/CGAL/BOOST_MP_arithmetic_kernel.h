@@ -1,1 +1,0 @@
-/home/yury/Projects/CPPProj/GSOC/cgal-public-dev/Arithmetic_kernel/include/CGAL/BOOST_MP_arithmetic_kernel.h

@@ -1,1 +1,0 @@
-/home/yury/Projects/CPPProj/GSOC/cgal-public-dev/Surface_mesh_deformation/include/CGAL/Surface_mesh_deformation.h

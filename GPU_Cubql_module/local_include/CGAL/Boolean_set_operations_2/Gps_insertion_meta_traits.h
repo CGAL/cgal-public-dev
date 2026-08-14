@@ -1,1 +1,0 @@
-/home/yury/Projects/CPPProj/GSOC/cgal-public-dev/Boolean_set_operations_2/include/CGAL/Boolean_set_operations_2/Gps_insertion_meta_traits.h

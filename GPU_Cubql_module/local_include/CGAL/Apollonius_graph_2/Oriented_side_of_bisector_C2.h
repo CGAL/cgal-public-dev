@@ -1,1 +1,0 @@
-/home/yury/Projects/CPPProj/GSOC/cgal-public-dev/Apollonius_graph_2/include/CGAL/Apollonius_graph_2/Oriented_side_of_bisector_C2.h
