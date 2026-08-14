@@ -9,6 +9,9 @@ The class `Graphics_scene` stores points, segments, triangles, rays, and lines. 
 */
 class Graphics_scene {
 public:
+  /// constructs an empty graphics scene.
+  Graphics_scene();
+
   /// adds the given point in the scene.
   /// \tparam KPoint a model of `Kernel::Point_2`, `Kernel::Point_3`, `Kernel::WeightedPoint_2` or `Kernel::WeightedPoint_3`.
   template <typename KPoint>
@@ -102,6 +105,18 @@ public:
 
   /// returns `true` if the scene is in 2D, i.e., lies on the XY or XZ or YZ plane.
   bool is_two_dimensional() const;
+
+  /// returns the number of triples stored in the graphics buffer selected by `index`.
+  /// \\param index the index of the graphics buffer.
+  unsigned int number_of_elements(int index) const;
+
+  /// returns the size in bytes of the graphics buffer selected by `index`.
+  /// \\param index the index of the graphics buffer.
+  int get_size_of_index(int index) const;
+
+  /// returns the array of floats of the graphics buffer selected by `index`.
+  /// \\param index the index of the graphics buffer.
+  const std::vector<float>& get_array_of_index(int index) const;
 
   /// set the default color of faces
   void set_default_color_face(const CGAL::IO::Color& c);
