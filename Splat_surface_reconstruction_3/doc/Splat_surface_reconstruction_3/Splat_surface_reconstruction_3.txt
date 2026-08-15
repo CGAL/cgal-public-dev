@@ -111,6 +111,35 @@ reconstructs a surface using the splat surface reconstruction algorithm.
 
 \cgalExample{Splat_surface_reconstruction_3/splat_reconstruction_function.cpp}
 
+\section Splat_surface_reconstruction_3Results Reconstruction Results
+
+The following examples illustrate the behavior of the reconstruction on
+different oriented point clouds.
+
+\subsection Splat_surface_reconstruction_3SmoothResults Smooth Surfaces
+
+\cgalFigureBegin{Splat_surface_reconstruction_3Kitten, kitten.png}
+Reconstruction of the kitten model.
+\cgalFigureEnd
+
+\cgalFigureBegin{Splat_surface_reconstruction_3Shampoo Bottle, shampoo.png}
+Reconstruction of the shampoo bottle.
+\cgalFigureEnd
+
+\cgalFigureBegin{Splat_surface_reconstruction_3Cup, cup.png}
+Reconstruction of the cup model.
+\cgalFigureEnd
+
+\cgalFigureBegin{Splat_surface_reconstruction_3Toycat, toycat.png}
+Reconstruction of the toycat model.
+\cgalFigureEnd
+
+\subsection Splat_surface_reconstruction_3SharpResults Sharp Features
+
+\cgalFigureBegin{Splat_surface_reconstruction_3Cube, cube.png}
+Reconstruction of a cube.\n
+\cgalFigureEnd
+
 The CGAL implementation was developed by **Pranav Jain** as part of
 **Google Summer of Code 2026**, under the guidance of **Martin Skrodzki**
 and **Andreas Fabri**.
