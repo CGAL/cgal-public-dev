@@ -190,27 +190,31 @@ int main(int argc, char* argv[]) {
   std::cout<<"Centering and scaling point cloud between [-1,1]^3 ..." << std::endl;
   double sc = center_and_scale_point_cloud(points);
 
-  // Then compute normals if the file did not provide them.
-  compute_normals_if_missing(points, normals, 6);
-
   // Average spacing should be computed in the normalized coordinate system.
   double scale = (argc > 2) ? std::stod(argv[2]) : 1.0;
-  double average_spacing = scale * CGAL::compute_average_spacing<CGAL::Parallel_if_available_tag>(points, 2);
+  double average_spacing = CGAL::compute_average_spacing<CGAL::Parallel_if_available_tag>(points, 2);
+  std::cout << "Average spacing: " << average_spacing << std::endl;
+
+  double edge_length = scale * average_spacing;
+  std::cout << "Required edge length: " << edge_length << std::endl;
+
+  // Then compute normals if the file did not provide them.
+  compute_normals_if_missing(points, normals, 6);
 
   Polyhedron output_mesh;
   const auto bbox = CGAL::bounding_box(points.begin(), points.end()); // recompute bbox after centering and scaling
 
-  const FT padding = FT(1.1) * average_spacing;
+  const FT padding = FT(1.1) * edge_length;
   // const FT padding = 1e-8;
   // Build the grid and insert points + normals.
-  CGAL::Box_grid<Kernel> grid{FT(average_spacing),
+  CGAL::Box_grid<Kernel> grid{FT(edge_length),
                               FT(bbox.xmin()-padding), FT(bbox.xmax()+padding),
                               FT(bbox.ymin()-padding), FT(bbox.ymax()+padding),
                               FT(bbox.zmin()-padding), FT(bbox.zmax()+padding)}; // initialize grid with cell size equal to average spacing and bounding box [-1,1]^3
   grid.build(points, normals); // insert points and normals into the grid
 
+  std::cout<<"Computing block normals..." << std::endl;
   std::vector<Vector_3> block_normals = grid.compute_block_normals(); // compute block normals by averaging point normals in each cell
-  std::cout<<"Computed " << block_normals.size() << " block normals." << std::endl;
 
   std::vector<FT> splat_sizes = grid.estimate_individual_splat_sizes(); // estimate individual splat sizes based on local point distribution
   std::cout<<"Estimated individual splat sizes for " << splat_sizes.size() << " points." << std::endl;

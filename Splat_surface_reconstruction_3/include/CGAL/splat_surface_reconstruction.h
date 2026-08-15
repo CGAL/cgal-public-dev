@@ -204,10 +204,7 @@ namespace CGAL {
       points_ = points;
       normals_ = normals;
 
-      if (normals_.size() != points_.size()) {
-        std::cerr << "Warning: normals size does not match points size.\n";
-        std::exit(EXIT_FAILURE);
-      }
+      CGAL_assertion(points_.size() == normals_.size());
 
       for (Index i = 0; i < points_.size(); ++i) {
         double len2 = CGAL::to_double(normals_[i].squared_length());
@@ -814,7 +811,7 @@ namespace CGAL {
 
     /// @brief Returns the total number of grid cells.
     std::size_t number_of_cells() const {
-      return cells_.size();
+      return nx_ * ny_ * nz_;
     }
 
     private:
