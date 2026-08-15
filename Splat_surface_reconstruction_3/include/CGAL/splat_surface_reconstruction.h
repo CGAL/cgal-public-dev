@@ -37,46 +37,23 @@
 
 namespace CGAL {
 
-  /*!
-    \ingroup PkgSplatSurfaceReconstruction3Ref
-
-    Performs splat surface reconstruction as follows:
-
-    - compute the ...
-    - outputs the result in a polygon mesh
-
-    This function relies mainly on the size parameter `spacing`.
-
-    \tparam PointRange is a model of `Range`.
-    \tparam NormalRange is a model of `Range`.
-    \tparam PolygonMesh a model of `MutableFaceGraph` with an internal
-    point property map.
-
-
-    \param points the range of points.
-    \param normals the range of normals.
-    \param output_mesh where the reconstruction is stored.
-    \param spacing size parameter.
-    \return `true` if reconstruction succeeded, `false` otherwise.
-  */
-
   /**
-   * @brief Runs splat surface reconstruction on a point cloud with normals.
+   * @brief Runs splat surface reconstruction on an input point cloud.
    *
-   * The function takes a range of input points, a matching range of normals,
-   * and reconstructs a polygon mesh using the splat-surface reconstruction
+   * This is the public reconstruction entry point. The current implementation
+   * delegates the actual reconstruction work to the internal reconstruction
    * pipeline.
    *
-   * @tparam PointRange  Model of Range whose value type is a CGAL point type.
-   * @tparam NormalRange Model of Range whose value type is a CGAL vector type.
-   * @tparam PolygonMesh Model of MutableFaceGraph with an internal point map.
+   * @tparam PointRange  Range of input 3D points.
+   * @tparam NormalRange Range of input point normals.
+   * @tparam PolygonMesh Mutable polygon mesh receiving the reconstruction.
    *
-   * @param points       Input point range.
-   * @param normals      Input normal range.
-   * @param output_mesh  Output polygon mesh storing the reconstruction.
-   * @param spacing      Global spacing parameter used by the algorithm.
+   * @param points        Input point positions.
+   * @param normals       Input point normals.
+   * @param output_mesh   Output polygon mesh.
+   * @param spacing       Global reconstruction spacing parameter.
    *
-   * @return `true` if reconstruction succeeds, otherwise `false`.
+   * @return `true` if reconstruction succeeds, `false` otherwise.
    */
   template <typename PointRange,typename NormalRange, typename PolygonMesh>
   bool Splat_surface_reconstruction(const PointRange& points,
@@ -136,8 +113,7 @@ namespace CGAL {
        * @param pid Point index in the input cloud.
        * @param n   Normal associated with the point.
        */
-      void add_point(Index pid, const Vector_3& n)
-      {
+      void add_point(Index pid, const Vector_3& n) {
         point_ids.push_back(pid);
         if (n != CGAL::NULL_VECTOR) {
           normal_sum = normal_sum + n;
@@ -164,45 +140,49 @@ namespace CGAL {
     }
 
     /**
-     * @brief Constructs a box grid with explicit bounds.
+     * @brief Constructs a dense 3D grid.
      *
-     * The same cell size is used along all axes, so each cell is cubic.
+     * The grid uses the same cell size along all three axes.
      *
-     * @param box_size Grid cell side length.
-     * @param min_x    Minimum x bound.
-     * @param max_x    Maximum x bound.
-     * @param min_y    Minimum y bound.
-     * @param max_y    Maximum y bound.
-     * @param min_z    Minimum z bound.
-     * @param max_z    Maximum z bound.
-     */
+     * @param box_size Cell side length.
+     * @param min_x Minimum x-coordinate of the grid.
+     * @param max_x Maximum x-coordinate of the grid.
+     * @param min_y Minimum y-coordinate of the grid.
+     * @param max_y Maximum y-coordinate of the grid.
+     * @param min_z Minimum z-coordinate of the grid.
+     * @param max_z Maximum z-coordinate of the grid.
+    */
     Box_grid(FT box_size,
              FT min_x, FT max_x,
              FT min_y, FT max_y,
              FT min_z, FT max_z)
      : box_size_(box_size),
        min_x_(min_x), max_x_(max_x), min_y_(min_y),
-       max_y_(max_y), min_z_(min_z), max_z_(max_z)
-    {
+       max_y_(max_y), min_z_(min_z), max_z_(max_z) {
       initialize_grid();
     }
 
+    /// @brief Returns the grid cell side length.
     FT get_box_size() const {
       return box_size_;
     }
 
+    /// @brief Returns the largest estimated splat radius.
     FT get_max_splat_radius() const {
       return max_splat_radius_;
     }
 
+    /// @brief Returns the input point positions stored by the grid.
     const std::vector<Point_3>& points() const {
       return points_;
     }
 
+    /// @brief Returns the input point normals stored by the grid.
     const std::vector<Vector_3>& normals() const {
       return normals_;
     }
 
+    /// @brief Returns the estimated splat radius of every input point.
     const std::vector<FT>& splat_sizes() const {
       return splat_sizes_;
     }
@@ -210,12 +190,12 @@ namespace CGAL {
     /**
      * @brief Builds the grid from input points and normals.
      *
-     * Points are inserted into the cell containing their coordinates and each
-     * cell accumulates the normals of the points it contains.
+     * Each point is inserted into its corresponding grid cell and its normal is
+     * accumulated into that cell.
      *
-     * @param points  Input 3D point cloud.
-     * @param normals Input normals, one per point.
-     */
+     * @param points Input point positions.
+     * @param normals Input point normals.
+    */
     void build(const std::vector<Point_3>& points,
               const std::vector<Vector_3>& normals) {
 
@@ -236,18 +216,19 @@ namespace CGAL {
     }
 
     /**
-     * @brief Computes one averaged unit normal per grid cell.
+     * @brief Computes a normalized average normal for every occupied cell.
      *
-     * Empty cells receive `CGAL::NULL_VECTOR`.
+     * The averaged normal is obtained from the sum of the normals of all points
+     * contained in the cell. A consistency check is performed to ensure that the
+     * resulting cell normal is compatible with the individual point normals.
      *
-     * @return A vector of block normals in grid order.
-     */
+     * Empty or degenerate cells receive `CGAL::NULL_VECTOR`.
+     *
+     * @return Cell normals in the same flattened order as `cells_`.
+    */
     std::vector<Vector_3> compute_block_normals() {
       block_normals_.resize(cells_.size(), CGAL::NULL_VECTOR);
 
-      // ------------------------------------------------------------
-      // Pass 1: compute one averaged unit normal per non-empty cell.
-      // ------------------------------------------------------------
       for (std::size_t ix = 0; ix < nx_; ++ix) {
         for (std::size_t iy = 0; iy < ny_; ++iy) {
           for (std::size_t iz = 0; iz < nz_; ++iz) {
@@ -299,18 +280,14 @@ namespace CGAL {
     }
 
     /**
-     * @brief Estimates one splat size per point using local 2D triangulation.
+     * @brief Estimates one splat radius for every input point.
      *
-     * For each point, the method:
-     * - finds the point's cell,
-     * - projects neighbors to the tangent plane,
-     * - builds a local Delaunay triangulation in 2D,
-     * - measures the farthest circumcenter distance.
+     * A local 2D Delaunay triangulation is constructed in the tangent plane of
+     * each input point. The largest incident circumcenter distance is used as
+     * the local splat radius and is clamped to the global spacing.
      *
-     * @param global_spacing Default splat size used as fallback.
-     *
-     * @return A vector of per-point splat radii.
-     */
+     * @return Per-point splat radii.
+    */
     std::vector<FT> estimate_individual_splat_sizes() {
     FT global_spacing = 1.05*box_size_;
     splat_sizes_.resize(points_.size(), global_spacing);
@@ -390,7 +367,13 @@ namespace CGAL {
     return splat_sizes_;
   }
   
-  void fill_empty_block_normals_from_large_splats() {
+  /**
+   * @brief Recomputes normal information from splats intersecting the grid.
+   *
+   * Grid cells are assigned a normalized average of normals from 
+   * precomputed normals and nearby splats whose splat disks intersect the cell.
+  */
+  void recompute_block_normals_from_splats() {
     CGAL_assertion(block_normals_.size() == cells_.size());
 
     for (std::size_t ix = 0; ix < nx_; ++ix) {
@@ -398,9 +381,6 @@ namespace CGAL {
         for (std::size_t iz = 0; iz < nz_; ++iz) {
 
           const std::size_t idx = flat_index(ix, iy, iz);
-
-          // if (block_normals_[idx] != CGAL::NULL_VECTOR)
-          //   continue;
 
           Vector_3 normal_sum = block_normals_[idx];
           std::size_t count = 0;
@@ -442,15 +422,17 @@ namespace CGAL {
       }
     }
   }
+
   /**
-   * @brief Checks if a splat intersects a given box.
+   * @brief Tests whether a splat intersects an axis-aligned grid cell.
    *
-   * @param pid The index of the splat.
-   * @param ix The x-coordinate of the box.
-   * @param iy The y-coordinate of the box.
-   * @param iz The z-coordinate of the box.
-   * @return True if the splat intersects the box, false otherwise.
-   */
+   * @param pid Input point/splat identifier.
+   * @param ix Cell index along x.
+   * @param iy Cell index along y.
+   * @param iz Cell index along z.
+   *
+   * @return `true` if the splat intersects the cell.
+  */
   bool splat_intersects_box(Index pid,
                             std::size_t ix,
                             std::size_t iy,
@@ -483,10 +465,14 @@ namespace CGAL {
   }
 
     /**
-     * @brief Returns a seed pair on the first splat whose radius exceeds box size.
+     * @brief Selects an initial pair of mesh vertices from a large splat.
      *
-     * @return An optional seed with two seed points and the splat index.
-     */
+     * The seed is placed symmetrically around the splat center along one tangent
+     * direction. A central region of the input bounding box is preferred to avoid
+     * starting the reconstruction near the boundary.
+     *
+     * @return Initial seed information.
+    */
     Initial_seed get_initial_seed() const {
       std::cout<<"Searching for initial seed with splat size larger than box size..." << std::endl;
       for (Index i = 0; i < splat_sizes_.size(); ++i) {
@@ -540,13 +526,13 @@ namespace CGAL {
     }
 
     /**
-     * @brief Returns point ids in nearby cells around a query point.
+     * @brief Finds input points in grid cells intersecting a query neighborhood.
      *
-     * @param p Query point.
+     * @param p Query position.
      * @param radius Search radius.
      *
-     * @return Unique point indices gathered from neighboring cells.
-     */
+     * @return Unique input point identifiers in the neighborhood.
+    */
     std::vector<Index> nearby_point_ids(const Point_3& p, FT radius) const {
       std::vector<Index> ids;
 
@@ -585,15 +571,19 @@ namespace CGAL {
     }
 
     /**
-     * @brief Intersects a circle with a splat.
+     * @brief Intersects the construction circle of two parent vertices with a splat.
+     *
+     * The circle is defined by the parent pair and the global box size. Its
+     * intersection with the splat plane is computed analytically and only
+     * intersection points inside the splat disk are returned.
      *
      * @param parent_a First parent point.
      * @param parent_b Second parent point.
-     * @param splat_center Splat center.
+     * @param splat_center Center of the splat.
      * @param splat_normal Splat normal.
      * @param splat_radius Splat radius.
      *
-     * @return Vector of intersection points.
+     * @return Zero, one, or two valid intersection points.
     */
     std::vector<Point_3> intersect_circle_with_splat(const Point_3& parent_a,
                                                     const Point_3& parent_b,
@@ -704,52 +694,61 @@ namespace CGAL {
       return result;
     }
 
-      /**
-       * @brief Computes an orthonormal tangent frame at a point.
-       *
-       * @param n Input normal.
-       *
-       * @return Two orthonormal tangent directions spanning the tangent plane.
-       */
-      std::vector<Vector_3> compute_local_tangent_frame(const Vector_3& n) const {
-        // Find a vector that is not parallel to n to construct the tangent frame.
-        Vector_3 temp;
-        if (std::abs(CGAL::to_double(n.x())) < 0.9)
-          temp = Vector_3(1,0,0);
-        else
-          temp = Vector_3(0,1,0);
-
-        Vector_3 u = CGAL::cross_product(n, temp);
-        Vector_3 v = CGAL::cross_product(n, u);
-
-        // Normalize u and v to have unit length.
-        const double len_u = std::sqrt(CGAL::to_double(u.squared_length()));
-        const double len_v = std::sqrt(CGAL::to_double(v.squared_length()));
-        if (len_u > 0) u = u / len_u;
-        if (len_v > 0) v = v / len_v;
-
-        return {u, v};
-      }
-
-      Vector_3 box_normal(const Point_3& p) const {
-        int ix, iy, iz;
-
-        if (!to_grid_coords(p, ix, iy, iz))
-            return CGAL::NULL_VECTOR;
-
-        return block_normals_[flat_index(ix,iy,iz)];
-      }
-
-      /**
-     * @brief Maps a 3D point to integer grid coordinates.
+    /**
+     * @brief Computes an orthonormal tangent frame for a normal.
      *
-     * @param p   Input point.
-     * @param ix  Output cell index along x.
-     * @param iy  Output cell index along y.
-     * @param iz  Output cell index along z.
+     * The returned vectors span the plane orthogonal to the input normal.
      *
-     * @return `true` if the point is inside the grid bounds.
-     */
+     * @param n Surface normal.
+     *
+     * @return Two approximately unit-length tangent vectors.
+    */
+    std::vector<Vector_3> compute_local_tangent_frame(const Vector_3& n) const {
+      // Find a vector that is not parallel to n to construct the tangent frame.
+      Vector_3 temp;
+      if (std::abs(CGAL::to_double(n.x())) < 0.9)
+        temp = Vector_3(1,0,0);
+      else
+        temp = Vector_3(0,1,0);
+
+      Vector_3 u = CGAL::cross_product(n, temp);
+      Vector_3 v = CGAL::cross_product(n, u);
+
+      // Normalize u and v to have unit length.
+      const double len_u = std::sqrt(CGAL::to_double(u.squared_length()));
+      const double len_v = std::sqrt(CGAL::to_double(v.squared_length()));
+      if (len_u > 0) u = u / len_u;
+      if (len_v > 0) v = v / len_v;
+
+      return {u, v};
+    }
+
+    /**
+     * @brief Returns the averaged normal associated with the cell containing p.
+     *
+     * @param p Query point.
+     *
+     * @return Cell normal, or `CGAL::NULL_VECTOR` if the point is outside the grid.
+    */
+    Vector_3 box_normal(const Point_3& p) const {
+      int ix, iy, iz;
+
+      if (!to_grid_coords(p, ix, iy, iz))
+          return CGAL::NULL_VECTOR;
+
+      return block_normals_[flat_index(ix,iy,iz)];
+    }
+
+    /**
+     * @brief Converts a 3D point into integer grid coordinates.
+     *
+     * @param p Input point.
+     * @param ix Output x index.
+     * @param iy Output y index.
+     * @param iz Output z index.
+     *
+     * @return `true` if the point is inside the grid.
+    */
     bool to_grid_coords(const Point_3& p, int& ix, int& iy, int& iz) const {
 
       const double h = CGAL::to_double(box_size_);
@@ -790,7 +789,7 @@ namespace CGAL {
      * @param iz Cell index along z.
      *
      * @return Linearized index into the cell array.
-     */
+    */
     std::size_t flat_index(int ix, int iy, int iz) const {
       return (static_cast<std::size_t>(ix) * ny_
             + static_cast<std::size_t>(iy)) * nz_
@@ -813,6 +812,7 @@ namespace CGAL {
             static_cast<std::size_t>(iz) < nz_;
     }
 
+    /// @brief Returns the total number of grid cells.
     std::size_t number_of_cells() const {
       return cells_.size();
     }
@@ -910,191 +910,199 @@ namespace CGAL {
     std::vector<Vector_3> block_normals_;
     FT max_splat_radius_ = 0;
 
-    /*
-    //////////////////// DEBUG /////////////////////
-    */
-    public:
-    /**
-     * @brief Writes the input point cloud and normals to a PLY file.
-     *
-     * @param filename Output PLY filename.
-     *
-     * @return `true` if the file was written successfully.
-     */
-    bool write_point_cloud_ply(const std::string& filename) const
-    {
-      std::ofstream out(filename);
-      if (!out) {
-        std::cerr << "Error: cannot open " << filename << " for writing.\n";
-        return false;
-      }
+  //   ---------------------------------- DEBUG ---------------------------------------
+  //   public:
+  //   /**
+  //    * @brief Writes the input point cloud and normals to a PLY file.
+  //    *
+  //    * @param filename Output PLY filename.
+  //    *
+  //    * @return `true` if the file was written successfully.
+  //    */
+  //   bool write_point_cloud_ply(const std::string& filename) const
+  //   {
+  //     std::ofstream out(filename);
+  //     if (!out) {
+  //       std::cerr << "Error: cannot open " << filename << " for writing.\n";
+  //       return false;
+  //     }
 
-      out << "ply\n";
-      out << "format ascii 1.0\n";
-      out << "element vertex " << points_.size() << "\n";
-      out << "property float x\n";
-      out << "property float y\n";
-      out << "property float z\n";
-      out << "property float nx\n";
-      out << "property float ny\n";
-      out << "property float nz\n";
-      out << "end_header\n";
+  //     out << "ply\n";
+  //     out << "format ascii 1.0\n";
+  //     out << "element vertex " << points_.size() << "\n";
+  //     out << "property float x\n";
+  //     out << "property float y\n";
+  //     out << "property float z\n";
+  //     out << "property float nx\n";
+  //     out << "property float ny\n";
+  //     out << "property float nz\n";
+  //     out << "end_header\n";
 
-      for (std::size_t i = 0; i < points_.size(); ++i) {
-        const Point_3& p = points_[i];
-        const Vector_3 n = (i < normals_.size()) ? normals_[i] : CGAL::NULL_VECTOR;
+  //     for (std::size_t i = 0; i < points_.size(); ++i) {
+  //       const Point_3& p = points_[i];
+  //       const Vector_3 n = (i < normals_.size()) ? normals_[i] : CGAL::NULL_VECTOR;
 
-        out << std::setprecision(17)
-            << CGAL::to_double(p.x()) << ' '
-            << CGAL::to_double(p.y()) << ' '
-            << CGAL::to_double(p.z()) << ' '
-            << CGAL::to_double(n.x()) << ' '
-            << CGAL::to_double(n.y()) << ' '
-            << CGAL::to_double(n.z()) << '\n';
-      }
+  //       out << std::setprecision(17)
+  //           << CGAL::to_double(p.x()) << ' '
+  //           << CGAL::to_double(p.y()) << ' '
+  //           << CGAL::to_double(p.z()) << ' '
+  //           << CGAL::to_double(n.x()) << ' '
+  //           << CGAL::to_double(n.y()) << ' '
+  //           << CGAL::to_double(n.z()) << '\n';
+  //     }
 
-      return true;
-    }
+  //     return true;
+  //   }
 
-    /**
-     * @brief Writes all grid vertices to a PLY file for visualization.
-     *
-     * @param filename Output PLY filename.
-     *
-     * @return `true` if the file was written successfully.
-     */
-    bool write_grid_vertices_ply(const std::string& filename) const
-    {
-      std::ofstream out(filename);
-      if (!out) {
-        std::cerr << "Error: cannot open " << filename << " for writing.\n";
-        return false;
-      }
+  //   /**
+  //    * @brief Writes all grid vertices to a PLY file for visualization.
+  //    *
+  //    * @param filename Output PLY filename.
+  //    *
+  //    * @return `true` if the file was written successfully.
+  //    */
+  //   bool write_grid_vertices_ply(const std::string& filename) const
+  //   {
+  //     std::ofstream out(filename);
+  //     if (!out) {
+  //       std::cerr << "Error: cannot open " << filename << " for writing.\n";
+  //       return false;
+  //     }
 
-      std::vector<Point_3> vertices;
-      vertices.reserve((nx_ + 1) * (ny_ + 1) * (nz_ + 1));
+  //     std::vector<Point_3> vertices;
+  //     vertices.reserve((nx_ + 1) * (ny_ + 1) * (nz_ + 1));
 
-      for (std::size_t ix = 0; ix <= nx_; ++ix) {
-        for (std::size_t iy = 0; iy <= ny_; ++iy) {
-          for (std::size_t iz = 0; iz <= nz_; ++iz) {
-            const FT x = min_x_ + FT(ix) * box_size_;
-            const FT y = min_y_ + FT(iy) * box_size_;
-            const FT z = min_z_ + FT(iz) * box_size_;
-            vertices.emplace_back(x, y, z);
-          }
-        }
-      }
+  //     for (std::size_t ix = 0; ix <= nx_; ++ix) {
+  //       for (std::size_t iy = 0; iy <= ny_; ++iy) {
+  //         for (std::size_t iz = 0; iz <= nz_; ++iz) {
+  //           const FT x = min_x_ + FT(ix) * box_size_;
+  //           const FT y = min_y_ + FT(iy) * box_size_;
+  //           const FT z = min_z_ + FT(iz) * box_size_;
+  //           vertices.emplace_back(x, y, z);
+  //         }
+  //       }
+  //     }
 
-      out << "ply\n";
-      out << "format ascii 1.0\n";
-      out << "element vertex " << vertices.size() << "\n";
-      out << "property float x\n";
-      out << "property float y\n";
-      out << "property float z\n";
-      out << "end_header\n";
+  //     out << "ply\n";
+  //     out << "format ascii 1.0\n";
+  //     out << "element vertex " << vertices.size() << "\n";
+  //     out << "property float x\n";
+  //     out << "property float y\n";
+  //     out << "property float z\n";
+  //     out << "end_header\n";
 
-      for (const Point_3& p : vertices) {
-        out << std::setprecision(17)
-            << CGAL::to_double(p.x()) << ' '
-            << CGAL::to_double(p.y()) << ' '
-            << CGAL::to_double(p.z()) << '\n';
-      }
+  //     for (const Point_3& p : vertices) {
+  //       out << std::setprecision(17)
+  //           << CGAL::to_double(p.x()) << ' '
+  //           << CGAL::to_double(p.y()) << ' '
+  //           << CGAL::to_double(p.z()) << '\n';
+  //     }
 
-      return true;
-    }
+  //     return true;
+  //   }
 
-    /**
-     * @brief Writes occupied cell centers and their averaged normals to a PLY file.
-     *
-     * @param filename Output PLY filename.
-     * @param normal_scale Scale factor for visualizing the normal direction.
-     *
-     * @return `true` if the file was written successfully.
-     */
-    bool write_cell_centers_and_normals_ply(const std::string& filename,
-                                            double normal_scale = 0.25) const
-    {
-      std::ofstream out(filename);
-      if (!out) {
-        std::cerr << "Error: cannot open " << filename << " for writing.\n";
-        return false;
-      }
+  //   /**
+  //    * @brief Writes occupied cell centers and their averaged normals to a PLY file.
+  //    *
+  //    * @param filename Output PLY filename.
+  //    * @param normal_scale Scale factor for visualizing the normal direction.
+  //    *
+  //    * @return `true` if the file was written successfully.
+  //    */
+  //   bool write_cell_centers_and_normals_ply(const std::string& filename,
+  //                                           double normal_scale = 0.25) const
+  //   {
+  //     std::ofstream out(filename);
+  //     if (!out) {
+  //       std::cerr << "Error: cannot open " << filename << " for writing.\n";
+  //       return false;
+  //     }
 
-      std::vector<Point_3> centers;
-      std::vector<Vector_3> normals;
-      centers.reserve(cells_.size());
-      normals.reserve(cells_.size());
+  //     std::vector<Point_3> centers;
+  //     std::vector<Vector_3> normals;
+  //     centers.reserve(cells_.size());
+  //     normals.reserve(cells_.size());
 
-      for (std::size_t ix = 0; ix < nx_; ++ix) {
-        for (std::size_t iy = 0; iy < ny_; ++iy) {
-          for (std::size_t iz = 0; iz < nz_; ++iz) {
-            const Cell& c = cells_[flat_index(static_cast<int>(ix),
-                                              static_cast<int>(iy),
-                                              static_cast<int>(iz))];
+  //     for (std::size_t ix = 0; ix < nx_; ++ix) {
+  //       for (std::size_t iy = 0; iy < ny_; ++iy) {
+  //         for (std::size_t iz = 0; iz < nz_; ++iz) {
+  //           const Cell& c = cells_[flat_index(static_cast<int>(ix),
+  //                                             static_cast<int>(iy),
+  //                                             static_cast<int>(iz))];
 
-            if (c.point_ids.empty()) {
-              continue;
-            }
+  //           if (c.point_ids.empty()) {
+  //             continue;
+  //           }
 
-            centers.push_back(cell_center(static_cast<int>(ix),
-                                          static_cast<int>(iy),
-                                          static_cast<int>(iz)));
-            normals.push_back(compute_cell_normal(static_cast<int>(ix),
-                                                  static_cast<int>(iy),
-                                                  static_cast<int>(iz)));
-          }
-        }
-      }
+  //           centers.push_back(cell_center(static_cast<int>(ix),
+  //                                         static_cast<int>(iy),
+  //                                         static_cast<int>(iz)));
+  //           normals.push_back(compute_cell_normal(static_cast<int>(ix),
+  //                                                 static_cast<int>(iy),
+  //                                                 static_cast<int>(iz)));
+  //         }
+  //       }
+  //     }
 
-      out << "ply\n";
-      out << "format ascii 1.0\n";
-      out << "element vertex " << centers.size() * 2 << "\n";
-      out << "property float x\n";
-      out << "property float y\n";
-      out << "property float z\n";
-      out << "element edge " << centers.size() << "\n";
-      out << "property int vertex1\n";
-      out << "property int vertex2\n";
-      out << "end_header\n";
+  //     out << "ply\n";
+  //     out << "format ascii 1.0\n";
+  //     out << "element vertex " << centers.size() * 2 << "\n";
+  //     out << "property float x\n";
+  //     out << "property float y\n";
+  //     out << "property float z\n";
+  //     out << "element edge " << centers.size() << "\n";
+  //     out << "property int vertex1\n";
+  //     out << "property int vertex2\n";
+  //     out << "end_header\n";
 
-      for (std::size_t i = 0; i < centers.size(); ++i) {
-        const Point_3& c = centers[i];
-        const Vector_3 n = normals[i];
+  //     for (std::size_t i = 0; i < centers.size(); ++i) {
+  //       const Point_3& c = centers[i];
+  //       const Vector_3 n = normals[i];
 
-        const Point_3 tip(
-          c.x() + FT(normal_scale) * n.x(),
-          c.y() + FT(normal_scale) * n.y(),
-          c.z() + FT(normal_scale) * n.z()
-        );
+  //       const Point_3 tip(
+  //         c.x() + FT(normal_scale) * n.x(),
+  //         c.y() + FT(normal_scale) * n.y(),
+  //         c.z() + FT(normal_scale) * n.z()
+  //       );
 
-        out << std::setprecision(17)
-            << CGAL::to_double(c.x()) << ' '
-            << CGAL::to_double(c.y()) << ' '
-            << CGAL::to_double(c.z()) << '\n';
+  //       out << std::setprecision(17)
+  //           << CGAL::to_double(c.x()) << ' '
+  //           << CGAL::to_double(c.y()) << ' '
+  //           << CGAL::to_double(c.z()) << '\n';
 
-        out << std::setprecision(17)
-            << CGAL::to_double(tip.x()) << ' '
-            << CGAL::to_double(tip.y()) << ' '
-            << CGAL::to_double(tip.z()) << '\n';
-      }
+  //       out << std::setprecision(17)
+  //           << CGAL::to_double(tip.x()) << ' '
+  //           << CGAL::to_double(tip.y()) << ' '
+  //           << CGAL::to_double(tip.z()) << '\n';
+  //     }
 
-      for (std::size_t i = 0; i < centers.size(); ++i) {
-        const int v0 = static_cast<int>(2 * i);
-        const int v1 = static_cast<int>(2 * i + 1);
-        out << v0 << ' ' << v1 << '\n';
-      }
+  //     for (std::size_t i = 0; i < centers.size(); ++i) {
+  //       const int v0 = static_cast<int>(2 * i);
+  //       const int v1 = static_cast<int>(2 * i + 1);
+  //       out << v0 << ' ' << v1 << '\n';
+  //     }
 
-      return true;
-    }
+  //     return true;
+  //   }
+  //   ---------------------------------------------------------------------------
+
   };
 
-
   /**
-   * @brief Builds a splat mesh by growing a front from two initial seeds.
+   * @brief Incrementally reconstructs a polygon mesh from splat candidates.
    *
-   * This class keeps the halfedge structure in the output mesh, but the region
-   * bookkeeping and priorities are intentionally not implemented yet.
-   */
+   * The reconstruction grows a halfedge front from an initial seed. Candidate
+   * vertices are generated from pairs of existing mesh vertices and accepted
+   * according to proximity, projection, priority, and local topology tests.
+   *
+   * During growth, the class maintains an explicit halfedge connectivity graph.
+   * Faces are created only after the growth phase by traversing the resulting
+   * `next()` cycles.
+   *
+   * @tparam PointRange  Input point range type.
+   * @tparam NormalRange Input normal range type.
+   * @tparam PolygonMesh Output mesh type.
+  */
   template <typename PointRange, typename NormalRange, typename PolygonMesh>
   class Splat_surface_reconstruction_3 {
     public:
@@ -1129,10 +1137,18 @@ namespace CGAL {
           normal(normal),
           splat_id(splat_id),
           first(first),
-          second(second)
-        {}
+          second(second) {}
       };
 
+      /**
+       * @brief Constructs a reconstruction object and initializes mesh properties.
+       *
+       * Adds the per-vertex normal property map and per-edge property map,
+       * initializes the spatial lookup structure, and creates the initial seed.
+       *
+       * @param grid Spatial grid containing input points, normals, and splat sizes.
+       * @param output_mesh Mesh receiving the reconstructed surface.
+      */
       Splat_surface_reconstruction_3(const Grid& grid, PolygonMesh& output_mesh)
       : grid_(grid),
         mesh_(output_mesh),
@@ -1153,6 +1169,14 @@ namespace CGAL {
         seed_from_grid();
       }
 
+      /**
+       * @brief Executes the complete reconstruction pipeline.
+       *
+       * Candidates are processed by priority until no candidates remain. Accepted
+       * vertices are inserted into the halfedge graph and new candidates are
+       * generated around them. Once growth stops, open halfedge cycles are converted
+       * into polygonal faces.
+      */
       void run() {
         if (!seeded_) {
           std::cerr << "No initial seed was found. Mesh growth did not start.\n";
@@ -1204,7 +1228,10 @@ namespace CGAL {
           insert_mesh_vertex(nv);
           
           push_candidates_from_vertex(nv);
-          std::cout << num_vertices(mesh_) << " vertices in mesh." << "\n";
+
+          if (num_vertices(mesh_) % 1000 == 0) { // Print progress every 1000 vertices
+            std::cout << num_vertices(mesh_) << " vertices in mesh." << "\n";
+          }
         }
 
         std::cout<<"Setting Faces..." << std::endl;
@@ -1215,6 +1242,12 @@ namespace CGAL {
       }
 
     private:
+      
+      /**
+       * @brief Inserts a mesh vertex into the spatial lookup structure.
+       *
+       * The vertex is stored in the grid cell containing its position.
+      */
       void insert_mesh_vertex(vertex_descriptor vd) {
         int ix, iy, iz;
 
@@ -1226,6 +1259,14 @@ namespace CGAL {
         mesh_vertices_per_cell_[grid_.flat_index(ix, iy, iz)].push_back(vd);
       }
 
+      /**
+       * @brief Returns mesh vertices within a spatial neighborhood.
+       *
+       * @param p Query position.
+       * @param radius Search radius.
+       *
+       * @return Mesh vertices in neighboring grid cells.
+      */
       std::vector<vertex_descriptor> nearby_mesh_vertices(const Point_3& p, FT radius) const {
         std::vector<vertex_descriptor> out;
 
@@ -1252,14 +1293,24 @@ namespace CGAL {
         return out;
       }
 
+      /**
+       * @brief Inserts a candidate into its priority queue.
+       *
+       * The candidate priority is clamped to the valid queue range before insertion.
+      */
       void push_candidate_in_queue(Candidate cand) {
-        cand.priority =
-          (std::max)(0,
-          (std::min)(cand.priority, NUM_PRIORITIES - 1));
+        cand.priority = (std::max)(0, (std::min)(cand.priority, NUM_PRIORITIES - 1));
 
         candidate_queues_[cand.priority].push_back(cand);
       }
 
+      /**
+       * @brief Removes the highest-priority available candidate from the queues.
+       *
+       * @param cand Output candidate.
+       *
+       * @return `true` if a candidate was available.
+      */
       bool pop_candidate_from_queue(Candidate& cand) {
         for (int p = NUM_PRIORITIES - 1; p >= 0; --p) {
           if (!candidate_queues_[p].empty()) {
@@ -1272,6 +1323,7 @@ namespace CGAL {
         return false;
       }
 
+      /// @brief Returns whether every candidate queue is empty.
       bool candidate_queues_empty() const {
         for (const auto& q : candidate_queues_) {
           if (!q.empty())
@@ -1281,6 +1333,12 @@ namespace CGAL {
         return true;
       }
 
+      /**
+       * @brief Initializes the mesh with the initial two-vertex seed.
+       *
+       * The seed creates a single undirected edge whose two halfedges form the
+       * initial front. Candidate generation is then started from both seed vertices.
+      */
       void seed_from_grid() {
         std::optional<typename Grid::Initial_seed> seed = grid_.get_initial_seed();
         if (!seed) {
@@ -1326,6 +1384,14 @@ namespace CGAL {
 
       }
 
+      /**
+       * @brief Generates new candidates around a newly inserted mesh vertex.
+       *
+       * Nearby mesh vertices are paired with the supplied vertex and candidate
+       * splat intersections are generated for each pair.
+       *
+       * @param nv Newly inserted mesh vertex.
+      */
       void push_candidates_from_vertex(vertex_descriptor nv) {
         const Point_3 p = get(points_pm_, nv);
 
@@ -1340,6 +1406,17 @@ namespace CGAL {
         }
       }
 
+      /**
+       * @brief Generates candidate vertices from a pair of parent vertices.
+       *
+       * A construction circle derived from the parent pair is intersected with
+       * nearby splats. Each valid intersection becomes a reconstruction candidate.
+       *
+       * @param parent_a First parent vertex.
+       * @param parent_b Second parent vertex.
+       *
+       * @return Candidate vertices generated from the parent pair.
+      */
       std::vector<Candidate> generate_candidates_from_parents(vertex_descriptor parent_a,
                                                               vertex_descriptor parent_b) const {
         std::vector<Candidate> candidates;
@@ -1390,6 +1467,14 @@ namespace CGAL {
         return candidates;
       }
 
+      /**
+       * @brief Tests whether a mesh vertex already exists near a candidate position.
+       *
+       * @param p Candidate position.
+       *
+       * @return `true` when an existing mesh vertex is closer than the reconstruction
+       *         tolerance.
+      */
       bool has_vertex_near(const Point_3& p) const {
         const FT tol = grid_.get_box_size() * FT(0.9);
         const FT tol2 = tol * tol;
@@ -1403,6 +1488,20 @@ namespace CGAL {
         return false;
       }
 
+      /**
+       * @brief Creates an oriented halfedge between two vertices.
+       *
+       * The new edge is initialized with the requested orientation `va -> vb`.
+       * The opposite halfedge is initialized with orientation `vb -> va`.
+       *
+       * Vertex halfedge pointers are initialized when the corresponding vertex does
+       * not already have a halfedge.
+       *
+       * @param va Source vertex.
+       * @param vb Target vertex.
+       *
+       * @return The halfedge oriented from `va` to `vb`.
+      */
       halfedge_descriptor create_halfedge(vertex_descriptor va,
                                           vertex_descriptor vb)
       {
@@ -1424,6 +1523,26 @@ namespace CGAL {
         return h_vavb;
       }
 
+      /**
+       * @brief Inserts a new vertex into the local halfedge front.
+       *
+       * The two parent vertices define an existing front interval. The new vertex
+       * is connected to both parents and the surrounding `next()` relationships are
+       * rewired so that the old boundary interval is replaced by two new boundary
+       * intervals.
+       *
+       * The local halfedge ordering around each parent is computed using the parent
+       * box normals. The selected halfedges are first checked for compatibility
+       * before any topology is modified.
+       *
+       * @param v0 First parent vertex.
+       * @param v1 Second parent vertex.
+       * @param nv Newly inserted vertex.
+       * @param normal Normal associated with the new candidate.
+       *
+       * @return `true` if the local graph can be updated consistently, `false`
+       *         otherwise.
+      */
       bool build_graph(vertex_descriptor v0,
                       vertex_descriptor v1,
                       vertex_descriptor nv,
@@ -1435,8 +1554,7 @@ namespace CGAL {
         const Point_3 p1 = get(points_pm_, v1);
         const Point_3 pn = get(points_pm_, nv);
 
-        auto normalize_vec = [](const Vector_3& n) -> Vector_3
-        {
+        auto normalize_vec = [](const Vector_3& n) -> Vector_3 {
           const double len2 = CGAL::to_double(n.squared_length());
           if (len2 <= 0.0) {
             return CGAL::NULL_VECTOR;
@@ -1444,6 +1562,7 @@ namespace CGAL {
           return n / std::sqrt(len2);
         };
 
+        // Normalize the box normals before using them to construct tangent frames.
         Vector_3 n0 = normalize_vec(grid_.box_normal(p0));
         Vector_3 n1 = normalize_vec(grid_.box_normal(p1));
 
@@ -1454,8 +1573,9 @@ namespace CGAL {
           return false;
         }
 
-        auto make_frame = [&](const Vector_3& n) -> std::pair<Vector_3, Vector_3>
-        {
+        // Construct an oriented tangent frame. The sign of v is adjusted so that
+        // cross(u,v) agrees with the supplied normal.
+        auto make_frame = [&](const Vector_3& n) -> std::pair<Vector_3, Vector_3> {
           std::vector<Vector_3> frame = grid_.compute_local_tangent_frame(n);
           Vector_3 u = frame[0];
           Vector_3 v = frame[1];
@@ -1471,11 +1591,11 @@ namespace CGAL {
           return {u, v};
         };
 
+        // Return the polar angle of q around origin in the tangent frame.
         auto angle_of = [&](const Point_3& origin,
                             const Point_3& q,
                             const Vector_3& u,
-                            const Vector_3& v) -> double
-        {
+                            const Vector_3& v) -> double {
           const Vector_3 d = q - origin;
           double a = std::atan2(CGAL::to_double(d * v), CGAL::to_double(d * u));
           if (a < 0.0) {
@@ -1484,10 +1604,11 @@ namespace CGAL {
           return a;
         };
 
-        auto sorted_border_halfedges_around_vertex =
+        // Collect all incident halfedges around a parent and sort them by their
+        // projected angle. These halfedges define the local front ordering.
+        auto sorted_halfedges_around_vertex =
           [&](vertex_descriptor v, const Vector_3& local_normal)
-            -> std::vector<std::pair<double, halfedge_descriptor>>
-        {
+            -> std::vector<std::pair<double, halfedge_descriptor>> {
           std::vector<std::pair<double, halfedge_descriptor>> out;
           const Point_3 pv = get(points_pm_, v);
 
@@ -1506,17 +1627,18 @@ namespace CGAL {
           }
 
           std::sort(out.begin(), out.end(),
-                    [](const auto& a, const auto& b) { return a.first < b.first; });
+            [](const auto& a, const auto& b) { return a.first < b.first; });
 
           return out;
         };
 
+        // Select the two front halfedges immediately clockwise and counter-clockwise
+        // from the direction toward the new vertex.
         auto choose_closest_ccw_halfedges =
           [&](vertex_descriptor v,
               const Point_3& new_point,
               const Vector_3& local_normal)
-            -> std::pair<halfedge_descriptor, halfedge_descriptor>
-        {
+            -> std::pair<halfedge_descriptor, halfedge_descriptor> {
           const Point_3 pv = get(points_pm_, v);
           const auto [u, vaxis] = make_frame(local_normal);
           if (u == CGAL::NULL_VECTOR || vaxis == CGAL::NULL_VECTOR) {
@@ -1526,7 +1648,7 @@ namespace CGAL {
           const double theta_new = angle_of(pv, new_point, u, vaxis);
 
           std::vector<std::pair<double, halfedge_descriptor>> sorted =
-            sorted_border_halfedges_around_vertex(v, local_normal);
+            sorted_halfedges_around_vertex(v, local_normal);
 
           if (sorted.empty()) {
             return {null_h, null_h};
@@ -1544,22 +1666,12 @@ namespace CGAL {
           return {cw.second, ccw.second};
         };
 
-        // Use each parent's own box normal for ordering.
+        // Compute the local ordering using parent normals.
         auto [h1, h2] = choose_closest_ccw_halfedges(v0, pn, n0);
-        auto [h1_temp, h2_temp] = choose_closest_ccw_halfedges(v0, pn, n1);
-
         auto [g2, g1] = choose_closest_ccw_halfedges(v1, pn, n1);
-        auto [g2_temp, g1_temp] = choose_closest_ccw_halfedges(v1, pn, n0);
 
-        if (g1 != g1_temp || g2 != g2_temp || h1 != h1_temp || h2 != h2_temp) {
-          return false;
-        }
-
-        if (h1 == null_h || h2 == null_h || g1 == null_h || g2 == null_h) {
-          std::cout << "Found a null edge" << std::endl;
-          return false;
-        }
-
+        // Ensure that the selected halfedges are oriented from the parent vertex to
+        // the other vertex. If not, flip them to their opposite halfedge.
         if (target(h1, mesh_) != v0) h1 = opposite(h1, mesh_);
         CGAL_assertion(target(h1, mesh_) == v0);
 
@@ -1572,21 +1684,59 @@ namespace CGAL {
         if (target(g2, mesh_) != v1) g2 = opposite(g2, mesh_);
         CGAL_assertion(target(g2, mesh_) == v1);
 
-        // Topology check.
+        // Reject the candidate when the chosen halfedges aren't already connected.
         if (next(g1, mesh_) != opposite(g2, mesh_) ||
             next(h2, mesh_) != opposite(h1, mesh_)) {
           return false;
         }
 
+        // Check that the halfedge cycles around each parent vertex don't have repeated vertices. 
+        // This ensures that the local front is a simple cycle.
+        // We limit the number of steps to avoid infinite loops.
+        std::unordered_set<vertex_descriptor> visited;
+        halfedge_descriptor h = opposite(h1, mesh_);
+        for (std::size_t steps = 0; steps <= 20; ++steps) {
+          if (!visited.insert(source(h, mesh_)).second)
+            return false;
+
+          if (h == g1)
+            break;
+
+          h = next(h, mesh_);
+
+          if (h == null_h)
+            return false;
+        }
+
+        visited.clear();
+        h = opposite(g2, mesh_);
+        for (std::size_t steps = 0; steps <= 20; ++steps) {
+          if (!visited.insert(source(h, mesh_)).second)
+            return false;
+
+          if (h == h2)
+            break;
+
+          h = next(h, mesh_);
+
+          if (h == null_h)
+            return false;
+        }
+
+        // Create the two new undirected edges connecting the new vertex to its parents.
         halfedge_descriptor h_v0nv = create_halfedge(v0, nv);
         halfedge_descriptor h_nvv0 = opposite(h_v0nv, mesh_);
         halfedge_descriptor h_v1nv = create_halfedge(v1, nv);
         halfedge_descriptor h_nvv1 = opposite(h_v1nv, mesh_);
 
+        // First boundary update:
+        // g1 -> v1 -> nv -> v0 -> opposite(h1)
         set_next(g1, h_v1nv, mesh_);
         set_next(h_v1nv, h_nvv0, mesh_);
         set_next(h_nvv0, opposite(h1, mesh_), mesh_);
 
+        // Second boundary update:
+        // h2 -> v0 -> nv -> v1 -> opposite(g2)
         set_next(h2, h_v0nv, mesh_);
         set_next(h_v0nv, h_nvv1, mesh_);
         set_next(h_nvv1, opposite(g2, mesh_), mesh_);
@@ -1594,11 +1744,21 @@ namespace CGAL {
         return true;
       }
 
+      /**
+       * @brief Converts closed `next()` cycles into polygonal faces.
+       *
+       * Every unassigned halfedge is used as the starting point of a boundary walk.
+       * Closed cycles containing at least three halfedges are passed to the ear
+       * clipping stage.
+       *
+       * Cycles that do not close within the safety limit are ignored.
+      */
       void fill_faces_from_next_cycles()
       {
         const auto null_h = boost::graph_traits<PolygonMesh>::null_halfedge();
         const auto null_f = boost::graph_traits<PolygonMesh>::null_face();
 
+        // Walk the current `next()` graph starting from an unassigned halfedge.
         for (halfedge_descriptor start : halfedges(mesh_)) {
           CGAL_assertion(start != null_h);
 
@@ -1612,7 +1772,6 @@ namespace CGAL {
           halfedge_descriptor h = start;
           const std::size_t max_steps = std::min((std::size_t)num_halfedges(mesh_), std::size_t(1000)); // If cycle is too long, it is considered a hole.
           bool closed = false;
-
 
           for (std::size_t i = 0; i < max_steps; ++i)
           {
@@ -1633,27 +1792,35 @@ namespace CGAL {
             }
           }
 
-          if (!closed || cycle.size() < 3)
-          {
-            // done.insert(done.end(), cycle.begin(), cycle.end());
+          // Only closed cycles with at least three halfedges can represent polygonal faces
+          if (!closed || cycle.size() < 3) {
             continue;
           }
 
+          // Ear clipping converts the polygon cycle into triangle faces while preserving
+          // the existing halfedge connectivity.
           ear_clip_and_add_faces(cycle);
         }
       }
 
-      void ear_clip_and_add_faces(std::vector<halfedge_descriptor> cycle)
-      {
-        if (cycle.size() < 3)
-        {
-          std::cerr << "Ear clipping failed: cycle too small.\n";
-          return;
-        }
+      /**
+       * @brief Triangulates a polygonal halfedge cycle using ear clipping.
+       *
+       * The cycle is projected once onto a local tangent plane. Valid ears are
+       * identified using 2D orientation tests, containment tests, and a 3D normal
+       * consistency test. Candidate ears are ordered by their interior angle.
+       *
+       * After an ear is committed, the halfedge cycle is updated and the remaining
+       * polygon is processed again. When only three halfedges remain, the final
+       * triangle is created directly.
+       *
+       * @param cycle Halfedge cycle representing a polygon boundary.
+      */
+      void ear_clip_and_add_faces(std::vector<halfedge_descriptor> cycle) {
+        CGAL_assertion(cycle.size() >= 3);
 
         // 2D orientation test.        
-        const auto orient2 = [](const Point_2& a, const Point_2& b, const Point_2& c)
-        {
+        const auto orient2 = [](const Point_2& a, const Point_2& b, const Point_2& c) {
           return CGAL::orientation(a, b, c);
         };
 
@@ -1662,8 +1829,7 @@ namespace CGAL {
           [&](const Point_2& p,
               const Point_2& a,
               const Point_2& b,
-              const Point_2& c) -> bool
-        {
+              const Point_2& c) -> bool {
           const auto o1 = orient2(a, b, p);
           const auto o2 = orient2(b, c, p);
           const auto o3 = orient2(c, a, p);
@@ -1676,8 +1842,7 @@ namespace CGAL {
         const auto triangle_angle =
           [&](const Point_2& a,
               const Point_2& b,
-              const Point_2& c) -> double
-        {
+              const Point_2& c) -> double {
           const double ux = CGAL::to_double(a.x() - b.x());
           const double uy = CGAL::to_double(a.y() - b.y());
           const double vx = CGAL::to_double(c.x() - b.x());
@@ -1695,8 +1860,7 @@ namespace CGAL {
         };
 
         // Estimate a supporting plane normal for the current polygon from the box normals of its vertices.
-        auto compute_cycle_normal = [&](const std::vector<vertex_descriptor>& verts) -> Vector_3
-        {
+        auto compute_cycle_normal = [&](const std::vector<vertex_descriptor>& verts) -> Vector_3 {
           Vector_3 n = CGAL::NULL_VECTOR;
           for (auto v: verts) {
             n = n + grid_.box_normal(get(points_pm_, v));
@@ -1713,16 +1877,31 @@ namespace CGAL {
         for (halfedge_descriptor h : cycle)
           verts.push_back(source(h, mesh_));
 
+        // --------------------------------------------------------------------------
+        // Extract the current polygon vertices.
+        //
+        // A polygon cycle must contain each vertex only once. Repeated vertices mean
+        // that the halfedge walk is actually a pinched/multi-cycle boundary and cannot
+        // be safely triangulated as a simple polygon.
+        // --------------------------------------------------------------------------
         auto tmp = verts;
         std::sort(tmp.begin(), tmp.end());
         if (std::unique(tmp.begin(), tmp.end()) != tmp.end()) {
-          std::cerr << "Warning: Ear clipping failed: cycle contains repeated vertices. Will result in  holes.\n";
+          std::cerr << "Warning: Ear clipping failed: cycle contains repeated vertices. Can result in holes.\n";
+          for (halfedge_descriptor h : cycle) {
+            vertex_descriptor v = source(h, mesh_);
+            std::cerr << "  Vertex " << v << " at " << get(points_pm_, v) << "\n";
+          }
           return;
         }
 
+        // Compute one supporting normal for the polygon. This normal is fixed for the
+        // entire ear-clipping operation so that the projection does not change after
+        // each ear removal.
         Vector_3 n = compute_cycle_normal(verts);
 
-        // Project the polygon onto a local tangent plane.
+        // Project the polygon vertices into the tangent plane once. The resulting 2D
+        // points are reused by the ear-clipping loop.
         std::vector<Vector_3> frame = grid_.compute_local_tangent_frame(n);
         Vector_3 u = frame[0];
         Vector_3 v = frame[1];
@@ -1740,9 +1919,7 @@ namespace CGAL {
           return Point_2(d * u, d * v);
         };
 
-        // --------------------------------------------------------------------------
         // Iteratively remove one ear until only one triangle remains.
-        // --------------------------------------------------------------------------
         while (cycle.size() > 3) {
           verts.clear();
           P.clear();
@@ -1812,18 +1989,18 @@ namespace CGAL {
             ear_candidates.emplace_back(ang, i); // Store candidate together with its interior angle.
           }
 
-          if (!found_ear && cycle.size() > 3)
-          {
-            std::cerr << "Ear clipping failed: no valid ear found.\n";
+          if (!found_ear && cycle.size() > 3) {
             return;
           }
 
+          // ----------------------------------------------------
           // commit_ear_step must:
           //  - add the ear triangle face,
           //  - update the mesh halfedge wiring,
           //  - erase the ear vertex from 'cycle'.
+          // ----------------------------------------------------
 
-           // Try ears from smallest angle to largest until one can be inserted topologically.
+          // Try ears from smallest angle to largest until one can be inserted topologically.
           std::sort(ear_candidates.begin(), ear_candidates.end());
           bool ear_committed = false;
           for (const auto& [angle, best_pos] : ear_candidates) {
@@ -1853,14 +2030,29 @@ namespace CGAL {
         }
       }
 
-      // --------------------------------------------------------------------------
-      // Commits one ear by:
-      //   1. creating the diagonal (a,c),
-      //   2. creating the ear triangle,
-      //   3. rewiring the remaining boundary,
-      //   4. removing b from the current polygon cycle.
-      // --------------------------------------------------------------------------
-
+      /**
+       * @brief Commits one ear removal to the halfedge mesh.
+       *
+       * For an ear
+       *
+       *   a -> b -> c
+       *
+       * a new diagonal `a -> c` is created, the triangle `a-b-c` is assigned a face,
+       * and the remaining polygon boundary is rewired to replace
+       *
+       *   a -> b -> c
+       *
+       * by
+       *
+       *   a -> c.
+       *
+       * The supplied cycle is updated to remove the ear vertex.
+       *
+       * @param cycle Current polygon halfedge cycle.
+       * @param ear_pos Position of the ear vertex in `cycle`.
+       *
+       * @return `true` if the ear was successfully committed.
+      */
       bool commit_ear_step(std::vector<halfedge_descriptor>& cycle,
                           std::size_t ear_pos) {
         const auto null_h = boost::graph_traits<PolygonMesh>::null_halfedge();
@@ -1871,9 +2063,9 @@ namespace CGAL {
           return false;
         }
 
-        // Final triangle: just convert the current cycle into one face.
-        if (n == 3)
-        {
+        // The final cycle already consists of exactly three halfedges, so no new
+        // diagonal is needed. Convert the cycle directly into a triangular face.
+        if (n == 3) {
           face_descriptor f = add_face(mesh_);
           if (f == null_f) {
             return false;
@@ -1900,10 +2092,10 @@ namespace CGAL {
 
         const std::size_t i_ab     = (ear_pos + n - 1) % n;
         const std::size_t i_bc     = ear_pos;
-        const std::size_t i_before = (ear_pos + n - 2) % n;
+        const std::size_t i_before = (ear_pos + n - 2) % n; 
         const std::size_t i_after  = (ear_pos + 1) % n;
 
-        // Locate the two boundary edges incident to the ear.
+        // Identify the two halfedges entering and leaving the ear vertex.
         halfedge_descriptor h_ab = cycle[i_ab];
         halfedge_descriptor h_bc = cycle[i_bc];
 
@@ -1920,15 +2112,20 @@ namespace CGAL {
         }
 
         // Check if the diagonal (a, c) already exists.
+        // The diagonal must not already exist. Existing diagonals indicate that the
+        // polygon has already been split topologically and cannot be treated as a
+        // simple ear insertion.
         halfedge_descriptor temp = find_halfedge(a, c);
         if (temp != null_h) {
           return false;
         }
 
+        // Create the diagonal a -> c. Its opposite halfedge c -> a is used to close
+        // the new triangular face.
         halfedge_descriptor h_ac = create_halfedge(a, c);
         halfedge_descriptor h_ca = opposite(h_ac, mesh_);
 
-        // The diagonal must be unused on both sides.
+        // The two boundary halfedges of the ear must not already belong to faces.
         if (face(h_ac, mesh_) != null_f && face(h_ca, mesh_) != null_f) {
           return false;
         }
@@ -1936,7 +2133,8 @@ namespace CGAL {
           return false;
         }
 
-        // Triangle face: a -> b -> c -> a
+        // Construct the new triangular face:
+        //     a -> b -> c -> a
         face_descriptor f = add_face(mesh_);
         if (f == null_f) {
           return false;
@@ -1965,13 +2163,22 @@ namespace CGAL {
         set_next(h_before, h_ac, mesh_);
         set_next(h_ac, h_after, mesh_);
 
-        // Update the local cycle representation.
+        // Update the explicit cycle representation so that the removed ear vertex
+        // is no longer part of the polygon being triangulated.
         cycle[i_ab] = h_ac;
         cycle.erase(cycle.begin() + static_cast<std::ptrdiff_t>(i_bc));
 
         return true;
       }
 
+      /**
+       * @brief Finds an oriented halfedge from one vertex to another.
+       *
+       * @param from Source vertex.
+       * @param to Target vertex.
+       *
+       * @return Halfedge `from -> to`, or the null halfedge if none exists.
+      */
       halfedge_descriptor find_halfedge(vertex_descriptor from,
                                         vertex_descriptor to) const {
         const auto null_h = boost::graph_traits<PolygonMesh>::null_halfedge();
@@ -1984,6 +2191,20 @@ namespace CGAL {
         return null_h;
       }
 
+      /**
+       * @brief Tests whether two 2D segments intersect in their interiors.
+       *
+       * Endpoint touching is not considered a strict intersection. When
+       * `allow_overlap` is false, overlapping segments are considered intersecting.
+       *
+       * @param a First endpoint of the first segment.
+       * @param b Second endpoint of the first segment.
+       * @param c First endpoint of the second segment.
+       * @param d Second endpoint of the second segment.
+       * @param allow_overlap Whether overlapping segments should be ignored.
+       *
+       * @return `true` if the segments violate the local intersection constraint.
+      */
       bool intersect_2d(const Point_2& a,
                         const Point_2& b,
                         const Point_2& c,
@@ -2010,6 +2231,19 @@ namespace CGAL {
         return false;
       };
 
+      /**
+       * @brief Checks whether a candidate is geometrically compatible with the
+       *        surrounding mesh under a local planar projection.
+       *
+       * The parent-to-candidate edges are projected into the tangent plane defined
+       * by the supplied normal. They are rejected when they intersect existing mesh
+       * edges.
+       *
+       * @param cand Candidate reconstruction vertex.
+       * @param n Projection normal.
+       *
+       * @return `true` when the candidate passes the local intersection test.
+      */
       bool projection_check(const Candidate& cand, const Vector_3 n) const {
         CGAL_assertion(n != CGAL::NULL_VECTOR);
 
@@ -2060,11 +2294,29 @@ namespace CGAL {
         return true;
       }
 
+      /**
+       * @brief Returns the number of halfedges incident to a vertex.
+       *
+       * @param v Vertex whose degree is queried.
+       *
+       * @return Number of incident halfedges.
+      */
       std::size_t incident_vertex_degree(vertex_descriptor v) const {
         std::size_t deg = halfedges_around_source(v, mesh_).size();
         return deg;
       }
 
+      /**
+       * @brief Searches the local halfedge neighborhood for another parent vertex.
+       *
+       * The search follows `next()` pointers for a bounded number of steps from
+       * every incident halfedge.
+       *
+       * @param start_v Starting vertex.
+       * @param target_v Vertex being searched for.
+       *
+       * @return `true` if the target vertex is encountered.
+      */
       bool walk_finds_other_parent_from_vertex(vertex_descriptor start_v,
                                                vertex_descriptor target_v) const {
 
@@ -2094,6 +2346,12 @@ namespace CGAL {
         return false;
       }
 
+      /**
+       * @brief Determines whether a candidate connects two distinct boundary fronts.
+       *
+       * A candidate is considered to join two borders when neither parent can reach
+       * the other through the local halfedge walks.
+      */
       bool joins_two_borders(const Candidate& cand) const {
         const bool a_finds_b = walk_finds_other_parent_from_vertex(cand.first, cand.second);
         const bool b_finds_a = walk_finds_other_parent_from_vertex(cand.second, cand.first);
@@ -2101,6 +2359,16 @@ namespace CGAL {
         return !a_finds_b && !b_finds_a;
       }
 
+      /**
+       * @brief Computes the processing priority of a reconstruction candidate.
+       *
+       * Higher priority is assigned to candidates adjacent to low-degree vertices,
+       * followed by candidates that connect two separate boundary fronts.
+       *
+       * @param cand Candidate being prioritized.
+       *
+       * @return Integer priority in the range `[0, NUM_PRIORITIES-1]`.
+      */
       int compute_priority(const Candidate& cand) const {
         
         if (incident_vertex_degree(cand.first) == 1 || incident_vertex_degree(cand.second) == 1) {
@@ -2112,139 +2380,6 @@ namespace CGAL {
         }
 
         return 0;   // default for now
-      }
-
-      void print_duplicate_edges() const
-      {
-        const auto null_f = boost::graph_traits<PolygonMesh>::null_face();
-
-        struct EdgeKey
-        {
-          vertex_descriptor a, b;
-
-          EdgeKey(vertex_descriptor u, vertex_descriptor v)
-          {
-            if (u < v) {
-              a = u;
-              b = v;
-            } else {
-              a = v;
-              b = u;
-            }
-          }
-
-          bool operator==(const EdgeKey& other) const
-          {
-            return a == other.a && b == other.b;
-          }
-        };
-
-        struct EdgeKeyHash
-        {
-          std::size_t operator()(const EdgeKey& k) const
-          {
-            std::size_t h1 = std::hash<std::size_t>()(std::size_t(k.a));
-            std::size_t h2 = std::hash<std::size_t>()(std::size_t(k.b));
-            return h1 ^ (h2 << 1);
-          }
-        };
-
-        std::unordered_map<EdgeKey,
-                          std::vector<edge_descriptor>,
-                          EdgeKeyHash> edge_map;
-
-        for (edge_descriptor e : edges(mesh_))
-        {
-          halfedge_descriptor h = halfedge(e, mesh_);
-          vertex_descriptor s = source(h, mesh_);
-          vertex_descriptor t = target(h, mesh_);
-          edge_map[EdgeKey(s, t)].push_back(e);
-        }
-
-        std::size_t duplicates = 0;
-
-        for (const auto& kv : edge_map)
-        {
-          if (kv.second.size() <= 1)
-            continue;
-
-          ++duplicates;
-
-          std::cout << "Duplicate edge between vertices "
-                    << kv.first.a << " and " << kv.first.b
-                    << " : " << kv.second.size()
-                    << " edge descriptors\n";
-
-          for (edge_descriptor e : kv.second)
-          {
-            halfedge_descriptor h = halfedge(e, mesh_);
-
-            std::cout << "    edge " << e;
-
-            if (face(h, mesh_) != null_f)
-              std::cout << " left_face=" << face(h, mesh_);
-
-            if (face(opposite(h, mesh_), mesh_) != null_f)
-              std::cout << " right_face=" << face(opposite(h, mesh_), mesh_);
-
-            std::cout << '\n';
-          }
-        }
-
-        std::cout << "Duplicate geometric edges: " << duplicates << std::endl;
-      }
-
-      void print_duplicate_faces() const
-      {
-        struct FaceKey
-        {
-          std::array<vertex_descriptor, 3> v;
-
-          bool operator==(const FaceKey& other) const
-          {
-            return v == other.v;
-          }
-        };
-
-        struct Hash
-        {
-          std::size_t operator()(const FaceKey& f) const
-          {
-            std::size_t h = 0;
-            for (auto x : f.v) {
-              std::size_t hx = std::hash<std::size_t>()(std::size_t(x));
-              h ^= hx + 0x9e3779b9 + (h << 6) + (h >> 2);
-            }
-            return h;
-          }
-        };
-
-        std::unordered_map<FaceKey, std::vector<face_descriptor>, Hash> face_map;
-
-        for (face_descriptor f : faces(mesh_))
-        {
-          std::array<vertex_descriptor, 3> verts;
-          int i = 0;
-
-          for (halfedge_descriptor h : halfedges_around_face(halfedge(f, mesh_), mesh_))
-            verts[i++] = target(h, mesh_);
-
-          std::sort(verts.begin(), verts.end());
-          face_map[{verts}].push_back(f);
-        }
-
-        for (const auto& kv : face_map)
-        {
-          if (kv.second.size() > 1)
-          {
-            std::cout << "Duplicate face on vertices "
-                      << kv.first.v[0] << " "
-                      << kv.first.v[1] << " "
-                      << kv.first.v[2]
-                      << " count=" << kv.second.size()
-                      << std::endl;
-          }
-        }
       }
 
     private:

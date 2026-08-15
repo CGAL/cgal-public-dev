@@ -58,8 +58,7 @@ bool read_xyz_file(const std::string& filename,
 
 bool read_off_file(const std::string& filename,
                    std::vector<Point>& points,
-                   std::vector<Vector_3>& normals)
-{
+                   std::vector<Vector_3>& normals) {
   points.clear();
   normals.clear();
 
@@ -91,7 +90,6 @@ bool read_off_file(const std::string& filename,
 // ------------------------------------------------------------
 // Center and scale into [-1,1]^3
 // ------------------------------------------------------------
-
 double center_and_scale_point_cloud(std::vector<Point>& points) {
   if (points.empty()) {
     return 1.0;
@@ -127,7 +125,6 @@ double center_and_scale_point_cloud(std::vector<Point>& points) {
 // ------------------------------------------------------------
 // Compute normals if needed
 // ------------------------------------------------------------
-
 void compute_normals_if_missing(std::vector<Point>& points,
                                 std::vector<Vector_3>& normals,
                                 std::size_t k = 6) {
@@ -164,67 +161,8 @@ void compute_normals_if_missing(std::vector<Point>& points,
     CGAL::parameters::point_map(CGAL::make_random_access_property_map(points)).normal_map(CGAL::make_random_access_property_map(normals)));
 }
 
-template <typename Mesh>
-bool write_mesh_graph_ply(const Mesh& mesh, const std::string& filename)
-{
-  using vertex_descriptor = typename boost::graph_traits<Mesh>::vertex_descriptor;
-  using halfedge_descriptor = typename boost::graph_traits<Mesh>::halfedge_descriptor;
-
-  std::ofstream out(filename);
-  if (!out) {
-    std::cerr << "Error: cannot open " << filename << " for writing.\n";
-    return false;
-  }
-
-  std::unordered_map<vertex_descriptor, int> vindex;
-  int idx = 0;
-
-  for (auto vd : vertices(mesh)) {
-    vindex[vd] = idx++;
-  }
-
-  std::vector<std::pair<int,int>> edges_list;
-  for (auto e : edges(mesh)) {
-    halfedge_descriptor h = halfedge(e, mesh);
-    vertex_descriptor s = source(h, mesh);
-    vertex_descriptor t = target(h, mesh);
-
-    int is = vindex[s];
-    int it = vindex[t];
-    if (is > it) std::swap(is, it);
-    edges_list.emplace_back(is, it);
-  }
-
-  out << "ply\n";
-  out << "format ascii 1.0\n";
-  out << "element vertex " << num_vertices(mesh) << "\n";
-  out << "property float x\n";
-  out << "property float y\n";
-  out << "property float z\n";
-  out << "element edge " << edges_list.size() << "\n";
-  out << "property int vertex1\n";
-  out << "property int vertex2\n";
-  out << "end_header\n";
-
-  for (auto vd : vertices(mesh)) {
-    const auto& p = get(CGAL::vertex_point, mesh, vd);
-    out << CGAL::to_double(p.x()) << " "
-        << CGAL::to_double(p.y()) << " "
-        << CGAL::to_double(p.z()) << "\n";
-  }
-
-  for (const auto& e : edges_list) {
-    out << e.first << " " << e.second << "\n";
-  }
-
-  return true;
-}
-
 int main(int argc, char* argv[]) {
-  const std::string filename = (argc>1)?argv[1]:CGAL::data_file_path("meshes/plane.off");
-  // const std::string filename = CGAL::data_file_path("meshes/plane.off");
-  // const std::string filename = (argc>1)?argv[1]:CGAL::data_file_path("points_3/fold.xyz");
-  // const std::string filename = CGAL::data_file_path("meshes/fold.off");
+  const std::string filename = (argc>1) ? argv[1] : CGAL::data_file_path("meshes/plane.off");
 
   std::vector<Point> points;
   std::vector<Vector_3> normals;
@@ -259,8 +197,6 @@ int main(int argc, char* argv[]) {
   double scale = (argc > 2) ? std::stod(argv[2]) : 1.0;
   double average_spacing = scale * CGAL::compute_average_spacing<CGAL::Parallel_if_available_tag>(points, 2);
 
-  // double average_spacing = sc * std::stod(argv[2]);
-
   Polyhedron output_mesh;
   const auto bbox = CGAL::bounding_box(points.begin(), points.end()); // recompute bbox after centering and scaling
 
@@ -279,56 +215,17 @@ int main(int argc, char* argv[]) {
   std::vector<FT> splat_sizes = grid.estimate_individual_splat_sizes(); // estimate individual splat sizes based on local point distribution
   std::cout<<"Estimated individual splat sizes for " << splat_sizes.size() << " points." << std::endl;
 
-  grid.fill_empty_block_normals_from_large_splats();
+  grid.recompute_block_normals_from_splats();
 
-  grid.write_point_cloud_ply("debug_points.ply");
-  grid.write_grid_vertices_ply("debug_grid_vertices.ply");
-  grid.write_cell_centers_and_normals_ply("debug_cell_normals.ply", 0.2);
+  // grid.write_point_cloud_ply("debug_points.ply");
+  // grid.write_grid_vertices_ply("debug_grid_vertices.ply");
+  // grid.write_cell_centers_and_normals_ply("debug_cell_normals.ply", 0.2);
 
   CGAL::Splat_surface_reconstruction_3<std::vector<Point>, std::vector<Vector_3>, Polyhedron> reconstruction(grid, output_mesh);
   reconstruction.run();
   
   CGAL::IO::write_polygon_mesh("mesh.ply", output_mesh);
   std::cout << "Reconstructed mesh written to mesh.ply" << std::endl;
-
-  // std::ofstream out("rejected_candidates.ply");
-  // if (!out) {
-  //   std::cerr << "Error: cannot open output file!" << std::endl;
-  //   return EXIT_FAILURE;
-  // }
-  // out << "ply\n";
-  // out << "format ascii 1.0\n";
-  // out << "element vertex " << reconstruction.rejected_candidates_.size() << "\n";
-  // out << "property float x\n";
-  // out << "property float y\n";
-  // out << "property float z\n";
-  // // out << "element edge " << 2*reconstruction.rejected_candidates_.size() << "\n";
-  // // out << "property int vertex1\n";
-  // // out << "property int vertex2\n";
-  // out << "end_header\n";
-
-  // // for(const auto& vd : vertices(output_mesh))
-  // // {
-  // //   const auto& p = get(CGAL::vertex_point, output_mesh, vd);
-  // //     out << p.x() << " "
-  // //         << p.y() << " "
-  // //         << p.z() << "\n";
-  // // }
-  // for (const auto& cand : reconstruction.rejected_candidates_)
-  // {
-  //   const auto& p = cand.p;
-  //     out << p.x() << " "
-  //         << p.y() << " "
-  //         << p.z() << "\n";
-  // }
-  // // Write edges connecting rejected candidates to their parents
-  // // for(int i = 0; i < reconstruction.rejected_candidates_.size(); ++i)
-  // // {
-  // //   // omit the v in the output, just write the index of the vertex
-  // //   out << reconstruction.rejected_candidates_[i].parent0 << " " << i + vertices(output_mesh).size() << "\n";
-  // //   out << reconstruction.rejected_candidates_[i].parent1 << " " << i + vertices(output_mesh).size() << "\n";
-  // //   // out << reconstruction.rejected_candidates_[i].parent1 << " " << reconstruction.rejected_candidates_[i].parent0 << "\n";
-  // // }
 
   return EXIT_SUCCESS;
 }
