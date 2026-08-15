@@ -4,25 +4,121 @@ namespace CGAL {
 \mainpage User Manual
 \anchor Chapter_Splat_Surface_Reconstruction
 \cgalAutoToc
-\authors Pranav Jain, Martin Skrodzki
+
+\authors Pranav Jain, Martin Skrodzki, Andreas Fabri
 
 \section Splat_surface_reconstruction_3Introduction Introduction
 
-This \cgal component implements a surface reconstruction method which
-takes as input point sets with oriented normals and compute_average_spacing
+This \cgal component implements a splat-based surface reconstruction method
+for oriented point clouds. The input consists of a set of three-dimensional
+points together with consistently oriented normal vectors.
+
+The implementation is based on the method presented in:
+
+Henriette Lipschütz, Ulrich Reitebuch, Konrad Polthier, and Martin Skrodzki,
+<i>Feature-aware manifold meshing and remeshing of point clouds and
+polyhedral surfaces with guaranteed smallest edge length</i>,
+<a href="https://arxiv.org/abs/2305.07570">arXiv:2305.07570</a>.
+
+The reconstruction incrementally generates a polygonal surface from local
+splat information. The resolution of the reconstructed surface is controlled
+by a target edge length derived from the sampling density of the input point
+cloud.
 
 \cgalFigureBegin{Splat_surface_reconstruction_3figintroduction, SplatIntroduction.jpg}
 Splat surface reconstruction.\n
-Left:  Right: reconstructed surface mesh.
+Left: input oriented point cloud. Right: reconstructed surface mesh.
 \cgalFigureEnd
 
-The following example reads a point set and reconstructs a surface using Splat reconstruction.
+
+\section Splat_surface_reconstruction_3Input Input
+
+The reconstruction requires an oriented point cloud. Each input sample must
+provide:
+
+- a three-dimensional point position, and
+- an associated normal vector.
+
+The normal vectors should be consistently oriented. Inconsistent or strongly
+noisy normals can lead to incorrect local surface estimates and can therefore
+affect the reconstructed surface.
+
+The example program reads the oriented point cloud from an `.xyz` file.
+
+
+\section Splat_surface_reconstruction_3Scale Reconstruction Scale
+
+The reconstruction requires a target edge length that determines the
+resolution of the generated surface mesh.
+
+In the example program, this target edge length is specified relative to the
+average spacing estimated from the input point cloud.
+
+Let \f$\ell_{\mathrm{avg}}\f$ denote the estimated average spacing of the
+input point cloud and let \f$s\f$ denote the scale factor supplied by the
+user. The target edge length is defined as
+
+\f[
+  \ell_{\mathrm{target}} = s\,\ell_{\mathrm{avg}}.
+\f]
+
+Consequently, smaller values of \f$s\f$ result in a finer reconstruction,
+whereas larger values result in a coarser reconstruction.
+
+For example, a scale factor of `2` requests a target edge length equal to
+twice the estimated average spacing of the input point cloud.
+
+
+\section Splat_surface_reconstruction_3Compilation Compilation
+
+The example program can be compiled using CMake.
+
+From the example directory, create a build directory and configure the
+project:
+
+\code{.sh}
+mkdir build
+cd build
+cmake ..
+\endcode
+
+Then compile the example:
+
+\code{.sh}
+make
+\endcode
+
+After successful compilation, the executable
+`splat_reconstruction_function` is generated in the build directory.
+
+
+\section Splat_surface_reconstruction_3Usage Running the Reconstruction
+
+The reconstruction example is executed using
+
+\code{.sh}
+./splat_reconstruction_function <point_cloud.xyz> <scale>
+\endcode
+
+The first argument specifies the input oriented point cloud. The second
+argument specifies the scale factor used to determine the target edge length.
+
+\section Splat_surface_reconstruction_3Example Example
+
+The following example reads an oriented point cloud, estimates its average
+spacing, computes the target edge length from the supplied scale factor, and
+reconstructs a surface using the splat surface reconstruction algorithm.
 
 \cgalExample{Splat_surface_reconstruction_3/splat_reconstruction_function.cpp}
 
+The CGAL implementation was developed by **Pranav Jain** as part of
+**Google Summer of Code 2026**, under the guidance of **Martin Skrodzki**
+and **Andreas Fabri**.
 
-\section SplatSurfReconstDesignHistory Design and Implementation History
+The implementation adapts the method to CGAL data structures and algorithms,
+including CGAL polygon meshes, halfedge connectivity, two-dimensional
+Delaunay triangulations, geometric intersection predicates, and property
+maps.
 
-The initial implementation
 */
 } /* namespace CGAL */
