@@ -1,19 +1,31 @@
+// Standard C++ Headers
+#include <iostream>
+#include <vector>
+#include <algorithm>
+#include <cstdlib>
+
+// Thrust Headers
 #include <thrust/device_ptr.h>
 #include <thrust/scan.h>
 #include <thrust/execution_policy.h>
 #include <thrust/fill.h>
 #include <thrust/copy.h>
 #include <thrust/iterator/counting_iterator.h>
-#include <iostream>
-#include <vector>
-#include <algorithm>
-#include <cstdlib>
 
-#include "../custom_pipeline/GPUPredicatesCheckDoubleAssisted.h"
-#include "batchedCrossIntersectionCommon.h"
-#include "TargetStatus.h"
-#include "../src/CPU/YellowFilter.h"
-#include "batchedCrossIntersectionDouble.h"
+// Self Header
+#include "testBVH/batchedCrossIntersectionDouble.h"
+
+// GPU Exact Predicates Modules (Renamed directory)
+#include "GPU_exact_predicates/GPUPredicatesCheckDoubleAssisted.h"
+#include "GPU_exact_predicates/GPUPredicatesCheckDouble.h" 
+#include "GPU_exact_predicates/GPUPredicatesCheckShewchukFloat.h" 
+#include "GPU_exact_predicates/GPUPredicatesCheckBigInteger.h" 
+#include "GPU_exact_predicates/GPUPredicatesCheckBigIntegerV2.h" 
+
+// CPU & BVH Test Modules
+#include "testBVH/batchedCrossIntersectionCommon.h"
+#include "testBVH/TargetStatus.h"
+#include "CPU/YellowFilter.h"
 
 uint64_t executeBatchedCrossIntersectionLoopDoubleOld(
     Mesh & meshAcpu, Mesh & meshBcpu,

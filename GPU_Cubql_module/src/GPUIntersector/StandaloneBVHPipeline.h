@@ -1,11 +1,13 @@
+
 #pragma once
 
 #include <cstdint>
 #include <vector>
 #include <cuda_runtime.h>
 
-#include "ExecutionStats.h"
-#include "../src/CPU/CgalDefinitions.h"
+// Project Utilities & CPU Definitions (relative to src/GPUIntersector/)
+#include "common/ExecutionStats.h"
+#include "CPU/CgalDefinitions.h"
 
 
 

@@ -1,22 +1,14 @@
 #define CUBQL_GPU_BUILDER_IMPLEMENTATION 1
 
-#include <cuda_runtime.h>
+// Standard C++ System Headers
+#include <vector>
+#include <algorithm>
+#include <iostream>
 #include <cmath>
 #include <chrono>
 
-#include "KernelBVHController.h"
-
-#include <tbb/parallel_for.h>
-#include <tbb/parallel_invoke.h>
-
-// Core cuBQL headers
-#include "cuBQL/builder/cuda.h"
-#include "include/third-party/cubql/sm_builder_v2_2.h"
-#include "include/third-party/cubql/refit_forest.h"
-#include "cuBQL/bvh.h"
-
-#include "include/third-party/cubql/fixedBoxQueryv2.h"
-
+// CUDA & Thrust Headers
+#include <cuda_runtime.h>
 #include <thrust/device_vector.h>
 #include <thrust/host_vector.h>
 #include <thrust/scan.h>
@@ -26,22 +18,28 @@
 #include <thrust/sort.h>
 #include <thrust/unique.h>
 
-#include <vector>
-#include <algorithm>
-#include <iostream>
-#include "samples/common/loadOBJ.h"
+// Intel TBB Headers
+#include <tbb/parallel_for.h>
+#include <tbb/parallel_invoke.h>
 
-// Custom modules
-#include "../testBVH/utils.h"
-#include "../testBVH/crossCheck.h"
-#include "../testBVH/DualTreeStep.h"
-#include "../testBVH/rapidDescendKernel.h"
-// #include "../testBVH/batchedCrossIntersection.h"
-//#include "../testBVH/batchedCrossIntersectionV2.h"
-#include "../testBVH/batchedCrossIntersectionDouble.h"
-//#include "../testBVH/batchedCrossIntersectionDoubleOld.h"
-//#include "../testBVH/batchedCrossIntersectionV3.h"
-#include "../custom_pipeline/TriangleDouble.h"
+// Self Header
+#include "GPUIntersector/KernelBVHController.h"
+
+// Core cuBQL & External Utilities
+#include <cuBQL/builder/cuda.h>
+#include <cuBQL/bvh.h>
+#include <third-party/cubql/sm_builder_v2_2.h>
+#include <third-party/cubql/refit_forest.h>
+#include <third-party/cubql/fixedBoxQueryv2.h>
+#include <loadOBJ.h>
+
+// Custom Project Modules
+#include "common/utils.h"
+#include "traversal/crossCheck.h"
+#include "traversal/DualTreeStep.h"
+#include "traversal/rapidDescendKernel.h"
+#include "single_tree/SingleTreeBatchIntersector.h"
+#include "GPU_exact_predicates/TriangleDouble.h"
 
 
 #ifndef _ALLOC

@@ -1,4 +1,4 @@
-#include "batchedCrossIntersectionCommon.h"
+#include "SingleTreeBatchCommon.h"
 
 __global__ void computeMaxChunkSizeKernel(
     const uint32_t* outPairsB,

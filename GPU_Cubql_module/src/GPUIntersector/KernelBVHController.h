@@ -1,14 +1,18 @@
 #pragma once
 
-#include "cuBQL/bvh.h"
-#include "cuBQL/builder/cuda.h"
-#include <thrust/device_vector.h>
+// External / System Headers
 #include <vector>
+#include <thrust/device_vector.h>
 #include <tbb/concurrent_vector.h>
 
-#include "samples/common/loadOBJ.h"
-#include "../CPU/CgalDefinitions.h"
-#include "../testBVH/ExecutionStats.h"
+// Vendor / Library Headers
+#include <cuBQL/bvh.h>
+#include <cuBQL/builder/cuda.h>
+#include <loadOBJ.h>
+
+// Custom Project Modules
+#include "CPU/CgalDefinitions.h"
+#include "common/ExecutionStats.h"
 
 // REMOVED: #include "../custom_pipeline/TriangleDouble.h"
 

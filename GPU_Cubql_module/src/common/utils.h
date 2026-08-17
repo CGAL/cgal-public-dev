@@ -4,7 +4,7 @@
 #include <cuda_runtime.h>
 #include "samples/common/loadOBJ.h"
 #include "cuBQL/bvh.h"
-#include "../custom_pipeline/TriangleDouble.h"
+#include "GPU_exact_predicates/TriangleDouble.h"
 
 // =============================================================================
 // Kernel Declarations (float3 - Legacy / Float Pipeline)

@@ -9,16 +9,19 @@
 #include <algorithm>
 #include <cstdlib>
 
-#include "../custom_pipeline/GPUPredicatesCheckDoubleAssisted.h"
-#include "../custom_pipeline/GPUPredicatesCheckDouble.h" 
-#include "../custom_pipeline/GPUPredicatesCheckShewchukFloat.h" 
-#include "../custom_pipeline/GPUPredicatesCheckBigInteger.h" 
-#include "../custom_pipeline/GPUPredicatesCheckBigIntegerV2.h" 
-#include "../custom_pipeline/GPUPredicatesTwoLap.h"
-#include "batchedCrossIntersectionCommon.h"
-#include "TargetStatus.h"
-#include "../src/CPU/YellowFilter.h"
-#include "batchedCrossIntersectionDouble.h"
+// Updated GPU Exact Predicate Headers
+#include "GPU_exact_predicates/OriginShiftedFloatPredicate.h"
+#include "GPU_exact_predicates/TwoSumDoublePredicate.h" 
+#include "GPU_exact_predicates/InexactBigIntFilter.h" 
+#include "GPU_exact_predicates/ExactBigIntPredicate.h" 
+
+// Module & Sibling Header Includes
+#include "SingleTreeBatchCommon.h"
+#include "SingleTreeBatchIntersector.h"
+
+// Infrastructure & CPU Helpers (relative to src/single_tree/)
+#include "common/TargetStatus.h"
+#include "CPU/YellowFilter.h"
 
 uint64_t executeBatchedCrossIntersectionLoopDouble(Mesh& meshAcpu,
                                                    Mesh& meshBcpu,
@@ -314,10 +317,7 @@ uint64_t executeBatchedCrossIntersectionLoopDouble(Mesh& meshAcpu,
         } else if (exactPredicateComputeMode == 2) {
           evaluateGeometricPairsKernelBigInt(d_yellow_raw, d_double_statuses, d_vertsA, d_indicesA, d_vertsB, d_indicesB,
                                       totalYellow, stream);
-        } else if (exactPredicateComputeMode == 3) {
-          evaluateAndCompactPairsShewchukFloat(d_yellow_raw, d_double_statuses, d_vertsA, d_indicesA, d_vertsB, d_indicesB,
-                                      totalYellow, stream);
-        } else {
+        }  else {
           evaluateGeometricPairsKernelBigIntV2(d_yellow_raw, d_double_statuses, d_vertsA, d_indicesA, d_vertsB, d_indicesB,
                                       totalYellow, stream);
         }

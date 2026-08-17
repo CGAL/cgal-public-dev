@@ -1,4 +1,4 @@
-#include "GPUPredicatesCheckDoubleAssisted.h"
+#include "OriginShiftedFloatPredicate.h"
 #include "GPUPredicatesCommon.h"
 
 // --------------------------------------------------------------------

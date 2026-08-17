@@ -1,7 +1,7 @@
 #include "utils.h"
 #include "cuBQL/math/vec.h"
 #include <cmath>
-#include "../custom_pipeline/TriangleDouble.h"
+#include "GPU_exact_predicates/TriangleDouble.h"
 
 // =============================================================================
 // Internal Device Workhorse Functions

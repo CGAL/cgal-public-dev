@@ -1,4 +1,4 @@
-#include "GPUPredicatesCheckBigInteger.h"
+#include "InexactBigIntFilter.h"
 #include "GPUPredicatesCommon.h"
 #include <cuda_runtime.h>
 #include <stdint.h>

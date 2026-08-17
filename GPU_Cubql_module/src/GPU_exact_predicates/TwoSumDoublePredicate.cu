@@ -1,4 +1,4 @@
-#include "GPUPredicatesCheckDouble.h"
+#include "TwoSumDoublePredicate.h"
 #include "GPUPredicatesCommon.h"
 #include <cmath>
 

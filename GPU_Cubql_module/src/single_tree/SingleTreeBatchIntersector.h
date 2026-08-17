@@ -1,18 +1,25 @@
 #ifndef BATCHED_CROSS_INTERSECTION_DOUBLE_H
 #define BATCHED_CROSS_INTERSECTION_DOUBLE_H
+// Standard C++ & System Headers
 
-#include "cuBQL/bvh.h"
-#include <thrust/device_vector.h>
-#include <vector_types.h>
 #include <iostream>
 #include <vector>
+
+// CUDA & Thrust Headers
+#include <vector_types.h>
+#include <thrust/device_vector.h>
+
+// Intel TBB Headers
 #include <tbb/concurrent_vector.h>
-#include "IntersectionTimeTracker.h"
 
-#include "../custom_pipeline/GPUPredicatesCheckDouble.h"
-#include "../src/CPU/CgalDefinitions.h"
-#include "samples/common/loadOBJ.h"
+// Vendor / Library Headers
+#include <cuBQL/bvh.h>
+#include <loadOBJ.h>
 
+// Custom Project Modules (relative to src/single_tree/)
+#include "common/IntersectionTimeTracker.h"
+#include "GPU_exact_predicates/TwoSumDoublePredicate.h"
+#include "CPU/CgalDefinitions.h"
 /**
  * Batched Cross-Intersection Loop using direct precomputed cuBQL::box3f arrays
  * for coarse AABB overlap checks, and double3 vertex & uint3 index buffers for exact GPU predicates.

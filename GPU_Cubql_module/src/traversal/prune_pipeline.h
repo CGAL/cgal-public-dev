@@ -8,7 +8,7 @@
 #include <vector>
 #include "samples/common/loadOBJ.h"
 
-#include "IntersectionTimeTracker.h"
+#include "common/IntersectionTimeTracker.h"
 
 // Simple functor definition required for Thrust compaction filtering
 

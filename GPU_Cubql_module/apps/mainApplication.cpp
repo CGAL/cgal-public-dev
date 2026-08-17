@@ -13,7 +13,7 @@
 #include <algorithm>
 #include <limits>
 
-// GNU Readline headers for Fedora terminal arrow key & history support
+// GNU Readline headers for terminal arrow key & history support
 #include <readline/readline.h>
 #include <readline/history.h>
 
@@ -28,23 +28,21 @@
 // CGAL & cuBQL Includes
 #include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
 #include <CGAL/Surface_mesh.h>
-#include "cuBQL/bvh.h"
+#include <cuBQL/bvh.h>
 
-// Custom Controller and Helpers
-#include "../src/GPUIntersector/KernelBVHController.h"
-#include "../src/CPU/CgalDefinitions.h"
-#include "../src/CPU/PolyscopeBridge.h"
-#include "../src/CPU/ParallelCgalOffLoader.h"
-#include "../src/Warmup/cuda_warmup.h"
+// Custom Controllers & CPU Utilities
+#include "GPUIntersector/KernelBVHController.h"
+#include "CPU/CgalDefinitions.h"
+#include "CPU/PolyscopeBridge.h"
+#include "CPU/ParallelCgalOffLoader.h"
+#include "CPU/RotationTools.h"
+#include "CPU/MeshTriangleDegeneracyVisualizer.h"
+#include "CPU/CommandDispatcher.h"
+#include "CPU/ExecutionTimingVisualizer.h"
 
-#include "../src/CPU/RotationTools.h"
-#include "../src/CPU/MeshTriangleDegeneracyVisualizer.h"
-#include "../src/testBVH/kernelsTestBVHV3.h"
-
-// Include the new Command Dispatcher
-#include "../src/CPU/CommandDispatcher.h"
-
-#include "../src/CPU/ExecutionTimingVisualizer.h"
+// Hardware Warmup & Pipeline Entry Points
+#include "Warmup/cuda_warmup.h"
+#include "GPUIntersector/StandaloneBVHPipeline.h"
 
 // --------------------------------------------------------------------
 // TBB ACCUMULATOR STRUCT FOR MESH STATS

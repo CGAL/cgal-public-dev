@@ -4,14 +4,15 @@
 #include "cuBQL/bvh.h"
 #include "cuBQL/builder/cuda.h"
 
-// Your custom experimental builder layout
-#include "include/third-party/cubql/sm_builder_v3.h"
-#include "include/third-party/cubql/sm_builder_v4.h"
-#include "include/third-party/cubql/refit_forest.h"
+// Custom experimental builder layout
+#include "third-party/cubql/sm_builder_v3.h"
+#include "third-party/cubql/sm_builder_v4.h"
+#include "third-party/cubql/refit_forest.h"
 
 // Custom traversal
-#include "include/third-party/cubql/fixedBoxQueryv2.h"
+#include "third-party/cubql/fixedBoxQueryv2.h"
 
+// CUDA & Thrust Headers
 #include <thrust/device_vector.h>
 #include <thrust/host_vector.h>
 #include <thrust/scan.h>
@@ -21,23 +22,25 @@
 #include <thrust/sort.h>
 #include <thrust/unique.h>
 
+// Standard Library Headers
 #include <vector>
 #include <algorithm>
-#include <iostream> // For deep debug printings
-#include "samples/common/loadOBJ.h"
+#include <iostream>
 
-// Include modular execution targets
-#include "DualTreeStep.h"
-#include "rapidDescendKernel.h"
-// #include "batchedCrossIntersection.h"
+// Mesh Loader
+#include "loadOBJ.h"
 
-#include "crossCheckNew.h"
-#include "kernelsTestBVHAlternative.h"
-#include "prune_pipeline.h"
-#include "batchedCrossIntersectionDouble.h"
+// Modular Execution & Pipeline Targets (relative to src/GPUIntersector/)
+#include "traversal/DualTreeStep.h"
+#include "traversal/rapidDescendKernel.h"
+#include "traversal/crossCheckNew.h"
+#include "traversal/prune_pipeline.h"
+#include "single_tree/SingleTreeBatchIntersector.h"
 
-#include "global_box.h"
-#include "utils.h"
+// Utilities & Geometry
+#include "common/ExecutionStats.h"
+#include "common/global_box.h"
+#include "common/utils.h"
 
 
 #ifndef _ALLOC

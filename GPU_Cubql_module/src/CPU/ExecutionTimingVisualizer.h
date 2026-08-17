@@ -14,7 +14,7 @@
 #include "imgui.h"
 
 // Execution Stats Definition
-#include "../testBVH/ExecutionStats.h"
+#include "common/ExecutionStats.h"
 
 class ExecutionTimingVisualizer {
 public:
