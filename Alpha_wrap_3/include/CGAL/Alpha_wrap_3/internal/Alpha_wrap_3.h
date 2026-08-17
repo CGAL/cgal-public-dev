@@ -931,7 +931,7 @@ private:
   static FT xaxis(Point_3 point)
   {
 	FT x = point.x();
-	FT alpha = (- x + 6) / 10;
+	FT alpha = 1.5 + 8 * (x + 85) / 170;
 	return alpha;
   }
 
@@ -1191,7 +1191,7 @@ public:
     }
 
     // skip if f min empty sphere radius is smaller than alpha
-    if(is_traversable(f, dist_to_origin))
+    if(is_traversable(f, xaxis))
     {
 #ifdef CGAL_AW3_DEBUG_FACET_STATUS
       std::cout << "traversable" << std::endl;
