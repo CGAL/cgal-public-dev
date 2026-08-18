@@ -48,6 +48,7 @@ public:
     // 3. Deallocates all GPU resources safely
     void cleanup();
     void clearGPU();
+    void reconstructGPU(ExecutionStats& stats, int a, int b);
     void reconstructGPU(ExecutionStats& stats);
 
     // Dynamic Dual Point Cloud Transformation

@@ -23,7 +23,7 @@
 #include "common/TargetStatus.h"
 #include "CPU/YellowFilter.h"
 
-uint64_t executeBatchedCrossIntersectionLoopDouble(Mesh& meshAcpu,
+uint64_t executeSingleTreeBatchedTraversalWithPredicates(Mesh& meshAcpu,
                                                    Mesh& meshBcpu,
                                                    int batchMultiplier,
                                                    int totalBatches,

@@ -28,7 +28,7 @@
 // Core cuBQL & External Utilities
 #include <cuBQL/builder/cuda.h>
 #include <cuBQL/bvh.h>
-#include <third-party/cubql/sm_builder_v2_2.h>
+#include <third-party/cubql/level_cut_builder.h>
 #include <third-party/cubql/refit_forest.h>
 #include <third-party/cubql/fixedBoxQueryv2.h>
 #include <loadOBJ.h>
@@ -588,7 +588,7 @@ void KernelBVHController::construct(Mesh& meshAcpu,
 
   // --- BUILD & REFIT BVHs ---
   CUBQL_CUDA_CALL(EventRecord(evBuildAStart, m_stream));
-  cuBQL::gpuBuilder_v2_2::build_custom(m_bvhA, m_dBoxesA, m_numTrianglesA, buildConfig, (uint32_t)m_levelA,
+  cuBQL::ext::level_cut::build_custom(m_bvhA, m_dBoxesA, m_numTrianglesA, buildConfig, (uint32_t)m_levelA,
                                        thrust::raw_pointer_cast(m_dMarkedNodeIndicesA_Full.data()),
                                        thrust::raw_pointer_cast(m_dNodeDescendantCountsA.data()),
                                        &m_hOutMarkedCountA_Full, m_stream, m_memResource);
@@ -596,7 +596,7 @@ void KernelBVHController::construct(Mesh& meshAcpu,
   CUBQL_CUDA_CALL(EventRecord(evBuildAStop, m_stream));
 
   CUBQL_CUDA_CALL(EventRecord(evBuildBStart, m_stream));
-  cuBQL::gpuBuilder_v2_2::build_custom(m_bvhB, m_dBoxesB, m_numTrianglesB, buildConfig, (uint32_t)m_levelB,
+  cuBQL::ext::level_cut::build_custom(m_bvhB, m_dBoxesB, m_numTrianglesB, buildConfig, (uint32_t)m_levelB,
                                        thrust::raw_pointer_cast(m_dMarkedNodeIndicesB_Full.data()),
                                        thrust::raw_pointer_cast(m_dNodeDescendantCountsB.data()),
                                        &m_hOutMarkedCountB_Full, m_stream, m_memResource);
@@ -691,7 +691,7 @@ void KernelBVHController::runIntersectionPipeline(int batchMultiplier,
 
   // 4. BATCHED CROSS INTERSECTION LOOP (DOUBLE MODE ONLY)
   if(m_meshAcpu && m_meshBcpu) {
-    finalCandidatePairs = executeBatchedCrossIntersectionLoopDouble(
+    finalCandidatePairs = executeSingleTreeBatchedTraversalWithPredicates(
         *m_meshAcpu, *m_meshBcpu, batchMultiplier, totalBatches, m_dOutPairsA, m_dOutPairsB, m_dReverseMapB,
         m_dMarkedNodeIndicesB, m_dOutOffsetsB, m_dOutPrimsFlatB, m_dNodeDescendantCountsB, m_hOutMarkedCountB, m_bvhA,
         m_dBoxesA, // <-- ADDED: Precomputed boxes for Mesh A
@@ -863,11 +863,21 @@ void KernelBVHController::clearGPU() {
   }
 }
 
+void KernelBVHController::reconstructGPU(ExecutionStats& stats, int a, int b)
+{
+  m_levelA = a;
+  m_levelB = b;
+  this->reconstructGPU(stats);
+
+
+}
+
 void KernelBVHController::reconstructGPU(ExecutionStats& stats) {
   if(!m_hVertsA || !m_hIndicesA || !m_hVertsB || !m_hIndicesB || m_numTrianglesA <= 0 || m_numTrianglesB <= 0) {
     std::cerr << "[KernelBVHController] Error: Cannot reconstruct GPU resources. Host pointers missing.\n";
     return;
   }
+
 
   // Clear existing GPU allocations safely
   clearGPU();
@@ -921,13 +931,13 @@ void KernelBVHController::reconstructGPU(ExecutionStats& stats) {
   m_dReverseMapB.resize(maxPossibleNodesB, 0);
 
   // 5. Build and Refit BVHs
-  cuBQL::gpuBuilder_v2_2::build_custom(m_bvhA, m_dBoxesA, m_numTrianglesA, buildConfig, (uint32_t)m_levelA,
+  cuBQL::ext::level_cut::build_custom(m_bvhA, m_dBoxesA, m_numTrianglesA, buildConfig, (uint32_t)m_levelA,
                                        thrust::raw_pointer_cast(m_dMarkedNodeIndicesA_Full.data()),
                                        thrust::raw_pointer_cast(m_dNodeDescendantCountsA.data()),
                                        &m_hOutMarkedCountA_Full, m_stream, m_memResource);
   cuBQL::cuda::refit(m_bvhA, m_dBoxesA, m_stream);
 
-  cuBQL::gpuBuilder_v2_2::build_custom(m_bvhB, m_dBoxesB, m_numTrianglesB, buildConfig, (uint32_t)m_levelB,
+  cuBQL::ext::level_cut::build_custom(m_bvhB, m_dBoxesB, m_numTrianglesB, buildConfig, (uint32_t)m_levelB,
                                        thrust::raw_pointer_cast(m_dMarkedNodeIndicesB_Full.data()),
                                        thrust::raw_pointer_cast(m_dNodeDescendantCountsB.data()),
                                        &m_hOutMarkedCountB_Full, m_stream, m_memResource);

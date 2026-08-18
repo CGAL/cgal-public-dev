@@ -24,7 +24,7 @@
 // );
 
 
-extern "C" void kernelsTestBVHV3(Mesh & meshAcpu, Mesh & meshBcpu, const double3* hVertsA,
+extern "C" void runGridForestIntersectionPipeline(Mesh & meshAcpu, Mesh & meshBcpu, const double3* hVertsA,
                                  int numVertsA,
                                  const uint3* hIndicesA,
                                  int numTrianglesA,

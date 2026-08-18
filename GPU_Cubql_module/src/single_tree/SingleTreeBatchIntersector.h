@@ -24,7 +24,7 @@
  * Batched Cross-Intersection Loop using direct precomputed cuBQL::box3f arrays
  * for coarse AABB overlap checks, and double3 vertex & uint3 index buffers for exact GPU predicates.
  */
-uint64_t executeBatchedCrossIntersectionLoopDouble(
+uint64_t executeSingleTreeBatchedTraversalWithPredicates(
     Mesh & meshAcpu, Mesh & meshBcpu,
     int batchMultiplier,
     int totalBatches,
