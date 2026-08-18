@@ -31,8 +31,18 @@
 #include <CGAL/Timer.h>
 #include <string>
 #define CGAL_HOMOLOGY_BASIS_CHECKPOINT(t, label) checkpoint(t, label)
+// Unlike CHECKPOINT (stop + print + reset + restart -- fits a sequence of
+// phases printed one at a time), START/STOP just accumulate: CGAL::Timer's
+// own stop() already does elapsed+=(t-started) internally, so calling
+// start()/stop() every iteration of a loop, without reset() in between,
+// sums the time spent in that step over the whole loop for free. Printed
+// only once after the loop, via CHECKPOINT.
+#define CGAL_HOMOLOGY_BASIS_TIMER_START(t) (t).start()
+#define CGAL_HOMOLOGY_BASIS_TIMER_STOP(t) (t).stop()
 #else
 #define CGAL_HOMOLOGY_BASIS_CHECKPOINT(t, label)
+#define CGAL_HOMOLOGY_BASIS_TIMER_START(t)
+#define CGAL_HOMOLOGY_BASIS_TIMER_STOP(t)
 #endif
 
 namespace CGAL {
@@ -126,9 +136,16 @@ public:
   // start()) under the given label, then resets t for the next phase --
   // shared by every CGAL_HOMOLOGY_BASIS_CHECKPOINT call in compute_basis
   // instead of repeating the stop/print/reset/start sequence at each one.
+  // Only stops t if it is still running: compute_candidates' own
+  // accumulator timers (summed via repeated START/STOP over its loop) are
+  // already stopped by the time it checkpoints them, and Timer::stop() on
+  // an already-stopped timer silently corrupts its accumulated time in
+  // Release builds -- CGAL_precondition(running) inside it compiles away
+  // to nothing without assertions enabled, so it neither catches nor
+  // prevents the double-stop.
   void checkpoint(CGAL::Timer& t, const std::string& label)
   {
-    t.stop();
+    if (t.is_running()) { t.stop(); }
     std::cout<<"[TIME] "<<label<<": "<<t.time()<<" seconds."<<std::endl;
     t.reset(); t.start();
   }
@@ -405,24 +422,36 @@ protected:
   {
     std::vector<Candidate<WeightFunctor>> candidates;
 
+#ifdef CGAL_MY_TIMER
+    CGAL::Timer t_dijkstra, t_alloc, t_mark, t_scan;
+#endif
+
     for (auto ity=this->get_local_map().template attributes<0>().begin(),
               itYend=this->get_local_map().template attributes<0>().end();
          ity!=itYend; ++ity)
     {
       Dart_descriptor y=this->get_local_map().template dart_of_attribute<0>(ity);
       Original_dart_const_descriptor original_y=this->m_copy_to_origin.at(y);
+
+      CGAL_HOMOLOGY_BASIS_TIMER_START(t_dijkstra);
       std::vector<typename WeightFunctor::Weight_t> distance_from_root=
         this->compute_root_spanning_tree(original_y, wf);
+      CGAL_HOMOLOGY_BASIS_TIMER_STOP(t_dijkstra);
 
+      CGAL_HOMOLOGY_BASIS_TIMER_START(t_alloc);
       std::vector<bool> computed(distance_from_root.size(), false);
       std::vector<boost::dynamic_bitset<>> annotation_from_y(
           distance_from_root.size(), boost::dynamic_bitset<>(2*m_genus));
       computed[0]=true;
+      CGAL_HOMOLOGY_BASIS_TIMER_STOP(t_alloc);
 
+      CGAL_HOMOLOGY_BASIS_TIMER_START(t_mark);
       size_type in_tree_y=this->get_local_map().get_new_mark();
       for (Dart_descriptor dh : this->m_spanning_tree)
       { if (!this->get_local_map().is_marked(dh, in_tree_y)) { this->get_local_map().template mark_cell<1>(dh, in_tree_y); } }
+      CGAL_HOMOLOGY_BASIS_TIMER_STOP(t_mark);
 
+      CGAL_HOMOLOGY_BASIS_TIMER_START(t_scan);
       for (auto it=this->get_local_map().darts().begin(),
                 itend=this->get_local_map().darts().end(); it!=itend; ++it)
       {
@@ -445,8 +474,15 @@ protected:
         }
       }
 
+      CGAL_HOMOLOGY_BASIS_TIMER_STOP(t_scan);
+
       this->get_local_map().free_mark(in_tree_y);
     }
+
+    CGAL_HOMOLOGY_BASIS_CHECKPOINT(t_dijkstra, "compute_candidates / compute_root_spanning_tree, summed over every y");
+    CGAL_HOMOLOGY_BASIS_CHECKPOINT(t_alloc, "compute_candidates / per-y allocation (computed+annotation_from_y), summed over every y");
+    CGAL_HOMOLOGY_BASIS_CHECKPOINT(t_mark, "compute_candidates / marking in-tree edges, summed over every y");
+    CGAL_HOMOLOGY_BASIS_CHECKPOINT(t_scan, "compute_candidates / dart scan + annotation XOR, summed over every y");
 
     return candidates;
   }
