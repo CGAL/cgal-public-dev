@@ -21,6 +21,20 @@
 #include <algorithm>
 #include <boost/dynamic_bitset.hpp>
 
+// Define CGAL_MY_TIMER to print the wall-clock time of each
+// phase of compute_basis() to std::cout. Off by default: with the macro
+// undefined, CGAL_HOMOLOGY_BASIS_CHECKPOINT(t, label) expands to nothing, so
+// the timer variable it's called on is never referenced either -- no
+// CGAL::Timer, no checkpoint() calls, no checkpoint() definition end up in
+// the compiled code at all.
+#ifdef CGAL_MY_TIMER
+#include <CGAL/Timer.h>
+#include <string>
+#define CGAL_HOMOLOGY_BASIS_CHECKPOINT(t, label) checkpoint(t, label)
+#else
+#define CGAL_HOMOLOGY_BASIS_CHECKPOINT(t, label)
+#endif
+
 namespace CGAL {
 namespace Surface_mesh_topology {
 namespace internal {
@@ -74,22 +88,51 @@ public:
   template <class WeightFunctor>
   std::vector<Path> compute_basis(const WeightFunctor& wf)
   {
+#ifdef CGAL_MY_TIMER
+    CGAL::Timer t;
+    t.start();
+#endif
+
     int genus=this->compute_genus();
     if (genus==0) { return std::vector<Path>(); }
+    CGAL_HOMOLOGY_BASIS_CHECKPOINT(t, "compute_genus (Phase 0)");
 
     Dart_descriptor root_local=this->get_local_map().darts().begin();
     Original_dart_const_descriptor root=this->m_copy_to_origin.at(root_local);
     this->compute_root_spanning_tree(root, Unit_weight_functor());
     this->compute_dual_BFS_tree();
+    CGAL_HOMOLOGY_BASIS_CHECKPOINT(t, "primal tree T + dual tree C/X (Phase 1)");
+
     this->compute_annotations();
+    CGAL_HOMOLOGY_BASIS_CHECKPOINT(t, "compute_annotations (Phase 2)");
 
     auto candidates=this->compute_candidates(wf);
+    CGAL_HOMOLOGY_BASIS_CHECKPOINT(t, "compute_candidates (Phase 3)");
+
     auto selected=this->matroid_greedy(candidates);
-    return this->reconstruct_basis(selected, wf);
+    CGAL_HOMOLOGY_BASIS_CHECKPOINT(t, "matroid_greedy (Phase 4)");
+
+    auto basis=this->reconstruct_basis(selected, wf);
+    CGAL_HOMOLOGY_BASIS_CHECKPOINT(t, "reconstruct_basis (Phase 5)");
+
+    return basis;
   }
 
   std::vector<Path> compute_basis()
   { return compute_basis(Unit_weight_functor()); }
+
+#ifdef CGAL_MY_TIMER
+  // Prints the time elapsed on t since its last checkpoint (or since
+  // start()) under the given label, then resets t for the next phase --
+  // shared by every CGAL_HOMOLOGY_BASIS_CHECKPOINT call in compute_basis
+  // instead of repeating the stop/print/reset/start sequence at each one.
+  void checkpoint(CGAL::Timer& t, const std::string& label)
+  {
+    t.stop();
+    std::cout<<"[TIME] "<<label<<": "<<t.time()<<" seconds."<<std::endl;
+    t.reset(); t.start();
+  }
+#endif
 
 protected:
   // Face id of every dart, and the number of faces -- filled by
