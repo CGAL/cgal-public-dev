@@ -175,7 +175,7 @@ protected:
   Oracle m_oracle;
   SC_Iso_cuboid_3 m_bbox;
 
-  FT m_alpha = FT(-1), m_sq_alpha = FT(-1);
+  std::function<FT(Point_3)> alpha_field;
   FT m_offset = FT(-1), m_sq_offset = FT(-1);
 
   Seeds m_seeds;
@@ -234,7 +234,6 @@ public:
   {
     m_oracle.clear();
     m_bbox = {};
-    m_alpha = m_sq_alpha = FT(-1);
     m_offset = m_sq_offset = FT(-1);
     m_seeds.clear();
     m_tr.clear();
@@ -249,9 +248,9 @@ public:
   const Triangulation& triangulation() const { return m_tr; }
   Alpha_PQ& queue() { return m_queue; }
   const Alpha_PQ& queue() const { return m_queue; }
-  const FT& alpha() const { return m_alpha; }
   const FT& offset() const { return m_offset; }
 
+  // TODO: use this as default field
   double default_alpha() const
   {
     const Bbox_3 bbox = m_oracle.bbox();
@@ -282,7 +281,7 @@ public:
   template <typename OutputMesh,
             typename InputNamedParameters = parameters::Default_named_parameters,
             typename OutputNamedParameters = parameters::Default_named_parameters>
-  void operator()(const double alpha, // = default_alpha()
+  void operator()(const std::function<double(double, double, double)> af,
                   const double offset, // = alpha / 30.
                   OutputMesh& output_mesh,
                   const InputNamedParameters& in_np = parameters::default_values(),
@@ -348,7 +347,7 @@ public:
 
     visitor.on_alpha_wrapping_begin(*this);
 
-    if(!initialize(alpha, offset, refining))
+    if(!initialize(af, offset, refining))
       return;
 
 #ifdef CGAL_AW3_TIMER
@@ -424,16 +423,16 @@ public:
 
   // Convenience overloads
   template <typename OutputMesh>
-  void operator()(const double alpha,
+  void operator()(std::function<double(double,double,double)> af,
                   OutputMesh& output_mesh)
   {
-    return operator()(alpha, alpha / 30. /*offset*/, output_mesh);
+    return operator()(af, 1.0 /*offset*/, output_mesh); // FIXME
   }
 
   template <typename OutputMesh>
   void operator()(OutputMesh& output_mesh)
   {
-    return operator()(default_alpha(), output_mesh);
+    return operator()(default_alpha(), output_mesh); // FIXME
   }
 
   // This function is public only because it is used in the tests
@@ -615,7 +614,7 @@ private:
 
       // Icosahedron vertices (see also BGL::make_icosahedron())
       const Point_3 center = seed_p;
-      const FT radius = 1.65 * m_alpha;
+      const FT radius = 1.65; //  FIXME
       const FT phi = (FT(1) + approximate_sqrt(FT(5))) / FT(2);
       const FT t = radius / approximate_sqrt(1 + square(phi));
       const FT t_phi = t * phi;
@@ -928,39 +927,20 @@ public:
   }
 
 private:
-  static FT xaxis(Point_3 point)
-  {
-	FT x = point.x();
-	FT alpha = 1.5 + 8 * (x + 85) / 170;
-	return alpha;
-  }
-
-  static FT dist_to_origin(Point_3 point)
-  {
-	Point_3 origin = {0,0,0};
-	FT alpha = (squared_distance(point, origin) + 0.5) / 10;
-	return alpha;
-  }
-
   bool is_traversable(const Facet& f) const
   {
-	return less_squared_radius_of_min_empty_sphere(m_sq_alpha, f, m_tr);
-  }
+    Cell_handle c = f.first;
+    Point_3 sp;
+    const int s = f.second;
+    const Cell_handle nh = c->neighbor(s);
+    Steiner_status ss = compute_steiner_point(c, nh, sp);
+    if (ss == Steiner_status::NO_STEINER_POINT) {
+      sp = c->vertex(0)->point();
+    }
 
-  bool is_traversable(const Facet& f, std::function<FT(Point_3)> a_field) const
-  {
-	Cell_handle c = f.first;
-	Point_3 sp;
-	const int s = f.second;
-	const Cell_handle nh = c->neighbor(s);
-	Steiner_status ss = compute_steiner_point(c, nh, sp);
-	if (ss == Steiner_status::NO_STEINER_POINT) {
-	  sp = c->vertex(0)->point();
-	}
-
-	FT alpha = a_field(sp);
-	FT sq_alpha = alpha * alpha;
-	return less_squared_radius_of_min_empty_sphere(sq_alpha, f, m_tr);
+    FT alpha = alpha_field(sp);
+    FT sq_alpha = square(alpha);
+    return less_squared_radius_of_min_empty_sphere(sq_alpha, f, m_tr);
   }
 
   Steiner_status compute_steiner_point(const Gate& gate,
@@ -1191,7 +1171,7 @@ public:
     }
 
     // skip if f min empty sphere radius is smaller than alpha
-    if(is_traversable(f, xaxis))
+    if(is_traversable(f))
     {
 #ifdef CGAL_AW3_DEBUG_FACET_STATUS
       std::cout << "traversable" << std::endl;
@@ -1273,7 +1253,7 @@ private:
   }
 
 private:
-  bool initialize(const double alpha,
+  bool initialize(std::function<double(double, double, double)> af,
                   const double offset,
                   const bool refining)
   {
@@ -1281,7 +1261,7 @@ private:
     std::cout << "> Initialize..." << std::endl;
 #endif
 
-    const bool resuming = refining && (alpha == m_alpha) && (offset == m_offset);
+    // const bool resuming = refining && (alpha == m_alpha) && (offset == m_offset);
 
 #ifdef CGAL_AW3_DEBUG
     std::cout << "\tAlpha: " << alpha << std::endl;
@@ -1290,13 +1270,13 @@ private:
     std::cout << "\tResuming? " << resuming << std::endl;
 #endif
 
-    if(!is_positive(alpha) || !is_positive(offset))
-    {
-#ifdef CGAL_AW3_DEBUG
-      std::cerr << "Error: invalid input parameters: " << alpha << " and " << offset << std::endl;
-#endif
-      return false;
-    }
+//     if(!is_positive(alpha) || !is_positive(offset))
+//     {
+// #ifdef CGAL_AW3_DEBUG
+//       std::cerr << "Error: invalid input parameters: " << alpha << " and " << offset << std::endl;
+// #endif
+//       return false;
+//     }
 
 #ifdef CGAL_AW3_DEBUG
     if(refining && alpha > m_alpha)
@@ -1305,23 +1285,24 @@ private:
       std::cerr << "Warning: refining with a different offset value!" << std::endl;
 #endif
 
-    m_alpha = FT(alpha);
-    m_sq_alpha = square(m_alpha);
+    alpha_field = [=](Point_3 p) { return af(p.x(), p.y(), p.z()); };
+    // m_alpha = FT(alpha);
+    // m_sq_alpha = square(m_alpha);
     m_offset = FT(offset);
     m_sq_offset = square(m_offset);
 
     // Resuming means that we do not need to re-initialize the queue: either we have finished
     // and there is nothing to do, or the interruption was due to a user callback in the visitor,
     // and we can resume with the current queue
-    if(resuming)
-    {
-#ifdef CGAL_AW3_DEBUG
-      std::cout << "Resuming with a queue of size: " << m_queue.size() << std::endl;
-#endif
+//     if(resuming)
+//     {
+// #ifdef CGAL_AW3_DEBUG
+//       std::cout << "Resuming with a queue of size: " << m_queue.size() << std::endl;
+// #endif
 
-      reset_manifold_labels();
-      return true;
-    }
+//       reset_manifold_labels();
+//       return true;
+//     }
 
 #ifdef CGAL_AW3_USE_SORTED_PRIORITY_QUEUE
     m_queue.clear();

@@ -93,7 +93,7 @@ template <typename PointRange, typename FaceRange, typename OutputMesh,
           typename InputNamedParameters, typename OutputNamedParameters>
 void alpha_wrap_3(const PointRange& points,
                   const FaceRange& faces,
-                  const double alpha,
+                  const std::function<double(double, double, double)> af,
                   const double offset,
                   OutputMesh& alpha_wrap,
                   const InputNamedParameters& in_np,
@@ -109,10 +109,10 @@ void alpha_wrap_3(const PointRange& points,
 
   Geom_traits gt = choose_parameter<Geom_traits>(get_parameter(in_np, internal_np::geom_traits));
 
-  Oracle oracle(alpha, gt);
+  Oracle oracle(0.1, gt); // FIXME
   oracle.add_triangle_soup(points, faces, in_np);
   AW3 alpha_wrap_builder(oracle);
-  alpha_wrap_builder(alpha, offset, alpha_wrap, in_np, out_np);
+  alpha_wrap_builder(af, offset, alpha_wrap, in_np, out_np);
 }
 
 // Convenience overloads
@@ -120,22 +120,22 @@ template <typename PointRange, typename FaceRange, typename OutputMesh,
           typename CGAL_NP_TEMPLATE_PARAMETERS>
 void alpha_wrap_3(const PointRange& points,
                   const FaceRange& faces,
-                  const double alpha,
+                  const std::function<double(double, double, double)> af,
                   const double offset,
                   OutputMesh& alpha_wrap,
                   const CGAL_NP_CLASS& in_np)
 {
-  return alpha_wrap_3(points, faces, alpha, offset, alpha_wrap, in_np, CGAL::parameters::default_values());
+  return alpha_wrap_3(points, faces, af, offset, alpha_wrap, in_np, CGAL::parameters::default_values());
 }
 
 template <typename PointRange, typename FaceRange, typename OutputMesh>
 void alpha_wrap_3(const PointRange& points,
                   const FaceRange& faces,
-                  const double alpha,
+                  const std::function<double(double, double, double)> af,
                   const double offset,
                   OutputMesh& alpha_wrap)
 {
-  return alpha_wrap_3(points, faces, alpha, offset, alpha_wrap, CGAL::parameters::default_values());
+  return alpha_wrap_3(points, faces, af, offset, alpha_wrap, CGAL::parameters::default_values());
 }
 
 // without offset
@@ -144,36 +144,36 @@ template <typename PointRange, typename FaceRange, typename OutputMesh,
           typename T_O, typename Tag_O, typename Base_O>
 void alpha_wrap_3(const PointRange& points,
                   const FaceRange& faces,
-                  const double alpha,
+                  const std::function<double(double, double, double)> af,
                   OutputMesh& alpha_wrap,
                   const CGAL::Named_function_parameters<T_I, Tag_I, Base_I>& in_np,
                   const CGAL::Named_function_parameters<T_O, Tag_O, Base_O>& out_np,
                   std::enable_if_t<boost::has_range_const_iterator<FaceRange>::value>* = nullptr)
 {
-  return alpha_wrap_3(points, faces, alpha, alpha / 30., alpha_wrap, in_np, out_np);
+  return alpha_wrap_3(points, faces, af, 1.0, alpha_wrap, in_np, out_np); // FIXME
 }
 
 template <typename PointRange, typename FaceRange, typename OutputMesh,
           typename CGAL_NP_TEMPLATE_PARAMETERS>
 void alpha_wrap_3(const PointRange& points,
                   const FaceRange& faces,
-                  const double alpha,
+                  const std::function<double(double, double, double)> af,
                   OutputMesh& alpha_wrap,
                   const CGAL_NP_CLASS& in_np,
                   std::enable_if_t<boost::has_range_const_iterator<FaceRange>::value>* = nullptr)
 {
-  return alpha_wrap_3(points, faces, alpha, alpha / 30., alpha_wrap, in_np,
+  return alpha_wrap_3(points, faces, af, 1.0, alpha_wrap, in_np, // FIXME
                       CGAL::parameters::default_values());
 }
 
 template <typename PointRange, typename FaceRange, typename OutputMesh>
 void alpha_wrap_3(const PointRange& points,
                   const FaceRange& faces,
-                  const double alpha,
+                  const std::function<double(double, double, double)> af,
                   OutputMesh& alpha_wrap,
                   std::enable_if_t<boost::has_range_const_iterator<FaceRange>::value>* = nullptr)
 {
-  return alpha_wrap_3(points, faces, alpha, alpha / 30., alpha_wrap,
+  return alpha_wrap_3(points, faces, af, 1.0, alpha_wrap, // FIXME
                       CGAL::parameters::default_values(), CGAL::parameters::default_values());
 }
 
@@ -239,7 +239,7 @@ void alpha_wrap_3(const PointRange& points,
 template <typename TriangleMesh, typename OutputMesh,
           typename InputNamedParameters, typename OutputNamedParameters>
 void alpha_wrap_3(const TriangleMesh& tmesh,
-                  const double alpha,
+                  const std::function<double(double, double, double)> af,
                   const double offset,
                   OutputMesh& alpha_wrap,
                   const InputNamedParameters& in_np,
@@ -258,10 +258,10 @@ void alpha_wrap_3(const TriangleMesh& tmesh,
 
   Geom_traits gt = choose_parameter<Geom_traits>(get_parameter(in_np, internal_np::geom_traits));
 
-  Oracle oracle(alpha, gt);
+  Oracle oracle(1.0, gt); // FIXME
   oracle.add_triangle_mesh(tmesh, in_np);
   AW3 alpha_wrap_builder(oracle);
-  alpha_wrap_builder(alpha, offset, alpha_wrap, in_np, out_np);
+  alpha_wrap_builder(af, offset, alpha_wrap, in_np, out_np);
 }
 
 // The convenience overloads are the same for triangle mesh & point set
@@ -329,7 +329,7 @@ template <typename PointRange, typename OutputMesh,
           typename T_O, typename Tag_O, typename Base_O>
 #endif
 void alpha_wrap_3(const PointRange& points,
-                  const double alpha,
+                  const std::function<double(double, double, double)> af,
                   const double offset,
                   OutputMesh& alpha_wrap,
 #ifdef DOXYGEN_RUNNING
@@ -357,28 +357,28 @@ void alpha_wrap_3(const PointRange& points,
   Oracle oracle(gt);
   oracle.add_points(points, in_np);
   AW3 alpha_wrap_builder(oracle);
-  alpha_wrap_builder(alpha, offset, alpha_wrap, in_np, out_np);
+  alpha_wrap_builder(af, offset, alpha_wrap, in_np, out_np);
 }
 
 // Convenience overloads, common to both mesh and point set
 template <typename Input, typename OutputMesh,
           typename CGAL_NP_TEMPLATE_PARAMETERS>
 void alpha_wrap_3(const Input& input,
-                  const double alpha,
+                  const std::function<double(double, double, double)> af,
                   const double offset,
                   OutputMesh& alpha_wrap,
                   const CGAL_NP_CLASS& in_np)
 {
-  return alpha_wrap_3(input, alpha, offset, alpha_wrap, in_np, CGAL::parameters::default_values());
+  return alpha_wrap_3(input, af, offset, alpha_wrap, in_np, CGAL::parameters::default_values());
 }
 
 template <typename Input, typename OutputMesh>
 void alpha_wrap_3(const Input& input,
-                  const double alpha,
+                  const std::function<double(double, double, double)> af,
                   const double offset,
                   OutputMesh& alpha_wrap)
 {
-  return alpha_wrap_3(input, alpha, offset, alpha_wrap, CGAL::parameters::default_values());
+  return alpha_wrap_3(input, af, offset, alpha_wrap, CGAL::parameters::default_values());
 }
 
 // without offset
@@ -386,29 +386,29 @@ template <typename Input, typename OutputMesh,
           typename T_I, typename Tag_I, typename Base_I,
           typename T_O, typename Tag_O, typename Base_O>
 void alpha_wrap_3(const Input& input,
-                  const double alpha,
+                  const std::function<double(double, double, double)> af,
                   OutputMesh& alpha_wrap,
                   const CGAL::Named_function_parameters<T_I, Tag_I, Base_I>& in_np,
                   const CGAL::Named_function_parameters<T_O, Tag_O, Base_O>& out_np)
 {
-  return alpha_wrap_3(input, alpha, alpha / 30., alpha_wrap, in_np, out_np);
+  return alpha_wrap_3(input, af, 1.0, alpha_wrap, in_np, out_np); // FIXME
 }
 
 template <typename Input, typename OutputMesh, typename CGAL_NP_TEMPLATE_PARAMETERS>
 void alpha_wrap_3(const Input& input,
-                  const double alpha,
+                  const std::function<double(double, double, double)> af,
                   OutputMesh& alpha_wrap,
                   const CGAL_NP_CLASS& in_np)
 {
-  return alpha_wrap_3(input, alpha, alpha / 30., alpha_wrap, in_np, CGAL::parameters::default_values());
+  return alpha_wrap_3(input, af, 1.0, alpha_wrap, in_np, CGAL::parameters::default_values());
 }
 
 template <typename Input, typename OutputMesh>
 void alpha_wrap_3(const Input& input,
-                  const double alpha,
+                  const std::function<double(double, double, double)> af,
                   OutputMesh& alpha_wrap)
 {
-  return alpha_wrap_3(input, alpha, alpha / 30., alpha_wrap,
+  return alpha_wrap_3(input, af, 1.0, alpha_wrap,
                       CGAL::parameters::default_values(), CGAL::parameters::default_values());
 }
 
