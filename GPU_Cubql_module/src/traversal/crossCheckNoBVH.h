@@ -67,7 +67,7 @@ __global__ void fillBoxIntersections(
     }
 }
 
-// 4. The Grand Orchestrator (Zimblified Edition)
+// 4. The Grand Orchestrator (Simblified Edition)
 template<typename T, int D>
 uint32_t executeBoxCrossCheck(
     const cuBQL::box_t<T,D>* d_boxesA, uint32_t numA,

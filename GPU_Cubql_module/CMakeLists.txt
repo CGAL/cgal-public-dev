@@ -87,10 +87,16 @@ endfunction()
 # PRIMARY TARGET: MainApp
 # ====================================================================
 
-set_source_files_properties(apps/mainApplication.cpp PROPERTIES LANGUAGE CUDA)
+set_source_files_properties(
+    apps/mainApplication.cpp 
+    src/CPU/TestSuite.cpp 
+    PROPERTIES LANGUAGE CUDA
+)
 
 add_executable(MainApp 
     apps/mainApplication.cpp 
+
+    src/CPU/TestSuite.cpp
     # Top-Level Entry Points
     src/GPUIntersector/KernelBVHController.cu
     src/GPUIntersector/StandaloneBVHPipeline.cu
@@ -114,6 +120,7 @@ add_executable(MainApp
     src/GPU_exact_predicates/InexactBigIntFilter.cu
     src/GPU_exact_predicates/ExactBigIntPredicate.cu
     src/GPU_exact_predicates/OriginShiftedFloatPredicate.cu
+    src/GPU_exact_predicates/DoublePredicate.cu
 )
 
 configure_geometry_target(MainApp)

@@ -19,6 +19,8 @@
 
 #include "CgalDefinitions.h"
 
+
+
 namespace PolyscopeBridge {
 
 // Global cumulative offset tracker for Mesh B

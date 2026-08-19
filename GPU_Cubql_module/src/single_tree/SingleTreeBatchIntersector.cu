@@ -14,6 +14,7 @@
 #include "GPU_exact_predicates/TwoSumDoublePredicate.h" 
 #include "GPU_exact_predicates/InexactBigIntFilter.h" 
 #include "GPU_exact_predicates/ExactBigIntPredicate.h" 
+#include "GPU_exact_predicates/DoublePredicate.h" 
 
 // Module & Sibling Header Includes
 #include "SingleTreeBatchCommon.h"
@@ -317,10 +318,21 @@ uint64_t executeSingleTreeBatchedTraversalWithPredicates(Mesh& meshAcpu,
         } else if (exactPredicateComputeMode == 2) {
           evaluateGeometricPairsKernelBigInt(d_yellow_raw, d_double_statuses, d_vertsA, d_indicesA, d_vertsB, d_indicesB,
                                       totalYellow, stream);
-        }  else {
+        }      
+        else if (exactPredicateComputeMode == 3) {
           evaluateGeometricPairsKernelBigIntV2(d_yellow_raw, d_double_statuses, d_vertsA, d_indicesA, d_vertsB, d_indicesB,
                                       totalYellow, stream);
         }
+        else
+        {
+          evaluateAndCompactPairsDoubleFull(d_yellow_raw, d_double_statuses, d_vertsA, d_indicesA, d_vertsB, d_indicesB,
+                                      totalYellow, stream);
+
+
+        }
+
+
+
         CUBQL_CUDA_CALL(EventRecord(evDoubleEnd, stream));
 
         // PAIR COMPACTION PASS 2: DOUBLE PREDICATES -> GREEN & ORANGE

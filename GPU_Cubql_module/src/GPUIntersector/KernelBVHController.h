@@ -41,7 +41,7 @@ public:
 
     // 2. Execution Pipeline - Double Precision Only
     void runIntersectionPipeline(
-        int batchMultiplier, int mode, int activateAsyncDownload,
+        int batchMultiplier, int numberOfDualTreeSteps, int activateAsyncDownload,
         int2*& outFinalExactPairs,       // Fast raw pointer return
     size_t& outFinalCount,  ExecutionStats& stats,int gpuDouble);
 
@@ -112,8 +112,6 @@ private:
     float2*          m_dMeshMetricsB = nullptr;
     cuBQL::box3f*    m_dBoxesB = nullptr;
 
-    // REMOVED: TriangleDouble* m_dMeshDoubleA
-    // REMOVED: TriangleDouble* m_dMeshDoubleB
 
         // ADD: Cached host data needed for GPU reconstruction
     const double3* m_hVertsA = nullptr;

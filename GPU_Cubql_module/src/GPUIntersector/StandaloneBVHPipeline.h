@@ -35,7 +35,7 @@ extern "C" void runGridForestIntersectionPipeline(Mesh & meshAcpu, Mesh & meshBc
                                  int numTrianglesB,
                                  int maxCellSizeB,
                                  int batchMultiplier,
-                                 int mode,
+                                 int numberOfDualTreeSteps,
                                  int gpuPredicateMode,
                                  int leafThreshold,
                                  ExecutionStats& stats,

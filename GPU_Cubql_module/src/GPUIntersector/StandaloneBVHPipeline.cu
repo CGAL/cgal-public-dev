@@ -67,7 +67,7 @@ extern "C" void runGridForestIntersectionPipeline(Mesh& meshA,
                                                   int numTrianglesB,
                                                   int maxCellSizeB,
                                                   int batchMultiplier,
-                                                  int mode,
+                                                  int numberOfDualTreeSteps,
                                                   int gpuPredicateMode,
                                                   int leafThreshold,
                                                   ExecutionStats& stats,
@@ -264,14 +264,14 @@ extern "C" void runGridForestIntersectionPipeline(Mesh& meshA,
   thrust::device_vector<uint32_t> d_reverseMapB(bvhB.numNodes, 0);
 
   const double tDualStepStart = cuBQL::getCurrentTime();
-  if(mode > 0) {
-    executeDualTreeStep(mode, maxCellSizeA, maxCellSizeB, d_outPairsA, d_outPairsB, d_markedNodeIndicesA,
+  if(numberOfDualTreeSteps > 0) {
+    executeDualTreeStep(numberOfDualTreeSteps, maxCellSizeA, maxCellSizeB, d_outPairsA, d_outPairsB, d_markedNodeIndicesA,
                         d_markedNodeIndicesB, d_nodeDescendantCountsA, d_nodeDescendantCountsB, finalActiveCellsA,
                         finalActiveCellsB, bvhA, bvhB);
   }
 
   CUBQL_CUDA_CALL(StreamSynchronize(stream));
-  stats.dualTreeStepMs = (mode > 0) ? (cuBQL::getCurrentTime() - tDualStepStart) * 1000.0 : 0.0;
+  stats.dualTreeStepMs = (numberOfDualTreeSteps > 0) ? (cuBQL::getCurrentTime() - tDualStepStart) * 1000.0 : 0.0;
 
   const int totalBatches = d_outPairsA.size();
   const double tGpuBfsStart = cuBQL::getCurrentTime();
