@@ -8,7 +8,8 @@ find_package(CGAL REQUIRED)
 # add_compile_definitions(CGAL_TRACE_CMAP_TOOLS)
 
 set(SOURCE_FILES quadrangulation_computation_benchmarks.cpp
-                 path_homotopy_with_schema.cpp)
+                 path_homotopy_with_schema.cpp
+                 homology_basis_benchmark.cpp)
 
 foreach(cppfile ${SOURCE_FILES})
   create_single_source_cgal_program("${cppfile}")
