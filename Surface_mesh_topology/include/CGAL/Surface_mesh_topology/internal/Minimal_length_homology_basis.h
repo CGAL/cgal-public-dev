@@ -401,14 +401,14 @@ protected:
   int parent_index(int v_index)
   { return this->m_trace_index[v_index-1]+1; }
 
-  // Walk-to-root-with-memoization: returns A_y[v] (XOR of edge annotations
-  // along T_y from y to the vertex with vertex_info()==v_index). value[idx]
-  // holds A_y[idx] for every vertex already computed so far, computed[idx]
-  // says whether that entry is filled in yet; both are meant to be created
-  // once per root y and passed back into this function for every candidate
-  // edge of that y (see compute_candidates, not yet written), so a vertex
-  // already computed for one candidate is an instant lookup for the next.
-  // Computes v_index's own entry, if not already known, by following
+  // Walk-to-root-with-memoization: writes A_y[v] (XOR of edge annotations
+  // along T_y from y to the vertex with vertex_info()==v_index) into
+  // result. value[idx] holds A_y[idx] for every vertex already computed so
+  // far, computed[idx] says whether that entry is filled in yet; both are
+  // meant to be created once per root y and passed back into this function
+  // for every candidate edge of that y (see compute_candidates), so a
+  // vertex already computed for one candidate is an instant lookup for the
+  // next. Computes v_index's own entry, if not already known, by following
   // parent_index up from v_index until an already-known vertex is found
   // (path ends up ordered from v_index towards that ancestor), then
   // filling in every visited vertex in the opposite order (ancestor-side
@@ -416,8 +416,16 @@ protected:
   // known. i counts down from path.size() to 1 (not path.size()-1 to 0)
   // so it stays a valid size_t the whole time -- decrementing an unsigned
   // 0 would wrap around instead of going negative.
-  boost::dynamic_bitset<> get_annotation_to_root(
-      int v_index, std::vector<bool>& computed, std::vector<boost::dynamic_bitset<>>& value)
+  //
+  // result is an out-parameter, not a return value, so the caller can pass
+  // the same pre-sized dynamic_bitset in on every call (see Aa/Ab in
+  // compute_candidates): dynamic_bitset::operator= reuses an
+  // already-correctly-sized bitset's own buffer instead of allocating a
+  // new one, unlike returning by value, which would copy out a fresh one
+  // on every single call.
+  void get_annotation_to_root(
+      int v_index, std::vector<bool>& computed, std::vector<boost::dynamic_bitset<>>& value,
+      boost::dynamic_bitset<>& result)
   {
     std::vector<int> path;
     int idx=v_index;
@@ -434,7 +442,7 @@ protected:
       computed[cur]=true;
     }
 
-    return value[v_index];
+    result=value[v_index];
   }
 
   // Phase 3: for every vertex y of the local map, reruns
@@ -452,6 +460,12 @@ protected:
   std::vector<Candidate<WeightFunctor>> compute_candidates(const WeightFunctor& wf)
   {
     std::vector<Candidate<WeightFunctor>> candidates;
+
+    // Reused across every candidate dart of every y below instead of being
+    // freshly allocated by get_annotation_to_root on every call: both stay
+    // sized 2*m_genus for the whole function, so dynamic_bitset::operator=
+    // just overwrites their existing buffer.
+    boost::dynamic_bitset<> Aa(2*m_genus), Ab(2*m_genus);
 
 #if defined(CGAL_MY_TIMER) && CGAL_MY_TIMER==1
     CGAL::Timer t_dijkstra, t_alloc, t_mark, t_scan;
@@ -496,8 +510,8 @@ protected:
           int ia=this->vertex_info(a), ib=this->vertex_info(b);
 
           CGAL_HOMOLOGY_BASIS_SCAN_TIMER_START(t_annotation);
-          boost::dynamic_bitset<> Aa=get_annotation_to_root(ia, computed, annotation_from_y);
-          boost::dynamic_bitset<> Ab=get_annotation_to_root(ib, computed, annotation_from_y);
+          get_annotation_to_root(ia, computed, annotation_from_y, Aa);
+          get_annotation_to_root(ib, computed, annotation_from_y, Ab);
           CGAL_HOMOLOGY_BASIS_SCAN_TIMER_STOP(t_annotation);
 
           CGAL_HOMOLOGY_BASIS_SCAN_TIMER_START(t_xor);
