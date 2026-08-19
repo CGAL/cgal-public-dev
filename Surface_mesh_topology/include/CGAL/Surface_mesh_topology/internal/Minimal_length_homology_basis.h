@@ -21,15 +21,36 @@
 #include <algorithm>
 #include <boost/dynamic_bitset.hpp>
 
-// Define CGAL_MY_TIMER to print the wall-clock time of each
-// phase of compute_basis() to std::cout. Off by default: with the macro
-// undefined, CGAL_HOMOLOGY_BASIS_CHECKPOINT(t, label) expands to nothing, so
-// the timer variable it's called on is never referenced either -- no
+// Define CGAL_MY_TIMER to print timing information to std::cout -- off by
+// default, and the two levels below are mutually exclusive on purpose
+// rather than cumulative:
+//   CGAL_MY_TIMER=1 : compute_basis()'s phases, and compute_candidates'
+//                      own per-y steps (Dijkstra/alloc/marking/scan) --
+//                      cheap to measure, called only once per vertex.
+//   CGAL_MY_TIMER=2 : the detail *inside* compute_candidates' scan step
+//                      (annotation lookup / XOR / candidate construction)
+//                      -- called once per candidate dart, so the timer
+//                      calls themselves are expensive relative to what
+//                      they measure. Kept separate from level 1 so that
+//                      level 1's own scan timer is never contaminated by
+//                      level 2's overhead sitting inside the same loop --
+//                      measuring both at once would make the outer scan
+//                      total include the inner timers' own cost, not just
+//                      the work they're measuring.
+// A bare -DCGAL_MY_TIMER (no value) is level 1: GCC/Clang define a
+// valueless -D flag as 1.
+//
+// With neither level active, CGAL_HOMOLOGY_BASIS_CHECKPOINT/TIMER_START/
+// TIMER_STOP and their _SCAN_ counterparts all expand to nothing, so the
+// timer variables they're called on are never referenced either -- no
 // CGAL::Timer, no checkpoint() calls, no checkpoint() definition end up in
 // the compiled code at all.
-#ifdef CGAL_MY_TIMER
+#if defined(CGAL_MY_TIMER) && (CGAL_MY_TIMER==1 || CGAL_MY_TIMER==2)
 #include <CGAL/Timer.h>
 #include <string>
+#endif
+
+#if defined(CGAL_MY_TIMER) && CGAL_MY_TIMER==1
 #define CGAL_HOMOLOGY_BASIS_CHECKPOINT(t, label) checkpoint(t, label)
 // Unlike CHECKPOINT (stop + print + reset + restart -- fits a sequence of
 // phases printed one at a time), START/STOP just accumulate: CGAL::Timer's
@@ -43,6 +64,16 @@
 #define CGAL_HOMOLOGY_BASIS_CHECKPOINT(t, label)
 #define CGAL_HOMOLOGY_BASIS_TIMER_START(t)
 #define CGAL_HOMOLOGY_BASIS_TIMER_STOP(t)
+#endif
+
+#if defined(CGAL_MY_TIMER) && CGAL_MY_TIMER==2
+#define CGAL_HOMOLOGY_BASIS_SCAN_CHECKPOINT(t, label) checkpoint(t, label)
+#define CGAL_HOMOLOGY_BASIS_SCAN_TIMER_START(t) (t).start()
+#define CGAL_HOMOLOGY_BASIS_SCAN_TIMER_STOP(t) (t).stop()
+#else
+#define CGAL_HOMOLOGY_BASIS_SCAN_CHECKPOINT(t, label)
+#define CGAL_HOMOLOGY_BASIS_SCAN_TIMER_START(t)
+#define CGAL_HOMOLOGY_BASIS_SCAN_TIMER_STOP(t)
 #endif
 
 namespace CGAL {
@@ -422,8 +453,11 @@ protected:
   {
     std::vector<Candidate<WeightFunctor>> candidates;
 
-#ifdef CGAL_MY_TIMER
+#if defined(CGAL_MY_TIMER) && CGAL_MY_TIMER==1
     CGAL::Timer t_dijkstra, t_alloc, t_mark, t_scan;
+#endif
+#if defined(CGAL_MY_TIMER) && CGAL_MY_TIMER==2
+    CGAL::Timer t_annotation, t_xor, t_candidate;
 #endif
 
     for (auto ity=this->get_local_map().template attributes<0>().begin(),
@@ -461,16 +495,23 @@ protected:
           Dart_descriptor a=it, b=this->get_local_map().next(it);
           int ia=this->vertex_info(a), ib=this->vertex_info(b);
 
+          CGAL_HOMOLOGY_BASIS_SCAN_TIMER_START(t_annotation);
           boost::dynamic_bitset<> Aa=get_annotation_to_root(ia, computed, annotation_from_y);
           boost::dynamic_bitset<> Ab=get_annotation_to_root(ib, computed, annotation_from_y);
-          boost::dynamic_bitset<> vec=Aa^this->m_annotation.at(it)^Ab;
+          CGAL_HOMOLOGY_BASIS_SCAN_TIMER_STOP(t_annotation);
 
+          CGAL_HOMOLOGY_BASIS_SCAN_TIMER_START(t_xor);
+          boost::dynamic_bitset<> vec=Aa^this->m_annotation.at(it)^Ab;
+          CGAL_HOMOLOGY_BASIS_SCAN_TIMER_STOP(t_xor);
+
+          CGAL_HOMOLOGY_BASIS_SCAN_TIMER_START(t_candidate);
           if (vec.any())
           {
             typename WeightFunctor::Weight_t len=
               distance_from_root[ia]+distance_from_root[ib]+wf(this->m_copy_to_origin.at(it));
             candidates.push_back(Candidate<WeightFunctor>{len, vec, y, it});
           }
+          CGAL_HOMOLOGY_BASIS_SCAN_TIMER_STOP(t_candidate);
         }
       }
 
@@ -483,6 +524,9 @@ protected:
     CGAL_HOMOLOGY_BASIS_CHECKPOINT(t_alloc, "compute_candidates / per-y allocation (computed+annotation_from_y), summed over every y");
     CGAL_HOMOLOGY_BASIS_CHECKPOINT(t_mark, "compute_candidates / marking in-tree edges, summed over every y");
     CGAL_HOMOLOGY_BASIS_CHECKPOINT(t_scan, "compute_candidates / dart scan + annotation XOR, summed over every y");
+    CGAL_HOMOLOGY_BASIS_SCAN_CHECKPOINT(t_annotation, "compute_candidates / scan: get_annotation_to_root (Aa+Ab), summed over every candidate dart");
+    CGAL_HOMOLOGY_BASIS_SCAN_CHECKPOINT(t_xor, "compute_candidates / scan: XOR (Aa^m_annotation^Ab), summed over every candidate dart");
+    CGAL_HOMOLOGY_BASIS_SCAN_CHECKPOINT(t_candidate, "compute_candidates / scan: vec.any() + Candidate construction, summed over every candidate dart");
 
     return candidates;
   }
