@@ -134,10 +134,22 @@ Reconstruction of the cup model.
 Reconstruction of the toycat model.
 \cgalFigureEnd
 
+\cgalFigureBegin{Splat_surface_reconstruction_3Duck, duck.png}
+Reconstruction of the duck model.
+\cgalFigureEnd
+
 \subsection Splat_surface_reconstruction_3SharpResults Sharp Features
 
 \cgalFigureBegin{Splat_surface_reconstruction_3Cube, cube.png}
 Reconstruction of a cube.\n
+\cgalFigureEnd
+
+\cgalFigureBegin{Splat_surface_reconstruction_3Fandisk, fandisk.png}
+Reconstruction of the fandisk model\n
+\cgalFigureEnd
+
+\cgalFigureBegin{Splat_surface_reconstruction_3Wrench, wrench.png}
+Reconstruction of the wrench model.\n
 \cgalFigureEnd
 
 The CGAL implementation was developed by **Pranav Jain** as part of
