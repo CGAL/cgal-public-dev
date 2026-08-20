@@ -32,6 +32,7 @@
 
 // Custom Controllers & CPU Utilities
 #include "GPUIntersector/KernelBVHController.h"
+#include "CPU/MeshIntersectionCurves.h"
 #include "CPU/CgalDefinitions.h"
 #include "CPU/PolyscopeBridge.h"
 #include "CPU/ParallelCgalOffLoader.h"
@@ -49,6 +50,8 @@
 // Hardware Warmup & Pipeline Entry Points
 #include "Warmup/cuda_warmup.h"
 #include "GPUIntersector/StandaloneBVHPipeline.h"
+
+
 
 
 static TestConfig g_testConfig;
@@ -405,7 +408,8 @@ void normalizeAndSynchronizeScene(ApplicationState& app, bool scaleToUnit) {
 void executeMeshIntersectionPipeline(ApplicationState& app,
                                      int batchMultiplier = std::numeric_limits<int>::max(),
                                      int mode = 0,
-                                     int enableGpuDoublePrecision = 1) {
+                                     int enableGpuDoublePrecision = 1,
+                                     bool showCurves = false) {
   if(!app.isLoaded) {
     std::cout << "Error: You must 'load' meshes before computing.\n";
     return;
@@ -431,7 +435,6 @@ void executeMeshIntersectionPipeline(ApplicationState& app,
   int2* outIntersectionPairs = nullptr;
   size_t outFinalCount = 0;
 
-  // Hardcode async download parameter to 0 here to maintain compatibility with the controller
   app.controller.runIntersectionPipeline(batchMultiplier, mode, 0, outIntersectionPairs, outFinalCount, app.stats,
                                          enableGpuDoublePrecision);
 
@@ -440,15 +443,40 @@ void executeMeshIntersectionPipeline(ApplicationState& app,
   auto tEnd = std::chrono::high_resolution_clock::now();
   double elapsedMs = std::chrono::duration<double, std::milli>(tEnd - tStart).count();
 
+  std::vector<int2> stdPairs;
   if(outIntersectionPairs && outFinalCount > 0) {
-    std::vector<int2> stdPairs(outIntersectionPairs, outIntersectionPairs + outFinalCount);
+    stdPairs.assign(outIntersectionPairs, outIntersectionPairs + outFinalCount);
     PolyscopeBridge::highlightIntersections(stdPairs, num_faces(app.meshA), num_faces(app.meshB));
   } else {
     PolyscopeBridge::highlightIntersections({}, num_faces(app.meshA), num_faces(app.meshB));
   }
 
+  // Handle curve generation via PolyscopeBridge abstraction
+  double curveMs = 0.0;
+  if (showCurves) {
+    auto tCurveStart = std::chrono::high_resolution_clock::now();
+
+    Point3 centerA(app.normCenterA.x, app.normCenterA.y, app.normCenterA.z);
+    Point3 centerB(app.normCenterB.x, app.normCenterB.y, app.normCenterB.z);
+
+    auto segments = computeExactIntersectionCurves(
+        app.meshA, app.meshB, stdPairs,
+        centerA, make_double3(rotA.x, rotA.y, rotA.z), make_double3(transA.x, transA.y, transA.z),
+        centerB, make_double3(rotB.x, rotB.y, rotB.z), make_double3(transB.x, transB.y, transB.z));
+
+    PolyscopeBridge::showIntersectionCurves(segments);
+
+    auto tCurveEnd = std::chrono::high_resolution_clock::now();
+    curveMs = std::chrono::duration<double, std::milli>(tCurveEnd - tCurveStart).count();
+  } else {
+    PolyscopeBridge::clearIntersectionCurves();
+  }
+
   std::cout << "\n[Compute] Query completed in: " << std::fixed << std::setprecision(2) << elapsedMs << " ms. "
             << "Found " << outFinalCount << " intersections.\n";
+  if (showCurves) {
+    std::cout << "[Curves] Extracted and rendered exact curves in: " << std::fixed << std::setprecision(2) << curveMs << " ms.\n";
+  }
   std::cout << "AABB Hits: " << app.stats.finalAabbCandidatePairs
             << " | Green: " << app.stats.loopTracker.confirmedGreenPairs
             << " | Yellow: " << app.stats.loopTracker.confirmedYellowPairs
@@ -938,24 +966,32 @@ int main(int argc, char** argv) {
       "Loads meshes via standard sequential CGAL stream loader.",
       [&](std::istringstream& iss) { cmdLoad(app, iss, true); });
 
-  ui.registerCommand("compute", "[batchMultiplier] [DualTreeSteps] [GpuPredicates mode]",
+ ui.registerCommand("compute", "[batchMultiplier] [DualTreeSteps] [GpuPredicates mode] [showCurves]",
                      "Syncs active viewport/gizmo transforms to GPU and executes intersection pipeline.",
                      [&](std::istringstream& iss) {
                        int batchMultiplier = std::numeric_limits<int>::max();
                        int mode = 0;
                        int enableGpuDoublePrecision = 1; // Default to 1 (true)
+                       bool showCurves = false;          // Default to false
 
                        std::string batchStr;
-                       if(iss >> batchStr) {
-                         if(batchStr == "INF" || batchStr == "inf") {
+                       if (iss >> batchStr) {
+                         if (batchStr == "INF" || batchStr == "inf") {
                            batchMultiplier = std::numeric_limits<int>::max();
                          } else {
                            batchMultiplier = std::stoi(batchStr);
                          }
-                         iss >> mode >> enableGpuDoublePrecision;
+                         
+                         if (iss >> mode >> enableGpuDoublePrecision) {
+                           // Parse 0/1 or true/false for showCurves if provided
+                           std::string curvesStr;
+                           if (iss >> curvesStr) {
+                             showCurves = (curvesStr == "1" || curvesStr == "true" || curvesStr == "TRUE");
+                           }
+                         }
                        }
 
-                       executeMeshIntersectionPipeline(app, batchMultiplier, mode, enableGpuDoublePrecision);
+                       executeMeshIntersectionPipeline(app, batchMultiplier, mode, enableGpuDoublePrecision, showCurves);
                      });
 
   ui.registerCommand(

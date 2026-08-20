@@ -19,6 +19,8 @@
 
 #include "CgalDefinitions.h"
 
+#include "polyscope/curve_network.h"
+#include "CPU/MeshIntersectionCurves.h"
 
 
 namespace PolyscopeBridge {
@@ -421,6 +423,44 @@ inline void highlightIntersections(const std::vector<int2>& exactPairs, size_t n
     meshB->removeQuantity("Intersections");
     meshB->addFaceColorQuantity("Intersections", colorsB)->setEnabled(true);
   }
+}
+
+inline void showIntersectionCurves(const std::vector<IntersectionSegment>& segs) {
+  if (segs.empty()) {
+    polyscope::removeStructure("Intersection Curve", false);
+    return;
+  }
+
+  std::vector<glm::vec3> nodes;
+  std::vector<std::array<size_t, 2>> edges;
+  nodes.reserve(segs.size() * 2);
+  edges.reserve(segs.size());
+
+  for (const auto& s : segs) {
+    size_t i0 = nodes.size();
+
+    // Access POD fields directly (compatible across NVCC host/device passes and standard GCC)
+    nodes.push_back(glm::vec3(static_cast<float>(s.p0.x), 
+                              static_cast<float>(s.p0.y), 
+                              static_cast<float>(s.p0.z)));
+    nodes.push_back(glm::vec3(static_cast<float>(s.p1.x), 
+                              static_cast<float>(s.p1.y), 
+                              static_cast<float>(s.p1.z)));
+
+    edges.push_back({i0, i0 + 1});
+  }
+
+  auto* curve = polyscope::registerCurveNetwork("Intersection Curve", nodes, edges);
+  if (curve) {
+    curve->setColor(glm::vec3(1.0f, 0.0f, 0.0f)); // Red curve
+    curve->setRadius(0.002f);
+  }
+}
+
+
+
+inline void clearIntersectionCurves() {
+  polyscope::removeStructure("Intersection Curve", false);
 }
 
 inline void drawFrame() {

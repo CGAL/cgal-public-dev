@@ -95,7 +95,7 @@ set_source_files_properties(
 
 add_executable(MainApp 
     apps/mainApplication.cpp 
-
+    src/CPU/MeshIntersectionCurves.cpp
     src/CPU/TestSuite.cpp
     # Top-Level Entry Points
     src/GPUIntersector/KernelBVHController.cu
