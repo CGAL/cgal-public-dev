@@ -8,7 +8,12 @@
 #include <CGAL/alpha_wrap_3.h>
 #include <CGAL/Polygon_mesh_processing/bbox.h>
 #include <CGAL/Polygon_mesh_processing/IO/polygon_mesh_io.h>
+#include <CGAL/Polygon_mesh_processing/interpolated_corrected_curvatures.h>
 #include <CGAL/Real_timer.h>
+
+#include <CGAL/AABB_tree.h>
+#include <CGAL/AABB_traits_3.h>
+#include <CGAL/AABB_face_graph_triangle_primitive.h>
 
 #include <iostream>
 #include <string>
@@ -21,6 +26,19 @@ using Point_3 = K::Point_3;
 using Mesh = CGAL::Surface_mesh<Point_3>;
 
 using Field = std::function<double(double,double,double)>;
+
+// vertex_property and vertex_descriptor to store and query curvature
+typedef boost::graph_traits<Mesh>::vertex_descriptor vertex_descriptor;
+typedef boost::graph_traits<Mesh>::face_descriptor face_descriptor;
+using VP = CGAL::dynamic_vertex_property_t<K::FT>;
+using VPC = CGAL::dynamic_vertex_property_t<PMP::Principal_curvatures_and_directions<K>>;
+using VP_PM = boost::property_map<Mesh, VP>::type;
+using VPC_PM = boost::property_map<Mesh, VPC>::type;
+
+// AABB_tree for closest point
+typedef CGAL::AABB_face_graph_triangle_primitive<Mesh> Primitive;
+typedef CGAL::AABB_traits_3<K, Primitive> Traits;
+typedef CGAL::AABB_tree<Traits> Tree;
 
 double diag_length(Mesh mesh) {
   CGAL::Bbox_3 bbox = CGAL::Polygon_mesh_processing::bbox(mesh);
@@ -80,16 +98,43 @@ Field xaxis_field_generator(Mesh mesh) {
   double range = 1./8.;
   double start = 1./100.;
   Field field = [=](double x, double y, double z) {
-	double centered = x - bbox.xmin();
-	double clamped = std::max(0.,centered);
-	double normalized = clamped / x_length;
-	double alpha = x_length * (start + range * normalized);
+    double centered = x - bbox.xmin();
+    double clamped = std::max(0.,centered);
+    double normalized = clamped / x_length;
+    double alpha = x_length * (start + range * normalized);
+    return alpha;
+  };
+  return field;
+}
+
+Field curvature_field_generator(Mesh& mesh) {
+
+  auto tree = std::make_shared<Tree>(mesh.faces_begin(), mesh.faces_end(), mesh);
+
+  // define property map to store curvature value and directions
+  auto mean_curvature_map = std::make_shared<VP_PM>(get(VP(), mesh));
+  auto Gaussian_curvature_map = std::make_shared<VP_PM>(get(VP(), mesh));
+  auto principal_curvatures_and_directions_map = std::make_shared<VPC_PM>(get(VPC(), mesh));
+  // Compute curvatures
+  PMP::interpolated_corrected_curvatures(mesh,
+		CGAL::parameters::vertex_mean_curvature_map(*mean_curvature_map)
+			.vertex_Gaussian_curvature_map(*Gaussian_curvature_map)
+			.vertex_principal_curvatures_and_directions_map(*principal_curvatures_and_directions_map));
+
+  Field field = [tree, &mesh, principal_curvatures_and_directions_map] (double x, double y, double z) {
+	Point_3 point = {x,y,z};
+	face_descriptor fd = tree->closest_point_and_primitive(point).second;
+	Mesh::Halfedge_index h = halfedge(fd, mesh); //
+	vertex_descriptor vd = target(h, mesh);
+	auto PC = get(*principal_curvatures_and_directions_map, vd);
+	double max_curvature = std::max(std::abs(PC.min_curvature), std::abs(PC.max_curvature));
+	double alpha = 1. / max_curvature;
 	return alpha;
   };
   return field;
 }
 
-std::function<Field(Mesh)> field_generator = dist_to_bbox_field_generator;
+std::function<Field(Mesh&)> field_generator = curvature_field_generator;
 
 int main(int argc, char** argv)
 {
