@@ -464,10 +464,14 @@ void executeMeshIntersectionPipeline(ApplicationState& app,
         centerA, make_double3(rotA.x, rotA.y, rotA.z), make_double3(transA.x, transA.y, transA.z),
         centerB, make_double3(rotB.x, rotB.y, rotB.z), make_double3(transB.x, transB.y, transB.z));
 
-    PolyscopeBridge::showIntersectionCurves(segments);
+    
 
     auto tCurveEnd = std::chrono::high_resolution_clock::now();
+
+    PolyscopeBridge::showIntersectionCurves(segments);
+
     curveMs = std::chrono::duration<double, std::milli>(tCurveEnd - tCurveStart).count();
+    
   } else {
     PolyscopeBridge::clearIntersectionCurves();
   }
@@ -475,7 +479,7 @@ void executeMeshIntersectionPipeline(ApplicationState& app,
   std::cout << "\n[Compute] Query completed in: " << std::fixed << std::setprecision(2) << elapsedMs << " ms. "
             << "Found " << outFinalCount << " intersections.\n";
   if (showCurves) {
-    std::cout << "[Curves] Extracted and rendered exact curves in: " << std::fixed << std::setprecision(2) << curveMs << " ms.\n";
+    std::cout << "[Curves] Extracted exact curves in: " << std::fixed << std::setprecision(2) << curveMs << " ms.\n";
   }
   std::cout << "AABB Hits: " << app.stats.finalAabbCandidatePairs
             << " | Green: " << app.stats.loopTracker.confirmedGreenPairs
@@ -1056,6 +1060,22 @@ int main(int argc, char** argv) {
                        TestSuite suite(app);
                        suite.runSuite(g_testConfig);
                      });
+  ui.registerCommand("HelpPredicateModes", "", 
+                     "Displays the available GPU precision modes for exact predicates.",
+                     [&](std::istringstream&) {
+                       std::cout << "\n=======================================================\n";
+                       std::cout << "               PREDICATE COMPUTE MODES                 \n";
+                       std::cout << "=======================================================\n";
+                       std::cout << "  Mode 0 : Float predicates -> CPU\n";
+                       std::cout << "  Mode 1 : Float predicates -> Simulated double -> CPU\n";
+                       std::cout << "  Mode 2 : Float predicates -> Inexact Big integer quantization (Experimental)\n";
+                       std::cout << "  Mode 3 : Float predicates -> Exact Big integer quantization -> CPU (Experimental)\n";
+                       std::cout << "  Mode 4 : Float predicates -> Real double -> CPU\n";
+                       std::cout << "=======================================================\n\n";
+                     });
+
+  // Optional: Add a shorter alias so you can just type 'modes' in the terminal
+  ui.registerAlias("modes", "HelpPredicateModes");
 
   ui.registerCommand("quit", "", "Exits the application.", [&](std::istringstream&) { g_running = false; });
 
