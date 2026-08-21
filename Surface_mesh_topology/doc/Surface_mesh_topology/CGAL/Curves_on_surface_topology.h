@@ -66,6 +66,18 @@ namespace Surface_mesh_topology {
      * Affects \link Surface_mesh_topology::Curves_on_surface_topology::are_freely_homotopic `are_freely_homotopic(p1, p2)`\endlink, \link Surface_mesh_topology::Curves_on_surface_topology::are_homotopic_with_fixed_endpoints `are_homotopic_with_fixed_endpoints(p1, p2)`\endlink, \link Surface_mesh_topology::Curves_on_surface_topology::is_contractible `is_contractible(p)`\endlink, and \link Surface_mesh_topology::Curves_on_surface_topology::is_homotopic_to_simple_cycle `is_homotopic_to_simple_cycle(p)`\endlink
      */
     void set_verbose(bool is_verbose);
+    
+    /*! returns a vector of cycles of type `Path_on_surface` forming a basis of homotopy with minimal length from the source vertex of `dh`, where the length of a basis is the sum of the weights of the edges of its cycles computed thanks to the WeightFunctor `wf`. By default, all the edge weights are set to 1 (thanks to the `Unit_weight_functor` functor).
+     * @pre `amesh` must be closed and orientable.
+     */
+    template <class WeightFunctor=Unit_weight_functor>
+    std::vector<Path_on_surface<Mesh>> compute_minimal_homotopy_basis_with_base_point(Dart_const_descriptor dh, const WeightFunctor& wf=WeightFunctor()) const;
+    
+    /*! returns a vector of cycles of type `Path_on_surface` forming a basis of \f$ F_2 \f$-homology with minimal length, where the length of a basis is the sum of the weights of the edges of its cycles computed thanks to the WeightFunctor `wf`. By default, all the edge weights are set to 1 (thanks to the `Unit_weight_functor` functor).
+     * @pre `amesh` must be closed and orientable.
+     */
+    template <class WeightFunctor=Unit_weight_functor>
+    std::vector<Path_on_surface<Mesh>> compute_minimal_homology_basis(const WeightFunctor& wf=WeightFunctor()) const;
   };
 
   /*!
