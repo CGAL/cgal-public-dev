@@ -14,24 +14,31 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CUDA_STANDARD 17)
 set(CMAKE_CUDA_STANDARD_REQUIRED ON)
 
+# Default CUDA architecture (sm_120 / Blackwell), overridable via -DCMAKE_CUDA_ARCHITECTURES
+if(NOT DEFINED CMAKE_CUDA_ARCHITECTURES)
+    set(CMAKE_CUDA_ARCHITECTURES "120")
+endif()
+
 # ====================================================================
 # DEPENDENCIES & PACKAGE LOCATIONS
 # ====================================================================
 
-find_package(CGAL REQUIRED PATHS "${CMAKE_CURRENT_SOURCE_DIR}/../../cgal-build" NO_DEFAULT_PATH)
+# Standard package resolution (allows -DCGAL_DIR=... or system installs)
+find_package(CGAL REQUIRED COMPONENTS Core)
 find_package(CUDAToolkit REQUIRED)
 find_package(Threads REQUIRED)
 find_package(TBB REQUIRED)
 find_package(PkgConfig REQUIRED)
 pkg_check_modules(READLINE REQUIRED readline)
 
-# Path variables for cuBQL and CUDA context
-set(CUBQL_ROOT "/home/yury/Projects/CPPProj/Cubql" CACHE PATH "Path to cuBQL source root")
-set(CUBQL_BUILD "${CUBQL_ROOT}/build")
+# Configurable cuBQL location (Overridable via -DCUBQL_ROOT=... and -DCUBQL_BUILD=...)
+set(CUBQL_ROOT "${CMAKE_CURRENT_SOURCE_DIR}/external/cubql" CACHE PATH "Path to cuBQL source root")
+set(CUBQL_BUILD "${CUBQL_ROOT}/build" CACHE PATH "Path to cuBQL build folder")
 
 # Shared Link Libraries List
 set(SHARED_LINK_LIBS
     CGAL::CGAL
+    CGAL::CGAL_Core
     gmp
     mpfr
     Threads::Threads
@@ -55,7 +62,6 @@ FetchContent_MakeAvailable(polyscope)
 
 function(configure_geometry_target TARGET_NAME)
     set_target_properties(${TARGET_NAME} PROPERTIES
-        CUDA_ARCHITECTURES "120"
         CUDA_SEPARABLE_COMPILATION ON
         BUILD_WITH_INSTALL_RPATH TRUE
         INSTALL_RPATH "${CUBQL_BUILD}"
@@ -136,32 +142,24 @@ target_link_libraries(MainApp PRIVATE ${READLINE_LIBRARIES} polyscope)
 if(BUILD_ARCHIVED_TARGETS)
     message(STATUS "Building archived/legacy targets enabled.")
 
-    # TARGET: meshIntersectionRegistration
     add_executable(meshIntersectionRegistration apps/archive/main.cpp src/registration/kernels.cu)
     configure_geometry_target(meshIntersectionRegistration)
 
-    # TARGET: meshIntersectionBatch
     add_executable(meshIntersectionBatch apps/archive/main_massive.cpp src/registration/kernels.cu)
     configure_geometry_target(meshIntersectionBatch)
 
-    # TARGET: meshIntersectionCustom
     add_executable(meshIntersectionCustom apps/archive/mainV2.cpp src/GPU_exact_predicates/kernelsV2.cu src/GPU_exact_predicates/InexactBigIntFilter.cu)
     configure_geometry_target(meshIntersectionCustom)
 
-    # TARGET: meshVoxelizer
     add_executable(meshVoxelizer apps/archive/mainVoxel.cpp src/voxelizer/kernelsVoxel.cu)
     configure_geometry_target(meshVoxelizer)
 
-    # TARGET: testBVH
     add_executable(testBVH apps/archive/mainTestBVH.cpp src/archive/kernelsTestBVH.cu src/traversal/rapidDescendKernel.cu src/traversal/crossCheck.cu src/archive/volumeSanityCheck.cu src/archive/batchedCrossIntersection.cu src/archive/batchedCrossIntersectionBruteV2.cu src/traversal/DualTreeStep.cu src/traversal/prune_pipeline.cu src/GPU_exact_predicates/InexactBigIntFilter.cu)
     configure_geometry_target(testBVH)
 
-    # TARGET: dualTreeExecution
     add_executable(dualTreeExecution apps/archive/mainDualTreeTestLauncher.cpp src/traversal/crossCheck.cu src/GPU_exact_predicates/InexactBigIntFilter.cu src/DualTreeTraversal/DualTreeLauncher.cu src/DualTreeTraversal/DualTreeMeshIntersection.cu)
     configure_geometry_target(dualTreeExecution)
 
-    # TARGET: testBVHV2
     add_executable(testBVHV2 apps/archive/mainTestBVHV2.cpp src/archive/kernelsTestBVHAlternative.cu src/traversal/rapidDescendKernel.cu src/archive/batchedCrossIntersectionV2.cu src/archive/batchedCrossIntersectionV3.cu src/single_tree/SingleTreeBatchCommon.cu src/traversal/DualTreeStep.cu src/traversal/prune_pipeline.cu src/Warmup/cuda_warmup.cu src/GPU_exact_predicates/ExactBigIntPredicate.cu src/common/utils.cu)
     configure_geometry_target(testBVHV2)
-
 endif()
