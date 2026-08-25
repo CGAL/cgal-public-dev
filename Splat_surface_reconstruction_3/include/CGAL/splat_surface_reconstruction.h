@@ -57,9 +57,9 @@ namespace CGAL {
    */
   template <typename PointRange,typename NormalRange, typename PolygonMesh>
   bool Splat_surface_reconstruction(const PointRange& points,
-                               const NormalRange& normals,
-                               PolygonMesh& output_mesh,
-                               double spacing) {
+                                    const NormalRange& normals,
+                                    PolygonMesh& output_mesh,
+                                    double spacing) {
     typedef typename PointRange::value_type Point;
     typedef typename Kernel_traits<Point>::Kernel Kernel;
     typedef typename Kernel::Sphere_3 Sphere;
@@ -1086,6 +1086,8 @@ namespace CGAL {
   };
 
   /**
+   * @ingroup PkgSplatSurfaceReconstruction3Classes
+   *
    * @brief Incrementally reconstructs a polygon mesh from splat candidates.
    *
    * The reconstruction grows a halfedge front from an initial seed. Candidate

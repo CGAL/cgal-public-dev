@@ -1,4 +1,8 @@
 /// \defgroup PkgSplatSurfaceReconstruction3Ref Reference Manual
+
+/// \defgroup PkgSplatSurfaceReconstruction3Classes Reconstruction Classes
+/// \ingroup PkgSplatSurfaceReconstruction3Ref
+
 /*!
 \addtogroup PkgSplatSurfaceReconstruction3Ref
 \cgalPkgDescriptionBegin{Splat Surface Reconstruction,PkgSplatSurfaceReconstruction3}
@@ -19,7 +23,7 @@
 
 \cgalClassifedRefPages
 \cgalCRPSection{Classes}
-- `CGAL::Splat_reconstruction_function<GeomTraits>`
+- `CGAL::Splat_surface_reconstruction_3`
 
 */
 
