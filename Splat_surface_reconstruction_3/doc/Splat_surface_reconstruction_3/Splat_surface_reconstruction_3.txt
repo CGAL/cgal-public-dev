@@ -25,12 +25,6 @@ splat information. The resolution of the reconstructed surface is controlled
 by a target edge length derived from the sampling density of the input point
 cloud.
 
-\cgalFigureBegin{Splat_surface_reconstruction_3figintroduction, SplatIntroduction.jpg}
-Splat surface reconstruction.\n
-Left: input oriented point cloud. Right: reconstructed surface mesh.
-\cgalFigureEnd
-
-
 \section Splat_surface_reconstruction_3Input Input
 
 The reconstruction requires an oriented point cloud. Each input sample must
