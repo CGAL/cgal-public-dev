@@ -57,9 +57,9 @@ namespace CGAL {
    */
   template <typename PointRange,typename NormalRange, typename PolygonMesh>
   bool Splat_surface_reconstruction(const PointRange& points,
-                               const NormalRange& normals,
-                               PolygonMesh& output_mesh,
-                               double spacing) {
+                                    const NormalRange& normals,
+                                    PolygonMesh& output_mesh,
+                                    double spacing) {
     typedef typename PointRange::value_type Point;
     typedef typename Kernel_traits<Point>::Kernel Kernel;
     typedef typename Kernel::Sphere_3 Sphere;
@@ -363,11 +363,11 @@ namespace CGAL {
     std::cout<<"Box size: " << box_size_ << " Max splat radius: " << max_splat_radius_ << std::endl;
     return splat_sizes_;
   }
-  
+
   /**
    * @brief Recomputes normal information from splats intersecting the grid.
    *
-   * Grid cells are assigned a normalized average of normals from 
+   * Grid cells are assigned a normalized average of normals from
    * precomputed normals and nearby splats whose splat disks intersect the cell.
   */
   void recompute_block_normals_from_splats() {
@@ -1086,6 +1086,8 @@ namespace CGAL {
   };
 
   /**
+   * @ingroup PkgSplatSurfaceReconstruction3Classes
+   *
    * @brief Incrementally reconstructs a polygon mesh from splat candidates.
    *
    * The reconstruction grows a halfedge front from an initial seed. Candidate
@@ -1199,7 +1201,7 @@ namespace CGAL {
           }
 
           if (!projection_check(cand, grid_.box_normal(get(points_pm_, cand.first)))
-           || !projection_check(cand, grid_.box_normal(get(points_pm_, cand.second))) 
+           || !projection_check(cand, grid_.box_normal(get(points_pm_, cand.second)))
            || !projection_check(cand, grid_.box_normal(cand.position)) ) {
             rejected_proj++;
             continue;
@@ -1223,7 +1225,7 @@ namespace CGAL {
           }
 
           insert_mesh_vertex(nv);
-          
+
           push_candidates_from_vertex(nv);
 
           if (num_vertices(mesh_) % 1000 == 0) { // Print progress every 1000 vertices
@@ -1239,7 +1241,7 @@ namespace CGAL {
       }
 
     private:
-      
+
       /**
        * @brief Inserts a mesh vertex into the spatial lookup structure.
        *
@@ -1272,7 +1274,7 @@ namespace CGAL {
         if (!grid_.to_grid_coords(p, cx, cy, cz))
           return out;
 
-        const int r = std::max(
+        const int r = (std::max)(
           1,
           static_cast<int>(std::ceil(CGAL::to_double(radius) / CGAL::to_double(grid_.get_box_size()))));
 
@@ -1687,7 +1689,7 @@ namespace CGAL {
           return false;
         }
 
-        // Check that the halfedge cycles around each parent vertex don't have repeated vertices. 
+        // Check that the halfedge cycles around each parent vertex don't have repeated vertices.
         // This ensures that the local front is a simple cycle.
         // We limit the number of steps to avoid infinite loops.
         std::unordered_set<vertex_descriptor> visited;
@@ -1767,7 +1769,7 @@ namespace CGAL {
           cycle.reserve(16);
 
           halfedge_descriptor h = start;
-          const std::size_t max_steps = std::min((std::size_t)num_halfedges(mesh_), std::size_t(1000)); // If cycle is too long, it is considered a hole.
+          const std::size_t max_steps = (std::min)((std::size_t)num_halfedges(mesh_), std::size_t(1000)); // If cycle is too long, it is considered a hole.
           bool closed = false;
 
           for (std::size_t i = 0; i < max_steps; ++i)
@@ -1816,7 +1818,7 @@ namespace CGAL {
       void ear_clip_and_add_faces(std::vector<halfedge_descriptor> cycle) {
         CGAL_assertion(cycle.size() >= 3);
 
-        // 2D orientation test.        
+        // 2D orientation test.
         const auto orient2 = [](const Point_2& a, const Point_2& b, const Point_2& c) {
           return CGAL::orientation(a, b, c);
         };
@@ -2089,7 +2091,7 @@ namespace CGAL {
 
         const std::size_t i_ab     = (ear_pos + n - 1) % n;
         const std::size_t i_bc     = ear_pos;
-        const std::size_t i_before = (ear_pos + n - 2) % n; 
+        const std::size_t i_before = (ear_pos + n - 2) % n;
         const std::size_t i_after  = (ear_pos + 1) % n;
 
         // Identify the two halfedges entering and leaving the ear vertex.
@@ -2148,7 +2150,7 @@ namespace CGAL {
           set_next(h_bc, h_ca, mesh_);
           set_next(h_ca, h_ab, mesh_);
         }
-        
+
         // Rewire the remaining boundary:
         // ... -> a -> b -> c -> ...
         // becomes
@@ -2367,7 +2369,7 @@ namespace CGAL {
        * @return Integer priority in the range `[0, NUM_PRIORITIES-1]`.
       */
       int compute_priority(const Candidate& cand) const {
-        
+
         if (incident_vertex_degree(cand.first) == 1 || incident_vertex_degree(cand.second) == 1) {
           return 2; // highest priority
         }
