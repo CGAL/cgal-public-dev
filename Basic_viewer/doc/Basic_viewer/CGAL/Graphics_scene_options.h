@@ -27,6 +27,14 @@ template <typename DS,
 struct Graphics_scene_options
 {
 public:
+  /// constructs default graphics scene options.
+  ///
+  /// Vertices, edges, and faces are enabled. The `draw_vertex`,
+  /// `draw_edge`, and `draw_face` callbacks return `true` by default,
+  /// while the `colored_vertex`, `colored_edge`, `colored_face`, and
+  /// `face_wireframe` callbacks return `false` by default.
+  Graphics_scene_options();
+
   typedef VertexDescriptor vertex_descriptor;
   typedef EdgeDescriptor edge_descriptor;
   typedef FaceDescriptor face_descriptor;

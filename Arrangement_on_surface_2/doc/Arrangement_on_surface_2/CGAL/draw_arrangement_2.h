@@ -13,6 +13,7 @@
 //
 //
 // Author(s) : Efi Fogel <efifogel@gmail.com>
+//             Utkarsh Khajuria <utkarshkhajuria55@gmail.com>
 
 #ifndef CGAL_DRAW_ARRANGEMENT_2_H
 #define CGAL_DRAW_ARRANGEMENT_2_H
@@ -95,6 +96,42 @@ void draw(const Arrangement_on_surface_2<GeometryTraits, TopologyTraits>& arr,
 template <typename GeometryTraits, typename TopologyTraits>
 void draw(const Arrangement_on_surface_2<GeometryTraits, TopologyTraits>& arr,
           const char* title = "2D Arrangement on Surface");
+
+/*! \\ingroup PkgArrangementOnSurface2Draw
+ *
+ * Adds the vertices, edges, and faces of `arr` to the graphics scene `gs`.
+ * The scene is not cleared before it is filled.
+ *
+ * \\tparam GeometryTraits a geometry traits type, a model of a 2D arrangement
+ * geometry traits concept.
+ * \\tparam TopologyTraits a topology traits type, a model of the
+ * `AosTopologyTraits` concept.
+ * \\tparam GSOptions a model of the `GraphicsSceneOptions` concept.
+ *
+ * \\param arr the arrangement to add to the graphics scene.
+ * \\param gs the graphics scene to fill.
+ * \\param gso the graphics scene options.
+ */
+template <typename GeometryTraits, typename TopologyTraits, typename GSOptions>
+void add_to_graphics_scene(
+  const Arrangement_on_surface_2<GeometryTraits, TopologyTraits>& arr,
+  Graphics_scene& gs,
+  const GSOptions& gso);
+
+/*! \\ingroup PkgArrangementOnSurface2Draw
+ *
+ * A shortcut to `CGAL::add_to_graphics_scene(arr, gs,
+ * Graphics_scene_options<Aos, Aos::Vertex_const_handle,
+ * Aos::Halfedge_const_handle, Aos::Face_const_handle>{})`, where `Aos` is
+ * `Arrangement_on_surface_2<GeometryTraits, TopologyTraits>`.
+ *
+ * \\param arr the arrangement to add to the graphics scene.
+ * \\param gs the graphics scene to fill.
+ */
+template <typename GeometryTraits, typename TopologyTraits>
+void add_to_graphics_scene(
+  const Arrangement_on_surface_2<GeometryTraits, TopologyTraits>& arr,
+  Graphics_scene& gs);
 
 } /* namespace CGAL */
 
