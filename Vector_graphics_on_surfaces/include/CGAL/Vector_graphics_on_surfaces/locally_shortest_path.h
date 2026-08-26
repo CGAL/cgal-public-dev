@@ -1220,7 +1220,7 @@ void locally_shortest_path(CGAL::Polygon_mesh_processing::Face_location<Triangle
   std::size_t max_index=0;
 
   // lerps are barycentric coordinates of the shortest path restricted to the unfolded strip
-  std::vector<FT> lerps=Impl::funnel(portals,max_index);
+  std::vector<FT> lerps=Impl::funnel(portals,max_index); // (TODO: in the case of straightning we could get rid of this one and init it with Edge_location)
   // TODO: if you comment this if you don't want to shorten the path (option?).
   //       but this part is really fast so maybe does not make sense.
   Impl::straighten_path(portals,lerps,initial_path,src,tgt,vpm,tmesh,max_index);
@@ -1232,6 +1232,128 @@ void locally_shortest_path(CGAL::Polygon_mesh_processing::Face_location<Triangle
     edge_locations.emplace_back(initial_path[i], make_array(lerps[i], 1.-lerps[i]));
   }
 }
+
+template <class FT, class TriangleMesh, class EdgeLocationRange, class NamedParameters = parameters::Default_named_parameters>
+void straighten_cycle_impl(Polygon_mesh_processing::Face_location<TriangleMesh, FT> start_loc,
+                           Polygon_mesh_processing::Face_location<TriangleMesh, FT> end_loc,
+                           std::vector<typename boost::graph_traits<TriangleMesh>::halfedge_descriptor>& initial_path,
+                           const TriangleMesh &tmesh,
+                           EdgeLocationRange &edge_locations,
+                           const NamedParameters& np = parameters::default_values())
+{
+  namespace PMP = CGAL::Polygon_mesh_processing;
+  using parameters::choose_parameter;
+  using parameters::get_parameter;
+  using parameters::get_parameter_reference;
+
+  using VPM = typename GetVertexPointMap<TriangleMesh, NamedParameters>::const_type;
+  using K = typename GetGeomTraits<TriangleMesh, NamedParameters>::type;
+  using Impl = internal::Locally_shortest_path_imp<K, TriangleMesh, VPM>;
+  VPM vpm = choose_parameter(get_parameter(np, internal_np::vertex_point),
+                             get_const_property_map(boost::vertex_point, tmesh));
+
+  Impl::strip_path(tmesh, start_loc, end_loc, initial_path);
+  if (initial_path.empty()) return;
+
+  CGAL_assertion(face(opposite(initial_path.front(), tmesh), tmesh)==start_loc.first);
+  CGAL_assertion(face(initial_path.back(), tmesh)==end_loc.first);
+
+
+  // here portals contains 2D coordinates of endpoints of edges in initial_path
+  std::vector< std::array<typename K::Vector_2, 2>> portals=Impl::unfold_strip(initial_path,start_loc,end_loc,vpm,tmesh);
+  std::size_t max_index=0;
+
+  // lerps are barycentric coordinates of the shortest path restricted to the unfolded strip
+  std::vector<FT> lerps=Impl::funnel(portals,max_index);
+  // TODO: if you comment this if you don't want to shorten the path (option?).
+  //       but this part is really fast so maybe does not make sense.
+  Impl::straighten_path(portals,lerps,initial_path,start_loc,end_loc,vpm,tmesh,max_index);
+  CGAL_assertion(lerps.size()==initial_path.size());
+
+  edge_locations.reserve(initial_path.size());
+  for(std::size_t i=0; i<initial_path.size(); ++i)
+  {
+    edge_locations.emplace_back(initial_path[i], make_array(lerps[i], 1.-lerps[i]));
+  }
+}
+
+template <class FT, class TriangleMesh, class EdgeLocationRange, class NamedParameters = parameters::Default_named_parameters>
+void straighten_cycle(typename boost::graph_traits<TriangleMesh>::vertex_descriptor v,
+                      std::vector<typename boost::graph_traits<TriangleMesh>::vertex_descriptor> cycle,
+                      const TriangleMesh &tmesh,
+                      EdgeLocationRange &edge_locations,
+                      const NamedParameters& np = parameters::default_values())
+{
+  namespace PMP = CGAL::Polygon_mesh_processing;
+  using halfedge_descriptor = typename boost::graph_traits<TriangleMesh>::halfedge_descriptor;
+
+  auto it = cycle.begin();
+  while (*it!=v)
+  {
+    ++it;
+    if (it==cycle.end()) return;
+  }
+  std::rotate(cycle.begin(), it, cycle.end());
+  CGAL_assertion(v==cycle[0]);
+
+  std::vector<halfedge_descriptor> initial_path;
+  initial_path.reserve(2*cycle.size());
+
+  // we need to prepare the initial_path
+  auto [h, found] = halfedge(cycle.back(), cycle.front(), tmesh);
+  CGAL_assertion(found);
+  auto first_h = h;
+
+  for (std::size_t i=1; i<cycle.size(); ++i)
+  {
+    auto [tgt_h, found] = halfedge(cycle[i-1], cycle[i], tmesh);
+    CGAL_assertion(found);
+    // TODO: we should probably modify the cycle and pop the vertex, question is what is happening if it's the source...
+    CGAL_assertion(next(h, tmesh)!=tgt_h && "TODO: should be allowed but skipt for now");
+    while(next(h, tmesh)!=tgt_h)
+    {
+      h = opposite(next(h, tmesh), tmesh);
+      initial_path.push_back(h);
+    }
+    h=next(h, tmesh);
+  }
+  // last one
+  while(next(h, tmesh)!=first_h)
+  {
+    h = opposite(next(h, tmesh), tmesh);
+    initial_path.push_back(h);
+  }
+
+  PMP::Face_location<TriangleMesh, FT> start_loc = PMP::locate_vertex<FT>(v, face(opposite(initial_path.front(), tmesh), tmesh), tmesh);
+  PMP::Face_location<TriangleMesh, FT> end_loc = PMP::locate_vertex<FT>(v, face(initial_path.back(), tmesh), tmesh);
+
+  straighten_cycle_impl(start_loc, end_loc, initial_path, tmesh, edge_locations, np);
+}
+
+template <class FT, class TriangleMesh, class EdgeLocationRange, class NamedParameters = parameters::Default_named_parameters>
+void straighten_cycle(std::size_t fixed_point,
+                      std::vector<Polygon_mesh_processing::Edge_location<TriangleMesh,FT>> cycle,
+                      const TriangleMesh &tmesh,
+                      EdgeLocationRange &edge_locations,
+                      const NamedParameters& np = parameters::default_values())
+{
+  namespace PMP = CGAL::Polygon_mesh_processing;
+  using halfedge_descriptor = typename boost::graph_traits<TriangleMesh>::halfedge_descriptor;
+
+  std::vector<halfedge_descriptor> initial_path;
+  initial_path.reserve(cycle.size());
+
+  std::rotate(cycle.begin(), std::next(cycle.begin(), fixed_point), cycle.end());
+  for (auto el : cycle)
+    initial_path.push_back(halfedge(el.first, tmesh));
+
+  PMP::Edge_location<TriangleMesh, FT> opel(edge(opposite(halfedge(cycle[0].first, tmesh), tmesh), tmesh), CGAL::make_array(cycle[0].second[1], cycle[0].second[0]));
+  PMP::Face_location<TriangleMesh, FT> start_loc = PMP::to_face_location(opel, tmesh);
+  PMP::Face_location<TriangleMesh, FT> end_loc = PMP::to_face_location(cycle.back(), tmesh);
+
+  straighten_cycle_impl(start_loc, end_loc, initial_path, tmesh, edge_locations, np);
+}
+
 
 } // namespace Vector_graphics_on_surfaces
 } // namespace CGAL
