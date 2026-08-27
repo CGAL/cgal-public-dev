@@ -2,7 +2,7 @@
 # This is the CMake script for compiling a CGAL application.
 
 cmake_minimum_required(VERSION 3.12...3.31)
-project( Splat_surface_reconstruction_3 )
+project( Splat_surface_reconstruction_3_Tests )
 
 find_package(CGAL REQUIRED)
 
