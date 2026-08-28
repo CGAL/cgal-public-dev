@@ -13,7 +13,7 @@
 \cgalPkgManuals{Chapter_Splat_Surface_Reconstruction,PkgSplatSurfaceReconstruction3Ref}
 \cgalPkgSummaryEnd
 \cgalPkgShortInfoBegin
-\cgalPkgSince{3.5}
+\cgalPkgSince{6.4}
 \cgalPkgDependsOn{\ref PkgSolverInterface}
 \cgalPkgBib{cgal:js-ssr}
 \cgalPkgLicense{\ref licensesGPL "GPL"}

@@ -1069,24 +1069,26 @@ namespace CGAL {
    *
    * @tparam PointRange  Input point range type.
    * @tparam NormalRange Input normal range type.
-   * @tparam PolygonMesh Output mesh type.
+   * @tparam TriangleMesh Output mesh type model of `HalfedgeListGraph`, `FaceListGraph`, and `MutableFaceGraph`
   */
-  template <typename PointRange, typename NormalRange, typename PolygonMesh>
+  template <typename PointRange, typename NormalRange, typename TriangleMesh>
   class Splat_surface_reconstruction_3 {
     public:
       using Point_3 = typename PointRange::value_type;
       using Kernel = typename Kernel_traits<Point_3>::Kernel;
       using Vector_3 = typename Kernel::Vector_3;
-      using Vector_2 = typename Kernel::Vector_2;
-      using Point_2  = typename Kernel::Point_2;
       using FT = typename Kernel::FT;
       using Grid = Box_grid<Kernel>;
       using Index = typename Grid::Index;
 
-      using vertex_descriptor = typename boost::graph_traits<PolygonMesh>::vertex_descriptor;
-      using edge_descriptor = typename boost::graph_traits<PolygonMesh>::edge_descriptor;
-      using halfedge_descriptor = typename boost::graph_traits<PolygonMesh>::halfedge_descriptor;
-      using face_descriptor = typename boost::graph_traits<PolygonMesh>::face_descriptor;
+    private:
+      using Vector_2 = typename Kernel::Vector_2;
+      using Point_2  = typename Kernel::Point_2;
+
+      using vertex_descriptor = typename boost::graph_traits<TriangleMesh>::vertex_descriptor;
+      using edge_descriptor = typename boost::graph_traits<TriangleMesh>::edge_descriptor;
+      using halfedge_descriptor = typename boost::graph_traits<TriangleMesh>::halfedge_descriptor;
+      using face_descriptor = typename boost::graph_traits<TriangleMesh>::face_descriptor;
 
       struct Candidate {
       Point_3 position;
@@ -1108,6 +1110,7 @@ namespace CGAL {
           second(second) {}
       };
 
+    public:
       /**
        * @brief Constructs a reconstruction object and initializes mesh properties.
        *
@@ -1117,7 +1120,7 @@ namespace CGAL {
        * @param grid Spatial grid containing input points, normals, and splat sizes.
        * @param output_mesh Mesh receiving the reconstructed surface.
       */
-      Splat_surface_reconstruction_3(const Grid& grid, PolygonMesh& output_mesh)
+      Splat_surface_reconstruction_3(const Grid& grid, TriangleMesh& output_mesh)
       : grid_(grid),
         mesh_(output_mesh),
         points_pm_(get(CGAL::vertex_point, mesh_)) {
@@ -1481,10 +1484,10 @@ namespace CGAL {
         set_target(h_vavb, vb, mesh_);
         set_target(h_vbva, va, mesh_);
 
-        if (halfedge(va, mesh_) == boost::graph_traits<PolygonMesh>::null_halfedge()) {
+        if (halfedge(va, mesh_) == boost::graph_traits<TriangleMesh>::null_halfedge()) {
           set_halfedge(va, h_vbva, mesh_);
         }
-        if (halfedge(vb, mesh_) == boost::graph_traits<PolygonMesh>::null_halfedge()) {
+        if (halfedge(vb, mesh_) == boost::graph_traits<TriangleMesh>::null_halfedge()) {
           set_halfedge(vb, h_vavb, mesh_);
         }
 
@@ -1515,7 +1518,7 @@ namespace CGAL {
                       vertex_descriptor v1,
                       vertex_descriptor nv,
                       const Vector_3& normal) {
-        const auto null_h = boost::graph_traits<PolygonMesh>::null_halfedge();
+        const auto null_h = boost::graph_traits<TriangleMesh>::null_halfedge();
         const double two_pi = 2.0 * std::acos(-1.0);
 
         const Point_3 p0 = get(points_pm_, v0);
@@ -1723,8 +1726,8 @@ namespace CGAL {
       */
       void fill_faces_from_next_cycles()
       {
-        const auto null_h = boost::graph_traits<PolygonMesh>::null_halfedge();
-        const auto null_f = boost::graph_traits<PolygonMesh>::null_face();
+        const auto null_h = boost::graph_traits<TriangleMesh>::null_halfedge();
+        const auto null_f = boost::graph_traits<TriangleMesh>::null_face();
 
         // Walk the current `next()` graph starting from an unassigned halfedge.
         for (halfedge_descriptor start : halfedges(mesh_)) {
@@ -2023,8 +2026,8 @@ namespace CGAL {
       */
       bool commit_ear_step(std::vector<halfedge_descriptor>& cycle,
                           std::size_t ear_pos) {
-        const auto null_h = boost::graph_traits<PolygonMesh>::null_halfedge();
-        const auto null_f = boost::graph_traits<PolygonMesh>::null_face();
+        const auto null_h = boost::graph_traits<TriangleMesh>::null_halfedge();
+        const auto null_f = boost::graph_traits<TriangleMesh>::null_face();
 
         const std::size_t n = cycle.size();
         if (n < 3 || ear_pos >= n) {
@@ -2149,7 +2152,7 @@ namespace CGAL {
       */
       halfedge_descriptor find_halfedge(vertex_descriptor from,
                                         vertex_descriptor to) const {
-        const auto null_h = boost::graph_traits<PolygonMesh>::null_halfedge();
+        const auto null_h = boost::graph_traits<TriangleMesh>::null_halfedge();
 
         for (halfedge_descriptor h : halfedges_around_source(from, mesh_)) {
           if (target(h, mesh_) == to)
@@ -2289,7 +2292,7 @@ namespace CGAL {
                                                vertex_descriptor target_v) const {
 
         for (halfedge_descriptor h0 : halfedges_around_source(start_v, mesh_)) {
-          if (h0 == boost::graph_traits<PolygonMesh>::null_halfedge()) {
+          if (h0 == boost::graph_traits<TriangleMesh>::null_halfedge()) {
             return false;
           }
 
@@ -2303,7 +2306,7 @@ namespace CGAL {
             }
 
             const halfedge_descriptor n = next(h, mesh_);
-            if (n == boost::graph_traits<PolygonMesh>::null_halfedge()) {
+            if (n == boost::graph_traits<TriangleMesh>::null_halfedge()) {
               return false;
             }
 
@@ -2352,15 +2355,15 @@ namespace CGAL {
 
     private:
       const Grid& grid_;
-      PolygonMesh& mesh_;
+      TriangleMesh& mesh_;
 
-      typename PolygonMesh:: template Property_map<vertex_descriptor,Point_3> points_pm_;
-      typename PolygonMesh:: template Property_map<vertex_descriptor,Vector_3> normals_pm_;
+      typename TriangleMesh:: template Property_map<vertex_descriptor,Point_3> points_pm_;
+      typename TriangleMesh:: template Property_map<vertex_descriptor,Vector_3> normals_pm_;
 
-      typename PolygonMesh::template Property_map<edge_descriptor, FT> edge_weight_pm_;
+      typename TriangleMesh::template Property_map<edge_descriptor, FT> edge_weight_pm_;
 
-      vertex_descriptor v0_{boost::graph_traits<PolygonMesh>::null_vertex()};
-      vertex_descriptor v1_{boost::graph_traits<PolygonMesh>::null_vertex()};
+      vertex_descriptor v0_{boost::graph_traits<TriangleMesh>::null_vertex()};
+      vertex_descriptor v1_{boost::graph_traits<TriangleMesh>::null_vertex()};
       bool seeded_ = false;
 
       static constexpr int NUM_PRIORITIES = 3; // 0 is lowest, NUM_PRIORITIES-1 is highest
