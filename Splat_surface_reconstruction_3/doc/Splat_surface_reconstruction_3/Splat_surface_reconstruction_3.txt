@@ -5,20 +5,15 @@ namespace CGAL {
 \anchor Chapter_Splat_Surface_Reconstruction
 \cgalAutoToc
 
-\authors Pranav Jain, Martin Skrodzki, Andreas Fabri
+\authors Pranav Jain, Martin Skrodzki
 
 \section Splat_surface_reconstruction_3Introduction Introduction
 
 This \cgal component implements a splat-based surface reconstruction method
-for oriented point clouds. The input consists of a set of three-dimensional
+for oriented point clouds \cgalCite{LIPSCHUTZ2026104010}. The input consists of a set of three-dimensional
 points together with consistently oriented normal vectors.
 
-The implementation is based on the method presented in:
 
-Henriette Lipschütz, Ulrich Reitebuch, Konrad Polthier, and Martin Skrodzki,
-<i>Feature-aware manifold meshing and remeshing of point clouds and
-polyhedral surfaces with guaranteed smallest edge length</i>,
-<a href="https://arxiv.org/abs/2305.07570">arXiv:2305.07570</a>.
 
 The reconstruction incrementally generates a polygonal surface from local
 splat information. The resolution of the reconstructed surface is controlled
@@ -112,43 +107,86 @@ different oriented point clouds.
 
 \subsection Splat_surface_reconstruction_3SmoothResults Smooth Surfaces
 
-\cgalFigureBegin{Splat_surface_reconstruction_3Kitten, kitten.png}
+
+\cgalFigureAnchor{Splat_surface_reconstruction_3Kitten}
+<center>
+<img src="kitten.png" style="max-width:80%;"/>
+</center>
+\cgalFigureCaptionBegin{Splat_surface_reconstruction_3Kitten}
 Reconstruction of the kitten model.
-\cgalFigureEnd
+\cgalFigureCaptionEnd
 
-\cgalFigureBegin{Splat_surface_reconstruction_3Shampoo Bottle, shampoo.png}
+\cgalFigureAnchor{Splat_surface_reconstruction_3Shampoo}
+<center>
+<img src="shampoo.png" style="max-width:80%;"/>
+</center>
+\cgalFigureCaptionBegin{Splat_surface_reconstruction_3Shampoo}
 Reconstruction of the shampoo bottle.
-\cgalFigureEnd
+\cgalFigureCaptionEnd
 
-\cgalFigureBegin{Splat_surface_reconstruction_3Cup, cup.png}
+\cgalFigureAnchor{Splat_surface_reconstruction_3Cup}
+<center>
+<img src="cup.png" style="max-width:80%;"/>
+</center>
+\cgalFigureCaptionBegin{Splat_surface_reconstruction_3Cup}
 Reconstruction of the cup model.
-\cgalFigureEnd
+\cgalFigureCaptionEnd
 
-\cgalFigureBegin{Splat_surface_reconstruction_3Toycat, toycat.png}
+
+
+\cgalFigureAnchor{Splat_surface_reconstruction_3Toycat}
+<center>
+<img src="toycat.png" style="max-width:80%;"/>
+</center>
+\cgalFigureCaptionBegin{Splat_surface_reconstruction_3Toycat}
 Reconstruction of the toycat model.
-\cgalFigureEnd
+\cgalFigureCaptionEnd
 
-\cgalFigureBegin{Splat_surface_reconstruction_3Duck, duck.png}
+
+\cgalFigureAnchor{Splat_surface_reconstruction_3Duck}
+<center>
+<img src="duck.png" style="max-width:80%;"/>
+</center>
+\cgalFigureCaptionBegin{Splat_surface_reconstruction_3Duck}
 Reconstruction of the duck model.
-\cgalFigureEnd
+\cgalFigureCaptionEnd
+
 
 \subsection Splat_surface_reconstruction_3SharpResults Sharp Features
 
-\cgalFigureBegin{Splat_surface_reconstruction_3Cube, cube.png}
-Reconstruction of a cube.\n
-\cgalFigureEnd
 
-\cgalFigureBegin{Splat_surface_reconstruction_3Fandisk, fandisk.png}
-Reconstruction of the fandisk model\n
-\cgalFigureEnd
+\cgalFigureAnchor{Splat_surface_reconstruction_3Cube}
+<center>
+<img src="cube.png" style="max-width:80%;"/>
+</center>
+\cgalFigureCaptionBegin{Splat_surface_reconstruction_3Cube}
+Reconstruction of a cube.
+\cgalFigureCaptionEnd
 
-\cgalFigureBegin{Splat_surface_reconstruction_3Wrench, wrench.png}
-Reconstruction of the wrench model.\n
-\cgalFigureEnd
 
-The CGAL implementation was developed by **Pranav Jain** as part of
-**Google Summer of Code 2026**, under the guidance of **Martin Skrodzki**
-and **Andreas Fabri**.
+\cgalFigureAnchor{Splat_surface_reconstruction_3Fandisk}
+<center>
+<img src="fandisk.png" style="max-width:80%;"/>
+</center>
+\cgalFigureCaptionBegin{Splat_surface_reconstruction_3Fandisk}
+Reconstruction of the fandisk model.
+\cgalFigureCaptionEnd
+
+
+\cgalFigureAnchor{Splat_surface_reconstruction_3Wrench}
+<center>
+<img src="wrench.png" style="max-width:80%;"/>
+</center>
+\cgalFigureCaptionBegin{Splat_surface_reconstruction_3Wrench}
+Reconstruction of the wrench model.
+\cgalFigureCaptionEnd
+
+
+\section Splat_surface_reconstruction_history Design and Implementation History
+
+The \cgal implementation was developed by Pranav Jain as part of
+<em>Google Summer of Code 2026</em>, mentored by Martin Skrodzki
+and Andreas Fabri.
 
 The implementation adapts the method to CGAL data structures and algorithms,
 including CGAL polygon meshes, halfedge connectivity, two-dimensional

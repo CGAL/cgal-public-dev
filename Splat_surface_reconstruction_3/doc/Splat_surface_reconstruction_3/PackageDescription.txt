@@ -8,7 +8,7 @@
 \cgalPkgDescriptionBegin{Splat Surface Reconstruction,PkgSplatSurfaceReconstruction3}
 \cgalPkgPicture{splat_surface_reconstruction_detail.png}
 \cgalPkgSummaryBegin
-\cgalPkgAuthors{Pranav Jain, and Martin Skrodzki}
+\cgalPkgAuthors{Pranav Jain and Martin Skrodzki}
 \cgalPkgDesc{This package implements a surface reconstruction method: Splat Surface Reconstruction. It takes as input a set of points with oriented normals and computes an implicit function. The \cgal surface mesh generator can then be used to extract an iso-surface from this function.  }
 \cgalPkgManuals{Chapter_Splat_Surface_Reconstruction,PkgSplatSurfaceReconstruction3Ref}
 \cgalPkgSummaryEnd
