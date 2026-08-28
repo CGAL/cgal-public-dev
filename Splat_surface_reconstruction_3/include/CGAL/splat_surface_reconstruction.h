@@ -38,37 +38,6 @@
 namespace CGAL {
 
   /**
-   * @brief Runs splat surface reconstruction on an input point cloud.
-   *
-   * This is the public reconstruction entry point. The current implementation
-   * delegates the actual reconstruction work to the internal reconstruction
-   * pipeline.
-   *
-   * @tparam PointRange  Range of input 3D points.
-   * @tparam NormalRange Range of input point normals.
-   * @tparam PolygonMesh Mutable polygon mesh receiving the reconstruction.
-   *
-   * @param points        Input point positions.
-   * @param normals       Input point normals.
-   * @param output_mesh   Output polygon mesh.
-   * @param spacing       Global reconstruction spacing parameter.
-   *
-   * @return `true` if reconstruction succeeds, `false` otherwise.
-   */
-  template <typename PointRange,typename NormalRange, typename PolygonMesh>
-  bool Splat_surface_reconstruction(const PointRange& points,
-                                    const NormalRange& normals,
-                                    PolygonMesh& output_mesh,
-                                    double spacing) {
-    typedef typename PointRange::value_type Point;
-    typedef typename Kernel_traits<Point>::Kernel Kernel;
-    typedef typename Kernel::Sphere_3 Sphere;
-    typedef typename Kernel::FT FT;
-
-    return true;
-  }
-
-  /**
    * @brief Dense axis-aligned box grid over a fixed 3D domain.
    *
    * The grid stores points and accumulated normals per cell. It is used as a
