@@ -23,13 +23,13 @@ class Splat   // (could be property of CGAL point set)
   - int id  // the id matches the center point id
   - Vec3 center // not needed
   - Vec3 normal // not needed
-  - float radius 
+  - float radius
   - bool contains(Vec3 x)
   - Vec3 generateCandidates(Vec3 parentA, Vec3 parentB, float targetEdgeLength)
 
 Used for BoxGrid data structure (Use full grid)
 class Box
-  - normal 
+  - normal
   - position (center of box)
   - Vec3 computeBoxNormal(BoxId b) const
 

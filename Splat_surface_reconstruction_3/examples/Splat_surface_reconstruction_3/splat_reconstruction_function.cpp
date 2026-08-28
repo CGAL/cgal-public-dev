@@ -227,7 +227,7 @@ int main(int argc, char* argv[]) {
 
   CGAL::Splat_surface_reconstruction_3<std::vector<Point>, std::vector<Vector_3>, Polyhedron> reconstruction(grid, output_mesh);
   reconstruction.run();
-  
+
   CGAL::IO::write_polygon_mesh("mesh.ply", output_mesh);
   std::cout << "Reconstructed mesh written to mesh.ply" << std::endl;
 

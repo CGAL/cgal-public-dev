@@ -91,7 +91,7 @@ bool test_circle_splat_intersection_exact()
       std::abs(std::abs(z0) - expected) < eps &&
       std::abs(std::abs(z1) - expected) < eps;
 
-  
+
 
   if (pass) {
     std::cout << "PASSED\n";
@@ -142,6 +142,6 @@ bool test_circle_splat_intersection_exact()
 int main(int argc, char* argv[]) {
   test_circle_splat_intersection_exact();
 
-  
+
   return EXIT_SUCCESS;
 }
