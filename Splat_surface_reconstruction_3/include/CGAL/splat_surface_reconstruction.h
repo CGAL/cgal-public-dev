@@ -102,7 +102,7 @@ namespace CGAL {
      *         are outside the grid.
      */
     const Cell* cell(int ix, int iy, int iz) const {
-      if (!valid_coords(ix, iy, iz)) {
+      if (!valid_coordinates(ix, iy, iz)) {
         return nullptr;
       }
       return &cells_[flat_index(ix, iy, iz)];
@@ -259,7 +259,7 @@ namespace CGAL {
 
     for (Index i = 0; i < points_.size(); ++i) {
       int cx, cy, cz;
-      if (!to_grid_coords(points_[i], cx, cy, cz)) {
+      if (!to_grid_coordinates(points_[i], cx, cy, cz)) {
         std::cerr << "Warning: point " << i << " is out of grid bounds, skipping splat size estimation.\n";
         std::exit(EXIT_FAILURE);
       }
@@ -358,7 +358,7 @@ namespace CGAL {
                 int ny = static_cast<int>(iy) + dy;
                 int nz = static_cast<int>(iz) + dz;
 
-                if (!valid_coords(nx, ny, nz))
+                if (!valid_coordinates(nx, ny, nz))
                   continue;
 
                 const Cell& c = cells_[flat_index(nx, ny, nz)];
@@ -502,7 +502,7 @@ namespace CGAL {
       std::vector<Index> ids;
 
       int cx, cy, cz;
-      if (!to_grid_coords(p, cx, cy, cz)) {
+      if (!to_grid_coordinates(p, cx, cy, cz)) {
         return ids;
       }
 
@@ -698,7 +698,7 @@ namespace CGAL {
     Vector_3 box_normal(const Point_3& p) const {
       int ix, iy, iz;
 
-      if (!to_grid_coords(p, ix, iy, iz))
+      if (!to_grid_coordinates(p, ix, iy, iz))
           return CGAL::NULL_VECTOR;
 
       return block_normals_[flat_index(ix,iy,iz)];
@@ -714,7 +714,7 @@ namespace CGAL {
      *
      * @return `true` if the point is inside the grid.
     */
-    bool to_grid_coords(const Point_3& p, int& ix, int& iy, int& iz) const {
+    bool to_grid_coordinates(const Point_3& p, int& ix, int& iy, int& iz) const {
 
       const double h = CGAL::to_double(box_size_);
 
@@ -743,7 +743,7 @@ namespace CGAL {
       iy = (std::min)(iy, static_cast<int>(ny_) - 1);
       iz = (std::min)(iz, static_cast<int>(nz_) - 1);
 
-      return valid_coords(ix, iy, iz);
+      return valid_coordinates(ix, iy, iz);
     }
 
     /**
@@ -770,7 +770,7 @@ namespace CGAL {
      *
      * @return `true` if the coordinates lie inside the grid.
      */
-    bool valid_coords(int ix, int iy, int iz) const {
+    bool valid_coordinates(int ix, int iy, int iz) const {
       return ix >= 0 && iy >= 0 && iz >= 0 &&
             static_cast<std::size_t>(ix) < nx_ &&
             static_cast<std::size_t>(iy) < ny_ &&
@@ -820,7 +820,7 @@ namespace CGAL {
      */
     void insert(Index point_id, const Point_3& p, const Vector_3& n) {
       int ix, iy, iz;
-      if (!to_grid_coords(p, ix, iy, iz)) {
+      if (!to_grid_coordinates(p, ix, iy, iz)) {
         return;
       }
 
@@ -1223,7 +1223,7 @@ namespace CGAL {
 
         const Point_3& p = get(points_pm_, vd);
 
-        if (!grid_.to_grid_coords(p, ix, iy, iz))
+        if (!grid_.to_grid_coordinates(p, ix, iy, iz))
             return;
 
         mesh_vertices_per_cell_[grid_.flat_index(ix, iy, iz)].push_back(vd);
@@ -1242,7 +1242,7 @@ namespace CGAL {
 
         int cx, cy, cz;
 
-        if (!grid_.to_grid_coords(p, cx, cy, cz))
+        if (!grid_.to_grid_coordinates(p, cx, cy, cz))
           return out;
 
         const int r = (std::max)(
@@ -1252,7 +1252,7 @@ namespace CGAL {
         for (int dx = -r; dx <= r; ++dx)
           for (int dy = -r; dy <= r; ++dy)
             for (int dz = -r; dz <= r; ++dz) {
-              if (!grid_.valid_coords(cx + dx, cy + dy, cz + dz))
+              if (!grid_.valid_coordinates(cx + dx, cy + dy, cz + dz))
                 continue;
 
               const auto& cell = mesh_vertices_per_cell_[grid_.flat_index(cx + dx, cy + dy, cz + dz)];
