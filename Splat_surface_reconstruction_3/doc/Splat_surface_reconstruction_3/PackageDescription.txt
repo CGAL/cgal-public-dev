@@ -24,6 +24,7 @@
 \cgalClassifedRefPages
 \cgalCRPSection{Classes}
 - `CGAL::Splat_surface_reconstruction_3`
+- `CGAL::Box_grid`
 
 */
 

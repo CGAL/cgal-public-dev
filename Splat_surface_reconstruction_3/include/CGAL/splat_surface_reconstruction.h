@@ -115,16 +115,15 @@ namespace CGAL {
      *
      * @param box_size Cell side length.
      * @param min_x Minimum x-coordinate of the grid.
-     * @param max_x Maximum x-coordinate of the grid.
      * @param min_y Minimum y-coordinate of the grid.
-     * @param max_y Maximum y-coordinate of the grid.
      * @param min_z Minimum z-coordinate of the grid.
+     * @param max_x Maximum x-coordinate of the grid.
+     * @param max_y Maximum y-coordinate of the grid.
      * @param max_z Maximum z-coordinate of the grid.
     */
     Box_grid(FT box_size,
-             FT min_x, FT max_x,
-             FT min_y, FT max_y,
-             FT min_z, FT max_z)
+             FT min_x, FT min_y, min_z,
+             FT max_x, FT max_y, FT max_z)
      : box_size_(box_size),
        min_x_(min_x), max_x_(max_x), min_y_(min_y),
        max_y_(max_y), min_z_(min_z), max_z_(max_z) {

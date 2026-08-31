@@ -32,9 +32,8 @@ bool test_circle_splat_intersection_exact()
   // Create a dummy grid.
   Grid grid(
       FT(1.0),
-      FT(-2.0), FT(2.0),
-      FT(-2.0), FT(2.0),
-      FT(-2.0), FT(2.0));
+      FT(-2.0), FT(-2.0), FT(-2.0),
+      FT(2.0), T(2.0), FT(2.0));
 
   const Point parent_a(-0.5, 0.0, 0.0);
   const Point parent_b( 0.5, 0.0, 0.0);

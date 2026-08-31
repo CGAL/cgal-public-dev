@@ -208,9 +208,8 @@ int main(int argc, char* argv[]) {
   // const FT padding = 1e-8;
   // Build the grid and insert points + normals.
   CGAL::Box_grid<Kernel> grid{FT(edge_length),
-                              FT(bbox.xmin()-padding), FT(bbox.xmax()+padding),
-                              FT(bbox.ymin()-padding), FT(bbox.ymax()+padding),
-                              FT(bbox.zmin()-padding), FT(bbox.zmax()+padding)}; // initialize grid with cell size equal to average spacing and bounding box [-1,1]^3
+                              FT(bbox.xmin()-padding), FT(bbox.ymin()-padding), FT(bbox.zmin()-padding),
+                              FT(bbox.xmax()+padding), FT(bbox.ymax()+padding), FT(bbox.zmax()+padding)}; // initialize grid with cell size equal to average spacing and bounding box [-1,1]^3
   grid.build(points, normals); // insert points and normals into the grid
 
   std::cout<<"Computing block normals..." << std::endl;
