@@ -1406,10 +1406,7 @@ namespace CGAL {
 
         FT search_radius = circle_r + grid_.get_max_splat_radius();
 
-        const Point_3 mid = Point_3(
-          (pa.x() + pb.x()) / FT(2),
-          (pa.y() + pb.y()) / FT(2),
-          (pa.z() + pb.z()) / FT(2));
+        const Point_3 mid = midpoint(pa, pb);
 
         std::vector<Index> nearby = grid_.nearby_point_ids(mid, search_radius);
 
@@ -1514,9 +1511,9 @@ namespace CGAL {
        *         otherwise.
       */
       bool build_graph(vertex_descriptor v0,
-                      vertex_descriptor v1,
-                      vertex_descriptor nv,
-                      const Vector_3& normal) {
+                       vertex_descriptor v1,
+                       vertex_descriptor nv,
+                       const Vector_3& normal) {
         const auto null_h = boost::graph_traits<TriangleMesh>::null_halfedge();
         const double two_pi = 2.0 * std::acos(-1.0);
 
