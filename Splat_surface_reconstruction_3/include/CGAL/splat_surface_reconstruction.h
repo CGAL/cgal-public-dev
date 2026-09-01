@@ -122,7 +122,7 @@ namespace CGAL {
      * @param max_z Maximum z-coordinate of the grid.
     */
     Box_grid(FT box_size,
-             FT min_x, FT min_y, min_z,
+             FT min_x, FT min_y, FT min_z,
              FT max_x, FT max_y, FT max_z)
      : box_size_(box_size),
        min_x_(min_x), max_x_(max_x), min_y_(min_y),
