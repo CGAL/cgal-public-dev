@@ -2021,7 +2021,7 @@ namespace CGAL {
        * @return `true` if the ear was successfully committed.
       */
       bool commit_ear_step(std::vector<halfedge_descriptor>& cycle,
-                          std::size_t ear_pos) {
+                           std::size_t ear_pos) {
         const auto null_h = boost::graph_traits<TriangleMesh>::null_halfedge();
         const auto null_f = boost::graph_traits<TriangleMesh>::null_face();
 
@@ -2082,8 +2082,8 @@ namespace CGAL {
         // The diagonal must not already exist. Existing diagonals indicate that the
         // polygon has already been split topologically and cannot be treated as a
         // simple ear insertion.
-        halfedge_descriptor temp = find_halfedge(a, c);
-        if (temp != null_h) {
+        bool found  = halfedge(a, c, mesh_).second;
+        if (found) {
           return false;
         }
 
@@ -2139,26 +2139,6 @@ namespace CGAL {
       }
 
       /**
-       * @brief Finds an oriented halfedge from one vertex to another.
-       *
-       * @param from Source vertex.
-       * @param to Target vertex.
-       *
-       * @return Halfedge `from -> to`, or the null halfedge if none exists.
-      */
-      halfedge_descriptor find_halfedge(vertex_descriptor from,
-                                        vertex_descriptor to) const {
-        const auto null_h = boost::graph_traits<TriangleMesh>::null_halfedge();
-
-        for (halfedge_descriptor h : halfedges_around_source(from, mesh_)) {
-          if (target(h, mesh_) == to)
-            return h;
-        }
-
-        return null_h;
-      }
-
-      /**
        * @brief Tests whether two 2D segments intersect in their interiors.
        *
        * Endpoint touching is not considered a strict intersection. When
@@ -2211,7 +2191,7 @@ namespace CGAL {
        *
        * @return `true` when the candidate passes the local intersection test.
       */
-      bool projection_check(const Candidate& cand, const Vector_3 n) const {
+      bool projection_check(const Candidate& cand, const Vector_3& n) const {
         CGAL_assertion(n != CGAL::NULL_VECTOR);
 
         const Point_3 pa = get(points_pm_, cand.first);
@@ -2259,18 +2239,6 @@ namespace CGAL {
         }
 
         return true;
-      }
-
-      /**
-       * @brief Returns the number of halfedges incident to a vertex.
-       *
-       * @param v Vertex whose degree is queried.
-       *
-       * @return Number of incident halfedges.
-      */
-      std::size_t incident_vertex_degree(vertex_descriptor v) const {
-        std::size_t deg = halfedges_around_source(v, mesh_).size();
-        return deg;
       }
 
       /**
@@ -2338,7 +2306,7 @@ namespace CGAL {
       */
       int compute_priority(const Candidate& cand) const {
 
-        if (incident_vertex_degree(cand.first) == 1 || incident_vertex_degree(cand.second) == 1) {
+        if (out_degree(cand.first, mesh_) == 1 || out_degree(cand.second, mesh_) == 1) {
           return 2; // highest priority
         }
 
