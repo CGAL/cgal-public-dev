@@ -16,6 +16,10 @@
 #include <CGAL/license/Vector_graphics_on_surfaces.h>
 
 #include <CGAL/Polygon_mesh_processing/locate.h>
+#include <CGAL/Polygon_mesh_processing/measure.h>
+
+#include <cmath>
+#include <unordered_map>
 
 namespace CGAL {
 namespace Vector_graphics_on_surfaces {
@@ -304,6 +308,88 @@ get_total_angle(const typename boost::graph_traits<TriangleMesh>::vertex_descrip
   }
 
   return theta;
+}
+
+// Intrinsic (edge-length-based) quantities for the exact-geodesic-loop
+// algorithm. Unlike get_total_angle() above (approximate, in degrees, via 3D
+// vector angles), these are exact -- law of cosines on edge lengths only,
+// never 3D coordinates directly -- and return radians, so they can be
+// compared directly against CGAL_PI. Each takes a cache owned by the caller
+// and keyed by halfedge/vertex descriptor, filled lazily on first access:
+// memory and compute stay proportional to what is actually visited, not to
+// the whole mesh.
+
+template <class GT, class TriangleMesh, class VertexPointMap>
+typename GT::FT
+edge_length(const typename boost::graph_traits<TriangleMesh>::halfedge_descriptor& h,
+           std::unordered_map<typename boost::graph_traits<TriangleMesh>::halfedge_descriptor, typename GT::FT>& length_cache,
+           const VertexPointMap &vpm,
+           const TriangleMesh &mesh)
+{
+  auto it = length_cache.find(h);
+  if (it != length_cache.end())
+    return it->second;
+
+  // force the same Kernel/vpm as the rest of the algorithm -- otherwise
+  // Polygon_mesh_processing::edge_length() would silently re-deduce its own
+  // from TriangleMesh's point type instead of using GT.
+  typename GT::FT len = CGAL::Polygon_mesh_processing::edge_length(
+      h, mesh, CGAL::parameters::vertex_point_map(vpm).geom_traits(GT()));
+  length_cache.emplace(h, len);
+  return len;
+}
+
+// angle at target(h), within face(h) -- radians.
+template <class GT, class TriangleMesh, class VertexPointMap>
+typename GT::FT
+corner_angle(const typename boost::graph_traits<TriangleMesh>::halfedge_descriptor& h,
+            std::unordered_map<typename boost::graph_traits<TriangleMesh>::halfedge_descriptor, typename GT::FT>& angle_cache,
+            std::unordered_map<typename boost::graph_traits<TriangleMesh>::halfedge_descriptor, typename GT::FT>& length_cache,
+            const VertexPointMap &vpm,
+            const TriangleMesh &mesh)
+{
+  auto it = angle_cache.find(h);
+  if (it != angle_cache.end())
+    return it->second;
+
+  typename GT::FT l1 = edge_length<GT>(h, length_cache, vpm, mesh);
+  typename GT::FT l2 = edge_length<GT>(next(h, mesh), length_cache, vpm, mesh);
+  typename GT::FT l3 = edge_length<GT>(prev(h, mesh), length_cache, vpm, mesh);
+
+  typename GT::FT cos_angle = (l1*l1 + l2*l2 - l3*l3) / (2*l1*l2);
+  cos_angle = std::clamp(cos_angle, typename GT::FT(-1), typename GT::FT(1));
+  // acos has no Kernel-level equivalent (transcendental, never exact even
+  // with an exact Kernel) -- go through CGAL::to_double() explicitly rather
+  // than assume FT converts implicitly to double, same spirit as
+  // CGAL::approximate_sqrt() above for edge_length().
+  typename GT::FT angle = typename GT::FT(std::acos(CGAL::to_double(cos_angle)));
+  angle_cache.emplace(h, angle);
+  return angle;
+}
+
+// sum of corner angles around vid's full 1-ring -- radians.
+// pre: vid is not a border vertex (same assumption as get_total_angle() above).
+template <class GT, class TriangleMesh, class VertexPointMap>
+typename GT::FT
+theta(const typename boost::graph_traits<TriangleMesh>::vertex_descriptor& vid,
+     std::unordered_map<typename boost::graph_traits<TriangleMesh>::vertex_descriptor, typename GT::FT>& theta_cache,
+     std::unordered_map<typename boost::graph_traits<TriangleMesh>::halfedge_descriptor, typename GT::FT>& angle_cache,
+     std::unordered_map<typename boost::graph_traits<TriangleMesh>::halfedge_descriptor, typename GT::FT>& length_cache,
+     const VertexPointMap &vpm,
+     const TriangleMesh &mesh)
+{
+  auto it = theta_cache.find(vid);
+  if (it != theta_cache.end())
+    return it->second;
+
+  using halfedge_descriptor = typename boost::graph_traits<TriangleMesh>::halfedge_descriptor;
+
+  typename GT::FT total(0);
+  for (halfedge_descriptor h : CGAL::halfedges_around_target(vid, mesh))
+    total += corner_angle<GT>(h, angle_cache, length_cache, vpm, mesh);
+
+  theta_cache.emplace(vid, total);
+  return total;
 }
 
 template <class GT, class TriangleMesh, class VertexPointMap>
