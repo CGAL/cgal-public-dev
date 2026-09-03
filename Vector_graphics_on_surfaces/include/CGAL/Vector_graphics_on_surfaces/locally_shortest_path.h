@@ -253,7 +253,8 @@ struct Locally_shortest_path_imp
 
   static
   std::vector<FT>
-  funnel(const std::vector< std::array<Vector_2, 2>>& portals, std::size_t& max_index)
+  funnel(const std::vector< std::array<Vector_2, 2>>& portals, std::size_t& max_index,
+        std::vector<funnel_point>* out_points = nullptr)
   {
     // Find straight path.
     Vector_2 start(NULL_VECTOR);
@@ -378,6 +379,7 @@ struct Locally_shortest_path_imp
     }
     max_index = max_curvature_point(points);
     // assert(lerps.size() == portals.size() - 1);
+    if (out_points) *out_points = points;
     return lerps;
   }
   static
