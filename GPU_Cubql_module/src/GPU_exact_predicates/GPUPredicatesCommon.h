@@ -10,6 +10,106 @@
 #define CUBQL_CUDA_CALL(X) { cudaError_t err = cuda ## X; if(err != cudaSuccess) { printf("CUDA Error at %s:%d\n", __FILE__, __LINE__); } }
 #endif
 
+#ifdef __SIZEOF_INT128__
+
+using uint128_t = unsigned __int128;
+using int128_t = __int128;
+
+#else
+
+struct uint128_t {
+  uint64_t lo;
+  uint64_t hi;
+
+  // CUDA-compatible operators/functions
+  __host__ __device__ uint128_t() {}
+  __host__ __device__ uint128_t(int64_t) {}
+  __host__ __device__ uint128_t(uint64_t) {}
+  __host__ __device__ uint128_t(int) {}
+  __host__ __device__ uint128_t(unsigned int) {}
+  __host__ __device__ operator uint64_t() const { return uint64_t(); }
+
+  __host__ __device__ bool operator<(uint128_t other) const { return false; }
+  __host__ __device__ bool operator<=(uint128_t other) const { return false; }
+  __host__ __device__ bool operator>(uint128_t other) const { return false; }
+  __host__ __device__ bool operator>=(uint128_t other) const { return false; }
+  __host__ __device__ uint128_t operator*(uint128_t other) const { return { 0 }; }
+  __host__ __device__ uint128_t operator/(uint128_t other) const { return { 0 }; }
+  __host__ __device__ uint128_t operator+(uint128_t other) const { return { 0 }; }
+  __host__ __device__ uint128_t operator-(uint128_t other) const { return { 0 }; }
+  __host__ __device__ uint128_t operator*=(uint128_t other) const { return { 0 }; }
+  __host__ __device__ uint128_t operator/=(uint128_t other) const { return { 0 }; }
+  __host__ __device__ uint128_t operator+=(uint128_t other) const { return { 0 }; }
+  __host__ __device__ uint128_t operator-=(uint128_t other) const { return { 0 }; }
+  __host__ __device__ uint128_t operator<<(uint128_t other) const { return { 0 }; }
+  //__host__ __device__ uint128_t operator>>(uint128_t other) const { return { 0 }; }
+
+/*
+  __host__ __device__ bool operator<(uint64_t other) const { return false; }
+  __host__ __device__ bool operator<=(uint64_t other) const { return false; }
+  __host__ __device__ bool operator>(uint64_t other) const { return false; }
+  __host__ __device__ bool operator>=(uint64_t other) const { return false; }
+  __host__ __device__ uint128_t operator*(uint64_t other) const { return { 0 }; }
+  __host__ __device__ uint128_t operator/(uint64_t other) const { return { 0 }; }
+  __host__ __device__ uint128_t operator+(uint64_t other) const { return { 0 }; }
+  __host__ __device__ uint128_t operator-(uint64_t other) const { return { 0 }; }
+  __host__ __device__ uint128_t operator*=(uint64_t other) const { return { 0 }; }
+  __host__ __device__ uint128_t operator/=(uint64_t other) const { return { 0 }; }
+  __host__ __device__ uint128_t operator+=(uint64_t other) const { return { 0 }; }
+  __host__ __device__ uint128_t operator-=(uint64_t other) const { return { 0 }; }*/
+};
+
+struct int128_t {
+  uint64_t lo;
+  int64_t  hi;
+
+  // CUDA-compatible operators/functions
+  //int128_t(const int128_t) {}
+  __host__ __device__ int128_t() {}
+  __host__ __device__ int128_t(int64_t) {}
+  __host__ __device__ operator uint64_t() const { return uint64_t(); }
+  //int128_t(uint64_t) {}
+
+  __host__ __device__ bool operator<(int128_t other) const { return false; }
+  //__host__ __device__ bool operator<(int other) const { return false; }
+  __host__ __device__ bool operator<=(int128_t other) const { return false; }
+  __host__ __device__ bool operator>(int128_t other) const { return false; }
+  __host__ __device__ bool operator>=(int128_t other) const { return false; }
+  __host__ __device__ bool operator==(int128_t other) const { return false; }
+  __host__ __device__ bool operator==(int other) const { return false; }
+  __host__ __device__ bool operator!=(int128_t other) const { return false; }
+  __host__ __device__ int128_t operator*(int128_t other) const { return { 0 }; }
+  __host__ __device__ int128_t operator/(int128_t other) const { return { 0 }; }
+  __host__ __device__ int128_t operator+(int128_t other) const { return { 0 }; }
+  __host__ __device__ int128_t operator-(int128_t other) const { return { 0 }; }
+  __host__ __device__ int128_t operator+() const { return { 0 }; }
+  __host__ __device__ int128_t operator-() const { return { 0 }; }
+  __host__ __device__ int128_t operator*=(int128_t other) const { return { 0 }; }
+  __host__ __device__ int128_t operator/=(int128_t other) const { return { 0 }; }
+  __host__ __device__ int128_t operator+=(int128_t other) const { return { 0 }; }
+  __host__ __device__ int128_t operator-=(int128_t other) const { return { 0 }; }
+  __host__ __device__ int128_t operator<<(int128_t other) const { return { 0 }; }
+  __host__ __device__ int128_t operator>>(int128_t other) const { return { 0 }; }
+
+  /*
+    __host__ __device__ bool operator<(int64_t other) const { return false; }
+    __host__ __device__ bool operator<=(int64_t other) const { return false; }
+    __host__ __device__ bool operator>(int64_t other) const { return false; }
+    __host__ __device__ bool operator>=(int64_t other) const { return false; }
+    __host__ __device__ int128_t operator*(int64_t other) const { return { 0 }; }
+    __host__ __device__ int128_t operator/(int64_t other) const { return { 0 }; }
+    __host__ __device__ int128_t operator+(int64_t other) const { return { 0 }; }
+    __host__ __device__ int128_t operator-(int64_t other) const { return { 0 }; }
+    __host__ __device__ int128_t operator*=(int64_t other) const { return { 0 }; }
+    __host__ __device__ int128_t operator/=(int64_t other) const { return { 0 }; }
+    __host__ __device__ int128_t operator+=(int64_t other) const { return { 0 }; }
+    __host__ __device__ int128_t operator-=(int64_t other) const { return { 0 }; }*/
+};
+
+#endif
+
+
+
 // --------------------------------------------------------------------
 // INTERVAL ARITHMETIC & GEOMETRIC CLASS CONTEXT (DEVICE INTERNAL)
 // --------------------------------------------------------------------
@@ -18,16 +118,16 @@ struct GPUInterval {
     float hi;
 };
 
-__device__ inline GPUInterval interval_sub(float a, float b) { 
-    return { __fsub_rd(a, b), __fsub_ru(a, b) }; 
+__device__ inline GPUInterval interval_sub(float a, float b) {
+    return { __fsub_rd(a, b), __fsub_ru(a, b) };
 }
 
-__device__ inline GPUInterval interval_add(GPUInterval a, GPUInterval b) { 
-    return { __fadd_rd(a.lo, b.lo), __fadd_ru(a.hi, b.hi) }; 
+__device__ inline GPUInterval interval_add(GPUInterval a, GPUInterval b) {
+    return { __fadd_rd(a.lo, b.lo), __fadd_ru(a.hi, b.hi) };
 }
 
-__device__ inline GPUInterval interval_sub(GPUInterval a, GPUInterval b) { 
-    return { __fsub_rd(a.lo, b.hi), __fsub_ru(a.hi, b.lo) }; 
+__device__ inline GPUInterval interval_sub(GPUInterval a, GPUInterval b) {
+    return { __fsub_rd(a.lo, b.hi), __fsub_ru(a.hi, b.lo) };
 }
 
 __device__ inline GPUInterval interval_mul(GPUInterval a, GPUInterval b) {
@@ -39,8 +139,8 @@ __device__ inline GPUInterval interval_mul(GPUInterval a, GPUInterval b) {
 }
 
 __device__ inline int orient3d_interval(
-    const cuBQL::vec3f& p, const cuBQL::vec3f& q, 
-    const cuBQL::vec3f& r, const cuBQL::vec3f& s, float eps) 
+    const cuBQL::vec3f& p, const cuBQL::vec3f& q,
+    const cuBQL::vec3f& r, const cuBQL::vec3f& s, float eps)
 {
     GPUInterval pdx = interval_sub(p.x, s.x); GPUInterval pdy = interval_sub(p.y, s.y); GPUInterval pdz = interval_sub(p.z, s.z);
     GPUInterval qdx = interval_sub(q.x, s.x); GPUInterval qdy = interval_sub(q.y, s.y); GPUInterval qdz = interval_sub(q.z, s.z);
@@ -56,12 +156,12 @@ __device__ inline int orient3d_interval(
 
     if (det.lo > eps) return 1;
     if (det.hi < -eps) return -1;
-    return 0; 
+    return 0;
 }
 
 __device__ inline int edgeTriInterval(
     const cuBQL::vec3f &a, const cuBQL::vec3f &b,
-    const cuBQL::vec3f &p, const cuBQL::vec3f &q, const cuBQL::vec3f &r, float eps) 
+    const cuBQL::vec3f &p, const cuBQL::vec3f &q, const cuBQL::vec3f &r, float eps)
 {
     int s0 = orient3d_interval(p, q, r, a, eps);
     int s1 = orient3d_interval(p, q, r, b, eps);

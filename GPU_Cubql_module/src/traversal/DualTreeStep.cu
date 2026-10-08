@@ -3,6 +3,7 @@
 #include <thrust/scan.h>
 #include <thrust/execution_policy.h>
 #include <thrust/sort.h>
+#include <thrust/tuple.h>
 #include <thrust/unique.h>
 #include "cuBQL/bvh.h"
 
@@ -25,11 +26,11 @@ struct ZipToPairFunctor {
 // --------------------------------------------------------------------
 
 __global__ void countExpansionsKernel(
-    const DualFrontierPair* d_inFrontier, 
-    uint32_t frontierSize, 
+    const DualFrontierPair* d_inFrontier,
+    uint32_t frontierSize,
     int* d_childCounts,
-    cuBQL::bvh3f bvhA, 
-    cuBQL::bvh3f bvhB) 
+    cuBQL::bvh3f bvhA,
+    cuBQL::bvh3f bvhB)
 {
     uint32_t tid = threadIdx.x + blockIdx.x * blockDim.x;
     if (tid >= frontierSize) return;
@@ -56,14 +57,14 @@ __global__ void countExpansionsKernel(
         if (bvhA.nodes[al].bounds.overlaps(bvhB.nodes[br].bounds)) validChildren++;
         if (bvhA.nodes[ar].bounds.overlaps(bvhB.nodes[bl].bounds)) validChildren++;
         if (bvhA.nodes[ar].bounds.overlaps(bvhB.nodes[br].bounds)) validChildren++;
-    } 
-    else if (isLeafA) { 
+    }
+    else if (isLeafA) {
         uint32_t bl = nodeB.admin.offset; uint32_t br = bl + 1;
 
         if (nodeA.bounds.overlaps(bvhB.nodes[bl].bounds)) validChildren++;
         if (nodeA.bounds.overlaps(bvhB.nodes[br].bounds)) validChildren++;
-    } 
-    else { 
+    }
+    else {
         uint32_t al = nodeA.admin.offset; uint32_t ar = al + 1;
 
         if (bvhA.nodes[al].bounds.overlaps(nodeB.bounds)) validChildren++;
@@ -74,12 +75,12 @@ __global__ void countExpansionsKernel(
 }
 
 __global__ void populateFrontierKernel(
-    const DualFrontierPair* d_inFrontier, 
-    uint32_t frontierSize, 
-    const int* d_offsets, 
+    const DualFrontierPair* d_inFrontier,
+    uint32_t frontierSize,
+    const int* d_offsets,
     DualFrontierPair* d_outFrontier,
-    cuBQL::bvh3f bvhA, 
-    cuBQL::bvh3f bvhB) 
+    cuBQL::bvh3f bvhA,
+    cuBQL::bvh3f bvhB)
 {
     uint32_t tid = threadIdx.x + blockIdx.x * blockDim.x;
     if (tid >= frontierSize) return;
@@ -110,14 +111,14 @@ __global__ void populateFrontierKernel(
         if (bvhA.nodes[al].bounds.overlaps(bvhB.nodes[br].bounds)) push_pair(al, br);
         if (bvhA.nodes[ar].bounds.overlaps(bvhB.nodes[bl].bounds)) push_pair(ar, bl);
         if (bvhA.nodes[ar].bounds.overlaps(bvhB.nodes[br].bounds)) push_pair(ar, br);
-    } 
-    else if (isLeafA) { 
+    }
+    else if (isLeafA) {
         uint32_t bl = nodeB.admin.offset; uint32_t br = bl + 1;
 
         if (nodeA.bounds.overlaps(bvhB.nodes[bl].bounds)) push_pair(pair.nodeIdxA, bl);
         if (nodeA.bounds.overlaps(bvhB.nodes[br].bounds)) push_pair(pair.nodeIdxA, br);
-    } 
-    else { 
+    }
+    else {
         uint32_t al = nodeA.admin.offset; uint32_t ar = al + 1;
 
         if (bvhA.nodes[al].bounds.overlaps(nodeB.bounds)) push_pair(al, pair.nodeIdxB);
@@ -126,10 +127,10 @@ __global__ void populateFrontierKernel(
 }
 
 __global__ void finalUnpackKernel(
-    const DualFrontierPair* d_frontier, 
+    const DualFrontierPair* d_frontier,
     uint32_t totalPairs,
-    uint32_t* d_outPairsA, 
-    uint32_t* d_outPairsB) 
+    uint32_t* d_outPairsA,
+    uint32_t* d_outPairsB)
 {
     uint32_t tid = threadIdx.x + blockIdx.x * blockDim.x;
     if (tid >= totalPairs) return;
@@ -146,16 +147,16 @@ __global__ void finalUnpackKernel(
 // --------------------------------------------------------------------
 uint64_t executeDualTreeStep(
     int numSteps,
-    uint32_t maxDescendantsA,      
-    uint32_t maxDescendantsB,      
+    uint32_t maxDescendantsA,
+    uint32_t maxDescendantsB,
     thrust::device_vector<uint32_t>& d_outPairsA,
     thrust::device_vector<uint32_t>& d_outPairsB,
-    thrust::device_vector<uint32_t>& d_markedNodeIndicesA,      
-    thrust::device_vector<uint32_t>& d_markedNodeIndicesB,      
-    thrust::device_vector<uint32_t>& d_nodeDescendantCountsA,   
-    thrust::device_vector<uint32_t>& d_nodeDescendantCountsB,   
-    uint32_t& h_outMarkedCountA,                                
-    uint32_t& h_outMarkedCountB,                                
+    thrust::device_vector<uint32_t>& d_markedNodeIndicesA,
+    thrust::device_vector<uint32_t>& d_markedNodeIndicesB,
+    thrust::device_vector<uint32_t>& d_nodeDescendantCountsA,
+    thrust::device_vector<uint32_t>& d_nodeDescendantCountsB,
+    uint32_t& h_outMarkedCountA,
+    uint32_t& h_outMarkedCountB,
     const cuBQL::bvh3f& bvhA,
     const cuBQL::bvh3f& bvhB
 )  {
@@ -165,7 +166,7 @@ uint64_t executeDualTreeStep(
 
     // Start with a reasonable initial capacity instead of maximum possible
     uint32_t currentCapacity = std::max((uint32_t)1000000, currentFrontierSize * 2);
-    
+
     thrust::device_vector<DualFrontierPair> frontierBuffer1(currentCapacity);
     thrust::device_vector<DualFrontierPair> frontierBuffer2(currentCapacity);
     thrust::device_vector<int> d_childCounts(currentCapacity);
@@ -177,7 +178,7 @@ uint64_t executeDualTreeStep(
 
     auto inputZipBegin = thrust::make_zip_iterator(thrust::make_tuple(d_outPairsA.begin(), d_outPairsB.begin()));
     auto inputZipEnd   = inputZipBegin + currentFrontierSize;
-    
+
     thrust::transform(thrust::device, inputZipBegin, inputZipEnd, currentBuffer->begin(), ZipToPairFunctor());
 
     for (int step = 0; step < numSteps; ++step) {
@@ -190,16 +191,16 @@ uint64_t executeDualTreeStep(
         DualFrontierPair* d_frontierCurrent = thrust::raw_pointer_cast(currentBuffer->data());
 
         countExpansionsKernel<<<blocks, threads>>>(
-            d_frontierCurrent, currentFrontierSize, 
-            thrust::raw_pointer_cast(d_childCounts.data()), 
+            d_frontierCurrent, currentFrontierSize,
+            thrust::raw_pointer_cast(d_childCounts.data()),
             bvhA, bvhB
         );
         cudaDeviceSynchronize();
 
         thrust::exclusive_scan(
-            thrust::device, 
-            d_childCounts.begin(), 
-            d_childCounts.begin() + currentFrontierSize, 
+            thrust::device,
+            d_childCounts.begin(),
+            d_childCounts.begin() + currentFrontierSize,
             d_offsets.begin()
         );
 
@@ -216,7 +217,7 @@ uint64_t executeDualTreeStep(
         if (nextFrontierSize > currentCapacity) {
             // Grow by 1.5x to amortize allocation costs
             currentCapacity = std::max((uint32_t)(currentCapacity * 1.5), nextFrontierSize);
-            
+
             currentBuffer->resize(currentCapacity);
             nextBuffer->resize(currentCapacity);
             d_childCounts.resize(currentCapacity);
@@ -229,9 +230,9 @@ uint64_t executeDualTreeStep(
         DualFrontierPair* d_frontierNext = thrust::raw_pointer_cast(nextBuffer->data());
 
         populateFrontierKernel<<<blocks, threads>>>(
-            d_frontierCurrent, currentFrontierSize, 
-            thrust::raw_pointer_cast(d_offsets.data()), 
-            d_frontierNext, 
+            d_frontierCurrent, currentFrontierSize,
+            thrust::raw_pointer_cast(d_offsets.data()),
+            d_frontierNext,
             bvhA, bvhB
         );
         cudaDeviceSynchronize();
