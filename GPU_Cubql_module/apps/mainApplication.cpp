@@ -13,9 +13,13 @@
 #include <algorithm>
 #include <limits>
 
-// GNU Readline headers for terminal arrow key & history support
+// GNU Readline headers for terminal arrow key & history support.
+// Windows consoles already provide line editing/history, so there we fall back to std::getline.
+#ifndef _WIN32
 #include <readline/readline.h>
 #include <readline/history.h>
+#define MESH_HAVE_READLINE 1
+#endif
 
 // CUDA & TBB Includes
 #include <vector_types.h>
@@ -283,7 +287,7 @@ static bool g_readyForInput{true};
  * @brief Asynchronous CLI reader thread maintaining interactive terminal input via GNU Readline.
  */
 void inputThreadWorker() {
-  char* rawInput = nullptr;
+  [[maybe_unused]] char* rawInput = nullptr;
   while(g_running) {
     {
       std::unique_lock<std::mutex> lock(g_cmdMutex);
@@ -292,16 +296,27 @@ void inputThreadWorker() {
         break;
     }
 
+    std::string line;
+#ifdef MESH_HAVE_READLINE
     rawInput = readline("> ");
     if(!rawInput) {
       g_running = false;
       break;
     }
 
-    std::string line(rawInput);
+    line = rawInput;
     if(!line.empty())
       add_history(rawInput);
     free(rawInput);
+#else
+    std::cout << "> " << std::flush;
+    if(!std::getline(std::cin, line)) {
+      g_running = false;
+      break;
+    }
+    if(!line.empty() && line.back() == '\r')
+      line.pop_back();
+#endif
 
     {
       std::lock_guard<std::mutex> lock(g_cmdMutex);

@@ -5,10 +5,10 @@
 #include "cuBQL/builder/cuda.h"
 
 // Your custom experimental builder layout
-#include "include/third-party/cubql/sm_builder_v2.h"
+#include "third-party/cubql/sm_builder_v2.h"
 
 // Custom traversal 
-#include "include/third-party/cubql/fixedBoxQueryv2.h"
+#include "third-party/cubql/fixedBoxQueryv2.h"
 
 #include <thrust/device_vector.h>
 #include <thrust/host_vector.h>

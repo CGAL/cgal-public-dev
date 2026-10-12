@@ -7,7 +7,7 @@
 #include <cstdlib>
 #include "cuBQL/bvh.h"
 #include "samples/common/loadOBJ.h"
-#include "include/third-party/cubql/fixedBoxQueryv2.h"
+#include "third-party/cubql/fixedBoxQueryv2.h"
 
 // Shared helper macro for CUDA error checking
 #ifndef CUBQL_CUDA_CALL
