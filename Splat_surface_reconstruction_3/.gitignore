@@ -1,0 +1,4 @@
+*.gcov
+build_coverage/
+build_debug/
+build_test/

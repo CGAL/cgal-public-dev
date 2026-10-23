@@ -1,0 +1,7 @@
+ipykernel
+numpy
+meshio[all]
+pyvista
+pyvista[jupyter]
+matplotlib
+vtk

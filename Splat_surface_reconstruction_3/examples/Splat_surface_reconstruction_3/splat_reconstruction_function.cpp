@@ -204,7 +204,9 @@ int main(int argc, char* argv[]) {
   Polyhedron output_mesh;
   const auto bbox = CGAL::bounding_box(points.begin(), points.end()); // recompute bbox after centering and scaling
 
+
   const FT padding = FT(1.1) * edge_length;
+
   // const FT padding = 1e-8;
   // Build the grid and insert points + normals.
   CGAL::Box_grid<Kernel> grid{FT(edge_length),
@@ -213,12 +215,17 @@ int main(int argc, char* argv[]) {
   grid.build(points, normals); // insert points and normals into the grid
 
   std::cout<<"Computing block normals..." << std::endl;
+
   std::vector<Vector_3> block_normals = grid.compute_block_normals(); // compute block normals by averaging point normals in each cell
 
+  grid.write_splat_mesh_obj("splats_before.obj");
   std::vector<FT> splat_sizes = grid.estimate_individual_splat_sizes(); // estimate individual splat sizes based on local point distribution
   std::cout<<"Estimated individual splat sizes for " << splat_sizes.size() << " points." << std::endl;
+  grid.write_splat_mesh_obj("splats_individual.obj");
 
   grid.recompute_block_normals_from_splats();
+
+  grid.write_splat_sizes_to_file("splat_sizes.txt");
 
   // grid.write_point_cloud_ply("debug_points.ply");
   // grid.write_grid_vertices_ply("debug_grid_vertices.ply");
@@ -228,6 +235,8 @@ int main(int argc, char* argv[]) {
   reconstruction.run();
 
   CGAL::IO::write_polygon_mesh("mesh.ply", output_mesh);
+  CGAL::IO::write_polygon_mesh("mesh.obj", output_mesh);
+  CGAL::IO::write_polygon_mesh("mesh.stl", output_mesh);
   std::cout << "Reconstructed mesh written to mesh.ply" << std::endl;
 
   return EXIT_SUCCESS;
