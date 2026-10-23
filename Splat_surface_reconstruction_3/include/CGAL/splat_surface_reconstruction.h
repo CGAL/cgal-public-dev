@@ -45,6 +45,9 @@ namespace CGAL {
   template <typename PointRange, typename NormalRange, typename TriangleMesh>
   struct Splat_surface_reconstruction_3_test_access;
 
+  template <typename Kernel_>
+  struct Grid_test_access;
+
   /**
    * @brief Dense axis-aligned box grid over a fixed 3D domain.
    *
@@ -56,6 +59,8 @@ namespace CGAL {
    */
   template <typename Kernel_>
   class Box_grid {
+    private:
+      friend struct Grid_test_access<Kernel_>;
 
     public:
     using Kernel   = Kernel_;

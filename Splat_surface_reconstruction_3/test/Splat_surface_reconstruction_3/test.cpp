@@ -27,6 +27,7 @@
 // Types
 typedef CGAL::Exact_predicates_inexact_constructions_kernel Kernel;
 typedef Kernel::Point_3 Point;
+typedef Kernel::Point_3 Point_3;
 typedef Kernel::Vector_3 Vector_3;
 typedef std::pair<Point, Vector_3> Pwn;
 typedef CGAL::Surface_mesh<Point> Polyhedron;
@@ -38,7 +39,132 @@ bool approxEq(double a, double b, double epsilon = 1e-6) {
   return std::abs(a - b) < epsilon;
 }
 
+bool approxEq(const Point_3& p1, const Point_3& p2, double epsilon = 1e-6) {
+  return approxEq(p1.x(), p2.x(), epsilon) &&
+         approxEq(p1.y(), p2.y(), epsilon) &&
+         approxEq(p1.z(), p2.z(), epsilon);
+}
+
+bool approxEq(const Vector_3& v1, const Vector_3& v2, double epsilon = 1e-6) {
+  return approxEq(v1.x(), v2.x(), epsilon) &&
+         approxEq(v1.y(), v2.y(), epsilon) &&
+         approxEq(v1.z(), v2.z(), epsilon);
+}
+
+// Get a random integer between min and max (inclusive)
+int rand_int(int min, int max) {
+  return min + std::rand() % (max - min + 1);
+}
+
+// Get a random float in [min, max]
+float rand_float_inclusive(float min, float max) {
+  return min + (max - min) *
+    (static_cast<float>(std::rand()) / static_cast<float>(RAND_MAX));
+}
+
+// Get a random float in [min, max)
+float rand_float_exclusive(float min, float max) {
+  return min + (max - min) *
+    (static_cast<float>(std::rand()) / (static_cast<float>(RAND_MAX) + 1.0f));
+}
+
+
+
+struct TestData {
+  uint total_tests = 0;
+  uint passed_tests = 0;
+  uint failed_tests = 0;
+  std::vector<std::string> failed_test_names;
+};
+
+template <typename Function>
+void test(Function&& function, const char* test_name, TestData& test_data) {
+  test_data.total_tests++;
+  try {
+    std::forward<Function>(function)();
+    test_data.passed_tests++;
+  }
+  catch (const std::exception& e) {
+    std::cout << e.what() << std::endl;
+    test_data.failed_tests++;
+    test_data.failed_test_names.push_back(test_name);
+  }
+  catch (...) {
+    std::cout << "Unknown exception caught in test " << test_name << '\n';
+    test_data.failed_tests++;
+    test_data.failed_test_names.push_back(test_name);
+  }
+}
+
+
+
+
+
+
+
+
+
+
 namespace CGAL {
+
+template <typename Kernel_>
+struct Grid_test_access {
+  using TestGrid = CGAL::Box_grid<Kernel_>;
+
+  using Kernel   = Kernel_;
+  using FT       = typename Kernel::FT;
+  using Point_3  = typename Kernel::Point_3;
+  using Point_2  = typename Kernel::Point_2;
+  using Vector_3 = typename Kernel::Vector_3;
+  using Index    = std::size_t;
+  using Cell = typename Box_grid<Kernel>::Cell;
+
+  static TestGrid make_grid(FT box_size, FT min_x, FT min_y, FT min_z, FT max_x, FT max_y, FT max_z) {
+    return TestGrid(box_size, min_x, min_y, min_z, max_x, max_y, max_z);
+  }
+
+  static TestGrid make_grid_from_points(FT box_size, const std::vector<Point_3>& points) {
+    auto bbox = CGAL::bounding_box(points.begin(), points.end());
+    FT min_x = bbox.xmin();
+    FT min_y = bbox.ymin();
+    FT min_z = bbox.zmin();
+    FT max_x = bbox.xmax();
+    FT max_y = bbox.ymax();
+    FT max_z = bbox.zmax();
+    return make_grid(box_size, min_x, min_y, min_z, max_x, max_y, max_z);
+  }
+
+  static bool to_grid_coordinates(TestGrid& grid, const Point_3& p, int& ix, int& iy, int& iz) {
+    return grid.to_grid_coordinates(p, ix, iy, iz);
+  }
+  
+  static std::size_t flat_index(TestGrid& grid, int ix, int iy, int iz) {
+    return grid.flat_index(ix, iy, iz);
+  }
+
+  static Point_3 cell_center(TestGrid& grid, int ix, int iy, int iz) {
+    return grid.cell_center(ix, iy, iz);
+  }
+  
+  static const Cell* cell(TestGrid& grid, int ix, int iy, int iz) {
+    return grid.cell(ix, iy, iz);
+  }
+
+  static void insert(TestGrid& grid, Index point_id, const Point_3& p, const Vector_3& n) {
+    grid.insert(point_id, p, n);
+  }
+
+  static std::size_t nx(TestGrid& grid) {
+    return grid.nx_;
+  }
+  static std::size_t ny(TestGrid& grid) {
+    return grid.ny_;
+  }
+  static std::size_t nz(TestGrid& grid) {
+    return grid.nz_;
+  }
+};
+
 
 template <typename PointRange, typename NormalRange, typename TriangleMesh>
 struct Splat_surface_reconstruction_3_test_access {
@@ -116,6 +242,11 @@ using Access = TestAccess;
 using halfedge_descriptor = Access::halfedge_descriptor;
 using vertex_descriptor = Access::vertex_descriptor;
 using Point_2 = Access::Point_2;
+
+using TestGrid = CGAL::Grid_test_access<Kernel>::TestGrid;
+using GridTestAccess = CGAL::Grid_test_access<Kernel>;
+using Cell = CGAL::Box_grid<Kernel>::Cell;
+using Index = CGAL::Box_grid<Kernel>::Index;
 
 bool test_commit_ear_step() {
   // Implement the test for commit_ear_step here.
@@ -273,6 +404,335 @@ Polyhedron ear_clip_and_add_faces_helper(std::vector<Point> points, std::vector<
 
   return TestAccess::mesh(reconstruction);
 }
+
+
+
+
+
+
+
+
+bool test_to_grid_coordinates_lowest_corner() {
+  TestGrid grid = GridTestAccess::make_grid(1.0, -2.0, -2.0, -2.0, 2.0, 2.0, 2.0);
+  int ix, iy, iz;
+  Point_3 p(-2.0, -2.0, -2.0);
+  bool result = GridTestAccess::to_grid_coordinates(grid, p, ix, iy, iz);
+  TEST_ASSERT(result, "Failed to convert lowest corner to grid coordinates");
+  TEST_ASSERT(ix == 0 && iy == 0 && iz == 0, "Lowest corner grid coordinates are incorrect");
+  return true;
+}
+
+bool test_to_grid_coordinates_highest_corner() {
+  TestGrid grid = GridTestAccess::make_grid(1.0, -2.0, -2.0, -2.0, 2.0, 2.0, 2.0);
+  int ix, iy, iz;
+  Point_3 p(2.0, 2.0, 2.0);
+  bool result = GridTestAccess::to_grid_coordinates(grid, p, ix, iy, iz);
+  TEST_ASSERT(result, "Failed to convert highest corner to grid coordinates");
+  TEST_ASSERT(ix == 3 && iy == 3 && iz == 3, "Highest corner grid coordinates are incorrect");
+  return true;
+}
+
+bool test_to_grid_coordinates_box_corner() {
+  TestGrid grid = GridTestAccess::make_grid(1.0, -2.0, -2.0, -2.0, 2.0, 2.0, 2.0);
+  int ix, iy, iz;
+  Point_3 p(1.0, 1.0, 1.0);
+  bool result = GridTestAccess::to_grid_coordinates(grid, p, ix, iy, iz);
+  TEST_ASSERT(result, "Failed to convert box corner to grid coordinates");
+  TEST_ASSERT(ix == 3 && iy == 3 && iz == 3, "Box corner grid coordinates are incorrect");
+  return true;
+}
+
+bool test_to_grid_coordinates_all_different() {
+  TestGrid grid = GridTestAccess::make_grid(1.0, -2.0, -2.0, -2.0, 2.0, 2.0, 2.0);
+  int ix, iy, iz;
+  Point_3 p(-1.5, 0.5, 1.5);
+  bool result = GridTestAccess::to_grid_coordinates(grid, p, ix, iy, iz);
+  TEST_ASSERT(result, "Failed to convert all different point to grid coordinates");
+  TEST_ASSERT(ix == 0 && iy == 2 && iz == 3, "All different point grid coordinates are incorrect");
+  return true;
+}
+
+bool test_to_grid_coordinates_out_of_bounds_1() {
+  TestGrid grid = GridTestAccess::make_grid(1.0, -2.0, -2.0, -2.0, 2.0, 2.0, 2.0);
+  int ix, iy, iz;
+  Point_3 p(1.0, 1.0, 2.001);
+  bool result = GridTestAccess::to_grid_coordinates(grid, p, ix, iy, iz);
+  TEST_ASSERT(!result, "Out of bounds point should not convert to grid coordinates");
+  return true;
+}
+
+bool test_to_grid_coordinates_out_of_bounds_2() {
+  TestGrid grid = GridTestAccess::make_grid(1.0, -2.0, -2.0, -2.0, 2.0, 2.0, 2.0);
+  int ix, iy, iz;
+  Point_3 p(1.0, 1.0, -2.001);
+  bool result = GridTestAccess::to_grid_coordinates(grid, p, ix, iy, iz);
+  TEST_ASSERT(!result, "Out of bounds point should not convert to grid coordinates");
+  return true;
+}
+
+bool test_to_grid_coordinates_random() {
+  TestGrid grid = GridTestAccess::make_grid(1.0, -2.0, -2.0, -2.0, 2.0, 2.0, 2.0);
+  int ix, iy, iz;
+  int num_iterations = 1000;
+  for (int i = 0; i < num_iterations; ++i) {
+    int chosen_x = rand_int(0, 3);
+    int chosen_y = rand_int(0, 3);
+    int chosen_z = rand_int(0, 3);
+
+    FT min_x = -2.0 + chosen_x * 1.0;
+    FT min_y = -2.0 + chosen_y * 1.0;
+    FT min_z = -2.0 + chosen_z * 1.0;
+
+    FT x = rand_float_exclusive(min_x, min_x + 1.0);
+    FT y = rand_float_exclusive(min_y, min_y + 1.0);
+    FT z = rand_float_exclusive(min_z, min_z + 1.0);
+
+    Point_3 p(x, y, z);
+    bool result = GridTestAccess::to_grid_coordinates(grid, p, ix, iy, iz);
+    TEST_ASSERT(result, "Failed to convert all different point to grid coordinates");
+    TEST_ASSERT(ix == chosen_x && iy == chosen_y && iz == chosen_z, "All different point grid coordinates are incorrect");
+  }
+  return true;
+}
+
+bool test_to_grid_coordinates_random_different_box_size() {
+  TestGrid grid = GridTestAccess::make_grid(0.2, -2.0, -4.0, -2.0, 2.0, 2.0, 6.0);
+  int ix, iy, iz;
+  int num_iterations = 1000;
+  for (int i = 0; i < num_iterations; ++i) {
+    int chosen_x = rand_int(0, 19);
+    int chosen_y = rand_int(0, 29);
+    int chosen_z = rand_int(0, 39);
+
+    FT min_x = -2.0 + chosen_x * 0.2;
+    FT min_y = -4.0 + chosen_y * 0.2;
+    FT min_z = -2.0 + chosen_z * 0.2;
+
+    FT x = rand_float_exclusive(min_x, min_x + 0.2);
+    FT y = rand_float_exclusive(min_y, min_y + 0.2);
+    FT z = rand_float_exclusive(min_z, min_z + 0.2);
+
+    Point_3 p(x, y, z);
+    bool result = GridTestAccess::to_grid_coordinates(grid, p, ix, iy, iz);
+    TEST_ASSERT(result, "Failed to convert all different point to grid coordinates");
+    TEST_ASSERT(ix == chosen_x && iy == chosen_y && iz == chosen_z, "All different point grid coordinates are incorrect");
+  }
+  return true;
+}
+
+
+bool test_flat_index_all_equal() {
+  TestGrid grid = GridTestAccess::make_grid(0.2, 0.0, 0.0, 0.0, 2.0, 2.0, 2.0);
+  int ix = 1, iy = 2, iz = 3;
+  std::size_t index = GridTestAccess::flat_index(grid, ix, iy, iz);
+  std::size_t expected_index = 100 + 20 + 3;
+  TEST_ASSERT(index == expected_index, "Flat index calculation is incorrect");
+  return true;
+}
+
+bool test_flat_index_different_sizes() {
+  TestGrid grid = GridTestAccess::make_grid(0.1, 0.0, 0.0, 0.0, 1.0, 2.0, 3.0);
+  int ix = 4, iy = 2, iz = 3;
+  std::size_t index = GridTestAccess::flat_index(grid, ix, iy, iz);
+  std::size_t expected_index = 2400 + 60 + 3;
+  TEST_ASSERT(index == expected_index, "Flat index calculation is incorrect");
+  return true;
+}
+
+bool test_cell_center() {
+  TestGrid grid = GridTestAccess::make_grid(0.2, 0.0, 0.0, 0.0, 2.0, 2.0, 2.0);
+  int ix = 3, iy = 4, iz = 5;
+  Point_3 center = GridTestAccess::cell_center(grid, ix, iy, iz);
+  FT expected_x = 0.7;
+  FT expected_y = 0.9;
+  FT expected_z = 1.1;
+  TEST_ASSERT(approxEq(center, Point_3(expected_x, expected_y, expected_z)), "Cell center calculation is incorrect");
+  return true;
+}
+
+bool test_cell_center_with_negative_mins() {
+  TestGrid grid = GridTestAccess::make_grid(0.2, -1.0, -2.0, -3.0, 2.0, 2.0, 2.0);
+  int ix = 3, iy = 4, iz = 5;
+  Point_3 center = GridTestAccess::cell_center(grid, ix, iy, iz);
+  FT expected_x = -0.3;
+  FT expected_y = -1.1;
+  FT expected_z = -1.9;
+  TEST_ASSERT(approxEq(center, Point_3(expected_x, expected_y, expected_z)), "Cell center calculation is incorrect");
+  return true;
+}
+
+bool test_insert_point_into_cell() {
+  TestGrid grid = GridTestAccess::make_grid(
+      0.2, 0.0, 0.0, 0.0, 2.0, 2.0, 2.0);
+
+  Index point_id = 42;
+  Point_3 p(0.7, 0.9, 1.1);
+  Vector_3 n(0.0, 0.0, 1.0);
+
+  GridTestAccess::insert(grid, point_id, p, n);
+
+  int ix, iy, iz;
+  TEST_ASSERT(GridTestAccess::to_grid_coordinates(grid, p, ix, iy, iz),
+              "Point should map to valid grid coordinates");
+
+  const Cell* cell = grid.cell(ix, iy, iz);
+  TEST_ASSERT(cell != nullptr, "Inserted point's cell should exist");
+  TEST_ASSERT(cell->point_ids.size() == 1,
+              "Cell should contain exactly one point");
+  TEST_ASSERT(cell->point_ids[0] == point_id,
+              "Cell should contain the inserted point ID");
+  TEST_ASSERT(cell->normal_count == 1,
+              "Cell should contain one normal contribution");
+  TEST_ASSERT(approxEq(cell->normal_sum, n),
+              "Cell normal sum should equal the inserted normal");
+
+  return true;
+}
+
+bool test_insert_multiple_points_into_same_cell() {
+  TestGrid grid = GridTestAccess::make_grid(
+      0.2, 0.0, 0.0, 0.0, 2.0, 2.0, 2.0);
+
+  Index point_id1 = 10;
+  Index point_id2 = 20;
+
+  Point_3 p1(0.71, 0.81, 0.91);
+  Point_3 p2(0.72, 0.82, 0.92);
+
+  Vector_3 n1(0.0, 0.0, 1.0);
+  Vector_3 n2(0.0, 1.0, 0.0);
+
+  GridTestAccess::insert(grid, point_id1, p1, n1);
+  GridTestAccess::insert(grid, point_id2, p2, n2);
+
+  int ix1, iy1, iz1;
+  int ix2, iy2, iz2;
+
+  TEST_ASSERT(GridTestAccess::to_grid_coordinates(grid, p1, ix1, iy1, iz1),
+              "First point should map to valid grid coordinates");
+  TEST_ASSERT(GridTestAccess::to_grid_coordinates(grid, p2, ix2, iy2, iz2),
+              "Second point should map to valid grid coordinates");
+  TEST_ASSERT(ix1 == ix2 && iy1 == iy2 && iz1 == iz2,
+              "Points should map to the same cell");
+
+  const Cell* cell = grid.cell(ix1, iy1, iz1);
+  TEST_ASSERT(cell != nullptr, "Cell should exist");
+  TEST_ASSERT(cell->point_ids.size() == 2,
+              "Cell should contain exactly two points");
+  TEST_ASSERT(cell->point_ids[0] == point_id1 &&
+              cell->point_ids[1] == point_id2,
+              "Cell should contain both point IDs in insertion order");
+  TEST_ASSERT(cell->normal_count == 2,
+              "Cell should contain two normal contributions");
+  TEST_ASSERT(approxEq(cell->normal_sum, n1 + n2),
+              "Cell should accumulate both normals");
+
+  return true;
+}
+
+bool test_insert_points_into_different_cells() {
+  TestGrid grid = GridTestAccess::make_grid(
+      0.2, 0.0, 0.0, 0.0, 2.0, 2.0, 2.0);
+
+  Index point_id1 = 10;
+  Index point_id2 = 20;
+
+  Point_3 p1(0.1, 0.1, 0.1);
+  Point_3 p2(1.1, 1.1, 1.1);
+
+  Vector_3 n(0.0, 0.0, 1.0);
+
+  GridTestAccess::insert(grid, point_id1, p1, n);
+  GridTestAccess::insert(grid, point_id2, p2, n);
+
+  int ix1, iy1, iz1;
+  int ix2, iy2, iz2;
+
+  TEST_ASSERT(GridTestAccess::to_grid_coordinates(grid, p1, ix1, iy1, iz1),
+              "First point should map to valid grid coordinates");
+  TEST_ASSERT(GridTestAccess::to_grid_coordinates(grid, p2, ix2, iy2, iz2),
+              "Second point should map to valid grid coordinates");
+  TEST_ASSERT(ix1 != ix2 || iy1 != iy2 || iz1 != iz2,
+              "Points should map to different cells");
+
+  const Cell* cell1 = grid.cell(ix1, iy1, iz1);
+  const Cell* cell2 = grid.cell(ix2, iy2, iz2);
+
+  TEST_ASSERT(cell1 != nullptr && cell2 != nullptr,
+              "Both cells should exist");
+  TEST_ASSERT(cell1->point_ids.size() == 1 &&
+              cell1->point_ids[0] == point_id1,
+              "First cell should contain only the first point");
+  TEST_ASSERT(cell2->point_ids.size() == 1 &&
+              cell2->point_ids[0] == point_id2,
+              "Second cell should contain only the second point");
+
+  return true;
+}
+
+bool test_insert_point_outside_grid() {
+  TestGrid grid = GridTestAccess::make_grid(
+      0.2, 0.0, 0.0, 0.0, 2.0, 2.0, 2.0);
+
+  Index point_id = 42;
+  Point_3 p(-0.1, 0.5, 0.5);
+  Vector_3 n(0.0, 0.0, 1.0);
+
+  GridTestAccess::insert(grid, point_id, p, n);
+
+  for (int ix = 0; ix < GridTestAccess::nx(grid); ++ix) {
+    for (int iy = 0; iy < GridTestAccess::ny(grid); ++iy) {
+      for (int iz = 0; iz < GridTestAccess::nz(grid); ++iz) {
+        const Cell* cell = GridTestAccess::cell(grid, ix, iy, iz);
+
+        TEST_ASSERT(cell != nullptr,
+                    "Valid grid coordinates should return a cell");
+        TEST_ASSERT(cell->point_ids.empty(),
+                    "No cell should contain a point outside the grid");
+        TEST_ASSERT(cell->normal_count == 0,
+                    "No normal should be accumulated for an outside point");
+        TEST_ASSERT(approxEq(cell->normal_sum, CGAL::NULL_VECTOR),
+                    "Normal sum should remain zero for an outside point");
+      }
+    }
+  }
+
+  return true;
+}
+
+// Grid tests
+void run_grid_tests(TestData& test_data) {
+  test(test_to_grid_coordinates_lowest_corner, "test_to_grid_coordinates_lowest_corner", test_data);
+  test(test_to_grid_coordinates_highest_corner, "test_to_grid_coordinates_highest_corner", test_data);
+  test(test_to_grid_coordinates_box_corner, "test_to_grid_coordinates_box_corner", test_data);
+  test(test_to_grid_coordinates_all_different, "test_to_grid_coordinates_all_different", test_data);
+  test(test_to_grid_coordinates_out_of_bounds_1, "test_to_grid_coordinates_out_of_bounds_1", test_data);
+  test(test_to_grid_coordinates_out_of_bounds_2, "test_to_grid_coordinates_out_of_bounds_2", test_data);
+  test(test_to_grid_coordinates_random, "test_to_grid_coordinates_random", test_data);
+  test(test_to_grid_coordinates_random_different_box_size, "test_to_grid_coordinates_random_different_box_size", test_data);
+  test(test_flat_index_all_equal, "test_flat_index_all_equal", test_data);
+  test(test_flat_index_different_sizes, "test_flat_index_different_sizes", test_data);
+  test(test_cell_center, "test_cell_center", test_data);
+  test(test_cell_center_with_negative_mins, "test_cell_center_with_negative_mins", test_data);
+  test(test_insert_point_into_cell, "test_insert_point_into_cell", test_data);
+  test(test_insert_multiple_points_into_same_cell, "test_insert_multiple_points_into_same_cell", test_data);
+  test(test_insert_points_into_different_cells, "test_insert_points_into_different_cells", test_data);
+  test(test_insert_point_outside_grid, "test_insert_point_outside_grid", test_data);
+}
+
+
+
+
+
+
+
+
+
+
+
+// Splat surface reconstruction tests
+
+
 
 bool test_ear_clip_and_add_faces_single_tri() {
   std::vector<Point> points = {
@@ -699,32 +1159,6 @@ bool test_circle_splat_intersection_exact()
   return pass;
 }
 
-struct TestData {
-  uint total_tests = 0;
-  uint passed_tests = 0;
-  uint failed_tests = 0;
-  std::vector<std::string> failed_test_names;
-};
-
-template <typename Function>
-void test(Function&& function, const char* test_name, TestData& test_data) {
-  test_data.total_tests++;
-  try {
-    std::forward<Function>(function)();
-    test_data.passed_tests++;
-  }
-  catch (const std::exception& e) {
-    std::cout << e.what() << std::endl;
-    test_data.failed_tests++;
-    test_data.failed_test_names.push_back(test_name);
-  }
-  catch (...) {
-    std::cout << "Unknown exception caught in test " << test_name << '\n';
-    test_data.failed_tests++;
-    test_data.failed_test_names.push_back(test_name);
-  }
-}
-
 int main(int argc, char* argv[]) {
   test_circle_splat_intersection_exact();
 
@@ -738,6 +1172,8 @@ int main(int argc, char* argv[]) {
 
   test(test_ear_clip_and_add_faces_square, "test_ear_clip_and_add_faces_square", test_data);
   test(test_ear_clip_and_add_faces_single_tri, "test_ear_clip_and_add_faces_single_tri", test_data);
+
+  run_grid_tests(test_data);
 
   std::cout << "\n========== Test Summary ==========\n";
   std::cout << "Passed " << test_data.passed_tests << " out of " << test_data.total_tests << " tests\n";
