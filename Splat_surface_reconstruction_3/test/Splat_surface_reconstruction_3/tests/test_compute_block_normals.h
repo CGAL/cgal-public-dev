@@ -67,8 +67,6 @@ inline bool test_compute_block_normals_opposing_directions() {
 
 
 
-// Grid tests
-
 inline void run_compute_block_normals_tests(TestData& test_data) {
   test(test_compute_block_normals_single_direction, "test_compute_block_normals_single_direction", test_data);
   test(test_compute_block_normals_opposing_directions, "test_compute_block_normals_opposing_directions", test_data);

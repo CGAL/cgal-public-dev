@@ -77,6 +77,23 @@ inline float rand_float_exclusive(float min, float max) {
     (static_cast<float>(std::rand()) / (static_cast<float>(RAND_MAX) + 1.0f));
 }
 
+inline Point_3 rand_point_3(float min_x, float max_x, float min_y, float max_y, float min_z, float max_z) {
+  return Point_3(
+    rand_float_inclusive(min_x, max_x),
+    rand_float_inclusive(min_y, max_y),
+    rand_float_inclusive(min_z, max_z)
+  );
+}
+
+inline std::vector<Point_3> rand_points_3(std::size_t count, float min_x, float max_x, float min_y, float max_y, float min_z, float max_z) {
+  std::vector<Point_3> points;
+  points.reserve(count);
+  for (std::size_t i = 0; i < count; ++i) {
+    points.push_back(rand_point_3(min_x, max_x, min_y, max_y, min_z, max_z));
+  }
+  return points;
+}
+
 
 
 struct TestData {
@@ -167,13 +184,6 @@ struct Grid_test_access {
     grid.insert(point_id, p, n);
   }
 
-  static bool splat_intersects_box(TestGrid& grid, Index pid,
-                            std::size_t ix,
-                            std::size_t iy,
-                            std::size_t iz) {
-    return grid.splat_intersects_box(pid, ix, iy, iz);
-  }
-
   static const std::vector<Index>& point_ids_within_distance_d_of_box(TestGrid& grid, 
     std::size_t ix, std::size_t iy, std::size_t iz) {
 
@@ -184,6 +194,10 @@ struct Grid_test_access {
     std::size_t ix, std::size_t iy, std::size_t iz) {
 
     return grid.point_ids_in_box(ix, iy, iz);
+  }
+
+  static const std::vector<Index> nearby_point_ids(TestGrid& grid, Point_3& query, FT radius) {
+    return grid.nearby_point_ids(query, radius);
   }
 
   static std::size_t nx(TestGrid& grid) {

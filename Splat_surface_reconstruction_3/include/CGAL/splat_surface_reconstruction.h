@@ -323,132 +323,83 @@ namespace CGAL {
      * @return Per-point splat radii.
     */
     std::vector<FT> estimate_individual_splat_sizes() {
-    FT global_spacing = 1.05*box_size_;
-    splat_sizes_.resize(points_.size(), global_spacing);
+      FT global_spacing = 1.05*box_size_;
+      splat_sizes_.resize(points_.size(), global_spacing);
 
-    for (Index i = 0; i < points_.size(); ++i) {
-      int cx, cy, cz;
-      if (!to_grid_coordinates(points_[i], cx, cy, cz)) {
-        std::cerr << "Warning: point " << i << " is out of grid bounds, skipping splat size estimation.\n";
-        std::exit(EXIT_FAILURE);
-      }
+      for (Index i = 0; i < points_.size(); ++i) {
+        int cx, cy, cz;
+        if (!to_grid_coordinates(points_[i], cx, cy, cz)) {
+          std::cerr << "Warning: point " << i << " is out of grid bounds, skipping splat size estimation.\n";
+          std::exit(EXIT_FAILURE);
+        }
 
-      // Collect all points in the same box as p_i.
-      std::vector<Index> local_ids;
-      const Cell* c = cell(cx, cy, cz);
-      if (c == nullptr || c->point_ids_contained.empty()) {
-        continue;
-      }
-      local_ids = c->point_ids_contained;
+        // Collect all points in the same box as p_i.
+        std::vector<Index> local_ids;
+        const Cell* c = cell(cx, cy, cz);
+        if (c == nullptr || c->point_ids_contained.empty()) {
+          continue;
+        }
+        local_ids = c->point_ids_contained;
 
-      // Need at least a few neighbors to define a local triangulation.
-      if (local_ids.size() < 3) {
-        continue;
-      }
+        // Need at least a few neighbors to define a local triangulation.
+        if (local_ids.size() < 3) {
+          continue;
+        }
 
-      // Build a local tangent frame at p_i from its normal.
-      std::vector<Vector_3> local_frame = compute_local_tangent_frame(normals_[i]);
-      Vector_3 u = local_frame[0];
-      Vector_3 v = local_frame[1];
+        // Build a local tangent frame at p_i from its normal.
+        std::vector<Vector_3> local_frame = compute_local_tangent_frame(normals_[i]);
+        Vector_3 u = local_frame[0];
+        Vector_3 v = local_frame[1];
 
-      // Project local neighbors onto the tangent plane and compute their 2D coordinates
-      // Also input in the Delaunay Triangulation Kernel
-      CGAL::Delaunay_triangulation_2<Kernel> DT;
-      auto center_vh = DT.insert(Point_2(0, 0)); // keep the handle
+        // Project local neighbors onto the tangent plane and compute their 2D coordinates
+        // Also input in the Delaunay Triangulation Kernel
+        CGAL::Delaunay_triangulation_2<Kernel> DT;
+        auto center_vh = DT.insert(Point_2(0, 0)); // keep the handle
 
-      for (Index neighbor_id : local_ids) {
-        if (neighbor_id == i) continue;
+        for (Index neighbor_id : local_ids) {
+          if (neighbor_id == i) continue;
 
-        Vector_3 vec = points_[neighbor_id] - points_[i];
-        double x = CGAL::to_double(vec * u);
-        double y = CGAL::to_double(vec * v);
-        DT.insert(Point_2(x, y));
-      }
+          Vector_3 vec = points_[neighbor_id] - points_[i];
+          double x = CGAL::to_double(vec * u);
+          double y = CGAL::to_double(vec * v);
+          DT.insert(Point_2(x, y));
+        }
 
-      // Find the circumcenter of faces incident to the center vertex only.
-      std::vector<FT> circumcenter_distances;
-      FT max_r2 = FT(0);
+        // Find the circumcenter of faces incident to the center vertex only.
+        std::vector<FT> circumcenter_distances;
+        FT max_r2 = FT(0);
 
-      auto fc = DT.incident_faces(center_vh);
-      if (fc != 0) {
-        auto done = fc;
+        auto fc = DT.incident_faces(center_vh);
+        if (fc != 0) {
+          auto done = fc;
 
-        do {
-          if (!DT.is_infinite(fc)) {
-            Point_2 a = fc->vertex(0)->point();
-            Point_2 b = fc->vertex(1)->point();
-            Point_2 cpt = fc->vertex(2)->point();
+          do {
+            if (!DT.is_infinite(fc)) {
+              Point_2 a = fc->vertex(0)->point();
+              Point_2 b = fc->vertex(1)->point();
+              Point_2 cpt = fc->vertex(2)->point();
 
-            Point_2 cc = CGAL::circumcenter(a, b, cpt);
-            const FT r2 = cc.x() * cc.x() + cc.y() * cc.y();
+              Point_2 cc = CGAL::circumcenter(a, b, cpt);
+              const FT r2 = cc.x() * cc.x() + cc.y() * cc.y();
 
-            if (r2 > max_r2) {
-              max_r2 = r2;
+              if (r2 > max_r2) {
+                max_r2 = r2;
+              }
             }
-          }
-          ++fc;
-        } while (fc != done);
+            ++fc;
+          } while (fc != done);
+        }
+
+        if (max_r2 > FT(0)) {
+          splat_sizes_[i] = CGAL::sqrt(max_r2);
+          splat_sizes_[i] = (std::min)(splat_sizes_[i], global_spacing); // Clamp to global spacing to avoid outliers.
+        }
       }
 
-      if (max_r2 > FT(0)) {
-        splat_sizes_[i] = CGAL::sqrt(max_r2);
-        splat_sizes_[i] = (std::min)(splat_sizes_[i], global_spacing); // Clamp to global spacing to avoid outliers.
-      }
+      max_splat_radius_ = *std::max_element(splat_sizes_.begin(), splat_sizes_.end());
+      std::cout<<"Box size: " << box_size_ << " Max splat radius: " << max_splat_radius_ << std::endl;
+      return splat_sizes_;
     }
-
-    max_splat_radius_ = *std::max_element(splat_sizes_.begin(), splat_sizes_.end());
-    std::cout<<"Box size: " << box_size_ << " Max splat radius: " << max_splat_radius_ << std::endl;
-    return splat_sizes_;
-  }
-
-  /**
-   * @brief Tests whether a splat intersects an axis-aligned grid cell.
-   *
-   * @param pid Input point/splat identifier.
-   * @param ix Cell index along x.
-   * @param iy Cell index along y.
-   * @param iz Cell index along z.
-   *
-   * @return `true` if the splat intersects the cell.
-  */
-  bool splat_intersects_box(Index pid,
-                            std::size_t ix,
-                            std::size_t iy,
-                            std::size_t iz) const {
-    const Point_3& p = points_[pid];
-    const FT r = splat_sizes_[pid];
-
-    const FT xmin = min_x_ + FT(ix) * box_size_;
-    const FT xmax = xmin + box_size_;
-
-    const FT ymin = min_y_ + FT(iy) * box_size_;
-    const FT ymax = ymin + box_size_;
-
-    const FT zmin = min_z_ + FT(iz) * box_size_;
-    const FT zmax = zmin + box_size_;
-
-    std::cout << "Checking splat intersection for pid " << pid << " with cell (" << ix << ", " << iy << ", " << iz << ")" << std::endl;
-    std::cout << "p: " << p << ", r: " << r << std::endl;
-    std::cout << "Cell bounds: [" << xmin << ", " << xmax << "] x [" << ymin << ", " << ymax << "] x [" << zmin << ", " << zmax << "]" << std::endl;
-
-    // first find the p and n vertex
-    return true;
-    
-    
-    // auto accumulate = [&](FT c, FT lo, FT hi, FT r)
-    // {
-    //   if (c < lo) {
-    //     FT d = lo - c;
-    //     return d < r;
-    //   } else if (c > hi) {
-    //     FT d = c - hi;
-    //     return d < r;
-    //   }
-    //   return false;
-    // };
-
-    // return accumulate(p.x(), xmin, xmax, r) || accumulate(p.y(), ymin, ymax, r) || accumulate(p.z(), zmin, zmax, r);
-  }
 
     /**
      * @brief Selects an initial pair of mesh vertices from a large splat.

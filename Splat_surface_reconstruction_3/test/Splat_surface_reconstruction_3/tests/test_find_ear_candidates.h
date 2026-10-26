@@ -39,7 +39,7 @@ inline bool test_find_ear_candidates_hexagon() {
 
 
 
-  assert(candidates.size() == expected_candidates.size());
+  TEST_ASSERT(candidates.size() == expected_candidates.size(), "Number of candidates does not match expected");
   for (std::size_t i = 0; i < candidates.size(); ++i) {
     bool found = false;
     for (std::size_t j = 0; j < expected_candidates.size(); ++j) {
@@ -52,7 +52,7 @@ inline bool test_find_ear_candidates_hexagon() {
 
     std::cout << "Checking candidate (" << candidates[i].first << "," << candidates[i].second << "): "
               << (found ? "found" : "not found") << "\n";
-    assert(found);
+    TEST_ASSERT(found, "Candidate not found in expected candidates");
   }
 
   return true;
@@ -112,7 +112,7 @@ inline bool test_find_ear_candidates_step()
 
 
 
-  assert(candidates.size() == expected_candidates.size());
+  TEST_ASSERT(candidates.size() == expected_candidates.size(), "Number of candidates does not match expected");
   for (std::size_t i = 0; i < candidates.size(); ++i) {
     bool found = false;
     for (std::size_t j = 0; j < expected_candidates.size(); ++j) {
@@ -125,7 +125,7 @@ inline bool test_find_ear_candidates_step()
 
     std::cout << "Checking candidate (" << candidates[i].first << "," << candidates[i].second << "): "
               << (found ? "found" : "not found") << "\n";
-    assert(found);
+    TEST_ASSERT(found, "Candidate not found in expected candidates");
   }
 
   return true;
@@ -192,7 +192,7 @@ inline bool test_find_ear_candidates_wrapping_shape() {
 
     std::cout << "Checking candidate (" << candidates[i].first << "," << candidates[i].second << "): "
               << (found ? "found" : "not found") << "\n";
-    assert(found);
+    TEST_ASSERT(found, "Candidate not found in expected candidates");
   }
 
   return true;
