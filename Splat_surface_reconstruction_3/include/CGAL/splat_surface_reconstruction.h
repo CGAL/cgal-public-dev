@@ -2927,7 +2927,7 @@ namespace CGAL {
           const Point_3& b3 = get(points_pm_, verts[i1]);
           const Point_3& c3 = get(points_pm_, verts[i2]);
 
-          const Vector_3 b_normal = normals_pm_[verts[i1]];
+          const Vector_3 b_normal = grid_.box_normal(b3);
 
           bool wrong_orientation_3d_new = orient3(a3, b3, c3, b_normal) != CGAL::LEFT_TURN;
 
@@ -3020,9 +3020,8 @@ namespace CGAL {
       Vector_3 compute_cycle_normal(const std::vector<vertex_descriptor>& verts) const {
         Vector_3 n = CGAL::NULL_VECTOR;
         for (auto v: verts) {
-          // CHANGED: instead of using box normal, use the vertex normal
-          // n = n + grid_.box_normal(get(points_pm_, v));
-          n = n + normals_pm_[v];
+          n = n + grid_.box_normal(get(points_pm_, v));
+          //n = n + normals_pm_[v];
         }
         const double nlen2 = CGAL::to_double(n.squared_length());
         CGAL_assertion(nlen2 > 0.0);
@@ -3356,18 +3355,18 @@ namespace CGAL {
           return false;
         }
 
-        Vector_3 normal = normals_pm_[b];
+        // Vector_3 normal = normals_pm_[b];
 
-        std::vector<Vector_3> frame = grid_.compute_local_tangent_frame(normal);
-        const Vector_3& u = frame[0];
-        const Vector_3& v = frame[1];
+        // std::vector<Vector_3> frame = grid_.compute_local_tangent_frame(normal);
+        // const Vector_3& u = frame[0];
+        // const Vector_3& v = frame[1];
 
-        auto project_to_2d = [&](const Point_3& p) -> Point_2 {
-          const Vector_3 d = p - points_pm_[b];
-          return Point_2(d * u, d * v);
-        };
+        // auto project_to_2d = [&](const Point_3& p) -> Point_2 {
+        //   const Vector_3 d = p - points_pm_[b];
+        //   return Point_2(d * u, d * v);
+        // };
 
-        const bool found = halfedge(a, c, mesh_).second;
+        // const bool found = halfedge(a, c, mesh_).second;
 
         // if (found) {
 
