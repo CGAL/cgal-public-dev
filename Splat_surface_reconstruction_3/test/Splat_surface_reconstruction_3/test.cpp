@@ -51,6 +51,14 @@ bool approxEq(const Vector_3& v1, const Vector_3& v2, double epsilon = 1e-6) {
          approxEq(v1.z(), v2.z(), epsilon);
 }
 
+bool approxEq(const std::vector<Vector_3>& v1, const std::vector<Vector_3>& v2, double epsilon = 1e-6) {
+  if (v1.size() != v2.size()) return false;
+  for (std::size_t i = 0; i < v1.size(); ++i) {
+    if (!approxEq(v1[i], v2[i], epsilon)) return false;
+  }
+  return true;
+}
+
 // Get a random integer between min and max (inclusive)
 int rand_int(int min, int max) {
   return min + std::rand() % (max - min + 1);
@@ -134,6 +142,10 @@ struct Grid_test_access {
     return make_grid(box_size, min_x, min_y, min_z, max_x, max_y, max_z);
   }
 
+  static std::vector<Vector_3> compute_block_normals(TestGrid& grid) {
+    return grid.compute_block_normals();
+  }
+
   static bool to_grid_coordinates(TestGrid& grid, const Point_3& p, int& ix, int& iy, int& iz) {
     return grid.to_grid_coordinates(p, ix, iy, iz);
   }
@@ -152,6 +164,25 @@ struct Grid_test_access {
 
   static void insert(TestGrid& grid, Index point_id, const Point_3& p, const Vector_3& n) {
     grid.insert(point_id, p, n);
+  }
+
+  static bool splat_intersects_box(TestGrid& grid, Index pid,
+                            std::size_t ix,
+                            std::size_t iy,
+                            std::size_t iz) {
+    return grid.splat_intersects_box(pid, ix, iy, iz);
+  }
+
+  static const std::vector<Index>& point_ids_within_distance_d_of_box(TestGrid& grid, 
+    std::size_t ix, std::size_t iy, std::size_t iz) {
+
+    return grid.point_ids_within_distance_d_of_box(ix, iy, iz);
+  }
+
+  static const std::vector<Index>& point_ids_in_box(TestGrid& grid, 
+    std::size_t ix, std::size_t iy, std::size_t iz) {
+
+    return grid.point_ids_in_box(ix, iy, iz);
   }
 
   static std::size_t nx(TestGrid& grid) {
@@ -561,144 +592,379 @@ bool test_cell_center_with_negative_mins() {
   return true;
 }
 
-bool test_insert_point_into_cell() {
+
+// Tests for splat_intersects_box
+void test_splat_intersects_box_basic_case() {
   TestGrid grid = GridTestAccess::make_grid(
-      0.2, 0.0, 0.0, 0.0, 2.0, 2.0, 2.0);
+      1.0, 0.0, 0.0, 0.0, 5.0, 5.0, 5.0);
 
-  Index point_id = 42;
-  Point_3 p(0.7, 0.9, 1.1);
-  Vector_3 n(0.0, 0.0, 1.0);
+  Point_3 point(1.0, 0.5, 0.5);
+  Vector_3 normal(0.0, 0.0, 1.0);
+  FT size = 0.5;
 
-  GridTestAccess::insert(grid, point_id, p, n);
+  grid.build(std::vector<Point_3>{point},
+             std::vector<Vector_3>{normal});
+  grid.set_all_splat_sizes(size);
 
-  int ix, iy, iz;
-  TEST_ASSERT(GridTestAccess::to_grid_coordinates(grid, p, ix, iy, iz),
-              "Point should map to valid grid coordinates");
-
-  const Cell* cell = grid.cell(ix, iy, iz);
-  TEST_ASSERT(cell != nullptr, "Inserted point's cell should exist");
-  TEST_ASSERT(cell->point_ids.size() == 1,
-              "Cell should contain exactly one point");
-  TEST_ASSERT(cell->point_ids[0] == point_id,
-              "Cell should contain the inserted point ID");
-  TEST_ASSERT(cell->normal_count == 1,
-              "Cell should contain one normal contribution");
-  TEST_ASSERT(approxEq(cell->normal_sum, n),
-              "Cell normal sum should equal the inserted normal");
-
-  return true;
+  TEST_ASSERT(
+      GridTestAccess::splat_intersects_box(grid, 0, 0, 0, 0),
+      "Disk centered on the box boundary should intersect the box");
 }
 
-bool test_insert_multiple_points_into_same_cell() {
+void test_splat_intersects_box_center_inside() {
   TestGrid grid = GridTestAccess::make_grid(
-      0.2, 0.0, 0.0, 0.0, 2.0, 2.0, 2.0);
+      1.0, 0.0, 0.0, 0.0, 5.0, 5.0, 5.0);
 
-  Index point_id1 = 10;
-  Index point_id2 = 20;
+  Point_3 point(0.5, 0.5, 0.5);
+  Vector_3 normal(0.0, 0.0, 1.0);
 
-  Point_3 p1(0.71, 0.81, 0.91);
-  Point_3 p2(0.72, 0.82, 0.92);
+  grid.build(std::vector<Point_3>{point},
+             std::vector<Vector_3>{normal});
+  grid.set_all_splat_sizes(0.1);
 
-  Vector_3 n1(0.0, 0.0, 1.0);
-  Vector_3 n2(0.0, 1.0, 0.0);
-
-  GridTestAccess::insert(grid, point_id1, p1, n1);
-  GridTestAccess::insert(grid, point_id2, p2, n2);
-
-  int ix1, iy1, iz1;
-  int ix2, iy2, iz2;
-
-  TEST_ASSERT(GridTestAccess::to_grid_coordinates(grid, p1, ix1, iy1, iz1),
-              "First point should map to valid grid coordinates");
-  TEST_ASSERT(GridTestAccess::to_grid_coordinates(grid, p2, ix2, iy2, iz2),
-              "Second point should map to valid grid coordinates");
-  TEST_ASSERT(ix1 == ix2 && iy1 == iy2 && iz1 == iz2,
-              "Points should map to the same cell");
-
-  const Cell* cell = grid.cell(ix1, iy1, iz1);
-  TEST_ASSERT(cell != nullptr, "Cell should exist");
-  TEST_ASSERT(cell->point_ids.size() == 2,
-              "Cell should contain exactly two points");
-  TEST_ASSERT(cell->point_ids[0] == point_id1 &&
-              cell->point_ids[1] == point_id2,
-              "Cell should contain both point IDs in insertion order");
-  TEST_ASSERT(cell->normal_count == 2,
-              "Cell should contain two normal contributions");
-  TEST_ASSERT(approxEq(cell->normal_sum, n1 + n2),
-              "Cell should accumulate both normals");
-
-  return true;
+  TEST_ASSERT(
+      GridTestAccess::splat_intersects_box(grid, 0, 0, 0, 0),
+      "Disk centered inside the box should intersect it");
 }
 
-bool test_insert_points_into_different_cells() {
+void test_splat_intersects_box_tangent_to_face() {
   TestGrid grid = GridTestAccess::make_grid(
-      0.2, 0.0, 0.0, 0.0, 2.0, 2.0, 2.0);
+      1.0, 0.0, 0.0, 0.0, 5.0, 5.0, 5.0);
 
-  Index point_id1 = 10;
-  Index point_id2 = 20;
+  Point_3 point(1.5, 0.5, 0.5);
+  Vector_3 normal(0.0, 0.0, 1.0);
 
-  Point_3 p1(0.1, 0.1, 0.1);
-  Point_3 p2(1.1, 1.1, 1.1);
+  grid.build(std::vector<Point_3>{point},
+             std::vector<Vector_3>{normal});
+  grid.set_all_splat_sizes(0.5);
 
-  Vector_3 n(0.0, 0.0, 1.0);
-
-  GridTestAccess::insert(grid, point_id1, p1, n);
-  GridTestAccess::insert(grid, point_id2, p2, n);
-
-  int ix1, iy1, iz1;
-  int ix2, iy2, iz2;
-
-  TEST_ASSERT(GridTestAccess::to_grid_coordinates(grid, p1, ix1, iy1, iz1),
-              "First point should map to valid grid coordinates");
-  TEST_ASSERT(GridTestAccess::to_grid_coordinates(grid, p2, ix2, iy2, iz2),
-              "Second point should map to valid grid coordinates");
-  TEST_ASSERT(ix1 != ix2 || iy1 != iy2 || iz1 != iz2,
-              "Points should map to different cells");
-
-  const Cell* cell1 = grid.cell(ix1, iy1, iz1);
-  const Cell* cell2 = grid.cell(ix2, iy2, iz2);
-
-  TEST_ASSERT(cell1 != nullptr && cell2 != nullptr,
-              "Both cells should exist");
-  TEST_ASSERT(cell1->point_ids.size() == 1 &&
-              cell1->point_ids[0] == point_id1,
-              "First cell should contain only the first point");
-  TEST_ASSERT(cell2->point_ids.size() == 1 &&
-              cell2->point_ids[0] == point_id2,
-              "Second cell should contain only the second point");
-
-  return true;
+  TEST_ASSERT(
+      GridTestAccess::splat_intersects_box(grid, 0, 0, 0, 0),
+      "Disk tangent to the box face should count as intersecting");
 }
 
-bool test_insert_point_outside_grid() {
+void test_splat_does_not_intersect_box_outside_radius() {
   TestGrid grid = GridTestAccess::make_grid(
-      0.2, 0.0, 0.0, 0.0, 2.0, 2.0, 2.0);
+      1.0, 0.0, 0.0, 0.0, 5.0, 5.0, 5.0);
 
-  Index point_id = 42;
-  Point_3 p(-0.1, 0.5, 0.5);
-  Vector_3 n(0.0, 0.0, 1.0);
+  Point_3 point(1.6, 0.5, 0.5);
+  Vector_3 normal(0.0, 0.0, 1.0);
 
-  GridTestAccess::insert(grid, point_id, p, n);
+  grid.build(std::vector<Point_3>{point},
+             std::vector<Vector_3>{normal});
+  grid.set_all_splat_sizes(0.5);
 
-  for (int ix = 0; ix < GridTestAccess::nx(grid); ++ix) {
-    for (int iy = 0; iy < GridTestAccess::ny(grid); ++iy) {
-      for (int iz = 0; iz < GridTestAccess::nz(grid); ++iz) {
-        const Cell* cell = GridTestAccess::cell(grid, ix, iy, iz);
+  TEST_ASSERT(
+      !GridTestAccess::splat_intersects_box(grid, 0, 0, 0, 0),
+      "Disk separated from the box by more than its radius should not intersect");
+}
 
-        TEST_ASSERT(cell != nullptr,
-                    "Valid grid coordinates should return a cell");
-        TEST_ASSERT(cell->point_ids.empty(),
-                    "No cell should contain a point outside the grid");
-        TEST_ASSERT(cell->normal_count == 0,
-                    "No normal should be accumulated for an outside point");
-        TEST_ASSERT(approxEq(cell->normal_sum, CGAL::NULL_VECTOR),
-                    "Normal sum should remain zero for an outside point");
+void test_splat_does_not_intersect_box_wrong_plane() {
+  TestGrid grid = GridTestAccess::make_grid(
+      1.0, 0.0, 0.0, 0.0, 5.0, 5.0, 5.0);
+
+  // The disk lies in the plane z = 1.1, entirely above the box.
+  Point_3 point(0.5, 0.5, 1.1);
+  Vector_3 normal(0.0, 0.0, 1.0);
+
+  grid.build(std::vector<Point_3>{point},
+             std::vector<Vector_3>{normal});
+  grid.set_all_splat_sizes(0.05);
+
+  TEST_ASSERT(
+      !GridTestAccess::splat_intersects_box(grid, 0, 0, 0, 0),
+      "Disk outside the box's plane and radius should not intersect");
+}
+
+void test_splat_disk_does_not_intersect_box_near_sphere_only() {
+  TestGrid grid = GridTestAccess::make_grid(
+      1.0, 0.0, 0.0, 0.0, 5.0, 5.0, 5.0);
+
+  // Disk lies in z = 0.5, with radius 0.2.
+  // The neighboring cell is separated in z, so the disk cannot reach it.
+  Point_3 point(0.5, 0.5, 0.5);
+  Vector_3 normal(0.0, 0.0, 1.0);
+
+  grid.build(std::vector<Point_3>{point},
+             std::vector<Vector_3>{normal});
+  grid.set_all_splat_sizes(0.2);
+
+  // Cell (0, 0, 1) occupies [0,1] x [0,1] x [1,2].
+  // The disk at z=0.5 cannot intersect this cell.
+  TEST_ASSERT(
+      !GridTestAccess::splat_intersects_box(grid, 0, 0, 0, 1),
+      "A disk must not intersect a cell outside its plane and radius");
+}
+
+void test_splat_intersects_box_with_tilted_normal() {
+  TestGrid grid = GridTestAccess::make_grid(
+      1.0, 0.0, 0.0, 0.0, 5.0, 5.0, 5.0);
+
+  Point_3 point(1.0, 0.5, 0.5);
+  Vector_3 normal(1.0, 0.0, 0.0);
+
+  grid.build(std::vector<Point_3>{point},
+             std::vector<Vector_3>{normal});
+  grid.set_all_splat_sizes(0.5);
+
+  // Disk lies in x = 1 and extends in y and z.
+  TEST_ASSERT(
+      GridTestAccess::splat_intersects_box(grid, 0, 0, 0, 0),
+      "Disk in a vertical plane should intersect the box");
+}
+
+void test_splat_intersection_depends_on_normal() {
+  TestGrid grid_z = GridTestAccess::make_grid(
+      1.0, 0.0, 0.0, 0.0, 5.0, 5.0, 5.0);
+
+  TestGrid grid_x = GridTestAccess::make_grid(
+      1.0, 0.0, 0.0, 0.0, 5.0, 5.0, 5.0);
+
+  Point_3 point(0.5, 0.5, 0.5);
+
+  grid_z.build(std::vector<Point_3>{point},
+               std::vector<Vector_3>{Vector_3(0.0, 0.0, 1.0)});
+  grid_x.build(std::vector<Point_3>{point},
+               std::vector<Vector_3>{Vector_3(1.0, 0.0, 0.0)});
+
+  grid_z.set_all_splat_sizes(0.5);
+  grid_x.set_all_splat_sizes(0.5);
+
+  // Both disks intersect the cell containing their common center.
+  TEST_ASSERT(
+      GridTestAccess::splat_intersects_box(grid_z, 0, 0, 0, 0),
+      "Horizontal disk should intersect the center cell");
+  TEST_ASSERT(
+      GridTestAccess::splat_intersects_box(grid_x, 0, 0, 0, 0),
+      "Vertical disk should intersect the center cell");
+}
+
+
+
+bool test_build_cell_point_associations() {
+  TestGrid grid = GridTestAccess::make_grid(
+      1.0, 0.0, 0.0, 0.0, 3.0, 3.0, 3.0);
+
+  std::vector<Point_3> points = {
+    Point_3(1.5, 1.5, 1.5)
+  };
+  std::vector<Vector_3> normals = {
+    Vector_3(0.0, 0.0, 1.0)
+  };
+
+  grid.build(points, normals);
+
+  // The point is contained only in its own cell.
+  TEST_ASSERT(
+      GridTestAccess::point_ids_in_box(grid, 1, 1, 1)
+          == std::vector<std::size_t>{0},
+      "The containing cell should contain the point");
+
+  TEST_ASSERT(
+      GridTestAccess::point_ids_in_box(grid, 0, 1, 1).empty(),
+      "A neighboring cell should not claim the point as contained");
+
+  // The point is within distance d of the 27 cells surrounding it.
+  for (int ix = 0; ix <= 2; ++ix) {
+    for (int iy = 0; iy <= 2; ++iy) {
+      for (int iz = 0; iz <= 2; ++iz) {
+        TEST_ASSERT(
+            GridTestAccess::point_ids_within_distance_d_of_box(
+                grid, ix, iy, iz)
+                == std::vector<std::size_t>{0},
+            "Every box within distance d should be associated with the point");
       }
     }
   }
 
+  TEST_ASSERT(
+      GridTestAccess::point_ids_within_distance_d_of_box(grid, 2, 1, 1).empty(),
+      "A box farther than distance d should not be associated with the point");
+
   return true;
 }
+
+
+bool test_build_point_associations_multiple_points() {
+  TestGrid grid = GridTestAccess::make_grid(
+      1.0, 0.0, 0.0, 0.0, 3.0, 1.0, 1.0);
+
+  std::vector<Point_3> points = {
+    Point_3(0.5, 0.5, 0.5),
+    Point_3(1.5, 0.5, 0.5),
+    Point_3(2.5, 0.5, 0.5)
+  };
+  std::vector<Vector_3> normals = {
+    Vector_3(0.0, 0.0, 1.0),
+    Vector_3(0.0, 0.0, 1.0),
+    Vector_3(0.0, 0.0, 1.0)
+  };
+
+  grid.build(points, normals);
+
+
+
+  // Each point is contained in exactly one cell.
+  TEST_ASSERT(
+      (GridTestAccess::point_ids_in_box(grid, 0, 0, 0)
+          == std::vector<std::size_t>{0}),
+      "The first cell should contain only point 0");
+
+  TEST_ASSERT(
+      (GridTestAccess::point_ids_in_box(grid, 1, 0, 0)
+          == std::vector<std::size_t>{1}),
+      "The second cell should contain only point 1");
+
+  TEST_ASSERT(
+      (GridTestAccess::point_ids_in_box(grid, 2, 0, 0)
+          == std::vector<std::size_t>{2}),
+      "The third cell should contain only point 2");
+
+  // Each cell should also associate nearby points from adjacent cells.
+  TEST_ASSERT(
+      (GridTestAccess::point_ids_within_distance_d_of_box(grid, 0, 0, 0)
+          == std::vector<std::size_t>{0, 1}),
+      "The first cell should associate points 0 and 1");
+
+  TEST_ASSERT(
+      (GridTestAccess::point_ids_within_distance_d_of_box(grid, 1, 0, 0)
+          == std::vector<std::size_t>{0, 1, 2}),
+      "The middle cell should associate all three points");
+
+  TEST_ASSERT(
+      (GridTestAccess::point_ids_within_distance_d_of_box(grid, 2, 0, 0)
+          == std::vector<std::size_t>{1, 2}),
+      "The last cell should associate points 1 and 2");
+
+  return true;
+}
+
+
+bool test_build_normal_filtering_removes_opposing_normal() {
+  TestGrid grid = GridTestAccess::make_grid(
+      1.0, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0);
+
+  std::vector<Point_3> points = {
+    Point_3(0.5, 0.5, 0.5),
+    Point_3(0.5, 0.5, 0.5),
+    Point_3(0.5, 0.5, 0.5)
+  };
+  std::vector<Vector_3> normals = {
+    Vector_3(0.0, 0.0, 1.0),
+    Vector_3(0.0, 0.0, 1.0),
+    Vector_3(0.0, 0.0, -1.0)
+  };
+
+  grid.build(points, normals);
+
+  // The unnormalized normal sum is (0,0,1), with length 1.
+  // The negative-z normal should therefore be filtered out.
+  TEST_ASSERT(
+      (GridTestAccess::point_ids_within_distance_d_of_box(grid, 0, 0, 0)
+          == std::vector<std::size_t>{0, 1}),
+      "Filtering should remove the point with an opposing normal");
+
+  // Filtering should not alter cell containment.
+  TEST_ASSERT(
+      (GridTestAccess::point_ids_in_box(grid, 0, 0, 0)
+          == std::vector<std::size_t>{0, 1, 2}),
+      "Filtering should not change the contained-point list");
+
+  return true;
+}
+
+
+bool test_build_normal_filtering_keeps_points_when_sum_is_small() {
+  TestGrid grid = GridTestAccess::make_grid(
+      1.0, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0);
+
+  std::vector<Point_3> points = {
+    Point_3(0.5, 0.5, 0.5),
+    Point_3(0.5, 0.5, 0.5)
+  };
+  std::vector<Vector_3> normals = {
+    Vector_3(0.0, 0.0, 1.0),
+    Vector_3(0.0, 0.0, -1.0)
+  };
+
+  grid.build(points, normals);
+
+  // The sum is zero, below the threshold of 0.1.
+  // The filtering rule must preserve all points in this case.
+  TEST_ASSERT(
+      (GridTestAccess::point_ids_within_distance_d_of_box(grid, 0, 0, 0)
+          == std::vector<std::size_t>{0, 1}),
+      "Filtering should retain all points when the normal sum is too small");
+
+  return true;
+}
+
+
+bool test_compute_block_normals_single_direction() {
+  TestGrid grid = GridTestAccess::make_grid(
+      1.0, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0);
+
+  std::vector<Point_3> points = {
+    Point_3(0.5, 0.5, 0.5),
+    Point_3(0.5, 0.5, 0.5),
+    Point_3(0.5, 0.5, 0.5)
+  };
+  std::vector<Vector_3> normals = {
+    Vector_3(0.0, 0.0, 1.0),
+    Vector_3(0.0, 0.0, 1.0),
+    Vector_3(0.0, 0.0, 1.0)
+  };
+
+  grid.build(points, normals);
+
+  std::vector<Vector_3> block_normals = grid.block_normals();
+
+  TEST_ASSERT(block_normals.size() == 1,
+              "There should be one block normal for a single cell");
+
+  TEST_ASSERT(
+      CGAL::to_double(block_normals[0].squared_length()) > 0.99,
+      "The computed block normal should be a unit vector");
+
+  TEST_ASSERT(
+      CGAL::to_double(block_normals[0] * normals[0]) > 0.99,
+      "The block normal should align with all associated point normals");
+
+  return true;
+}
+
+
+bool test_compute_block_normals_opposing_directions() {
+  TestGrid grid = GridTestAccess::make_grid(
+      1.0, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0);
+
+  std::vector<Point_3> points = {
+    Point_3(0.5, 0.5, 0.5),
+    Point_3(0.5, 0.5, 0.5),
+    Point_3(0.5, 0.5, 0.5)
+  };
+  std::vector<Vector_3> normals = {
+    Vector_3(0.0, 0.0, 1.0),
+    Vector_3(0.0, 0.0, 1.0),
+    Vector_3(0.0, 0.0, -1.0)
+  };
+
+  grid.build(points, normals);
+
+  // build() filters out the opposing normal, leaving two positive-z normals.
+  std::vector<Vector_3> block_normals = grid.block_normals();
+
+  TEST_ASSERT(block_normals.size() == 1,
+              "There should be one block normal for a single cell");
+
+  TEST_ASSERT(
+      CGAL::to_double(block_normals[0] * Vector_3(0.0, 0.0, 1.0)) > 0.99,
+      "The block normal should align with the filtered positive-z normals");
+
+  return true;
+}
+
+
 
 // Grid tests
 void run_grid_tests(TestData& test_data) {
@@ -714,10 +980,24 @@ void run_grid_tests(TestData& test_data) {
   test(test_flat_index_different_sizes, "test_flat_index_different_sizes", test_data);
   test(test_cell_center, "test_cell_center", test_data);
   test(test_cell_center_with_negative_mins, "test_cell_center_with_negative_mins", test_data);
-  test(test_insert_point_into_cell, "test_insert_point_into_cell", test_data);
-  test(test_insert_multiple_points_into_same_cell, "test_insert_multiple_points_into_same_cell", test_data);
-  test(test_insert_points_into_different_cells, "test_insert_points_into_different_cells", test_data);
-  test(test_insert_point_outside_grid, "test_insert_point_outside_grid", test_data);
+
+  test(test_splat_intersects_box_basic_case, "test_splat_intersects_box_basic_case", test_data);
+  test(test_splat_intersects_box_center_inside, "test_splat_intersects_box_center_inside", test_data);
+  test(test_splat_intersects_box_tangent_to_face, "test_splat_intersects_box_tangent_to_face", test_data);
+  test(test_splat_intersects_box_center_inside, "test_splat_intersects_box_center_inside", test_data);
+  test(test_splat_does_not_intersect_box_outside_radius, "test_splat_does_not_intersect_box_outside_radius", test_data);
+  test(test_splat_does_not_intersect_box_wrong_plane, "test_splat_does_not_intersect_box_wrong_plane", test_data);
+  test(test_splat_disk_does_not_intersect_box_near_sphere_only, "test_splat_disk_does_not_intersect_box_near_sphere_only", test_data);
+  test(test_splat_intersects_box_with_tilted_normal, "test_splat_intersects_box_with_tilted_normal", test_data);
+  test(test_splat_intersection_depends_on_normal, "test_splat_intersection_depends_on_normal", test_data);
+
+  test(test_build_cell_point_associations, "test_build_cell_point_associations", test_data);
+  test(test_build_point_associations_multiple_points, "test_build_point_associations_multiple_points", test_data);
+  test(test_build_normal_filtering_removes_opposing_normal, "test_build_normal_filtering_removes_opposing_normal", test_data);
+  test(test_build_normal_filtering_keeps_points_when_sum_is_small, "test_build_normal_filtering_keeps_points_when_sum_is_small", test_data);
+  test(test_compute_block_normals_single_direction, "test_compute_block_normals_single_direction", test_data);
+  test(test_compute_block_normals_opposing_directions, "test_compute_block_normals_opposing_directions", test_data);
+
 }
 
 

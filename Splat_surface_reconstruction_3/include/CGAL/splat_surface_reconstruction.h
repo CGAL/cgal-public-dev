@@ -85,22 +85,15 @@ namespace CGAL {
      */
     struct Cell
     {
-      std::vector<Index> point_ids;
-      Vector_3 normal_sum = CGAL::NULL_VECTOR;
-      std::size_t normal_count = 0;
+      // The indices of all input points within distance d of the cell center.
+      std::vector<Index> point_ids_within_distance_d;
+      std::vector<Index> point_ids_contained;
 
-      /**
-       * @brief Adds one point and its normal contribution to the cell.
-       *
-       * @param pid Point index in the input cloud.
-       * @param n   Normal associated with the point.
-       */
-      void add_point(Index pid, const Vector_3& n) {
-        point_ids.push_back(pid);
-        if (n != CGAL::NULL_VECTOR) {
-          normal_sum = normal_sum + n;
-          ++normal_count;
-        }
+      void add_point_contained(Index pid) {
+        point_ids_contained.push_back(pid);
+      }
+      void add_point_within_distance_d(Index pid) {
+        point_ids_within_distance_d.push_back(pid);
       }
     };
 
@@ -168,6 +161,11 @@ namespace CGAL {
       return splat_sizes_;
     }
 
+    /// @brief Return the computed block normals.
+    const std::vector<Vector_3>& block_normals() const {
+      return block_normals_;
+    }
+
     /**
      * @brief Builds the grid from input points and normals.
      *
@@ -187,73 +185,131 @@ namespace CGAL {
 
       CGAL_assertion(points_.size() == normals_.size());
 
+      // Add each point to the grid boxes
       for (Index i = 0; i < points_.size(); ++i) {
         double len2 = CGAL::to_double(normals_[i].squared_length());
-        insert(i, points_[i], normals_[i]);
+        insert(i, points_[i]);
+      }
+
+      filter_points_by_normals();
+
+      compute_block_normals();
+    }
+
+    // TODO write description
+    void filter_points_by_normals() {
+      constexpr double min_normal_sum_length = 0.1;
+      constexpr double min_normal_sum_length_squared =
+        min_normal_sum_length * min_normal_sum_length;
+
+      for (Cell& cell : cells_) {
+        auto& ids = cell.point_ids_within_distance_d;
+
+        if (ids.empty()) {
+          continue;
+        }
+
+        // Step 1: Sum the associated point normals without normalization.
+        Vector_3 normal_sum = CGAL::NULL_VECTOR;
+
+        for (Index pid : ids) {
+          CGAL_assertion(pid < normals_.size());
+          normal_sum = normal_sum + normals_[pid];
+        }
+
+        // Step 2: If the sum is too small, keep all associated points.
+        const double length_squared =
+          CGAL::to_double(normal_sum.squared_length());
+
+        if (length_squared < min_normal_sum_length_squared) {
+          continue;
+        }
+
+        // Step 3: Remove points whose normals oppose the summed normal.
+        ids.erase(
+          std::remove_if(
+            ids.begin(),
+            ids.end(),
+            [&](Index pid) {
+              return CGAL::to_double(normals_[pid] * normal_sum) < 0.0;
+            }),
+          ids.end());
       }
     }
 
     /**
-     * @brief Computes a normalized average normal for every occupied cell.
+     * @brief Computes box normals using the finite-sampling optimization
+     *        described in the Feature-aware Manifold Meshing paper.
      *
-     * The averaged normal is obtained from the sum of the normals of all points
-     * contained in the cell. A consistency check is performed to ensure that the
-     * resulting cell normal is compatible with the individual point normals.
+     * For each box, selects the sampled unit direction N that maximizes
+     * the minimum dot product between N and all associated point normals.
      *
-     * Empty or degenerate cells receive `CGAL::NULL_VECTOR`.
-     *
-     * @return Cell normals in the same flattened order as `cells_`.
-    */
-    std::vector<Vector_3> compute_block_normals() {
-      block_normals_.resize(cells_.size(), CGAL::NULL_VECTOR);
+     * Assumes point_ids_within_distance_d contains the distance-associated
+     * points after the preliminary normal-filtering step.
+     */
+    std::vector<Vector_3> compute_block_normals()
+    {
+      // Number of directions in the finite sampling of S^2.
+      constexpr std::size_t sample_count = 1000;
 
-      for (std::size_t ix = 0; ix < nx_; ++ix) {
-        for (std::size_t iy = 0; iy < ny_; ++iy) {
-          for (std::size_t iz = 0; iz < nz_; ++iz) {
+      // Construct a deterministic, approximately uniform sampling of S^2.
+      std::vector<Vector_3> sphere_samples;
+      sphere_samples.reserve(sample_count);
 
-            const std::size_t idx =
-              flat_index(static_cast<int>(ix),
-                        static_cast<int>(iy),
-                        static_cast<int>(iz));
+      const double golden_angle =
+        CGAL_PI * (3.0 - std::sqrt(5.0));
 
-            const Cell& c = cells_[idx];
+      for (std::size_t i = 0; i < sample_count; ++i) {
+        const double z =
+          1.0 - 2.0 * (static_cast<double>(i) + 0.5)
+                      / static_cast<double>(sample_count);
 
-            if (c.normal_count == 0)
-              continue;
+        const double radius = std::sqrt(1.0 - z * z);
+        const double theta = golden_angle * static_cast<double>(i);
 
-            const FT inv = FT(1) / FT(c.normal_count);
-            Vector_3 n = c.normal_sum * inv;
+        sphere_samples.emplace_back(
+          radius * std::cos(theta),
+          radius * std::sin(theta),
+          z);
+      }
 
-            const double len2 = CGAL::to_double(n.squared_length());
-            if (len2 <= 0.0)
-              continue;
+      block_normals_.assign(cells_.size(), CGAL::NULL_VECTOR);
 
-            n = n * (1.0 / std::sqrt(len2));
+      for (std::size_t idx = 0; idx < cells_.size(); ++idx) {
+        const Cell& cell = cells_[idx];
 
-            // Consistency check.
-            for (Index pid : c.point_ids) {
-              CGAL_assertion(pid < normals_.size());
+        // Use the distance-associated point list, not cell membership.
+        const auto& point_ids = cell.point_ids_within_distance_d;
 
-              const Vector_3& point_normal = normals_[pid];
-              CGAL_assertion(point_normal != CGAL::NULL_VECTOR);
+        if (point_ids.empty()) {
+          continue;
+        }
 
-              if (CGAL::to_double(n * point_normal) < 1e-12) {
-                std::cout << CGAL::to_double(n * point_normal)
-                          << " at cell (" << ix << "," << iy << "," << iz
-                          << ") with point index " << pid << std::endl;
+        // Find the sampled direction with the largest minimum dot product.
+        double best_score = -std::numeric_limits<double>::infinity();
+        Vector_3 best_normal = CGAL::NULL_VECTOR;
 
-                std::cerr
-                  << "Warning: block normal has negative dot product with a point normal.\n"
-                  << "box_size is likely too large. Aborting.\n";
+        for (const Vector_3& candidate : sphere_samples) {
+          double min_dot = std::numeric_limits<double>::infinity();
 
-                std::exit(EXIT_FAILURE);
-              }
-            }
+          for (Index pid : point_ids) {
+            CGAL_assertion(pid < normals_.size());
 
-            block_normals_[idx] = n;
+            const double dot = CGAL::to_double(
+              normals_[pid] * candidate);
+
+            min_dot = (std::min)(min_dot, dot);
+          }
+
+          if (min_dot > best_score) {
+            best_score = min_dot;
+            best_normal = candidate;
           }
         }
+
+        block_normals_[idx] = best_normal;
       }
+
       return block_normals_;
     }
 
@@ -280,10 +336,10 @@ namespace CGAL {
       // Collect all points in the same box as p_i.
       std::vector<Index> local_ids;
       const Cell* c = cell(cx, cy, cz);
-      if (c == nullptr || c->point_ids.empty()) {
+      if (c == nullptr || c->point_ids_contained.empty()) {
         continue;
       }
-      local_ids = c->point_ids;
+      local_ids = c->point_ids_contained;
 
       // Need at least a few neighbors to define a local triangulation.
       if (local_ids.size() < 3) {
@@ -346,62 +402,6 @@ namespace CGAL {
   }
 
   /**
-   * @brief Recomputes normal information from splats intersecting the grid.
-   *
-   * Grid cells are assigned a normalized average of normals from
-   * precomputed normals and nearby splats whose splat disks intersect the cell.
-  */
-  void recompute_block_normals_from_splats() {
-    CGAL_assertion(block_normals_.size() == cells_.size());
-
-    for (std::size_t ix = 0; ix < nx_; ++ix) {
-      for (std::size_t iy = 0; iy < ny_; ++iy) {
-        for (std::size_t iz = 0; iz < nz_; ++iz) {
-
-          const std::size_t idx = flat_index(ix, iy, iz);
-
-          Vector_3 normal_sum = block_normals_[idx];
-          std::size_t count = 0;
-
-          for (int dx = -1; dx <= 1; ++dx) {
-            for (int dy = -1; dy <= 1; ++dy) {
-              for (int dz = -1; dz <= 1; ++dz) {
-
-                int nx = static_cast<int>(ix) + dx;
-                int ny = static_cast<int>(iy) + dy;
-                int nz = static_cast<int>(iz) + dz;
-
-                if (!valid_coordinates(nx, ny, nz))
-                  continue;
-
-                const Cell& c = cells_[flat_index(nx, ny, nz)];
-
-                for (Index pid : c.point_ids) {
-
-                  if (!splat_intersects_box(pid, ix, iy, iz))
-                    continue;
-
-                  normal_sum += normals_[pid];
-                  ++count;
-                }
-              }
-            }
-          }
-
-          if (count == 0) {
-            continue;
-          }
-
-          const double len2 = CGAL::to_double(normal_sum.squared_length());
-
-          if (len2 > 0.0)
-            block_normals_[idx] = normal_sum * (1.0 / std::sqrt(len2));
-        }
-      }
-    }
-  }
-
-  /**
    * @brief Tests whether a splat intersects an axis-aligned grid cell.
    *
    * @param pid Input point/splat identifier.
@@ -427,19 +427,27 @@ namespace CGAL {
     const FT zmin = min_z_ + FT(iz) * box_size_;
     const FT zmax = zmin + box_size_;
 
-    auto accumulate = [&](FT c, FT lo, FT hi, FT r)
-    {
-      if (c < lo) {
-        FT d = lo - c;
-        return d < r;
-      } else if (c > hi) {
-        FT d = c - hi;
-        return d < r;
-      }
-      return false;
-    };
+    std::cout << "Checking splat intersection for pid " << pid << " with cell (" << ix << ", " << iy << ", " << iz << ")" << std::endl;
+    std::cout << "p: " << p << ", r: " << r << std::endl;
+    std::cout << "Cell bounds: [" << xmin << ", " << xmax << "] x [" << ymin << ", " << ymax << "] x [" << zmin << ", " << zmax << "]" << std::endl;
 
-    return accumulate(p.x(), xmin, xmax, r) || accumulate(p.y(), ymin, ymax, r) || accumulate(p.z(), zmin, zmax, r);
+    // first find the p and n vertex
+    return true;
+    
+    
+    // auto accumulate = [&](FT c, FT lo, FT hi, FT r)
+    // {
+    //   if (c < lo) {
+    //     FT d = lo - c;
+    //     return d < r;
+    //   } else if (c > hi) {
+    //     FT d = c - hi;
+    //     return d < r;
+    //   }
+    //   return false;
+    // };
+
+    // return accumulate(p.x(), xmin, xmax, r) || accumulate(p.y(), ymin, ymax, r) || accumulate(p.z(), zmin, zmax, r);
   }
 
     /**
@@ -538,7 +546,7 @@ namespace CGAL {
               continue;
             }
 
-            ids.insert(ids.end(), c->point_ids.begin(), c->point_ids.end());
+            ids.insert(ids.end(), c->point_ids_contained.begin(), c->point_ids_contained.end());
           }
         }
       }
@@ -820,16 +828,14 @@ namespace CGAL {
      */
     void clear() {
       for (Cell& c : cells_) {
-        c.point_ids.clear();
-        c.normal_sum = CGAL::NULL_VECTOR;
-        c.normal_count = 0;
+        c.point_ids_contained.clear();
+        c.point_ids_within_distance_d.clear();
       }
 
       // Make sure all cells are cleared.
       for (const Cell& c : cells_) {
-        CGAL_assertion(c.point_ids.empty());
-        CGAL_assertion(c.normal_sum == CGAL::NULL_VECTOR);
-        CGAL_assertion(c.normal_count == 0);
+        CGAL_assertion(c.point_ids_contained.empty());
+        CGAL_assertion(c.point_ids_within_distance_d.empty());
       }
     }
 
@@ -851,20 +857,47 @@ namespace CGAL {
     }
 
     /**
-     * @brief Inserts a single point and its normal into the grid.
+     * @brief Inserts a single point into the grid.
      *
      * @param point_id Index of the point in the input cloud.
      * @param p        Point position.
-     * @param n        Point normal.
      */
-    void insert(Index point_id, const Point_3& p, const Vector_3& n) {
+    void insert(Index point_id, const Point_3& p) {
       int ix, iy, iz;
       if (!to_grid_coordinates(p, ix, iy, iz)) {
         return;
       }
 
+      // Always add the point to the cell it falls into.
       const std::size_t idx = flat_index(ix, iy, iz);
-      cells_[idx].add_point(point_id, n);
+      cells_[idx].add_point_contained(point_id);
+
+      // And add it to all neighboring cells within distance d.
+      for (int dx = -1; dx <= 1; ++dx) {
+        for (int dy = -1; dy <= 1; ++dy) {
+          for (int dz = -1; dz <= 1; ++dz) {
+            int nx = ix + dx;
+            int ny = iy + dy;
+            int nz = iz + dz;
+            if (valid_coordinates(nx, ny, nz) && distance_to_box(p, nx, ny, nz) <= box_size_) {
+              const std::size_t nidx = flat_index(nx, ny, nz);
+              cells_[nidx].add_point_within_distance_d(point_id);
+            }
+          }
+        }
+      }
+    }
+
+    FT distance_to_box(const Point_3& p, int ix, int iy, int iz) const {
+      const Point_3 center = cell_center(ix, iy, iz);
+      const Vector_3 diff = p - center;
+      const FT half_box = box_size_ * FT(0.5);
+
+      FT dx = std::max(FT(0), CGAL::abs(diff.x()) - half_box);
+      FT dy = std::max(FT(0), CGAL::abs(diff.y()) - half_box);
+      FT dz = std::max(FT(0), CGAL::abs(diff.z()) - half_box);
+
+      return CGAL::sqrt(dx*dx + dy*dy + dz*dz);
     }
 
     /**
@@ -898,6 +931,22 @@ namespace CGAL {
       return n * (1.0 / std::sqrt(len2));
     }
 
+    const std::vector<Index>& point_ids_within_distance_d_of_box(std::size_t ix, std::size_t iy, std::size_t iz) const {
+      CGAL_assertion(ix < nx_ && iy < ny_ && iz < nz_);
+      const Cell* c = cell(ix, iy, iz);
+      CGAL_assertion(c != nullptr);
+
+      return c->point_ids_within_distance_d;
+    }
+
+    const std::vector<Index>& point_ids_in_box(std::size_t ix, std::size_t iy, std::size_t iz) const {
+      CGAL_assertion(ix < nx_ && iy < ny_ && iz < nz_);
+      const Cell* c = cell(ix, iy, iz);
+      CGAL_assertion(c != nullptr);
+
+      return c->point_ids_contained;
+    }
+
     FT box_size_;
     FT min_x_ = 0, max_x_ = 0;
     FT min_y_ = 0, max_y_ = 0;
@@ -917,6 +966,10 @@ namespace CGAL {
   //   ---------------------------------- DEBUG ---------------------------------------
   public:
 
+  void set_all_splat_sizes(FT size) {
+    splat_sizes_.assign(points_.size(), size);
+    max_splat_radius_ = size;
+  }
 
   void write_splat_mesh_obj(const char * filename) const {
 

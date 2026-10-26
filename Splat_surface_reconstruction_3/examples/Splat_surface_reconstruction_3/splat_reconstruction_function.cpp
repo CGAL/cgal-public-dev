@@ -214,16 +214,10 @@ int main(int argc, char* argv[]) {
                               FT(bbox.xmax()+padding), FT(bbox.ymax()+padding), FT(bbox.zmax()+padding)}; // initialize grid with cell size equal to average spacing and bounding box [-1,1]^3
   grid.build(points, normals); // insert points and normals into the grid
 
-  std::cout<<"Computing block normals..." << std::endl;
-
-  std::vector<Vector_3> block_normals = grid.compute_block_normals(); // compute block normals by averaging point normals in each cell
-
   grid.write_splat_mesh_obj("splats_before.obj");
   std::vector<FT> splat_sizes = grid.estimate_individual_splat_sizes(); // estimate individual splat sizes based on local point distribution
   std::cout<<"Estimated individual splat sizes for " << splat_sizes.size() << " points." << std::endl;
   grid.write_splat_mesh_obj("splats_individual.obj");
-
-  grid.recompute_block_normals_from_splats();
 
   grid.write_splat_sizes_to_file("splat_sizes.txt");
 
