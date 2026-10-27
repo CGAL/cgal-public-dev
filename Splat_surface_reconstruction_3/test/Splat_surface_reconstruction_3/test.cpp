@@ -9,6 +9,8 @@
 #include "tests/test_find_ear_candidates.h"
 #include "tests/test_circle_splat_intersection.h"
 #include "tests/test_nearby_point_ids.h"
+#include "tests/test_has_vertex_near.h"
+#include "tests/test_compute_priority.h"
 
 
 int main() {
@@ -24,6 +26,8 @@ int main() {
   run_find_ear_candidates_tests(test_data);
   run_circle_splat_intersection_tests(test_data);
   run_nearby_point_ids_tests(test_data);
+  run_has_vertex_near_tests(test_data);
+  run_compute_priority_tests(test_data);
 
   std::cout << "\n========== Test Summary ==========\n";
   std::cout << "Passed " << test_data.passed_tests << " out of " << test_data.total_tests << " tests\n";

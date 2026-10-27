@@ -1909,12 +1909,13 @@ namespace CGAL {
        *         tolerance.
       */
       bool has_vertex_near(const Point_3& p) const {
-        const FT tol = grid_.get_box_size() * FT(0.9);
+        const FT tol = grid_.get_box_size();
         const FT tol2 = tol * tol;
+        const FT epsilon = FT(1e-6);
 
         auto nearby = nearby_mesh_vertices(p, FT(2.0) * grid_.get_box_size());
         for (vertex_descriptor vd : nearby) {
-          if (CGAL::squared_distance(get(points_pm_, vd), p) < tol2) {
+          if (CGAL::squared_distance(get(points_pm_, vd), p) < tol2 - epsilon) {
             return true;
           }
         }
@@ -3643,7 +3644,6 @@ namespace CGAL {
 
         for (vertex_descriptor v : vertices(mesh_))
         {
-          std::cout << "Setting normal for vertex " << v.idx() << " to " << normals[v.idx()] << std::endl;
           normals_pm_[v] = normals[v.idx()];
         }
 

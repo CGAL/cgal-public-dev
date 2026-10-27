@@ -217,6 +217,8 @@ struct Splat_surface_reconstruction_3_test_access {
   using Reconstruction =
     CGAL::Splat_surface_reconstruction_3<PointRange, NormalRange, TriangleMesh>;
 
+  using Candidate = typename Reconstruction::Candidate;
+
   using vertex_descriptor = typename boost::graph_traits<TriangleMesh>::vertex_descriptor;
   using edge_descriptor = typename boost::graph_traits<TriangleMesh>::edge_descriptor;
   using halfedge_descriptor = typename boost::graph_traits<TriangleMesh>::halfedge_descriptor;
@@ -278,6 +280,21 @@ struct Splat_surface_reconstruction_3_test_access {
   {
     return reconstruction.mesh_;
   }
+
+  static bool has_vertex_near(
+    Reconstruction& reconstruction,
+    const Point_3& p)
+  {
+    return reconstruction.has_vertex_near(p);
+  }
+
+  static void insert_mesh_vertex(Reconstruction& reconstruction, vertex_descriptor vd) {
+    reconstruction.insert_mesh_vertex(vd);
+  }
+
+  static int compute_priority(Reconstruction& reconstruction, const Candidate& cand) {
+    return reconstruction.compute_priority(cand);
+  }
 };
 
 }
@@ -287,7 +304,10 @@ using TestAccess =
 using Access = TestAccess;
 using halfedge_descriptor = Access::halfedge_descriptor;
 using vertex_descriptor = Access::vertex_descriptor;
+using edge_descriptor = Access::edge_descriptor;
+using face_descriptor = Access::face_descriptor;
 using Point_2 = Access::Point_2;
+using Candidate = Access::Candidate;
 
 using TestGrid = CGAL::Grid_test_access<Kernel>::TestGrid;
 using GridTestAccess = CGAL::Grid_test_access<Kernel>;
