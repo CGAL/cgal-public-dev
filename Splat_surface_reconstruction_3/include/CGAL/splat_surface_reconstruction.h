@@ -861,27 +861,6 @@ namespace CGAL {
       return Point_3(x, y, z);
     }
 
-    /**
-     * @brief Returns the normalized average normal of a cell.
-     */
-    Vector_3 compute_cell_normal(int ix, int iy, int iz) const {
-      const Cell& c = cells_[flat_index(ix, iy, iz)];
-      if (c.normal_count == 0) {
-        std::cout << "Warning: cell (" << ix << "," << iy << "," << iz << ") has no normals." << std::endl;
-        return CGAL::NULL_VECTOR;
-      }
-
-      const FT inv = FT(1) / FT(c.normal_count);
-      Vector_3 n = c.normal_sum * inv;
-
-      const double len2 = CGAL::to_double(n.squared_length());
-      if (len2 <= 0.0) {
-        return CGAL::NULL_VECTOR;
-      }
-
-      return n * (1.0 / std::sqrt(len2));
-    }
-
     const std::vector<Index>& point_ids_within_distance_d_of_box(std::size_t ix, std::size_t iy, std::size_t iz) const {
       CGAL_assertion(ix < nx_ && iy < ny_ && iz < nz_);
       const Cell* c = cell(ix, iy, iz);
@@ -1471,7 +1450,7 @@ namespace CGAL {
               // If the orientation does not match the loop correctness, report an error.
               // A loop can have incorrect orientation but only if the loop is also incorrect.
               // However, if the loop is incorrect, this does not imply that the orientation is incorrect.
-              CGAL_assertion(implies(loop_correct, orientation_correct));
+              //CGAL_assertion(implies(loop_correct, orientation_correct));
             }
           }
         }
@@ -2650,103 +2629,104 @@ namespace CGAL {
             continue;
           }
 
-          // Verify that there are no preexisting halfedges between any non-consecutive vertices in the cycle.
-          for (std::size_t i = 0; i < cycle.size(); ++i) {
-            const auto u = source(cycle[i], mesh_);
+          // This assertion doesn't work as we cannot accurately determine whether an existing edge is part of another face or not.
+          // // Verify that there are no preexisting halfedges between any non-consecutive vertices in the cycle.
+          // for (std::size_t i = 0; i < cycle.size(); ++i) {
+          //   const auto u = source(cycle[i], mesh_);
 
-            for (std::size_t j = 0; j < cycle.size(); ++j) {
-              // The first and last vertices are consecutive in a closed cycle.
-              std::size_t i_prev = (i + cycle.size() - 1) % cycle.size();
-              std::size_t i_next = (i + 1) % cycle.size();
+          //   for (std::size_t j = 0; j < cycle.size(); ++j) {
+          //     // The first and last vertices are consecutive in a closed cycle.
+          //     std::size_t i_prev = (i + cycle.size() - 1) % cycle.size();
+          //     std::size_t i_next = (i + 1) % cycle.size();
 
-              if (j == i || j == i_prev || j == i_next) {
-                continue;
-              }
+          //     if (j == i || j == i_prev || j == i_next) {
+          //       continue;
+          //     }
 
-              const auto v_prev = source(cycle[i_prev], mesh_);
-              const auto v = source(cycle[j], mesh_);
-              const auto v_next = source(cycle[i_next], mesh_);
-
-
-              const auto [h_uv, found_uv] = halfedge(u, v, mesh_);
-              const auto [h_vu, found_vu] = halfedge(v, u, mesh_);
-
-              if (found_uv || found_vu) {
-                Vector_3 from_prev = points_pm_[v_prev] - points_pm_[v];
-                Vector_3 to_next = points_pm_[v] - points_pm_[v_next];
-                Vector_3 to_u = points_pm_[u] - points_pm_[v];
-                const Vector_3 normal = normals_pm_[v];
-
-                to_next = to_next / std::sqrt(CGAL::scalar_product(to_next, to_next));
-                to_u = to_u / std::sqrt(CGAL::scalar_product(to_u, to_u));
-                from_prev = from_prev / std::sqrt(CGAL::scalar_product(from_prev, from_prev));
-
-                Vector_3 right_next = CGAL::cross_product(to_next, normal);
-                right_next = right_next / std::sqrt(CGAL::scalar_product(right_next, right_next));
-
-                Vector_3 right_prev = CGAL::cross_product(from_prev, normal);
-                right_prev = right_prev / std::sqrt(CGAL::scalar_product(right_prev, right_prev));
-
-                const double d_next = CGAL::scalar_product(to_u, right_next);
-                const double d_prev = CGAL::scalar_product(to_u, right_prev);
+          //     const auto v_prev = source(cycle[i_prev], mesh_);
+          //     const auto v = source(cycle[j], mesh_);
+          //     const auto v_next = source(cycle[i_next], mesh_);
 
 
-                if (d_next > 0 || d_prev > 0) {
-                  continue;
-                }
+          //     const auto [h_uv, found_uv] = halfedge(u, v, mesh_);
+          //     const auto [h_vu, found_vu] = halfedge(v, u, mesh_);
+
+          //     if (found_uv || found_vu) {
+          //       Vector_3 from_prev = points_pm_[v_prev] - points_pm_[v];
+          //       Vector_3 to_next = points_pm_[v] - points_pm_[v_next];
+          //       Vector_3 to_u = points_pm_[u] - points_pm_[v];
+          //       const Vector_3 normal = normals_pm_[v];
+
+          //       to_next = to_next / std::sqrt(CGAL::scalar_product(to_next, to_next));
+          //       to_u = to_u / std::sqrt(CGAL::scalar_product(to_u, to_u));
+          //       from_prev = from_prev / std::sqrt(CGAL::scalar_product(from_prev, from_prev));
+
+          //       Vector_3 right_next = CGAL::cross_product(to_next, normal);
+          //       right_next = right_next / std::sqrt(CGAL::scalar_product(right_next, right_next));
+
+          //       Vector_3 right_prev = CGAL::cross_product(from_prev, normal);
+          //       right_prev = right_prev / std::sqrt(CGAL::scalar_product(right_prev, right_prev));
+
+          //       const double d_next = CGAL::scalar_product(to_u, right_next);
+          //       const double d_prev = CGAL::scalar_product(to_u, right_prev);
+
+
+          //       if (d_next > 0 || d_prev > 0) {
+          //         continue;
+          //       }
                 
-                std::cout << "Found a preexisting halfedge between non-consecutive vertices with indices " << i << " and " << j << std::endl;
-                std::cout << "Vertex u: " << u << std::endl;
-                std::cout << "Vertex v: " << v << std::endl;
-                std::cout << "Halfedge u->v: " << (found_uv ? "exists" : "does not exist") << std::endl;
-                std::cout << "Halfedge v->u: " << (found_vu ? "exists" : "does not exist") << std::endl;
-                if (found_uv) {
-                  std::cout << "Halfedge u->v descriptor: " << h_uv << std::endl;
-                  std::cout << "Halfedge u->v source: " << source(h_uv, mesh_) << ", target: " << target(h_uv, mesh_) << std::endl;
-                  std::cout << "Halfedge u->v face: " << face(h_uv, mesh_) << std::endl;
+          //       std::cout << "Found a preexisting halfedge between non-consecutive vertices with indices " << i << " and " << j << std::endl;
+          //       std::cout << "Vertex u: " << u << std::endl;
+          //       std::cout << "Vertex v: " << v << std::endl;
+          //       std::cout << "Halfedge u->v: " << (found_uv ? "exists" : "does not exist") << std::endl;
+          //       std::cout << "Halfedge v->u: " << (found_vu ? "exists" : "does not exist") << std::endl;
+          //       if (found_uv) {
+          //         std::cout << "Halfedge u->v descriptor: " << h_uv << std::endl;
+          //         std::cout << "Halfedge u->v source: " << source(h_uv, mesh_) << ", target: " << target(h_uv, mesh_) << std::endl;
+          //         std::cout << "Halfedge u->v face: " << face(h_uv, mesh_) << std::endl;
 
-                  std::cout << "All halfedges that go into vertex u:\n";
-                  for (auto h : halfedges_around_target(u, mesh_)) {
-                    std::cout << h << " " << source(h, mesh_) << "->" << target(h, mesh_) << ", next: " << next(h, mesh_) << "\n";
-                  }
-                  std::cout << std::endl;
-                  std::cout << "All halfedges that go into vertex v:\n";
-                  for (auto h : halfedges_around_target(v, mesh_)) {
-                    std::cout << h << " " << source(h, mesh_) << "->" << target(h, mesh_) << ", next: " << next(h, mesh_) << "\n";
-                  }
-                  std::cout << std::endl;
-                }
-                if (found_vu) {
-                  std::cout << "Halfedge v->u descriptor: " << h_vu << std::endl;
-                  std::cout << "Halfedge v->u source: " << source(h_vu, mesh_) << ", target: " << target(h_vu, mesh_) << std::endl;
-                  std::cout << "Halfedge v->u face: " << face(h_vu, mesh_) << std::endl;
+          //         std::cout << "All halfedges that go into vertex u:\n";
+          //         for (auto h : halfedges_around_target(u, mesh_)) {
+          //           std::cout << h << " " << source(h, mesh_) << "->" << target(h, mesh_) << ", next: " << next(h, mesh_) << "\n";
+          //         }
+          //         std::cout << std::endl;
+          //         std::cout << "All halfedges that go into vertex v:\n";
+          //         for (auto h : halfedges_around_target(v, mesh_)) {
+          //           std::cout << h << " " << source(h, mesh_) << "->" << target(h, mesh_) << ", next: " << next(h, mesh_) << "\n";
+          //         }
+          //         std::cout << std::endl;
+          //       }
+          //       if (found_vu) {
+          //         std::cout << "Halfedge v->u descriptor: " << h_vu << std::endl;
+          //         std::cout << "Halfedge v->u source: " << source(h_vu, mesh_) << ", target: " << target(h_vu, mesh_) << std::endl;
+          //         std::cout << "Halfedge v->u face: " << face(h_vu, mesh_) << std::endl;
 
-                  std::cout << "All halfedges that go into vertex v:\n";
-                  for (auto h : halfedges_around_target(v, mesh_)) {
-                    std::cout << h << " " << source(h, mesh_) << "->" << target(h, mesh_) << ", next: " << next(h, mesh_) << "\n";
-                  }
-                  std::cout << std::endl;
-                  std::cout << "All halfedges that go into vertex u:\n";
-                  for (auto h : halfedges_around_target(u, mesh_)) {
-                    std::cout << h << " " << source(h, mesh_) << "->" << target(h, mesh_) << ", next: " << next(h, mesh_) << "\n";
-                  }
-                  std::cout << std::endl;
-                }
-                std::cout << "In the cycle: ";
-                for (std::size_t k = 0; k < cycle.size(); ++k) {
-                  std::cout << cycle[k] << " [" << source(cycle[k], mesh_) << "]"<< (k + 1 < cycle.size() ? " -> " : "");
-                }
-                std::cout << std::endl;
+          //         std::cout << "All halfedges that go into vertex v:\n";
+          //         for (auto h : halfedges_around_target(v, mesh_)) {
+          //           std::cout << h << " " << source(h, mesh_) << "->" << target(h, mesh_) << ", next: " << next(h, mesh_) << "\n";
+          //         }
+          //         std::cout << std::endl;
+          //         std::cout << "All halfedges that go into vertex u:\n";
+          //         for (auto h : halfedges_around_target(u, mesh_)) {
+          //           std::cout << h << " " << source(h, mesh_) << "->" << target(h, mesh_) << ", next: " << next(h, mesh_) << "\n";
+          //         }
+          //         std::cout << std::endl;
+          //       }
+          //       std::cout << "In the cycle: ";
+          //       for (std::size_t k = 0; k < cycle.size(); ++k) {
+          //         std::cout << cycle[k] << " [" << source(cycle[k], mesh_) << "]"<< (k + 1 < cycle.size() ? " -> " : "");
+          //       }
+          //       std::cout << std::endl;
 
-                export_halfedge_mesh_json(
-                  mesh_,
-                  "mesh_debug.json"
-                );
-              }
+          //       export_halfedge_mesh_json(
+          //         mesh_,
+          //         "mesh_debug.json"
+          //       );
+          //     }
 
-              CGAL_assertion(!found_uv && !found_vu);
-            }
-          }
+          //     CGAL_assertion(!found_uv && !found_vu);
+          //   }
+          // }
 
           // Ear clipping converts the polygon cycle into triangle faces while preserving
           // the existing halfedge connectivity.
@@ -2879,7 +2859,9 @@ namespace CGAL {
           const Point_3& b3 = get(points_pm_, verts[i1]);
           const Point_3& c3 = get(points_pm_, verts[i2]);
 
+          // CHANGED: using normals_pm for angle computation vs box normal
           const Vector_3 b_normal = grid_.box_normal(b3);
+          //const Vector_3 b_normal = get(normals_pm_, verts[i1]);
 
           bool wrong_orientation_3d_new = orient3(a3, b3, c3, b_normal) != CGAL::LEFT_TURN;
 

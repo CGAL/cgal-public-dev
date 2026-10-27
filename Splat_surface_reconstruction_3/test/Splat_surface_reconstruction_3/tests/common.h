@@ -209,6 +209,19 @@ struct Grid_test_access {
   static std::size_t nz(TestGrid& grid) {
     return grid.nz_;
   }
+
+  static const std::vector<Cell>& cells(TestGrid& grid) {
+    return grid.cells_;
+  }
+
+  static std::vector<Point_3> intersect_circle_with_splat(TestGrid& grid,
+      const Point_3& parent_a,
+      const Point_3& parent_b,
+      const Point_3& splat_center,
+      const Vector_3& splat_normal,
+      FT splat_radius) {
+    return grid.intersect_circle_with_splat(parent_a, parent_b, splat_center, splat_normal, splat_radius);
+  }
 };
 
 
@@ -294,6 +307,29 @@ struct Splat_surface_reconstruction_3_test_access {
 
   static int compute_priority(Reconstruction& reconstruction, const Candidate& cand) {
     return reconstruction.compute_priority(cand);
+  }
+
+  static bool intersect_2d(
+    Reconstruction& reconstruction,
+    const Point_2& p,
+    const Point_2& q,
+    const Point_2& r,
+    const Point_2& s,
+    const bool allow_overlap)
+  {
+    return reconstruction.intersect_2d(p, q, r, s, allow_overlap);
+  }
+
+  static void push_candidate_in_queue(Reconstruction& reconstruction, Candidate cand) {
+    reconstruction.push_candidate_in_queue(cand);
+  }
+
+  static bool pop_candidate_from_queue(Reconstruction& reconstruction, Candidate& cand) {
+    return reconstruction.pop_candidate_from_queue(cand);
+  }
+
+  static bool candidate_queues_empty(Reconstruction& reconstruction) {
+    return reconstruction.candidate_queues_empty();
   }
 };
 

@@ -11,6 +11,11 @@
 #include "tests/test_nearby_point_ids.h"
 #include "tests/test_has_vertex_near.h"
 #include "tests/test_compute_priority.h"
+#include "tests/test_initialize_grid.h"
+#include "tests/test_intersect_2d.h"
+#include "tests/test_candidate_queue.h"
+#include "tests/test_intersect_circle_with_splat.h"
+
 
 
 int main() {
@@ -28,6 +33,10 @@ int main() {
   run_nearby_point_ids_tests(test_data);
   run_has_vertex_near_tests(test_data);
   run_compute_priority_tests(test_data);
+  run_initialize_grid_tests(test_data);
+  run_intersect_2d_tests(test_data);
+  run_candidate_queue_tests(test_data);
+  run_intersect_circle_with_splat_tests(test_data);
 
   std::cout << "\n========== Test Summary ==========\n";
   std::cout << "Passed " << test_data.passed_tests << " out of " << test_data.total_tests << " tests\n";
