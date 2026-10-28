@@ -214,6 +214,10 @@ struct Grid_test_access {
     return grid.cells_;
   }
 
+  static const std::vector<FT>& splat_sizes(TestGrid& grid) {
+    return grid.splat_sizes_;
+  }
+
   static std::vector<Point_3> intersect_circle_with_splat(TestGrid& grid,
       const Point_3& parent_a,
       const Point_3& parent_b,
@@ -221,6 +225,10 @@ struct Grid_test_access {
       const Vector_3& splat_normal,
       FT splat_radius) {
     return grid.intersect_circle_with_splat(parent_a, parent_b, splat_center, splat_normal, splat_radius);
+  }
+
+  static std::vector<FT> estimate_individual_splat_sizes(TestGrid& grid) {
+    return grid.estimate_individual_splat_sizes();
   }
 };
 
@@ -330,6 +338,12 @@ struct Splat_surface_reconstruction_3_test_access {
 
   static bool candidate_queues_empty(Reconstruction& reconstruction) {
     return reconstruction.candidate_queues_empty();
+  }
+
+  static std::vector<Candidate> generate_candidates_from_parents(Reconstruction& reconstruction, vertex_descriptor parent_a,
+                                                              vertex_descriptor parent_b)
+  {
+    return reconstruction.generate_candidates_from_parents(parent_a, parent_b);
   }
 };
 

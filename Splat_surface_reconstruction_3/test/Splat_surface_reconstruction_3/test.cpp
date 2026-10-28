@@ -15,6 +15,8 @@
 #include "tests/test_intersect_2d.h"
 #include "tests/test_candidate_queue.h"
 #include "tests/test_intersect_circle_with_splat.h"
+#include "tests/test_estimate_individual_splat_sizes.h"
+#include "tests/test_generate_candidates_from_parents.h"
 
 
 
@@ -37,6 +39,8 @@ int main() {
   run_intersect_2d_tests(test_data);
   run_candidate_queue_tests(test_data);
   run_intersect_circle_with_splat_tests(test_data);
+  run_estimate_individual_splat_sizes_tests(test_data);
+  run_generate_candidates_from_parents_tests(test_data);
 
   std::cout << "\n========== Test Summary ==========\n";
   std::cout << "Passed " << test_data.passed_tests << " out of " << test_data.total_tests << " tests\n";

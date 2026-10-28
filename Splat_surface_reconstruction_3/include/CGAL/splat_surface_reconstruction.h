@@ -323,8 +323,10 @@ namespace CGAL {
      * @return Per-point splat radii.
     */
     std::vector<FT> estimate_individual_splat_sizes() {
-      FT global_spacing = 1.05*box_size_;
+      FT global_spacing = 1.5*box_size_;
       splat_sizes_.resize(points_.size(), global_spacing);
+
+      std::size_t computation_count = 0;
 
       for (Index i = 0; i < points_.size(); ++i) {
         int cx, cy, cz;
@@ -336,15 +338,18 @@ namespace CGAL {
         // Collect all points in the same box as p_i.
         std::vector<Index> local_ids;
         const Cell* c = cell(cx, cy, cz);
-        if (c == nullptr || c->point_ids_contained.empty()) {
+        if (c == nullptr || c->point_ids_within_distance_d.empty()) {
           continue;
         }
-        local_ids = c->point_ids_contained;
+        local_ids = c->point_ids_within_distance_d;
 
         // Need at least a few neighbors to define a local triangulation.
         if (local_ids.size() < 3) {
           continue;
         }
+
+        std::cout << "Found " << local_ids.size() << " local points." << std::endl;
+        ++computation_count;
 
         // Build a local tangent frame at p_i from its normal.
         std::vector<Vector_3> local_frame = compute_local_tangent_frame(normals_[i]);
@@ -395,6 +400,8 @@ namespace CGAL {
           splat_sizes_[i] = (std::min)(splat_sizes_[i], global_spacing); // Clamp to global spacing to avoid outliers.
         }
       }
+
+      std::cout << "Total local splat size computations: " << computation_count << " / " << splat_sizes_.size() << std::endl;
 
       max_splat_radius_ = *std::max_element(splat_sizes_.begin(), splat_sizes_.end());
       std::cout<<"Box size: " << box_size_ << " Max splat radius: " << max_splat_radius_ << std::endl;
@@ -766,6 +773,11 @@ namespace CGAL {
             static_cast<std::size_t>(ix) < nx_ &&
             static_cast<std::size_t>(iy) < ny_ &&
             static_cast<std::size_t>(iz) < nz_;
+    }
+
+    bool is_point_inside_grid(const Point_3& p) const {
+      int ix, iy, iz;
+      return to_grid_coordinates(p, ix, iy, iz);
     }
 
     /// @brief Returns the total number of grid cells.
@@ -1842,9 +1854,10 @@ namespace CGAL {
         const FT d = grid_.get_box_size();
         const FT d2 = CGAL::squared_distance(pa, pb);
 
-        if (d2 < FT(0.9) * d * d) {
+        if (d2 < d * d - FT(1e-6)) {
           return candidates;
         }
+
 
         // Circle radius from the two-parent construction.
         const FT circle_r = CGAL::sqrt((d * d) - (d2 / FT(4)));
@@ -1870,6 +1883,16 @@ namespace CGAL {
             grid_.intersect_circle_with_splat(pa, pb, points[sid], normals[sid], splat_radius);
 
           for (const Point_3& p : hits) {
+            // Changed: add this check
+            // Don't add candidates that are outside the grid bounds
+            if (!grid_.is_point_inside_grid(p))
+              continue;
+
+            // Changed: add this check
+            // Don't add vertices that cannot find a proper box normal
+            if (grid_.box_normal(p) == CGAL::NULL_VECTOR)
+              continue;
+
             Candidate c(p, normals[sid], sid, parent_a, parent_b);
             c.priority = compute_priority(c);
             candidates.push_back(c);
