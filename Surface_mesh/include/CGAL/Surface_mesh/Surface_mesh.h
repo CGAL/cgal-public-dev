@@ -1030,13 +1030,13 @@ public:
 
     Halfedge_index add_edge(Vertex_index v0, Vertex_index v1)
     {
-        CGAL_assertion(v0 != v1);
-        Halfedge_index h = add_edge();
+      CGAL_assertion(v0 != v1);
+      Halfedge_index h = add_edge();
 
-        set_target(h, v1);
-        set_target(opposite(h), v0);
+      set_target(h, v1);
+      set_target(opposite(h), v0);
 
-        return h;
+      return h;
     }
 
     /// adds a new face, and resizes face properties if necessary.

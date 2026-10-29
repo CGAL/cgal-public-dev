@@ -195,6 +195,8 @@ int main(int argc, char* argv[]) {
   double average_spacing = CGAL::compute_average_spacing<CGAL::Parallel_if_available_tag>(points, 2);
   std::cout << "Average spacing: " << average_spacing << std::endl;
 
+  std::cout << "Scale factor: " << scale << std::endl;
+
   double edge_length = scale * average_spacing;
   std::cout << "Required edge length: " << edge_length << std::endl;
 
@@ -217,6 +219,12 @@ int main(int argc, char* argv[]) {
   grid.write_splat_mesh_obj("splats_before.obj");
   std::vector<FT> splat_sizes = grid.estimate_individual_splat_sizes(); // estimate individual splat sizes based on local point distribution
   std::cout<<"Estimated individual splat sizes for " << splat_sizes.size() << " points." << std::endl;
+  FT mean = FT(0.0);
+  for (const auto& s : splat_sizes) {
+    mean += s;
+  }
+  mean /= splat_sizes.size();
+  std::cout << "Mean splat size: " << mean << std::endl;
   grid.write_splat_mesh_obj("splats_individual.obj");
 
   grid.write_splat_sizes_to_file("splat_sizes.txt");

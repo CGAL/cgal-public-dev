@@ -96,6 +96,7 @@ inline std::vector<Point_3> rand_points_3(std::size_t count, float min_x, float 
 
 
 
+
 struct TestData {
   uint total_tests = 0;
   uint passed_tests = 0;
@@ -345,6 +346,10 @@ struct Splat_surface_reconstruction_3_test_access {
   {
     return reconstruction.generate_candidates_from_parents(parent_a, parent_b);
   }
+
+  static bool projection_check(Reconstruction& reconstruction, const Candidate& cand, const Vector_3& n) {
+    return reconstruction.projection_check(cand, n);
+  }
 };
 
 }
@@ -430,6 +435,23 @@ inline Polyhedron ear_clip_and_add_faces_helper(std::vector<Point> points, std::
 
 
 
+
+inline void add_edge_to_mesh(Polyhedron& mesh, vertex_descriptor v0, vertex_descriptor v1) {
+  auto h = mesh.add_edge(v0, v1);
+  auto h_opposite = opposite(h, mesh);
+
+  // Set the targets explicitly.
+  set_target(h, v1, mesh);
+  set_target(h_opposite, v0, mesh);
+
+  // Make the two halfedges form a boundary cycle.
+  set_next(h, h_opposite, mesh);
+  set_next(h_opposite, h, mesh);
+
+  // Register an incident halfedge for each vertex.
+  set_halfedge(v0, h_opposite, mesh);
+  set_halfedge(v1, h, mesh);
+}
 
 
 

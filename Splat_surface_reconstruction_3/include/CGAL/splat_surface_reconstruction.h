@@ -323,8 +323,10 @@ namespace CGAL {
      * @return Per-point splat radii.
     */
     std::vector<FT> estimate_individual_splat_sizes() {
-      FT global_spacing = 1.5*box_size_;
+      FT global_spacing = 1.05*box_size_;
       splat_sizes_.resize(points_.size(), global_spacing);
+
+      std::cout << "Estimating individual splat sizes with global spacing: " << global_spacing << std::endl;
 
       std::size_t computation_count = 0;
 
@@ -335,20 +337,31 @@ namespace CGAL {
           std::exit(EXIT_FAILURE);
         }
 
+        // Changed: from
         // Collect all points in the same box as p_i.
+        // to:
+        // Collect all points within distance d of p_i.
         std::vector<Index> local_ids;
         const Cell* c = cell(cx, cy, cz);
         if (c == nullptr || c->point_ids_within_distance_d.empty()) {
           continue;
         }
-        local_ids = c->point_ids_within_distance_d;
+
+        for (Index pid : c->point_ids_within_distance_d) {
+          // Distance check: only include points within distance d of p_i.
+          Vector_3 diff = points_[pid] - points_[i];
+          double dist2 = CGAL::to_double(diff * diff);
+          double d_sq = 1.0 * box_size_ * box_size_;
+          if (dist2 <= d_sq + 1e-6 || true) {
+            local_ids.push_back(pid);
+          }
+        }
 
         // Need at least a few neighbors to define a local triangulation.
         if (local_ids.size() < 3) {
           continue;
         }
 
-        std::cout << "Found " << local_ids.size() << " local points." << std::endl;
         ++computation_count;
 
         // Build a local tangent frame at p_i from its normal.
@@ -1286,6 +1299,10 @@ namespace CGAL {
         std::size_t accepted = 0;
 
         int iterationIndex = 0;
+
+        // export the splats for visualization
+        // export_halfedge_mesh_json(mesh_, "initial_splats.json");
+        // CGAL_assertion(false);
 
         while (!candidate_queues_empty()) {
           Candidate cand(Point_3(0,0,0), CGAL::NULL_VECTOR, 0, vertex_descriptor(), vertex_descriptor()); // Dummy initialization
@@ -2430,20 +2447,20 @@ namespace CGAL {
             // There must be continuity between h2 and g1
             CGAL_assertion(next(h2, mesh_) == g1);
           }
-          else {
+          // else {
 
-            std::cout << "Debugging halfedge mesh: unexpected configuration" << std::endl;
-            std::cout << "h1: " << h1 << " h2: " << h2 << " g1: " << g1 << " g2: " << g2 << std::endl;
-            std::cout << "existing edge between v0 and v1: " << halfedge(v0, v1, mesh_).first << std::endl;
-            std::cout << "existing edge between v1 and v0: " << halfedge(v1, v0, mesh_).first << std::endl;
-            std::cout << "v0: " << v0 << std::endl;
-            std::cout << "v1: " << v1 << std::endl;
-            export_halfedge_mesh_json(
-              mesh_,
-              "mesh_debug.json"
-            );
-            CGAL_assertion(false);
-          }
+          //   std::cout << "Debugging halfedge mesh: unexpected configuration" << std::endl;
+          //   std::cout << "h1: " << h1 << " h2: " << h2 << " g1: " << g1 << " g2: " << g2 << std::endl;
+          //   std::cout << "existing edge between v0 and v1: " << halfedge(v0, v1, mesh_).first << std::endl;
+          //   std::cout << "existing edge between v1 and v0: " << halfedge(v1, v0, mesh_).first << std::endl;
+          //   std::cout << "v0: " << v0 << std::endl;
+          //   std::cout << "v1: " << v1 << std::endl;
+          //   export_halfedge_mesh_json(
+          //     mesh_,
+          //     "mesh_debug.json"
+          //   );
+          //   CGAL_assertion(false);
+          // }
 
           // std::cout << "halfedge between v0 and v1 exists." << std::endl;
 
@@ -3476,6 +3493,17 @@ namespace CGAL {
         return false;
       };
 
+
+      bool point_in_cylinder(const Point_3& p, const Point_3& c, const Vector_3& n, FT radius, FT height) const {
+        Vector_3 pc = p - c;
+        FT dist_along_normal = pc * n;
+        if (dist_along_normal < -height || dist_along_normal > height) {
+          return false;
+        }
+        Vector_3 proj = pc - dist_along_normal * n;
+        return std::sqrt(proj.squared_length()) <= radius;
+      }
+
       /**
        * @brief Checks whether a candidate is geometrically compatible with the
        *        surrounding mesh under a local planar projection.
@@ -3511,7 +3539,7 @@ namespace CGAL {
         const Point_2 new_e2_t = C;
 
         //CHANGED: made the vicinity d instead of 4d
-        auto nearby = nearby_mesh_vertices(pc, FT(1.0) * grid_.get_box_size());
+        auto nearby = nearby_mesh_vertices(pc, FT(3.0) * grid_.get_box_size());
         for (auto v : nearby) {
           const FT distance = std::sqrt(CGAL::squared_distance(pc, get(points_pm_, v)));
           // if (distance > FT(1.0) * grid_.get_box_size()) {
@@ -3519,6 +3547,14 @@ namespace CGAL {
           //   std::cout << "Vertex " << v << " is too far from candidate: distance = " << distance << " while allowed distance = " << FT(1.0) * grid_.get_box_size() << std::endl;
           // }
           //CGAL_assertion(distance <= FT(1.0) * grid_.get_box_size());
+
+          const FT radius = FT(2.0) * grid_.get_box_size();
+          const FT height = FT(1.0) * grid_.get_box_size();
+          const Point_3 v_point = get(points_pm_, v);
+
+          if (!point_in_cylinder(v_point, pc, n, radius, height)) {
+            continue;
+          }
 
           for (halfedge_descriptor h : halfedges_around_target(v, mesh_)) {
             vertex_descriptor s = source(h, mesh_);

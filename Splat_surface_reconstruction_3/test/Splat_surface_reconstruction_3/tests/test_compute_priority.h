@@ -1,23 +1,6 @@
 #pragma once
 #include "common.h"
 
-inline void add_edge(Polyhedron& mesh, vertex_descriptor v0, vertex_descriptor v1) {
-  auto h = mesh.add_edge(v0, v1);
-  auto h_opposite = opposite(h, mesh);
-
-  // Set the targets explicitly.
-  set_target(h, v1, mesh);
-  set_target(h_opposite, v0, mesh);
-
-  // Make the two halfedges form a boundary cycle.
-  set_next(h, h_opposite, mesh);
-  set_next(h_opposite, h, mesh);
-
-  // Register an incident halfedge for each vertex.
-  set_halfedge(v0, h_opposite, mesh);
-  set_halfedge(v1, h, mesh);
-}
-
 inline bool test_compute_priority_3() {
   std::vector<Point> points = {
     Point(0.0, 0.0, 0.0),
@@ -91,7 +74,7 @@ inline bool test_compute_priority_2() {
     mesh_verts.push_back(mesh.add_vertex(p));
 
 
-  add_edge(mesh, mesh_verts[0], mesh_verts[1]);
+  add_edge_to_mesh(mesh, mesh_verts[0], mesh_verts[1]);
 
   // Construct the reconstruction after initializing the mesh.
   Splat_surface_reconstruction reconstruction =
