@@ -3710,7 +3710,7 @@ namespace CGAL {
       static constexpr int NUM_PRIORITIES = 4; // 0 is lowest, NUM_PRIORITIES-1 is highest
       std::array<std::deque<Candidate>, NUM_PRIORITIES> candidate_queues_; // candidate_queues_[p] contains all candidates with priority p
 
-      const std::size_t window_size_ = 8;
+      const std::size_t window_size_ = 80;
 
       std::vector<std::vector<vertex_descriptor>> mesh_vertices_per_cell_;
   };
