@@ -59,25 +59,6 @@ std::vector<std::pair<double, std::size_t>> find_ear_candidates_helper(std::vect
     h = next(h, mesh);
   } while (h != start);
 
-  // The hexagon lies in the xy-plane, centered at the origin.
-  const Point origin = points[0];
-  Vector_3 n = Access::compute_cycle_normal(reconstruction, verts);
-  std::vector<Vector_3> frame = grid.compute_local_tangent_frame(n);
-  Vector_3 u = frame[0];
-  Vector_3 v = frame[1];
-  CGAL_assertion(u != CGAL::NULL_VECTOR && v != CGAL::NULL_VECTOR);
-  if (CGAL::cross_product(u, v) * n < FT(0))
-    v = -v;
-
-  // Project each vertex into the local 2D coordinate system.
-  std::vector<Point_2> P;
-  P.reserve(verts.size());
-
-  for (Point p : points)
-  {
-    P.push_back(TestAccess::project(reconstruction, p, origin, u, v));
-  }
-
   // Associate each cycle vertex with its corresponding input index.
   std::vector<int> idx;
   idx.reserve(verts.size());
@@ -85,11 +66,10 @@ std::vector<std::pair<double, std::size_t>> find_ear_candidates_helper(std::vect
   for (const auto vertex : verts) {
     idx.push_back(static_cast<int>(
       get(CGAL::vertex_index, mesh, vertex)));
-    std::cout << "Vertex " << vertex << " has index " << idx.back() << std::endl;
   }
 
   const auto candidates = Access::find_ear_candidates(
-    reconstruction, cycle, verts, P, n, origin, u, v, idx);
+    reconstruction, cycle, verts, idx);
 
   return candidates;
 }

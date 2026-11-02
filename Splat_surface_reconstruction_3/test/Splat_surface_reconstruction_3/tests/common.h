@@ -274,14 +274,9 @@ struct Splat_surface_reconstruction_3_test_access {
     Reconstruction& reconstruction,
     const std::vector<halfedge_descriptor>& cycle,
     const std::vector<vertex_descriptor>& verts,
-    const std::vector<Point_2>& P,
-    const Vector_3& n,
-    const Point_3& origin,
-    const Vector_3& u,
-    const Vector_3& v,
     const std::vector<int>& idx)
   {
-    return reconstruction.find_ear_candidates(cycle, verts, P, n, origin, u, v, idx, false);
+    return reconstruction.find_ear_candidates(cycle, verts, idx);
   }
 
   static bool ear_clip_and_add_faces(Reconstruction& reconstruction, std::vector<halfedge_descriptor> cycle) {

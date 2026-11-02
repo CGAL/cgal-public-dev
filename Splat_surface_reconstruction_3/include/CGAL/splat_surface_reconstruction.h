@@ -2881,19 +2881,12 @@ namespace CGAL {
       std::vector<std::pair<double, std::size_t>> find_ear_candidates(
           const std::vector<halfedge_descriptor>& cycle,
           const std::vector<vertex_descriptor>& verts,
-          const std::vector<Point_2>& P,
-          const Vector_3& n,
-          const Point_3& origin,
-          const Vector_3& u,
-          const Vector_3& v,
-          const std::vector<int>& idx,
-          bool print_info)
+          const std::vector<int>& idx)
       {
         // Verify inputs
         CGAL_assertion(cycle.size() >= 3);
         CGAL_assertion(verts.size() == cycle.size());
         CGAL_assertion(idx.size() == cycle.size());
-        CGAL_assertion(P.size() == cycle.size());
 
         //bool target_found = false;
 
@@ -2920,20 +2913,6 @@ namespace CGAL {
           //   CGAL_assertion(false);
           // }
         }
-
-        // The vectors must be non-zero and orthogonal to each other.
-        CGAL_assertion(u != CGAL::NULL_VECTOR);
-        CGAL_assertion(v != CGAL::NULL_VECTOR);
-        CGAL_assertion(n != CGAL::NULL_VECTOR);
-
-        CGAL_assertion(std::abs(u * v) < 1e-8);
-        CGAL_assertion(std::abs(u * n) < 1e-8);
-        CGAL_assertion(std::abs(v * n) < 1e-8);
-
-        // And must be normalized
-        CGAL_assertion(std::abs(u * u - 1.0) < 1e-8);
-        CGAL_assertion(std::abs(v * v - 1.0) < 1e-8);
-        CGAL_assertion(std::abs(n * n - 1.0) < 1e-8);
         
 
         std::vector<std::pair<double, std::size_t>> ear_candidates;
@@ -2945,17 +2924,10 @@ namespace CGAL {
 
         for (std::size_t i = 0; i < idx.size(); ++i)
         {
-          // Candidate ear = (prev,current,next).
+          // Candidate ear = (prev,current,next)
           const std::size_t i0 = idx[(i + idx.size() - 1) % idx.size()];
           const std::size_t i1 = idx[i];
           const std::size_t i2 = idx[(i + 1) % idx.size()];
-
-          const Point_2& a = P[i0];
-          const Point_2& b = P[i1];
-          const Point_2& c = P[i2];
-
-          bool wrong_orientation_3d = CGAL::cross_product(get(points_pm_, verts[i2]) - get(points_pm_, verts[i1]),
-                                  get(points_pm_, verts[i0]) - get(points_pm_, verts[i1])) * n < FT(0);
 
           const Point_3& a3 = get(points_pm_, verts[i0]);
           const Point_3& b3 = get(points_pm_, verts[i1]);
@@ -3094,40 +3066,15 @@ namespace CGAL {
           CGAL_assertion(false);
         }
 
-        // Compute one supporting normal for the polygon. This normal is fixed for the
-        // entire ear-clipping operation so that the projection does not change after
-        // each ear removal.
-        Vector_3 n = compute_cycle_normal(verts);
-
-        // Project the polygon vertices into the tangent plane once. The resulting 2D
-        // points are reused by the ear-clipping loop.
-        std::vector<Vector_3> frame = grid_.compute_local_tangent_frame(n);
-        Vector_3 u = frame[0];
-        Vector_3 v = frame[1];
-        CGAL_assertion(u != CGAL::NULL_VECTOR && v != CGAL::NULL_VECTOR);
-        if (CGAL::cross_product(u, v) * n < FT(0))
-          v = -v;
-        const Point_3 origin = get(points_pm_, verts[0]);
-
-        std::vector<Point_2> P;
-        P.reserve(verts.size());
-
         // Iteratively remove one ear until only one triangle remains.
         while (cycle.size() > 3) {
           verts.clear();
-          P.clear();
 
           verts.reserve(cycle.size());
           for (halfedge_descriptor h : cycle)
             verts.push_back(source(h, mesh_));
 
-          for (vertex_descriptor vd : verts)
-          {
-            const Point_3 p = get(points_pm_, vd);
-            P.emplace_back(project(p, origin, u, v));
-          }
-
-          std::vector<int> idx(P.size());
+          std::vector<int> idx(cycle.size());
           std::iota(idx.begin(), idx.end(), 0);
 
           // ----------------------------------------------------------------------
@@ -3138,13 +3085,7 @@ namespace CGAL {
             = find_ear_candidates(
                 cycle,
                 verts,
-                P,
-                n,
-                origin,
-                u,
-                v,
-                idx,
-                false
+                idx
               );
           
           // There should always be at least one valid ear unless the polygon has 3 or fewer vertices.
