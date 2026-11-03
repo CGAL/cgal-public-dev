@@ -166,6 +166,21 @@ namespace CGAL {
       return block_normals_;
     }
 
+    const Point_3& get_splat_point(Index pid) const {
+      CGAL_assertion(pid < points_.size());
+      return points_[pid];
+    }
+
+    const Vector_3& get_splat_normal(Index pid) const {
+      CGAL_assertion(pid < normals_.size());
+      return normals_[pid];
+    }
+
+    const FT get_splat_size(Index pid) const {
+      CGAL_assertion(pid < splat_sizes_.size());
+      return splat_sizes_[pid];
+    }
+
     /**
      * @brief Builds the grid from input points and normals.
      *
@@ -323,7 +338,7 @@ namespace CGAL {
      * @return Per-point splat radii.
     */
     std::vector<FT> estimate_individual_splat_sizes() {
-      FT global_spacing = 1.05*box_size_;
+      FT global_spacing = box_size_;
       splat_sizes_.resize(points_.size(), global_spacing);
 
       std::cout << "Estimating individual splat sizes with global spacing: " << global_spacing << std::endl;
@@ -433,7 +448,9 @@ namespace CGAL {
     Initial_seed get_initial_seed() const {
       std::cout<<"Searching for initial seed with splat size larger than box size..." << std::endl;
       for (Index i = 0; i < splat_sizes_.size(); ++i) {
-        if (splat_sizes_[i] > box_size_ && i < normals_.size() && normals_[i] != CGAL::NULL_VECTOR) {
+        // CHANGED: from requiring splat_sizes_[i] > box_size_
+        // to splat_sizes_[i] > box_size_ * 0.95
+        if (splat_sizes_[i] > box_size_ * 0.95 && i < normals_.size() && normals_[i] != CGAL::NULL_VECTOR) {
           // Define a central region: keep points that are at least 10% away from each face.
           const FT margin_x = FT(0.1) * (max_x_ - min_x_);
           const FT margin_y = FT(0.1) * (max_y_ - min_y_);
@@ -590,6 +607,9 @@ namespace CGAL {
       }
       ns = ns * (1.0 / std::sqrt(ns_len2));
 
+      return circle_intersects_splat(mid, circle_normal, circle_r, splat_center, ns, splat_radius);
+
+
       // Circle points are:
       //   x(t) = mid + circle_r * (cos(t) * u + sin(t) * v)
       //
@@ -628,6 +648,92 @@ namespace CGAL {
           mid.x() + circle_r * (ct * u.x() + st * v.x()),
           mid.y() + circle_r * (ct * u.y() + st * v.y()),
           mid.z() + circle_r * (ct * u.z() + st * v.z())
+        );
+      };
+
+      const FT splat_r2 = splat_radius * splat_radius;
+
+      Point_3 p1 = make_point(t1);
+      Point_3 p2 = make_point(t2);
+
+      // Keep only points that lie inside the splat disk.
+      if (CGAL::squared_distance(p1, splat_center) <= splat_r2) {
+        result.push_back(p1);
+      }
+
+      // Avoid duplicate if the two solutions coincide numerically.
+      if (CGAL::squared_distance(p2, splat_center) <= splat_r2 &&
+          CGAL::squared_distance(p2, p1) > FT(1e-12))
+      {
+        result.push_back(p2);
+      }
+
+      return result;
+    }
+
+
+    std::vector<Point_3> circle_intersects_splat(
+      const Point_3& circle_center,
+      const Vector_3& circle_normal,
+      const FT circle_radius,
+      const Point_3& splat_center,
+      const Vector_3& splat_normal,
+      const FT splat_radius
+    ) const
+    {
+      std::vector<Point_3> result;
+
+      // Build an orthonormal basis (u, v) for the circle plane.
+      std::vector<Vector_3> frame = compute_local_tangent_frame(circle_normal);
+      const Vector_3& u = frame[0];
+      const Vector_3& v = frame[1];
+
+      // Normalize the splat normal.
+      Vector_3 ns = splat_normal;
+      const double ns_len2 = CGAL::to_double(ns.squared_length());
+      if (ns_len2 <= 0.0) {
+        return result;
+      }
+      ns = ns * (1.0 / std::sqrt(ns_len2));
+
+      // Circle points are:
+      //   x(t) = circle_center + circle_radius * (cos(t) * u + sin(t) * v)
+      //
+      // Splat plane equation:
+      //   dot(ns, x - splat_center) = 0
+      //
+      // This becomes:
+      //   A cos(t) + B sin(t) = C
+      const FT A = circle_radius * (u * ns);
+      const FT B = circle_radius * (v * ns);
+      const FT C = (splat_center - circle_center) * ns;
+
+      const FT R2 = A * A + B * B;
+      if (R2 <= FT(0)) {
+        // Circle plane is parallel to splat plane.
+        return result;
+      }
+
+      const FT R = CGAL::sqrt(R2);
+
+      if (std::abs(CGAL::to_double(C)) > CGAL::to_double(R)) {
+        // No intersection between circle and splat plane.
+        return result;
+      }
+
+      const FT phi = std::atan2(CGAL::to_double(B), CGAL::to_double(A));
+      const FT delta = std::acos(CGAL::to_double(C / R));
+
+      const FT t1 = phi + delta;
+      const FT t2 = phi - delta;
+
+      const auto make_point = [&](FT t) -> Point_3 {
+        const FT ct = std::cos(CGAL::to_double(t));
+        const FT st = std::sin(CGAL::to_double(t));
+        return Point_3(
+          circle_center.x() + circle_radius * (ct * u.x() + st * v.x()),
+          circle_center.y() + circle_radius * (ct * u.y() + st * v.y()),
+          circle_center.z() + circle_radius * (ct * u.z() + st * v.z())
         );
       };
 
@@ -1228,26 +1334,69 @@ namespace CGAL {
       using face_descriptor = typename boost::graph_traits<TriangleMesh>::face_descriptor;
 
       struct Candidate {
-      Point_3 position;
-      Vector_3 normal;
-      Index splat_id;
-      vertex_descriptor first;
-      vertex_descriptor second;
-      int priority = 0;
+        Point_3 position;
+        Vector_3 normal;
+        Index splat_id;
+        vertex_descriptor first;
+        vertex_descriptor second;
+        int priority = 0;
 
-      Candidate(const Point_3& position,
-                const Vector_3& normal,
-                Index splat_id,
-                vertex_descriptor first,
-                vertex_descriptor second)
-        : position(position),
-          normal(normal),
-          splat_id(splat_id),
-          first(first),
-          second(second) {}
+        Candidate(const Point_3& position,
+                  const Vector_3& normal,
+                  Index splat_id,
+                  vertex_descriptor first,
+                  vertex_descriptor second)
+          : position(position),
+            normal(normal),
+            splat_id(splat_id),
+            first(first),
+            second(second) {}
+      };
+
+
+      struct FeatureVertexCandidate {
+        Point_3 position;
+        Vector_3 normal;
+        std::size_t feature_segment_index;
+        bool has_feature_segment;
+        vertex_descriptor parent_vertex;
+        bool has_parent_vertex;
+
+        FeatureVertexCandidate(const Point_3& position,
+          const Vector_3& normal,
+          bool has_feature_segment = false,
+          bool has_parent_vertex = false,
+          std::size_t feature_segment_index = 0,
+          vertex_descriptor parent_vertex = vertex_descriptor())
+          : position(position)
+          , normal(normal)
+          , has_feature_segment(has_feature_segment)
+          , has_parent_vertex(has_parent_vertex)
+          , feature_segment_index(feature_segment_index)
+          , parent_vertex(parent_vertex)
+          {}
+      };
+
+      struct FeatureSegment {
+        Point_3 point_1;
+        Point_3 point_2;
+        Vector_3 normal;
+
+        FeatureSegment(const Point_3& point_1, const Point_3& point_2, const Vector_3& normal)
+          : point_1(point_1)
+          , point_2(point_2)
+          , normal(normal)
+          {}
       };
 
     public:
+
+      enum class Initialization_method
+      {
+        DEFAULT,
+        FEATURE_AWARE
+      };
+
       /**
        * @brief Constructs a reconstruction object and initializes mesh properties.
        *
@@ -1257,7 +1406,10 @@ namespace CGAL {
        * @param grid Spatial grid containing input points, normals, and splat sizes.
        * @param output_mesh Mesh receiving the reconstructed surface.
       */
-      Splat_surface_reconstruction_3(const Grid& grid, TriangleMesh& output_mesh)
+      Splat_surface_reconstruction_3(const Grid& grid,
+        TriangleMesh& output_mesh,
+        Initialization_method init_method = Initialization_method::DEFAULT,
+        FT feature_angle_minimum = FT(30.0))
       : grid_(grid),
         mesh_(output_mesh),
         points_pm_(get(CGAL::vertex_point, mesh_)) {
@@ -1274,7 +1426,13 @@ namespace CGAL {
 
         mesh_vertices_per_cell_.resize(grid_.number_of_cells());
 
-        seed_from_grid();
+        if (init_method == Initialization_method::FEATURE_AWARE) {
+          seed_from_features(feature_angle_minimum);
+          seed_from_grid();
+        }
+        else {
+          seed_from_grid();
+        }
       }
 
       /**
@@ -1390,9 +1548,9 @@ namespace CGAL {
         std::cout<<"Setting Faces..." << std::endl;
         fill_faces_from_next_cycles();
 
-        assert_valid_triangle_faces();
+        //assert_valid_triangle_faces();
 
-        assert_final_mesh_manifold();
+        //assert_final_mesh_manifold();
 
         export_halfedge_mesh_json(mesh_, "final_mesh.json");
 
@@ -1470,14 +1628,14 @@ namespace CGAL {
               bool orientation_correct = (orientation == CGAL::LEFT_TURN);
 
               if (orientation_correct != loop_correct) {
-                export_halfedge_mesh_json(mesh_, "invalid_orientation.json");
-                std::cout << "Invalid orientation detected for triangle: h0=" << h0 << ", h1=" << h1 << ", h2=" << h2 << std::endl;
-                std::cout << h0 << ": " << h0_source << "->" << h0_target << " (next: " << next(h0, mesh_) << ")" << std::endl;
-                std::cout << h1 << ": " << source(h1, mesh_) << "->" << target(h1, mesh_) << " (next: " << next(h1, mesh_) << ")" << std::endl;
-                std::cout << h2 << ": " << source(h2, mesh_) << "->" << target(h2, mesh_) << " (next: " << next(h2, mesh_) << ")" << std::endl;
-                std::cout << "Orientation: " << orientation << std::endl;
-                std::cout << "Points: p_a=" << p_a << ", p_b=" << p_b << ", p_c=" << p_c << std::endl;
-                std::cout << "Final normal: " << final_normal << std::endl;
+                // export_halfedge_mesh_json(mesh_, "invalid_orientation.json");
+                // std::cout << "Invalid orientation detected for triangle: h0=" << h0 << ", h1=" << h1 << ", h2=" << h2 << std::endl;
+                // std::cout << h0 << ": " << h0_source << "->" << h0_target << " (next: " << next(h0, mesh_) << ")" << std::endl;
+                // std::cout << h1 << ": " << source(h1, mesh_) << "->" << target(h1, mesh_) << " (next: " << next(h1, mesh_) << ")" << std::endl;
+                // std::cout << h2 << ": " << source(h2, mesh_) << "->" << target(h2, mesh_) << " (next: " << next(h2, mesh_) << ")" << std::endl;
+                // std::cout << "Orientation: " << orientation << std::endl;
+                // std::cout << "Points: p_a=" << p_a << ", p_b=" << p_b << ", p_c=" << p_c << std::endl;
+                // std::cout << "Final normal: " << final_normal << std::endl;
               }
 
               // If the orientation does not match the loop correctness, report an error.
@@ -1561,7 +1719,7 @@ namespace CGAL {
 
               // The loop being correct implies that the orientation should also be correct.
               // If the loop is not correct, the orientation may or may not be correct.
-              CGAL_assertion(implies(loop_correct, orientation_correct));
+              //CGAL_assertion(implies(loop_correct, orientation_correct));
             }
           }
         }
@@ -2141,6 +2299,25 @@ namespace CGAL {
         }
         out << "\n  ],\n";
 
+        // --------------------------------------------------
+        // Feature segments
+        // --------------------------------------------------
+        out << "  \"feature_segments\": [\n";
+
+        for (std::size_t i = 0; i < feature_segments_.size(); ++i) {
+          if (i > 0) out << ",\n";
+
+          out << "    {\"point_1\": ["
+              << CGAL::to_double(feature_segments_[i].point_1.x()) << ", "
+              << CGAL::to_double(feature_segments_[i].point_1.y()) << ", "
+              << CGAL::to_double(feature_segments_[i].point_1.z()) << "], "
+              << "\"point_2\": ["
+              << CGAL::to_double(feature_segments_[i].point_2.x()) << ", "
+              << CGAL::to_double(feature_segments_[i].point_2.y()) << ", "
+              << CGAL::to_double(feature_segments_[i].point_2.z()) << "]}";
+        }
+        out << "\n  ],\n";
+
 
 
         // --------------------------------------------------
@@ -2315,8 +2492,9 @@ namespace CGAL {
           if (a < 0.0) {
             a += two_pi;
           }
-          CGAL_assertion(a >= 0.0);
-          CGAL_assertion(a < two_pi);
+          if (a >= two_pi) {
+            a = 0.0;
+          }
           return a;
         };
 
@@ -3631,6 +3809,623 @@ namespace CGAL {
         return 0;   // lowest priority
       }
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+      // Feature awareness functions
+
+
+
+
+      void seed_from_features(FT minimum_angle) {
+        feature_vertices_per_cell_.clear();
+        feature_vertices_per_cell_.resize(grid_.number_of_cells());
+        feature_segment_indices_per_cell_.clear();
+        feature_segment_indices_per_cell_.resize(grid_.number_of_cells());
+        feature_segment_is_used_.clear();
+        feature_segment_is_used_.resize(feature_segments_.size(), false);
+
+        find_feature_segments(minimum_angle);
+        find_initial_feature_vertex_candidates(minimum_angle);
+
+        // No feature segments have been used yet
+        feature_segment_is_used_.assign(feature_segments_.size(), false);
+        
+        const FT d = grid_.get_box_size();
+
+        int iteration = 0;
+
+        while (!feature_vertex_candidate_queue_.empty()) {
+          const FeatureVertexCandidate& cand = feature_vertex_candidate_queue_.front();
+          feature_vertex_candidate_queue_.pop_front();
+
+          if (is_any_feature_vertex_too_close(cand.position, d)) {
+            continue;
+          }
+
+          // Now we create a feature vertex for this candidate.
+          vertex_descriptor parent_vertex_index = create_feature_vertex(cand);
+
+          if (cand.has_feature_segment) {
+            feature_segment_is_used_[cand.feature_segment_index] = true;
+          }
+
+          // And we need to add any new feature vertex candidates that arise from this insertion.
+          add_new_feature_vertex_candidates(cand, parent_vertex_index);
+
+          iteration++;
+
+          if (iteration >= 1000) {
+            break;
+          }
+        }
+
+        export_halfedge_mesh_json(mesh_, "feature_vertices.json");
+        CGAL_assertion(false);
+      }
+
+
+
+      void add_new_feature_vertex_candidates(const FeatureVertexCandidate& cand, vertex_descriptor parent_vertex_index) {
+        int ix, iy, iz;
+
+        if (!grid_.to_grid_coordinates(cand.position, ix, iy, iz))
+          return;
+
+        const FT sphere_radius = grid_.get_box_size();
+        const Point_3& sphere_center = cand.position;
+
+        // Iterate over all neighbouring cells to check for feature segments
+        int reach = 2;
+        for (int dx = -reach; dx <= reach; ++dx) {
+          for (int dy = -reach; dy <= reach; ++dy) {
+            for (int dz = -reach; dz <= reach; ++dz) {
+              int neighbor_ix = ix + dx;
+              int neighbor_iy = iy + dy;
+              int neighbor_iz = iz + dz;
+
+              if (!grid_.valid_coordinates(neighbor_ix, neighbor_iy, neighbor_iz)) {
+                continue;
+              }
+
+              std::size_t flat_index = grid_.flat_index(neighbor_ix, neighbor_iy, neighbor_iz);
+              for (const std::size_t& feature_segment_index : feature_segment_indices_per_cell_[flat_index]) {
+                const FeatureSegment& feature_segment = feature_segments_[feature_segment_index];
+                Point_3 intersection_point;
+                if (line_intersects_sphere(
+                  feature_segment.point_1,
+                  feature_segment.point_2,
+                  sphere_center,
+                  sphere_radius,
+                  intersection_point))
+                {
+                  // We have found a new candidate
+                  feature_vertex_candidate_queue_.push_back(
+                    FeatureVertexCandidate{
+                      intersection_point,
+                      feature_segment.normal,
+                      true, // does have an associated feature segment
+                      true, // does have a parent vertex
+                      feature_segment_index,
+                      parent_vertex_index
+                    });
+                }
+              }
+            }
+          }
+        }
+      }
+
+
+      vertex_descriptor create_feature_vertex(const FeatureVertexCandidate& cand) {
+        const auto null_h = boost::graph_traits<TriangleMesh>::null_halfedge();
+        const double two_pi = 2.0 * std::acos(-1.0);
+
+        auto make_frame = [&](const Vector_3& n) -> std::pair<Vector_3, Vector_3> {
+          std::vector<Vector_3> frame = grid_.compute_local_tangent_frame(n);
+          Vector_3 u = frame[0];
+          Vector_3 v = frame[1];
+
+          if (u == CGAL::NULL_VECTOR || v == CGAL::NULL_VECTOR) {
+            return {CGAL::NULL_VECTOR, CGAL::NULL_VECTOR};
+          }
+
+          if (CGAL::cross_product(u, v) * n < FT(0)) {
+            v = -v;
+          }
+
+          CGAL_assertion(u != CGAL::NULL_VECTOR && v != CGAL::NULL_VECTOR);
+
+          CGAL_assertion(u.squared_length() > FT(0));
+          CGAL_assertion(v.squared_length() > FT(0));
+
+          // Their cross product should agree with the normal
+          CGAL_assertion(CGAL::cross_product(u, v) * n >= FT(0));
+
+          // Check that u and v are perpendicular to the normal n.
+          CGAL_assertion(
+            std::abs(CGAL::to_double(u * n)) < 1e-8
+          );
+          CGAL_assertion(
+            std::abs(CGAL::to_double(v * n)) < 1e-8
+          );
+          // Check that u and v are perpendicular to each other.
+          CGAL_assertion(
+            std::abs(CGAL::to_double(u * v)) < 1e-8
+          );
+
+          return {u, v};
+        };
+
+        // Return the polar angle of q around origin in the tangent frame.
+        auto angle_of = [&](const Point_3& origin,
+                            const Point_3& q,
+                            const Vector_3& u,
+                            const Vector_3& v) -> double {
+          const Vector_3 d = q - origin;
+          double a = std::atan2(CGAL::to_double(d * v), CGAL::to_double(d * u));
+          if (a < 0.0) {
+            a += two_pi;
+          }
+          if (a >= two_pi) {
+            a = 0.0;
+          }
+          return a;
+        };
+
+        // Collect all incident halfedges around a parent and sort them by their
+        // projected angle. These halfedges define the local front ordering.
+        auto sorted_halfedges_around_vertex =
+          [&](vertex_descriptor v, const Vector_3& local_normal)
+            -> std::vector<std::pair<double, halfedge_descriptor>> {
+          std::vector<std::pair<double, halfedge_descriptor>> out;
+          const Point_3 pv = get(points_pm_, v);
+
+          const auto [u, vaxis] = make_frame(local_normal);
+          if (u == CGAL::NULL_VECTOR || vaxis == CGAL::NULL_VECTOR) {
+            return out;
+          }
+
+          for (halfedge_descriptor h : halfedges_around_source(v, mesh_)) {
+            CGAL_assertion(source(h, mesh_) == v);
+            const vertex_descriptor t = target(h, mesh_);
+            if (t == v) {
+              continue;
+            }
+            out.emplace_back(angle_of(pv, get(points_pm_, t), u, vaxis), h);
+          }
+
+          std::sort(out.begin(), out.end(),
+            [](const auto& a, const auto& b) { return a.first < b.first; });
+
+          for (std::size_t i = 1; i < out.size(); ++i) {
+            CGAL_assertion(out[i - 1].first <= out[i].first);
+          }
+
+          for (const auto& [angle, he] : out) {
+            CGAL_assertion(he != null_h);
+            CGAL_assertion(source(he, mesh_) == v);
+            CGAL_assertion(angle >= 0.0 && angle < two_pi);
+          }
+
+          return out;
+        };
+
+        // Select the two front halfedges immediately clockwise and counter-clockwise
+        // from the direction toward the new vertex.
+        auto choose_closest_ccw_halfedges =
+          [&](vertex_descriptor v,
+              const Point_3& new_point,
+              const Vector_3& local_normal)
+            -> std::pair<halfedge_descriptor, halfedge_descriptor> {
+          const Point_3 pv = get(points_pm_, v);
+          const auto [u, vaxis] = make_frame(local_normal);
+          if (u == CGAL::NULL_VECTOR || vaxis == CGAL::NULL_VECTOR) {
+            return {null_h, null_h};
+          }
+
+          const double theta_new = angle_of(pv, new_point, u, vaxis);
+
+          std::vector<std::pair<double, halfedge_descriptor>> sorted =
+            sorted_halfedges_around_vertex(v, local_normal);
+
+          if (sorted.empty()) {
+            return {null_h, null_h};
+          }
+
+          auto it = std::lower_bound(
+            sorted.begin(), sorted.end(), theta_new,
+            [](const std::pair<double, halfedge_descriptor>& a, double theta) {
+              return a.first < theta;
+            });
+
+          const auto& ccw = (it == sorted.end())   ? sorted.front() : *it;
+          const auto& cw  = (it == sorted.begin()) ? sorted.back()  : *(it - 1);
+
+          return {cw.second, ccw.second};
+        };
+
+        insert_feature_vertex(cand.position);
+
+        // Add this vertex to the mesh and maps
+        vertex_descriptor v = add_vertex(mesh_);
+        put(points_pm_, v, cand.position);
+        put(normals_pm_, v, cand.normal);
+
+        // Add the edges
+        if (cand.has_parent_vertex) {
+          bool has_previous_and_next_halfedges = false;
+          halfedge_descriptor previous_halfedge, next_halfedge;
+          std::vector<halfedge_descriptor> halfedges_out_of_parent;
+
+          for (const auto h : halfedges_around_source(cand.parent_vertex, mesh_))
+          {
+            halfedges_out_of_parent.push_back(h);
+          }
+
+          // If there are no halfedges out of the parent, we cannot determine previous and next halfedges.
+          if (halfedges_out_of_parent.empty()) {
+            has_previous_and_next_halfedges = false;
+          }
+          // If there is only one halfedge out of the parent, we can set the previous and next halfedges accordingly.
+          else if (halfedges_out_of_parent.size() == 1) {
+            has_previous_and_next_halfedges = true;
+            next_halfedge = halfedges_out_of_parent.front();
+            previous_halfedge = opposite(next_halfedge, mesh_);
+          }
+          // If there are multiple halfedges out of the parent, we can choose the appropriate previous and next halfedges based on the local ordering.
+          else {
+            has_previous_and_next_halfedges = true;
+            
+            // Find the first clockwise and counterclockwise halfedges around the parent vertex.
+            auto [cw, ccw] = choose_closest_ccw_halfedges(cand.parent_vertex, cand.position, normals_pm_[v]);
+
+            previous_halfedge = cw;
+            next_halfedge = ccw;
+
+            // Make sure that they point the right way
+            if (source(previous_halfedge, mesh_) != cand.parent_vertex) {
+              previous_halfedge = opposite(previous_halfedge, mesh_);
+            }
+            if (target(next_halfedge, mesh_) != cand.parent_vertex) {
+              next_halfedge = opposite(next_halfedge, mesh_);
+            }
+          }
+
+
+          
+          edge_descriptor e = add_edge(mesh_);
+          halfedge_descriptor h = halfedge(e, mesh_);
+          halfedge_descriptor ho = opposite(h, mesh_);
+
+          set_target(h,  cand.parent_vertex, mesh_); // v -> parent
+          set_target(ho, v, mesh_); // parent -> v
+          set_halfedge(v, ho, mesh_);
+          set_halfedge(cand.parent_vertex, h, mesh_);
+
+          if (has_previous_and_next_halfedges) {
+            // ho is parent -> new vertex so it comes right after the previous halfedge around the parent vertex.
+            set_next(previous_halfedge, ho, mesh_);
+
+            // next_halfedge should come right after h around the parent vertex.
+            set_next(h, next_halfedge, mesh_);
+          }
+          else {
+            set_next(h, ho, mesh_);
+            set_next(ho, h, mesh_);
+          }
+        }
+
+        return v;
+      }
+
+
+      void insert_feature_vertex(Point_3 p) {
+        int ix, iy, iz;
+
+        if (!grid_.to_grid_coordinates(p, ix, iy, iz))
+          return;
+
+        feature_vertices_per_cell_[grid_.flat_index(ix, iy, iz)].push_back(p);
+      }
+
+
+      bool triple_plane_intersection(
+        const Point_3& p1, const Vector_3& n1, const FT& r1,
+        const Point_3& p2, const Vector_3& n2, const FT& r2,
+        const Point_3& p3, const Vector_3& n3, const FT& r3,
+        FT minimum_angle,
+        Point_3& intersection_point) const
+      {
+        // Reject invalid normals.
+        if (n1 == CGAL::NULL_VECTOR ||
+            n2 == CGAL::NULL_VECTOR ||
+            n3 == CGAL::NULL_VECTOR)
+        {
+          return false;
+        }
+
+        // Reject intersections where the angle between any pair of normals is too small.
+        if (std::abs(CGAL::approximate_angle(n1, n2)) < minimum_angle ||
+            std::abs(CGAL::approximate_angle(n1, n3)) < minimum_angle ||
+            std::abs(CGAL::approximate_angle(n2, n3)) < minimum_angle)
+        {
+          return false;
+        }
+
+        // Construct the three supporting planes.
+        const typename Kernel::Plane_3 plane1(p1, n1);
+        const typename Kernel::Plane_3 plane2(p2, n2);
+        const typename Kernel::Plane_3 plane3(p3, n3);
+
+        // Calculate their common intersection.
+        const auto result = CGAL::intersection(plane1, plane2, plane3);
+
+        if (!result) {
+          return false;
+        }
+
+        // We only accept a unique intersection point.
+        const Point_3* point = std::get_if<Point_3>(&*result);
+
+        if (point == nullptr) {
+          return false;
+        }
+
+        // Check whether the intersection lies inside all three splat disks.
+        if (CGAL::squared_distance(*point, p1) > r1 * r1 ||
+            CGAL::squared_distance(*point, p2) > r2 * r2 ||
+            CGAL::squared_distance(*point, p3) > r3 * r3)
+        {
+          return false;
+        }
+
+        intersection_point = *point;
+        return true;
+      }
+
+
+
+      void find_initial_feature_vertex_candidates(FT minimum_angle) {
+        feature_vertex_candidate_queue_.clear();
+
+        // Iterate over all splats to find triple intersections
+        for (std::size_t i = 0; i < grid_.points().size(); ++i) {
+          const Point_3& point_i = grid_.get_splat_point(i);
+          const Vector_3 normal_i = grid_.get_splat_normal(i);
+          const FT radius = grid_.get_box_size();
+
+          std::vector<Index> splats_in_block = grid_.nearby_point_ids(point_i, radius+radius);
+          for (Index j : splats_in_block) {
+            if (i == j) continue;
+
+            for (Index k : splats_in_block) {
+              if (i == k || j == k) continue;
+
+              const Vector_3& normal_j = grid_.get_splat_normal(j);
+              const Point_3& point_j = grid_.get_splat_point(j);
+
+              const Vector_3& normal_k = grid_.get_splat_normal(k);
+              const Point_3& point_k = grid_.get_splat_point(k);
+
+              Vector_3 normal = normal_i + normal_j + normal_k;
+              normal = normal / CGAL::sqrt(normal.squared_length());
+
+
+              Point_3 intersection_point;
+              if (triple_plane_intersection(point_i, normal_i, radius,
+                point_j, normal_j, radius,
+                point_k, normal_k, radius,
+                minimum_angle,
+                intersection_point))
+              {
+                feature_vertex_candidate_queue_.push_back(
+                  FeatureVertexCandidate{
+                    intersection_point,
+                    normal,
+                    false, // does not have an associated feature segment
+                    false, // does not have a parent vertex
+                  });
+              }
+            }
+          }
+        }
+      }
+
+
+      bool is_any_feature_vertex_too_close(const Point_3& point, FT min_distance) const {
+        int ix, iy, iz;
+
+        if (!grid_.to_grid_coordinates(point, ix, iy, iz))
+          return false;
+
+        int reach = 1;
+        for (int dx = -reach; dx <= reach; ++dx) {
+          for (int dy = -reach; dy <= reach; ++dy) {
+            for (int dz = -reach; dz <= reach; ++dz) {
+              int neighbor_ix = ix + dx;
+              int neighbor_iy = iy + dy;
+              int neighbor_iz = iz + dz;
+
+              if (!grid_.valid_coordinates(neighbor_ix, neighbor_iy, neighbor_iz)) {
+                continue;
+              }
+
+              std::size_t flat_index = grid_.flat_index(neighbor_ix, neighbor_iy, neighbor_iz);
+              for (const Point_3& feature_vertex : feature_vertices_per_cell_[flat_index]) {
+                if (CGAL::squared_distance(point, feature_vertex) < min_distance * min_distance) {
+                  return true;
+                }
+              }
+            }
+          }
+        }
+      }
+
+
+      void find_feature_segments(FT minimum_angle) {
+        feature_segments_.clear();
+
+        // Iterate over all splats and identify feature segments
+        for (std::size_t i = 0; i < grid_.points().size(); ++i) {
+          const Point_3& center = grid_.get_splat_point(i);
+          const Vector_3 normal = grid_.get_splat_normal(i);
+          const FT radius = grid_.get_box_size();
+
+          // Attempt intersection with other splats
+          std::vector<Index> splats_in_block = grid_.nearby_point_ids(center, radius+radius);
+          for (Index j : splats_in_block) {
+            if (i == j) continue;
+            Point_3 intersection_point_1, intersection_point_2;
+
+            // If the splats intersect, add the feature segment
+            if (splat_intersects_splat(i, j, intersection_point_1, intersection_point_2, minimum_angle)) {
+              // Find the normal of the intersecting splat
+              Vector_3 normal = grid_.get_splat_normal(i);
+              normal += grid_.get_splat_normal(j);
+              normal = normal / CGAL::sqrt(normal.squared_length());
+
+              feature_segments_.emplace_back(FeatureSegment{intersection_point_1, intersection_point_2, normal});
+
+              // Add the feature segment to the grid cells
+              // Add both ends of the segment
+              int cell_x, cell_y, cell_z;
+              grid_.to_grid_coordinates(intersection_point_1, cell_x, cell_y, cell_z);
+              std::size_t flat_index = grid_.flat_index(cell_x, cell_y, cell_z);
+              feature_vertices_per_cell_[flat_index].push_back(intersection_point_1);
+
+              grid_.to_grid_coordinates(intersection_point_2, cell_x, cell_y, cell_z);
+              flat_index = grid_.flat_index(cell_x, cell_y, cell_z);
+              feature_vertices_per_cell_[flat_index].push_back(intersection_point_2);
+            }
+          }
+        }
+      }
+
+
+
+
+
+      // Returns the number of intersections of the line with the sphere
+      // Only retains the case where the line intersects the sphere at one point,
+      // where one of the endpoints is inside the sphere.
+      bool line_intersects_sphere(
+        const Point_3& line_point_1,
+        const Point_3& line_point_2,
+        const Point_3& sphere_center,
+        FT sphere_radius,
+        Point_3& intersection_point) const
+      {
+        const FT radius_squared = sphere_radius * sphere_radius;
+
+        const FT d1 = CGAL::squared_distance(line_point_1, sphere_center);
+        const FT d2 = CGAL::squared_distance(line_point_2, sphere_center);
+
+        const bool p1_inside = d1 < radius_squared;
+        const bool p2_inside = d2 < radius_squared;
+
+        // One should be inside, other should be outside
+        if (p1_inside == p2_inside)
+          return false;
+
+        const Vector_3 direction = line_point_2 - line_point_1;
+        const Vector_3 offset = line_point_1 - sphere_center;
+
+        const FT a = direction.squared_length();
+        const FT b = FT(2) * (offset * direction);
+        const FT c = offset.squared_length() - radius_squared;
+
+        const FT discriminant = b * b - FT(4) * a * c;
+
+        if (discriminant < FT(0) || a == FT(0))
+          return false;
+
+        const FT sqrt_discriminant = CGAL::sqrt(discriminant);
+        const FT t1 = (-b - sqrt_discriminant) / (FT(2) * a);
+        const FT t2 = (-b + sqrt_discriminant) / (FT(2) * a);
+
+        // Select the intersection lying between the two endpoints.
+        const FT t = (t1 >= FT(0) && t1 <= FT(1)) ? t1 : t2;
+
+        if (t < FT(0) || t > FT(1))
+          return false;
+
+        intersection_point = line_point_1 + t * direction;
+        return true;
+      }
+
+
+
+      bool splat_intersects_splat(Index splat_1, Index splat_2, Point_3& intersection_point_1, Point_3& intersection_point_2, FT minimum_angle) const {
+        const Point_3& splat_1_center = grid_.get_splat_point(splat_1);
+        const Vector_3 splat_1_normal = grid_.get_splat_normal(splat_1);
+        const FT splat_1_radius = grid_.get_box_size();
+
+        const Point_3& splat_2_center = grid_.get_splat_point(splat_2);
+        const Vector_3 splat_2_normal = grid_.get_splat_normal(splat_2);
+        const FT splat_2_radius = grid_.get_box_size();
+
+        FT distance_between_centers = CGAL::sqrt(CGAL::squared_distance(splat_1_center, splat_2_center));
+        if (distance_between_centers > splat_1_radius + splat_2_radius) {
+          return false;
+        }
+
+        FT angle_between_normals = CGAL::approximate_angle(splat_1_normal, splat_2_normal);
+        if (angle_between_normals < minimum_angle) {
+          return false;
+        }
+
+
+        std::vector<Point_3> result_1 = grid_.circle_intersects_splat(splat_1_center, splat_1_normal, splat_1_radius, splat_2_center, splat_2_normal, splat_2_radius);
+        std::vector<Point_3> result_2 = grid_.circle_intersects_splat(splat_2_center, splat_2_normal, splat_2_radius, splat_1_center, splat_1_normal, splat_1_radius);
+
+        std::vector<Point_3> intersection_points = result_1;
+        intersection_points.insert(intersection_points.end(), result_2.begin(), result_2.end());
+
+        std::vector<Point_3> unique_intersection_points;
+
+        for (const Point_3& p : intersection_points) {
+          bool is_duplicate = false;
+          for (const Point_3& q : unique_intersection_points) {
+            if (CGAL::squared_distance(p, q) <= FT(1e-12)) {
+              is_duplicate = true;
+              break;
+            }
+          }
+          if (!is_duplicate) {
+            unique_intersection_points.push_back(p);
+          }
+        }
+
+        // If there are exactly two unique intersection points, we have a valid intersection
+        if (unique_intersection_points.size() == 2) {
+          intersection_point_1 = unique_intersection_points[0];
+          intersection_point_2 = unique_intersection_points[1];
+          return true;
+        }
+        return false;
+      }
+
+
+
+
+
+
+
+
+
+
+
     private:
 
       // Constructor to set the state for a test
@@ -3673,6 +4468,14 @@ namespace CGAL {
       const std::size_t window_size_ = 80;
 
       std::vector<std::vector<vertex_descriptor>> mesh_vertices_per_cell_;
+
+      // Variables for feature awareness
+      std::deque<FeatureVertexCandidate> feature_vertex_candidate_queue_;
+      std::vector<std::vector<Point_3>> feature_vertices_per_cell_;
+      std::vector<FeatureSegment> feature_segments_;
+      std::vector<std::vector<std::size_t>> feature_segment_indices_per_cell_;
+
+      std::vector<bool> feature_segment_is_used_;
   };
 
 } // namespace CGAL

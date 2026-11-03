@@ -249,6 +249,8 @@ struct Splat_surface_reconstruction_3_test_access {
   using Kernel = typename CGAL::Kernel_traits<
     typename PointRange::value_type>::Kernel;
 
+  using Index = typename CGAL::Box_grid<Kernel>::Index;
+
   using Point_2 = typename Kernel::Point_2;
   using Point_3 = typename Kernel::Point_3;
   using Vector_3 = typename Kernel::Vector_3;
@@ -344,6 +346,11 @@ struct Splat_surface_reconstruction_3_test_access {
 
   static bool projection_check(Reconstruction& reconstruction, const Candidate& cand, const Vector_3& n) {
     return reconstruction.projection_check(cand, n);
+  }
+
+  static bool splat_intersects_splat(Reconstruction& reconstruction, Index splat_1, Index splat_2, Point_3& intersection_point_1, Point_3& intersection_point_2)
+  {
+    return reconstruction.splat_intersects_splat(splat_1, splat_2, intersection_point_1, intersection_point_2);
   }
 };
 

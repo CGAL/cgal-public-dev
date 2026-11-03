@@ -18,6 +18,7 @@
 #include "tests/test_estimate_individual_splat_sizes.h"
 #include "tests/test_generate_candidates_from_parents.h"
 #include "tests/test_projection_check.h"
+#include "tests/test_splat_intersects_splat.h"
 
 
 
@@ -43,6 +44,7 @@ int main() {
   run_estimate_individual_splat_sizes_tests(test_data);
   run_generate_candidates_from_parents_tests(test_data);
   run_projection_check_tests(test_data);
+  run_splat_intersects_splats_tests(test_data);
 
   std::cout << "\n========== Test Summary ==========\n";
   std::cout << "Passed " << test_data.passed_tests << " out of " << test_data.total_tests << " tests\n";

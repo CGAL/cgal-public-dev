@@ -233,7 +233,30 @@ int main(int argc, char* argv[]) {
   // grid.write_grid_vertices_ply("debug_grid_vertices.ply");
   // grid.write_cell_centers_and_normals_ply("debug_cell_normals.ply", 0.2);
 
-  CGAL::Splat_surface_reconstruction_3<std::vector<Point>, std::vector<Vector_3>, Polyhedron> reconstruction(grid, output_mesh);
+  using Reconstruction = CGAL::Splat_surface_reconstruction_3<std::vector<Point>, std::vector<Vector_3>, Polyhedron>; 
+
+  Reconstruction::Initialization_method init_method = Reconstruction::Initialization_method::FEATURE_AWARE;
+
+  // Take argument input to choose the initialization method for the reconstruction
+  if (argc > 3) {
+    std::string init_method_str = argv[3];
+    if (init_method_str == "feature_aware") {
+      init_method = Reconstruction::Initialization_method::FEATURE_AWARE;
+    } else if (init_method_str == "default") {
+      init_method = Reconstruction::Initialization_method::DEFAULT;
+    } else {
+      std::cerr << "Unknown initialization method: " << init_method_str << std::endl;
+      return EXIT_FAILURE;
+    }
+  }
+
+  FT feature_angle_minimum = FT(30.0); // default minimum feature angle in degrees
+  if (argc > 4) {
+    feature_angle_minimum = FT(std::stod(argv[4]));
+  }
+
+  Reconstruction reconstruction
+    (grid, output_mesh, init_method, feature_angle_minimum);
   reconstruction.run();
 
   CGAL::IO::write_polygon_mesh("mesh.ply", output_mesh);
