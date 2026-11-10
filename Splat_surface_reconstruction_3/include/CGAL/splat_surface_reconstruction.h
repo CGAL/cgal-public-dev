@@ -1428,7 +1428,7 @@ namespace CGAL {
 
         if (init_method == Initialization_method::FEATURE_AWARE) {
           seed_from_features(feature_angle_minimum);
-          seed_from_grid();
+          //seed_from_grid();
         }
         else {
           seed_from_grid();
@@ -1462,27 +1462,31 @@ namespace CGAL {
         // export_halfedge_mesh_json(mesh_, "initial_splats.json");
         // CGAL_assertion(false);
 
+        CGAL_assertion(CGAL::is_valid_halfedge_graph(mesh_, true));
+
         while (!candidate_queues_empty()) {
+          iterationIndex++;
           Candidate cand(Point_3(0,0,0), CGAL::NULL_VECTOR, 0, vertex_descriptor(), vertex_descriptor()); // Dummy initialization
           if (!pop_candidate_from_queue(cand)) {
             break;
           }
-
-          std::size_t target_parent_1 = 321;
-          std::size_t target_parent_2 = 349;
-
-          bool is_target = (cand.first.idx() == target_parent_1 || cand.first.idx() == target_parent_2)
-                           && (cand.second.idx() == target_parent_1 || cand.second.idx() == target_parent_2);
+          size_t target_1 = 152;
+          size_t target_2 = 535;
+          bool is_target = (cand.first.idx() == target_1 || cand.second.idx () == target_1)
+              && (cand.first.idx() == target_2 || cand.second.idx () == target_2);
 
           if (is_target) {
-            std::cout << "Involved halfedge: " << halfedge(cand.first, cand.second, mesh_).first << "\n";
-            std::cout << "Candidate involves target parents: " << cand.first << ", " << cand.second << std::endl;
-            export_halfedge_mesh_json(mesh_, "involved_halfedge.json");
+            std::cout << "Priority for candidate with parents " << cand.first << " and " << cand.second << ": " << cand.priority << std::endl;
           }
 
           if (has_vertex_near(cand.position)) {
             rejected_near++;
             //std::cout << "Candidate rejected due to nearby vertex: " << cand.first << ", " << cand.second << std::endl;
+            if (is_target) {
+              std::cout << "Candidate rejected due to nearby vertex: " << cand.first << ", " << cand.second << std::endl;
+              //export_halfedge_mesh_json(mesh_, "candidate_rejected_near.json");
+              //CGAL_assertion(false);
+            }
             continue;
           }
 
@@ -1490,9 +1494,8 @@ namespace CGAL {
            || !projection_check(cand, grid_.box_normal(get(points_pm_, cand.second)))
            || !projection_check(cand, grid_.box_normal(cand.position)) ) {
             rejected_proj++;
-            //std::cout << "Candidate rejected due to projection check: " << cand.first << ", " << cand.second << std::endl;
             if (is_target) {
-              CGAL_assertion(false);
+              std::cout << "Candidate rejected due to projection check: " << cand.first << ", " << cand.second << std::endl;
             }
             continue;
           }
@@ -1501,12 +1504,27 @@ namespace CGAL {
           if (new_priority != cand.priority) {
             cand.priority = new_priority;
             push_candidate_in_queue(cand);
+            if (is_target) {
+              std::cout << "Candidate priority updated: " << cand.first << ", " << cand.second << " -> " << cand.priority << std::endl;
+            }
             continue;
+          }
+
+          if (is_target) {
+            std::cout << "Candidate accepted: " << cand.first << ", " << cand.second << std::endl;
           }
 
           vertex_descriptor nv = mesh_.add_vertex(cand.position);
           put(points_pm_, nv, cand.position);
           put(normals_pm_, nv, cand.normal);
+
+          if (!CGAL::is_valid_halfedge_graph(mesh_, false)) {
+            CGAL::is_valid_halfedge_graph(mesh_, true);
+            export_halfedge_mesh_json(mesh_, "invalid_mesh.json");
+          }
+
+          CGAL_assertion(CGAL::is_valid_halfedge_graph(mesh_, false));
+
 
           accepted++;
           if (!build_graph(cand.first, cand.second, nv, cand.normal)) {
@@ -1522,28 +1540,18 @@ namespace CGAL {
 
           if (num_vertices(mesh_) % 1000 == 0) { // Print progress every 1000 vertices
             std::cout << num_vertices(mesh_) << " vertices in mesh." << "\n";
+            export_halfedge_mesh_json(mesh_, ("progress_" + std::to_string(num_vertices(mesh_)) + ".json").c_str());
           }
 
-          iterationIndex++;
+
+          CGAL_assertion(CGAL::is_valid_halfedge_graph(mesh_, false));
         }
 
-        assert_valid_triangle_loops();
+        //assert_valid_triangle_loops();
 
-        // Every half edge must have an opposite half edge (i.e., the mesh should be manifold).
-        const auto null_h = boost::graph_traits<TriangleMesh>::null_halfedge();
-        const auto null_v = boost::graph_traits<TriangleMesh>::null_vertex();
-        for (const auto& he : halfedges(mesh_)) {
-          CGAL_assertion(opposite(he, mesh_) != null_h);
-          const auto u = source(he, mesh_);
-          const auto v = target(he, mesh_);
-          CGAL_assertion(u != null_v);
-          CGAL_assertion(v != null_v);
-          
-          const auto [h_uv, found_uv] = halfedge(u, v, mesh_);
-          const auto [h_vu, found_vu] = halfedge(v, u, mesh_);
+        CGAL_assertion(CGAL::is_valid_halfedge_graph(mesh_, false));
 
-          CGAL_assertion(found_uv && found_vu);
-        }
+        export_halfedge_mesh_json(mesh_, "before_face_filling.json");
 
         std::cout<<"Setting Faces..." << std::endl;
         fill_faces_from_next_cycles();
@@ -2222,7 +2230,12 @@ namespace CGAL {
             Vector_3 to_prev = prev_v - p;
             Vector_3 to_next = next_v - p;
             cross_product_normal = CGAL::cross_product(to_next, to_prev);
-            cross_product_normal = cross_product_normal / std::sqrt(cross_product_normal.squared_length());
+            if (cross_product_normal.squared_length() == 0) {
+              cross_product_normal = Vector_3(0, 0, 0);
+            }
+            else {
+              cross_product_normal = cross_product_normal / std::sqrt(cross_product_normal.squared_length());
+            }
           }
 
           out << "    {\"id\": " << v.idx()
@@ -2419,6 +2432,7 @@ namespace CGAL {
         // Normalize the box normals before using them to construct tangent frames.
         Vector_3 n0 = normalize_vec(grid_.box_normal(p0));
         Vector_3 n1 = normalize_vec(grid_.box_normal(p1));
+        //Vector_3 n = normalize_vec(n0+n1);
         Vector_3 n2 = normalize_vec(grid_.box_normal(pn));
 
         // // This normal can be very wrong sometimes
@@ -2511,6 +2525,10 @@ namespace CGAL {
             return out;
           }
 
+          // If it has no outgoing halfedges, return an empty array
+          if (out_degree(v, mesh_) == 0) {
+            return out;
+          }
           for (halfedge_descriptor h : halfedges_around_source(v, mesh_)) {
             CGAL_assertion(source(h, mesh_) == v);
             const vertex_descriptor t = target(h, mesh_);
@@ -2567,17 +2585,22 @@ namespace CGAL {
           const auto& ccw = (it == sorted.end())   ? sorted.front() : *it;
           const auto& cw  = (it == sorted.begin()) ? sorted.back()  : *(it - 1);
 
+          // const auto& ccw_next = (std::next(it) == sorted.end()) ? sorted.front() : *std::next(it);
+          // const auto& cw_next = (it == sorted.begin() + 1) ? sorted.back() : *(it - 2);
+
           return {cw.second, ccw.second};
         };
 
+        bool is_target = nv.idx() == 649;
+
         // Compute the local ordering using parent normals.
-        
         auto [h1, h2] = choose_closest_ccw_halfedges(v0, pn, n0);
         auto [g2, g1] = choose_closest_ccw_halfedges(v1, pn, n1);
 
         // std::cout << "\n[BUILD_GRAPH ITERATION]" << std::endl;
         // std::cout << "v0: " << v0 << " v1: " << v1 << std::endl;
         // std::cout << "h1: " << h1 << " h2: " << h2 << " g1: " << g1 << " g2: " << g2 << std::endl;
+
 
         // Instead of using h2 and g2 from the local ordering, we use the edge connecting v0 and v1
         // First ensure that it exists in the mesh
@@ -2607,36 +2630,57 @@ namespace CGAL {
 
         // Ensure that the selected halfedges are oriented from the parent vertex to
         // the other vertex. If not, flip them to their opposite halfedge.
-        if (target(h1, mesh_) != v0) h1 = opposite(h1, mesh_);
-        CGAL_assertion(target(h1, mesh_) == v0);
 
-        if (target(h2, mesh_) != v0) h2 = opposite(h2, mesh_);
-        CGAL_assertion(target(h2, mesh_) == v0);
+        // if (nv.idx() == 433) {
+        //   std::cout << "nv.idx() == 433" << std::endl;
+        //   std::cout << "v0: " << v0 << " v1: " << v1 << std::endl;
+        //   std::cout << "h1: " << h1 << " h2: " << h2 << " g1: " << g1 << " g2: " << g2 << std::endl;
+        //   export_halfedge_mesh_json(mesh_, "pre_433.json");
+        // }
 
-        if (target(g1, mesh_) != v1) g1 = opposite(g1, mesh_);
-        CGAL_assertion(target(g1, mesh_) == v1);
+        const auto null_f = boost::graph_traits<TriangleMesh>::null_face();
 
-        if (target(g2, mesh_) != v1) g2 = opposite(g2, mesh_);
-        CGAL_assertion(target(g2, mesh_) == v1);
+        if (h1 != null_h) {
+          if (target(h1, mesh_) != v0) h1 = opposite(h1, mesh_);
+          CGAL_assertion(target(h1, mesh_) == v0);
 
-        // Keep only h2 and g1, and derive h1 and g2 from them.
-        // h1 = opposite(next(h2, mesh_), mesh_);
-        // g2 = opposite(next(g1, mesh_), mesh_);
-
-        CGAL_assertion(h1 != null_h);
-        CGAL_assertion(h2 != null_h);
-        CGAL_assertion(g1 != null_h);
-        CGAL_assertion(g2 != null_h);
+          if (target(h2, mesh_) != v0) h2 = opposite(h2, mesh_);
+          CGAL_assertion(target(h2, mesh_) == v0);
         
-        CGAL_assertion(target(h1, mesh_) == v0);
-        CGAL_assertion(target(h2, mesh_) == v0);
-        CGAL_assertion(target(g1, mesh_) == v1);
-        CGAL_assertion(target(g2, mesh_) == v1);
+          CGAL_assertion(target(h1, mesh_) == v0);
+          CGAL_assertion(target(h2, mesh_) == v0);
+          CGAL_assertion(source(h1, mesh_) != v0);
+          CGAL_assertion(source(h2, mesh_) != v0);
 
-        CGAL_assertion(source(h1, mesh_) != v0);
-        CGAL_assertion(source(h2, mesh_) != v0);
-        CGAL_assertion(source(g1, mesh_) != v1);
-        CGAL_assertion(source(g2, mesh_) != v1);
+          CGAL_assertion(face(h1, mesh_) == null_f);
+          CGAL_assertion(face(h2, mesh_) == null_f);
+        }
+
+        if (g1 != null_h) {
+          if (target(g1, mesh_) != v1) g1 = opposite(g1, mesh_);
+          CGAL_assertion(target(g1, mesh_) == v1);
+
+          if (target(g2, mesh_) != v1) g2 = opposite(g2, mesh_);
+          CGAL_assertion(target(g2, mesh_) == v1);
+        
+          CGAL_assertion(target(g1, mesh_) == v1);
+          CGAL_assertion(target(g2, mesh_) == v1);
+          CGAL_assertion(source(g1, mesh_) != v1);
+          CGAL_assertion(source(g2, mesh_) != v1);
+
+          CGAL_assertion(face(g1, mesh_) == null_f);
+          CGAL_assertion(face(g2, mesh_) == null_f);
+        }
+
+        if (is_target) {
+          std::cout << "v0: " << v0 << " v1: " << v1 << std::endl;
+          std::cout << "h1: " << h1 << " h2: " << h2 << " g1: " << g1 << " g2: " << g2 << std::endl;
+        }
+
+        // CGAL_assertion(h1 != null_h);
+        // CGAL_assertion(h2 != null_h);
+        // CGAL_assertion(g1 != null_h);
+        // CGAL_assertion(g2 != null_h);
 
         // std::cout << "after ensuring halfedge orientations:" << std::endl;
         // std::cout << "h1: " << h1 << " h2: " << h2 << " g1: " << g1 << " g2: " << g2 << std::endl;
@@ -2677,6 +2721,7 @@ namespace CGAL {
             if (next(h2, mesh_) != g1) {
 
               std::cout << "Debugging halfedge mesh: next(g2, mesh_) != h1" << std::endl;
+              std::cout << "v0: " << v0 << " v1: " << v1 << std::endl;
               std::cout << "g2: " << g2 << " next(g2, mesh_): " << next(g2, mesh_) << std::endl;
               std::cout << "h1: " << h1 << " next(h1, mesh_): " << next(h1, mesh_) << std::endl;
               std::cout << "g1: " << g1 << " next(g1, mesh_): " << next(g1, mesh_) << std::endl;
@@ -2690,7 +2735,6 @@ namespace CGAL {
             // There must be continuity between h2 and g1
             CGAL_assertion(next(h2, mesh_) == g1);
           }
-          // else {
 
           //   std::cout << "Debugging halfedge mesh: unexpected configuration" << std::endl;
           //   std::cout << "h1: " << h1 << " h2: " << h2 << " g1: " << g1 << " g2: " << g2 << std::endl;
@@ -2728,93 +2772,75 @@ namespace CGAL {
           // CGAL_assertion(next(g1, mesh_) == h2);
         }
 
-        // std::cout << "h1: " << h1 << " h2: " << h2 << " g1: " << g1 << " g2: " << g2 << std::endl;
-        // std::cout << "next(h1, mesh_): " << next(h1, mesh_) << " next(h2, mesh_): " << next(h2, mesh_) << " next(g1, mesh_): " << next(g1, mesh_) << " next(g2, mesh_): " << next(g2, mesh_) << std::endl;
-
-
-        // Halfedge: h1 source: vx target: v0
-        // Halfedge: h2 source: v1 target: v0
-        // Halfedge: g1 source: vx target: v1
-        // Halfedge: g2 source: v0 target: v1
-
-        // Halfedge: h1 source: vx target: v0
-        // Halfedge: h2 source: vy target: v0
-        // Halfedge: g1 source: v0 target: v1
-        // Halfedge: g2 source: v1 target: v1
-
-        // std::cout << "v0: " << v0 << " v1: " << v1 << std::endl;
-        // int i = 0;
-        // for (const auto& he : {h1, h2, g1, g2}) {
-        //   std::cout << "Halfedge: " << he << "(" << i << ") source: " << source(he, mesh_) << " target: " << target(he, mesh_) << " next: " << next(he, mesh_) << " opposite: " << opposite(he, mesh_) << std::endl;
-        //   i++;
-        // }
-
-        // std::cout << "Starting halfedge cycle check..." << std::endl;
-
-
-
-        // Reject the candidate when the chosen halfedges aren't already connected.
-        // CGAL_assertion(next(g1, mesh_) == opposite(g2, mesh_));
-        // CGAL_assertion(next(h2, mesh_) == opposite(h1, mesh_));
-
-        const auto null_f = boost::graph_traits<TriangleMesh>::null_face();
-
-        CGAL_assertion(face(h1, mesh_) == null_f);
-        CGAL_assertion(face(h2, mesh_) == null_f);
-        CGAL_assertion(face(g1, mesh_) == null_f);
-        CGAL_assertion(face(g2, mesh_) == null_f);
-
-        // Check that the halfedge cycles around each parent vertex don't have repeated vertices.
-        // This ensures that the local front is a simple cycle.
-        // We limit the number of steps to avoid infinite loops.
-        std::unordered_set<vertex_descriptor> visited;
-        halfedge_descriptor h = opposite(h1, mesh_);
-        bool reached_target = false;
-        for (std::size_t steps = 0; steps <= 2000; ++steps) {
-
-          CGAL_assertion(h != null_h);
-          CGAL_assertion(opposite(h, mesh_) != null_h);
-          CGAL_assertion(next(h, mesh_) != null_h);
-
-          if (!visited.insert(source(h, mesh_)).second)
-            return false;
-
-          if (h == g1) {
-            reached_target = true;
-            break;
-          }
-
-          h = next(h, mesh_);
+        if (nv.idx() == 2105) {
+          export_halfedge_mesh_json(mesh_, "pre_2105.json");
         }
-        CGAL_assertion(reached_target);
-
-        visited.clear();
-        h = opposite(g2, mesh_);
-        reached_target = false;
-        for (std::size_t steps = 0; steps <= 2000; ++steps) {
-
-          CGAL_assertion(h != null_h);
-          CGAL_assertion(opposite(h, mesh_) != null_h);
-          CGAL_assertion(next(h, mesh_) != null_h);
-
-          if (!visited.insert(source(h, mesh_)).second)
-            return false;
-
-          if (h == h2) {
-            reached_target = true;
-            break;
-          }
-
-          h = next(h, mesh_);
-        }
-
-        CGAL_assertion(reached_target);
 
         // Create the two new undirected edges connecting the new vertex to its parents.
         halfedge_descriptor h_v0nv = create_halfedge(v0, nv);
         halfedge_descriptor h_nvv0 = opposite(h_v0nv, mesh_);
         halfedge_descriptor h_v1nv = create_halfedge(v1, nv);
         halfedge_descriptor h_nvv1 = opposite(h_v1nv, mesh_);
+        if (h_v0nv.idx() == 446 || h_nvv0.idx() == 446 || h_v1nv.idx() == 446 || h_nvv1.idx() == 446) {
+          std::cout << "creating edge 446 in build_graph" << std::endl;
+          //CGAL_assertion(false);
+        }
+
+        if (h1 == null_h) {
+          h1 = h_nvv0;
+          h2 = h_nvv0;
+        }
+        if (g1 == null_h) {
+          g1 = h_nvv1;
+          g2 = h_nvv1;
+        }
+
+        // Check that the halfedge cycles around each parent vertex don't have repeated vertices.
+
+        // This ensures that the local front is a simple cycle.
+        // We limit the number of steps to avoid infinite loops.
+        // std::unordered_set<vertex_descriptor> visited;
+        // halfedge_descriptor h = opposite(h1, mesh_);
+        // bool reached_target = false;
+        // for (std::size_t steps = 0; steps <= 2000; ++steps) {
+
+        //   CGAL_assertion(h != null_h);
+        //   CGAL_assertion(opposite(h, mesh_) != null_h);
+        //   CGAL_assertion(next(h, mesh_) != null_h);
+
+        //   if (!visited.insert(source(h, mesh_)).second)
+        //     return false;
+
+        //   if (h == g1) {
+        //     reached_target = true;
+        //     break;
+        //   }
+
+        //   h = next(h, mesh_);
+        // }
+        // CGAL_assertion(reached_target);
+
+        // visited.clear();
+        // h = opposite(g2, mesh_);
+        // reached_target = false;
+        // for (std::size_t steps = 0; steps <= 2000; ++steps) {
+
+        //   CGAL_assertion(h != null_h);
+        //   CGAL_assertion(opposite(h, mesh_) != null_h);
+        //   CGAL_assertion(next(h, mesh_) != null_h);
+
+        //   if (!visited.insert(source(h, mesh_)).second)
+        //     return false;
+
+        //   if (h == h2) {
+        //     reached_target = true;
+        //     break;
+        //   }
+
+        //   h = next(h, mesh_);
+        // }
+
+        // CGAL_assertion(reached_target);
 
         // First boundary update:
         // g1 -> v1 -> nv -> v0 -> opposite(h1)
@@ -2827,6 +2853,17 @@ namespace CGAL {
         set_next(h2, h_v0nv, mesh_);
         set_next(h_v0nv, h_nvv1, mesh_);
         set_next(h_nvv1, opposite(g2, mesh_), mesh_);
+
+        if (nv.idx() == 2105) {
+          std::cout << "v0: " << v0 << ", v1: " << v1 << std::endl;
+          std::cout << "h1: " << h1 << std::endl;
+          std::cout << "h2: " << h2 << std::endl;
+          std::cout << "g1: " << g1 << std::endl;
+          std::cout << "g2: " << g2 << std::endl;
+          export_halfedge_mesh_json(mesh_, "post_2105.json");
+        }
+
+        //std::cout << "adding " << h_v0nv << " and " << h_v1nv << " to vertex " << nv << std::endl;
 
         //assert_valid_triangle_faces();
 
@@ -2851,6 +2888,29 @@ namespace CGAL {
 
         CGAL_assertion(source(h_nvv1, mesh_) == nv);
         CGAL_assertion(target(h_nvv1, mesh_) == v1);
+
+        // if (nv.idx() == 433) {
+        //   std::cout << "nv.idx() == 433" << std::endl;
+        //   std::cout << "v0: " << v0 << " v1: " << v1 << std::endl;
+        //   std::cout << "h1: " << h1 << " h2: " << h2 << " g1: " << g1 << " g2: " << g2 << std::endl;
+        //   export_halfedge_mesh_json(mesh_, "post_433.json");
+        // }
+
+        // std::cout << "g1: " << g1.idx() << ", h1: " << h1.idx() << ", g2: " << g2.idx() << ", h2: " << h2.idx() << std::endl;
+        // std::cout << "h_v0nv: " << h_v0nv.idx() << ", h_nvv0: " << h_nvv0.idx() << ", h_v1nv: " << h_v1nv.idx() << ", h_nvv1: " << h_nvv1.idx() << std::endl;
+        // std::cout << "h_v0nv: " << source(h_v0nv, mesh_).idx() << " -> " << target(h_v0nv, mesh_).idx() << ", \n";
+        // std::cout << "h_nvv0: " << source(h_nvv0, mesh_).idx() << " -> " << target(h_nvv0, mesh_).idx() << ", \n";
+        // std::cout << "h_v1nv: " << source(h_v1nv, mesh_).idx() << " -> " << target(h_v1nv, mesh_).idx() << ", \n";
+        // std::cout << "h_nvv1: " << source(h_nvv1, mesh_).idx() << " -> " << target(h_nvv1, mesh_).idx() << std::endl;
+        // std::cout << "next(h_v0nv): " << next(h_v0nv, mesh_).idx() << ", \n";
+        // std::cout << "next(h_nvv0): " << next(h_nvv0, mesh_).idx() << ", \n";
+        // std::cout << "next(h_v1nv): " << next(h_v1nv, mesh_).idx() << ", \n";
+        // std::cout << "next(h_nvv1): " << next(h_nvv1, mesh_).idx() << std::endl;
+        // std::cout << "opposite(h_v0nv): " << opposite(h_v0nv, mesh_).idx() << ", \n";
+        // std::cout << "opposite(h_nvv0): " << opposite(h_nvv0, mesh_).idx() << ", \n";
+        // std::cout << "opposite(h_v1nv): " << opposite(h_v1nv, mesh_).idx() << ", \n";
+        // std::cout << "opposite(h_nvv1): " << opposite(h_nvv1, mesh_).idx() << std::endl;
+
 
         return true;
       }
@@ -3107,6 +3167,15 @@ namespace CGAL {
           const std::size_t i1 = idx[i];
           const std::size_t i2 = idx[(i + 1) % idx.size()];
 
+          if (verts[i0] == verts[i2])
+            continue;
+
+          // If there already exists a connection between a and c, we cannot cut this ear 
+          auto [he_ac, exists_ac] = halfedge(verts[i0], verts[i2], mesh_);
+          if (exists_ac) {
+            continue;
+          }
+
           const Point_3& a3 = get(points_pm_, verts[i0]);
           const Point_3& b3 = get(points_pm_, verts[i1]);
           const Point_3& c3 = get(points_pm_, verts[i2]);
@@ -3180,6 +3249,33 @@ namespace CGAL {
         return angle;
       }
 
+
+      bool contains_subcycle(const std::vector<vertex_descriptor>& cycle)
+      {
+        std::vector<vertex_descriptor> path;
+        path.reserve(cycle.size());
+
+        for (const auto& v : cycle)
+        {
+          if (path.size() >= 2 && path[path.size() - 2] == v)
+          {
+            path.pop_back();
+          }
+          else if (std::find(path.begin(), path.end(), v) != path.end())
+          {
+            return true;
+          }
+          else
+          {
+            path.push_back(v);
+          }
+        }
+
+        // The input itself is a cycle, so the first and last vertices
+        // being equal is not a subcycle.
+        return false;
+      }
+
       /**
        * @brief Triangulates a polygonal halfedge cycle using ear clipping.
        *
@@ -3220,10 +3316,6 @@ namespace CGAL {
         verts.reserve(cycle.size());
         for (halfedge_descriptor h : cycle) {
           verts.push_back(source(h, mesh_));
-          if (verts.back().idx() == 2068) {
-            // export_halfedge_mesh_json(mesh_, "double_prev_halfedge.json");
-            // CGAL_assertion(false);
-          }
         }
 
         // --------------------------------------------------------------------------
@@ -3233,16 +3325,16 @@ namespace CGAL {
         // that the halfedge walk is actually a pinched/multi-cycle boundary and cannot
         // be safely triangulated as a simple polygon.
         // --------------------------------------------------------------------------
-        auto tmp = verts;
-        std::sort(tmp.begin(), tmp.end());
-        if (std::unique(tmp.begin(), tmp.end()) != tmp.end()) {
-          std::cerr << "Warning: Ear clipping failed: cycle contains repeated vertices. Can result in holes.\n";
-          for (halfedge_descriptor h : cycle) {
-            vertex_descriptor v = source(h, mesh_);
-            std::cerr << "  Vertex " << v << " at " << get(points_pm_, v) << "\n";
-          }
-          CGAL_assertion(false);
-        }
+        // if (contains_subcycle(verts)) {
+        //   std::cerr << "Warning: Ear clipping failed: cycle contains repeated vertices. Can result in holes.\n";
+        //   for (halfedge_descriptor h : cycle) {
+        //     vertex_descriptor v = source(h, mesh_);
+        //     std::cerr << "  Vertex " << v << " at " << get(points_pm_, v) << "\n";
+        //     std::cerr << "  Halfedge " << h << "\n";
+        //   }
+        //   export_halfedge_mesh_json(mesh_, "ear_clipping_failed.json");
+        // }
+        // CGAL_assertion(!contains_subcycle(verts));
 
         // Iteratively remove one ear until only one triangle remains.
         while (cycle.size() > 3) {
@@ -3518,6 +3610,10 @@ namespace CGAL {
         // the new triangular face.
         halfedge_descriptor h_ac = create_halfedge(a, c);
         halfedge_descriptor h_ca = opposite(h_ac, mesh_);
+        if (h_ac.idx() == 744 || h_ca.idx() == 744) {
+          std::cout << "creating edge 744 in ear committing" << std::endl;
+          //CGAL_assertion(false);
+        }
 
         // The two boundary halfedges of the ear must not already belong to faces.
         CGAL_assertion(face(h_ac, mesh_) == null_f && face(h_ca, mesh_) == null_f);
@@ -3662,6 +3758,9 @@ namespace CGAL {
         const Point_3 pb = get(points_pm_, cand.second);
         const Point_3 pc = cand.position;
 
+        bool print = (cand.first.idx() == 1545 || cand.second.idx() == 1545) && 
+          (cand.first.idx() == 1546 || cand.second.idx() == 1546);
+
         auto local_frame = grid_.compute_local_tangent_frame(n);
         Vector_3 u = local_frame[0];
         Vector_3 v = local_frame[1];
@@ -3676,8 +3775,15 @@ namespace CGAL {
         const Point_2 new_e2_s = B;
         const Point_2 new_e2_t = C;
 
-        //CHANGED: made the vicinity d instead of 4d
+        if (print)
+          std::cout << "e1 = ((" << new_e1_s.x() << ", " << new_e1_s.y() << "), (" << new_e1_t.x() << ", " << new_e1_t.y() << "))" << std::endl;
+        if (print)
+          std::cout << "e2 = ((" << new_e2_s.x() << ", " << new_e2_s.y() << "), (" << new_e2_t.x() << ", " << new_e2_t.y() << "))" << std::endl;
+
         auto nearby = nearby_mesh_vertices(pc, FT(3.0) * grid_.get_box_size());
+
+        if (print)
+          std::cout << "checked = [";
         for (auto v : nearby) {
           const FT distance = std::sqrt(CGAL::squared_distance(pc, get(points_pm_, v)));
           // if (distance > FT(1.0) * grid_.get_box_size()) {
@@ -3712,6 +3818,9 @@ namespace CGAL {
             const Point_2 E0 = project(q0, pc, local_frame[0], local_frame[1]);
             const Point_2 E1 = project(q1, pc, local_frame[0], local_frame[1]);
 
+            if (print)
+              std::cout << "((" << E0.x() << ", " << E0.y() << "), (" << E1.x() << ", " << E1.y() << "))," << std::endl;
+
             if (intersect_2d(new_e1_s, new_e1_t, E0, E1)) {
               return false;
             }
@@ -3720,6 +3829,8 @@ namespace CGAL {
             }
           }
         }
+        if (print)
+          std::cout << "]" << std::endl;
 
         return true;
       }
@@ -3829,24 +3940,81 @@ namespace CGAL {
 
       void seed_from_features(FT minimum_angle) {
         feature_vertices_per_cell_.clear();
-        feature_vertices_per_cell_.resize(grid_.number_of_cells());
+        feature_vertices_per_cell_.resize(grid_.number_of_cells(), std::vector<Point_3>());
         feature_segment_indices_per_cell_.clear();
-        feature_segment_indices_per_cell_.resize(grid_.number_of_cells());
+        feature_segment_indices_per_cell_.resize(grid_.number_of_cells(), std::vector<std::size_t>());
         feature_segment_is_used_.clear();
         feature_segment_is_used_.resize(feature_segments_.size(), false);
 
         find_feature_segments(minimum_angle);
+        std::cout << "Found feature segments: " << feature_segments_.size() << std::endl;
+
         find_initial_feature_vertex_candidates(minimum_angle);
+        std::cout << "Found initial feature vertex candidates: " << feature_vertex_candidate_queue_.size() << std::endl;
 
         // No feature segments have been used yet
         feature_segment_is_used_.assign(feature_segments_.size(), false);
+
+        int loop_count = 0;
+        while (true) {
+          process_feature_vertex_candidates_from_queue();
+
+          // Iterate through all feature segments, adding any unused segments as feature vertex candidates
+          bool any_added = add_feature_vertices_from_unused_segments();
+
+          ++loop_count;
+
+          if (!any_added) {
+            break;
+          }
+        }
+
+        std::cout << "Total loops required for feature vertex generation: " << loop_count << std::endl;
+
+        // close feature vertex gaps
+        close_feature_vertex_gaps();
+
+
+
+        std::cout << "Feature vertex generation finished" << std::endl;
+        std::cout << "Total feature vertices: " << mesh_.number_of_vertices() << std::endl;
+        std::cout << "Total feature edges: " << mesh_.number_of_edges() << std::endl;
+
+        export_halfedge_mesh_json(mesh_, "feature_vertices.json");
+
+        // insert all feature candidates from pairs of attached feature vertices
+        for (const halfedge_descriptor& he : mesh_.halfedges()) {
+          const vertex_descriptor& v = source(he, mesh_);
+          const vertex_descriptor& u = target(he, mesh_);
+
+          // We only need one call per pair of vertices, so we can skip if u < v to avoid duplicates
+          if (u.idx() < v.idx()) {
+            continue;
+          }
+
+          std::vector<Candidate> candidates = generate_candidates_from_parents(u, v);
+
+          for (const Candidate& c : candidates) {
+            push_candidate_in_queue(c);
+          }
+        }
+
+        if (mesh_.number_of_vertices() == 0) {
+          std::cout << "No feature vertices were generated. Seeding from grid instead." << std::endl;
+          seed_from_grid();
+        }
+        else {
+          seeded_ = true;
+        }
+      }
+
+
+      void process_feature_vertex_candidates_from_queue() {
         
         const FT d = grid_.get_box_size();
 
-        int iteration = 0;
-
         while (!feature_vertex_candidate_queue_.empty()) {
-          const FeatureVertexCandidate& cand = feature_vertex_candidate_queue_.front();
+          FeatureVertexCandidate cand = feature_vertex_candidate_queue_.front();
           feature_vertex_candidate_queue_.pop_front();
 
           if (is_any_feature_vertex_too_close(cand.position, d)) {
@@ -3854,26 +4022,147 @@ namespace CGAL {
           }
 
           // Now we create a feature vertex for this candidate.
-          vertex_descriptor parent_vertex_index = create_feature_vertex(cand);
+          vertex_descriptor added_vertex = create_feature_vertex(cand);
 
           if (cand.has_feature_segment) {
             feature_segment_is_used_[cand.feature_segment_index] = true;
           }
 
           // And we need to add any new feature vertex candidates that arise from this insertion.
-          add_new_feature_vertex_candidates(cand, parent_vertex_index);
-
-          iteration++;
-
-          if (iteration >= 1000) {
-            break;
-          }
+          add_new_feature_vertex_candidates(cand, added_vertex);
         }
-
-        export_halfedge_mesh_json(mesh_, "feature_vertices.json");
-        CGAL_assertion(false);
       }
 
+      bool add_feature_vertices_from_unused_segments() {
+
+        for (std::size_t i = 0; i < feature_segments_.size(); ++i) {
+          if (!feature_segment_is_used_[i]) {
+            const FeatureSegment& feature_segment = feature_segments_[i];
+            Point_3 midpoint = CGAL::midpoint(feature_segment.point_1, feature_segment.point_2);
+            FeatureVertexCandidate cand{
+              midpoint,
+              feature_segment.normal,
+              true,  // has feature segment
+              false, // no parent vertex
+              i
+            };
+            feature_vertex_candidate_queue_.push_back(cand);
+
+            // This segment can no longer be considered unused since we are adding a candidate for it.
+            feature_segment_is_used_[i] = true;
+
+            return true;
+          }
+        }
+        return false;
+      }
+
+      void close_feature_vertex_gaps() {
+
+        const FT d = grid_.get_box_size();
+
+        // Iterate through all vertices
+        for (vertex_descriptor v : vertices(mesh_)) {
+          // Only keep it if it has valence = 1
+          if (out_degree(v, mesh_) != 1) {
+            continue;
+          }
+
+          // Now iterate over all vertices within distance 2d, also with valence 1
+          int ix, iy, iz;
+          if (!grid_.to_grid_coordinates(mesh_.point(v), ix, iy, iz))
+            continue;
+
+          bool added_edge = false;
+
+          int reach = 2;
+          for (int dx = -reach; dx <= reach && !added_edge; ++dx) {
+            for (int dy = -reach; dy <= reach && !added_edge; ++dy) {
+              for (int dz = -reach; dz <= reach && !added_edge; ++dz) {
+
+                int neighbor_ix = ix + dx;
+                int neighbor_iy = iy + dy;
+                int neighbor_iz = iz + dz;
+
+                if (!grid_.valid_coordinates(neighbor_ix, neighbor_iy, neighbor_iz)) {
+                  continue;
+                }
+
+                std::size_t flat_index = grid_.flat_index(neighbor_ix, neighbor_iy, neighbor_iz);
+                for (const vertex_descriptor& neighbor_v : mesh_vertices_per_cell_[flat_index]) {
+                  if (neighbor_v == v || out_degree(neighbor_v, mesh_) != 1 || added_edge) {
+                    continue;
+                  }
+
+                  // Don't add anything if the only attached edge is already between v and neighbor_v
+                  if (halfedge(v, neighbor_v, mesh_).second) continue;
+
+                  // Check that the distance between v and neighbor_v is less than 2d
+                  const Point_3 p_v = mesh_.point(v);
+                  const Point_3 p_neighbor_v = mesh_.point(neighbor_v);
+                  const FT dist = std::sqrt(CGAL::squared_distance(p_v, p_neighbor_v));
+                  if (dist >= 2 * d) {
+                    continue;
+                  }
+                  
+                  
+                  // This is the current situation:
+                  // v0 -- v    n -- v1
+                  // where v0 and v1 are the neighbors of v and n respectively.
+
+                  const halfedge_descriptor h_v_v0 = opposite(halfedge(v, mesh_), mesh_);
+                  CGAL_assertion(source(h_v_v0, mesh_) == v);
+                  const halfedge_descriptor h_v0_v = opposite(h_v_v0, mesh_);
+
+                  const halfedge_descriptor h_n_v1 = opposite(halfedge(neighbor_v, mesh_), mesh_);
+                  CGAL_assertion(source(h_n_v1, mesh_) == neighbor_v);
+                  const halfedge_descriptor h_v1_n = opposite(h_n_v1, mesh_);
+
+
+                  // Now we have found two vertices with valence 1 within distance 2d, 
+                  // so we can connect them by adding a new edge between them
+                  halfedge_descriptor h_v_n = create_halfedge(v, neighbor_v);
+                  halfedge_descriptor h_n_v = opposite(h_v_n, mesh_);
+                  if (h_v_n.idx() == 744 || h_n_v.idx() == 744) {
+                    std::cout << "creating edge 744 in the gap closing" << std::endl;
+                    //CGAL_assertion(false);
+                  }
+
+                  set_target(h_v_n, neighbor_v, mesh_); // v -> n
+                  set_target(h_n_v, v, mesh_); // n -> v
+                  set_halfedge(v, h_n_v, mesh_);
+                  set_halfedge(neighbor_v, h_v_n, mesh_);
+
+                  CGAL_assertion(source(h_v_n, mesh_) == v && target(h_v_n, mesh_) == neighbor_v);
+                  CGAL_assertion(source(h_n_v, mesh_) == neighbor_v && target(h_n_v, mesh_) == v);
+
+                  // Connect the new edge to the existing halfedges
+                  set_next(h_v0_v, h_v_n, mesh_);
+                  set_next(h_v_n, h_n_v1, mesh_);
+                  set_next(h_v1_n, h_n_v, mesh_);
+                  set_next(h_n_v, h_v_v0, mesh_);
+
+                  CGAL_assertion(CGAL::is_valid_halfedge_graph(mesh_, false));
+
+                  // Move the two vertices slightly towards each other to reduce the gap
+                  const FT factor = FT(0.33) * (dist - d) / dist;
+                  mesh_.point(v) =
+                      p_v + (CGAL::midpoint(p_v, p_neighbor_v) - p_v) * factor;
+
+                  mesh_.point(neighbor_v) =
+                      p_neighbor_v + (CGAL::midpoint(p_v, p_neighbor_v) - p_neighbor_v) * factor;
+
+                  // Now that we have added the new edge, we cannot use v anymore since its valence is now 2
+                  added_edge = true;
+                  break; // Exit the loop since we have added the edge
+                }
+              }
+            }
+          }
+
+        }
+
+      }
 
 
       void add_new_feature_vertex_candidates(const FeatureVertexCandidate& cand, vertex_descriptor parent_vertex_index) {
@@ -4068,9 +4357,10 @@ namespace CGAL {
           halfedge_descriptor previous_halfedge, next_halfedge;
           std::vector<halfedge_descriptor> halfedges_out_of_parent;
 
-          for (const auto h : halfedges_around_source(cand.parent_vertex, mesh_))
-          {
-            halfedges_out_of_parent.push_back(h);
+          if (!is_isolated(cand.parent_vertex, mesh_)) {
+            for (const auto h : halfedges_around_source(cand.parent_vertex, mesh_)) {
+              halfedges_out_of_parent.push_back(h);
+            }
           }
 
           // If there are no halfedges out of the parent, we cannot determine previous and next halfedges.
@@ -4090,41 +4380,51 @@ namespace CGAL {
             // Find the first clockwise and counterclockwise halfedges around the parent vertex.
             auto [cw, ccw] = choose_closest_ccw_halfedges(cand.parent_vertex, cand.position, normals_pm_[v]);
 
-            previous_halfedge = cw;
-            next_halfedge = ccw;
+            previous_halfedge = ccw;
+            next_halfedge = cw;
 
             // Make sure that they point the right way
-            if (source(previous_halfedge, mesh_) != cand.parent_vertex) {
+            if (target(previous_halfedge, mesh_) != cand.parent_vertex) {
               previous_halfedge = opposite(previous_halfedge, mesh_);
             }
-            if (target(next_halfedge, mesh_) != cand.parent_vertex) {
+            if (source(next_halfedge, mesh_) != cand.parent_vertex) {
               next_halfedge = opposite(next_halfedge, mesh_);
             }
           }
 
 
-          
-          edge_descriptor e = add_edge(mesh_);
-          halfedge_descriptor h = halfedge(e, mesh_);
-          halfedge_descriptor ho = opposite(h, mesh_);
-
-          set_target(h,  cand.parent_vertex, mesh_); // v -> parent
-          set_target(ho, v, mesh_); // parent -> v
-          set_halfedge(v, ho, mesh_);
-          set_halfedge(cand.parent_vertex, h, mesh_);
+          halfedge_descriptor h_vp = create_halfedge(v, cand.parent_vertex);
+          halfedge_descriptor h_pv = opposite(h_vp, mesh_);
+          if (h_vp.idx() == 744 || h_pv.idx() == 744) {
+            std::cout << "creating edge 744 in the feature vertex insertion" << std::endl;
+            //CGAL_assertion(false);
+          }
 
           if (has_previous_and_next_halfedges) {
             // ho is parent -> new vertex so it comes right after the previous halfedge around the parent vertex.
-            set_next(previous_halfedge, ho, mesh_);
+            set_next(previous_halfedge, h_pv, mesh_);
 
             // next_halfedge should come right after h around the parent vertex.
-            set_next(h, next_halfedge, mesh_);
+            set_next(h_vp, next_halfedge, mesh_);
+
+            // next of h_pv should be h_vp (as it loops back around the new vertex)
+            set_next(h_pv, h_vp, mesh_);
           }
           else {
-            set_next(h, ho, mesh_);
-            set_next(ho, h, mesh_);
+            set_next(h_vp, h_pv, mesh_);
+            set_next(h_pv, h_vp, mesh_);
           }
         }
+
+        // Add the new vertex to the mesh too
+        insert_mesh_vertex(v);
+
+        if (!CGAL::is_valid_halfedge_graph(mesh_, false)) {
+          CGAL::is_valid_halfedge_graph(mesh_, true);
+          export_halfedge_mesh_json(mesh_, "mesh_debug.json");
+        }
+
+        CGAL_assertion(CGAL::is_valid_halfedge_graph(mesh_, false));
 
         return v;
       }
@@ -4263,13 +4563,15 @@ namespace CGAL {
 
               std::size_t flat_index = grid_.flat_index(neighbor_ix, neighbor_iy, neighbor_iz);
               for (const Point_3& feature_vertex : feature_vertices_per_cell_[flat_index]) {
-                if (CGAL::squared_distance(point, feature_vertex) < min_distance * min_distance) {
+                if (CGAL::squared_distance(point, feature_vertex) < min_distance * min_distance - 1e-6) {
                   return true;
                 }
               }
             }
           }
         }
+
+        return false;
       }
 
 
@@ -4285,7 +4587,7 @@ namespace CGAL {
           // Attempt intersection with other splats
           std::vector<Index> splats_in_block = grid_.nearby_point_ids(center, radius+radius);
           for (Index j : splats_in_block) {
-            if (i == j) continue;
+            if (j < i) continue;
             Point_3 intersection_point_1, intersection_point_2;
 
             // If the splats intersect, add the feature segment
@@ -4295,18 +4597,22 @@ namespace CGAL {
               normal += grid_.get_splat_normal(j);
               normal = normal / CGAL::sqrt(normal.squared_length());
 
+              std::size_t feature_segment_index = feature_segments_.size();
+
               feature_segments_.emplace_back(FeatureSegment{intersection_point_1, intersection_point_2, normal});
 
               // Add the feature segment to the grid cells
               // Add both ends of the segment
               int cell_x, cell_y, cell_z;
               grid_.to_grid_coordinates(intersection_point_1, cell_x, cell_y, cell_z);
-              std::size_t flat_index = grid_.flat_index(cell_x, cell_y, cell_z);
-              feature_vertices_per_cell_[flat_index].push_back(intersection_point_1);
+              std::size_t flat_index_1 = grid_.flat_index(cell_x, cell_y, cell_z);
+              feature_segment_indices_per_cell_[flat_index_1].push_back(feature_segment_index);
 
               grid_.to_grid_coordinates(intersection_point_2, cell_x, cell_y, cell_z);
-              flat_index = grid_.flat_index(cell_x, cell_y, cell_z);
-              feature_vertices_per_cell_[flat_index].push_back(intersection_point_2);
+              std::size_t flat_index_2 = grid_.flat_index(cell_x, cell_y, cell_z);
+              if (flat_index_2 != flat_index_1) {
+                feature_segment_indices_per_cell_[flat_index_2].push_back(feature_segment_index);
+              }
             }
           }
         }
