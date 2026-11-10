@@ -1490,9 +1490,15 @@ namespace CGAL {
             continue;
           }
 
-          if (!projection_check(cand, grid_.box_normal(get(points_pm_, cand.first)))
-           || !projection_check(cand, grid_.box_normal(get(points_pm_, cand.second)))
-           || !projection_check(cand, grid_.box_normal(cand.position)) ) {
+          const Point_3 parent_1 = get(points_pm_, cand.first);
+          const Point_3 parent_2 = get(points_pm_, cand.second);
+
+          if (!projection_check(cand.position, parent_1, grid_.box_normal(cand.position))
+            || !projection_check(cand.position, parent_2, grid_.box_normal(cand.position))
+            || !projection_check(cand.position, parent_1, grid_.box_normal(parent_1))
+            || !projection_check(cand.position, parent_2, grid_.box_normal(parent_1))
+            || !projection_check(cand.position, parent_1, grid_.box_normal(parent_2))
+            || !projection_check(cand.position, parent_2, grid_.box_normal(parent_2))) {
             rejected_proj++;
             if (is_target) {
               std::cout << "Candidate rejected due to projection check: " << cand.first << ", " << cand.second << std::endl;
@@ -3751,86 +3757,51 @@ namespace CGAL {
        *
        * @return `true` when the candidate passes the local intersection test.
       */
-      bool projection_check(const Candidate& cand, const Vector_3& n) const {
+      bool projection_check(
+        const Point_3 point_1,
+        const Point_3 point_2,
+        const Vector_3& n) const
+      {
         CGAL_assertion(n != CGAL::NULL_VECTOR);
 
-        const Point_3 pa = get(points_pm_, cand.first);
-        const Point_3 pb = get(points_pm_, cand.second);
-        const Point_3 pc = cand.position;
-
-        bool print = (cand.first.idx() == 1545 || cand.second.idx() == 1545) && 
-          (cand.first.idx() == 1546 || cand.second.idx() == 1546);
+        const Point_3 center = point_1 + (point_2 - point_1) / FT(2.0);
 
         auto local_frame = grid_.compute_local_tangent_frame(n);
-        Vector_3 u = local_frame[0];
-        Vector_3 v = local_frame[1];
+        const Vector_3 u = local_frame[0];
+        const Vector_3 v = local_frame[1];
 
-        const Point_2 A = project(pa, pc, u, v);
-        const Point_2 B = project(pb, pc, u, v);
-        const Point_2 C = project(pc, pc, u, v);
+        const Point_2 proj_1 = project(point_1, center, u, v);
+        const Point_2 proj_2 = project(point_2, center, u, v);
 
-        // New projected edges created if this candidate is accepted.
-        const Point_2 new_e1_s = A;
-        const Point_2 new_e1_t = C;
-        const Point_2 new_e2_s = B;
-        const Point_2 new_e2_t = C;
+        auto nearby = nearby_mesh_vertices(
+          center, FT(3.0) * grid_.get_box_size()
+        );
 
-        if (print)
-          std::cout << "e1 = ((" << new_e1_s.x() << ", " << new_e1_s.y() << "), (" << new_e1_t.x() << ", " << new_e1_t.y() << "))" << std::endl;
-        if (print)
-          std::cout << "e2 = ((" << new_e2_s.x() << ", " << new_e2_s.y() << "), (" << new_e2_t.x() << ", " << new_e2_t.y() << "))" << std::endl;
+        const FT radius = FT(2.0) * grid_.get_box_size();
+        const FT height = FT(1.0) * grid_.get_box_size();
 
-        auto nearby = nearby_mesh_vertices(pc, FT(3.0) * grid_.get_box_size());
+        for (vertex_descriptor vtx : nearby) {
+          const Point_3 v_point = get(points_pm_, vtx);
 
-        if (print)
-          std::cout << "checked = [";
-        for (auto v : nearby) {
-          const FT distance = std::sqrt(CGAL::squared_distance(pc, get(points_pm_, v)));
-          // if (distance > FT(1.0) * grid_.get_box_size()) {
-          //   continue;
-          //   std::cout << "Vertex " << v << " is too far from candidate: distance = " << distance << " while allowed distance = " << FT(1.0) * grid_.get_box_size() << std::endl;
-          // }
-          //CGAL_assertion(distance <= FT(1.0) * grid_.get_box_size());
-
-          const FT radius = FT(2.0) * grid_.get_box_size();
-          const FT height = FT(1.0) * grid_.get_box_size();
-          const Point_3 v_point = get(points_pm_, v);
-
-          if (!point_in_cylinder(v_point, pc, n, radius, height)) {
+          if (!point_in_cylinder(v_point, center, n, radius, height)) {
             continue;
           }
 
-          for (halfedge_descriptor h : halfedges_around_target(v, mesh_)) {
-            vertex_descriptor s = source(h, mesh_);
-            vertex_descriptor t = target(h, mesh_);
-
-            // Vector_3 n_s = get(normals_pm_, s);
-            // Vector_3 n_t = get(normals_pm_, t);
-            // Vector_3 n_h = n_s + n_t;
-            // n_h = n_h / std::sqrt(n_h.squared_length());
-            // if (n_h * n < 0) {
-            //   continue;
-            // }
+          for (halfedge_descriptor h : halfedges_around_target(vtx, mesh_)) {
+            const vertex_descriptor s = source(h, mesh_);
+            const vertex_descriptor t = target(h, mesh_);
 
             const Point_3 q0 = get(points_pm_, s);
             const Point_3 q1 = get(points_pm_, t);
 
-            const Point_2 E0 = project(q0, pc, local_frame[0], local_frame[1]);
-            const Point_2 E1 = project(q1, pc, local_frame[0], local_frame[1]);
+            const Point_2 E0 = project(q0, center, u, v);
+            const Point_2 E1 = project(q1, center, u, v);
 
-            if (print)
-              std::cout << "((" << E0.x() << ", " << E0.y() << "), (" << E1.x() << ", " << E1.y() << "))," << std::endl;
-
-            if (intersect_2d(new_e1_s, new_e1_t, E0, E1)) {
-              return false;
-            }
-            if (intersect_2d(new_e2_s, new_e2_t, E0, E1)) {
+            if (intersect_2d(proj_1, proj_2, E0, E1)) {
               return false;
             }
           }
         }
-        if (print)
-          std::cout << "]" << std::endl;
 
         return true;
       }
@@ -4021,6 +3992,10 @@ namespace CGAL {
             continue;
           }
 
+          if (cand.has_parent_vertex && !projection_check(cand.position, points_pm_[cand.parent_vertex], grid_.box_normal(cand.position))) {
+            continue;
+          }
+
           // Now we create a feature vertex for this candidate.
           vertex_descriptor added_vertex = create_feature_vertex(cand);
 
@@ -4073,12 +4048,15 @@ namespace CGAL {
           if (!grid_.to_grid_coordinates(mesh_.point(v), ix, iy, iz))
             continue;
 
-          bool added_edge = false;
+          // Find the closest vertex to v within this grid cell that has valence 1 and is not already connected to v
+          vertex_descriptor closest_neighbor_v;
+          FT closest_dist = 2 * d;
+          bool found_closest = false;
 
           int reach = 2;
-          for (int dx = -reach; dx <= reach && !added_edge; ++dx) {
-            for (int dy = -reach; dy <= reach && !added_edge; ++dy) {
-              for (int dz = -reach; dz <= reach && !added_edge; ++dz) {
+          for (int dx = -reach; dx <= reach; ++dx) {
+            for (int dy = -reach; dy <= reach; ++dy) {
+              for (int dz = -reach; dz <= reach; ++dz) {
 
                 int neighbor_ix = ix + dx;
                 int neighbor_iy = iy + dy;
@@ -4090,7 +4068,7 @@ namespace CGAL {
 
                 std::size_t flat_index = grid_.flat_index(neighbor_ix, neighbor_iy, neighbor_iz);
                 for (const vertex_descriptor& neighbor_v : mesh_vertices_per_cell_[flat_index]) {
-                  if (neighbor_v == v || out_degree(neighbor_v, mesh_) != 1 || added_edge) {
+                  if (neighbor_v == v || out_degree(neighbor_v, mesh_) != 1) {
                     continue;
                   }
 
@@ -4104,62 +4082,77 @@ namespace CGAL {
                   if (dist >= 2 * d) {
                     continue;
                   }
-                  
-                  
-                  // This is the current situation:
-                  // v0 -- v    n -- v1
-                  // where v0 and v1 are the neighbors of v and n respectively.
 
-                  const halfedge_descriptor h_v_v0 = opposite(halfedge(v, mesh_), mesh_);
-                  CGAL_assertion(source(h_v_v0, mesh_) == v);
-                  const halfedge_descriptor h_v0_v = opposite(h_v_v0, mesh_);
+                  if (dist < closest_dist) {
+                    // We must make sure that the projection check passes for both vertices
+                    if (!projection_check(p_v, p_neighbor_v, grid_.box_normal(p_v)) ||
+                        !projection_check(p_v, p_neighbor_v, grid_.box_normal(p_neighbor_v))) {
+                      continue;
+                    }
 
-                  const halfedge_descriptor h_n_v1 = opposite(halfedge(neighbor_v, mesh_), mesh_);
-                  CGAL_assertion(source(h_n_v1, mesh_) == neighbor_v);
-                  const halfedge_descriptor h_v1_n = opposite(h_n_v1, mesh_);
-
-
-                  // Now we have found two vertices with valence 1 within distance 2d, 
-                  // so we can connect them by adding a new edge between them
-                  halfedge_descriptor h_v_n = create_halfedge(v, neighbor_v);
-                  halfedge_descriptor h_n_v = opposite(h_v_n, mesh_);
-                  if (h_v_n.idx() == 744 || h_n_v.idx() == 744) {
-                    std::cout << "creating edge 744 in the gap closing" << std::endl;
-                    //CGAL_assertion(false);
+                    closest_dist = dist;
+                    closest_neighbor_v = neighbor_v;
+                    found_closest = true;
                   }
-
-                  set_target(h_v_n, neighbor_v, mesh_); // v -> n
-                  set_target(h_n_v, v, mesh_); // n -> v
-                  set_halfedge(v, h_n_v, mesh_);
-                  set_halfedge(neighbor_v, h_v_n, mesh_);
-
-                  CGAL_assertion(source(h_v_n, mesh_) == v && target(h_v_n, mesh_) == neighbor_v);
-                  CGAL_assertion(source(h_n_v, mesh_) == neighbor_v && target(h_n_v, mesh_) == v);
-
-                  // Connect the new edge to the existing halfedges
-                  set_next(h_v0_v, h_v_n, mesh_);
-                  set_next(h_v_n, h_n_v1, mesh_);
-                  set_next(h_v1_n, h_n_v, mesh_);
-                  set_next(h_n_v, h_v_v0, mesh_);
-
-                  CGAL_assertion(CGAL::is_valid_halfedge_graph(mesh_, false));
-
-                  // Move the two vertices slightly towards each other to reduce the gap
-                  const FT factor = FT(0.33) * (dist - d) / dist;
-                  mesh_.point(v) =
-                      p_v + (CGAL::midpoint(p_v, p_neighbor_v) - p_v) * factor;
-
-                  mesh_.point(neighbor_v) =
-                      p_neighbor_v + (CGAL::midpoint(p_v, p_neighbor_v) - p_neighbor_v) * factor;
-
-                  // Now that we have added the new edge, we cannot use v anymore since its valence is now 2
-                  added_edge = true;
-                  break; // Exit the loop since we have added the edge
                 }
               }
             }
           }
 
+          if (!found_closest) {
+            continue;
+          }
+
+          // This is the current situation:
+          // v0 -- v    n -- v1
+          // where v0 and v1 are the neighbors of v and n respectively.
+
+          const vertex_descriptor neighbor_v = closest_neighbor_v;
+          const Point_3 p_v = mesh_.point(v);
+          const Point_3 p_neighbor_v = mesh_.point(neighbor_v);
+          const FT dist = std::sqrt(CGAL::squared_distance(p_v, p_neighbor_v));
+
+          const halfedge_descriptor h_v_v0 = opposite(halfedge(v, mesh_), mesh_);
+          CGAL_assertion(source(h_v_v0, mesh_) == v);
+          const halfedge_descriptor h_v0_v = opposite(h_v_v0, mesh_);
+
+          const halfedge_descriptor h_n_v1 = opposite(halfedge(neighbor_v, mesh_), mesh_);
+          CGAL_assertion(source(h_n_v1, mesh_) == neighbor_v);
+          const halfedge_descriptor h_v1_n = opposite(h_n_v1, mesh_);
+
+
+          // Now we have found two vertices with valence 1 within distance 2d, 
+          // so we can connect them by adding a new edge between them
+          halfedge_descriptor h_v_n = create_halfedge(v, neighbor_v);
+          halfedge_descriptor h_n_v = opposite(h_v_n, mesh_);
+          if (h_v_n.idx() == 744 || h_n_v.idx() == 744) {
+            std::cout << "creating edge 744 in the gap closing" << std::endl;
+            //CGAL_assertion(false);
+          }
+
+          set_target(h_v_n, neighbor_v, mesh_); // v -> n
+          set_target(h_n_v, v, mesh_); // n -> v
+          set_halfedge(v, h_n_v, mesh_);
+          set_halfedge(neighbor_v, h_v_n, mesh_);
+
+          CGAL_assertion(source(h_v_n, mesh_) == v && target(h_v_n, mesh_) == neighbor_v);
+          CGAL_assertion(source(h_n_v, mesh_) == neighbor_v && target(h_n_v, mesh_) == v);
+
+          // Connect the new edge to the existing halfedges
+          set_next(h_v0_v, h_v_n, mesh_);
+          set_next(h_v_n, h_n_v1, mesh_);
+          set_next(h_v1_n, h_n_v, mesh_);
+          set_next(h_n_v, h_v_v0, mesh_);
+
+          CGAL_assertion(CGAL::is_valid_halfedge_graph(mesh_, false));
+
+          // Move the two vertices slightly towards each other to reduce the gap
+          const FT factor = FT(0.33) * (dist - d) / dist;
+          mesh_.point(v) =
+              p_v + (CGAL::midpoint(p_v, p_neighbor_v) - p_v) * factor;
+
+          mesh_.point(neighbor_v) =
+              p_neighbor_v + (CGAL::midpoint(p_v, p_neighbor_v) - p_neighbor_v) * factor;
         }
 
       }
@@ -4395,10 +4388,6 @@ namespace CGAL {
 
           halfedge_descriptor h_vp = create_halfedge(v, cand.parent_vertex);
           halfedge_descriptor h_pv = opposite(h_vp, mesh_);
-          if (h_vp.idx() == 744 || h_pv.idx() == 744) {
-            std::cout << "creating edge 744 in the feature vertex insertion" << std::endl;
-            //CGAL_assertion(false);
-          }
 
           if (has_previous_and_next_halfedges) {
             // ho is parent -> new vertex so it comes right after the previous halfedge around the parent vertex.

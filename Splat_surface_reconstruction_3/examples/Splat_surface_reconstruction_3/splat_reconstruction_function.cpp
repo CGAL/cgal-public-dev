@@ -74,6 +74,10 @@ bool read_off_file(const std::string& filename,
 
   const bool has_normals = normal_map_opt.has_value();
 
+  if (!has_normals) {
+    std::cerr << "Warning: OFF file " << filename << " does not contain vertex normals." << std::endl;
+  }
+
   for (auto vd : mesh.vertices()) {
     points.push_back(mesh.point(vd));
 
