@@ -1379,19 +1379,16 @@ namespace CGAL {
       struct Candidate {
         Point_3 position;
         Vector_3 normal;
-        Index splat_id;
         vertex_descriptor first;
         vertex_descriptor second;
         int priority = 0;
 
         Candidate(const Point_3& position,
                   const Vector_3& normal,
-                  Index splat_id,
                   vertex_descriptor first,
                   vertex_descriptor second)
           : position(position),
             normal(normal),
-            splat_id(splat_id),
             first(first),
             second(second) {}
       };
@@ -1449,13 +1446,30 @@ namespace CGAL {
        * @param grid Spatial grid containing input points, normals, and splat sizes.
        * @param output_mesh Mesh receiving the reconstructed surface.
       */
-      Splat_surface_reconstruction_3(const Grid& grid,
+      Splat_surface_reconstruction_3(const std::vector<Point_3>& points,
+        const std::vector<Vector_3>& normals,
+        const FT d,
         TriangleMesh& output_mesh,
         Initialization_method init_method = Initialization_method::DEFAULT,
         FT feature_angle_minimum = FT(30.0))
-      : grid_(grid),
-        mesh_(output_mesh),
+      : mesh_(output_mesh),
+        grid_(make_grid(points, d)),
         points_pm_(get(CGAL::vertex_point, mesh_)) {
+          
+        grid_.build(points, normals); // insert points and normals into the grid
+
+        grid_.write_splat_mesh_obj("splats_before.obj");
+        std::vector<FT> splat_sizes = grid_.estimate_individual_splat_sizes(); // estimate individual splat sizes based on local point distribution
+        std::cout<<"Estimated individual splat sizes for " << splat_sizes.size() << " points." << std::endl;
+        FT mean = FT(0.0);
+        for (const auto& s : splat_sizes) {
+          mean += s;
+        }
+        mean /= splat_sizes.size();
+        std::cout << "Mean splat size: " << mean << std::endl;
+        grid_.write_splat_mesh_obj("splats_individual.obj");
+
+        grid_.write_splat_sizes_to_file("splat_sizes.txt");
 
         bool created = false;
         std::tie(normals_pm_, created) = mesh_.template add_property_map<vertex_descriptor, Vector_3>("v:normal", CGAL::NULL_VECTOR);
@@ -1477,6 +1491,61 @@ namespace CGAL {
           seed_from_grid();
         }
       }
+
+      // /**
+      //  * @brief Constructs a reconstruction object and initializes mesh properties.
+      //  *
+      //  * Adds the per-vertex normal property map and per-edge property map,
+      //  * initializes the spatial lookup structure, and creates the initial seed.
+      //  *
+      //  * @param grid Spatial grid containing input points, normals, and splat sizes.
+      //  * @param output_mesh Mesh receiving the reconstructed surface.
+      // */
+      // Splat_surface_reconstruction_3(
+      //   TriangleMesh& input_mesh,
+      //   const FT d,
+      //   TriangleMesh& output_mesh,
+      //   Initialization_method init_method = Initialization_method::DEFAULT,
+      //   FT feature_angle_minimum = FT(30.0))
+      // : mesh_(output_mesh),
+      //   grid_(make_grid(points, d)),
+      //   points_pm_(get(CGAL::vertex_point, mesh_)) {
+          
+      //   grid_.build(points, normals); // insert points and normals into the grid
+
+      //   grid_.write_splat_mesh_obj("splats_before.obj");
+      //   std::vector<FT> splat_sizes = grid_.estimate_individual_splat_sizes(); // estimate individual splat sizes based on local point distribution
+      //   std::cout<<"Estimated individual splat sizes for " << splat_sizes.size() << " points." << std::endl;
+      //   FT mean = FT(0.0);
+      //   for (const auto& s : splat_sizes) {
+      //     mean += s;
+      //   }
+      //   mean /= splat_sizes.size();
+      //   std::cout << "Mean splat size: " << mean << std::endl;
+      //   grid_.write_splat_mesh_obj("splats_individual.obj");
+
+      //   grid_.write_splat_sizes_to_file("splat_sizes.txt");
+
+      //   bool created = false;
+      //   std::tie(normals_pm_, created) = mesh_.template add_property_map<vertex_descriptor, Vector_3>("v:normal", CGAL::NULL_VECTOR);
+
+      //   bool created_w = false;
+      //   std::tie(edge_weight_pm_, created_w) = mesh_.template add_property_map<edge_descriptor, FT>("e:weight", FT(1));
+
+      //   if (created) {
+      //     std::cout << "Created vertex normal property map." << std::endl;
+      //   }
+
+      //   mesh_vertices_per_cell_.resize(grid_.number_of_cells());
+
+      //   if (init_method == Initialization_method::FEATURE_AWARE) {
+      //     seed_from_features(feature_angle_minimum);
+      //     //seed_from_grid();
+      //   }
+      //   else {
+      //     seed_from_grid();
+      //   }
+      // }
 
       /**
        * @brief Executes the complete reconstruction pipeline.
@@ -1509,7 +1578,7 @@ namespace CGAL {
 
         while (!candidate_queues_empty()) {
           iterationIndex++;
-          Candidate cand(Point_3(0,0,0), CGAL::NULL_VECTOR, 0, vertex_descriptor(), vertex_descriptor()); // Dummy initialization
+          Candidate cand(Point_3(0,0,0), CGAL::NULL_VECTOR, vertex_descriptor(), vertex_descriptor()); // Dummy initialization
           if (!pop_candidate_from_queue(cand)) {
             break;
           }
@@ -1616,6 +1685,22 @@ namespace CGAL {
       }
 
     private:
+
+      Grid make_grid(const std::vector<Point_3>& points,
+                const FT d)
+      {
+        const FT padding = FT(1.1) * d;
+
+        const auto bbox = CGAL::bounding_box(points.begin(), points.end());
+
+        return Grid(d,
+                    FT(bbox.xmin()) - padding,
+                    FT(bbox.ymin()) - padding,
+                    FT(bbox.zmin()) - padding,
+                    FT(bbox.xmax()) + padding,
+                    FT(bbox.ymax()) + padding,
+                    FT(bbox.zmax()) + padding);
+      }
 
       bool is_halfedge_inside(halfedge_descriptor h, vertex_descriptor v0, vertex_descriptor v1, vertex_descriptor v2) const {
         Vector_3 normal = normals_pm_[v0] + normals_pm_[v1] + normals_pm_[v2];
@@ -2151,7 +2236,7 @@ namespace CGAL {
             if (grid_.box_normal(p) == CGAL::NULL_VECTOR)
               continue;
 
-            Candidate c(p, normals[sid], sid, parent_a, parent_b);
+            Candidate c(p, normals[sid], parent_a, parent_b);
             c.priority = compute_priority(c);
             candidates.push_back(c);
           }
@@ -4788,7 +4873,7 @@ namespace CGAL {
         mesh_vertices_per_cell_.resize(grid_.number_of_cells());
       }
 
-      const Grid& grid_;
+      Grid grid_;
       TriangleMesh& mesh_;
 
       typename TriangleMesh:: template Property_map<vertex_descriptor,Point_3> points_pm_;

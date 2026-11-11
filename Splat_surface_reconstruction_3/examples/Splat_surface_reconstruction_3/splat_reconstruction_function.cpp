@@ -23,6 +23,7 @@ typedef Kernel::Vector_3 Vector_3;
 typedef std::pair<Point, Vector_3> Pwn;
 typedef CGAL::Surface_mesh<Point> Polyhedron;
 typedef Kernel::FT FT;
+typedef boost::graph_traits<Polyhedron>::vertex_descriptor vertex_descriptor;
 
 typedef CGAL::Splat_surface_reconstruction_3<std::vector<Point>, std::vector<Vector_3>, Polyhedron> Splat_surface_reconstruction;
 // ------------------------------------------------------------
@@ -165,108 +166,226 @@ void compute_normals_if_missing(std::vector<Point>& points,
     CGAL::parameters::point_map(CGAL::make_random_access_property_map(points)).normal_map(CGAL::make_random_access_property_map(normals)));
 }
 
-int main(int argc, char* argv[]) {
-  const std::string filename = (argc>1) ? argv[1] : CGAL::data_file_path("meshes/plane.off");
+int main(int argc, char* argv[])
+{
+  std::string filename;
+  std::string input_type;
+  std::string output_filename = "mesh.obj";
+  double scale = 1.0;
+  double feature_angle_minimum = 30.0;
 
-  std::vector<Point> points;
-  std::vector<Vector_3> normals;
-  std::cout << "Filename: " << filename << std::endl;
+  using Reconstruction =
+    CGAL::Splat_surface_reconstruction_3<
+      std::vector<Point>,
+      std::vector<Vector_3>,
+      Polyhedron>;
 
-  // if extension is .off
-  if (std::filesystem::path(filename).extension() == ".off") {
-    if (!read_off_file(filename, points, normals)) {
-      std::cerr << "Error: cannot read input file!" << std::endl;
+  Reconstruction::Initialization_method init_method =
+    Reconstruction::Initialization_method::FEATURE_AWARE;
+
+  // Parse arguments.
+  for (int i = 1; i < argc; ++i)
+  {
+    const std::string arg = argv[i];
+
+    auto next_value = [&]() -> std::string
+    {
+      if (i + 1 >= argc)
+      {
+        std::cerr << "Missing value for " << arg << std::endl;
+        std::exit(EXIT_FAILURE);
+      }
+      return argv[++i];
+    };
+
+    if (arg == "--input")
+      filename = next_value();
+
+    else if (arg == "--type")
+      input_type = next_value();
+
+    else if (arg == "--output")
+      output_filename = next_value();
+
+    else if (arg == "--scale")
+      scale = std::stod(next_value());
+
+    else if (arg == "--feature-angle")
+      feature_angle_minimum = std::stod(next_value());
+
+    else if (arg == "--init")
+    {
+      const std::string method = next_value();
+
+      if (method == "feature_aware")
+        init_method = Reconstruction::Initialization_method::FEATURE_AWARE;
+      else if (method == "default")
+        init_method = Reconstruction::Initialization_method::DEFAULT;
+      else
+      {
+        std::cerr << "Unknown initialization method: "
+                  << method << std::endl;
+        return EXIT_FAILURE;
+      }
+    }
+    else
+    {
+      std::cerr << "Unknown argument: " << arg << std::endl;
       return EXIT_FAILURE;
     }
   }
-  else if (std::filesystem::path(filename).extension() == ".xyz") {
-    if (!read_xyz_file(filename, points, normals)) {
-      std::cerr << "Error: cannot read input file!" << std::endl;
-      return EXIT_FAILURE;
-    }
-  }
-  else {
-    std::cerr << "Error: unsupported file format!" << std::endl;
+
+  // Validate arguments.
+  if (filename.empty() ||
+      (input_type != "mesh" && input_type != "point-cloud"))
+  {
+    std::cerr
+      << "Usage: " << argv[0]
+      << " --input <file> --type <mesh|point-cloud>"
+      << " [--scale <factor>]"
+      << " [--init <default|feature_aware>]"
+      << " [--feature-angle <degrees>]"
+      << " [--output <file>]"
+      << std::endl;
     return EXIT_FAILURE;
   }
 
-  // Normalize geometry first.
-  std::cout<<"Centering and scaling point cloud between [-1,1]^3 ..." << std::endl;
-  double sc = center_and_scale_point_cloud(points);
-
-  // Average spacing should be computed in the normalized coordinate system.
-  double scale = (argc > 2) ? std::stod(argv[2]) : 1.0;
-  double average_spacing = CGAL::compute_average_spacing<CGAL::Parallel_if_available_tag>(points, 2);
-  std::cout << "Average spacing: " << average_spacing << std::endl;
-
-  std::cout << "Scale factor: " << scale << std::endl;
-
-  double edge_length = scale * average_spacing;
-  std::cout << "Required edge length: " << edge_length << std::endl;
-
-  // Then compute normals if the file did not provide them.
-  compute_normals_if_missing(points, normals, 6);
+  std::cout << "Input: " << filename << std::endl;
+  std::cout << "Input type: " << input_type << std::endl;
 
   Polyhedron output_mesh;
-  const auto bbox = CGAL::bounding_box(points.begin(), points.end()); // recompute bbox after centering and scaling
+  double average_spacing = 0.0;
 
+  if (input_type == "point-cloud")
+  {
+    // Read point cloud.
+    std::vector<Point> points;
+    std::vector<Vector_3> normals;
 
-  const FT padding = FT(1.1) * edge_length;
+    const std::string extension =
+      std::filesystem::path(filename).extension().string();
 
-  // const FT padding = 1e-8;
-  // Build the grid and insert points + normals.
-  CGAL::Box_grid<Kernel> grid{FT(edge_length),
-                              FT(bbox.xmin()-padding), FT(bbox.ymin()-padding), FT(bbox.zmin()-padding),
-                              FT(bbox.xmax()+padding), FT(bbox.ymax()+padding), FT(bbox.zmax()+padding)}; // initialize grid with cell size equal to average spacing and bounding box [-1,1]^3
-  grid.build(points, normals); // insert points and normals into the grid
-
-  grid.write_splat_mesh_obj("splats_before.obj");
-  std::vector<FT> splat_sizes = grid.estimate_individual_splat_sizes(); // estimate individual splat sizes based on local point distribution
-  std::cout<<"Estimated individual splat sizes for " << splat_sizes.size() << " points." << std::endl;
-  FT mean = FT(0.0);
-  for (const auto& s : splat_sizes) {
-    mean += s;
-  }
-  mean /= splat_sizes.size();
-  std::cout << "Mean splat size: " << mean << std::endl;
-  grid.write_splat_mesh_obj("splats_individual.obj");
-
-  grid.write_splat_sizes_to_file("splat_sizes.txt");
-
-  // grid.write_point_cloud_ply("debug_points.ply");
-  // grid.write_grid_vertices_ply("debug_grid_vertices.ply");
-  // grid.write_cell_centers_and_normals_ply("debug_cell_normals.ply", 0.2);
-
-  using Reconstruction = CGAL::Splat_surface_reconstruction_3<std::vector<Point>, std::vector<Vector_3>, Polyhedron>; 
-
-  Reconstruction::Initialization_method init_method = Reconstruction::Initialization_method::FEATURE_AWARE;
-
-  // Take argument input to choose the initialization method for the reconstruction
-  if (argc > 3) {
-    std::string init_method_str = argv[3];
-    if (init_method_str == "feature_aware") {
-      init_method = Reconstruction::Initialization_method::FEATURE_AWARE;
-    } else if (init_method_str == "default") {
-      init_method = Reconstruction::Initialization_method::DEFAULT;
-    } else {
-      std::cerr << "Unknown initialization method: " << init_method_str << std::endl;
+    if (extension == ".off")
+    {
+      if (!read_off_file(filename, points, normals))
+      {
+        std::cerr << "Error: cannot read point cloud!"
+                  << std::endl;
+        return EXIT_FAILURE;
+      }
+    }
+    else if (extension == ".xyz")
+    {
+      if (!read_xyz_file(filename, points, normals))
+      {
+        std::cerr << "Error: cannot read point cloud!"
+                  << std::endl;
+        return EXIT_FAILURE;
+      }
+    }
+    else
+    {
+      std::cerr << "Unsupported point-cloud format: "
+                << extension << std::endl;
       return EXIT_FAILURE;
     }
+
+    // Normalize geometry.
+    std::cout << "Centering and scaling point cloud..."
+              << std::endl;
+
+    center_and_scale_point_cloud(points);
+
+    average_spacing =
+      CGAL::compute_average_spacing<
+        CGAL::Parallel_if_available_tag>(points, 2);
+
+    // Compute normals if missing.
+    compute_normals_if_missing(points, normals, 6);
+
+    const double edge_length = scale * average_spacing;
+
+    std::cout << "Average spacing: " << average_spacing << std::endl;
+    std::cout << "Required edge length: " << edge_length << std::endl;
+
+    // Construct point-cloud reconstruction.
+    Reconstruction reconstruction(
+      points,
+      normals,
+      edge_length,
+      output_mesh,
+      init_method,
+      FT(feature_angle_minimum)
+    );
+
+    reconstruction.run();
+  }
+  else // input_type == "mesh"
+  {
+    // Read input mesh.
+    Polyhedron input_mesh;
+
+    if (!CGAL::IO::read_polygon_mesh(filename, input_mesh) ||
+        input_mesh.is_empty() ||
+        !CGAL::is_triangle_mesh(input_mesh))
+    {
+      std::cerr << "Error: cannot read a valid triangle mesh!"
+                << std::endl;
+      return EXIT_FAILURE;
+    }
+
+    // Collect input mesh vertices.
+    std::vector<Point> points;
+    points.reserve(num_vertices(input_mesh));
+
+    for (vertex_descriptor v : vertices(input_mesh))
+      points.push_back(input_mesh.point(v));
+
+    // Normalize geometry using the same normalization as
+    // the point-cloud implementation.
+    std::cout << "Centering and scaling input mesh..."
+              << std::endl;
+
+    center_and_scale_point_cloud(points);
+
+    // Apply the same transformation to the input mesh.
+    auto vertex_it = vertices(input_mesh).begin();
+
+    for (std::size_t i = 0; i < points.size(); ++i, ++vertex_it)
+      input_mesh.point(*vertex_it) = points[i];
+
+    // Estimate spacing from the mesh vertices.
+    average_spacing =
+      CGAL::compute_average_spacing<
+        CGAL::Parallel_if_available_tag>(points, 2);
+
+    const double edge_length = scale * average_spacing;
+
+    std::cout << "Average spacing: " << average_spacing << std::endl;
+    std::cout << "Required edge length: " << edge_length << std::endl;
+
+    // Construct mesh-input reconstruction.
+    // Reconstruction reconstruction(
+    //   input_mesh,
+    //   edge_length,
+    //   output_mesh,
+    //   init_method,
+    //   FT(feature_angle_minimum)
+    // );
+
+    // reconstruction.run();
   }
 
-  FT feature_angle_minimum = FT(30.0); // default minimum feature angle in degrees
-  if (argc > 4) {
-    feature_angle_minimum = FT(std::stod(argv[4]));
+  // Write output.
+  if (!CGAL::IO::write_polygon_mesh(output_filename, output_mesh))
+  {
+    std::cerr << "Error: could not write output mesh!"
+              << std::endl;
+    return EXIT_FAILURE;
   }
 
-  Reconstruction reconstruction
-    (grid, output_mesh, init_method, feature_angle_minimum);
-  reconstruction.run();
-
-  CGAL::IO::write_polygon_mesh("mesh.ply", output_mesh);
-  CGAL::IO::write_polygon_mesh("mesh.obj", output_mesh);
-  CGAL::IO::write_polygon_mesh("mesh.stl", output_mesh);
-  std::cout << "Reconstructed mesh written to mesh.ply" << std::endl;
+  std::cout << "Reconstructed mesh written to "
+            << output_filename << std::endl;
 
   return EXIT_SUCCESS;
 }
