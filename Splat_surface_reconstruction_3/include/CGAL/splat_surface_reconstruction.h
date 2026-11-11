@@ -166,16 +166,25 @@ namespace CGAL {
       return block_normals_;
     }
 
+    /// @brief Get the position of the splat point with the given ID.
+    /// @param pid the ID of the splat point.
+    /// @return the position of the splat point with the given ID.
     const Point_3& get_splat_point(Index pid) const {
       CGAL_assertion(pid < points_.size());
       return points_[pid];
     }
 
+    /// @brief Get the normal of the splat point with the given ID.
+    /// @param pid the ID of the splat point.
+    /// @return the normal of the splat point with the given ID.
     const Vector_3& get_splat_normal(Index pid) const {
       CGAL_assertion(pid < normals_.size());
       return normals_[pid];
     }
 
+    /// @brief Get the splat size of the splat point with the given ID.
+    /// @param pid the ID of the splat point.
+    /// @return the splat size of the splat point with the given ID.
     const FT get_splat_size(Index pid) const {
       CGAL_assertion(pid < splat_sizes_.size());
       return splat_sizes_[pid];
@@ -211,7 +220,9 @@ namespace CGAL {
       compute_block_normals();
     }
 
-    // TODO write description
+    /**
+     * @brief Filters points within each grid cell based on their normals.
+     */
     void filter_points_by_normals() {
       constexpr double min_normal_sum_length = 0.1;
       constexpr double min_normal_sum_length_squared =
@@ -672,6 +683,16 @@ namespace CGAL {
     }
 
 
+    /**
+     * @brief Compute the intersection points between a circle and a splat.
+     * @param circle_center the center of the circle.
+     * @param circle_normal the normal of the circle plane.
+     * @param circle_radius the radius of the circle.
+     * @param splat_center the center of the splat.
+     * @param splat_normal the normal of the splat plane.
+     * @param splat_radius the radius of the splat.
+     * @return a vector of intersection points between the circle and the splat disk.
+     */
     std::vector<Point_3> circle_intersects_splat(
       const Point_3& circle_center,
       const Vector_3& circle_normal,
@@ -970,6 +991,14 @@ namespace CGAL {
       }
     }
 
+    /**
+     * @brief Compute the distance from a point to the surface of a cell's bounding box.
+     * @param p The point to measure the distance from.
+     * @param ix The x-coordinate of the cell in the grid.
+     * @param iy The y-coordinate of the cell in the grid.
+     * @param iz The z-coordinate of the cell in the grid.
+     * @return The distance from the point to the surface of the cell's bounding box.
+     */
     FT distance_to_box(const Point_3& p, int ix, int iy, int iz) const {
       const Point_3 center = cell_center(ix, iy, iz);
       const Vector_3 diff = p - center;
@@ -992,6 +1021,13 @@ namespace CGAL {
       return Point_3(x, y, z);
     }
 
+    /**
+     * @brief Returns the point IDs of points within distance d of the specified cell's bounding box.
+     * @param ix The x-coordinate of the cell in the grid.
+     * @param iy The y-coordinate of the cell in the grid.
+     * @param iz The z-coordinate of the cell in the grid.
+     * @return A reference to the vector of point IDs within distance d of the cell's bounding box.
+     */
     const std::vector<Index>& point_ids_within_distance_d_of_box(std::size_t ix, std::size_t iy, std::size_t iz) const {
       CGAL_assertion(ix < nx_ && iy < ny_ && iz < nz_);
       const Cell* c = cell(ix, iy, iz);
@@ -1000,6 +1036,13 @@ namespace CGAL {
       return c->point_ids_within_distance_d;
     }
 
+    /**
+     * @brief Returns the point IDs of points contained within the specified cell's bounding box.
+     * @param ix The x-coordinate of the cell in the grid.
+     * @param iy The y-coordinate of the cell in the grid.
+     * @param iz The z-coordinate of the cell in the grid.
+     * @return A reference to the vector of point IDs contained within the cell's bounding box.
+     */
     const std::vector<Index>& point_ids_in_box(std::size_t ix, std::size_t iy, std::size_t iz) const {
       CGAL_assertion(ix < nx_ && iy < ny_ && iz < nz_);
       const Cell* c = cell(ix, iy, iz);
