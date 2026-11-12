@@ -88,7 +88,7 @@ class Mesh_surface_approximation : public Surface_approximation<Kernel_> {
         insert(i);
       }
 
-      std::cout << "Number of triangles: " << triangles_.size() << std::endl;
+      filter_triangles_by_normals();
 
       compute_block_normals();
     }
@@ -315,6 +315,49 @@ class Mesh_surface_approximation : public Surface_approximation<Kernel_> {
     }
 
   private:
+
+
+    /**
+     * @brief Filters triangles within each grid cell based on their normals.
+     */
+    void filter_triangles_by_normals() {
+      constexpr double min_normal_sum_length = 0.1;
+      constexpr double min_normal_sum_length_squared =
+        min_normal_sum_length * min_normal_sum_length;
+
+      for (Cell& cell : cells_) {
+        auto& ids = cell.triangle_ids_within_distance_d;
+
+        if (ids.empty()) {
+          continue;
+        }
+
+        // Step 1: Sum the associated triangle normals without normalization.
+        Vector_3 normal_sum = CGAL::NULL_VECTOR;
+
+        for (Index tid : ids) {
+          normal_sum = normal_sum + triangle_normal(tid);
+        }
+
+        // Step 2: If the sum is too small, keep all associated triangles.
+        const double length_squared =
+          CGAL::to_double(normal_sum.squared_length());
+
+        if (length_squared < min_normal_sum_length_squared) {
+          continue;
+        }
+
+        // Step 3: Remove triangles whose normals oppose the summed normal.
+        ids.erase(
+          std::remove_if(
+            ids.begin(),
+            ids.end(),
+            [&](Index tid) {
+              return CGAL::to_double(triangle_normal(tid) * normal_sum) < 0.0;
+            }),
+          ids.end());
+      }
+    }
 
     /**
      * @brief Computes box normals using the finite-sampling optimization

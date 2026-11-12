@@ -3164,7 +3164,8 @@ namespace CGAL {
             has_previous_and_next_halfedges = true;
             
             // Find the first clockwise and counterclockwise halfedges around the parent vertex.
-            auto [cw, ccw] = choose_closest_ccw_halfedges(cand.parent_vertex, cand.position, normals_pm_[v]);
+            auto [cw, ccw] = choose_closest_ccw_halfedges(cand.parent_vertex, cand.position,
+              surface_approximation_->box_normal(points_pm_[cand.parent_vertex]));
 
             previous_halfedge = ccw;
             next_halfedge = cw;
