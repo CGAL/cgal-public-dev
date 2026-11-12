@@ -39,1303 +39,17 @@
 #include <algorithm>
 #include <optional>
 #include <queue>
+#include <memory>
+
+#include <CGAL/internal/Splat_surface_reconstruction_3/geometry_utils.h>
+#include <CGAL/internal/Splat_surface_reconstruction_3/splat_surface_approximation.h>
+#include <CGAL/internal/Splat_surface_reconstruction_3/mesh_surface_approximation.h>
+
 
 namespace CGAL {
 
   template <typename PointRange, typename NormalRange, typename TriangleMesh>
   struct Splat_surface_reconstruction_3_test_access;
-
-  template <typename Kernel_>
-  struct Grid_test_access;
-
-  /**
-   * @brief Dense axis-aligned box grid over a fixed 3D domain.
-   *
-   * The grid stores points and accumulated normals per cell. It is used as a
-   * local acceleration structure for neighborhood queries, cell-normal
-   * estimation, and adaptive splat-size estimation.
-   *
-   * @tparam Kernel_ CGAL kernel type used for points, vectors, and scalars.
-   */
-  template <typename Kernel_>
-  class Box_grid {
-    private:
-      friend struct Grid_test_access<Kernel_>;
-
-    public:
-    using Kernel   = Kernel_;
-    using FT       = typename Kernel::FT;
-    using Point_3  = typename Kernel::Point_3;
-    using Point_2  = typename Kernel::Point_2;
-    using Vector_3 = typename Kernel::Vector_3;
-    using Index    = std::size_t;
-
-    struct Initial_seed {
-      Point_3 first;
-      Point_3 second;
-      Index splat_id;
-    };
-
-    public:
-    /**
-     * @brief A single grid cell.
-     *
-     * Each cell stores the indices of the points that fall inside it together
-     * with the sum of their normals and the number of contributing normals.
-     */
-    struct Cell
-    {
-      // The indices of all input points within distance d of the cell center.
-      std::vector<Index> point_ids_within_distance_d;
-      std::vector<Index> point_ids_contained;
-
-      void add_point_contained(Index pid) {
-        point_ids_contained.push_back(pid);
-      }
-      void add_point_within_distance_d(Index pid) {
-        point_ids_within_distance_d.push_back(pid);
-      }
-    };
-
-    /**
-     * @brief Returns the cell at integer grid coordinates.
-     *
-     * @param ix Cell index along x.
-     * @param iy Cell index along y.
-     * @param iz Cell index along z.
-     *
-     * @return Pointer to the requested cell, or `nullptr` if the coordinates
-     *         are outside the grid.
-     */
-    const Cell* cell(int ix, int iy, int iz) const {
-      if (!valid_coordinates(ix, iy, iz)) {
-        return nullptr;
-      }
-      return &cells_[flat_index(ix, iy, iz)];
-    }
-
-    /**
-     * @brief Constructs a dense 3D grid.
-     *
-     * The grid uses the same cell size along all three axes.
-     *
-     * @param box_size Cell side length.
-     * @param min_x Minimum x-coordinate of the grid.
-     * @param min_y Minimum y-coordinate of the grid.
-     * @param min_z Minimum z-coordinate of the grid.
-     * @param max_x Maximum x-coordinate of the grid.
-     * @param max_y Maximum y-coordinate of the grid.
-     * @param max_z Maximum z-coordinate of the grid.
-    */
-    Box_grid(FT box_size,
-             FT min_x, FT min_y, FT min_z,
-             FT max_x, FT max_y, FT max_z)
-     : box_size_(box_size),
-       min_x_(min_x), max_x_(max_x), min_y_(min_y),
-       max_y_(max_y), min_z_(min_z), max_z_(max_z) {
-      initialize_grid();
-    }
-
-    /// @brief Returns the grid cell side length.
-    FT get_box_size() const {
-      return box_size_;
-    }
-
-    /// @brief Returns the largest estimated splat radius.
-    FT get_max_splat_radius() const {
-      return max_splat_radius_;
-    }
-
-    /// @brief Returns the input point positions stored by the grid.
-    const std::vector<Point_3>& points() const {
-      return points_;
-    }
-
-    /// @brief Returns the input point normals stored by the grid.
-    const std::vector<Vector_3>& normals() const {
-      return normals_;
-    }
-
-    /// @brief Returns the estimated splat radius of every input point.
-    const std::vector<FT>& splat_sizes() const {
-      return splat_sizes_;
-    }
-
-    /// @brief Return the computed block normals.
-    const std::vector<Vector_3>& block_normals() const {
-      return block_normals_;
-    }
-
-    /// @brief Get the position of the splat point with the given ID.
-    /// @param pid the ID of the splat point.
-    /// @return the position of the splat point with the given ID.
-    const Point_3& get_splat_point(Index pid) const {
-      CGAL_assertion(pid < points_.size());
-      return points_[pid];
-    }
-
-    /// @brief Get the normal of the splat point with the given ID.
-    /// @param pid the ID of the splat point.
-    /// @return the normal of the splat point with the given ID.
-    const Vector_3& get_splat_normal(Index pid) const {
-      CGAL_assertion(pid < normals_.size());
-      return normals_[pid];
-    }
-
-    /// @brief Get the splat size of the splat point with the given ID.
-    /// @param pid the ID of the splat point.
-    /// @return the splat size of the splat point with the given ID.
-    const FT get_splat_size(Index pid) const {
-      CGAL_assertion(pid < splat_sizes_.size());
-      return splat_sizes_[pid];
-    }
-
-    /**
-     * @brief Builds the grid from input points and normals.
-     *
-     * Each point is inserted into its corresponding grid cell and its normal is
-     * accumulated into that cell.
-     *
-     * @param points Input point positions.
-     * @param normals Input point normals.
-    */
-    void build(const std::vector<Point_3>& points,
-              const std::vector<Vector_3>& normals) {
-
-      clear();
-
-      points_ = points;
-      normals_ = normals;
-
-      CGAL_assertion(points_.size() == normals_.size());
-
-      // Add each point to the grid boxes
-      for (Index i = 0; i < points_.size(); ++i) {
-        double len2 = CGAL::to_double(normals_[i].squared_length());
-        insert(i, points_[i]);
-      }
-
-      filter_points_by_normals();
-
-      compute_block_normals();
-    }
-
-    /**
-     * @brief Filters points within each grid cell based on their normals.
-     */
-    void filter_points_by_normals() {
-      constexpr double min_normal_sum_length = 0.1;
-      constexpr double min_normal_sum_length_squared =
-        min_normal_sum_length * min_normal_sum_length;
-
-      for (Cell& cell : cells_) {
-        auto& ids = cell.point_ids_within_distance_d;
-
-        if (ids.empty()) {
-          continue;
-        }
-
-        // Step 1: Sum the associated point normals without normalization.
-        Vector_3 normal_sum = CGAL::NULL_VECTOR;
-
-        for (Index pid : ids) {
-          CGAL_assertion(pid < normals_.size());
-          normal_sum = normal_sum + normals_[pid];
-        }
-
-        // Step 2: If the sum is too small, keep all associated points.
-        const double length_squared =
-          CGAL::to_double(normal_sum.squared_length());
-
-        if (length_squared < min_normal_sum_length_squared) {
-          continue;
-        }
-
-        // Step 3: Remove points whose normals oppose the summed normal.
-        ids.erase(
-          std::remove_if(
-            ids.begin(),
-            ids.end(),
-            [&](Index pid) {
-              return CGAL::to_double(normals_[pid] * normal_sum) < 0.0;
-            }),
-          ids.end());
-      }
-    }
-
-    /**
-     * @brief Computes box normals using the finite-sampling optimization
-     *        described in the Feature-aware Manifold Meshing paper.
-     *
-     * For each box, selects the sampled unit direction N that maximizes
-     * the minimum dot product between N and all associated point normals.
-     *
-     * Assumes point_ids_within_distance_d contains the distance-associated
-     * points after the preliminary normal-filtering step.
-     */
-    std::vector<Vector_3> compute_block_normals()
-    {
-      // Number of directions in the finite sampling of S^2.
-      constexpr std::size_t sample_count = 1000;
-
-      // Construct a deterministic, approximately uniform sampling of S^2.
-      std::vector<Vector_3> sphere_samples;
-      sphere_samples.reserve(sample_count);
-
-      const double golden_angle =
-        CGAL_PI * (3.0 - std::sqrt(5.0));
-
-      for (std::size_t i = 0; i < sample_count; ++i) {
-        const double z =
-          1.0 - 2.0 * (static_cast<double>(i) + 0.5)
-                      / static_cast<double>(sample_count);
-
-        const double radius = std::sqrt(1.0 - z * z);
-        const double theta = golden_angle * static_cast<double>(i);
-
-        sphere_samples.emplace_back(
-          radius * std::cos(theta),
-          radius * std::sin(theta),
-          z);
-      }
-
-      block_normals_.assign(cells_.size(), CGAL::NULL_VECTOR);
-
-      for (std::size_t idx = 0; idx < cells_.size(); ++idx) {
-        const Cell& cell = cells_[idx];
-
-        // Use the distance-associated point list, not cell membership.
-        const auto& point_ids = cell.point_ids_within_distance_d;
-
-        if (point_ids.empty()) {
-          continue;
-        }
-
-        // Find the sampled direction with the largest minimum dot product.
-        double best_score = -std::numeric_limits<double>::infinity();
-        Vector_3 best_normal = CGAL::NULL_VECTOR;
-
-        for (const Vector_3& candidate : sphere_samples) {
-          double min_dot = std::numeric_limits<double>::infinity();
-
-          for (Index pid : point_ids) {
-            CGAL_assertion(pid < normals_.size());
-
-            const double dot = CGAL::to_double(
-              normals_[pid] * candidate);
-
-            min_dot = (std::min)(min_dot, dot);
-          }
-
-          if (min_dot > best_score) {
-            best_score = min_dot;
-            best_normal = candidate;
-          }
-        }
-
-        block_normals_[idx] = best_normal;
-      }
-
-      return block_normals_;
-    }
-
-    /**
-     * @brief Estimates one splat radius for every input point.
-     *
-     * A local 2D Delaunay triangulation is constructed in the tangent plane of
-     * each input point. The largest incident circumcenter distance is used as
-     * the local splat radius and is clamped to the global spacing.
-     *
-     * @return Per-point splat radii.
-    */
-    std::vector<FT> estimate_individual_splat_sizes() {
-      FT global_spacing = box_size_;
-      splat_sizes_.resize(points_.size(), global_spacing);
-
-      std::cout << "Estimating individual splat sizes with global spacing: " << global_spacing << std::endl;
-
-      std::size_t computation_count = 0;
-
-      for (Index i = 0; i < points_.size(); ++i) {
-        int cx, cy, cz;
-        if (!to_grid_coordinates(points_[i], cx, cy, cz)) {
-          std::cerr << "Warning: point " << i << " is out of grid bounds, skipping splat size estimation.\n";
-          std::exit(EXIT_FAILURE);
-        }
-
-        // Changed: from
-        // Collect all points in the same box as p_i.
-        // to:
-        // Collect all points within distance d of p_i.
-        std::vector<Index> local_ids;
-        const Cell* c = cell(cx, cy, cz);
-        if (c == nullptr || c->point_ids_within_distance_d.empty()) {
-          continue;
-        }
-
-        for (Index pid : c->point_ids_within_distance_d) {
-          // Distance check: only include points within distance d of p_i.
-          Vector_3 diff = points_[pid] - points_[i];
-          double dist2 = CGAL::to_double(diff * diff);
-          double d_sq = 1.0 * box_size_ * box_size_;
-          if (dist2 <= d_sq + 1e-6 || true) {
-            local_ids.push_back(pid);
-          }
-        }
-
-        // Need at least a few neighbors to define a local triangulation.
-        if (local_ids.size() < 3) {
-          continue;
-        }
-
-        ++computation_count;
-
-        // Build a local tangent frame at p_i from its normal.
-        std::vector<Vector_3> local_frame = compute_local_tangent_frame(normals_[i]);
-        Vector_3 u = local_frame[0];
-        Vector_3 v = local_frame[1];
-
-        // Project local neighbors onto the tangent plane and compute their 2D coordinates
-        // Also input in the Delaunay Triangulation Kernel
-        CGAL::Delaunay_triangulation_2<Kernel> DT;
-        auto center_vh = DT.insert(Point_2(0, 0)); // keep the handle
-
-        for (Index neighbor_id : local_ids) {
-          if (neighbor_id == i) continue;
-
-          Vector_3 vec = points_[neighbor_id] - points_[i];
-          double x = CGAL::to_double(vec * u);
-          double y = CGAL::to_double(vec * v);
-          DT.insert(Point_2(x, y));
-        }
-
-        // Find the circumcenter of faces incident to the center vertex only.
-        std::vector<FT> circumcenter_distances;
-        FT max_r2 = FT(0);
-
-        auto fc = DT.incident_faces(center_vh);
-        if (fc != 0) {
-          auto done = fc;
-
-          do {
-            if (!DT.is_infinite(fc)) {
-              Point_2 a = fc->vertex(0)->point();
-              Point_2 b = fc->vertex(1)->point();
-              Point_2 cpt = fc->vertex(2)->point();
-
-              Point_2 cc = CGAL::circumcenter(a, b, cpt);
-              const FT r2 = cc.x() * cc.x() + cc.y() * cc.y();
-
-              if (r2 > max_r2) {
-                max_r2 = r2;
-              }
-            }
-            ++fc;
-          } while (fc != done);
-        }
-
-        if (max_r2 > FT(0)) {
-          splat_sizes_[i] = CGAL::sqrt(max_r2);
-          splat_sizes_[i] = (std::min)(splat_sizes_[i], global_spacing); // Clamp to global spacing to avoid outliers.
-        }
-      }
-
-      std::cout << "Total local splat size computations: " << computation_count << " / " << splat_sizes_.size() << std::endl;
-
-      max_splat_radius_ = *std::max_element(splat_sizes_.begin(), splat_sizes_.end());
-      std::cout<<"Box size: " << box_size_ << " Max splat radius: " << max_splat_radius_ << std::endl;
-      return splat_sizes_;
-    }
-
-    /**
-     * @brief Selects an initial pair of mesh vertices from a large splat.
-     *
-     * The seed is placed symmetrically around the splat center along one tangent
-     * direction. A central region of the input bounding box is preferred to avoid
-     * starting the reconstruction near the boundary.
-     *
-     * @return Initial seed information.
-    */
-    Initial_seed get_initial_seed() const {
-      std::cout<<"Searching for initial seed with splat size larger than box size..." << std::endl;
-      for (Index i = 0; i < splat_sizes_.size(); ++i) {
-        // CHANGED: from requiring splat_sizes_[i] > box_size_
-        // to splat_sizes_[i] > box_size_ * 0.95
-        if (splat_sizes_[i] > box_size_ * 0.95 && i < normals_.size() && normals_[i] != CGAL::NULL_VECTOR) {
-          // Define a central region: keep points that are at least 10% away from each face.
-          const FT margin_x = FT(0.1) * (max_x_ - min_x_);
-          const FT margin_y = FT(0.1) * (max_y_ - min_y_);
-          const FT margin_z = FT(0.1) * (max_z_ - min_z_);
-          const FT mid_min_x = min_x_ + margin_x;
-          const FT mid_max_x = max_x_ - margin_x;
-          const FT mid_min_y = min_y_ + margin_y;
-          const FT mid_max_y = max_y_ - margin_y;
-          const FT mid_min_z = min_z_ + margin_z;
-          const FT mid_max_z = max_z_ - margin_z;
-
-          auto is_in_middle = [&](const Point_3& p) -> bool {
-            return (p.x() >= mid_min_x && p.x() <= mid_max_x &&
-                    p.y() >= mid_min_y && p.y() <= mid_max_y &&
-                    p.z() >= mid_min_z && p.z() <= mid_max_z);
-          };
-
-          // Require the seed point to be somewhere in the middle of the cloud.
-          if (!is_in_middle(points_[i])) {
-            continue;
-          }
-
-          auto frame = compute_local_tangent_frame(normals_[i]);
-          const Vector_3& u = frame[0];
-
-          const Point_3 seed1 = points_[i] + FT(0.5) * box_size_ * u;
-          const Point_3 seed2 = points_[i] - FT(0.5) * box_size_ * u;
-
-          // Make sure the two initial vertices are also not near the boundary.
-          if (!is_in_middle(seed1) || !is_in_middle(seed2)) {
-            continue;
-          }
-
-          std::cout<<"Found initial seed at point index " << i << " with splat size " << splat_sizes_[i] << "." << std::endl;
-          return Initial_seed{seed1, seed2, i};
-        }
-      }
-
-      std::cerr << "Warning: no suitable initial seed found with splat size larger than box size.\n";
-
-      // Fallback to a default initial seed.
-      auto frame = compute_local_tangent_frame(normals_[0]);
-      const Vector_3& u = frame[0];
-      const Point_3 seed1 = points_[1000] + FT(0.5) * box_size_ * u;
-      const Point_3 seed2 = points_[1000] - FT(0.5) * box_size_ * u;
-      return Initial_seed{seed1, seed2, 0};
-    }
-
-    /**
-     * @brief Finds input points in grid cells intersecting a query neighborhood.
-     *
-     * @param p Query position.
-     * @param radius Search radius.
-     *
-     * @return Unique input point identifiers in the neighborhood.
-    */
-    std::vector<Index> nearby_point_ids(const Point_3& p, FT radius) const {
-      std::vector<Index> ids;
-
-      int cx, cy, cz;
-      if (!to_grid_coordinates(p, cx, cy, cz)) {
-        return ids;
-      }
-
-      const int r = (std::max)(
-        1,
-        static_cast<int>(
-          std::ceil(CGAL::to_double(radius) / CGAL::to_double(box_size_))
-        )
-      );
-
-      for (int dx = -r; dx <= r; ++dx) {
-        for (int dy = -r; dy <= r; ++dy) {
-          for (int dz = -r; dz <= r; ++dz) {
-            const int ix = cx + dx;
-            const int iy = cy + dy;
-            const int iz = cz + dz;
-
-            const Cell* c = cell(ix, iy, iz);
-            if (c == nullptr) {
-              continue;
-            }
-
-            ids.insert(ids.end(), c->point_ids_contained.begin(), c->point_ids_contained.end());
-          }
-        }
-      }
-
-      std::sort(ids.begin(), ids.end());
-      ids.erase(std::unique(ids.begin(), ids.end()), ids.end());
-      return ids;
-    }
-
-    /**
-     * @brief Intersects the construction circle of two parent vertices with a splat.
-     *
-     * The circle is defined by the parent pair and the global box size. Its
-     * intersection with the splat plane is computed analytically and only
-     * intersection points inside the splat disk are returned.
-     *
-     * @param parent_a First parent point.
-     * @param parent_b Second parent point.
-     * @param splat_center Center of the splat.
-     * @param splat_normal Splat normal.
-     * @param splat_radius Splat radius.
-     *
-     * @return Zero, one, or two valid intersection points.
-    */
-    std::vector<Point_3> intersect_circle_with_splat(const Point_3& parent_a,
-                                                    const Point_3& parent_b,
-                                                    const Point_3& splat_center,
-                                                    const Vector_3& splat_normal,
-                                                    FT splat_radius) const {
-      std::vector<Point_3> result;
-
-      const Vector_3 ab = parent_b - parent_a;
-      const FT d2 = ab.squared_length();
-      if (d2 <= FT(0)) {
-        return result;
-      }
-
-      // Circle radius from the two-parent construction.
-      const FT circle_r2 = box_size_ * box_size_ - d2 / FT(4);
-      if (circle_r2 <= FT(0)) {
-        return result;
-      }
-
-      const FT circle_r = CGAL::sqrt(circle_r2);
-
-      // Circle center = midpoint of the two parents.
-      const Point_3 mid(
-        (parent_a.x() + parent_b.x()) / FT(2),
-        (parent_a.y() + parent_b.y()) / FT(2),
-        (parent_a.z() + parent_b.z()) / FT(2)
-      );
-
-      // Normal of the circle plane: along the parent-parent direction.
-      const double ab_len2 = CGAL::to_double(d2);
-      if (ab_len2 <= 0.0) {
-        return result;
-      }
-      Vector_3 circle_normal = ab * (1.0 / std::sqrt(ab_len2));
-
-      // Build an orthonormal basis (u, v) for the circle plane.
-      std::vector<Vector_3> frame = compute_local_tangent_frame(circle_normal);
-      const Vector_3& u = frame[0];
-      const Vector_3& v = frame[1];
-
-      // Normalize the splat normal.
-      Vector_3 ns = splat_normal;
-      const double ns_len2 = CGAL::to_double(ns.squared_length());
-      if (ns_len2 <= 0.0) {
-        return result;
-      }
-      ns = ns * (1.0 / std::sqrt(ns_len2));
-
-      return circle_intersects_splat(mid, circle_normal, circle_r, splat_center, ns, splat_radius);
-
-
-      // Circle points are:
-      //   x(t) = mid + circle_r * (cos(t) * u + sin(t) * v)
-      //
-      // Splat plane equation:
-      //   dot(ns, x - splat_center) = 0
-      //
-      // This becomes:
-      //   A cos(t) + B sin(t) = C
-      const FT A = circle_r * (u * ns);
-      const FT B = circle_r * (v * ns);
-      const FT C = (splat_center - mid) * ns;
-
-      const FT R2 = A * A + B * B;
-      if (R2 <= FT(0)) {
-        // Circle plane is parallel to splat plane.
-        return result;
-      }
-
-      const FT R = CGAL::sqrt(R2);
-
-      if (std::abs(CGAL::to_double(C)) > CGAL::to_double(R)) {
-        // No intersection between circle and splat plane.
-        return result;
-      }
-
-      const FT phi = std::atan2(CGAL::to_double(B), CGAL::to_double(A));
-      const FT delta = std::acos(CGAL::to_double(C / R));
-
-      const FT t1 = phi + delta;
-      const FT t2 = phi - delta;
-
-      const auto make_point = [&](FT t) -> Point_3 {
-        const FT ct = std::cos(CGAL::to_double(t));
-        const FT st = std::sin(CGAL::to_double(t));
-        return Point_3(
-          mid.x() + circle_r * (ct * u.x() + st * v.x()),
-          mid.y() + circle_r * (ct * u.y() + st * v.y()),
-          mid.z() + circle_r * (ct * u.z() + st * v.z())
-        );
-      };
-
-      const FT splat_r2 = splat_radius * splat_radius;
-
-      Point_3 p1 = make_point(t1);
-      Point_3 p2 = make_point(t2);
-
-      // Keep only points that lie inside the splat disk.
-      if (CGAL::squared_distance(p1, splat_center) <= splat_r2) {
-        result.push_back(p1);
-      }
-
-      // Avoid duplicate if the two solutions coincide numerically.
-      if (CGAL::squared_distance(p2, splat_center) <= splat_r2 &&
-          CGAL::squared_distance(p2, p1) > FT(1e-12))
-      {
-        result.push_back(p2);
-      }
-
-      return result;
-    }
-
-
-    /**
-     * @brief Compute the intersection points between a circle and a splat.
-     * @param circle_center the center of the circle.
-     * @param circle_normal the normal of the circle plane.
-     * @param circle_radius the radius of the circle.
-     * @param splat_center the center of the splat.
-     * @param splat_normal the normal of the splat plane.
-     * @param splat_radius the radius of the splat.
-     * @return a vector of intersection points between the circle and the splat disk.
-     */
-    std::vector<Point_3> circle_intersects_splat(
-      const Point_3& circle_center,
-      const Vector_3& circle_normal,
-      const FT circle_radius,
-      const Point_3& splat_center,
-      const Vector_3& splat_normal,
-      const FT splat_radius
-    ) const
-    {
-      std::vector<Point_3> result;
-
-      // Build an orthonormal basis (u, v) for the circle plane.
-      std::vector<Vector_3> frame = compute_local_tangent_frame(circle_normal);
-      const Vector_3& u = frame[0];
-      const Vector_3& v = frame[1];
-
-      // Normalize the splat normal.
-      Vector_3 ns = splat_normal;
-      const double ns_len2 = CGAL::to_double(ns.squared_length());
-      if (ns_len2 <= 0.0) {
-        return result;
-      }
-      ns = ns * (1.0 / std::sqrt(ns_len2));
-
-      // Circle points are:
-      //   x(t) = circle_center + circle_radius * (cos(t) * u + sin(t) * v)
-      //
-      // Splat plane equation:
-      //   dot(ns, x - splat_center) = 0
-      //
-      // This becomes:
-      //   A cos(t) + B sin(t) = C
-      const FT A = circle_radius * (u * ns);
-      const FT B = circle_radius * (v * ns);
-      const FT C = (splat_center - circle_center) * ns;
-
-      const FT R2 = A * A + B * B;
-      if (R2 <= FT(0)) {
-        // Circle plane is parallel to splat plane.
-        return result;
-      }
-
-      const FT R = CGAL::sqrt(R2);
-
-      if (std::abs(CGAL::to_double(C)) > CGAL::to_double(R)) {
-        // No intersection between circle and splat plane.
-        return result;
-      }
-
-      const FT phi = std::atan2(CGAL::to_double(B), CGAL::to_double(A));
-      const FT delta = std::acos(CGAL::to_double(C / R));
-
-      const FT t1 = phi + delta;
-      const FT t2 = phi - delta;
-
-      const auto make_point = [&](FT t) -> Point_3 {
-        const FT ct = std::cos(CGAL::to_double(t));
-        const FT st = std::sin(CGAL::to_double(t));
-        return Point_3(
-          circle_center.x() + circle_radius * (ct * u.x() + st * v.x()),
-          circle_center.y() + circle_radius * (ct * u.y() + st * v.y()),
-          circle_center.z() + circle_radius * (ct * u.z() + st * v.z())
-        );
-      };
-
-      const FT splat_r2 = splat_radius * splat_radius;
-
-      Point_3 p1 = make_point(t1);
-      Point_3 p2 = make_point(t2);
-
-      // Keep only points that lie inside the splat disk.
-      if (CGAL::squared_distance(p1, splat_center) <= splat_r2) {
-        result.push_back(p1);
-      }
-
-      // Avoid duplicate if the two solutions coincide numerically.
-      if (CGAL::squared_distance(p2, splat_center) <= splat_r2 &&
-          CGAL::squared_distance(p2, p1) > FT(1e-12))
-      {
-        result.push_back(p2);
-      }
-
-      return result;
-    }
-
-    /**
-     * @brief Computes an orthonormal tangent frame for a normal.
-     *
-     * The returned vectors span the plane orthogonal to the input normal.
-     *
-     * @param n Surface normal.
-     *
-     * @return Two approximately unit-length tangent vectors.
-    */
-    std::vector<Vector_3> compute_local_tangent_frame(const Vector_3& n) const {
-      // Find a vector that is not parallel to n to construct the tangent frame.
-      Vector_3 temp;
-      if (std::abs(CGAL::to_double(n.x())) < 0.9)
-        temp = Vector_3(1,0,0);
-      else
-        temp = Vector_3(0,1,0);
-
-      Vector_3 u = CGAL::cross_product(n, temp);
-      Vector_3 v = CGAL::cross_product(n, u);
-
-      // Each vector should be orthogonal to the others.
-      CGAL_assertion(u*v < 1e-8);
-      CGAL_assertion(n*u < 1e-8);
-      CGAL_assertion(n*v < 1e-8);
-
-      // None should be the zero vector.
-      CGAL_assertion(u.squared_length() > 0);
-      CGAL_assertion(v.squared_length() > 0);
-      CGAL_assertion(n.squared_length() > 0);
-
-      // Normalize u and v to have unit length.
-      const double len_u = std::sqrt(CGAL::to_double(u.squared_length()));
-      const double len_v = std::sqrt(CGAL::to_double(v.squared_length()));
-      if (len_u > 0) u = u / len_u;
-      if (len_v > 0) v = v / len_v;
-
-      return {u, v};
-    }
-
-    /**
-     * @brief Returns the averaged normal associated with the cell containing p.
-     *
-     * @param p Query point.
-     *
-     * @return Cell normal, or `CGAL::NULL_VECTOR` if the point is outside the grid.
-    */
-    Vector_3 box_normal(const Point_3& p) const {
-      int ix, iy, iz;
-
-      CGAL_assertion(to_grid_coordinates(p, ix, iy, iz));
-
-      if (!to_grid_coordinates(p, ix, iy, iz)) {
-        return CGAL::NULL_VECTOR;
-      }
-
-      return block_normals_[flat_index(ix,iy,iz)];
-    }
-
-    /**
-     * @brief Converts a 3D point into integer grid coordinates.
-     *
-     * @param p Input point.
-     * @param ix Output x index.
-     * @param iy Output y index.
-     * @param iz Output z index.
-     *
-     * @return `true` if the point is inside the grid.
-    */
-    bool to_grid_coordinates(const Point_3& p, int& ix, int& iy, int& iz) const {
-
-      const double h = CGAL::to_double(box_size_);
-
-      const double x = CGAL::to_double(p.x());
-      const double y = CGAL::to_double(p.y());
-      const double z = CGAL::to_double(p.z());
-
-      const double minx = CGAL::to_double(min_x_);
-      const double miny = CGAL::to_double(min_y_);
-      const double minz = CGAL::to_double(min_z_);
-      const double maxx = CGAL::to_double(max_x_);
-      const double maxy = CGAL::to_double(max_y_);
-      const double maxz = CGAL::to_double(max_z_);
-
-      if (x < minx || x > maxx ||
-          y < miny || y > maxy ||
-          z < minz || z > maxz) {
-        return false;
-      }
-
-      ix = static_cast<int>(std::floor((x - minx) / h));
-      iy = static_cast<int>(std::floor((y - miny) / h));
-      iz = static_cast<int>(std::floor((z - minz) / h));
-
-      // Check that the indices are within the valid range.
-      CGAL_assertion(ix >= 0 && iy >= 0 && iz >= 0);
-      CGAL_assertion(static_cast<std::size_t>(ix) <= nx_);
-      CGAL_assertion(static_cast<std::size_t>(iy) <= ny_);
-      CGAL_assertion(static_cast<std::size_t>(iz) <= nz_);
-
-      ix = (std::min)(ix, static_cast<int>(nx_) - 1);
-      iy = (std::min)(iy, static_cast<int>(ny_) - 1);
-      iz = (std::min)(iz, static_cast<int>(nz_) - 1);
-
-      return valid_coordinates(ix, iy, iz);
-    }
-
-    /**
-     * @brief Converts 3D grid coordinates into a flat array index.
-     *
-     * @param ix Cell index along x.
-     * @param iy Cell index along y.
-     * @param iz Cell index along z.
-     *
-     * @return Linearized index into the cell array.
-    */
-    std::size_t flat_index(int ix, int iy, int iz) const {
-      return (static_cast<std::size_t>(ix) * ny_
-            + static_cast<std::size_t>(iy)) * nz_
-            + static_cast<std::size_t>(iz);
-    }
-
-    /**
-     * @brief Checks whether integer grid coordinates are valid.
-     *
-     * @param ix Cell index along x.
-     * @param iy Cell index along y.
-     * @param iz Cell index along z.
-     *
-     * @return `true` if the coordinates lie inside the grid.
-     */
-    bool valid_coordinates(int ix, int iy, int iz) const {
-      return ix >= 0 && iy >= 0 && iz >= 0 &&
-            static_cast<std::size_t>(ix) < nx_ &&
-            static_cast<std::size_t>(iy) < ny_ &&
-            static_cast<std::size_t>(iz) < nz_;
-    }
-
-    bool is_point_inside_grid(const Point_3& p) const {
-      int ix, iy, iz;
-      return to_grid_coordinates(p, ix, iy, iz);
-    }
-
-    /// @brief Returns the total number of grid cells.
-    std::size_t number_of_cells() const {
-      return nx_ * ny_ * nz_;
-    }
-
-    private:
-    /**
-     * @brief Clears all per-cell accumulators.
-     */
-    void clear() {
-      for (Cell& c : cells_) {
-        c.point_ids_contained.clear();
-        c.point_ids_within_distance_d.clear();
-      }
-
-      // Make sure all cells are cleared.
-      for (const Cell& c : cells_) {
-        CGAL_assertion(c.point_ids_contained.empty());
-        CGAL_assertion(c.point_ids_within_distance_d.empty());
-      }
-    }
-
-    /**
-     * @brief Allocates the 3D cell array from the current bounds and box size.
-     */
-    void initialize_grid() {
-      const double h = CGAL::to_double(box_size_);
-      const double extent_x = CGAL::to_double(max_x_ - min_x_);
-      const double extent_y = CGAL::to_double(max_y_ - min_y_);
-      const double extent_z = CGAL::to_double(max_z_ - min_z_);
-
-      nx_ = std::max<std::size_t>(1, static_cast<std::size_t>(std::ceil(extent_x / h)));
-      ny_ = std::max<std::size_t>(1, static_cast<std::size_t>(std::ceil(extent_y / h)));
-      nz_ = std::max<std::size_t>(1, static_cast<std::size_t>(std::ceil(extent_z / h)));
-
-      cells_.clear();
-      cells_.resize(number_of_cells());
-    }
-
-    /**
-     * @brief Inserts a single point into the grid.
-     *
-     * @param point_id Index of the point in the input cloud.
-     * @param p        Point position.
-     */
-    void insert(Index point_id, const Point_3& p) {
-      int ix, iy, iz;
-      if (!to_grid_coordinates(p, ix, iy, iz)) {
-        return;
-      }
-
-      // Always add the point to the cell it falls into.
-      const std::size_t idx = flat_index(ix, iy, iz);
-      cells_[idx].add_point_contained(point_id);
-
-      // And add it to all neighboring cells within distance d.
-      for (int dx = -1; dx <= 1; ++dx) {
-        for (int dy = -1; dy <= 1; ++dy) {
-          for (int dz = -1; dz <= 1; ++dz) {
-            int nx = ix + dx;
-            int ny = iy + dy;
-            int nz = iz + dz;
-            if (valid_coordinates(nx, ny, nz) && distance_to_box(p, nx, ny, nz) <= box_size_) {
-              const std::size_t nidx = flat_index(nx, ny, nz);
-              cells_[nidx].add_point_within_distance_d(point_id);
-            }
-          }
-        }
-      }
-    }
-
-    /**
-     * @brief Compute the distance from a point to the surface of a cell's bounding box.
-     * @param p The point to measure the distance from.
-     * @param ix The x-coordinate of the cell in the grid.
-     * @param iy The y-coordinate of the cell in the grid.
-     * @param iz The z-coordinate of the cell in the grid.
-     * @return The distance from the point to the surface of the cell's bounding box.
-     */
-    FT distance_to_box(const Point_3& p, int ix, int iy, int iz) const {
-      const Point_3 center = cell_center(ix, iy, iz);
-      const Vector_3 diff = p - center;
-      const FT half_box = box_size_ * FT(0.5);
-
-      FT dx = std::max(FT(0), CGAL::abs(diff.x()) - half_box);
-      FT dy = std::max(FT(0), CGAL::abs(diff.y()) - half_box);
-      FT dz = std::max(FT(0), CGAL::abs(diff.z()) - half_box);
-
-      return CGAL::sqrt(dx*dx + dy*dy + dz*dz);
-    }
-
-    /**
-    * @brief Returns the center of a cell.
-    */
-    Point_3 cell_center(int ix, int iy, int iz) const {
-      const FT x = min_x_ + (FT(ix) + FT(0.5)) * box_size_;
-      const FT y = min_y_ + (FT(iy) + FT(0.5)) * box_size_;
-      const FT z = min_z_ + (FT(iz) + FT(0.5)) * box_size_;
-      return Point_3(x, y, z);
-    }
-
-    /**
-     * @brief Returns the point IDs of points within distance d of the specified cell's bounding box.
-     * @param ix The x-coordinate of the cell in the grid.
-     * @param iy The y-coordinate of the cell in the grid.
-     * @param iz The z-coordinate of the cell in the grid.
-     * @return A reference to the vector of point IDs within distance d of the cell's bounding box.
-     */
-    const std::vector<Index>& point_ids_within_distance_d_of_box(std::size_t ix, std::size_t iy, std::size_t iz) const {
-      CGAL_assertion(ix < nx_ && iy < ny_ && iz < nz_);
-      const Cell* c = cell(ix, iy, iz);
-      CGAL_assertion(c != nullptr);
-
-      return c->point_ids_within_distance_d;
-    }
-
-    /**
-     * @brief Returns the point IDs of points contained within the specified cell's bounding box.
-     * @param ix The x-coordinate of the cell in the grid.
-     * @param iy The y-coordinate of the cell in the grid.
-     * @param iz The z-coordinate of the cell in the grid.
-     * @return A reference to the vector of point IDs contained within the cell's bounding box.
-     */
-    const std::vector<Index>& point_ids_in_box(std::size_t ix, std::size_t iy, std::size_t iz) const {
-      CGAL_assertion(ix < nx_ && iy < ny_ && iz < nz_);
-      const Cell* c = cell(ix, iy, iz);
-      CGAL_assertion(c != nullptr);
-
-      return c->point_ids_contained;
-    }
-
-    FT box_size_;
-    FT min_x_ = 0, max_x_ = 0;
-    FT min_y_ = 0, max_y_ = 0;
-    FT min_z_ = 0, max_z_ = 0;
-
-    std::size_t nx_ = 0;
-    std::size_t ny_ = 0;
-    std::size_t nz_ = 0;
-
-    std::vector<Cell> cells_;
-    std::vector<Point_3> points_;
-    std::vector<Vector_3> normals_;
-    std::vector<FT> splat_sizes_;
-    std::vector<Vector_3> block_normals_;
-    FT max_splat_radius_ = 0;
-
-  //   ---------------------------------- DEBUG ---------------------------------------
-  public:
-
-  void set_all_splat_sizes(FT size) {
-    splat_sizes_.assign(points_.size(), size);
-    max_splat_radius_ = size;
-  }
-
-  void write_splat_mesh_obj(const char * filename) const {
-
-    std::cout << "bbox: " << min_x_ << "," << min_y_ << "," << min_z_ << " - " << max_x_ << "," << max_y_ << "," << max_z_ << std::endl;
-
-    typename CGAL::Surface_mesh<Point_3> mesh;
-
-    for (std::size_t i = 0; i < points_.size(); ++i) {
-      FT global_spacing = 1.05*box_size_;
-
-      FT radius = splat_sizes_.size() == 0 ? global_spacing : splat_sizes_[i];
-
-      add_splat(mesh, points_[i], normals_[i], radius);
-    }
-
-    CGAL::IO::write_polygon_mesh(filename, mesh);
-
-    std::cout << "Splat mesh written to " << filename << std::endl;
-  }
-
-  Vector_3 normalize_vec(const Vector_3& n) const {
-    const double len2 = CGAL::to_double(n.squared_length());
-    if (len2 <= 0.0) {
-      return CGAL::NULL_VECTOR;
-    }
-    const Vector_3 normalized = n / std::sqrt(len2);
-    CGAL_assertion(std::abs(normalized.squared_length() - FT(1.0)) < 1e-8);
-    return normalized;
-  }
-
-  void add_splat(CGAL::Surface_mesh<Point_3>& m,
-               const Point_3& center,
-               const Vector_3& normal,
-               FT radius) const
-  {
-      const int num_vertices = 10;
-
-      std::vector<Vector_3> tangent_frame_vectors = compute_local_tangent_frame(normal);
-
-      using Vertex_index = typename CGAL::Surface_mesh<Point_3>::Vertex_index;
-
-      // Create the center vertex once.
-      Vertex_index center_vertex = m.add_vertex(center);
-
-      // Create the ring vertices once.
-      std::vector<Vertex_index> ring;
-      ring.reserve(num_vertices);
-
-      for (int i = 0; i < num_vertices; ++i) {
-          const double angle = 2.0 * M_PI * double(i) / double(num_vertices);
-
-          Point_3 p = center + radius *
-              (std::cos(angle) * tangent_frame_vectors[0] + std::sin(angle) * tangent_frame_vectors[1]);
-
-          ring.push_back(m.add_vertex(p));
-      }
-
-      // Connect adjacent ring vertices to the shared center.
-      for (int i = 0; i < num_vertices; ++i) {
-          const int next = (i + 1) % num_vertices;
-          m.add_face(center_vertex, ring[i], ring[next]);
-      }
-  }
-
-  void add_triangle(CGAL::Surface_mesh<Point_3>& m, const Point_3& p1, const Point_3& p2, const Point_3& p3) const {
-    typename CGAL::Surface_mesh<Point_3>::Vertex_index u = m.add_vertex(p1);
-    typename CGAL::Surface_mesh<Point_3>::Vertex_index v = m.add_vertex(p2);
-    typename CGAL::Surface_mesh<Point_3>::Vertex_index w = m.add_vertex(p3);
-    m.add_face(u, v, w);
-  }
-  bool write_splat_sizes_to_file(const std::string& filename) const
-  {
-    std::ofstream out(filename);
-    if (!out) {
-      std::cerr << "Error: cannot open " << filename << " for writing.\n";
-      return false;
-    }
-
-    for (const FT& size : splat_sizes_) {
-      out << std::setprecision(17) << CGAL::to_double(size) << '\n';
-    }
-
-    return true;
-  }
-
-  
-  //   public:
-  //   /**
-  //    * @brief Writes the input point cloud and normals to a PLY file.
-  //    *
-  //    * @param filename Output PLY filename.
-  //    *
-  //    * @return `true` if the file was written successfully.
-  //    */
-  //   bool write_point_cloud_ply(const std::string& filename) const
-  //   {
-  //     std::ofstream out(filename);
-  //     if (!out) {
-  //       std::cerr << "Error: cannot open " << filename << " for writing.\n";
-  //       return false;
-  //     }
-
-  //     out << "ply\n";
-  //     out << "format ascii 1.0\n";
-  //     out << "element vertex " << points_.size() << "\n";
-  //     out << "property float x\n";
-  //     out << "property float y\n";
-  //     out << "property float z\n";
-  //     out << "property float nx\n";
-  //     out << "property float ny\n";
-  //     out << "property float nz\n";
-  //     out << "end_header\n";
-
-  //     for (std::size_t i = 0; i < points_.size(); ++i) {
-  //       const Point_3& p = points_[i];
-  //       const Vector_3 n = (i < normals_.size()) ? normals_[i] : CGAL::NULL_VECTOR;
-
-  //       out << std::setprecision(17)
-  //           << CGAL::to_double(p.x()) << ' '
-  //           << CGAL::to_double(p.y()) << ' '
-  //           << CGAL::to_double(p.z()) << ' '
-  //           << CGAL::to_double(n.x()) << ' '
-  //           << CGAL::to_double(n.y()) << ' '
-  //           << CGAL::to_double(n.z()) << '\n';
-  //     }
-
-  //     return true;
-  //   }
-
-  //   /**
-  //    * @brief Writes all grid vertices to a PLY file for visualization.
-  //    *
-  //    * @param filename Output PLY filename.
-  //    *
-  //    * @return `true` if the file was written successfully.
-  //    */
-  //   bool write_grid_vertices_ply(const std::string& filename) const
-  //   {
-  //     std::ofstream out(filename);
-  //     if (!out) {
-  //       std::cerr << "Error: cannot open " << filename << " for writing.\n";
-  //       return false;
-  //     }
-
-  //     std::vector<Point_3> vertices;
-  //     vertices.reserve((nx_ + 1) * (ny_ + 1) * (nz_ + 1));
-
-  //     for (std::size_t ix = 0; ix <= nx_; ++ix) {
-  //       for (std::size_t iy = 0; iy <= ny_; ++iy) {
-  //         for (std::size_t iz = 0; iz <= nz_; ++iz) {
-  //           const FT x = min_x_ + FT(ix) * box_size_;
-  //           const FT y = min_y_ + FT(iy) * box_size_;
-  //           const FT z = min_z_ + FT(iz) * box_size_;
-  //           vertices.emplace_back(x, y, z);
-  //         }
-  //       }
-  //     }
-
-  //     out << "ply\n";
-  //     out << "format ascii 1.0\n";
-  //     out << "element vertex " << vertices.size() << "\n";
-  //     out << "property float x\n";
-  //     out << "property float y\n";
-  //     out << "property float z\n";
-  //     out << "end_header\n";
-
-  //     for (const Point_3& p : vertices) {
-  //       out << std::setprecision(17)
-  //           << CGAL::to_double(p.x()) << ' '
-  //           << CGAL::to_double(p.y()) << ' '
-  //           << CGAL::to_double(p.z()) << '\n';
-  //     }
-
-  //     return true;
-  //   }
-
-  //   /**
-  //    * @brief Writes occupied cell centers and their averaged normals to a PLY file.
-  //    *
-  //    * @param filename Output PLY filename.
-  //    * @param normal_scale Scale factor for visualizing the normal direction.
-  //    *
-  //    * @return `true` if the file was written successfully.
-  //    */
-  //   bool write_cell_centers_and_normals_ply(const std::string& filename,
-  //                                           double normal_scale = 0.25) const
-  //   {
-  //     std::ofstream out(filename);
-  //     if (!out) {
-  //       std::cerr << "Error: cannot open " << filename << " for writing.\n";
-  //       return false;
-  //     }
-
-  //     std::vector<Point_3> centers;
-  //     std::vector<Vector_3> normals;
-  //     centers.reserve(cells_.size());
-  //     normals.reserve(cells_.size());
-
-  //     for (std::size_t ix = 0; ix < nx_; ++ix) {
-  //       for (std::size_t iy = 0; iy < ny_; ++iy) {
-  //         for (std::size_t iz = 0; iz < nz_; ++iz) {
-  //           const Cell& c = cells_[flat_index(static_cast<int>(ix),
-  //                                             static_cast<int>(iy),
-  //                                             static_cast<int>(iz))];
-
-  //           if (c.point_ids.empty()) {
-  //             continue;
-  //           }
-
-  //           centers.push_back(cell_center(static_cast<int>(ix),
-  //                                         static_cast<int>(iy),
-  //                                         static_cast<int>(iz)));
-  //           normals.push_back(compute_cell_normal(static_cast<int>(ix),
-  //                                                 static_cast<int>(iy),
-  //                                                 static_cast<int>(iz)));
-  //         }
-  //       }
-  //     }
-
-  //     out << "ply\n";
-  //     out << "format ascii 1.0\n";
-  //     out << "element vertex " << centers.size() * 2 << "\n";
-  //     out << "property float x\n";
-  //     out << "property float y\n";
-  //     out << "property float z\n";
-  //     out << "element edge " << centers.size() << "\n";
-  //     out << "property int vertex1\n";
-  //     out << "property int vertex2\n";
-  //     out << "end_header\n";
-
-  //     for (std::size_t i = 0; i < centers.size(); ++i) {
-  //       const Point_3& c = centers[i];
-  //       const Vector_3 n = normals[i];
-
-  //       const Point_3 tip(
-  //         c.x() + FT(normal_scale) * n.x(),
-  //         c.y() + FT(normal_scale) * n.y(),
-  //         c.z() + FT(normal_scale) * n.z()
-  //       );
-
-  //       out << std::setprecision(17)
-  //           << CGAL::to_double(c.x()) << ' '
-  //           << CGAL::to_double(c.y()) << ' '
-  //           << CGAL::to_double(c.z()) << '\n';
-
-  //       out << std::setprecision(17)
-  //           << CGAL::to_double(tip.x()) << ' '
-  //           << CGAL::to_double(tip.y()) << ' '
-  //           << CGAL::to_double(tip.z()) << '\n';
-  //     }
-
-  //     for (std::size_t i = 0; i < centers.size(); ++i) {
-  //       const int v0 = static_cast<int>(2 * i);
-  //       const int v1 = static_cast<int>(2 * i + 1);
-  //       out << v0 << ' ' << v1 << '\n';
-  //     }
-
-  //     return true;
-  //   }
-  //   ---------------------------------------------------------------------------
-
-  };
 
   /**
    * @ingroup PkgSplatSurfaceReconstruction3Classes
@@ -1375,6 +89,12 @@ namespace CGAL {
       using edge_descriptor = typename boost::graph_traits<TriangleMesh>::edge_descriptor;
       using halfedge_descriptor = typename boost::graph_traits<TriangleMesh>::halfedge_descriptor;
       using face_descriptor = typename boost::graph_traits<TriangleMesh>::face_descriptor;
+
+      using Surface_approximation = typename CGAL::internal::Splat_surface_reconstruction_3::Surface_approximation<Kernel>;
+      using Splat_surface_approximation = typename CGAL::internal::Splat_surface_reconstruction_3::Splat_surface_approximation<Kernel>;
+      using Mesh_surface_approximation = typename CGAL::internal::Splat_surface_reconstruction_3::Mesh_surface_approximation<Kernel, TriangleMesh>;
+      using Initial_seed = typename Surface_approximation::Initial_seed;
+      using Feature_segment = typename Surface_approximation::Feature_segment;
 
       struct Candidate {
         Point_3 position;
@@ -1417,18 +137,6 @@ namespace CGAL {
           {}
       };
 
-      struct FeatureSegment {
-        Point_3 point_1;
-        Point_3 point_2;
-        Vector_3 normal;
-
-        FeatureSegment(const Point_3& point_1, const Point_3& point_2, const Vector_3& normal)
-          : point_1(point_1)
-          , point_2(point_2)
-          , normal(normal)
-          {}
-      };
-
     public:
 
       enum class Initialization_method
@@ -1454,22 +162,23 @@ namespace CGAL {
         FT feature_angle_minimum = FT(30.0))
       : mesh_(output_mesh),
         grid_(make_grid(points, d)),
-        points_pm_(get(CGAL::vertex_point, mesh_)) {
-          
-        grid_.build(points, normals); // insert points and normals into the grid
+        points_pm_(get(CGAL::vertex_point, mesh_)),
+        surface_approximation_(std::make_unique<Splat_surface_approximation>(points, normals, grid_)) {
 
-        grid_.write_splat_mesh_obj("splats_before.obj");
-        std::vector<FT> splat_sizes = grid_.estimate_individual_splat_sizes(); // estimate individual splat sizes based on local point distribution
-        std::cout<<"Estimated individual splat sizes for " << splat_sizes.size() << " points." << std::endl;
-        FT mean = FT(0.0);
-        for (const auto& s : splat_sizes) {
-          mean += s;
-        }
-        mean /= splat_sizes.size();
-        std::cout << "Mean splat size: " << mean << std::endl;
-        grid_.write_splat_mesh_obj("splats_individual.obj");
 
-        grid_.write_splat_sizes_to_file("splat_sizes.txt");
+        // TODO add these writes back
+        // grid_.write_splat_mesh_obj("splats_before.obj");
+        // std::vector<FT> splat_sizes = grid_.estimate_individual_splat_sizes(); // estimate individual splat sizes based on local point distribution
+        // std::cout<<"Estimated individual splat sizes for " << splat_sizes.size() << " points." << std::endl;
+        // FT mean = FT(0.0);
+        // for (const auto& s : splat_sizes) {
+        //   mean += s;
+        // }
+        // mean /= splat_sizes.size();
+        // std::cout << "Mean splat size: " << mean << std::endl;
+        // grid_.write_splat_mesh_obj("splats_individual.obj");
+
+        // grid_.write_splat_sizes_to_file("splat_sizes.txt");
 
         bool created = false;
         std::tie(normals_pm_, created) = mesh_.template add_property_map<vertex_descriptor, Vector_3>("v:normal", CGAL::NULL_VECTOR);
@@ -1485,67 +194,52 @@ namespace CGAL {
 
         if (init_method == Initialization_method::FEATURE_AWARE) {
           seed_from_features(feature_angle_minimum);
-          //seed_from_grid();
         }
         else {
           seed_from_grid();
         }
       }
 
-      // /**
-      //  * @brief Constructs a reconstruction object and initializes mesh properties.
-      //  *
-      //  * Adds the per-vertex normal property map and per-edge property map,
-      //  * initializes the spatial lookup structure, and creates the initial seed.
-      //  *
-      //  * @param grid Spatial grid containing input points, normals, and splat sizes.
-      //  * @param output_mesh Mesh receiving the reconstructed surface.
-      // */
-      // Splat_surface_reconstruction_3(
-      //   TriangleMesh& input_mesh,
-      //   const FT d,
-      //   TriangleMesh& output_mesh,
-      //   Initialization_method init_method = Initialization_method::DEFAULT,
-      //   FT feature_angle_minimum = FT(30.0))
-      // : mesh_(output_mesh),
-      //   grid_(make_grid(points, d)),
-      //   points_pm_(get(CGAL::vertex_point, mesh_)) {
-          
-      //   grid_.build(points, normals); // insert points and normals into the grid
+      /**
+       * @brief Constructs a reconstruction object and initializes mesh properties.
+       *
+       * Adds the per-vertex normal property map and per-edge property map,
+       * initializes the spatial lookup structure, and creates the initial seed.
+       *
+       * @param grid Spatial grid containing input points, normals, and splat sizes.
+       * @param output_mesh Mesh receiving the reconstructed surface.
+      */
+      Splat_surface_reconstruction_3(
+        TriangleMesh& input_mesh,
+        const FT d,
+        TriangleMesh& output_mesh,
+        Initialization_method init_method = Initialization_method::DEFAULT,
+        FT feature_angle_minimum = FT(30.0))
+      : mesh_(output_mesh),
+        grid_(make_grid(input_mesh, d)),
+        points_pm_(get(CGAL::vertex_point, mesh_)),
+        surface_approximation_(std::make_unique<Mesh_surface_approximation>(input_mesh, grid_)) 
+      {
 
-      //   grid_.write_splat_mesh_obj("splats_before.obj");
-      //   std::vector<FT> splat_sizes = grid_.estimate_individual_splat_sizes(); // estimate individual splat sizes based on local point distribution
-      //   std::cout<<"Estimated individual splat sizes for " << splat_sizes.size() << " points." << std::endl;
-      //   FT mean = FT(0.0);
-      //   for (const auto& s : splat_sizes) {
-      //     mean += s;
-      //   }
-      //   mean /= splat_sizes.size();
-      //   std::cout << "Mean splat size: " << mean << std::endl;
-      //   grid_.write_splat_mesh_obj("splats_individual.obj");
+        bool created = false;
+        std::tie(normals_pm_, created) = mesh_.template add_property_map<vertex_descriptor, Vector_3>("v:normal", CGAL::NULL_VECTOR);
 
-      //   grid_.write_splat_sizes_to_file("splat_sizes.txt");
+        bool created_w = false;
+        std::tie(edge_weight_pm_, created_w) = mesh_.template add_property_map<edge_descriptor, FT>("e:weight", FT(1));
 
-      //   bool created = false;
-      //   std::tie(normals_pm_, created) = mesh_.template add_property_map<vertex_descriptor, Vector_3>("v:normal", CGAL::NULL_VECTOR);
+        if (created) {
+          std::cout << "Created vertex normal property map." << std::endl;
+        }
 
-      //   bool created_w = false;
-      //   std::tie(edge_weight_pm_, created_w) = mesh_.template add_property_map<edge_descriptor, FT>("e:weight", FT(1));
+        mesh_vertices_per_cell_.resize(grid_.number_of_cells());
 
-      //   if (created) {
-      //     std::cout << "Created vertex normal property map." << std::endl;
-      //   }
-
-      //   mesh_vertices_per_cell_.resize(grid_.number_of_cells());
-
-      //   if (init_method == Initialization_method::FEATURE_AWARE) {
-      //     seed_from_features(feature_angle_minimum);
-      //     //seed_from_grid();
-      //   }
-      //   else {
-      //     seed_from_grid();
-      //   }
-      // }
+        if (init_method == Initialization_method::FEATURE_AWARE) {
+          seed_from_features(feature_angle_minimum);
+        }
+        else {
+          seed_from_grid();
+        }
+      }
 
       /**
        * @brief Executes the complete reconstruction pipeline.
@@ -1605,12 +299,12 @@ namespace CGAL {
           const Point_3 parent_1 = get(points_pm_, cand.first);
           const Point_3 parent_2 = get(points_pm_, cand.second);
 
-          if (!projection_check(cand.position, parent_1, grid_.box_normal(cand.position))
-            || !projection_check(cand.position, parent_2, grid_.box_normal(cand.position))
-            || !projection_check(cand.position, parent_1, grid_.box_normal(parent_1))
-            || !projection_check(cand.position, parent_2, grid_.box_normal(parent_1))
-            || !projection_check(cand.position, parent_1, grid_.box_normal(parent_2))
-            || !projection_check(cand.position, parent_2, grid_.box_normal(parent_2))) {
+          if (!projection_check(cand.position, parent_1, surface_approximation_->box_normal(cand.position))
+            || !projection_check(cand.position, parent_2, surface_approximation_->box_normal(cand.position))
+            || !projection_check(cand.position, parent_1, surface_approximation_->box_normal(parent_1))
+            || !projection_check(cand.position, parent_2, surface_approximation_->box_normal(parent_1))
+            || !projection_check(cand.position, parent_1, surface_approximation_->box_normal(parent_2))
+            || !projection_check(cand.position, parent_2, surface_approximation_->box_normal(parent_2))) {
             rejected_proj++;
             if (is_target) {
               std::cout << "Candidate rejected due to projection check: " << cand.first << ", " << cand.second << std::endl;
@@ -1690,6 +384,27 @@ namespace CGAL {
                 const FT d)
       {
         const FT padding = FT(1.1) * d;
+
+        const auto bbox = CGAL::bounding_box(points.begin(), points.end());
+
+        return Grid(d,
+                    FT(bbox.xmin()) - padding,
+                    FT(bbox.ymin()) - padding,
+                    FT(bbox.zmin()) - padding,
+                    FT(bbox.xmax()) + padding,
+                    FT(bbox.ymax()) + padding,
+                    FT(bbox.zmax()) + padding);
+      }
+
+      Grid make_grid(const TriangleMesh& mesh,
+                const FT d)
+      {
+        const FT padding = FT(1.1) * d;
+
+        std::vector<Point_3> points;
+        for (const vertex_descriptor v : vertices(mesh)) {
+          points.push_back(mesh.point(v));
+        }
 
         const auto bbox = CGAL::bounding_box(points.begin(), points.end());
 
@@ -2095,7 +810,7 @@ namespace CGAL {
        * initial front. Candidate generation is then started from both seed vertices.
       */
       void seed_from_grid() {
-        std::optional<typename Grid::Initial_seed> seed = grid_.get_initial_seed();
+        std::optional<Initial_seed> seed = surface_approximation_->get_initial_seed();
         if (!seed) {
           std::cerr << "No initial splat seed found.\n";
           return;
@@ -2105,11 +820,11 @@ namespace CGAL {
         // v0_ = mesh_.add_vertex(seed->first);
         vertex_descriptor v0_ = add_vertex(mesh_);
         put(points_pm_, v0_, seed->first);
-        put(normals_pm_, v0_, grid_.normals()[seed->splat_id]);
+        put(normals_pm_, v0_, seed->normal);
 
         vertex_descriptor v1_ = add_vertex(mesh_);
         put(points_pm_, v1_, seed->second);
-        put(normals_pm_, v1_, grid_.normals()[seed->splat_id]);
+        put(normals_pm_, v1_, seed->normal);
 
         // Create the base edge between the two seed vertices.
         edge_descriptor e = add_edge(mesh_);
@@ -2140,6 +855,9 @@ namespace CGAL {
         CGAL_assertion(is_valid_vertex_descriptor(v1_, mesh_));
 
         
+
+        std::cout << "Found initial seed: " << seed->first << ", " << seed->second << ", " << seed->normal << std::endl;
+
         seeded_ = true;
         std::cout << "Mesh seeded with initial vertices. Starting growth...\n";
 
@@ -2148,9 +866,6 @@ namespace CGAL {
 
         push_candidates_from_vertex(v0_);
         push_candidates_from_vertex(v1_);
-
-        std::cout << "seed_from_grid " << e << " added between " << v0_ << "  and " << v1_ << "\n";
-
       }
 
       /**
@@ -2167,6 +882,10 @@ namespace CGAL {
         auto nearby = nearby_mesh_vertices(p, FT(8.0) * grid_.get_box_size());
 
         for (vertex_descriptor other_v : nearby) {
+
+          if (other_v == nv) {
+            continue;
+          }
 
           std::vector<Candidate> candidates = generate_candidates_from_parents(nv, other_v);
 
@@ -2191,6 +910,10 @@ namespace CGAL {
                                                               vertex_descriptor parent_b) const {
         std::vector<Candidate> candidates;
 
+        if (parent_a == parent_b) {
+          return candidates;
+        }
+
         const Point_3 pa = get(points_pm_, parent_a);
         const Point_3 pb = get(points_pm_, parent_b);
 
@@ -2201,45 +924,34 @@ namespace CGAL {
           return candidates;
         }
 
+        Point_3 circle_center;
+        Vector_3 circle_normal;
+        FT circle_radius;
 
-        // Circle radius from the two-parent construction.
-        const FT circle_r = CGAL::sqrt((d * d) - (d2 / FT(4)));
+        if (!CGAL::internal::Splat_surface_reconstruction_3::find_circle_between_points<Point_3, Vector_3, FT>(pa, pb, d, circle_center, circle_normal, circle_radius)) {
+          return candidates;
+        }
 
-        FT search_radius = circle_r + grid_.get_max_splat_radius();
+        // Now the circle is defined by circle_center, circle_normal, and circle_radius.
 
-        const Point_3 mid = midpoint(pa, pb);
+        // Find all intersections with the surface approximation.
+        const std::vector<std::pair<Point_3, Vector_3>> hits =
+          surface_approximation_->intersect_circle(circle_center, circle_normal, circle_radius);
 
-        std::vector<Index> nearby = grid_.nearby_point_ids(mid, search_radius);
-
-        const std::vector<Point_3>& points = grid_.points();
-        const std::vector<Vector_3>& normals = grid_.normals();
-        const std::vector<FT>& splat_sizes = grid_.splat_sizes();
-
-        for (Index sid : nearby) {
-          if (sid >= points.size() || sid >= normals.size()) {
+        for (const auto& [p, normal] : hits) {
+          // Changed: add this check
+          // Don't add candidates that are outside the grid bounds
+          if (!grid_.is_point_inside_grid(p))
             continue;
-          }
 
-          const FT splat_radius = splat_sizes[sid];
+          // Changed: add this check
+          // Don't add vertices that cannot find a proper box normal
+          if (surface_approximation_->box_normal(p) == CGAL::NULL_VECTOR)
+            continue;
 
-          const std::vector<Point_3> hits =
-            grid_.intersect_circle_with_splat(pa, pb, points[sid], normals[sid], splat_radius);
-
-          for (const Point_3& p : hits) {
-            // Changed: add this check
-            // Don't add candidates that are outside the grid bounds
-            if (!grid_.is_point_inside_grid(p))
-              continue;
-
-            // Changed: add this check
-            // Don't add vertices that cannot find a proper box normal
-            if (grid_.box_normal(p) == CGAL::NULL_VECTOR)
-              continue;
-
-            Candidate c(p, normals[sid], parent_a, parent_b);
-            c.priority = compute_priority(c);
-            candidates.push_back(c);
-          }
+          Candidate c(p, normal, parent_a, parent_b);
+          c.priority = compute_priority(c);
+          candidates.push_back(c);
         }
 
         return candidates;
@@ -2330,7 +1042,7 @@ namespace CGAL {
 
           const Point& p = mesh.point(v);
           const Vector_3 normal = normals_pm_[v];
-          const Vector_3 box_normal = grid_.box_normal(p);
+          const Vector_3 box_normal = surface_approximation_->box_normal(p);
           Vector_3 cross_product_normal = Vector_3(0, 0, 0);
 
           bool found_loop = false;
@@ -2425,26 +1137,26 @@ namespace CGAL {
         // --------------------------------------------------
         // Splats
         // --------------------------------------------------
-        out << "  \"splats\": [\n";
+        // out << "  \"splats\": [\n";
 
-        const std::vector<FT> splat_sizes = grid_.splat_sizes();
-        const std::vector<Vector_3> splat_normals = grid_.normals();
-        const std::vector<Point> splat_positions = grid_.points();
+        // const std::vector<FT> splat_sizes = grid_.splat_sizes();
+        // const std::vector<Vector_3> splat_normals = grid_.normals();
+        // const std::vector<Point> splat_positions = grid_.points();
 
-        for (std::size_t i = 0; i < splat_sizes.size(); ++i) {
-          if (i > 0) out << ",\n";
+        // for (std::size_t i = 0; i < splat_sizes.size(); ++i) {
+        //   if (i > 0) out << ",\n";
 
-          out << "    {\"size\": " << CGAL::to_double(splat_sizes[i])
-              << ", \"normal\": ["
-              << CGAL::to_double(splat_normals[i].x()) << ", "
-              << CGAL::to_double(splat_normals[i].y()) << ", "
-              << CGAL::to_double(splat_normals[i].z()) << "], "
-              << "\"position\": ["
-              << CGAL::to_double(splat_positions[i].x()) << ", "
-              << CGAL::to_double(splat_positions[i].y()) << ", "
-              << CGAL::to_double(splat_positions[i].z()) << "]}";
-        }
-        out << "\n  ],\n";
+        //   out << "    {\"size\": " << CGAL::to_double(splat_sizes[i])
+        //       << ", \"normal\": ["
+        //       << CGAL::to_double(splat_normals[i].x()) << ", "
+        //       << CGAL::to_double(splat_normals[i].y()) << ", "
+        //       << CGAL::to_double(splat_normals[i].z()) << "], "
+        //       << "\"position\": ["
+        //       << CGAL::to_double(splat_positions[i].x()) << ", "
+        //       << CGAL::to_double(splat_positions[i].y()) << ", "
+        //       << CGAL::to_double(splat_positions[i].z()) << "]}";
+        // }
+        // out << "\n  ],\n";
 
         // --------------------------------------------------
         // Feature segments
@@ -2564,10 +1276,10 @@ namespace CGAL {
         };
 
         // Normalize the box normals before using them to construct tangent frames.
-        Vector_3 n0 = normalize_vec(grid_.box_normal(p0));
-        Vector_3 n1 = normalize_vec(grid_.box_normal(p1));
+        Vector_3 n0 = normalize_vec(surface_approximation_->box_normal(p0));
+        Vector_3 n1 = normalize_vec(surface_approximation_->box_normal(p1));
         //Vector_3 n = normalize_vec(n0+n1);
-        Vector_3 n2 = normalize_vec(grid_.box_normal(pn));
+        Vector_3 n2 = normalize_vec(surface_approximation_->box_normal(pn));
 
         // // This normal can be very wrong sometimes
         // n0 = normals_pm_[v0];
@@ -2595,7 +1307,7 @@ namespace CGAL {
         // Construct an oriented tangent frame. The sign of v is adjusted so that
         // cross(u,v) agrees with the supplied normal.
         auto make_frame = [&](const Vector_3& n) -> std::pair<Vector_3, Vector_3> {
-          std::vector<Vector_3> frame = grid_.compute_local_tangent_frame(n);
+          std::vector<Vector_3> frame = CGAL::internal::Splat_surface_reconstruction_3::compute_local_tangent_frame<Point_3, Vector_3, FT>(n);
           Vector_3 u = frame[0];
           Vector_3 v = frame[1];
 
@@ -2725,8 +1437,6 @@ namespace CGAL {
           return {cw.second, ccw.second};
         };
 
-        bool is_target = nv.idx() == 649;
-
         // Compute the local ordering using parent normals.
         auto [h1, h2] = choose_closest_ccw_halfedges(v0, pn, n0);
         auto [g2, g1] = choose_closest_ccw_halfedges(v1, pn, n1);
@@ -2734,15 +1444,6 @@ namespace CGAL {
         // std::cout << "\n[BUILD_GRAPH ITERATION]" << std::endl;
         // std::cout << "v0: " << v0 << " v1: " << v1 << std::endl;
         // std::cout << "h1: " << h1 << " h2: " << h2 << " g1: " << g1 << " g2: " << g2 << std::endl;
-
-
-        // Instead of using h2 and g2 from the local ordering, we use the edge connecting v0 and v1
-        // First ensure that it exists in the mesh
-        // this doesnt work in general but can be used to assert correctness in certain cases
-        // const auto [h_v0v1, found_v0v1] = halfedge(v0, v1, mesh_);
-        // const auto [h_v1v0, found_v1v0] = halfedge(v1, v0, mesh_);
-        // CGAL_assertion(found_v0v1);
-        // CGAL_assertion(found_v1v0);
 
         // g2 = h_v0v1;
         // h2 = h_v1v0;
@@ -2805,16 +1506,6 @@ namespace CGAL {
           CGAL_assertion(face(g1, mesh_) == null_f);
           CGAL_assertion(face(g2, mesh_) == null_f);
         }
-
-        if (is_target) {
-          std::cout << "v0: " << v0 << " v1: " << v1 << std::endl;
-          std::cout << "h1: " << h1 << " h2: " << h2 << " g1: " << g1 << " g2: " << g2 << std::endl;
-        }
-
-        // CGAL_assertion(h1 != null_h);
-        // CGAL_assertion(h2 != null_h);
-        // CGAL_assertion(g1 != null_h);
-        // CGAL_assertion(g2 != null_h);
 
         // std::cout << "after ensuring halfedge orientations:" << std::endl;
         // std::cout << "h1: " << h1 << " h2: " << h2 << " g1: " << g1 << " g2: " << g2 << std::endl;
@@ -2906,19 +1597,11 @@ namespace CGAL {
           // CGAL_assertion(next(g1, mesh_) == h2);
         }
 
-        if (nv.idx() == 2105) {
-          export_halfedge_mesh_json(mesh_, "pre_2105.json");
-        }
-
         // Create the two new undirected edges connecting the new vertex to its parents.
         halfedge_descriptor h_v0nv = create_halfedge(v0, nv);
         halfedge_descriptor h_nvv0 = opposite(h_v0nv, mesh_);
         halfedge_descriptor h_v1nv = create_halfedge(v1, nv);
         halfedge_descriptor h_nvv1 = opposite(h_v1nv, mesh_);
-        if (h_v0nv.idx() == 446 || h_nvv0.idx() == 446 || h_v1nv.idx() == 446 || h_nvv1.idx() == 446) {
-          std::cout << "creating edge 446 in build_graph" << std::endl;
-          //CGAL_assertion(false);
-        }
 
         if (h1 == null_h) {
           h1 = h_nvv0;
@@ -2987,19 +1670,6 @@ namespace CGAL {
         set_next(h2, h_v0nv, mesh_);
         set_next(h_v0nv, h_nvv1, mesh_);
         set_next(h_nvv1, opposite(g2, mesh_), mesh_);
-
-        if (nv.idx() == 2105) {
-          std::cout << "v0: " << v0 << ", v1: " << v1 << std::endl;
-          std::cout << "h1: " << h1 << std::endl;
-          std::cout << "h2: " << h2 << std::endl;
-          std::cout << "g1: " << g1 << std::endl;
-          std::cout << "g2: " << g2 << std::endl;
-          export_halfedge_mesh_json(mesh_, "post_2105.json");
-        }
-
-        //std::cout << "adding " << h_v0nv << " and " << h_v1nv << " to vertex " << nv << std::endl;
-
-        //assert_valid_triangle_faces();
 
         // Verify all six new successor relationships.
         CGAL_assertion(next(g1, mesh_) == h_v1nv);
@@ -3315,7 +1985,7 @@ namespace CGAL {
           const Point_3& c3 = get(points_pm_, verts[i2]);
 
           // CHANGED: using normals_pm for angle computation vs box normal
-          const Vector_3 b_box_normal = grid_.box_normal(b3);
+          const Vector_3 b_box_normal = surface_approximation_->box_normal(b3);
           const Vector_3 b_normal = get(normals_pm_, verts[i1]);
 
           bool wrong_orientation_3d_new = orient3(a3, b3, c3, b_normal) != CGAL::LEFT_TURN;
@@ -3359,7 +2029,7 @@ namespace CGAL {
       Vector_3 compute_cycle_normal(const std::vector<vertex_descriptor>& verts) const {
         Vector_3 n = CGAL::NULL_VECTOR;
         for (auto v: verts) {
-          n = n + grid_.box_normal(get(points_pm_, v));
+          n = n + surface_approximation_->box_normal(get(points_pm_, v));
           //n = n + normals_pm_[v];
         }
         const double nlen2 = CGAL::to_double(n.squared_length());
@@ -3822,57 +2492,6 @@ namespace CGAL {
       }
 
       /**
-       * @brief Tests whether two 2D segments intersect in their interiors.
-       *
-       * Endpoint touching is not considered a strict intersection. When
-       * `allow_overlap` is false, overlapping segments are considered intersecting.
-       *
-       * @param a First endpoint of the first segment.
-       * @param b Second endpoint of the first segment.
-       * @param c First endpoint of the second segment.
-       * @param d Second endpoint of the second segment.
-       * @param allow_overlap Whether overlapping segments should be ignored.
-       *
-       * @return `true` if the segments violate the local intersection constraint.
-      */
-      bool intersect_2d(const Point_2& a,
-                        const Point_2& b,
-                        const Point_2& c,
-                        const Point_2& d,
-                        bool allow_overlap = false) const {
-        const CGAL::Segment_2<Kernel> s1(a, b);
-        const CGAL::Segment_2<Kernel> s2(c, d);
-
-        auto inter = CGAL::intersection(s1, s2);
-        if (!inter) {
-          return false;
-        }
-
-        Point_2 ip;
-        if (CGAL::assign(ip, *inter)) {
-          // Allow touching at endpoints.
-          return !(ip == a || ip == b || ip == c || ip == d);
-        }
-
-        // If the intersection is not a point, it is an overlapping segment.
-        if (!allow_overlap) {
-          return true;
-        }
-        return false;
-      };
-
-
-      bool point_in_cylinder(const Point_3& p, const Point_3& c, const Vector_3& n, FT radius, FT height) const {
-        Vector_3 pc = p - c;
-        FT dist_along_normal = pc * n;
-        if (dist_along_normal < -height || dist_along_normal > height) {
-          return false;
-        }
-        Vector_3 proj = pc - dist_along_normal * n;
-        return std::sqrt(proj.squared_length()) <= radius;
-      }
-
-      /**
        * @brief Checks whether a candidate is geometrically compatible with the
        *        surrounding mesh under a local planar projection.
        *
@@ -3894,7 +2513,7 @@ namespace CGAL {
 
         const Point_3 center = point_1 + (point_2 - point_1) / FT(2.0);
 
-        auto local_frame = grid_.compute_local_tangent_frame(n);
+        auto local_frame = CGAL::internal::Splat_surface_reconstruction_3::compute_local_tangent_frame<Point_3, Vector_3, FT>(n);
         const Vector_3 u = local_frame[0];
         const Vector_3 v = local_frame[1];
 
@@ -3911,7 +2530,7 @@ namespace CGAL {
         for (vertex_descriptor vtx : nearby) {
           const Point_3 v_point = get(points_pm_, vtx);
 
-          if (!point_in_cylinder(v_point, center, n, radius, height)) {
+          if (!CGAL::internal::Splat_surface_reconstruction_3::point_in_cylinder<Point_3, Vector_3, FT>(v_point, center, n, radius, height)) {
             continue;
           }
 
@@ -3925,7 +2544,7 @@ namespace CGAL {
             const Point_2 E0 = project(q0, center, u, v);
             const Point_2 E1 = project(q1, center, u, v);
 
-            if (intersect_2d(proj_1, proj_2, E0, E1)) {
+            if (CGAL::internal::Splat_surface_reconstruction_3::intersect_2d<Point_2, Kernel>(proj_1, proj_2, E0, E1)) {
               return false;
             }
           }
@@ -4045,7 +2664,52 @@ namespace CGAL {
         feature_segment_is_used_.clear();
         feature_segment_is_used_.resize(feature_segments_.size(), false);
 
-        find_feature_segments(minimum_angle);
+        feature_segments_ = surface_approximation_->find_feature_segments(minimum_angle);
+
+        // Add all feature segments to their respective cells
+        for (std::size_t i = 0; i < feature_segments_.size(); ++i) {
+          const Feature_segment& seg = feature_segments_[i];
+
+          // Add the feature segment to the grid cells
+          // Add both ends of the segment
+          const Point_3& p1 = seg.point_1;
+          const Point_3& p2 = seg.point_2;
+
+          const Point_3 p_min = Point_3(
+            std::min(p1.x(), p2.x()),
+            std::min(p1.y(), p2.y()),
+            std::min(p1.z(), p2.z())
+          );
+
+          const Point_3 p_max = Point_3(
+            std::max(p1.x(), p2.x()),
+            std::max(p1.y(), p2.y()),
+            std::max(p1.z(), p2.z())
+          );
+
+          int cell_min_x, cell_min_y, cell_min_z;
+          int cell_max_x, cell_max_y, cell_max_z;
+
+          grid_.to_grid_coordinates(p_min, cell_min_x, cell_min_y, cell_min_z);
+          grid_.to_grid_coordinates(p_max, cell_max_x, cell_max_y, cell_max_z);
+
+          for (int x = cell_min_x; x <= cell_max_x; ++x) {
+            for (int y = cell_min_y; y <= cell_max_y; ++y) {
+              for (int z = cell_min_z; z <= cell_max_z; ++z) {
+                if (!CGAL::internal::Splat_surface_reconstruction_3::line_intersects_aabb<Point_3, Vector_3, FT>(
+                      p1, p2,
+                      grid_.cell_min_corner(x, y, z),
+                      grid_.cell_max_corner(x, y, z))) {
+                  continue;
+                }
+
+                std::size_t flat_index = grid_.flat_index(x, y, z);
+                feature_segment_indices_per_cell_[flat_index].push_back(i);
+              }
+            }
+          }
+        }
+
         std::cout << "Found feature segments: " << feature_segments_.size() << std::endl;
 
         find_initial_feature_vertex_candidates(minimum_angle);
@@ -4120,7 +2784,7 @@ namespace CGAL {
             continue;
           }
 
-          if (cand.has_parent_vertex && !projection_check(cand.position, points_pm_[cand.parent_vertex], grid_.box_normal(cand.position))) {
+          if (cand.has_parent_vertex && !projection_check(cand.position, points_pm_[cand.parent_vertex], surface_approximation_->box_normal(cand.position))) {
             continue;
           }
 
@@ -4140,7 +2804,7 @@ namespace CGAL {
 
         for (std::size_t i = 0; i < feature_segments_.size(); ++i) {
           if (!feature_segment_is_used_[i]) {
-            const FeatureSegment& feature_segment = feature_segments_[i];
+            const Feature_segment& feature_segment = feature_segments_[i];
             Point_3 midpoint = CGAL::midpoint(feature_segment.point_1, feature_segment.point_2);
             FeatureVertexCandidate cand{
               midpoint,
@@ -4213,8 +2877,8 @@ namespace CGAL {
 
                   if (dist < closest_dist) {
                     // We must make sure that the projection check passes for both vertices
-                    if (!projection_check(p_v, p_neighbor_v, grid_.box_normal(p_v)) ||
-                        !projection_check(p_v, p_neighbor_v, grid_.box_normal(p_neighbor_v))) {
+                    if (!projection_check(p_v, p_neighbor_v, surface_approximation_->box_normal(p_v)) ||
+                        !projection_check(p_v, p_neighbor_v, surface_approximation_->box_normal(p_neighbor_v))) {
                       continue;
                     }
 
@@ -4310,14 +2974,15 @@ namespace CGAL {
 
               std::size_t flat_index = grid_.flat_index(neighbor_ix, neighbor_iy, neighbor_iz);
               for (const std::size_t& feature_segment_index : feature_segment_indices_per_cell_[flat_index]) {
-                const FeatureSegment& feature_segment = feature_segments_[feature_segment_index];
-                Point_3 intersection_point;
-                if (line_intersects_sphere(
-                  feature_segment.point_1,
-                  feature_segment.point_2,
-                  sphere_center,
-                  sphere_radius,
-                  intersection_point))
+                const Feature_segment& feature_segment = feature_segments_[feature_segment_index];
+                std::vector<Point_3> intersection_points = 
+                  CGAL::internal::Splat_surface_reconstruction_3::line_intersects_sphere<Point_3, Vector_3, FT>(
+                    feature_segment.point_1,
+                    feature_segment.point_2,
+                    sphere_center,
+                    sphere_radius);
+
+                for (const Point_3& intersection_point : intersection_points)
                 {
                   // We have found a new candidate
                   feature_vertex_candidate_queue_.push_back(
@@ -4342,7 +3007,7 @@ namespace CGAL {
         const double two_pi = 2.0 * std::acos(-1.0);
 
         auto make_frame = [&](const Vector_3& n) -> std::pair<Vector_3, Vector_3> {
-          std::vector<Vector_3> frame = grid_.compute_local_tangent_frame(n);
+          std::vector<Vector_3> frame = CGAL::internal::Splat_surface_reconstruction_3::compute_local_tangent_frame<Point_3, Vector_3, FT>(n);
           Vector_3 u = frame[0];
           Vector_3 v = frame[1];
 
@@ -4556,106 +3221,19 @@ namespace CGAL {
         feature_vertices_per_cell_[grid_.flat_index(ix, iy, iz)].push_back(p);
       }
 
-
-      bool triple_plane_intersection(
-        const Point_3& p1, const Vector_3& n1, const FT& r1,
-        const Point_3& p2, const Vector_3& n2, const FT& r2,
-        const Point_3& p3, const Vector_3& n3, const FT& r3,
-        FT minimum_angle,
-        Point_3& intersection_point) const
-      {
-        // Reject invalid normals.
-        if (n1 == CGAL::NULL_VECTOR ||
-            n2 == CGAL::NULL_VECTOR ||
-            n3 == CGAL::NULL_VECTOR)
-        {
-          return false;
-        }
-
-        // Reject intersections where the angle between any pair of normals is too small.
-        if (std::abs(CGAL::approximate_angle(n1, n2)) < minimum_angle ||
-            std::abs(CGAL::approximate_angle(n1, n3)) < minimum_angle ||
-            std::abs(CGAL::approximate_angle(n2, n3)) < minimum_angle)
-        {
-          return false;
-        }
-
-        // Construct the three supporting planes.
-        const typename Kernel::Plane_3 plane1(p1, n1);
-        const typename Kernel::Plane_3 plane2(p2, n2);
-        const typename Kernel::Plane_3 plane3(p3, n3);
-
-        // Calculate their common intersection.
-        const auto result = CGAL::intersection(plane1, plane2, plane3);
-
-        if (!result) {
-          return false;
-        }
-
-        // We only accept a unique intersection point.
-        const Point_3* point = std::get_if<Point_3>(&*result);
-
-        if (point == nullptr) {
-          return false;
-        }
-
-        // Check whether the intersection lies inside all three splat disks.
-        if (CGAL::squared_distance(*point, p1) > r1 * r1 ||
-            CGAL::squared_distance(*point, p2) > r2 * r2 ||
-            CGAL::squared_distance(*point, p3) > r3 * r3)
-        {
-          return false;
-        }
-
-        intersection_point = *point;
-        return true;
-      }
-
-
-
       void find_initial_feature_vertex_candidates(FT minimum_angle) {
         feature_vertex_candidate_queue_.clear();
 
-        // Iterate over all splats to find triple intersections
-        for (std::size_t i = 0; i < grid_.points().size(); ++i) {
-          const Point_3& point_i = grid_.get_splat_point(i);
-          const Vector_3 normal_i = grid_.get_splat_normal(i);
-          const FT radius = grid_.get_box_size();
+        const std::vector<std::pair<Point_3, Vector_3>> initial_candidates = surface_approximation_->find_initial_feature_vertex_candidates(minimum_angle);
 
-          std::vector<Index> splats_in_block = grid_.nearby_point_ids(point_i, radius+radius);
-          for (Index j : splats_in_block) {
-            if (i == j) continue;
-
-            for (Index k : splats_in_block) {
-              if (i == k || j == k) continue;
-
-              const Vector_3& normal_j = grid_.get_splat_normal(j);
-              const Point_3& point_j = grid_.get_splat_point(j);
-
-              const Vector_3& normal_k = grid_.get_splat_normal(k);
-              const Point_3& point_k = grid_.get_splat_point(k);
-
-              Vector_3 normal = normal_i + normal_j + normal_k;
-              normal = normal / CGAL::sqrt(normal.squared_length());
-
-
-              Point_3 intersection_point;
-              if (triple_plane_intersection(point_i, normal_i, radius,
-                point_j, normal_j, radius,
-                point_k, normal_k, radius,
-                minimum_angle,
-                intersection_point))
-              {
-                feature_vertex_candidate_queue_.push_back(
-                  FeatureVertexCandidate{
-                    intersection_point,
-                    normal,
-                    false, // does not have an associated feature segment
-                    false, // does not have a parent vertex
-                  });
-              }
-            }
-          }
+        for (const auto& [point, normal] : initial_candidates) {
+          feature_vertex_candidate_queue_.push_back(
+            FeatureVertexCandidate{
+              point,
+              normal,
+              false, // does not have an associated feature segment
+              false, // does not have a parent vertex
+            });
         }
       }
 
@@ -4692,160 +3270,6 @@ namespace CGAL {
       }
 
 
-      void find_feature_segments(FT minimum_angle) {
-        feature_segments_.clear();
-
-        // Iterate over all splats and identify feature segments
-        for (std::size_t i = 0; i < grid_.points().size(); ++i) {
-          const Point_3& center = grid_.get_splat_point(i);
-          const Vector_3 normal = grid_.get_splat_normal(i);
-          const FT radius = grid_.get_box_size();
-
-          // Attempt intersection with other splats
-          std::vector<Index> splats_in_block = grid_.nearby_point_ids(center, radius+radius);
-          for (Index j : splats_in_block) {
-            if (j < i) continue;
-            Point_3 intersection_point_1, intersection_point_2;
-
-            // If the splats intersect, add the feature segment
-            if (splat_intersects_splat(i, j, intersection_point_1, intersection_point_2, minimum_angle)) {
-              // Find the normal of the intersecting splat
-              Vector_3 normal = grid_.get_splat_normal(i);
-              normal += grid_.get_splat_normal(j);
-              normal = normal / CGAL::sqrt(normal.squared_length());
-
-              std::size_t feature_segment_index = feature_segments_.size();
-
-              feature_segments_.emplace_back(FeatureSegment{intersection_point_1, intersection_point_2, normal});
-
-              // Add the feature segment to the grid cells
-              // Add both ends of the segment
-              int cell_x, cell_y, cell_z;
-              grid_.to_grid_coordinates(intersection_point_1, cell_x, cell_y, cell_z);
-              std::size_t flat_index_1 = grid_.flat_index(cell_x, cell_y, cell_z);
-              feature_segment_indices_per_cell_[flat_index_1].push_back(feature_segment_index);
-
-              grid_.to_grid_coordinates(intersection_point_2, cell_x, cell_y, cell_z);
-              std::size_t flat_index_2 = grid_.flat_index(cell_x, cell_y, cell_z);
-              if (flat_index_2 != flat_index_1) {
-                feature_segment_indices_per_cell_[flat_index_2].push_back(feature_segment_index);
-              }
-            }
-          }
-        }
-      }
-
-
-
-
-
-      // Returns the number of intersections of the line with the sphere
-      // Only retains the case where the line intersects the sphere at one point,
-      // where one of the endpoints is inside the sphere.
-      bool line_intersects_sphere(
-        const Point_3& line_point_1,
-        const Point_3& line_point_2,
-        const Point_3& sphere_center,
-        FT sphere_radius,
-        Point_3& intersection_point) const
-      {
-        const FT radius_squared = sphere_radius * sphere_radius;
-
-        const FT d1 = CGAL::squared_distance(line_point_1, sphere_center);
-        const FT d2 = CGAL::squared_distance(line_point_2, sphere_center);
-
-        const bool p1_inside = d1 < radius_squared;
-        const bool p2_inside = d2 < radius_squared;
-
-        // One should be inside, other should be outside
-        if (p1_inside == p2_inside)
-          return false;
-
-        const Vector_3 direction = line_point_2 - line_point_1;
-        const Vector_3 offset = line_point_1 - sphere_center;
-
-        const FT a = direction.squared_length();
-        const FT b = FT(2) * (offset * direction);
-        const FT c = offset.squared_length() - radius_squared;
-
-        const FT discriminant = b * b - FT(4) * a * c;
-
-        if (discriminant < FT(0) || a == FT(0))
-          return false;
-
-        const FT sqrt_discriminant = CGAL::sqrt(discriminant);
-        const FT t1 = (-b - sqrt_discriminant) / (FT(2) * a);
-        const FT t2 = (-b + sqrt_discriminant) / (FT(2) * a);
-
-        // Select the intersection lying between the two endpoints.
-        const FT t = (t1 >= FT(0) && t1 <= FT(1)) ? t1 : t2;
-
-        if (t < FT(0) || t > FT(1))
-          return false;
-
-        intersection_point = line_point_1 + t * direction;
-        return true;
-      }
-
-
-
-      bool splat_intersects_splat(Index splat_1, Index splat_2, Point_3& intersection_point_1, Point_3& intersection_point_2, FT minimum_angle) const {
-        const Point_3& splat_1_center = grid_.get_splat_point(splat_1);
-        const Vector_3 splat_1_normal = grid_.get_splat_normal(splat_1);
-        const FT splat_1_radius = grid_.get_box_size();
-
-        const Point_3& splat_2_center = grid_.get_splat_point(splat_2);
-        const Vector_3 splat_2_normal = grid_.get_splat_normal(splat_2);
-        const FT splat_2_radius = grid_.get_box_size();
-
-        FT distance_between_centers = CGAL::sqrt(CGAL::squared_distance(splat_1_center, splat_2_center));
-        if (distance_between_centers > splat_1_radius + splat_2_radius) {
-          return false;
-        }
-
-        FT angle_between_normals = CGAL::approximate_angle(splat_1_normal, splat_2_normal);
-        if (angle_between_normals < minimum_angle) {
-          return false;
-        }
-
-
-        std::vector<Point_3> result_1 = grid_.circle_intersects_splat(splat_1_center, splat_1_normal, splat_1_radius, splat_2_center, splat_2_normal, splat_2_radius);
-        std::vector<Point_3> result_2 = grid_.circle_intersects_splat(splat_2_center, splat_2_normal, splat_2_radius, splat_1_center, splat_1_normal, splat_1_radius);
-
-        std::vector<Point_3> intersection_points = result_1;
-        intersection_points.insert(intersection_points.end(), result_2.begin(), result_2.end());
-
-        std::vector<Point_3> unique_intersection_points;
-
-        for (const Point_3& p : intersection_points) {
-          bool is_duplicate = false;
-          for (const Point_3& q : unique_intersection_points) {
-            if (CGAL::squared_distance(p, q) <= FT(1e-12)) {
-              is_duplicate = true;
-              break;
-            }
-          }
-          if (!is_duplicate) {
-            unique_intersection_points.push_back(p);
-          }
-        }
-
-        // If there are exactly two unique intersection points, we have a valid intersection
-        if (unique_intersection_points.size() == 2) {
-          intersection_point_1 = unique_intersection_points[0];
-          intersection_point_2 = unique_intersection_points[1];
-          return true;
-        }
-        return false;
-      }
-
-
-
-
-
-
-
-
 
 
 
@@ -4875,6 +3299,7 @@ namespace CGAL {
 
       Grid grid_;
       TriangleMesh& mesh_;
+      std::unique_ptr<Surface_approximation> surface_approximation_;
 
       typename TriangleMesh:: template Property_map<vertex_descriptor,Point_3> points_pm_;
       typename TriangleMesh:: template Property_map<vertex_descriptor,Vector_3> normals_pm_;
@@ -4895,7 +3320,7 @@ namespace CGAL {
       // Variables for feature awareness
       std::deque<FeatureVertexCandidate> feature_vertex_candidate_queue_;
       std::vector<std::vector<Point_3>> feature_vertices_per_cell_;
-      std::vector<FeatureSegment> feature_segments_;
+      std::vector<Feature_segment> feature_segments_;
       std::vector<std::vector<std::size_t>> feature_segment_indices_per_cell_;
 
       std::vector<bool> feature_segment_is_used_;

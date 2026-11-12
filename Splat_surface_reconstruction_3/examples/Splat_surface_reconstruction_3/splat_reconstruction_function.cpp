@@ -171,7 +171,7 @@ int main(int argc, char* argv[])
   std::string filename;
   std::string input_type;
   std::string output_filename = "mesh.obj";
-  double scale = 1.0;
+  double d = 0.05;
   double feature_angle_minimum = 30.0;
 
   using Reconstruction =
@@ -207,8 +207,8 @@ int main(int argc, char* argv[])
     else if (arg == "--output")
       output_filename = next_value();
 
-    else if (arg == "--scale")
-      scale = std::stod(next_value());
+    else if (arg == "--d")
+      d = std::stod(next_value());
 
     else if (arg == "--feature-angle")
       feature_angle_minimum = std::stod(next_value());
@@ -242,7 +242,7 @@ int main(int argc, char* argv[])
     std::cerr
       << "Usage: " << argv[0]
       << " --input <file> --type <mesh|point-cloud>"
-      << " [--scale <factor>]"
+      << " [--d <value>]"
       << " [--init <default|feature_aware>]"
       << " [--feature-angle <degrees>]"
       << " [--output <file>]"
@@ -303,16 +303,14 @@ int main(int argc, char* argv[])
     // Compute normals if missing.
     compute_normals_if_missing(points, normals, 6);
 
-    const double edge_length = scale * average_spacing;
-
     std::cout << "Average spacing: " << average_spacing << std::endl;
-    std::cout << "Required edge length: " << edge_length << std::endl;
+    std::cout << "d: " << d << std::endl;
 
     // Construct point-cloud reconstruction.
     Reconstruction reconstruction(
       points,
       normals,
-      edge_length,
+      d,
       output_mesh,
       init_method,
       FT(feature_angle_minimum)
@@ -359,21 +357,19 @@ int main(int argc, char* argv[])
       CGAL::compute_average_spacing<
         CGAL::Parallel_if_available_tag>(points, 2);
 
-    const double edge_length = scale * average_spacing;
-
     std::cout << "Average spacing: " << average_spacing << std::endl;
-    std::cout << "Required edge length: " << edge_length << std::endl;
+    std::cout << "d: " << d << std::endl;
 
     // Construct mesh-input reconstruction.
-    // Reconstruction reconstruction(
-    //   input_mesh,
-    //   edge_length,
-    //   output_mesh,
-    //   init_method,
-    //   FT(feature_angle_minimum)
-    // );
+    Reconstruction reconstruction(
+      input_mesh,
+      d,
+      output_mesh,
+      init_method,
+      FT(feature_angle_minimum)
+    );
 
-    // reconstruction.run();
+    reconstruction.run();
   }
 
   // Write output.
